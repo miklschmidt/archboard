@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import {
 	claimArchitectureSubjects,
 	editArchitectureModule,
 	releaseArchitectureClaim,
-} from "@archboard/board/store-write";
+} from "@archboard/model/store-write";
 
 import { join } from "node:path";
 import { canonicalNarration } from "./support/canonical-narration.ts";
@@ -71,7 +71,7 @@ describe("live narration", () => {
 			walkthrough: voice.model.playback!.walkthrough.id,
 			beat: 0,
 		});
-		expect(message).not.toHaveProperty("board");
+		expect(message).not.toHaveProperty("paneKey");
 		expect(voice.spoken()).toEqual([]);
 		await voice.report(voice.beat(0, false, String(message["request"])));
 		expect(voice.spoken()).toEqual([]);

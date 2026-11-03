@@ -3,15 +3,15 @@ import { semanticChangeFeed } from "#server/services/panes/change-feed.ts";
 
 /**
  * The changes one tab session of the Codex workbench hears: those of the vaults its panes are in.
- * A tab can show boards of several vaults, and a change to a board of a vault it shows none of
- * is not its news, even when that board goes by the same name.
- * @param shows Whether a change to a board of a vault is the tab session's news, asked at each change.
+ * A tab can show models of several vaults, and a change to a model of a vault it shows none of
+ * is not its news, even when that model goes by the same name.
+ * @param shows Whether a change to a model of a vault is the tab session's news, asked at each change.
  * @returns The feed.
  */
 function workbenchFeedFor(shows: (vault: string) => boolean): SettledChangeSource {
 	return {
 		/**
-		 * Hear each settled change to a board of a vault the tab session's panes are in.
+		 * Hear each settled change to a model of a vault the tab session's panes are in.
 		 * @param listener What to tell.
 		 * @returns Stops listening.
 		 */

@@ -554,9 +554,6 @@ export {
 	createDynamicOperationSettlement,
 	issueMutationOperations,
 	issueReadOperation,
-	operationIdsForRetirement,
 	operationWire,
 	operationWireForIssuedResult,
-	operationWireForResult,
-	terminalizeDynamicOperationId,
 };

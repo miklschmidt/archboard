@@ -36,7 +36,7 @@ Release claims when the authoring intent ends.
 If `model read` returns `LEGACY_AUTHORITY`, follow [explicit migration](../archboard/references/legacy-migration.md).
 Preserve original bytes and independent drafts until the owner authorizes complete mappings and installation.
 Use retained originals for exact historical evidence.
-Retired board commands provide no live authoring route.
+The retired `board` commands provide no live authoring route.
 
 ## Finish the change
 

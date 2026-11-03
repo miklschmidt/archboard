@@ -157,10 +157,8 @@ export {
 	isCanonicalAbsolutePath,
 	isCanonicalIdentity,
 	isHash,
-	isNonEmptyString,
 	isNullableString,
 	isReason,
 	isRecord,
 	isTimestamp,
 };
-export type { CanonicalIdentityKind };

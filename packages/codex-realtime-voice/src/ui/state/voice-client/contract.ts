@@ -157,6 +157,5 @@ export type {
 	VoiceClientOptions,
 	VoiceClientSnapshot,
 	VoiceClientVoice,
-	VoiceCommandIntent,
 	VoiceSignIn,
 };

@@ -437,5 +437,4 @@ export {
 	sameCapturedLink,
 	sameCommandTarget,
 	sameLeaseTarget,
-	type CommandRefusal,
 };

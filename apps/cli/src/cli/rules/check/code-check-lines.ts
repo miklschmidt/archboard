@@ -1,13 +1,13 @@
 // The lines `archboard check code` writes beside its JSON answer: each
 // finding as a diagnostic line with the evidence it rests on, what the code
-// check skipped, one line for each reason with a count, and how far each board
-// is behind its code, per board and per part (ADR 0045, ADR 0046).
+// check skipped, one line for each reason with a count, and how far each document
+// is behind its code, per document and per part (ADR 0045, ADR 0046).
 
 import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
-import { diagnosticLine } from "@archboard/board/policy";
+import { diagnosticLine } from "@archboard/model/policy";
 
-/** How far one board is behind its code. */
-type BoardBehind = CodeCheckAnswer["behind"][number];
+/** How far one document is behind its code. */
+type ModelBehind = CodeCheckAnswer["behind"][number];
 
 /** One subject the code check skipped, and why. */
 type CodeCheckSkip = CodeCheckAnswer["skipped"][number];
@@ -36,34 +36,34 @@ function plural(count: number, noun: string): string {
 	return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
 
-/** Why the last change of a board cannot be found, in words. */
+/** Why the last change of a document cannot be found, in words. */
 const UNKNOWN_REASON = {
 	"vault-outside-git": "the vault is in no Git repository",
-	"board-file-ignored": "Git ignores the board file",
+	"model-file-ignored": "Git ignores the model file",
 } as const;
 
 /**
- * The lines about how far one board is behind.
- * @param board One board's reading.
+ * The lines about how far one document is behind.
+ * @param document One document's reading.
  * @returns Its lines.
  */
-function behindLines(board: BoardBehind): string[] {
-	const head = `behind: ${board.board}`;
-	if (board.lastChange.kind === "unknown") {
-		return [`${head}: cannot tell, because ${UNKNOWN_REASON[board.lastChange.reason]}`];
+function behindLines(document: ModelBehind): string[] {
+	const head = `behind: ${document.model}`;
+	if (document.lastChange.kind === "unknown") {
+		return [`${head}: cannot tell, because ${UNKNOWN_REASON[document.lastChange.reason]}`];
 	}
-	if (!("commits" in board)) return [];
+	if (!("commits" in document)) return [];
 	const since =
-		board.lastChange.kind === "commit"
-			? `since ${board.lastChange.commit.slice(0, 9)} (${board.lastChange.committedAt.slice(0, 10)})`
+		document.lastChange.kind === "commit"
+			? `since ${document.lastChange.commit.slice(0, 9)} (${document.lastChange.committedAt.slice(0, 10)})`
 			: "since a change to its current variant that no commit holds yet";
-	const large = board.commits.filter((commit) => commit.large).length;
+	const large = document.commits.filter((commit) => commit.large).length;
 	return [
-		`${head}: ${plural(board.commits.length, "commit")} ${since}${large === 0 ? "" : `, ${large} large`}`,
-		...board.parts
+		`${head}: ${plural(document.commits.length, "commit")} ${since}${large === 0 ? "" : `, ${large} large`}`,
+		...document.parts
 			.filter((part) => part.commits.length > 0)
 			.map((part) => `behind:   ${part.subject.name} (${part.path}): ${part.commits.length}`),
-		...counts(board.skipped.map((skip) => skip.reason)).map(
+		...counts(document.skipped.map((skip) => skip.reason)).map(
 			([reason, count]) => `behind:   skipped ${plural(count, "part")}: ${reason}`,
 		),
 	];
@@ -85,7 +85,7 @@ function findingLines(finding: CodeFinding): string[] {
 }
 
 /**
- * What a skip is about: a subject, a whole draft, a whole board, a whole
+ * What a skip is about: a subject, a whole draft, a whole document, a whole
  * checkout, or a whole language that no checkout names.
  * @param skip The skip.
  * @returns The noun.
@@ -93,7 +93,7 @@ function findingLines(finding: CodeFinding): string[] {
 function skippedNoun(skip: CodeCheckSkip): string {
 	if (skip.subject !== undefined) return "subject";
 	if (skip.variant !== undefined) return "draft";
-	if (skip.board !== undefined) return "board";
+	if (skip.model !== undefined) return "model";
 	return skip.repo === undefined ? "language" : "checkout";
 }
 
@@ -102,8 +102,8 @@ function skippedNoun(skip: CodeCheckSkip): string {
  * reason can be said once for each project of a checkout, such as a Swift
  * package with no index; or each language with why. A checkout with no server
  * for a language says which language and what configures one, since that is
- * its whole answer. A draft is named with its board, its repository and why,
- * since which drafts were not read is the answer. Skips of subjects and boards
+ * its whole answer. A draft is named with its document, its repository and why,
+ * since which drafts were not read is the answer. Skips of subjects and documents
  * name nothing.
  * @param same The skips of one reason.
  * @param noun What they are about.
@@ -113,7 +113,7 @@ function namesOf(same: readonly CodeCheckSkip[], noun: string): string[] {
 	if (noun === "language") return same.flatMap((skip) => skip.detail ?? []);
 	if (noun === "draft") {
 		return same.map(
-			(skip) => `${skip.board} ${skip.variant} in ${skip.repo}: ${skip.detail ?? ""}`,
+			(skip) => `${skip.model} ${skip.variant} in ${skip.repo}: ${skip.detail ?? ""}`,
 		);
 	}
 	if (noun !== "checkout") return [];

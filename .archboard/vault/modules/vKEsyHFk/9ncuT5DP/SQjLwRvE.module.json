@@ -3,7 +3,7 @@
   "name": "Archboard announcements",
   "kind": "module",
   "responsibility": "Adapts canonical model news and pane context to the voice agent",
-  "description": "It keeps one Semantic context publisher per tab session and announces each event it publishes. A settled change's brief goes to the workhorse of the board's checkout, withheld once the brief is stale. The voice hears the news of a board on screen, as speech when it stops the narration, and nothing of a board no pane shows. The coordinator hears only what an agent outside the session did. A focus or selection the user made carries a topic, so a later one replaces it while it waits.",
+  "description": "It keeps one Semantic context publisher per tab session and announces each event it publishes. A settled change's brief goes to the workhorse of the model's checkout, withheld once the brief is stale. The voice hears the news of a model on screen, as speech when it stops the narration, and nothing of a model no pane shows. The coordinator hears only what an agent outside the session did. A focus or selection the user made carries a topic, so a later one replaces it while it waits.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/server/services/host/archboard-announcements.ts"

@@ -2,8 +2,8 @@
 // keeps its own values: `after` turns a default comparison off, and nothing at all means the
 // default. A person reads neither.
 
-import { comparedWith as defaultComparisonReference } from "@archboard/board/comparison";
-import type { Model } from "@archboard/board/content";
+import { comparedWith as defaultComparisonReference } from "@archboard/model/comparison";
+import type { Model } from "@archboard/model/content";
 import { changedCount, reviewsChanges } from "#ui/rules/architecture-model/change-list.ts";
 import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
 import { sharedNameTouches } from "#ui/rules/architecture-model/draft-touches.ts";

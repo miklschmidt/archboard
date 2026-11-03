@@ -285,4 +285,4 @@ function assertExpected(expected: unknown): asserts expected is ThreadLinkCasTok
 	}
 }
 
-export { EMPTY_LINK, assertExpected, assertLink, assertLinkKey, invalidInput, isNonEmptyString };
+export { EMPTY_LINK, assertExpected, assertLink, assertLinkKey, invalidInput };

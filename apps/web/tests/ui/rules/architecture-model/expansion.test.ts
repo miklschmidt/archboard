@@ -2,7 +2,7 @@
 // frames in the picture.
 
 import { expect, test } from "bun:test";
-import { projectModel, type Model } from "@archboard/board/content";
+import { projectModel, type Model } from "@archboard/model/content";
 import { cardBeside, toggled } from "#ui/rules/architecture-model/expansion.ts";
 import { moduleTree } from "#ui/rules/architecture-model/module-tree.ts";
 import { pictureReach } from "#ui/rules/architecture-model/picture-reach.ts";

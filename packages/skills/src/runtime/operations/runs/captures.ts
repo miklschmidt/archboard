@@ -1,4 +1,4 @@
-import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
+import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules/outcomes/reading.ts";
 // The bitmaps the harness takes of every final diagram a scenario asked for,
 // through `archboard semantic rasterize`: the same capability a person uses,
 // never a renderer of the harness's own. A capture is declared by the
@@ -272,48 +272,48 @@ function viewLabel(label: string, view: string, taken: ReadonlySet<string>): str
 }
 
 /**
- * A named capture as the saved boards answer to it: the board, variant and
+ * A named capture as the saved documents answer to it: the document, variant and
  * view the author actually wrote, so a picture the scenario asked for is taken
  * even when the author spelled its name differently. A name nothing answers to
  * is left as written, and the rasterize command refuses it as before.
  * @param request What the scenario asks to see.
- * @param boards The boards as finally saved, by name.
+ * @param documents The documents as finally saved, by name.
  * @returns The declaration the rasterize command is given.
  */
 function resolvedCapture(
 	request: CaptureDeclaration,
-	boards: ReadonlyMap<string, SemanticBoard>,
+	documents: ReadonlyMap<string, EvaluatedDocument>,
 ): CaptureDeclaration {
-	const entry = namedEntry(boards, request.board);
+	const entry = namedEntry(documents, request.board);
 	if (entry === undefined) return request;
-	const [name, board] = entry;
-	return { ...request, board: name, ...selectorsNamed(board, request) };
+	const [name, document] = entry;
+	return { ...request, board: name, ...selectorsNamed(document, request) };
 }
 
 /**
- * The variant and view of a named capture as the saved board answers to them,
+ * The variant and view of a named capture as the saved document answers to them,
  * and as written when nothing on it does.
- * @param board The board the capture is of.
+ * @param document The document the capture is of.
  * @param request What the scenario asks to see.
  * @returns The selectors, each left out when the request names none.
  */
 function selectorsNamed(
-	board: SemanticBoard,
+	document: EvaluatedDocument,
 	request: CaptureDeclaration,
 ): Pick<CaptureDeclaration, "variant" | "view"> {
 	return {
-		...asWritten("variant", request.variant, () => variantNamed(board, request.variant)?.name),
-		...asWritten("view", request.view, () => viewNamed(board, request.view)?.name),
+		...asWritten("variant", request.variant, () => variantNamed(document, request.variant)?.name),
+		...asWritten("view", request.view, () => viewNamed(document, request.view)?.name),
 	};
 }
 
 /**
- * One selector under its key: the name the board answers with, the name as
+ * One selector under its key: the name the document answers with, the name as
  * written when nothing on it answers, and nothing at all when the request
  * names no such selector.
  * @param key The selector's key.
  * @param asked The name the request used, if any.
- * @param answer The name the board answers with, asked lazily.
+ * @param answer The name the document answers with, asked lazily.
  * @returns The one-key record, or an empty one.
  */
 function asWritten(
@@ -325,21 +325,21 @@ function asWritten(
 }
 
 /**
- * The pictures a scenario's requests come to once the saved boards are known:
+ * The pictures a scenario's requests come to once the saved documents are known:
  * a named capture as declared, and an every-view capture as one capture per
- * view on its board, in the board's order, drawing each in its own grammar.
+ * view on its document, in the document's order, drawing each in its own grammar.
  * @param requests What the scenario asks to see.
- * @param boards The boards as finally saved, by name.
+ * @param documents The documents as finally saved, by name.
  * @returns The concrete declarations, in request order.
  */
 function expandCaptures(
 	requests: readonly CaptureRequest[],
-	boards: ReadonlyMap<string, SemanticBoard>,
+	documents: ReadonlyMap<string, EvaluatedDocument>,
 ): CaptureDeclaration[] {
 	const taken = new Set(requests.map((request) => request.label));
 	return requests.flatMap((request): CaptureDeclaration[] => {
-		if (!("views" in request)) return [resolvedCapture(request, boards)];
-		return (boards.get(request.board)?.views ?? []).map((view) => {
+		if (!("views" in request)) return [resolvedCapture(request, documents)];
+		return (documents.get(request.board)?.views ?? []).map((view) => {
 			const label = viewLabel(request.label, view.name, taken);
 			taken.add(label);
 			return {
@@ -413,6 +413,5 @@ export {
 	type CaptureAttempt,
 	type CaptureProvenance,
 	type CaptureSummary,
-	type CaptureTile,
 	type PageRegion,
 };

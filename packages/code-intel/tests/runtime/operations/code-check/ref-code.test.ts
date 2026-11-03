@@ -14,7 +14,7 @@ import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
 import {
-	board as fixtureBoard,
+	document as fixtureDocument,
 	git as fixtureGit,
 	register,
 	write,
@@ -101,7 +101,7 @@ beforeAll(async () => {
 	git("commit", "-q", "--no-gpg-sign", "-m", "feat/x");
 	git("checkout", "-q", "main");
 	register(scratch, { [SHOP]: shop });
-	fixtureBoard(vault, "Shop", [
+	fixtureDocument(vault, "Shop", [
 		{
 			id: "v1",
 			name: "Built",
@@ -153,9 +153,9 @@ afterAll(() => {
  * @returns The outcome.
  */
 async function pass(variant?: string): Promise<CodeCheckOutcome> {
-	const read = check.readBoardsToCheck(vault, variant);
+	const read = check.readStatesToCheck(vault, variant);
 	if (!read.ok) throw new Error(`no draft ${variant}`);
-	return check.checkCode(vault, read.boards, new AbortController().signal);
+	return check.checkCode(vault, read.states, new AbortController().signal);
 }
 
 /**
@@ -212,9 +212,9 @@ test("a named draft reports a bound path that its branch lacks, and the checkout
 });
 
 test("a historical candidate reads its authoritative commit even at dirty HEAD", async () => {
-	const read = check.readBoardsToCheck(vault);
-	if (!read.ok || read.boards[0] === undefined) throw new Error("fixture board missing");
-	const base = read.boards[0];
+	const read = check.readStatesToCheck(vault);
+	if (!read.ok || read.states[0] === undefined) throw new Error("fixture document missing");
+	const base = read.states[0];
 	const commit = headCommit();
 	const variant = {
 		...base.variant,
@@ -230,7 +230,7 @@ test("a historical candidate reads its authoritative commit even at dirty HEAD",
 	try {
 		const outcome = await check.checkCandidateCode({
 			vault,
-			board: base.board,
+			document: base.document,
 			file: base.file,
 			variant,
 			revisions: [{ repo: SHOP, commit }],
@@ -254,7 +254,7 @@ test("a historical candidate reads its authoritative commit even at dirty HEAD",
 		};
 		const anchored = await check.checkCandidateCode({
 			vault,
-			board: base.board,
+			document: base.document,
 			file: base.file,
 			variant: anchorOnly,
 			revisions: [{ repo: SHOP, commit }],
@@ -271,9 +271,9 @@ test("a historical candidate reads its authoritative commit even at dirty HEAD",
 });
 
 test("candidate revision evidence refuses duplicates, omissions, branch names and unavailable commits", async () => {
-	const read = check.readBoardsToCheck(vault);
-	if (!read.ok || read.boards[0] === undefined) throw new Error("fixture board missing");
-	const base = read.boards[0];
+	const read = check.readStatesToCheck(vault);
+	if (!read.ok || read.states[0] === undefined) throw new Error("fixture document missing");
+	const base = read.states[0];
 	const commit = headCommit();
 	const revision = { repo: SHOP, commit };
 	const refused = [
@@ -294,9 +294,9 @@ test("candidate revision evidence refuses duplicates, omissions, branch names an
 });
 
 test("historical suggestions use HEAD ancestry and report missing timestamp history", async () => {
-	const read = check.readBoardsToCheck(vault);
-	if (!read.ok || read.boards[0] === undefined) throw new Error("fixture board missing");
-	const variant = read.boards[0].variant;
+	const read = check.readStatesToCheck(vault);
+	if (!read.ok || read.states[0] === undefined) throw new Error("fixture document missing");
+	const variant = read.states[0].variant;
 	const commit = headCommit();
 	const signal = new AbortController().signal;
 	expect(

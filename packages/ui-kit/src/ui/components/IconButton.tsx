@@ -127,4 +127,4 @@ function IconButton(props: IconButtonProps): JSX.Element {
 	);
 }
 
-export { IconButton, type IconButtonProps };
+export { IconButton };

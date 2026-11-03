@@ -1,13 +1,13 @@
 // The address `semantic record` opens its page at, as the browser reads it
 // (TASK-472.06, ADR 0050). The recorder writes the address and the browser's
 // workspace address reads it, so this owner holds the two sides together: the
-// page shows the recorded board in pane A, in the repository of the vault the
+// page shows the recorded model in pane A, in the repository of the vault the
 // command found, and with no repository named it opens where a page opens.
 
 import { expect, test } from "bun:test";
 import { recordingPageUrl } from "@archboard/walkthrough/recorder";
 import { recordingAskedOf } from "@archboard/walkthrough/recording";
-import { addressFromSearch, parseWorkspaceSearchString } from "#ui/rules/board-routing/search.ts";
+import { addressFromSearch, parseWorkspaceSearchString } from "#ui/rules/reading-routing/search.ts";
 
 /**
  * The panes the browser opens for a recording page's address.
@@ -19,7 +19,7 @@ function panesOpenedFor(repository: string | null, variant: string | null) {
 	const url = new URL(
 		recordingPageUrl({
 			serverUrl: "http://127.0.0.1:3000",
-			board: { name: "Checkout" },
+			document: { name: "Checkout" },
 			variant,
 			repository,
 			walkthrough: { id: "w1" },
@@ -30,12 +30,12 @@ function panesOpenedFor(repository: string | null, variant: string | null) {
 	return addressFromSearch(parseWorkspaceSearchString(url.search)).panes;
 }
 
-test("the recording page shows the board in pane A, in the repository of the vault the command found", () => {
+test("the recording page shows the model in pane A, in the repository of the vault the command found", () => {
 	expect(panesOpenedFor("github.com/acme/shop", null)).toMatchObject([
-		{ paneId: "A", boardKey: "Checkout", repository: "github.com/acme/shop" },
+		{ paneId: "A", paneKey: "Checkout", repository: "github.com/acme/shop" },
 	]);
 	expect(panesOpenedFor(null, "v2")).toMatchObject([
-		{ paneId: "A", boardKey: "Checkout@v2", repository: null },
+		{ paneId: "A", paneKey: "Checkout@v2", repository: null },
 	]);
 });
 
@@ -48,7 +48,7 @@ function addressSearch(against: string | null): string {
 	return new URL(
 		recordingPageUrl({
 			serverUrl: "http://127.0.0.1:3000",
-			board: { name: "Checkout" },
+			document: { name: "Checkout" },
 			variant: "v3",
 			repository: null,
 			walkthrough: { id: "w1" },

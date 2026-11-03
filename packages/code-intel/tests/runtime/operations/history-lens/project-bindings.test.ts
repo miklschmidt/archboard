@@ -7,14 +7,13 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
-import { BoardBehindSchema } from "#shared/protocol/code-check.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 import { LocalityAnswerSchema } from "#shared/protocol/locality.ts";
 import {
 	currentVariant,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
-} from "@archboard/board/document";
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
+} from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-project-history-"));
@@ -28,8 +27,8 @@ process.env["ARCHBOARD_REPOS"] = registry;
 let lens: typeof LensModule;
 let base = "";
 
-const board = SemanticBoardSchema.parse({
-	schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+const document = LegacyBoardSchema.parse({
+	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "board1",
 	name: "Shop",
@@ -111,8 +110,8 @@ beforeAll(async () => {
 	writeFileSync(join(root, "src/Shop/sub/Ledger.cs"), "first\n");
 	writeFileSync(join(root, "src/Shop/settings.json"), "{}\n");
 	writeFileSync(join(root, "src/Other.cs"), "first\n");
-	writeFileSync(file, JSON.stringify(board));
-	base = commit("create the board and project");
+	writeFileSync(file, JSON.stringify(document));
+	base = commit("create the document and project");
 	for (let at = 1; at <= 5; at += 1) {
 		writeFileSync(join(root, "src/Shop/sub/Ledger.cs"), `${at}\n`);
 		writeFileSync(join(root, "src/Other.cs"), `${at}\n`);
@@ -129,19 +128,11 @@ afterAll(() => {
 	rmSync(scratch, { recursive: true, force: true });
 });
 
-test("Behind counts every changed file in a project directory after the board changed", async () => {
-	const [read] = await lens.createBehindReading().read(vault, [{ board, file }]);
-	const answer = BoardBehindSchema.parse(read);
-	if (!("parts" in answer)) throw new Error("no last change");
-	expect(answer.lastChange).toMatchObject({ kind: "commit", commit: base });
-	expect(answer.parts.find((part) => part.subject.id === "project")?.commits).toHaveLength(6);
-});
-
 test("hotspots and coupling use the project directory and omit overlapping bindings", async () => {
-	const current = currentVariant(board);
+	const current = currentVariant(document);
 	if (current === undefined) throw new Error("no current variant");
 	const answer = LocalityAnswerSchema.parse(
-		await lens.createVariantLocality().read(vault, board, current, new Date("2000-01-01")),
+		await lens.createVariantLocality().read(vault, document, current, new Date("2000-01-01")),
 	);
 	expect(answer.hotspots.find((part) => part.subject.id === "project")?.commits).toHaveLength(7);
 	const pairs = answer.coupling.map((pair) => pair.subjects.map((subject) => subject.id));
@@ -150,10 +141,10 @@ test("hotspots and coupling use the project directory and omit overlapping bindi
 });
 
 test("a footprint includes source-only and settings changes in a project directory", async () => {
-	const current = currentVariant(board);
+	const current = currentVariant(document);
 	if (current === undefined) throw new Error("no current variant");
 	const answer = FootprintAnswerSchema.parse(
-		await lens.readVariantFootprint({ vault, board, against: current, base }),
+		await lens.readVariantFootprint({ vault, document, against: current, base }),
 	);
 	if (answer.proposal !== null) throw new Error("no proposal expected");
 	expect(answer.changed.find((part) => part.subject.id === "project")?.commits).toHaveLength(6);

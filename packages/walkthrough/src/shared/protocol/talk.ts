@@ -1,5 +1,5 @@
 import { canonicalReadingProblems } from "#shared/protocol/canonical.ts";
-import { ArchitectureModelReadSchema } from "@archboard/board/model";
+import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 // A talk: what the live pass of a recording heard and did, for the second pass
 // to render frame by frame (TASK-381).
 //
@@ -21,13 +21,13 @@ import {
 	DEFAULT_LAYOUT_ENGINE,
 	DiagramThemeSchema,
 	LayoutEngineSchema,
-} from "@archboard/board/render-reply";
+} from "@archboard/model/render-reply";
 import {
 	addressedVariant,
-	type SemanticBoard,
-	parseSemanticBoard,
-} from "@archboard/board/document";
-import { VaultCheckSchema } from "@archboard/board/policy";
+	type LegacyBoard,
+	parseLegacyBoard,
+} from "@archboard/model/legacy-board";
+import { VaultCheckSchema } from "@archboard/model/policy";
 import { RecordingLanguageSchema } from "#shared/schemas/recording-language.ts";
 
 /** What a talk's file says it is. */
@@ -262,7 +262,7 @@ function boardProblems(talk: z.infer<typeof TalkSchema>): readonly string[] {
  * @returns Board failures.
  */
 function legacyBoardProblems(talk: z.infer<typeof TalkSchema>): readonly string[] {
-	const parsed = parseSemanticBoard(talk.document);
+	const parsed = parseLegacyBoard(talk.document);
 	if (!parsed.ok) return [`The talk's board cannot be read: ${parsed.problem}`];
 	const problems: string[] = [];
 	if (parsed.board.version !== talk.board.version) {
@@ -326,10 +326,7 @@ function canonicalProblems(talk: z.infer<typeof TalkSchema>): string[] {
  * @param board The talk's board, as read.
  * @returns The problems.
  */
-function againstProblems(
-	talk: z.infer<typeof TalkSchema>,
-	board: SemanticBoard,
-): readonly string[] {
+function againstProblems(talk: z.infer<typeof TalkSchema>, board: LegacyBoard): readonly string[] {
 	const { against } = talk.board;
 	if (against === undefined) return [];
 	if (!board.variants.some((variant) => variant.id === against)) {
@@ -470,14 +467,11 @@ function publishReplayPage(renderer: ReplayRenderer): void {
 export {
 	REPLAY_PAGE_GLOBAL,
 	REPLAY_SEARCH_PARAM,
-	ReplayOptionsSchema,
 	SAMPLES_PER_FRAME,
-	TALK_FORMAT,
 	TALK_FRAME_RATE,
 	TALK_SAMPLE_RATE,
 	TALK_VERSION,
 	TALK_VOICE_FILE,
-	TalkEventSchema,
 	TalkLogSchema,
 	TalkSchema,
 	framesOf,
@@ -486,7 +480,6 @@ export {
 	talkFrom,
 	voiceLevels,
 	type ReplayOptions,
-	type ReplayPage,
 	type Talk,
 	type TalkParts,
 	type TalkEvent,

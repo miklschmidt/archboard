@@ -323,4 +323,4 @@ function yamlLines(text: string): YamlLines {
 	};
 }
 
-export { type LineSpan, type YamlLines, type YamlPath, yamlLines };
+export { type YamlLines, type YamlPath, yamlLines };

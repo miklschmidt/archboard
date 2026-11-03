@@ -8,7 +8,7 @@
 // The checkout `shop` holds an address helper whose two functions are bound
 // as two parts, a ledger, an order that calls the ledger through a parameter
 // typed by a type-only import, a memory interface the order calls through a
-// parameter, and a report the board joins to the order by two anchored
+// parameter, and a report the document joins to the order by two anchored
 // relationships: one names the call to the ledger, one the call to the memory.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
@@ -26,7 +26,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 import { languageServerOf } from "#runtime/operations/language-servers/server-command.ts";
 
 const caller = {
@@ -98,7 +98,7 @@ beforeAll(async () => {
 		"src/report.ts": "export function report(): string { return 'r'; }\n",
 	});
 	register(scratch, { [SHOP]: shop });
-	board(vault, "Shop", [
+	document(vault, "Shop", [
 		{
 			id: "v1",
 			name: "Built",
@@ -134,9 +134,9 @@ beforeAll(async () => {
 		},
 	]);
 	const check: typeof CheckModule = await import("#tests/runtime/support/code-check/pass.ts");
-	const read = check.readBoardsToCheck(vault, undefined);
-	if (!read.ok) throw new Error("no boards");
-	outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
+	const read = check.readStatesToCheck(vault, undefined);
+	if (!read.ok) throw new Error("no documents");
+	outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 });
 
 afterAll(() => {

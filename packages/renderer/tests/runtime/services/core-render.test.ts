@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_LAYOUT_ENGINE, type LayoutEngineName } from "@archboard/board/render-reply";
+import { DEFAULT_LAYOUT_ENGINE, type LayoutEngineName } from "@archboard/model/render-reply";
 import { loadCore } from "#runtime/services/core.ts";
 import type { RenderHost } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 

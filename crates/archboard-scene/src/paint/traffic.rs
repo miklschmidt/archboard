@@ -1,4 +1,4 @@
-//! A board's traffic, painted as data (ADR 0027): on every line that carries
+//! A picture's traffic, painted as data (ADR 0027): on every line that carries
 //! some, the route its pulses ride and how they move, in the time that lines
 //! which keep the same time hand on. The SVG painter draws the pulses.
 
@@ -57,7 +57,7 @@ pub(super) struct TrafficLine<'a> {
     pub line_width: f64,
 }
 
-/// A board's traffic: each line's in a layer of its own, by relationship id.
+/// A picture's traffic: each line's in a layer of its own, by relationship id.
 pub(super) fn paint_traffic(
     lines: &[TrafficLine<'_>],
     cards: &[(&str, Rect)],

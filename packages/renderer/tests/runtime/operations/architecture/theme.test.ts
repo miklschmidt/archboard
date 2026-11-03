@@ -2,7 +2,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { themeColor } from "#runtime/store/theme/source.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const content = orderedFixture({
 	nodes: [

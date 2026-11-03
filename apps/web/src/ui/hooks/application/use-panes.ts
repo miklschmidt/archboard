@@ -1,6 +1,6 @@
 // The panes as React state: the list, the records collected from each session,
 // and the one stable callbacks every session reports into. Callbacks that belong to
-// other owners (boards, notices, theme, workbench) are bound live each render,
+// other owners (models, notices, theme, workbench) are bound live each render,
 // so a session never has to be re-optioned for them.
 
 import { useCallback, useMemo, useState } from "react";
@@ -23,16 +23,12 @@ import {
 	type PaneRecords,
 } from "#ui/rules/application/pane-records.ts";
 import type { PaneSessionOptions } from "#ui/rules/pane-session/session-contracts.ts";
-import type {
-	AgentActivityEntry,
-	LockHolder,
-	PaneStatus,
-} from "#ui/rules/pane-session/session-types.ts";
+import type { AgentActivityEntry, PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 /** What other owners hear from the panes; bound live each render. */
 interface PaneEvents {
-	readonly onBoardError: (paneId: string, error: string) => void;
-	/** Which boards an agent is working on in one vault (ADR 0022). */
+	readonly onModelError: (paneId: string, error: string) => void;
+	/** Which models an agent is working on in one vault (ADR 0022). */
 	readonly onAgentActivity: (vault: string, activity: readonly AgentActivityEntry[]) => void;
 	/** A checkout was chosen somewhere, so the repositories are read again (ADR 0050). */
 	readonly onRepositoriesChanged: () => void;
@@ -42,9 +38,9 @@ interface PaneEvents {
 	readonly onPaneReconnected: (paneId: string) => void;
 	/** A pane's status was published; the workbench re-reads its transport. */
 	readonly onStatusPublished: (paneId: string) => void;
-	/** The server moved a pane onto a board, which the address bar records. */
-	readonly onBoardAdopted: NonNullable<
-		PaneSessionOptions<BrowserWorkbenchTransport>["onBoardAdopted"]
+	/** The server moved a pane onto a model, which the address bar records. */
+	readonly onModelAdopted: NonNullable<
+		PaneSessionOptions<BrowserWorkbenchTransport>["onModelAdopted"]
 	>;
 	/** A pane reported its session, or went. */
 	readonly onSession: (paneId: string, session: PaneSession | null) => void;
@@ -55,17 +51,16 @@ type PaneCallbacks = Required<
 	Pick<
 		PaneSessionOptions<BrowserWorkbenchTransport>,
 		| "onStatus"
-		| "onHolder"
 		| "onPaneReconnected"
 		| "onStaleFrontend"
 		| "onCodeTargetNotice"
 		| "onAgentActivity"
 		| "onRepositoriesChanged"
-		| "onBoardAdopted"
+		| "onModelAdopted"
 	>
 > & {
-	/** A board could not be shown in one pane. */
-	readonly onBoardError: (paneId: string, error: string) => void;
+	/** A model could not be shown in one pane. */
+	readonly onModelError: (paneId: string, error: string) => void;
 	/**
 	 * The server asked the shell for another pane, or for one to go. Carried
 	 * with the pane it is about, because a close names the pane to close.
@@ -123,15 +118,6 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 		events.read().onStatusPublished(status.paneId);
 	}
 	/**
-	 * Who holds a pane's board changed.
-	 * @param paneId The pane.
-	 * @param _boardKey The board.
-	 * @param holder The holder, or null.
-	 */
-	function onHolder(paneId: string, _boardKey: string | null, holder: LockHolder | null): void {
-		patch(paneId, { holder });
-	}
-	/**
 	 * The server asks for another pane, or for one to go.
 	 * @param paneId The pane that heard the request.
 	 * @param request Open or close.
@@ -154,7 +140,6 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 	}
 	return {
 		onStatus,
-		onHolder,
 		onLayoutRequest,
 		/**
 		 * A pane's socket came back.
@@ -164,12 +149,12 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 			events.read().onPaneReconnected(paneId);
 		},
 		/**
-		 * A board could not be shown.
+		 * A model could not be shown.
 		 * @param paneId The pane.
 		 * @param error The refusal.
 		 */
-		onBoardError: (paneId: string, error: string): void => {
-			events.read().onBoardError(paneId, error);
+		onModelError: (paneId: string, error: string): void => {
+			events.read().onModelError(paneId, error);
 		},
 		/**
 		 * This tab runs a bundle the server no longer serves.
@@ -186,7 +171,7 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 			events.read().onCodeTargetNotice(notice);
 		},
 		/**
-		 * Which boards an agent is working on in one vault.
+		 * Which models an agent is working on in one vault.
 		 * @param vault The vault.
 		 * @param activity The whole snapshot.
 		 */
@@ -198,13 +183,13 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 			events.read().onRepositoriesChanged();
 		},
 		/**
-		 * The server moved a pane onto a board.
+		 * The server moved a pane onto a model.
 		 * @param paneId The pane.
-		 * @param boardKey The board it is showing now.
-		 * @param previousKey The board key it left, or null on first adoption.
+		 * @param paneKey The model it is showing now.
+		 * @param previousKey The model key it left, or null on first adoption.
 		 */
-		onBoardAdopted: (paneId: string, boardKey: string, previousKey: string | null): void => {
-			events.read().onBoardAdopted(paneId, boardKey, previousKey);
+		onModelAdopted: (paneId: string, paneKey: string, previousKey: string | null): void => {
+			events.read().onModelAdopted(paneId, paneKey, previousKey);
 		},
 		onSession,
 	};

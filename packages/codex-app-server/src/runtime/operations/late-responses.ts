@@ -168,4 +168,3 @@ function createLateResponseStore(
 }
 
 export { createLateResponseStore };
-export type { LateResponseStore };

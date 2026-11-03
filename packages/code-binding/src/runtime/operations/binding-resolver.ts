@@ -338,8 +338,6 @@ function resolveLocalCodeTargetsWith(
 }
 
 export {
-	type ResolutionFailure,
-	type RegisteredCheckout,
 	type LocalCodeTarget,
 	type OtherRef,
 	type RegisteredCheckoutResult,

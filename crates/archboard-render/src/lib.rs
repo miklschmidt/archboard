@@ -1,8 +1,8 @@
-//! The renderer core's one call (ADR 0059): a board's reading, the vault's
+//! The renderer core's one call (ADR 0059): a picture's reading, the vault's
 //! policy and the render's choices in; the picture, as one SVG document with
 //! its atlas, and the legend a pane lists beside it out.
 //!
-//! Agents author meaning, and this derives the presentation of every board
+//! Agents author meaning, and this derives the presentation of every picture
 //! (ADR 0023, ADR 0028): what is drawn in which grammar, every word measured,
 //! the layout solved and chosen between, the crossings settled, the look the
 //! policy gives each subject, and the document written. A host does what only

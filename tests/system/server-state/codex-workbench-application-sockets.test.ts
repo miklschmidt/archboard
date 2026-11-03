@@ -8,7 +8,7 @@ import { WebSocket } from "ws";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import { createRequester, onlyVault, waitFor } from "./support/http.ts";
-import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/model/pane-context";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 
@@ -52,7 +52,7 @@ async function openApplicationSocket(base: string, clientId: string): Promise<Ap
 			requestId?: unknown;
 			type?: unknown;
 		};
-		if (message.type === "pane_board") {
+		if (message.type === "pane_place") {
 			initial.resolve();
 		}
 		if (typeof message.requestId !== "string") {
@@ -110,7 +110,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 					paneId: clientId,
 					primary: true,
 					focused: true,
-					board: "scratch",
+					paneKey: "scratch",
 					rect: { x: 0, y: 0, width: 1280, height: 800 },
 				},
 			});
@@ -124,7 +124,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 						body: {
 							paneId: clientId,
 							clientId,
-							board: { name: "scratch", key: "scratch" },
+							model: { name: "scratch", key: "scratch" },
 							variant: null,
 							view: null,
 							selection: [{ id: "picked-by-replacement" }],
@@ -213,7 +213,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 					paneId: clientId,
 					primary: true,
 					focused: true,
-					board: "scratch",
+					paneKey: "scratch",
 					rect: { x: 0, y: 0, width: 1280, height: 800 },
 				},
 			});

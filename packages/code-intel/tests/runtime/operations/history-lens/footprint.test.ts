@@ -3,7 +3,7 @@
 // nothing reads the machine's real one.
 //
 // `shop` has `main`, which moves on after the branch left it, and a `feature`
-// branch that is HEAD. `other` is registered too but has no `main`. A board's
+// branch that is HEAD. `other` is registered too but has no `main`. A document's
 // current variant binds parts into both, into a repository that is not
 // registered, and to nothing; a proposal against it adds, changes and removes
 // parts and relationships. The merge base is what keeps the commits of `main`
@@ -16,12 +16,12 @@ import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { FootprintAnswerSchema, type FootprintAnswer } from "#shared/protocol/footprint.ts";
 import {
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
 	currentVariant,
 	resolveVariant,
-	type SemanticBoard,
-} from "@archboard/board/document";
+	type LegacyBoard,
+} from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-footprint-"));
@@ -112,7 +112,7 @@ const BUILT = [
 ];
 
 /**
- * A node as the board holds it.
+ * A node as the document holds it.
  * @param node What a test says about it.
  * @param index Where it stands.
  * @returns The node.
@@ -122,13 +122,13 @@ function nodeOf(node: (typeof BUILT)[number] & { responsibility?: string }, inde
 }
 
 /**
- * The board: the built architecture and the proposal that changes it. The
+ * The document: the built architecture and the proposal that changes it. The
  * proposal rewords Ledger, adds Cache, a relationship from Checkout to
  * Payments and a step from Billing to Ledger, removes Legacy, and rewords the
  * stranger's part.
- * @returns The board.
+ * @returns The document.
  */
-function board(): SemanticBoard {
+function document(): LegacyBoard {
 	const built = BUILT.map(nodeOf);
 	const reworded = new Set(["pL", "pS"]);
 	const proposed = [
@@ -140,8 +140,8 @@ function board(): SemanticBoard {
 			index,
 		),
 	);
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "bd",
 		name: "Shop",
@@ -176,21 +176,21 @@ function board(): SemanticBoard {
 }
 
 /**
- * Read the footprint of the branch against the board.
+ * Read the footprint of the branch against the document.
  * @param base The ref.
  * @param proposal The proposal's name, when one is named.
  * @param head The ref the commits run up to, when it is not HEAD.
  * @returns The answer, checked against its schema.
  */
 async function footprint(base: string, proposal?: string, head?: string): Promise<FootprintAnswer> {
-	const value = board();
+	const value = document();
 	const current = currentVariant(value);
-	if (current === undefined) throw new Error("the board has no current variant");
+	if (current === undefined) throw new Error("the document has no current variant");
 	const named = proposal === undefined ? undefined : resolveVariant(value, proposal);
 	return FootprintAnswerSchema.parse(
 		await lens.readVariantFootprint({
 			vault: scratch,
-			board: value,
+			document: value,
 			against: current,
 			proposal: named,
 			base,
@@ -421,11 +421,11 @@ test("a --head that looks like an option is a ref and never an option", async ()
  * @returns The answer, which names a proposal.
  */
 async function readAgainst(proposal: string, variantName?: string) {
-	const value = board();
+	const value = document();
 	const answer = FootprintAnswerSchema.parse(
 		await lens.readVariantFootprint({
 			vault: scratch,
-			board: value,
+			document: value,
 			against: variantName === undefined ? undefined : resolveVariant(value, variantName),
 			proposal: resolveVariant(value, proposal),
 			base: "main",

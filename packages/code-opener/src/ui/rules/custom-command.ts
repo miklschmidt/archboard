@@ -173,5 +173,4 @@ export {
 	presetChoice,
 	presetOfChoice,
 	selectionOfChoice,
-	type PresetName,
 };

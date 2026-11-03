@@ -2,7 +2,7 @@
   "order": 11000,
   "name": "Captures",
   "kind": "module",
-  "responsibility": "Takes the picture of every board, view and variant the scenario declared, and tiles an oversize one",
+  "responsibility": "Takes the picture of every model, view and variant the scenario declared, and tiles an oversize one",
   "description": "The harness takes the pictures; an author never supplies one. A declared view the author never made is a failed capture, never a default picture.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",

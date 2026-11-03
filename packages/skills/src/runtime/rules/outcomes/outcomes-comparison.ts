@@ -1,14 +1,14 @@
-import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
+import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules/outcomes/reading.ts";
 // The comparison of a proposal against the variant its picture is drawn
-// against and `semantic compare` reads it against by default — the board's
-// current one, or on a board with none its direct predecessor — as a check
+// against and `semantic compare` reads it against by default — the document's
+// current one, or on a document with none its direct predecessor — as a check
 // reads it: over every kind of subject together, and over the nodes alone.
 // A scenario that replaces a node also replaces the relationships that touched
 // it, so "two nodes removed" and "four subjects removed" describe the same
 // proposal, and a check may state either.
 
-import { comparedWith, compareVariants } from "@archboard/board/comparison";
-import type { SemanticVariant } from "@archboard/board/document";
+import { comparedWith, compareVariants } from "@archboard/model/comparison";
+import type { SemanticVariant } from "@archboard/model/legacy-board";
 import {
 	finding,
 	located,
@@ -44,17 +44,17 @@ function countChanges(changes: ReadonlyMap<string, { readonly kind: string }>): 
  * of subject together, and over the nodes alone. A scenario that replaces a
  * node also replaces the relationships that touched it, so "two nodes
  * removed" and "four subjects removed" describe the same proposal.
- * @param board The board.
+ * @param document The document.
  * @param variant The variant.
  * @returns The counts, or undefined when there is nothing to read it against.
  */
 function standingCounts(
-	board: SemanticBoard,
+	document: EvaluatedDocument,
 	variant: SemanticVariant,
 ):
 	| { readonly against: string; readonly all: ChangeCounts; readonly nodes: ChangeCounts }
 	| undefined {
-	const against = comparedWith(board, variant);
+	const against = comparedWith(document, variant);
 	if (against === undefined) return undefined;
 	const comparison = compareVariants(against.content, variant.content);
 	const nodes = countChanges(comparison.nodes);
@@ -79,14 +79,14 @@ function standingCounts(
  * Whether a proposal reads as the stated removals and additions against the
  * variant it is read against: `removed`/`addedAtLeast` count every kind of subject,
  * `removedNodes`/`addedNodesAtLeast` the nodes alone.
- * @param check The board, variant and counts.
+ * @param check The document, variant and counts.
  * @param reading The reading.
  * @returns The finding.
  */
 const comparisonStanding: Check = (check, reading) => {
 	const at = located(reading, check.board, check.variant);
 	if (isFinding(at)) return at;
-	const counts = standingCounts(at.board, at.variant);
+	const counts = standingCounts(at.document, at.variant);
 	if (counts === undefined)
 		return finding(false, `"${check.variant}" has nothing to be read against`);
 	return finding(

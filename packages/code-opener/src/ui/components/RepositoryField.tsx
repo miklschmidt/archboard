@@ -91,4 +91,4 @@ function RepositoryItem(props: RepositoryItemProps): JSX.Element {
 	);
 }
 
-export { RepositoryField, type RepositoryFieldProps };
+export { RepositoryField };

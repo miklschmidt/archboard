@@ -4,12 +4,12 @@
 // open disagreement, and one adoption recorded.
 
 import {
-	parseSemanticBoard,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	type SemanticBoard,
-} from "@archboard/board/document";
+	parseLegacyBoard,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	type LegacyBoard,
+} from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { evaluateOutcomes, type OutcomeCheck } from "#runtime/rules/outcomes/outcomes.ts";
 import { type Reading } from "#runtime/rules/outcomes/reading.ts";
 
@@ -24,18 +24,18 @@ interface VariantSpec {
 }
 
 /**
- * A coherent board with the given variants: a variant is a draft unless it
+ * A coherent document with the given variants: a variant is a draft unless it
  * says otherwise, and the one marked current, if any, is designated.
  * @param variants The variants.
  * @param extra Board-level fields.
- * @returns The board.
- * @throws {Error} When the fixture is not a board the store would read.
+ * @returns The document.
+ * @throws {Error} When the fixture is not a document the store would read.
  */
-function board(variants: readonly VariantSpec[], extra: object = {}): SemanticBoard {
+function document(variants: readonly VariantSpec[], extra: object = {}): LegacyBoard {
 	const current = variants.find((variant) => variant.lifecycle === "current")?.id;
-	const parsed = parseSemanticBoard(
+	const parsed = parseLegacyBoard(
 		withFixtureOrders({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
 			name: "Flask",
@@ -49,7 +49,7 @@ function board(variants: readonly VariantSpec[], extra: object = {}): SemanticBo
 			...extra,
 		}),
 	);
-	if (!parsed.ok) throw new Error(`fixture board is incoherent: ${parsed.problem}`);
+	if (!parsed.ok) throw new Error(`fixture document is incoherent: ${parsed.problem}`);
 	return parsed.board;
 }
 
@@ -71,7 +71,7 @@ const FLOW = {
 	],
 };
 
-const BEFORE = board([
+const BEFORE = document([
 	{
 		id: "v1",
 		name: "Initial",
@@ -101,7 +101,7 @@ const BEFORE = board([
 	},
 ]);
 
-const AFTER = board(
+const AFTER = document(
 	[
 		{
 			id: "v1",
@@ -196,7 +196,7 @@ const AFTER = board(
 );
 
 const READING: Reading = {
-	boards: new Map([["Flask", AFTER]]),
+	documents: new Map([["Flask", AFTER]]),
 	snapshot: new Map([["Flask", BEFORE]]),
 	policy: {
 		...DEFAULT_SEMANTIC_POLICY,
@@ -205,7 +205,7 @@ const READING: Reading = {
 	diagnostics: [],
 	renders: [
 		{
-			board: "Flask",
+			document: "Flask",
 			variant: undefined,
 			view: "Session path",
 			ok: true,
@@ -216,7 +216,7 @@ const READING: Reading = {
 	captures: [],
 	inspections: [
 		{
-			board: "Flask",
+			document: "Flask",
 			group: "request-lifecycle",
 			variant: undefined,
 			result: {

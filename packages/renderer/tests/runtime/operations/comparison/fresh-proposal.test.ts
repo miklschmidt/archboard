@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
-import { renderArchitecture, renderBoard } from "#runtime/operations/render.ts";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { renderArchitecture, renderLegacyBoard } from "#runtime/operations/render.ts";
+import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { arrangementOf } from "#tests/runtime/support/drawn-atlas.ts";
 
@@ -21,10 +21,10 @@ test("a nested proposal lays out its comparison content fresh and retains subjec
 		],
 		edges: [{ id: "keys", from: "kms", to: "custody", kind: "data", label: "Signing key" }],
 	};
-	const board = SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	const document = LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
-		id: "board",
+		id: "document",
 		name: "Nested proposal",
 		level: "system",
 		version: 1,
@@ -47,15 +47,15 @@ test("a nested proposal lays out its comparison content fresh and retains subjec
 			},
 		],
 	});
-	const proposal = await renderBoard(
-		board,
+	const proposal = await renderLegacyBoard(
+		document,
 		// Every nested part, which the overview would close.
 		{ variant: "draft", view: "Everything", theme: "light" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	if (!proposal.ok || !("svg" in proposal.reply)) throw new Error("Expected a drawn proposal");
 	const fresh = await renderArchitecture({
-		content: board.variants[1]!.content,
+		content: document.variants[1]!.content,
 		theme: "light",
 		policy: DEFAULT_SEMANTIC_POLICY,
 	});

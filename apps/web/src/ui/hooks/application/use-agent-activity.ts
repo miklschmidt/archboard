@@ -11,7 +11,7 @@ import {
 } from "#ui/rules/application/agent-activity.ts";
 import type { AgentActivityEntry } from "#ui/rules/pane-session/session-types.ts";
 
-/** Which boards an agent is working on, by vault and then by board key. */
+/** Which models an agent is working on, by vault and then by model key. */
 type AgentActivityByVault = Readonly<Record<string, AgentActivityMap>>;
 
 /** The maps and their moves. */

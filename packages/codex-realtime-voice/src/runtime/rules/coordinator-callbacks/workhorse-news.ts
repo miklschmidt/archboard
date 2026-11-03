@@ -282,9 +282,4 @@ function workhorseNewsSentence(callback: CoordinatorCallback): string {
 		: `Something you gave the workhorse in ${callback.correlation.workhorseLink.checkout} may or may not have reached it. Read that workhorse before you act on it or tell the user it happened.`;
 }
 
-export {
-	createWorkhorseNewsObserver,
-	workhorseNewsSentence,
-	type WorkhorseNewsContext,
-	type WorkhorseNewsObserver,
-};
+export { createWorkhorseNewsObserver, workhorseNewsSentence };

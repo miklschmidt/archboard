@@ -152,8 +152,4 @@ function createServerCodexWorkbenchApplication(options: ServerCodexWorkbenchAppl
 	}
 }
 
-export {
-	type ServerCodexWorkbenchModule,
-	type ServerCodexWorkbenchApplicationOptions,
-	createServerCodexWorkbenchApplication,
-};
+export { createServerCodexWorkbenchApplication };

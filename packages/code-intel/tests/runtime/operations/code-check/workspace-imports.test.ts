@@ -6,7 +6,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
 const priorRegistry = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-workspace-imports-"));
@@ -69,7 +69,7 @@ beforeAll(async () => {
 	git(scratch, checkout, "add", "-A");
 	git(scratch, checkout, "commit", "-q", "--no-gpg-sign", "-m", "workspace callers");
 	register(scratch, { [REPO]: checkout });
-	board(vault, "Workspaces", [
+	document(vault, "Workspaces", [
 		{
 			id: "v1",
 			name: "Built",
@@ -88,11 +88,11 @@ beforeAll(async () => {
 		},
 	]);
 	const check = await import("#tests/runtime/support/code-check/pass.ts");
-	const read = check.readBoardsToCheck(vault, undefined);
-	if (!read.ok) throw new Error("fixture board was not read");
-	expect(read.boards).toHaveLength(1);
+	const read = check.readStatesToCheck(vault, undefined);
+	if (!read.ok) throw new Error("fixture document was not read");
+	expect(read.states).toHaveLength(1);
 	expect(read.skipped).toEqual([]);
-	outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
+	outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 });
 
 afterAll(() => {

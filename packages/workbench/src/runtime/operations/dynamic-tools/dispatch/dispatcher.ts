@@ -234,6 +234,4 @@ function createCodexDynamicTools(options: CodexDynamicToolsOptions): CodexDynami
 	});
 }
 
-const createCodexDynamicToolDispatcher = createCodexDynamicTools;
-
-export { createCodexDynamicTools, createCodexDynamicToolDispatcher };
+export { createCodexDynamicTools };

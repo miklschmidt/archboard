@@ -255,4 +255,4 @@ function openResolution(
 	};
 }
 
-export { type Resolve, type UseResolution, openResolution };
+export { type Resolve, openResolution };

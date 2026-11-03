@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ArchitectureArchiveInitializationSchema } from "@archboard/board/model";
+import { ArchitectureArchiveInitializationSchema } from "@archboard/model/contract";
 import { initializeArchitectureArchiveOnServer } from "#cli/clients/server/architecture-model.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";

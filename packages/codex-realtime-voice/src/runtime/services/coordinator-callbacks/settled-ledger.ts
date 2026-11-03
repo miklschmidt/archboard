@@ -165,4 +165,4 @@ function createSettledLedger(limit: number): SettledLedger {
 	});
 }
 
-export { createSettledLedger, type RealtimeGeneration, type SettledLedger };
+export { createSettledLedger, type RealtimeGeneration };

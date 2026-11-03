@@ -1,4 +1,4 @@
-import type { EvidenceKindSchema } from "@archboard/board/policy";
+import type { EvidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
 type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
@@ -298,6 +298,5 @@ export type {
 	ResolvedImport,
 	SyntaxFacts,
 	Target,
-	TextFacts,
 	Unparsed,
 };

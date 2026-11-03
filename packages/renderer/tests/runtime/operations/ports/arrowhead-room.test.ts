@@ -5,21 +5,21 @@
 //
 // What this catches: a head made longer than that run, for any weight and
 // either head form, and a line drawn with a shorter last run, in either
-// engine. The boards are small ones that draw hero, default and muted heads,
+// engine. The documents are small ones that draw hero, default and muted heads,
 // filled and open, and the two approaches that once came up short.
 
 import { expect, test } from "bun:test";
 
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import type { VariantContent } from "@archboard/board/content";
+import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import spokenInstruction from "#tests/runtime/support/fixtures/a-spoken-instruction.json";
-import reachTheWorkhorse from "#tests/runtime/support/fixtures/board-changes-reach-the-workhorse.json";
+import reachTheWorkhorse from "#tests/runtime/support/fixtures/model-changes-reach-the-workhorse.json";
 import frameApproach from "#tests/runtime/support/fixtures/frame-head-approach.json";
 import oneWriteLands from "#tests/runtime/support/fixtures/one-write-lands.json";
 import sideApproach from "#tests/runtime/support/fixtures/side-head-approach.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** The straight run every line keeps before its head: archboard_layout::constants::APPROACH_STRAIGHT. */
 const APPROACH_STRAIGHT = 12;
@@ -30,7 +30,7 @@ interface Point {
 	readonly y: number;
 }
 
-const BOARDS: readonly VariantContent[] = [
+const DOCUMENTS: readonly VariantContent[] = [
 	spokenInstruction,
 	reachTheWorkhorse,
 	frameApproach,
@@ -81,7 +81,7 @@ function lastRun(d: string): { from: Point; to: Point; straight: boolean } {
 test.each(LayoutEngineSchema.options)(
 	"every arrowhead fits the straight run that every line keeps before its end (%s)",
 	async (layout) => {
-		for (const content of BOARDS) {
+		for (const content of DOCUMENTS) {
 			const { svg } = await renderArchitecture({
 				policy: DEFAULT_SEMANTIC_POLICY,
 				content,

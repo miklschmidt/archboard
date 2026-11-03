@@ -26,7 +26,7 @@ type PaneReportListeners = Pick<PaneSessionOptions<never>, "onStaleFrontend">;
 interface PaneReportSenderParts {
 	readonly paneId: string;
 	readonly clientId: string;
-	readonly boardKey: () => string | null;
+	readonly paneKey: () => string | null;
 	/** The vault the pane is in now, which its report names. */
 	readonly vault: () => string;
 	readonly paneElement: () => HTMLElement | null;
@@ -183,7 +183,7 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 		reportPane(vault, report)
 			.then((result) => {
 				// The server moved the pane before this report reached it. The move's
-				// pane_board says where, and the report that follows it is the answer
+				// pane_place says where, and the report that follows it is the answer
 				// that counts, whichever of the two arrives first.
 				if (result.code === "PANE_MOVED") {
 					return result;
@@ -200,13 +200,13 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 	/**
 	 * The report to send, or null when the pane cannot be measured yet.
 	 *
-	 * A pane showing no board still reports: it is on screen, it has a place,
+	 * A pane showing no model still reports: it is on screen, it has a place,
 	 * and it is the thing a `browser show` will point at.
 	 * @returns The report.
 	 */
 	function build(): PaneReport | null {
 		return buildPaneReport({
-			boardKey: parts.boardKey(),
+			paneKey: parts.paneKey(),
 			element: parts.paneElement(),
 			clientId: parts.clientId,
 			paneId: parts.paneId,
@@ -243,9 +243,4 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 	return { send, forget };
 }
 
-export {
-	createPaneReportSender,
-	type PaneReportListeners,
-	type PaneReportSender,
-	type PaneReportSenderParts,
-};
+export { createPaneReportSender };

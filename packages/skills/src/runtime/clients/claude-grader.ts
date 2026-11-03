@@ -249,11 +249,4 @@ function claudeGrader(settings: ClaudeGraderSettings, executable: string): Grade
 	};
 }
 
-export {
-	CLAUDE_GRADER_SYSTEM_PROMPT,
-	claudeGrader,
-	claudeGraderArgv,
-	outsideReads,
-	readImages,
-	type ClaudeGraderSettings,
-};
+export { CLAUDE_GRADER_SYSTEM_PROMPT, claudeGrader, claudeGraderArgv, outsideReads, readImages };

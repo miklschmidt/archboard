@@ -16,6 +16,7 @@ import {
 } from "./support/codex-live-voice.ts";
 import {
 	productionFixtureRecords,
+	operableWorkbenchControl,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
 import {
@@ -106,7 +107,7 @@ test(
 					return (${MODEL_NAME_EXPRESSION}) === 'workbench';
 				})()`),
 			Boolean,
-			"the seeded board to render",
+			"the seeded model to render",
 		);
 
 		await browser.run(["console", "--clear"]);
@@ -148,16 +149,16 @@ test(
 		for (const control of [DOCK_MUTE, DOCK_SUBTITLES]) {
 			await browser.run(["press", "Tab"]);
 			expect(await focusIs(browser, control)).toEqual([true, false]);
-			expect((await workbenchControlOperability(browser, control)).operable).toBe(true);
+			await operableWorkbenchControl(browser, control);
 		}
 		// The wire, in order: the coordinator and then the workhorse are created, the
 		// conversation reads the workhorse as the tab's linked thread, voice starts on the
-		// coordinator, and the coordinator is given the board catalogue this voice session
+		// coordinator, and the coordinator is given the model catalogue this voice session
 		// speaks about.
 		const wire = await pollUntil(
 			() => talkWire(records().slice(beforeTalk), "workbench"),
 			(value) => value.catalogueAt >= 0,
-			"the coordinator to be given the board catalogue voice speaks about",
+			"the coordinator to be given the model catalogue voice speaks about",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 		expect(wire.threadStarts).toBe(2);

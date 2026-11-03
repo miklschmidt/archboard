@@ -64,7 +64,7 @@
     {
       "order": 57000,
       "kind": "dependency",
-      "label": "interpret selected board subjects",
+      "label": "interpret selected model subjects",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

@@ -1,7 +1,7 @@
-//! A native frontend reads a corpus board's scene as typed values (ADR 0059,
+//! A native frontend reads a corpus picture's scene as typed values (ADR 0059,
 //! docs/design/typed-scene.md): where each card stands, what each line is
 //! stroked with and which words each card says, with no SVG, path data or CSS
-//! to parse. The board is the dogfood vault's "Codex session", as the renderer
+//! to parse. The picture is the dogfood vault's "Codex session", as the renderer
 //! hands it to the core (`tests/fixtures/codex-session.paint.json`).
 //! The fixture keeps icon names without their paths because scene painting
 //! reads only which icons are available.
@@ -17,7 +17,7 @@ use serde_json::Value;
 /// The paint request of "Codex session".
 const REQUEST: &str = include_str!("fixtures/codex-session.paint.json");
 
-/// The board painted, and its request as plain data to read what it asked for.
+/// The picture painted, and its request as plain data to read what it asked for.
 fn painted() -> (Scene, Value) {
     let request: PaintRequest = serde_json::from_str(REQUEST).expect("the fixture is a request");
     let asked: Value = serde_json::from_str(REQUEST).expect("the fixture is JSON");
@@ -134,7 +134,7 @@ fn laid_out<'a>(asked: &'a Value, key: &str) -> &'a [Value] {
     let laid = asked["picture"]["drawing"][key]
         .as_array()
         .map_or(nothing, Vec::as_slice);
-    assert_ne!(laid, nothing, "the board lays out {key}");
+    assert_ne!(laid, nothing, "the picture lays out {key}");
     laid
 }
 
@@ -199,7 +199,7 @@ fn each_line_is_a_path_stroked_with_a_colour_and_its_head_is_defined() {
         let head = line
             .marker
             .as_ref()
-            .expect("each line of this board has a head");
+            .expect("each line of this picture has a head");
         assert!(defines(&scene, head), "{id}'s head is defined");
     }
 }

@@ -113,10 +113,4 @@ function prepareSkillArtifacts(skill: string, source: PreparationSource): Prepar
 	return { directory, files };
 }
 
-export {
-	GENERATED_DIRECTORY,
-	INSTALL_DOCUMENT,
-	prepareSkillArtifacts,
-	type PreparationSource,
-	type PreparedSkill,
-};
+export { prepareSkillArtifacts };

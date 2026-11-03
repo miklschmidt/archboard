@@ -6,7 +6,7 @@
   "description": "Private archives live outside source repositories, keyed by the addressed vault. Their retained metadata uses a portable vault address and no invented source association. Setup returns the local directory for owner Git configuration. Existing damaged storage and silent ownership changes are refused.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/store/model-archive-location.ts"
+    "path": "packages/model/src/runtime/store/model-archive-location.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#nqi2h0Ku",
@@ -40,7 +40,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-archive-location.ts",
+        "path": "packages/model/src/runtime/store/model-archive-location.ts",
         "symbol": "git"
       },
       "id": "vKEsyHFk/0T9enjhi#vD1f2SWx",

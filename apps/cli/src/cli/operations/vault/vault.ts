@@ -19,10 +19,10 @@ import {
 } from "#cli/operations/vault/check-help.ts";
 import { checkEmbeds } from "#cli/operations/vault/embeds/embeds-check.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
-import { checkSemanticVaultOnServer } from "#cli/clients/server/semantic-boards.ts";
+import { checkSemanticVaultOnServer } from "#cli/clients/server/vault-check.ts";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
-import { diagnosticLine, VaultCheckSchema } from "@archboard/board/policy";
-import { SemanticBoardConfigurationSchema } from "@archboard/board/vault-policy";
+import { diagnosticLine, VaultCheckSchema } from "@archboard/model/policy";
+import { VaultConfigurationSchema } from "@archboard/model/vault-policy";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 
 /** How long one check took. */
@@ -54,8 +54,8 @@ type CodeCheckInput = z.output<typeof CodeCheckInputSchema>;
 /**
  * Run the code check on the Archboard server.
  * @param reading What to read.
- * @param reading.state The draft to read on every board that has one.
- * @param reading.everyDraft Whether to read every draft of every board.
+ * @param reading.state The draft to read on every document that has one.
+ * @param reading.everyDraft Whether to read every draft of every document.
  * @param reading.plan The plan JSON files named, resolved against this directory,
  * because the server runs elsewhere.
  * @param signal Cancels the request, which cancels the check.
@@ -88,7 +88,7 @@ const noSuchDraftRefusal = {
 	code: "NO_SUCH_DRAFT",
 	exit: 2,
 	stream: "stderr" as const,
-	description: "--state names no draft on any board. The refusal names the drafts that exist.",
+	description: "--state names no draft on any model. The refusal names the drafts that exist.",
 };
 
 const planRefusal = {
@@ -152,7 +152,7 @@ async function semanticsCheckOnServer(
 ): Promise<SemanticsPart> {
 	const started = performance.now();
 	const result = await checkSemanticVaultOnServer(signal, state);
-	return { ...result, timings: [{ check: "board", elapsedMs: performance.now() - started }] };
+	return { ...result, timings: [{ check: "model", elapsedMs: performance.now() - started }] };
 }
 
 /**
@@ -335,14 +335,7 @@ const checkOutcomes = [
 const embedsRelationships = [
 	{
 		method: "GET",
-		path: "/api/semantic-boards",
-		cardinality: "conditional",
-		description:
-			"Each vault an embed's recipe names, listed once, to find its board by id, and this vault's boards with the embeds they track",
-	},
-	{
-		method: "GET",
-		path: "/api/semantic-boards/render",
+		path: "/api/architecture/render",
 		cardinality: "conditional",
 		description: "Each embed drawn again from its recipe",
 	},
@@ -574,7 +567,7 @@ const semanticConfigContract = defineCommand({
 	 * @returns Policy or generated schema.
 	 */
 	async handler(input, context) {
-		if (input.schema) return { result: z.toJSONSchema(SemanticBoardConfigurationSchema) };
+		if (input.schema) return { result: z.toJSONSchema(VaultConfigurationSchema) };
 		await context.require("server", "model config");
 		return { result: await checkSemanticVaultOnServer() };
 	},

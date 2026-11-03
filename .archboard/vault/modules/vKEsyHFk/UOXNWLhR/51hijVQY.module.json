@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-pane-vault.ts",
+    "path": "apps/web/src/ui/hooks/canvas/use-pane-vault.ts",
     "symbol": "usePaneVault"
   },
   "schemaVersion": 1,
@@ -23,7 +23,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-pane-vault.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-pane-vault.ts",
         "symbol": "PaneVaultContext"
       },
       "id": "vKEsyHFk/yejBBUFY#yIlWm0s3",

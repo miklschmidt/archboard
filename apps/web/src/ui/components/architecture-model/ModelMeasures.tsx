@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, type CSSProperties, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import type { LocalityAnswer } from "@archboard/code-intel/history";
 import { Button } from "@archboard/ui-kit/components";
 import { modelHistoryQuery } from "#ui/clients/architecture-model/history.ts";
@@ -28,7 +28,7 @@ import {
 	type MeasureRow,
 	type MeasureView,
 } from "#ui/rules/architecture-model/module-measures.ts";
-import { kindLookOf } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
+import { kindLookOf } from "#ui/rules/canvas/reading/kind-look.ts";
 
 /** Inputs for the list. */
 interface ModelMeasuresProps {

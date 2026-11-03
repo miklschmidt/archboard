@@ -87,7 +87,7 @@ export interface VoiceAgentOptions {
 type Workbench = ReturnType<typeof createCodexWorkbench>;
 
 /** The agent's private Codex process: idle, starting, ready, or failed, with its failure. */
-export type VoiceAgentStatus = ReturnType<Workbench["snapshot"]>;
+type VoiceAgentStatus = ReturnType<Workbench["snapshot"]>;
 
 /**
  * The browser connection port, for a host that serves the agent's browser messages on a socket

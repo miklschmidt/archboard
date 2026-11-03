@@ -28,10 +28,7 @@ import { deepFreeze } from "#server/rules/snapshot/snapshot-bounds.ts";
 import { containsSecretKey } from "#server/rules/snapshot/secret-keys.ts";
 
 export {
-	BROWSER_DELTA_MAX_BYTES,
 	BROWSER_SNAPSHOT_MAX_BYTES,
-	BROWSER_SNAPSHOT_MIN_BYTES,
-	assertBrowserDeltaBounded,
 	assertBrowserSnapshotBounded,
 	assertBrowserSnapshotBudget,
 	diffBrowserSnapshots,

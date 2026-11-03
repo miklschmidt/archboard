@@ -1,0 +1,151 @@
+// What one group is, read off one variant: who is in it, how they reach each
+// other, and where the group's edge is.
+//
+// Nothing here is authored and nothing is drawn. A node says which groups it
+// belongs to; everything below is derived from those memberships and the
+// relationships the variant already states, every time it is asked, over the
+// whole variant before any view narrows it (ADR 0023). A view that hides a
+// member is a narrower picture, not a smaller group, so the viewer says a
+// hidden member is hidden rather than leaving it out.
+//
+// Membership is explicit and only explicit. A container is not in a group
+// because something inside it is, and the group's boundary is drawn around its
+// members, not around whatever contains them: a service holding one grouped
+// module out of six is context for the reader, and is reported as such.
+// A relationship ends on a part, so one that reaches a part of a member reaches
+// that member.
+//
+// Where a card is placed is read off the same memberships (ADR 0038): a card
+// goes with the first group, in configuration order, that it belongs to, so
+// every container holding a member of a group draws that group's region.
+
+import type { SemanticEdge, SemanticNode, VariantContent } from "#shared/schemas/content.ts";
+import { normalizeGroupIds } from "#shared/schemas/primitives.ts";
+
+/** Which way a relationship crosses the group's boundary. */
+type BoundaryDirection = "incoming" | "outgoing";
+
+/** One relationship between a member and something outside the group. */
+interface BoundaryEdge {
+	/** The relationship, exactly as the variant states it. */
+	readonly edge: SemanticEdge;
+	/** Whether it reaches into the group or leaves it. */
+	readonly direction: BoundaryDirection;
+	/** The member at the group's end of it. */
+	readonly member: string;
+	/** The node at the other end, which is not a member. */
+	readonly neighbor: string;
+}
+
+/** Everything one group is, on one variant. */
+interface GroupInspection {
+	/** The group's id, as the model and the vault configuration spell it. */
+	readonly group: string;
+	/** The explicit members, in document order. */
+	readonly members: readonly SemanticNode[];
+	/** Relationships with a member at both ends, in document order. */
+	readonly internalEdges: readonly SemanticEdge[];
+	/** Relationships with a member at exactly one end, in document order. */
+	readonly boundaryEdges: readonly BoundaryEdge[];
+	/**
+	 * Every non-member at the far end of a boundary relationship, once each, in
+	 * document order. Immediate only: what a member reaches or is reached by,
+	 * and not what those reach in turn.
+	 */
+	readonly neighbors: readonly SemanticNode[];
+}
+
+/**
+ * Whether one node says it is in one group.
+ * @param node The node.
+ * @param group The group's id.
+ * @returns True when the node lists it.
+ */
+function isMemberOf(node: SemanticNode, group: string): boolean {
+	return node.groups?.includes(group) ?? false;
+}
+
+/**
+ * Every group id any node of the variant says it is in, once each, in the
+ * canonical order. Ids the configuration no longer defines are included,
+ * because the model still says them and a reader still has to be able to ask.
+ * @param content The variant's whole content.
+ * @returns The ids in use.
+ */
+function groupsUsed(content: VariantContent): string[] {
+	return normalizeGroupIds(content.nodes.flatMap((node) => node.groups ?? []));
+}
+
+/**
+ * The member at one end of a relationship.
+ * @param id The module at that end.
+ * @param members The group's members, by id.
+ * @param parents Each module's parent, by id.
+ * @returns The module, or the nearest module around it that is a member, if any.
+ */
+function memberAt(
+	id: string,
+	members: ReadonlySet<string>,
+	parents: ReadonlyMap<string, string>,
+): string | undefined {
+	for (let at: string | undefined = id; at !== undefined; at = parents.get(at))
+		if (members.has(at)) return at;
+	return undefined;
+}
+
+/**
+ * The direction of one boundary relationship, seen from the group.
+ * @param edge The relationship.
+ * @param from The member at its start, if any.
+ * @param to The member at its end, if any.
+ * @returns The boundary edge, or null when both ends or neither end is in a member.
+ */
+function boundaryOf(
+	edge: SemanticEdge,
+	from: string | undefined,
+	to: string | undefined,
+): BoundaryEdge | null {
+	if (from !== undefined && to === undefined)
+		return { edge, direction: "outgoing", member: from, neighbor: edge.to };
+	if (to !== undefined && from === undefined)
+		return { edge, direction: "incoming", member: to, neighbor: edge.from };
+	return null;
+}
+
+/**
+ * What one group is, on one variant.
+ *
+ * A group nothing belongs to comes back empty rather than as a failure: a
+ * configured group that nobody has joined yet is a real thing the vault says,
+ * and the caller decides what to say about it. Whether the id is configured at
+ * all is not a question this content can answer, so it is not asked here.
+ * @param content The variant's whole content, before any view narrows it.
+ * @param group The group's id.
+ * @returns Its members, its internal and boundary relationships, and its neighbors.
+ */
+function inspectGroup(content: VariantContent, group: string): GroupInspection {
+	const members = content.nodes.filter((node) => isMemberOf(node, group));
+	const inside = new Set(members.map((node) => node.id));
+	const parents = new Map(
+		content.nodes.flatMap(({ id, parent }) =>
+			parent === undefined ? [] : [[id, parent] as const],
+		),
+	);
+	const crossings = content.edges.map((edge) => ({
+		edge,
+		from: memberAt(edge.from, inside, parents),
+		to: memberAt(edge.to, inside, parents),
+	}));
+	const internalEdges = crossings.flatMap(({ edge, from, to }) =>
+		from !== undefined && to !== undefined && from !== to ? [edge] : [],
+	);
+	const boundaryEdges = crossings.flatMap(({ edge, from, to }) => {
+		const boundary = boundaryOf(edge, from, to);
+		return boundary === null ? [] : [boundary];
+	});
+	const touched = new Set(boundaryEdges.map((boundary) => boundary.neighbor));
+	const neighbors = content.nodes.filter((node) => touched.has(node.id));
+	return { group, members, internalEdges, boundaryEdges, neighbors };
+}
+
+export { groupsUsed, inspectGroup, isMemberOf };

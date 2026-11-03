@@ -1,6 +1,6 @@
-import { readArchitectureModel } from "@archboard/board/store-read";
-import type { ArchitectureModelRead } from "@archboard/board/model";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import { readArchitectureModel } from "@archboard/model/store-read";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 import type { RealtimePresentationChange } from "#runtime/rules/realtime/presentation-mode.ts";
 import { canonicalNarratedSubjects } from "#server/rules/semantic-context/narrated-subjects.ts";

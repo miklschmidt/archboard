@@ -229,4 +229,4 @@ function requireDynamicOwners(
 }
 
 export { requireDynamicOwners };
-export type { DynamicOwnerContext, DynamicOwners, ArchboardDomainOwners };
+export type { ArchboardDomainOwners };

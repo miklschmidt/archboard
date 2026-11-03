@@ -1,5 +1,5 @@
 // The deterministic outcome checks: what a scenario says must be true of the
-// vault after the author ran, decided from the saved boards, the vault
+// vault after the author ran, decided from the saved documents, the vault
 // configuration, the checker's report, the renders and inspections the
 // harness ran on the checks' behalf, and the videos it looked for. Every
 // verdict carries what was found.
@@ -9,7 +9,7 @@ import {
 	plausibleSubjects,
 	recordingMatches,
 } from "#runtime/rules/outcomes/naming.ts";
-import { boardCheck } from "#runtime/rules/outcomes/outcomes-board.ts";
+import { contentCheck } from "#runtime/rules/outcomes/outcomes-content.ts";
 import { familyCheck } from "#runtime/rules/outcomes/outcomes-family.ts";
 import { videoRendered } from "#runtime/operations/runs/replay.ts";
 import {
@@ -19,18 +19,18 @@ import {
 	type InspectedGroup,
 	type Reading,
 } from "#runtime/rules/outcomes/reading.ts";
-import { CHECK_KINDS, type OutcomeCheck } from "#runtime/schemas/suite.ts";
+import { type OutcomeCheck } from "#runtime/schemas/suite.ts";
 
 /** A render the harness must attempt before the checks run. */
 interface RenderRequest {
-	readonly board: string;
+	readonly document: string;
 	readonly variant?: string | undefined;
 	readonly view?: string | undefined;
 }
 
 /** An inspection the harness must run before the checks run. */
 interface InspectionRequest {
-	readonly board: string;
+	readonly document: string;
 	readonly group: string;
 	readonly variant?: string | undefined;
 }
@@ -43,7 +43,7 @@ interface InspectionRequest {
 function renderRequests(checks: readonly OutcomeCheck[]): RenderRequest[] {
 	return checks
 		.filter((check) => check.check === "render-ok")
-		.map((check) => ({ board: check.board ?? "", variant: check.variant, view: check.view }));
+		.map((check) => ({ document: check.board ?? "", variant: check.variant, view: check.view }));
 }
 
 /**
@@ -55,7 +55,7 @@ function inspectionRequests(checks: readonly OutcomeCheck[]): InspectionRequest[
 	return checks
 		.filter((check) => check.check === "inspect-group")
 		.map((check) => ({
-			board: check.board ?? "",
+			document: check.board ?? "",
 			group: check.group ?? "",
 			variant: check.variant,
 		}));
@@ -70,7 +70,7 @@ function inspectionRequests(checks: readonly OutcomeCheck[]): InspectionRequest[
 function renderOk(check: OutcomeCheck, reading: Reading): Finding {
 	const attempt = reading.renders.find(
 		(render) =>
-			render.board === check.board &&
+			render.document === check.board &&
 			render.variant === check.variant &&
 			render.view === check.view,
 	);
@@ -155,7 +155,7 @@ function inspectionDetail(result: InspectedGroup, gaps: ReturnType<typeof member
 function inspectGroup(check: OutcomeCheck, reading: Reading): Finding {
 	const attempt = reading.inspections.find(
 		(inspection) =>
-			inspection.board === check.board &&
+			inspection.document === check.board &&
 			inspection.group === check.group &&
 			inspection.variant === check.variant,
 	);
@@ -237,7 +237,7 @@ function evaluateOutcomes(checks: readonly OutcomeCheck[], reading: Reading): Ch
 		const run = recordingMatches(
 			() =>
 				VAULT_OWNERS[check.check]?.(check, reading) ??
-				boardCheck(check, reading) ??
+				contentCheck(check, reading) ??
 				familyCheck(check, reading),
 		);
 		const found = run.value ?? finding(false, `no owner for check "${check.check}"`);
@@ -249,11 +249,7 @@ function evaluateOutcomes(checks: readonly OutcomeCheck[], reading: Reading): Ch
 	});
 }
 
-/** The check kinds the dispatcher knows, for the suite's own validation. */
-const KNOWN_CHECKS = CHECK_KINDS;
-
 export {
-	KNOWN_CHECKS,
 	evaluateOutcomes,
 	inspectionRequests,
 	renderRequests,

@@ -6,7 +6,7 @@ import { checkBrowserCsrf } from "@archboard/code-opener/browser-origin";
 import type { RawData } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
-import { parseBoardKey } from "@archboard/board/address";
+import { parsePaneKey } from "@archboard/model/legacy-address";
 import {
 	createServerCodexBrowserSocketSend,
 	type VoiceAgentBrowserPort,
@@ -23,14 +23,14 @@ import { frameText } from "#server/sockets/frame-text.ts";
 import { server } from "#server/wiring/http/server-app.ts";
 import {
 	acceptedSockets,
-	boardForNewPane,
+	paneKeyForNewPane,
 	clientIds,
 	clients,
 	codexSocketInstances,
 	currentSocketsByClient,
 	latestSocketAcceptanceByClient,
 	notePaneClosed,
-	paneBoards,
+	paneKeys,
 	paneVaults,
 	panes,
 	socketVaults,
@@ -85,13 +85,13 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
 }
 
 /**
- * Tell a pane which board it is on.
+ * Tell a pane which model it is on.
  *
- * The whole of what a semantic pane needs to start: the board is a file the
- * server reads and draws, so the pane is named a board rather than handed one
+ * The whole of what a semantic pane needs to start: the model is a file the
+ * server reads and draws, so the pane is named a model rather than handed one
  * (ADR 0023). The picture is a separate read the pane makes for itself.
  *
- * Sent even when there is no board to name, because "there is nothing here
+ * Sent even when there is no model to name, because "there is nothing here
  * yet" is news a pane has to be told rather than infer from silence — an empty
  * vault would otherwise be indistinguishable from a socket that never
  * finished, both on screen and to anything waiting on this message.
@@ -101,22 +101,22 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
  * leave a transport owning a pane it can say nothing to, having retired the
  * live one it replaced.
  * @param ws The socket.
- * @param startingKey The board key, or null when the vault holds no board.
+ * @param startingKey The model key, or null when the vault holds no model.
  * @param vault The vault the pane is in, with the name the navigator lists it under.
  * @returns Resolves once the socket has taken the message.
  */
-function sendStartingBoard(
+function sendStartingPlace(
 	ws: WebSocket,
 	startingKey: string | null,
 	vault: string,
 ): Promise<void> {
 	const message: WebSocketMessage = {
-		type: "pane_board",
+		type: "pane_place",
 		vault,
 		repository: repositoryOfVault(vault),
 		...(startingKey === null
-			? { board: null, identity: null }
-			: { board: startingKey, identity: parseBoardKey(startingKey) }),
+			? { paneKey: null, identity: null }
+			: { paneKey: startingKey, identity: parsePaneKey(startingKey) }),
 	};
 	return new Promise<void>((resolve, reject) => {
 		try {
@@ -128,17 +128,17 @@ function sendStartingBoard(
 }
 
 /**
- * Record the vault and board a pane holds as its socket takes its authority.
+ * Record the vault and model a pane holds as its socket takes its authority.
  *
  * A choice of checkout may have moved the pane while its first message was on
  * the way (ADR 0050). The socket has carried that move to the page already, so
- * the pane is in the vault and on the board the move gave it.
+ * the pane is in the vault and on the model the move gave it.
  * @param ws The socket.
  * @param clientId The pane's client id.
- * @param startingKey The board the pane was started on.
+ * @param startingKey The model the pane was started on.
  * @param vault The vault it was started in.
  */
-function holdPaneBoard(
+function holdPaneKey(
 	ws: WebSocket,
 	clientId: string,
 	startingKey: string | null,
@@ -146,13 +146,13 @@ function holdPaneBoard(
 ): void {
 	const current = socketVaults.get(ws) ?? vault;
 	// A pane that comes back naming another vault holds none of what it held in
-	// the first: a board key means a board of one vault.
+	// the first: a model key means a model of one vault.
 	if (paneVaults.get(clientId) !== current) {
-		paneBoards.delete(clientId);
+		paneKeys.delete(clientId);
 	}
 	paneVaults.set(clientId, current);
 	if (startingKey !== null && current === vault) {
-		paneBoards.set(clientId, startingKey);
+		paneKeys.set(clientId, startingKey);
 	}
 }
 
@@ -163,7 +163,7 @@ function holdPaneBoard(
  * @param ws The socket.
  * @param clientId The pane's client id.
  * @param acceptanceToken The token this socket's acceptance was stamped with.
- * @param startingKey The board the pane starts on.
+ * @param startingKey The model the pane starts on.
  * @param vault The vault the pane was started in.
  * @returns False when this socket was superseded and has been terminated.
  */
@@ -179,7 +179,7 @@ function takePaneAuthority(
 		return false;
 	}
 	const previous = currentSocketsByClient.get(clientId);
-	holdPaneBoard(ws, clientId, startingKey, vault);
+	holdPaneKey(ws, clientId, startingKey, vault);
 	currentSocketsByClient.set(clientId, ws);
 	if (previous !== undefined && previous !== ws) {
 		previous.terminate();
@@ -262,16 +262,16 @@ function listenForCodexRequests(ws: WebSocket, socket: RegisteredSocket): void {
 }
 
 /**
- * Tell a freshly admitted pane what it needs to know beyond its board: where
- * that board's lock stands, and which boards an agent has in every vault.
+ * Tell a freshly admitted pane what it needs to know beyond its model: where
+ * that model's lock stands, and which models an agent has in every vault.
  * @param ws The socket.
  * @param clientId The pane's client id, or null for an anonymous socket.
- * @param startingKey The board the pane starts on, or null when it starts on none.
+ * @param startingKey The model the pane starts on, or null when it starts on none.
  */
 
 /** What one accepted socket is registered as, before it is presented anything. */
 interface RegisteredSocket {
-	/** The vault it named when it connected: its panes show boards of this vault only. */
+	/** The vault it named when it connected: its panes show models of this vault only. */
 	vault: string;
 	/** The pane it presents, or null for a socket that named none. */
 	clientId: string | null;
@@ -310,12 +310,12 @@ function registerSocket(ws: WebSocket, req: IncomingMessage, vault: string): Reg
 /**
  * Take pane authority and admit the socket to broadcasts.
  *
- * Called only once the pane has been told which board it is on, so a socket
+ * Called only once the pane has been told which model it is on, so a socket
  * whose opening message never landed does not retire the live transport it was
  * replacing and then sit there owning a pane it cannot speak to.
  * @param ws The socket.
  * @param socket What it is registered as.
- * @param startingKey The board it starts on.
+ * @param startingKey The model it starts on.
  * @returns False when a later socket had already taken this pane's authority.
  */
 function admitSocket(ws: WebSocket, socket: RegisteredSocket, startingKey: string | null): boolean {
@@ -354,12 +354,12 @@ async function acceptWebSocketConnection(
 ): Promise<void> {
 	const vault = vaultOfReturningPane(req, named);
 	const socket = registerSocket(ws, req, vault);
-	// Which board this pane gets, and it is a board *for this pane* — not "the"
-	// board, which no longer exists as a single thing. A pane that has been here
+	// Which model this pane gets, and it is a model *for this pane* — not "the"
+	// model, which no longer exists as a single thing. A pane that has been here
 	// before (a dropped socket, not a new tab) resumes what it was holding,
 	// because a reconnect must not undo a user's scene arrangement.
-	const startingKey = startingBoard(req, socket.clientId, vault);
-	await sendStartingBoard(ws, startingKey, vault);
+	const startingKey = startingPaneKey(req, socket.clientId, vault);
+	await sendStartingPlace(ws, startingKey, vault);
 	if (ws.readyState !== WebSocket.OPEN || !admitSocket(ws, socket, startingKey)) {
 		return;
 	}
@@ -380,14 +380,14 @@ async function acceptWebSocketConnection(
  * @param vault The pane's source vault.
  * @returns The legacy starting key, or no legacy reading.
  */
-function startingBoard(
+function startingPaneKey(
 	req: IncomingMessage,
 	clientId: string | null,
 	vault: string,
 ): string | null {
 	const canonical =
 		new URL(req.url ?? "/", "http://localhost").searchParams.get("reading") === "canonical";
-	return clientId === null || canonical ? null : boardForNewPane(clientId, vault);
+	return clientId === null || canonical ? null : paneKeyForNewPane(clientId, vault);
 }
 
 /**

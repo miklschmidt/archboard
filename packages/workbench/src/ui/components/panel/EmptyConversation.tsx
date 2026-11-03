@@ -65,4 +65,4 @@ function Suggestion(props: {
 	);
 }
 
-export { EmptyConversation, type EmptyConversationProps };
+export { EmptyConversation };

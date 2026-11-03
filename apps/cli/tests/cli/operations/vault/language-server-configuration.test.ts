@@ -11,7 +11,7 @@ import { afterAll, beforeAll, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import type * as CodeCheck from "@archboard/code-intel/code-check-run";
 
 /** A repository with no remote is named by its directory, here with a space. */
@@ -170,7 +170,7 @@ async function missingSkips() {
 		plans: [],
 		signal: new AbortController().signal,
 	});
-	if (!("boards" in answer)) throw new Error(answer.error);
+	if (!("states" in answer)) throw new Error(answer.error);
 	return answer.skipped.filter((skip) => skip.reason === "language-server-missing");
 }
 

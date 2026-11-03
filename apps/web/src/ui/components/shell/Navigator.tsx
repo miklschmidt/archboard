@@ -19,7 +19,7 @@ import type { ShellActions, ShellRepository, ShellView } from "#ui/rules/shell/c
 
 /** Inputs for the navigator. */
 interface NavigatorProps {
-	/** The application can replace empty-board guidance when another model format is present. */
+	/** The application can replace empty-model guidance when another model format is present. */
 	view: ShellView;
 	actions: ShellActions;
 	/** The column's top row: the brand and the application's own controls. */
@@ -60,7 +60,7 @@ function workingEntries(view: ShellView, panes: readonly PaneMark[]): WorkingEnt
 	return view.repositories.flatMap((shell) => {
 		const repository = shell.repository.name;
 		return Object.values(shell.activity).map((activity) => {
-			const name = shell.model?.name ?? activity.board;
+			const name = shell.model?.name ?? activity.model;
 			const letters =
 				panes.length < 2
 					? []
@@ -84,13 +84,13 @@ function openRepository(actions: ShellActions, shell: ShellRepository, beside: b
 
 /**
  * Why the navigator cannot show what it should: the repositories or the panes
- * could not be read, or else the first repository whose boards could not be,
+ * could not be read, or else the first repository whose models could not be,
  * named. Its row marks it too; this is where the way to read it again is.
  * @param view The shell view.
  * @returns The reason, or null.
  */
 function listingFailure(view: ShellView): string | null {
-	if (view.boardsError !== null) return view.boardsError;
+	if (view.modelsError !== null) return view.modelsError;
 	const failed = view.repositories.find((shell) => shell.error !== null);
 	return failed === undefined ? null : `${failed.repository.name}: ${failed.error}`;
 }
@@ -118,8 +118,8 @@ function Navigator(props: NavigatorProps): JSX.Element {
 		},
 		[actions],
 	);
-	const openBoard = useCallback(
-		(_board: string, beside: boolean, repository: string): void => {
+	const openPaneKey = useCallback(
+		(_model: string, beside: boolean, repository: string): void => {
 			const shell = view.repositories.find((entry) => entry.repository.name === repository);
 			if (shell !== undefined) openRepository(actions, shell, beside);
 		},
@@ -164,7 +164,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 					</Popover>
 				)}
 				<ListingState
-					loading={view.boardsLoading}
+					loading={view.modelsLoading}
 					error={listingFailure(view)}
 					empty={view.repositories.length === 0}
 					actions={actions}
@@ -186,7 +186,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 						onLeave={leave}
 					/>
 				)}
-				<WorkingNow entries={workingEntries(view, panes)} onOpen={openBoard} />
+				<WorkingNow entries={workingEntries(view, panes)} onOpen={openPaneKey} />
 			</nav>
 			{props.foot}
 		</div>
@@ -209,7 +209,7 @@ interface ListingStateProps {
  */
 function ListingState(props: ListingStateProps): JSX.Element | null {
 	const { actions } = props;
-	const retry = useCallback(() => actions.refreshBoards(), [actions]);
+	const retry = useCallback(() => actions.refreshModels(), [actions]);
 	if (props.error !== null) {
 		return (
 			<div
@@ -235,7 +235,7 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 }
 
 /**
- * The listing's loading state: rows of the shape a board takes, greyed, with
+ * The listing's loading state: rows of the shape a model takes, greyed, with
  * the words for assistive technology.
  * @returns The skeleton.
  */
@@ -255,4 +255,4 @@ function ListingSkeleton(): JSX.Element {
 	);
 }
 
-export { Navigator, type NavigatorProps };
+export { Navigator };

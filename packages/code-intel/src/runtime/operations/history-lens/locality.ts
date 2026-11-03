@@ -1,4 +1,4 @@
-// Locality: which parts of a board change most often, and which change
+// Locality: which parts of a document change most often, and which change
 // together (ADR 0045).
 //
 // A hotspot is a part that many commits of a period changed. Change coupling
@@ -9,12 +9,12 @@
 // The lens counts commits only, not the size or the complexity of the code,
 // and it leaves out large commits and says how many.
 //
-// One walk of each repository serves every part of the board. The walk keeps
+// One walk of each repository serves every part of the document. The walk keeps
 // large commits so that a rename inside one still carries a bound file's
 // history; they are left out only when each part's commits are listed.
 //
 // The answer is kept in memory, keyed on everything it derives from: the
-// vault, the board and its version, the variant, the start of the period, and
+// vault, the document and its version, the variant, the start of the period, and
 // each checkout with its HEAD. A request that arrives while it is made waits for
 // that work. The walk behind it derives only from HEAD, the period and what the
 // parts bind, so it is kept apart: a model edit that moves no binding needs a
@@ -45,10 +45,10 @@ import type {
 	LocalityCommit,
 	LocalityPeriod,
 } from "#shared/protocol/locality.ts";
-import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
+import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
 import { LOCALITY_DEFAULT_PERIOD_MS } from "@archboard/timing";
 
-/** How many answers the server keeps: the boards that somebody selects parts on. */
+/** How many answers the server keeps: the documents that somebody selects parts on. */
 const KEPT_ANSWERS = 32;
 
 /** How many walks the server keeps. A walk holds every file of a year of commits. */
@@ -241,7 +241,7 @@ function rank(split: readonly (CountedPart & PartCommits)[]): Ranking {
 	};
 }
 
-type LocalityEvidence = Omit<LocalityAnswer, "board" | "version" | "variant">;
+type LocalityEvidence = Omit<LocalityAnswer, "model" | "version" | "variant">;
 /**
  * Read locality: every part the lens reads, ranked by the commits of the
  * period that changed its bound files, and the pairs those commits couple.
@@ -304,9 +304,9 @@ async function readLocality(
 /** The reading of locality of a variant already chosen (`locality-reading.ts`), with the memory of its answers. */
 interface VariantLocality {
 	/**
-	 * The hotspots and change coupling of one variant of one board.
-	 * @param vault The vault directory the board is in: its own checkout is read for its own repository.
-	 * @param board The board as the store read it.
+	 * The hotspots and change coupling of one variant of one document.
+	 * @param vault The vault directory the document is in: its own checkout is read for its own repository.
+	 * @param document The document as the store read it.
 	 * @param variant The variant to read: the current one, or a draft.
 	 * @param since The start of the period, or undefined for the year before each HEAD.
 	 * @param signal Cancels the reading and every Git command it runs, once no other request waits for it.
@@ -314,7 +314,7 @@ interface VariantLocality {
 	 */
 	read(
 		vault: string,
-		board: SemanticBoard,
+		document: LegacyBoard,
 		variant: SemanticVariant,
 		since: Date | undefined,
 		signal?: AbortSignal,
@@ -323,7 +323,7 @@ interface VariantLocality {
 
 /**
  * A reading of locality that keeps its answers while nothing they derive from
- * has moved: the vault, the board's version, the variant, the start of the
+ * has moved: the vault, the document's version, the variant, the start of the
  * period, and each checkout with its HEAD.
  * @returns The reading.
  */
@@ -358,7 +358,7 @@ function createLocalityEvidence() {
 			// Only the checkouts the parts are bound into: a commit in another
 			// registered repository changes nothing this answer says.
 			const repos = [...new Set(bindings.map((binding) => binding.repo))].toSorted();
-			// A board's id and version name its content within one vault only: two
+			// A document's id and version name its content within one vault only: two
 			// worktrees of one repository hold copies that can each have moved on.
 			const key = JSON.stringify({
 				vault,
@@ -386,20 +386,20 @@ function createVariantLocality(): VariantLocality {
 		/**
 		 * Read retained evidence.
 		 * @param vault The vault.
-		 * @param board The retained document.
+		 * @param document The retained document.
 		 * @param variant The selected state.
 		 * @param since The period start.
 		 * @param signal Cancellation.
 		 * @returns The original semantic receipt.
 		 */
-		async read(vault, board, variant, since, signal) {
+		async read(vault, document, variant, since, signal) {
 			return {
-				board: board.name,
-				version: board.version,
+				model: document.name,
+				version: document.version,
 				variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 				...(await evidence.read(
 					vault,
-					JSON.stringify([board.id, board.version]),
+					JSON.stringify([document.id, document.version]),
 					variant,
 					since,
 					signal,
@@ -408,4 +408,4 @@ function createVariantLocality(): VariantLocality {
 		},
 	};
 }
-export { type VariantLocality, createVariantLocality, createLocalityEvidence };
+export { createVariantLocality, createLocalityEvidence };

@@ -42,4 +42,4 @@ function markCounts(standing: Readonly<Record<string, SubjectStanding>>): readon
 	})).filter((marked) => marked.count > 0);
 }
 
-export { LINE_MARKS, markCounts, type LineMark, type MarkCount };
+export { LINE_MARKS, markCounts, type LineMark };

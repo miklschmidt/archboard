@@ -4,10 +4,10 @@ import {
 	ADDITIONAL_CONTEXT_POLICY,
 	type OperationOutcome,
 } from "@archboard/codex-realtime-voice/runtime";
-import { DiagramGrammarSchema } from "@archboard/board/views";
-import { VariantLifecycleSchema } from "@archboard/board/document";
-import { ReconciliationKindSchema } from "@archboard/board/reconciliation";
-import { SemanticSubjectKindSchema } from "@archboard/board/pane-context";
+import { DiagramGrammarSchema } from "@archboard/model/views";
+import { VariantLifecycleSchema } from "@archboard/model/legacy-board";
+import { ReconciliationKindSchema } from "@archboard/model/reconciliation";
+import { SemanticSubjectKindSchema } from "@archboard/model/pane-context";
 
 /**
  * UTF-8 byte length of a string, the unit every context size limit is written in.
@@ -54,7 +54,7 @@ const DoingSchema = boundedUtf8Text(512, "doing");
 /**
  * What kind of thing a selected identity names.
  *
- * The board contract's own vocabulary, reused rather than restated: an agent
+ * The model contract's own vocabulary, reused rather than restated: an agent
  * handed one of these can put it straight into an edit or a resolution, which is
  * only true while this list and the one commands take are the same list. There
  * is no spelling here for anything that was merely drawn, because there is
@@ -121,8 +121,8 @@ function freezeDeep<T>(value: T): T {
 const ArchboardContextRawSchema = z.strictObject({
 	schema: z.literal(1),
 	paneId: NonEmptyStringSchema,
-	board: z.strictObject({
-		/** The name every command spells this board with. */
+	model: z.strictObject({
+		/** The name every command spells this model with. */
 		name: NonEmptyStringSchema,
 		/** Its comparison form, which is what a claim and a broadcast agree on. */
 		key: NonEmptyStringSchema,
@@ -211,7 +211,7 @@ const ArchboardContextRawSchema = z.strictObject({
 	 * the brief had room for. They can disagree — a brief under byte pressure
 	 * drops issues before it drops anything else — and when they do, `required`
 	 * is the one to believe. An agent told `required` with no issues listed reads
-	 * the board; an agent told neither does not know there is work.
+	 * the model; an agent told neither does not know there is work.
 	 */
 	reconciliation: z.strictObject({
 		required: z.boolean(),
@@ -312,11 +312,11 @@ function orderedContext(value: ArchboardContext): ArchboardContext {
 	return {
 		schema: value.schema,
 		paneId: value.paneId,
-		board: {
-			name: value.board.name,
-			key: value.board.key,
-			version: value.board.version,
-			cursor: value.board.cursor,
+		model: {
+			name: value.model.name,
+			key: value.model.key,
+			version: value.model.version,
+			cursor: value.model.cursor,
 		},
 		threadLink: {
 			state: value.threadLink.state,

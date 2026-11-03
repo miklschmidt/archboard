@@ -128,7 +128,7 @@ The take refuses missing counts and a module that no longer demonstrates its bea
 Each refusal names the module and gives a recovery step.
 
 Walkthrough recording demonstrates Unjoined with at least one unjoined connection.
-server-lifecycle demonstrates Entries with several entry points and no hidden parts.
+workspace demonstrates Entries with several entry points and no hidden parts.
 Command contract demonstrates Pass-through with at least one entry that passes a call on.
 The clip ends on its About page, where each such entry names its target.
 The terminal prints the summary of `archboard model locality`.
@@ -155,7 +155,7 @@ The `architecture` SVGs are tracked embeds under ADR 0068.
 The kit reads the canonical model from `.archboard/vault` on its own server.
 It writes the selected diagrams into `docs/readme` through `model render`.
 Each artifact carries its exact render recipe, and Git supplies the tracked artifact list.
-Rendering does not change authored architecture or maintain a board-owned tracking list.
+Rendering does not change authored architecture or maintain a tracking list in the model.
 Run `archboard check embeds` to compare the artifacts with their recorded readings.
 An unavailable reading remains an explicit failure with recovery instructions.
 

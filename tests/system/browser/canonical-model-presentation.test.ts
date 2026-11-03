@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import {
@@ -48,7 +48,7 @@ const presented = (browser: AgentBrowserSession): Promise<Presented> =>
 	browser.eval<Presented>(
 		`(() => {` +
 			` const stage = document.querySelector("[data-slot='model-walkthrough']") ?? document.querySelector("[data-slot='model-reading']");` +
-			` const surface = stage?.querySelector("[data-slot='semantic-board-surface']");` +
+			` const surface = stage?.querySelector("[data-slot='canvas-surface']");` +
 			` return {` +
 			`  step: stage?.querySelector("[data-slot='semantic-presentation']")?.getAttribute("data-step") ?? null,` +
 			`  arrived: !!surface && !surface.hasAttribute("data-camera-motion") && !surface.hasAttribute("data-picture-motion"),` +
@@ -79,7 +79,7 @@ const arrivedAt = (browser: AgentBrowserSession, step: string): Promise<Presente
  */
 const opacityOfCard = (browser: AgentBrowserSession, words: string): Promise<number> =>
 	browser.eval<number>(
-		`(() => { const stage = document.querySelector("[data-slot='model-walkthrough']") ?? document.querySelector("[data-slot='model-reading']"); const card = [...stage.querySelectorAll("[data-slot='semantic-board-surface'] [data-semantic-kind='node']")]` +
+		`(() => { const stage = document.querySelector("[data-slot='model-walkthrough']") ?? document.querySelector("[data-slot='model-reading']"); const card = [...stage.querySelectorAll("[data-slot='canvas-surface'] [data-semantic-kind='node']")]` +
 			`.find((group) => group.textContent.includes(${JSON.stringify(words)}));` +
 			` if (!card) return -1;` +
 			// What a reader sees: the card's own opacity, under any opacity filter over it.
@@ -158,7 +158,7 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	await pollUntil(
 		() => presented(browser),
 		(state) => state.arrived && state.camera !== "",
-		"the board to be drawn in its pane",
+		"the model to be drawn in its pane",
 		WAIT,
 	);
 	const reader = await presented(browser);
@@ -234,7 +234,7 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 
 	// Escape leaves, and the pane is the reader's again, where they had it, by a glide.
 	await browser.eval(
-		`window.__way = new Set(); (function watch() { const surface = [...document.querySelectorAll('[data-slot="semantic-board-surface"]')].find((one) => one.checkVisibility()); if (surface) window.__way.add(surface.style.transform); requestAnimationFrame(watch); })(); true`,
+		`window.__way = new Set(); (function watch() { const surface = [...document.querySelectorAll('[data-slot="canvas-surface"]')].find((one) => one.checkVisibility()); if (surface) window.__way.add(surface.style.transform); requestAnimationFrame(watch); })(); true`,
 	);
 	await browser.run(["press", "Escape"]);
 	const left = await pollUntil(
@@ -252,7 +252,7 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 		ARRIVAL,
 	);
 
-	// Nothing a person did in the browser wrote a board.
+	// Nothing a person did in the browser wrote a model.
 	const after = await readArchitectureModel(vault);
 	if (!after.success) throw new Error(JSON.stringify(after));
 	expect(after.revision).toEqual(before.revision);

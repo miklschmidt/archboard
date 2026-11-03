@@ -555,4 +555,4 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 	};
 }
 
-export { ORB_MOVED, createOrbStage, type OrbFrames, type OrbHome, type OrbStage, type OrbWish };
+export { ORB_MOVED, createOrbStage, type OrbFrames, type OrbHome, type OrbStage };

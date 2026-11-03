@@ -1,13 +1,13 @@
-//! The order a board's lines are drawn in, as its connections give it.
+//! The order a picture's lines are drawn in, as its connections give it.
 //!
 //! A spark leaves each card that nothing feeds and runs along its lines. Where a
-//! spark reaches a card, the card's own lines start, so a board builds along the
+//! spark reaches a card, the card's own lines start, so a picture builds along the
 //! way its parts talk. A ring has no start, so a spark enters it at its top left
 //! card.
 //!
-//! The more lines run at once, the slower each one goes. Most of a board's lines
+//! The more lines run at once, the slower each one goes. Most of a picture's lines
 //! stand near a source, and at one pace they would all flash on at the start,
-//! with a few long ways left to finish alone. A small board does not stretch to
+//! with a few long ways left to finish alone. A small picture does not stretch to
 //! fill the time of a large one: it lands early.
 
 use std::collections::HashMap;
@@ -21,8 +21,8 @@ use super::line::{end_of, start_of};
 /// How far past a box the end of a line can stand and still belong to it.
 const BOX_ROOM: f64 = 16.0;
 
-/// How far a spark runs in a whole drawing at the least, as a share of the board's
-/// diagonal. A board with shorter ways than this lands early.
+/// How far a spark runs in a whole drawing at the least, as a share of the picture's
+/// diagonal. A picture with shorter ways than this lands early.
 const LEAST_RUN: f64 = 1.0;
 
 /// How far through its line's drawing a label arrives.
@@ -166,7 +166,7 @@ fn run_order(runs: &[Run], boxes: &[Rect], least: f64) -> Vec<Span> {
 
 /// Some spans of a drawing, timed by how many lines run at each moment: a moment
 /// takes longer the more lines it draws, by the square root of their number. In
-/// full proportion, the lone line at the end whips across the board. The order
+/// full proportion, the lone line at the end whips across the picture. The order
 /// stays the same, so a line still starts as the line that feeds it lands.
 fn paced(spans: &[Span]) -> Vec<Span> {
     let mut stops: Vec<(f64, f64)> = spans
@@ -320,7 +320,7 @@ mod tests {
     }
 
     #[test]
-    fn a_line_from_outside_the_board_feeds_the_card_it_reaches() {
+    fn a_line_from_outside_the_picture_feeds_the_card_it_reaches() {
         let outside = square(-100.0, 0.0);
         let runs = [
             between(FIRST, SECOND, 100.0),
@@ -331,7 +331,7 @@ mod tests {
     }
 
     #[test]
-    fn a_small_board_keeps_the_pace_and_lands_early() {
+    fn a_small_picture_keeps_the_pace_and_lands_early() {
         let spans = run_order(&[between(FIRST, SECOND, 100.0)], &[FIRST, SECOND], 400.0);
         assert_eq!(spans, [(0.0, 0.25)]);
     }

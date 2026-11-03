@@ -281,4 +281,4 @@ function createRealtimeServer(run: MediaRunPort): RealtimeServer {
 	};
 }
 
-export { createRealtimeServer, type MediaRunPort, type StartOperation };
+export { createRealtimeServer, type StartOperation };

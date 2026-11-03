@@ -9,14 +9,7 @@ import { createBrowserApprovalSchemas } from "#shared/schemas/browser/approvals.
 import { createBrowserCommandSchemas } from "#shared/schemas/browser/commands.ts";
 import { createBrowserSessionSchemas } from "#shared/schemas/browser/session.ts";
 import { createBrowserThreadSchemas } from "#shared/schemas/browser/thread.ts";
-import {
-	BROWSER_PERMISSION_FILE_ACCESS,
-	BROWSER_TIMELINE_LIMITS,
-	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
-	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
-	BROWSER_VOICE_CONTEXT_ENTRY_LIMIT,
-	DeliveryOutcomeSchema,
-} from "#shared/schemas/browser/vocabulary.ts";
+import { DeliveryOutcomeSchema } from "#shared/schemas/browser/vocabulary.ts";
 import { createBrowserVoiceSchemas } from "#shared/schemas/browser/voice.ts";
 import { createDynamicApprovalSchemas } from "#shared/schemas/dynamic-approval/approval.ts";
 import type { IdentityContext, IdentitySchemas } from "#shared/schemas/browser/scalars.ts";
@@ -243,7 +236,6 @@ type BrowserQueue = z.infer<BrowserSchemas["BrowserQueueSchema"]>;
 type BrowserSettings = z.infer<BrowserSchemas["BrowserSettingsSchema"]>;
 type BrowserWorkhorses = z.infer<BrowserSchemas["BrowserWorkhorsesSchema"]>;
 type BrowserApproval = z.infer<BrowserSchemas["BrowserApprovalSchema"]>;
-type BrowserTextCommand = z.infer<BrowserSchemas["BrowserTextCommandSchema"]>;
 type BrowserContextDelivery = z.infer<BrowserSchemas["BrowserContextDeliverySchema"]>;
 type BrowserCoordinator = z.infer<BrowserSchemas["BrowserCoordinatorSchema"]>;
 type BrowserVoice = z.infer<BrowserSchemas["BrowserVoiceSchema"]>;
@@ -261,13 +253,6 @@ type BrowserDto = z.infer<BrowserSchemas["BrowserDtoSchema"]>;
 type DeliveryOutcome = z.infer<typeof DeliveryOutcomeSchema>;
 
 export {
-	DeliveryOutcomeSchema,
-	BROWSER_TIMELINE_LIMITS,
-	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
-	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
-	BROWSER_VOICE_CONTEXT_ENTRY_LIMIT,
-	BROWSER_PERMISSION_FILE_ACCESS,
-	type BrowserSnapshotRelationshipIssue,
 	browserSnapshotRelationshipIssues,
 	createBrowserSchemas,
 	type BrowserSchemas,
@@ -281,7 +266,6 @@ export {
 	type BrowserSettings,
 	type BrowserWorkhorses,
 	type BrowserApproval,
-	type BrowserTextCommand,
 	type BrowserContextDelivery,
 	type BrowserCoordinator,
 	type BrowserVoice,

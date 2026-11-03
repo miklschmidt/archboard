@@ -6,7 +6,7 @@ use archboard_scene::geometry::Rect;
 use archboard_scene::js;
 use archboard_scene::measure;
 
-use crate::board::Node;
+use crate::content::Node;
 use crate::sequence::design::{
     CARD_HEIGHT, CARD_HEIGHT_WITH_NOTE, CARD_PADDING_X, DRILL_MARK_ROOM, ICON_CHIP_GAP,
     ICON_CHIP_SIZE, NOTE_SIZE, TEXT_LINE_HEIGHT, TITLE_SIZE,
@@ -28,13 +28,13 @@ pub(super) fn card_text_width(card_width: f64) -> f64 {
 }
 
 /// The room a participant keeps beside its name for the mark of a part that
-/// opens another board.
+/// opens another picture.
 pub(super) fn mark_room(node: &Node) -> f64 {
     if node.drills { DRILL_MARK_ROOM } else { 0.0 }
 }
 
 /// The run a participant's name has on its card: the text run, less the mark
-/// of a part that opens another board.
+/// of a part that opens another picture.
 pub(super) fn title_room(node: &Node, card_width: f64) -> f64 {
     card_text_width(card_width) - mark_room(node)
 }

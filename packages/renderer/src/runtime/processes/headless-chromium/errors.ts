@@ -51,9 +51,4 @@ function messageOf(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
-export {
-	HeadlessChromiumError,
-	messageOf,
-	type HeadlessChromiumCleanup,
-	type HeadlessChromiumErrorCode,
-};
+export { HeadlessChromiumError, messageOf, type HeadlessChromiumCleanup };

@@ -5,7 +5,7 @@
   "responsibility": "Resolves one narrative target and reports beat readiness against one captured revision.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/operations/read/playback.ts"
+    "path": "packages/model/src/runtime/operations/read/playback.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#8nPhZJ6C",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/playback.ts",
+        "path": "packages/model/src/runtime/operations/read/playback.ts",
         "symbol": "readSelectedState"
       },
       "id": "vKEsyHFk/0T9enjhi#IUelf4x1",
@@ -52,7 +52,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/playback.ts",
+        "path": "packages/model/src/runtime/operations/read/playback.ts",
         "symbol": "readCurrentModel"
       },
       "id": "vKEsyHFk/0T9enjhi#vVbPUTQy",
@@ -65,7 +65,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/playback.ts",
+        "path": "packages/model/src/runtime/operations/read/playback.ts",
         "symbol": "historyResult"
       },
       "id": "vKEsyHFk/0T9enjhi#8yI2otaH",

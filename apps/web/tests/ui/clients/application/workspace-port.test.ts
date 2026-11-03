@@ -32,7 +32,7 @@ function placedPane(): WorkspacePortDeps["panes"] {
 			clientId: "client-a",
 			connected: true,
 			registered: true,
-			boardKey: "payments",
+			paneKey: "payments",
 			vault: OWN,
 			repository: "github.com/acme/shop",
 		},
@@ -88,13 +88,13 @@ function portOver(vaultOf: ((repository: string) => string | null) | null) {
 		/**
 		 * Record a show the port sent.
 		 * @param _clientId The pane.
-		 * @param boardKey The board.
+		 * @param paneKey The model.
 		 * @param vault The vault it was sent to.
-		 * @returns The board, as the server would answer.
+		 * @returns The model, as the server would answer.
 		 */
-		show: async (_clientId: string, boardKey: string, vault: string) => {
+		show: async (_clientId: string, paneKey: string, vault: string) => {
 			shownIn.push(vault);
-			return { boardKey, repository: null };
+			return { paneKey, repository: null };
 		},
 	});
 	return { port, shownIn, raised };
@@ -121,16 +121,16 @@ test("a repository the page does not list with a vault is unreachable, and nothi
 	expect(shownIn).toEqual([]);
 });
 
-test("a board the address asked of a repository with no vault is reported by its repository", () => {
+test("a model the address asked of a repository with no vault is reported by its repository", () => {
 	const { port, raised } = portOver(listed);
 	port.reportUnreachable([
-		{ boardKey: "ledger", repository: "github.com/acme/elsewhere" },
-		{ boardKey: "audit", repository: "github.com/acme/elsewhere" },
-		{ boardKey: "nowhere", repository: null },
+		{ paneKey: "ledger", repository: "github.com/acme/elsewhere" },
+		{ paneKey: "audit", repository: "github.com/acme/elsewhere" },
+		{ paneKey: "nowhere", repository: null },
 	]);
 	expect(raised.map((notice) => notice.id)).toEqual([
 		"unreachable-repository:github.com/acme/elsewhere",
-		"unreachable-boards",
+		"unreachable-models",
 	]);
 	expect(raised[0]?.title).toContain("github.com/acme/elsewhere");
 	expect(raised[1]?.title).toContain("nowhere");

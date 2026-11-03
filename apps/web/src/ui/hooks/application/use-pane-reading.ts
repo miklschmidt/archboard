@@ -1,21 +1,21 @@
-// What each pane is reading, as the shell owns it: which of the board's
+// What each pane is reading, as the shell owns it: which of the model's
 // named views, and which subject the person picked out.
 //
-// Which board a pane shows is not here. That is the server's: a pane is
-// pointed at a board by `browser show` or by the person choosing one, the
+// Which model a pane shows is not here. That is the server's: a pane is
+// pointed at a model by `browser show` or by the person choosing one, the
 // server records it, and the pane hears it back over its socket. Keeping a
 // second copy in the browser is how a pane and `browser panes` come to
 // disagree.
 //
 // A view and a selection are the opposite kind of fact. They are session
-// state — two panes can read one board two ways at once, and neither choice
-// touches the board (ADR 0023) — so they live here, and go to the server only
+// state — two panes can read one model two ways at once, and neither choice
+// touches the model (ADR 0023) — so they live here, and go to the server only
 // as context an agent can be grounded in.
 
 import { useCallback, useMemo, useState } from "react";
 
-import { boardAddressOf, sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import { paneAddressOf, sameModelName } from "#ui/rules/canvas/reading/address.ts";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type SemanticSubjectRef = z.infer<typeof SemanticPaneContextSchema>["selection"][number];
@@ -29,13 +29,13 @@ type ByPane<Value> = Readonly<Record<string, Value>>;
 /** What each pane is reading, and how that changes. */
 interface PaneReadings {
 	/**
-	 * Which of the board's views one pane is reading it through.
+	 * Which of the model's views one pane is reading it through.
 	 * @param paneId The pane.
 	 * @returns The view's id, or null for the overview.
 	 */
 	readonly viewOf: (paneId: string) => string | null;
 	/**
-	 * Read a board through one of its views, in this pane.
+	 * Read a model through one of its views, in this pane.
 	 * @param paneId The pane.
 	 * @param view The view's id, or null for the overview.
 	 */
@@ -53,12 +53,12 @@ interface PaneReadings {
 	 */
 	readonly pick: (paneId: string, subject: PickedSubject | null) => void;
 	/**
-	 * A pane moved: clear its selection, retaining the view within one board.
+	 * A pane moved: clear its selection, retaining the view within one model.
 	 * @param paneId The pane.
-	 * @param boardKey The board key it adopted.
-	 * @param previousKey The board key it left, or null on first adoption.
+	 * @param paneKey The model key it adopted.
+	 * @param previousKey The model key it left, or null on first adoption.
 	 */
-	readonly boardChanged: (paneId: string, boardKey: string, previousKey: string | null) => void;
+	readonly modelChanged: (paneId: string, paneKey: string, previousKey: string | null) => void;
 }
 
 /** Nothing is being read yet. */
@@ -104,11 +104,11 @@ function usePaneReadings(): PaneReadings {
 			subject === null ? cleared(current, paneId) : held(current, paneId, subject),
 		);
 	}, []);
-	const boardChanged = useCallback(
-		(paneId: string, boardKey: string, previousKey: string | null): void => {
-			const board = boardAddressOf(boardKey);
-			const previous = boardAddressOf(previousKey);
-			if (board === null || previous === null || !sameBoardName(board.board, previous.board)) {
+	const modelChanged = useCallback(
+		(paneId: string, paneKey: string, previousKey: string | null): void => {
+			const model = paneAddressOf(paneKey);
+			const previous = paneAddressOf(previousKey);
+			if (model === null || previous === null || !sameModelName(model.model, previous.model)) {
 				setViews((current) => cleared(current, paneId));
 			}
 			setPicked((current) => cleared(current, paneId));
@@ -121,9 +121,9 @@ function usePaneReadings(): PaneReadings {
 		[picked],
 	);
 	return useMemo(
-		() => ({ viewOf, showView, pickedIn, pick, boardChanged }),
-		[viewOf, showView, pickedIn, pick, boardChanged],
+		() => ({ viewOf, showView, pickedIn, pick, modelChanged }),
+		[viewOf, showView, pickedIn, pick, modelChanged],
 	);
 }
 
-export { usePaneReadings, type ByPane, type PaneReadings, type PickedSubject };
+export { usePaneReadings, type PaneReadings, type PickedSubject };

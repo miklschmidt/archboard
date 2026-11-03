@@ -37,7 +37,7 @@
     {
       "order": 37000,
       "kind": "call",
-      "label": "builds turn input with the prompt and board context",
+      "label": "builds turn input with the prompt and model context",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

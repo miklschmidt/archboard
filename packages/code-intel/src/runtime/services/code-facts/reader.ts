@@ -527,12 +527,4 @@ function createPass(context: PassContext): FactsPass {
 	};
 }
 
-export {
-	type CodeFacts,
-	type FactsPass,
-	type PassStats,
-	type SourceFacts,
-	createCodeFacts,
-	createSourceFacts,
-	readListed,
-};
+export { type FactsPass, createCodeFacts, createSourceFacts, readListed };

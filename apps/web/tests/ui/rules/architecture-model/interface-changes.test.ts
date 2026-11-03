@@ -2,7 +2,7 @@
 // the counts that differ, and a module the state lacks says so and keeps its place on a picture.
 
 import { expect, test } from "bun:test";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import {
 	interfaceRows,
 	interfaceRowWords,

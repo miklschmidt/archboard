@@ -162,7 +162,6 @@ function createCoordinatorCallbackContextPort(
 
 export {
 	createCoordinatorCallbackContextPort,
-	type CoordinatorCallbackRealtimePortOptions,
 	sameRealtimeGeneration,
 	createCoordinatorCallbackRealtimePort,
 };

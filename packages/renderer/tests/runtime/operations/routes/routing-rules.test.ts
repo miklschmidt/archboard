@@ -1,9 +1,9 @@
 // Routing rules of the track router that change drawings of this repository,
 // each owned by the lines it moves. What this catches: any of the rules below
-// dropped or undone, read off the named lines rather than a whole-board score.
+// dropped or undone, read off the named lines rather than a whole-picture score.
 
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { corridorPoints, routeLabels, turnsOf } from "#tests/runtime/support/drawn-routes.ts";
@@ -58,7 +58,7 @@ async function linesOf(fixture: unknown, layout: "track" | "blocks") {
 	return Object.assign(corridorPoints(drawing.svg), { labels: routeLabels(drawing.svg) });
 }
 
-// Taken from a board of this repository: 'route every relationship' from
+// Taken from a document of this repository: 'route every relationship' from
 // Layout engine drops straight into Obstacle routing once the jog routing
 // left in it is closed again; without that it steps aside and back.
 test("a jog is closed again once routing frees its column", async () => {

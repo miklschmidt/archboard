@@ -5,11 +5,11 @@
 // ghosts. No pane at all is the normal state of a headless server, not an
 // error.
 
-import type { parseBoardKey } from "@archboard/board/address";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { parsePaneKey } from "@archboard/model/legacy-address";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
-type BoardIdentity = ReturnType<typeof parseBoardKey>;
+type LegacyIdentity = ReturnType<typeof parsePaneKey>;
 
 /** A rectangle in page coordinates. */
 interface Rect {
@@ -22,10 +22,10 @@ interface Rect {
 /**
  * What one pane tells the server about itself.
  *
- * The pane reports the board key it *adopted*, never the server's idea of what
+ * The pane reports the model key it *adopted*, never the server's idea of what
  * it should be holding. That is what makes this report a description of the
  * scene rather than a restatement of server state: if a pane were somehow
- * rendering a board the server did not think it had, this would say so.
+ * rendering a model the server did not think it had, this would say so.
  */
 interface PaneRegistration {
 	/** The pane's identity to the server: also its websocket and selection key. */
@@ -33,17 +33,17 @@ interface PaneRegistration {
 	/** Stable within the tab, and what the human sees on the pane tab. */
 	paneId: string;
 	/**
-	 * The vault this pane shows boards of: the directory it named when its socket
-	 * connected (ADR 0049). A board key means a board of this vault and no other.
+	 * The vault this pane shows models of: the directory it named when its socket
+	 * connected (ADR 0049). A model key means a model of this vault and no other.
 	 */
 	vault: string;
 	/**
-	 * Board key, e.g. `payments` or `payments@option-a`; null when the pane is
-	 * showing no board. A pane exists as long as its socket does, whether or not
-	 * there is anything on it — a fresh vault holds no board, and a pane that
+	 * Model key, e.g. `payments` or `payments@option-a`; null when the pane is
+	 * showing no model. A pane exists as long as its socket does, whether or not
+	 * there is anything on it — a fresh vault holds no model, and a pane that
 	 * could not register until one existed could never be shown the first one.
 	 */
-	board: string | null;
+	paneKey: string | null;
 	/** Is this the first pane in reading order, the one that speaks for the tab? */
 	primary: boolean;
 	/** Is this the pane the user last interacted with? */
@@ -82,7 +82,7 @@ interface PaneReading {
 	moreSelected: number;
 	/** One phrase, e.g. `2 nodes — "Gateway", "Payments"`. */
 	summary: string;
-	/** The board version the pane drew, or null. */
+	/** The model version the pane drew, or null. */
 	version: number | null;
 	at: string | null;
 }
@@ -96,11 +96,11 @@ interface PaneReport {
 	place: string;
 	focused: boolean;
 	primary: boolean;
-	/** The board it is showing, or null when it is showing none. */
-	board: string | null;
-	/** What that board is, or null when there is no board. */
-	identity: BoardIdentity | null;
-	/** The vault the board is in. */
+	/** The model it is showing, or null when it is showing none. */
+	paneKey: string | null;
+	/** What that model is, or null when there is no model. */
+	identity: LegacyIdentity | null;
+	/** The vault the model is in. */
 	vault: string;
 	/**
 	 * The repository the vault is in, by identity or an untracked vault's
@@ -143,8 +143,8 @@ interface PanesReport {
 	arrangement: Arrangement;
 	/** paneId of the pane the user last interacted with. */
 	focused: string | null;
-	/** Are all panes showing the same board? */
-	sameBoard: boolean;
+	/** Are all panes showing the same model? */
+	samePaneKey: boolean;
 	panes: PaneReport[];
 	summary: string;
 	text: string;
@@ -152,8 +152,8 @@ interface PanesReport {
 
 /** What the report needs from the server, without importing the server. */
 interface PaneContext {
-	/** The identity a board key spells. */
-	identity(board: string): BoardIdentity | null;
+	/** The identity a model key spells. */
+	identity(paneKey: string): LegacyIdentity | null;
 	/** What this pane last reported reading, or null when it has said nothing. */
 	reading(clientId: string): Omit<PaneReading, "moreSelected" | "summary"> | null;
 	/** The model reading this pane last reported, or null when it has reported none. */
@@ -338,7 +338,6 @@ export {
 	type PaneReport,
 	type PanesReport,
 	type PlacedPane,
-	type Rect,
 	MAX_IDS,
 	arrangementOf,
 	panesInOrder,

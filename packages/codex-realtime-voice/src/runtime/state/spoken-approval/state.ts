@@ -92,4 +92,4 @@ const EMPTY_SPOKEN_APPROVAL_SNAPSHOT: SpokenApprovalSnapshot = Object.freeze({
 });
 
 export { EMPTY_SPOKEN_APPROVAL_SNAPSHOT };
-export type { ActiveSlot, LiveGateState, TerminalGateState, TurnReadyControls };
+export type { ActiveSlot, TurnReadyControls };

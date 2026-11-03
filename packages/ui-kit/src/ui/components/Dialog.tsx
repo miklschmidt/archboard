@@ -1,6 +1,6 @@
 // A dialog with its parts on it. The official shadcn parts lay it out (`Dialog.Trigger`,
 // `Dialog.Content`, `Dialog.Header`, `Dialog.Title`, `Dialog.Description`, `Dialog.Footer`),
-// and the parts every settings and board dialog shares say what it is doing:
+// and the parts every settings and model dialog shares say what it is doing:
 // `Dialog.Busy` while a request is in flight, `Dialog.Error` for the host's failure and
 // `Dialog.Cancel` for the footer's dismissing action, and `Dialog.Technical` sets an identifier,
 // path, version or time in the mono face.

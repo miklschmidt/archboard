@@ -2,7 +2,6 @@ import { afterAll, expect, spyOn, test } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
 import { createPaneCore } from "#ui/state/pane-session/pane-core.ts";
-import { onSemanticBoardChange } from "#ui/state/semantic-board-canvas/board-changes.ts";
 import type { PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 GlobalRegistrator.register({ url: "http://localhost/" });
@@ -94,16 +93,14 @@ test("a reconnect becomes connected only after its unchanged pane is registered 
 		setConnected: (connected) => {
 			if (connected) accepted.resolve();
 		},
-		/** This fixture has no displayed board. */
-		setBoard: (): void => {},
-		/** This fixture makes no board navigation. */
+		/** This fixture has no displayed model. */
+		setModel: (): void => {},
+		/** This fixture makes no model navigation. */
 		setOpened: (): void => {},
-		/** This fixture makes no board navigation. */
+		/** This fixture makes no model navigation. */
 		arrived: (): void => {},
-		/** No board claim is involved. */
-		setHeldBy: (): void => {},
+		/** No model claim is involved. */
 		/** No agent activity is involved. */
-		setDoing: (): void => {},
 		/** The server never moves this pane to another vault. */
 		setVault: (): void => {},
 	});
@@ -151,7 +148,7 @@ function deliver(socket: ControlledSocket, message: Record<string, unknown>): vo
 /** The vault a pane opens in, and the vault of another checkout of its repository. */
 const LEFT_VAULT = "/work/archboard/.archboard/vault";
 const CHOSEN_VAULT = "/work/archboard-next/.archboard/vault";
-const PAYMENTS = { board: "payments", variant: "current" };
+const PAYMENTS = { model: "payments", variant: "current" };
 
 /** One call the pane made, held until the test answers it. */
 interface HeldCall {
@@ -163,7 +160,7 @@ interface HeldCall {
 /**
  * A pane in the left vault, connected and registered, showing `payments`, with
  * every call it makes held for the test to answer.
- * @returns The pane, its socket, its calls, and what it said of itself and its holder.
+ * @returns The pane, its socket, its calls, and and what it said of itself.
  */
 async function paneOnPayments() {
 	const calls: HeldCall[] = [];
@@ -181,7 +178,6 @@ async function paneOnPayments() {
 		),
 	);
 	const statuses: PaneStatus[] = [];
-	const holders: unknown[] = [];
 	const core = createPaneCore({
 		paneId: "A",
 		clientId: "A-mv01",
@@ -202,15 +198,6 @@ async function paneOnPayments() {
 			onStatus: (status): void => {
 				statuses.push(status);
 			},
-			/**
-			 * Record who the pane says holds its board.
-			 * @param _paneId The pane.
-			 * @param _board The board.
-			 * @param holder The holder.
-			 */
-			onHolder: (_paneId, _board, holder): void => {
-				holders.push(holder);
-			},
 		}),
 		/**
 		 * Read the fixture state.
@@ -221,15 +208,12 @@ async function paneOnPayments() {
 		/** Read from the published status instead. */
 		setConnected: (): void => {},
 		/** Read from the published status instead. */
-		setBoard: (): void => {},
+		setModel: (): void => {},
 		/** Read from the published status instead. */
 		setOpened: (): void => {},
 		/** Read from the published status instead. */
 		arrived: (): void => {},
-		/** Read from the holder listener instead. */
-		setHeldBy: (): void => {},
 		/** No agent activity is involved. */
-		setDoing: (): void => {},
 		/** Read from the published status instead. */
 		setVault: (): void => {},
 	});
@@ -239,8 +223,8 @@ async function paneOnPayments() {
 	await firstCall.promise;
 	calls[0]!.answer.resolve(registeredReply());
 	deliver(socket, {
-		type: "pane_board",
-		board: "payments",
+		type: "pane_place",
+		paneKey: "payments",
 		identity: PAYMENTS,
 		vault: LEFT_VAULT,
 		repository: "r",
@@ -250,7 +234,7 @@ async function paneOnPayments() {
 		core.dispose();
 		fetchMock.mockRestore();
 	}
-	return { core, socket, calls, statuses, holders, restore };
+	return { core, socket, calls, statuses, restore };
 }
 
 /**
@@ -262,13 +246,13 @@ function registeredReply(): Response {
 }
 
 /**
- * The server moves the pane to the chosen checkout of its repository, keeping its board.
+ * The server moves the pane to the chosen checkout of its repository, keeping its model.
  * @param socket The pane's socket.
  */
 function chooseOtherCheckout(socket: ControlledSocket): void {
 	deliver(socket, {
-		type: "pane_board",
-		board: "payments",
+		type: "pane_place",
+		paneKey: "payments",
 		identity: PAYMENTS,
 		vault: CHOSEN_VAULT,
 		repository: "r",
@@ -280,7 +264,7 @@ test("a pane moved into another checkout's vault reports there, and the answer f
 	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
 	const pane = await paneOnPayments();
 	try {
-		// The report of arriving on the board is still unanswered when the
+		// The report of arriving on the model is still unanswered when the
 		// repository's chosen checkout changes and the server moves the pane.
 		chooseOtherCheckout(pane.socket);
 		expect(pane.calls.map((each) => each.vault)).toEqual([LEFT_VAULT, LEFT_VAULT, CHOSEN_VAULT]);
@@ -302,18 +286,18 @@ test("a pane moved into another checkout's vault reports there, and the answer f
 	}
 });
 
-test("a pane told only where it is takes its repository's new name and keeps its board", async () => {
+test("a pane told only where it is takes its repository's new name and keeps its model", async () => {
 	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
 	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
 	const pane = await paneOnPayments();
 	try {
 		const calls = pane.calls.length;
 		// The registry changed, and the name the repository goes by with it.
-		deliver(pane.socket, { type: "pane_board", vault: LEFT_VAULT, repository: "r-2" });
+		deliver(pane.socket, { type: "pane_place", vault: LEFT_VAULT, repository: "r-2" });
 		expect(pane.statuses.at(-1)).toMatchObject({
 			vault: LEFT_VAULT,
 			repository: "r-2",
-			boardKey: "payments",
+			paneKey: "payments",
 		});
 		// Nothing moved, so the pane has nothing new to report.
 		expect(pane.calls).toHaveLength(calls);
@@ -331,9 +315,9 @@ test("an answer from the vault a pane left that comes back before the move leave
 		pane.calls[1]!.answer.resolve(registeredReply());
 		await Bun.sleep(0);
 		deliver(pane.socket, {
-			type: "pane_board",
-			board: "ledger",
-			identity: { board: "ledger", variant: "current" },
+			type: "pane_place",
+			paneKey: "ledger",
+			identity: { model: "ledger", variant: "current" },
 			vault: LEFT_VAULT,
 			repository: "r",
 		});
@@ -346,28 +330,6 @@ test("an answer from the vault a pane left that comes back before the move leave
 		await Bun.sleep(0);
 		expect(pane.statuses.at(-1)).toMatchObject({ connected: true, registered: true });
 	} finally {
-		pane.restore();
-		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
-	}
-});
-
-test("news of a board is news of the vault the pane is in, before and after the server moves it", async () => {
-	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
-	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
-	const pane = await paneOnPayments();
-	const heard: string[] = [];
-	const stop = onSemanticBoardChange((vault) => {
-		heard.push(vault);
-	});
-	try {
-		deliver(pane.socket, { type: "board_note", semantic: true, board: "payments", version: 2 });
-		chooseOtherCheckout(pane.socket);
-		deliver(pane.socket, { type: "board_note", semantic: true, board: "payments", version: 7 });
-		// The server sends a pane only its own vault's news, so the board the
-		// canvas reads again is the one of the vault it moved to.
-		expect(heard).toEqual([LEFT_VAULT, CHOSEN_VAULT]);
-	} finally {
-		stop();
 		pane.restore();
 		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
 	}
@@ -404,16 +366,14 @@ function dialledTabSession(paneId: string): string | null {
 		workbenchSockets: null,
 		/** The socket is never opened here. */
 		setConnected: (): void => {},
-		/** This fixture has no displayed board. */
-		setBoard: (): void => {},
-		/** This fixture makes no board navigation. */
+		/** This fixture has no displayed model. */
+		setModel: (): void => {},
+		/** This fixture makes no model navigation. */
 		setOpened: (): void => {},
-		/** This fixture makes no board navigation. */
+		/** This fixture makes no model navigation. */
 		arrived: (): void => {},
-		/** No board claim is involved. */
-		setHeldBy: (): void => {},
+		/** No model claim is involved. */
 		/** No agent activity is involved. */
-		setDoing: (): void => {},
 		/** The server never moves this pane to another vault. */
 		setVault: (): void => {},
 	});

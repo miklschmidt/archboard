@@ -4,11 +4,11 @@ import {
 	exportArchitectureModel,
 	importArchitectureModel,
 	initializeArchitectureModel,
-} from "@archboard/board/store-write";
+} from "@archboard/model/store-write";
 import {
 	ArchitectureImportRequestSchema,
 	ArchitectureInitializationRequestSchema,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { respond } from "#server/routes/architecture/model-response.ts";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";

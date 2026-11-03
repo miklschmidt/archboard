@@ -38,7 +38,7 @@ pub enum Engine {
     Blocks,
 }
 
-/// A board drawn: laid out by the engine named, on a page fitted to it, with
+/// A picture drawn: laid out by the engine named, on a page fitted to it, with
 /// its crossings settled.
 ///
 /// `standings` keeps relationships that stand differently in a comparison on

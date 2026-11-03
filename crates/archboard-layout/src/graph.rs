@@ -1,5 +1,5 @@
 //! The measured graph a solve lays out, as the core builds it
-//! (`architecture::graph`): the board's containment, every card's and
+//! (`architecture::graph`): the picture's containment, every card's and
 //! container's measured size, every relationship's ends and label, and the
 //! layout options that carry the rest as text.
 
@@ -11,7 +11,7 @@ use serde::Deserialize;
 /// Layout options: text by name, in the order they were set.
 pub(crate) type Options = IndexMap<String, String>;
 
-/// A card, a container or the board.
+/// A card, a container or the picture.
 #[derive(Clone, Debug, Deserialize)]
 pub(crate) struct Node {
     pub id: String,

@@ -37,9 +37,6 @@ const ROW_GUTTER = 4;
 /** From the facts' right edge to the navigator's right edge. */
 const FACTS_INSET = 12;
 
-/** The smallest pointer target the shell allows; a chevron's reaches past its column. */
-const TARGET_SIZE = 24;
-
 /**
  * Where the disclosure column of a depth starts.
  * @param depth The depth, 0 at the top.
@@ -85,8 +82,6 @@ export {
 	NAME_GAP,
 	ROW_GUTTER,
 	ROW_HEIGHT,
-	TARGET_SIZE,
-	TREE_STEP,
 	disclosureX,
 	guideX,
 	markerX,

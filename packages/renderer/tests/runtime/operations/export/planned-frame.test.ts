@@ -1,21 +1,21 @@
 import { expect, test } from "bun:test";
-import { renderBoard } from "#runtime/operations/render.ts";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
-import type { DiagramBox } from "@archboard/board/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { renderLegacyBoard } from "#runtime/operations/render.ts";
+import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import type { DiagramBox } from "@archboard/model/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
 
 /**
- * One board holding the same content, built or not.
+ * One document holding the same content, built or not.
  * @param built Whether its variant is current.
- * @returns The board.
+ * @returns The document.
  */
-function boardOf(built: boolean) {
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+function documentOf(built: boolean) {
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
-		id: "board",
+		id: "document",
 		name: "Ingest",
 		level: "system",
 		version: 1,
@@ -40,13 +40,17 @@ function boardOf(built: boolean) {
 }
 
 /**
- * Draw a board by its bare name.
+ * Draw a document by its bare name.
  * @param built Whether its variant is current.
  * @returns The drawn reply.
  */
 async function drawn(built: boolean) {
-	const outcome = await renderBoard(boardOf(built), { theme: "light" }, DEFAULT_SEMANTIC_POLICY);
-	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");
+	const outcome = await renderLegacyBoard(
+		documentOf(built),
+		{ theme: "light" },
+		DEFAULT_SEMANTIC_POLICY,
+	);
+	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn document");
 	return outcome.reply;
 }
 
@@ -60,7 +64,7 @@ function offset(a: DiagramBox, b: DiagramBox): readonly number[] {
 	return [b.x - a.x, b.y - a.y];
 }
 
-test("a board nothing is built of is framed as planned, its atlas moved with its drawing", async () => {
+test("a document nothing is built of is framed as planned, its atlas moved with its drawing", async () => {
 	const built = await drawn(true);
 	const planned = await drawn(false);
 
@@ -81,7 +85,7 @@ test("a board nothing is built of is framed as planned, its atlas moved with its
 	}
 
 	// A line read back off the framed drawing stands where the atlas moved it, so the
-	// drawn checks compare a planned board's routes with its cards in one frame.
+	// drawn checks compare a planned document's routes with its cards in one frame.
 	const before = routeEnds(built.svg).get("put")!;
 	const after = routeEnds(planned.svg).get("put")!;
 	expect([after.x - before.x, after.y - before.y]).toEqual([...shift]);

@@ -16,15 +16,15 @@ import { randomUUID } from "node:crypto";
 
 import { PANE_MS } from "@archboard/timing";
 import {
-	paneBoardOf,
+	paneKeyOfClient,
 	panes,
 	sendToPane,
-	sendBoardlessToPane,
+	sendKeylessToPane,
 } from "#server/services/panes/registry.ts";
 import { semanticPaneContextFor } from "#server/services/panes/context.ts";
-import type { PanePresentRequestSchema } from "@archboard/board/pane-context";
+import type { PanePresentRequestSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 
 type SemanticPanePresentation = NonNullable<
 	z.infer<typeof SemanticPaneContextSchema>["presentation"]
@@ -34,14 +34,12 @@ type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
 
 /** Why a pane could not be shown the step it was asked for. */
 type PresentRefusal =
-	/** No live pane has that id, or it is showing no board. */
+	/** No live pane has that id, or it is showing no model. */
 	| "no_pane"
 	/** A later request for the same pane replaced this one. */
 	| "superseded"
 	/** A user stepped by hand or left while the step was on its way. */
 	| "person_took_over"
-	/** The pane never said the step arrived. */
-	| "timeout"
 	/** The server is stopping. */
 	| "stopping";
 
@@ -90,16 +88,16 @@ interface Pending {
 /** Where a live pane is, as the presentation port needs to know it. */
 interface PresentablePane {
 	readonly clientId: string;
-	/** The board key the pane is showing, which its socket messages are addressed by. */
-	readonly board: string | null;
+	/** The model key the pane is showing, which its socket messages are addressed by. */
+	readonly model: string | null;
 }
 
 /** What the port needs of the server around it. */
 interface PanePresentationParts {
 	/**
-	 * The live pane with that client id, showing a board.
+	 * The live pane with that client id, showing a model.
 	 * @param clientId The pane's client id.
-	 * @returns The pane, or null when it has gone or shows no board.
+	 * @returns The pane, or null when it has gone or shows no model.
 	 */
 	readonly paneFor: (clientId: string) => PresentablePane | null;
 	/**
@@ -199,6 +197,23 @@ function arrivedSince(
 }
 
 /**
+ * What to remember of a report. A step stays arrived when the camera moves on it
+ * again, as it does when the pane is resized: it is the same step, and a voice
+ * told it again would start it over.
+ * @param before Where the pane last said it was, or null.
+ * @param said Where it says it is now, or null.
+ * @returns The position to compare the next report with.
+ */
+function remembered(
+	before: SemanticPanePresentation | null,
+	said: SemanticPanePresentation | null,
+): SemanticPanePresentation | null {
+	return said !== null && before?.arrived === true && sameStep(before, said)
+		? { ...said, arrived: true }
+		: said;
+}
+
+/**
  * Settle a request the pane's report answers, and note when the pane has taken it up.
  * @param waiting The unanswered request, or undefined when the pane was sent none.
  * @param said Where the pane says its presentation is, or null.
@@ -246,9 +261,10 @@ function awaitAnswer(
 	const { pending } = ledger;
 	const request = `present:${randomUUID()}`;
 	return new Promise<PresentOutcome>((resolve) => {
-		const timer = setTimeout(() => {
-			settle({ kind: "refused", reason: "timeout" });
-		}, PANE_MS.presentationArrival);
+		// A slow pane keeps its request, so only a pane that has gone ends the wait.
+		const watch = setInterval(() => {
+			if (parts.paneFor(clientId) === null) settle({ kind: "refused", reason: "no_pane" });
+		}, PANE_MS.presentationPaneCheck);
 		/**
 		 * End the wait once, whoever ends it.
 		 * @param outcome How it ended.
@@ -258,7 +274,7 @@ function awaitAnswer(
 				return;
 			}
 			pending.delete(clientId);
-			clearTimeout(timer);
+			clearInterval(watch);
 			resolve(outcome);
 		}
 		pending.set(clientId, {
@@ -299,7 +315,7 @@ function refuseTakenOver(waiting: Pending | undefined): void {
 function noteReport(ledger: PresentationLedger, report: SemanticPaneContext): void {
 	const said = report.presentation ?? null;
 	const before = ledger.lastSaid.get(report.clientId) ?? null;
-	ledger.lastSaid.set(report.clientId, said);
+	ledger.lastSaid.set(report.clientId, remembered(before, said));
 	const waiting = ledger.pending.get(report.clientId);
 	if (settledBy(waiting, said) || !movedByPerson(before, said)) {
 		return;
@@ -387,7 +403,7 @@ const panePresentations = createPanePresentations({
 	// browser, "the only pane on screen" is not that pane once it has gone, and a second
 	// browser's pane of the same shell id is not it either.
 	/**
-	 * The live pane with that client id, showing a board.
+	 * The live pane with that client id, showing a model.
 	 * @param clientId The pane's client id.
 	 * @returns The pane, or null.
 	 */
@@ -395,9 +411,9 @@ const panePresentations = createPanePresentations({
 		const pane = panes.get(clientId);
 		if (pane === undefined) return null;
 		const architecture = semanticPaneContextFor(clientId)?.architecture;
-		if (architecture?.vault === pane.vault) return { clientId, board: null };
-		const board = paneBoardOf(clientId);
-		return board === null ? null : { clientId, board };
+		if (architecture?.vault === pane.vault) return { clientId, model: null };
+		const model = paneKeyOfClient(clientId);
+		return model === null ? null : { clientId, model };
 	},
 	/**
 	 * Send one request down a pane's socket.
@@ -406,17 +422,9 @@ const panePresentations = createPanePresentations({
 	 * @returns Whether a live socket took it.
 	 */
 	send: (pane, message) =>
-		pane.board === null
-			? sendBoardlessToPane(pane.clientId, message)
-			: sendToPane(pane.clientId, message, pane.board),
+		pane.model === null
+			? sendKeylessToPane(pane.clientId, message)
+			: sendToPane(pane.clientId, message, pane.model),
 });
 
-export {
-	createPanePresentations,
-	panePresentations,
-	type PanePresentations,
-	type UserPresentationChange,
-	type PresentInput,
-	type PresentOutcome,
-	type PresentRefusal,
-};
+export { createPanePresentations, panePresentations, type UserPresentationChange };

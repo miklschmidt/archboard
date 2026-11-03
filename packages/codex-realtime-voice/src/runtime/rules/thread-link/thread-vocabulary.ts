@@ -107,14 +107,6 @@ function isAllowedThreadLinkSource(value: unknown): value is ThreadLinkAllowedSo
 }
 
 /**
- * The sources a link may execute against, in listing order.
- * @returns The allowed sources.
- */
-function allowedThreadLinkSources(): readonly ThreadLinkAllowedSource[] {
-	return ALLOWED_SOURCES;
-}
-
-/**
  * Whether a value is any source the contract can describe, including custom and sub-agent forms.
  * @param value The source.
  * @returns True for a recognised source.
@@ -221,7 +213,6 @@ function statusReason(status: ThreadLinkStatus): ThreadLinkReason | null {
 export {
 	ALLOWED_SOURCES,
 	REASON_PRECEDENCE,
-	allowedThreadLinkSources,
 	authoredReason,
 	invalidResult,
 	isAllowedThreadLinkSource,
@@ -229,7 +220,6 @@ export {
 	isExecutableThreadLinkStatus,
 	isNonEmptyString,
 	isRecord,
-	isThreadLinkSource,
 	isThreadLinkStatus,
 	observedDirectInput,
 	sourceOf,

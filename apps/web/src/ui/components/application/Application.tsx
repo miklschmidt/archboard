@@ -1,4 +1,4 @@
-import { ModelArrivalContext } from "#ui/state/board-routing/model-arrival.ts";
+import { ModelArrivalContext } from "#ui/state/reading-routing/model-arrival.ts";
 // The application root: the pane sessions, the listing, the notices, the
 // workbench and the presentation composed over the shell. The sessions, the
 // transport, the runtime and the controllers are the state; this file only
@@ -45,16 +45,16 @@ import { conversationActivation } from "#ui/clients/application/shown-conversati
 import { useWorkbench, type Workbench } from "#ui/hooks/application/use-workbench.ts";
 import { useWorkspaceAddressing } from "#ui/hooks/application/use-workspace-addressing.ts";
 import { useBesideOpening } from "#ui/hooks/application/use-beside-opening.ts";
-import { BoardCatalogProvider } from "#ui/components/board-catalog/BoardCatalogProvider.tsx";
+import { ModelCatalogProvider } from "#ui/components/model-catalog/ModelCatalogProvider.tsx";
 import {
 	useModelCatalog,
 	type ModelCatalog,
 } from "#ui/hooks/architecture-model/use-model-catalog.ts";
-import { useOpeningAddress } from "#ui/hooks/board-routing/use-opening-address.ts";
-import { useLastReading, useStart } from "#ui/hooks/board-routing/use-start.ts";
-import { type WorkspaceAddressing } from "#ui/hooks/board-routing/use-workspace-address.ts";
+import { useOpeningAddress } from "#ui/hooks/reading-routing/use-opening-address.ts";
+import { useLastReading, useStart } from "#ui/hooks/reading-routing/use-start.ts";
+import { type WorkspaceAddressing } from "#ui/hooks/reading-routing/use-workspace-address.ts";
 import { Tooltip } from "@archboard/ui-kit/components";
-import { boardAddressOf, boardKeyFor } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import { paneAddressOf, paneKeyFor } from "#ui/rules/canvas/reading/address.ts";
 import { RecordingStage } from "#ui/components/walkthrough-recording/RecordingStage.tsx";
 import { OrbStageProvider, VoiceSurfaceProvider } from "@archboard/workbench/voice";
 import { AgentDockSlot, AgentPanelSlot } from "#ui/components/application/AgentSurfaceSlots.tsx";
@@ -62,8 +62,8 @@ import { PresentationVoiceKey } from "#ui/components/application/PresentationVoi
 import { SettingsHosts } from "#ui/components/application/SettingsHosts.tsx";
 import { StartShell } from "#ui/components/application/StartShell.tsx";
 import { Shell } from "#ui/components/shell/Shell.tsx";
-import { searchOfRepository } from "#ui/rules/board-routing/search.ts";
-import type { OpenStart } from "#ui/rules/board-routing/start.ts";
+import { searchOfRepository } from "#ui/rules/reading-routing/search.ts";
+import type { OpenStart } from "#ui/rules/reading-routing/start.ts";
 import { ModelDraftContext } from "#ui/state/architecture-model/draft.ts";
 import { useRouter } from "@tanstack/react-router";
 import {
@@ -240,7 +240,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	const paneReadings = usePaneReadings();
 	const [addressBinding] = useState(() => new LiveBinding<WorkspaceAddressing>());
 	const addressing = useMemo(() => addressingOver(addressBinding), [addressBinding]);
-	// Choosing a way of reading a board is the person's own move, so it is
+	// Choosing a way of reading a model is the person's own move, so it is
 	// announced and the address bar keeps it.
 	const readings = useMemo(
 		() => announcingViews(paneReadings, addressing),
@@ -330,8 +330,8 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		() => ({ ...composed, openBeside }),
 		[composed, openBeside],
 	);
-	// Which variant of its board a pane shows is part of the board key, so
-	// asking for another one is asking the shell to show a different board. It
+	// Which variant of its model a pane shows is part of the model key, so
+	// asking for another one is asking the shell to show a different model. It
 	// reads the records and the actions when it is asked, so one identity serves
 	// every render: a pane's news changes both, and a pane must not be rebuilt for it.
 	const [variantSources] = useState(
@@ -341,11 +341,11 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	const onVariantChange = useCallback(
 		(paneId: string, variant: string | null): void => {
 			const { records, actions: shell } = variantSources.read();
-			const address = boardAddressOf(recordFor(records, paneId).status.boardKey);
+			const address = paneAddressOf(recordFor(records, paneId).status.paneKey);
 			if (address !== null) {
 				// This pane, not whichever has focus: the person chose a variant of
-				// the board in front of them, and focus follows the pointer.
-				void shell.selectBoard(boardKeyFor(address.board, variant), paneId);
+				// the model in front of them, and focus follows the pointer.
+				void shell.selectModel(paneKeyFor(address.model, variant), paneId);
 			}
 		},
 		[variantSources],
@@ -354,9 +354,9 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	// each time they are: a pane is offered one function for as long as it lives.
 	const [actionsNow] = useState(() => new LiveBinding<ShellActions>());
 	actionsNow.bind(actions);
-	const selectBoard = useCallback(
+	const selectModel = useCallback(
 		(key: string, paneId: string, repository?: string): Promise<boolean> =>
-			actionsNow.read().selectBoard(key, paneId, repository),
+			actionsNow.read().selectModel(key, paneId, repository),
 		[actionsNow],
 	);
 	const selectPane = useCallback(
@@ -388,7 +388,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		readings,
 		reducedMotion,
 		onVariantChange,
-		openBoard: selectBoard,
+		openPaneKey: selectModel,
 		openingVault,
 		...recorded,
 	});
@@ -504,15 +504,15 @@ function ApplicationStart(): JSX.Element {
 }
 
 /**
- * The root component. The board cache is above everything that reads a board
+ * The root component. The model cache is above everything that reads a model
  * resource, and is made once for the life of the tab (TASK-167).
  * @returns The shell inside its providers, with the workbench.
  */
 function Application(): JSX.Element {
 	return (
-		<BoardCatalogProvider>
+		<ModelCatalogProvider>
 			<ApplicationStart />
-		</BoardCatalogProvider>
+		</ModelCatalogProvider>
 	);
 }
 

@@ -43,7 +43,7 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	await pollUntil(
 		() => modelDrawn(browser.eval.bind(browser)),
 		Boolean,
-		"the board to be drawn before the voice is looked at",
+		"the model to be drawn before the voice is looked at",
 		WAIT,
 	);
 	await browser.eval(WATCH);

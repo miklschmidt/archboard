@@ -1,9 +1,9 @@
-// Archboard's context changes, as the voice agent announces them (TASK-530.05): a board change
+// Archboard's context changes, as the voice agent announces them (TASK-530.05): a model change
 // that settled, and what a pane shows or has picked out. Each tab session has one semantic
 // publisher, which reads the change feed the tab hears and the pane reports of its panes; each
 // event it publishes is one `agent.announce`. What is Archboard's stays here: which changes are
 // news at all (the publisher drops a cosmetic one), the words a model is told (pane-news.ts),
-// whether a board is on screen, whether a narration stops for it, and a brief that went stale.
+// whether a model is on screen, whether a narration stops for it, and a brief that went stale.
 
 import type { ContextChange, TabSessionId } from "@archboard/codex-realtime-voice/server";
 import { checkoutOfVault } from "@archboard/workspace/vault";
@@ -34,7 +34,7 @@ interface TabCanvas {
 
 /**
  * What the coordinator and the voice are told of one event. The voice is told every piece of news
- * of a board on screen, and the coordinator what an agent outside the session did, since neither
+ * of a legacy board on screen, and the coordinator what an agent outside the session did, since neither
  * model asked for it.
  * @param news The pane news, or null when nothing of the event was the user's or an outside agent's.
  * @param canvas What the canvas holds.
@@ -45,7 +45,7 @@ function heard(
 	canvas: CoordinatorCallbackCanvas,
 ): Pick<ContextChange, "coordinator" | "voice"> {
 	if (news === null) return { voice: { withheld: "agent" } };
-	if (news.board !== null && !canvas.boards.includes(news.board)) {
+	if (news.model !== null && !canvas.models.includes(news.model)) {
 		return { voice: { withheld: "not_shown" } };
 	}
 	return {
@@ -55,14 +55,14 @@ function heard(
 }
 
 /**
- * The change one settled board change announces to one tab session: the brief to the workhorse of
- * the board's checkout, and the news to the coordinator and the voice.
+ * The change one settled model change announces to one tab session: the brief to the workhorse of
+ * the model's checkout, and the news to the coordinator and the voice.
  * @param event The settled change, as the tab's publisher built it.
  * @param tab The tab session and its canvas.
  * @returns The change.
  */
-function boardChangeAnnouncement(event: SettledSemanticChangeEvent, tab: TabCanvas): ContextChange {
-	const checkouts = [checkoutOfVault(event.board.vault)];
+function modelChangeAnnouncement(event: SettledSemanticChangeEvent, tab: TabCanvas): ContextChange {
+	const checkouts = [checkoutOfVault(event.model.vault)];
 	return {
 		feed: event.change.feedId,
 		sequence: event.change.cursor.sequence,
@@ -186,7 +186,7 @@ function createArchboardAnnouncements(
 		 */
 		const tab = (): TabCanvas => ({ id, canvas: options.canvas(id) });
 		publisher.subscribeSettledChange((event) => {
-			tell(() => boardChangeAnnouncement(event, tab()));
+			tell(() => modelChangeAnnouncement(event, tab()));
 		});
 		/**
 		 * Announce one pane report.
@@ -235,9 +235,4 @@ function createArchboardAnnouncements(
 	});
 }
 
-export {
-	boardChangeAnnouncement,
-	createArchboardAnnouncements,
-	paneAnnouncement,
-	type ArchboardAnnouncements,
-};
+export { modelChangeAnnouncement, createArchboardAnnouncements, paneAnnouncement };

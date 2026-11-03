@@ -21,7 +21,7 @@ Read [canonical models](references/canonical-models.md) before the first archite
 Read [canonical walkthroughs](references/canonical-walkthroughs.md) before authoring or recording a narrative.
 If a vault returns `LEGACY_AUTHORITY`, read [legacy migration](references/legacy-migration.md).
 That refusal requires explicit identity choices and owner-authorized installation.
-Do not rewrite original files or resume retired board commands.
+Do not rewrite original files or resume the retired `board` commands.
 
 ## Discover the model
 

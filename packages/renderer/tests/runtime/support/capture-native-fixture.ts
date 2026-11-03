@@ -1,11 +1,11 @@
 // Writes the fixture of the core's native render test
-// (`crates/archboard-render/tests/native.rs`): one corpus board drawn by the
+// (`crates/archboard-render/tests/native.rs`): one corpus document drawn by the
 // WebAssembly core, with the request this host wrote, the icons the core was
 // given, and the document the core wrote. The native test draws the same
 // request with a native build of the core, Graphviz included, and holds it to
 // the same document.
 //
-// Each solve runs here, one at a time, with the core's `layOutBoard`, as a
+// Each solve runs here, one at a time, with the core's `layOutPicture`, as a
 // layout worker runs it; a solve's answer depends on its graph alone, so the
 // document is the one the worker pool draws.
 //
@@ -13,8 +13,8 @@
 //   bun packages/renderer/tests/runtime/support/capture-native-fixture.ts
 
 import { readFileSync, writeFileSync } from "node:fs";
-import { projectModel } from "@archboard/board/content";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { projectModel } from "@archboard/model/content";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import { iconPaths } from "#runtime/operations/icon-paths.ts";
 import { loadCore } from "#runtime/services/core.ts";
 import { THEME_STYLESHEET } from "#runtime/store/assets.ts";
@@ -47,7 +47,7 @@ installRendererHost({
 			});
 		},
 	}),
-	solve: async (graph) => core.layOutBoard(graph),
+	solve: async (graph) => core.layOutPicture(graph),
 	themeColors: readThemeColors(readFileSync(THEME_STYLESHEET, "utf8")),
 	iconPaths,
 });

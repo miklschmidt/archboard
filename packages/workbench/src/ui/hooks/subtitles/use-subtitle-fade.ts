@@ -98,4 +98,4 @@ function useSubtitleFade(cue: SpokenCue | null): SubtitleFade {
 	return { shown: cue ?? kept.shown, replaced: kept.replaced };
 }
 
-export { useSubtitleFade, type SubtitleFade };
+export { useSubtitleFade };

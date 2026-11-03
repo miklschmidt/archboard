@@ -1,6 +1,6 @@
 // Measuring badge attachment, occlusion and whitespace on actual rendered routes.
 
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import {
 	boxesOverlap,

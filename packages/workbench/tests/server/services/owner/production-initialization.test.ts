@@ -53,7 +53,7 @@ describe("production Codex storage", () => {
 			);
 			expect(existsSync(join(coordinator, ".archboard"))).toBe(false);
 			// So a command the coordinator runs without -C finds no vault and is refused, rather than
-			// read the boards of a checkout it does not work in.
+			// read the models of a checkout it does not work in.
 			expect(await findVault({ directory: null, cwd: coordinator })).toMatchObject({
 				ok: false,
 				code: "VAULT_NOT_FOUND",

@@ -35,7 +35,7 @@ import {
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { lockupMarkup } from "./lockup.ts";
 
-/** The board and the proposal the banner shows. */
+/** The model and the proposal the banner shows. */
 const MODEL = "Shop";
 const PROPOSAL = "Queued fulfilment";
 /** Its identity, because the shelved first draft of the example still holds the name as a former one. */

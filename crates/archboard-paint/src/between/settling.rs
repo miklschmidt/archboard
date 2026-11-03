@@ -4,7 +4,7 @@ use super::testing::{card, line, rect, scene};
 use super::{Between, Entrance, PHASES};
 use archboard_scene::scene::{Group, Item, Role, Scene};
 
-fn board() -> Scene {
+fn picture() -> Scene {
     let pulses = Group::new(Role::Traffic("e".to_owned()), Vec::new());
     scene(
         vec![
@@ -18,7 +18,7 @@ fn board() -> Scene {
 
 #[test]
 fn an_entrance_finishes_the_rim_and_pulse_fade_after_the_last_line() {
-    let scene = board();
+    let scene = picture();
     let entrance = Entrance::new(&scene, &PHASES, None);
     let after_line = PHASES.entry.draw_end + PHASES.entry.pulse_span / 2.0;
     assert!(entrance.length() > after_line);
@@ -40,7 +40,7 @@ fn an_entrance_finishes_the_rim_and_pulse_fade_after_the_last_line() {
 
 #[test]
 fn a_carry_finishes_the_rim_after_the_last_line() {
-    let scene = board();
+    let scene = picture();
     let between = Between::new(
         &super::testing::scene(Vec::new(), &[]),
         &scene,

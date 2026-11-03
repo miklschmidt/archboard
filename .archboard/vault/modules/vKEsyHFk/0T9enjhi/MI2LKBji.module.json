@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/store/model-history-news.ts"
+    "path": "packages/model/src/runtime/store/model-history-news.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#MI2LKBji",
@@ -43,7 +43,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-history-news.ts",
+        "path": "packages/model/src/runtime/store/model-history-news.ts",
         "symbol": "advanceObservation"
       },
       "id": "vKEsyHFk/0T9enjhi#E7MfWknr",
@@ -56,7 +56,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-history-news.ts",
+        "path": "packages/model/src/runtime/store/model-history-news.ts",
         "symbol": "completions"
       },
       "id": "vKEsyHFk/0T9enjhi#1H1Ks46q",
@@ -69,7 +69,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-history-news.ts",
+        "path": "packages/model/src/runtime/store/model-history-news.ts",
         "symbol": "openObservation"
       },
       "id": "vKEsyHFk/0T9enjhi#zRILT0vc",
@@ -82,7 +82,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-history-news.ts",
+        "path": "packages/model/src/runtime/store/model-history-news.ts",
         "symbol": "openObservation"
       },
       "id": "vKEsyHFk/0T9enjhi#iKreIhYm",

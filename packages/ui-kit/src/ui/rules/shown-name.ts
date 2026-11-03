@@ -26,4 +26,4 @@ function shownRepository(identity: string): ShownRepository {
 	return { name: identity.slice(host[0].length), onGitHub: true };
 }
 
-export { shownRepository, type ShownRepository };
+export { shownRepository };

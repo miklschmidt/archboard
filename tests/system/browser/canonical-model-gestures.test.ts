@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { cpSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -20,7 +20,7 @@ const WAIT = { timeoutMs: 10_000 } as const;
 
 async function cameraTransform(browser: AgentBrowserSession): Promise<string> {
 	return browser.eval<string>(
-		`document.querySelector('[data-slot="model-diagram"] [data-slot="semantic-board-surface"]')?.style.transform ?? ''`,
+		`document.querySelector('[data-slot="model-diagram"] [data-slot="canvas-surface"]')?.style.transform ?? ''`,
 	);
 }
 
@@ -185,7 +185,7 @@ test("a double click opens a card", async () => {
 	const takers = await pollUntil(
 		() =>
 			browser.eval<number | null>(`(() => {
-				const surface = document.querySelector('[data-slot="semantic-board-surface"][data-painter]');
+				const surface = document.querySelector('[data-slot="canvas-surface"][data-painter]');
 				if (surface === null) return null;
 				const box = surface.getBoundingClientRect();
 				const places = Array.from({ length: 64 }, (_, index) => [
@@ -200,6 +200,25 @@ test("a double click opens a card", async () => {
 		WAIT,
 	);
 	expect(takers).toBe(0);
+	const address = await browser.eval<string>("window.location.search");
+	await browser.eval(
+		`document.querySelector('[data-slot="model-diagram"]').dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: true }))`,
+	);
+	await pollUntil(
+		() =>
+			browser.eval<string>(
+				`getComputedStyle(document.querySelector('[data-slot="model-diagram"]')).cursor`,
+			),
+		(cursor) => cursor === "grab",
+		"the Space hand before a double click",
+		WAIT,
+	);
+	await browser.run(["dblclick", card]);
+	expect(await selectedIds(browser)).toEqual([]);
+	expect(await browser.eval<string>("window.location.search")).toBe(address);
+	await browser.eval(
+		`document.querySelector('[data-slot="model-diagram"]').dispatchEvent(new KeyboardEvent('keyup', { key: ' ', code: 'Space', bubbles: true }))`,
+	);
 	await browser.run(["dblclick", card]);
 	await settledOn(browser, "Shop#Gateway");
 }, 30_000);

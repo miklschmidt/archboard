@@ -122,7 +122,7 @@ change must be one the update means to make.
 
 [vello_encoding](https://github.com/linebender/vello) holds the buffer sizes of
 Vello, which paints the browser canvas
-([ADR 0071](../../docs/adr/0071-vello-paints-the-board-canvas-and-motion-lives-in-the-painter.md)).
+([ADR 0071](../../docs/adr/0071-vello-paints-the-canvas-and-motion-lives-in-the-painter.md)).
 
 - Crate: `vello_encoding`, through `[patch.crates-io]` in the root `Cargo.toml`.
 - Source: its crates.io archive of version 0.11.0. The commit that imports it

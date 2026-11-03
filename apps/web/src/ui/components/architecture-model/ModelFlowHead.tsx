@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { ModelFlow } from "@archboard/board/content";
+import type { ModelFlow } from "@archboard/model/content";
 import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";
 import { ModelSwitch } from "#ui/components/architecture-model/ModelSwitch.tsx";
 

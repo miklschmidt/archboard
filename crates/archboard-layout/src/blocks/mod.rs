@@ -3,7 +3,7 @@
 //! router drawing their lines, and a block of blocks packed with the trunks
 //! between them routed round them (`packing`). Drawn as blocks, every
 //! container and group region is a block; drawn inline (Track), only the
-//! board, every group region packed whole and every column a block folds
+//! picture, every group region packed whole and every column a block folds
 //! into are, and every other container and region is a cluster of the block
 //! that lays it out (`tree.rs`).
 

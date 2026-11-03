@@ -33,7 +33,7 @@ const originalEmit = WebSocketServer.prototype.emit as Emit;
 			if (typeof data === "string") {
 				try {
 					const message = JSON.parse(data) as { type?: unknown };
-					if (message.type === "pane_board") {
+					if (message.type === "pane_place") {
 						initialSendCount += 1;
 						appendFileSync(
 							logPath,

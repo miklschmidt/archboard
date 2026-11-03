@@ -6,7 +6,7 @@ import { afterAll, afterEach } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import type { Root } from "react-dom/client";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import type {
 	ShellActions,
 	ShellPane,
@@ -93,7 +93,7 @@ interface Asked {
 	readonly chosen: string[];
 }
 
-/** The workspace a test states: the shop's boards and activity, or every repository itself. */
+/** The workspace a test states: the shop's models and activity, or every repository itself. */
 interface Workspace extends Partial<ShellView> {
 	readonly model?: Model["manifest"];
 	readonly agentActivity?: Readonly<Record<string, AgentActivityEntry>>;
@@ -118,10 +118,10 @@ function viewOf(workspace: Workspace): ShellView {
 	return {
 		theme: "light",
 		repositories: [repositoryOf(ready(SHOP, SHOP_VAULT), model, agentActivity)],
-		boardsError: null,
-		boardsLoading: false,
+		modelsError: null,
+		modelsLoading: false,
 		choosing: false,
-		selectedBoardKey: null,
+		selectedPaneKey: null,
 		panes: [pane("A", null)],
 		activePaneId: "A",
 		presentation: null,
@@ -151,21 +151,21 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 			return Promise.resolve(true);
 		},
 		/**
-		 * Record a board opened in the active pane.
-		 * @param key The board key.
+		 * Record a model opened in the active pane.
+		 * @param key The model key.
 		 * @param _paneId The pane, which the navigator never names.
-		 * @param repository The repository the board is in.
+		 * @param repository The repository the model is in.
 		 * @returns That the pane shows it.
 		 */
-		selectBoard: (key, _paneId, repository) => {
+		selectModel: (key, _paneId, repository) => {
 			asked.selected.push(key);
 			asked.opened.push(`${repository}|${key}`);
 			return Promise.resolve(true);
 		},
 		/**
-		 * Record a board opened beside.
-		 * @param key The board key.
-		 * @param repository The repository the board is in.
+		 * Record a model opened beside.
+		 * @param key The model key.
+		 * @param repository The repository the model is in.
 		 */
 		openBeside: (key, repository) => {
 			asked.beside.push(key ?? repository);
@@ -179,7 +179,7 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 		chooseCheckout: (repository, checkout) => {
 			asked.chosen.push(`${repository}|${checkout}`);
 		},
-		refreshBoards: ignore,
+		refreshModels: ignore,
 		selectPane: ignore,
 		addPane: ignore,
 		closePane: ignore,
@@ -192,7 +192,7 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 	const container = document.createElement("div");
 	document.body.append(container);
 	root = createRoot(container);
-	// A board's mark is its level's, drawn from the vault vocabulary the shell reads through its query cache.
+	// A model's mark is its level's, drawn from the vault vocabulary the shell reads through its query cache.
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	/**
 	 * Draw the shell over a view.
@@ -226,14 +226,14 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 /**
  * One local pane.
  * @param paneId The pane.
- * @param boardKey What it shows, or null.
+ * @param paneKey What it shows, or null.
  * @param repository The repository the server says it is in: the shop unless said.
  * @param vault The vault it is in: the shop's unless said.
  * @returns The pane.
  */
 function pane(
 	paneId: string,
-	boardKey: string | null,
+	paneKey: string | null,
 	repository: string | null = SHOP,
 	vault = SHOP_VAULT,
 ): ShellPane {
@@ -245,16 +245,12 @@ function pane(
 			registered: true,
 			vault,
 			repository,
-			boardKey,
-			opened: boardKey,
-			board: null,
+			paneKey,
+			opened: paneKey,
+			model: null,
 			view: null,
-			lastChangeAt: null,
-			doing: [],
-			version: null,
 		},
 		stage: null,
-		holder: null,
 	};
 }
 

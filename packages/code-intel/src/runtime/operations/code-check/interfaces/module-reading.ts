@@ -1,6 +1,6 @@
 // What a module exposes and how the files outside it use it (ADR 0044, ADR
 // 0046, TASK-368.10): the code's side of a container's interface, read once a
-// pass for each module, however many boards draw it.
+// pass for each module, however many documents draw it.
 //
 // A use is a reference in a file outside the module whose import leads into
 // it, followed through every re-export to its definition. A test exercises
@@ -69,7 +69,7 @@ interface TestImport {
 	readonly found: SyntaxFacts["imports"][number] & { readonly resolved: string };
 }
 
-/** The modules one pass has read, by repository and directory, so two boards share one reading. */
+/** The modules one pass has read, by repository and directory, so two documents share one reading. */
 type ModuleReadings = Map<string, Promise<ModuleReading | undefined>>;
 
 /**

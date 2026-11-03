@@ -446,4 +446,4 @@ function createLeaseOwner(owners: LeaseOwners, ledger?: BrowserSessionLeaseLedge
 }
 
 export { createSessionLeases };
-export type { LeaseOwner, SessionLeases };
+export type { SessionLeases };

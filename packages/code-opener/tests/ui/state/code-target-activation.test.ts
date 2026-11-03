@@ -32,14 +32,14 @@ function answering(body: unknown, status = 200): ReturnType<typeof mock> {
 
 /**
  * Activate a subject's code target, with a spy for what the person is told.
- * @param boardKey The board key the subject is on.
+ * @param paneKey The model key the subject is on.
  * @returns The spy.
  */
 function activate(
-	boardKey: string | null = "board-a",
+	paneKey: string | null = "board-a",
 ): ReturnType<typeof mock<(notice: CodeTargetNotice) => void>> {
 	const onNotice = mock((_notice: CodeTargetNotice) => undefined);
-	activateCodeTarget({ vault: VAULT, boardKey, elementId: "7c40IV7N", onNotice });
+	activateCodeTarget({ vault: VAULT, paneKey, elementId: "7c40IV7N", onNotice });
 	return onNotice;
 }
 
@@ -61,11 +61,11 @@ const SUCCESS = {
 const VAULT = "/work/archboard/.archboard/vault";
 
 describe("code-target activation", () => {
-	test("posts the board and the subject's identity, and a plain open tells nothing", async () => {
+	test("posts the model and the subject's identity, and a plain open tells nothing", async () => {
 		const fetchMock = answering(SUCCESS);
 
 		const onNotice = activate("system/payments");
-		// The browser states which board and which subject; the binding, the
+		// The browser states which model and which subject; the binding, the
 		// checkout registry and the opener are all the server's (ADR 0023).
 		expect(fetchMock).toHaveBeenCalledWith("/api/code-targets/open", {
 			method: "POST",
@@ -91,14 +91,14 @@ describe("code-target activation", () => {
 		});
 	});
 
-	test("refuses a pane that is on no board without reaching the server", () => {
+	test("refuses a pane that is on no model without reaching the server", () => {
 		const fetchMock = answering({});
 
 		const onNotice = activate(null);
 
 		expect(fetchMock).not.toHaveBeenCalled();
 		expect(onNotice.mock.calls[0]?.[0]).toMatchObject({
-			message: "No board is available for this code target.",
+			message: "No model is available for this code target.",
 		});
 	});
 

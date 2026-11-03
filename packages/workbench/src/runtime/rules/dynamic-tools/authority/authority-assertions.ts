@@ -264,13 +264,4 @@ function assertAuthorityShape(authority: AuthorityShape, role: "caller" | "targe
 	}
 }
 
-export {
-	assertAuthorityShape,
-	assertCallerState,
-	assertEpochOwnership,
-	assertExecutableLinkIdentity,
-	assertExecutableLinkProvenance,
-	assertLinkObservesRecord,
-	currentEpochMatches,
-	linkEvidenceMatches,
-};
+export { assertAuthorityShape, assertCallerState, linkEvidenceMatches };

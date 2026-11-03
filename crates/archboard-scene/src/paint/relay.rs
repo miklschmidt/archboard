@@ -1,7 +1,7 @@
-//! How a board's traffic keeps time (ADR 0027). A line carries a steady train
+//! How a picture's traffic keeps time (ADR 0027). A line carries a steady train
 //! of pulses; lines that keep the same time hand their pulses on through the
 //! card between them, held for the shorter way round its edge. Everything is a
-//! function of the board, so one board draws the same bytes every time.
+//! function of the picture, so one picture draws the same bytes every time.
 
 use std::collections::HashMap;
 

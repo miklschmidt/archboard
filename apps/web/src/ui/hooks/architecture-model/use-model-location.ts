@@ -1,9 +1,9 @@
 import { useCallback, useContext, useMemo } from "react";
 import { ModelExplanationContext } from "#ui/state/architecture-model/explanations.ts";
 import { useRouter, useRouterState } from "@tanstack/react-router";
-import { validateWorkspaceSearch } from "#ui/rules/board-routing/search.ts";
-import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
-import type { Model } from "@archboard/board/content";
+import { validateWorkspaceSearch } from "#ui/rules/reading-routing/search.ts";
+import type { ModelAddress } from "#ui/rules/reading-routing/address.ts";
+import type { Model } from "@archboard/model/content";
 import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
 import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
 
@@ -28,7 +28,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	});
 	const search = { ...bookmarkSearch(bookmarkReading, paneId), ...address };
 	const model = nullableParameter(search[`model${paneId}`]);
-	const board = nullableParameter(search[`pane${paneId}`]);
+	const paneKey = nullableParameter(search[`pane${paneId}`]);
 	const scope = nullableParameter(search[`scope${paneId}`]);
 	const checkpoint = nullableParameter(search[`checkpoint${paneId}`]);
 	const state = nullableParameter(search[`state${paneId}`]);
@@ -335,9 +335,8 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	return {
 		openRequested,
 		openRepository,
-		board,
 		openOriginal,
-		legacyAddress: legacyAddress ?? (model === null ? board : null),
+		legacyAddress: legacyAddress ?? (model === null ? paneKey : null),
 		selectLegacyAddress,
 		bookmark,
 		selectBookmark,

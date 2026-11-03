@@ -14,7 +14,7 @@ use crate::track::chains::{ChainId, Kind, Track};
 use crate::track::route::SceneLine;
 use crate::track::scene::{Item, ItemId, Map};
 
-/// A line held to a point of its card, with its place in the board.
+/// A line held to a point of its card, with its place in the picture.
 #[derive(Clone, Copy, Debug)]
 struct Held {
     chain: ChainId,

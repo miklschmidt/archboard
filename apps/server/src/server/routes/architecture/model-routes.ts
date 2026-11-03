@@ -10,12 +10,12 @@ import {
 	listArchitectureCheckpoints,
 	listArchitectureCheckpointRows,
 	readRetainedModule,
-} from "@archboard/board/store-read";
+} from "@archboard/model/store-read";
 import {
 	retainArchitectureCheckpoint,
 	initializeArchitectureArchive,
-} from "@archboard/board/store-write";
-import { ArchitectureCheckpointRequestSchema } from "@archboard/board/model";
+} from "@archboard/model/store-write";
+import { ArchitectureCheckpointRequestSchema } from "@archboard/model/contract";
 import { respond } from "#server/routes/architecture/model-response.ts";
 import { mountArchitectureEditRoutes } from "#server/routes/architecture/model-edit-routes.ts";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";

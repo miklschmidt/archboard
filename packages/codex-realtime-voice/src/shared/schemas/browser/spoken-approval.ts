@@ -406,12 +406,8 @@ function createBrowserSpokenApprovalSchema(identity: IdentitySchemas) {
 		.superRefine(validateSpokenApproval);
 }
 
-type BrowserSpokenApproval = z.infer<ReturnType<typeof createBrowserSpokenApprovalSchema>>;
-
 export {
-	BROWSER_SPOKEN_APPROVAL_STATES,
 	BROWSER_SPOKEN_APPROVAL_REASONS,
 	BROWSER_IDLE_SPOKEN_APPROVAL,
 	createBrowserSpokenApprovalSchema,
-	type BrowserSpokenApproval,
 };

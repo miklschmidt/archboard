@@ -146,20 +146,6 @@ function currentOperationBinding(
 	};
 }
 
-/**
- * Whether the transport has lost its child. A transport that refuses
- * inspection has already lost it.
- * @param transport The transport.
- * @returns True when it is not open.
- */
-function closedTransport(transport: CodexWorkbenchComponents["transport"]): boolean {
-	try {
-		return transport.inspect().state !== "open";
-	} catch {
-		return true;
-	}
-}
-
 /** The realtime generation, in the shape every callback owner correlates against. */
 interface RealtimeGenerationCorrelation {
 	readonly childId: CodexRealtimeGeneration["child"];
@@ -306,7 +292,6 @@ function publishProjection(owners: GenerationOwners): void {
 
 export {
 	allNamed,
-	closedTransport,
 	createGenerationOwnerStore,
 	currentOperationBinding,
 	currentRealtimeGeneration,
@@ -314,4 +299,4 @@ export {
 	publishProjection,
 	retire,
 };
-export type { GenerationOwners, GenerationOwnerStore, RealtimeGenerationCorrelation };
+export type { GenerationOwners };

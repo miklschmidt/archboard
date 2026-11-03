@@ -87,7 +87,7 @@ pub(super) fn arrowhead_marker(id: MarkerId, head: Head, weight: Emphasis, ink: 
     }
 }
 
-/// The subject kind a drawn line is: a flow step drawn on the board, or a relationship.
+/// The subject kind a drawn line is: a flow step drawn on the picture, or a relationship.
 fn line_kind(step: bool) -> SubjectKind {
     if step {
         SubjectKind::Step

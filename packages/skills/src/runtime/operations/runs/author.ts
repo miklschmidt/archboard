@@ -1,4 +1,4 @@
-import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
+import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules/outcomes/reading.ts";
 // One author run, start to finish: a private world, Flask at the pin, a
 // Archboard server of its own, the fixture laid, the skill installed and verified, a
 // snapshot, one Codex exec with the scenario's prompt, and then everything
@@ -35,7 +35,7 @@ import {
 	type GuidanceStanding,
 } from "#runtime/protocol/events.ts";
 import { checkoutFlask, emptyCheckout } from "#runtime/processes/flask.ts";
-import { countDirectBoardWrites, evaluateGuardrails } from "#runtime/rules/audit/guardrails.ts";
+import { countDirectVaultWrites, evaluateGuardrails } from "#runtime/rules/audit/guardrails.ts";
 import { installSkill, type InstallRecord } from "#runtime/operations/runs/install.ts";
 import {
 	authorConfigToml,
@@ -64,9 +64,9 @@ import {
 	readConfigurationText,
 	readPolicy,
 	readVault,
-	renderBoard,
+	renderLegacyBoard,
 	vaultDiagnostics,
-	writeBoards,
+	writeDocuments,
 	writeVaultConfiguration,
 } from "#runtime/operations/runs/vault.ts";
 
@@ -232,19 +232,19 @@ function statusOf(result: ProcessResult, failure: string | null): RunStatus {
  * Reads everything the checks need after the author ran.
  * @param world The world.
  * @param scenario The scenario.
- * @param snapshot The boards before the author.
+ * @param snapshot The documents before the author.
  * @param commands What the author ran, whose output holds any receipt a check reads.
  * @returns The reading.
  */
 async function readAfter(
 	world: RunWorld,
 	scenario: Scenario,
-	snapshot: ReadonlyMap<string, SemanticBoard>,
+	snapshot: ReadonlyMap<string, EvaluatedDocument>,
 	commands: readonly ClassifiedCommand[],
 ): Promise<Reading> {
-	const boards = await readVault(world.cli);
+	const documents = await readVault(world.cli);
 	const renders = await sequentially(renderRequests(scenario.outcomes), (request, index) =>
-		renderBoard(world.cli, request, path.join(world.paths.renders, `render-${index}.svg`)),
+		renderLegacyBoard(world.cli, request, path.join(world.paths.renders, `render-${index}.svg`)),
 	);
 	const inspections = await sequentially(inspectionRequests(scenario.outcomes), (request) =>
 		inspectGroup(world.cli, request),
@@ -253,11 +253,11 @@ async function readAfter(
 	// takes the picture, the author never supplies one.
 	const captures = await captureDeclared(
 		world.cli,
-		expandCaptures(scenario.captures, boards),
+		expandCaptures(scenario.captures, documents),
 		world.paths.captures,
 	);
 	return {
-		boards,
+		documents,
 		snapshot,
 		policy: readPolicy(world.paths.vault),
 		diagnostics: await vaultDiagnostics(world.cli),
@@ -304,7 +304,7 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 		);
 		await layFixture(world.cli, job.fixture, world.paths.flask, world.paths.home);
 		const snapshot = await readVault(world.cli);
-		writeBoards(snapshot, world.paths.snapshot);
+		writeDocuments(snapshot, world.paths.snapshot);
 		if (!job.fixture.registerRepo) await forgetCheckout(world.cli, world.paths.flask);
 		const configBefore = readConfigurationText(world.paths.vault);
 		const { result, argv } = await runAuthorProcess(job, world);
@@ -332,7 +332,7 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 			(file) => fs.existsSync(path.join(install.skillRoot, file)),
 		);
 		const reading = await readAfter(world, job.scenario, snapshot, commands);
-		writeBoards(reading.boards, world.paths.boards);
+		writeDocuments(reading.documents, world.paths.documents);
 		const completed = assemble(job, id, world, install, {
 			result,
 			argv,
@@ -383,14 +383,14 @@ function assemble(
 	const outcomes = evaluateOutcomes(job.scenario.outcomes, reading);
 	const guardrails = evaluateGuardrails(job.scenario.guardrails, {
 		snapshot: reading.snapshot,
-		boards: reading.boards,
+		documents: reading.documents,
 		configBefore: gathered.configBefore,
 		configAfter: readConfigurationText(world.paths.vault),
 		commands,
 		fileChanges: trace.fileChanges,
 		vault: world.paths.vault,
 	});
-	const directWrites = countDirectBoardWrites({
+	const directWrites = countDirectVaultWrites({
 		commands,
 		fileChanges: trace.fileChanges,
 		vault: world.paths.vault,
@@ -409,7 +409,7 @@ function assemble(
 		usage: trace.usage,
 		commands,
 		fileChanges: trace.fileChanges,
-		boards: reading.boards,
+		documents: reading.documents,
 		snapshot: reading.snapshot,
 		policy: reading.policy,
 		inspections: reading.inspections,
@@ -479,13 +479,13 @@ function assemble(
  * @returns Every declaration, including why an unavailable capture was not taken.
  */
 async function partialCaptures(job: RunJob, world: RunWorld | null): Promise<CaptureAttempt[]> {
-	let boards: ReadonlyMap<string, SemanticBoard> = new Map();
+	let documents: ReadonlyMap<string, EvaluatedDocument> = new Map();
 	if (world !== null && !job.signal.aborted) {
 		// An unreadable vault leaves every-view captures with no views to take;
 		// the named captures still record why they were not taken.
-		boards = await readVault(world.cli).catch(() => boards);
+		documents = await readVault(world.cli).catch(() => documents);
 	}
-	return sequentially(expandCaptures(job.scenario.captures, boards), async (declaration) => {
+	return sequentially(expandCaptures(job.scenario.captures, documents), async (declaration) => {
 		let detail = "the run failed before its server was ready";
 		if (job.signal.aborted) detail = "the run was cancelled";
 		else if (world !== null) {
@@ -554,7 +554,7 @@ async function failedRun(
 		usage: null,
 		commands: [],
 		fileChanges: [],
-		boards: new Map(),
+		documents: new Map(),
 		snapshot: new Map(),
 		policy: null,
 		inspections: [],
@@ -568,4 +568,4 @@ async function failedRun(
 	return run;
 }
 
-export { authorArgv, executeRun, statusOf, type RunJob };
+export { executeRun, type RunJob };

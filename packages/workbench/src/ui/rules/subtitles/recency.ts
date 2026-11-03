@@ -45,4 +45,4 @@ function subtitleShowing(progress: SubtitleProgress, watch: SubtitleWatch): bool
 	return progress.words > 0 && mark !== watch.from && mark !== watch.lapsed;
 }
 
-export { progressMark, subtitleShowing, type SubtitleProgress, type SubtitleWatch };
+export { progressMark, subtitleShowing, type SubtitleProgress };

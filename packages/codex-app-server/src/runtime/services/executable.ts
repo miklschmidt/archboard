@@ -297,9 +297,7 @@ function resolveCodexExecutable(options: CodexExecutableOptions = {}): string {
 
 export {
 	CODEX_EXECUTABLE_PROOF_MAX_BYTES,
-	type CodexExecutableOptions,
 	type VerifiedCodexExecutable,
-	type CodexExecutableFailureCode,
 	CodexExecutableError,
 	requireCheckoutLocal,
 	resolveCodexExecutable,

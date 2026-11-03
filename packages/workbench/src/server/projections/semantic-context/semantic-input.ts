@@ -51,9 +51,9 @@ function canonicalContextFromBrief(
 	return ArchboardContextSchema.parse({
 		schema: 1,
 		paneId,
-		board: {
-			name: brief.board.name,
-			key: brief.board.key,
+		model: {
+			name: brief.model.name,
+			key: brief.model.key,
 			version: brief.version ?? 0,
 			cursor: brief.cursor === null ? null : `${brief.cursor.feedId}:${brief.cursor.sequence}`,
 		},
@@ -79,7 +79,7 @@ function canonicalContextFromBrief(
 			capturedAtMs: brief.freshness.capturedAtMs,
 		},
 		// The summary, not the fitted list: a brief that had to drop its issues
-		// still says there are some, and an agent told `required` reads the board.
+		// still says there are some, and an agent told `required` reads the model.
 		reconciliation: {
 			required: brief.architecture.reconciliation.required,
 			count: brief.architecture.reconciliation.count,
@@ -247,7 +247,7 @@ function linkedIdentities(active: SemanticInputOwners | null): LinkedIdentities 
  * Build local agent input from canonical authority or its explicit migration refusal.
  * @param active The session owners.
  * @param vault The addressed vault.
- * @param _contextBoard The retained presentation address.
+ * @param _contextModel The retained presentation address.
  * @param cursor The current feed cursor.
  * @param pane The reporting pane.
  * @returns Canonical facts and session identities.
@@ -255,7 +255,7 @@ function linkedIdentities(active: SemanticInputOwners | null): LinkedIdentities 
 function semanticInputFor(
 	active: SemanticInputOwners | null,
 	vault: string,
-	_contextBoard: string,
+	_contextModel: string,
 	cursor: SemanticContextInput["cursor"],
 	pane: ContextPane,
 ): SemanticContextInput {

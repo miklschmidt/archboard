@@ -1,8 +1,8 @@
 import { aboutOf, releaseCapture, retireCapture } from "#server/services/explanations/capture.ts";
-import { panes, sendBoardlessToPane } from "#server/services/panes/registry.ts";
+import { panes, sendKeylessToPane } from "#server/services/panes/registry.ts";
 import { tabSessionOf } from "#server/services/panes/tab-sessions.ts";
 import { isDeepStrictEqual } from "node:util";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 import { CODEX_SESSION_MS } from "@archboard/timing";
 import type {
@@ -303,7 +303,7 @@ function announce(entry: Entry): void {
 	delete entry.announcing;
 	for (const pane of panes.values()) {
 		if (tabSessionOf(pane.clientId) === entry.invocation.tabSessionId)
-			sendBoardlessToPane(pane.clientId, { type: "architecture_explanations_changed" });
+			sendKeylessToPane(pane.clientId, { type: "architecture_explanations_changed" });
 	}
 }
 

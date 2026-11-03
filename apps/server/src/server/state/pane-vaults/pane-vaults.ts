@@ -1,6 +1,6 @@
 // Which vault a pane is in, when that changes (ADR 0050). A pane is in one
 // vault at a time, and the server moves it: a show of another repository's
-// board, or a new chosen checkout of the repository it shows. News about the
+// model, or a new chosen checkout of the repository it shows. News about the
 // machine rather than one vault goes to every tab.
 
 import { WebSocket } from "ws";
@@ -19,7 +19,7 @@ import {
  * Broadcast something to every admitted client of every vault: news about the
  * machine rather than about one vault, such as a repository's chosen checkout,
  * or a vault's account of agent work, which names its vault (ADR 0022).
- * @param message The boardless message.
+ * @param message The keyless message.
  */
 function broadcastEverywhere(message: WebSocketMessage): void {
 	const data = JSON.stringify(message);
@@ -37,7 +37,7 @@ function broadcastEverywhere(message: WebSocketMessage): void {
 
 /**
  * Move a pane into another vault (ADR 0050). The server decides which vault a
- * pane is in, as it decides which board it holds: a show into another
+ * pane is in, as it decides which model it holds: a show into another
  * repository moves it, and so does choosing another checkout of the repository
  * it shows. Its sockets carry the news of the new vault from now on, and its
  * registration says the new vault until the pane next reports. What it said it
@@ -63,13 +63,4 @@ function movePaneVault(clientId: string, vault: string): void {
 	forgetSemanticPaneContext(clientId);
 }
 
-/**
- * The panes in one vault, by client id, whether or not their socket is open now.
- * @param vault The vault.
- * @returns Their client ids.
- */
-function paneClientsOfVault(vault: string): string[] {
-	return [...paneVaults].flatMap(([clientId, held]) => (held === vault ? [clientId] : []));
-}
-
-export { broadcastEverywhere, movePaneVault, paneClientsOfVault };
+export { broadcastEverywhere, movePaneVault };

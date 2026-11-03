@@ -1,12 +1,12 @@
-import { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
+import { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
 import { statedJson } from "#cli/operations/model/input.ts";
 import { z } from "zod";
 import {
 	closePane,
 	getPanes,
 	openPane,
-	showBoardInPane,
-	type ShowBoardResponse,
+	showModelInPane,
+	type ShowModelResponse,
 } from "#cli/clients/server/panes.ts";
 import { paneWords } from "@archboard/server-lifecycle/panes";
 import { findVault } from "@archboard/workspace/vault";
@@ -29,14 +29,12 @@ const stagedNoFlags = z.array(z.string()).transform((values, context) => {
 const OnScreenPaneSchema = z.looseObject({
 	paneId: z.string(),
 	place: z.string(),
-	/** The board it is showing, or null on a vault that holds none yet. */
-	board: z.string().nullable(),
+	/** The model it is showing, or null on a vault that holds none yet. */
+	paneKey: z.string().nullable(),
 });
 
 const PaneNamespaceInputSchema = z.object({ tokens });
-type PaneNamespaceInput = z.infer<typeof PaneNamespaceInputSchema>;
 const PaneNamespaceResultSchema = z.never();
-type PaneNamespaceResult = z.infer<typeof PaneNamespaceResultSchema>;
 const browserContract = defineCommand({
 	path: ["browser"],
 	shared: ["url"],
@@ -78,16 +76,13 @@ const browserContract = defineCommand({
 });
 
 const PaneOpenInputSchema = z.object({ tokens });
-type PaneOpenInput = z.infer<typeof PaneOpenInputSchema>;
 const PaneOpenStageSchema = stagedNoFlags;
-type PaneOpenStage = z.infer<typeof PaneOpenStageSchema>;
 const PaneOpenResultSchema = z.looseObject({
 	success: z.literal(true),
 	pane: PaneRefSchema.nullable(),
 	paneCount: z.number().int().nonnegative(),
 	onScreen: z.array(OnScreenPaneSchema),
 });
-type PaneOpenResult = z.infer<typeof PaneOpenResultSchema>;
 const paneOpenContract = defineCommand({
 	path: ["browser", "open"],
 	shared: ["url"],
@@ -148,7 +143,6 @@ const paneOpenContract = defineCommand({
 });
 
 const PaneCloseInputSchema = z.object({ tokens });
-type PaneCloseInput = z.infer<typeof PaneCloseInputSchema>;
 const PaneCloseStageSchema = stagedNoFlags.transform((values, context) => {
 	const spec = values[0];
 	if (!spec) {
@@ -161,14 +155,12 @@ const PaneCloseStageSchema = stagedNoFlags.transform((values, context) => {
 	}
 	return { spec };
 });
-type PaneCloseStage = z.infer<typeof PaneCloseStageSchema>;
 const PaneCloseResultSchema = z.looseObject({
 	success: z.literal(true),
-	closed: PaneRefSchema.extend({ board: z.string().nullable() }),
+	closed: PaneRefSchema.extend({ paneKey: z.string().nullable() }),
 	paneCount: z.number().int().nonnegative(),
 	onScreen: z.array(OnScreenPaneSchema),
 });
-type PaneCloseResult = z.infer<typeof PaneCloseResultSchema>;
 const paneCloseContract = defineCommand({
 	path: ["browser", "close"],
 	shared: ["url"],
@@ -227,7 +219,7 @@ const paneCloseContract = defineCommand({
 		},
 	],
 	/**
-	 * Takes one pane off screen, reminding the user that the board it showed
+	 * Takes one pane off screen, reminding the user that the model it showed
 	 * is still open on the server.
 	 * @param input - The ingress input holding the staged tokens.
 	 * @param context - The command context.
@@ -248,7 +240,6 @@ const paneCloseContract = defineCommand({
 });
 
 const PanesInputSchema = z.object({ tokens, text: z.boolean().default(false) });
-type PanesInput = z.infer<typeof PanesInputSchema>;
 const PanesResultSchema = z.looseObject({
 	success: z.literal(true),
 	paneCount: z.number().int().nonnegative(),
@@ -256,7 +247,7 @@ const PanesResultSchema = z.looseObject({
 		z.looseObject({
 			paneId: z.string(),
 			place: z.string(),
-			board: z.string().nullable(),
+			paneKey: z.string().nullable(),
 			vault: z.string(),
 			/** The repository identity, or an untracked vault's registry name; null when unregistered. */
 			repository: z.string().nullable(),
@@ -269,14 +260,13 @@ const PanesResultSchema = z.looseObject({
 	summary: z.string(),
 	text: z.string(),
 });
-type PanesResult = z.infer<typeof PanesResultSchema>;
 const panesContract = defineCommand({
 	path: ["browser", "panes"],
 	shared: ["url"],
 	summary: "What every pane is showing and reading",
 	description:
-		"Reports where each pane sits, which board and variant it shows, which view it is read " +
-		"through, and what the user has picked out. View state only: never board content. Each " +
+		"Reports where each pane sits, which model and variant it shows, which view it is read " +
+		"through, and what the user has picked out. View state only: never model content. Each " +
 		"pane names its repository and checkout, and own says whether it shows the vault that a " +
 		"command run in this directory finds. It needs no vault: where none is found, no pane is own.",
 	examples: ["archboard browser panes", "archboard browser panes --text"],
@@ -366,7 +356,7 @@ async function callerVault(): Promise<string | null> {
  * @param result The show's answer.
  * @returns The line, or none when the show changed no choice.
  */
-function choiceLine(result: Pick<ShowBoardResponse, "chose">): string[] {
+function choiceLine(result: Pick<ShowModelResponse, "chose">): string[] {
 	const { chose } = result;
 	if (chose === undefined) return [];
 	const instead = chose.replaced === null ? "" : ` in place of ${chose.replaced}`;
@@ -379,9 +369,6 @@ const ShowInputSchema = ArchitecturePaneReadingSchema.extend({
 	pane: z.string().optional(),
 	input: z.string().optional(),
 });
-type ShowInput = z.infer<typeof ShowInputSchema>;
-const ShowStageSchema = ShowInputSchema;
-type ShowStage = ShowInput;
 const ShowResultSchema = z.looseObject({
 	success: z.literal(true),
 	model: z.string(),
@@ -394,7 +381,6 @@ const ShowResultSchema = z.looseObject({
 		.optional(),
 	paneId: z.string(),
 });
-type ShowResult = z.infer<typeof ShowResultSchema>;
 const browserShowContract = defineCommand({
 	path: ["browser", "show"],
 	shared: ["url", "directory", "as-session"],
@@ -519,41 +505,17 @@ const browserShowContract = defineCommand({
 				? flags
 				: context.parse(ArchitecturePaneReadingSchema, await statedJson({ input: file }, context));
 		await context.require("browser", "Show architecture");
-		const result = await showBoardInPane(reading, pane);
+		const result = await showModelInPane(reading, pane);
 		return { result: ShowResultSchema.parse(result), diagnostics: choiceLine(result) };
 	},
 });
 
 export {
-	PaneNamespaceInputSchema,
-	type PaneNamespaceInput,
-	PaneNamespaceResultSchema,
-	type PaneNamespaceResult,
 	browserContract,
-	PaneOpenInputSchema,
-	type PaneOpenInput,
-	PaneOpenStageSchema,
-	type PaneOpenStage,
 	PaneOpenResultSchema,
-	type PaneOpenResult,
 	paneOpenContract,
-	PaneCloseInputSchema,
-	type PaneCloseInput,
-	PaneCloseStageSchema,
-	type PaneCloseStage,
-	PaneCloseResultSchema,
-	type PaneCloseResult,
 	paneCloseContract,
-	PanesInputSchema,
-	type PanesInput,
-	PanesResultSchema,
-	type PanesResult,
 	panesContract,
-	ShowInputSchema,
-	type ShowInput,
-	ShowStageSchema,
-	type ShowStage,
 	ShowResultSchema,
-	type ShowResult,
 	browserShowContract,
 };

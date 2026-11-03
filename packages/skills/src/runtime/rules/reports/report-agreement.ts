@@ -193,4 +193,4 @@ function agreementLines(agreement: Agreement | null): string[] {
 	];
 }
 
-export { agreementLines, agreementOf, type Agreement, type RunAgreement };
+export { agreementLines, agreementOf, type Agreement };

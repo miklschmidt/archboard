@@ -2,8 +2,8 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ArchitectureImportRequestSchema } from "@archboard/board/model";
-import { exportArchitectureModel, importArchitectureModel } from "@archboard/board/store-write";
+import { ArchitectureImportRequestSchema } from "@archboard/model/contract";
+import { exportArchitectureModel, importArchitectureModel } from "@archboard/model/store-write";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { ROOT, attempt, inOrder, run } from "./tools.ts";

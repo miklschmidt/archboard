@@ -5,13 +5,13 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { useRouter } from "@tanstack/react-router";
 
-import { boardCatalogKeys } from "#ui/clients/board-catalog/queries.ts";
-import { chooseCheckout } from "#ui/clients/board-catalog/repositories.ts";
+import { modelCatalogKeys } from "#ui/clients/model-catalog/queries.ts";
+import { chooseCheckout } from "#ui/clients/model-catalog/repositories.ts";
 import type { NoticeStack } from "#ui/hooks/application/use-notices.ts";
 import type { ModelCatalog } from "#ui/hooks/architecture-model/use-model-catalog.ts";
 import { failureNotice } from "#ui/rules/application/notices.ts";
 import { PANE_IDS } from "#ui/rules/application/pane-list.ts";
-import { searchOfRepository } from "#ui/rules/board-routing/search.ts";
+import { searchOfRepository } from "#ui/rules/reading-routing/search.ts";
 import type { SettingsSurface, ShellActions, ThemeChoice } from "#ui/rules/shell/contracts.ts";
 
 /** What the actions act on. */
@@ -28,10 +28,10 @@ interface StartActionDeps {
 function noPane(): void {}
 
 /**
- * No board opens before a pane exists.
+ * No model opens before a pane exists.
  * @returns That none did.
  */
-function noBoard(): Promise<boolean> {
+function noModel(): Promise<boolean> {
 	return Promise.resolve(false);
 }
 
@@ -62,7 +62,7 @@ function createStartActions(deps: StartActionDeps): ShellActions {
 	const choose = async (repository: string, root: string): Promise<void> => {
 		try {
 			await chooseCheckout({ repository, root });
-			await client.invalidateQueries({ queryKey: boardCatalogKeys.repositories });
+			await client.invalidateQueries({ queryKey: modelCatalogKeys.repositories });
 			await open(null, repository);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
@@ -87,10 +87,10 @@ function createStartActions(deps: StartActionDeps): ShellActions {
 		chooseCheckout: (repository, root): void => {
 			void choose(repository, root);
 		},
-		refreshBoards: deps.catalog.reload,
+		refreshModels: deps.catalog.reload,
 		setTheme: deps.setTheme,
 		openSettings: deps.openSettings,
-		selectBoard: noBoard,
+		selectModel: noModel,
 		selectPane: noPane,
 		addPane: noPane,
 		closePane: noPane,

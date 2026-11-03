@@ -1,12 +1,12 @@
 import { useMemo, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { modelHistoryQuery } from "#ui/clients/architecture-model/history.ts";
 import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import { usePeekRow } from "#ui/hooks/architecture-model/use-peek-row.ts";
-import { partLocality, type Partner } from "#ui/rules/semantic-board-canvas/board/part-locality.ts";
+import { partLocality, type Partner } from "#ui/rules/canvas/reading/part-locality.ts";
 
 /** Inputs for the modules that change with one. */
 interface ModelChangesWithProps {

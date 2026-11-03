@@ -1,8 +1,8 @@
 import { cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { SemanticBoard } from "@archboard/board/document";
-import { readLegacyInventory } from "@archboard/board/store-read";
-import { retainArchitectureCheckpoint, saveLegacyMappingPlan } from "@archboard/board/store-write";
+import type { LegacyBoard } from "@archboard/model/legacy-board";
+import { readLegacyInventory } from "@archboard/model/store-read";
+import { retainArchitectureCheckpoint, saveLegacyMappingPlan } from "@archboard/model/store-write";
 import { vaultIn } from "../../support/test-vault.ts";
 import { fixtureGit, initializeSource } from "./canonical-model.ts";
 
@@ -19,8 +19,8 @@ async function legacyNavigation(root: string) {
 	initializeSource(root);
 	fixtureGit(root, "config", "commit.gpgsign", "false");
 	const file = join(vault, "Shop.semantic.json");
-	const board = JSON.parse(readFileSync(file, "utf8")) as SemanticBoard;
-	board.views = [
+	const model = JSON.parse(readFileSync(file, "utf8")) as LegacyBoard;
+	model.views = [
 		{
 			id: "Entry",
 			name: "Entry",
@@ -41,7 +41,7 @@ async function legacyNavigation(root: string) {
 		},
 		{ id: "Whole", name: "Whole shop", grammar: "architecture", scope: { kind: "all" } },
 	];
-	const current = board.variants[0]!;
+	const current = model.variants[0]!;
 	current.content.edges.push({
 		id: "Extra",
 		from: "Db",
@@ -117,8 +117,8 @@ async function legacyNavigation(root: string) {
 		variant: { kind: "named", name: "Implemented" },
 	};
 	current.parent = "Old";
-	board.variants = [original, current];
-	writeFileSync(file, JSON.stringify(board));
+	model.variants = [original, current];
+	writeFileSync(file, JSON.stringify(model));
 	fixtureGit(root, "add", ".");
 	fixtureGit(root, "commit", "--quiet", "-m", "test: seed explicit legacy navigation");
 	const inventory = readLegacyInventory(vault, "Shop");

@@ -19,7 +19,7 @@ pub(crate) const LABEL_LABEL_CLEARANCE: f64 = 24.0;
 /// Required straight run after the final bend, for every arrow.
 pub(crate) const APPROACH_STRAIGHT: f64 = 12.0;
 
-/// The page shape the renderer lays a board out for: width over height.
+/// The page shape the renderer lays a picture out for: width over height.
 pub(crate) const LAYOUT_ASPECT: f64 = 1.4;
 
 const SIDEBAR_WIDTH: f64 = 280.0;

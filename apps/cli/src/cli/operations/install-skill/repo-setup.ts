@@ -11,7 +11,7 @@ import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 import {
 	initializeArchitectureModel,
 	initializeArchitectureArchive,
-} from "@archboard/board/store-write";
+} from "@archboard/model/store-write";
 import { repoRootOf } from "@archboard/workspace/checkouts";
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 import type { CommandContext } from "#cli/protocol/contract/contract.ts";
@@ -170,4 +170,4 @@ async function setUpRepository(options: SetupOptions): Promise<SetupResult> {
 	return { repo, vault, vaultCreated, vaultIgnored, removedBlocks };
 }
 
-export { type SetupResult, type SetupOptions, setUpRepository, withoutOldBlock };
+export { setUpRepository, withoutOldBlock };

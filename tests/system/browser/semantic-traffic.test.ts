@@ -34,7 +34,7 @@ const EXAMPLE = join(import.meta.dir, "../../../examples/canonical-model/.archbo
 /** The model and its independent flow identity. */
 const MODEL = "Shop";
 const FLOW = "Shop#Request";
-const SEMANTIC_SURFACE = '[data-slot="model-diagram"] [data-slot="semantic-board-surface"]';
+const SEMANTIC_SURFACE = '[data-slot="model-diagram"] [data-slot="canvas-surface"]';
 
 /** The canvas the picture is painted on. */
 const CANVAS = '[data-slot="model-diagram"] [data-slot="picture-canvas"]';
@@ -133,7 +133,7 @@ test("the canvas draws a picture's traffic, the page runs none, and a reader who
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["set", "viewport", "1920", "1080"]);
 
-	// Trains on the board, and a pulse a message on its sequence view: every form the renderer writes.
+	// Trains on the model, and a pulse a message on its sequence view: every form the renderer writes.
 	for (const address of [
 		`?modelA=${MODEL}&grammarA=sequence&flowA=${encodeURIComponent(FLOW)}`,
 		`?modelA=${MODEL}`,

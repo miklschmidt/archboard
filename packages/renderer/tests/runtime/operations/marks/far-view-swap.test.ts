@@ -10,8 +10,8 @@ import { describe, expect, test } from "bun:test";
 
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import type { DiagramGrammar } from "@archboard/board/views";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import type { DiagramGrammar } from "@archboard/model/views";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const content = orderedFixture({
 	nodes: [
@@ -26,21 +26,21 @@ const content = orderedFixture({
 			name: "API",
 			kind: "service",
 			parent: "system",
-			responsibility: "Accepts board changes and checks the writer.",
+			responsibility: "Accepts document changes and checks the writer.",
 		},
 		{
 			id: "store",
 			name: "Board storage",
 			kind: "datastore",
 			parent: "system",
-			responsibility: "Keeps the complete board and its proposals together.",
+			responsibility: "Keeps the complete document and its proposals together.",
 		},
 	],
 	edges: [{ id: "write", from: "api", to: "store", kind: "data", label: "write revision" }],
 	flows: [
 		{
 			id: "save",
-			name: "Save a board",
+			name: "Save a document",
 			participants: ["api", "store"],
 			steps: [{ id: "saveit", from: "api", to: "store", kind: "sync", label: "persist" }],
 		},

@@ -2,11 +2,11 @@
   "order": 3000,
   "name": "Fetch semantic reads",
   "kind": "function",
-  "responsibility": "Decode the listing, a board, a render, the vault check, the code findings and a board's locality",
+  "responsibility": "Decode the listing, a model, a render, the vault check, the code findings and a model's locality",
   "description": "Plain fetch to the semantic read routes; refused, unreachable or invalid replies become explicit viewer failures carrying the server's code. There is no write call.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts"
+    "path": "apps/web/src/ui/clients/canvas/reads/drawings.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
@@ -15,7 +15,7 @@
     {
       "order": 5000,
       "kind": "http",
-      "label": "board documents, listing, policy",
+      "label": "legacy boards, listing, policy",
       "emphasis": "hero",
       "traffic": {
         "speed": 40,
@@ -23,7 +23,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
+        "path": "apps/web/src/ui/clients/canvas/reads/drawings.ts",
         "symbol": "fetch"
       },
       "id": "vKEsyHFk/yejBBUFY#pqG9kqlF",
@@ -49,7 +49,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
+        "path": "apps/web/src/ui/clients/canvas/reads/drawings.ts",
         "symbol": "inVault"
       },
       "id": "vKEsyHFk/yejBBUFY#wQi4PrJj",
@@ -62,11 +62,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
+        "path": "apps/web/src/ui/clients/canvas/reads/drawings.ts",
         "symbol": "fetchCodeFindings"
       },
-      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
-      "id": "vKEsyHFk#aFx2toJd"
+      "id": "vKEsyHFk#aFx2toJd",
+      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
     }
   ]
 }

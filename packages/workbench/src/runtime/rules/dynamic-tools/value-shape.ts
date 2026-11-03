@@ -25,24 +25,6 @@ function hasExactKeys(value: object, keys: readonly string[]): boolean {
 }
 
 /**
- * Recursively freeze an object graph so an effect or identity cannot change
- * after it was hashed or approved. Already-frozen and primitive values are
- * returned untouched.
- * @param value Value to freeze in place.
- * @returns The same value, deeply frozen.
- */
-function freezeDeep<Value>(value: Value): Value {
-	if (typeof value !== "object" || value === null || Object.isFrozen(value)) {
-		return value;
-	}
-	const children: readonly unknown[] = Object.values(value);
-	for (const child of children) {
-		freezeDeep(child);
-	}
-	return Object.freeze(value);
-}
-
-/**
  * Whether a value is a string with at least one character; identities and
  * wire fields are never allowed to be empty.
  * @param value Candidate of unknown origin.
@@ -62,4 +44,4 @@ function isExactlyTrue(value: unknown): value is true {
 	return value === true;
 }
 
-export { freezeDeep, hasExactKeys, isExactlyTrue, isNonEmptyString, isRecord };
+export { hasExactKeys, isExactlyTrue, isNonEmptyString, isRecord };

@@ -1,5 +1,5 @@
 import { useMemo, type ComponentProps, type JSX, type ReactNode } from "react";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import {
 	ConnectionSummary,
 	kindNames,
@@ -23,7 +23,7 @@ import {
 	ModuleOpenCode,
 	ModuleOpenReferences,
 } from "#ui/components/architecture-model/ModuleNavigation.tsx";
-import { TraceToggle } from "#ui/components/semantic-board-canvas/TraceToggle.tsx";
+import { TraceToggle } from "#ui/components/canvas/TraceToggle.tsx";
 import type { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import { usePeekRow } from "#ui/hooks/architecture-model/use-peek-row.ts";
@@ -38,7 +38,7 @@ import {
 	type Connection,
 	type SelectedSubject,
 } from "#ui/rules/architecture-model/selected-subject.ts";
-import type { Way } from "#ui/rules/semantic-board-canvas/board/reach.ts";
+import type { Way } from "#ui/rules/canvas/reading/reach.ts";
 
 /** Inputs for what the panel says of a selection. */
 interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {

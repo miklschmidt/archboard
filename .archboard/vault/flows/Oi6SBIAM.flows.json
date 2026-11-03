@@ -220,7 +220,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#YkrftZyC",
       "name": "A person chooses a checkout",
-      "summary": "Seen from the panes: each pane learns where it is, or moves into the chosen checkout's vault and reads its board again there. Every tab then refreshes its repositories.",
+      "summary": "Seen from the panes: each pane learns where it is, or moves into the chosen checkout's vault and reads its model again there. Every tab then refreshes its repositories.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "vKEsyHFk/HBlhIeSD#FHvFFjFn",
@@ -301,7 +301,7 @@
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
                                 "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
-                                "symbol": "sendBoardlessToPane"
+                                "symbol": "sendKeylessToPane"
                               }
                             }
                           ]
@@ -325,7 +325,7 @@
                               "id": "vKEsyHFk/Oi6SBIAM#vJTlDcZe",
                               "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
                               "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
-                              "label": "pane_board: its board, read again there",
+                              "label": "pane_place: its model, read again there",
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
@@ -337,12 +337,12 @@
                               "id": "vKEsyHFk/Oi6SBIAM#Z5pzIome",
                               "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
                               "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3",
-                              "label": "the pane arrived on its board",
+                              "label": "the pane arrived on its model",
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
                                 "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
-                                "symbol": "arrivedOnBoard"
+                                "symbol": "arrivedOnModel"
                               }
                             }
                           ]

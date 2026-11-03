@@ -3,7 +3,7 @@
 // state that the catalogue does not list keeps a row of its own, so it never reads as another
 // state's. Pure.
 
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import type { CheckpointRows } from "#ui/clients/architecture-model/queries.ts";
 import { checkpointTime } from "#ui/rules/architecture-model/history-time.ts";
 import { standingLabel } from "#ui/rules/architecture-model/standing.ts";

@@ -74,7 +74,6 @@ type WriteJob = RequestJob | NotificationJob | ReverseResponseJob | ProtocolErro
 export type {
 	NotificationJob,
 	PendingRequest,
-	ProtocolErrorJob,
 	RequestJob,
 	RequestTombstone,
 	ReverseRecord,

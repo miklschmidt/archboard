@@ -141,7 +141,7 @@ function presentedStep(
 ): Promise<{ readonly index: string | null; readonly moving: boolean }> {
 	return browser.eval(`(() => {
 		const stage = document.querySelector('${PANE_SECTIONS} [data-slot="model-walkthrough"]');
-		const surface = stage?.querySelector('[data-slot="semantic-board-surface"]');
+		const surface = stage?.querySelector('[data-slot="canvas-surface"]');
 		return {
 			index: stage?.querySelector('[data-slot="semantic-presentation"]')?.getAttribute('data-step') ?? null,
 			moving: !surface || surface.hasAttribute('data-camera-motion') || surface.hasAttribute('data-picture-motion'),

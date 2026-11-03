@@ -6,22 +6,21 @@
 // claims that its file holds its symbol, and that where the symbol is defined
 // in the checkout, the bound code of an end or of a part inside one holds it.
 
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
-import { edgeSubjects, nodeSubject } from "@archboard/board/vault-policy";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
+import { edgeSubjects, nodeSubject } from "@archboard/model/vault-policy";
 import type { CodeAnchor, CodeBinding } from "@archboard/code-binding/bindings";
-import { messagesOf } from "@archboard/board/flow";
-import type { SemanticNode } from "@archboard/board/content";
-import type { EvidenceKindSchema } from "@archboard/board/policy";
+import { messagesOf } from "@archboard/model/flow";
+import type { SemanticNode } from "@archboard/model/content";
+import type { EvidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
-import type { VaultDiagnosticSchema } from "@archboard/board/policy";
-import type { describeSubject } from "@archboard/board/policy";
+import type { CodeFinding } from "#shared/protocol/code-check.ts";
+import type { describeSubject } from "@archboard/model/policy";
 
 type DiagnosticSubject = Parameters<typeof describeSubject>[0];
-type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
 type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
 
-/** Where a claim sits: the board, its variant, the place in the document and its subject. */
-type ClaimSite = Pick<VaultDiagnostic, "file" | "board" | "variant" | "path"> & {
+/** Where a claim sits: the document, its variant, the place in the document and its subject. */
+type ClaimSite = Pick<CodeFinding, "file" | "model" | "variant" | "path"> & {
 	readonly subject: DiagnosticSubject;
 };
 
@@ -51,7 +50,7 @@ type Claim = BindingClaim | AnchorClaim;
 
 /** One variant as its claims read it: where a claim sits, and its parts by id. */
 interface ReadVariant {
-	readonly read: BoardToCheck;
+	readonly read: StateToCheck;
 	readonly byId: ReadonlyMap<string, SemanticNode>;
 	/** The parts directly inside each part, by its id. */
 	readonly inside: ReadonlyMap<string, readonly SemanticNode[]>;
@@ -60,17 +59,17 @@ interface ReadVariant {
 }
 
 /**
- * Where a claim sits in its board.
+ * Where a claim sits in its document.
  * @param variant The variant read.
  * @param path The place inside the variant's content.
  * @param subject What the claim is about.
  * @returns The site.
  */
 function siteOf(variant: ReadVariant, path: string, subject: DiagnosticSubject): ClaimSite {
-	const { board, file, variant: read } = variant.read;
+	const { document, file, variant: read } = variant.read;
 	return {
 		file,
-		board: board.name,
+		model: document.name,
 		variant: read.id,
 		path: `variants.${read.id}.content.${path}`,
 		subject,
@@ -178,11 +177,11 @@ function stepClaims(variant: ReadVariant): AnchorClaim[] {
 }
 
 /**
- * Every claim one board makes about code at the variant the check reads.
- * @param read The board, its variant, and whether the variant is the named draft.
+ * Every claim one document makes about code at the variant the check reads.
+ * @param read The document, its variant, and whether the variant is the named draft.
  * @returns The claims, in the variant's order: parts, relationships, then steps.
  */
-function claimsOf(read: BoardToCheck): Claim[] {
+function claimsOf(read: StateToCheck): Claim[] {
 	const { content } = read.variant;
 	const inside = new Map<string, SemanticNode[]>();
 	for (const node of content.nodes) {

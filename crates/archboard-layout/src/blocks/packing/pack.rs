@@ -122,7 +122,7 @@ impl<'t> PackLayout<'t> {
     }
 
     /// The items in the order their lines run: by the longest run of lines
-    /// that leads to each, then in the board's order.
+    /// that leads to each, then in the picture's order.
     fn sequence(&self) -> Vec<usize> {
         let count = self.block.items.len();
         let mut rank = vec![0_usize; count];

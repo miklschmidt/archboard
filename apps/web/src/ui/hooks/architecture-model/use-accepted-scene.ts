@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { modelDrawingQuery } from "#ui/clients/architecture-model/drawing.ts";
-import { useLayoutEngine } from "#ui/hooks/semantic-board-canvas/use-layout-engine.ts";
+import { useLayoutEngine } from "#ui/hooks/canvas/use-layout-engine.ts";
 import {
 	EMPTY_DRAWING,
 	leavingTo,

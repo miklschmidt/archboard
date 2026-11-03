@@ -6,7 +6,7 @@
 // beside them, and the reasons are the point: the next person to halve one of
 // these should not have to discover by accident what else they halved.
 //
-// Each owner has one frozen group, such as `BOARD_LOCK_MS` or `CODEX_PROCESS_MS`,
+// Each owner has one frozen group, such as `MODEL_LOCK_MS` or `CODEX_PROCESS_MS`,
 // in a file of its own beside this one. A caller imports its owner's group and
 // reads a key of it. A value with one owner and no siblings stays one named
 // constant. Where callers would repeat a computation from a group, the owner's
@@ -19,7 +19,7 @@
 // environment to read.
 
 // ── The server and its processes ─────────────────────────────────────────
-export { BOARD_LOCK_MS, CLAIM_MS } from "#shared/constants/board-locks.ts";
+export { MODEL_LOCK_MS, CLAIM_MS } from "#shared/constants/model-locks.ts";
 export { SERVER_LIFECYCLE_MS } from "#shared/constants/server-lifecycle.ts";
 export {
 	CLI_INTERRUPT_CLEANUP_MS,
@@ -36,7 +36,6 @@ export {
 } from "#shared/constants/codex.ts";
 export {
 	HEADLESS_CHROMIUM_CALL_MS,
-	IMAGE_CLIPBOARD_MS,
 	SEMANTIC_RASTER_CLEANUP_MS,
 	SEMANTIC_RASTER_JOB_TIMEOUT_MS,
 	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
@@ -50,7 +49,7 @@ export { SKILL_EVAL_MS } from "#shared/constants/skill-eval.ts";
 
 // ── The browser ──────────────────────────────────────────────────────────
 export { PANE_MS } from "#shared/constants/pane.ts";
-export { BOARD_CACHE_MS, SHELL_CLOCK_MS } from "#shared/constants/shell.ts";
+export { MODEL_CACHE_MS, SHELL_CLOCK_MS } from "#shared/constants/shell.ts";
 export { COLUMN_MS, SIDEBAR_MS } from "#shared/constants/column-motion.ts";
 export { EXPLORING_MS } from "#shared/constants/exploring.ts";
 export {

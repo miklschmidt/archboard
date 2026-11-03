@@ -1,5 +1,5 @@
 // The panes a tab session's Codex context is read through, and the owners it is read from
-// (ADR 0050). A tab session presents through one of its open panes, hears the boards of the vaults
+// (ADR 0050). A tab session presents through one of its open panes, hears the models of the vaults
 // its panes are in, and tells each workhorse the changes of its own checkout.
 
 import type { CodexWorkbenchWorkhorse } from "#runtime/protocol/voice/extension.ts";
@@ -89,11 +89,11 @@ function presentingPaneOf(
 }
 
 /**
- * Whether a tab session hears a settled change to a board of a vault: one its panes are in, or,
+ * Whether a tab session hears a settled change to a model of a vault: one its panes are in, or,
  * while none of them is open, the vault of the pane it presented through last. A reload closes
  * every pane of a tab for a moment, and what another agent wrote meanwhile is still its news.
  * @param session The tab session.
- * @param vault The vault of the changed board.
+ * @param vault The vault of the changed model.
  * @returns True when the change is the session's news.
  */
 function hearsVault(session: CodexWorkbenchTabSession, vault: string): boolean {
@@ -143,7 +143,7 @@ function operationPane(
 }
 
 /**
- * Whether a workhorse has board-change delivery bound to a thread of its own.
+ * Whether a workhorse has model-change delivery bound to a thread of its own.
  * @param workhorse The workhorse.
  * @returns True once its delivery is bound.
  */
@@ -152,7 +152,7 @@ function deliveryBound(workhorse: CodexWorkbenchWorkhorse): boolean {
 }
 
 /**
- * The conversation a pane's news is for: its own tab's, once a workhorse of it has board-change
+ * The conversation a pane's news is for: its own tab's, once a workhorse of it has model-change
  * delivery bound.
  * @param components The generation.
  * @param clientId The pane's client id.
@@ -213,8 +213,8 @@ function requireWorkhorse(
 /**
  * The pane a settled change is filed under for one session: its presenting pane while one is
  * open, else the pane it presented through last, which has no presentation to report. A session
- * hears every board update except its own writes, so a closed pane or a pane looking at another
- * board cannot be the thing that stops the news.
+ * hears every model update except its own writes, so a closed pane or a pane looking at another
+ * model cannot be the thing that stops the news.
  * @param session The tab session.
  * @returns The pane.
  * @throws {Error} When the session never had a pane on screen.

@@ -47,15 +47,4 @@ interface ConversationTurn {
 	readonly delegatedBy: ConversationDelegation | null;
 }
 
-/** The thread's token use, and the context window it counts against. */
-type ConversationUsage = NonNullable<BrowserTimeline["usage"]>;
-
-export type {
-	ConversationDelegation,
-	ConversationItem,
-	ConversationOutcome,
-	ConversationOwner,
-	ConversationPlan,
-	ConversationTurn,
-	ConversationUsage,
-};
+export type { ConversationOutcome, ConversationOwner, ConversationTurn };

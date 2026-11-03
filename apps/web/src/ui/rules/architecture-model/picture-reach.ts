@@ -1,6 +1,6 @@
-import type { projectModel } from "@archboard/board/content";
+import type { projectModel } from "@archboard/model/content";
 import { openModules } from "#ui/rules/architecture-model/expansion.ts";
-import { reachOf, type Reach, type Way } from "#ui/rules/semantic-board-canvas/board/reach.ts";
+import { reachOf, type Reach, type Way } from "#ui/rules/canvas/reading/reach.ts";
 
 type Projection = ReturnType<typeof projectModel>;
 

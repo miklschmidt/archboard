@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import {
 	corridorPoints,
 	routeLabels,
@@ -30,7 +30,7 @@ const APPROACH = 12;
 /** The sideways room a line's two fixed 8 px bends need to step aside and on. */
 const TWO_BENDS = 16;
 
-/** The vocabulary the fixtures reduced from dogfood boards draw with, its groups in the vault's order. */
+/** The vocabulary the fixtures reduced from dogfood documents draw with, its groups in the vault's order. */
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],
 	nodeKinds: {
@@ -76,7 +76,7 @@ function sidewaysSteps(points: readonly DrawnPoint[]): number[] {
 	return uprights.slice(1).map((x, index) => Math.abs(x - uprights[index]!));
 }
 
-// Reduced from dogfood boards, names replaced in the first: lines leaving one
+// Reduced from dogfood documents, names replaced in the first: lines leaving one
 // shared port stepped a few points aside where a lane or a label stood just
 // off their column; and a lane held a few points off its label's column by
 // the box beside the label, where no move could close the step.
@@ -98,7 +98,7 @@ test.each([
 	},
 );
 
-// Reduced from a dogfood board, names replaced: a line rising into the card
+// Reduced from a dogfood document, names replaced: a line rising into the card
 // above turned on the channel's first track, 8 px under that card.
 test("every line's arrowhead sits on a straight run, rising lines' too", async () => {
 	const drawing = await renderArchitecture({
@@ -113,7 +113,7 @@ test("every line's arrowhead sits on a straight run, rising lines' too", async (
 	}
 });
 
-// Shaped like a real ingress board's band, names replaced: four labelled lines
+// Shaped like a real ingress document's band, names replaced: four labelled lines
 // between two rows, whose label boxes cannot all stand where their lines run
 // straight. Sharing the displacement out made every line but one jog.
 test("labels crowding one band leave as many of their lines straight as fit", async () => {
@@ -143,7 +143,7 @@ test("labels crowding one band leave as many of their lines straight as fit", as
 	expect(jogging.length).toBeLessThanOrEqual(1);
 });
 
-// Reduced from a dogfood board, names replaced: labelled lines leaving one
+// Reduced from a dogfood document, names replaced: labelled lines leaving one
 // card through a shared trunk. Each label stood over the edge of the source's
 // face, so each line ran sideways on the trunk's track and again below its label.
 test("a labelled line leaving through a trunk runs sideways on one level only", async () => {
@@ -162,7 +162,7 @@ test("a labelled line leaving through a trunk runs sideways on one level only", 
 	}
 });
 
-// Reduced from a dogfood board: the run of lanes above a line's label and the
+// Reduced from a dogfood document: the run of lanes above a line's label and the
 // run below it were each straightened on their own, so the line stepped
 // sideways on both sides of its label although one column ran free from the
 // label down to its card.
@@ -188,7 +188,7 @@ test("a labelled line steps sideways on one side of its label at most", async ()
 	}
 });
 
-// Shaped like a real board, names replaced: two hosts side by side each send a
+// Shaped like a real document, names replaced: two hosts side by side each send a
 // labelled line into the store under them. Where Graphviz stood a label is
 // arbitrary, and one line entered 20 px from the store's corner.
 test("two labelled lines into one card enter it evenly", async () => {
@@ -235,7 +235,7 @@ function headingLines(svg: string): { x: number; end: number; top: number; botto
 		}));
 }
 
-// Reduced from a dogfood board, names replaced: Graphviz stands a frame's
+// Reduced from a dogfood document, names replaced: Graphviz stands a frame's
 // heading row wherever it likes and runs lines beside it, but the words are
 // painted from the frame's left edge, where those lines ran.
 test("a line crossing a container's heading passes beside its words", async () => {
@@ -294,7 +294,7 @@ function crossingsOf(svg: string): number {
 	);
 }
 
-// Reduced from a dogfood board, names replaced: the longest run of lanes took
+// Reduced from a dogfood document, names replaced: the longest run of lanes took
 // its column first and passed a sibling line's lanes that still stood where
 // Graphviz left them, so the sibling crossed it on its way to its label.
 test("a run of lanes takes the free column that crosses fewest other lines", async () => {
@@ -307,7 +307,7 @@ test("a run of lanes takes the free column that crosses fewest other lines", asy
 	expect(crossingsOf(drawing.svg)).toBe(0);
 });
 
-// Shaped like a real ingress board, names replaced: two gateways each take a
+// Shaped like a real ingress document, names replaced: two gateways each take a
 // labelled line in on top and send one out at the bottom, and where Graphviz
 // stood each label put the line in and the line out 10 px apart.
 test("a line into a card and one out of it run through it on one column", async () => {
@@ -408,7 +408,7 @@ test("lines of one kind that join on the way to a card stay one line into it", a
 	expect(parted).toEqual([]);
 });
 
-// Reduced from a dogfood board, names replaced: Graphviz stood a long line's
+// Reduced from a dogfood document, names replaced: Graphviz stood a long line's
 // label, and so its lanes, beyond the cards on one side, and the line ran out
 // round the edge of the drawing and back in, where a free route ran between
 // its two ends.

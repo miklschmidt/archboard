@@ -35,7 +35,6 @@ const ArchboardAppManifestSchema = z.strictObject({
 });
 
 export type ArchboardAppNamespaceSpec = z.infer<typeof ArchboardAppManifestSchema>;
-export type ArchboardAppToolSpec = ArchboardAppNamespaceSpec["tools"][number];
 
 /**
  * Freeze a value and everything reachable from it, so the loaded manifest cannot be changed by

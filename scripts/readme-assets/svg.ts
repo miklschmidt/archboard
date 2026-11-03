@@ -8,7 +8,7 @@ import type { z } from "zod";
 import {
 	ArchitectureRenderResultSchema,
 	type ArchitectureRenderRequestSchema,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 
 import {
 	encodeThumbnail,

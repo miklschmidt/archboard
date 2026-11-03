@@ -191,12 +191,12 @@ async function createOpenerFixture(options: OpenerFixtureOptions = {}): Promise<
 	let visibleBase = "";
 	let disposed = false;
 
-	const bindingForElement: CodeOpenerRouteDependencies["bindingForElement"] = (board, element) => {
-		if (board !== "system/payments") {
-			return { ok: false, code: "BOARD_NOT_FOUND", error: "Board is not open." };
+	const bindingForElement: CodeOpenerRouteDependencies["bindingForElement"] = (model, element) => {
+		if (model !== "system/payments") {
+			return { ok: false, code: "BINDING_UNAVAILABLE", error: "The model is not open." };
 		}
 		if (element !== "node") {
-			return { ok: false, code: "ELEMENT_NOT_FOUND", error: "Element is missing." };
+			return { ok: false, code: "BINDING_UNAVAILABLE", error: "The element is missing." };
 		}
 		const parsed = CodeBindingSchema.safeParse(JSON.parse(readFileSync(bindingFile, "utf8")));
 		return parsed.success

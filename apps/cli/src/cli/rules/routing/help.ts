@@ -245,4 +245,4 @@ function usageLine(routes: CommandRoutes, path: readonly string[]): string {
 	return command.createHelp().commandUsage(command);
 }
 
-export { commanderTree, helpText, usageLine, type HelpTree };
+export { commanderTree, helpText, usageLine };

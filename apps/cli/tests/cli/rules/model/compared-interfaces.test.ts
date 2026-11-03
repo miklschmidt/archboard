@@ -2,7 +2,7 @@
 // which containers they name. The system owner reads the real command.
 
 import { describe, expect, test } from "bun:test";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { describedComparison } from "#cli/rules/model/compared-interfaces.ts";
 
 type Comparison = NonNullable<Model["comparison"]>;

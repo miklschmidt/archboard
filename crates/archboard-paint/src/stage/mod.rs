@@ -72,7 +72,7 @@ pub struct Stage {
     awaited: Fade,
     leaving: Option<Leaving>,
     ghost: Option<Ghost>,
-    /// Boards that an earlier passage has not yet taken off the canvas.
+    /// Pictures that an earlier passage has not yet taken off the canvas.
     behind: Vec<Ghost>,
     dive: Option<Dive>,
     glide: Glide,
@@ -157,7 +157,7 @@ impl Stage {
     }
 
     /// Put a picture on the stage in place of what stands there. The sparks of a
-    /// board that bloomed inside a card run on over the board that takes over.
+    /// picture that bloomed inside a card run on over the picture that takes over.
     pub fn show(&mut self, painting: Painting) {
         let bloom = self.bloom_of(&painting);
         let enter = self.phases.as_ref().map(|phases| phases.enter);
@@ -168,7 +168,7 @@ impl Stage {
             .and_then(|(bloom, ms)| Flight::landed_from(bloom, ms, self.now));
     }
 
-    /// The board that bloomed inside a card, when a flight has brought it here.
+    /// The picture that bloomed inside a card, when a flight has brought it here.
     fn bloom_of(&mut self, painting: &Painting) -> Option<Entrance> {
         self.dive
             .take_if(|dive| dive.way == DiveWay::In && dive.inset.scene == painting.scene)?
@@ -215,7 +215,7 @@ impl Stage {
         }
     }
 
-    /// Send the picture on its way out, while the next is drawn. A board that a
+    /// Send the picture on its way out, while the next is drawn. A picture that a
     /// passage is still bringing in finishes coming in first.
     pub fn leave(&mut self, heading: Heading, ms: f64, now: f64) {
         self.now = now;

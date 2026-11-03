@@ -3,10 +3,10 @@
 // a word lost or broken where its room holds it whole, a wrapped line that keeps
 // the space it broke at and widens its card, a plate whose lines are not
 // balanced or not centred, a container that draws its description, and a
-// render that answers differently after another board was drawn.
+// render that answers differently after another document was drawn.
 import { expect, test } from "bun:test";
-import type { VariantContent } from "@archboard/board/content";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import type { VariantContent } from "@archboard/model/content";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import {
@@ -93,7 +93,7 @@ test("a card's and a plate's words are drawn whole, at readable sizes, inside wh
 	}
 });
 
-// From the dogfood boards: a wrapped line kept the space it broke at, and the
+// From the dogfood documents: a wrapped line kept the space it broke at, and the
 // card grew past its widest by that space's width.
 test("a card's wrapped lines do not widen it by the space they broke at", async () => {
 	const drawing = await drawn(
@@ -184,7 +184,7 @@ test("a container draws its whole wrapped header above its members and leaves it
 	).toBe(name);
 });
 
-test("a board drawn in between leaves another board's picture as it was", async () => {
+test("a document drawn in between leaves another document's picture as it was", async () => {
 	const words = "AVAST Waterfall Office";
 	const content = orderedFixture({
 		nodes: [

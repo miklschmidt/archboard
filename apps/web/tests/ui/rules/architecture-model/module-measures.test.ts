@@ -2,7 +2,7 @@
 // and the one order of each measure.
 
 import { expect, test } from "bun:test";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import {
 	MEASURES,
 	historySource,

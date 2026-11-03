@@ -56,20 +56,6 @@ type RememberPath = (candidate: string, realpath: string, kind: PathInspection["
 /** A checkout nothing was captured about: no branch and no commit. */
 const NOTHING_OUT: Readonly<CheckoutHead> = Object.freeze({});
 
-export const EMPTY_CHECKOUT_SNAPSHOT: CheckoutSnapshot = Object.freeze({
-	entries: Object.freeze([]),
-	/**
-	 * Reports no checkout evidence, because the empty snapshot inspected nothing.
-	 * @returns Always undefined.
-	 */
-	inspection: () => undefined,
-	/**
-	 * Reports no path evidence, because the empty snapshot inspected nothing.
-	 * @returns Always undefined.
-	 */
-	path: () => undefined,
-});
-
 /**
  * Inspects one registered checkout on disk: its canonical registered root, the
  * Git root discovered from it and the identity recorded there. Any failure

@@ -40,7 +40,7 @@ const MARK_MARGIN: f64 = 14.0;
 /// How many times larger one box is than the other, on a side, for what a card
 /// was drawn with to stop following the box. A door that opens into a frame is
 /// a button and then a tray, and a button stretched to a tray's size is a bar of
-/// bright colour across the board.
+/// bright colour across the picture.
 const OPENS_INTO: f64 = 1.5;
 
 /// The smallest side a clip is given, so that a box shrinking to nothing does

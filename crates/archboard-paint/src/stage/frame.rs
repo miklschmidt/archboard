@@ -1,4 +1,4 @@
-//! One frame of a stage: its ground, the picture, the board inside a card, and
+//! One frame of a stage: its ground, the picture, the picture inside a card, and
 //! over them what is left of the last picture.
 
 use archboard_scene::geometry::Rect;
@@ -15,7 +15,7 @@ use crate::path::{placed, rect_of};
 use crate::presentation::Presentation;
 
 impl Stage {
-    /// Draw what stands on the stage: its ground, the picture, the board
+    /// Draw what stands on the stage: its ground, the picture, the picture
     /// inside a card, and over them what is left of the last picture.
     pub(super) fn draw_frame<C: Canvas>(&mut self, canvas: &mut C, now: f64) {
         let Stage {
@@ -96,7 +96,7 @@ impl Stage {
     }
 }
 
-/// Where the board on the stage stands at a moment: on its way in, then on its way
+/// Where the picture on the stage stands at a moment: on its way in, then on its way
 /// out, when a passage carries it.
 fn plane_at(leaving: Option<&Leaving>, ghost: Option<&Ghost>, now: f64) -> Plane {
     let arrived = ghost.and_then(|ghost| ghost.passage(now));
@@ -165,7 +165,7 @@ fn opacity_of(opacity: f64) -> f32 {
     opacity as f32
 }
 
-/// Draw the board inside its card: fitted to the card and clipped to it, in the
+/// Draw the picture inside its card: fitted to the card and clipped to it, in the
 /// parent's own coordinates, with no light on it.
 fn draw_inset<C: Canvas>(
     canvas: &mut C,

@@ -31,7 +31,7 @@ function context(
 			threadId: ids.thread("coordinator"),
 			realtimeSessionId: ids.realtimeSession,
 		},
-		board: {
+		model: {
 			key: "payments",
 			name: "Payments",
 			vault: "/work/.archboard/vault",
@@ -52,10 +52,10 @@ function context(
 			differences: null,
 			reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
 		},
-		claim: { holder: "agent", doing: "mapping the board" },
-		doing: "mapping the board",
+		claim: { holder: "agent", doing: "mapping the model" },
+		doing: "mapping the model",
 		cursor: { feedId: "feed-1", sequence: 3 },
-		description: "Payments board: checkout, ledger, and settlement boundaries.",
+		description: "Payments model: checkout, ledger, and settlement boundaries.",
 		ambiguity: [],
 		...overrides,
 	};
@@ -87,11 +87,11 @@ function change(
 	return {
 		cursor: 3,
 		vault: "/work/.archboard/vault",
-		board: "payments",
+		model: "payments",
 		at: new Date(now).toISOString(),
 		origin: "human",
 		significance: "structural",
-		text: "A human settled a structural board change.",
+		text: "A human settled a structural model change.",
 		...overrides,
 	};
 }

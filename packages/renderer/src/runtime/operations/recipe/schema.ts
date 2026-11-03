@@ -1,4 +1,4 @@
-import { ArchitectureRenderRequestSchema } from "@archboard/board/model";
+import { ArchitectureRenderRequestSchema } from "@archboard/model/contract";
 // What a board render records about how it was drawn (ADR 0057, TASK-526.02).
 //
 // The recipe is what draws the picture again and what tells whether it is
@@ -19,7 +19,7 @@ import {
 	OfferedViewSchema,
 	RenderedVariantSchema,
 	StandaloneThemeSchema,
-} from "@archboard/board/render-reply";
+} from "@archboard/model/render-reply";
 
 /** The version of the recipe's shape. A reader refuses one it does not know. */
 const RENDER_RECIPE_VERSION = 1;
@@ -108,6 +108,5 @@ export {
 	RENDER_RECIPE_MARK,
 	RENDER_RECIPE_NAMESPACE,
 	RENDER_RECIPE_VERSION,
-	RenderRecipeSchema,
 	type RenderRecipe,
 };

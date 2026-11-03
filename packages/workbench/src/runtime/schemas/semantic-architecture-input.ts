@@ -2,17 +2,17 @@
 // out of it.
 //
 // Apart from the rest of the normalizer because it is the half that is about a
-// board rather than about a session, and because the two together are more than
-// one reviewed file. Nothing here reads a board: it validates what a
-// composition adapter says the board said, and refuses a word an edit command
+// model rather than about a session, and because the two together are more than
+// one reviewed file. Nothing here reads a model: it validates what a
+// composition adapter says the model said, and refuses a word an edit command
 // would not take.
 
 import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
-import { DiagramGrammarSchema } from "@archboard/board/views";
-import { VariantLifecycleSchema } from "@archboard/board/document";
-import { ReconciliationKindSchema } from "@archboard/board/reconciliation";
-import type { ChangeKind } from "@archboard/board/comparison";
-import { SemanticSubjectKindSchema } from "@archboard/board/pane-context";
+import { DiagramGrammarSchema } from "@archboard/model/views";
+import { VariantLifecycleSchema } from "@archboard/model/legacy-board";
+import { ReconciliationKindSchema } from "@archboard/model/reconciliation";
+import type { ChangeKind } from "@archboard/model/comparison";
+import { SemanticSubjectKindSchema } from "@archboard/model/pane-context";
 import type {
 	SemanticArchitecture,
 	SemanticContextInput,
@@ -60,7 +60,7 @@ function deepFreeze<Value>(value: Value): Value {
 /**
  * Validates one word from a closed vocabulary.
  *
- * The lists come from the board contract rather than from here; this only
+ * The lists come from the model contract rather than from here; this only
  * refuses a word that is not on them, so a composition adapter cannot invent a
  * kind of subject an edit command would not take.
  * @param words - The words the field allows.
@@ -82,7 +82,7 @@ function wordValue<Word extends string>(
 
 // The vocabularies are the contracts' own, read off the canonical Zod schemas
 // rather than written out again. A list copied here is a list that will still
-// say `node` the day the board contract stops, and this side would quietly
+// say `node` the day the model contract stops, and this side would quietly
 // refuse a kind the rest of the system had started using.
 
 /** The kinds of subject a selection or a difference may name. */
@@ -91,7 +91,7 @@ const SUBJECT_KINDS = SemanticSubjectKindSchema.options;
 /** What kinds of disagreement a variant can be holding. */
 const ISSUE_KINDS = ReconciliationKindSchema.options;
 
-/** Where a variant can stand in a board's lifecycle. */
+/** Where a variant can stand in a model's lifecycle. */
 const LIFECYCLES = VariantLifecycleSchema.options;
 
 /** The grammars a view can be drawn in. */
@@ -101,14 +101,14 @@ const GRAMMARS = DiagramGrammarSchema.options;
  * How one subject differs from the same subject in the variant it is read against.
  *
  * The one vocabulary with no Zod owner to read: `ChangeKind` is a bare union in
- * the board contract's comparison. Listed here under a compile-time completeness
+ * the model contract's comparison. Listed here under a compile-time completeness
  * check instead, so adding a kind there fails this file rather than silently
  * making it refuse the new word. When that union gains a schema this becomes
  * `<its schema>.options` like the others.
  */
 const CHANGE_KINDS = ["added", "removed", "changed", "unchanged"] as const;
 
-/** Fails to compile if the board contract gains a change kind this list lacks. */
+/** Fails to compile if the model contract gains a change kind this list lacks. */
 type EveryChangeKindListed =
 	Exclude<ChangeKind, (typeof CHANGE_KINDS)[number]> extends never ? true : never;
 const everyChangeKindListed: EveryChangeKindListed = true;
@@ -370,7 +370,7 @@ function normalizeIssues(
  *
  * The fact and the count are required and never clipped; the issues themselves
  * are the part a brief may have to drop. An agent told `required` with an empty
- * list knows to read the board; an agent told nothing at all does not.
+ * list knows to read the model; an agent told nothing at all does not.
  * @param reconciliation - The reconciliation input.
  * @returns The frozen reconciliation.
  */
@@ -436,4 +436,4 @@ function normalizeArchitecture(
 	};
 }
 
-export { type BoundedValue, normalizeArchitecture };
+export { normalizeArchitecture };

@@ -16,7 +16,7 @@
 import { useSyncExternalStore, type JSX } from "react";
 
 import { subtitledTranscript, type VoiceFeed } from "#ui/rules/application/subtitled-transcript.ts";
-import { useOverlayPlace } from "#ui/hooks/semantic-board-canvas/use-overlay-place.ts";
+import { useOverlayPlace } from "#ui/hooks/canvas/use-overlay-place.ts";
 import {
 	VoiceSubtitles,
 	useSubtitlesWanted,
@@ -94,4 +94,4 @@ function Subtitled(props: SubtitledProps): JSX.Element {
 	);
 }
 
-export { PaneSubtitles, type PaneSubtitlesProps };
+export { PaneSubtitles };

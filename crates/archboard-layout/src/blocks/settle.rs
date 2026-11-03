@@ -82,7 +82,7 @@ fn turn_from(points: &[Point], from: &Rect) -> f64 {
     turned.get(2).unwrap_or(&turned[turned.len() - 1]).x
 }
 
-/// The board laid out, as settling reads and writes it.
+/// The picture laid out, as settling reads and writes it.
 pub(crate) struct Settling<'s> {
     pub tree: &'s BlockTree,
     /// Every block laid out; each block routed again replaces its own.

@@ -12,7 +12,7 @@
 // dropped: it must never start later, with nobody asking. It holds no React
 // state, so the order can be read, and tested, on its own.
 
-import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
+import type { WalkthroughNarration } from "#ui/rules/canvas/walkthrough/narration.ts";
 
 /** Where the shell is, as far as a narration needs to know. */
 interface ShellState {
@@ -46,7 +46,7 @@ interface Narrator {
 	 */
 	readonly sync: (state: ShellState) => void;
 	/**
-	 * Narrate one walkthrough of one pane's board. Nothing starts while voice runs.
+	 * Narrate one walkthrough of one pane's model. Nothing starts while voice runs.
 	 * @param paneId The pane.
 	 * @param walkthrough The walkthrough's id.
 	 */
@@ -114,11 +114,13 @@ function createNarrator(ports: NarratorPorts): Narrator {
  * what it was offered already.
  * @param narrator The narrator.
  * @param held Why a narration cannot start now, or null when one can.
+ * @param starting Whether voice is still connecting.
  * @returns What a pane is offered.
  */
 function offerNarration(
 	narrator: Narrator,
 	held: string | null,
+	starting: boolean,
 ): (paneId: string) => WalkthroughNarration {
 	const offered = new Map<string, WalkthroughNarration>();
 	return (paneId) => {
@@ -128,6 +130,7 @@ function offerNarration(
 		}
 		const made: WalkthroughNarration = {
 			held,
+			starting,
 			/**
 			 * Narrate one of this pane's walkthroughs.
 			 * @param walkthrough The walkthrough's id.
@@ -141,4 +144,4 @@ function offerNarration(
 	};
 }
 
-export { createNarrator, offerNarration, type Narrator, type NarratorPorts, type ShellState };
+export { createNarrator, offerNarration, type Narrator, type ShellState };

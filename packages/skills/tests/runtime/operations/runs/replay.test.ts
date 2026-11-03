@@ -7,8 +7,8 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { SemanticBoardSchema } from "@archboard/board/document";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { LegacyBoardSchema } from "@archboard/model/legacy-board";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { framesOf } from "@archboard/walkthrough/talk";
 import { keepTalk } from "@archboard/walkthrough/recorder";
 import { evaluateOutcomes, type OutcomeCheck } from "#runtime/rules/outcomes/outcomes.ts";
@@ -16,7 +16,7 @@ import { inspectVideo, talkOfFixture } from "#runtime/operations/runs/replay.ts"
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { READING } from "#tests/runtime/support/reading-fixture.ts";
 
-const BOARD = SemanticBoardSchema.parse(
+const DOCUMENT = LegacyBoardSchema.parse(
 	withFixtureOrders({
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",
@@ -87,7 +87,7 @@ beforeEach(() => {
 	home = mkdtempSync(join(tmpdir(), "archboard-replay-check-"));
 	const kept = talkOfFixture(
 		{ board: "pr-1", walkthrough: "For reviewers", directory: "~/talk", theme: "light" },
-		BOARD,
+		DOCUMENT,
 		CHECKED,
 	);
 	frames = framesOf(keepTalk({ ...kept, directory: join(home, "talk") }));
@@ -111,7 +111,7 @@ function replayOutput(receipt: Record<string, unknown>): string {
 			{
 				success: true,
 				talk: join(home, "talk"),
-				board: "pr-1",
+				document: "pr-1",
 				variant: "v1",
 				walkthrough: { id: "w1", name: "For reviewers" },
 				steps: 2,

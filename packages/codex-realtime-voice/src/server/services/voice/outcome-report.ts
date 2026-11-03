@@ -113,4 +113,4 @@ function createOutcomeReportPort(parts: OutcomeReportParts): CoordinatorCallback
 	};
 }
 
-export { createOutcomeReportPort, outcomeReportPrompt, type OutcomeReportParts };
+export { createOutcomeReportPort };

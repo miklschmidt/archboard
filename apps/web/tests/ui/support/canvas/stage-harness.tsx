@@ -1,0 +1,369 @@
+// What a semantic pane does with what the server answers: the four states it
+// can be in, the selection a click makes, and the camera — which neither a
+// model changing under the person nor a failed refresh may disturb.
+
+import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { afterAll, afterEach, beforeAll } from "bun:test";
+import { act, cleanup, render } from "@testing-library/react";
+import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
+
+import type { CodeBinding } from "@archboard/code-binding/bindings";
+import { type PaneChrome, PaneChromeContext } from "#ui/components/canvas/PaneChrome.tsx";
+import { usePaneChrome } from "#ui/hooks/canvas/use-pane-chrome.ts";
+import { PaneVaultContext } from "#ui/state/canvas/pane-vault.ts";
+import { CanvasStage } from "#ui/components/canvas/CanvasStage.tsx";
+import { type SemanticPaneReading } from "#ui/rules/canvas/reading/address.ts";
+
+import {
+	server,
+	renderCalls,
+	supplyCapture,
+	resetCapture,
+} from "#tests/ui/support/canvas/stage-capture.ts";
+
+afterEach(() => {
+	cleanup();
+	Object.assign(room, VIEWPORT);
+	resetCapture();
+});
+
+/** The window on the diagram every measured element reports in these tests. */
+const VIEWPORT = Object.freeze({ width: 800, height: 600 });
+
+/** The window the elements measure now: a test may narrow it, and each test starts from VIEWPORT. */
+const room: { width: number; height: number } = { ...VIEWPORT };
+
+/**
+ * How big an element is, in a DOM that does no layout.
+ * @returns The one window these tests measure everything through.
+ */
+function measured(): DOMRect {
+	return new DOMRect(0, 0, room.width, room.height);
+}
+
+beforeAll(() => {
+	GlobalRegistrator.register();
+	Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
+	// This DOM does no layout, and a camera cannot fit or zoom about nothing. The
+	// size is given before anything mounts so that the stage's own first fit is
+	// the one under test rather than a no-op that happens again later.
+
+	Element.prototype.getBoundingClientRect = measured;
+});
+
+afterAll(async () => {
+	await GlobalRegistrator.unregister();
+});
+
+/**
+ * Let the answers in flight, and the reads they start, reach the screen. The
+ * cache answers on real promises and tells its subscribers on a timer, so this
+ * waits on the loop rather than on microtasks alone.
+ * @returns Settles once the stage has rendered over whatever arrived.
+ */
+async function settle(): Promise<void> {
+	await act(async () => {
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	});
+}
+
+/** What one mounted stage told its caller. */
+interface Mounted {
+	/** Every selection the stage reported, in order. */
+	readonly picks: (string | null)[];
+}
+
+/** The vault every mounted pane is in. */
+const PANE_VAULT = "/work/archboard/.archboard/vault";
+
+/**
+ * The stage inside a cache with this product's read defaults, in one vault.
+ * @param children The stage.
+ * @returns The providers around it.
+ */
+function Cache(children: ReactNode): JSX.Element {
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	return createElement(
+		QueryClientProvider,
+		{ client },
+		createElement(PaneVaultContext, { value: PANE_VAULT }, children),
+	);
+}
+
+/**
+ * The stage's own props a test may state as they are: a driven step, what is
+ * laid over the picture, the models above the one on screen, the shell's
+ * narration, and what the shell hears the person changed.
+ */
+type StagePassThrough = Pick<
+	Parameters<typeof CanvasStage>[0],
+	"driven" | "overlay" | "placeOf" | "narration" | "onUserChanged"
+>;
+/** What else a mounted pane may be told, beyond what it is showing. */
+interface MountOptions extends StagePassThrough {
+	/** Which view the pane reads its model through. */
+	readonly view?: string | undefined;
+	/**
+	 * The pane offered a different way of reading the model.
+	 * @param view The view's id, or null for the whole variant.
+	 */
+	readonly onViewChange?: ((view: string | null) => void) | undefined;
+	/** Which variant of its model the pane is showing. */
+	readonly variant?: string | undefined;
+	/** Whether the person asked for reduced motion. */
+	readonly reducedMotion?: boolean | undefined;
+	/**
+	 * Whether the selection is held above the pane and fed back to it, the way
+	 * the shell holds it. Off by default, so a test that only wants to know what
+	 * the pane reported sees a pane nothing moves under it.
+	 */
+	readonly live?: boolean | undefined;
+	/**
+	 * What the pane says it is reading, whenever that changes.
+	 * @param reading The model, variant, view and selection on screen.
+	 */
+	readonly onReading?: ((reading: SemanticPaneReading) => void) | undefined;
+	/**
+	 * The person asked to open a part's code, which only a shell can do.
+	 * @param binding Where the code is.
+	 */
+	readonly onOpenCode?: ((binding: CodeBinding) => void) | undefined;
+	/** What the shell puts in the pane's header; a pane alone in the shell by default. */
+	readonly chrome?: PaneChrome | undefined;
+}
+
+/** Every option the harness passes straight through to the stage. */
+const READING_PROPS = [
+	"view",
+	"onViewChange",
+	"variant",
+	"reducedMotion",
+	"onReading",
+	"onOpenCode",
+	"driven",
+	"overlay",
+	"placeOf",
+	"narration",
+	"onUserChanged",
+] as const satisfies readonly (keyof MountOptions)[];
+
+/**
+ * How the pane was told to read its model, as props the stage takes: assembled
+ * once, so the two mount paths cannot differ in what they hand the stage.
+ * @param options What the test asked for.
+ * @returns The reading props, leaving out whatever was not asked for.
+ */
+function paneReading(options: MountOptions): Record<string, unknown> {
+	const stated: Record<string, unknown> = {};
+	for (const key of READING_PROPS) {
+		const value = options[key];
+		if (value !== undefined) {
+			stated[key] = value;
+		}
+	}
+	return stated;
+}
+
+/** A step the shell asks a pane to present. */
+type Driven = MountOptions["driven"];
+
+/**
+ * The shell's hold on a held pane's variant, which the navigator changes, on
+ * the step it asks the pane to present, which a narration or an agent starts,
+ * and on what it puts in the pane's header, which a second pane changes:
+ * none is the pane's own control, so a test changes them from here.
+ */
+const shellHold: {
+	setVariant: ((variant: string | undefined) => void) | null;
+	setDriven: ((driven: Driven) => void) | null;
+	setChrome: ((chrome: PaneChrome) => void) | null;
+} = {
+	setVariant: null,
+	setDriven: null,
+	setChrome: null,
+};
+
+/**
+ * Show another state of the held pane's model, as choosing it in the navigator does.
+ * @param variant The variant's id, or undefined for whichever is current.
+ */
+function chooseVariantInShell(variant: string | undefined): void {
+	const set = shellHold.setVariant;
+	if (set === null) {
+		throw new Error("No held pane is mounted; mount with { live: true }.");
+	}
+	act(() => {
+		set(variant);
+	});
+}
+
+/**
+ * Ask the held pane to present a step, as a narration started from the shell does.
+ * @param driven The step.
+ */
+function driveInShell(driven: Driven): void {
+	const set = shellHold.setDriven;
+	if (set === null) {
+		throw new Error("No held pane is mounted; mount with { live: true }.");
+	}
+	act(() => {
+		set(driven);
+	});
+}
+
+/**
+ * Change what the shell puts in the held pane's header, as another pane opening beside it does.
+ * @param chrome What the shell puts there now.
+ */
+function changeChromeInShell(chrome: PaneChrome): void {
+	const set = shellHold.setChrome;
+	if (set === null) {
+		throw new Error("No held pane is mounted; mount with { live: true }.");
+	}
+	act(() => {
+		set(chrome);
+	});
+}
+
+/**
+ * Open one tab of the pane's sidebar, as a person does.
+ * @param tab Which tab.
+ */
+function openSidebarTab(tab: "model" | "selection"): void {
+	const trigger = document.querySelector<HTMLElement>(
+		`[data-slot='semantic-sidebar-tab'][data-tab='${tab}']`,
+	);
+	if (trigger === null) {
+		throw new Error(`The sidebar has no ${tab} tab.`);
+	}
+	act(() => {
+		trigger.click();
+	});
+}
+
+/** Inputs for the harness's own holder of a pane's selection. */
+interface HeldProps extends MountOptions {
+	/** What is picked out when it mounts. */
+	readonly selection: string | null;
+	/**
+	 * Record what the person picked out.
+	 * @param id The semantic id, or null.
+	 */
+	readonly report: (id: string | null) => void;
+}
+
+/**
+ * A pane whose selection and variant are held above it, as the shell holds
+ * them: the pane reports the person's choice and is given it back as a prop.
+ * @param props What is picked out to begin with, and where to report picks.
+ * @returns The pane.
+ */
+function Held(props: HeldProps): JSX.Element {
+	const [picked, setPicked] = useState<string | null>(props.selection);
+	const [variant, setVariant] = useState<string | undefined>(props.variant);
+	const [view, setView] = useState<string | undefined>(props.view);
+	const [driven, setDriven] = useState<Driven>(props.driven);
+	const alone = usePaneChrome();
+	const [chrome, setChrome] = useState(props.chrome);
+	useEffect(() => {
+		shellHold.setVariant = setVariant;
+		shellHold.setDriven = setDriven;
+		shellHold.setChrome = setChrome;
+		return (): void => {
+			shellHold.setVariant = null;
+			shellHold.setDriven = null;
+			shellHold.setChrome = null;
+		};
+	}, []);
+	/**
+	 * Take the pane's pick and feed it back to the pane.
+	 * @param id The semantic id, or null.
+	 */
+	function onSelect(id: string | null): void {
+		props.report(id);
+		setPicked(id);
+	}
+	/**
+	 * Read the chosen view, as the shell does.
+	 * @param chosen The view, or null for Everything.
+	 */
+	function onViewChange(chosen: string | null): void {
+		setView(chosen ?? undefined);
+	}
+	return createElement(
+		PaneChromeContext.Provider,
+		{ value: chrome ?? alone },
+		createElement(CanvasStage, {
+			model: "pipeline",
+			...paneReading(props),
+			variant,
+			view,
+			onViewChange,
+			driven,
+			selection: picked,
+			onSelect,
+		}),
+	);
+}
+
+/**
+ * Mount a semantic pane over the fake server.
+ * @param selection What the shell says is picked out, if anything.
+ * @param options The view it reads through, and what a choice reports to.
+ * @returns What the pane reported.
+ */
+function mountStage(selection: string | null = null, options: MountOptions = {}): Mounted {
+	supplyCapture();
+	const picks: (string | null)[] = [];
+	/**
+	 * Record what the person picked out.
+	 * @param id The semantic id, or null.
+	 */
+	function onSelect(id: string | null): void {
+		picks.push(id);
+	}
+	// A held pane puts its own header's contents in place, so that they can change.
+	const stage =
+		options.live === true
+			? createElement(Held, { ...options, selection, report: onSelect })
+			: createElement(CanvasStage, {
+					model: "pipeline",
+					...paneReading(options),
+					selection,
+					onSelect,
+				});
+	const framed =
+		options.live !== true && options.chrome !== undefined
+			? createElement(PaneChromeContext.Provider, { value: options.chrome }, stage)
+			: stage;
+	render(Cache(framed));
+	return { picks };
+}
+
+export {
+	VIEWPORT,
+	PANE_VAULT,
+	room,
+	type MountOptions,
+	settle,
+	server,
+	renderCalls,
+	chooseVariantInShell,
+	changeChromeInShell,
+	driveInShell,
+	mountStage,
+	openSidebarTab,
+	type Mounted,
+};
+
+export {
+	inPicture,
+	part,
+	stageState,
+	surface,
+	viewport,
+} from "#tests/ui/support/canvas/stage-queries.ts";
+
+export { NOTHING_DRAWN, UNREADABLE, drawing } from "#tests/ui/support/canvas/render-answers.ts";

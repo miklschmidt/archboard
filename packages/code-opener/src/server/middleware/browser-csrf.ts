@@ -205,4 +205,4 @@ function checkBrowserCsrf(kind: BrowserCsrfKind, headers: BrowserCsrfHeaders): B
 	return checkSettingsRead(headers, origin);
 }
 
-export { type BrowserCsrfKind, type BrowserCsrfHeaders, type BrowserCsrfResult, checkBrowserCsrf };
+export { type BrowserCsrfKind, checkBrowserCsrf };

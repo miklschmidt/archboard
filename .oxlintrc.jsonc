@@ -184,12 +184,12 @@
 	// when a component is added or removed; never widen it to a wildcard.
 	"overrides": [
 		{
-			// What a board's pane draws over time runs on the frame clock, so a
+			// What a model's pane draws over time runs on the frame clock, so a
 			// recording can render it frame by frame against a clock it steps
 			// (TASK-381). Nothing here reads the browser's clocks directly.
 			"files": [
-				// The board canvas of apps/web: its folder below each role of the ui area.
-				"apps/web/src/ui/{api,clients,components,constants,hooks,rules,state,workers}/semantic-board-canvas/**",
+				// The canvas of apps/web: its folder below each role of the ui area.
+				"apps/web/src/ui/{api,clients,components,constants,hooks,rules,state,workers}/canvas/**",
 				"packages/workbench/src/ui/components/subtitles/**",
 				"packages/workbench/src/ui/hooks/subtitles/**",
 				"packages/workbench/src/ui/rules/subtitles/**",

@@ -216,12 +216,7 @@ const policy = {
 const ADDITIONAL_CONTEXT_POLICY = deepFreeze(policy);
 
 type AdditionalContextPolicy = typeof ADDITIONAL_CONTEXT_POLICY;
-type ThreadLinkState =
-	| AdditionalContextPolicy["threadLink"]["reasonNullStates"][number]
-	| AdditionalContextPolicy["threadLink"]["reasonRequiredStates"][number];
 type ThreadLinkReason = AdditionalContextPolicy["threadLink"]["reasonPrecedence"][number]["reason"];
-type OperationKind = AdditionalContextPolicy["operation"]["producers"][number]["kind"];
-type OperationRpc = AdditionalContextPolicy["operation"]["producers"][number]["rpcs"][number];
 type OperationOutcome = Exclude<
 	AdditionalContextPolicy["operation"]["tupleStates"][number]["outcome"],
 	"null"
@@ -230,9 +225,6 @@ type OperationOutcome = Exclude<
 export {
 	ADDITIONAL_CONTEXT_POLICY,
 	type AdditionalContextPolicy,
-	type ThreadLinkState,
 	type ThreadLinkReason,
-	type OperationKind,
-	type OperationRpc,
 	type OperationOutcome,
 };

@@ -1,5 +1,5 @@
-//! The mark on a part that opens another board: a small ring around an arrow
-//! that says which way the other board lies, in the top-right corner inside the
+//! The mark on a part that opens another picture: a small ring around an arrow
+//! that says which way the other picture lies, in the top-right corner inside the
 //! card or the container's header, near and far alike.
 
 use crate::geometry::{Point, Rect, round_coord};

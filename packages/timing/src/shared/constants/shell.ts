@@ -26,18 +26,18 @@ const SHELL_CLOCK_MS = durations({
 });
 
 /** What the browser keeps of the server's answers (TASK-167). */
-const BOARD_CACHE_MS = durations({
+const MODEL_CACHE_MS = durations({
 	/**
-	 * How long the board listing stays fresh. The listing is small and every
+	 * How long the model listing stays fresh. The listing is small and every
 	 * event that can change it invalidates it by name, so this window is only the
 	 * floor under a burst of them. It is the one thing read again when the tab
 	 * comes back to the foreground, since nothing announces that the vault gained
-	 * a note. A board a pane holds is drawn from that pane and never read here.
+	 * a note. A model a pane holds is drawn from that pane and never read here.
 	 */
 	listingStale: 30_000,
 	/**
 	 * How long an answer nobody reads any more stays in the cache. It pulls
-	 * against the tab's memory rather than the server: it is what lets a board
+	 * against the tab's memory rather than the server: it is what lets a model
 	 * come back showing its last preview instead of an empty card.
 	 */
 	gc: 5 * 60_000,
@@ -51,4 +51,4 @@ const BOARD_CACHE_MS = durations({
 	startListing: 2_000,
 });
 
-export { SHELL_CLOCK_MS, BOARD_CACHE_MS };
+export { SHELL_CLOCK_MS, MODEL_CACHE_MS };

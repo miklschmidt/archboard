@@ -99,4 +99,4 @@ function KeyMark(props: { readonly stage: VoiceStage; readonly problem: boolean 
 	);
 }
 
-export { TalkControl, type TalkControlProps };
+export { TalkControl };

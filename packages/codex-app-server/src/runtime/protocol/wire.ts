@@ -7,7 +7,7 @@ import {
 
 export type WireId = string | number;
 
-export type JsonFrameDecodeFailureKind = "malformed-json" | "duplicate-key";
+type JsonFrameDecodeFailureKind = "malformed-json" | "duplicate-key";
 
 /** A stdout line that is not one strict JSON value, with the top-level correlation it managed to read. */
 export class JsonFrameDecodeError extends Error {

@@ -36,7 +36,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/cli/src/cli/operations/invocation/session.ts",
-        "symbol": "takeBoardFlag"
+        "symbol": "takeDirectoryFlag"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#a4PkS2Do",
       "to": "vKEsyHFk/nAmiQ3Vc#zs4XwBa9"
@@ -91,7 +91,7 @@
     {
       "order": 10000,
       "kind": "call",
-      "label": "the stated board, doing and version",
+      "label": "the stated model, doing and version",
       "emphasis": "normal",
       "traffic": {
         "speed": 40,

@@ -43,4 +43,4 @@ function stepsOf(turn: ConversationTurn | undefined): readonly CardStep[] {
 	}));
 }
 
-export { shownSteps, stepsOf, type CardStep, type StepState };
+export { shownSteps, stepsOf, type CardStep };

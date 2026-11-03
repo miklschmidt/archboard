@@ -1,11 +1,3 @@
-import { z } from "zod";
-
-const boardRequiredRefusal = {
-	code: "BOARD_REQUIRED",
-	exit: 2,
-	stream: "stderr" as const,
-	description: "A board-sensitive request did not name a board.",
-};
 const vaultNotFoundRefusal = {
 	code: "VAULT_NOT_FOUND",
 	exit: 2,
@@ -13,7 +5,7 @@ const vaultNotFoundRefusal = {
 	description:
 		"No vault was found from the working directory or the directory -C names. " +
 		"Inside a checkout only <root>/.archboard/vault counts; outside one, the nearest enclosing <dir>/.archboard/vault. " +
-		"In a checkout with no vault, the refusal names each known vault whose boards bind the checkout's repository, as the -C to give. Nothing was done.",
+		"In a checkout with no vault, the refusal names each known vault whose models bind the checkout's repository, as the -C to give. Nothing was done.",
 };
 const vaultRequiredRefusal = {
 	code: "VAULT_REQUIRED",
@@ -46,58 +38,9 @@ const doingRefusal = {
 	code: "DOING_REQUIRED",
 	exit: 1,
 	stream: "stderr" as const,
-	description: "A board write did not declare what it was doing.",
-};
-const boardHeldRefusal = {
-	code: "BOARD_HELD",
-	exit: 5,
-	stream: "stderr" as const,
-	description: "Another writer currently holds the board lease.",
-};
-const boardVersionRefusal = {
-	code: "BOARD_VERSION_CONFLICT",
-	exit: 5,
-	stream: "stderr" as const,
-	description: "The board advanced past expect-version.",
-};
-const claimRevokedRefusal = {
-	code: "CLAIM_REVOKED",
-	exit: 5,
-	stream: "stderr" as const,
-	description:
-		"The claim ended before its release: a person took it back, or its lease went to another process.",
+	description: "A model write did not declare what it was doing.",
 };
 
-const commonRefusals = [boardRequiredRefusal, serverRefusal] as const;
-const boardWriteRefusals = [
-	boardRequiredRefusal,
-	serverRefusal,
-	doingRefusal,
-	boardHeldRefusal,
-	boardVersionRefusal,
-	claimRevokedRefusal,
-] as const;
-const claimRefusals = [
-	boardRequiredRefusal,
-	serverRefusal,
-	boardHeldRefusal,
-	claimRevokedRefusal,
-] as const;
 const serverBrowserRefusals = [serverRefusal, browserRefusal] as const;
-const tail = z.array(z.string()).default([]);
 
-export {
-	boardRequiredRefusal,
-	serverRefusal,
-	vaultRefusals,
-	browserRefusal,
-	doingRefusal,
-	boardHeldRefusal,
-	boardVersionRefusal,
-	claimRevokedRefusal,
-	commonRefusals,
-	boardWriteRefusals,
-	claimRefusals,
-	serverBrowserRefusals,
-	tail,
-};
+export { serverRefusal, vaultRefusals, doingRefusal, serverBrowserRefusals };

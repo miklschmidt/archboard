@@ -1,16 +1,16 @@
 import { useCallback, useMemo, type CSSProperties, type JSX } from "react";
-import type { Model, projectModel } from "@archboard/board/content";
-import type { ChangeKind } from "@archboard/board/comparison";
+import type { Model, projectModel } from "@archboard/model/content";
+import type { ChangeKind } from "@archboard/model/comparison";
 import { cn } from "@archboard/ui-kit/components";
 import { KindChip, ModelAboutTable } from "#ui/components/architecture-model/ModelAboutTable.tsx";
 import { ModelCodePath } from "#ui/components/architecture-model/ModelHeading.tsx";
-import { SemanticGroupChip } from "#ui/components/semantic-board-canvas/SemanticGroupChip.tsx";
-import { StandingSample } from "#ui/components/semantic-board-canvas/SemanticTypeSamples.tsx";
+import { SemanticGroupChip } from "#ui/components/canvas/SemanticGroupChip.tsx";
+import { StandingSample } from "#ui/components/canvas/SemanticTypeSamples.tsx";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import type { ModulePlace } from "#ui/rules/architecture-model/module-places.ts";
-import { groupLabel, type GroupNames } from "#ui/rules/semantic-board-canvas/board/groups.ts";
-import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
+import { groupLabel, type GroupNames } from "#ui/rules/canvas/reading/groups.ts";
+import type { KindLook } from "#ui/rules/canvas/reading/kind-look.ts";
 
 type Projection = ReturnType<typeof projectModel>;
 type Module = Projection["children"][number];

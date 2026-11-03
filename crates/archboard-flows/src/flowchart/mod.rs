@@ -45,7 +45,7 @@ use archboard_scene::request::{
 };
 use serde::Deserialize;
 
-use crate::board::{Flow, Node};
+use crate::content::{Flow, Node};
 use answer_order::laid_out;
 use graph::{Graph, SHAPE_KIND, flowchart_of};
 use outlines::{to_diamonds, with_outlines};

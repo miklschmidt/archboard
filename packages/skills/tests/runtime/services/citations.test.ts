@@ -45,16 +45,16 @@ const table = (keys: readonly string[]): string =>
 describe("a citation", () => {
 	test("resolves to a heading of a skill file, and anything else is a problem", () => {
 		const root = skillWith(
-			"# Edit an existing board\n\n## Handles, and removals\n\n```md\n## Not a heading\n```\n\n## Handles, and removals\n",
+			"# Edit an existing document\n\n## Handles, and removals\n\n```md\n## Not a heading\n```\n\n## Handles, and removals\n",
 		);
 		try {
-			expect(citationProblem(root, "references/edit.md#edit-an-existing-board")).toBeNull();
+			expect(citationProblem(root, "references/edit.md#edit-an-existing-document")).toBeNull();
 			expect(citationProblem(root, "references/edit.md#handles-and-removals")).toBeNull();
 			// A repeated heading is numbered, as a renderer numbers its anchor.
 			expect(citationProblem(root, "references/edit.md#handles-and-removals-1")).toBeNull();
 			expect(citationProblem(root, "references/edit.md#not-a-heading")).not.toBeNull();
 			expect(citationProblem(root, "references/edit.md#nowhere")).not.toBeNull();
-			expect(citationProblem(root, "references/read.md#edit-an-existing-board")).not.toBeNull();
+			expect(citationProblem(root, "references/read.md#edit-an-existing-document")).not.toBeNull();
 			expect(citationProblem(root, "../outside.md#x")).not.toBeNull();
 			expect(citationProblem(root, "references/edit.md")).not.toBeNull();
 			fs.mkdirSync(path.join(root, "references", "generated"));
@@ -130,19 +130,19 @@ describe("the suite", () => {
 });
 
 test("a batch keeps the skill it ran once, without the derived generated files", () => {
-	const skill = skillWith("# Edit an existing board\n");
+	const skill = skillWith("# Edit an existing document\n");
 	const batch = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-kept-skill-"));
 	try {
 		fs.mkdirSync(path.join(skill, "references", "generated"));
 		fs.writeFileSync(path.join(skill, "references", "generated", "schema.json"), "{}");
 		keepBatchSkill(skill, batch);
 		const kept = path.join(batch, "skill");
-		expect(citationProblem(kept, "references/edit.md#edit-an-existing-board")).toBeNull();
+		expect(citationProblem(kept, "references/edit.md#edit-an-existing-document")).toBeNull();
 		expect(fs.existsSync(path.join(kept, "references", "generated"))).toBe(false);
 		// A resumed batch keeps its first copy, whatever the checkout holds by then.
 		fs.writeFileSync(path.join(skill, "references", "edit.md"), "# Renamed\n");
 		keepBatchSkill(skill, batch);
-		expect(citationProblem(kept, "references/edit.md#edit-an-existing-board")).toBeNull();
+		expect(citationProblem(kept, "references/edit.md#edit-an-existing-document")).toBeNull();
 	} finally {
 		fs.rmSync(skill, { recursive: true, force: true });
 		fs.rmSync(batch, { recursive: true, force: true });

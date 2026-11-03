@@ -6,7 +6,7 @@ import type { JsonRequestOptions, JsonResponse } from "./http.ts";
 
 export interface PaneMessage {
 	type: string;
-	board?: string;
+	model?: string;
 	requestId?: string;
 	[key: string]: unknown;
 }
@@ -14,7 +14,7 @@ export interface PaneMessage {
 export interface PaneRegistration {
 	clientId: string;
 	paneId: string;
-	board?: string;
+	model?: string;
 	primary: boolean;
 	focused: boolean;
 	rect: { x: number; y: number; width: number; height: number };
@@ -30,9 +30,9 @@ export interface TestPane {
 	readonly socket: WebSocket;
 	readonly seen: PaneMessage[];
 	readonly registration: PaneRegistration;
-	board(): string | undefined;
+	model(): string | undefined;
 	since(): number;
-	adopt(board: string): Promise<void>;
+	adopt(model: string): Promise<void>;
 	waitFor(
 		match: (message: PaneMessage) => boolean,
 		start?: number,
@@ -46,7 +46,7 @@ export async function openTestPane(
 	request: Request,
 	clientId: string,
 	x: number,
-	options: { primary?: boolean; focused?: boolean; board?: string } = {},
+	options: { primary?: boolean; focused?: boolean; model?: string } = {},
 ): Promise<TestPane> {
 	const registration: PaneRegistration = {
 		clientId,
@@ -59,11 +59,11 @@ export async function openTestPane(
 		base,
 		clientId,
 		vault: request.vault,
-		...(options.board === undefined ? {} : { preferredBoard: options.board }),
-		register: (board, signal) =>
+		...(options.model === undefined ? {} : { preferredModel: options.model }),
+		register: (model, signal) =>
 			request("/api/panes", {
 				method: "POST",
-				body: { ...registration, board },
+				body: { ...registration, paneKey: model },
 				signal,
 			}),
 		readPanes: (signal) => request("/api/panes", { signal }),
@@ -73,7 +73,7 @@ export async function openTestPane(
 		socket: pane.socket,
 		seen: pane.events,
 		registration,
-		board: pane.board,
+		model: pane.model,
 		since: () => pane.events.length,
 		adopt: pane.register,
 		waitFor: pane.waitFor,

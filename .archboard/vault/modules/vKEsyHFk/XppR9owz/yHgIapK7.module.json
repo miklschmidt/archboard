@@ -74,7 +74,7 @@
     {
       "order": 76000,
       "kind": "call",
-      "label": "address each request with its board, vault, and write claims",
+      "label": "address each request with its model, vault, and write claims",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

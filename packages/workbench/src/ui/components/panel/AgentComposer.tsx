@@ -2,7 +2,7 @@
 // turn runs, Enter steers it and Ctrl or Cmd with Enter queues the message to
 // run after it; Shift with Enter starts a new line. It grows upward as the
 // message grows, taking room from the conversation above it. It says which
-// board the agent will read.
+// model the agent will read.
 
 import { RiArrowUpLine } from "@remixicon/react";
 import {
@@ -108,4 +108,4 @@ function AgentComposer(props: AgentComposerProps): JSX.Element {
 	);
 }
 
-export { AgentComposer, type AgentComposerProps };
+export { AgentComposer };

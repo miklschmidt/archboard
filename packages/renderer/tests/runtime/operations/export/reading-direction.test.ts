@@ -2,19 +2,19 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // Track reads downward. Blocks also permits a rightward reading within one scope.
 
 import { describe, expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import type { VariantContent } from "@archboard/board/content";
+import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import type { VariantContent } from "@archboard/model/content";
 import { fitIn } from "#shared/constants/shell-geometry.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import { readingOf } from "#tests/runtime/support/drawn-reading.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /**
  * One hub with a fan of many dependents: a row of them across the page is
  * far wider than the pane, a column of them is not much taller than it.
  * @param count How many dependents.
- * @returns The board.
+ * @returns The document.
  */
 function fan(count: number): VariantContent {
 	const leaves = Array.from({ length: count }, (_, index) => ({
@@ -104,7 +104,7 @@ describe("architecture diagrams read top to bottom", () => {
  * A pipeline of cards, long enough that a column of it is taller than the pane.
  * @param length How many stages.
  * @param framed Whether the stages sit inside one frame.
- * @returns The board.
+ * @returns The document.
  */
 function pipeline(length: number, framed = false): VariantContent {
 	const stages = Array.from({ length }, (_, index) => ({

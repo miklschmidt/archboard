@@ -72,7 +72,7 @@ function isMutationRequest(req: Request): boolean {
 /**
  * Mount the admission middleware: it precedes every mutation-specific guard
  * and body parser. Parsing is one request lease; explicit async route and
- * board-lock work takes a second lease so disconnecting the response cannot
+ * model-lock work takes a second lease so disconnecting the response cannot
  * make unfinished mutation work disappear from shutdown's authoritative drain.
  * @param app The application to mount on.
  */
@@ -90,7 +90,7 @@ function mountMutationAdmission(app: Express): void {
 				code: "SERVER_STOPPING",
 				error:
 					"The Archboard server is checking whether it can stop and is not accepting writes. " +
-					"If the server remains running, retry after resolving any held board it reports.",
+					"If the server remains running, retry after resolving any held model it reports.",
 			});
 			return;
 		}
@@ -108,4 +108,4 @@ function mountMutationAdmission(app: Express): void {
 	});
 }
 
-export { asyncEndpoint, callerGone, mountMutationAdmission, trackMutationWork };
+export { asyncEndpoint, mountMutationAdmission, trackMutationWork };

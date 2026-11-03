@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import type { useModelNavigation } from "#ui/hooks/architecture-model/use-model-navigation.ts";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { ArchitectureReadError } from "#ui/clients/architecture-model/queries.ts";

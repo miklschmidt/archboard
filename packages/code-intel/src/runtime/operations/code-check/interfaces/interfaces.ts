@@ -1,7 +1,7 @@
 // Each container's interface held against what its module exposes
 // (ADR 0044, ADR 0046, TASK-368.10).
 //
-// The board's side is the interface ADR 0044 derives from the variant: the
+// The document's side is the interface ADR 0044 derives from the variant: the
 // children of a container that relationships from outside it reach are its
 // entry points, and the rest are hidden parts. The code's side is what the
 // module the container binds exposes: a bound directory, or the file that
@@ -14,19 +14,19 @@
 // a part inside it owns.
 //
 // - `ENTRY_POINT_UNEXPOSED`: an entry point owns nothing the module exposes,
-//   and the code of a caller the board draws reaches it from a file outside
-//   the module, so the board and the code both reach past the interface. The
+//   and the code of a caller the document draws reaches it from a file outside
+//   the module, so the document and the code both reach past the interface. The
 //   evidence is that use. A caller whose code shows no use, as a request over
 //   a network or a call through a value shows none, or whose code lies inside
 //   the module, gives no finding: the check cannot be sure, and the module's
 //   exports are not how it reaches the part. A warning when a use is resolved,
 //   information when all are candidates.
 // - `CALLER_UNDRAWN`: a hidden part owns an exposed definition that a file
-//   outside the module uses at run time, and the board draws no caller of it.
-//   Where a part on the board owns that use, `RELATIONSHIP_UNDRAWN` already
+//   outside the module uses at run time, and the document draws no caller of it.
+//   Where a part on the document owns that use, `RELATIONSHIP_UNDRAWN` already
 //   says it, or a relationship joins the two, so this adds nothing. A warning
 //   when a use is resolved, information when all are candidates. Judged only
-//   where the board draws a caller of the container at all: a board that
+//   where the document draws a caller of the container at all: a document that
 //   draws none says nothing about the interface (ADR 0044).
 // - `EXPOSED_UNUSED`, information: names the module exposes that no file
 //   outside it uses, as code or as a type.
@@ -36,7 +36,7 @@
 // outputs, so no entry point of it is judged unexposed, and its container
 // also gets the findings about the module's shape (terraform-modules.ts).
 
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 import type { Piece } from "#runtime/operations/code-check/evidence/evidence.ts";
 import {
 	ownersAtLine,
@@ -60,28 +60,28 @@ import {
 } from "#runtime/operations/code-facts/modules/module-exposure.ts";
 import { type Definition } from "#runtime/operations/code-facts/facts.ts";
 import { type FactsPass } from "#runtime/services/code-facts/reader.ts";
-import { nodeSubject } from "@archboard/board/vault-policy";
+import { nodeSubject } from "@archboard/model/vault-policy";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
-import { inspectContainer } from "@archboard/board/container-interface";
-import type { SemanticNode } from "@archboard/board/content";
-import { describeSubject } from "@archboard/board/policy";
-import type { interfaceMeasures } from "@archboard/board/container-interface";
+import { inspectContainer } from "@archboard/model/container-interface";
+import type { SemanticNode } from "@archboard/model/content";
+import { describeSubject } from "@archboard/model/policy";
+import type { interfaceMeasures } from "@archboard/model/container-interface";
 
 type ContainerInterface = Parameters<typeof interfaceMeasures>[0];
 
-/** What judging the containers of one board needs. */
+/** What judging the containers of one document needs. */
 interface InterfaceReading {
-	readonly read: BoardToCheck;
+	readonly read: StateToCheck;
 	readonly codes: ReadonlyMap<string, PartCode>;
 	/** Each part and the parts that hold it, the part first. */
 	readonly lineages: ReadonlyMap<string, ReadonlySet<string>>;
-	/** The evidence between the board's bound parts. */
+	/** The evidence between the document's bound parts. */
 	readonly pieces: readonly Piece[];
 	readonly facts: FactsPass;
 	readonly modules: ModuleReadings;
 }
 
-/** What the containers of one board give. */
+/** What the containers of one document give. */
 interface InterfaceOutcome {
 	readonly findings: CodeFinding[];
 	readonly skipped: CodeCheckSkip[];
@@ -139,7 +139,7 @@ function topLevel(name: ExposedName, exposed: readonly ExposedName[]): boolean {
 
 /**
  * Each part and every part inside it.
- * @param reading The board.
+ * @param reading The document.
  * @param id The part.
  * @returns The ids.
  */
@@ -233,7 +233,7 @@ function unusedFinding(judged: Judged): CodeFinding | undefined {
 }
 
 /**
- * The uses by which the code of a caller the board draws reaches an entry
+ * The uses by which the code of a caller the document draws reaches an entry
  * point from a file outside the module: one piece for each caller.
  * @param judged The container.
  * @param entry The entry point and the relationships that reach it.
@@ -289,7 +289,7 @@ function unexposedFinding(
 
 /**
  * The first run-time use of each exposed name a hidden part owns, by a file
- * that no part on the board owns there.
+ * that no part on the document owns there.
  * @param judged The container.
  * @param hidden The hidden part.
  * @returns One piece of evidence for each such name.
@@ -315,7 +315,7 @@ function undrawnUses(judged: Judged, hidden: SemanticNode): CodeEvidence[] {
 
 /**
  * The finding on a hidden part whose exposed code a file outside the module
- * uses, with no caller on the board.
+ * uses, with no caller on the document.
  * @param judged The container.
  * @param hidden The hidden part.
  * @param pieces One use of each name.
@@ -347,13 +347,13 @@ function callerFinding(
 /**
  * Judge each child of one container against what its module exposes.
  * @param judged The container.
- * @param findings The board's findings, which this adds to.
+ * @param findings The document's findings, which this adds to.
  */
 async function judgeChildren(judged: Judged, findings: CodeFinding[]): Promise<void> {
 	const { inspection } = judged;
 	const { nodes } = judged.reading.read.variant.content;
 	for (const child of nodes.filter((node) => node.parent === inspection.container.id)) {
-		// oxlint-disable-next-line no-await-in-loop -- one child at a time keeps the findings in board order
+		// oxlint-disable-next-line no-await-in-loop -- one child at a time keeps the findings in document order
 		if (await judgedChild(judged, child)) findings.push(...childFindings(judged, child));
 	}
 }
@@ -361,7 +361,7 @@ async function judgeChildren(judged: Judged, findings: CodeFinding[]): Promise<v
 /**
  * What one judged child of a container gives: an entry point that owns
  * nothing the module exposes, or a hidden part whose exposed code outside
- * files use with no caller on the board.
+ * files use with no caller on the document.
  * @param judged The container.
  * @param child The child.
  * @returns Its findings.
@@ -380,9 +380,9 @@ function childFindings(judged: Judged, child: SemanticNode): CodeFinding[] {
 
 /**
  * Judge one container, or say why the pass does not.
- * @param reading The board and the pass.
+ * @param reading The document and the pass.
  * @param container The container.
- * @param outcome What the board gives, which this adds to.
+ * @param outcome What the document gives, which this adds to.
  */
 async function judgeContainer(
 	reading: InterfaceReading,
@@ -428,8 +428,8 @@ function testImportFindings(judged: Judged): CodeFinding[] {
 }
 
 /**
- * The skip of a container, at its board and variant.
- * @param reading The board.
+ * The skip of a container, at its document and variant.
+ * @param reading The document.
  * @param container The container.
  * @param skip Why it is not judged.
  * @returns The skip.
@@ -440,16 +440,16 @@ function containerSkip(
 	skip: Pick<CodeCheckSkip, "reason" | "repo" | "ref" | "detail">,
 ): CodeCheckSkip {
 	const subject = nodeSubject(container);
-	const { board, variant } = siteOf(reading.read, "", subject);
-	return { board, variant, subject, ...skip };
+	const { model, variant } = siteOf(reading.read, "", subject);
+	return { model, variant, subject, ...skip };
 }
 
 /**
  * A node the pass judges as a container bound to a module, or nothing, with
  * the skip of a container whose code the pass does not read.
- * @param reading The board and the pass.
+ * @param reading The document and the pass.
  * @param container The node.
- * @param skipped What the board does not judge, which this adds to.
+ * @param skipped What the document does not judge, which this adds to.
  * @returns What judging it reads, or undefined.
  */
 async function containerToJudge(
@@ -467,10 +467,10 @@ async function containerToJudge(
 /**
  * What judging a container reads: what its module exposes and who owns each
  * exposed definition.
- * @param reading The board and the pass.
+ * @param reading The document and the pass.
  * @param inspection The container's interface.
  * @param code The container's code.
- * @param skipped What the board does not judge, which gains the container
+ * @param skipped What the document does not judge, which gains the container
  * when no language the check reads has its module's root files.
  * @returns It, or undefined when its binding names no module or the module is unknown.
  */
@@ -508,14 +508,14 @@ function moduleDirectory(code: ReadPart): string | undefined {
 }
 
 /**
- * Hold the interface of each container on one board against what its module exposes.
- * @param reading The board, its parts' code, and the pass.
+ * Hold the interface of each container on one document against what its module exposes.
+ * @param reading The document, its parts' code, and the pass.
  * @returns The findings and what was not judged.
  */
 async function judgeInterfaces(reading: InterfaceReading): Promise<InterfaceOutcome> {
 	const outcome: InterfaceOutcome = { findings: [], skipped: [] };
 	for (const node of reading.read.variant.content.nodes) {
-		// oxlint-disable-next-line no-await-in-loop -- one container at a time keeps the findings in board order
+		// oxlint-disable-next-line no-await-in-loop -- one container at a time keeps the findings in document order
 		await judgeContainer(reading, node, outcome);
 	}
 	return outcome;

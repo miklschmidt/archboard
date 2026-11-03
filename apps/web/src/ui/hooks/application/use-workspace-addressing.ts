@@ -13,7 +13,7 @@ import type { LiveBinding } from "#ui/state/application/live-binding.ts";
 import {
 	useWorkspaceAddress,
 	type WorkspaceAddressing,
-} from "#ui/hooks/board-routing/use-workspace-address.ts";
+} from "#ui/hooks/reading-routing/use-workspace-address.ts";
 
 /**
  * Reconcile the address bar with the panes, and bind what a person's gestures

@@ -1,14 +1,14 @@
-import { modelContent, subjectsOf } from "@archboard/board/content";
+import { modelContent, subjectsOf } from "@archboard/model/content";
 import { canonicalNarratedSubjects } from "#server/rules/semantic-context/narrated-subjects.ts";
-import { readArchitectureModel } from "@archboard/board/store-read";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import { readArchitectureModel } from "@archboard/model/store-read";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { SemanticContextInput } from "#runtime/schemas/semantic-context-types.ts";
 import { semanticPaneContextFor } from "#server/services/panes/context.ts";
-import { NOTHING_READ } from "#server/projections/semantic-context/board-context.ts";
+import { NOTHING_READ } from "#server/projections/semantic-context/architecture-context.ts";
 type ArchitectureModel = Extract<ArchitectureModelRead, { success: true }>;
 type Reading = Pick<
 	SemanticContextInput,
-	"board" | "architecture" | "description" | "stale" | "staleReasons"
+	"model" | "architecture" | "description" | "stale" | "staleReasons"
 >;
 type Report = ReturnType<typeof semanticPaneContextFor>;
 /**
@@ -24,7 +24,7 @@ function requiresCapture(model: ArchitectureModel, report: Report): boolean {
 	return selectionRequiresCapture(model, architecture.selection ?? {});
 }
 /**
- * Read canonical authority before consulting a former board or its claim.
+ * Read canonical authority before consulting a former model or its claim.
  * @param vault The addressed vault.
  * @param clientId The pane that reports its reading.
  * @returns Canonical context, or absence for an unmigrated vault.
@@ -61,7 +61,7 @@ function unavailableCanonical(
 	model: Extract<ArchitectureModelRead, { success: false }>,
 ): Reading {
 	return {
-		board: {
+		model: {
 			key: "architecture",
 			name: "Architecture",
 			vault,
@@ -105,7 +105,7 @@ function canonicalSelection(model: ArchitectureModel, report: Report) {
 function availableCanonical(vault: string, model: ArchitectureModel, report: Report): Reading {
 	const state = model.selectedState;
 	const reportedReading = report?.architecture ?? null;
-	const board = {
+	const context = {
 		key: `model:${model.manifest.id}`,
 		name: model.manifest.name,
 		vault,
@@ -114,7 +114,7 @@ function availableCanonical(vault: string, model: ArchitectureModel, report: Rep
 	};
 	if (requiresCapture(model, report))
 		return {
-			board,
+			model: context,
 			architecture: NOTHING_READ,
 			description: JSON.stringify({
 				authority: "canonical",
@@ -127,7 +127,7 @@ function availableCanonical(vault: string, model: ArchitectureModel, report: Rep
 			staleReasons: ["canonical_reading_requires_capture"],
 		};
 	return {
-		board,
+		model: context,
 		architecture: {
 			...NOTHING_READ,
 			selection: canonicalSelection(model, report),

@@ -199,7 +199,6 @@ export {
 	type SteerWorkhorseResult,
 	type StopWorkhorsesResult,
 	type ResolveSpokenApprovalResult,
-	COORDINATOR_TOOL_RESULT_SCHEMAS,
 	parseCoordinatorToolResult,
 	TOOL_SUCCESS_RESULT_SCHEMAS,
 };

@@ -397,13 +397,4 @@ function createCodexWaitGraph(): CodexWaitGraph {
 	return Object.freeze({ addEdgeSet, release, inspect });
 }
 
-export {
-	type WaitOwner,
-	type WaitEdgeSetInput,
-	type WaitEdge,
-	type OwnedWaitCleanupCause,
-	type WaitCleanup,
-	type WaitEdgeSetResult,
-	type CodexWaitGraph,
-	createCodexWaitGraph,
-};
+export { type WaitOwner, type OwnedWaitCleanupCause, createCodexWaitGraph };

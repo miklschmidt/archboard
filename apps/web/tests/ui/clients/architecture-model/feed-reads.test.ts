@@ -2,7 +2,7 @@
 // A focus, a mount of cached data and a returning socket read nothing.
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
-import type { ArchitectureFeedFrame } from "@archboard/board/model";
+import type { ArchitectureFeedFrame } from "@archboard/model/contract";
 
 GlobalRegistrator.register({ url: "http://127.0.0.1:3000/" });
 
@@ -11,8 +11,8 @@ const { waitFor } = await import("@testing-library/react");
 const { architectureFeed } = await import("#ui/clients/architecture-model/events.ts");
 const { architectureCheckpointsQuery, architectureModelQuery } =
 	await import("#ui/clients/architecture-model/queries.ts");
-const { vaultCheckQuery } = await import("#ui/clients/semantic-board-canvas/reads/queries.ts");
-const { readBoardsFrom } = await import("#ui/clients/semantic-board-canvas/reads/board-reads.ts");
+const { vaultCheckQuery } = await import("#ui/clients/canvas/reads/queries.ts");
+const { readRetainedFrom } = await import("#ui/clients/canvas/reads/retained-reads.ts");
 
 const VAULT = "/work/shop/.archboard/vault";
 const OLD = "a".repeat(64);
@@ -74,14 +74,14 @@ async function answer(input: Parameters<typeof fetch>[0]): Promise<Response> {
 }
 globalThis.fetch = Object.assign(answer, { preconnect: realFetch.preconnect });
 
-readBoardsFrom({
+readRetainedFrom({
 	/**
-	 * No board is listed here.
-	 * @returns No boards.
+	 * No model is listed here.
+	 * @returns No models.
 	 */
 	listing: async () => ({ levels: [], boards: [] }),
 	/**
-	 * No board is read here.
+	 * No model is read here.
 	 * @returns Nothing.
 	 */
 	document: async () => undefined,

@@ -54,4 +54,4 @@ function useMeasuredLines(): MeasuredLines {
 	return { ref, lines };
 }
 
-export { useMeasuredLines, type MeasuredLines };
+export { useMeasuredLines };

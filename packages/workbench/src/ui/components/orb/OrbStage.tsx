@@ -63,4 +63,4 @@ function OrbHost(props: VoiceOrbProps): JSX.Element {
 	return createPortal(<VoiceOrb {...props} />, stage.holder);
 }
 
-export { OrbHost, OrbSlot, OrbStageProvider, type OrbSlotProps };
+export { OrbHost, OrbSlot, OrbStageProvider };

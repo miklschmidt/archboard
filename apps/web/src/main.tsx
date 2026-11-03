@@ -8,7 +8,7 @@ import { createRoot } from "react-dom/client";
 import { replayAskedOf } from "@archboard/walkthrough/talk";
 import { Application } from "#ui/components/application/Application.tsx";
 import { applyShellDurations } from "#ui/clients/application/shell-durations.ts";
-import { createBoardRoutingHost } from "#ui/components/board-routing/BoardRoutingHost.tsx";
+import { createReadingRoutingHost } from "#ui/components/reading-routing/ReadingRoutingHost.tsx";
 
 const root = document.getElementById("root");
 if (!root) {
@@ -18,7 +18,7 @@ if (!root) {
 applyShellDurations(document.documentElement);
 
 // Pictures are drawn here, with the renderer core and a pool of engine
-// workers, from the boards this tab reads (TASK-247). The renderer is its own
+// workers, from the models this tab reads (TASK-247). The renderer is its own
 // chunk, fetched and started while the application boots, so the shell and a
 // kept picture never wait for it.
 const renderer = import("@archboard/renderer/browser").then((module) => {
@@ -33,7 +33,7 @@ if (replayAskedOf(window.location.search)) {
 		module.startWalkthroughReplay(root, renderer),
 	);
 } else {
-	const Root = createBoardRoutingHost(Application);
+	const Root = createReadingRoutingHost(Application);
 	createRoot(root).render(
 		<StrictMode>
 			<Root />

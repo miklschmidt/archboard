@@ -1,8 +1,8 @@
 // What the audit of a run says in the report: whether its author read the
 // material it was measured against or reached another run, whether it wrote a
-// board file outside the CLI, and whether the run was recorded before the
+// document file outside the CLI, and whether the run was recorded before the
 // harness kept either. Kept beside the comparison so the report can say it
-// without folding it into the board's correctness.
+// without folding it into the document's correctness.
 
 import type { Report, RunRecord } from "#runtime/rules/reports/report.ts";
 
@@ -16,7 +16,7 @@ function contaminated(run: RunRecord): boolean {
 }
 
 /**
- * Whether a run's author changed a board file outside the CLI.
+ * Whether a run's author changed a document file outside the CLI.
  * @param run The run.
  * @returns True when the trace holds such a change.
  */
@@ -46,7 +46,7 @@ function auditReasons(run: RunRecord): string[] {
 		.filter(([, count]) => count > 0)
 		.map(([kind, count]) => `${kind} ×${count}`);
 	return [
-		...(wroteDirectly(run) ? [`wrote ${run.directWrites} board files outside the CLI`] : []),
+		...(wroteDirectly(run) ? [`wrote ${run.directWrites} document files outside the CLI`] : []),
 		...(exposure.length === 0 ? [] : [`read evaluation material: ${exposure.join(", ")}`]),
 	];
 }

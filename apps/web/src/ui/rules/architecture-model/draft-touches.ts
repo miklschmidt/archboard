@@ -1,4 +1,4 @@
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 
 type Draft = Model["proposals"][number];
 

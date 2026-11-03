@@ -159,4 +159,3 @@ function createTransportWriterCallbacks(
 }
 
 export { createTransportWriterCallbacks };
-export type { TransportWriterCallbacksOptions };

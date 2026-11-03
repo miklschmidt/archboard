@@ -518,6 +518,5 @@ export type {
 	CodexWorkbenchSnapshot,
 	CodexWorkbenchState,
 	CodexWorkbenchStopReason,
-	CreateCodexWorkbenchGenerationLifecycleOptions,
 	GenerationState,
 };

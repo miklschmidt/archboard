@@ -96,4 +96,4 @@ function VoiceSlot(props: VoiceSlotProps): JSX.Element {
 	);
 }
 
-export { PresentationBar, type PresentationBarProps };
+export { PresentationBar };

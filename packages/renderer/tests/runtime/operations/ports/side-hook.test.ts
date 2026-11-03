@@ -3,11 +3,11 @@
 // few points below it, where entering the top takes one bend fewer (Renderer
 // layout's "measure every word", Codex session's "decode parameters and
 // answer"). Two lines down into Former names once hooked into its sides past
-// its top (Board persistence's "Durable write boundary").
+// its top (Document persistence's "Durable write boundary").
 
 import { expect, test } from "bun:test";
-import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@archboard/board/policy";
-import { type LayoutEngineName } from "@archboard/board/render-reply";
+import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@archboard/model/policy";
+import { type LayoutEngineName } from "@archboard/model/render-reply";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import type { StatedStandings } from "#shared/protocol/render-request.ts";
 import { cornersOf, routePoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
@@ -51,7 +51,7 @@ function hooksInto(box: Box, route: readonly DrawnPoint[]): boolean {
 
 /**
  * The lines of a finished drawing that hook into a card's side.
- * @param fixture The board, and how its subjects stand in the proposal it draws.
+ * @param fixture The document, and how its subjects stand in the proposal it draws.
  * @param layout The engine that draws it.
  * @returns The ids of the hooked lines, once for each hooked end.
  */
@@ -59,8 +59,8 @@ async function hookedLines(
 	fixture: Parameters<typeof orderedFixture>[0] & { readonly standing: object },
 	layout: LayoutEngineName,
 ): Promise<string[]> {
-	const { standing, ...board } = fixture;
-	const content = orderedFixture(board);
+	const { standing, ...document } = fixture;
+	const content = orderedFixture(document);
 	const drawing = await renderArchitecture({
 		content,
 		standing: standing as StatedStandings,
@@ -89,10 +89,10 @@ test.each(["track"] as const)(
 test.each(["track"] as const)(
 	"lines down into a card enter its top rather than hook past it into its sides (%s)",
 	async (layout) => {
-		const { standing, ...board } = formerNames;
-		const former = board.nodes.find(({ name }) => name === "Former names")!.id;
+		const { standing, ...document } = formerNames;
+		const former = document.nodes.find(({ name }) => name === "Former names")!.id;
 		const drawing = await renderArchitecture({
-			content: orderedFixture(board),
+			content: orderedFixture(document),
 			standing: standing as StatedStandings,
 			policy,
 			theme: "light",
@@ -100,7 +100,7 @@ test.each(["track"] as const)(
 		});
 		const routes = routePoints(drawing.svg);
 		const down = new Set(["a former name opens the board", "the board the name answers to"]);
-		const entries = board.edges
+		const entries = document.edges
 			.filter(({ to, label }) => to === former && down.has(label))
 			.map(({ id }) => {
 				const [last, before] = cornersOf(routes.get(id)!).toReversed();

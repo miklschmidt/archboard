@@ -83,4 +83,4 @@ async function connectedBrowsers(): Promise<number | undefined> {
 	return (await getHealth()).websocket_clients;
 }
 
-export { type ServerStatus, connectedBrowsers, serverStatus };
+export { connectedBrowsers, serverStatus };

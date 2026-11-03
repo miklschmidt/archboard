@@ -1,12 +1,12 @@
 import type { Query, QueryClient } from "@tanstack/react-query";
-import type { ArchitectureEvent, ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureEvent, ArchitectureModelRead } from "@archboard/model/contract";
 import { createFeedSocket } from "#ui/clients/architecture-model/feed-socket.ts";
 import {
 	ArchitectureReadError,
 	architectureModelKeys,
 	type ModelSummary,
 } from "#ui/clients/architecture-model/queries.ts";
-import { semanticBoardKeys } from "#ui/clients/semantic-board-canvas/reads/board-keys.ts";
+import { readKeys } from "#ui/clients/canvas/reads/read-keys.ts";
 
 type CurrentReading = Extract<ArchitectureModelRead, { success: true }>;
 type ModelEvent = Exclude<ArchitectureEvent, { type: "architecture_claims" }>;
@@ -143,7 +143,7 @@ function createFeed(
 		await Promise.all([
 			client.invalidateQueries(changingReadings),
 			client.invalidateQueries({ queryKey: architectureModelKeys.modules(vault) }),
-			client.invalidateQueries({ queryKey: semanticBoardKeys.vaultCheck(vault) }),
+			client.invalidateQueries({ queryKey: readKeys.vaultCheck(vault) }),
 		]);
 	}
 	/**

@@ -10,15 +10,15 @@ import { encodeCanonicalContext } from "#runtime/rules/instructions/context.ts";
 import { ARCHBOARD_CONTEXT_CODEC, workbenchContextOf } from "#runtime/services/host/archboard.ts";
 import { canonicalContextFromBrief } from "#server/projections/semantic-context/semantic-input.ts";
 import {
-	boardChangeAnnouncement,
+	modelChangeAnnouncement,
 	paneAnnouncement,
 } from "#server/services/host/archboard-announcements.ts";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { CoordinatorCallbackCanvas } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 
-// What Archboard announces of a board change and of a pane report (TASK-293, TASK-293.06,
-// TASK-530.05): the words each model is told, whether a board is on screen, whether a narration
+// What Archboard announces of a model change and of a pane report (TASK-293, TASK-293.06,
+// TASK-530.05): the words each model is told, whether a legacy board is on screen, whether a narration
 // stops for it, and the context a workhorse reads. How the voice agent delivers it is its own.
 
 const TAB = parseTabSessionId("tab-1")!;
@@ -26,7 +26,7 @@ const NULL_OPERATION = { id: null, kind: null, rpc: null, outcome: null } as con
 
 const { identity } = createIdentityAuthorities();
 
-/** One board, one pane, read under one workhorse. */
+/** One model, one pane, read under one workhorse. */
 const INPUT: SemanticContextInput = {
 	repository: "archboard",
 	child: { id: identity.validator.childId, epoch: identity.validator.epoch },
@@ -36,7 +36,7 @@ const INPUT: SemanticContextInput = {
 		threadId: identity.decoder.adoptThreadId("coordinator-1"),
 		realtimeSessionId: null,
 	},
-	board: {
+	model: {
 		key: "architecture",
 		name: "Architecture",
 		vault: "/work/.archboard/vault",
@@ -60,16 +60,16 @@ const INPUT: SemanticContextInput = {
 	claim: { holder: "agent", doing: "campaign: payments redesign" },
 	doing: "mapping",
 	cursor: null,
-	description: "Architecture board",
+	description: "Architecture model",
 };
 
 /**
  * A publisher over INPUT, and the settled change it publishes for a write.
  * @param by The thread the write names, or null.
- * @param board The board it wrote.
+ * @param model The model it wrote.
  * @returns The publisher and the change.
  */
-function sources(by: string | null = null, board = "architecture") {
+function sources(by: string | null = null, model = "architecture") {
 	const listeners = new Set<(event: SettledChangeSourceEvent) => void>();
 	const publisher = createSemanticContextPublisher({
 		feed: {
@@ -90,8 +90,8 @@ function sources(by: string | null = null, board = "architecture") {
 	for (const listener of listeners) {
 		listener({
 			cursor: 7,
-			vault: INPUT.board.vault,
-			board,
+			vault: INPUT.model.vault,
+			model,
 			at: "2023-11-14T22:13:20.000Z",
 			origin: "agent",
 			significance: "structural",
@@ -104,16 +104,16 @@ function sources(by: string | null = null, board = "architecture") {
 }
 
 /**
- * A canvas that shows these boards, narrating one or none.
- * @param narrated The narrated board, or null.
- * @param boards The boards its panes show.
+ * A canvas that shows these models, narrating one or none.
+ * @param narrated The narrated model, or null.
+ * @param models The models its panes show.
  * @returns The tab and its canvas.
  */
 function tab(
 	narrated: string | null = null,
-	boards: readonly string[] = ["architecture"],
+	models: readonly string[] = ["architecture"],
 ): { readonly id: typeof TAB; readonly canvas: CoordinatorCallbackCanvas } {
-	return { id: TAB, canvas: { boards, narrated } };
+	return { id: TAB, canvas: { models, narrated } };
 }
 
 /**
@@ -178,7 +178,7 @@ describe("a pane report", () => {
 		}
 	});
 
-	test("only the parts the user changed are said, and the board always is", () => {
+	test("only the parts the user changed are said, and the model always is", () => {
 		const view = { id: "w1", name: "Data flow", grammar: "sequence" as const };
 		const text = voiceText(paneAnnouncement(reading(["view"], { view }), tab(), 1));
 
@@ -269,10 +269,10 @@ describe("a pane report", () => {
 	});
 });
 
-describe("a settled board change", () => {
+describe("a settled model change", () => {
 	test("both models are told another agent's write as one quiet sentence, under its writer", () => {
 		const { change: event } = sources("another-agent-thread");
-		const change = boardChangeAnnouncement(event, tab());
+		const change = modelChangeAnnouncement(event, tab());
 
 		expect(change).toMatchObject({ feed: "feed-1", sequence: 7, author: "another-agent-thread" });
 		// Nothing an agent did is folded into the next.
@@ -282,7 +282,7 @@ describe("a settled board change", () => {
 				? change.coordinator.text
 				: "";
 		expect(change.voice).toEqual({ text: sentence, speech: false });
-		// The board by name and what the writer said it was doing; never an id, the envelope, or
+		// The model by name and what the writer said it was doing; never an id, the envelope, or
 		// the user as the one who did it.
 		expect(sentence).toContain("Architecture");
 		expect(sentence).toContain("mapping");
@@ -291,8 +291,8 @@ describe("a settled board change", () => {
 		expect(sentence).not.toMatch(/\buser\b/u);
 	});
 
-	test("a write to a board no pane of the canvas shows tells neither model", () => {
-		const change = boardChangeAnnouncement(sources(null, "payments").change, tab());
+	test("a write to a legacy board no pane of the canvas shows tells neither model", () => {
+		const change = modelChangeAnnouncement(sources(null, "payments").change, tab());
 
 		expect(change.voice).toEqual({ withheld: "not_shown" });
 		expect(change.coordinator).toBeUndefined();
@@ -301,10 +301,10 @@ describe("a settled board change", () => {
 	test("live writes stay quiet during captured narration, including the narrated model", () => {
 		const narrating = tab("architecture", ["architecture", "ledger"]);
 
-		expect(boardChangeAnnouncement(sources().change, narrating).voice).toMatchObject({
+		expect(modelChangeAnnouncement(sources().change, narrating).voice).toMatchObject({
 			speech: false,
 		});
-		expect(boardChangeAnnouncement(sources(null, "ledger").change, narrating).voice).toMatchObject({
+		expect(modelChangeAnnouncement(sources(null, "ledger").change, narrating).voice).toMatchObject({
 			speech: false,
 		});
 	});
@@ -317,7 +317,7 @@ describe("a settled board change", () => {
 			origin: "external",
 			change: { ...original.change, origin: "external", by: null },
 		};
-		const change = boardChangeAnnouncement(event, tab("architecture"));
+		const change = modelChangeAnnouncement(event, tab("architecture"));
 
 		expect(change.author).toBeNull();
 		expect(change.voice).toMatchObject({ speech: false });
@@ -327,9 +327,9 @@ describe("a settled board change", () => {
 		expect(voiceText(change)).not.toContain("mapping");
 	});
 
-	test("the workhorse of the board's checkout reads the same Archboard context bytes it always did", () => {
+	test("the workhorse of the model's checkout reads the same Archboard context bytes it always did", () => {
 		const { change: event } = sources();
-		const change = boardChangeAnnouncement(event, tab());
+		const change = modelChangeAnnouncement(event, tab());
 		const workhorse = change.workhorse;
 		if (workhorse === undefined || !("text" in workhorse))
 			throw new Error("The workhorse was told nothing.");
@@ -360,7 +360,7 @@ describe("a settled board change", () => {
 		const { change: event } = sources();
 		const stale = { ...event, staleness: { state: "stale" as const, reasons: ["board changed"] } };
 
-		expect(boardChangeAnnouncement(stale, tab()).workhorse).toEqual({
+		expect(modelChangeAnnouncement(stale, tab()).workhorse).toEqual({
 			checkouts: ["/work"],
 			withheld: "stale",
 		});

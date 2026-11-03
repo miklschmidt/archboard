@@ -1,36 +1,36 @@
-//! A board's parts and relationships as the layout reads them from the
-//! board's own JSON (`@archboard/board/content`): what a layout places, and
+//! A picture's parts and relationships as the layout reads them from the
+//! picture's own JSON (`@archboard/model/content`): what a layout places, and
 //! what the painter is told about each of them.
 
 use archboard_scene::drawing::{DoorWay, EdgeFacts, Emphasis, NodeFacts, Toggle, Traffic};
 use serde::{Deserialize, Deserializer, Serialize};
 
-/// One part of a board: a card, or a container of other parts.
+/// One part of a picture: a card, or a container of other parts.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Node {
     /// The part's id.
     pub id: String,
-    /// Where it stands among the board's parts, as the author ordered them.
+    /// Where it stands among the picture's parts, as the author ordered them.
     #[serde(default)]
     pub order: f64,
     /// What it is called.
     pub name: String,
     /// The key of the vault policy's node kind it is.
     pub kind: String,
-    /// What it is responsible for, when the board says.
+    /// What it is responsible for, when the picture says.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub responsibility: Option<String>,
-    /// Where its code lives, as a reading words it; never stored on a board.
+    /// Where its code lives, as a reading words it; never stored on a picture.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code_path: Option<String>,
-    /// The container it stands in; absent on the board itself.
+    /// The container it stands in; absent on the picture itself.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<String>,
     /// The groups it says it is in, by id.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<String>,
-    /// Whether it opens another board.
+    /// Whether it opens another picture.
     #[serde(
         default,
         rename(deserialize = "drillDown", serialize = "drills"),
@@ -40,7 +40,7 @@ pub struct Node {
     /// Which way it lies from the open frame, when it stands outside it as a door.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub door: Option<DoorWay>,
-    /// The control it wears for a live reader, as a reading words it; never stored on a board.
+    /// The control it wears for a live reader, as a reading words it; never stored on a picture.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub toggle: Option<Toggle>,
 }
@@ -65,17 +65,17 @@ impl Node {
     }
 }
 
-/// How loudly a relationship speaks when the board does not say.
+/// How loudly a relationship speaks when the picture does not say.
 fn normal() -> Emphasis {
     Emphasis::Normal
 }
 
-/// One directed relationship of a board.
+/// One directed relationship of a picture.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Edge {
     /// The relationship's id.
     pub id: String,
-    /// Where it stands among the board's relationships, as the author ordered them.
+    /// Where it stands among the picture's relationships, as the author ordered them.
     pub order: f64,
     /// The id of the part it starts at.
     pub from: String,
@@ -83,7 +83,7 @@ pub struct Edge {
     pub to: String,
     /// The key of the vault policy's relationship kind it is.
     pub kind: String,
-    /// What it carries, when the board says.
+    /// What it carries, when the picture says.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
     /// How loudly it speaks.
@@ -93,7 +93,7 @@ pub struct Edge {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub traffic: Option<Traffic>,
     /// Whether a joined line holds relationships in both directions, as a reading words it;
-    /// never stored on a board.
+    /// never stored on a picture.
     #[serde(default, rename = "twoWay", skip_serializing_if = "std::ops::Not::not")]
     pub two_way: bool,
 }
@@ -116,10 +116,10 @@ impl Edge {
 /// The parts and relationships a layout places.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Content {
-    /// The parts, in the board's order.
+    /// The parts, in the picture's order.
     #[serde(default)]
     pub nodes: Vec<Node>,
-    /// The relationships, in the board's order.
+    /// The relationships, in the picture's order.
     #[serde(default)]
     pub edges: Vec<Edge>,
 }

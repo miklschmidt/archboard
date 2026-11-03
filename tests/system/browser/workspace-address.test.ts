@@ -213,7 +213,7 @@ test("canonical workspace history preserves pane identity and isolates proposal 
 const ORDERS = "github.com/acme/orders";
 
 /**
- * Whether one pane's picture says a word: which vault's board it drew.
+ * Whether one pane's picture says a word: which vault's model it drew.
  * @param browser The page.
  * @param letter The pane's letter.
  * @param word What the picture should say.
@@ -221,7 +221,7 @@ const ORDERS = "github.com/acme/orders";
  */
 function paneSays(browser: AgentBrowserSession, letter: string, word: string): Promise<boolean> {
 	return browser.eval<boolean>(
-		`document.querySelector(${JSON.stringify(`${PANE_SECTIONS}[aria-label^="Pane ${letter}"] [data-slot="semantic-board-surface"]`)})?.textContent?.includes(${JSON.stringify(word)}) ?? false`,
+		`document.querySelector(${JSON.stringify(`${PANE_SECTIONS}[aria-label^="Pane ${letter}"] [data-slot="canvas-surface"]`)})?.textContent?.includes(${JSON.stringify(word)}) ?? false`,
 	);
 }
 
@@ -306,12 +306,12 @@ test("a plain address waits for a choice and returns to it, and choosing a check
 	await pollUntil(
 		() => paneSays(browser, "B", "Main checkout"),
 		Boolean,
-		"the right-hand pane to draw the board of the chosen checkout",
+		"the right-hand pane to draw the model of the chosen checkout",
 	);
 
 	const before = await addressSearch(browser);
 	// The switcher finds the repository's checkouts; choosing the worktree moves
-	// the pane that read the main checkout, and it keeps its board.
+	// the pane that read the main checkout, and it keeps its model.
 	await browser.run(["click", '[data-slot="repository-switcher"]']);
 	await browser.run([
 		"fill",

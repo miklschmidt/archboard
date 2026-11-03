@@ -370,4 +370,3 @@ function linkFor(
 }
 
 export { classifyReason, linkFor, observationFor, ownershipReason };
-export type { RefusalInput };

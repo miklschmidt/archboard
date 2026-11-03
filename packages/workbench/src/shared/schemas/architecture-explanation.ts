@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ArchitectureModelReadSchema } from "@archboard/board/model";
+import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 
 const CaptureSchema = ArchitectureModelReadSchema.options[0].shape.explanation.unwrap();
 const ExplanationActionRequestSchema = z.discriminatedUnion("type", [

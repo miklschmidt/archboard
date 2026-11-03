@@ -30,7 +30,7 @@ import { assertThemeParity } from "./support/theme-parity.ts";
 const WAIT = { timeoutMs: 8_000 } as const;
 
 /** The surface a pane's picture sits in. */
-const SURFACE = "[data-slot='semantic-board-surface']";
+const SURFACE = "[data-slot='canvas-surface']";
 
 /** How far a glyph's ink may stand past its run's advance, as a share of the size: a side bearing. */
 const BEARING = 0.2;

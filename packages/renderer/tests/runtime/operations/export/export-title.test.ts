@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import type { DiagramBox, DrawnBoard } from "@archboard/board/render-reply";
-import { exported, paintedBody } from "#tests/runtime/support/export-board.ts";
+import type { DiagramBox, DrawnPicture } from "@archboard/model/render-reply";
+import { exported, paintedBody } from "#tests/runtime/support/export-picture.ts";
 
 // A title is drawn above an exported picture (TASK-467): the drawing moves down
 // whole under it and is otherwise the drawing without it.
@@ -23,7 +23,7 @@ function titleOf(svg: string): { words: string; y: number } | undefined {
  * @param drawn The drawing.
  * @returns Its subjects' boxes, by kind and id.
  */
-function boxes(drawn: DrawnBoard): [string, DiagramBox][] {
+function boxes(drawn: DrawnPicture): [string, DiagramBox][] {
 	return (["nodes", "edges", "regions"] as const).flatMap((kind) =>
 		Object.entries(drawn.atlas[kind]).map(([id, box]): [string, DiagramBox] => [
 			`${kind}/${id}`,
@@ -75,7 +75,7 @@ test("a title wider than the picture widens the page to hold it", async () => {
 	expect(titled.width).toBeGreaterThan(plain.width);
 });
 
-test("asked for without words, the title names the board, the view, the variant and what it is compared with", async () => {
+test("asked for without words, the title names the document, the view, the variant and what it is compared with", async () => {
 	const compared = titleOf(
 		(await exported({ variant: "Worker pool", view: "Intake", title: true })).svg,
 	);

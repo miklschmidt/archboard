@@ -184,4 +184,4 @@ function Notices(props: NoticesProps): JSX.Element | null {
 	);
 }
 
-export { Notices, SETTINGS_ACTION_ID, type NoticesProps };
+export { Notices };

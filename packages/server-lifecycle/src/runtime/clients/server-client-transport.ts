@@ -1,8 +1,7 @@
 // One request to the Archboard server, and the identity gate in front of it.
 
 import { ARCHBOARD_URL } from "#runtime/services/config.ts";
-import { withBoard, withVault, withWriteClaims } from "#runtime/state/server-client-session.ts";
-import { isBoardRefusal } from "#runtime/protocol/server-client-refusal.ts";
+import { withVault, withWriteClaims } from "#runtime/state/server-client-session.ts";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 
@@ -168,7 +167,6 @@ async function assertServerIdentity(): Promise<void> {
 type ServerError = Error & {
 	code?: unknown;
 	available?: unknown;
-	refusal?: unknown;
 	/** The whole body the server answered with, for a route whose refusal says more than its reason. */
 	answer?: Record<string, unknown>;
 };
@@ -177,9 +175,9 @@ type ServerError = Error & {
  * The error for an answer that was not ok, carrying the server's own reason
  * and the structured body behind it.
  *
- * Refused board writes are results, not faults. Keeping their body on the
+ * Refused model writes are results, not faults. Keeping their body on the
  * error means the CLI does not have to reconstruct what the server said, or
- * read the board after the refusal.
+ * read the model after the refusal.
  * @param data The answer body.
  * @param response The answer.
  * @returns The error.
@@ -191,9 +189,6 @@ function responseError(data: unknown, response: Response): Error {
 	const error: ServerError = new Error([reason, ...diagnosticLines(body)].join("\n"));
 	describeFailure(error, body);
 	error.answer = body;
-	if (isBoardRefusal(data)) {
-		error.refusal = data;
-	}
 	return error;
 }
 
@@ -241,7 +236,7 @@ function describeFailure(error: ServerError, body: Record<string, unknown>): voi
 /**
  * One request to the Archboard server, answered as JSON.
  *
- * Every server request carries the board when one was named, and every API
+ * Every server request carries the model when one was named, and every API
  * request carries the vault (ADR 0049). Attached here rather than at 30 call
  * sites, so a route can never be the one that forgot.
  * @param path The request path.
@@ -252,7 +247,7 @@ function describeFailure(error: ServerError, body: Record<string, unknown>): voi
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 	await assertServerIdentity();
 	const response = await fetch(
-		`${ARCHBOARD_URL}${withWriteClaims(withVault(withBoard(path)), init?.method)}`,
+		`${ARCHBOARD_URL}${withWriteClaims(withVault(path), init?.method)}`,
 		init,
 	);
 	const data: unknown = await response.json().catch(() => null);
@@ -265,48 +260,10 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 	return data as T;
 }
 
-/**
- * Whether an error is the network failing rather than the server answering.
- * @param error The thrown value.
- * @returns True when nothing was reached.
- */
-function isConnectionFailure(error: unknown): boolean {
-	if (!isRecord(error)) {
-		return false;
-	}
-	const unreachable =
-		stringAt(error, "name") === "ConnectionRefused" ||
-		stringAt(error, "message")?.startsWith("Unable to connect.") === true;
-	return unreachable || UNREACHABLE_CODES.has(failureCode(error) ?? "");
-}
-
-// The system errors that mean nothing answered.
-const UNREACHABLE_CODES = new Set([
-	"ECONNREFUSED",
-	"ECONNRESET",
-	"ENOTFOUND",
-	"EAI_AGAIN",
-	"ETIMEDOUT",
-]);
-
-/**
- * The system code behind a failure: the cause's when it has one, else the
- * error's own.
- * @param error The thrown value.
- * @returns The code, or undefined.
- */
-function failureCode(error: Record<string, unknown>): string | undefined {
-	const cause = error["cause"];
-	return (isRecord(cause) ? stringAt(cause, "code") : undefined) ?? stringAt(error, "code");
-}
-
 export {
 	ARCHBOARD_SERVICE_NAME,
-	assertServerIdentity,
 	foreignServiceError,
-	isConnectionFailure,
 	markServerIdentityVerified,
 	OtherSourceError,
 	requestJson,
-	responseError,
 };

@@ -119,7 +119,6 @@ interface BrowserGatewayAccountReadResult {
 }
 
 export {
-	BROWSER_GATEWAY_ACTIONS,
 	type BrowserGatewayAction,
 	BROWSER_GATEWAY_ERROR_CODES,
 	type BrowserGatewayErrorCode,
@@ -128,7 +127,6 @@ export {
 	type BrowserGatewayDeltaMessage,
 	type BrowserGatewayMessage,
 	BROWSER_SNAPSHOT_DELTA_KEYS,
-	type BrowserSnapshotDeltaKey,
 	type BrowserSnapshotDeltaKeysAreExhaustive,
 	type BrowserGatewayCommandResult,
 	type BrowserGatewayAccountReadResult,

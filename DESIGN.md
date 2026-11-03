@@ -219,14 +219,14 @@ paths, versions, counts and times.
 
 ### Hierarchy
 
-- **Display** (650, 20px, 24px, 0.07em, capitals): a name set as a title. Examples are a picked part, a variant and a walkthrough. The utility is `title-name`. The board in a pane's breadcrumb is not one: it is Onest (650, 13px) in full ink, so the display face stays with the wordmark and the titles.
+- **Display** (650, 20px, 24px, 0.07em, capitals): a name set as a title. Examples are a picked part, a variant and a walkthrough. The utility is `title-name`. The model in a pane's breadcrumb is not one: it is Onest (650, 13px) in full ink, so the display face stays with the wordmark and the titles.
 - **Title** (600, 14px, 20px): the titles of regions and dialogs.
-- **Nav** (500, 14px, 20px): the name of a board in the navigator.
+- **Nav** (500, 14px, 20px): the name of a model in the navigator.
 - **Control** (500, 13px, 18px): buttons, tabs and fields.
 - **Body** (400, 12px, 16px): prose and row labels. A section heading uses it in semibold.
 - **Presentation** (600, 28px, 34px): the heading of a presented step.
-- **Reading** (400, 16px, 24px): the words of a presented step, in a column 64rem wide at most, and the summary under a board's name on its About page.
-- **Figure** (650, 44px, 44px, display face): the number of a presented step, and a board's name, in capitals, at the head of its About page.
+- **Reading** (400, 16px, 24px): the words of a presented step, in a column 64rem wide at most, and the summary under a model's name on its About page.
+- **Figure** (650, 44px, 44px, display face): the number of a presented step, and a model's name, in capitals, at the head of its About page.
 - **Subtitle** (500, 20px, 28px): the words the voice says. A section heading of the About page uses it in semibold.
 - **Technical** (400, 11px, 14px, mono): identifiers, paths, versions, counts and times.
 
@@ -246,7 +246,7 @@ in and out, and a handle on its edge, a grip on a line that takes the gold while
 it is dragged, resizes it between 320px and 720px, or drags it shut below that.
 Every Diagram reading of the canonical reader has a right panel beside its picture
 (360px, or 46 percent of a narrow pane), in every pane, and the picture fits the room
-that it leaves. A selection never refits the picture. A retained board recording keeps a sidebar (280px). Every
+that it leaves. A selection never refits the picture. A retained legacy board recording keeps a sidebar (280px). Every
 column starts with a chrome row (40px), and the left column has Find and the repository switcher, each 32px high. A pane's header stands
 on a whole-pixel grid: 16px lines and icons, 32px crumbs and text trimmed to its
 cap height, so its parts sit on one line at any display scale. A row of a list
@@ -379,13 +379,13 @@ along the line on both grounds.
 
 **The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part or several parts are picked out, or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede far under an opacity filter, so that what stays is plainly on top. Several picks keep only themselves and the lines between them. The shell lays no layer, blur or halo over the picture to do it.
 
-**The Card Is a Window Rule.** A card that opens a board is a window onto it. The board opens when the camera flies into the card, and going back flies out of it. The board's picture sits inside the card, in the picture's own units, so one camera carries both and the board that opens stands where the board in the card stood. The board blooms out of its middle as the camera flies in, and gathers again on the way back. The shell adds no layer for the flight.
+**The Card Is a Window Rule.** A card that opens a picture is a window onto it. The picture opens when the camera flies into the card, and going back flies out of it. The picture's picture sits inside the card, in the picture's own units, so one camera carries both and the picture that opens stands where the picture in the card stood. The picture blooms out of its middle as the camera flies in, and gathers again on the way back. The shell adds no layer for the flight.
 
-**The Focus Pull Rule.** A move on the canvas is a rack of focus, and the painter draws it as part of the picture. What the reader goes to stays sharp. What they leave falls out of focus and sinks into the ground. A door stays sharp while the board round it softens a little, and a picture comes into focus from its middle. A picture at rest is never soft, and a shell layer never blurs it. With reduced motion, or on the CPU painter, there is no blur.
+**The Focus Pull Rule.** A move on the canvas is a rack of focus, and the painter draws it as part of the picture. What the reader goes to stays sharp. What they leave falls out of focus and sinks into the ground. A door stays sharp while the picture round it softens a little, and a picture comes into focus from its middle. A picture at rest is never soft, and a shell layer never blurs it. With reduced motion, or on the CPU painter, there is no blur.
 
-**The Depth Rule.** A move between boards shows where the next board stands in the module tree. The modules nest, so a deeper board lies inside this one and a shallower board lies round it. A move to a board at the same depth carries the reader sideways along a strip of boards, in the order of the module tree. A move to a deeper board zooms into it, and a move to a shallower board zooms out to it. The camera flies through a card when the board shows one on the way, and otherwise the two boards zoom as one. The move never depends on the route: a card, a door, a crumb, the list and Back all take the same way. A view of one board stays on that board and has no way through the tree. With reduced motion, every move is a cut.
+**The Depth Rule.** A move between pictures shows where the next picture stands in the module tree. The modules nest, so a deeper picture lies inside this one and a shallower picture lies round it. A move to a picture at the same depth carries the reader sideways along a strip of pictures, in the order of the module tree. A move to a deeper picture zooms into it, and a move to a shallower picture zooms out to it. The camera flies through a card when the picture shows one on the way, and otherwise the two pictures zoom as one. The move never depends on the route: a card, a door, a crumb, the list and Back all take the same way. A view of one picture stays on that picture and has no way through the tree. With reduced motion, every move is a cut.
 
-**The Spark Rule.** A board's lines are drawn, and they never flash on together. A spark leaves each card that nothing feeds and runs along its lines. Where a spark lands, it runs both ways round the edge of the card and goes out, and the card's own lines start, so the board builds along the way its parts talk. A label arrives as the spark reaches it. The cards land first, so the board can be read while the lines run. A move between two pictures does the same for each line that changes its shape: the old line leaves, the cards settle on a clean ground, and a spark draws the new line. A line never swings across the board, and a line that keeps its shape rides with its cards. A spark takes the line's color toward the text, so it stands out on both grounds. A traffic pulse stays light, because it travels on a line that already stands. With reduced motion, every line is there at once.
+**The Spark Rule.** A picture's lines are drawn, and they never flash on together. A spark leaves each card that nothing feeds and runs along its lines. Where a spark lands, it runs both ways round the edge of the card and goes out, and the card's own lines start, so the picture builds along the way its parts talk. A label arrives as the spark reaches it. The cards land first, so the picture can be read while the lines run. A move between two pictures does the same for each line that changes its shape: the old line leaves, the cards settle on a clean ground, and a spark draws the new line. A line never swings across the picture, and a line that keeps its shape rides with its cards. A spark takes the line's color toward the text, so it stands out on both grounds. A traffic pulse stays light, because it travels on a line that already stands. With reduced motion, every line is there at once.
 
 **The Planes Not Lines Rule.** Regions read as layered planes. A one-pixel rule stays only where it draws the edge of a control or a card, or where it divides regions on one plane.
 
@@ -406,7 +406,7 @@ the Rule tone.
 ### Buttons
 
 - **Shape:** firm corners (3px to about 4.8px).
-- **Primary:** a physical piece of gold, drawn by the `primary-finish` utility. It has the gradient from Gold Top to Gold Bottom and a Gold Rim edge. It has a highlight on its top edge, a shadow that seats it and Gold Ink text. It is the one primary action of a region: Open <board> at the foot of the selection tab, Send, and the button of a dialog that saves or agrees.
+- **Primary:** a physical piece of gold, drawn by the `primary-finish` utility. It has the gradient from Gold Top to Gold Bottom and a Gold Rim edge. It has a highlight on its top edge, a shadow that seats it and Gold Ink text. It is the one primary action of a region: Open <model> at the foot of the selection tab, Send, and the button of a dialog that saves or agrees.
 - **Hover and pressed:** hover makes the gradient brighter. Pressed turns the gradient over, moves the shadow inside and sinks the control by 1px.
 - **Outline and secondary:** Card White, a Rule edge and `shadow-raised`. When pressed, they use `shadow-pressed`.
 - **Ghost:** no fill until hover.
@@ -438,7 +438,7 @@ A count of the left column stands on a low slab: `Badge` with the `count` varian
 
 ### Navigation
 
-- **Style:** the list lies in a well cut into the chrome, as a container is cut into the picture: the Well Floor, one thin line round it, an inner shadow from the whole of its top edge and a lit lip along its foot. The `column-well` utility holds the recipe. Nothing in the column is divided by a rule. A row is 28px at least, and a board or folder row 36px. Rails and elbows draw its levels. The chosen row is a plate in the Tab Piece tone with `shadow-raised`, and the row of what is open has a front edge in Gold Mark along its foot. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
+- **Style:** the list lies in a well cut into the chrome, as a container is cut into the picture: the Well Floor, one thin line round it, an inner shadow from the whole of its top edge and a lit lip along its foot. The `column-well` utility holds the recipe. Nothing in the column is divided by a rule. A row is 28px at least, and a model or folder row 36px. Rails and elbows draw its levels. The chosen row is a plate in the Tab Piece tone with `shadow-raised`, and the row of what is open has a front edge in Gold Mark along its foot. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
 
 The left column's tabs stand on the top edge of the well, as a container's name stands on the picture. They are 32px high, in Control and muted ink. The open tab is the Tab Piece raised on that edge, in full ink, with an underline of Gold Mark under its words. Its corners are 5px, and it meets the edge in a concave curve of 8px. The well's top edge runs on under it, so a line parts the tab from the floor. A tab at the well's left end keeps the well's left side, so it has no curve there. On a proposal, `Changes` and the walk share a second row. A pane's own tabs keep their underline of Gold Mark.
 
@@ -532,7 +532,7 @@ under the rule, with a section for each owner. `N` and `P` walk only that list.
 
 ### Pane sidebar
 
-A retained board recording keeps this sidebar. The sidebar is one panel, 280px wide and held at the pane's edge, on Chrome Chalk
+A retained legacy board recording keeps this sidebar. The sidebar is one panel, 280px wide and held at the pane's edge, on Chrome Chalk
 with a rule down its inner edge. It has two tabs and one control, in the pane's
 header, that shows and hides it. The control is filled while the sidebar is shown,
 its tooltip says what it will do, and it is there in every state of the pane.
@@ -570,8 +570,8 @@ its top names what it describes, the open scope or the selected subject, and lea
 the other one. Its column is 1320px wide at most and centred. The column
 keeps 40px of room inside each side, or 24px on a page narrower than 1040px.
 
-The head of the page names the board in the Figure role, in capitals. Under the
-name, one Control line gives the board's level with its mark. Then it gives the
+The head of the page names the model in the Figure role, in capitals. Under the
+name, one Control line gives the model's level with its mark. Then it gives the
 variant on screen with its lifecycle mark, its name and where it stands in muted
 ink. The variant's summary follows in the Reading role, 68 characters wide at most.
 40px separate the head from the first section.

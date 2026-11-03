@@ -17,7 +17,7 @@
 // lacks, or several refs with none new on the draft, is a skip that names the
 // draft, never a finding.
 
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 import {
 	normalized,
 	type Checkout,
@@ -30,8 +30,8 @@ import { type FactsPass } from "#runtime/services/code-facts/reader.ts";
 import { sourceAt } from "#runtime/clients/history-lens/source-history.ts";
 import type { CodeCheckSkip, CodeFinding } from "#shared/protocol/code-check.ts";
 import { bindingPathOf, filesOfBinding, type CodeBinding } from "@archboard/code-binding/bindings";
-import { draftRefs, type SemanticVariant } from "@archboard/board/document";
-import type { SemanticNode } from "@archboard/board/content";
+import { draftRefs, type SemanticVariant } from "@archboard/model/legacy-board";
+import type { SemanticNode } from "@archboard/model/content";
 
 /** What holding dropped parts to code needs from the pass. */
 interface DroppedContext {
@@ -46,7 +46,7 @@ type BoundNode = SemanticNode & { readonly binding: CodeBinding };
 
 /** A draft, the variant before it, and the bound parts of one repository it lacks. */
 interface Drop {
-	readonly read: BoardToCheck;
+	readonly read: StateToCheck;
 	readonly from: SemanticVariant;
 	readonly repo: string;
 	readonly nodes: readonly BoundNode[];
@@ -82,21 +82,21 @@ interface Judged {
 
 /**
  * The variant a read draft was branched from, when it is a draft that has one.
- * @param read The board, at the variant the check reads.
+ * @param read The document, at the variant the check reads.
  * @returns The variant before it, or undefined.
  */
-function predecessorOf(read: BoardToCheck): SemanticVariant | undefined {
+function predecessorOf(read: StateToCheck): SemanticVariant | undefined {
 	if (read.variant.lifecycle !== "draft") return undefined;
-	return read.board.variants.find((one) => one.id === read.variant.parent);
+	return read.document.variants.find((one) => one.id === read.variant.parent);
 }
 
 /**
  * The bound parts the variant before a read draft holds and the draft lacks,
  * by repository.
- * @param read The board, at the variant the check reads.
+ * @param read The document, at the variant the check reads.
  * @returns One drop for each repository.
  */
-function dropsOf(read: BoardToCheck): Drop[] {
+function dropsOf(read: StateToCheck): Drop[] {
 	const from = predecessorOf(read);
 	if (from === undefined) return [];
 	const kept = new Set(read.variant.content.nodes.map((node) => node.id));
@@ -112,10 +112,10 @@ function dropsOf(read: BoardToCheck): Drop[] {
 /**
  * The bindings of every part a read draft dropped, so the pass captures their
  * checkouts.
- * @param reads The boards, each at the variant the check reads.
+ * @param reads The documents, each at the variant the check reads.
  * @returns Each binding.
  */
-function droppedBindings(reads: readonly BoardToCheck[]): CodeBinding[] {
+function droppedBindings(reads: readonly StateToCheck[]): CodeBinding[] {
 	return reads.flatMap(dropsOf).flatMap((drop) => drop.nodes.map((node) => node.binding));
 }
 
@@ -127,9 +127,9 @@ function droppedBindings(reads: readonly BoardToCheck[]): CodeBinding[] {
  * @returns The skip.
  */
 function draftSkip(drop: Drop, reason: CodeCheckSkip["reason"], detail?: string): CodeCheckSkip {
-	const { board, variant } = drop.read;
+	const { document, variant } = drop.read;
 	const said = detail === undefined ? {} : { detail };
-	return { reason, board: board.name, variant: variant.id, repo: drop.repo, ...said };
+	return { reason, model: document.name, variant: variant.id, repo: drop.repo, ...said };
 }
 
 /**
@@ -163,7 +163,7 @@ async function codeAt(
 	checkout: ReadCheckout,
 	context: DroppedContext,
 ): Promise<Code | CodeCheckSkip> {
-	const refs = draftRefs(drop.read.board, drop.read.variant, drop.repo);
+	const refs = draftRefs(drop.read.document, drop.read.variant, drop.repo);
 	const [ref] = refs;
 	if (ref === undefined) return { checkout, facts: context.facts };
 	if (refs.length > 1) return draftSkip(drop, "draft-refs-ambiguous", refs.join(", "));
@@ -226,7 +226,7 @@ function droppedFinding(drop: Drop, node: BoundNode, code: Code, held: Place): C
 		severity: "warning",
 		code: "INHERITED_PART_DROPPED",
 		file: read.file,
-		board: read.board.name,
+		model: read.document.name,
 		variant: read.variant.id,
 		path: `variants.${from.id}.content.nodes.${node.id}.binding`,
 		subject: { kind: "node", id: node.id, name: node.name },
@@ -260,7 +260,7 @@ async function judgeDrop(drop: Drop, context: DroppedContext, judged: Judged): P
 		return;
 	}
 	for (const node of drop.nodes) {
-		// oxlint-disable-next-line no-await-in-loop -- one part at a time keeps the findings in board order, and a file one part reads is cached for the next
+		// oxlint-disable-next-line no-await-in-loop -- one part at a time keeps the findings in document order, and a file one part reads is cached for the next
 		const held = await heldPart(node, code);
 		if (held !== undefined) judged.findings.push(droppedFinding(drop, node, code, held));
 	}
@@ -268,17 +268,17 @@ async function judgeDrop(drop: Drop, context: DroppedContext, judged: Judged): P
 
 /**
  * Hold every part a read draft dropped to the code the draft describes.
- * @param reads The boards, each at the variant the check reads.
+ * @param reads The documents, each at the variant the check reads.
  * @param context The pass.
  * @returns The findings, and the drafts whose code could not be read.
  */
 async function judgeDroppedParts(
-	reads: readonly BoardToCheck[],
+	reads: readonly StateToCheck[],
 	context: DroppedContext,
 ): Promise<Judged> {
 	const judged: Judged = { findings: [], skipped: [] };
 	for (const drop of reads.flatMap(dropsOf)) {
-		// oxlint-disable-next-line no-await-in-loop -- one draft at a time keeps the findings in board order
+		// oxlint-disable-next-line no-await-in-loop -- one draft at a time keeps the findings in document order
 		await judgeDrop(drop, context, judged);
 	}
 	return judged;

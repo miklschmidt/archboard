@@ -1,7 +1,7 @@
 // Which report about a pane may be believed, and when.
 //
 // Two failures this guards, both of which hand an agent something true-looking
-// and wrong. A pane moving from one board to another registers on the new one
+// and wrong. A pane moving from one model to another registers on the new one
 // before its first report about it arrives, so for a moment the registry says B
 // and the pane's last report still says A — and A's ids resolved against B's
 // document may well resolve, meaning something else entirely. And two reports
@@ -14,7 +14,7 @@ import {
 	recordSemanticPaneContext,
 	semanticPaneContextFor,
 } from "#server/services/panes/context.ts";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
@@ -22,19 +22,19 @@ type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 /**
  * One report from the same pane.
  * @param sequence Which report it is.
- * @param board The board it says it is reading.
+ * @param model The model it says it is reading.
  * @param selection The ids it says are picked out.
  * @returns The report.
  */
 function report(
 	sequence: number,
-	board: string,
+	model: string,
 	selection: readonly string[] = [],
 ): SemanticPaneContext {
 	return {
 		paneId: "pane-a",
 		clientId: "client-a",
-		board: { name: board, key: board.toLowerCase() },
+		model: { name: model, key: model.toLowerCase() },
 		variant: null,
 		view: null,
 		selection: selection.map((id) => ({ id })),

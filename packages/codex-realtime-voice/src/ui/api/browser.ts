@@ -5,10 +5,6 @@ export type {
 	VoiceApproval,
 	VoiceApprovalResponse,
 	VoiceClient,
-	VoiceClientFailure,
-	VoiceClientOptions,
 	VoiceClientSnapshot,
-	VoiceClientVoice,
-	VoiceCommandIntent,
 	VoiceSignIn,
 } from "#ui/state/voice-client/contract.ts";

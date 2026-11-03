@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ArchitectureModelReadSchema } from "@archboard/board/model";
+import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 import { readArchitectureModelOnServer } from "#cli/clients/server/architecture-model.ts";
 import { modelReadContract, refusedRead, unavailableOutcome } from "#cli/operations/model/read.ts";
 import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
@@ -39,7 +39,7 @@ const modelInspectContract = defineCommand({
 		"A group answers with its members, the relationships between them, the relationships that cross its boundary with their direction, and the modules at the far end. A configured group that no module joined answers empty.",
 	].join("\n"),
 	examples: [
-		"archboard model inspect 'Board store'",
+		"archboard model inspect 'Order store'",
 		"archboard model inspect 'Shop#Gateway' --state 'Queued fulfilment' -C /tmp/shop",
 		"archboard model inspect --group fulfillment",
 	],

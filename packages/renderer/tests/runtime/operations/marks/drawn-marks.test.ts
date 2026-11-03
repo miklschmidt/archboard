@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
-import type { DrawnBoard } from "@archboard/board/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import type { DrawnPicture } from "@archboard/model/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { markCounts } from "#shared/rules/render/key-marks.ts";
-import { renderBoard } from "#runtime/operations/render.ts";
-import { type BoardRenderChoices } from "#shared/rules/render/board.ts";
+import { renderLegacyBoard } from "#runtime/operations/render.ts";
+import { type LegacyRenderChoices } from "#shared/rules/render/legacy-board.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { subjectGroups } from "#tests/runtime/support/drawn-subjects.ts";
 
@@ -12,7 +12,7 @@ import { subjectGroups } from "#tests/runtime/support/drawn-subjects.ts";
 // picture marks (TASK-497, TASK-496). A view's reading holds more than its
 // grammar draws: a sequence view keeps the relationships between its
 // participants and draws none, a flowchart draws neither parts nor
-// relationships, and an architecture on a board with relationships draws no
+// relationships, and an architecture on a document with relationships draws no
 // flow. A key that counted the reading said "Changed 3" over a picture that
 // marked one step.
 //
@@ -60,10 +60,10 @@ const DRAFT = {
 	],
 };
 
-const BOARD = SemanticBoardSchema.parse({
-	schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+const DOCUMENT = LegacyBoardSchema.parse({
+	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
-	id: "board",
+	id: "document",
 	name: "Ingest",
 	level: "system",
 	version: 1,
@@ -102,14 +102,14 @@ const BOARD = SemanticBoardSchema.parse({
  * @returns The drawn reply.
  */
 async function drawn(
-	choices: Pick<BoardRenderChoices, "view" | "comparison">,
-): Promise<DrawnBoard> {
-	const outcome = await renderBoard(
-		BOARD,
+	choices: Pick<LegacyRenderChoices, "view" | "comparison">,
+): Promise<DrawnPicture> {
+	const outcome = await renderLegacyBoard(
+		DOCUMENT,
 		{ variant: "draft", theme: "light", legend: "horizontal", ...choices },
 		DEFAULT_SEMANTIC_POLICY,
 	);
-	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");
+	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn document");
 	return outcome.reply;
 }
 
@@ -141,7 +141,7 @@ function legendMarks(svg: string): number[] {
  * @param reply The drawn reply.
  * @returns Their ids, sorted.
  */
-function placedIds(reply: DrawnBoard): string[] {
+function placedIds(reply: DrawnPicture): string[] {
 	return [...new Set(Object.values(reply.atlas).flatMap((boxes) => Object.keys(boxes)))].toSorted();
 }
 

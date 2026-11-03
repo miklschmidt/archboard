@@ -78,7 +78,7 @@ function archboard(
 }
 
 /**
- * List the boards and read the vault the answer names.
+ * List the models and read the vault the answer names.
  * @param cwd Where the command runs.
  * @param args What else the command line holds.
  * @param env What this invocation's environment changes.
@@ -213,7 +213,7 @@ test("inside a checkout without a vault a command refuses, and creates and regis
 	expect(existsSync(fixture.registry) ? readFileSync(fixture.registry) : null).toEqual(before);
 });
 
-test("a checkout without a vault is told which known vault holds boards of its code, and nothing is created", () => {
+test("a checkout without a vault is told which known vault holds models of its code, and nothing is created", () => {
 	// Another directory keeps the architecture of the billing checkout's code.
 	const architecture = holdingVault(join(fixture.root, "architecture"));
 	seedCanonicalFixture(join(architecture, ".archboard/vault"), "Billing flow", [
@@ -258,14 +258,14 @@ test("autostart starts a server without a vault, and the server serves the vault
 		seedCanonicalFixture(join(shop, ".archboard/vault"), "Checkout", []);
 		const drawn = archboard(["model", "read"], shop, started);
 		expect(drawn.status, drawn.failure).toBe(0);
-		const boards = (cwd: string, args: readonly string[] = []) => {
+		const models = (cwd: string, args: readonly string[] = []) => {
 			const result = archboard(["model", "read", ...args], cwd, started);
 			expect(result.status, result.failure).toBe(0);
 			return z.object({ manifest: z.object({ name: z.string() }) }).parse(JSON.parse(result.stdout))
 				.manifest.name;
 		};
-		expect(boards(shop)).toBe("Checkout");
-		expect(boards(fixture.nowhere, ["-C", plans])).toBe("plans");
+		expect(models(shop)).toBe("Checkout");
+		expect(models(fixture.nowhere, ["-C", plans])).toBe("plans");
 	} finally {
 		archboard(["stop"], fixture.nowhere, started);
 	}

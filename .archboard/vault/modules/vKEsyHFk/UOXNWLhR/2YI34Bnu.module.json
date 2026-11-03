@@ -1,12 +1,12 @@
 {
   "order": 45000,
-  "name": "Open a card's board",
+  "name": "Open a card's picture",
   "kind": "function",
-  "responsibility": "Opens the board one level down from a double-clicked card when its drill-down leads somewhere, unless the reader moved on before the answer came",
+  "responsibility": "Opens the model one level down from a double-clicked card when its drill-down leads somewhere, unless the reader moved on before the answer came",
   "description": "Asks the one drill-down reading where the card's link leads, once. A target that leads nowhere opens nothing: the inspector beside the picture reads the same target and says why.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
+    "path": "apps/web/src/ui/hooks/canvas/use-drill-open.ts",
     "symbol": "useDrillOpen"
   },
   "schemaVersion": 1,
@@ -20,7 +20,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-drill-open.ts",
         "symbol": "useDrillTargetReader"
       },
       "id": "vKEsyHFk/UOXNWLhR#HDMEL0tc",
@@ -29,15 +29,18 @@
     {
       "order": 119000,
       "kind": "call",
-      "label": "the board and variant to open, once read",
+      "label": "the model and variant to open, once read",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-drill-open.ts",
         "symbol": "onOpenDown"
       },
       "id": "vKEsyHFk/UOXNWLhR#2CWfWIJr",
       "to": "vKEsyHFk/UOXNWLhR#gIakrnWa"
     }
+  ],
+  "formerNames": [
+    "Open a card's board"
   ]
 }

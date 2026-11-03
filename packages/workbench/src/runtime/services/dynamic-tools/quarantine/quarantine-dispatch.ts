@@ -367,4 +367,4 @@ function createQuarantineDispatch(
 	return dispatch;
 }
 
-export { createQuarantineDispatch, type QuarantineDispatchDeps };
+export { createQuarantineDispatch };

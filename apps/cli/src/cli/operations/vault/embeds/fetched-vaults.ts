@@ -17,7 +17,7 @@
 // is still at is read again without a fetch. When the remote cannot be reached,
 // the newest cached commit is read, and the caller says so.
 //
-// Nothing writes to a cached vault: the server only lists and draws its boards.
+// Nothing writes to a cached vault: the server only lists and draws its documents.
 // The server keeps memory by vault, so each cached commit is another vault to
 // it, and a fetch of a new commit removes the older ones of the identity.
 
@@ -383,4 +383,4 @@ async function defaultBranchInCache(
 	return fetchInto(cache, identity, url, signal);
 }
 
-export { fetchedVault, remoteOf, type FetchedVault };
+export { fetchedVault, remoteOf };

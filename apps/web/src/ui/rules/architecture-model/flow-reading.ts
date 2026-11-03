@@ -1,6 +1,6 @@
-import { everyStep, type SemanticFlow } from "@archboard/board/flow";
-import type { VariantContent } from "@archboard/board/content";
-import { projectFlow, type Model, type ModelFlow } from "@archboard/board/content";
+import { everyStep, type SemanticFlow } from "@archboard/model/flow";
+import type { VariantContent } from "@archboard/model/content";
+import { projectFlow, type Model, type ModelFlow } from "@archboard/model/content";
 
 /**
  * Offer flows that touch selected subjects or the current scope, including hidden descendants.

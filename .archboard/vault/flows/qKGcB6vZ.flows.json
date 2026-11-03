@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#VXUdwB7J",
       "name": "Start a voice session",
+      "summary": "Takes one tab's offer, reads the host's coordinator context for the start's brief, and starts realtime on the coordinator thread. An active session or a stale coordinator refuses the offer.",
       "participants": [
         "vKEsyHFk/yejBBUFY#0SRnYXnC",
         "vKEsyHFk/9ncuT5DP#ZQxB1ZaK",
@@ -155,12 +156,12 @@
             }
           ]
         }
-      ],
-      "summary": "Takes one tab's offer, reads the host's coordinator context for the start's brief, and starts realtime on the coordinator thread. An active session or a stale coordinator refuses the offer."
+      ]
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#5FUaX27v",
       "name": "Start the coordinator thread",
+      "summary": "Reuses the retained coordinator thread when its instructions, tools and settings still match. Otherwise it stages a new thread and commits it only after Codex confirms the reviewed model and effort.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
         "vKEsyHFk/qKGcB6vZ#YVc05dVh",
@@ -352,12 +353,12 @@
             }
           ]
         }
-      ],
-      "summary": "Reuses the retained coordinator thread when its instructions, tools and settings still match. Otherwise it stages a new thread and commits it only after Codex confirms the reviewed model and effort."
+      ]
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#Em3B5KKC",
       "name": "Retire a coordinator thread",
+      "summary": "Unloads a thread that a fresh coordinator replaced, through thread/unsubscribe. It waits until the thread's voice has closed and it is idle, so no live work is cut off.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
         "vKEsyHFk/9ncuT5DP#YxDrzJtI",
@@ -484,12 +485,12 @@
             "symbol": "unload"
           }
         }
-      ],
-      "summary": "Unloads a thread that a fresh coordinator replaced, through thread/unsubscribe. It waits until the thread's voice has closed and it is idle, so no live work is cut off."
+      ]
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#BiOLk73A",
       "name": "A tool call from the coordinator",
+      "summary": "Validates each call against the manifest of its role and runs it once, because a replayed call answers from the ledger. It then resolves a spoken approval, stops workhorses or routes work to a checkout.",
       "participants": [
         "vKEsyHFk/qKGcB6vZ#LHBPlItu",
         "vKEsyHFk/9ncuT5DP#iay14AUl",
@@ -760,12 +761,12 @@
             }
           ]
         }
-      ],
-      "summary": "Validates each call against the manifest of its role and runs it once, because a replayed call answers from the ledger. It then resolves a spoken approval, stops workhorses or routes work to a checkout."
+      ]
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#o4PDOaXL",
       "name": "Answer an approval aloud",
+      "summary": "Lets a person answer a pending approval by voice: a classifier turn hears the final reply and calls resolve_spoken_approval. Anything unclear falls back to the page, so speech never approves by accident.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#ZQxB1ZaK",
         "vKEsyHFk/qKGcB6vZ#fEiupnAD",
@@ -954,12 +955,12 @@
             }
           ]
         }
-      ],
-      "summary": "Lets a person answer a pending approval by voice: a classifier turn hears the final reply and calls resolve_spoken_approval. Anything unclear falls back to the page, so speech never approves by accident."
+      ]
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#SUsqs0NP",
       "name": "A workhorse's news reaches the coordinator",
+      "summary": "Filters workhorse notifications down to news and delivers each in order as one sentence on the coordinator thread. Without an attended live session, it is recorded and told to nobody.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#iay14AUl",
         "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
@@ -1250,12 +1251,12 @@
             }
           ]
         }
-      ],
-      "summary": "Filters workhorse notifications down to news and delivers each in order as one sentence on the coordinator thread. Without an attended live session, it is recorded and told to nobody."
+      ]
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#67E4aMeN",
       "name": "A context change reaches the coordinator or the voice",
+      "summary": "Queues each audience's part of a change while voice is live. A later change of the same feed and topic replaces a waiting one, and a tab's own change is refused, so nobody hears stale or echoed news.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
         "vKEsyHFk/9ncuT5DP#SQjLwRvE",
@@ -1272,7 +1273,7 @@
           "id": "vKEsyHFk/qKGcB6vZ#6jER75L4",
           "from": "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
           "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
-          "label": "a settled board change, or a pane's focus or selection",
+          "label": "a settled model change, or a pane's focus or selection",
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
@@ -1286,7 +1287,7 @@
           "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
           "label": "word it for the coordinator and the voice",
           "kind": "self",
-          "note": "the voice hears a board on screen, as speech when it stops the narration; the coordinator hears only what an agent outside the session did",
+          "note": "the voice hears a model on screen, as speech when it stops the narration; the coordinator hears only what an agent outside the session did",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
@@ -1521,12 +1522,12 @@
             }
           ]
         }
-      ],
-      "summary": "Queues each audience's part of a change while voice is live. A later change of the same feed and topic replaces a waiting one, and a tab's own change is refused, so nobody hears stale or echoed news."
+      ]
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#7L5gGw1B",
       "name": "A workhorse tells the coordinator",
+      "summary": "Checks that a tell_coordinator call has a session, a valid message, the linked workhorse and a listener, then queues it as news. Every refusal is an answer that the workhorse can act on.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#iay14AUl",
         "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
@@ -1736,8 +1737,7 @@
             }
           ]
         }
-      ],
-      "summary": "Checks that a tell_coordinator call has a session, a valid message, the linked workhorse and a listener, then queues it as news. Every refusal is an answer that the workhorse can act on."
+      ]
     }
   ]
 }

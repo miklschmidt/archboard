@@ -8,37 +8,20 @@ import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
 import type {
 	AgentActivityEntry,
-	BoardIdentity,
-	DoingEntry,
-	LockHolder,
+	LegacyIdentity,
 	PaneStatus,
 } from "#ui/rules/pane-session/session-types.ts";
 import type { WorkbenchTransportPort } from "#ui/rules/pane-session/workbench-port.ts";
 import type { PaneWorkbenchSocketOwner } from "#ui/clients/pane-session/workbench-socket.ts";
-import type { PanePresentRequestSchema } from "@archboard/board/pane-context";
+import type { PanePresentRequestSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 
 type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
 type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
 
 /** Which palette the pane draws in. */
 type PaneTheme = "light" | "dark";
-
-/**
- * The holder a pane assumes before the server has said anything.
- *
- * Not a claim and not nobody: a pane that has not been told does not read the
- * board as free (ADR 0016). It disappears the moment the first `board_lock`
- * arrives, which the server sends immediately behind the board.
- */
-const UNKNOWN_HOLDER: LockHolder = Object.freeze({
-	id: "",
-	kind: "agent",
-	since: "",
-	until: "",
-	process: "",
-});
 
 /** What the shell tells one pane, and what it wants to hear back. */
 interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
@@ -66,13 +49,6 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 */
 	onStatus: (status: PaneStatus) => void;
 	/**
-	 * Who is writing this pane's board, or null when nobody is.
-	 * @param paneId The pane.
-	 * @param boardKey The board it is showing.
-	 * @param holder The holder, or null.
-	 */
-	onHolder?: (paneId: string, boardKey: string | null, holder: LockHolder | null) => void;
-	/**
 	 * The server asked the shell for another pane, or for this one to go.
 	 * @param request Which way the layout should move.
 	 */
@@ -80,7 +56,7 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	/**
 	 * The server asked this pane to go to a step of a walkthrough, or to leave
 	 * the presentation (TASK-251). The position is the pane's, so the request is
-	 * handed to whoever draws the board; the pane's own report answers it.
+	 * handed to whoever draws the model; the pane's own report answers it.
 	 * @param request Which walkthrough and beat, and the request's name.
 	 */
 	onPresentRequest?: (request: PanePresentRequest) => void;
@@ -93,11 +69,6 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 */
 	onPaneReconnected?: (paneId: string) => void;
 	/**
-	 * The board could not be shown.
-	 * @param error What the server said, in words a person can act on.
-	 */
-	onBoardError?: (error: string) => void;
-	/**
 	 * This tab is running a bundle the server no longer serves (TASK-056).
 	 * @param message What the server said about it.
 	 */
@@ -108,7 +79,7 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 */
 	onCodeTargetNotice?: (notice: CodeTargetNotice) => void;
 	/**
-	 * Which boards an agent is working on in the vault this pane is in (ADR 0022).
+	 * Which models an agent is working on in the vault this pane is in (ADR 0022).
 	 * @param vault The vault the snapshot is of.
 	 * @param activity The snapshot.
 	 */
@@ -118,13 +89,13 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	/** Temporary explanation progress changed in this tab. */
 	onExplanationsChanged?: () => void;
 	/**
-	 * The board the server says this pane is showing, which is how a pane learns
+	 * The model the server says this pane is showing, which is how a pane learns
 	 * that `browser show` moved it.
 	 * @param paneId The pane.
-	 * @param boardKey The board key.
-	 * @param previousKey The previously opened board key, or null on first adoption.
+	 * @param paneKey The model key.
+	 * @param previousKey The previously opened model key, or null on first adoption.
 	 */
-	onBoardAdopted?: (paneId: string, boardKey: string, previousKey: string | null) => void;
+	onModelAdopted?: (paneId: string, paneKey: string, previousKey: string | null) => void;
 	/** The workbench sockets this pane carries, when the shell gives it one. */
 	createWorkbenchSockets?: () => PaneWorkbenchSocketOwner<Transport>;
 }
@@ -140,14 +111,14 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	 */
 	readonly attachPaneElement: (element: HTMLElement | null) => void;
 	/**
-	 * The board the server pointed this pane at, or null before it pointed it
+	 * The model the server pointed this pane at, or null before it pointed it
 	 * anywhere.
 	 *
 	 * Where the pane was opened, not what it is showing: following a link down
-	 * puts another board on screen, and the viewer keeps this one so it can
-	 * offer the way back out. Everything about which board this pane HOLDS —
+	 * puts another model on screen, and the viewer keeps this one so it can
+	 * offer the way back out. Everything about which model this pane HOLDS —
 	 * its lock, the code a subject opens, what an agent is told, the address,
-	 * what `browser panes` says — is the status's `boardKey`, which the pane
+	 * what `browser panes` says — is the status's `paneKey`, which the pane
 	 * reports from what is actually drawn.
 	 */
 	readonly openedKey: string | null;
@@ -155,32 +126,29 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	readonly vault: string;
 	/**
 	 * How many times the server has pointed this pane somewhere other than the
-	 * board on screen. It counts the one move `openedKey` cannot show: the pane
-	 * pointed back at the board it was opened on while a drill-down has another
-	 * board on screen, which the viewer answers by leaving the drill-down.
+	 * model on screen. It counts the one move `openedKey` cannot show: the pane
+	 * pointed back at the model it was opened on while a drill-down has another
+	 * model on screen, which the viewer answers by leaving the drill-down.
 	 */
 	readonly arrivals: number;
-	readonly board: BoardIdentity | null;
+	readonly model: LegacyIdentity | null;
 	readonly connected: boolean;
-	/** Who holds the board, or null when nobody does. */
-	readonly heldBy: LockHolder | null;
-	readonly doing: readonly DoingEntry[];
 	/**
 	 * Open the file a node's binding names, in the person's editor.
 	 *
-	 * The browser sends the board and the subject and nothing else: the binding,
+	 * The browser sends the model and the subject and nothing else: the binding,
 	 * the checkout registry and the opener are all the server's, and a browser
 	 * that read a local path would be a second owner of where code lives.
 	 * @param subjectId The semantic id whose binding to open.
 	 */
 	readonly openCode: (subjectId: string) => void;
 	/**
-	 * What the person is reading in this pane changed: which board, which
+	 * What the person is reading in this pane changed: which model, which
 	 * variant, which named view, and what they picked out.
 	 *
 	 * Reading, never writing. It reaches the server so that an agent asked to
 	 * change something can be told what the person is looking at (ADR 0023).
-	 * @param reading The board, variant, view and selection.
+	 * @param reading The model, variant, view and selection.
 	 */
 	readonly readingChanged: (reading: PaneReading) => void;
 	/** Await the latest reading before starting an action that consumes it. */
@@ -203,4 +171,4 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	readonly workbenchTransport: () => Transport | null;
 }
 
-export { UNKNOWN_HOLDER, type PaneSession, type PaneSessionOptions, type PaneTheme };
+export { type PaneSession, type PaneSessionOptions, type PaneTheme };

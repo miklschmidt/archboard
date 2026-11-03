@@ -423,4 +423,4 @@ async function announceContextChange(
 	return Object.freeze(receipts);
 }
 
-export { announceContextChange, type AnnounceTarget };
+export { announceContextChange };

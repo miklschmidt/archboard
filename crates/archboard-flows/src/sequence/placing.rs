@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use archboard_scene::js;
 use archboard_scene::request::{FrameGuard, Slot};
 
-use crate::board::{Decision, Message, MessageKind, Step};
+use crate::content::{Decision, Message, MessageKind, Step};
 use crate::sequence::design::{
     FRAME_GAP, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, MAX_PULSES_PER_STEP, MESSAGE_LINE_STEP,
     MESSAGE_PITCH, SELF_LOOP_EXTENT, STEP_NOTE_GAP,

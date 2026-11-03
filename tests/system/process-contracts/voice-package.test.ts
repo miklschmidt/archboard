@@ -68,7 +68,7 @@ function pinned(names: readonly string[]): string[] {
 
 /**
  * Every line of the packed package that names a concept of the host that publishes it: Archboard,
- * its boards, vaults, panes, walkthroughs, narration, dock and canvas, or a decision or task of
+ * its models, vaults, panes, walkthroughs, narration, dock and canvas, or a decision or task of
  * its backlog. The `@archboard/` npm scope and the URL of the repository that holds the source
  * are the two names the package keeps. The browser global `navigator` is not in the list: the
  * browser client reads it.

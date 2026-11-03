@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#C6LkFhjC",
       "name": "One recording",
+      "summary": "model record from start to video. It checks ffmpeg's encoders, narrates the walkthrough in headless Chromium and keeps talk.json with voice.wav, then replays the talk frame by frame into ffmpeg.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#TBnOCNx2",
         "vKEsyHFk/vKEsyHFk#cPOdAA3f",
@@ -18,7 +19,7 @@
           "id": "vKEsyHFk/vKEsyHFk#VmVzsgEa",
           "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
           "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
-          "label": "Read the board and the vault policy",
+          "label": "Read the model and the vault policy",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
@@ -30,7 +31,7 @@
           "id": "vKEsyHFk/vKEsyHFk#ACwRzeh0",
           "from": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
           "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
-          "label": "The board and the policy",
+          "label": "The model and the policy",
           "kind": "return"
         },
         {
@@ -291,8 +292,7 @@
             }
           ]
         }
-      ],
-      "summary": "model record from start to video. It checks ffmpeg's encoders, narrates the walkthrough in headless Chromium and keeps talk.json with voice.wav, then replays the talk frame by frame into ffmpeg."
+      ]
     }
   ]
 }

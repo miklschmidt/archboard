@@ -5,12 +5,12 @@
 import { durations } from "#shared/constants/durations.ts";
 
 /**
- * The conversation column and the board beside it, as either changes size.
+ * The conversation column and the model beside it, as either changes size.
  *
  * The conversation slides open beside the navigator and shut again. It is motion
  * a person watches, not waits out: long enough to read as a slide, short enough
  * that opening it to type is not slowed. The pane centre beside it changes size on
- * every frame of the slide, and the board is fitted to it once, at the end. A
+ * every frame of the slide, and the model is fitted to it once, at the end. A
  * pane's docked sidebar does the same beside the picture, and in the same time.
  */
 const COLUMN_MS = durations({
@@ -27,10 +27,10 @@ const COLUMN_MS = durations({
 	 */
 	slideSettled: 20,
 	/**
-	 * How long a board's viewport keeps its size before the camera fits to it: longer than
+	 * How long a model's viewport keeps its size before the camera fits to it: longer than
 	 * a slow frame, so a slide is fitted at its end, and short enough not to trail a resize.
 	 */
-	boardResizeSettle: 64,
+	pictureResizeSettle: 64,
 	/**
 	 * How long a select's or a menu's popover takes to arrive: it fades in and grows a
 	 * little from the control that opened it, so a reader sees where it came from.
@@ -52,13 +52,13 @@ const SIDEBAR_MS = durations({
 	/**
 	 * How long a docked sidebar takes to open or shut. Its column eases between
 	 * no width and its own, the picture beside it gives way frame by frame, and
-	 * the board is fitted once, at the end (`COLUMN_MS.boardResizeSettle`). The panel
+	 * the model is fitted once, at the end (`COLUMN_MS.pictureResizeSettle`). The panel
 	 * keeps its own width throughout, held to the pane's edge, so it slides in
 	 * and never reflows.
 	 *
 	 * Pulls against the picture. It is the conversation's slide
 	 * (`COLUMN_MS.agentPanelSlide`), so the two columns of the shell move alike: past
-	 * about 300 ms the board waits behind a moving column, and under about 150 ms
+	 * about 300 ms the model waits behind a moving column, and under about 150 ms
 	 * the column reads as a jump.
 	 */
 	dock: COLUMN_MS.agentPanelSlide,
@@ -85,7 +85,7 @@ const SIDEBAR_MS = durations({
 	 * How long what the panel says about a new subject takes to fade in. Only its
 	 * opacity moves, so a part picked out on the way along a path is read at once.
 	 *
-	 * Pulls against walking the board. Past about 160 ms a person who clicks from
+	 * Pulls against walking the model. Past about 160 ms a person who clicks from
 	 * part to part waits on every one, and under about 80 ms the change is not
 	 * seen, which is all it is for.
 	 */

@@ -1,6 +1,6 @@
 // A pane's own parts of its header, which the shell decides and the pane's
 // stage places: its letter while two panes share the centre, and at the
-// header's end what can be done with this pane — move its board to another
+// header's end what can be done with this pane — move its model to another
 // repository, present it, open a second pane beside it, close it — with its
 // trouble when its socket is down. Each
 // control acts on the pane whose header it sits in, never on "the active
@@ -49,7 +49,7 @@ interface PaneControlsProps {
 }
 
 /**
- * Move this pane's board to another repository, present this pane, open a
+ * Move this pane's model to another repository, present this pane, open a
  * second pane beside it while it is alone, close it while it is not, and say so
  * when its socket is down.
  * @param props The pane, its letter, how many panes there are and the actions.

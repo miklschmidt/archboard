@@ -4,10 +4,10 @@
 
 import type { RemixiconComponentType } from "@remixicon/react";
 import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { ModelSwitch } from "#ui/components/architecture-model/ModelSwitch.tsx";
 import { ModelStateFact } from "#ui/components/architecture-model/ModelStateTimeline.tsx";
-import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
+import { KindIcon } from "#ui/components/canvas/KindMarks.tsx";
 import {
 	ABOUT_COLUMNS,
 	ABOUT_PAGE,
@@ -21,7 +21,7 @@ import {
 import type { Reader } from "#ui/hooks/architecture-model/use-reader.ts";
 import { useSectionSpy } from "#ui/hooks/architecture-model/use-section-spy.ts";
 import type { TimelineEntry } from "#ui/rules/architecture-model/state-timeline.ts";
-import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
+import type { KindLook } from "#ui/rules/canvas/reading/kind-look.ts";
 
 /** One section of the page: its mark, and what it holds when it holds anything. */
 interface AboutPageSection extends AboutSection {

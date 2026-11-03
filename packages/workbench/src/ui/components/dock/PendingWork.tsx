@@ -287,4 +287,4 @@ function QueuedPrompt(props: {
 	);
 }
 
-export { PendingWork, type PendingWorkProps };
+export { PendingWork };

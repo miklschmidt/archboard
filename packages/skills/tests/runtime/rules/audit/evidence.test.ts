@@ -1,16 +1,16 @@
 // The evidence an author run leaves behind, read the way the batch of
-// 2026-09-14 showed it has to be (TASK-212): a board patched with Codex's own
+// 2026-09-14 showed it has to be (TASK-212): a document patched with Codex's own
 // editing tool is a `file_change` item and no command; a read that names a
-// board file is not a write, whatever it redirects to /dev/null; a `--help`
+// document file is not a write, whatever it redirects to /dev/null; a `--help`
 // is not a write attempt; a read of the scenario, the fixtures or the rubric
 // is recorded as exposure; and a resumed grading call reports the thread's
 // cumulative usage, not its own.
 
 import { describe, expect, test } from "bun:test";
-import { SemanticBoardSchema } from "@archboard/board/document";
+import { LegacyBoardSchema } from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { callUsageFrom, sessionUsage } from "#runtime/protocol/grader-usage.ts";
-import { countDirectBoardWrites } from "#runtime/rules/audit/guardrails.ts";
+import { countDirectVaultWrites } from "#runtime/rules/audit/guardrails.ts";
 import { exposureCounts } from "#runtime/protocol/events.ts";
 import { buildReport, type RunRecord } from "#runtime/rules/reports/report.ts";
 import {
@@ -60,7 +60,7 @@ function classified(command: string): ClassifiedCommand {
 	return one;
 }
 
-const BOARD = SemanticBoardSchema.parse(
+const DOCUMENT = LegacyBoardSchema.parse(
 	withFixtureOrders({
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",
@@ -99,8 +99,8 @@ function writeGuardrail(
 	fileChanges: readonly { path: string; kind: string }[] = [],
 ) {
 	const [verdict] = evaluateGuardrails(["doing-on-writes"], {
-		snapshot: new Map([["Flask JSON", BOARD]]),
-		boards: new Map([["Flask JSON", BOARD]]),
+		snapshot: new Map([["Flask JSON", DOCUMENT]]),
+		documents: new Map([["Flask JSON", DOCUMENT]]),
 		configBefore: "a",
 		configAfter: "a",
 		commands: commands.map(classified),
@@ -112,7 +112,7 @@ function writeGuardrail(
 }
 
 describe("file changes", () => {
-	test("a board patched with the editing tool is read off the stream and fails the write guardrail", () => {
+	test("a document patched with the editing tool is read off the stream and fails the write guardrail", () => {
 		const trace = parseTrace(
 			[
 				{ type: "thread.started", thread_id: "t" },
@@ -154,7 +154,7 @@ describe("file changes", () => {
 		]);
 		const verdict = writeGuardrail([], trace.fileChanges);
 		expect(verdict.passed).toBe(false);
-		expect(verdict.detail).toContain("1 board files patched directly");
+		expect(verdict.detail).toContain("1 document files patched directly");
 		// A file outside the vault is the author's business.
 		expect(writeGuardrail([], [trace.fileChanges[1]!]).passed).toBe(true);
 		expect(
@@ -164,21 +164,24 @@ describe("file changes", () => {
 });
 
 describe("what counts as a direct write", () => {
-	const board = `'${VAULT}/flask.module.json'`;
+	const document = `'${VAULT}/flask.module.json'`;
 	test.each([
-		[`bash -lc "python -m json.tool ${board} >/dev/null; echo json_exit:$?"`, true],
-		[`bash -lc "jq empty ${board} 2>&1; grep -n version ${board}"`, true],
-		[`bash -lc "sed -n '1,12p' ${board}"`, true],
-		[`bash -lc "od -An -tx1 -N 180 ${board} 2>/dev/null"`, true],
-		[`bash -lc "cat ${board} | head -5 > /tmp/peek.json"`, true],
-		[`bash -lc "cat payload.json > ${board}"`, false],
-		[`bash -lc "cat payload.json >> ${board}"`, false],
-		[`bash -lc "sed -i 's/a/b/' ${board}"`, false],
-		[`bash -lc "cp /tmp/fixed.json ${board}"`, false],
-		[`bash -lc "cp ${board} /tmp/copy.json"`, true],
-		[`bash -lc "rm ${board}"`, false],
-		[`bash -lc "python3 - <<'EOF'\nimport json\np=${board}\nopen(p,'w').write('{}')\nEOF"`, false],
-		[`bash -lc "node -e \\"require('fs').writeFileSync(${board}, '{}')\\""`, false],
+		[`bash -lc "python -m json.tool ${document} >/dev/null; echo json_exit:$?"`, true],
+		[`bash -lc "jq empty ${document} 2>&1; grep -n version ${document}"`, true],
+		[`bash -lc "sed -n '1,12p' ${document}"`, true],
+		[`bash -lc "od -An -tx1 -N 180 ${document} 2>/dev/null"`, true],
+		[`bash -lc "cat ${document} | head -5 > /tmp/peek.json"`, true],
+		[`bash -lc "cat payload.json > ${document}"`, false],
+		[`bash -lc "cat payload.json >> ${document}"`, false],
+		[`bash -lc "sed -i 's/a/b/' ${document}"`, false],
+		[`bash -lc "cp /tmp/fixed.json ${document}"`, false],
+		[`bash -lc "cp ${document} /tmp/copy.json"`, true],
+		[`bash -lc "rm ${document}"`, false],
+		[
+			`bash -lc "python3 - <<'EOF'\nimport json\np=${document}\nopen(p,'w').write('{}')\nEOF"`,
+			false,
+		],
+		[`bash -lc "node -e \\"require('fs').writeFileSync(${document}, '{}')\\""`, false],
 	])("%s is %s", (command, reads) => {
 		expect(writeGuardrail([command]).passed).toBe(reads);
 	});
@@ -223,7 +226,7 @@ describe("write attempts", () => {
 		expect(classified(command).class).toBe("operation");
 		expect(writeGuardrail([command]).passed).toBe(false);
 		expect(
-			countDirectBoardWrites({ commands: [classified(command)], fileChanges: [], vault: VAULT }),
+			countDirectVaultWrites({ commands: [classified(command)], fileChanges: [], vault: VAULT }),
 		).toBe(1);
 	});
 });
@@ -455,7 +458,7 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 }
 
 describe("contamination in the report", () => {
-	test("a run that read evaluation material is listed apart and blocks the token comparison, without being called a board failure", () => {
+	test("a run that read evaluation material is listed apart and blocks the token comparison, without being called a document failure", () => {
 		const exposed = record({
 			run: "run-0000000002",
 			arm: "candidate",
@@ -481,7 +484,7 @@ describe("contamination in the report", () => {
 		expect(report.scenarios[0]!.baseline.unaudited).toBe(1);
 		expect(report.contamination.map((run) => run.run)).toEqual(["run-0000000003"]);
 		const markdown = renderReportMarkdown(report);
-		expect(markdown).toContain("wrote 1 board files outside the CLI");
+		expect(markdown).toContain("wrote 1 document files outside the CLI");
 		expect(markdown).toContain("1 runs were recorded before file changes and exposure were kept");
 	});
 

@@ -1,7 +1,7 @@
 // The text fields of a brief that can be shortened, and how to put them back.
 //
 // Two tables, in the order room is bought back for them. The identities come
-// first: a brief that cannot say which board, pane or thread it is about is not
+// first: a brief that cannot say which model, pane or thread it is about is not
 // usable at all. The prose comes last, after the lists, because a description
 // can be thousands of bytes and the selection is what the question is usually
 // about — refilling text first would spend the whole budget on prose and hand
@@ -86,7 +86,7 @@ function trimmedIdentity<Identity extends string>(
 /**
  * The text fields that say which thing this is, and how to put them back.
  *
- * Identities first, because a brief that cannot say which board, pane or thread
+ * Identities first, because a brief that cannot say which model, pane or thread
  * it is about is not usable at all. The prose comes later, after the lists.
  * @param context - The context being fitted.
  * @returns The slots, in the order room is given back to them.
@@ -106,15 +106,15 @@ function textSlots(context: BriefContext): readonly TextSlot[] {
 			},
 		},
 		{
-			original: context.board.key,
+			original: context.model.key,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 * Install the trimmed board.key back into the brief's context.
+			 * Install the trimmed model.key back into the brief's context.
 			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
-				context.board = { ...context.board, key: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
+				context.model = { ...context.model, key: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
 			},
 		},
 		{
@@ -205,39 +205,39 @@ function textSlots(context: BriefContext): readonly TextSlot[] {
 			},
 		},
 		{
-			original: context.board.name,
+			original: context.model.name,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 * Install the trimmed board.name back into the brief's context.
+			 * Install the trimmed model.name back into the brief's context.
 			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
-				context.board = { ...context.board, name: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
+				context.model = { ...context.model, name: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
 			},
 		},
 		{
-			original: context.board.vault,
+			original: context.model.vault,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 * Install the trimmed board.vault back into the brief's context.
+			 * Install the trimmed model.vault back into the brief's context.
 			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
-				context.board = { ...context.board, vault: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
+				context.model = { ...context.model, vault: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
 			},
 		},
 		{
-			original: context.board.file,
+			original: context.model.file,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 * Install the trimmed board.file back into the brief's context.
+			 * Install the trimmed model.file back into the brief's context.
 			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
-				context.board = { ...context.board, file: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
+				context.model = { ...context.model, file: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
 			},
 		},
 		{

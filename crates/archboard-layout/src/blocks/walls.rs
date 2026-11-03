@@ -58,7 +58,7 @@ pub(crate) fn channel_wall(block: &Block, line: &Line) -> Option<Side> {
     }
 }
 
-/// Every point the lines of a block inside the board draw, which its parent
+/// Every point the lines of a block inside the picture draw, which its parent
 /// must route around: all but the end where a line to or from a wall meets
 /// the wall, which stands where the block ends.
 pub(crate) fn inner_points(block: &Block, lines: &Map<String, Vec<Point>>) -> Vec<Point> {

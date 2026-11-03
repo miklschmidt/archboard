@@ -1,8 +1,8 @@
 {
   "order": 33000,
-  "name": "Board move",
+  "name": "Legacy board move",
   "kind": "module",
-  "responsibility": "Moves a whole board to another repository's vault in a fixed order, and previews what the move would rewrite without writing",
+  "responsibility": "Moves a whole model to another repository's vault in a fixed order, and previews what the move would rewrite without writing",
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#IbkA2Se8",
   "parent": "vKEsyHFk/0T9enjhi#EekL5c17",
@@ -27,5 +27,8 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [],
+  "formerNames": [
+    "Board move"
+  ]
 }

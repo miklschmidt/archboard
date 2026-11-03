@@ -44,7 +44,7 @@ function paneWords(place: string): string {
  *
  * A recording page is a headless browser nobody sees, presenting a pane id like anybody's.
  * Counted, listed or picked, it would be a pane the person cannot find, standing in for the one
- * they can, and a board sent to it would move the recording mid-take. So whatever picks, counts or
+ * they can, and a model sent to it would move the recording mid-take. So whatever picks, counts or
  * lists panes for somebody picks from these. The page's own socket, narration and voice reach
  * its pane by client id, which none of this is asked.
  * @param registrations Every pane registered.
@@ -52,17 +52,6 @@ function paneWords(place: string): string {
  */
 function addressablePanes(registrations: readonly PaneRegistration[]): PaneRegistration[] {
 	return registrations.filter((pane) => pane.recording !== true);
-}
-
-/**
- * Every pane, somebody's before a recording page's: for a lookup by pane id, where a recording
- * page presents the same id as the pane a person is looking at and the person's is meant.
- * @param registrations Every registered pane.
- * @returns The panes, addressable ones first.
- */
-function panesAddressableFirst(registrations: readonly PaneRegistration[]): PaneRegistration[] {
-	const recordings = registrations.filter((pane) => pane.recording === true);
-	return [...addressablePanes(registrations), ...recordings];
 }
 
 /** The command that makes a pane, said the same way everywhere it is offered. */
@@ -73,7 +62,7 @@ const HOW_TO_OPEN_A_PANE =
  * Which pane a caller means by `left`, `2`, `focused`, `pane-1`…
  *
  * Deliberately refuses rather than picks when a spec matches nothing or more
- * than one thing — putting a board on the wrong half of the screen is cheap to
+ * than one thing — putting a model on the wrong half of the screen is cheap to
  * notice, but so is saying which half, and a server that quietly ignores the
  * half you asked for teaches you to stop trusting the flag.
  * @param registrations The panes on screen, of which only the addressable ones answer to
@@ -84,7 +73,7 @@ const HOW_TO_OPEN_A_PANE =
  */
 function resolvePaneSpec(registrations: PaneRegistration[], spec: string): PaneRegistration {
 	// A client id names one pane exactly, a recording page's included: that is how the page asks
-	// for the board it records, and how nobody who did not know the id can point at it.
+	// for the model it records, and how nobody who did not know the id can point at it.
 	const exact = registrations.find((pane) => pane.clientId === spec.trim());
 	if (exact !== undefined) return exact;
 	const ordered = panesInOrder(addressablePanes(registrations));
@@ -101,7 +90,7 @@ function resolvePaneSpec(registrations: PaneRegistration[], spec: string): PaneR
 	 * @returns One numbered entry per pane.
 	 */
 	const list = (): string =>
-		ordered.map((entry) => `${entry.position}. ${entry.place} (${entry.pane.board})`).join(", ");
+		ordered.map((entry) => `${entry.position}. ${entry.place} (${entry.pane.paneKey})`).join(", ");
 
 	const matches = ordered.filter((entry) => matchesSpec(entry, wanted, spec.trim()));
 
@@ -114,7 +103,7 @@ function resolvePaneSpec(registrations: PaneRegistration[], spec: string): PaneR
 				`so which one is not decided. Panes on screen: ${list()}.`,
 		);
 	}
-	// Nothing here can point a board at a pane that does not exist, and until
+	// Nothing here can point a model at a pane that does not exist, and until
 	// TASK-033 nothing could make one either — the human had to click Split,
 	// which is not available to a voice thread. So the refusal carries the
 	// command that makes one, while there is still room in the browser layout.
@@ -160,12 +149,12 @@ function matchesRole(pane: PaneRegistration, wanted: string): boolean {
  * The pane a caller who named none means — when there is only one, that one.
  *
  * With two panes on screen there is no such pane and this refuses, for the
- * same reason a board has to be named: the answers on offer are "wherever you
- * last clicked" and "whichever we listed first", and both put a board on a
+ * same reason a model has to be named: the answers on offer are "wherever you
+ * last clicked" and "whichever we listed first", and both put a model on a
  * half of the screen nobody chose. Which half is cheaper to get wrong than
- * which board, but it is still a guess, and refusing costs one flag.
+ * which model, but it is still a guess, and refusing costs one flag.
  *
- * No pane at all is not a refusal: nothing is on screen, so a board can be
+ * No pane at all is not a refusal: nothing is on screen, so a model can be
  * loaded without being shown.
  * @param registrations The panes on screen, of which only the addressable ones count.
  * @returns The one pane, or null when nothing is on screen.
@@ -180,9 +169,9 @@ function soloPane(registrations: PaneRegistration[]): PaneRegistration | null {
 		return ordered[0]!.pane;
 	}
 	throw new Error(
-		`${ordered.length} panes are open, so this needs a pane as well as a board — ` +
+		`${ordered.length} panes are open, so this needs a pane as well as a model — ` +
 			`--pane ${ordered.map((entry) => entry.place).join(" | ")}. ` +
-			`They are showing ${ordered.map((entry) => `${entry.pane.board} (${entry.place})`).join(", ")}.`,
+			`They are showing ${ordered.map((entry) => `${entry.pane.paneKey} (${entry.place})`).join(", ")}.`,
 	);
 }
 
@@ -215,7 +204,6 @@ export {
 	HOW_TO_OPEN_A_PANE,
 	MAX_PANES,
 	addressablePanes,
-	panesAddressableFirst,
 	paneWords,
 	resolvePane,
 	resolvePaneSpec,

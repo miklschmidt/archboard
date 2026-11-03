@@ -155,7 +155,7 @@ test("a pane that moves to another repository shows none of the last one's histo
 	await pass(0);
 	expect(observer.getCurrentResult().data).toEqual(ANSWER);
 
-	// The same board in another checkout, whose history is its own.
+	// The same model in another checkout, whose history is its own.
 	observer.setOptions(modelHistoryQuery("/work/archboard-next/.archboard/vault", MODEL));
 	expect(observer.getCurrentResult().data).toBeUndefined();
 	unsubscribe();

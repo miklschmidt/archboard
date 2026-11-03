@@ -42,4 +42,4 @@ function isMainModule(moduleUrl: string): boolean {
 	return resolveEntrypointPath(fileURLToPath(moduleUrl)) === resolveEntrypointPath(process.argv[1]);
 }
 
-export { resolveEntrypointPath, isMainModule };
+export { isMainModule };

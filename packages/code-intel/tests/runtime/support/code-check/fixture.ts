@@ -1,11 +1,11 @@
 // What the code check's owners build for themselves: files, a Git checkout
-// with its own identity and configuration, and boards in a vault.
+// with its own identity and configuration, and documents in a vault.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { z } from "zod";
 import type { LanguageServersSchema } from "@archboard/workspace/checkouts";
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
+import { LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 
 /**
  * Run Git in a checkout with an owner's identity and no configuration of the machine.
@@ -41,7 +41,7 @@ function write(root: string, files: Record<string, string>): void {
 	}
 }
 
-/** One variant of a fixture board: its name, lifecycle and content. */
+/** One variant of a fixture document: its name, lifecycle and content. */
 interface FixtureVariant {
 	readonly id: string;
 	readonly name: string;
@@ -54,16 +54,16 @@ interface FixtureVariant {
 }
 
 /**
- * Write a board into a vault.
+ * Write a document into a vault.
  * @param vault The vault.
- * @param name The board's name.
+ * @param name The document's name.
  * @param variants Its variants; the current one, if any, is the one so marked.
  */
-function board(vault: string, name: string, variants: readonly FixtureVariant[]): void {
+function document(vault: string, name: string, variants: readonly FixtureVariant[]): void {
 	const current = variants.find((variant) => variant.lifecycle === "current");
 	write(vault, {
 		[`${name}.semantic.json`]: JSON.stringify({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: name.slice(0, 8).replaceAll(" ", ""),
 			name,
@@ -101,4 +101,4 @@ function register(
 	});
 }
 
-export { type FixtureVariant, board, git, register, write };
+export { type FixtureVariant, document, git, register, write };

@@ -1,6 +1,6 @@
 // An author who meets an evaluation's names in the skill is reading its answer.
 // The harness flags a run that opens `evals/`, but a skill package is read on
-// purpose, so a worked example written about the evaluated codebase (its board
+// purpose, so a worked example written about the evaluated codebase (its document
 // names, its views, its symbols) hands every author of both arms the checklist
 // without a read anybody could flag. This refuses such a package before a batch
 // can measure it.
@@ -177,4 +177,4 @@ function leakageProblems(
 	);
 }
 
-export { evaluationNames, leakageProblems, leaks, packageText };
+export { leakageProblems };

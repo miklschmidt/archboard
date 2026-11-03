@@ -472,7 +472,6 @@ const SESSION_PROTOCOL_METHODS = defineSessionProtocolMethods({
 export {
 	type ExactSessionRequestIdentityTuple,
 	SESSION_PROTOCOL_METHODS,
-	type SessionAccountLoginResult,
 	type SessionAgentMessageItem,
 	type SessionCollabAgentItem,
 	type SessionLoadedThreadPageResult,
@@ -490,12 +489,10 @@ export {
 	type SessionThreadItem,
 	type SessionThreadItemPageResult,
 	type SessionThreadPageResult,
-	type SessionThreadReadResult,
 	type SessionThreadSource,
 	type SessionThreadSpawnSource,
 	type SessionThreadStartResult,
 	type SessionThreadTurnPageResult,
 	type SessionTurn,
 	type SessionTurnResult,
-	type SessionTurnSteerResult,
 };

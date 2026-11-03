@@ -12,9 +12,9 @@
 // database; compose also sets `LEDGER_URL` for orders to the ledger service,
 // which no orders code reads. The web code reads `FLAGS_URL`, which nothing sets, and names from
 // its env file and an outside host, which are set. The worker service runs an
-// image built elsewhere; the board draws the jobs code inside it, and compose
+// image built elsewhere; the document draws the jobs code inside it, and compose
 // sets the jobs code's `QUEUE_URL` to the queue. Terraform gives a Lambda
-// function `EVENTS_URL`, the URL of a queue, and the board draws the notifier
+// function `EVENTS_URL`, the URL of a queue, and the document draws the notifier
 // code that reads it inside the function. A Kubernetes Deployment gives the
 // storefront code drawn inside it `CATALOG_URL`, the address of the Service
 // that picks the catalog Deployment, and `SF_SEARCH_URL` from a ConfigMap.
@@ -29,7 +29,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
@@ -258,7 +258,7 @@ beforeAll(async () => {
 	git(scratch, hops, "add", "-A");
 	git(scratch, hops, "commit", "-q", "--no-gpg-sign", "-m", "the services");
 	register(scratch, { [HOPS]: hops });
-	board(vault, "Hops", [
+	document(vault, "Hops", [
 		{
 			id: "v1",
 			name: "Built",
@@ -302,9 +302,9 @@ beforeAll(async () => {
 		},
 	]);
 	const check = await import("#tests/runtime/support/code-check/pass.ts");
-	const read = check.readBoardsToCheck(vault, undefined);
-	if (!read.ok) throw new Error("no boards");
-	outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
+	const read = check.readStatesToCheck(vault, undefined);
+	if (!read.ok) throw new Error("no documents");
+	outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 });
 
 afterAll(() => {

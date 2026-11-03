@@ -2,7 +2,7 @@
   "order": 13000,
   "name": "Block engine",
   "kind": "function",
-  "responsibility": "Asks the host for the one solve of a board, with its nesting fixed by the graph, and reads the drawing's geometry from the answer",
+  "responsibility": "Asks the host for the one solve of a model, with its nesting fixed by the graph, and reads the drawing's geometry from the answer",
   "description": "Track solves inline, or with groups where the graph gathers a region. Blocks solves as blocks. The solve runs through the host's Solver, and dropping it cancels work that the host has not completed.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",

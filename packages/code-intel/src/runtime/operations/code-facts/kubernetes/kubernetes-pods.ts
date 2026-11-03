@@ -181,11 +181,4 @@ function podLinks(reading: ObjectReading, pod: YamlPath): ObjectLinks {
 	return found;
 }
 
-export {
-	type EnvironmentSource,
-	type NamedLine,
-	type NamedLink,
-	type ObjectLinks,
-	type ObjectReading,
-	podLinks,
-};
+export { type NamedLine, type NamedLink, type ObjectLinks, type ObjectReading, podLinks };

@@ -1,7 +1,7 @@
 //! Graphviz in the core answers what viz-js answered.
 //!
 //! The fixture holds two graphs the layout asked Graphviz to lay out for
-//! dogfood boards, with what viz-js 3.30 answered of each. Both lay out
+//! dogfood pictures, with what viz-js 3.30 answered of each. Both lay out
 //! differently under Apple's `qsort`, which graphviz-pure ports upstream, so
 //! they hold the vendored copy to musl's tie order as well as the replay of
 //! viz-js's cgraph calls. Each is answered twice, around the other, because an

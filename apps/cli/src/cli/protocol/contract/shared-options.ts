@@ -32,14 +32,6 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 			"Find the vault from this directory instead of the working directory, the way git -C finds a " +
 			"repository; other relative paths still resolve against the working directory",
 	},
-	board: {
-		key: "board",
-		spellings: ["--board"],
-		value: "required",
-		placeholder: "key",
-		required: true,
-		description: "The vault the command is about; there is no default",
-	},
 	doing: {
 		key: "doing",
 		spellings: ["--doing"],
@@ -49,15 +41,6 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 		description:
 			"One present-tense line saying what this write does, shown on every pane holding the model " +
 			"and never written to it",
-	},
-	"expect-version": {
-		key: "expect-version",
-		spellings: ["--expect-version"],
-		value: "required",
-		placeholder: "n",
-		required: true,
-		description:
-			"The model revision this write was read against; refused if the model has moved past it",
 	},
 	"as-session": {
 		key: "as-session",
@@ -69,14 +52,7 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 };
 
 /** Every shared option, in the order help lists them. */
-const SHARED_OPTION_KEYS: readonly SharedOptionKey[] = [
-	"url",
-	"directory",
-	"board",
-	"doing",
-	"expect-version",
-	"as-session",
-];
+const SHARED_OPTION_KEYS: readonly SharedOptionKey[] = ["url", "directory", "doing", "as-session"];
 
 /**
  * The shared options one command reads, as option parameters help can list.
@@ -105,10 +81,4 @@ function inapplicableSharedOptions(
 	);
 }
 
-export {
-	SHARED_OPTIONS,
-	SHARED_OPTION_KEYS,
-	type SharedOption,
-	inapplicableSharedOptions,
-	sharedOptionsFor,
-};
+export { SHARED_OPTIONS, SHARED_OPTION_KEYS, inapplicableSharedOptions, sharedOptionsFor };

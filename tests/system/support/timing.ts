@@ -87,7 +87,7 @@ const TEST_SERVER_SHUTDOWN_TIMEOUT_MS = 1000;
  * gone, so a healthy proof never waits it out. It clears startup, owner
  * shutdown, and post-`archboard stop` PID observation on a slow hosted runner.
  * A stuck proof therefore fails with its PID and mode instead of hanging the
- * whole board suite.
+ * whole model suite.
  */
 const TEST_SERVER_CHILD_EXIT_TIMEOUT_MS = 20_000;
 
@@ -150,9 +150,9 @@ const TEST_PANE_MESSAGE_TIMEOUT_MS = 2000;
 
 /**
  * Outer bound for one cross-process lock-watch delivery, from the completed
- * ownership change in one server to the matching board_lock frame on the pane
+ * ownership change in one server to the matching model_lock frame on the pane
  * of the other. This owner is about that delivery, so it does wait for the
- * product's one-second lock sweep (`BOARD_LOCK_MS.watch`) to fire: a second server
+ * product's one-second lock sweep (`MODEL_LOCK_MS.watch`) to fire: a second server
  * learns of a lock file only by looking at it, and the sweep interval has no
  * test override.
  * The bound is a test number, three seconds: one sweep, then slack for timer
@@ -165,7 +165,7 @@ const TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS = 3000;
  * How long the cross-process lock owner waits after a pane takes a claim back
  * through one server, so that the server holding the claim has refused a
  * renewal and recorded the loss. This owner is about that discovery, so it does
- * wait for the product's one-second lease renewal (`BOARD_LOCK_MS.renew`) to fire: the
+ * wait for the product's one-second lease renewal (`MODEL_LOCK_MS.renew`) to fire: the
  * claiming server learns of the take-back only when that renewal is refused,
  * and the interval has no test override. It is a test number, 1.5 seconds: one
  * renewal, then slack for timer phase and a stressed host. A call to that
@@ -186,7 +186,7 @@ const TEST_BROWSER_POLL_MS = 50;
 
 /**
  * How long a browser owner waits for the shell to register its panes and draw
- * a board in them: a headless Chromium's load, layout and first report. It is
+ * a model in them: a headless Chromium's load, layout and first report. It is
  * a patience, so the factor applies.
  */
 const TEST_BROWSER_CONDITION_TIMEOUT_MS = TEST_PATIENCE_FACTOR * 1500;

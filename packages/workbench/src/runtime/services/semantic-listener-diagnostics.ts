@@ -57,7 +57,6 @@ function errorDetails(error: unknown): { errorName: string; message: string } {
 }
 
 export {
-	LISTENER_DIAGNOSTIC_FALLBACK_NAME,
 	LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE,
 	LISTENER_DIAGNOSTIC_ERROR_NAME_FALLBACK,
 	errorDetails,

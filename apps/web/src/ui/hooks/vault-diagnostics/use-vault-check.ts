@@ -1,9 +1,9 @@
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
-import { policyChanged } from "#ui/clients/semantic-board-canvas/reads/board-refresh.ts";
-import { vaultCheckQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
-import type { VaultCheckSchema } from "@archboard/board/policy";
+import { policyChanged } from "#ui/clients/canvas/reads/read-refresh.ts";
+import { vaultCheckQuery } from "#ui/clients/canvas/reads/queries.ts";
+import type { VaultCheckSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
 type VaultCheck = z.infer<typeof VaultCheckSchema>;

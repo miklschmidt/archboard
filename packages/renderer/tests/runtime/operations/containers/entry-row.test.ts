@@ -2,12 +2,12 @@
 // hidden parts sit below them (ADR 0044, TASK-368.08). The interface is read
 // off the whole variant, never off what a view or a comparison draws.
 import { expect, test } from "bun:test";
-import { renderArchitecture, renderBoard } from "#runtime/operations/render.ts";
+import { renderArchitecture, renderLegacyBoard } from "#runtime/operations/render.ts";
 import { interfaceContent } from "#shared/rules/render/drawing-key.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
-import type { DiagramAtlas } from "@archboard/board/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import type { DiagramAtlas } from "@archboard/model/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 // The scheduler is a hidden part that only calls out: nothing holds it below
 // the entry point but the interface, so without it Graphviz stands it on the
@@ -40,15 +40,15 @@ function standsBelow(atlas: DiagramAtlas, upper: string, lower: string): boolean
 }
 
 /**
- * A board whose current variant is the service, with a view and a draft.
+ * A document whose current variant is the service, with a view and a draft.
  * @param draft The draft's content.
- * @returns The board.
+ * @returns The document.
  */
-function boardOf(draft: unknown) {
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+function documentOf(draft: unknown) {
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
-		id: "board",
+		id: "document",
 		name: "Service",
 		level: "system",
 		version: 1,
@@ -77,19 +77,19 @@ function boardOf(draft: unknown) {
 }
 
 /**
- * The atlas of one rendered board picture.
- * @param board The board.
+ * The atlas of one rendered document picture.
+ * @param document The document.
  * @param choices The variant and view.
  * @param choices.variant The variant.
  * @param choices.view The view, if any.
  * @returns The atlas.
  */
 async function atlasOf(
-	board: ReturnType<typeof boardOf>,
+	document: ReturnType<typeof documentOf>,
 	choices: { variant: string; view?: string },
 ): Promise<DiagramAtlas> {
-	const outcome = await renderBoard(
-		board,
+	const outcome = await renderLegacyBoard(
+		document,
 		{ ...choices, theme: "light", layout: "track" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
@@ -110,7 +110,7 @@ test("a container's entry point takes its first row and its hidden parts sit bel
 });
 
 test("an entry point keeps the first row in a view that hides its caller", async () => {
-	const atlas = await atlasOf(boardOf(service), { variant: "current", view: "inside" });
+	const atlas = await atlasOf(documentOf(service), { variant: "current", view: "inside" });
 	expect(atlas.nodes["client"]).toBeUndefined();
 	expect(standsBelow(atlas, "api", "job")).toBe(true);
 });
@@ -146,7 +146,7 @@ test("a view holds a container's first row only where the whole variant does", a
 		],
 		edges: [...service.edges, { id: "wire", from: "boot", to: "api", kind: "call" }],
 	};
-	const atlas = await atlasOf(boardOf(rooted), { variant: "draft", view: "inside" });
+	const atlas = await atlasOf(documentOf(rooted), { variant: "draft", view: "inside" });
 	expect(atlas.nodes["boot"]).toBeUndefined();
 	expect(standsBelow(atlas, "api", "job")).toBe(false);
 });
@@ -158,10 +158,13 @@ test("a child a comparison puts back is never an entry point", async () => {
 		nodes: [...service.nodes, { id: "hook", name: "Webhook", kind: "module", parent: "svc" }],
 		edges: [...service.edges, { id: "notify", from: "client", to: "hook", kind: "call" }],
 	};
-	const board = boardOf(service);
-	const withHook = SemanticBoardSchema.parse({
-		...board,
-		variants: [{ ...board.variants[0]!, content: orderedFixture(current) }, board.variants[1]!],
+	const document = documentOf(service);
+	const withHook = LegacyBoardSchema.parse({
+		...document,
+		variants: [
+			{ ...document.variants[0]!, content: orderedFixture(current) },
+			document.variants[1]!,
+		],
 	});
 	const atlas = await atlasOf(withHook, { variant: "draft", view: "Everything" });
 	expect(atlas.nodes["hook"]).toBeDefined();

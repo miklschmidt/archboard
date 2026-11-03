@@ -7,10 +7,10 @@ import {
 	pressInPanel,
 } from "./support/canonical-page.ts";
 import type { z } from "zod";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";

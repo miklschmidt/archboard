@@ -4,7 +4,7 @@
 
 import { expect, test } from "bun:test";
 
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import {
 	endWithin,
 	moduleTree,

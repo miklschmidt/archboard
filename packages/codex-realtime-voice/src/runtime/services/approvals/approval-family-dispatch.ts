@@ -1,27 +1,13 @@
-import type {
-	ApprovalFamily,
-	ApprovalRequest,
-	ApprovalResponse,
-} from "#runtime/services/approvals/contract.ts";
+import type { ApprovalFamily, ApprovalResponse } from "#runtime/services/approvals/contract.ts";
 
 /** Each response variant keyed by the approval family it answers. */
 type ApprovalResponseByKind = {
 	readonly [Kind in ApprovalFamily]: Extract<ApprovalResponse, { readonly approvalKind: Kind }>;
 };
 
-/** Each request variant keyed by its approval family. */
-type ApprovalRequestByFamily = {
-	readonly [Family in ApprovalFamily]: Extract<ApprovalRequest, { readonly family: Family }>;
-};
-
 /** One handler per approval family, each typed to its own response variant. */
 type ApprovalResponseHandlers<Result> = {
 	readonly [Kind in ApprovalFamily]: (response: ApprovalResponseByKind[Kind]) => Result;
-};
-
-/** One handler per approval family, each typed to its own request variant. */
-type ApprovalRequestHandlers<Result> = {
-	readonly [Family in ApprovalFamily]: (request: ApprovalRequestByFamily[Family]) => Result;
 };
 
 /**
@@ -41,27 +27,4 @@ function handleApprovalResponse<Result, Kind extends ApprovalFamily>(
 	return handlers[kind](response);
 }
 
-/**
- * Routes a request to the handler for its family, correlated the same way as
- * {@link handleApprovalResponse}.
- * @param handlers - The handler for every family.
- * @param family - The request's family.
- * @param request - The request itself.
- * @returns Whatever the family's handler returns.
- */
-function handleApprovalRequest<Result, Family extends ApprovalFamily>(
-	handlers: ApprovalRequestHandlers<Result>,
-	family: Family,
-	request: ApprovalRequestByFamily[Family],
-): Result {
-	return handlers[family](request);
-}
-
-export {
-	type ApprovalRequestByFamily,
-	type ApprovalRequestHandlers,
-	type ApprovalResponseByKind,
-	type ApprovalResponseHandlers,
-	handleApprovalRequest,
-	handleApprovalResponse,
-};
+export { type ApprovalResponseByKind, type ApprovalResponseHandlers, handleApprovalResponse };

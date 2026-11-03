@@ -62,7 +62,7 @@ function SlowRead(props: {
 }
 
 /**
- * A repository that stores boards keeps them until an owner approves a migration.
+ * A repository that stores models keeps them until an owner approves a migration.
  * @returns What it needs and the way to its preview.
  */
 function ModelMigrationRequired(): JSX.Element {
@@ -70,12 +70,12 @@ function ModelMigrationRequired(): JSX.Element {
 		<ModelState slot="model-migration-required">
 			<ModelState.Title>Migration required</ModelState.Title>
 			<ModelState.Line>
-				This repository stores its architecture as boards. A migration opens it as modules, and its
-				files stay unchanged until you apply it.
+				This repository stores its architecture as legacy boards. A migration opens it as modules,
+				and its files stay unchanged until you apply it.
 			</ModelState.Line>
 			<ModelState.Ask
 				label="Ask the agent for a migration preview"
-				draft="Prepare a migration preview of this repository's boards. Do not apply the migration."
+				draft="Prepare a migration preview of this repository's legacy boards. Do not apply the migration."
 			/>
 		</ModelState>
 	);

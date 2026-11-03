@@ -6,7 +6,6 @@ import type {
 	BrowserCommandId,
 	ChildEpoch,
 	ChildId,
-	CodexIdentity,
 	DynamicToolCallId,
 	IdentityAuthority,
 	IdentityValidator,
@@ -58,13 +57,6 @@ const boundedWireText = (maximum: number) =>
 		);
 
 /**
- * Bounded text that may be null.
- * @param maximum - The limit, applied to both the length and the encoded byte size.
- * @returns The nullable string schema.
- */
-const nullableText = (maximum: number) => boundedText(maximum).nullable();
-
-/**
  * Bounded text that may be null or absent.
  * @param maximum - The limit, applied to both the length and the encoded byte size.
  * @returns The optional, nullable string schema.
@@ -81,7 +73,6 @@ const SafeUrlSchema = boundedText(2048).refine((value) => {
 }, "only http and https URLs are supported");
 
 const NonNegativeIntegerSchema = z.number().int().nonnegative();
-const NullableNonNegativeIntegerSchema = NonNegativeIntegerSchema.nullable();
 
 interface IdentitySchemas {
 	readonly ChildIdSchema: z.ZodType<ChildId>;
@@ -187,22 +178,15 @@ function assertCurrentTarget(
 	context.assertCurrentEpoch(value.childId, value.epoch);
 }
 
-type JsonValue = z.infer<typeof JsonValueSchema>;
-
 export {
 	JsonValueSchema,
 	boundedText,
 	boundedWireText,
-	nullableText,
 	optionalNullableText,
 	SafeUrlSchema,
 	NonNegativeIntegerSchema,
-	NullableNonNegativeIntegerSchema,
 	type IdentitySchemas,
 	type IdentityContext,
 	createIdentitySchemas,
 	assertCurrentTarget,
-	type AnyIdentity,
-	type CodexIdentity,
-	type JsonValue,
 };

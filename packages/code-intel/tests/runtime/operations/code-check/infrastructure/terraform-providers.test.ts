@@ -1,16 +1,16 @@
 // The code check under the Terraform rules of the providers the user named
-// (ADR 0046, TASK-367.18): one root module per provider, each with a board.
+// (ADR 0046, TASK-367.18): one root module per provider, each with a document.
 // A joining declaration gives evidence between the two parts it joins, never
 // between itself and each end, and an anchor may name it. A provisioning
 // reference, such as the role a function runs as, and a grant are never a
-// relationship the board does not draw.
+// relationship the document does not draw.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 import type { CodeFinding } from "#shared/protocol/code-check.ts";
 
 const caller = {
@@ -199,13 +199,13 @@ function edge(id: string, ends: [string, string], kind: string, anchor?: [string
 }
 
 /**
- * Write a board with one current variant.
+ * Write a document with one current variant.
  * @param name Its name.
  * @param nodes Its parts.
  * @param edges Its relationships.
  */
 function current(name: string, nodes: unknown[], edges: unknown[]): void {
-	board(vault, name, [
+	document(vault, name, [
 		{ id: "v1", name: "Built", lifecycle: "current", content: { nodes, edges } },
 	]);
 }
@@ -291,9 +291,9 @@ beforeAll(async () => {
 		[edge("e1", ["I", "S"], "http")],
 	);
 	const check = await import("#tests/runtime/support/code-check/pass.ts");
-	const read = check.readBoardsToCheck(vault, undefined);
-	if (!read.ok) throw new Error("no boards");
-	outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
+	const read = check.readStatesToCheck(vault, undefined);
+	if (!read.ok) throw new Error("no documents");
+	outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 });
 
 afterAll(() => {
@@ -317,14 +317,14 @@ function pieces(finding: CodeFinding): string[] {
 }
 
 /**
- * The findings on one board, each as its code, subject, severity and the
+ * The findings on one document, each as its code, subject, severity and the
  * pieces of its evidence.
- * @param name The board.
+ * @param name The document.
  * @returns The findings, sorted.
  */
 function found(name: string): string[] {
 	return outcome.findings
-		.filter((each) => each.board === name)
+		.filter((each) => each.model === name)
 		.map((each) => [each.code, each.subject?.id, each.severity, ...pieces(each)].join(" | "))
 		.toSorted();
 }

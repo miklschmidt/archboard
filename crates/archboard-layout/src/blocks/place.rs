@@ -42,7 +42,7 @@ fn answer(graph: &Node, width: f64, height: f64, told: Vec<(&str, String)>) -> S
 /// # Errors
 ///
 /// An unreadable graph or a refusal from the selected layout engine.
-pub fn lay_out_board(graph: &str, host: &mut dyn Graphviz) -> Result<String, String> {
+pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, String> {
     let graph: Node = serde_json::from_str(graph)
         .map_err(|error| format!("The measured graph is unreadable: {error}"))?;
     let mode = graph.option(BLOCKS_NESTING).unwrap_or("inline");

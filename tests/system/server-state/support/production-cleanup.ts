@@ -106,7 +106,7 @@ const pane = (clientId: string, primary: boolean, focused: boolean) => ({
 	paneId: `${clientId}-pane`,
 	primary,
 	focused,
-	board: "scratch",
+	paneKey: "scratch",
 	rect: { x: 0, y: 0, width: 1280, height: 800 },
 });
 

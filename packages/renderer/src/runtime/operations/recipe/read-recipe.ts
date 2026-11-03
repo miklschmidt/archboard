@@ -105,4 +105,4 @@ function replaceRenderRecipe(bytes: Uint8Array, recipe: AnyRenderRecipe): Uint8A
 	return Buffer.from(replaceRecipeInSvg(Buffer.from(bytes).toString("utf8"), recipe), "utf8");
 }
 
-export { readRenderRecipe, replaceRenderRecipe, type AnyRenderRecipeRead };
+export { readRenderRecipe, replaceRenderRecipe };

@@ -77,7 +77,7 @@ describe("semantic context publisher", () => {
 			source: "pane_focus",
 			feedId: "feed-1",
 			repository: "archboard",
-			board: {
+			model: {
 				key: "payments",
 				name: "Payments",
 				vault: "/work/.archboard/vault",
@@ -88,8 +88,8 @@ describe("semantic context publisher", () => {
 			cursor: { feedId: "feed-1", sequence: 3 },
 			freshness: { state: "fresh", capturedAtMs: h.state.now },
 			child: { id: h.ids.child, epoch: h.ids.epoch },
-			claim: { holder: "agent", doing: "mapping the board" },
-			doing: "mapping the board",
+			claim: { holder: "agent", doing: "mapping the model" },
+			doing: "mapping the model",
 		});
 		expect(Object.isFrozen(event)).toBe(true);
 		expect(Object.isFrozen(event.cursor)).toBe(true);
@@ -97,7 +97,7 @@ describe("semantic context publisher", () => {
 		expect(() => {
 			(event.architecture.selection.subjects as unknown as unknown[]).push({ id: "not-published" });
 		}).toThrow();
-		expect(event.brief).toContain('"description":"Payments board');
+		expect(event.brief).toContain('"description":"Payments model');
 	});
 
 	test("settled publication derives one cursor from the source event", () => {
@@ -141,7 +141,7 @@ describe("semantic context publisher", () => {
 	test("builds an operation brief from the exact supplied pane instead of focused state", () => {
 		const h = harness();
 		const exact = context(h.ids, {
-			board: {
+			model: {
 				key: "ledger",
 				name: "Ledger",
 				vault: "/work/.archboard/vault",
@@ -154,11 +154,11 @@ describe("semantic context publisher", () => {
 		const operationBrief = h.publisher.freshBriefFor(exact);
 		const focusedBrief = h.publisher.freshBrief();
 		expect(operationBrief).toMatchObject({
-			board: { key: "ledger", name: "Ledger", file: "boards/ledger.semantic.json" },
+			model: { key: "ledger", name: "Ledger", file: "boards/ledger.semantic.json" },
 			pane: { paneId: "pane-b", focused: false },
 		});
 		expect(focusedBrief).toMatchObject({
-			board: { key: "payments" },
+			model: { key: "payments" },
 			pane: { paneId: "pane-a", focused: true },
 		});
 		expect([operationBrief.version, h.state.freshReads]).toEqual([11, 1]);
@@ -178,8 +178,8 @@ describe("semantic context publisher", () => {
 		const hostile = context(h.ids, {
 			repository: "r".repeat(SEMANTIC_CONTEXT_LIMITS.repositoryBytes),
 			threadLink: { state: "inspect_only", reason: "界".repeat(170) },
-			board: {
-				key: "b".repeat(SEMANTIC_CONTEXT_LIMITS.boardKeyBytes),
+			model: {
+				key: "b".repeat(SEMANTIC_CONTEXT_LIMITS.paneKeyBytes),
 				name: "界".repeat(50),
 				vault: "界".repeat(1_365),
 				file: "界".repeat(1_365),
@@ -204,9 +204,9 @@ describe("semantic context publisher", () => {
 		expect(utf8(first.brief)).toBeLessThanOrEqual(SEMANTIC_CONTEXT_LIMITS.briefBytes);
 		expect(first.brief).toContain("…");
 		expect(first.repository).not.toBe("");
-		expect(first.board.key).not.toBe("");
-		expect(first.board.file).not.toBe("");
-		expect(first.board.vault).not.toBe("");
+		expect(first.model.key).not.toBe("");
+		expect(first.model.file).not.toBe("");
+		expect(first.model.vault).not.toBe("");
 		expect(first.pane.paneId).not.toBe("");
 		expect(
 			first.architecture.selection.subjects.every(
@@ -271,7 +271,7 @@ describe("semantic context publisher", () => {
 		restarted.dispose();
 	});
 
-	test("marks stale timestamps and board disagreement instead of hiding ambiguity", () => {
+	test("marks stale timestamps and model disagreement instead of hiding ambiguity", () => {
 		const h = harness();
 		h.state.now += CODEX_REALTIME_MS.contextFreshness + 1;
 		const stale: Array<{
@@ -287,12 +287,12 @@ describe("semantic context publisher", () => {
 			}),
 		);
 		h.emitFeed(change(h.state.now - CODEX_REALTIME_MS.contextFreshness - 1));
-		h.emitFeed(change(h.state.now, { board: "other-board", at: "not-a-date" }));
+		h.emitFeed(change(h.state.now, { model: "other-board", at: "not-a-date" }));
 
 		expect(stale[0]?.freshness).toBe("stale");
 		expect(stale[0]?.reasons).toContain("semantic freshness window expired");
-		expect(stale[1]?.reasons.join(" ")).toContain("settled event names board");
-		expect(stale[1]?.ambiguity.join(" ")).toContain("settled event names board");
+		expect(stale[1]?.reasons.join(" ")).toContain("settled event names model");
+		expect(stale[1]?.ambiguity.join(" ")).toContain("settled event names model");
 	});
 
 	test("rolls back every acquired source when registration fails at each step", () => {

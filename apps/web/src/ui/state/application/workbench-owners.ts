@@ -1,7 +1,7 @@
 // The owners the application composes over one pane's workbench transport:
 // the composer, queue, approvals and thread-link controllers. The
 // conversation is the tab's (TASK-373), so whichever pane of the tab the person
-// is reading speaks for it, with that pane's board as context.
+// is reading speaks for it, with that pane's model as context.
 
 import { createSnapshotCache, type SnapshotStore } from "#ui/state/application/snapshot-cache.ts";
 import { createProgressClock } from "#ui/state/application/progress-clock.ts";
@@ -78,10 +78,4 @@ function createWorkbenchOwners(options: WorkbenchOwnersOptions): WorkbenchOwners
 	});
 }
 
-export {
-	createWorkbenchOwners,
-	type ApprovalDecisions,
-	type VoiceOwner,
-	type WorkbenchOwners,
-	type WorkbenchOwnersOptions,
-};
+export { createWorkbenchOwners, type ApprovalDecisions, type VoiceOwner, type WorkbenchOwners };

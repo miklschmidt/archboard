@@ -5,16 +5,16 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import frameApproach from "#tests/runtime/support/fixtures/frame-head-approach.json";
 import sideApproach from "#tests/runtime/support/fixtures/side-head-approach.json";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { LayoutEngineSchema, type DiagramBox } from "@archboard/board/render-reply";
+import { LayoutEngineSchema, type DiagramBox } from "@archboard/model/render-reply";
 import {
 	corridorPoints,
 	routeCrosses,
 	routePoints,
 	type DrawnPoint,
 } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** Containment and opposing relationships exercise each endpoint face. */
 const CROWDED: VariantContent = orderedFixture({
@@ -30,7 +30,7 @@ const CROWDED: VariantContent = orderedFixture({
 	],
 	edges: [
 		{ id: "e1", from: "web", to: "gw", kind: "http", label: "REST" },
-		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read board" },
+		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read document" },
 		{ id: "e3", from: "gw", to: "queue", kind: "event", label: "enqueue" },
 		{ id: "e4", from: "queue", to: "io", kind: "call", label: "drain" },
 		{ id: "e5", from: "io", to: "lease", kind: "call", label: "take" },
@@ -72,7 +72,7 @@ function expectSquare(point: DrawnPoint, vector: DrawnPoint, box: DiagramBox): v
 	expect(Math.abs((vector.x * normal.x + vector.y * normal.y) / length)).toBeGreaterThan(0.999);
 }
 
-test("every relationship of a crowded board leaves and arrives square to its named subject", async () => {
+test("every relationship of a crowded document leaves and arrives square to its named subject", async () => {
 	const drawing = await renderArchitecture({
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content: CROWDED,

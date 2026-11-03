@@ -121,7 +121,7 @@ split by behavior.
   by name (`export { a } from "#shared/rules/x.ts"`, `export type { T } from ...`, never `export *`)
   from the private files that define the names, and it holds no second definition. A name that no
   code outside the package imports stays private, and so does a piece that callers only connect.
-  Private production files never import an api file, because the api files sit above them. `board`,
+  Private production files never import an api file, because the api files sit above them. `model`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
   `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `shared/`, `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process` and `skills` for `runtime/`, `server-lifecycle` for `shared/` and `runtime/`, `codex-realtime-voice` and `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   would be the one exception, and the test would have to name it. No package has one now.
@@ -145,7 +145,7 @@ split by behavior.
 
 The first package is `timing` (`@archboard/timing`). Its one `.` export holds every product duration,
 grouped by the subsystem that owns it. Each owner has one frozen group in a file of its own, such as
-`BOARD_LOCK_MS`, `CODEX_PROCESS_MS`, `SERVER_LIFECYCLE_MS` or `PANE_MS`, and each key has what it
+`MODEL_LOCK_MS`, `CODEX_PROCESS_MS`, `SERVER_LIFECYCLE_MS` or `PANE_MS`, and each key has what it
 pulls against written beside it. A caller imports its owner's group and reads a key of it. A
 computation that callers would repeat from a group is one function of the package, such as the
 Codex restart backoff `codexRestartDelayMs`. A duration with one owner and no siblings stays one
@@ -203,7 +203,7 @@ The fifth is `code-binding` (`@archboard/code-binding`). It knows what a node's 
 where its path lives in a checkout. It adopts the `api/` role for `shared/` and `runtime/` and
 exposes 2 subpaths with 18 names, where it exposed 9 files. Everything in `shared/api/` is safe for
 the browser, with no Node import. `./bindings` holds the binding, anchor and document-reference
-schemas and the files a binding names. `board` imports them and the resolver parses with
+schemas and the files a binding names. `model` imports them and the resolver parses with
 `CodeBindingSchema`, so they stay here. `./resolution` is Node-bound, in `runtime/api/`. It captures
 the registered checkouts and the paths of some bindings once, then resolves a binding or a
 repository against that snapshot alone. It also carries the result types and the resolution rules
@@ -240,8 +240,8 @@ Archboard owns captured architecture context in `workbench` through its `./seman
 - `./session` is the session of `runtime/services/`. It creates the session and carries its
   interface, its options, its errors and its control symbol. It also carries the decoded results of
   a session request, such as `SessionThread`, and the schemas where code outside the package
-  validates: the reply to a server request, the supported login parameters, the queue parameters
-  and a queued submission. The session's storage proof is in `runtime/store/`.
+  validates: the reply to a server request, the supported login parameters and a queued
+  submission. The session's storage proof is in `runtime/store/`.
 - `./process` owns the `codex app-server` child of `runtime/processes/`: it creates the process and
   reports its lifecycle. It also carries the executable check, which finds the Codex executable of
   the checkout whose source runs, through `SOURCE_CHECKOUT` of `workspace`, and refuses a global one
@@ -251,9 +251,8 @@ Archboard owns captured architecture context in `workbench` through its `./seman
   `runtime/processes/process.ts` from inside the package. No test outside the package does, so the
   package has no `./testing` export.
 
-The seventh is `board` (`@archboard/board`).
+The seventh is `model` (`@archboard/model`).
 It owns the canonical model contract and its coherent reader and durable writer.
-Its name remains the package identity, not a second board-storage abstraction.
 `shared/` is safe for the browser and imports no Node module.
 `runtime/` runs only in Bun.
 Both areas expose named operations through `api/` files.
@@ -261,11 +260,11 @@ The package's `exports` declares the public subpaths.
 
 The shared interface separates these responsibilities:
 
-- `./model` exposes canonical read, edit, claim, recovery, render, history, import, and initialization schemas.
+- `./contract` exposes canonical read, edit, claim, recovery, render, history, import, and initialization schemas.
   Derive local types from those schemas and operation results.
 - `./migration` exposes original inventory and explicit mapping contracts.
   Legacy document schemas remain available for migration and exact retained originals.
-  They provide no live board writer.
+  They provide no live writer.
 - `./content` exposes semantic content and the shared `modelContent`, `projectModel`, and `projectFlow` projections.
   Browser and backend consumers use those same projections.
   A projection is derived renderer input and owns no authored architecture.
@@ -290,13 +289,13 @@ The runtime interface owns these operations:
   The caller submits one complete intent rather than assembling private transitions.
 - `./vault-policy` reads configuration and semantic diagnostics.
   `./lock` exposes shared lease inspection and process-memory cleanup.
-  Canonical claims belong to the model operations, not a live board-lock API.
+  Canonical claims belong to the model operations, not a live lock API of legacy boards.
 
 Private `runtime/store/` owns current inputs, archive objects, installation journals, fingerprints, and short leases.
 Private `runtime/operations/` owns coherent reads and complete durable operations.
 Current files contain one model manifest, module definitions, flow collections, active compact proposals, and walkthrough instructions.
 Completed states and exact originals remain in the existing independent Git archive.
-No current file embeds a board family or historical snapshot array.
+No current file embeds a legacy board family or historical snapshot array.
 
 All operations cross the existing recovery boundary.
 The writer checks the complete expected revision and affected claim closure.
@@ -359,7 +358,7 @@ on a URL. The request options, the reply guards `isRecord` and `trustReply` stay
 The tenth is `code-intel` (`@archboard/code-intel`). It compares canonical architectural claims with source evidence.
 It owns checkout code facts and the code inspection algorithms. It also holds the history lens
 over Git and the language servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
-subpaths with 16 names, where code outside imported 7 module paths. It imports `board`,
+subpaths with 16 names, where code outside imported 7 module paths. It imports `model`,
 `code-binding`, `workspace`, `diagnostics` and `timing`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the canvas imports them. The 3 files of
 `runtime/api/` are Node-bound and run only in Bun.
@@ -402,13 +401,13 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
   with their dotfiles. A test finds them through `FIXTURES` of the `checkout.ts` beside them.
 
 The eleventh is `renderer` (`@archboard/renderer`). It draws projected architecture as a picture. It adopts the `api/` role for
-`shared/`, `runtime/` and `ui/`. It imports `board`, `timing` and `process`.
+`shared/`, `runtime/` and `ui/`. It imports `model`, `timing` and `process`.
 The files of `shared/api/` and `ui/api/` are safe for the browser, with no Node import.
 The files of `runtime/api/` are Node-bound and run only in Bun.
 
 - `shared/` holds the host code that the browser and Bun both run. It holds no rule of layout, painting or
   measurement: the renderer core in `crates/` draws every picture (ADR 0059). `rules/` is the pure code: `render/` has
-  the entry points (`board.ts` resolves a board's variant, view and comparison into what a render asks, and
+  the entry points (`legacy-board.ts` resolves a legacy board's variant, view and comparison into what a render asks, and
   `diagram.ts` hands that to the core with this host's durations and theme colours), the host contract, the words a
   pane's key says beside the kinds the core lists (`key-marks.ts`) and the marks a pane draws itself (`marks.ts`), and
   `engine/` runs the layout's solves on a pool of workers. `constants/` holds `shell-geometry.ts`, and `protocol/`
@@ -419,7 +418,7 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   It asks the host for two things through `RenderHost`: each solve of the layout, which `engine/` runs side by side on
   as many workers as the place has and calls off when the core drops it, and the path data of the icons it draws. A
   worker (`engine/layout-engine.ts`) instantiates the core its host's thread compiled and handed it, and runs one
-  solve at a time with the core's `layOutBoard`, which lays out each graph it ranks with the core's own Graphviz
+  solve at a time with the core's `layOutPicture`, which lays out each graph it ranks with the core's own Graphviz
   (`crates/archboard-graphviz` over the vendored graphviz-pure, ADR 0060).
 - `runtime/` holds the Bun host. `services/bun-host.ts` installs the core, the theme colors, the icon paths and the
   pool of layout workers. `processes/layout-worker.ts` is the worker thread, started with
@@ -429,15 +428,15 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   `store/` reads the theme stylesheet and names where the assets are.
 - `ui/` holds the browser host. `state/` keeps what the page loads once (the core, the icons, whether the renderer has
   started) and `workers/` holds the browser layout worker. `api/browser.ts` starts the renderer with
-  `startBrowserRenderer()` and draws a board with `drawBoardHere`. The worker is started inside the
+  `startBrowserRenderer()` and draws a legacy board with `drawLegacyBoardHere`. The worker is started inside the
   package with `new Worker(new URL("../workers/layout-worker.ts", import.meta.url), { type: "module" })`, which Vite
   bundles into its own chunk. So there is no `./worker` subpath: no code outside the package runs the worker. The
   page fetches and compiles the core's WebAssembly, served beside its glue, and hands each worker the compiled module.
 - `./picture` is what a pane reads of a picture besides its pixels: the words of the key it lists, the inks and marks
   the canvas draws with, the code warnings, and what a render asks and answers. The kinds the key lists and each
-  subject's appearance arrive with the picture (`@archboard/board/render-reply`). `./shell-geometry` is the shell's fixed geometry and the
-  page shape that boards are laid out for. `./browser` is the browser host. `./bun` draws with the Bun host:
-  `renderBoard`, `renderArchitecture` and the diagram icon paths. `./rasterizer` is the bitmap of a
+  subject's appearance arrive with the picture (`@archboard/model/render-reply`). `./shell-geometry` is the shell's fixed geometry and the
+  page shape that pictures are laid out for. `./browser` is the browser host. `./bun` draws with the Bun host:
+  `renderLegacyBoard`, `renderArchitecture` and the diagram icon paths. `./rasterizer` is the bitmap of a
   picture and the receipt of the capture.
   `./recipe` reads, embeds, and replaces render recipes in SVG and PNG artifacts.
   Canonical recipes record the model, vault repository, reading selectors, exact fingerprint, and picture digest.
@@ -457,12 +456,12 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   glyph positions of the core in Chrome.
 - The tests are in `tests/`. `shared/rules/` tests the pure code. `runtime/operations/<behavior>/` holds the
   whole-picture suites, with their fixtures in `runtime/support/fixtures/`. `runtime/services/rasterizer/`,
-  `runtime/processes/headless-chromium/` and `runtime/store/theme/` test the rest. A few tests read board fixtures from
+  `runtime/processes/headless-chromium/` and `runtime/store/theme/` test the rest. A few tests read fixtures from
   `docs/design/` and the vault of this repository, by a relative path from the test file.
 
 The twelfth is `code-opener` (`@archboard/code-opener`). It opens the code a node binds in the person's editor. It
 adopts the `api/` role for `shared/`, `server/` and `ui/` and exposes 5 subpaths with 13 names, where code outside
-imported 5 module paths. It imports `board`, `code-binding`, `code-intel`, `workspace`, `server-requests` and `ui-kit`.
+imported 5 module paths. It imports `model`, `code-binding`, `code-intel`, `workspace`, `server-requests` and `ui-kit`.
 The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser, with no Node import. The 2 files of
 `server/api/` are Node-bound and run only in Bun.
 
@@ -494,7 +493,7 @@ The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser,
 
 The thirteenth is `walkthrough` (`@archboard/walkthrough`). It records an exact retained canonical walkthrough to a video
 (ADR 0035, ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 21 names, one
-operation or fact for each job a caller has. It imports `board`, `timing`, `workspace` and `renderer`. The 2 files of
+operation or fact for each job a caller has. It imports `model`, `timing`, `workspace` and `renderer`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the recording page and the replay page import them. The 2
 files of `runtime/api/` run only in Bun.
 
@@ -524,7 +523,7 @@ files of `runtime/api/` run only in Bun.
   `runtime/processes/` the encoder. The end-to-end owners stay in `tests/system/server-state/walkthrough-*.test.ts`.
 
 The fourteenth is `skills` (`@archboard/skills`). It ships the archboard skill and evaluates it. It adopts the `api/`
-role for `runtime/` and exposes 3 subpaths with 3 names. It imports `board`, `timing`, `renderer`, `process` and
+role for `runtime/` and exposes 3 subpaths with 3 names. It imports `model`, `timing`, `renderer`, `process` and
 `walkthrough`. Every file is Node-bound and runs only in Bun. The 3 files of `runtime/api/` are the
 interface.
 
@@ -570,9 +569,9 @@ CLI route clients remain in `apps/cli/src/cli/clients/server/`.
   `./config` is the server URL that the CLI reads from the environment and the removed variables that it refuses.
   `bin.ts` imports `./config` alone and late, because loading it reads `.env`.
 - `./server-client` is one CLI request to a running server (`requestJson`), behind the identity gate, carrying what
-  the invocation states about itself on every request. `stateInvocation` states its board, vault, doing line, write
-  session and expected version, and `statedInvocation` reads them back. `formatBoardRefusal` and
-  `BOARD_REFUSAL_CODES` are how a refused board request is shown, and `responseError` is the error the transport
+  the invocation states about itself on every request. `stateInvocation` states its vault, doing line, write
+  session and expected version, and `statedInvocation` reads them back. `formatModelRefusal` and
+  `MODEL_REFUSAL_CODES` are how a refused model request is shown, and `responseError` is the error the transport
   builds from a refused answer.
 - `./server-host` is what the server process does for itself: whether it is the entry point, whether its source or
   frontend bundle is stale, its pid file (`recordServerPid` once it listens, which also sweeps the pid files of
@@ -596,7 +595,7 @@ The `codex-realtime-voice` package (`@archboard/codex-realtime-voice`) owns reus
 It runs one private app-server process with separate coordinator and workhorse histories.
 Each browser tab has one coordinator and one workhorse per admitted checkout.
 The package sits at layer 6 and reads only its Codex, process, diagnostics, and timing foundations.
-It imports no Archboard board, vault, walkthrough, pane, or server-lifecycle module.
+It imports no Archboard model, vault, walkthrough, pane, or server-lifecycle module.
 
 The package and the four packages it reads are MIT-licensed, each with its own `LICENSE`. Every other package is BUSL-1.1.
 `bun run pack:voice` (the `voice-package` Vite+ task, `scripts/pack-codex-realtime-voice.ts`) builds it for npm into ignored `dist/codex-realtime-voice/`.
@@ -677,12 +676,12 @@ Its pane sockets reach the agent through the extension's own browser routing.
 It supplies `ARCHBOARD_URL`, `ARCHBOARD_NO_AUTOSTART`, and its executable path prefix explicitly.
 The Codex SDK supplies none of those application values by default.
 Pane registration, captured model context, and narration remain integration concerns.
-Canonical semantic projections come from `@archboard/board/content`.
+Canonical semantic projections come from `@archboard/model/content`.
 `apps/server` owns HTTP routes, sockets, and application lifetime.
 
 Canonical explanation actions use the existing `./server` operation and shared `./browser-contract` schemas.
 `server/services/explanations/` owns temporary requests, exact retries, queue cancellation, and correlated text results.
-The board runtime owns coherent capture through `readArchitectureModel` and its selected-reading argument.
+The model runtime owns coherent capture through `readArchitectureModel` and its selected-reading argument.
 Adapters never reconstruct architecture or comparison bases.
 The existing coordinator, checkout workhorse, queues, and provider notifications own execution.
 The existing pane report owns canonical reading intent and notifies the coordinator context source.
@@ -753,10 +752,7 @@ path, and `archboard install-skill --print-source` is how a test learns which sk
   `operations/invocation/` resolves the command table, session, and explicit vault.
   `operations/execution/` presents one operation result.
   `operations/contract-artifacts/` generates the command proof from the shipped contracts.
-  No semantic-board or top-level claim/release command remains live.
-- `src/runtime/` is the `runtime` area, for the native clipboard: `clients/clipboard/` copies one
-  image through a detached owner process that `copy-image.ts` forks by file URL, and
-  `protocol/clipboard/` is the message pair between them.
+  No legacy board or top-level claim/release command remains live.
 - `command-owner` paths in the command table and the `generatedFrom` field of the proof are
   repository paths of these files. Moving a command file means editing `run.ts`.
 - The tests are in `tests/cli/`, in the folders of the code they cover. `support/` holds the public
@@ -781,7 +777,7 @@ of `dist/`.
   `sockets/panes/` accepts explicitly addressed pane sockets.
   `services/checkout-work/` owns machine-local source work and cancellation.
   The existing architecture change feed announces only coherent durable results.
-  Retired semantic-board routes perform no live reads or writes.
+  Retired legacy board routes perform no live reads or writes.
 - The app reads the pane and tab services, request context and listener address through the exports of
   `packages/workbench`. It mounts that package's pane context and voice trace routes, and the router of
   `packages/code-opener`.
@@ -805,14 +801,14 @@ behavior has an index: a caller imports the file that defines a name.
 - `src/ui/` is the `ui` area. Each behavior is a folder under each role it needs.
   `application` owns the root, the pane records and lists, the agent surfaces and the workspace port.
   `shell` owns the frame, navigator and rows. `pane-session` owns one pane's socket, status, reading and registration.
-  `board-routing` owns the workspace address, and `board-catalog` discovers canonical repository models.
+  `reading-routing` owns the workspace address, and `model-catalog` discovers canonical repository models.
   Canonical model components own module navigation, reading controls, claims, and selected-state presentation.
   The existing canvas, walkthrough-recording, and walkthrough-replay owners retain local rendering and playback.
   `rules/` holds pure behavior, `state/` holds state that outlives a render, and `clients/` owns external effects.
   `components/` and `hooks/` hold React code. `clients/renderer-build/` holds the declaration of the
   `virtual:archboard-renderer` module that `vite.config.ts` serves, a `.d.ts` that sits in a role folder because the
   files directly in `src/` are for entries.
-- The canvas has no index either. Its parts are in `rules/` (`camera/`, `walkthrough/`, `drilling/`, `board/`,
+- The canvas has no index either. Its parts are in `rules/` (`camera/`, `walkthrough/`, `drilling/`, `reading/`,
   `picture/`), `state/`, and `clients/` (`reads/`, `picture/`, `subjects/`).
 - The tests are in `tests/ui/<role>/<behavior>/`, in the folders of the code they cover. `tests/ui/support/<behavior>/`
   holds the harnesses and fixtures that tests share. `tests/contracts/` holds the one test that holds the recorder's page
@@ -871,7 +867,7 @@ applies safe Oxlint fixes and formats the repository.
 
 ### `apps/workbench-example`
 
-`apps/workbench-example` demonstrates the shared Codex workbench without an Archboard server, board, or vault.
+`apps/workbench-example` demonstrates the shared Codex workbench without an Archboard server, model, or vault.
 The server admits one checkout and keeps private state in the supplied directory.
 It reads only public SDK and codex-realtime-voice entries.
 Its server calls `createVoiceAgent` and runs on `Bun.serve` with `agent.bunHandlers`, and keeps only its own HTTP routes.

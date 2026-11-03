@@ -6,7 +6,7 @@
   "description": "Canonical readers reuse the picture surface, tips and type samples, and draw their own Legend and right panel in Model reading. The retained stage also presents original headers, variants, and walkthroughs through an explicit captured provider. These components contain no live legacy authoring path.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/semantic-board-canvas"
+    "path": "apps/web/src/ui/components/canvas"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#3KqRuOEN",

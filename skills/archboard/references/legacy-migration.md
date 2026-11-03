@@ -1,7 +1,7 @@
 # Inventory legacy boards
 
 Use this workflow when an owner requests legacy migration planning.
-Legacy bytes remain authoritative until explicit cutover. Live board commands are retired.
+Legacy bytes remain authoritative until explicit cutover. The live `board` commands are retired.
 A mapping plan records intended identities and conflict choices.
 It contains no active architecture.
 
@@ -15,7 +15,7 @@ Keep that namespace for every later read and save.
 archboard model inventory --origin Shop -C /path/to/checkout > inventory.json
 ```
 
-The result includes every original board as `boards[].source`.
+The result includes every original legacy board as `boards[].source`.
 The optional `document` is the existing decoder's normalized, in-memory reading.
 Inventory never persists that normalization.
 Unreadable documents retain their source text and report diagnostics.
@@ -24,8 +24,8 @@ An unreadable byte sequence refuses the inventory.
 Each complete document retains its states, adoptions, shelvings, reconciliation bases, views, walkthroughs, corrections, and document references.
 `identities` includes subjects from every state and reconciliation base.
 An imported identity uses `origin/original-board-id#local-id`.
-A board family supplies provenance, without owning canonical containment.
-`aliases` retains board addresses, former names, and named state addresses.
+A legacy board family supplies provenance, without owning canonical containment.
+`aliases` retains legacy addresses, former names, and named state addresses.
 
 `source` fingerprints recognized architecture paths and exact bytes, including the authored policy.
 It covers file additions, removals, renames, and whitespace changes.
@@ -39,7 +39,7 @@ Read `evidence` before selecting identities.
 Matching names, exact bindings, and drill-down links suggest shared subjects.
 They never create mappings.
 Current-state conflicts do not combine independent historical readings.
-A planning-only board retains its original draft coverage.
+A planning-only legacy board retains its original draft coverage.
 
 Create a request containing `plan` and `expectedPlan` from the inventory.
 Use the inventory's `planRevision` as `expectedPlan`, including `null` before the first save.
@@ -86,8 +86,8 @@ archboard model plan --input choices.json --doing "Record the owner identity cho
 
 The command saves only `<vault>/.archboard/migration-plan.json` through durable atomic replacement.
 Keep this authored plan in version control when the vault is tracked.
-The plan file is independent of every board claim and version.
-No board content, current designation, archive checkpoint, or pane announcement changes.
+The plan file is independent of every claim and version.
+No legacy board content, current designation, archive checkpoint, or pane announcement changes.
 
 If captured inputs differ from your request, saving returns `MAPPING_STALE` without replacing the plan.
 A changing inventory returns `INVENTORY_CHANGED`.
@@ -111,13 +111,13 @@ archboard model read 'Shop/System#Api' --preview Shop --flow 'Shop/System#Buy' -
 Open the local browser at `/?modelA=Shop&previewA=Shop` to inspect that candidate.
 For a different repository, add its registered identity as `repoA`.
 The preview uses the existing module navigation, selection, filters, and flow modes.
-Its source disclosure shows both fingerprints, original board coverage, and proposed state mappings.
+Its source disclosure shows both fingerprints, original legacy board coverage, and proposed state mappings.
 Reload and browser history retain the preview origin and selected scope or flow.
 Code actions keep the preview origin and open its binding through the existing local opener.
 A planned-only preview shows no implemented modules and retains its explicit proposed state mappings.
 If the source changes, Refresh refuses the stale candidate until the plan matches the source again.
 
-Browser snapshots and diagnostics normalize old board schemas in memory.
+Browser snapshots and diagnostics normalize old legacy schemas in memory.
 Opening a preview does not persist those schema upgrades.
 Legacy decoding serves migration and exact retained originals without rewriting source files.
 No ordinary live legacy CLI reader remains.
@@ -126,12 +126,12 @@ The existing canonical model result carries the composed current modules, source
 The preview uses the origin as its model identity and composed current-state identity.
 It names that state `Migration baseline`.
 Synthetic file paths describe candidate definitions, and no file is installed there.
-The result contains no board level or numeric depth.
+The result contains no legacy level or numeric depth.
 The shared policy still carries its existing vocabulary contract.
 
 `migrationPreview.source` retains the exact legacy source fingerprint.
 `migrationPreview.planRevision` identifies the saved mapping bytes.
-`migrationPreview.coverage` retains original board names and current-state metadata, including summaries and documents.
+`migrationPreview.coverage` retains original legacy board names and current-state metadata, including summaries and documents.
 The model revision covers the candidate, source fingerprint, and saved plan.
 Changing the source or plan produces another revision.
 Current-state document evidence also follows the composed modules.
@@ -179,7 +179,7 @@ Each current drill-down requires an explicit entry in `plan.references`:
 Use the existing model-reference contract for the target.
 A reference names the repository, model, subject, and state explicitly.
 An exact historical target also names its checkpoint.
-The preview never infers a target subject from a board name or a root list.
+The preview never infers a target subject from a legacy board name or a root list.
 Foreign and historical targets retain their explicit addresses when those targets remain unavailable.
 Resolving references uses the existing reader and does not import their subjects into current architecture.
 
@@ -200,11 +200,11 @@ All requests continue to name their vault explicitly.
 Preview reads save no model, checkpoint, plan, timestamp, or current designation.
 Ordinary model reads still return `LEGACY_AUTHORITY`.
 Use the explicit migration route before active canonical authoring.
-Retired live board commands remain unavailable.
+The retired `board` commands remain unavailable.
 
 ## Preserve original history
 
-A legacy state covers one original board.
+A legacy state covers one original legacy board.
 It never establishes a complete historical repository model.
 Open its qualified identity from `migrationPreview.history`:
 
@@ -213,7 +213,7 @@ archboard model read --preview Shop --state 'Shop/System#Old' -C /path/to/checko
 ```
 
 The result contains only that original state's modules and flows.
-`migrationPreview.selected` names its board, file, and incomplete repository coverage.
+`migrationPreview.selected` names its legacy board, file, and incomplete repository coverage.
 Its current designation is null.
 History entries retain original state metadata, corrections, standing bases, adoptions, and shelving reasons.
 Unpinned external history and code remain unavailable.
@@ -285,7 +285,7 @@ Archive append order never declares a historical repository reading or adopts a 
 
 The preview reading selector keeps original histories separate, including drafts with equal names.
 An original-state selection keeps its migration checkpoint through navigation, reload, and Back.
-The coverage notice names the original board and does not claim a historical repository model.
+The coverage notice names the original legacy board and does not claim a historical repository model.
 Open the state evidence to read lifecycle reasons, correction revisions, draft baselines, conflicts, and blocked ancestry.
 The browser authors no mapping or migration.
 
@@ -307,7 +307,7 @@ archboard model read --preview Shop --checkpoint <checkpoint> --state 'Shop/Syst
 ```
 
 Current playback captures the composed current candidate once.
-An original-state selection captures only that original board and its namespace.
+An original-state selection captures only that original legacy board and its namespace.
 A retained selection reads original content and choices only from its migration checkpoint.
 The playback reports separate source selectors and a complete target revision.
 Keep that returned model for every beat until an explicit restart.
@@ -318,7 +318,7 @@ A referenced view supplies its grammar and exact visible subjects.
 Optional `reading.visibility` lists module, relationship, and flow identities without content or geometry.
 It preserves a view that isolates one relationship between otherwise connected modules.
 Every original beat must name an explicit view for conversion.
-For the whole original board, select an all-scope architecture view.
+For the whole original legacy board, select an all-scope architecture view.
 A missing view produces `WALKTHROUGH_VIEW_REQUIRED` on that beat and stops its playback.
 The decoder preserves the original bytes and omission for explicit owner correction.
 Conversion selects neither a prior view nor an implicit overview.
@@ -341,9 +341,9 @@ Its diagnostics identify unavailable subjects, flows, scope, or filters in the s
 The model remains complete and contains no bookmark-owned architecture.
 
 `migrationPreview.addresses` lists exact original aliases with original and canonical state identities.
-The `legacyAddress` selector opens its exact original state and one-board coverage.
+The `legacyAddress` selector opens its exact original state and its coverage of one legacy board.
 `migrationPreview.resolvedAddress` records that choice.
-Board names, former names, filenames, state names, former state names, and state IDs remain explicit aliases.
+Legacy board names, former names, filenames, state names, former state names, and state IDs remain explicit aliases.
 The catalogue also captures serialized legacy pane addresses, such as `shop` and `shop@Old`.
 Resolution matches those captured strings exactly.
 Ambiguous addresses refuse rather than selecting a similarly named subject.
@@ -385,13 +385,13 @@ Complete original checkpoints retain the source for every derived reading until 
 
 Open the preview with `modelA=<model>&previewA=<origin>`.
 Use Bookmarks to open an unused original view.
-Use Former addresses to open an exact original board and state alias.
+Use Former addresses to open an exact original legacy board and state alias.
 The address retains `bookmarkA` or `legacyAddressA` for reload and browser history.
 A bookmark owns reading instructions only. Scope, focus, or grammar changes resume ordinary exploration.
 Filters preserve the exact bookmark membership.
 
 Use Walkthroughs to play a converted narrative through the existing presentation controls.
-Every beat requires an explicit original view, including whole-board readings.
+Every beat requires an explicit original view, including readings of a whole legacy board.
 An unavailable beat explains its missing view or subjects and draws no replacement architecture.
 The presentation keeps its captured source and target until an explicit restart.
 

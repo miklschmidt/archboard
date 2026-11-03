@@ -1,15 +1,15 @@
 import type { Express } from "express";
 import { z } from "zod";
-import { readArchitecturePublication } from "@archboard/board/store-read";
+import { readArchitecturePublication } from "@archboard/model/store-read";
 import {
 	configureArchitecturePublication,
 	publishArchitectureHistory,
 	fetchArchitectureHistory,
-} from "@archboard/board/store-write";
+} from "@archboard/model/store-write";
 import {
 	ArchitecturePublicationDestinationSchema,
 	ArchitecturePublicationRequestSchema,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { respond } from "#server/routes/architecture/model-response.ts";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";

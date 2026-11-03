@@ -12,16 +12,16 @@ import {
 	type SemanticViewRenderRequest,
 } from "#shared/protocol/render-request.ts";
 import {
-	drawBoard,
-	type BoardRenderChoices,
-	type BoardRenderOutcome,
+	drawLegacyBoard,
+	type LegacyRenderChoices,
+	type LegacyRenderOutcome,
 	type DrawnInput,
-} from "#shared/rules/render/board.ts";
-import type { SemanticBoard } from "@archboard/board/document";
-import type { SemanticPolicy } from "@archboard/board/policy";
-import { wasDrawn, type SemanticRenderReply } from "@archboard/board/render-reply";
+} from "#shared/rules/render/legacy-board.ts";
+import type { LegacyBoard } from "@archboard/model/legacy-board";
+import type { SemanticPolicy } from "@archboard/model/policy";
+import { wasDrawn, type SemanticRenderReply } from "@archboard/model/render-reply";
 import { installBunHost } from "#runtime/services/bun-host.ts";
-import { boardRecipe, type RecipeVault } from "#runtime/operations/recipe/board-recipe.ts";
+import { legacyRecipe, type RecipeVault } from "#runtime/operations/recipe/legacy-recipe.ts";
 import { embedRecipeInSvg } from "#runtime/operations/recipe/svg-recipe.ts";
 
 /**
@@ -39,7 +39,7 @@ async function renderArchitecture(
 }
 
 /**
- * One view of a board, in whichever grammar it asks for.
+ * One view of a document, in whichever grammar it asks for.
  * @param request What to draw, in which grammar and on which ground.
  * @returns The document, its size and its atlas.
  */
@@ -49,34 +49,34 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
 }
 
 /**
- * Answer a render of one board: the variant and view it names, drawn.
- * @param board The board, as read.
+ * Answer a render of one document: the variant and view it names, drawn.
+ * @param document The document, as read.
  * @param choices The variant, view, theme and faces asked for.
  * @param policy The vault's presentation policy.
- * @param recipe For a board render that stands alone, the vault its recipe names; the SVG then
+ * @param recipe For a document render that stands alone, the vault its recipe names; the SVG then
  * carries its render recipe (ADR 0057).
  * @param recipe.vault The vault.
- * @returns The answer, or which name the board does not have.
+ * @returns The answer, or which name the document does not have.
  */
-async function renderBoard(
-	board: SemanticBoard,
-	choices: BoardRenderChoices,
+async function renderLegacyBoard(
+	document: LegacyBoard,
+	choices: LegacyRenderChoices,
 	policy: SemanticPolicy,
 	recipe?: { readonly vault: RecipeVault },
-): Promise<BoardRenderOutcome> {
+): Promise<LegacyRenderOutcome> {
 	installBunHost();
-	const drawing = await drawBoard(board, choices, policy);
+	const drawing = await drawLegacyBoard(document, choices, policy);
 	if (!drawing.ok) return drawing;
 	const reply =
 		recipe === undefined
 			? drawing.reply
-			: carryingRecipe(board, choices, drawing.reply, drawing.input, recipe.vault);
+			: carryingRecipe(document, choices, drawing.reply, drawing.input, recipe.vault);
 	return { ok: true, reply };
 }
 
 /**
  * A drawn answer whose SVG carries its render recipe.
- * @param board The board, as read.
+ * @param document The document, as read.
  * @param choices What the render asked for.
  * @param reply What the render answered.
  * @param input What the picture was drawn from.
@@ -84,15 +84,15 @@ async function renderBoard(
  * @returns The answer, its SVG carrying the recipe; an answer with no picture as it was.
  */
 function carryingRecipe(
-	board: SemanticBoard,
-	choices: BoardRenderChoices,
+	document: LegacyBoard,
+	choices: LegacyRenderChoices,
 	reply: SemanticRenderReply,
 	input: DrawnInput,
 	vault: RecipeVault,
 ): SemanticRenderReply {
 	if (!wasDrawn(reply)) return reply;
-	const recipe = boardRecipe(board, choices, reply, input, vault);
+	const recipe = legacyRecipe(document, choices, reply, input, vault);
 	return { ...reply, svg: embedRecipeInSvg(reply.svg, recipe) };
 }
 
-export { renderArchitecture, renderBoard, renderSemanticView };
+export { renderArchitecture, renderLegacyBoard, renderSemanticView };

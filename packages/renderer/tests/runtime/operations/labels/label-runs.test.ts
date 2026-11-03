@@ -1,7 +1,7 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import { LayoutEngineSchema } from "@archboard/model/render-reply";
 import parentReturn from "#tests/runtime/support/fixtures/parent-return.json";
 import reservedCorner from "#tests/runtime/support/fixtures/reserved-label-corner.json";
 import reservedLane from "#tests/runtime/support/fixtures/reserved-label-lane.json";
@@ -18,7 +18,7 @@ import {
 	routeLabels,
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** The room a line's words keep from a card: archboard_layout::constants::LABEL_CARD_CLEARANCE. */
 const LABEL_CARD_CLEARANCE = 16;
@@ -185,7 +185,7 @@ test("a source-owned label keeps a private run clear of cards and other labels",
 	expect(overlaps(drawn, content)).toEqual([]);
 });
 
-// Taken from a board of this repository: moved to the middle of its gap, the
+// Taken from a document of this repository: moved to the middle of its gap, the
 // row holding 'one socket per page' ran into a channel where another line
 // turns beside the row, and the label sat half a lane from that line.
 test("a row of labels moves toward its gap's middle only as far as the lines turning there leave it a lane", async () => {

@@ -5,14 +5,14 @@ import {
 	soloPane,
 	type PaneRegistration,
 } from "#runtime/rules/panes.ts";
-import { parseBoardKey } from "@archboard/board/address";
+import { parsePaneKey } from "@archboard/model/legacy-address";
 
 // Which pane a caller means, beside a recording page's pane (TASK-304).
 //
 // A recording page is a headless browser nobody sees, and it presents a pane id like anybody's.
 // What is guarded: no spec but its exact client id, no call that names no pane and no report finds
 // or counts it, and somebody's pane of the same id is found as if the recording were not there.
-// Its client id still names it, because that is how the recording page asks for the board it
+// Its client id still names it, because that is how the recording page asks for the model it
 // records.
 
 /**
@@ -26,7 +26,7 @@ function pane(clientId: string, extra: Partial<PaneRegistration> = {}): PaneRegi
 		clientId,
 		paneId: "A",
 		vault: "/vault",
-		board: "tour",
+		paneKey: "tour",
 		primary: false,
 		focused: false,
 		rect: { x: 0, y: 0, width: 1920, height: 1080 },
@@ -50,7 +50,7 @@ test("a recording page's pane is nobody's to address but by its client id, count
 	expect(resolvePaneSpec([recording, user], "record")).toBe(recording);
 
 	const report = buildPanesReport([recording, user], {
-		identity: (key) => parseBoardKey(key),
+		identity: (key) => parsePaneKey(key),
 		reading: () => null,
 		architecture: () => null,
 		whereabouts: () => ({ repository: null, checkout: "/checkout" }),

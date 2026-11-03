@@ -3,7 +3,7 @@
 // semantics check and then the code check route and run the embeds check,
 // `check semantics`, `check code` and `check embeds` run one each, the answer
 // holds a part for each check that ran, and only a diagnostic or a warning
-// fails it. Behind is information (ADR 0045), so a board many commits behind
+// fails it. Behind is information (ADR 0045), so a model many commits behind
 // never does. `--state`, `--every-draft` and `--plan` name what the code
 // check reads, and only `check`, `check all` and `check embeds` take `--fix`.
 // Only the Archboard server is a stand-in.
@@ -12,7 +12,7 @@ import { afterAll, expect, spyOn, test } from "bun:test";
 import { resolve } from "node:path";
 import { z } from "zod";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
-import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/model/policy";
 import type { CliRegistryEntry } from "#cli/protocol/routing/route.ts";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
 
@@ -51,12 +51,12 @@ const codeCheck: CodeCheckAnswer = {
 		},
 		{ check: "history", elapsedMs: 8.5 },
 	],
-	boards: [{ board: "Orders", variant: "v1", version: 4 }],
+	states: [{ model: "Orders", variant: "v1", version: 4 }],
 	findings: [],
-	skipped: [{ reason: "no-current-variant", board: "Refunds" }],
+	skipped: [{ reason: "no-current-variant", model: "Refunds" }],
 	behind: [
 		{
-			board: "Orders",
+			model: "Orders",
 			variant: "v1",
 			lastChange: {
 				kind: "commit",
@@ -200,7 +200,6 @@ const PartsSchema = z.object({
 const NO_CHECKOUT = {
 	checkout: null,
 	embeds: [],
-	tracked: [],
 	vaults: [],
 	findings: [],
 	fixed: [],
@@ -236,7 +235,7 @@ test("check and check all ask the semantics check, then the code check, run the 
 		expect(answer).toHaveProperty("embeds", NO_CHECKOUT);
 		expect(result.semantics?.diagnostics).toEqual([]);
 		expect(result.code).toEqual(codeCheck);
-		expect(result.semantics?.timings.map((timing) => timing.check)).toEqual(["board"]);
+		expect(result.semantics?.timings.map((timing) => timing.check)).toEqual(["model"]);
 		const timed = stderr
 			.split("\n")
 			.filter((line) => line.endsWith(" ms"))
@@ -249,7 +248,7 @@ test("check and check all ask the semantics check, then the code check, run the 
 	}
 });
 
-test("a board behind its code is information and does not fail the check", async () => {
+test("a model behind its code is information and does not fail the check", async () => {
 	plain = clean;
 	const { stderr, exited } = await run(["check", "code"]);
 	expect(exited).toBe(0);
@@ -330,7 +329,7 @@ test("a finding prints with its subject and evidence, fails the code check on a 
 		severity: "warning",
 		code: "ANCHOR_MISMATCH",
 		file: "/vault/Orders.semantic.json",
-		board: "Orders",
+		model: "Orders",
 		variant: "v1",
 		subject: { kind: "step", id: "s1", name: "Pay: Api -> Ledger: post" },
 		message: "Elsewhere.",
@@ -391,7 +390,7 @@ test("--state, --every-draft and --plan reach the code check of check, check all
 	}
 });
 
-test("a draft no board has is refused, and --every-draft beside --state is refused before the server", async () => {
+test("a draft no model has is refused, and --every-draft beside --state is refused before the server", async () => {
 	plain = clean;
 	refuseDraft = true;
 	try {

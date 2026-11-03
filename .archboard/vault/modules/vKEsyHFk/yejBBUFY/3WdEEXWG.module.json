@@ -29,12 +29,12 @@
     {
       "order": 33000,
       "kind": "render",
-      "label": "mount on the talk's board, its step driven",
+      "label": "mount on the talk's model, its step driven",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
-        "symbol": "SemanticBoardStage"
+        "symbol": "CanvasStage"
       },
       "id": "vKEsyHFk/UOXNWLhR#Ntxc6nJp",
       "to": "vKEsyHFk/UOXNWLhR#aYC7if1N"
@@ -51,6 +51,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#FYKw5y8U",
       "to": "vKEsyHFk#ZTh8T7Ym"
+    },
+    {
+      "order": 37000,
+      "kind": "render",
+      "label": "the recording's stage, so both pages draw alike",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "symbol": "RecordingStage"
+      },
+      "id": "vKEsyHFk/yejBBUFY#3cky5MpR",
+      "to": "vKEsyHFk/yejBBUFY#H17EYQ6u"
     },
     {
       "order": 47000,
@@ -90,19 +103,6 @@
       },
       "id": "vKEsyHFk/yejBBUFY#3BpWAgaf",
       "to": "vKEsyHFk/yejBBUFY#3IbTeWiR"
-    },
-    {
-      "order": 37000,
-      "kind": "render",
-      "label": "the recording's stage, so both pages draw alike",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
-        "symbol": "RecordingStage"
-      },
-      "id": "vKEsyHFk/yejBBUFY#3cky5MpR",
-      "to": "vKEsyHFk/yejBBUFY#H17EYQ6u"
     }
   ]
 }

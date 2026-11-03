@@ -561,4 +561,4 @@ function opened(socket: VoiceClientSocket): Promise<void> {
 	});
 }
 
-export { createVoiceClient, openVoiceClient, type VoiceClientOwners, type VoiceClientSocket };
+export { createVoiceClient, openVoiceClient };

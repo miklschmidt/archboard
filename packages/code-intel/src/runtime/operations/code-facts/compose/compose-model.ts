@@ -429,4 +429,4 @@ function composeFile(text: string): ComposeFile {
 	};
 }
 
-export { type ComposeEntry, type ComposeFile, type ComposeLayer, composeFile };
+export { type ComposeEntry, type ComposeLayer, composeFile };

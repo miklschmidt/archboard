@@ -10,8 +10,8 @@ import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { z } from "zod";
 
-import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
-import { packageBin } from "../cli/support/package-cli.ts";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/model/pane-context";
+import { createPackageCliOwner, packageBin, packageFailure } from "../cli/support/package-cli.ts";
 import {
 	createRepositoryFixture,
 	type RepositoryFixture,
@@ -100,14 +100,14 @@ function chosenCheckout(): string | undefined {
 }
 
 /**
- * Create a board in a vault.
+ * Create a model in a vault.
  * @param vault The vault.
- * @param board The board.
+ * @param model The model.
  */
-async function createBoard(vault: string, board: string): Promise<void> {
+async function createModel(vault: string, model: string): Promise<void> {
 	writeFileSync(
 		join(vault, "model.json"),
-		JSON.stringify({ schemaVersion: 1, id: "Payments", name: board, current: null }),
+		JSON.stringify({ schemaVersion: 1, id: "Payments", name: model, current: null }),
 	);
 }
 
@@ -121,7 +121,7 @@ async function createBoard(vault: string, board: string): Promise<void> {
 function paneIn(vault: string, clientId: string, x = 0): Promise<PaneSession> {
 	return openPaneSession(server.base, createRequester({ ...server, vault }), {
 		clientId,
-		board: "payments",
+		model: "payments",
 		x,
 	});
 }
@@ -166,8 +166,8 @@ beforeAll(async () => {
 	});
 	// The main checkout registers first, so it is chosen, and the worktree becomes known with it.
 	archboard(main, ["repo", "add"]);
-	await createBoard(mainVault, "payments");
-	await createBoard(worktreeVault, "payments");
+	await createModel(mainVault, "payments");
+	await createModel(worktreeVault, "payments");
 });
 
 afterAll(async () => {
@@ -176,6 +176,38 @@ afterAll(async () => {
 });
 
 describe.serial("browser show and the chosen checkout", () => {
+	test("browser layout commands return the pane keys they put on screen", async () => {
+		await using resources = new AsyncDisposableStack();
+		const cli = resources.use(createPackageCliOwner());
+		const left = await paneIn(mainVault, "layout-left");
+		resources.defer(() => left.close());
+
+		const opening = cli.run(["browser", "open"], { url: server.base });
+		expect(await left.waitFor("pane_open")).toBeDefined();
+		const right = await paneIn(mainVault, "layout-right", 640);
+		resources.defer(() => right.close());
+		const opened = await opening;
+		expect(opened.status, packageFailure(opened)).toBe(0);
+		expect(JSON.parse(opened.stdout)).toMatchObject({
+			paneCount: 2,
+			onScreen: [
+				{ paneId: "layout-left", paneKey: "payments" },
+				{ paneId: "layout-right", paneKey: "payments" },
+			],
+		});
+
+		const closing = cli.run(["browser", "close", "layout-right"], { url: server.base });
+		expect(await right.waitFor("pane_close")).toBeDefined();
+		await right.close();
+		const closed = await closing;
+		expect(closed.status, packageFailure(closed)).toBe(0);
+		expect(JSON.parse(closed.stdout)).toMatchObject({
+			closed: { paneId: "layout-right", paneKey: "payments" },
+			paneCount: 1,
+			onScreen: [{ paneId: "layout-left", paneKey: "payments" }],
+		});
+	});
+
 	test("a show from a checkout that is not chosen chooses it, and every pane of the repository follows", async () => {
 		await using resources = new AsyncDisposableStack();
 		const left = await paneIn(mainVault, "pane-left");
@@ -191,7 +223,7 @@ describe.serial("browser show and the chosen checkout", () => {
 			own: false,
 		});
 		expect(panesFrom(main)["pane-left"]?.own).toBe(true);
-		// What the person picked out on the main checkout's board.
+		// What the person picked out on the main checkout's model.
 		const picked = await createRequester({ ...server, vault: mainVault })(
 			SEMANTIC_PANE_CONTEXT_ROUTE,
 			{
@@ -200,7 +232,7 @@ describe.serial("browser show and the chosen checkout", () => {
 				body: {
 					paneId: "pane-left",
 					clientId: "pane-left",
-					board: { name: "payments", key: "payments" },
+					model: { name: "payments", key: "payments" },
 					variant: null,
 					view: null,
 					selection: [{ id: "ab12" }],
@@ -226,9 +258,9 @@ describe.serial("browser show and the chosen checkout", () => {
 			vault: worktreeVault,
 		});
 		expect(chosenCheckout()).toBe(worktree);
-		// The pane the show did not name follows the choice with its board.
-		expect(await left.waitFor("pane_board", mark)).toMatchObject({
-			board: "payments",
+		// The pane the show did not name follows the choice with its model.
+		expect(await left.waitFor("pane_place", mark)).toMatchObject({
+			paneKey: "payments",
 			vault: worktreeVault,
 			repository: ORDERS,
 		});
@@ -237,7 +269,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		for (const paneId of ["pane-left", "pane-right"]) {
 			expect(after[paneId]).toMatchObject({ vault: worktreeVault, checkout: worktree, own: true });
 		}
-		// The pick was of the main checkout's board, so it is not reported as one of the worktree's.
+		// The pick was of the main checkout's model, so it is not reported as one of the worktree's.
 		expect(after["pane-left"]?.reading.selection).toEqual([]);
 
 		// A show from the chosen checkout changes no choice and says nothing of one.
@@ -245,7 +277,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		expect(chosenCheckout()).toBe(worktree);
 	});
 
-	test("no board command changes the choice, and a command that registers a checkout tells the server", async () => {
+	test("no model command changes the choice, and a command that registers a checkout tells the server", async () => {
 		await using resources = new AsyncDisposableStack();
 		const pane = await paneIn(worktreeVault, "pane-watch");
 		resources.defer(() => pane.close());
@@ -257,7 +289,7 @@ describe.serial("browser show and the chosen checkout", () => {
 			stdio: "ignore",
 		});
 		const fix = realpathSync.native(target);
-		await createBoard(vaultOf(fix), "payments");
+		await createModel(vaultOf(fix), "payments");
 		const mark = pane.mark();
 		expect(archboard(fix, ["model", "read"])).toMatchObject({
 			vault: { registered: { root: fix, chosen: false } },
@@ -273,8 +305,8 @@ describe.serial("browser show and the chosen checkout", () => {
 
 		const mark = pane.mark();
 		archboard(fixture.nowhere, ["repo", "use", main]);
-		expect(await pane.waitFor("pane_board", mark)).toMatchObject({
-			board: "payments",
+		expect(await pane.waitFor("pane_place", mark)).toMatchObject({
+			paneKey: "payments",
 			vault: mainVault,
 			repository: ORDERS,
 		});
@@ -282,7 +314,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		// Forgotten, the main checkout is no repository's, so the pane in its vault names none.
 		const forgot = pane.mark();
 		archboard(fixture.nowhere, ["repo", "forget", main]);
-		expect(await pane.waitFor("pane_board", forgot)).toMatchObject({
+		expect(await pane.waitFor("pane_place", forgot)).toMatchObject({
 			vault: mainVault,
 			repository: null,
 		});
@@ -298,7 +330,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		});
 		const gone = realpathSync.native(target);
 		const goneVault = vaultOf(gone);
-		await createBoard(goneVault, "payments");
+		await createModel(goneVault, "payments");
 		archboard(fixture.nowhere, ["repo", "use", gone]);
 		const before = await paneIn(goneVault, "pane-gone");
 		await before.close();
@@ -308,11 +340,11 @@ describe.serial("browser show and the chosen checkout", () => {
 		archboard(fixture.nowhere, ["repo", "use", main]);
 
 		// The page reconnects naming the vault it was in, which the server cannot read now.
-		const back = await openObservedPane<{ type: string; board?: string; vault?: unknown }>({
+		const back = await openObservedPane<{ type: string; model?: string; vault?: unknown }>({
 			base: server.base,
 			clientId: "pane-gone",
 			vault: goneVault,
-			register: (board, signal) =>
+			register: (model, signal) =>
 				createRequester({ ...server, vault: mainVault })("/api/panes", {
 					method: "POST",
 					doing: false,
@@ -323,14 +355,14 @@ describe.serial("browser show and the chosen checkout", () => {
 						primary: true,
 						focused: false,
 						rect: { x: 0, y: 0, width: 640, height: 800 },
-						board,
+						paneKey: model,
 					},
 				}),
 			readPanes: (signal) =>
 				createRequester({ ...server, vault: mainVault })("/api/panes", { signal }),
 		});
 		resources.defer(() => back.close());
-		expect(back.events.find((event) => event.type === "pane_board")).toMatchObject({
+		expect(back.events.find((event) => event.type === "pane_place")).toMatchObject({
 			vault: mainVault,
 			repository: ORDERS,
 		});
@@ -341,7 +373,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		const shelf = join(fixture.root, "shelf", "notes");
 		const shelfVault = vaultOf(shelf);
 		archboard(fixture.nowhere, ["repo", "add", shelf]);
-		await createBoard(shelfVault, "payments");
+		await createModel(shelfVault, "payments");
 		const pane = await paneIn(shelfVault, "pane-notes");
 		resources.defer(() => pane.close());
 
@@ -361,7 +393,7 @@ describe.serial("browser show and the chosen checkout", () => {
 			renamed: { root, from: "notes", to: "notes-2" },
 		});
 		expect(registry().vaults.find((each) => each.root === root)?.name).toBe("notes-2");
-		expect(await pane.waitFor("pane_board", mark)).toMatchObject({
+		expect(await pane.waitFor("pane_place", mark)).toMatchObject({
 			vault: shelfVault,
 			repository: "notes-2",
 		});

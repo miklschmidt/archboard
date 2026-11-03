@@ -1,10 +1,10 @@
-//! A move between two boards, as the reader's place in the module tree says it.
+//! A move between two pictures, as the reader's place in the module tree says it.
 //!
-//! The modules nest, so the boards stand at depths. A board at the same depth
+//! The modules nest, so the pictures stand at depths. A picture at the same depth
 //! stands beside this one, so the reader is carried sideways along a strip of
-//! boards. A deeper board stands inside this one and a shallower board round it,
+//! pictures. A deeper picture stands inside this one and a shallower picture round it,
 //! so the reader moves along one axis of depth. Either way there are two planes
-//! on one timeline, the board left and the board arrived at, and one number says
+//! on one timeline, the picture left and the picture arrived at, and one number says
 //! where the reader is between them. Nothing about a plane is staged by itself,
 //! so the two can never drift apart.
 
@@ -15,13 +15,13 @@ use std::f64::consts::PI;
 use crate::between::phase;
 use crate::timing::{EASE_OUT, EMPHASISED};
 
-/// Which way along the strip of boards the reader travels.
+/// Which way along the strip of pictures the reader travels.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Side {
-    /// To a board earlier in the module tree.
+    /// To a picture earlier in the module tree.
     Left,
-    /// To a board later in the module tree.
+    /// To a picture later in the module tree.
     Right,
 }
 
@@ -35,10 +35,10 @@ impl Side {
     }
 }
 
-/// How much further in one board stands than the next, as a scale.
+/// How much further in one picture stands than the next, as a scale.
 const ONE_LEVEL: f64 = 2.6;
 
-/// How much further than the edge of the canvas a board goes, so that it has gone
+/// How much further than the edge of the canvas a picture goes, so that it has gone
 /// before the slow end of the move.
 const CLEAR: f64 = 1.08;
 
@@ -47,16 +47,16 @@ const CLEAR: f64 = 1.08;
 const LIFT: f64 = 0.08;
 
 /// Where the reader stands once a picture has answered a click, before the next
-/// picture is there: a small part of the whole passage, so the board answers at
+/// picture is there: a small part of the whole passage, so the picture answers at
 /// once and the passage runs on from that place.
 const FIRST_STEP: f64 = 0.05;
 
-/// A board's place on a passage, as the canvas shows it.
+/// A picture's place on a passage, as the canvas shows it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Plane {
-    /// What the plane does to the board, on top of the camera.
+    /// What the plane does to the picture, on top of the camera.
     pub(crate) transform: Affine,
-    /// How much of the board shows.
+    /// How much of the picture shows.
     pub(crate) shown: f64,
 }
 
@@ -82,24 +82,24 @@ fn rising(place: f64, start: f64, end: f64) -> f64 {
 /// The line a passage runs along.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum Axis {
-    /// Along the strip of boards.
+    /// Along the strip of pictures.
     Across {
         /// Which way, as a sign.
         sign: f64,
         /// The canvas's middle.
         middle: Point,
-        /// How far one board stands from the next.
+        /// How far one picture stands from the next.
         reach: f64,
     },
-    /// Into the board, about a point of the canvas.
+    /// Into the picture, about a point of the canvas.
     In(Point),
-    /// Out of the board, about a point of the canvas.
+    /// Out of the picture, about a point of the canvas.
     Out(Point),
 }
 
 impl Axis {
-    /// The line along the strip of boards of a canvas of a size. The boards stand
-    /// as near as lets the widest of them clear the canvas, so that the next board
+    /// The line along the strip of pictures of a canvas of a size. The pictures stand
+    /// as near as lets the widest of them clear the canvas, so that the next picture
     /// is in sight before the last has gone.
     pub(crate) fn across(side: Side, (width, height): (f64, f64), widest: f64) -> Axis {
         Axis::Across {
@@ -109,7 +109,7 @@ impl Axis {
         }
     }
 
-    /// Where a place on this line stands on the next one, so that a board that
+    /// Where a place on this line stands on the next one, so that a picture that
     /// goes from one line to the other does not jump.
     pub(crate) fn place_on(self, next: Axis, place: f64) -> f64 {
         match (self, next) {
@@ -126,7 +126,7 @@ impl Axis {
         }
     }
 
-    /// The board left, at a place on the passage.
+    /// The picture left, at a place on the passage.
     pub(crate) fn left(self, place: f64) -> Plane {
         match self {
             Axis::Across {
@@ -149,7 +149,7 @@ impl Axis {
         }
     }
 
-    /// The board arrived at, at a place on the passage.
+    /// The picture arrived at, at a place on the passage.
     pub(crate) fn arrived(self, place: f64) -> Plane {
         match self {
             Axis::Across {
@@ -178,7 +178,7 @@ fn lift_at(place: f64) -> f64 {
     1.0 - LIFT * (place * PI).sin()
 }
 
-/// How far the reader has stepped when only the board left has answered, by a
+/// How far the reader has stepped when only the picture left has answered, by a
 /// share of that first step's time.
 pub(crate) fn first_step(progress: f64) -> f64 {
     FIRST_STEP * EASE_OUT.at(progress)
@@ -205,7 +205,7 @@ mod tests {
     }
 
     #[test]
-    fn a_board_at_the_same_depth_stands_along_the_way_the_reader_goes_and_clears_the_canvas() {
+    fn a_picture_at_the_same_depth_stands_along_the_way_the_reader_goes_and_clears_the_canvas() {
         let right = Axis::across(Side::Right, SIZE, 400.0);
         let point = Point::new(500.0, 250.0);
         assert!(seen(right.arrived(0.0), point).x > 1200.0);
@@ -216,7 +216,7 @@ mod tests {
     }
 
     #[test]
-    fn the_two_boards_keep_their_distance_the_whole_way() {
+    fn the_two_pictures_keep_their_distance_the_whole_way() {
         let axis = Axis::across(Side::Right, SIZE, 400.0);
         let point = Point::new(500.0, 250.0);
         for place in [0.0, 0.3, 0.5, 0.9, 1.0] {
@@ -226,7 +226,7 @@ mod tests {
     }
 
     #[test]
-    fn a_board_keeps_its_place_when_the_next_board_widens_the_strip() {
+    fn a_picture_keeps_its_place_when_the_next_picture_widens_the_strip() {
         let first = Axis::across(Side::Right, SIZE, 400.0);
         let next = Axis::across(Side::Right, SIZE, 800.0);
         let point = Point::new(500.0, 250.0);
@@ -235,7 +235,7 @@ mod tests {
     }
 
     #[test]
-    fn a_deeper_board_starts_unseen_far_inside_and_ends_at_rest() {
+    fn a_deeper_picture_starts_unseen_far_inside_and_ends_at_rest() {
         let axis = Axis::In(ABOUT);
         assert_eq!(axis.arrived(0.0).shown, 0.0);
         assert!(axis.arrived(0.0).transform.determinant() < 1.0);
@@ -244,7 +244,7 @@ mod tests {
     }
 
     #[test]
-    fn both_boards_grow_as_one_on_the_way_in() {
+    fn both_pictures_grow_as_one_on_the_way_in() {
         let axis = Axis::In(ABOUT);
         let growth = |plane: Plane| plane.transform.determinant();
         assert!(growth(axis.left(0.4)) > growth(axis.arrived(0.4)));
@@ -252,7 +252,7 @@ mod tests {
     }
 
     #[test]
-    fn a_shallower_board_stands_round_the_board_left_and_both_shrink_as_one() {
+    fn a_shallower_picture_stands_round_the_picture_left_and_both_shrink_as_one() {
         let axis = Axis::Out(ABOUT);
         assert!(
             axis.arrived(0.0).transform.determinant() > 1.0,

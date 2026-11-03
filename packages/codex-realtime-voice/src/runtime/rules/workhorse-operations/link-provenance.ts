@@ -150,11 +150,4 @@ function assertCreatedWorkhorse(classification: ThreadLinkClassification): void 
 	}
 }
 
-export {
-	WORKHORSE_CREATION_KIND,
-	WORKHORSE_THREAD_SOURCE,
-	recordMatchesTarget,
-	assertExecutableClassification,
-	assertCreatedWorkhorse,
-	isCreatedWorkhorse,
-};
+export { assertExecutableClassification, assertCreatedWorkhorse, isCreatedWorkhorse };

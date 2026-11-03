@@ -280,9 +280,7 @@ function asEnum<Value extends string>(
 export {
 	asAbsolutePath,
 	asArray,
-	asBoundedString,
 	asChildId,
-	asDomainIdentity,
 	asEnum,
 	asEpoch,
 	asHash,
@@ -294,5 +292,4 @@ export {
 	asTurnId,
 	assertKeys,
 	isInteger,
-	isRecord,
 };

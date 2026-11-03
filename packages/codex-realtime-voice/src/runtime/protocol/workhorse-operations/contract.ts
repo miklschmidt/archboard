@@ -1,14 +1,10 @@
 import type { VoiceToolset } from "#runtime/rules/host/toolset.ts";
-import type {
-	CodexEpochStore,
-	EpochExecutionProof,
-	EpochTransaction,
-} from "#runtime/store/epoch/contract.ts";
+import type { CodexEpochStore } from "#runtime/store/epoch/contract.ts";
 import type {
 	WorkbenchExecutionContext,
 	WorkbenchContextCodec,
 } from "#runtime/protocol/host/context.ts";
-import type { CodexSession, SessionParams, SessionTurn } from "@archboard/codex-app-server/session";
+import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type {
 	CodexThreadLinkPort,
@@ -287,27 +283,15 @@ interface CodexWorkhorseOperations {
 }
 
 type WorkhorseOperationClassification = ThreadLinkClassification;
-type WorkhorseOperationEpochProof = EpochExecutionProof;
-type WorkhorseOperationTransaction = EpochTransaction;
-type WorkhorseOperationTurn = SessionTurn;
-type WorkhorseOperationTurnStartParams = SessionParams<"turn/start">;
-type WorkhorseOperationTurnSteerParams = SessionParams<"turn/steer">;
 
 export {
-	WORKHORSE_OPERATION_NAMES,
 	type WorkhorseOperationName,
-	type WorkhorseTurnOperation,
 	type WorkhorseOperationRpc,
 	type WorkhorseOperationDelivery,
 	type WorkhorseOperationTarget,
 	type WorkhorseOperationBinding,
-	type CurrentWorkhorseOperationBinding,
-	type WorkhorseOperationThreadLinkPort,
 	type WorkhorseOperationSessionPort,
-	type WorkhorseOperationEpochPort,
 	type WorkhorseCoordinatorCall,
-	type CurrentWorkhorseCoordinatorCall,
-	type WorkhorseOperationContextInput,
 	type WorkhorseOperationOptions,
 	type InspectWorkhorseRequest,
 	type DelegateToWorkhorseRequest,
@@ -324,9 +308,4 @@ export {
 	CodexWorkhorseOperationsError,
 	type CodexWorkhorseOperations,
 	type WorkhorseOperationClassification,
-	type WorkhorseOperationEpochProof,
-	type WorkhorseOperationTransaction,
-	type WorkhorseOperationTurn,
-	type WorkhorseOperationTurnStartParams,
-	type WorkhorseOperationTurnSteerParams,
 };

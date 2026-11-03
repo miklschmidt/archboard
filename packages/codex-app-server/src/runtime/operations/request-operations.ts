@@ -36,7 +36,7 @@ import type {
 } from "#runtime/clients/transport-internals.ts";
 import { isRecord, jsonLine, wireKey } from "#runtime/protocol/wire.ts";
 
-export interface OutboundOperationsOptions {
+interface OutboundOperationsOptions {
 	readonly identity: () => IdentityAuthority;
 	readonly state: () => "open" | "closing" | "closed";
 	readonly pendingRequests: Map<string, PendingRequest>;
@@ -49,7 +49,7 @@ export interface OutboundOperationsOptions {
 	readonly enqueue: (job: WriteJob, pending?: PendingRequest) => FrameWriterJob<WriteJob>;
 }
 
-export interface OutboundOperations {
+interface OutboundOperations {
 	readonly request: CodexTransportRequest;
 	readonly sendNotification: (method: ClientNotificationMethod) => Promise<void>;
 }

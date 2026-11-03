@@ -33,7 +33,7 @@ WebAssembly.Instance = new Proxy(WebAssembly.Instance, {
 								const selected =
 									phase === "resume"
 										? name.includes("__invoke_")
-										: name === (phase === "layout" ? "layOutBoard" : "render");
+										: name === (phase === "layout" ? "layOutPicture" : "render");
 								if (armed && selected) {
 									trapped = true;
 									trap();
@@ -84,7 +84,7 @@ async function refusal(call: () => unknown): Promise<unknown> {
 armed = phase !== "resume";
 const first =
 	phase === "layout"
-		? refusal(() => core.layOutBoard("{}"))
+		? refusal(() => core.layOutPicture("{}"))
 		: refusal(() => core.render(request, host));
 const pending = refusal(() => core.render(request, host));
 const failures = await Promise.all([first, pending]);

@@ -1,6 +1,6 @@
 // The call that changes which checkout's conversation a tab's agent dock shows (ADR 0050).
 //
-// The person's own acts in the browser activate a checkout: focusing a pane, opening a board,
+// The person's own acts in the browser activate a checkout: focusing a pane, opening a model,
 // drilling down, or picking a workhorse from the dock's list. The browser
 // names the pane the act happened in, and the server reads the checkout from the vault that pane
 // is in. A pick from the list names the checkout itself, and is taken only for a checkout the tab
@@ -27,7 +27,7 @@ import {
 	tabSessionOf,
 } from "#server/services/panes/tab-sessions.ts";
 import { panes, paneVaults } from "#server/services/panes/registry.ts";
-import { bodyOf } from "#server/services/request/board.ts";
+import { bodyOf } from "#server/services/request/request-fields.ts";
 import { vaultOfRequest } from "#server/services/request/vault.ts";
 
 /** The pane an activation happened in, and the tab it belongs to. */
@@ -119,7 +119,7 @@ function shownFor(res: Response, pane: ActivatedPane, picked: string | undefined
 		res,
 		409,
 		"CHECKOUT_NOT_SHOWABLE",
-		`This tab has no workhorse and no pane in ${picked}. Pick a checkout from the list, or open one of its boards.`,
+		`This tab has no workhorse and no pane in ${picked}. Pick a checkout from the list, or open one of its models.`,
 	);
 	return null;
 }

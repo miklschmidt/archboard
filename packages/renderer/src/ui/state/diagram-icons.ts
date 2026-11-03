@@ -8,7 +8,7 @@
 
 import { z } from "zod";
 
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/model/policy";
 import { OWN_ICONS } from "#shared/protocol/generated/core/marks.ts";
 
 /** Where the server serves one icon's path data. */

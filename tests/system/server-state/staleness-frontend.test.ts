@@ -76,7 +76,7 @@ describe.serial("frontend staleness", () => {
 				await request<Registration>("/api/panes", {
 					method: "POST",
 					doing: false,
-					body: { ...pane.registration, board: "scratch", ...(build ? { build } : {}) },
+					body: { ...pane.registration, paneKey: "scratch", ...(build ? { build } : {}) },
 				})
 			).body;
 

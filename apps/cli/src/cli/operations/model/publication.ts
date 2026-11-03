@@ -3,7 +3,7 @@ import {
 	ArchitecturePublicationSchema,
 	ArchitecturePublicationRequestSchema,
 	ArchitecturePublicationDestinationSchema,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import {
 	readArchitecturePublicationOnServer,
 	configureArchitecturePublicationOnServer,

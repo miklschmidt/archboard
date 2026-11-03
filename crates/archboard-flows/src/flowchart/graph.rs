@@ -12,7 +12,7 @@
 //! runs back up to it, and a line labelled "done" leaves it for the step after.
 //!
 //! Nothing here is written anywhere: the graph is built for one picture, from
-//! the flow as the board holds it. Its boxes carry the steps' own ids, so a
+//! the flow as the picture holds it. Its boxes carry the steps' own ids, so a
 //! reader who picks one has picked the step; its lines and terminals carry ids
 //! of the picture's own, which name no subject.
 
@@ -23,7 +23,7 @@ use archboard_scene::drawing::Emphasis;
 use archboard_scene::paint::design::FLOW_KIND;
 use archboard_scene::request::FlowchartShape;
 
-use crate::board::{Flow, Message, Node, Step};
+use crate::content::{Flow, Message, Node, Step};
 
 /// The kind of a flow's frame.
 /// The kind of a decision, a loop or a terminal, which is drawn by its shape

@@ -6,9 +6,9 @@ use super::testing::{PHASES, card, drawing, label, line, rect, scene, shadow};
 use super::tests::solid;
 use super::{Entrance, Handover};
 
-/// A board of three cards one under another, a line from the first to the
+/// A picture of three cards one under another, a line from the first to the
 /// second, the line's label, and the shadow of a flow's start.
-fn tall_board() -> Scene {
+fn tall_picture() -> Scene {
     let body = vec![
         shadow(),
         card("bottom", rect(10.0, 210.0, 80.0, 40.0), &["C"]),
@@ -36,7 +36,7 @@ fn shadows_of(body: &[Item]) -> Vec<&Group> {
 }
 
 /// A picture whose cards cast shadows, and whose line casts one too.
-fn cast_board() -> Scene {
+fn cast_picture() -> Scene {
     let cast = |owner: &str| {
         let Item::Group(group) = shadow() else {
             unreachable!("a shadow is a group");
@@ -61,7 +61,7 @@ fn cast_board() -> Scene {
 
 #[test]
 fn a_shadow_inside_the_picture_waits_for_what_casts_it() {
-    let early = Entrance::new(&cast_board(), &PHASES, None).at(0.1);
+    let early = Entrance::new(&cast_picture(), &PHASES, None).at(0.1);
     let shadows = shadows_of(&early);
     assert_eq!(shadows.len(), 3);
     assert_eq!(solid(shadows[0]), 0.0, "the last card is not there yet");
@@ -70,7 +70,7 @@ fn a_shadow_inside_the_picture_waits_for_what_casts_it() {
 
 #[test]
 fn a_card_and_its_shadow_bloom_out_as_one() {
-    let early = Entrance::new(&cast_board(), &PHASES, None).at(0.2);
+    let early = Entrance::new(&cast_picture(), &PHASES, None).at(0.2);
     let shadow = shadows_of(&early)[2];
     let card = drawing(&early, "bottom")[0];
     assert!(solid(card) > 0.0);
@@ -79,26 +79,26 @@ fn a_card_and_its_shadow_bloom_out_as_one() {
 }
 
 #[test]
-fn an_entrance_opens_from_the_middle_of_the_board() {
-    let board = tall_board();
-    let early = Entrance::new(&board, &PHASES, None).at(0.1);
+fn an_entrance_opens_from_the_middle_of_the_picture() {
+    let picture = tall_picture();
+    let early = Entrance::new(&picture, &PHASES, None).at(0.1);
     let of = |name: &str| solid(drawing(&early, name)[0]);
     assert!(
         of("middle") > 0.0,
         "the card nearest the middle is on its way"
     );
     assert_eq!(of("top"), 0.0, "the wave has not reached the farthest");
-    let entrance = Entrance::new(&board, &PHASES, None);
+    let entrance = Entrance::new(&picture, &PHASES, None);
     assert_eq!(
         entrance.at(entrance.length()),
-        board.body,
+        picture.body,
         "it lands on the scene itself"
     );
 }
 
 #[test]
 fn a_card_comes_out_of_the_middle_small_and_lands_where_it_is_drawn() {
-    let early = Entrance::new(&tall_board(), &PHASES, None).at(0.12);
+    let early = Entrance::new(&tall_picture(), &PHASES, None).at(0.12);
     let moved = drawing(&early, "middle")[0].transform.expect("it is moved");
     assert!(moved.scale.is_some_and(|scale| scale < 1.0));
     let (x, _) = (50.0 * moved.scale.unwrap_or(1.0) + moved.x, 0.0);
@@ -109,12 +109,12 @@ fn a_card_comes_out_of_the_middle_small_and_lands_where_it_is_drawn() {
 fn a_card_the_last_picture_drew_flies_from_where_it_stood() {
     let was = rect(300.0, 200.0, 80.0, 40.0);
     let last = scene(vec![card("middle", was, &["B"])], &[]);
-    let board = tall_board();
+    let picture = tall_picture();
     let handover = Handover {
         last: &last,
         shown: 0.5,
     };
-    let entrance = Entrance::new(&board, &PHASES, Some(handover));
+    let entrance = Entrance::new(&picture, &PHASES, Some(handover));
     assert!(entrance.flown().contains("middle"));
     let start = entrance.at(0.0);
     let flying = drawing(&start, "middle")[0];
@@ -126,8 +126,8 @@ fn a_card_the_last_picture_drew_flies_from_where_it_stood() {
 
 #[test]
 fn no_line_leaves_or_reaches_a_card_before_the_card_shows_in_full() {
-    let board = tall_board();
-    let entrance = Entrance::new(&board, &PHASES, None);
+    let picture = tall_picture();
+    let entrance = Entrance::new(&picture, &PHASES, None);
     let drawn_by = |at: &f64| {
         let body = entrance.at(*at);
         solid(drawing(&body, "e")[0]) > 0.0
@@ -143,9 +143,9 @@ fn no_line_leaves_or_reaches_a_card_before_the_card_shows_in_full() {
 
 #[test]
 fn an_entrance_draws_the_lines_after_the_cards_and_each_label_as_its_line_reaches_it() {
-    let board = tall_board();
+    let picture = tall_picture();
     let lines = |progress: f64| {
-        let body = Entrance::new(&board, &PHASES, None).at(progress);
+        let body = Entrance::new(&picture, &PHASES, None).at(progress);
         drawing(&body, "e")
             .iter()
             .map(|group| solid(group))
@@ -178,8 +178,8 @@ fn column() -> Scene {
 
 #[test]
 fn a_lifeline_and_its_bars_arrive_with_the_card_at_their_head() {
-    let board = column();
-    let entrance = Entrance::new(&board, &PHASES, None);
+    let picture = column();
+    let entrance = Entrance::new(&picture, &PHASES, None);
     let visible = (0..=100).map(|step| {
         let body = entrance.at(f64::from(step) * 0.01);
         let groups = drawing(&body, "p");
@@ -192,7 +192,7 @@ fn a_lifeline_and_its_bars_arrive_with_the_card_at_their_head() {
 
 #[test]
 fn the_shadow_of_a_flows_start_waits_for_the_start() {
-    let early = Entrance::new(&tall_board(), &PHASES, None).at(0.2);
+    let early = Entrance::new(&tall_picture(), &PHASES, None).at(0.2);
     let shadow = early
         .iter()
         .find_map(|item| match item {

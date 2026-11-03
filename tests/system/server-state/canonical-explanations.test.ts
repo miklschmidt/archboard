@@ -7,8 +7,8 @@ import {
 	changeDescription,
 	startExplanationServer,
 } from "./support/explanation-captures.ts";
-import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { retainArchitectureCheckpoint } from "@archboard/model/store-write";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	prepareProductionFixture,
@@ -62,7 +62,7 @@ test("local explanations share captured text, cancellation, and retry through th
 	const report = {
 		clientId: "explain-client",
 		paneId: "explain-pane",
-		board: null,
+		model: null,
 		variant: null,
 		view: null,
 		selection: [],

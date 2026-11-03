@@ -1,14 +1,14 @@
-import type { Model, ModelFilters, projectModel } from "@archboard/board/content";
-import type { LayoutEngineName } from "@archboard/board/render-reply";
-import { DiagramGrammarSchema, type DiagramGrammar } from "@archboard/board/views";
+import type { Model, ModelFilters, projectModel } from "@archboard/model/content";
+import type { LayoutEngineName } from "@archboard/model/render-reply";
+import { DiagramGrammarSchema, type DiagramGrammar } from "@archboard/model/views";
 import type { ModelDrawing } from "#ui/clients/architecture-model/drawing.ts";
 import type {
 	Departure,
 	DepartureSide,
 	DepartureWay,
-} from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
-import type { MovingPicture } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
-import type { SemanticBox } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+} from "#ui/clients/canvas/picture/picture-departure.ts";
+import type { MovingPicture } from "#ui/clients/canvas/picture/picture-transition.ts";
+import type { SemanticBox } from "#ui/clients/canvas/reads/drawings.ts";
 import { moduleOrder } from "#ui/rules/architecture-model/module-tree.ts";
 
 type Projection = ReturnType<typeof projectModel>;
@@ -98,7 +98,7 @@ function drawableGrammar(grammar: string, projection: Projection): DiagramGramma
  * @param reading The address fields.
  * @returns The scope of a structural reading, or the flow of a behavioral one.
  */
-function sceneBoard(reading: SceneReading): string {
+function sceneModel(reading: SceneReading): string {
 	return JSON.stringify(
 		reading.grammar === "architecture"
 			? ["architecture", reading.scope]
@@ -107,7 +107,7 @@ function sceneBoard(reading: SceneReading): string {
 }
 
 /**
- * How a picture is narrowed. As with a view of a board, a focus starts a picture afresh.
+ * How a picture is narrowed. As with a view of a model, a focus starts a picture afresh.
  * @param reading The address fields.
  * @returns The focus as a view, or null for the whole scope.
  */
@@ -125,7 +125,7 @@ function sceneFit(request: Pick<SceneRequest, "reading" | "layout">): string {
 	const { reading, layout } = request;
 	const { state, checkpoint, against, filters, focus, expand } = reading;
 	return JSON.stringify([
-		sceneBoard(reading),
+		sceneModel(reading),
 		focus,
 		expand,
 		state,
@@ -243,9 +243,9 @@ function isNarrowed(reading: SceneReading): boolean {
  * @returns The way the picture leaves, and the name of the destination.
  */
 function departureTo(from: AcceptedScene, to: SceneRequest): Departure {
-	const board = destinationName(to);
+	const model = destinationName(to);
 	if (from.reading.grammar !== "architecture" || to.reading.grammar !== "architecture")
-		return { way: "across", toward: null, board };
+		return { way: "across", toward: null, model };
 	const { scope } = to.reading;
 	const way = wayBetween(to.model, from.reading.scope, scope);
 	const toward = way === "into" ? towardOf(from, to.model, scope) : null;
@@ -253,7 +253,7 @@ function departureTo(from: AcceptedScene, to: SceneRequest): Departure {
 		way === "across"
 			? sideOf(moduleOrder(to.projection.depicted), from.reading.scope, scope)
 			: undefined;
-	return { way, toward, side, board };
+	return { way, toward, side, model };
 }
 
 /**
@@ -284,11 +284,11 @@ function cardToward(scene: AcceptedScene, model: Model, scope: string | null): s
 }
 
 /**
- * The card a board stands for on a board above it: the module directly under
- * that board on the way to this one.
+ * The card a legacy board stands for on a legacy board above it: the module directly under
+ * that legacy board on the way to this one.
  * @param model The modules.
  * @param scope The scope left.
- * @param to The board above, or null for the roots.
+ * @param to The legacy board above, or null for the roots.
  * @returns The card, or null when the destination does not hold the scope.
  */
 function cardAbove(model: Model, scope: string | null, to: string | null): string | null {
@@ -316,7 +316,7 @@ function acceptScene(
 		...request,
 		key: sceneKey(request),
 		drawing,
-		picture: { ...drawing, board: sceneBoard(request.reading), view: sceneView(request.reading) },
+		picture: { ...drawing, model: sceneModel(request.reading), view: sceneView(request.reading) },
 		heading: before === null ? null : departureTo(before, request),
 		selected,
 	};
@@ -386,7 +386,7 @@ function nextScene(
  */
 function leavingTo(scene: AcceptedScene | null, request: SceneRequest): Departure | null {
 	if (scene === null || request.grammar === null || request.presentation !== undefined) return null;
-	return scene.picture.board === sceneBoard(request.reading) ? null : departureTo(scene, request);
+	return scene.picture.model === sceneModel(request.reading) ? null : departureTo(scene, request);
 }
 
 /** How a reader goes from the scene on screen to a module. */
@@ -398,7 +398,7 @@ type Move =
 /**
  * Which flight, if any, a move to a module can make. The camera flies when it has
  * a card to fly through: into the nearest card that holds a deeper module, or out
- * of the card that holds this board on a board above it. Any other move changes
+ * of the card that holds this model on a model above it. Any other move changes
  * the picture the plain way, which the painter makes a passage of.
  * @param scene The scene on screen.
  * @param next The module, or null for the roots.
@@ -445,7 +445,7 @@ export {
 	moveTo,
 	nextScene,
 	parentOf,
-	sceneBoard,
+	sceneModel,
 	sceneFit,
 	sceneKey,
 	sceneView,

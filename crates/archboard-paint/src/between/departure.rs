@@ -1,10 +1,10 @@
 //! A picture leaving with no place to go in the module tree: for another view of
-//! its own board, or for a reading of no board. A board that stands somewhere in
+//! its own picture, or for a reading of no picture. A picture that stands somewhere in
 //! the tree leaves on a passage instead (`crate::passage`).
 //!
 //! Leaving starts the moment somebody asks, not when the next picture arrives: a
 //! pane that sat unchanged until then feels as if the click had not been heard.
-//! It ends invisible, so a slow draw leaves an empty pane rather than a board
+//! It ends invisible, so a slow draw leaves an empty pane rather than a picture
 //! nobody is reading any more.
 
 use archboard_scene::geometry::Rect;
@@ -28,17 +28,17 @@ const VISIBLE_FLOOR: f64 = 0.02;
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
 #[serde(tag = "way", rename_all = "camelCase")]
 pub enum Heading {
-    /// Into the board a card opens. The picture grows about that card, or
+    /// Into the picture a card opens. The picture grows about that card, or
     /// about the middle of its page when the card is not known.
     Into {
         /// The card opened, as it stands in the picture leaving.
         toward: Option<Rect>,
     },
-    /// Back to the board above.
+    /// Back to the picture above.
     Out,
-    /// To a board at the same depth, on the side `side` says, or anywhere else.
+    /// To a picture at the same depth, on the side `side` says, or anywhere else.
     Across {
-        /// Which way the board stands, when it stands beside this one.
+        /// Which way the picture stands, when it stands beside this one.
         #[serde(default)]
         side: Option<Side>,
     },
@@ -87,10 +87,10 @@ mod tests {
     #[test]
     fn a_picture_leaving_ends_invisible_and_recedes_about_its_middle() {
         let frame = rect(10.0, 10.0, 100.0, 50.0);
-        let board = scene(vec![card("a", frame, &["Title"])], &[("a", frame)]);
+        let picture = scene(vec![card("a", frame, &["Title"])], &[("a", frame)]);
 
-        assert!(departure(&board, 1.0).is_empty(), "nothing is left of it");
-        let [Item::Group(leaving)] = &departure(&board, 0.5)[..] else {
+        assert!(departure(&picture, 1.0).is_empty(), "nothing is left of it");
+        let [Item::Group(leaving)] = &departure(&picture, 0.5)[..] else {
             panic!("the picture leaves as one group")
         };
         let receded = leaving.transform.expect("scaled");

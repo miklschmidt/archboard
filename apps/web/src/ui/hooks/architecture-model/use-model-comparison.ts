@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import {
 	architectureModelKeys,
 	architectureModelQuery,

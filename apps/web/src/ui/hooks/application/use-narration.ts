@@ -8,12 +8,14 @@
 // panes say so instead of withdrawing the control. Which pane voice is started
 // for, and when, is the narrator's (narrator.ts).
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { VOICE_MS } from "@archboard/timing";
 
 import type { AgentSetup } from "@archboard/workbench/agent";
 import { narrate } from "#ui/clients/application/agent-setup-ports.ts";
 import { createNarrator, offerNarration } from "#ui/rules/application/narrator.ts";
-import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
+import type { WalkthroughNarration } from "#ui/rules/canvas/walkthrough/narration.ts";
 import type { AgentVoiceView, VoiceStage } from "@archboard/workbench/voice";
 
 /** What narrating reads of the agent over the panes. */
@@ -27,7 +29,7 @@ interface NarrationSources {
 /** What every pane is offered. */
 interface Narration {
 	/**
-	 * What one pane is offered: starting voice for that pane's board, which makes
+	 * What one pane is offered: starting voice for that pane's model, which makes
 	 * the pane the active one first. The same object for a pane for as long as
 	 * voice is as it is, so that a pane is not drawn again for being offered it.
 	 * @param paneId The pane.
@@ -53,6 +55,27 @@ const HELD_WORDS: Readonly<Record<Exclude<VoiceStage, "idle">, string>> = {
 };
 
 /**
+ * Whether a step has to wait for voice: while it connects, and for a moment after.
+ * @param stage The stage of voice.
+ * @returns True until the voice model can take a step in.
+ */
+function useVoiceStarting(stage: VoiceStage): boolean {
+	const connecting = stage === "preparing" || stage === "connecting";
+	const [settled, setSettled] = useState(true);
+	if (connecting && settled) setSettled(false);
+	useEffect(() => {
+		if (connecting || settled) return undefined;
+		const timer = setTimeout(() => {
+			setSettled(true);
+		}, VOICE_MS.firstStepSettle);
+		return (): void => {
+			clearTimeout(timer);
+		};
+	}, [connecting, settled]);
+	return connecting || !settled;
+}
+
+/**
  * Narration for every pane.
  * @param workbench What narrating reads of the agent over the panes.
  * @param voice The voice as the agent dock shows it.
@@ -69,6 +92,7 @@ function useNarration(
 	const { setup } = workbench;
 	const idle = voice.stage === "idle";
 	const held = voice.stage === "idle" ? null : HELD_WORDS[voice.stage];
+	const starting = useVoiceStarting(voice.stage);
 	const followed = workbench.voice?.paneId ?? null;
 	const narrator = useMemo(
 		() =>
@@ -87,7 +111,10 @@ function useNarration(
 	useEffect(() => {
 		narrator.sync({ active: activePaneId, followed, idle });
 	}, [narrator, activePaneId, followed, idle]);
-	return useMemo(() => ({ forPane: offerNarration(narrator, held) }), [held, narrator]);
+	return useMemo(
+		() => ({ forPane: offerNarration(narrator, held, starting) }),
+		[narrator, held, starting],
+	);
 }
 
 export { useNarration, type Narration };

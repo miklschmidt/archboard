@@ -12,8 +12,8 @@ import { renderArchitecture } from "#runtime/operations/render.ts";
 import { APCA, lightnessContrast, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import type { DiagramTheme } from "@archboard/board/render-reply";
-import { PaletteColorSchema, SemanticPolicySchema } from "@archboard/board/policy";
+import type { DiagramTheme } from "@archboard/model/render-reply";
+import { PaletteColorSchema, SemanticPolicySchema } from "@archboard/model/policy";
 import { themeColor } from "#runtime/store/theme/source.ts";
 
 const COLOURS = PaletteColorSchema.options;

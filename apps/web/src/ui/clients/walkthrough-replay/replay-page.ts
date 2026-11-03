@@ -1,9 +1,9 @@
 // The page that renders a talk frame by frame (TASK-381).
 //
-// Loading a talk points the pane's board reads at the talk, swaps every moving
+// Loading a talk points the pane's model reads at the talk, swaps every moving
 // picture onto a stepped clock and mounts the recording's frame on the talk's
-// board. It then plays the board's entrance through, uncaptured, so the first
-// frame shows the board at rest, as the talk's first moment did.
+// model. It then plays the model's entrance through, uncaptured, so the first
+// frame shows the model at rest, as the talk's first moment did.
 //
 // Each frame is then drawn the same way. The clock moves to the frame's time,
 // running the timers due on the way. What happened by then is shown. The page
@@ -25,20 +25,17 @@ import {
 	type Talk,
 	type publishReplayPage,
 } from "@archboard/walkthrough/talk";
-import { createBoardQueryClient } from "#ui/clients/board-catalog/query-client.ts";
+import { createModelQueryClient } from "#ui/clients/model-catalog/query-client.ts";
 import {
 	createSteppedClock,
 	driveFramesFrom,
 	type SteppedClock,
 } from "@archboard/ui-kit/frame-clock";
-import { chooseLayoutEngine } from "#ui/clients/semantic-board-canvas/reads/layout-engine.ts";
-import {
-	pictureSource,
-	takePicturesFrom,
-} from "#ui/clients/semantic-board-canvas/reads/picture-source.ts";
-import { readBoardsFrom } from "#ui/clients/semantic-board-canvas/reads/board-reads.ts";
-import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
-import { sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import { chooseLayoutEngine } from "#ui/clients/canvas/reads/layout-engine.ts";
+import { pictureSource, takePicturesFrom } from "#ui/clients/canvas/reads/picture-source.ts";
+import { readRetainedFrom } from "#ui/clients/canvas/reads/retained-reads.ts";
+import { stageOf } from "#ui/clients/canvas/picture/picture-stage.ts";
+import { sameModelName } from "#ui/rules/canvas/reading/address.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import { ReplayStage } from "#ui/components/walkthrough-replay/ReplayStage.tsx";
 import { FrameReadiness } from "#ui/clients/walkthrough-replay/frame-readiness.ts";
@@ -63,7 +60,7 @@ interface Rendering {
 	/** The element the talk is mounted in. */
 	readonly root: HTMLElement;
 	readonly readiness: FrameReadiness;
-	/** Boards read that the talk could not answer. */
+	/** Models read that the talk could not answer. */
 	readonly foreign: string[];
 	/** What the pane last said it is reading. */
 	reading: PaneReading | null;
@@ -95,19 +92,19 @@ function drawAgainst(against: string): void {
 }
 
 /**
- * Whether the pane shows the talk's board as the talk drew it, or what it waits for.
+ * Whether the pane shows the talk's model as the talk drew it, or what it waits for.
  * @param rendering The rendering.
- * @returns What it waits for, in words, or null when the board is drawn.
+ * @returns What it waits for, in words, or null when the model is drawn.
  */
-function boardPending(rendering: Rendering): string | null {
+function modelPending(rendering: Rendering): string | null {
 	const { reading, talk } = rendering;
 	if (talk.architecture !== undefined) return canonicalPending(talk.architecture, reading);
-	if (reading?.board == null || !sameBoardName(reading.board.name, talk.board.name)) {
+	if (reading?.model == null || !sameModelName(reading.model.name, talk.board.name)) {
 		return `the pane to draw ${talk.board.name}`;
 	}
 	return reading.version === talk.board.version
 		? null
-		: `the board at version ${talk.board.version}, not ${reading.version}`;
+		: `the model at version ${talk.board.version}, not ${reading.version}`;
 }
 
 /**
@@ -132,20 +129,20 @@ function canonicalPending(
  * @returns True while one starts.
  */
 function paintersStarting(rendering: Rendering): boolean {
-	const surfaces = rendering.root.querySelectorAll("[data-slot='semantic-board-surface']");
+	const surfaces = rendering.root.querySelectorAll("[data-slot='canvas-surface']");
 	return [...surfaces].some((surface) => stageOf(surface)?.starting === true);
 }
 
 /**
- * What a frame still waits for before it shows the talk's board at its step.
+ * What a frame still waits for before it shows the talk's model at its step.
  * @param rendering The rendering.
  * @returns What it waits for, in words, or null when nothing.
  */
 function pendingOf(rendering: Rendering): string | null {
-	if (rendering.client.isFetching() > 0) return "the board's picture to be drawn";
+	if (rendering.client.isFetching() > 0) return "the model's picture to be drawn";
 	if (paintersStarting(rendering)) return "the painter to start";
-	const board = boardPending(rendering);
-	if (board !== null) return board;
+	const model = modelPending(rendering);
+	if (model !== null) return model;
 	return stepPending(rendering);
 }
 
@@ -166,7 +163,7 @@ function stepPending(rendering: Rendering): string | null {
  */
 function violationsOf(rendering: Rendering): readonly string[] {
 	const moved = rendering.clock.violations().map((violation) => violation.what);
-	const read = rendering.foreign.map((board) => `The board ${board} was read, not the talk's.`);
+	const read = rendering.foreign.map((model) => `The model ${model} was read, not the talk's.`);
 	return [...moved, ...read];
 }
 
@@ -218,10 +215,10 @@ class WalkthroughReplay {
 	}
 
 	/**
-	 * Put a talk on the page and play the board's entrance through.
+	 * Put a talk on the page and play the model's entrance through.
 	 * @param talk The talk.
 	 * @param options The theme and layout engine to render it in, and how loud its voice is on each frame.
-	 * @throws {Error} When the page already has a talk, or the board never draws.
+	 * @throws {Error} When the page already has a talk, or the model never draws.
 	 */
 	async load(talk: Talk, options: Parameters<ReplayRenderer["load"]>[1]): Promise<void> {
 		if (this.#rendering !== null) throw new Error("This page already has a talk; open it again.");
@@ -235,7 +232,7 @@ class WalkthroughReplay {
 			talk,
 			clock,
 			playback: new TalkPlayback(talk, levels),
-			client: createBoardQueryClient(),
+			client: createModelQueryClient(),
 			root: this.#root,
 			readiness: new FrameReadiness(this.#root),
 			foreign: [],
@@ -243,7 +240,7 @@ class WalkthroughReplay {
 			beat: null,
 			next: 0,
 		};
-		readBoardsFrom(talkReads(talk, (board) => rendering.foreign.push(board)));
+		readRetainedFrom(talkReads(talk, (model) => rendering.foreign.push(model)));
 		if (talk.board.against !== undefined) drawAgainst(talk.board.against);
 		this.#rendering = rendering;
 		createRoot(this.#root).render(

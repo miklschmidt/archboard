@@ -3,7 +3,7 @@
 //
 // It reads a part bound into a repository this machine has registered, at the
 // HEAD of that checkout. It skips a part with no binding, and a part that
-// carries a drill-down: the board it opens carries its history, and a card
+// carries a drill-down: the document it opens carries its history, and a card
 // that binds a whole directory otherwise adds hundreds of commits. It skips a
 // repository this machine has not registered, which stays silent, and a part
 // pinned to a branch or a commit that its checkout does not have out: the
@@ -21,7 +21,7 @@ import {
 import { normalizeBoundPath } from "#runtime/operations/history-lens/commits.ts";
 import type { BehindSkip } from "#shared/protocol/code-check.ts";
 import { bindingPathOf, type CodeBinding } from "@archboard/code-binding/bindings";
-import type { SemanticNode, VariantContent } from "@archboard/board/content";
+import type { SemanticNode, VariantContent } from "@archboard/model/content";
 
 /** A part the lens reads: where its checkout is, and the path it binds there. */
 interface ReadPart {
@@ -134,4 +134,4 @@ function partReading(
 	return { read, skipped };
 }
 
-export { type PartReading, type ReadPart, partReading };
+export { type ReadPart, partReading };

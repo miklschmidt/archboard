@@ -316,7 +316,7 @@ interface TalkWire {
 	/** The conversation reading the created thread's turns: it is the tab's linked thread. */
 	readonly readAt: number;
 	readonly voiceAt: number;
-	/** The board catalogue, naming the given board, injected into the coordinator. */
+	/** The model catalogue, naming the given model, injected into the coordinator. */
 	readonly catalogueAt: number;
 }
 
@@ -326,10 +326,10 @@ const isFrame = (record: FixtureRecord, method: string): boolean =>
 /**
  * Where Talk's steps fall in the fixture's log.
  * @param talked The records written after Talk was pressed.
- * @param board The board in view, which the coordinator's catalogue must name.
+ * @param model The model in view, which the coordinator's catalogue must name.
  * @returns The step positions.
  */
-function talkWire(talked: readonly FixtureRecord[], board: string): TalkWire {
+function talkWire(talked: readonly FixtureRecord[], model: string): TalkWire {
 	const started = talked
 		.filter((record) => record.kind === "response" && record.method === "thread/start")
 		.map((record) => (record.result?.["thread"] as { id?: string } | undefined)?.id ?? null);
@@ -337,7 +337,7 @@ function talkWire(talked: readonly FixtureRecord[], board: string): TalkWire {
 	const starts = talked.flatMap((record, index) =>
 		isFrame(record, "thread/start") ? [index] : [],
 	);
-	const named = JSON.stringify(JSON.stringify(board)).slice(1, -1);
+	const named = JSON.stringify(JSON.stringify(model)).slice(1, -1);
 	return {
 		threadStarts: starts.length,
 		realtimeStarts: talked.filter((record) => isFrame(record, "thread/realtime/start")).length,

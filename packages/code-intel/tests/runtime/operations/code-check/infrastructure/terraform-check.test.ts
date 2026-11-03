@@ -26,7 +26,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
@@ -195,7 +195,7 @@ beforeAll(async () => {
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the configuration");
 	write(shop, { "infra/plan.json": JSON.stringify(PLAN) });
 	register(scratch, { [SHOP]: shop });
-	board(vault, "Shop", [
+	document(vault, "Shop", [
 		{
 			id: "v1",
 			name: "Built",
@@ -224,16 +224,16 @@ beforeAll(async () => {
 		},
 	]);
 	check = await import("#tests/runtime/support/code-check/pass.ts");
-	const read = check.readBoardsToCheck(vault, undefined);
-	if (!read.ok) throw new Error("no boards");
-	withoutPlan = await check.checkCode(vault, read.boards, new AbortController().signal);
+	const read = check.readStatesToCheck(vault, undefined);
+	if (!read.ok) throw new Error("no documents");
+	withoutPlan = await check.checkCode(vault, read.states, new AbortController().signal);
 	const plans = await check.readPlans(
 		vault,
 		[join(shop, "infra", "plan.json")],
 		new AbortController().signal,
 	);
 	if (!plans.ok) throw new Error(`the plan was refused: ${plans.reason}`);
-	withPlan = await check.checkCode(vault, read.boards, new AbortController().signal, plans.plans);
+	withPlan = await check.checkCode(vault, read.states, new AbortController().signal, plans.plans);
 });
 
 afterAll(() => {
@@ -271,7 +271,7 @@ test("a part bound to an address its root module no longer declares is reported,
 	expect(skipped("path-never-read")).toEqual(["pT"]);
 });
 
-test("a reference that joins two resource-bound parts supports their relationship, through a module's output and variable, and one the board does not draw is undrawn", () => {
+test("a reference that joins two resource-bound parts supports their relationship, through a module's output and variable, and one the document does not draw is undrawn", () => {
 	const undrawn = withoutPlan.findings.find((each) => each.code === "RELATIONSHIP_UNDRAWN");
 	expect(undrawn?.evidence).toEqual([
 		{

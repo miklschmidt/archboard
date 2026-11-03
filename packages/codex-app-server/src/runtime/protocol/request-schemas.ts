@@ -174,26 +174,13 @@ const JSON_RPC_ERROR_CODES = Object.freeze({
 	internalError: -32603,
 });
 
-type ServerRequestSchemas = typeof SERVER_REQUEST_SCHEMAS;
-type ClientNotificationSchemas = typeof CLIENT_NOTIFICATION_SCHEMAS;
-
 export {
 	ClientInfoSchema,
 	LoginAccountParamsSchema,
 	CancelLoginAccountParamsSchema,
 	AccountReadParamsSchema,
-	CommandExecutionRequestApprovalParamsSchema,
-	FileChangeRequestApprovalParamsSchema,
-	ToolRequestUserInputParamsSchema,
-	PermissionsRequestApprovalParamsSchema,
-	DynamicToolCallParamsSchema,
-	ChatgptAuthTokensRefreshParamsSchema,
-	AttestationGenerateParamsSchema,
-	CurrentTimeReadParamsSchema,
 	SERVER_REQUEST_SCHEMAS,
 	CLIENT_NOTIFICATION_SCHEMAS,
 	JsonRpcErrorSchema,
 	JSON_RPC_ERROR_CODES,
-	type ServerRequestSchemas,
-	type ClientNotificationSchemas,
 };

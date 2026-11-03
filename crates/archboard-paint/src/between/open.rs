@@ -1,9 +1,9 @@
 //! A container that arrives with nothing to carry it.
 //!
-//! A container is a well cut into the board, and a well does not fade in: it opens.
+//! A container is a well cut into the picture, and a well does not fade in: it opens.
 //! One front leaves the middle of the picture ahead of the wave of cards, as a square
 //! that grows. Each container shows where the front has passed, so a card lands on a
-//! floor, wherever it stands and however wide the board is. A thin edge runs with the
+//! floor, wherever it stands and however wide the picture is. A thin edge runs with the
 //! front and cools as the container lands. The drawing keeps its place and its
 //! corners, so the walls of a well stand still as the front passes them.
 
@@ -296,7 +296,7 @@ mod tests {
 
     const MIDDLE: Point = Point { x: 200.0, y: 100.0 };
 
-    /// A tall container round the middle of the board.
+    /// A tall container round the middle of the picture.
     const TALL: Rect = Rect {
         x: 170.0,
         y: 20.0,
@@ -312,9 +312,9 @@ mod tests {
         })
     }
 
-    /// A wide container round the middle of a board 400 by 200, with a header, and
+    /// A wide container round the middle of a picture 400 by 200, with a header, and
     /// a second container far from the middle.
-    fn board() -> Scene {
+    fn picture() -> Scene {
         scene(
             vec![
                 region("near", rect(40.0, 60.0, 320.0, 80.0)),
@@ -326,8 +326,8 @@ mod tests {
         )
     }
 
-    fn opening_of(board: &Scene, id: &str, ordinal: usize) -> Opening {
-        let groups = found(board);
+    fn opening_of(picture: &Scene, id: &str, ordinal: usize) -> Opening {
+        let groups = found(picture);
         let all = ways(&groups, MIDDLE, (0.0, PHASES.entry.region_span));
         let group = groups
             .iter()
@@ -338,8 +338,8 @@ mod tests {
 
     #[test]
     fn a_container_opens_out_of_the_middle() {
-        let board = board();
-        let early = opening_of(&board, "near", 0).at(PHASES.entry.region_span * 0.25);
+        let picture = picture();
+        let early = opening_of(&picture, "near", 0).at(PHASES.entry.region_span * 0.25);
         let area = shown_box(&early).expect("a box shows it");
         assert!(area.width > 0.0 && area.width < 320.0, "it is on its way");
         assert!(area.x < MIDDLE.x && MIDDLE.x < area.x + area.width);
@@ -349,8 +349,8 @@ mod tests {
 
     #[test]
     fn a_container_lands_as_it_was_drawn() {
-        let board = board();
-        let frame = opening_of(&board, "near", 0);
+        let picture = picture();
+        let frame = opening_of(&picture, "near", 0);
         let landed = frame.at(frame.end());
         assert_eq!(shown_box(&landed), None, "nothing cuts it");
         assert_eq!(worn_edge(&landed), None);
@@ -358,9 +358,12 @@ mod tests {
 
     #[test]
     fn a_frame_and_its_header_open_as_one_and_only_the_frame_wears_the_edge() {
-        let board = board();
+        let picture = picture();
         let at = PHASES.entry.region_span * 0.2;
-        let (frame, header) = (opening_of(&board, "near", 0), opening_of(&board, "near", 1));
+        let (frame, header) = (
+            opening_of(&picture, "near", 0),
+            opening_of(&picture, "near", 1),
+        );
         let boxes = [&frame, &header].map(|opening| shown_box(&opening.at(at)));
         assert!(boxes[0].is_some());
         assert_eq!(boxes[0], boxes[1]);
@@ -369,8 +372,11 @@ mod tests {
 
     #[test]
     fn the_front_reaches_a_container_far_from_the_middle_last() {
-        let board = board();
-        let (near, far) = (opening_of(&board, "near", 0), opening_of(&board, "far", 0));
+        let picture = picture();
+        let (near, far) = (
+            opening_of(&picture, "near", 0),
+            opening_of(&picture, "far", 0),
+        );
         let early = PHASES.entry.region_span * 0.1;
         assert!(shown_box(&near.at(early)).is_some());
         let unseen = far.at(early);
@@ -379,17 +385,17 @@ mod tests {
     }
 
     #[test]
-    fn a_card_near_the_middle_lands_on_a_floor_however_wide_the_board() {
-        // The middle row of a wide board. A box that kept the board's shape would
+    fn a_card_near_the_middle_lands_on_a_floor_however_wide_the_picture() {
+        // The middle row of a wide picture. A box that kept the picture's shape would
         // reach a card above the middle far later than the front does.
-        let board = board();
-        let frame = opening_of(&board, "near", 0);
+        let picture = picture();
+        let frame = opening_of(&picture, "near", 0);
         let begins = PHASES.entry.cards_start + PHASES.entry.cards_start_by * 0.2;
         let area = shown_box(&frame.at(begins)).expect("a box shows it");
         assert!(area.y <= 90.0 && area.y + area.height >= 110.0);
     }
 
-    /// An entrance of the board after a picture of one tall container.
+    /// An entrance of the picture after a picture of one tall container.
     fn after_a_tall_tray(wide: &Scene) -> Entrance {
         let tall = scene(vec![region("near", TALL)], &[]);
         let handover = Handover {
@@ -401,7 +407,7 @@ mod tests {
 
     #[test]
     fn a_container_the_last_picture_drew_flies_over_and_lands_as_it_was_drawn() {
-        let wide = board();
+        let wide = picture();
         let entrance = after_a_tall_tray(&wide);
         assert!(entrance.flown().contains("near"));
         assert!(!entrance.flown().contains("far"), "that one opens");
@@ -410,7 +416,7 @@ mod tests {
 
     #[test]
     fn a_container_the_last_picture_drew_starts_at_its_old_size() {
-        let wide = board();
+        let wide = picture();
         let entrance = after_a_tall_tray(&wide);
         let start = entrance.at(0.0);
         let held = shown_box(drawing(&start, "near")[0]).expect("a box shows it");
@@ -426,7 +432,7 @@ mod tests {
     #[test]
     fn a_second_change_takes_the_tray_from_where_the_first_had_it() {
         let tall = scene(vec![region("near", TALL)], &[]);
-        let wide = board();
+        let wide = picture();
         let first = after_a_tall_tray(&wide);
         let mid = first.holder_at(0.2).expect("the tray stays on");
         let cut_short = Scene {
@@ -456,12 +462,12 @@ mod tests {
             last: &last,
             shown: 1.0,
         };
-        let entrance = Entrance::new(&board(), &PHASES, Some(handover));
+        let entrance = Entrance::new(&picture(), &PHASES, Some(handover));
         assert!(entrance.keeps_tray());
         assert_eq!(entrance.holder_at(0.0), None);
     }
 
-    /// The board with its wide container a little wider, as a door in it opens.
+    /// The picture with its wide container a little wider, as a door in it opens.
     fn with_a_door_open() -> Scene {
         scene(
             vec![
@@ -474,14 +480,14 @@ mod tests {
         )
     }
 
-    /// The opening of the board as it stood a quarter of the way, and the move that
+    /// The opening of the picture as it stood a quarter of the way, and the move that
     /// cut it short.
     fn cut_short() -> (Scene, Between) {
-        let board = board();
-        let entrance = Entrance::new(&board, &PHASES, None);
+        let picture = picture();
+        let entrance = Entrance::new(&picture, &PHASES, None);
         let seen = Scene {
             body: entrance.at(PHASES.entry.region_span * 0.25),
-            ..board
+            ..picture
         };
         let move_ = Between::new(&seen, &with_a_door_open(), (0.0, 0.0), &PHASES);
         (seen, move_)
@@ -521,17 +527,17 @@ mod tests {
 
     #[test]
     fn an_entrance_opens_its_containers_and_ends_on_the_scene_itself() {
-        let board = board();
-        let entrance = Entrance::new(&board, &PHASES, None);
+        let picture = picture();
+        let entrance = Entrance::new(&picture, &PHASES, None);
         let early = entrance.at(0.1);
         assert!(shown_box(drawing(&early, "near")[0]).is_some());
-        assert_eq!(entrance.at(entrance.length()), board.body);
+        assert_eq!(entrance.at(entrance.length()), picture.body);
     }
 
     #[test]
     fn a_container_only_the_next_picture_has_opens_in_a_move() {
         let last = scene(vec![card("c", rect(180.0, 90.0, 40.0, 20.0), &["C"])], &[]);
-        let next = board();
+        let next = picture();
         let move_ = Between::new(&last, &next, (0.0, 0.0), &PHASES);
         let t = PHASES.transition;
         let middle = move_.at(t.enter_start + (1.0 - t.enter_start) * 0.3);

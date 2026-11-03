@@ -1,6 +1,6 @@
 import type { JSX } from "react";
-import { describeSubject } from "@archboard/board/policy";
-import type { VaultDiagnosticSchema } from "@archboard/board/policy";
+import { describeSubject } from "@archboard/model/policy";
+import type { VaultDiagnosticSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
 type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
@@ -31,6 +31,7 @@ function DiagnosticList(props: { diagnostics: VaultDiagnostic[] }): JSX.Element 
  */
 function Diagnostic(props: { diagnostic: VaultDiagnostic }): JSX.Element {
 	const { diagnostic } = props;
+	const { board: model } = diagnostic;
 	return (
 		<li className="space-y-1 py-3">
 			<p className="font-medium">
@@ -40,9 +41,9 @@ function Diagnostic(props: { diagnostic: VaultDiagnostic }): JSX.Element {
 				{diagnostic.file}
 				{diagnostic.path === undefined ? "" : ` · ${diagnostic.path}`}
 			</p>
-			{diagnostic.board !== undefined && (
+			{model !== undefined && (
 				<p className="text-muted-foreground text-xs">
-					{diagnostic.board}
+					{model}
 					{diagnostic.variant === undefined ? "" : ` @ ${diagnostic.variant}`}
 					{diagnostic.subject === undefined ? "" : ` · ${describeSubject(diagnostic.subject)}`}
 				</p>

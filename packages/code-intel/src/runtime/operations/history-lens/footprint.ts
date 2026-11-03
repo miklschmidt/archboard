@@ -32,9 +32,9 @@ import type {
 	NamedReason,
 } from "#shared/protocol/footprint.ts";
 import { nodesAtOwnRef } from "#runtime/operations/history-lens/own-ref.ts";
-import { compareVariants } from "@archboard/board/comparison";
-import { emptyContent, type SemanticNode } from "@archboard/board/content";
-import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
+import { compareVariants } from "@archboard/model/comparison";
+import { emptyContent, type SemanticNode } from "@archboard/model/content";
+import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
 
 /**
  * What to read, once the variants are chosen (`footprint-reading.ts`): the
@@ -42,11 +42,11 @@ import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
  * against.
  */
 interface VariantFootprintRequest {
-	/** The vault directory the board is in: its own checkout is read for its own repository. */
+	/** The vault directory the document is in: its own checkout is read for its own repository. */
 	readonly vault: string;
-	readonly board: Pick<SemanticBoard, "id" | "name" | "variants" | "current">;
+	readonly document: Pick<LegacyBoard, "id" | "name" | "variants" | "current">;
 	/**
-	 * The variant the proposal is read against: the board's current variant by
+	 * The variant the proposal is read against: the document's current variant by
 	 * default. Undefined only with a proposal, which is then read against
 	 * nothing, so it names every part it holds.
 	 */
@@ -127,7 +127,7 @@ async function atOwnRefs(
 	const roots = new Map(
 		partReading({ nodes: [...parts] }, snapshot, true).read.map((part) => [part.repo, part.root]),
 	);
-	const own = await nodesAtOwnRef(request.board, read, (repo) => roots.get(repo), {
+	const own = await nodesAtOwnRef(request.document, read, (repo) => roots.get(repo), {
 		signal: request.signal,
 	});
 	const byId = new Map(own.map((node) => [node.id, node]));
@@ -408,11 +408,11 @@ function namedBy(
 
 type FootprintEvidence = FootprintAnswer extends infer T
 	? T extends unknown
-		? Omit<T, "board" | "version">
+		? Omit<T, "model" | "version">
 		: never
 	: never;
 /**
- * Read the footprint of a range of commits against a board's current variant,
+ * Read the footprint of a range of commits against a document's current variant,
  * and against a proposal when one is named.
  * @param request What to read.
  * @returns The footprint.
@@ -470,12 +470,12 @@ async function readFootprintEvidence(request: VariantFootprintRequest): Promise<
  * @returns The original semantic receipt.
  */
 async function readVariantFootprint(
-	request: Omit<VariantFootprintRequest, "board"> & { board: SemanticBoard },
+	request: Omit<VariantFootprintRequest, "document"> & { document: LegacyBoard },
 ): Promise<FootprintAnswer> {
 	return {
-		board: request.board.name,
-		version: request.board.version,
+		model: request.document.name,
+		version: request.document.version,
 		...(await readFootprintEvidence(request)),
 	};
 }
-export { type VariantFootprintRequest, readVariantFootprint, readFootprintEvidence };
+export { readVariantFootprint, readFootprintEvidence };

@@ -228,7 +228,6 @@ function createCoordinatorSettingsUpdateParams(
 export {
 	COORDINATOR_MODEL,
 	COORDINATOR_EFFORT,
-	COORDINATOR_MODEL_PAGE_LIMIT,
 	type CoordinatorModelSelection,
 	listCoordinatorModels,
 	selectCoordinatorModel,

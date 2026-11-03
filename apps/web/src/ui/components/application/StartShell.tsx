@@ -8,20 +8,20 @@ import { useRouter } from "@tanstack/react-router";
 import { useCallback, useMemo, useState, type JSX } from "react";
 
 import { IconButton, shownRepository, Tooltip } from "@archboard/ui-kit/components";
-import { BOARD_CACHE_MS } from "@archboard/timing";
+import { MODEL_CACHE_MS } from "@archboard/timing";
 import { RiFileCopyLine } from "@remixicon/react";
 import { SettingsHosts } from "#ui/components/application/SettingsHosts.tsx";
 import { ModelState } from "#ui/components/architecture-model/ModelState.tsx";
 import { Shell } from "#ui/components/shell/Shell.tsx";
 import { createStartActions } from "#ui/clients/application/start-actions.ts";
-import { repositoriesQuery } from "#ui/clients/board-catalog/queries.ts";
+import { repositoriesQuery } from "#ui/clients/model-catalog/queries.ts";
 import { useNotices } from "#ui/hooks/application/use-notices.ts";
 import { useTheme } from "#ui/hooks/application/use-theme.ts";
 import { useSlowWait } from "#ui/hooks/architecture-model/use-slow-wait.ts";
 import type { ModelCatalog } from "#ui/hooks/architecture-model/use-model-catalog.ts";
 import { initialPaneList } from "#ui/rules/application/pane-list.ts";
 import { assembleShellView } from "#ui/rules/application/shell-view.ts";
-import type { Start } from "#ui/rules/board-routing/start.ts";
+import type { Start } from "#ui/rules/reading-routing/start.ts";
 import type { SettingsSurface } from "#ui/rules/shell/contracts.ts";
 
 /** Inputs for the start's shell. */
@@ -50,7 +50,7 @@ function StartShell(props: StartShellProps): JSX.Element {
 	const closeSettings = useCallback((): void => openSettings(null), []);
 	const client = useQueryClient();
 	const router = useRouter();
-	useQuery({ ...repositoriesQuery(), refetchInterval: BOARD_CACHE_MS.startListing });
+	useQuery({ ...repositoriesQuery(), refetchInterval: MODEL_CACHE_MS.startListing });
 	const actions = useMemo(
 		() => createStartActions({ router, client, catalog, notices, setTheme, openSettings }),
 		[router, client, catalog, notices, setTheme],

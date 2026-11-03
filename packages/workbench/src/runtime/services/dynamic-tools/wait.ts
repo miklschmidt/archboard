@@ -1,4 +1,4 @@
-import type { ChildId, DynamicToolCallId, ThreadId } from "@archboard/codex-app-server/identity";
+import type { DynamicToolCallId, ThreadId } from "@archboard/codex-app-server/identity";
 import type {
 	CodexDynamicToolsOptions,
 	DynamicCallerAuthority,
@@ -346,7 +346,4 @@ async function waitForDynamicThreads(input: WaitInput): Promise<WaitProjection> 
 	}
 }
 
-/** The child a wait belongs to. */
-type DynamicWaitChild = ChildId;
-
-export { type WaitProjection, waitForDynamicThreads, type DynamicWaitChild };
+export { waitForDynamicThreads };

@@ -341,11 +341,4 @@ function writeReport(
 	return { report, markdown, json };
 }
 
-export {
-	RunManifestSchema,
-	buildBatchReport,
-	readManifests,
-	recordOf,
-	writeReport,
-	type RunManifest,
-};
+export { readManifests, recordOf, writeReport };

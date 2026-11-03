@@ -368,10 +368,4 @@ function publishReadySlots(
 	return slots;
 }
 
-export {
-	generationInput,
-	observeChildExit,
-	publishReadySlots,
-	replaceExitHandler,
-	terminalShutdown,
-};
+export { generationInput, publishReadySlots, replaceExitHandler, terminalShutdown };

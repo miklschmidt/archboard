@@ -1,9 +1,6 @@
 import { z } from "zod";
 
-import {
-	CodexCommandExecutionApprovalDecisionSchema,
-	CodexFileChangeApprovalDecisionSchema,
-} from "#shared/protocol/app-server-contract.ts";
+import { CodexCommandExecutionApprovalDecisionSchema } from "#shared/protocol/app-server-contract.ts";
 
 import { FileChangeSchema } from "#runtime/schemas/item-schemas.ts";
 import {
@@ -31,7 +28,6 @@ const NetworkPolicyAmendmentSchema = z.strictObject({
 const ExecPolicyAmendmentSchema = z.array(z.string());
 
 const CommandExecutionApprovalDecisionSchema = CodexCommandExecutionApprovalDecisionSchema;
-const FileChangeApprovalDecisionSchema = CodexFileChangeApprovalDecisionSchema;
 
 const AdditionalNetworkPermissionsSchema = z.strictObject({
 	enabled: z.boolean().nullable(),
@@ -233,13 +229,9 @@ export {
 	NetworkPolicyAmendmentSchema,
 	ExecPolicyAmendmentSchema,
 	CommandExecutionApprovalDecisionSchema,
-	FileChangeApprovalDecisionSchema,
-	AdditionalNetworkPermissionsSchema,
-	AdditionalFileSystemPermissionsSchema,
 	AdditionalPermissionProfileSchema,
 	RequestPermissionProfileSchema,
 	McpServerElicitationRequestParamsSchema,
-	ParsedCommandSchema,
 	ApplyPatchApprovalParamsSchema,
 	ExecCommandApprovalParamsSchema,
 };

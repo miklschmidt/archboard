@@ -20,4 +20,4 @@ function FieldIssues(props: FieldIssuesProps): JSX.Element {
 	return <FieldError errors={errors} />;
 }
 
-export { FieldIssues, type FieldIssuesProps };
+export { FieldIssues };

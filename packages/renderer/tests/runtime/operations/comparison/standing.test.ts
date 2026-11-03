@@ -1,7 +1,7 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
-import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/board/render-reply";
-import type { VariantContent } from "@archboard/board/content";
+import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/model/render-reply";
+import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { type StatedStandings } from "#shared/protocol/render-request.ts";
@@ -22,7 +22,7 @@ import {
 } from "#tests/runtime/support/sequence-fixture.ts";
 import { colourIn, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 import { arrangementOf } from "#tests/runtime/support/drawn-atlas.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /**
  * One architecture, as its own contract reads it.
@@ -47,7 +47,7 @@ const PROPOSAL: VariantContent = architecture(
 	],
 	[
 		{ id: "e1", from: "web", to: "gw", kind: "http", label: "REST", emphasis: "normal" },
-		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read board", emphasis: "hero" },
+		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read document", emphasis: "hero" },
 		{ id: "e3", from: "gw", to: "queue", kind: "event", label: "enqueue", emphasis: "normal" },
 		{ id: "e4", from: "legacy", to: "store", kind: "data", label: "writes", emphasis: "muted" },
 		{ id: "e5", from: "io", to: "store", kind: "data", emphasis: "hero" },
@@ -67,7 +67,7 @@ const STANDING: StatedStandings = {
 };
 
 /**
- * One node, drawn with nothing else on the board standing for anything.
+ * One node, drawn with nothing else on the document standing for anything.
  * @param standing How that node stands.
  * @returns Its drawn group.
  */
@@ -110,7 +110,7 @@ function drawn(standing?: StatedStandings, layout?: LayoutEngineName): Promise<R
 
 describe("a picture nobody stated a standing for", () => {
 	test("is drawn exactly as it was before standings existed", async () => {
-		// The whole proof that adding comparison to the renderer left a plain board
+		// The whole proof that adding comparison to the renderer left a plain document
 		// alone: the two spellings of "say nothing" agree, and nothing a standing
 		// can put on the page appears anywhere in the document.
 		expect((await drawn()).svg).toBe((await drawn(undefined)).svg);

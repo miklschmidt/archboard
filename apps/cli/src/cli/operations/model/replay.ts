@@ -4,8 +4,8 @@
 
 import { z } from "zod";
 
-import { DiagramThemeSchema, LayoutEngineSchema } from "@archboard/board/render-reply";
-import { parseSemanticBoard } from "@archboard/board/document";
+import { DiagramThemeSchema, LayoutEngineSchema } from "@archboard/model/render-reply";
+import { parseLegacyBoard } from "@archboard/model/legacy-board";
 import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
 import { TalkFileError, readTalk, renderTalk } from "@archboard/walkthrough/recorder";
 import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
@@ -52,7 +52,7 @@ const ReplayReceiptSchema = z.object({
  * @returns The state's id, or null for a model with no current state.
  */
 function currentStateOf(document: unknown): string | null {
-	const parsed = parseSemanticBoard(document);
+	const parsed = parseLegacyBoard(document);
 	return parsed.ok ? (parsed.board.current ?? null) : null;
 }
 

@@ -12,7 +12,7 @@ import {
 
 import { useQueryClient } from "@tanstack/react-query";
 import { RecordedModelStage } from "#ui/components/walkthrough-recording/RecordedModelStage.tsx";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { ModelExplanationHost } from "#ui/components/architecture-model/ModelExplanationHost.tsx";
 import { explanationKey } from "#ui/clients/architecture-model/explanations.ts";
 import { tabSessionId } from "#ui/clients/pane-session/tab-session.ts";
@@ -32,7 +32,7 @@ import {
 	type PaneWorkbenchSocketOwner,
 } from "#ui/clients/pane-session/workbench-socket.ts";
 import { ArchitectureModelStage } from "#ui/components/architecture-model/ArchitectureModelStage.tsx";
-import { type WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
+import { type WalkthroughNarration } from "#ui/rules/canvas/walkthrough/narration.ts";
 import {
 	createBrowserWorkbenchTransport,
 	type BrowserWorkbenchTransport,
@@ -60,7 +60,7 @@ interface ApplicationPaneProps {
 	recording?: boolean;
 	/**
 	 * Hear what this pane is reading, as well as reporting it (a recording, TASK-304).
-	 * @param reading The board, variant, view, selection and presentation on screen.
+	 * @param reading The model, variant, view, selection and presentation on screen.
 	 */
 	onRecordedReading?: ((reading: PaneReading) => void) | undefined;
 	/** Undefined for ordinary reading, null until a canonical capture loads. */
@@ -69,7 +69,7 @@ interface ApplicationPaneProps {
 
 /** The pane-bound callbacks the shared ones cannot supply. */
 interface BoundCallbacks {
-	onBoardError: (error: string) => void;
+	onModelError: (error: string) => void;
 	onLayoutRequest: (request: "open" | "close") => void;
 	createWorkbenchSockets: () => PaneWorkbenchSocketOwner<BrowserWorkbenchTransport>;
 }
@@ -93,14 +93,12 @@ function optionsFor(
 		theme: props.theme,
 		openingVault: props.openingVault,
 		onStatus: callbacks.onStatus,
-		onHolder: callbacks.onHolder,
 		onPaneReconnected: callbacks.onPaneReconnected,
 		onStaleFrontend: callbacks.onStaleFrontend,
 		onCodeTargetNotice: callbacks.onCodeTargetNotice,
 		onAgentActivity: callbacks.onAgentActivity,
 		onRepositoriesChanged: callbacks.onRepositoriesChanged,
-		onBoardAdopted: callbacks.onBoardAdopted,
-		onBoardError: bound.onBoardError,
+		onModelAdopted: callbacks.onModelAdopted,
 		onLayoutRequest: bound.onLayoutRequest,
 		createWorkbenchSockets: bound.createWorkbenchSockets,
 	};
@@ -113,8 +111,8 @@ function optionsFor(
  */
 function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
 	const { paneId, callbacks, handles } = props;
-	const onBoardError = useCallback(
-		(error: string): void => callbacks.onBoardError(paneId, error),
+	const onModelError = useCallback(
+		(error: string): void => callbacks.onModelError(paneId, error),
 		[callbacks, paneId],
 	);
 	const onLayoutRequest = useCallback(
@@ -130,8 +128,8 @@ function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
 		[handles, paneId],
 	);
 	return useMemo(
-		() => ({ onBoardError, onLayoutRequest, createWorkbenchSockets }),
-		[onBoardError, onLayoutRequest, createWorkbenchSockets],
+		() => ({ onModelError, onLayoutRequest, createWorkbenchSockets }),
+		[onModelError, onLayoutRequest, createWorkbenchSockets],
 	);
 }
 
@@ -145,7 +143,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	const bound = useBoundCallbacks(props);
 	const { arrival, driven, onModelRequest, onPresentRequest, endPresentation } = useModelArrival(
 		paneId,
-		bound.onBoardError,
+		bound.onModelError,
 	);
 	const [canonicalReading, reportCanonicalReading] = useState<PaneReading | null>(null);
 	const client = useQueryClient();
@@ -167,14 +165,13 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	const narration = usePublishedNarration(
 		props.narration,
 		session.flushReading,
-		bound.onBoardError,
+		bound.onModelError,
 	);
 	// The pictures of the vault this pane is in follow that vault's policy.
 	useVaultPolicyRefresh(vault);
 	// Registration and departure are two different events, and they are two
 	// effects for that reason. `usePaneSession` hands back a fresh object every
-	// render — its board, its holder and what an agent is doing all change under
-	// it — so a single effect with the session in its dependencies would report
+	// render — its model and connection change under it — so a single effect with the session in its dependencies would report
 	// the pane gone and back on every ordinary piece of news. The workbench
 	// answers "gone" by tearing down the pane's media and its thread binding, so
 	// that is not a re-registration, it is a disconnection per render.

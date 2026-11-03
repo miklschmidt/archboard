@@ -7,9 +7,9 @@ import { observedCloud, platformCloud } from "#tests/runtime/support/cloud-readi
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import phone from "../../../../../../docs/design/wide-board-layout-fixtures/phone-ownership.content.json";
 import cloud from "#tests/runtime/support/fixtures/branching-cloud.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
-// Work-vault readings of Cloud Infrastructure, three versions of one board:
+// Work-vault readings of Cloud Infrastructure, three versions of one document:
 // folded into columns each fit the pane better, but the steering line from
 // Azure Traffic Manager then ran back up and across the regional entry into
 // Portal API hostname, and every line turned twice more. A fold is kept only

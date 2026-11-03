@@ -113,4 +113,4 @@ class FrameOrder {
 	}
 }
 
-export { FrameOrder, type FrameSink };
+export { FrameOrder };

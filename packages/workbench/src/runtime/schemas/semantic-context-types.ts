@@ -5,12 +5,12 @@ import type {
 	ThreadId,
 	TurnId,
 } from "@archboard/codex-app-server/identity";
-import type { ChangeKind } from "@archboard/board/comparison";
-import type { DiagramGrammar } from "@archboard/board/views";
-import type { VariantLifecycleSchema } from "@archboard/board/document";
+import type { ChangeKind } from "@archboard/model/comparison";
+import type { DiagramGrammar } from "@archboard/model/views";
+import type { VariantLifecycleSchema } from "@archboard/model/legacy-board";
 import type { z } from "zod";
-import type { SemanticSubjectKindSchema } from "@archboard/board/pane-context";
-import type { ReconciliationKindSchema } from "@archboard/board/reconciliation";
+import type { SemanticSubjectKindSchema } from "@archboard/model/pane-context";
+import type { ReconciliationKindSchema } from "@archboard/model/reconciliation";
 
 type ReconciliationKind = z.infer<typeof ReconciliationKindSchema>;
 type SemanticSubjectKind = z.infer<typeof SemanticSubjectKindSchema>;
@@ -35,9 +35,9 @@ type SemanticCursorInput = SemanticCursor;
 /** The settled fields consumed from the existing change feed. */
 interface SettledChangeSourceEvent {
 	readonly cursor: number;
-	/** The directory of the vault the board lives in: a board name alone does not say which. */
+	/** The directory of the vault the model lives in: a model name alone does not say which. */
 	readonly vault: string;
-	readonly board: string;
+	readonly model: string;
 	readonly at: string;
 	readonly origin: SemanticChangeOrigin;
 	readonly significance: SemanticChangeSignificance;
@@ -67,18 +67,18 @@ interface PaneSignalSource {
 	readonly onSelection: (listener: (input: SemanticContextInput) => void) => SemanticUnsubscribe;
 }
 
-/** A board/context reader used only by the on-demand fresh-brief port. */
+/** A model/context reader used only by the on-demand fresh-brief port. */
 interface FreshBriefSource {
 	readonly read: () => SemanticContextInput;
 }
 
-interface SemanticBoardInput {
+interface SemanticModelInput {
 	readonly key: string;
-	/** The name every command spells the board with. */
+	/** The name every command spells the model with. */
 	readonly name: string;
 	/**
 	 * The directory of the vault that holds it, which a thread passes as `-C` so that its
-	 * command reads this board and not a board of the same name in another vault.
+	 * command reads this model and not a model of the same name in another vault.
 	 */
 	readonly vault: string;
 	/** The document that holds it, which is a path and never content. */
@@ -90,7 +90,7 @@ interface SemanticBoardInput {
  * What of a pane's reading the user changed by hand: a part the pane marked in its report
  * (ADR 0034), or the pane having become the one they are in.
  */
-type SemanticUserChange = "board" | "variant" | "view" | "selection" | "focus";
+type SemanticUserChange = "model" | "variant" | "view" | "selection" | "focus";
 
 interface SemanticPaneInput {
 	readonly paneId: string;
@@ -100,12 +100,12 @@ interface SemanticPaneInput {
 	 * a change an agent or the server caused says, and what nobody is told about.
 	 */
 	readonly userChanged?: readonly SemanticUserChange[];
-	/** Set when an agent pointed this pane at the board it now shows (TASK-293.06). */
+	/** Set when an agent pointed this pane at the model it now shows (TASK-293.06). */
 	readonly agentSwitch?: SemanticAgentSwitch;
 }
 
 /**
- * That an agent pointed a pane at another board with `browser show`: the board's name the pane
+ * That an agent pointed a pane at another model with `browser show`: the model's name the pane
  * showed before, and the agent session that asked, when it said which.
  */
 interface SemanticAgentSwitch {
@@ -171,9 +171,9 @@ interface SemanticVariantInput {
 	readonly name: string;
 	readonly lifecycle: VariantLifecycle;
 	/**
-	 * The variant its differences are measured against: the board's current
-	 * variant, or on a board with none the one it came from; null for the
-	 * current variant and for a first draft on a board with none.
+	 * The variant its differences are measured against: the model's current
+	 * variant, or on a model with none the one it came from; null for the
+	 * current variant and for a first draft on a model with none.
 	 */
 	readonly against: string | null;
 }
@@ -206,7 +206,7 @@ interface SemanticDifferencesInput {
  * One thing somebody has to settle before this proposal is coherent again.
  *
  * `repair` is written where the disagreement is found — the reconciliation in
- * `@archboard/board/reconcile` — and carried verbatim rather than reworded. The
+ * `@archboard/model/reconcile` — and carried verbatim rather than reworded. The
  * same sentence reaches the write answer and the pane, so a person and an agent
  * read one wording of one disagreement; an agent that invents its own there is
  * guessing at a decision it did not make, in words nobody else is using.
@@ -227,7 +227,7 @@ interface SemanticIssueInput {
  * never trimmed. The issues themselves are, because a brief is display text
  * under a byte ceiling — and a brief that dropped its issues and therefore read
  * as "nothing to settle" would invert the one thing this block exists to say.
- * A count without its issues still sends the agent to read the board; an empty
+ * A count without its issues still sends the agent to read the model; an empty
  * list without a count sends it away.
  */
 interface SemanticReconciliationInput {
@@ -240,10 +240,10 @@ interface SemanticReconciliationInput {
 }
 
 /**
- * What the pane is reading, in the board's own identities.
+ * What the pane is reading, in the model's own identities.
  *
  * All of it is optional in the sense that every part can be absent: a pane on a
- * board that has not drawn yet has no variant, a variant read whole has no
+ * model that has not drawn yet has no variant, a variant read whole has no
  * view, and a root variant has nothing to differ from. Absence is stated, never
  * implied, so an agent can tell "nothing is selected" from "nobody asked".
  */
@@ -258,8 +258,8 @@ interface SemanticArchitectureInput {
 /**
  * Scalar context supplied by a composition adapter.
  *
- * `description` is already the compact result of the public board-description
- * port. The publisher never receives a board document and never stores one:
+ * `description` is already the compact result of the public model-description
+ * port. The publisher never receives a model document and never stores one:
  * everything here is a name, an identity or a count that somebody else read.
  */
 interface SemanticContextInput {
@@ -268,7 +268,7 @@ interface SemanticContextInput {
 	readonly threadLink?: SemanticThreadLinkInput;
 	readonly workhorse?: SemanticWorkhorseInput;
 	readonly coordinator?: SemanticCoordinatorInput;
-	readonly board: SemanticBoardInput;
+	readonly model: SemanticModelInput;
 	readonly pane: SemanticPaneInput;
 	readonly architecture: SemanticArchitectureInput;
 	readonly claim?: SemanticClaimInput;
@@ -280,7 +280,7 @@ interface SemanticContextInput {
 	readonly staleReasons?: readonly string[];
 }
 
-type SemanticBoard = Pick<SemanticBoardInput, "key" | "name" | "vault" | "file">;
+type LegacyBoard = Pick<SemanticModelInput, "key" | "name" | "vault" | "file">;
 type SemanticPane = Pick<SemanticPaneInput, "paneId" | "focused">;
 type SemanticThreadLink = SemanticThreadLinkInput;
 type SemanticWorkhorse = SemanticWorkhorseInput;
@@ -319,7 +319,7 @@ interface SemanticBriefFields {
 	readonly threadLink: SemanticThreadLink;
 	readonly workhorse: SemanticWorkhorse;
 	readonly coordinator: SemanticCoordinator;
-	readonly board: SemanticBoard;
+	readonly model: LegacyBoard;
 	readonly pane: SemanticPane;
 	readonly version: number | null;
 	readonly architecture: SemanticArchitecture;
@@ -341,7 +341,7 @@ interface SettledSemanticChangeEvent extends SemanticBriefFields {
 	readonly change: {
 		readonly feedId: string;
 		readonly cursor: SemanticCursor;
-		readonly board: string;
+		readonly model: string;
 		readonly at: string;
 		readonly origin: SemanticChangeOrigin;
 		readonly significance: SemanticChangeSignificance;
@@ -414,7 +414,7 @@ interface SemanticContextPublisherOptions {
 	/** Feed identity makes a cursor from one process distinct after restart. */
 	readonly feedId: string;
 	readonly fresh: FreshBriefSource;
-	/** Must provide scalar state only; it must not read or retain a board document. */
+	/** Must provide scalar state only; it must not read or retain a model document. */
 	readonly contextForChange: (event: SettledChangeSourceEvent) => SemanticContextInput;
 	readonly pane?: PaneSignalSource;
 	readonly now?: () => number;
@@ -440,9 +440,7 @@ interface SemanticContextPublisher {
 
 export {
 	type SemanticChangeOrigin,
-	type SemanticChangeSignificance,
 	type SemanticBriefSource,
-	type SemanticThreadLinkState,
 	type SemanticClaimHolder,
 	type SemanticPublisherPort,
 	type SemanticUnsubscribe,
@@ -450,27 +448,10 @@ export {
 	type SemanticCursorInput,
 	type SettledChangeSourceEvent,
 	type SettledChangeSource,
-	type PaneSignalSource,
-	type FreshBriefSource,
-	type SemanticBoardInput,
-	type SemanticPaneInput,
 	type SemanticUserChange,
-	type SemanticThreadLinkInput,
-	type SemanticWorkhorseInput,
-	type SemanticCoordinatorInput,
-	type SemanticChildInput,
-	type SemanticClaimInput,
-	type SemanticSubjectInput,
-	type SemanticSelectionInput,
-	type SemanticVariantInput,
-	type SemanticViewInput,
-	type SemanticDifferenceInput,
-	type SemanticDifferencesInput,
-	type SemanticIssueInput,
-	type SemanticReconciliationInput,
 	type SemanticArchitectureInput,
 	type SemanticContextInput,
-	type SemanticBoard,
+	type LegacyBoard,
 	type SemanticPane,
 	type SemanticAgentSwitch,
 	type SemanticThreadLink,

@@ -1,4 +1,4 @@
-import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
+import type { ModelAddress } from "#ui/rules/reading-routing/address.ts";
 import { queryOptions, skipToken } from "@tanstack/react-query";
 import type { z } from "zod";
 import {
@@ -9,7 +9,7 @@ import {
 	type ArchitectureEvent,
 	ArchitectureRetainedModuleSchema,
 	type ArchitectureModelRead,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
 
 type StateSelection = {
@@ -390,18 +390,6 @@ function architectureClaimsQuery(vault: string) {
 	});
 }
 
-/**
- * Whether this vault still belongs to the legacy reader or has no model.
- * @param error The structured read failure.
- * @returns True when the existing empty-board surface remains appropriate.
- */
-function hasNoCanonicalModel(error: Error | null): boolean {
-	return (
-		error instanceof ArchitectureReadError &&
-		(error.failure.code === "LEGACY_AUTHORITY" || error.failure.code === "MODEL_NOT_FOUND")
-	);
-}
-
 export {
 	readReply,
 	readModel,
@@ -414,7 +402,6 @@ export {
 	architectureClaimsQuery,
 	retainedModuleQuery,
 	ArchitectureReadError,
-	hasNoCanonicalModel,
 	type CheckpointRows,
 	type ModelSummary,
 	type RetainedModule,

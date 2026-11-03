@@ -258,9 +258,4 @@ function createWorkbenchApprovalsController(
 	});
 }
 
-export {
-	createWorkbenchApprovalsController,
-	type WorkbenchApprovalsController,
-	type WorkbenchApprovalsControllerOptions,
-	type WorkbenchApprovalsDecisionState,
-};
+export { createWorkbenchApprovalsController, type WorkbenchApprovalsController };

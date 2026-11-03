@@ -299,13 +299,13 @@ describe("server application lifetime", () => {
 
 	test("disconnect aborts waitable work and releases request admission", async () => {
 		const admission = createServerMutationAdmission({ drainTimeoutMs: 100 });
-		const lease = admission.admit("POST /api/semantic-boards/edit");
+		const lease = admission.admit("POST /api/architecture/edit");
 		if (lease === null) {
 			throw new Error("The first mutation was not admitted.");
 		}
 		let observed: AbortSignal | null = null;
 		const work = lease
-			.track("POST /api/semantic-boards/edit board-lock wait", async (signal) => {
+			.track("POST /api/architecture/module model-lock wait", async (signal) => {
 				observed = signal;
 				await new Promise<void>((_resolve, reject) =>
 					signal.addEventListener("abort", () => reject(signal.reason), { once: true }),

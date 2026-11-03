@@ -80,11 +80,11 @@ impl Host {
 }
 
 /// A card, optionally placed in a multi-member group that Track packs as a block.
-fn board() -> (Content, Measured) {
+fn picture() -> (Content, Measured) {
     let content: Content = serde_json::from_value(json!({
         "nodes": [{ "id": "card", "name": "Card", "kind": "service" }],
     }))
-    .expect("the fixture is board content");
+    .expect("the fixture is picture content");
     let mut measured = Measured::default();
     measured.nodes.insert(
         "card".to_owned(),
@@ -149,9 +149,9 @@ fn ready<T>(answer: Poll<T>) -> T {
     }
 }
 
-/// A board whose one block could stack: a line from a card in one container
+/// A picture whose one block could stack: a line from a card in one container
 /// into a card in another.
-fn stacking_board() -> (Content, Measured) {
+fn stacking_picture() -> (Content, Measured) {
     let content: Content = serde_json::from_value(json!({
         "nodes": [
             { "id": "left", "name": "Left", "kind": "service" },
@@ -161,7 +161,7 @@ fn stacking_board() -> (Content, Measured) {
         ],
         "edges": [{ "id": "line", "order": 1, "from": "out", "to": "inner", "kind": "call" }],
     }))
-    .expect("the fixture is board content");
+    .expect("the fixture is picture content");
     let mut measured = Measured::default();
     for node in &content.nodes {
         measured.nodes.insert(
@@ -203,7 +203,7 @@ fn whole(width: f64) -> String {
 #[test]
 fn a_graph_with_containers_asks_one_whole_solve() {
     let host = Host::default();
-    let (content, measured) = stacking_board();
+    let (content, measured) = stacking_picture();
     let mut layout = Box::pin(drawing(&host, &content, &measured));
     waits(layout.as_mut());
     waits(layout.as_mut());
@@ -221,7 +221,7 @@ fn a_graph_with_containers_asks_one_whole_solve() {
 #[test]
 fn nesting_is_fixed_before_the_only_solve() {
     let host = Host::default();
-    let (content, measured) = board();
+    let (content, measured) = picture();
     let mut layout = Box::pin(drawing(&host, &content, &measured));
     waits(layout.as_mut());
     let asked = host.0.borrow();
@@ -243,7 +243,7 @@ fn nesting_is_fixed_before_the_only_solve() {
 #[test]
 fn a_solve_failure_reaches_the_caller_without_another_reply() {
     let host = Host::default();
-    let (content, measured) = stacking_board();
+    let (content, measured) = stacking_picture();
     let mut layout = Box::pin(drawing(&host, &content, &measured));
     waits(layout.as_mut());
     host.answer(0, Err(Unsolved::Failed("host failure".to_owned())));
@@ -258,8 +258,8 @@ fn a_solve_failure_reaches_the_caller_without_another_reply() {
 #[test]
 fn independent_graphs_keep_their_answers_when_the_host_replies_in_reverse_order() {
     let host = Host::default();
-    let (plain, plain_size) = board();
-    let (contained, contained_size) = stacking_board();
+    let (plain, plain_size) = picture();
+    let (contained, contained_size) = stacking_picture();
     let mut first = Box::pin(drawing(&host, &plain, &plain_size));
     let mut second = Box::pin(drawing(&host, &contained, &contained_size));
     waits(first.as_mut());
@@ -282,12 +282,12 @@ fn independent_graphs_keep_their_answers_when_the_host_replies_in_reverse_order(
 #[test]
 fn dropping_a_layout_drops_its_solve_and_late_replies_do_not_answer_a_new_layout() {
     let host = Host::default();
-    let (content, measured) = stacking_board();
+    let (content, measured) = stacking_picture();
     let mut first = Box::pin(drawing(&host, &content, &measured));
     waits(first.as_mut());
     drop(first);
     assert!(host.0.borrow()[0].dropped);
-    let (plain, sizes) = board();
+    let (plain, sizes) = picture();
     let mut next = Box::pin(drawing(&host, &plain, &sizes));
     waits(next.as_mut());
     host.answer(0, Ok(whole(200.0)));

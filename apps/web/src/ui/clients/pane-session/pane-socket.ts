@@ -213,9 +213,4 @@ function createPaneSocketConnector(
 	};
 }
 
-export {
-	createPaneSocketConnector,
-	type PaneSocketConnector,
-	type PaneSocketGeneration,
-	type PaneSocketListener,
-};
+export { createPaneSocketConnector, type PaneSocketConnector, type PaneSocketGeneration };

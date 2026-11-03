@@ -1,5 +1,5 @@
-import { inspectContainer } from "@archboard/board/container-interface";
-import type { Model, projectModel } from "@archboard/board/content";
+import { inspectContainer } from "@archboard/model/container-interface";
+import type { Model, projectModel } from "@archboard/model/content";
 
 type Projection = ReturnType<typeof projectModel>;
 type ModuleInterface = NonNullable<Projection["inspection"]>;

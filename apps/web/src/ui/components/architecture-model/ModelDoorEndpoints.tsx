@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { doorEndpoints, type Model, type projectModel } from "@archboard/board/content";
+import { doorEndpoints, type Model, type projectModel } from "@archboard/model/content";
 import { kindNames, moduleName } from "#ui/components/architecture-model/ModelConnections.tsx";
 import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";

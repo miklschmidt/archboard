@@ -1,6 +1,6 @@
 import type { ComponentProps, JSX } from "react";
 import { ModelWalkthrough } from "#ui/components/architecture-model/ModelWalkthrough.tsx";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 
 type Props = Omit<
 	ComponentProps<typeof ModelWalkthrough>,

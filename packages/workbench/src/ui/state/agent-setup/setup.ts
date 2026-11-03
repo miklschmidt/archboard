@@ -99,7 +99,7 @@ interface SendOptions {
 
 /** How voice is started. */
 interface TalkOptions {
-	/** Narrate this walkthrough of the board in view, rather than converse. */
+	/** Narrate this walkthrough of the model in view, rather than converse. */
 	readonly walkthrough?: string | undefined;
 	/** The narration is a recording a page paces itself (TASK-304), in this language (TASK-380). */
 	readonly recording?: BrowserVoicePresentation["recording"];
@@ -577,8 +577,6 @@ export {
 	type AgentSetupPorts,
 	type AgentSetupSnapshot,
 	type AuthTab,
-	type SendOptions,
 	type SetupStep,
-	type TalkOptions,
 	type SetupStepResult,
 };

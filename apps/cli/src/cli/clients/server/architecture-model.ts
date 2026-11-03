@@ -3,13 +3,13 @@ import {
 	ArchitectureImportRequestSchema,
 	ArchitectureInitializationRequestSchema,
 	ArchitectureMigrationRequestSchema,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import {
 	ExplanationActionRequestSchema,
 	ExplanationActionResultSchema,
 } from "@archboard/workbench/browser-contract";
 import type { z } from "zod";
-import type { readArchitectureModel } from "@archboard/board/store-read";
+import type { readArchitectureModel } from "@archboard/model/store-read";
 import {
 	ArchitectureArchiveInitializationSchema,
 	ArchitectureModuleEditSchema,
@@ -28,7 +28,7 @@ import {
 	ArchitectureCheckpointRetainSchema,
 	ArchitectureCheckpointListSchema,
 	type ArchitectureCheckpointRequest,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import { isRecord } from "@archboard/diagnostics/unknown-record";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 

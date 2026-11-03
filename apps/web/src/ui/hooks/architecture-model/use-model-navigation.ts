@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { architectureModuleQuery, readModel } from "#ui/clients/architecture-model/queries.ts";
 
 /** The fields that make a reading one exact reading. */

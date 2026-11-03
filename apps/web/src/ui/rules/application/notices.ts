@@ -12,15 +12,15 @@ const NOTICE_ACTIONS = Object.freeze({
 });
 
 /**
- * A board could not be shown in one pane.
+ * A model could not be shown in one pane.
  * @param paneId The pane.
  * @param error The server's refusal.
  * @returns The notice.
  */
-function boardErrorNotice(paneId: string, error: string): ShellNotice {
+function modelErrorNotice(paneId: string, error: string): ShellNotice {
 	return {
-		id: `board-error:${paneId}`,
-		title: `Pane ${paneId} could not show its board`,
+		id: `pane-error:${paneId}`,
+		title: `Pane ${paneId} could not show its model`,
 		description: error,
 		tone: "destructive",
 		actions: [],
@@ -80,25 +80,25 @@ function failureNotice(id: string, title: string, description: string): ShellNot
 }
 
 /**
- * The address named boards that could not be opened (TASK-166). What is on
+ * The address named models that could not be opened (TASK-166). What is on
  * screen is what the panes could reach, and the address bar now says so.
- * @param boardKeys The boards that could not be opened.
+ * @param paneKeys The models that could not be opened.
  * @returns The notice.
  */
-function unreachableBoardsNotice(boardKeys: readonly string[]): ShellNotice {
-	const named = boardKeys.join(", ");
+function unreachableModelsNotice(paneKeys: readonly string[]): ShellNotice {
+	const named = paneKeys.join(", ");
 	return {
-		id: "unreachable-boards",
+		id: "unreachable-models",
 		title:
-			boardKeys.length === 1 ? `${named} could not be opened` : "Some boards could not be opened",
-		description: `The address asked for ${named}. Check the key in Board navigation; the panes are showing what they could reach, and the address now says so.`,
+			paneKeys.length === 1 ? `${named} could not be opened` : "Some models could not be opened",
+		description: `The address asked for ${named}. Check the key in Model navigation; the panes are showing what they could reach, and the address now says so.`,
 		tone: "destructive",
 		actions: [],
 	};
 }
 
 /**
- * The address named a repository this page cannot read boards of: it lists
+ * The address named a repository this page cannot read models of: it lists
  * no such repository, or the repository's chosen checkout has no vault.
  * @param repository The repository's name.
  * @returns The notice.
@@ -107,7 +107,7 @@ function unreachableRepositoryNotice(repository: string): ShellNotice {
 	return {
 		id: `unreachable-repository:${repository}`,
 		title: `${repository} cannot be read`,
-		description: `The address asked for boards of ${repository}, and this machine has no checkout of it with a vault. If it is in Board navigation, choose a checkout with a vault in its menu. If it is not, add a checkout with archboard repo add <directory>.`,
+		description: `The address asked for models of ${repository}, and this machine has no checkout of it with a vault. If it is in Model navigation, choose a checkout with a vault in its menu. If it is not, add a checkout with archboard repo add <directory>.`,
 		tone: "destructive",
 		actions: [],
 	};
@@ -163,13 +163,13 @@ function withoutNotice(notices: readonly ShellNotice[], id: string): readonly Sh
 
 export {
 	NOTICE_ACTIONS,
-	boardErrorNotice,
+	modelErrorNotice,
 	codeTargetShellNotice,
 	failureNotice,
 	infoNotice,
 	presentationNotice,
 	staleFrontendNotice,
-	unreachableBoardsNotice,
+	unreachableModelsNotice,
 	unreachableRepositoryNotice,
 	withNotice,
 	withoutNotice,

@@ -6,9 +6,9 @@ import { join } from "node:path";
 import { readVariantFootprint } from "#runtime/operations/history-lens/footprint.ts";
 import {
 	currentVariant,
-	SemanticBoardSchema,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-} from "@archboard/board/document";
+	LegacyBoardSchema,
+	LEGACY_BOARD_SCHEMA_VERSION,
+} from "@archboard/model/legacy-board";
 
 test("bound declarations retain historical C, Objective-C and Nix parser context outside their binding", async () => {
 	const scratch = mkdtempSync(join(tmpdir(), "archboard-source-context-"));
@@ -74,8 +74,8 @@ test("bound declarations retain historical C, Objective-C and Nix parser context
 		writeFileSync(join(root, "api.cpp"), '#include "api.h"\n');
 		writeFileSync(join(root, "Shared/Macros.h"), "");
 		writeFileSync(join(root, "outputs1.nix"), "{ self }: {}\n");
-		const board = SemanticBoardSchema.parse({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+		const document = LegacyBoardSchema.parse({
+			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "board1",
 			name: "API",
@@ -117,9 +117,9 @@ test("bound declarations retain historical C, Objective-C and Nix parser context
 				},
 			],
 		});
-		const current = currentVariant(board);
+		const current = currentVariant(document);
 		if (current === undefined) throw new Error("Missing current variant");
-		const answer = await readVariantFootprint({ vault: scratch, board, against: current, base });
+		const answer = await readVariantFootprint({ vault: scratch, document, against: current, base });
 		if (answer.proposal !== null) throw new Error("Unexpected proposal");
 		expect(answer.changed).toMatchObject([
 			{

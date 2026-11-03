@@ -115,7 +115,6 @@ function verifySpokenApprovalClassifierIntegrity(): string {
 export {
 	SPOKEN_APPROVAL_CLASSIFIER_SHA256,
 	SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE,
-	type SpokenApprovalClassifierPromptInput,
 	createSpokenApprovalClassifierPrompt,
 	verifySpokenApprovalClassifierIntegrity,
 };

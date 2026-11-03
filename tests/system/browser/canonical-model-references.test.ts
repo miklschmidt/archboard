@@ -7,7 +7,7 @@ import type {
 	ArchitectureModuleEditResult,
 	ArchitectureClaimResult,
 	ArchitectureCheckpointRetain,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";

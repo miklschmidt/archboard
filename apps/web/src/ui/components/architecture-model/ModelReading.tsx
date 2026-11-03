@@ -1,7 +1,7 @@
 import { Activity, useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
-import type { Model as Content } from "@archboard/board/content";
+import type { Model as Content } from "@archboard/model/content";
 import { ModelBreadcrumbs } from "#ui/components/architecture-model/ModelBreadcrumbs.tsx";
 import { ModelChanges } from "#ui/components/architecture-model/ModelChanges.tsx";
 import { ModelColumn, type Destination } from "#ui/components/architecture-model/ModelColumn.tsx";

@@ -51,7 +51,7 @@ import {
 	terraformModules,
 } from "#runtime/operations/code-facts/terraform/terraform-resolution.ts";
 import { lastName } from "#runtime/operations/code-facts/text-reading.ts";
-import type { EvidenceKindSchema } from "@archboard/board/policy";
+import type { EvidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
 type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
@@ -585,11 +585,4 @@ function terraformRootOf(
 	return terraformModules({ files }).has(where) ? where : undefined;
 }
 
-export {
-	type Declaration,
-	type Declared,
-	type Link,
-	type TerraformConfiguration,
-	terraformConfiguration,
-	terraformRootOf,
-};
+export { type Declared, type TerraformConfiguration, terraformConfiguration, terraformRootOf };

@@ -177,9 +177,4 @@ function assertWorkbenchThreadTools(
 		throw new TypeError(`The ${role} profile must declare exactly its coordination namespaces.`);
 }
 
-export {
-	assertWorkbenchThreadTools,
-	coordinatorDynamicTools,
-	isReservedWorkbenchNamespace,
-	requiredNamespaces,
-};
+export { assertWorkbenchThreadTools, isReservedWorkbenchNamespace, requiredNamespaces };

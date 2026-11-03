@@ -1,12 +1,12 @@
-import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
+import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules/outcomes/reading.ts";
 // Checks about the family rather than one variant's content: identity kept
 // across the run, versions, variants and their lifecycle, comparison against
 // the predecessor, reconciliation, adoption, flows, views and walkthroughs.
 
-import { currentVariant, findVariant, type SemanticVariant } from "@archboard/board/document";
-import { messagesOf, type SemanticFlow } from "@archboard/board/flow";
-import type { SemanticView } from "@archboard/board/views";
-import type { SemanticNode, VariantContent } from "@archboard/board/content";
+import { currentVariant, findVariant, type SemanticVariant } from "@archboard/model/legacy-board";
+import { messagesOf, type SemanticFlow } from "@archboard/model/flow";
+import type { SemanticView } from "@archboard/model/views";
+import type { SemanticNode, VariantContent } from "@archboard/model/content";
 import {
 	beatReferences,
 	beatsOf,
@@ -15,7 +15,7 @@ import {
 	singleBeatStanding,
 	walkthroughNamed,
 } from "#runtime/rules/outcomes/beats.ts";
-import { fieldOf } from "#runtime/rules/outcomes/outcomes-board.ts";
+import { fieldOf } from "#runtime/rules/outcomes/outcomes-content.ts";
 import { comparisonStanding } from "#runtime/rules/outcomes/outcomes-comparison.ts";
 import {
 	namedSubject,
@@ -35,10 +35,10 @@ import {
 import type { OutcomeCheck } from "#runtime/schemas/suite.ts";
 
 type Check = (check: OutcomeCheck, reading: Reading) => Finding;
-type Located = { readonly board: SemanticBoard; readonly variant: SemanticVariant };
+type Located = { readonly document: EvaluatedDocument; readonly variant: SemanticVariant };
 
 /**
- * Runs a check that needs the board and variant it names.
+ * Runs a check that needs the document and variant it names.
  * @param check The check.
  * @param reading The reading.
  * @param judge What to conclude once located.
@@ -54,27 +54,27 @@ function onLocated(
 }
 
 /**
- * Runs a check that needs only the board it names.
+ * Runs a check that needs only the document it names.
  * @param check The check.
  * @param reading The reading.
- * @param judge What to conclude from the board.
+ * @param judge What to conclude from the document.
  * @returns The finding.
  */
-function onBoard(
+function onDocument(
 	check: OutcomeCheck,
 	reading: Reading,
-	judge: (board: SemanticBoard) => Finding,
+	judge: (document: EvaluatedDocument) => Finding,
 ): Finding {
-	const board = namedValue(reading.boards, check.board);
-	return board === undefined
-		? finding(false, `board "${check.board}" is not in the vault`)
-		: judge(board);
+	const document = namedValue(reading.documents, check.board);
+	return document === undefined
+		? finding(false, `document "${check.board}" is not in the vault`)
+		: judge(document);
 }
 
 /**
  * The named variant's content as the fixtures left it.
  * @param reading The reading.
- * @param check The board and variant.
+ * @param check The document and variant.
  * @returns The content, or undefined when the snapshot lacks it.
  */
 function snapshotContent(reading: Reading, check: OutcomeCheck): VariantContent | undefined {
@@ -87,7 +87,7 @@ function snapshotContent(reading: Reading, check: OutcomeCheck): VariantContent 
  * was there, else on any variant of the snapshot, since a node restored from a
  * predecessor keeps the id the predecessor gave it.
  * @param reading The reading.
- * @param check The board, variant and node.
+ * @param check The document, variant and node.
  * @returns The id, or undefined when the snapshot never held the name.
  */
 function snapshotId(reading: Reading, check: OutcomeCheck): string | undefined {
@@ -105,7 +105,7 @@ function snapshotId(reading: Reading, check: OutcomeCheck): string | undefined {
 
 /**
  * Whether a node kept the id the fixtures gave it.
- * @param check The board, variant and node.
+ * @param check The document, variant and node.
  * @param reading The reading.
  * @returns The finding.
  */
@@ -114,14 +114,14 @@ const nodeIdRetained: Check = (check, reading) =>
 		const before = snapshotId(reading, check);
 		const after = nodeNamed(at.variant.content, check.node ?? "")?.id;
 		if (before === undefined)
-			return finding(false, `"${check.node}" was not on the board before the run`);
+			return finding(false, `"${check.node}" was not on the document before the run`);
 		return finding(before === after, `"${check.node}" was ${before}, is ${after ?? "gone"}`);
 	});
 
 /**
  * The named node as the fixtures left it on the named variant.
  * @param reading The reading.
- * @param check The board, variant and node.
+ * @param check The document, variant and node.
  * @returns The node, or undefined.
  */
 function nodeBefore(reading: Reading, check: OutcomeCheck): SemanticNode | undefined {
@@ -131,7 +131,7 @@ function nodeBefore(reading: Reading, check: OutcomeCheck): SemanticNode | undef
 
 /**
  * Whether a node's listed fields still say what they said before the run.
- * @param check The board, variant, node and fields.
+ * @param check The document, variant, node and fields.
  * @param reading The reading.
  * @returns The finding.
  */
@@ -152,7 +152,7 @@ const nodeFieldRetained: Check = (check, reading) =>
 
 /**
  * Whether every relationship that existed before still has its id.
- * @param check The board and variant.
+ * @param check The document and variant.
  * @param reading The reading.
  * @returns The finding.
  */
@@ -170,13 +170,16 @@ const edgeIdsRetained: Check = (check, reading) =>
 	});
 
 /**
- * Whether the vault holds exactly the stated number of boards.
+ * Whether the vault holds exactly the stated number of documents.
  * @param check The expected count.
  * @param reading The reading.
  * @returns The finding.
  */
-const boardCount: Check = (check, reading) =>
-	finding(reading.boards.size === check.expected, `${reading.boards.size} boards in the vault`);
+const documentCount: Check = (check, reading) =>
+	finding(
+		reading.documents.size === check.expected,
+		`${reading.documents.size} documents in the vault`,
+	);
 
 /**
  * Whether a variant is in the lifecycle a check names, or the check names none.
@@ -190,15 +193,15 @@ function lifecycleMatches(variant: SemanticVariant, check: OutcomeCheck): boolea
 
 /**
  * Whether a variant exists, in the stated lifecycle.
- * @param check The board, variant and lifecycle.
+ * @param check The document, variant and lifecycle.
  * @param reading The reading.
  * @returns The finding.
  */
 const variantExists: Check = (check, reading) =>
-	onBoard(check, reading, (board) => {
+	onDocument(check, reading, (document) => {
 		const variant =
-			findVariant(board, check.variant ?? "") ??
-			namedSubject(board.variants, (candidate) => candidate.name, check.variant);
+			findVariant(document, check.variant ?? "") ??
+			namedSubject(document.variants, (candidate) => candidate.name, check.variant);
 		return finding(
 			variant !== undefined && lifecycleMatches(variant, check),
 			`"${check.variant}" is ${variant?.lifecycle ?? "absent"}`,
@@ -217,40 +220,40 @@ function isNamed(variant: SemanticVariant | undefined, asked: string | undefined
 
 /**
  * Whether the current variant is the named one.
- * @param check The board and variant.
+ * @param check The document and variant.
  * @param reading The reading.
  * @returns The finding.
  */
 const currentIs: Check = (check, reading) =>
-	onBoard(check, reading, (board) => {
-		const current = currentVariant(board);
+	onDocument(check, reading, (document) => {
+		const current = currentVariant(document);
 		return finding(isNamed(current, check.variant), `current is "${current?.name ?? "?"}"`);
 	});
 
 /**
  * The current variant's content as JSON, for equality.
- * @param board The board, if any.
+ * @param document The document, if any.
  * @returns The JSON text.
  */
-function currentJson(board: SemanticBoard | undefined): string {
-	return JSON.stringify(board === undefined ? null : currentVariant(board)?.content);
+function currentJson(document: EvaluatedDocument | undefined): string {
+	return JSON.stringify(document === undefined ? null : currentVariant(document)?.content);
 }
 
 /**
  * Whether the current variant's content is byte-for-byte what the fixtures left.
- * @param check The board.
+ * @param check The document.
  * @param reading The reading.
  * @returns The finding.
  */
 const currentUntouched: Check = (check, reading) =>
-	onBoard(check, reading, (board) => {
-		// Two absences are not two equal architectures: a board with no current
+	onDocument(check, reading, (document) => {
+		// Two absences are not two equal architectures: a document with no current
 		// variant has nothing for this check to hold still, and passing it would
 		// say the author left alone something that was never there.
-		if (currentVariant(board) === undefined) {
-			return finding(false, `"${board.name}" has no current variant to leave untouched`);
+		if (currentVariant(document) === undefined) {
+			return finding(false, `"${document.name}" has no current variant to leave untouched`);
 		}
-		const same = currentJson(board) === currentJson(namedValue(reading.snapshot, check.board));
+		const same = currentJson(document) === currentJson(namedValue(reading.snapshot, check.board));
 		return finding(
 			same,
 			same ? "the current variant is unchanged" : "the current variant's content changed",
@@ -259,7 +262,7 @@ const currentUntouched: Check = (check, reading) =>
 
 /**
  * Whether a variant holds no open disagreement.
- * @param check The board and variant.
+ * @param check The document and variant.
  * @param reading The reading.
  * @returns The finding.
  */
@@ -270,14 +273,14 @@ const reconciliationSettled: Check = (check, reading) =>
 	});
 
 /**
- * Whether the board records the stated number of adoptions, with reasons when asked.
- * @param check The board, count and reason requirement.
+ * Whether the document records the stated number of adoptions, with reasons when asked.
+ * @param check The document, count and reason requirement.
  * @param reading The reading.
  * @returns The finding.
  */
 const adoptionsCount: Check = (check, reading) =>
-	onBoard(check, reading, (board) => {
-		const adoptions = board.adoptions ?? [];
+	onDocument(check, reading, (document) => {
+		const adoptions = document.adoptions ?? [];
 		const reasons = adoptions.every((adoption) => adoption.reason !== undefined);
 		const reasonsOk = check.withReason !== true || reasons;
 		return finding(
@@ -367,14 +370,14 @@ function viewMatches(view: SemanticView, check: OutcomeCheck): boolean {
 }
 
 /**
- * Whether a board view exists with the stated grammar and selection shape.
+ * Whether a document view exists with the stated grammar and selection shape.
  * @param check The view, grammar and selection sizes.
  * @param reading The reading.
  * @returns The finding.
  */
 const viewExists: Check = (check, reading) =>
-	onBoard(check, reading, (board) => {
-		const view = viewNamed(board, check.view);
+	onDocument(check, reading, (document) => {
+		const view = viewNamed(document, check.view);
 		if (view === undefined) return finding(false, `view "${check.view}" is missing`);
 		const selection = selectionOf(view);
 		return finding(
@@ -407,7 +410,7 @@ const walkthroughBeatReferences: Check = (check, reading) =>
 
 /**
  * Whether a walkthrough kept every beat id it had, in the same order.
- * @param check The board and walkthrough.
+ * @param check The document and walkthrough.
  * @param reading The reading.
  * @returns The finding.
  */
@@ -434,7 +437,7 @@ const OWNERS: Partial<Record<OutcomeCheck["check"], Check>> = {
 	"node-id-retained": nodeIdRetained,
 	"node-field-retained": nodeFieldRetained,
 	"edge-ids-retained": edgeIdsRetained,
-	"board-count": boardCount,
+	"board-count": documentCount,
 	"variant-exists": variantExists,
 	"current-variant": currentIs,
 	"current-untouched": currentUntouched,

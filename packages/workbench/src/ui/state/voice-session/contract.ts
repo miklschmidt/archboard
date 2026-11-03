@@ -234,7 +234,6 @@ export {
 	type VoiceRealtimePort,
 	type VoiceSession,
 	type VoiceSessionBinding,
-	type VoiceSessionControlName,
 	type VoiceSessionControls,
 	type VoiceSessionFailure,
 	type VoiceSessionFailureCode,

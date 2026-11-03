@@ -6,7 +6,7 @@
   "description": "The camera is committed to state once, at the end, and the surface carries data-camera-motion while it flies. A gesture stops it where it is. It reads the time and its frames from the frame clock, so a replay steps it to each frame's time.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-glide.ts"
+    "path": "apps/web/src/ui/hooks/canvas/use-camera-glide.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#GnoK0EuT",
@@ -19,24 +19,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-glide.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-camera-glide.ts",
         "symbol": "frameClock"
       },
       "id": "vKEsyHFk/UOXNWLhR#l3AXCLw5",
       "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
-    },
-    {
-      "order": 96000,
-      "kind": "call",
-      "label": "the transform of each glide frame",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-glide.ts",
-        "symbol": "cameraTransform"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#zx1KnBNz",
-      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
     },
     {
       "order": 38000,
@@ -45,11 +32,24 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-glide.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-camera-glide.ts",
         "symbol": "frameClock"
       },
       "id": "vKEsyHFk/yejBBUFY#PGzV2I05",
       "to": "vKEsyHFk/yejBBUFY#rouptSyK"
+    },
+    {
+      "order": 96000,
+      "kind": "call",
+      "label": "the transform of each glide frame",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/canvas/use-camera-glide.ts",
+        "symbol": "cameraTransform"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#zx1KnBNz",
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
     }
   ]
 }

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { modelHistoryQuery } from "#ui/clients/architecture-model/history.ts";
 
 /**

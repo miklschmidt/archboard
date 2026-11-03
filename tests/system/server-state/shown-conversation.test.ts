@@ -187,7 +187,7 @@ test("the page's activation changes the conversation every pane of a tab shows, 
 		);
 		expect(turnStarts.map((entry) => entry.params?.["threadId"])).toEqual(workhorseThreads);
 
-		// An agent shows B a board of the payments checkout: the pane moves, the dock does not.
+		// An agent shows B a model of the payments checkout: the pane moves, the dock does not.
 		const shown = runServerCli({
 			repoRoot,
 			server,

@@ -1,5 +1,5 @@
 import type { LocalityAnswer } from "@archboard/code-intel/history";
-import type { Model, projectModel } from "@archboard/board/content";
+import type { Model, projectModel } from "@archboard/model/content";
 import {
 	interfaceCounts,
 	type InterfaceCount,
@@ -403,7 +403,6 @@ function mostOf(rows: readonly MeasureRow[], key: MeasureKey): number {
 export {
 	MEASURES,
 	MEASURE_VIEW,
-	NO_HISTORY_MEASURE,
 	SHOWS,
 	historySource,
 	historyState,
@@ -422,6 +421,5 @@ export {
 	type MeasureKey,
 	type MeasureRow,
 	type MeasureView,
-	type ModuleHistory,
 	type ShowKey,
 };

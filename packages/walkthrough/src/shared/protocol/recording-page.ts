@@ -1,12 +1,12 @@
 import { canonicalRecordingModel } from "#shared/protocol/canonical.ts";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 // A recording of one walkthrough, as the page that records it and the command
 // that drives the page agree on it (TASK-304, TASK-381).
 //
-// The page is the Archboard server's own page, opened on one board with two more search
+// The page is the Archboard server's own page, opened on one document with two more search
 // parameters, naming the walkthrough to record and the language the voice narrates it in
 // (TASK-380), which it reads once as it loads.
-// It shows that board's pane and nothing else, and it paces the talk itself:
+// It shows that document's pane and nothing else, and it paces the talk itself:
 // the position in a walkthrough is the browser's (ADR 0023), and the page is
 // the only place that hears when the voice has finished speaking.
 //
@@ -58,12 +58,11 @@ const RecordingNarrationSchema = z
 		against: z.string().min(1).max(64).optional(),
 	})
 	.strict();
-type RecordingNarration = z.infer<typeof RecordingNarrationSchema>;
 
 /**
  * Where a recording stands.
  *
- * - `loading`: the page is still reaching a board it can present and an agent
+ * - `loading`: the page is still reaching a document it can present and an agent
  *   that can speak.
  * - `ready`: it can be started.
  * - `recording`: it is keeping the talk; the step on screen is named once the
@@ -72,7 +71,6 @@ type RecordingNarration = z.infer<typeof RecordingNarrationSchema>;
  * - `failed`: nothing usable was recorded; the failure says why.
  */
 const RecordingPhaseSchema = z.enum(["loading", "ready", "recording", "finished", "failed"]);
-type RecordingPhase = z.infer<typeof RecordingPhaseSchema>;
 
 /** What the page says about its recording. */
 const RecordingStateSchema = z
@@ -201,13 +199,9 @@ export {
 	RECORDING_SEARCH_PARAM,
 	RecordingContainerSchema,
 	RecordingNarrationSchema,
-	RecordingPhaseSchema,
 	RecordingStateSchema,
 	publishRecordingPage,
 	recordingAskedOf,
 	type RecordingContainer,
-	type RecordingNarration,
-	type RecordingPage,
-	type RecordingPhase,
 	type RecordingState,
 };

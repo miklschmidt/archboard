@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeEach, expect, test } from "bun:test";
 import { createElement, type ComponentProps, type JSX } from "react";
 import type { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
 import type { z } from "zod";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -85,7 +85,7 @@ afterAll(async () => {
 });
 
 /**
- * Mount the actual history consumer independently from retained board rendering.
+ * Mount the actual history consumer independently from legacy board rendering.
  * @param initial The chosen module identity.
  * @returns A model/selection update action.
  */
@@ -183,7 +183,7 @@ function hotspot(
  * The route's answer for the pipeline's current variant. The handler changed
  * in all six commits; it changes with the queue, which a relationship joins to
  * it, and with the ledger, which nothing joins to it. The gateway changed in
- * none, the worker is bound to nothing, and Orders opens a board of its own.
+ * none, the worker is bound to nothing, and Orders opens a model of its own.
  * @returns The route's success body.
  */
 function answer(): HistoryAnswer {

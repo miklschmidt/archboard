@@ -10,15 +10,15 @@ import {
 import {
 	SemanticPresentation,
 	type SemanticPresentationProps,
-} from "#ui/components/semantic-board-canvas/SemanticPresentation.tsx";
-import { projectModel, type Model } from "@archboard/board/content";
+} from "#ui/components/canvas/SemanticPresentation.tsx";
+import { projectModel, type Model } from "@archboard/model/content";
 import { useAcceptedScene } from "#ui/hooks/architecture-model/use-accepted-scene.ts";
-import { useBoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import { usePictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { drawableGrammar } from "#ui/rules/architecture-model/scene.ts";
 import { projectFlow } from "#ui/rules/architecture-model/flow-reading.ts";
 import { useModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
-import type { DrivenPlace } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
+import type { DrivenPlace } from "#ui/hooks/canvas/use-walkthrough.ts";
 import { useWalkthroughBeat } from "#ui/hooks/architecture-model/use-walkthrough-beat.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 
@@ -118,8 +118,12 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 		[index, playback.walkthrough.id, caption.beats.length, picture, key, position.answering],
 	);
 	const reporting = useMemo(
-		() => ({ ready: picture?.key === key || !available, presentation, onReading: props.onReading }),
-		[picture, key, available, presentation, props.onReading],
+		() => ({
+			ready: picture?.key === key || !available,
+			presentation: audiblePresentation(presentation, props.narration),
+			onReading: props.onReading,
+		}),
+		[picture, key, available, presentation, props.narration, props.onReading],
 	);
 	useModelExplanation(props.vault, model, location, accepted.selected, reporting);
 	const ignore = useCallback((): void => {}, []);
@@ -177,7 +181,7 @@ function BeatStage(
 ): JSX.Element {
 	const { accepted, selection, reducedMotion } = props;
 	const { scene, failure } = accepted;
-	const camera = useBoardCamera(reducedMotion);
+	const camera = usePictureCamera(reducedMotion);
 	return (
 		<>
 			<Suspense fallback={null}>
@@ -252,6 +256,22 @@ function UnavailableBeat({ status }: { status: Playback["beats"][number] }): JSX
 }
 
 export { ModelWalkthrough };
+
+/**
+ * Hold a step's arrival while voice connects. The server hands a step to the voice model once the
+ * pane says that it arrived, and a step handed over before the voice can be heard is lost.
+ * @param presentation The beat on screen and its arrival.
+ * @param narration What the shell offers this pane.
+ * @returns The position to report.
+ */
+function audiblePresentation(
+	presentation: PaneReading["presentation"],
+	narration: WalkthroughProps["narration"],
+): PaneReading["presentation"] {
+	return presentation == null || narration?.starting !== true
+		? presentation
+		: { ...presentation, arrived: false };
+}
 
 /**
  * Offer narration only when the pane can publish its captured architecture.

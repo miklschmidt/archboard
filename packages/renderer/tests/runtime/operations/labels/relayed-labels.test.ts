@@ -1,12 +1,12 @@
 // Where the relay may stand a label box when it lays a line again (visual
-// polish): each case is reduced from a dogfood board. The relay stood a label
+// polish): each case is reduced from a dogfood document. The relay stood a label
 // across a line drawn straight from a card's side to its block's wall, which it
 // did not see, so the line ran under the label (Agent workbench).
 // What this catches: a line drawn straight to a wall under a relaid label.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import { labelsAcrossWalls, runsUnderLabels } from "#tests/runtime/support/drawn-checks.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import labelBeside from "#tests/runtime/support/fixtures/relayed-label-beside.json";

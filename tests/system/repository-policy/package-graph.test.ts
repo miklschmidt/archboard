@@ -31,7 +31,7 @@ const LAYERS: Record<string, number> = {
 	process: 1,
 	workspace: 2,
 	"code-binding": 3,
-	board: 4,
+	model: 4,
 	"codex-app-server": 5,
 	renderer: 5,
 	"code-intel": 5,
@@ -232,7 +232,7 @@ describe("the package graph", () => {
 				'import { clip } from "@archboard-app/cli/src/runtime/clipboard.ts";\n',
 			);
 			fs.writeFileSync(pathed, 'await import("../../apps/web/src/main.tsx");\n');
-			fs.writeFileSync(clean, 'import { id } from "@archboard/board/ids";\n');
+			fs.writeFileSync(clean, 'import { id } from "@archboard/model/ids";\n');
 			expect(rootImportsOfApps([named, pathed, clean])).toHaveLength(2);
 		} finally {
 			fs.rmSync(scratch, { recursive: true, force: true });
@@ -242,14 +242,14 @@ describe("the package graph", () => {
 	test("a specifier names its owner, and an edge into an app is an upward edge", () => {
 		// Catches a graph that cannot see an app: nothing imports one, so every edge into an app
 		// must be found by its name or its path and must break the layer order.
-		expect(ownerOfSpecifier("@archboard/board/ids")).toBe("board");
+		expect(ownerOfSpecifier("@archboard/model/ids")).toBe("model");
 		expect(ownerOfSpecifier("@archboard-app/web")).toBe("apps/web");
 		expect(ownerOfSpecifier("../../../apps/cli/src/runtime/clipboard.js")).toBe("apps/cli");
 		expect(ownerOfSpecifier("node_modules/@archboard-app/web/src/x.ts")).toBeUndefined();
 		expect(ownerOfSpecifier("node:fs")).toBeUndefined();
 
 		const ok = [
-			edge("apps/web", "board"),
+			edge("apps/web", "model"),
 			edge("apps/cli", "workbench"),
 			edge("apps/server", "ui-kit"),
 		];
@@ -261,11 +261,11 @@ describe("the package graph", () => {
 		expect(bad).toHaveLength(3);
 		expect(bad[0]).toContain("layer 7 (workbench) takes in layer 8 (apps/web)");
 
-		const exported = { board: [".", "./ids"] };
+		const exported = { model: [".", "./ids"] };
 		const reached = [
-			{ ...edge("apps/web", "board"), specifier: "@archboard/board" },
-			{ ...edge("apps/web", "board"), specifier: "@archboard/board/ids" },
-			{ ...edge("apps/web", "board"), specifier: "@archboard/board/src/shared/ids.ts" },
+			{ ...edge("apps/web", "model"), specifier: "@archboard/model" },
+			{ ...edge("apps/web", "model"), specifier: "@archboard/model/ids" },
+			{ ...edge("apps/web", "model"), specifier: "@archboard/model/src/shared/ids.ts" },
 		];
 		expect(privateImports(reached, exported)).toHaveLength(1);
 	});
@@ -281,7 +281,7 @@ describe("the package graph", () => {
 			"workspace",
 			"process",
 		]);
-		const upward = layerViolations([edge("process", "workspace"), edge("board", "board")], LAYERS);
+		const upward = layerViolations([edge("process", "workspace"), edge("model", "model")], LAYERS);
 		expect(upward).toHaveLength(2);
 		expect(upward[0]).toContain("process/src/a.ts");
 		expect(upward[0]).toContain("@archboard/workspace");
@@ -364,24 +364,24 @@ describe("the resolved package graph", () => {
 	test("the syntax reader includes type imports, mocks and resolver calls without reading comments as code", () => {
 		const source = sourceOf(
 			[
-				'import type { A } from "@archboard/board/document";',
-				'export type { B } from "@archboard/board/content";',
-				'type C = import("@archboard/board/flow").C;',
-				'import("@archboard/board/views");',
-				"mock.module(`@archboard/board/policy`, () => ({}));",
-				'import.meta.resolve("@archboard/board/comparison");',
+				'import type { A } from "@archboard/model/legacy-board";',
+				'export type { B } from "@archboard/model/content";',
+				'type C = import("@archboard/model/flow").C;',
+				'import("@archboard/model/views");',
+				"mock.module(`@archboard/model/policy`, () => ({}));",
+				'import.meta.resolve("@archboard/model/comparison");',
 				'new Worker(new URL("../workers/layout-worker.ts", import.meta.url));',
 				'new URL("../assets/layout.wasm", import.meta.url);',
 				'// import "@archboard-app/server";',
 			].join("\n"),
 		);
 		expect(source.imports).toEqual([
-			"@archboard/board/document",
-			"@archboard/board/content",
-			"@archboard/board/flow",
-			"@archboard/board/views",
-			"@archboard/board/policy",
-			"@archboard/board/comparison",
+			"@archboard/model/legacy-board",
+			"@archboard/model/content",
+			"@archboard/model/flow",
+			"@archboard/model/views",
+			"@archboard/model/policy",
+			"@archboard/model/comparison",
 			"../workers/layout-worker.ts",
 		]);
 	});

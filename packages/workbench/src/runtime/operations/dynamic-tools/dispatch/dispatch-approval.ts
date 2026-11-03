@@ -215,12 +215,10 @@ async function approveMutation(
 }
 
 export {
-	approvalDecisionFallback,
 	approvalIdentityExact,
 	approvalRefusal,
 	approvalRequiredDecision,
 	approveMutation,
 	approvedDecision,
 	childDisconnectedDecision,
-	settleApproval,
 };

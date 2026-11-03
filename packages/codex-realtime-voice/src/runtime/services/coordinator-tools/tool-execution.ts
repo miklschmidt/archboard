@@ -361,7 +361,6 @@ function spokenResponse(
 
 export {
 	type IssuedOperationIdentity,
-	type WorkhorseToolName,
 	issueOperationIdentity,
 	captureSpokenOperationIdentity,
 	isMutation,

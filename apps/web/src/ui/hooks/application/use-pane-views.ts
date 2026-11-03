@@ -33,10 +33,10 @@ interface PaneViewSources {
 	readonly readings: PaneReadings;
 	readonly reducedMotion: boolean;
 	/**
-	 * The person asked for another variant of one pane's board.
+	 * The person asked for another variant of one pane's model.
 	 *
-	 * A move between variants is a move between boards as far as the server is
-	 * concerned — the pane's board key carries the variant — so it goes through
+	 * A move between variants is a move between models as far as the server is
+	 * concerned — the pane's model key carries the variant — so it goes through
 	 * the shell rather than being held here.
 	 * @param paneId The pane.
 	 * @param variant The variant's id or name, or null for whichever is current.
@@ -49,13 +49,13 @@ interface PaneViewSources {
 	/** The page records its one pane (TASK-304), or null. */
 	readonly recording: PaneRecording | null;
 	/**
-	 * Show a board in one pane: where a part its search found is, or where a drill-down leads.
-	 * @param key The board key.
+	 * Show a model in one pane: where a part its search found is, or where a drill-down leads.
+	 * @param key The model key.
 	 * @param paneId The pane.
-	 * @param repository The repository the board is in; the pane's own when none is named.
+	 * @param repository The repository the model is in; the pane's own when none is named.
 	 * @returns Whether the pane shows it now.
 	 */
-	readonly openBoard: (key: string, paneId: string, repository?: string) => Promise<boolean>;
+	readonly openPaneKey: (key: string, paneId: string, repository?: string) => Promise<boolean>;
 	/**
 	 * The vault a pane mounted now opens in: that of the other pane, so a second pane
 	 * never lands on an unrelated repository.
@@ -154,7 +154,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		narration,
 		overlay,
 		recording,
-		openBoard,
+		openPaneKey,
 		openingVault,
 	} = sources;
 	const { list, callbacks, handles } = panes;
@@ -171,7 +171,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					narration,
 					overlay,
 					recording,
-					openBoard,
+					openPaneKey,
 					openingVault,
 				},
 				entry.paneId,
@@ -190,9 +190,9 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		narration,
 		overlay,
 		recording,
-		openBoard,
+		openPaneKey,
 		openingVault,
 	]);
 }
 
-export { usePaneViews, type PaneOverlay, type PaneRecording, type PaneViewSources };
+export { usePaneViews, type PaneOverlay, type PaneRecording };

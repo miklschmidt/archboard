@@ -2,11 +2,11 @@
 // `GET /api/vault/code-check` (ADR 0046).
 //
 // `timings` records elapsed work for code facts, each language server and
-// history (TASK-436.02). `boards` says which board was read at which variant and
+// history (TASK-436.02). `states` says which document was read at which variant and
 // version. `findings` says what the code pass found. `skipped` says what the
 // check did not read, with the reason, so a subject that was not read never
 // looks like one with nothing to report. `behind` is the reading of ADR 0045:
-// the commits that changed each board's bound files after the board last
+// the commits that changed each document's bound files after the document last
 // changed. It is information, kept apart from the findings, and never changes
 // the exit status.
 //
@@ -24,7 +24,7 @@
 // does not expose while the code of a caller drawn to it reaches it from a
 // file outside the module; `CALLER_UNDRAWN`, a warning (information on a candidate) on
 // a hidden part whose exposed code a file outside the module uses at run time
-// with no caller on the board; `EXPOSED_UNUSED`, information on the container,
+// with no caller on the document; `EXPOSED_UNUSED`, information on the container,
 // for exposed names no file outside the module uses; and the skip
 // `exposure-unknown`. TASK-368.11 reads a Terraform or OpenTofu module, whose
 // variables and outputs are what it exposes, and adds two information findings
@@ -49,17 +49,17 @@
 // not at the version it names, with no subject: its `path` names the reference
 // as `variants.<id>.documents.<index>` (ADR 0054).
 
-import { ArchitectureModelReadSchema } from "@archboard/board/model";
+import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
 import { z } from "zod";
-import { EvidenceKindSchema, VaultDiagnosticSchema } from "@archboard/board/policy";
+import { EvidenceKindSchema, VaultDiagnosticSchema } from "@archboard/model/policy";
 
 /** The part, relationship or step an entry is about, as every diagnostic names it. */
 const CodeCheckSubjectSchema = VaultDiagnosticSchema.shape.subject.unwrap();
 
-/** One board the check read, at the variant it read, and the version it read. */
-const CodeCheckBoardSchema = z
-	.object({ board: z.string(), variant: z.string(), version: z.int().nonnegative() })
+/** One document the check read, at the variant it read, and the version it read. */
+const CodeCheckDocumentSchema = z
+	.object({ model: z.string(), variant: z.string(), version: z.int().nonnegative() })
 	.strict();
 
 /**
@@ -118,7 +118,7 @@ const DroppedPartSchema = z
  * that side's: where the value is set, or the first read of each name that
  * nothing sets.
  */
-const CodeFindingSchema = VaultDiagnosticSchema.extend({
+const CodeFindingSchema = VaultDiagnosticSchema.omit({ board: true }).extend({
 	model: z.string().optional(),
 	state: z.string().nullable().optional(),
 	severity: z.enum(["warning", "information"]),
@@ -135,8 +135,8 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  * subject gets no finding and changes no exit status, and it is listed so it
  * never looks like a subject with nothing to report.
  *
- * - `no-current-variant`: a board with nothing built and no draft of the
- *   named variant (ADR 0031). `board-unreadable`: its file is not a board.
+ * - `no-current-variant`: a document with nothing built and no draft of the
+ *   named variant (ADR 0031). `model-unreadable`: its file is not a document.
  * - `repository-unregistered`: a part, relationship or step whose binding or
  *   anchor names a repository this machine has not registered. It stays
  *   silent, and is listed. Also a draft, with no subject, whose dropped parts
@@ -224,7 +224,7 @@ const CodeCheckSkipSchema = z
 	.object({
 		reason: z.enum([
 			"no-current-variant",
-			"board-unreadable",
+			"model-unreadable",
 			"unbound",
 			"repository-unregistered",
 			"ref-not-checked-out",
@@ -247,7 +247,6 @@ const CodeCheckSkipSchema = z
 		]),
 		model: z.string().optional(),
 		state: z.string().nullable().optional(),
-		board: z.string().optional(),
 		variant: z.string().optional(),
 		subject: CodeCheckSubjectSchema.optional(),
 		repo: z.string().optional(),
@@ -256,7 +255,7 @@ const CodeCheckSkipSchema = z
 	})
 	.strict();
 
-/** One commit that changed a bound file after the board last changed. */
+/** One commit that changed a bound file after the document last changed. */
 const BehindCommitSchema = z
 	.object({
 		repo: z.string(),
@@ -265,7 +264,7 @@ const BehindCommitSchema = z
 		subject: z.string(),
 		/** How many files the commit changed, bound or not. */
 		files: z.int().nonnegative(),
-		/** More than 30 files: kept here, and said, because it can move what a board says. */
+		/** More than 30 files: kept here, and said, because it can move what a document says. */
 		large: z.boolean(),
 	})
 	.strict();
@@ -276,7 +275,7 @@ const BehindPartSchema = z
 		subject: CodeCheckSubjectSchema,
 		repo: z.string(),
 		path: z.string(),
-		/** The commits of the board's `commits` that changed this part, newest first. */
+		/** The commits of the document's `commits` that changed this part, newest first. */
 		commits: z.array(z.string()),
 	})
 	.strict();
@@ -311,21 +310,21 @@ const KnownLastChangeSchema = z.discriminatedUnion("kind", [
 
 /**
  * Why the last change cannot be found: the vault is in no Git repository, or
- * Git ignores the board file. Such a board is never reported as zero commits
+ * Git ignores the document file. Such a document is never reported as zero commits
  * behind.
  */
 const UnknownLastChangeSchema = z
 	.object({
 		kind: z.literal("unknown"),
-		reason: z.enum(["vault-outside-git", "board-file-ignored"]),
+		reason: z.enum(["vault-outside-git", "model-file-ignored"]),
 	})
 	.strict();
 
-/** How far one board is behind its code, per board and per part. */
-const BoardBehindSchema = z.union([
+/** How far one document is behind its code, per document and per part. */
+const ModelBehindSchema = z.union([
 	z
 		.object({
-			board: z.string(),
+			model: z.string(),
 			variant: z.string(),
 			lastChange: KnownLastChangeSchema,
 			/** Every commit that changed a part it read, newest first. */
@@ -335,7 +334,7 @@ const BoardBehindSchema = z.union([
 		})
 		.strict(),
 	z
-		.object({ board: z.string(), variant: z.string(), lastChange: UnknownLastChangeSchema })
+		.object({ model: z.string(), variant: z.string(), lastChange: UnknownLastChangeSchema })
 		.strict(),
 ]);
 
@@ -343,7 +342,7 @@ const BoardBehindSchema = z.union([
 const CheckTimingSchema = z.discriminatedUnion("check", [
 	z
 		.object({
-			check: z.enum(["board", "code-facts", "history"]),
+			check: z.enum(["model", "code-facts", "history"]),
 			elapsedMs: z.number().nonnegative(),
 		})
 		.strict(),
@@ -371,25 +370,25 @@ const CodeCheckModelSchema = z.strictObject({
 const CodeCheckAnswerSchema = z.object({
 	models: z.array(CodeCheckModelSchema).optional(),
 	timings: z.array(CheckTimingSchema),
-	boards: z.array(CodeCheckBoardSchema),
+	states: z.array(CodeCheckDocumentSchema),
 	findings: z.array(CodeFindingSchema),
 	skipped: z.array(CodeCheckSkipSchema),
-	behind: z.array(BoardBehindSchema),
+	behind: z.array(ModelBehindSchema),
 });
 
 /**
- * What the last pass that read one board at one variant found there, as the
+ * What the last pass that read one document at one variant found there, as the
  * Archboard server remembers it for a pane (TASK-367.24, ADR 0046): the
- * version of the board the pass read, when the pass ran, and its findings on
- * that board. A pane draws them only over the version they were found on.
+ * version of the document the pass read, when the pass ran, and its findings on
+ * that document. A pane draws them only over the version they were found on.
  */
-const RememberedReadingSchema = CodeCheckBoardSchema.extend({
+const RememberedReadingSchema = CodeCheckDocumentSchema.extend({
 	checkedAt: z.iso.datetime(),
 	findings: z.array(CodeFindingSchema),
 }).strict();
 
 /**
- * The answer of `GET /api/vault/code-findings`: one reading for each board and
+ * The answer of `GET /api/vault/code-findings`: one reading for each document and
  * variant that a pass has read since the server started. The route only reads
  * the server's memory and never starts a pass, so it is empty until somebody
  * runs the code check, with `archboard check` or `archboard check code`. The
@@ -405,40 +404,25 @@ const RememberedFindingsSchema = z.object({
 });
 
 type CodeCheckAnswer = z.infer<typeof CodeCheckAnswerSchema>;
-type RememberedReading = z.infer<typeof RememberedReadingSchema>;
 type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
-type CodeCheckBoard = z.infer<typeof CodeCheckBoardSchema>;
 type CodeCheckSkip = z.infer<typeof CodeCheckSkipSchema>;
 type CodeFinding = z.infer<typeof CodeFindingSchema>;
 type CodeEvidence = z.infer<typeof CodeEvidenceSchema>;
-type BoardBehind = z.infer<typeof BoardBehindSchema>;
 type BehindCommit = z.infer<typeof BehindCommitSchema>;
-type BehindPart = z.infer<typeof BehindPartSchema>;
 type BehindSkip = z.infer<typeof BehindSkipSchema>;
 
 export {
-	CheckTimingSchema,
 	type CheckTiming,
 	BehindCommitSchema,
 	type BehindCommit,
 	BehindPartSchema,
-	type BehindPart,
 	BehindSkipSchema,
 	type BehindSkip,
-	BoardBehindSchema,
-	type BoardBehind,
 	CodeCheckAnswerSchema,
 	type CodeCheckAnswer,
-	CodeCheckBoardSchema,
-	type CodeCheckBoard,
-	CodeCheckSkipSchema,
 	type CodeCheckSkip,
-	CodeEvidenceSchema,
 	type CodeEvidence,
-	CodeFindingSchema,
 	type CodeFinding,
 	RememberedFindingsSchema,
 	type RememberedFindings,
-	RememberedReadingSchema,
-	type RememberedReading,
 };

@@ -106,4 +106,4 @@ function directoryName(checkout: string): string {
 	return checkout.split(/[\\/]/u).findLast((part) => part !== "") ?? checkout;
 }
 
-export { ConversationList, type ConversationListProps };
+export { ConversationList };

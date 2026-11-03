@@ -9,7 +9,7 @@ use archboard_scene::js;
 use archboard_scene::measure;
 use archboard_scene::request::WordLine;
 
-use crate::board::{Flow, Message, MessageKind, messages_of};
+use crate::content::{Flow, Message, MessageKind, messages_of};
 use crate::sequence::design::{
     ACTIVATION_HALF_WIDTH, COLUMN_GAP, LABEL_BAR_CLEARANCE, MESSAGE_LINE_STEP, MESSAGE_PITCH,
     NOTE_SIZE, PILL_PADDING_X, PILL_TEXT_SIZE, SELF_LABEL_GAP, SELF_LOOP_EXTENT,

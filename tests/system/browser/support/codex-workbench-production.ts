@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 
 import type { ProductionFixture } from "../../server-state/support/codex-production.ts";
 import { AGENT_DOCK, AGENT_PANEL } from "./shell-dom.ts";
-import type { AgentBrowserSession } from "./agent-browser.ts";
+import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 
 interface WorkbenchControlOperability {
 	readonly width: number;
@@ -64,6 +64,24 @@ function workbenchControlOperability(
 	})()`);
 }
 
+/**
+ * A workbench control once it rests where it can be operated. The dock moves its controls while
+ * the Talk key grows into the voice circle, and the circle lights before that ends.
+ * @param browser The page.
+ * @param selector The control.
+ * @returns Its operability.
+ */
+function operableWorkbenchControl(
+	browser: AgentBrowserSession,
+	selector: string,
+): Promise<WorkbenchControlOperability> {
+	return pollUntil(
+		() => workbenchControlOperability(browser, selector),
+		(found) => found.operable,
+		`${selector} to rest where it can be operated`,
+	);
+}
+
 /** What the agent dock and the conversation show, read through their hooks. */
 interface AgentSurface {
 	/** How the dock lights the agent's state: quiet, working, attention or failed. */
@@ -113,6 +131,7 @@ function agentSurface(browser: AgentBrowserSession): Promise<AgentSurface> {
 
 export {
 	agentSurface,
+	operableWorkbenchControl,
 	type WorkbenchControlOperability,
 	productionFixtureRecords,
 	workbenchControlOperability,

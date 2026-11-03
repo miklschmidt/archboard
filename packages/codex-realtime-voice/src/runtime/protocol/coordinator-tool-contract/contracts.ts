@@ -302,31 +302,18 @@ const COORDINATOR_TOOL_CONTRACTS = deepFreeze([
 	...VOICE_TOOL_CONTRACTS,
 ]);
 
-const WORKHORSE_TOOL_CATALOGUE = deepFreeze({ role: "workhorse", tools: WORKHORSE_TOOL_CONTRACTS });
-const VOICE_TOOL_CATALOGUE = deepFreeze({ role: "voice", tools: VOICE_TOOL_CONTRACTS });
 const COORDINATOR_TOOL_CATALOGUE = deepFreeze({
 	identity: COORDINATOR_IDENTITY,
 	tools: COORDINATOR_TOOL_CONTRACTS,
 });
 
 export {
-	COORDINATOR_ROLE,
-	type CoordinatorRole,
-	COORDINATOR_NAMESPACE_ROLES,
 	COORDINATOR_THREAD_CONFIG,
 	COORDINATOR_IDENTITY,
 	CoordinatorIdentitySchema,
-	type AuthorityTarget,
-	AuthorityTargetSchema,
-	type RequiredLink,
-	RequiredLinkSchema,
 	CoordinatorToolContractSchema,
-	type SuccessResultContract,
-	type CoordinatorToolContract,
 	WORKHORSE_TOOL_CONTRACTS,
 	VOICE_TOOL_CONTRACTS,
 	COORDINATOR_TOOL_CONTRACTS,
-	WORKHORSE_TOOL_CATALOGUE,
-	VOICE_TOOL_CATALOGUE,
 	COORDINATOR_TOOL_CATALOGUE,
 };

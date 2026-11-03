@@ -1,5 +1,5 @@
 import { test } from "bun:test";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";

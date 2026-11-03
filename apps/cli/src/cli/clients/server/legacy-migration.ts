@@ -2,7 +2,7 @@ import {
 	LegacyInventoryReadSchema,
 	type LegacyInventoryRead,
 	type LegacyMappingWrite,
-} from "@archboard/board/migration";
+} from "@archboard/model/migration";
 import { isRecord } from "@archboard/diagnostics/unknown-record";
 import { statedInvocation, requestJson } from "@archboard/server-lifecycle/server-client";
 

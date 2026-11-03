@@ -82,14 +82,4 @@ function sameBinding(left: ThreadLinkBindingSnapshot, right: ThreadLinkBindingSn
 	);
 }
 
-/**
- * Element-wise equality of two ordered string lists.
- * @param left - One list.
- * @param right - The other list.
- * @returns True when both have the same values in the same order.
- */
-function sameStringValues(left: readonly string[], right: readonly string[]): boolean {
-	return left.length === right.length && left.every((value, index) => value === right[index]);
-}
-
-export { sameBinding, sameLink, sameStringValues };
+export { sameBinding };

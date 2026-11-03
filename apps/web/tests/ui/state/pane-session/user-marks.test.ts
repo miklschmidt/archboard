@@ -6,7 +6,7 @@ import {
 	type PaneReading,
 } from "#ui/state/pane-session/pane-reading.ts";
 import { PANE_MS } from "@archboard/timing";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
@@ -32,15 +32,15 @@ async function settled(): Promise<void> {
 
 /**
  * A drawn reading.
- * @param board The board on screen.
+ * @param model The legacy board on screen.
  * @param selected The selected subject, or null.
- * @param version The board version drawn.
+ * @param version The legacy board version drawn.
  * @returns The reading.
  */
-function reading(board: string, selected: string | null, version = 1): PaneReading {
+function reading(model: string, selected: string | null, version = 1): PaneReading {
 	return {
 		...NOTHING_READ,
-		board: { name: board, key: board },
+		model: { name: model, key: model },
 		variant: { id: "v1", name: "Current", lifecycle: "current" },
 		version,
 		selection: selected === null ? [] : [{ id: selected }],
@@ -109,7 +109,7 @@ describe("what a report says the user changed", () => {
 		publisher.publish(reading("payments", "lease", 1));
 		await settled();
 
-		// Clicking what is already selected, then an agent's write redraws the board and the
+		// Clicking what is already selected, then an agent's write redraws the model and the
 		// pane's pick goes with it.
 		publisher.userChanged("selection");
 		publisher.publish(reading("payments", "lease", 2));
@@ -121,12 +121,12 @@ describe("what a report says the user changed", () => {
 		expect(sent.map((body) => body.byUser)).toEqual([undefined, undefined, undefined]);
 	});
 
-	test("a board the user asked for is theirs when it arrives, across the moment the pane reads nothing", async () => {
+	test("a model the user asked for is theirs when it arrives, across the moment the pane reads nothing", async () => {
 		const { publisher, sent } = watched();
 		publisher.publish(reading("payments", null));
 		await settled();
 
-		publisher.userChanged("board");
+		publisher.userChanged("model");
 		publisher.userChanged("variant");
 		publisher.reset();
 		publisher.publish(NOTHING_READ);
@@ -135,17 +135,17 @@ describe("what a report says the user changed", () => {
 		await settled();
 		publisher.dispose();
 
-		// The variant kept its id, so only the board is said.
-		expect(sent.map((body) => body.byUser)).toEqual([undefined, undefined, ["board"]]);
+		// The variant kept its id, so only the model is said.
+		expect(sent.map((body) => body.byUser)).toEqual([undefined, undefined, ["model"]]);
 	});
 
-	test("a board the server could not open leaves nothing waiting for an agent's switch to use", async () => {
+	test("a model the server could not open leaves nothing waiting for an agent's switch to use", async () => {
 		const { publisher, sent } = watched();
 		publisher.publish(reading("payments", null));
 		await settled();
 
-		publisher.userChanged("board");
-		publisher.userChangeFailed("board");
+		publisher.userChanged("model");
+		publisher.userChangeFailed("model");
 		publisher.reset();
 		publisher.publish(reading("ledger", null));
 		await settled();

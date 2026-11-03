@@ -1,23 +1,16 @@
 // What one pane reports about itself, kept live outside React and published to
 // the shell whole, so two readers never see two different panes.
 
-import type {
-	BoardIdentity,
-	DoingEntry,
-	PaneStatus,
-} from "#ui/rules/pane-session/session-types.ts";
+import type { LegacyIdentity, PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 /** The live status of one pane. */
 interface LivePaneStatus {
 	connected: boolean;
 	registered: boolean;
-	board: BoardIdentity | null;
-	boardKey: string | null;
+	model: LegacyIdentity | null;
+	paneKey: string | null;
 	opened: string | null;
 	view: string | null;
-	lastChangeAt: string | null;
-	doing: DoingEntry[];
-	version: number | null;
 	vault: string;
 	repository: string | null;
 }
@@ -47,13 +40,10 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 	const live: LivePaneStatus = {
 		connected: false,
 		registered: false,
-		board: null,
-		boardKey: null,
+		model: null,
+		paneKey: null,
 		opened: null,
 		view: null,
-		lastChangeAt: null,
-		doing: [],
-		version: null,
 		vault: parts.vault,
 		repository: null,
 	};
@@ -65,13 +55,10 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 			clientId: parts.clientId,
 			connected: live.connected,
 			registered: live.registered,
-			board: live.board,
-			boardKey: live.boardKey,
+			model: live.model,
+			paneKey: live.paneKey,
 			opened: live.opened,
 			view: live.view,
-			lastChangeAt: live.lastChangeAt,
-			doing: live.doing,
-			version: live.version,
 			vault: live.vault,
 			repository: live.repository,
 		});
@@ -80,4 +67,4 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 	return { live, publish };
 }
 
-export { createPaneStatus, type LivePaneStatus, type PaneStatusOwner };
+export { createPaneStatus, type LivePaneStatus };

@@ -2,7 +2,7 @@
 //
 // One server serves several vaults and has no working directory, so it cannot
 // know which vault a call means. The call says: `?vault=<directory>` on a
-// request, or a `vault` field in its JSON body, exactly as it names its board.
+// request, or a `vault` field in its JSON body, exactly as it names its model.
 // There is no default. A call that names none is refused with how to name one,
 // and a vault the server cannot read is refused before anything is created.
 //
@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { NextFunction, Request, Response } from "express";
 import { isVaultLayout } from "@archboard/workspace/vault";
-import { bodyOf, queryString } from "#server/services/request/board.ts";
+import { bodyOf, queryString } from "#server/services/request/request-fields.ts";
 
 /** The query parameter, and the body field, that name the vault. */
 const VAULT_PARAMETER = "vault";
@@ -44,7 +44,7 @@ function vaultRequiredRefusal(): VaultRefusal {
 		status: 400,
 		code: "VAULT_REQUIRED",
 		error:
-			`This call names no vault, so there is no telling which boards it means. Nothing was done. ` +
+			`This call names no vault, so there is no telling which models it means. Nothing was done. ` +
 			`${HOW_TO_NAME} There is no default vault on purpose: one server serves every vault (ADR 0049).`,
 	};
 }
@@ -52,7 +52,7 @@ function vaultRequiredRefusal(): VaultRefusal {
 /** What a caller does with a readable directory in no layout. */
 const HOW_TO_LAY_OUT =
 	"The server serves only a vault at <dir>/.archboard/vault, because its agents work in <dir>. " +
-	"Move the boards to <dir>/.archboard/vault and name that directory.";
+	"Move the models to <dir>/.archboard/vault and name that directory.";
 
 /**
  * The refusal for a vault the server cannot read.
@@ -66,7 +66,7 @@ function vaultUnreadableRefusal(named: string, why: string, next = HOW_TO_NAME):
 		status: 404,
 		code: "VAULT_UNREADABLE",
 		error:
-			`The vault "${named}" is ${why}, so the server cannot read boards from it. Nothing was done ` +
+			`The vault "${named}" is ${why}, so the server cannot read models from it. Nothing was done ` +
 			`and nothing was created. ${next}`,
 	};
 }
@@ -144,7 +144,7 @@ function requireVault(req: Request, res: Response, next: NextFunction): void {
 
 /**
  * The vault a request names, when it names one the server can read, for a
- * route that reads no board and answers either way.
+ * route that reads no model and answers either way.
  * @param req The request.
  * @returns The canonical vault, or null when the request names none that can be read.
  */
@@ -154,7 +154,7 @@ function statedVault(req: Request): string | null {
 }
 
 /**
- * The vault a request named. Every route that reads or writes a board mounts
+ * The vault a request named. Every route that reads or writes a model mounts
  * `requireVault` before its handler, so a request that reaches one has named a vault.
  * @param req The request.
  * @returns The canonical vault.

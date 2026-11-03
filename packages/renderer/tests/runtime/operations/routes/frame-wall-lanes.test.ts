@@ -1,15 +1,15 @@
 // A line out of a frame once ran down the frame's wall, where the frame edge
-// took the line's colour (a view of a work board, its words scrambled). Kept
+// took the line's colour (a view of a work document, its words scrambled). Kept
 // half a lane off, it still traced the frame's outline; where the passage
 // beside the wall has room, a line keeps a whole lane from it.
 
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import { LayoutEngineSchema } from "@archboard/model/render-reply";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { bodyShift, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import frameWall from "#tests/runtime/support/fixtures/frame-wall.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** The distance a line keeps off a frame wall where the passage has room, and the length of a run that is not a jog. */
 const LANE = 16;

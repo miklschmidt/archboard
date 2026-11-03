@@ -1,14 +1,10 @@
 // What one CLI invocation says about itself on every request it makes: which
-// board it is for, what it says it is doing, and which version of that board it
-// believes it is writing against.
+// vault it is for and what it says it is doing.
 //
 // Carried here rather than threaded through thirty call sites. The CLI is one
 // command per process, so "this invocation" is a process-wide fact and stating
-// it once is what keeps a write's `--board`, `--doing` and `--expect-version`
-// from being forgotten by whichever call site was written last.
-
-/** The board this invocation names, or null when it names none. */
-let requestedBoard: string | null = null;
+// it once is what keeps a write's `--doing` from being forgotten by whichever
+// call site was written last.
 
 /**
  * The vault this invocation names, which every server call states (ADR 0049):
@@ -21,12 +17,6 @@ let requestedVault: string | null = null;
 /** What this invocation says it is doing, or null when it says nothing. */
 let writeDoing: string | null = null;
 let writeSession: string | null = null;
-
-/**
- * The version this invocation states it is writing against: a number, null for
- * "against a board that carries no version", or undefined for "states none".
- */
-let expectedVersion: number | null | undefined;
 
 /**
  * A path with one more query parameter on it.
@@ -56,15 +46,6 @@ function withVault(requestPath: string): string {
 }
 
 /**
- * A path carrying the board this invocation named, when it named one.
- * @param path The path.
- * @returns The path, with `?board=` when there is a board to state.
- */
-function withBoard(path: string): string {
-	return requestedBoard === null ? path : addQuery(path, "board", requestedBoard);
-}
-
-/**
  * A path carrying what this invocation is doing, when it said.
  *
  * Unless the caller has already said it. A command that builds its own query —
@@ -83,24 +64,9 @@ function withDoing(path: string): string {
 }
 
 /**
- * A path carrying the version this invocation states, when it states one.
+ * A path carrying what a write states about itself: the line it is doing under.
+ * Only a write, so a read never carries it.
  * @param path The path.
- * @returns The path, with `?expectVersion=` when there is one to state.
- */
-function withExpectedVersion(path: string): string {
-	if (expectedVersion === undefined || expectedVersion === null) {
-		return path;
-	}
-	// The same rule, for the same reason: the caller that built the query is the
-	// one that knows what it is writing against.
-	return /[?&]expectVersion=/u.test(path) ? path : addQuery(path, "expectVersion", expectedVersion);
-}
-
-/**
- * A path carrying everything a write states about itself: the line it is doing
- * under, and the version it believes it is writing against. Only a write, so a
- * read never carries either.
- * @param path The path, board already stated.
  * @param method The request method; anything but GET is a write.
  * @returns The path.
  */
@@ -108,13 +74,11 @@ function withWriteClaims(path: string, method?: string): string {
 	if (method === undefined || method.toUpperCase() === "GET") {
 		return path;
 	}
-	return withExpectedVersion(withDoing(path));
+	return withDoing(path);
 }
 
 /** What one invocation states about itself, which every later request carries. */
 interface InvocationStatement {
-	/** The board it names, or null. */
-	readonly board: string | null;
 	/** The vault directory it names, absolute, or null. */
 	readonly vault: string | null;
 	/** What it says it is doing, or null. */
@@ -123,11 +87,9 @@ interface InvocationStatement {
 	 * The agent session it writes as, or null. Per invocation, never from the environment: one
 	 * private app-server child serves every thread of a workbench, so a value read out of that
 	 * process's environment would stamp one session's identity on another's writes. It lets that
-	 * session skip the board news it wrote itself, and nothing on a board rests on it.
+	 * session skip the model news it wrote itself, and nothing on a model rests on it.
 	 */
 	readonly session: string | null;
-	/** The version it writes against: null for a board that carries none, undefined for unstated. */
-	readonly expectedVersion: number | null | undefined;
 }
 
 /**
@@ -136,11 +98,9 @@ interface InvocationStatement {
  */
 function stateInvocation(stated: Partial<InvocationStatement>): void {
 	const next = { ...statedInvocation(), ...stated };
-	requestedBoard = next.board;
 	requestedVault = next.vault;
 	writeDoing = next.doing;
 	writeSession = next.session;
-	expectedVersion = next.expectedVersion;
 }
 
 /**
@@ -149,19 +109,10 @@ function stateInvocation(stated: Partial<InvocationStatement>): void {
  */
 function statedInvocation(): InvocationStatement {
 	return {
-		board: requestedBoard,
 		vault: requestedVault,
 		doing: writeDoing,
 		session: writeSession,
-		expectedVersion,
 	};
 }
 
-export {
-	type InvocationStatement,
-	stateInvocation,
-	statedInvocation,
-	withBoard,
-	withVault,
-	withWriteClaims,
-};
+export { stateInvocation, statedInvocation, withVault, withWriteClaims };

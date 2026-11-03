@@ -23,4 +23,4 @@ function AgentRuntimeProvider(props: AgentRuntimeProviderProps): JSX.Element {
 	return <AssistantRuntimeProvider runtime={runtime}>{props.children}</AssistantRuntimeProvider>;
 }
 
-export { AgentRuntimeProvider, type AgentRuntimeProviderProps };
+export { AgentRuntimeProvider };

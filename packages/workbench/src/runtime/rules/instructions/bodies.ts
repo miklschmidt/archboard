@@ -2,7 +2,6 @@ import { createTextUserInput } from "@archboard/codex-realtime-voice/runtime";
 import path from "node:path";
 import { z } from "zod";
 
-import type { SessionUserInput } from "@archboard/codex-app-server/session";
 import {
 	ArchboardContextSchema,
 	canonicalContext,
@@ -31,7 +30,6 @@ const TextUserInputSchema = z.strictObject({
 	text: boundedPrompt,
 	text_elements: z.tuple([]),
 });
-type TextUserInput = Extract<SessionUserInput, { type: "text" }>;
 const CanonicalContextValueSchema = z.string().superRefine((value, issueContext) => {
 	try {
 		decodeCanonicalContext(value);
@@ -354,41 +352,17 @@ function createSelfThreadForkParams(
 	return createThreadForkParams({ ...selfFork, beforeTurnId: executingTurnId });
 }
 
-/**
- * Decode the context carried by an `additionalContext` body, refusing any other shape.
- * @param value - The body to decode.
- * @returns The decoded canonical context.
- */
-function parseCanonicalAdditionalContext(value: unknown): ArchboardContext {
-	const parsed = AdditionalContextSchema.safeParse(value);
-	if (!parsed.success) {
-		throw new TypeError(`Invalid additionalContext: ${parsed.error.message}`);
-	}
-	return decodeCanonicalContext(parsed.data.archboard.value);
-}
-
 export {
-	type TextUserInput,
 	AdditionalContextSchema,
-	type AdditionalContext,
 	TurnStartParamsSchema,
-	type TurnStartParams,
 	TurnSteerParamsSchema,
-	type TurnSteerParams,
 	ThreadInjectItemsParamsSchema,
-	type ThreadInjectItemsParams,
 	ThreadForkParamsSchema,
-	type ThreadForkParams,
 	createTextUserInput,
 	createAdditionalContext,
-	type TurnStartBuilderInput,
 	createTurnStartParams,
-	type TurnSteerBuilderInput,
 	createTurnSteerParams,
-	type ThreadInjectItemsBuilderInput,
 	createThreadInjectItemsParams,
-	type ThreadForkBuilderInput,
 	createThreadForkParams,
 	createSelfThreadForkParams,
-	parseCanonicalAdditionalContext,
 };

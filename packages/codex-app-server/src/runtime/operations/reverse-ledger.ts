@@ -167,4 +167,4 @@ function createReverseLedger(options: ReverseLedgerOptions): ReverseLedger {
 }
 
 export { createReverseLedger };
-export type { ReverseByteAccounting, ReverseLedger, ReverseLedgerOptions };
+export type { ReverseByteAccounting };

@@ -7,7 +7,6 @@ import {
 	type CodexDynamicToolsOptions,
 	type DynamicCallerAuthority,
 	type DynamicContextAuthority,
-	type DynamicImmutableEffect,
 	type DynamicRelation,
 	type DynamicTargetAuthority,
 } from "#runtime/protocol/dynamic-tools/contract.ts";
@@ -479,16 +478,4 @@ async function executeSend(
 	};
 }
 
-/**
- * The thread an effect names, when it names one.
- * @param effect The effect.
- * @returns The thread, or null for a create.
- */
-function effectTargetThreadId(effect: DynamicImmutableEffect): string | null {
-	if (effect.tool === "create_thread") {
-		return null;
-	}
-	return effect.arguments.threadId;
-}
-
-export { type MutationExecution, executeCreate, executeFork, executeSend, effectTargetThreadId };
+export { type MutationExecution, executeCreate, executeFork, executeSend };

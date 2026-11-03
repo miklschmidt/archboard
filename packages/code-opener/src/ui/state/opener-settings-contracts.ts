@@ -63,7 +63,6 @@ export type {
 	CustomCommandDraft,
 	CustomCommandIssues,
 	OpenerChoice,
-	OpenerSettingsBusy,
 	OpenerSettingsDialogProps,
 	OpenerTestResult,
 };

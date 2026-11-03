@@ -90,9 +90,4 @@ function createWorkbenchTransportPublication<Transport extends object>(
 	return Object.freeze({ reconcile, published: current, dispose: clear });
 }
 
-export {
-	type WorkbenchTransportPublication,
-	type WorkbenchTransportPublicationListener,
-	type WorkbenchTransportPublicationOptions,
-	createWorkbenchTransportPublication,
-};
+export { type WorkbenchTransportPublication, createWorkbenchTransportPublication };

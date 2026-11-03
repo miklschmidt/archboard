@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { ModelPreviewDecisions } from "#ui/components/architecture-model/ModelPreviewDecisions.tsx";
 import { ModelPreviewDraft } from "#ui/components/architecture-model/ModelPreviewDraft.tsx";
 

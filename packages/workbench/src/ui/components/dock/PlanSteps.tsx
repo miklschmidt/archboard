@@ -101,4 +101,4 @@ function StepMark(props: { readonly state: CardStep["state"] }): JSX.Element {
 	);
 }
 
-export { PlanSteps, type PlanStepsProps };
+export { PlanSteps };

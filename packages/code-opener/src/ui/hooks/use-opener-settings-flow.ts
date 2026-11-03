@@ -103,4 +103,4 @@ function useOpenerSettingsFlow(listener: OpenerSettingsFlowListener): MountedOpe
 	return { flow, state };
 }
 
-export { useOpenerSettingsFlow, type MountedOpenerSettingsFlow };
+export { useOpenerSettingsFlow };

@@ -3,7 +3,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import nearMiss from "#tests/runtime/support/fixtures/near-miss-columns.json";
 import { describe, expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import { LayoutEngineSchema } from "@archboard/model/render-reply";
 import {
 	distanceToFrame,
 	routeCrosses,
@@ -13,7 +13,7 @@ import {
 import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { headerFoot } from "#tests/runtime/support/drawn-subjects.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const NESTED = orderedFixture({
 	nodes: [
@@ -101,7 +101,7 @@ describe("compound architecture layout", () => {
 
 	test("concurrent requests on the layout worker retain deterministic independent drawings", async () => {
 		const other = orderedFixture({
-			nodes: [{ id: "solo", name: "Another board", kind: "module" }],
+			nodes: [{ id: "solo", name: "Another document", kind: "module" }],
 		});
 		const [first, separate, concurrent] = await Promise.all([
 			renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: NESTED, theme: "light" }),
@@ -196,7 +196,7 @@ test.each(LayoutEngineSchema.options)(
 	},
 );
 
-// Reduced from the dogfood Semantic renderer board: a line through its label
+// Reduced from the dogfood Semantic renderer document: a line through its label
 // let its two stacked ends stand 9 to 10 points out of one column, so their
 // edges almost lined up and the line jogged or sat off both centres. Stacked
 // ends stand in one column or clearly apart, never a near miss.
@@ -216,7 +216,7 @@ test("stacked cards joined through a label share a column or stand clearly apart
 
 // A page kept its placement's slack: under Graphviz a frame's trimmed title
 // margin left 52 points above the drawing against 24 below it, and under the
-// block engines a frame at the board's edge stood 32 points in on one side.
+// block engines a frame at the document's edge stood 32 points in on one side.
 test.each(LayoutEngineSchema.options)(
 	"a %s page keeps the same margin on every side of what it draws",
 	async (layout) => {

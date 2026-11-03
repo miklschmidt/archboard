@@ -1,14 +1,14 @@
-import type { LayoutEngineName } from "@archboard/board/render-reply";
-import type { DiagramGrammar } from "@archboard/board/views";
+import type { LayoutEngineName } from "@archboard/model/render-reply";
+import type { DiagramGrammar } from "@archboard/model/views";
 import { scopedDrawingKey } from "@archboard/renderer/picture";
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
-import type { projectModel, Model } from "@archboard/board/content";
+import type { projectModel, Model } from "@archboard/model/content";
 import { rendererBuild } from "virtual:archboard-renderer";
 import {
 	browserPictureStorage,
 	cachedModelDrawing,
 	modelDrawingKey,
-} from "#ui/clients/semantic-board-canvas/reads/picture-cache.ts";
+} from "#ui/clients/canvas/reads/picture-cache.ts";
 
 type ModelDrawing = Awaited<ReturnType<typeof cachedModelDrawing>>;
 

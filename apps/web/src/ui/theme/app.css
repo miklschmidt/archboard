@@ -245,19 +245,19 @@
    the picture across while the camera glides, and that flight writes each
    subject's opacity every frame. A filter multiplies with it, so a card only the
    new view draws arrives veiled rather than lit and then dimmed. */
-[data-slot="semantic-board-surface"].is-presenting [data-semantic-id] {
+[data-slot="canvas-surface"].is-presenting [data-semantic-id] {
 	transition: filter var(--presentation-step-ms, 0ms) ease-in-out;
 }
-[data-slot="semantic-board-surface"].is-presenting.is-veiled [data-semantic-id] {
+[data-slot="canvas-surface"].is-presenting.is-veiled [data-semantic-id] {
 	opacity: 1;
 	filter: opacity(0.16);
 }
-[data-slot="semantic-board-surface"].is-presenting.is-veiled .is-lit,
-[data-slot="semantic-board-surface"].is-presenting.is-veiled .is-lit [data-semantic-id] {
+[data-slot="canvas-surface"].is-presenting.is-veiled .is-lit,
+[data-slot="canvas-surface"].is-presenting.is-veiled .is-lit [data-semantic-id] {
 	filter: none;
 }
 @media (prefers-reduced-motion: reduce) {
-	[data-slot="semantic-board-surface"].is-presenting [data-semantic-id] {
+	[data-slot="canvas-surface"].is-presenting [data-semantic-id] {
 		transition: none;
 	}
 }
@@ -267,11 +267,11 @@
    readers and the viewer's marks, and shows no ink. A painter answers the pointer,
    so nothing in the surface takes it, a shape that says it takes every pointer
    included. */
-[data-slot="semantic-board-surface"][data-painter],
-[data-slot="semantic-board-surface"][data-painter] svg * {
+[data-slot="canvas-surface"][data-painter],
+[data-slot="canvas-surface"][data-painter] svg * {
 	pointer-events: none;
 }
-[data-slot="semantic-board-surface"]:is([data-painter], [data-ink-waits])
+[data-slot="canvas-surface"]:is([data-painter], [data-ink-waits])
 	svg
 	:is(path, rect, circle, line, use, polygon, polyline, image) {
 	visibility: hidden;
@@ -284,44 +284,44 @@
    subject is drawn at and with a flight's own writes. The viewer marks what
    stays (`is-lit`), and the surface says how strongly (`is-probing`, and
    `is-probing-light` for the pointer's rest, which recedes the rest less). */
-[data-slot="semantic-board-surface"] [data-semantic-id],
-[data-slot="semantic-board-surface"] [data-traffic],
-[data-slot="semantic-board-surface"] [data-members] {
+[data-slot="canvas-surface"] [data-semantic-id],
+[data-slot="canvas-surface"] [data-traffic],
+[data-slot="canvas-surface"] [data-members] {
 	transition: filter var(--lighting-ms, 0ms) ease-out;
 }
-[data-slot="semantic-board-surface"].is-probing {
+[data-slot="canvas-surface"].is-probing {
 	--recede: 0.14;
 }
-[data-slot="semantic-board-surface"].is-probing.is-probing-light {
+[data-slot="canvas-surface"].is-probing.is-probing-light {
 	--recede: 0.24;
 }
-[data-slot="semantic-board-surface"].is-probing [data-semantic-id],
-[data-slot="semantic-board-surface"].is-probing [data-traffic],
-[data-slot="semantic-board-surface"].is-probing [data-members] {
+[data-slot="canvas-surface"].is-probing [data-semantic-id],
+[data-slot="canvas-surface"].is-probing [data-traffic],
+[data-slot="canvas-surface"].is-probing [data-members] {
 	filter: opacity(var(--recede));
 }
-[data-slot="semantic-board-surface"].is-probing .is-lit,
-[data-slot="semantic-board-surface"].is-probing .is-lit [data-semantic-id] {
+[data-slot="canvas-surface"].is-probing .is-lit,
+[data-slot="canvas-surface"].is-probing .is-lit [data-semantic-id] {
 	filter: none;
 }
 /* A trace lights what a part reaches beyond its connections, each further hop
    more faintly and one hop after another: the delay grows with the hop. */
-[data-slot="semantic-board-surface"].is-probing .is-reach-2 {
+[data-slot="canvas-surface"].is-probing .is-reach-2 {
 	filter: opacity(0.78);
 	transition-delay: var(--reach-hop-ms, 0ms);
 }
-[data-slot="semantic-board-surface"].is-probing .is-reach-3 {
+[data-slot="canvas-surface"].is-probing .is-reach-3 {
 	filter: opacity(0.6);
 	transition-delay: calc(var(--reach-hop-ms, 0ms) * 2);
 }
-[data-slot="semantic-board-surface"].is-probing .is-reach-4 {
+[data-slot="canvas-surface"].is-probing .is-reach-4 {
 	filter: opacity(0.46);
 	transition-delay: calc(var(--reach-hop-ms, 0ms) * 3);
 }
 @media (prefers-reduced-motion: reduce) {
-	[data-slot="semantic-board-surface"] [data-semantic-id],
-	[data-slot="semantic-board-surface"] [data-traffic],
-	[data-slot="semantic-board-surface"] [data-members] {
+	[data-slot="canvas-surface"] [data-semantic-id],
+	[data-slot="canvas-surface"] [data-traffic],
+	[data-slot="canvas-surface"] [data-members] {
 		transition: none;
 	}
 }
@@ -330,12 +330,12 @@
    seen from far as well as near. Where the rest of the picture recedes, under a
    poke or under a presented step's veil, a label that is not lit recedes less
    than they do, so its words can still be made out. */
-[data-slot="semantic-board-surface"]:is(.is-probing, .is-presenting.is-veiled)
+[data-slot="canvas-surface"]:is(.is-probing, .is-presenting.is-veiled)
 	[data-semantic-kind="edge"][data-semantic-part="label"]:not(.is-lit) {
 	filter: opacity(0.28);
 }
 
-[data-slot="semantic-board-surface"] .ab-toggle:hover > rect:nth-child(2) {
+[data-slot="canvas-surface"] .ab-toggle:hover > rect:nth-child(2) {
 	fill-opacity: 0.2;
 }
 

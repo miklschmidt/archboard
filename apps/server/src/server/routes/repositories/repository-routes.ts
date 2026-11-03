@@ -2,12 +2,12 @@
 // repository this machine reads (ADR 0050).
 //
 // The navigator lists every repository identity with a known checkout that has a
-// vault, and every untracked vault, each with the boards of its chosen
+// vault, and every untracked vault, each with the models of its chosen
 // checkout's vault. The registry is the one account of that, and every pane
 // follows it: when it changes, a pane in the vault of a checkout that is not
-// chosen moves to the chosen one, keeping its board, every other pane hears the
+// chosen moves to the chosen one, keeping its model, every other pane hears the
 // name its repository goes by now, and every tab is told to read the list again.
-// A pane whose board the new checkout has not got says so, because the board it
+// A pane whose model the new checkout has not got says so, because the model it
 // asks for is not there.
 //
 // The registry is one file that every server on the machine reads. This server
@@ -24,20 +24,20 @@ import path from "path";
 import type { Express, Request, Response } from "express";
 
 import { logger } from "@archboard/diagnostics/logger";
-import { readArchitectureModel } from "@archboard/board/store-read";
-import type { ArchitectureModelRead } from "@archboard/board/model";
-import { parseBoardKey } from "@archboard/board/address";
+import { readArchitectureModel } from "@archboard/model/store-read";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
+import { parsePaneKey } from "@archboard/model/legacy-address";
 import { chooseKnownCheckout, listRegistry, registryPath } from "@archboard/workspace/checkouts";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import {
 	semanticPaneContextFor,
-	paneBoardOf,
+	paneKeyOfClient,
 	paneVaults,
-	sendBoardlessToPane,
+	sendKeylessToPane,
 	sendToPane,
 } from "@archboard/workbench/panes";
 import { broadcastEverywhere, movePaneVault } from "#server/state/pane-vaults/pane-vaults.ts";
-import { arrivedOnBoard } from "#server/routes/panes/pane-routes.ts";
+import { arrivedOnModel } from "#server/routes/panes/pane-routes.ts";
 import { listRepositories, placeOfVault, vaultIn } from "@archboard/workspace/repository-listing";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 import type { z } from "zod";
@@ -121,7 +121,7 @@ function statedChoice(req: Request, res: Response): z.infer<typeof CheckoutChoic
 			success: false,
 			code: "CHECKOUT_UNUSABLE",
 			error: checkout.exists
-				? `${root} has no ${VAULT_DIRECTORY}, so it has no boards to read. Choose a checkout of ${repository} that has one.`
+				? `${root} has no ${VAULT_DIRECTORY}, so it has no models to read. Choose a checkout of ${repository} that has one.`
 				: `${root} is gone from this machine. Choose another checkout of ${repository}, or remove it with \`archboard repo forget ${root}\`.`,
 		});
 		return null;
@@ -156,7 +156,7 @@ function registerReadableVaults(): void {
 /**
  * Bring every pane in line with the registry as it is now (ADR 0050). A pane in
  * the vault of a checkout that is not chosen, including one that is gone, moves
- * to the vault of the chosen checkout, keeping its board, and its board is read
+ * to the vault of the chosen checkout, keeping its model, and its model is read
  * again there. Every other pane is told where it is again, with the name its
  * repository goes by now, which a forgotten checkout or a renamed untracked
  * vault changes. Then every tab is told to read the list of repositories again.
@@ -168,7 +168,7 @@ function followRegistry(): void {
 	for (const [clientId, vault] of paneVaults) {
 		const { home, repository } = placeOfVault(vault);
 		if (home === vault) {
-			sendBoardlessToPane(clientId, { type: "pane_board", vault, repository });
+			sendKeylessToPane(clientId, { type: "pane_place", vault, repository });
 		} else {
 			movePane(clientId, home, repository);
 		}
@@ -236,26 +236,26 @@ function moveCanonicalPane(
 		},
 		key,
 	);
-	arrivedOnBoard(clientId, key);
+	arrivedOnModel(clientId, key);
 }
 /**
- * Move one pane into another checkout's vault, keeping its board.
+ * Move one pane into another checkout's vault, keeping its model.
  * @param clientId The pane.
  * @param to The vault it moves into.
  * @param repository The name of the repository it is in.
  */
 function movePane(clientId: string, to: string, repository: string | null): void {
 	const captured = semanticPaneContextFor(clientId)?.architecture;
-	const key = paneBoardOf(clientId);
+	const key = paneKeyOfClient(clientId);
 	movePaneVault(clientId, to);
 	if (key?.startsWith("model:")) {
 		moveCanonicalPane(clientId, to, repository, key, captured);
 		return;
 	}
 	if (key === null) {
-		sendBoardlessToPane(clientId, {
-			type: "pane_board",
-			board: null,
+		sendKeylessToPane(clientId, {
+			type: "pane_place",
+			paneKey: null,
 			identity: null,
 			vault: to,
 			repository,
@@ -264,10 +264,10 @@ function movePane(clientId: string, to: string, repository: string | null): void
 	}
 	sendToPane(
 		clientId,
-		{ type: "pane_board", identity: parseBoardKey(key), vault: to, repository },
+		{ type: "pane_place", identity: parsePaneKey(key), vault: to, repository },
 		key,
 	);
-	arrivedOnBoard(clientId, key);
+	arrivedOnModel(clientId, key);
 }
 
 /**

@@ -1,6 +1,6 @@
 import { useCallback, type JSX } from "react";
 import { DropdownMenu } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 
 /**
  * Follow an exact original alias through the captured migration catalogue.

@@ -4,12 +4,12 @@
 import { expect } from "bun:test";
 
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { type StatedStandings } from "#shared/protocol/render-request.ts";
 import { groupOf, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const SEQUENCE: VariantContent = orderedFixture({
 	nodes: [

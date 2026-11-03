@@ -1,14 +1,7 @@
 import type { WorkbenchThreadProfile } from "#runtime/protocol/host/instructions.ts";
-import type {
-	CodexEpochStore,
-	EpochExecutionProof,
-	EpochSnapshot,
-	EpochTransaction,
-} from "#runtime/store/epoch/contract.ts";
-import type { EpochOperationRecord } from "#runtime/store/epoch/manifest-contract.ts";
+import type { CodexEpochStore, EpochTransaction } from "#runtime/store/epoch/contract.ts";
 import type {
 	CodexSession,
-	SessionParams,
 	SessionResponse,
 	SessionThread,
 	CODEX_SESSION_THREAD_SOURCE,
@@ -17,7 +10,6 @@ import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkCasToken,
-	ThreadLinkTarget,
 } from "#runtime/rules/thread-link/contract.ts";
 import type {
 	ChildEpoch,
@@ -29,10 +21,7 @@ import type {
 	TrustedIdentityDecoder,
 } from "@archboard/codex-app-server/identity";
 
-type WorkhorseThreadStartParams = SessionParams<"thread/start">;
 type WorkhorseStartResponse = SessionResponse<"thread/start">;
-type WorkhorseThreadReadResponse = SessionResponse<"thread/read">;
-type WorkhorseThreadDeleteResponse = SessionResponse<"thread/delete">;
 
 type WorkhorseApprovalPolicy = WorkhorseStartResponse["approvalPolicy"];
 type WorkhorseApprovalsReviewer = WorkhorseStartResponse["approvalsReviewer"];
@@ -122,11 +111,7 @@ interface WorkhorseSnapshot {
 }
 
 type WorkhorseStartTransaction = EpochTransaction;
-type WorkhorseEpochSnapshot = EpochSnapshot;
-type WorkhorseEpochProof = EpochExecutionProof;
-type WorkhorseEpochRecord = EpochOperationRecord;
 type WorkhorseThread = SessionThread;
-type WorkhorseThreadLinkTarget = ThreadLinkTarget;
 
 interface CodexWorkhorseStart {
 	readonly start: (input: WorkhorseStartInput) => Promise<WorkhorseSnapshot>;
@@ -134,31 +119,16 @@ interface CodexWorkhorseStart {
 }
 
 export {
-	type WorkhorseThreadStartParams,
 	type WorkhorseStartResponse,
-	type WorkhorseThreadReadResponse,
-	type WorkhorseThreadDeleteResponse,
-	type WorkhorseApprovalPolicy,
-	type WorkhorseApprovalsReviewer,
-	type WorkhorseSandboxPolicy,
-	type WorkhorsePermissionProfile,
 	type WorkhorseSessionPort,
 	type WorkhorseThreadLinkPort,
-	type WorkhorseEpochPort,
-	type WorkhorseIdentityPort,
-	type WorkhorseOperationPort,
 	type WorkhorseStartInput,
 	type CodexWorkhorseStartOptions,
-	type WorkhorseLifecycleState,
 	type WorkhorseSettlementOutcome,
 	type WorkhorseStartFacts,
 	type WorkhorseCleanupFacts,
 	type WorkhorseSnapshot,
 	type WorkhorseStartTransaction,
-	type WorkhorseEpochSnapshot,
-	type WorkhorseEpochProof,
-	type WorkhorseEpochRecord,
 	type WorkhorseThread,
-	type WorkhorseThreadLinkTarget,
 	type CodexWorkhorseStart,
 };

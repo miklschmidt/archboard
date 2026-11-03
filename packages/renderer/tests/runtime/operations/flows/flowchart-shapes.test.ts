@@ -13,7 +13,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { renderSemanticView } from "#runtime/operations/render.ts";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import {
 	distanceToOutline,
 	drawnLines,
@@ -29,7 +29,7 @@ import {
 	type DrawnGroup,
 } from "#tests/runtime/support/drawn-subjects.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** A decision whose question wraps onto two lines, and a loop, between steps. */
 const FLOW: VariantContent = orderedFixture({

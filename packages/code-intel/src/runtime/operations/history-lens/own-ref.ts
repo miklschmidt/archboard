@@ -14,10 +14,10 @@ import {
 	ownRefs,
 	refOfBinding,
 	type OwnRef,
-	type SemanticBoard,
+	type LegacyBoard,
 	type SemanticVariant,
-} from "@archboard/board/document";
-import type { SemanticNode } from "@archboard/board/content";
+} from "@archboard/model/legacy-board";
+import type { SemanticNode } from "@archboard/model/content";
 
 /**
  * What a ref pinned in a repository is keyed by.
@@ -65,19 +65,19 @@ function pinAway(
  * The parts of a variant as they are read: in a draft, every bound part of a
  * repository at the one ref the draft is read against there, unless it pins a
  * ref that ref does not hold.
- * @param board The board.
+ * @param document The document.
  * @param variant The variant.
  * @param rootOf The checkout of a repository, when this machine has one to read.
  * @param options The caller's signal.
  * @returns The variant's parts.
  */
 async function nodesAtOwnRef(
-	board: Pick<SemanticBoard, "variants">,
+	document: Pick<LegacyBoard, "variants">,
 	variant: SemanticVariant,
 	rootOf: (repo: string) => string | undefined,
 	options: GitRunOptions,
 ): Promise<SemanticNode[]> {
-	const own = ownRefs(board, variant);
+	const own = ownRefs(document, variant);
 	const { nodes } = variant.content;
 	if (own.size === 0) return nodes;
 	const pins = new Map<string, Pin>();

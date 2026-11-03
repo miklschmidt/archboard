@@ -267,12 +267,4 @@ async function runProcess(request: ProcessRequest): Promise<ProcessResult> {
 	}
 }
 
-export {
-	ownProcess,
-	pause,
-	runProcess,
-	sequentially,
-	settlesWithin,
-	type ProcessRequest,
-	type ProcessResult,
-};
+export { ownProcess, pause, runProcess, sequentially, settlesWithin, type ProcessResult };

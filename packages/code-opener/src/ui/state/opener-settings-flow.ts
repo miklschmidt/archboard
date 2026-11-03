@@ -237,9 +237,7 @@ function createOpenerSettingsFlow(options: OpenerSettingsFlowOptions): OpenerSet
 export {
 	createOpenerSettingsFlow,
 	type OpenerSettingsApi,
-	type OpenerSettingsBusy,
 	type OpenerSettingsFlow,
 	type OpenerSettingsFlowListener,
-	type OpenerSettingsFlowOptions,
 	type OpenerSettingsFlowState,
 };

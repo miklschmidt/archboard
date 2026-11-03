@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
@@ -136,7 +136,7 @@ beforeAll(async () => {
 	git(scratch, shop, "add", "-A");
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the code");
 	register(scratch, { [SHOP]: shop });
-	board(vault, "Shop", [
+	document(vault, "Shop", [
 		{
 			id: "v1",
 			name: "Built",
@@ -168,8 +168,8 @@ beforeAll(async () => {
 			},
 		},
 	]);
-	// The store bound through its index, drawn with no caller: the board says nothing about its interface.
-	board(vault, "Store alone", [
+	// The store bound through its index, drawn with no caller: the document says nothing about its interface.
+	document(vault, "Store alone", [
 		{
 			id: "v1",
 			name: "Built",
@@ -186,7 +186,7 @@ beforeAll(async () => {
 		},
 	]);
 	// A directory no language the check reads has a root file in.
-	board(vault, "Docs", [
+	document(vault, "Docs", [
 		{
 			id: "v1",
 			name: "Built",
@@ -198,7 +198,7 @@ beforeAll(async () => {
 			},
 		},
 	]);
-	board(vault, "Flake", [
+	document(vault, "Flake", [
 		{
 			id: "v1",
 			name: "Built",
@@ -216,7 +216,7 @@ beforeAll(async () => {
 			},
 		},
 	]);
-	board(vault, "Chart", [
+	document(vault, "Chart", [
 		{
 			id: "v1",
 			name: "Built",
@@ -237,7 +237,7 @@ beforeAll(async () => {
 		["Compose", "infra/compose/compose.yaml"],
 		["Manifest", "infra/plain/config.yaml"],
 	] as const) {
-		board(vault, name, [
+		document(vault, name, [
 			{
 				id: "v1",
 				name: "Built",
@@ -251,9 +251,9 @@ beforeAll(async () => {
 		]);
 	}
 	const check: typeof CheckModule = await import("#tests/runtime/support/code-check/pass.ts");
-	const read = check.readBoardsToCheck(vault, undefined);
-	if (!read.ok) throw new Error("no boards");
-	outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
+	const read = check.readStatesToCheck(vault, undefined);
+	if (!read.ok) throw new Error("no documents");
+	outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 });
 
 afterAll(() => {
@@ -265,13 +265,13 @@ afterAll(() => {
 });
 
 /**
- * The findings of one code on one board.
+ * The findings of one code on one document.
  * @param code The finding's code.
- * @param boardName The board.
+ * @param boardName The document.
  * @returns Each finding.
  */
-function findings(code: string, boardName: string) {
-	return outcome.findings.filter((each) => each.code === code && each.board === boardName);
+function findings(code: string, documentName: string) {
+	return outcome.findings.filter((each) => each.code === code && each.model === documentName);
 }
 
 test("an entry point the module does not expose, which a caller's code reaches from outside the module, is a warning with that use", () => {
@@ -295,7 +295,7 @@ test("an entry point the module does not expose, which a caller's code reaches f
 	expect(findings("ENTRY_POINT_UNEXPOSED", "Store alone")).toEqual([]);
 });
 
-test("a hidden part whose exposed code a file no part binds uses at run time is a caller the board does not draw", () => {
+test("a hidden part whose exposed code a file no part binds uses at run time is a caller the document does not draw", () => {
 	const undrawn = findings("CALLER_UNDRAWN", "Shop");
 	expect(undrawn.map((each) => [each.subject?.id, each.severity])).toEqual([
 		["Audit", "warning"],
@@ -314,8 +314,8 @@ test("a hidden part whose exposed code a file no part binds uses at run time is 
 	]);
 });
 
-test("a use by a part on the board is the undrawn relationship's to report, and a use only as a type or as a value is no caller", () => {
-	// The server, a part on the board, calls Write: RELATIONSHIP_UNDRAWN says so, once.
+test("a use by a part on the document is the undrawn relationship's to report, and a use only as a type or as a value is no caller", () => {
+	// The server, a part on the document, calls Write: RELATIONSHIP_UNDRAWN says so, once.
 	expect(findings("RELATIONSHIP_UNDRAWN", "Shop").map((each) => each.subject?.id)).toEqual([
 		"Write",
 	]);
@@ -345,13 +345,13 @@ test("an external file passing an exposed function to a callback is an undrawn c
 	);
 });
 
-test("a container with no caller on its board has no caller to miss", () => {
+test("a container with no caller on its document has no caller to miss", () => {
 	expect(findings("CALLER_UNDRAWN", "Store alone")).toEqual([]);
 });
 
 test("exposed names no file outside the module uses are information on the container, and a test is no caller and no root file", () => {
-	for (const boardName of ["Shop", "Store alone"]) {
-		const unused = findings("EXPOSED_UNUSED", boardName);
+	for (const documentName of ["Shop", "Store alone"]) {
+		const unused = findings("EXPOSED_UNUSED", documentName);
 		expect(unused.map((each) => [each.subject?.id, each.severity])).toEqual([
 			["Store", "information"],
 		]);
@@ -363,14 +363,14 @@ test("exposed names no file outside the module uses are information on the conta
 });
 
 test("a container whose module exposes nothing the check can read is listed as not judged", () => {
-	const skip = outcome.skipped.find((each) => each.board === "Docs");
+	const skip = outcome.skipped.find((each) => each.model === "Docs");
 	expect(skip).toMatchObject({ reason: "exposure-unknown", subject: { id: "Manual" }, repo: SHOP });
-	expect(outcome.findings.some((each) => each.board === "Docs")).toBe(false);
+	expect(outcome.findings.some((each) => each.model === "Docs")).toBe(false);
 });
 
 test("external tests use public entry files, while tests inside the module can exercise private files", () => {
-	for (const boardName of ["Shop", "Store alone"]) {
-		const privateImports = findings("TEST_IMPORT_UNEXPOSED", boardName);
+	for (const documentName of ["Shop", "Store alone"]) {
+		const privateImports = findings("TEST_IMPORT_UNEXPOSED", documentName);
 		expect(privateImports.map((each) => [each.subject?.id, each.severity])).toEqual([
 			["Store", "warning"],
 			["Store", "warning"],
@@ -401,16 +401,16 @@ test("external tests use public entry files, while tests inside the module can e
 });
 
 test("flake outputs and chart values receive interface findings, and chart templates remain private", () => {
-	for (const [boardName, id] of [
+	for (const [documentName, id] of [
 		["Flake", "pFlake"],
 		["Chart", "pChart"],
 	] as const) {
 		expect(
-			findings("EXPOSED_UNUSED", boardName).map((each) => [each.subject?.id, each.severity]),
+			findings("EXPOSED_UNUSED", documentName).map((each) => [each.subject?.id, each.severity]),
 		).toEqual([[id, "information"]]);
 		expect(
 			outcome.skipped.some(
-				(each) => each.board === boardName && each.reason === "exposure-unknown",
+				(each) => each.model === documentName && each.reason === "exposure-unknown",
 			),
 		).toBe(false);
 	}
@@ -432,12 +432,12 @@ test("flake outputs and chart values receive interface findings, and chart templ
 });
 
 test("containers bound to compose files and plain manifests still have unknown exposure", () => {
-	for (const boardName of ["Compose", "Manifest"]) {
+	for (const documentName of ["Compose", "Manifest"]) {
 		expect(
 			outcome.skipped
-				.filter((each) => each.board === boardName && each.reason === "exposure-unknown")
+				.filter((each) => each.model === documentName && each.reason === "exposure-unknown")
 				.map((each) => each.subject?.id),
 		).toEqual(["Module"]);
-		expect(findings("EXPOSED_UNUSED", boardName)).toEqual([]);
+		expect(findings("EXPOSED_UNUSED", documentName)).toEqual([]);
 	}
 });

@@ -333,7 +333,7 @@ fn an_entrance_comes_into_focus_and_ends_with_no_lens() {
 }
 
 #[test]
-fn a_flight_into_a_card_keeps_the_card_in_focus_and_lets_the_board_fall_away() {
+fn a_flight_into_a_card_keeps_the_card_in_focus_and_lets_the_picture_fall_away() {
     let mut stage = stage();
     stage.set_phases(PHASES);
     stage.show(painting(Vec::new()));
@@ -363,7 +363,7 @@ fn a_flight_into_a_card_keeps_the_card_in_focus_and_lets_the_board_fall_away() {
     assert_eq!(stage.lens_at(100.0), None);
 }
 
-/// Where a heading to a board beside this one takes a stage.
+/// Where a heading to a picture beside this one takes a stage.
 const BESIDE: Heading = Heading::Across {
     side: Some(Side::Right),
 };
@@ -383,7 +383,7 @@ fn a_passage_runs_on_from_the_click_as_one_plane_and_ends_with_no_lens() {
     stage.advance(50.0);
     assert!(
         stage.flight.is_none(),
-        "a board on a passage has no entrance"
+        "a picture on a passage has no entrance"
     );
     let (_, place) = stage
         .ghost
@@ -399,7 +399,7 @@ fn a_passage_runs_on_from_the_click_as_one_plane_and_ends_with_no_lens() {
 }
 
 #[test]
-fn a_change_of_mind_takes_the_last_board_on_along_the_way_it_came() {
+fn a_change_of_mind_takes_the_last_picture_on_along_the_way_it_came() {
     let mut stage = stage();
     stage.set_phases(PHASES);
     stage.show(painting(Vec::new()));
@@ -411,7 +411,7 @@ fn a_change_of_mind_takes_the_last_board_on_along_the_way_it_came() {
         .as_ref()
         .and_then(|leaving| leaving.passage(30.0))
         .map_or(1.0, |(_, place)| place);
-    assert!(stepped < 1e-6, "the click waits for the board to arrive");
+    assert!(stepped < 1e-6, "the click waits for the picture to arrive");
     stage.enter(painting(Vec::new()), None, 100.0, (0.0, 0.0), 30.0);
     let ghost = stage.ghost.as_ref().expect("a ghost");
     assert_ne!(
@@ -419,7 +419,11 @@ fn a_change_of_mind_takes_the_last_board_on_along_the_way_it_came() {
         Plane::STILL,
         "it goes on along the way it came"
     );
-    assert_eq!(stage.behind.len(), 1, "the board before it goes on its way");
+    assert_eq!(
+        stage.behind.len(),
+        1,
+        "the picture before it goes on its way"
+    );
 }
 
 #[test]

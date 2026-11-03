@@ -1,12 +1,12 @@
 {
   "order": 58000,
-  "name": "Board cache keys",
+  "name": "Read keys",
   "kind": "function",
-  "responsibility": "The cache keys of the semantic-board resources, spelled once, and the one reading of a cached key back into the board it names",
+  "responsibility": "The cache keys of the retained resources, spelled once, and the one reading of a cached key back into the model it names",
   "description": "Private to the reads folder: the queries subscribe under these keys and the refresh module decides which go stale. Nothing outside it names a key or decodes one, so the layout can change here alone.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-keys.ts"
+    "path": "apps/web/src/ui/clients/canvas/reads/read-keys.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#nMKLaMje",
@@ -19,11 +19,14 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-keys.ts",
+        "path": "apps/web/src/ui/clients/canvas/reads/read-keys.ts",
         "symbol": "comparisonKey"
       },
       "id": "vKEsyHFk/UOXNWLhR#N9rPOyGF",
       "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
     }
+  ],
+  "formerNames": [
+    "Board cache keys"
   ]
 }

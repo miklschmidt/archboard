@@ -2,8 +2,8 @@ import { z } from "zod";
 import {
 	ArchitectureRenderRequestSchema,
 	ArchitectureRenderResultSchema,
-} from "@archboard/board/model";
-import { StandaloneThemeSchema } from "@archboard/board/render-reply";
+} from "@archboard/model/contract";
+import { StandaloneThemeSchema } from "@archboard/model/render-reply";
 import { renderArchitectureFlowOnServer } from "#cli/clients/server/architecture-model.ts";
 import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";

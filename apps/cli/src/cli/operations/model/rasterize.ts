@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
 	ArchitectureRenderRequestSchema,
 	ArchitectureRenderResultSchema,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import {
 	ArchitectureRasterReceiptSchema,
 	createSemanticRasterizer,

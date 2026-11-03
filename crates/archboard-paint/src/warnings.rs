@@ -1,5 +1,5 @@
 //! The warning a viewer adds to a subject that the code check warns about. The
-//! picture never holds it, because a picture is drawn from the board alone. The
+//! picture never holds it, because a picture is drawn from the picture alone. The
 //! viewer adds the picture's own warning triangle in the place the picture puts
 //! it on a subject nobody has decided: the top-right corner of a part's body,
 //! the leading edge of a relationship's or a message's words, or the middle of

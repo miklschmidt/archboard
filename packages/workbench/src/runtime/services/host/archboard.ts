@@ -46,11 +46,11 @@ function workbenchContextOf(
  * @returns The payload.
  */
 function archboardPayloadOf(context: ArchboardContext): Readonly<Record<string, unknown>> {
-	const { schema, paneId, board, focus, variant, view, selection, reconciliation, claim } = context;
+	const { schema, paneId, model, focus, variant, view, selection, reconciliation, claim } = context;
 	return {
 		schema,
 		paneId,
-		board,
+		model,
 		focus,
 		variant,
 		view,

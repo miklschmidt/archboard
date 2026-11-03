@@ -2,7 +2,7 @@
   "order": 51000,
   "name": "Embeds check",
   "kind": "module",
-  "responsibility": "Draws each render that Git tracks here and each tracked embed of the vault's boards again from its recipe, and reports or redraws the outdated ones; fetches a vault no checkout here holds",
+  "responsibility": "Draws each render that Git tracks here again from its recipe, and reports or redraws the outdated ones; fetches a vault no checkout here holds",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/operations/vault/embeds"
@@ -55,8 +55,8 @@
         "path": "apps/cli/src/cli/operations/vault/embeds/embeds-check.ts",
         "symbol": "checkoutsReadFrom"
       },
-      "to": "vKEsyHFk/0T9enjhi#klNuMiwC",
-      "id": "vKEsyHFk#5yYA6WLY"
+      "id": "vKEsyHFk#5yYA6WLY",
+      "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
     }
   ]
 }

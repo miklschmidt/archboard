@@ -3,7 +3,7 @@
 //! that holds every card at its measured size and joins every line to its
 //! cards, and fails, asking no Graphviz, where it cannot lay out.
 
-use archboard_layout::{Graphviz, lay_out_board};
+use archboard_layout::{Graphviz, lay_out_picture};
 use serde_json::{Value, json};
 
 /// A Graphviz that stands every node of a graph in one column, a rank each,
@@ -92,7 +92,7 @@ impl Graphviz for Refusing {
     }
 }
 
-/// A board measured: two containers holding a card each, and a call from one
+/// A picture measured: two containers holding a card each, and a call from one
 /// card to the other, drawn the way its nesting names.
 fn two_containers(nesting: &str) -> String {
     let container = |id: &str, card: Value| {
@@ -151,7 +151,7 @@ fn every_card_stands_at_its_measured_size_and_its_line_runs_from_card_to_card() 
     for nesting in ["inline", "groups", "blocks"] {
         let mut graphviz = Column::default();
         let (answer, placed) =
-            placed_of(&lay_out_board(&two_containers(nesting), &mut graphviz).unwrap()).unwrap();
+            placed_of(&lay_out_picture(&two_containers(nesting), &mut graphviz).unwrap()).unwrap();
         // Two flat frames are a dense drawing, which needs no Graphviz.
         assert_eq!(graphviz.asked > 0, nesting != "blocks", "{nesting}");
         let cards = placed["cards"].as_array().unwrap();
@@ -177,7 +177,7 @@ fn every_card_stands_at_its_measured_size_and_its_line_runs_from_card_to_card() 
 #[test]
 fn a_track_solve_fails_when_graphviz_refuses_its_graph() {
     for nesting in ["inline", "groups"] {
-        lay_out_board(&two_containers(nesting), &mut Refusing).unwrap_err();
+        lay_out_picture(&two_containers(nesting), &mut Refusing).unwrap_err();
     }
 }
 
@@ -206,7 +206,7 @@ fn a_parent_inside_a_packed_group_stays_above_its_enclosing_inline_frame() {
         }],
     });
     let (_, placed) =
-        placed_of(&lay_out_board(&graph.to_string(), &mut Column::default()).unwrap()).unwrap();
+        placed_of(&lay_out_picture(&graph.to_string(), &mut Column::default()).unwrap()).unwrap();
     let frames = placed["frames"].as_array().unwrap();
     let depth = |id: &str| number(&frames.iter().find(|frame| frame["id"] == id).unwrap()["depth"]);
     assert!(
@@ -218,8 +218,8 @@ fn a_parent_inside_a_packed_group_stays_above_its_enclosing_inline_frame() {
 }
 
 #[test]
-fn a_board_drawn_no_way_the_core_knows_is_refused_before_graphviz_is_asked() {
+fn a_picture_drawn_no_way_the_core_knows_is_refused_before_graphviz_is_asked() {
     let mut graphviz = Column::default();
-    lay_out_board(&two_containers("stacked"), &mut graphviz).unwrap_err();
+    lay_out_picture(&two_containers("stacked"), &mut graphviz).unwrap_err();
     assert_eq!(graphviz.asked, 0);
 }

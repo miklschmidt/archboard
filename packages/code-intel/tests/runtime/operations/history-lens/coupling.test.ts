@@ -13,10 +13,10 @@ import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { LocalityAnswerSchema, type LocalityAnswer } from "#shared/protocol/locality.ts";
 import {
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
-	type SemanticBoard,
-} from "@archboard/board/document";
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
+	type LegacyBoard,
+} from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-coupling-"));
@@ -73,7 +73,7 @@ function together(files: readonly string[], times = 1): void {
 	}
 }
 
-/** Every part of the board: its id, name, bound file and what holds it. */
+/** Every part of the document: its id, name, bound file and what holds it. */
 const PARTS = [
 	["pOr", "Orders", "src/orders.ts"],
 	["pBi", "Billing", "src/billing.ts"],
@@ -100,13 +100,13 @@ const PARTS = [
 ] as const;
 
 /**
- * The board: every part bound into the shop, a container that binds nothing,
+ * The document: every part bound into the shop, a container that binds nothing,
  * a relationship from Tracking to Shipping, one from Fraud to the container
  * that holds Gateway, one from Line inside Basket to Tax, and a flow with one
  * step from Mailer to Templates.
- * @returns The board.
+ * @returns The document.
  */
-function board(): SemanticBoard {
+function document(): LegacyBoard {
 	const nodes = [
 		...PARTS.map(([id, name, path, parent], index) => ({
 			id,
@@ -118,8 +118,8 @@ function board(): SemanticBoard {
 		})),
 		{ id: "pPy", order: (PARTS.length + 1) * 1000, name: "Payments", kind: "service" },
 	];
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "bd",
 		name: "Shop",
@@ -206,9 +206,9 @@ beforeAll(async () => {
 	together(["src/mailer.ts", "src/templates.ts"], 5);
 	together(["src/basket.ts", "src/tax.ts"], 5);
 	lens = await import("#tests/runtime/support/history-lens/lens.ts");
-	const value = board();
+	const value = document();
 	const [variant] = value.variants;
-	if (variant === undefined) throw new Error("the board has no variant");
+	if (variant === undefined) throw new Error("the document has no variant");
 	answer = LocalityAnswerSchema.parse(
 		await lens.createVariantLocality().read(scratch, value, variant, undefined),
 	);

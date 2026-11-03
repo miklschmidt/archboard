@@ -53,7 +53,7 @@ function identityEntry(name: string, checkouts: RegisteredRepoStatus[]): Reposit
 }
 
 /**
- * Why an identity's chosen checkout shows boards or does not.
+ * Why an identity's chosen checkout shows models or does not.
  * @param chosen The chosen checkout, if the identity has one.
  * @param vault Its vault, when it has one.
  * @returns The state.
@@ -148,11 +148,4 @@ function repositoryOfVault(vault: string): string | null {
 	return placeOfVault(vault).repository;
 }
 
-export {
-	listRepositories,
-	placeOfVault,
-	repositoryOfVault,
-	vaultIn,
-	type RepositoryEntry,
-	type VaultPlace,
-};
+export { listRepositories, placeOfVault, repositoryOfVault, vaultIn };

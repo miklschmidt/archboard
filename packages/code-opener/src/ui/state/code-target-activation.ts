@@ -1,5 +1,5 @@
-// Activating a code target: the person asks for the code a board subject is
-// bound to, and the server opens it. The board and the subject's stable
+// Activating a code target: the person asks for the code a model subject is
+// bound to, and the server opens it. The model and the subject's stable
 // identity go to the server, which owns the binding, the opener and the
 // checkout registry; the browser never reads a local path.
 
@@ -22,7 +22,7 @@ type CodeTargetActivationOptions = {
 	 */
 	onNotice: (notice: CodeTargetNotice) => void;
 } & (
-	| { boardKey: string | null; elementId: string }
+	| { paneKey: string | null; elementId: string }
 	| { target: Extract<CodeTargetOpenRequest, { model: string }> }
 );
 
@@ -58,8 +58,8 @@ function openedNotice(reply: CodeTargetOpenSuccess): CodeTargetNotice | null {
 }
 
 /**
- * Open a board subject's code target, and tell the person what the outcome deserves.
- * @param options The board, the subject and where a notice goes.
+ * Open a model subject's code target, and tell the person what the outcome deserves.
+ * @param options The model, the subject and where a notice goes.
  */
 function activateCodeTarget(options: CodeTargetActivationOptions): void {
 	const { vault, onNotice } = options;
@@ -67,7 +67,7 @@ function activateCodeTarget(options: CodeTargetActivationOptions): void {
 	if (request === null) {
 		onNotice({
 			kind: "error",
-			message: "No board is available for this code target.",
+			message: "No model is available for this code target.",
 			actions: [],
 		});
 		return;
@@ -84,12 +84,12 @@ function activateCodeTarget(options: CodeTargetActivationOptions): void {
 /**
  * Preserve the selected canonical reading or the legacy board identity.
  * @param options The explicit activation destination.
- * @returns The shared request, or absence for a legacy pane without a board.
+ * @returns The shared request, or absence for a legacy pane without a model.
  */
 function activationRequest(options: CodeTargetActivationOptions): CodeTargetOpenRequest | null {
 	if ("target" in options) return options.target;
-	if (options.boardKey === null || options.boardKey === "") return null;
-	return { board: options.boardKey, element: options.elementId };
+	if (options.paneKey === null || options.paneKey === "") return null;
+	return { board: options.paneKey, element: options.elementId };
 }
 
-export { activateCodeTarget, type CodeTargetActivationOptions };
+export { activateCodeTarget };

@@ -121,4 +121,4 @@ function useAgent(inputs: AgentInputs): {
 	return { voice: voiceView, actions };
 }
 
-export { useAgent, useAgentView, type AgentInputs };
+export { useAgent, useAgentView };

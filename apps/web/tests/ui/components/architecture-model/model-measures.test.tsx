@@ -6,7 +6,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
 import { createElement, type ComponentProps } from "react";
 import type { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import type { z } from "zod";
 
 GlobalRegistrator.register();

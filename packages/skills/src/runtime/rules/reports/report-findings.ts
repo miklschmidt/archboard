@@ -23,7 +23,7 @@ interface SkillDisagreement {
 	readonly untaught: readonly string[];
 	/**
 	 * Runs whose finding is counted against the run: a departure from the
-	 * skill, or a contradicted board. A skill finding on a passage the feature
+	 * skill, or a contradicted document. A skill finding on a passage the feature
 	 * cites is counted here, whatever axis the grader gave it.
 	 */
 	readonly otherwise: readonly string[];

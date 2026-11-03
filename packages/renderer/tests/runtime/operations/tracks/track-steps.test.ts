@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import { bodyShift, corridorPoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { scorecardOf } from "#tests/runtime/support/drawn-scorecard.ts";
 import onePointPort from "#tests/runtime/support/fixtures/one-point-port.json";
-import boardRasterizer from "#tests/runtime/support/fixtures/board-rasterizer.json";
+import modelRasterizer from "#tests/runtime/support/fixtures/model-rasterizer.json";
 import browserApplication from "#tests/runtime/support/fixtures/browser-application.json";
 import codexWorkhorse from "#tests/runtime/support/fixtures/codex-workhorse.json";
 import commandGroups from "#tests/runtime/support/fixtures/command-groups.json";
@@ -16,7 +16,7 @@ import staircase from "#tests/runtime/support/fixtures/staircase.json";
 import voiceCoordinator from "#tests/runtime/support/fixtures/voice-coordinator.json";
 import walkthroughStair from "#tests/runtime/support/fixtures/walkthrough-stair.json";
 
-/** The vocabulary the fixtures reduced from dogfood boards draw with, its groups in the vault's order. */
+/** The vocabulary the fixtures reduced from dogfood documents draw with, its groups in the vault's order. */
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],
 	nodeKinds: {
@@ -63,7 +63,7 @@ function sidewaysLevels(points: readonly DrawnPoint[]): Set<number> {
 	);
 }
 
-// Reduced from a dogfood board: a long line's lanes drift a little from band
+// Reduced from a dogfood document: a long line's lanes drift a little from band
 // to band where Graphviz drew it, no one column was free for all of them, and
 // each lane kept its own x, so the line stepped in almost every channel.
 test("a long line no one column holds takes as few columns as hold it", async () => {
@@ -77,7 +77,7 @@ test("a long line no one column holds takes as few columns as hold it", async ()
 		expect(sidewaysLevels(points).size, id).toBeLessThanOrEqual(4);
 });
 
-// Reduced from a dogfood board: two lines leave a frame through its one
+// Reduced from a dogfood document: two lines leave a frame through its one
 // port, one of them straight down into it. Read as two lines lined up end to
 // end, the other was stepped a lane aside just before the port they share,
 // where they are drawn joined anyway.
@@ -109,7 +109,7 @@ test.each([
 	},
 );
 
-// Taken from a board of this repository: a line into a card stacked under
+// Taken from a document of this repository: a line into a card stacked under
 // another in a group region went round the upper card, then stepped to its
 // label and again, a lane, from the label to the lower card's port, a
 // staircase just above its arrowhead. It steps once, above its label.
@@ -176,7 +176,7 @@ function frameWalls(svg: string): Walls[] {
 	}));
 }
 
-// Taken from boards of this repository: a line ran down just outside a
+// Taken from documents of this repository: a line ran down just outside a
 // container's wall, 16 px off it, where nothing stood between them. Inside a
 // container its inset keeps what it holds off the wall; outside, a line keeps
 // the same clearance from it where it has the room.
@@ -218,7 +218,7 @@ function leftOfEverything(drawing: RenderedDiagram, id: string): number[] {
 
 test("a line runs inside the drawing rather than round it", async () => {
 	for (const [fixture, id] of [
-		[boardRasterizer, "P1XYQl8l"],
+		[modelRasterizer, "P1XYQl8l"],
 		[codexWorkhorse, "FWJMAVKj"],
 	] as const) {
 		const drawing = await renderArchitecture({
@@ -244,14 +244,14 @@ test("a line squeezed between a card and a wall passes on one column", async () 
 	expect(sidewaysLevels(corridorPoints(drawing.svg).get("FWJMAVKj")!).size).toBeLessThanOrEqual(2);
 });
 
-test("a packed group's pin stands where the board's line turns to it", async () => {
+test("a packed group's pin stands where the document's line turns to it", async () => {
 	const content = orderedFixture(commandGroups);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
 	const crossings = scorecardOf(drawing, content).find(({ name }) => name === "crossings")!;
 	expect(crossings.value).toBeLessThanOrEqual(3);
 });
 
-// Taken from a board of this repository: Graphviz ranked a line's label beside
+// Taken from a document of this repository: Graphviz ranked a line's label beside
 // a card that blocks the one column both of the line's cards reach, so the
 // line stepped aside just below its source. The band above had room for the
 // label on that column, and the line runs straight with its label there.

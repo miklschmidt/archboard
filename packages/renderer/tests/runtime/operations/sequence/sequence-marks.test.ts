@@ -3,7 +3,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { type StatedStandings } from "#shared/protocol/render-request.ts";
@@ -22,7 +22,7 @@ import {
 	drawnSequence,
 	subject,
 } from "#tests/runtime/support/sequence-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /**
  * The ink a start tag is filled with, as an attribute or in its style.

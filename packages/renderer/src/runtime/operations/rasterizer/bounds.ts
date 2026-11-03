@@ -140,14 +140,12 @@ function boundsRefusal(bounds: RasterBounds): string | null {
 }
 
 export {
-	RASTER_MAX_PIXELS,
 	RASTER_MAX_SCALE,
 	RASTER_MAX_SIDE_PX,
 	RASTER_MIN_SCALE,
 	bitmapSizeOf,
 	boundsRefusal,
 	regionOf,
-	type BitmapSize,
 	type PageRegion,
 	type RasterBounds,
 };

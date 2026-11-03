@@ -44,4 +44,4 @@ function useSubtitleOverlay(sources: SubtitleOverlaySources): PaneOverlay | null
 	}, [voice, activePaneId, reducedMotion, recording, presentedPaneId]);
 }
 
-export { useSubtitleOverlay, type SubtitleOverlaySources };
+export { useSubtitleOverlay };

@@ -3,7 +3,7 @@ import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 export const contextFixture: ArchboardContext = {
 	schema: 1,
 	paneId: "pane-1",
-	board: {
+	model: {
 		name: "Ingest pipeline",
 		key: "ingest pipeline",
 		version: 42,

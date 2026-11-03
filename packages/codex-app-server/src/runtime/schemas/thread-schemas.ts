@@ -142,7 +142,6 @@ export {
 	TurnItemsViewSchema,
 	TurnSchema,
 	ThreadSchema,
-	ThreadTimelineEntrySchema,
 	ThreadRealtimeTimelineStateSchema,
 	ThreadItemPageSchema,
 	ThreadTurnPageSchema,

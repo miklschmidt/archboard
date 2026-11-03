@@ -1,9 +1,9 @@
 // The answer of a footprint, `archboard semantic footprint` and
-// `GET /api/semantic-boards/footprint` (ADR 0045).
+// `GET /api/architecture/footprint` (ADR 0045).
 //
 // A footprint reads the commits from the merge base of a named ref and HEAD up
 // to HEAD, or up to a named head ref that need not be checked out, in each
-// checkout, and says which parts of a board's current variant those commits
+// checkout, and says which parts of a document's current variant those commits
 // changed through their bound declarations or paths. With a proposal it sets
 // that against the parts the proposal names, in three lists: named and
 // changed, changed but not named, and named but not changed. The proposal
@@ -22,7 +22,7 @@ import {
 	BehindPartSchema,
 	BehindSkipSchema,
 } from "#shared/protocol/code-check.ts";
-import { SubjectStandingSchema } from "@archboard/board/render-reply";
+import { SubjectStandingSchema } from "@archboard/model/render-reply";
 
 /** How the comparison marks a part, relationship or step that it names. */
 const NamedStatusSchema = SubjectStandingSchema.exclude(["unchanged"]);
@@ -114,7 +114,7 @@ const FootprintRepositorySchema = z.discriminatedUnion("status", [
 
 /** What every footprint says, whether or not a proposal was named. */
 const footprintBase = {
-	board: z.string(),
+	model: z.string(),
 	version: z.int().nonnegative(),
 	/** The ref as the caller named it. */
 	base: z.string(),
@@ -123,7 +123,7 @@ const footprintBase = {
 	/**
 	 * The variant the proposal is read against, or the variant itself when no
 	 * proposal is named: the current variant, else the proposal's parent. Null
-	 * for a proposal with no parent on a board with no current variant, which
+	 * for a proposal with no parent on a document with no current variant, which
 	 * is read against nothing, so every part it holds is named.
 	 */
 	against: z.object({ id: z.string(), name: z.string() }).strict().nullable(),
@@ -152,13 +152,6 @@ const ProposedFootprintSchema = z
 /** One footprint. */
 const FootprintAnswerSchema = z.union([UnproposedFootprintSchema, ProposedFootprintSchema]);
 
-/** What the route answers and the command prints: the footprint beside the `success` every answer carries. */
-const FootprintReplySchema = z.union([
-	UnproposedFootprintSchema.extend({ success: z.literal(true) }),
-	ProposedFootprintSchema.extend({ success: z.literal(true) }),
-]);
-
-type FootprintReply = z.infer<typeof FootprintReplySchema>;
 type FootprintAnswer = z.infer<typeof FootprintAnswerSchema>;
 type FootprintPart = z.infer<typeof FootprintPartSchema>;
 type FootprintSkip = z.infer<typeof FootprintSkipSchema>;
@@ -168,14 +161,8 @@ type NamedReason = z.infer<typeof NamedReasonSchema>;
 export {
 	FootprintAnswerSchema,
 	type FootprintAnswer,
-	FootprintReplySchema,
-	type FootprintReply,
-	FootprintPartSchema,
 	type FootprintPart,
-	FootprintRepositorySchema,
 	type FootprintRepository,
-	FootprintSkipSchema,
 	type FootprintSkip,
-	NamedReasonSchema,
 	type NamedReason,
 };

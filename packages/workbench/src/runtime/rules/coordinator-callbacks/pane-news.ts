@@ -5,9 +5,9 @@
 // How they got there does not matter to somebody answering "what is this?"; where they are does.
 // Names only. An identifier, a pane letter or a line of JSON in a speech model's context is
 // something it will say out loud. Only the parts the pane marked as the user's own are said
-// (ADR 0034), and the board always is, because two panes can be open.
+// (ADR 0034), and the model always is, because two panes can be open.
 //
-// What an agent outside this session does is news too (TASK-293.06): a board it wrote, or a pane
+// What an agent outside this session does is news too (TASK-293.06): a model it wrote, or a pane
 // it pointed somewhere with `browser show`. Neither model asked for it, so the sentence says what
 // changed under them and that an agent did it, never crediting the user.
 
@@ -53,7 +53,7 @@ function selectionClause(event: PaneNewsSource): string {
 }
 
 /**
- * The words for the view the board is read through.
+ * The words for the view the model is read through.
  * @param event - The pane event.
  * @returns The clause, beginning with its own comma.
  */
@@ -66,7 +66,7 @@ function viewClause(event: PaneNewsSource): string {
 
 /**
  * The words for the variant on screen, said when the user chose it, or when they arrived on a
- * board at a state of it that is not the current one.
+ * model at a state of it that is not the current one.
  * @param event - The pane event.
  * @param changed - What the user changed.
  * @returns The clause, or nothing.
@@ -76,8 +76,8 @@ function variantClause(event: PaneNewsSource, changed: readonly SemanticUserChan
 	if (variant === null) {
 		return "";
 	}
-	const chosen = changed.includes("variant") && !changed.includes("board");
-	const arrivedElsewhere = changed.includes("board") && variant.lifecycle !== "current";
+	const chosen = changed.includes("variant") && !changed.includes("model");
+	const arrivedElsewhere = changed.includes("model") && variant.lifecycle !== "current";
 	return chosen || arrivedElsewhere ? `, variant "${variant.name}"` : "";
 }
 
@@ -88,12 +88,12 @@ function variantClause(event: PaneNewsSource, changed: readonly SemanticUserChan
  */
 function focusNews(event: PaneFocusEvent): string {
 	return event.focus.focused
-		? `The user is now in the pane showing board "${event.board.name}" (data).`
-		: `The user is now in another pane, not the one showing board "${event.board.name}" (data).`;
+		? `The user is now in the pane showing model "${event.model.name}" (data).`
+		: `The user is now in another pane, not the one showing model "${event.model.name}" (data).`;
 }
 
 /**
- * What a reading report says: the board, and whichever parts the user changed.
+ * What a reading report says: the model, and whichever parts the user changed.
  * @param event - The selection event.
  * @param changed - What the user changed.
  * @returns The sentence.
@@ -104,13 +104,13 @@ function readingNews(event: PaneSelectionEvent, changed: readonly SemanticUserCh
 		changed.includes("view") ? viewClause(event) : "",
 		changed.includes("selection") ? selectionClause(event) : "",
 	];
-	return `The user is now looking at board "${event.board.name}"${clauses.join("")} (data).`;
+	return `The user is now looking at model "${event.model.name}"${clauses.join("")} (data).`;
 }
 
 /**
  * Whether a reading the user changed is a reason to stop a narration (TASK-293.05): they picked
- * something out, or chose a view or a variant, on the board they were on. Clicking empty canvas
- * should not stop a talk, and a board of their choosing ends the walkthrough, which is told as
+ * something out, or chose a view or a variant, on the model they were on. Clicking empty canvas
+ * should not stop a talk, and a model of their choosing ends the walkthrough, which is told as
  * leaving it.
  * @param event - The selection event.
  * @param changed - What the user changed.
@@ -120,7 +120,7 @@ function stopsNarration(
 	event: PaneSelectionEvent,
 	changed: readonly SemanticUserChange[],
 ): boolean {
-	if (changed.includes("board")) {
+	if (changed.includes("model")) {
 		return false;
 	}
 	const picked = changed.includes("selection") && event.architecture.selection.count > 0;
@@ -138,30 +138,30 @@ function outsideWriteNews(event: SettledSemanticChangeEvent): CoordinatorPaneNew
 	const by = event.change.origin === "agent" ? "agent" : "external";
 	const writer = by === "agent" ? "by another agent" : "outside this session";
 	return {
-		sentence: `Board "${event.board.name}" was just changed ${writer}${doing} (data).`,
+		sentence: `Model "${event.model.name}" was just changed ${writer}${doing} (data).`,
 		// Narration retains its source and target snapshots. Live edits only update context.
 		stops: false,
 		by,
-		board: event.change.board,
+		model: event.change.model,
 	};
 }
 
 /**
- * What an agent pointing a pane at another board is: where the pane was and where it is now,
+ * What an agent pointing a pane at another model is: where the pane was and where it is now,
  * worded so it never credits the user.
  * @param event - The focus event the show published.
- * @param from - The board the pane showed before, by name, or null when it showed none.
+ * @param from - The model the pane showed before, by name, or null when it showed none.
  * @returns The news.
  */
 function agentSwitchNews(event: PaneFocusEvent, from: string | null): CoordinatorPaneNews {
-	const now = `board "${event.board.name}"`;
+	const now = `model "${event.model.name}"`;
 	let sentence = `A pane now shows ${now}; an agent put it there (data).`;
-	if (from === event.board.name) {
+	if (from === event.model.name) {
 		sentence = `The pane showing ${now} now shows another reading of it; an agent put it there (data).`;
 	} else if (from !== null) {
-		sentence = `The pane that showed board "${from}" now shows ${now}; an agent put it there (data).`;
+		sentence = `The pane that showed model "${from}" now shows ${now}; an agent put it there (data).`;
 	}
-	return { sentence, stops: true, by: "agent", board: null };
+	return { sentence, stops: true, by: "agent", model: null };
 }
 
 /**
@@ -174,14 +174,14 @@ function userNews(event: PaneFocusEvent | PaneSelectionEvent): CoordinatorPaneNe
 	const changed = event.userChanged;
 	if (event.kind === "pane_focus") {
 		return changed.includes("focus")
-			? { sentence: focusNews(event), stops: false, by: "user", board: null }
+			? { sentence: focusNews(event), stops: false, by: "user", model: null }
 			: null;
 	}
 	if (changed.length === 0) {
 		return null;
 	}
 	const sentence = readingNews(event, changed);
-	return { sentence, stops: stopsNarration(event, changed), by: "user", board: null };
+	return { sentence, stops: stopsNarration(event, changed), by: "user", model: null };
 }
 
 /**

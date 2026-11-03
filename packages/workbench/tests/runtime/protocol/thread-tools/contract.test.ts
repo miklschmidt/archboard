@@ -1,19 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { archboardProfiles } from "#tests/runtime/support/archboard-profiles.ts";
 
 import {
-	ARCHBOARD_APP_DYNAMIC_TOOLS,
 	ARCHBOARD_APP_MANIFEST,
 	ARCHBOARD_APP_MANIFEST_BYTES,
 	ARCHBOARD_APP_TOOL_NAMES,
 	assertCanonicalArchboardAppManifest,
 	parseArchboardAppManifest,
 } from "#runtime/protocol/thread-tools/manifest.ts";
-import {
-	ARCHBOARD_APP_TOOL_BINDING,
-	archboardAppDynamicToolsFor,
-	archboardAppToolBindingFor,
-} from "#runtime/protocol/thread-tools/binding.ts";
 import {
 	DynamicToolCallResponseSchema,
 	parseDynamicToolCallResponse,
@@ -31,9 +24,6 @@ import {
 	dynamicResponse,
 	okEnvelope,
 } from "#tests/runtime/protocol/thread-tools/fixtures.ts";
-
-const EXPECTED_MANIFEST_SHA256 = "5399a33a0466d31518de7067536dc6c578d559bb2b46b3668ff8d4e18bdd1860";
-const EXPECTED_WORKHORSE_SHA256 = archboardProfiles().workhorse.instructions.sha256;
 
 function expectDeepFrozen(value: unknown): void {
 	if (typeof value !== "object" || value === null) {
@@ -386,58 +376,6 @@ describe("strict dynamic-tool result boundary", () => {
 					message: "The request may have taken effect.",
 				}),
 			),
-		);
-	});
-});
-
-describe("fresh workhorse tool binding", () => {
-	test("binds exact identity and reviewed workhorse bytes", () => {
-		expect(ARCHBOARD_APP_TOOL_BINDING).toMatchObject({
-			namespace: "archboard_app",
-			manifestHash: EXPECTED_MANIFEST_SHA256,
-			workhorseInstructionsSha256: EXPECTED_WORKHORSE_SHA256,
-		});
-		expect(ARCHBOARD_APP_TOOL_BINDING.dynamicTools).toBe(ARCHBOARD_APP_DYNAMIC_TOOLS);
-		expectDeepFrozen(ARCHBOARD_APP_TOOL_BINDING);
-	});
-
-	test("installs tools only on a fresh Archboard-created workhorse start", () => {
-		const eligible = {
-			lifecycle: "fresh_workhorse_start",
-			provenance: "archboard_created",
-		} as const;
-		expect(archboardAppToolBindingFor(eligible)).toBe(ARCHBOARD_APP_TOOL_BINDING);
-		expect(archboardAppDynamicToolsFor(eligible)).toBe(ARCHBOARD_APP_DYNAMIC_TOOLS);
-		for (const lifecycle of ["attach", "reconnect"] as const) {
-			for (const provenance of ["archboard_created", "attached", "foreign", "unknown"] as const) {
-				const request = { lifecycle, provenance };
-				expect(archboardAppToolBindingFor(request)).toBeNull();
-				expect(archboardAppDynamicToolsFor(request)).toEqual([]);
-			}
-		}
-		for (const provenance of ["attached", "foreign", "unknown"] as const) {
-			const request = { lifecycle: "fresh_workhorse_start" as const, provenance };
-			expect(archboardAppToolBindingFor(request)).toBeNull();
-		}
-	});
-
-	test("does not accept caller-supplied identity, manifest, or tool data", () => {
-		expectRejected(() =>
-			archboardAppToolBindingFor({
-				lifecycle: "fresh_workhorse_start",
-				provenance: "archboard_created",
-				manifestHash: EXPECTED_MANIFEST_SHA256,
-			}),
-		);
-		expectRejected(() =>
-			archboardAppDynamicToolsFor({
-				lifecycle: "fresh_workhorse_start",
-				provenance: "archboard_created",
-				dynamicTools: ARCHBOARD_APP_DYNAMIC_TOOLS,
-			}),
-		);
-		expectRejected(() =>
-			archboardAppToolBindingFor({ lifecycle: "fresh_start", provenance: "foreign" }),
 		);
 	});
 });

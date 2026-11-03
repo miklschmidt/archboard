@@ -12,11 +12,11 @@ import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 import {
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
 	currentVariant,
 	resolveVariant,
-} from "@archboard/board/document";
+} from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-footprint-pinned-"));
@@ -71,13 +71,13 @@ function part(id: string, order: number, path: string, branch: string) {
 }
 
 /**
- * A board with the variants a test says.
+ * A document with the variants a test says.
  * @param variants The variants.
- * @returns The board.
+ * @returns The document.
  */
-function board(variants: readonly object[]) {
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+function document(variants: readonly object[]) {
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "bd",
 		name: "Shop",
@@ -118,15 +118,15 @@ afterAll(() => {
 
 /**
  * The ids of the parts a footprint lists as changed, and why it skipped the rest.
- * @param value The board.
+ * @param value The document.
  * @param proposal The draft to read, if any.
  * @returns The changed ids, and each skip as its part and reason.
  */
-async function read(value: ReturnType<typeof board>, proposal?: string) {
+async function read(value: ReturnType<typeof document>, proposal?: string) {
 	const answer = FootprintAnswerSchema.parse(
 		await lens.readVariantFootprint({
 			vault: scratch,
-			board: value,
+			document: value,
 			against: currentVariant(value),
 			proposal: proposal === undefined ? undefined : resolveVariant(value, proposal),
 			base: "main",
@@ -144,7 +144,7 @@ async function read(value: ReturnType<typeof board>, proposal?: string) {
 }
 
 test("a part pinned to a branch that is not checked out is read up to that branch, and one pinned to a ref no checkout resolves is skipped naming it", async () => {
-	const value = board([
+	const value = document([
 		{
 			id: "v1",
 			name: "Built",
@@ -165,7 +165,7 @@ test("a part pinned to a branch that is not checked out is read up to that branc
 
 test("a draft is read at its own branch, which holds the older branch an inherited part pins", async () => {
 	const inherited = part("pL", 1000, "src/ledger.ts", "feature");
-	const value = board([
+	const value = document([
 		{ id: "v1", name: "Built", lifecycle: "current", content: { nodes: [inherited] } },
 		{
 			id: "v2",

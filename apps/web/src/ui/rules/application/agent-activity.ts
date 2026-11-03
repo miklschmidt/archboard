@@ -1,13 +1,13 @@
-// Which boards an agent is working on, as the server tells every client
-// (ADR 0022): a map by board key, replaced whole on each snapshot and kept
+// Which models an agent is working on, as the server tells every client
+// (ADR 0022): a map by model key, replaced whole on each snapshot and kept
 // reference-stable when the snapshot says nothing new. Pure.
 
 import type { AgentActivityEntry } from "#ui/rules/pane-session/session-types.ts";
 
-/** Agent activity by board key. */
+/** Agent activity by model key. */
 type AgentActivityMap = Readonly<Record<string, AgentActivityEntry>>;
 
-/** No agent is working on any board. */
+/** No agent is working on any model. */
 const NO_AGENT_ACTIVITY: AgentActivityMap = Object.freeze({});
 
 /**
@@ -29,7 +29,7 @@ function sameActivity(current: AgentActivityMap, next: AgentActivityMap): boolea
 /**
  * Replace the map with a snapshot.
  * @param current The map held now.
- * @param snapshot Every board an agent is working on.
+ * @param snapshot Every model an agent is working on.
  * @returns The next map, or the same reference when nothing changed.
  */
 function replaceAgentActivity(
@@ -38,7 +38,7 @@ function replaceAgentActivity(
 ): AgentActivityMap {
 	const next: Record<string, AgentActivityEntry> = {};
 	for (const entry of snapshot) {
-		next[entry.board] = entry;
+		next[entry.model] = entry;
 	}
 	return sameActivity(current, next) ? current : Object.freeze(next);
 }

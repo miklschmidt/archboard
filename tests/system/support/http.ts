@@ -53,7 +53,7 @@ export function createJsonRequester(server: OwnedServer) {
 			url.searchParams.set("vault", vault);
 		}
 		if (method !== "GET" && method !== "HEAD" && !url.searchParams.has("doing")) {
-			url.searchParams.set("doing", options.doing ?? "checking the board contract");
+			url.searchParams.set("doing", options.doing ?? "checking the model contract");
 		}
 		return readOwnedJsonResponse<T>(
 			server,

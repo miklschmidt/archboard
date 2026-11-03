@@ -110,4 +110,4 @@ function readOrbColors(element: Element): OrbColors {
 	};
 }
 
-export { readOrbColors, rgba, type OrbColors, type Rgb };
+export { readOrbColors, rgba, type OrbColors };

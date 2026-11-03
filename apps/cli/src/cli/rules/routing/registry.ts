@@ -1,5 +1,5 @@
 // Projects the command table into the contract registry, and asserts the
-// board/browser architecture rule over every registered command.
+// model/browser architecture rule over every registered command.
 import type { AnyCommandContract } from "#cli/protocol/contract/contract.ts";
 import type {
 	CliRegistryEntry,
@@ -8,29 +8,16 @@ import type {
 	RouteOwner,
 } from "#cli/protocol/routing/route.ts";
 
-// `semantic` is here because a semantic board is a board: the commands in that
-// namespace read and write one, even though they declare no `board`
-// prerequisite of their own (ADR 0023).
-const boardNamespaces = new Set(["semantic"]);
-const sessionRelationships = [
-	"/api/selection",
-	"/api/panes",
-	"/api/viewport",
-	"/api/browser/",
-	"/api/boards/open",
-];
+const sessionRelationships = ["/api/selection", "/api/panes", "/api/viewport", "/api/browser/"];
 
 /**
- * Classifies a command by what it touches: the browser namespace, a persisted board, or neither.
+ * Classifies a command by what it touches: the browser namespace or neither.
  * @param command - The command contract.
  * @returns The classification the registry reports and the architecture rule checks.
  */
 function commandClassification(command: AnyCommandContract): CliRegistryEntry["classification"] {
 	if (command.path[0] === "browser") {
 		return "browser";
-	}
-	if (command.prerequisites.includes("board") || boardNamespaces.has(command.path[0])) {
-		return "board";
 	}
 	return "neither";
 }
@@ -74,7 +61,7 @@ function usesBrowserSession(command: AnyCommandContract): boolean {
 
 /**
  * Finds the first way a command breaks the architecture rule: browser-session work lives only
- * in the browser namespace, and the browser namespace never writes a board note.
+ * in the browser namespace, and the browser namespace never writes a model note.
  * @param entry - The registry entry to check.
  * @returns The violation message, or null when the command is placed correctly.
  */
@@ -89,7 +76,7 @@ function architectureViolation(entry: CliRegistryEntry): string | null {
 		return `${name} is a browser operation outside the browser namespace.`;
 	}
 	if (command.effects.includes("write")) {
-		return `${name} is a browser operation that writes a board note.`;
+		return `${name} is a browser operation that writes a model note.`;
 	}
 	return null;
 }

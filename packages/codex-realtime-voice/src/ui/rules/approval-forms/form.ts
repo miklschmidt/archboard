@@ -7,12 +7,6 @@ import type {
 	WorkbenchApprovalFormState,
 } from "#ui/state/approvals/contracts.ts";
 
-const EMPTY_APPROVAL_FORM: WorkbenchApprovalFormState = Object.freeze({
-	values: Object.freeze({}),
-	selections: Object.freeze({}),
-	flags: Object.freeze({}),
-});
-
 /**
  * The form seeded from the fields' published defaults.
  * @param fields The reviewed fields.
@@ -98,11 +92,4 @@ function formSelection(state: WorkbenchApprovalFormState, name: string): readonl
 	return state.selections[name] ?? [];
 }
 
-export {
-	EMPTY_APPROVAL_FORM,
-	applyApprovalFormEvent,
-	formFlag,
-	formSelection,
-	formValue,
-	initialApprovalForm,
-};
+export { applyApprovalFormEvent, formFlag, formSelection, formValue, initialApprovalForm };

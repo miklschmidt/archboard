@@ -1,14 +1,14 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-// A flow drawn on the board it lives on: the architecture reading draws each
+// A flow drawn on the document it lives on: the architecture reading draws each
 // message between two participants as a step line unless an authored
 // relationship already joins them, a self step draws nothing, and a standing
 // keyed by the step's id lands on its line.
 
 import { describe, expect, test } from "bun:test";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const NODES = [
 	{ id: "sh", name: "Shell", kind: "external", responsibility: "Invokes the command" },
@@ -31,11 +31,11 @@ const FLOW = {
 };
 
 /**
- * A board holding one exchange and the given relationships.
+ * A document holding one exchange and the given relationships.
  * @param edges The authored relationships.
  * @returns The content.
  */
-function board(edges: readonly unknown[] = []): VariantContent {
+function document(edges: readonly unknown[] = []): VariantContent {
 	return orderedFixture({ nodes: NODES, edges, flows: [FLOW] });
 }
 
@@ -53,11 +53,11 @@ function drawnIds(svg: string, kind: "edge" | "step"): string[] {
 		.filter((id, index, all) => all.indexOf(id) === index);
 }
 
-describe("a flow drawn on its board", () => {
+describe("a flow drawn on its document", () => {
 	test("each message between two participants is a dashed, open-headed step line; a return, a self step and a repeated pair draw nothing more", async () => {
 		const rendered = await renderArchitecture({
 			policy: DEFAULT_SEMANTIC_POLICY,
-			content: board(),
+			content: document(),
 			theme: "light",
 		});
 		expect(drawnIds(rendered.svg, "step")).toEqual(["s1", "s2", "s3"]);
@@ -71,10 +71,10 @@ describe("a flow drawn on its board", () => {
 		expect(rendered.atlas.edges["s1"]).toBeDefined();
 	});
 
-	test("a board with any authored relationship is drawn from its relationships alone", async () => {
+	test("a document with any authored relationship is drawn from its relationships alone", async () => {
 		const rendered = await renderArchitecture({
 			policy: DEFAULT_SEMANTIC_POLICY,
-			content: board([{ id: "e1", from: "grp", to: "run", kind: "call", label: "invoke" }]),
+			content: document([{ id: "e1", from: "grp", to: "run", kind: "call", label: "invoke" }]),
 			theme: "light",
 		});
 		expect(drawnIds(rendered.svg, "edge")).toEqual(["e1"]);
@@ -84,7 +84,7 @@ describe("a flow drawn on its board", () => {
 	test("a standing keyed by the step's id lands on its line", async () => {
 		const rendered = await renderArchitecture({
 			policy: DEFAULT_SEMANTIC_POLICY,
-			content: board(),
+			content: document(),
 			theme: "light",
 			standing: { s3: "added" },
 		});

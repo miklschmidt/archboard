@@ -89,7 +89,7 @@ async function openModel(
  */
 async function selectPart(page: Page, id: string, pane = "A"): Promise<void> {
 	await page.click(
-		`[data-slot='pane-stage'][data-pane='${pane}'] [data-slot='semantic-board-surface'] [data-semantic-id='${id}'] text`,
+		`[data-slot='pane-stage'][data-pane='${pane}'] [data-slot='canvas-surface'] [data-semantic-id='${id}'] text`,
 	);
 	await Bun.sleep(900);
 }

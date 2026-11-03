@@ -332,13 +332,10 @@ async function assertBeforeEffect(
 
 export {
 	MUTATION_KINDS,
-	type DurableSettlementResult,
-	type SettlementConfirmation,
 	type MutationExecution,
 	assertBeforeEffect,
 	callerWorkspace,
 	dynamicReason,
-	epochError,
 	freezeDeep,
 	operationWire,
 	refusalMessage,

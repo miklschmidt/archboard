@@ -1,6 +1,6 @@
-import { ArchitectureRenderResultSchema } from "@archboard/board/model";
-import { StandaloneThemeSchema } from "@archboard/board/render-reply";
-// The public receipt for one semantic rasterization: the saved board picture,
+import { ArchitectureRenderResultSchema } from "@archboard/model/contract";
+import { StandaloneThemeSchema } from "@archboard/model/render-reply";
+// The public receipt for one semantic rasterization: the saved document picture,
 // its selectors and dimensions, and the renderer document that produced it.
 // The CLI writes this shape and evaluation tooling parses the same authority.
 
@@ -11,7 +11,7 @@ import {
 	OfferedViewSchema,
 	PictureReceiptShape,
 	RenderedVariantSchema,
-} from "@archboard/board/render-reply";
+} from "@archboard/model/render-reply";
 
 /** The diagram page before bitmap scaling. */
 const SemanticRasterPageSizeSchema = z.object({ width: z.number(), height: z.number() });
@@ -27,15 +27,15 @@ const SemanticRasterRegionSchema = z.object({
 /** The machine-readable receipt for a PNG written by `semantic rasterize`. */
 const SemanticRasterReceiptSchema = z.object({
 	success: z.literal(true),
-	board: z.string(),
+	document: z.string(),
 	version: z.int(),
 	/** What was drawn; ids select it exactly and names are what a person types. */
 	variant: RenderedVariantSchema,
 	/**
 	 * The variant this picture is drawn against, or null when comparison is disabled or there is nothing
 	 * to read it against — it is the current variant, or a first draft on a
-	 * board with none — and it is therefore drawn plain. Every other variant is
-	 * drawn by default as the comparison with the board's current one (on a board
+	 * document with none — and it is therefore drawn plain. Every other variant is
+	 * drawn by default as the comparison with the document's current one (on a document
 	 * with none, with the one it came from), so the receipt names the other
 	 * side; the bitmap cannot.
 	 */
@@ -66,10 +66,7 @@ const SemanticRasterReceiptSchema = z.object({
 	}),
 });
 
-type SemanticRasterReceipt = z.infer<typeof SemanticRasterReceiptSchema>;
-type SemanticRasterPageSize = SemanticRasterReceipt["diagram"];
-
-export { SemanticRasterReceiptSchema, type SemanticRasterPageSize, type SemanticRasterReceipt };
+export { SemanticRasterReceiptSchema };
 
 const ArchitectureRasterReceiptSchema = ArchitectureRenderResultSchema.options[0]
 	.omit({ svg: true, atlas: true })

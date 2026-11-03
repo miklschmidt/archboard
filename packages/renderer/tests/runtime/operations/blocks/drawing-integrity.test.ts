@@ -1,6 +1,6 @@
 import { test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";

@@ -150,4 +150,3 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 }
 
 export { createCheckoutWorkOwner };
-export type { CheckoutTask, CheckoutWorkOwner };

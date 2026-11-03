@@ -1,7 +1,7 @@
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import type { JSX } from "react";
-import { everyStep, stepWords, isMessage, type FlowStep } from "@archboard/board/flow";
-import type { Model, ModelFlow } from "@archboard/board/content";
+import { everyStep, stepWords, isMessage, type FlowStep } from "@archboard/model/flow";
+import type { Model, ModelFlow } from "@archboard/model/content";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 

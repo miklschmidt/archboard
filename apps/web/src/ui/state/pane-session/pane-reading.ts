@@ -2,23 +2,23 @@
 // request in it without waking a browser.
 //
 // The pane is read-only, so this is the whole of what a person contributes to
-// a board's context: which board and variant they are looking at, which named
+// a model's context: which model and variant they are looking at, which named
 // view they are reading it through, and which semantic subjects they picked
 // out. No geometry, no camera, and nothing that could be mistaken for content
-// (ADR 0023) — the board on disk is still the only thing that says what the
+// (ADR 0023) — the model on disk is still the only thing that says what the
 // architecture is.
 //
 // Debounced for the same reason a selection always has been: picking things out
 // is a click a second, and what reads this is a command that runs once a turn.
 //
-// The wire shape is `@archboard/board/pane-context`, which the reader of these
+// The wire shape is `@archboard/model/pane-context`, which the reader of these
 // reports owns; nothing about it is restated here.
 
-import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/model/pane-context";
 import { PANE_MS } from "@archboard/timing";
 import { createUserMarks } from "#ui/state/pane-session/user-marks.ts";
 import { inVault, requestJson } from "@archboard/server-requests";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
@@ -27,9 +27,9 @@ type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 /** What one pane is reading, before its identity, count and moment are stamped on. */
 type PaneReading = Omit<SemanticPaneContext, "paneId" | "clientId" | "at" | "sequence" | "byUser">;
 
-/** A pane showing nothing: what a pane reports when it leaves a board. */
+/** A pane showing nothing: what a pane reports when it leaves a model. */
 const NOTHING_READ: PaneReading = Object.freeze({
-	board: null,
+	model: null,
 	variant: null,
 	view: null,
 	selection: [],
@@ -56,7 +56,7 @@ interface ReadingPublisher {
 	 * @param part The part.
 	 */
 	readonly userChangeFailed: (part: SemanticPanePart) => void;
-	/** Forget what was published and what was read, because the board changed. */
+	/** Forget what was published and what was read, because the model changed. */
 	readonly reset: () => void;
 	/** Send the last reading again, because whoever had it no longer does. */
 	readonly republish: () => void;
@@ -213,8 +213,8 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 	/**
 	 * Forget what was published and what was read.
 	 *
-	 * For a pane that has moved to another board: what it was reading names
-	 * subjects of a board it is no longer showing, and saying it again would be
+	 * For a pane that has moved to another model: what it was reading names
+	 * subjects of a model it is no longer showing, and saying it again would be
 	 * saying something that is not true any more.
 	 */
 	function reset(): void {
@@ -258,4 +258,4 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 	};
 }
 
-export { NOTHING_READ, createReadingPublisher, type PaneReading, type ReadingPublisher };
+export { NOTHING_READ, createReadingPublisher, type PaneReading };

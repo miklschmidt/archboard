@@ -5,7 +5,7 @@ import { join } from "node:path";
 import {
 	ArchitectureClaimResultSchema,
 	ArchitectureModuleEditResultSchema,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 
 import {
 	Terminal,

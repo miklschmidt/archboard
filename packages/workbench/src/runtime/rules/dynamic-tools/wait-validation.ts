@@ -340,12 +340,4 @@ function reviewedManifestCall(call: Readonly<Record<string, unknown>>): boolean 
 	return call["manifestHash"] === ARCHBOARD_APP_MANIFEST_SHA256;
 }
 
-export {
-	assertWaitArguments,
-	assertWaitCall,
-	dynamicError,
-	errorCode,
-	exactEventKeys,
-	isRecord,
-	validateEvent,
-};
+export { assertWaitArguments, assertWaitCall, dynamicError, errorCode, validateEvent };

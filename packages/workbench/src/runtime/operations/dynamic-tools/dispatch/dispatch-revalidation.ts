@@ -404,4 +404,4 @@ async function revalidateMutation(
 	return Object.freeze({ caller: freshCaller, target: freshTarget, context: freshContext });
 }
 
-export { type ForkBoundary, type RevalidatedMutation, boundaryForFork, revalidateMutation };
+export { boundaryForFork, revalidateMutation };

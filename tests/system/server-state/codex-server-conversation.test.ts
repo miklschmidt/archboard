@@ -15,7 +15,7 @@ import {
 } from "./support/codex-production.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { coordinatorModelFixture } from "./fixtures/fake-codex-production-data.ts";
-import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/model/pane-context";
 import { productionServer } from "./support/production-server.ts";
 
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
@@ -108,7 +108,7 @@ test("panes of one tab session share a conversation; another tab session holds i
 		]);
 		const register = async (body: Record<string, unknown>) =>
 			(await request("/api/panes", { method: "POST", doing: false, body })).status;
-		// Tab one shows two panes: A first in reading order, B focused on another board. Tab two
+		// Tab one shows two panes: A first in reading order, B focused on another model. Tab two
 		// shows a pane A of its own.
 		const a = await openApplicationSocket(server.base, "client-a", { tabSession: "tab-one" });
 		resources.defer(() => a.close());
@@ -117,7 +117,9 @@ test("panes of one tab session share a conversation; another tab session holds i
 		const c = await openApplicationSocket(server.base, "client-c", { tabSession: "tab-two" });
 		resources.defer(() => c.close());
 		expect(await register(pane("client-a", "A", false, true))).toBe(200);
-		expect(await register({ ...pane("client-b", "B", true, false), board: "payments" })).toBe(200);
+		expect(await register({ ...pane("client-b", "B", true, false), paneKey: "payments" })).toBe(
+			200,
+		);
 		expect(await register(pane("client-c", "A", false, false))).toBe(200);
 		for (const socket of [a, b, c]) {
 			expect(await socket.request("connect")).toMatchObject({ ok: true });
@@ -134,7 +136,7 @@ test("panes of one tab session share a conversation; another tab session holds i
 		expect(await linkOf(b)).toEqual(tabOne);
 		expect((await linkOf(c))["threadId"]).toBeNull();
 
-		// B's typed turn runs on that thread and carries B's own pane and board.
+		// B's typed turn runs on that thread and carries B's own pane and model.
 		const started = await leased(b, "start", {
 			threadId: tabOne["threadId"],
 			prompt: "Talk from the other pane.",
@@ -149,7 +151,7 @@ test("panes of one tab session share a conversation; another tab session holds i
 			| undefined;
 		expect(JSON.parse(String(additional?.archboard?.value))).toMatchObject({
 			paneId: "B",
-			board: { name: "payments" },
+			model: { name: "payments" },
 		});
 
 		// Tab two starts a conversation of its own, on its own coordinator and workhorse.
@@ -229,7 +231,7 @@ test("panes of one tab session share a conversation; another tab session holds i
 			body: {
 				paneId: "B",
 				clientId: "client-b",
-				board: { name: "payments", key: "payments" },
+				model: { name: "payments", key: "payments" },
 				variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 				view: null,
 				selection: [{ id: selected }],

@@ -6,9 +6,9 @@
 
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { z } from "zod";
-import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/model/policy";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
-import type { describeSubject } from "@archboard/board/policy";
+import type { describeSubject } from "@archboard/model/policy";
 
 type DiagnosticSubject = Parameters<typeof describeSubject>[0];
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
@@ -50,9 +50,9 @@ const check: VaultCheck = {
 		},
 		{
 			severity: "error",
-			code: "BOARD_UNREADABLE",
+			code: "MODEL_UNREADABLE",
 			file: "/vault/Broken.semantic.json",
-			message: "Not a board.",
+			message: "Not a model.",
 		},
 	],
 };

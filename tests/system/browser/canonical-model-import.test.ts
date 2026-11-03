@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
-import { exportArchitectureModel, importArchitectureModel } from "@archboard/board/store-write";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { exportArchitectureModel, importArchitectureModel } from "@archboard/model/store-write";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import {

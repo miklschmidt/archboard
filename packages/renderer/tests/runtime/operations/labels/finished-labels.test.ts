@@ -4,8 +4,8 @@
 // What this catches: an engine's drawing that silently loses a label.
 
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@archboard/board/policy";
+import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { routeLabels } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";

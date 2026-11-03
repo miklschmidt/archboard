@@ -1,9 +1,9 @@
 import { useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
-import { ReconciliationIssues } from "#ui/components/semantic-board-canvas/SemanticInspectorStanding.tsx";
+import { ReconciliationIssues } from "#ui/components/canvas/SemanticInspectorStanding.tsx";
 
 interface ModelReconciliationProps {
 	model: Model;

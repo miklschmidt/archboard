@@ -297,13 +297,4 @@ function fsyncDirectory(directory: string, fileSystem: CodexStorageFileSystem): 
  * @param fileSystem - The file-system seam.
  */
 
-export {
-	absolutePath,
-	assertNoSymlinkComponents,
-	canonicalDirectory,
-	createPrivateDirectory,
-	fsyncDirectory,
-	isWithin,
-	verifyOwnedRegularFile,
-	verifyPrivateDirectory,
-};
+export { absolutePath, fsyncDirectory, isWithin, verifyOwnedRegularFile, verifyPrivateDirectory };

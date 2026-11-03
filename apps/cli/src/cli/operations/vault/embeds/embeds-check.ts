@@ -206,7 +206,7 @@ async function inspect(
 	return inspectPicture(embed, recipe, fresh, options, cached);
 }
 /**
- * Resolve and inspect one artifact without a live board lookup or tracking list.
+ * Resolve and inspect one artifact without a live document lookup or tracking list.
  * @param embed The artifact found through Git.
  * @param reader The existing checkout and fetched-vault resolver.
  * @param options The repair intent and cancellation signal.
@@ -299,7 +299,7 @@ async function inspectInOrder(
 	return { findings, fixed };
 }
 /**
- * Inspect canonical recipes in the addressed checkout without board-owned tracking.
+ * Inspect canonical recipes in the addressed checkout.
  * @param at The explicit vault or checkout.
  * @param options The repair intent and cancellation signal.
  * @param options.fix Whether to replace changed local artifacts.
@@ -316,14 +316,13 @@ async function checkEmbedsAt(
 			? at.checkout
 			: await repoRootOf(checkoutOfVault(at.vault), { signal: options.signal });
 	if (root === undefined)
-		return { checkout: null, embeds: [], tracked: [], vaults: [], findings: [], fixed: [] };
+		return { checkout: null, embeds: [], vaults: [], findings: [], fixed: [] };
 	const embeds = await checkoutEmbeds(root, options.signal);
 	const reader = vaultReader(checkoutsReadFrom(vault), options.signal);
 	const checked = await inspectInOrder(embeds, reader, options);
 	return {
 		checkout: root,
 		embeds: embeds.map((embed) => embed.file),
-		tracked: [],
 		vaults: await reader.vaults(),
 		...checked,
 	};
@@ -340,4 +339,4 @@ function checkEmbeds(context: Pick<CommandContext, "vault" | "checkout" | "signa
 	if (context.checkout !== null) return checkEmbedsAt({ checkout: context.checkout }, options);
 	throw new Error("The embeds check requires an addressed vault or checkout.");
 }
-export { checkEmbeds, checkEmbedsAt };
+export { checkEmbeds };

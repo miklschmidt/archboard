@@ -22,7 +22,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
@@ -197,7 +197,7 @@ beforeAll(async () => {
 	git(scratch, shop, "add", "-A");
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the configuration");
 	register(scratch, { [SHOP]: shop });
-	board(vault, "Infra", [
+	document(vault, "Infra", [
 		{
 			id: "v1",
 			name: "Built",
@@ -224,9 +224,9 @@ beforeAll(async () => {
 		},
 	]);
 	const check: typeof CheckModule = await import("#tests/runtime/support/code-check/pass.ts");
-	const read = check.readBoardsToCheck(vault, undefined);
-	if (!read.ok) throw new Error("no boards");
-	outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
+	const read = check.readStatesToCheck(vault, undefined);
+	if (!read.ok) throw new Error("no documents");
+	outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 });
 
 afterAll(() => {

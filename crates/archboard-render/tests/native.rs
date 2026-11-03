@@ -1,10 +1,10 @@
-//! A corpus board drawn by a native build of the core, to the same document
+//! A corpus picture drawn by a native build of the core, to the same document
 //! the WebAssembly build draws (ADR 0059).
 //!
 //! The fixture (`fixtures/recommendations.json`) holds what the WebAssembly core was
 //! asked and answered: the request its host wrote, the icons it was given, and
 //! the document it wrote. The native render lays out each solve here, Graphviz
-//! included (ADR 0060), so a native build lays a board out with no C library
+//! included (ADR 0060), so a native build lays a picture out with no C library
 //! and no host's Graphviz.
 //!
 //! `packages/renderer/tests/runtime/support/capture-native-fixture.ts` writes
@@ -81,7 +81,7 @@ fn answer_of<T>(future: impl Future<Output = T>) -> T {
 }
 
 #[test]
-fn a_native_build_draws_a_corpus_board_to_the_bytes_the_webassembly_build_draws() {
+fn a_native_build_draws_a_corpus_picture_to_the_bytes_the_webassembly_build_draws() {
     let path = concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/tests/fixtures/recommendations.json"
@@ -93,7 +93,7 @@ fn a_native_build_draws_a_corpus_board_to_the_bytes_the_webassembly_build_draws(
     let request: RenderRequest = serde_json::from_str(&fixture.request).expect("the request reads");
     let rendered = answer_of(Renderer::default().render(&request, &host)).expect("it draws");
     let Rendered::Drawn(drawn) = rendered else {
-        panic!("the board drew nothing");
+        panic!("the picture drew nothing");
     };
     assert!(
         drawn.document.svg == fixture.svg,

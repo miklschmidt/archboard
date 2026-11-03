@@ -22,7 +22,7 @@ import { availableParallelism } from "node:os";
 import { dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-import type { DiagramTheme, LayoutEngineName } from "@archboard/board/render-reply";
+import type { DiagramTheme, LayoutEngineName } from "@archboard/model/render-reply";
 import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
 import { RECORDER_MS } from "@archboard/timing";
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";
@@ -59,7 +59,7 @@ interface RenderTalkRequest {
 	readonly container: RecordingContainer;
 	/** Which palette the page draws in. */
 	readonly theme: DiagramTheme;
-	/** Which layout engine the page lays the board out with. */
+	/** Which layout engine the page lays the document out with. */
 	readonly layout: LayoutEngineName;
 	/** The file to write, absolute. */
 	readonly out: string;
@@ -535,4 +535,4 @@ async function renderTalk(request: RenderTalkRequest): Promise<RenderedTalk> {
 	}
 }
 
-export { renderFlags, renderTalk, type RenderTalkRequest, type RenderedTalk };
+export { renderFlags, renderTalk };

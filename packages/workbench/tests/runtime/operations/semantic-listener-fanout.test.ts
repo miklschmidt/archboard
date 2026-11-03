@@ -13,8 +13,8 @@ import {
 function input(selection: readonly string[] = []): SemanticContextInput {
 	return {
 		repository: "repo",
-		board: {
-			key: "board",
+		model: {
+			key: "model",
 			name: "Board",
 			vault: "/vault",
 			file: "board.semantic.json",
@@ -33,7 +33,7 @@ function input(selection: readonly string[] = []): SemanticContextInput {
 		},
 		doing: null,
 		cursor: { feedId: "feed", sequence: 0 },
-		description: "compact board",
+		description: "compact model",
 	};
 }
 
@@ -41,7 +41,7 @@ function change(sequence: number): SettledChangeSourceEvent {
 	return {
 		cursor: sequence,
 		vault: "/work/.archboard/vault",
-		board: "board",
+		model: "model",
 		at: new Date(1_700_000_000_000).toISOString(),
 		origin: "human",
 		significance: "structural",

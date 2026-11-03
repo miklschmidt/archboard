@@ -3,7 +3,7 @@
 //! consumes these values unchanged.
 //!
 //! A drawing of an architecture is generic over what each card and each line
-//! stands for: the layout in TypeScript holds the board's own nodes and
+//! stands for: the layout in TypeScript holds the picture's own nodes and
 //! relationships in it, and the painter reads only the facts it needs
 //! ([`NodeFacts`], [`EdgeFacts`]).
 
@@ -216,16 +216,16 @@ pub struct PaintedDrawing<N, E> {
 }
 
 /// What the painter reads of a node: which it is, what it is called and what
-/// it is responsible for, and where it stands in the board's order.
+/// it is responsible for, and where it stands in the picture's order.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct NodeFacts {
     /// The node's id.
     pub id: String,
-    /// Where it stands in the board's order.
+    /// Where it stands in the picture's order.
     pub order: f64,
     /// What it is called.
     pub name: String,
-    /// What it is responsible for, when the board says.
+    /// What it is responsible for, when the picture says.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub responsibility: Option<String>,

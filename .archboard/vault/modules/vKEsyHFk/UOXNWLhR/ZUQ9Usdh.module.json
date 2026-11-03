@@ -3,10 +3,10 @@
   "name": "Mark code warnings",
   "kind": "module",
   "responsibility": "Draws the picture's warning triangle on each subject the last code pass warns about",
-  "description": "Reads the findings of the board, variant and version on screen and puts the renderer's own warning mark in the subject's group, where the picture puts it on an undecided subject. The picture's markup stays the renderer's; information draws nothing.",
+  "description": "Reads the findings of the model, variant and version on screen and puts the renderer's own warning mark in the subject's group, where the picture puts it on an undecided subject. The picture's markup stays the renderer's; information draws nothing.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-code-marks.ts",
+    "path": "apps/web/src/ui/hooks/canvas/use-code-marks.ts",
     "symbol": "useCodeMarks"
   },
   "schemaVersion": 1,
@@ -20,7 +20,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-code-findings.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-code-findings.ts",
         "symbol": "codeFindingsQuery"
       },
       "id": "vKEsyHFk/UOXNWLhR#8VT4p2DT",

@@ -15,7 +15,7 @@ import {
 import type { JSX } from "react";
 
 import { cn } from "@archboard/ui-kit/components";
-import type { VariantLifecycleSchema } from "@archboard/board/document";
+import type { VariantLifecycleSchema } from "@archboard/model/legacy-board";
 import type { z } from "zod";
 
 type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
@@ -55,4 +55,4 @@ function VariantMark(props: VariantMarkProps): JSX.Element {
 	);
 }
 
-export { VariantMark, type VariantMarkProps };
+export { VariantMark };

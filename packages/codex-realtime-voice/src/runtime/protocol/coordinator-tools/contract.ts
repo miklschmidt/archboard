@@ -1,11 +1,7 @@
 import type { CoordinatorSnapshot } from "#runtime/protocol/coordinator/contract.ts";
-import type {
-	CodexSpokenApprovalGate,
-	SpokenApprovalToolResult,
-} from "#runtime/protocol/spoken-approval/contract.ts";
+import type { CodexSpokenApprovalGate } from "#runtime/protocol/spoken-approval/contract.ts";
 import type {
 	CodexWorkhorseOperations,
-	WorkhorseCoordinatorCall,
 	WorkhorseOperationBinding,
 } from "#runtime/protocol/workhorse-operations/contract.ts";
 import type {
@@ -16,21 +12,13 @@ import type {
 import type {
 	ChildEpoch,
 	ChildId,
-	DynamicToolCallId,
 	IdentityAuthority,
 	JsonRpcRequestId,
 	LogicalToolCallCorrelation,
 	OperationAuthority,
-	ThreadId,
 	TurnId,
 } from "@archboard/codex-app-server/identity";
 import type { CoordinatorToolName } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
-import type {
-	ManageWorkhorseQueueInput,
-	DelegateToWorkhorseInput,
-	SteerWorkhorseInput,
-} from "#runtime/protocol/coordinator-tool-contract/tool-inputs.ts";
-import type { DynamicToolRefusalReason } from "#runtime/protocol/coordinator-tool-contract/dynamic-tool-envelopes.ts";
 import type {
 	InspectWorkhorseResult,
 	ManageWorkhorseQueueResult,
@@ -193,22 +181,6 @@ interface CoordinatorToolCancellation {
 	readonly cause: CoordinatorToolLifecycleCause;
 }
 
-type CoordinatorToolNameValue = CoordinatorToolName;
-type CoordinatorToolRefusal = DynamicToolRefusalReason;
-type CoordinatorToolCall = WorkhorseCoordinatorCall;
-type CoordinatorToolCallId = DynamicToolCallId;
-type CoordinatorToolChild = ChildId;
-type CoordinatorToolEpoch = ChildEpoch;
-type CoordinatorToolThread = ThreadId;
-type CoordinatorToolSpokenResult = SpokenApprovalToolResult;
-
-type CoordinatorToolInput =
-	| DelegateToWorkhorseInput
-	| ManageWorkhorseQueueInput
-	| SteerWorkhorseInput
-	| { readonly verdict: "accept" | "decline" }
-	| Record<string, never>;
-
 interface CoordinatorToolDispatcher {
 	readonly dispatch: (
 		request: CoordinatorToolsServerRequest,
@@ -242,11 +214,8 @@ class CodexCoordinatorToolsError extends Error {
 export {
 	COORDINATOR_TOOLS_OWNER,
 	coordinatorDynamicDispatchers,
-	type CoordinatorDynamicDispatcher,
 	type CoordinatorToolCoordinatorAuthority,
 	type CoordinatorToolAuthorityPort,
-	type CoordinatorToolResponsePort,
-	type CoordinatorToolWorkhorse,
 	type CoordinatorToolStop,
 	type CodexCoordinatorToolsOptions,
 	type CoordinatorToolsServerRequest,
@@ -256,17 +225,7 @@ export {
 	type CoordinatorToolDispatchResult,
 	COORDINATOR_REPLAY_LIMITS,
 	type CoordinatorReplayStateSnapshot,
-	type CoordinatorToolLifecycleCause,
 	type CoordinatorToolCancellation,
-	type CoordinatorToolNameValue,
-	type CoordinatorToolRefusal,
-	type CoordinatorToolCall,
-	type CoordinatorToolCallId,
-	type CoordinatorToolChild,
-	type CoordinatorToolEpoch,
-	type CoordinatorToolThread,
-	type CoordinatorToolSpokenResult,
-	type CoordinatorToolInput,
 	type CoordinatorToolDispatcher,
 	CodexCoordinatorToolsError,
 };

@@ -249,7 +249,7 @@ function mentionsArchboard(script: string): boolean {
 
 /**
  * Whether a command reads the checkout. The run's vault sits inside it, and a
- * read of a board is not a read of the code.
+ * read of a document is not a read of the code.
  * @param script The command.
  * @param context Where the run happened.
  * @returns True when it does.

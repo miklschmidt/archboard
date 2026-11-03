@@ -258,4 +258,4 @@ function createProductionCodexWorkbenchFactories(
 	});
 }
 
-export { createProductionCodexWorkbenchFactories, installDynamicRegistrations, requireComponent };
+export { createProductionCodexWorkbenchFactories, installDynamicRegistrations };

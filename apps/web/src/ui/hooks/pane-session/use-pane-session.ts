@@ -9,17 +9,12 @@ import { createPaneCore, type PaneCore } from "#ui/state/pane-session/pane-core.
 import { usePaneContact, type PaneContact } from "#ui/hooks/pane-session/use-pane-contact.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import {
-	UNKNOWN_HOLDER,
 	type PaneSession,
 	type PaneSessionOptions,
 } from "#ui/rules/pane-session/session-contracts.ts";
 import type { WorkbenchTransportPort } from "#ui/rules/pane-session/workbench-port.ts";
-import type {
-	BoardIdentity,
-	DoingEntry,
-	LockHolder,
-} from "#ui/rules/pane-session/session-types.ts";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { LegacyIdentity } from "#ui/rules/pane-session/session-types.ts";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
@@ -38,18 +33,14 @@ function mintClientId(paneId: string): string {
 interface SessionState {
 	contact: PaneContact;
 	setConnected: (connected: boolean) => void;
-	board: BoardIdentity | null;
-	setBoard: (board: BoardIdentity | null) => void;
+	model: LegacyIdentity | null;
+	setModel: (model: LegacyIdentity | null) => void;
 	/** Where the server pointed the pane; a drill-down does not move it. */
 	openedKey: string | null;
 	setOpened: (key: string | null) => void;
-	/** How many times the server pointed the pane somewhere other than the board on screen. */
+	/** How many times the server pointed the pane somewhere other than the model on screen. */
 	arrivals: number;
 	arrived: () => void;
-	heldBy: LockHolder | null;
-	setHeldBy: (holder: LockHolder | null) => void;
-	doing: DoingEntry[];
-	setDoing: (entries: DoingEntry[]) => void;
 	vault: string;
 	setVault: (vault: string) => void;
 }
@@ -61,28 +52,20 @@ interface SessionState {
  */
 function useSessionState(openingVault: string): SessionState {
 	const { contact, setConnected } = usePaneContact();
-	const [board, setBoard] = useState<BoardIdentity | null>(null);
+	const [model, setModel] = useState<LegacyIdentity | null>(null);
 	const [openedKey, setOpened] = useState<string | null>(null);
 	const [arrivals, setArrivals] = useState(0);
 	const arrived = useCallback((): void => setArrivals((count) => count + 1), []);
-	// It starts as somebody else's until the server says otherwise: a pane that
-	// has not been told does not read the board as free (ADR 0016).
-	const [heldBy, setHeldBy] = useState<LockHolder | null>(UNKNOWN_HOLDER);
-	const [doing, setDoing] = useState<DoingEntry[]>([]);
 	const [vault, setVault] = useState(openingVault);
 	return {
 		contact,
 		setConnected,
-		board,
-		setBoard,
+		model,
+		setModel,
 		openedKey,
 		setOpened,
 		arrivals,
 		arrived,
-		heldBy,
-		setHeldBy,
-		doing,
-		setDoing,
 		vault,
 		setVault,
 	};
@@ -161,12 +144,10 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 			paneElement: box.element.bind(box),
 			workbenchSockets: box.options().createWorkbenchSockets?.() ?? null,
 			setConnected: state.setConnected,
-			setBoard: state.setBoard,
+			setModel: state.setModel,
 			setVault: state.setVault,
 			setOpened: state.setOpened,
 			arrived: state.arrived,
-			setHeldBy: state.setHeldBy,
-			setDoing: state.setDoing,
 		}),
 	);
 
@@ -209,10 +190,8 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 		openedKey: state.openedKey,
 		vault: state.vault,
 		arrivals: state.arrivals,
-		board: state.board,
+		model: state.model,
 		connected: state.contact.connected,
-		heldBy: state.heldBy,
-		doing: state.doing,
 		openCode,
 		readingChanged,
 		flushReading,

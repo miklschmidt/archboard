@@ -5,11 +5,14 @@
   "responsibility": "Lists the marks of the rendered picture with what each one means",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticLegend.tsx"
+    "path": "apps/web/src/ui/components/canvas/SemanticLegend.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#ksn35ZHp",
   "parent": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
+  "formerNames": [
+    "Legend key"
+  ],
   "outgoing": [
     {
       "order": 53000,
@@ -18,14 +21,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticLegend.tsx",
+        "path": "apps/web/src/ui/components/canvas/SemanticLegend.tsx",
         "symbol": "SemanticLegend"
       },
       "id": "vKEsyHFk/gbyqW4H3#m9XkQSPd",
       "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
     }
-  ],
-  "formerNames": [
-    "Legend key"
   ]
 }

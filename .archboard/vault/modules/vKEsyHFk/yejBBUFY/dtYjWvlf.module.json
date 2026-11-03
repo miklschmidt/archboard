@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/semantic-board-canvas"
+    "path": "apps/web/src/ui/clients/canvas"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#dtYjWvlf",

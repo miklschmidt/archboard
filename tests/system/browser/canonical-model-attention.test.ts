@@ -13,7 +13,7 @@ import {
 import { seedCanonicalModel, pick } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
-const SURFACE = "[data-slot='model-diagram'] [data-slot='semantic-board-surface']";
+const SURFACE = "[data-slot='model-diagram'] [data-slot='canvas-surface']";
 const WAIT = { timeoutMs: 8_000 } as const;
 
 /**

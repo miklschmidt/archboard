@@ -86,4 +86,4 @@ function usePaneContact(): PaneContactCell {
 	return { contact, setConnected };
 }
 
-export { reducePaneContact, usePaneContact, type PaneContact, type PaneContactEvent };
+export { usePaneContact, type PaneContact };

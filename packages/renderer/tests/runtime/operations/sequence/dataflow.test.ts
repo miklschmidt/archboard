@@ -1,12 +1,12 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
-import type { DiagramBox, DiagramTheme } from "@archboard/board/render-reply";
-import type { VariantContent } from "@archboard/board/content";
+import type { DiagramBox, DiagramTheme } from "@archboard/model/render-reply";
+import type { VariantContent } from "@archboard/model/content";
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { SemanticRenderError, type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { drawnSpan, drawnTexts, labelPlates, spanFits } from "#tests/runtime/support/drawn-text.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const policy = DEFAULT_SEMANTIC_POLICY;
 
@@ -44,7 +44,7 @@ const SAMPLE: VariantContent = variant({
 	flows: [
 		{
 			id: "claim",
-			name: "An agent claims a board and edits it",
+			name: "An agent claims a document and edits it",
 			summary: "One writer at a time, and the note still decides",
 			participants: ["agent", "cli", "server", "io", "vault"],
 			steps: [

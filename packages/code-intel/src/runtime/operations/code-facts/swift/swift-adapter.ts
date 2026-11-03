@@ -419,4 +419,4 @@ function isSwiftFacts(facts: ParsedFacts): facts is SwiftFacts {
 	return "scoped" in facts;
 }
 
-export { type SwiftFacts, isSwiftFacts, swiftFacts };
+export { isSwiftFacts, swiftFacts };

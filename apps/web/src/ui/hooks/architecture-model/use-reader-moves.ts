@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { EXPLORING_MS } from "@archboard/timing";
-import type { ModelFlow } from "@archboard/board/content";
-import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import type { ModelFlow } from "@archboard/model/content";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import type { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { cardBeside } from "#ui/rules/architecture-model/expansion.ts";
@@ -24,7 +24,7 @@ interface ReaderMoveInputs {
 	readonly flows: readonly ModelFlow[];
 	readonly selection: Pick<ModelSelection, "ids" | "select">;
 	readonly scene: AcceptedScene | null;
-	readonly camera: BoardCamera;
+	readonly camera: PictureCamera;
 	readonly reducedMotion: boolean;
 	readonly onOpen: (next: string | null) => void;
 	/** Expand a door or collapse a frame, and say whether the subject has a control. */

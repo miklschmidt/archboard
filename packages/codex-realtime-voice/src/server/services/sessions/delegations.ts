@@ -173,5 +173,4 @@ export {
 	recordDelegations,
 	recordGivenWork,
 	type CoordinatorTurnHome,
-	type DelegationEvent,
 };

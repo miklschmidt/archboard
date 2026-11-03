@@ -3,7 +3,7 @@ import {
 	ArchitectureExportResultSchema,
 	ArchitectureImportRequestSchema,
 	ArchitectureModuleEditResultSchema,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import {
 	exportArchitectureModelOnServer,
 	importArchitectureModelOnServer,

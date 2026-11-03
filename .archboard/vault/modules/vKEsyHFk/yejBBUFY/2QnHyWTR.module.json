@@ -2,10 +2,10 @@
   "order": 47000,
   "name": "Routing outcomes",
   "kind": "module",
-  "responsibility": "Defines the outcomes of board-opening requests",
+  "responsibility": "Defines the outcomes of requests to open a model",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/rules/board-routing/contracts.ts"
+    "path": "apps/web/src/ui/rules/reading-routing/contracts.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#2QnHyWTR",

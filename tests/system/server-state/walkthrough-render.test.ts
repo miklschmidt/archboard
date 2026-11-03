@@ -10,7 +10,7 @@ import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { keepTalk, renderTalk } from "@archboard/walkthrough/recorder";
 
 import { prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
@@ -21,8 +21,8 @@ let server: ReturnType<typeof Bun.serve>;
 let failAt: number | null = null;
 let asked: number[] = [];
 
-/** A board of one part with a walkthrough of two steps: all the talk's schema asks of a board. */
-const BOARD = {
+/** A model of one part with a walkthrough of two steps: all the talk's schema asks of a model. */
+const MODEL = {
 	schemaVersion: "2.0.0",
 	kind: "semantic-board",
 	id: "bd1",
@@ -90,7 +90,7 @@ const talkParts: Omit<Parameters<typeof keepTalk>[0], "voice" | "directory"> = {
 			{ kind: "end", at: SAMPLES },
 		],
 	},
-	document: BOARD,
+	document: MODEL,
 	policy: {
 		policy: DEFAULT_SEMANTIC_POLICY,
 		configurationValid: true,

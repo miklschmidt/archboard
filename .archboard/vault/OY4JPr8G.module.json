@@ -40,7 +40,7 @@
     {
       "order": 30000,
       "kind": "call",
-      "description": "the pane a context is for, and its board",
+      "description": "the pane a context is for, and its model",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -66,7 +66,7 @@
     {
       "order": 51000,
       "kind": "call",
-      "description": "a pane's tab, and the end of a tab gone for 60 s; the board the pane shows",
+      "description": "a pane's tab, and the end of a tab gone for 60 s; the model the pane shows",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -144,7 +144,7 @@
     {
       "order": 75000,
       "kind": "call",
-      "label": "the brief's input for the board a pane shows",
+      "label": "the brief's input for the model a pane shows",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -177,8 +177,8 @@
         "path": "packages/workbench/src/server/services/owner/wiring.ts",
         "symbol": "productionModule.createServerVoiceAgentOptions"
       },
-      "to": "vKEsyHFk/9ncuT5DP#yyFS6UVO",
-      "id": "vKEsyHFk#ratt913y"
+      "id": "vKEsyHFk#ratt913y",
+      "to": "vKEsyHFk/9ncuT5DP#yyFS6UVO"
     },
     {
       "order": 980200,
@@ -190,8 +190,8 @@
         "path": "packages/workbench/src/server/services/owner/wiring.ts",
         "symbol": "narrationChangesOf"
       },
-      "to": "vKEsyHFk/9ncuT5DP#pZL0uxjI",
-      "id": "vKEsyHFk#AvmihZrD"
+      "id": "vKEsyHFk#AvmihZrD",
+      "to": "vKEsyHFk/9ncuT5DP#pZL0uxjI"
     }
   ]
 }

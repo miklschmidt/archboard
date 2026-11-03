@@ -1,7 +1,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, mock, test } from "bun:test";
 import { createElement, type ReactNode } from "react";
-import { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import { ExplanationActionRequestSchema } from "@archboard/workbench/browser-contract";
 import { SHOP, shopReading } from "#tests/ui/support/architecture-model/scene.ts";
 import { ModelExplanationContext } from "#ui/state/architecture-model/explanations.ts";

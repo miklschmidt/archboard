@@ -221,7 +221,6 @@ function parseResponseText(response: DynamicToolResponse): DynamicToolResponse {
 }
 
 export {
-	type DynamicToolEnvelope,
 	okPortResponse,
 	okResponse,
 	refusedResponse,

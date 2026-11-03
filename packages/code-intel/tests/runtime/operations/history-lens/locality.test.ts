@@ -15,11 +15,11 @@ import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { LocalityAnswerSchema, type LocalityAnswer } from "#shared/protocol/locality.ts";
 import {
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
-	type SemanticBoard,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
+	type LegacyBoard,
 	type SemanticVariant,
-} from "@archboard/board/document";
+} from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-locality-"));
@@ -102,7 +102,7 @@ const edit = (name: string, times: number): Record<string, string> => ({
 	[name]: `${name} ${times}\n`,
 });
 
-/** A part of the shop's board. */
+/** A part of the shop's document. */
 const part = (id: string, name: string, binding?: object, extra: object = {}) => ({
 	id,
 	name,
@@ -114,12 +114,12 @@ const part = (id: string, name: string, binding?: object, extra: object = {}) =>
 const IN_SHOP = (path: string, extra: object = {}) => ({ repo: SHOP, path, ...extra });
 
 /**
- * A board whose current variant holds every kind of part, and whose draft binds
+ * A document whose current variant holds every kind of part, and whose draft binds
  * one more part.
- * @param version The board's version.
- * @returns The board.
+ * @param version The document's version.
+ * @returns The document.
  */
-function board(version: number): SemanticBoard {
+function document(version: number): LegacyBoard {
 	const current = [
 		part("pA", "Checkout", IN_SHOP("src/a.ts")),
 		part("pB", "Payments", IN_SHOP("src/b.ts")),
@@ -134,8 +134,8 @@ function board(version: number): SemanticBoard {
 		part("pP", "Pinned", IN_SHOP("src/a.ts", { branch: "elsewhere" })),
 	].map((node, index) => Object.assign({ order: (index + 1) * 1000 }, node));
 	const draft = [...current, { order: 10_000, ...part("pN", "Cache", IN_SHOP("src/b.ts")) }];
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "bd",
 		name: "Shop",
@@ -152,21 +152,21 @@ function board(version: number): SemanticBoard {
 }
 
 /**
- * One variant of a board.
- * @param value The board.
+ * One variant of a document.
+ * @param value The document.
  * @param id The variant's id.
  * @returns The variant.
  */
-function variantOf(value: SemanticBoard, id: string): SemanticVariant {
+function variantOf(value: LegacyBoard, id: string): SemanticVariant {
 	const found = value.variants.find((one) => one.id === id);
 	if (found === undefined) throw new Error(`no variant ${id}`);
 	return found;
 }
 
-const built = board(1);
+const built = document(1);
 
 /**
- * The hotspots of the shop's board, parsed as the route answers them.
+ * The hotspots of the shop's document, parsed as the route answers them.
  * @param since The start of the period, or undefined for the default.
  * @param variant The variant's id.
  * @returns The answer.
@@ -340,8 +340,8 @@ test("a draft is read when it is named, and its parts rank beside the current on
 	expect(answer.hotspots.find((one) => one.subject.id === "pN")?.count).toBe(3);
 });
 
-test("a board with no part in a registered repository answers an empty ranking, not a failure", async () => {
-	const lonely = SemanticBoardSchema.parse({
+test("a document with no part in a registered repository answers an empty ranking, not a failure", async () => {
+	const lonely = LegacyBoardSchema.parse({
 		...built,
 		variants: [
 			{
@@ -360,8 +360,8 @@ test("a board with no part in a registered repository answers an empty ranking, 
 	expect(answer.skipped.map((one) => one.reason)).toEqual(["unbound"]);
 });
 
-const small = (version: number): SemanticBoard =>
-	SemanticBoardSchema.parse({
+const small = (version: number): LegacyBoard =>
+	LegacyBoardSchema.parse({
 		...built,
 		version,
 		variants: [
@@ -376,7 +376,7 @@ const small = (version: number): SemanticBoard =>
 		],
 	});
 
-test("a new version of a board that binds the same code needs a new answer and no new walk", async () => {
+test("a new version of a document that binds the same code needs a new answer and no new walk", async () => {
 	const reading = lens.createVariantLocality();
 	const first = small(1);
 	const next = small(2);
@@ -386,15 +386,15 @@ test("a new version of a board that binds the same code needs a new answer and n
 	expect(moved.periods[0]).toBe(answer.periods[0]!);
 });
 
-test("an answer is kept until the board's version, the start of the period or a checkout's HEAD moves, and is no other vault's", async () => {
+test("an answer is kept until the document's version, the start of the period or a checkout's HEAD moves, and is no other vault's", async () => {
 	const reading = lens.createVariantLocality();
 	const first = small(1);
 	const answer = await reading.read(scratch, first, variantOf(first, "v1"), undefined);
 	expect((await reading.read(scratch, first, variantOf(first, "v1"), undefined)).hotspots).toBe(
 		answer.hotspots,
 	);
-	// Two worktrees of one repository hold copies of a board with one id and version, which
-	// each may have changed since (ADR 0049): what one vault's board is read as is not the other's.
+	// Two worktrees of one repository hold copies of a document with one id and version, which
+	// each may have changed since (ADR 0049): what one vault's document is read as is not the other's.
 	const elsewhere = join(scratch, "another-vault");
 	expect(
 		(await reading.read(elsewhere, first, variantOf(first, "v1"), undefined)).hotspots,
@@ -408,7 +408,7 @@ test("an answer is kept until the board's version, the start of the period or a 
 			.hotspots,
 	).not.toBe(answer.hotspots);
 	write(shop, edit("src/c.ts", 3));
-	commit(shop, 0, "a commit in a repository the board does not bind");
+	commit(shop, 0, "a commit in a repository the document does not bind");
 	expect((await reading.read(scratch, first, variantOf(first, "v1"), undefined)).hotspots).toBe(
 		answer.hotspots,
 	);

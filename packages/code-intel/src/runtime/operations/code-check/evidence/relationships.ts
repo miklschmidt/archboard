@@ -1,7 +1,7 @@
-// What the evidence says about the relationships of one board (ADR 0046).
+// What the evidence says about the relationships of one document (ADR 0046).
 //
 // Two bound parts that code joins and that no relationship joins are a
-// dependency the board does not draw: `RELATIONSHIP_UNDRAWN`, one finding on
+// dependency the document does not draw: `RELATIONSHIP_UNDRAWN`, one finding on
 // the part the code reaches, which lists every part that reaches it with one
 // piece of evidence each, so 7 parts that use one shared helper make one
 // finding on the helper. A relationship or a flow step in either direction
@@ -11,7 +11,7 @@
 // finding is a warning when some of its evidence is resolved and nothing
 // stands for it, because the check is sure of it and drawing the relationship
 // clears it. It is information when all of it is a candidate, which nothing on
-// a board can clear, and when a relationship joins the two sides where the parts
+// a document can clear, and when a relationship joins the two sides where the parts
 // meet, the children of their nearest holder. A reading draws that relationship
 // between those two sides, and a relationship ends on the part that owns it
 // (ADR 0044), so the holder cannot state it. Asking for one relationship for
@@ -47,19 +47,19 @@
 // those names, or the infrastructure, when the code of the start reads names
 // that nothing the check reads sets for it.
 
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 import type { ClaimSite } from "#runtime/operations/code-check/claims/claims.ts";
 import type { EnvironmentJoin } from "#runtime/operations/code-check/evidence/environment-join.ts";
-import type { BoardEvidence, Piece } from "#runtime/operations/code-check/evidence/evidence.ts";
+import type { StateEvidence, Piece } from "#runtime/operations/code-check/evidence/evidence.ts";
 import { sideOf, sidesJoined } from "#runtime/operations/code-check/evidence/sides.ts";
 import { differingCode } from "#runtime/operations/code-check/part-code.ts";
 import type { PartCode, ReadPart, SkippedPart } from "#runtime/operations/code-check/part-code.ts";
-import { edgeSubjects, nodeSubject } from "@archboard/board/vault-policy";
+import { edgeSubjects, nodeSubject } from "@archboard/model/vault-policy";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
-import { messagesOf } from "@archboard/board/flow";
-import type { SemanticEdge } from "@archboard/board/content";
-import { describeSubject, type SemanticPolicy } from "@archboard/board/policy";
-import type { EvidenceKindSchema } from "@archboard/board/policy";
+import { messagesOf } from "@archboard/model/flow";
+import type { SemanticEdge } from "@archboard/model/content";
+import { describeSubject, type SemanticPolicy } from "@archboard/model/policy";
+import type { EvidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
 type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
@@ -71,11 +71,11 @@ const DEPENDENCY_KINDS: ReadonlySet<EvidenceKind> = new Set([
 	"build-dependency",
 ]);
 
-/** What judging the relationships of one board needs. */
+/** What judging the relationships of one document needs. */
 interface RelationshipReading {
-	readonly read: BoardToCheck;
+	readonly read: StateToCheck;
 	readonly codes: ReadonlyMap<string, PartCode>;
-	readonly evidence: BoardEvidence;
+	readonly evidence: StateEvidence;
 	/** Each part and the parts that hold it, the part first. */
 	readonly lineages: ReadonlyMap<string, ReadonlySet<string>>;
 	readonly relationshipKinds: SemanticPolicy["relationshipKinds"];
@@ -83,23 +83,23 @@ interface RelationshipReading {
 	readonly hops: Pick<EnvironmentJoin, "partners" | "sides">;
 }
 
-/** What the relationships of one board give. */
+/** What the relationships of one document give. */
 interface RelationshipOutcome {
 	readonly findings: CodeFinding[];
 	readonly skipped: CodeCheckSkip[];
 }
 
 /**
- * Where a finding about one part or relationship of the board sits.
- * @param read The board and its variant.
+ * Where a finding about one part or relationship of the document sits.
+ * @param read The document and its variant.
  * @param path The place inside the variant's content.
  * @param subject What it is about.
  * @returns The site.
  */
-function siteOf(read: BoardToCheck, path: string, subject: ClaimSite["subject"]): ClaimSite {
+function siteOf(read: StateToCheck, path: string, subject: ClaimSite["subject"]): ClaimSite {
 	return {
 		file: read.file,
-		board: read.board.name,
+		model: read.document.name,
 		variant: read.variant.id,
 		path: `variants.${read.variant.id}.content.${path}`,
 		subject,
@@ -108,7 +108,7 @@ function siteOf(read: BoardToCheck, path: string, subject: ClaimSite["subject"])
 
 /**
  * The name of a part, quoted.
- * @param reading The board.
+ * @param reading The document.
  * @param id The part's id.
  * @returns Its name.
  */
@@ -117,9 +117,9 @@ function nameOf(reading: RelationshipReading, id: string): string {
 }
 
 /**
- * Whether the board draws two parts joined: a relationship or a flow step runs
+ * Whether the document draws two parts joined: a relationship or a flow step runs
  * between them, or between parts that hold them, in either direction.
- * @param reading The board.
+ * @param reading The document.
  * @param left One part.
  * @param right The other.
  * @returns True when it does.
@@ -160,7 +160,7 @@ function onePer(pieces: readonly Piece[], keyOf: (piece: Piece) => string): Piec
 /**
  * Pieces with the partner of each piece of a join across a network hop: the
  * place where the infrastructure sets the value that the code reads.
- * @param reading The board.
+ * @param reading The document.
  * @param pieces The pieces.
  * @returns Each piece, followed by its partner where it has one.
  */
@@ -184,7 +184,7 @@ function candidatesAre(count: number): string {
  * What a finding says of its candidates: those of code, matched by name, and
  * those of a join across a network hop, where the infrastructure leaves a
  * choice (environment-join.ts).
- * @param reading The board and its join.
+ * @param reading The document and its join.
  * @param pieces The finding's pieces.
  * @returns The sentences, or nothing when none is a candidate.
  */
@@ -204,8 +204,8 @@ function candidateSentence(reading: RelationshipReading, pieces: readonly Piece[
 }
 
 /**
- * The finding about a part that code reaches from parts the board does not join to it.
- * @param reading The board.
+ * The finding about a part that code reaches from parts the document does not join to it.
+ * @param reading The document.
  * @param to The part reached.
  * @param pieces One piece for each part that reaches it.
  * @returns The finding.
@@ -235,7 +235,7 @@ function undrawnFinding(reading: RelationshipReading, to: ReadPart, pieces: Piec
 /**
  * Whether a piece makes a dependency undrawn where no relationship draws it:
  * evidence of a dependency, unless its use runs none of the code it reaches.
- * @param reading The board.
+ * @param reading The document.
  * @param piece The piece.
  * @returns True when it does.
  */
@@ -245,8 +245,8 @@ function undrawnBy(reading: RelationshipReading, piece: Piece): boolean {
 }
 
 /**
- * The parts that code reaches from bound parts the board does not join to them.
- * @param reading The board.
+ * The parts that code reaches from bound parts the document does not join to them.
+ * @param reading The document.
  * @returns One finding for each part reached.
  */
 function undrawnFindings(reading: RelationshipReading): CodeFinding[] {
@@ -271,7 +271,7 @@ function undrawnFindings(reading: RelationshipReading): CodeFinding[] {
 /**
  * Whether a relationship kind accepts an evidence kind. A kind without the
  * `evidence` key, or one the vocabulary lacks, accepts every evidence kind.
- * @param reading The board and the vocabulary.
+ * @param reading The document and the vocabulary.
  * @param kind The relationship's kind.
  * @param evidence The evidence kind.
  * @returns True when it does.
@@ -306,7 +306,7 @@ function isRead(code: PartCode | undefined): code is ReadPart {
 /**
  * Whether code facts, not the text reading, read some of the code of a part
  * or of a part inside it, so references can join it to another.
- * @param reading The board.
+ * @param reading The document.
  * @param part The part.
  * @returns True when a grammar read one of those files.
  */
@@ -320,7 +320,7 @@ function hasParsedCode(reading: RelationshipReading, part: ReadPart): boolean {
 
 /**
  * Whether one part holds the other.
- * @param reading The board.
+ * @param reading The document.
  * @param left One part's id.
  * @param right The other's.
  * @returns True when either holds the other.
@@ -336,7 +336,7 @@ function holdsOneAnother(reading: RelationshipReading, left: string, right: stri
  * Why the check does not judge a relationship whose ends it read: ends that
  * hold one another, bind the same code or are read at different code, or code it
  * read only as text.
- * @param reading The board.
+ * @param reading The document.
  * @param start The part at its start.
  * @param end The part at its end.
  * @returns The reason, `silent` when the text-only skip says it, or undefined.
@@ -357,7 +357,7 @@ function unjudgedRead(
 /**
  * Why the check does not judge a relationship with no anchor whose ends are
  * both bound, or nothing when it does.
- * @param reading The board.
+ * @param reading The document.
  * @param edge The relationship.
  * @returns The reason, `silent` when it is said elsewhere, or undefined.
  */
@@ -384,7 +384,7 @@ function pairOf(piece: Piece): string {
 /**
  * The finding about a relationship with no anchor that the accepted evidence
  * does not support, if any.
- * @param reading The board.
+ * @param reading The document.
  * @param edge The relationship.
  * @returns The finding, or undefined when accepted evidence supports it.
  */
@@ -430,7 +430,7 @@ function judgeEdge(
  * code of its end holds an output of the same flake, which that expression
  * may name. A build dependency in a flake reaches only the outputs of that
  * flake, so a relationship to any other code is judged.
- * @param reading The board.
+ * @param reading The document.
  * @param edge The relationship.
  * @param ends Its start and its end, each with every part inside it.
  * @param ends.start Its start and every part inside it.
@@ -471,7 +471,7 @@ function namesIn(evidence: readonly CodeEvidence[]): string {
 
 /**
  * Which side of a relationship across a network hop has evidence, where only one has.
- * @param reading The board.
+ * @param reading The document.
  * @param edge The relationship.
  * @returns The side with none, what the other side says, and its evidence; nothing where neither or both have some.
  */
@@ -506,7 +506,7 @@ function oneSided(
  * The finding about a relationship with no anchor that no accepted evidence
  * joins: with the pieces of other kinds between its ends, and, across a
  * network hop, the side that has evidence.
- * @param reading The board.
+ * @param reading The document.
  * @param edge The relationship.
  * @param others One piece of each pair and kind between its ends.
  * @returns The finding.
@@ -538,9 +538,9 @@ function unsupportedFinding(
 
 /**
  * Judge one relationship with no anchor whose ends are both bound, or say why not.
- * @param reading The board.
+ * @param reading The document.
  * @param edge The relationship.
- * @param outcome What the board gives, which this adds to.
+ * @param outcome What the document gives, which this adds to.
  */
 function judgeOrSkip(
 	reading: RelationshipReading,
@@ -556,13 +556,13 @@ function judgeOrSkip(
 		return;
 	}
 	const subject = edgeSubjects(reading.read.variant.content)(edge);
-	const { board, variant } = siteOf(reading.read, "", subject);
-	outcome.skipped.push({ board, variant, subject, ...judged });
+	const { model, variant } = siteOf(reading.read, "", subject);
+	outcome.skipped.push({ model, variant, subject, ...judged });
 }
 
 /**
  * Judge every relationship with no anchor whose ends are both bound.
- * @param reading The board.
+ * @param reading The document.
  * @returns The findings and what was not judged.
  */
 function edgeOutcome(reading: RelationshipReading): RelationshipOutcome {
@@ -582,10 +582,10 @@ function edgeOutcome(reading: RelationshipReading): RelationshipOutcome {
 }
 
 /**
- * What the evidence says about the relationships of one board: the parts code
- * joins that the board does not, then each relationship with no anchor that
+ * What the evidence says about the relationships of one document: the parts code
+ * joins that the document does not, then each relationship with no anchor that
  * the evidence does not support.
- * @param reading The board, its parts' code, the evidence and the vocabulary.
+ * @param reading The document, its parts' code, the evidence and the vocabulary.
  * @returns The findings and what was not judged.
  */
 function judgeRelationships(reading: RelationshipReading): RelationshipOutcome {
@@ -593,4 +593,4 @@ function judgeRelationships(reading: RelationshipReading): RelationshipOutcome {
 	return { findings: [...undrawnFindings(reading), ...edges.findings], skipped: edges.skipped };
 }
 
-export { type RelationshipReading, judgeRelationships, siteOf };
+export { judgeRelationships, siteOf };

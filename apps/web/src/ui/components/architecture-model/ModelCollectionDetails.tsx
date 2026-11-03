@@ -1,7 +1,7 @@
 import { useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 
 interface CollectionDetailsProps {
 	model: Model;

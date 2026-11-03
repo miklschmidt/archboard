@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, type RefObject } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { projectModel, type Model } from "@archboard/board/content";
+import { projectModel, type Model } from "@archboard/model/content";
 import { modelDrawingQuery } from "#ui/clients/architecture-model/drawing.ts";
-import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
-import { useDive, type Destination } from "#ui/hooks/semantic-board-canvas/use-dive.ts";
-import { useLayoutEngine } from "#ui/hooks/semantic-board-canvas/use-layout-engine.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import { useDive, type Destination } from "#ui/hooks/canvas/use-dive.ts";
+import { useLayoutEngine } from "#ui/hooks/canvas/use-layout-engine.ts";
 import { toggled } from "#ui/rules/architecture-model/expansion.ts";
 import {
 	moveTo,
 	parentOf,
-	sceneBoard,
+	sceneModel,
 	sceneView,
 	type AcceptedScene,
 	type ScenePicture,
@@ -20,7 +20,7 @@ import {
 const ROOTS = "";
 
 interface MoveInputs {
-	camera: BoardCamera;
+	camera: PictureCamera;
 	/** The picture's area. */
 	area: RefObject<HTMLElement | null>;
 	/** The scene on screen. */
@@ -52,14 +52,14 @@ function useModelMoves(inputs: MoveInputs) {
 	const layout = useLayoutEngine();
 	const draw = useCallback(
 		async (to: Destination): Promise<ScenePicture | null> => {
-			const scope = to.board === ROOTS ? null : to.board;
+			const scope = to.model === ROOTS ? null : to.model;
 			const filters = { ...reading.filters, controls: true };
 			const opened = projectModel(model, scope, null, filters, reference);
 			if (opened.content.nodes.length === 0) return null;
 			const destination = { ...reading, scope, focus: null, expand: [], grammar: "architecture" };
 			return {
 				...(await client.fetchQuery(modelDrawingQuery(model, opened, "architecture", layout))),
-				board: sceneBoard(destination),
+				model: sceneModel(destination),
 				view: sceneView(destination),
 			};
 		},
@@ -95,7 +95,7 @@ function useModelMoves(inputs: MoveInputs) {
 			 */
 			const plain = (): void => open(next);
 			const route = moveTo(scene, next);
-			const to = { board: next ?? ROOTS };
+			const to = { model: next ?? ROOTS };
 			if (route.kind === "out") out({ ...to, card: route.card }, plain);
 			else if (route.kind === "into") into(route.card, to, plain);
 			else plain();
@@ -147,14 +147,14 @@ function useDrawAhead(
 	const modules = useMemo(() => new Set(model.modules.map((module) => module.id)), [model.modules]);
 	const scope = scene?.reading.scope ?? null;
 	useEffect(() => {
-		if (scope !== null) ask(() => draw({ board: parentOf(model, scope) ?? ROOTS }));
+		if (scope !== null) ask(() => draw({ model: parentOf(model, scope) ?? ROOTS }));
 	}, [scope, model, ask, draw]);
 	return useCallback(
 		(id: string): void => {
 			const opens = modules.has(id) && id !== scope;
 			ask(async () => {
 				await drawToggled(id);
-				if (opens) await draw({ board: id });
+				if (opens) await draw({ model: id });
 			});
 		},
 		[modules, scope, ask, draw, drawToggled],

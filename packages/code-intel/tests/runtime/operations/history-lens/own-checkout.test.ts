@@ -1,4 +1,4 @@
-// Behind, footprint and locality read a board against the checkout that holds
+// Footprint and locality read a document against the checkout that holds
 // its vault, for the vault's own repository (ADR 0049, TASK-472.03).
 //
 // The registry holds `shop` on `main`. A second checkout of the same
@@ -11,15 +11,14 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createBehindReading } from "#runtime/operations/history-lens/behind.ts";
 import { createVariantLocality } from "#runtime/operations/history-lens/locality.ts";
 import { readVariantFootprint } from "#runtime/operations/history-lens/footprint.ts";
 import {
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
 	currentVariant,
-	type SemanticBoard,
-} from "@archboard/board/document";
+	type LegacyBoard,
+} from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-own-checkout-"));
@@ -90,9 +89,9 @@ function commit(root: string, subject: string, files: Record<string, string>): s
 	return git(root, "rev-parse", "HEAD");
 }
 
-/** A board with one part, pinned to the branch the vault's checkout is on. */
-const board: SemanticBoard = SemanticBoardSchema.parse({
-	schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+/** A document with one part, pinned to the branch the vault's checkout is on. */
+const document: LegacyBoard = LegacyBoardSchema.parse({
+	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "bd",
 	name: "Shop",
@@ -128,10 +127,10 @@ beforeAll(() => {
 	);
 	repository(shop, "main", { "src/a.ts": "export {};\n" });
 	first = repository(holder, "feature", { "src/a.ts": "export {};\n" });
-	// The board is committed, then the code it describes changes.
+	// The document is committed, then the code it describes changes.
 	mkdirSync(vault, { recursive: true });
-	writeFileSync(join(vault, "Shop.semantic.json"), `${JSON.stringify(board, null, "\t")}\n`);
-	commit(holder, "board", {});
+	writeFileSync(join(vault, "Shop.semantic.json"), `${JSON.stringify(document, null, "\t")}\n`);
+	commit(holder, "document", {});
 	commit(holder, "code moved on", { "src/a.ts": "export const a = 1;\n" });
 });
 
@@ -141,21 +140,12 @@ afterAll(() => {
 	rmSync(scratch, { recursive: true, force: true });
 });
 
-test("behind counts the commits of the checkout that holds the vault", async () => {
-	const [answer] = await createBehindReading().read(vault, [
-		{ board, file: join(vault, "Shop.semantic.json") },
-	]);
-	if (answer === undefined || !("parts" in answer)) throw new Error("the board was not read");
-	expect(answer.skipped).toEqual([]);
-	expect(answer.parts.map((part) => [part.subject.id, part.commits.length])).toEqual([["pA", 1]]);
-});
-
 test("footprint and locality read the part in the checkout that holds the vault", async () => {
-	const current = currentVariant(board)!;
-	const footprint = await readVariantFootprint({ vault, board, against: current, base: first });
+	const current = currentVariant(document)!;
+	const footprint = await readVariantFootprint({ vault, document, against: current, base: first });
 	expect(footprint.skipped).toEqual([]);
 	expect(footprint.proposal).toBeNull();
-	const locality = await createVariantLocality().read(vault, board, current, undefined);
+	const locality = await createVariantLocality().read(vault, document, current, undefined);
 	expect(locality.skipped).toEqual([]);
 	expect(locality.hotspots.map((one) => one.subject.id)).toEqual(["pA"]);
 });

@@ -1,12 +1,12 @@
-//! A board whose author wrote an exchange and no relationships draws each
+//! A picture whose author wrote an exchange and no relationships draws each
 //! message of a flow as a line of its own on the architecture: a step between
 //! two participants, drawn unlike any relationship, carrying the step's id so
 //! selection and standing resolve to the step. Nothing here is written to the
-//! board (ADR 0023): the line is a reading of content the board holds.
+//! picture (ADR 0023): the line is a reading of content the picture holds.
 
 use std::collections::HashSet;
 
-use archboard_flows::board::{Message, MessageKind, messages_of};
+use archboard_flows::content::{Message, MessageKind, messages_of};
 use archboard_layout::Edge;
 use archboard_scene::drawing::Emphasis;
 use archboard_scene::names::word;
@@ -81,10 +81,10 @@ fn step_lines_of(content: &Reading, held: &Reading) -> Vec<Edge> {
 }
 
 /// The reading laid out, with one line for each pair a drawable message runs
-/// between on a board whose own reading holds no relationships, and the ids
+/// between on a picture whose own reading holds no relationships, and the ids
 /// of those lines in the order they were added.
 ///
-/// A board that has relationships is drawn from them: a flow there restates
+/// A picture that has relationships is drawn from them: a flow there restates
 /// the wiring as messages and answers, and drawing those again doubles every
 /// line. Whether it has any, and which message stands for a pair, are asked
 /// of the variant's own reading, so a picture with its comparison and one

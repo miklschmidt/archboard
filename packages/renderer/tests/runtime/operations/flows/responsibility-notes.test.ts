@@ -1,11 +1,11 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
-import type { DiagramBox } from "@archboard/board/render-reply";
-import type { DiagramGrammar } from "@archboard/board/views";
+import type { DiagramBox } from "@archboard/model/render-reply";
+import type { DiagramGrammar } from "@archboard/model/views";
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { drawnSpan, drawnTexts, spanFits } from "#tests/runtime/support/drawn-text.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const content = orderedFixture({
 	nodes: [
@@ -21,7 +21,7 @@ const content = orderedFixture({
 			name: "API",
 			kind: "service",
 			parent: "system",
-			responsibility: "Accepts board changes.\nChecks the writer.\nSaves every accepted edit.",
+			responsibility: "Accepts document changes.\nChecks the writer.\nSaves every accepted edit.",
 		},
 		{
 			id: "store",
@@ -29,14 +29,14 @@ const content = orderedFixture({
 			kind: "datastore",
 			parent: "system",
 			responsibility:
-				"Keeps the complete board and its proposals together, writes every accepted revision to disk before answering, and preserves every word an agent authored for readers to understand the system.",
+				"Keeps the complete document and its proposals together, writes every accepted revision to disk before answering, and preserves every word an agent authored for readers to understand the system.",
 		},
 	],
 	edges: [{ id: "write", from: "api", to: "store", kind: "data", label: "write revision" }],
 	flows: [
 		{
 			id: "save",
-			name: "Save a board",
+			name: "Save a document",
 			participants: ["api", "store"],
 			steps: [{ id: "saveit", from: "api", to: "store", kind: "sync", label: "persist" }],
 		},

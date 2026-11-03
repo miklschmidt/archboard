@@ -1,15 +1,15 @@
-// The code pass: every claim a board makes about code, held to the code facts
+// The code pass: every claim a document makes about code, held to the code facts
 // of the files on disk (ADR 0046).
 //
 // A bound symbol must be a definition in the bound file or directory, and an
 // anchor's symbol a definition or a use in its file; a file no grammar reads
 // holds a symbol wherever its last name stands. A missing path or symbol says
 // that something is missing, so the check is sure of it, the code contradicts
-// the board, and a right change clears it: each one is a warning, and the only
+// the document, and a right change clears it: each one is a warning, and the only
 // finding about its binding or anchor (claim-findings.ts). An anchor that holds, and whose symbol
 // is defined outside the bound code of both ends, is `ANCHOR_MISMATCH`
 // (support.ts), and so is one whose uses are all of an evidence kind its
-// relationship kind does not accept (anchor-kind.ts). Then each board's
+// relationship kind does not accept (anchor-kind.ts). Then each document's
 // relationships are held to the evidence between its bound parts
 // (relationships.ts), and each container's interface to what the module it
 // binds exposes (interfaces.ts). Language servers resolve the uses no import
@@ -45,7 +45,7 @@ import {
 	bindingPathMissing,
 	bindingSymbolMissing,
 } from "#runtime/operations/code-check/claims/claim-findings.ts";
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 import { documentsOf, judgeDocuments } from "#runtime/operations/code-check/claims/documents.ts";
 import {
 	droppedBindings,
@@ -119,22 +119,22 @@ interface Pass {
 	readonly resolve: Resolve;
 	/** The kinds of file read as text in each repository. */
 	readonly readAsText: Map<string, Set<string>>;
-	/** What each module a container binds exposes, read once for every board. */
+	/** What each module a container binds exposes, read once for every document. */
 	readonly modules: ModuleReadings;
 	readonly outcome: CodeCheckOutcome;
 }
 
 /**
- * A skipped subject, at its board and variant.
+ * A skipped subject, at its document and variant.
  * @param site Where the claim sits.
  * @param skip Why it was skipped, and what else the reason says.
  * @returns The skip.
  */
 function skipped(
 	site: ClaimSite,
-	skip: Omit<CodeCheckSkip, "board" | "variant" | "subject">,
+	skip: Omit<CodeCheckSkip, "model" | "variant" | "subject">,
 ): CodeCheckSkip {
-	return { board: site.board, variant: site.variant, subject: site.subject, ...skip };
+	return { model: site.model, variant: site.variant, subject: site.subject, ...skip };
 }
 
 /**
@@ -367,12 +367,12 @@ async function anchorMismatch(
 }
 
 /**
- * Hold one board's relationships to the evidence between its bound parts,
+ * Hold one document's relationships to the evidence between its bound parts,
  * and its containers' interfaces to what their modules expose.
- * @param read The board, at the variant the check reads.
+ * @param read The document, at the variant the check reads.
  * @param pass The pass.
  */
-async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<void> {
+async function judgeStateRelationships(read: StateToCheck, pass: Pass): Promise<void> {
 	const codes = await partCodesOf(read.variant.content.nodes, {
 		snapshot: pass.snapshot,
 		checkouts: pass.checkouts,
@@ -422,7 +422,7 @@ async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<
 	pass.outcome.skipped.push(
 		...judged.skipped,
 		...interfaces.skipped,
-		...unboundSkips(codes, { board: read.board.name, variant: read.variant.id }),
+		...unboundSkips(codes, { model: read.document.name, variant: read.variant.id }),
 	);
 }
 
@@ -441,25 +441,25 @@ function pathsOf(claim: Claim): CodeBinding[] {
 }
 
 /**
- * Judge every claim in the order the boards make them, so the answer keeps
+ * Judge every claim in the order the documents make them, so the answer keeps
  * that order.
  * @param claims The claims.
  * @param pass The pass.
  */
 async function judgeAll(claims: readonly Claim[], pass: Pass): Promise<void> {
 	for (const claim of claims) {
-		// oxlint-disable-next-line no-await-in-loop -- one claim at a time keeps the findings in board order, and a file one claim reads is cached for the next
+		// oxlint-disable-next-line no-await-in-loop -- one claim at a time keeps the findings in document order, and a file one claim reads is cached for the next
 		await (claim.kind === "binding" ? judgeBinding(claim, pass) : judgeAnchor(claim, pass));
 	}
 }
 
 /**
- * Every bound part's binding on the boards.
- * @param boards The boards.
+ * Every bound part's binding on the documents.
+ * @param states The documents.
  * @returns Each binding.
  */
-function partBindings(boards: readonly BoardToCheck[]): CodeBinding[] {
-	return boards.flatMap((read) =>
+function partBindings(states: readonly StateToCheck[]): CodeBinding[] {
+	return states.flatMap((read) =>
 		read.variant.content.nodes.flatMap((node) =>
 			node.binding === undefined ? [] : [node.binding],
 		),
@@ -493,11 +493,11 @@ function timedFacts(facts: FactsPass) {
 }
 
 /**
- * Hold every board's anchors and bound symbols to the code facts of the files
+ * Hold every document's anchors and bound symbols to the code facts of the files
  * on disk, then its relationships to the evidence between its bound parts.
- * @param vault The vault directory the boards were read from: the checkout that holds
+ * @param vault The vault directory the documents were read from: the checkout that holds
  * it is read for its own repository, and the chosen checkout for every other (ADR 0049).
- * @param boards The boards, each at the variant the check reads.
+ * @param states The documents, each at the variant the check reads.
  * @param signal Cancels the pass, every Git command it runs, every file it
  * reads and every language server it started.
  * @param plans The Terraform or OpenTofu plans an agent named (`--plan`).
@@ -508,16 +508,16 @@ function timedFacts(facts: FactsPass) {
  */
 async function checkCode(
 	vault: string,
-	boards: readonly BoardToCheck[],
+	states: readonly StateToCheck[],
 	signal: AbortSignal,
 	plans: FactsPass["plans"] = [],
 	serverOf?: ServerOf,
 	revisions?: ReadonlyMap<string, string>,
 ): Promise<CodeCheckOutcome> {
-	const inherited = droppedBindings(boards);
-	const asked = boards.flatMap(claimsOf);
-	const documents = documentsOf(boards);
-	const bindings = [...asked.flatMap(pathsOf), ...partBindings(boards), ...inherited, ...documents];
+	const inherited = droppedBindings(states);
+	const asked = states.flatMap(claimsOf);
+	const documents = documentsOf(states);
+	const bindings = [...asked.flatMap(pathsOf), ...partBindings(states), ...inherited, ...documents];
 	const snapshot: RevisionSnapshot = {
 		...(await snapshotCheckoutAccess({ vault, signal, bindings, timeoutMs: null })),
 		...(revisions === undefined ? {} : { revisions }),
@@ -526,8 +526,8 @@ async function checkCode(
 	const checkouts = await readCheckouts(repos, snapshot, signal);
 	const reads =
 		revisions === undefined
-			? await Promise.all(boards.map((read) => atOwnRef(read, checkouts, signal)))
-			: boards;
+			? await Promise.all(states.map((read) => atOwnRef(read, checkouts, signal)))
+			: states;
 	const claims = reads.flatMap(claimsOf);
 	const bound = [...partBindings(reads), ...documents];
 	const refs = await readRefCodes(refReadsOf(claims, bound, snapshot), checkouts, signal);
@@ -556,10 +556,10 @@ async function checkCode(
 		pass.outcome.findings.push(...documented.findings);
 		pass.outcome.skipped.push(...documented.skipped);
 		for (const read of reads) {
-			// oxlint-disable-next-line no-await-in-loop -- one board at a time keeps the findings in board order, and a file one board reads is cached for the next
-			await judgeBoardRelationships(read, pass);
+			// oxlint-disable-next-line no-await-in-loop -- one document at a time keeps the findings in document order, and a file one document reads is cached for the next
+			await judgeStateRelationships(read, pass);
 		}
-		const dropped = await judgeDroppedParts(boards, { checkouts, facts, signal });
+		const dropped = await judgeDroppedParts(states, { checkouts, facts, signal });
 		pass.outcome.findings.push(...dropped.findings);
 		pass.outcome.skipped.push(...dropped.skipped);
 	} finally {

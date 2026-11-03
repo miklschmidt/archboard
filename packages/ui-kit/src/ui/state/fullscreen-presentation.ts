@@ -378,6 +378,5 @@ function createFullscreenPresentation(
 export {
 	createFullscreenPresentation,
 	type FullscreenPresentation,
-	type FullscreenPresentationListeners,
 	type FullscreenPresentationSnapshot,
 };

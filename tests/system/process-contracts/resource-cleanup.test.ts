@@ -234,14 +234,14 @@ test("TERM-resistant peer is killed through its handle and its lease is recovera
 		const stubborn = await startOwnedPeer({
 			argv: [
 				process.execPath,
-				join(repoRoot, "packages/board/tests/runtime/support/process-lock.ts"),
+				join(repoRoot, "packages/model/tests/runtime/support/process-lock.ts"),
 			],
 			env: {
 				...env,
 				ARCHBOARD_TEST_RESOURCE_MODE: "lock",
 				ARCHBOARD_TEST_REPO_ROOT: repoRoot,
 				ARCHBOARD_TEST_LOCK_VAULT: vault,
-				ARCHBOARD_TEST_LOCK_BOARD: "stubborn-resource",
+				ARCHBOARD_TEST_LOCK_MODEL: "stubborn-resource",
 				ARCHBOARD_TEST_LOCK_HOLDER: "stubborn-owner",
 				ARCHBOARD_TEST_IGNORE_TERM: "1",
 				ARCHBOARD_TEST_STUBBORN_PORT: String(port),
@@ -266,14 +266,14 @@ test("TERM-resistant peer is killed through its handle and its lease is recovera
 		const recovery = await startOwnedPeer({
 			argv: [
 				process.execPath,
-				join(repoRoot, "packages/board/tests/runtime/support/process-lock.ts"),
+				join(repoRoot, "packages/model/tests/runtime/support/process-lock.ts"),
 			],
 			env: {
 				...env,
 				ARCHBOARD_TEST_RESOURCE_MODE: "lock",
 				ARCHBOARD_TEST_REPO_ROOT: repoRoot,
 				ARCHBOARD_TEST_LOCK_VAULT: vault,
-				ARCHBOARD_TEST_LOCK_BOARD: "stubborn-resource",
+				ARCHBOARD_TEST_LOCK_MODEL: "stubborn-resource",
 				ARCHBOARD_TEST_LOCK_HOLDER: "recovery-owner",
 			},
 			readySchema: RawLockReadySchema,

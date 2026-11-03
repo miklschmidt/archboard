@@ -1,20 +1,20 @@
 import type { Express, Request } from "express";
 import { z } from "zod";
-import { readArchitectureClaims } from "@archboard/board/store-read";
+import { readArchitectureClaims } from "@archboard/model/store-read";
 import {
 	editArchitectureModule,
 	recoverArchitectureModel,
 	claimArchitectureSubjects,
 	releaseArchitectureClaim,
 	takeBackArchitectureClaim,
-} from "@archboard/board/store-write";
+} from "@archboard/model/store-write";
 import {
 	ArchitectureModuleEditSchema,
 	ArchitectureClaimRequestSchema,
 	ArchitectureClaimReleaseSchema,
 	ArchitectureClaimTakeBackSchema,
 	type ArchitectureModelRead,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";
 import { respond } from "#server/routes/architecture/model-response.ts";

@@ -1,20 +1,20 @@
-// Where two parts of a board meet: the children of their nearest holder that hold
+// Where two parts of a document meet: the children of their nearest holder that hold
 // them. A reading draws a relationship between those two sides, so it stands for
 // every call between them (ADR 0044, ADR 0046).
 
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
-import { messagesOf } from "@archboard/board/flow";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
+import { messagesOf } from "@archboard/model/flow";
 
-/** What reading the sides of a board needs. */
+/** What reading the sides of a document needs. */
 interface Sides {
-	readonly read: BoardToCheck;
+	readonly read: StateToCheck;
 	/** Each part and the parts that hold it, the part first. */
 	readonly lineages: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 /**
  * A part and every part inside it.
- * @param sides The board.
+ * @param sides The document.
  * @param id The part.
  * @returns The ids.
  */
@@ -24,7 +24,7 @@ function sideOf(sides: Pick<Sides, "lineages">, id: string): Set<string> {
 
 /**
  * The top of what separates a part from another.
- * @param sides The board.
+ * @param sides The document.
  * @param part The part.
  * @param other The part it meets.
  * @returns The child of their nearest holder that holds the part, or the root that does.
@@ -37,7 +37,7 @@ function sideWhereTheyMeet(sides: Sides, part: string, other: string): string {
 
 /**
  * Whether a relationship or a flow step joins the two sides where two parts meet.
- * @param sides The board.
+ * @param sides The document.
  * @param left One part.
  * @param right The other.
  * @returns True when one does, in either direction.

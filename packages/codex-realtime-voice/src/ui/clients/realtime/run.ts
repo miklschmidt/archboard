@@ -431,5 +431,4 @@ export {
 	type Cancelled,
 	type RealtimeMediaSnapshot,
 	type Run,
-	type TimedOut,
 };

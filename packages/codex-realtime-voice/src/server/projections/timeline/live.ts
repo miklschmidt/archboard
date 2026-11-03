@@ -164,5 +164,4 @@ function startedThreadId(params: Readonly<Record<string, unknown>>): string | nu
 	return thread["id"];
 }
 
-export { eventThreadId, createTimelineLiveHolder, TIMELINE_PLANS_HELD, TIMELINE_USAGES_HELD };
-export type { TimelineLiveHolder };
+export { eventThreadId, createTimelineLiveHolder };

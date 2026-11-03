@@ -1,13 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserApproval } from "#shared/schemas/browser/snapshot.ts";
-import { approvalDecisionSignature, approvalFocusReturn } from "#ui/rules/approvals/focus.ts";
 import { approvalTarget, projectWorkbenchApprovals } from "#ui/rules/approvals/projection.ts";
 import type {
 	WorkbenchApprovalCard,
 	WorkbenchApprovalPhase,
 	WorkbenchApprovalsInput,
-	WorkbenchApprovalsView,
 } from "#ui/state/approvals/contracts.ts";
 import type { WorkbenchTransportState } from "#ui/state/approvals/transport-port.ts";
 import {
@@ -71,30 +68,6 @@ function dynamicCard(overrides: Overrides): WorkbenchApprovalCard {
 	return cardFor(
 		connected(snapshot({ dynamicApprovals: [dynamicApproval(SEND_EFFECT, overrides)] })),
 	);
-}
-
-/**
- * The surface for some approvals.
- * @param approvals The approvals.
- * @returns The view.
- */
-function projectApprovals(approvals: readonly BrowserApproval[]): WorkbenchApprovalsView {
-	return projectWorkbenchApprovals(
-		approvalsInput(connected(snapshot({ approvals: [...approvals] }))),
-	);
-}
-
-/**
- * The key of the first card.
- * @param view The view.
- * @returns The key.
- */
-function firstKey(view: WorkbenchApprovalsView): string {
-	const card = view.cards[0];
-	if (card === undefined) {
-		throw new Error("Expected one card");
-	}
-	return card.key;
 }
 
 describe("ordinary approval lifecycle", () => {
@@ -314,60 +287,5 @@ describe("dynamic approval lifecycle", () => {
 
 		expect(card.status.detail).toContain("Codex child disconnected");
 		expect(card.status.delivery).toBe("not_delivered");
-	});
-});
-
-describe("focus return", () => {
-	test("returns focus when the focused card loses its authority", () => {
-		const pending = projectApprovals([commandApproval()]);
-		const key = firstKey(pending);
-		const settled = projectApprovals([
-			commandApproval({
-				lifecycle: {
-					state: "settled",
-					decision: "approved",
-					outcome: "delivered",
-					reason: "Delivered.",
-				},
-				spoken: { eligible: false, reason: "not_pending" },
-			}),
-		]);
-		const settledCard = settled.cards[0];
-		if (settledCard === undefined) {
-			throw new Error("Expected one settled card");
-		}
-		const change = approvalFocusReturn(
-			approvalDecisionSignature(pending.cards),
-			[{ ...settledCard, key }],
-			key,
-		);
-
-		expect(change?.key).toBe(key);
-		expect(change?.announcement).toContain("no longer accepts a decision");
-		expect(change?.announcement).toContain("Focus returned to the approvals heading.");
-	});
-
-	test("returns focus when the card disappears entirely", () => {
-		const pending = projectApprovals([commandApproval()]);
-		const change = approvalFocusReturn(
-			approvalDecisionSignature(pending.cards),
-			[],
-			firstKey(pending),
-		);
-
-		expect(change?.announcement).toContain("gone from this workbench");
-	});
-
-	test("leaves focus alone while the card still accepts a decision", () => {
-		const pending = projectApprovals([commandApproval()]);
-
-		expect(
-			approvalFocusReturn(
-				approvalDecisionSignature(pending.cards),
-				pending.cards,
-				firstKey(pending),
-			),
-		).toBeNull();
-		expect(approvalFocusReturn("", pending.cards, null)).toBeNull();
 	});
 });

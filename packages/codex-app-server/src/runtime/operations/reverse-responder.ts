@@ -199,4 +199,4 @@ function createReverseResponder(options: ReverseResponderOptions): ReverseRespon
 	return Object.freeze({ respond });
 }
 
-export { type ReverseResponderOptions, type ReverseResponder, createReverseResponder };
+export { createReverseResponder };

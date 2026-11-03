@@ -121,25 +121,13 @@ function selectPane(list: PaneList, paneId: string): PaneList {
 	return Object.freeze({ panes: list.panes, activePaneId: paneId });
 }
 
-/**
- * The primary pane: the one the server picks when a request names none.
- * @param list The list.
- * @returns The first pane's id.
- */
-function primaryPaneId(list: PaneList): string {
-	return list.panes[0]?.paneId ?? PANE_IDS[0];
-}
-
 export {
 	PANE_IDS,
 	addPane,
 	canClosePane,
 	closePane,
-	hasPane,
 	initialPaneList,
 	paneListOf,
-	primaryPaneId,
 	selectPane,
-	type PaneEntry,
 	type PaneList,
 };

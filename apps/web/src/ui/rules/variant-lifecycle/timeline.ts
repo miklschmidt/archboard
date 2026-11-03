@@ -1,7 +1,7 @@
-// A board's variants as one line with branches: the lines a timeline draws
+// A model's variants as one line with branches: the lines a timeline draws
 // beside each variant, worked out from nothing but where the variants sit in
 // their list. The main line runs through the variants at depth zero (the one
-// the board's name opens, then its history); a variant one deeper branches off
+// the model's name opens, then its history); a variant one deeper branches off
 // the one above it at the shallower depth, as a draft branches off the variant
 // it was derived from; and a line keeps running past whatever sits between two
 // variants it joins. The navigator draws these lanes compactly beside its rows,

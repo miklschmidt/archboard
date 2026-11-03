@@ -89,4 +89,4 @@ function createLevelChannel(): LevelChannel {
 	});
 }
 
-export { createLevelChannel, type LevelChannel };
+export { createLevelChannel };

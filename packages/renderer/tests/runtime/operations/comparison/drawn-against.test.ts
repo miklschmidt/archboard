@@ -1,15 +1,15 @@
 // A picture drawn against a named variant (TASK-478.01).
 //
 // What these catch: a stacked proposal whose picture marks everything the proposals below it
-// added, because it was read against the board's current variant; a picture of unbuilt work
+// added, because it was read against the document's current variant; a picture of unbuilt work
 // that is still framed "Planned"; a name that is not a variant, or is the drawn variant, drawn
 // anyway; and a picture asked for with no variant to read against that no longer draws as it did.
 
 import { expect, test } from "bun:test";
-import { renderBoard } from "#runtime/operations/render.ts";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
-import type { SemanticRenderReply } from "@archboard/board/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { renderLegacyBoard } from "#runtime/operations/render.ts";
+import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import type { SemanticRenderReply } from "@archboard/model/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
 const API = { id: "api", name: "Intake API", kind: "service" };
@@ -43,13 +43,13 @@ function variantOf(
 /**
  * A stack of three variants, each one part larger than the one it came from.
  * @param built Whether the bottom of the stack is the current architecture.
- * @returns The board.
+ * @returns The document.
  */
 function stack(built: boolean) {
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
-		id: "board",
+		id: "document",
 		name: "Ingest",
 		level: "system",
 		version: 1,
@@ -73,7 +73,7 @@ function stack(built: boolean) {
  * @returns The outcome of the render.
  */
 function drawn(built: boolean, choices: { variant: string; against?: string }) {
-	return renderBoard(stack(built), { theme: "light", ...choices }, DEFAULT_SEMANTIC_POLICY);
+	return renderLegacyBoard(stack(built), { theme: "light", ...choices }, DEFAULT_SEMANTIC_POLICY);
 }
 
 /**
@@ -84,7 +84,7 @@ function drawn(built: boolean, choices: { variant: string; against?: string }) {
 function replyOf(
 	outcome: Awaited<ReturnType<typeof drawn>>,
 ): SemanticRenderReply & { svg: string } {
-	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");
+	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn document");
 	return outcome.reply;
 }
 
@@ -110,7 +110,7 @@ test("a stacked proposal marks only what it adds over the proposal below it, not
 	expect(added(stacked)).toEqual(["cache"]);
 });
 
-test("a picture drawn against a variant carries no planned frame, also on a board with no current variant", async () => {
+test("a picture drawn against a variant carries no planned frame, also on a document with no current variant", async () => {
 	const framed = replyOf(await drawn(false, { variant: "two" }));
 	expect(framed.svg).toContain('data-slot="planned-frame"');
 
@@ -125,7 +125,7 @@ test("the variant to read against is found by name as well as by id", async () =
 	expect(byName.changes?.against.id).toBe("one");
 });
 
-test("a variant the board lacks, and the drawn variant itself, are refused", async () => {
+test("a variant the document lacks, and the drawn variant itself, are refused", async () => {
 	const unknown = await drawn(true, { variant: "two", against: "nope" });
 	expect(unknown).toMatchObject({ ok: false, code: "UNKNOWN_VARIANT" });
 	const itself = await drawn(true, { variant: "two", against: "two" });

@@ -3,7 +3,7 @@
 // the environment values it sets, for the join across a network hop
 // (environment-join.ts).
 //
-// The check reads every compose file of a repository whose code the board
+// The check reads every compose file of a repository whose code the document
 // binds, bound or not, because the compose file is what runs that code. A
 // service is one runner across the files of its project: compose merges an
 // override's block into it, and a later file's `build` replaces an earlier
@@ -148,7 +148,7 @@ async function addServices(
 /**
  * The services the compose files of one repository declare, across the files
  * of each project.
- * @param parts The read parts of the board in that repository.
+ * @param parts The read parts of the document in that repository.
  * @param facts The pass.
  * @returns Each service, by each file and address of its blocks.
  */
@@ -216,7 +216,7 @@ function directoriesOf(service: Service): string[] {
 /**
  * The runners of one repository's compose files.
  * @param codes Each part's bound code, by its id.
- * @param parts The read parts of the board in that repository.
+ * @param parts The read parts of the document in that repository.
  * @param facts The pass.
  * @returns One runner per service.
  */
@@ -263,7 +263,7 @@ async function runnersIn(
 }
 
 /**
- * The runners the compose files of every repository whose code a board binds declare.
+ * The runners the compose files of every repository whose code a document binds declare.
  * @param codes Each part's bound code, by its id.
  * @param facts The pass.
  * @returns The runners.
@@ -274,7 +274,7 @@ async function composeRunners(
 ): Promise<Runner[]> {
 	const runners: Runner[] = [];
 	for (const parts of partsByRepo(codes)) {
-		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in board order
+		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in document order
 		runners.push(...(await runnersIn(codes, parts, facts)));
 	}
 	return runners;

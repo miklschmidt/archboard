@@ -2,7 +2,7 @@
   "order": 46000,
   "name": "Invocation context",
   "kind": "module",
-  "responsibility": "Keeps the board, vault, doing line, expected version, and writing session for one CLI invocation",
+  "responsibility": "Keeps the model, vault, doing line and writing session for one CLI invocation",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/state/server-client-session.ts"

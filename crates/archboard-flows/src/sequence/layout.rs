@@ -24,7 +24,7 @@ use archboard_scene::js;
 use archboard_scene::measure;
 use archboard_scene::request::{Activation, FrameGuard, FrameOperator, Slot};
 
-use crate::board::{Decision, Flow, Loop, Message, Node};
+use crate::content::{Decision, Flow, Loop, Message, Node};
 use crate::sequence::activations::activations_for;
 use crate::sequence::card::{
     Card, card_content_width, card_height, card_notes, card_text_width, mark_room, title_room,
@@ -219,7 +219,7 @@ pub(super) fn largest(values: impl IntoIterator<Item = f64>, floor: f64) -> f64 
     values.into_iter().fold(floor, js::js_max)
 }
 
-/// The node a column stands for. A board whose flows name nodes it does not
+/// The node a column stands for. A picture whose flows name nodes it does not
 /// hold is refused before it is read, so the stand-in is a backstop: a column
 /// named after the id, because a sequence that silently lost a participant
 /// would be a different sequence.

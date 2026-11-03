@@ -4,7 +4,7 @@
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import {
-	boardErrorNotice,
+	modelErrorNotice,
 	codeTargetShellNotice,
 	staleFrontendNotice,
 } from "#ui/rules/application/notices.ts";
@@ -54,21 +54,21 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 			}
 		},
 		/**
-		 * A board could not be shown.
+		 * A model could not be shown.
 		 * @param paneId The pane.
 		 * @param error The refusal.
 		 */
-		onBoardError: (paneId: string, error: string): void => {
-			notices.raise(boardErrorNotice(paneId, error));
+		onModelError: (paneId: string, error: string): void => {
+			notices.raise(modelErrorNotice(paneId, error));
 		},
 		/**
-		 * The server moved a pane onto another board or variant.
+		 * The server moved a pane onto another model or variant.
 		 * @param paneId The pane.
-		 * @param boardKey The board key it adopted.
-		 * @param previousKey The board key it left, or null on first adoption.
+		 * @param paneKey The model key it adopted.
+		 * @param previousKey The model key it left, or null on first adoption.
 		 */
-		onBoardAdopted: (paneId: string, boardKey: string, previousKey: string | null): void => {
-			owners.readings.boardChanged(paneId, boardKey, previousKey);
+		onModelAdopted: (paneId: string, paneKey: string, previousKey: string | null): void => {
+			owners.readings.modelChanged(paneId, paneKey, previousKey);
 		},
 		/**
 		 * This tab runs a bundle the server no longer serves.
@@ -95,7 +95,7 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 			catalog.reconnected();
 		},
 		/**
-		 * Which boards an agent is working on in one vault.
+		 * Which models an agent is working on in one vault.
 		 * @param vault The vault.
 		 * @param snapshot The whole snapshot.
 		 */
@@ -109,4 +109,4 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 	};
 }
 
-export { paneEvents, type PaneEventOwners };
+export { paneEvents };

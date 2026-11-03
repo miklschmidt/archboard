@@ -1,11 +1,11 @@
 {
   "order": 33000,
-  "name": "Board addresses",
+  "name": "Reading addresses",
   "kind": "module",
-  "responsibility": "Identifies the board and variant that a pane reads",
+  "responsibility": "Identifies the model and variant that a pane reads",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/rules/semantic-board-canvas/board/address.ts"
+    "path": "apps/web/src/ui/rules/canvas/reading/address.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#DW1hIFRx",
@@ -24,5 +24,8 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [],
+  "formerNames": [
+    "Board addresses"
+  ]
 }

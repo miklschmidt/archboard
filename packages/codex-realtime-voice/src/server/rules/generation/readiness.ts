@@ -26,7 +26,7 @@ export interface ServerReadinessInput {
  * @param fallback What to say when it says nothing usable.
  * @returns The bounded reason.
  */
-export function boundedBrowserReason(value: string | null | undefined, fallback: string): string {
+function boundedBrowserReason(value: string | null | undefined, fallback: string): string {
 	const collapsed = collapseWhitespace(value ?? "");
 	if (collapsed.length === 0) return fallback;
 	if (textEncoder.encode(collapsed).byteLength <= READINESS_REASON_MAX_BYTES) return collapsed;

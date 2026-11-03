@@ -1,16 +1,16 @@
 // What the deterministic checks read: the vault as it stood after the fixtures
 // and as it stands after the author, plus what the harness asked the CLI on
 // the checks' behalf. Gathered once per run by the harness; read by pure
-// functions, so a check is testable against a board built in memory.
+// functions, so a check is testable against a document built in memory.
 
 import {
 	currentVariant,
-	type SemanticBoard as LegacyBoard,
+	type LegacyBoard,
 	type SemanticVariant,
-} from "@archboard/board/document";
-import type { DiagramTheme } from "@archboard/board/render-reply";
-import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
-import type { SemanticPolicy } from "@archboard/board/policy";
+} from "@archboard/model/legacy-board";
+import type { DiagramTheme } from "@archboard/model/render-reply";
+import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/model/content";
+import type { SemanticPolicy } from "@archboard/model/policy";
 import type { recordingContainerOf } from "@archboard/walkthrough/recorder";
 import type { CaptureAttempt } from "#runtime/operations/runs/captures.ts";
 import {
@@ -19,11 +19,11 @@ import {
 	plausibleSubjects,
 	variantNamed,
 } from "#runtime/rules/outcomes/naming.ts";
-import type { VaultDiagnosticSchema } from "@archboard/board/policy";
+import type { VaultDiagnosticSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
-type Model = Extract<import("@archboard/board/model").ArchitectureModelRead, { success: true }>;
-type SemanticBoard = Omit<
+type Model = Extract<import("@archboard/model/contract").ArchitectureModelRead, { success: true }>;
+type EvaluatedDocument = Omit<
 	LegacyBoard,
 	"schemaVersion" | "kind" | "level" | "createdAt" | "updatedAt" | "version"
 > & { version?: number; revision?: string; architecture?: Model };
@@ -31,7 +31,7 @@ type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
 
 /** One render the harness attempted because a check asked for it. */
 interface RenderAttempt {
-	readonly board: string;
+	readonly document: string;
 	readonly variant?: string | undefined;
 	readonly view?: string | undefined;
 	readonly ok: boolean;
@@ -42,7 +42,7 @@ interface RenderAttempt {
 
 /** One group inspection the harness ran because a check asked for it. */
 interface InspectionAttempt {
-	readonly board: string;
+	readonly document: string;
 	readonly group: string;
 	readonly variant?: string | undefined;
 	readonly result: InspectedGroup | null;
@@ -80,10 +80,10 @@ interface InspectedGroup {
 
 /** Everything a run's checks can see. */
 interface Reading {
-	/** Every board in the vault after the author ran, by name. */
-	readonly boards: ReadonlyMap<string, SemanticBoard>;
-	/** Every board as the fixtures left it, before the author ran. */
-	readonly snapshot: ReadonlyMap<string, SemanticBoard>;
+	/** Every document in the vault after the author ran, by name. */
+	readonly documents: ReadonlyMap<string, EvaluatedDocument>;
+	/** Every document as the fixtures left it, before the author ran. */
+	readonly snapshot: ReadonlyMap<string, EvaluatedDocument>;
 	/** The vault policy as configured after the run. */
 	readonly policy: SemanticPolicy;
 	/** What `archboard check semantics` reported after the run. */
@@ -108,15 +108,15 @@ type Finding = Omit<CheckVerdict, "check">;
 
 /**
  * The variant a check names, or the current one. Never a draft in the current
- * one's place: on a board nobody has built there is no current variant, and a
+ * one's place: on a document nobody has built there is no current variant, and a
  * check naming none fails there rather than judging a proposal as the
  * implemented architecture.
- * @param board The board.
+ * @param document The document.
  * @param asked The variant's id or name, when the check names one.
- * @returns The variant, or undefined when the board has no such variant.
+ * @returns The variant, or undefined when the document has no such variant.
  */
-function variantOf(board: SemanticBoard, asked?: string): SemanticVariant | undefined {
-	return asked === undefined ? currentVariant(board) : variantNamed(board, asked);
+function variantOf(document: EvaluatedDocument, asked?: string): SemanticVariant | undefined {
+	return asked === undefined ? currentVariant(document) : variantNamed(document, asked);
 }
 
 /**
@@ -190,28 +190,29 @@ function finding(passed: boolean, detail: string): Finding {
 }
 
 /**
- * Looks a board and variant up for a check, or says which is missing.
+ * Looks a document and variant up for a check, or says which is missing.
  * @param reading The reading.
- * @param board The board's name.
+ * @param document The document's name.
  * @param variant The variant, when named.
  * @returns The content, or a failed finding.
  */
 function located(
 	reading: Reading,
-	board: string | undefined,
+	document: string | undefined,
 	variant: string | undefined,
-): { readonly board: SemanticBoard; readonly variant: SemanticVariant } | Finding {
-	const found = namedValue(reading.boards, board);
-	if (found === undefined) return finding(false, `board "${board ?? "?"}" is not in the vault`);
+): { readonly document: EvaluatedDocument; readonly variant: SemanticVariant } | Finding {
+	const found = namedValue(reading.documents, document);
+	if (found === undefined)
+		return finding(false, `document "${document ?? "?"}" is not in the vault`);
 	const chosen = variantOf(found, variant);
 	if (chosen === undefined)
 		return finding(
 			false,
 			variant === undefined
-				? `"${board}" has no current variant; a check on it names the variant it means`
-				: `variant "${variant}" is not on "${board}"`,
+				? `"${document}" has no current variant; a check on it names the variant it means`
+				: `variant "${variant}" is not on "${document}"`,
 		);
-	return { board: found, variant: chosen };
+	return { document: found, variant: chosen };
 }
 
 /**
@@ -232,7 +233,6 @@ export {
 	nodeNameOf,
 	nodeNamed,
 	nodesPlausiblyNamed,
-	variantOf,
 	type CheckVerdict,
 	type Finding,
 	type InspectedGroup,
@@ -242,4 +242,4 @@ export {
 	type VideoAttempt,
 };
 
-export type { SemanticBoard as EvaluationArchitecture };
+export type { EvaluatedDocument as EvaluationArchitecture };

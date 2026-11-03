@@ -1,6 +1,6 @@
 import { RiSubtractLine } from "@remixicon/react";
 import { useCallback, useMemo, type JSX } from "react";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { IconButton } from "@archboard/ui-kit/components";
 import { moduleName } from "#ui/components/architecture-model/ModelConnections.tsx";
 import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";

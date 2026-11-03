@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
 import input from "#tests/runtime/support/fixtures/placement-order-graph.json";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/board/render-reply";
-import { VariantContentSchema, type VariantContent } from "@archboard/board/content";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/model/render-reply";
+import { VariantContentSchema, type VariantContent } from "@archboard/model/content";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const CONTENT = VariantContentSchema.parse(input);
 

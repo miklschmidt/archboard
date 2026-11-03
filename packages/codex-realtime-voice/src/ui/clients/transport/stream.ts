@@ -227,4 +227,4 @@ function applyMessage(
 		: applyDelta(run, message, clearDuplicate, ports);
 }
 
-export { applyMessage, type StreamPorts, type StreamStatus };
+export { applyMessage, type StreamPorts };

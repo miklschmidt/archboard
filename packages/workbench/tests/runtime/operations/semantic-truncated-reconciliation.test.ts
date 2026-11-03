@@ -30,7 +30,7 @@ const ISSUE = {
 function crowded(description: string): SemanticContextInput {
 	return {
 		repository: "archboard",
-		board: {
+		model: {
 			key: "pipeline",
 			name: "Pipeline",
 			vault: "/vault",

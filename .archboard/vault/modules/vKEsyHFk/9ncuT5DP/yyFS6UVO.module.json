@@ -37,7 +37,7 @@
     {
       "order": 81000,
       "kind": "call",
-      "label": "announce the tabs' board changes, focus and selection",
+      "label": "announce the tabs' model changes, focus and selection",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

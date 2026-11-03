@@ -173,4 +173,3 @@ async function exhaustLoadedList(session: ThreadListSession): Promise<readonly T
 }
 
 export { exhaustLoadedList, exhaustThreadList };
-export type { ThreadListSession };

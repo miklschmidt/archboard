@@ -1,20 +1,20 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
-import { readArchitectureModel } from "@archboard/board/store-read";
-import { projectModel } from "@archboard/board/content";
+import { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
+import { readArchitectureModel } from "@archboard/model/store-read";
+import { projectModel } from "@archboard/model/content";
 import { publishPaneContext } from "@archboard/workbench/server";
 import {
 	paneFromRequest,
 	paneResponse,
 	semanticPaneContextFor,
-	sendBoardlessToPane,
+	sendKeylessToPane,
 	sendToPane,
 } from "@archboard/workbench/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { messageOf, vaultOfRequest } from "@archboard/workbench/host";
 import { logger } from "@archboard/diagnostics/logger";
-import { arrivedOnBoard, noBrowserBody } from "#server/routes/panes/pane-routes.ts";
+import { arrivedOnModel, noBrowserBody } from "#server/routes/panes/pane-routes.ts";
 import { movePaneVault } from "#server/state/pane-vaults/pane-vaults.ts";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
 import { followRegistry } from "#server/routes/repositories/repository-routes.ts";
@@ -129,7 +129,7 @@ function addressedReading(model: Model, request: Reading): Reading {
 function agentSwitch(body: z.infer<typeof RequestSchema>, clientId: string) {
 	if (body.agent !== true) return undefined;
 	return {
-		from: semanticPaneContextFor(clientId)?.board?.name ?? null,
+		from: semanticPaneContextFor(clientId)?.model?.name ?? null,
 		by: body.session ?? null,
 	};
 }
@@ -165,7 +165,7 @@ function showResolvedPane(
 		},
 		`model:${model.manifest.id}`,
 	);
-	arrivedOnBoard(pane.clientId, `model:${model.manifest.id}`);
+	arrivedOnModel(pane.clientId, `model:${model.manifest.id}`);
 	publishPaneContext(pane.clientId, "focus", [], moved);
 	if (chose !== undefined) followRegistry();
 	res.json({
@@ -203,8 +203,8 @@ function opensUnread(
 function moveUnread(vault: string, pane: PaneRegistration, res: Response): void {
 	movePaneVault(pane.clientId, vault);
 	const { repository, checkout } = placeOfVault(vault);
-	const place = { type: "pane_board", board: null, identity: null, vault, repository } as const;
-	sendBoardlessToPane(pane.clientId, place);
+	const place = { type: "pane_place", paneKey: null, identity: null, vault, repository } as const;
+	sendKeylessToPane(pane.clientId, place);
 	res.json({ success: true, repository, checkout, paneId: pane.paneId, ...paneResponse(pane) });
 }
 /**
@@ -278,7 +278,7 @@ interface ShowChoice {
  * is a known checkout that is not chosen. An untracked vault is always read, and
  * a vault no registered directory holds has no repository to choose for. A move
  * into a checkout chooses it the same way (ADR 0051).
- * @param vault The vault of the board shown, or moved into.
+ * @param vault The vault of the model shown, or moved into.
  * @param act What chose, as the log says it.
  * @returns The choice, or undefined when it changed no choice.
  */
@@ -297,7 +297,7 @@ function chooseShownCheckout(vault: string, act = "A show"): ShowChoice | undefi
 
 /**
  * The pane a show is addressed to, or nothing once the refusal has been sent.
- * @param vault The vault the board is in: an unnamed pane must be one of that vault's.
+ * @param vault The vault the model is in: an unnamed pane must be one of that vault's.
  * @param spec The pane spec the caller stated, if any.
  * @param res The response.
  * @returns The pane, or null.
@@ -311,9 +311,9 @@ function showablePane(vault: string, spec: unknown, res: Response): PaneRegistra
 		return null;
 	}
 	if (pane === null) {
-		res.status(503).json(noBrowserBody("Showing a board"));
+		res.status(503).json(noBrowserBody("Showing a model"));
 	}
 	return pane;
 }
 
-export { chooseShownCheckout, showPaneRoute, type ShowChoice };
+export { showPaneRoute };

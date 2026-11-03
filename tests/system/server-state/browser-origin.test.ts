@@ -21,7 +21,7 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 		vault,
 	});
 	resources.defer(() => server.dispose());
-	const boardFile = join(vault, "model.json");
+	const modelFile = join(vault, "model.json");
 	for (const args of [
 		["init", "-q"],
 		["config", "user.name", "Origin Author"],
@@ -58,7 +58,7 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 		expect(await response.json()).toMatchObject({ success: false, code: "CROSS_ORIGIN_REFUSED" });
 		expect(response.headers.get("access-control-allow-origin")).toBeNull();
 	}
-	expect(existsSync(boardFile)).toBeFalse();
+	expect(existsSync(modelFile)).toBeFalse();
 	const findings = await (await fetch(`${server.base}/api/vault/code-findings?${named}`)).json();
 	expect(findings).toMatchObject({ success: true, readings: [] });
 
@@ -72,7 +72,7 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 			})
 		).status,
 	).toBe(200);
-	const before = readFileSync(boardFile);
+	const before = readFileSync(modelFile);
 	for (const headers of [
 		{},
 		{ Origin: server.base, "Sec-Fetch-Site": "same-origin" },
@@ -99,13 +99,13 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 			method: "POST",
 			headers: { Origin: "https://example.com", "Content-Type": "application/json" },
 			body: JSON.stringify({
-				board: "payments",
+				model: "payments",
 				edit: { nodes: [{ name: "Foreign", kind: "service" }] },
 			}),
 		},
 	);
 	expect(refusedEdit.status).toBe(403);
-	expect(readFileSync(boardFile)).toEqual(before);
+	expect(readFileSync(modelFile)).toEqual(before);
 
 	const socketUrl = `${server.base.replace(/^http/u, "ws")}/?vault=${encodeURIComponent(server.vault)}`;
 	const response = await new Promise<IncomingMessage>((received, reject) => {

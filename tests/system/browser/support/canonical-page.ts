@@ -5,14 +5,14 @@ import type {
 	ArchitectureModuleEditSchema,
 	ArchitectureModuleEditResult,
 	ArchitectureClaimResult,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import type { createJsonRequester } from "../../support/http.ts";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { mintId } from "@archboard/board/ids";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
-import type { Model, VariantContent } from "@archboard/board/content";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { mintId } from "@archboard/model/ids";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import type { Model, VariantContent } from "@archboard/model/content";
+import { readArchitectureModel } from "@archboard/model/store-read";
 
 type Node = Pick<
 	Model["modules"][number],

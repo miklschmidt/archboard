@@ -6,7 +6,7 @@ import {
 	forgetStalePictures,
 	modelDrawingKey,
 	type PictureStorage,
-} from "#ui/clients/semantic-board-canvas/reads/picture-cache.ts";
+} from "#ui/clients/canvas/reads/picture-cache.ts";
 
 const clock = createSteppedClock(0);
 afterAll(driveFramesFrom(clock));

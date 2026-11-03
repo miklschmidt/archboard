@@ -24,10 +24,7 @@ import type {
 	CodexRemoteError,
 	CodexRequestFailureReason,
 	CodexRequestOutcome,
-	CodexTransportRequestError,
 	TransportRemoteErrorSummary,
-	CodexTransportRemoteError,
-	CodexTransportWriteError,
 } from "#runtime/clients/transport-errors.ts";
 
 /** The subset of the Node child-process contract that the transport needs. */
@@ -220,7 +217,6 @@ interface TransportIssue {
 	readonly requestId?: string | number;
 }
 
-type LateResponseKind = "result" | "error" | "malformed" | "redacted";
 type LateResponseOutcome = "outcome_unknown" | "duplicate";
 
 type TransportLateResponseContext<Method extends ResponseMethod> = {
@@ -337,11 +333,6 @@ interface CodexTransport {
 	readonly shutdown: () => Promise<void>;
 }
 
-type TransportRequestFailure =
-	| CodexTransportRequestError
-	| CodexTransportRemoteError
-	| CodexTransportWriteError;
-
 interface CodexTransportOptions {
 	readonly child: CodexTransportChild;
 	readonly identity: IdentityAuthority;
@@ -351,14 +342,11 @@ interface CodexTransportOptions {
 export {
 	type CodexTransportChild,
 	type ResponseOwner,
-	type DynamicDispatcherOwner,
 	DYNAMIC_DISPATCHER_OWNERS,
 	HUMAN_APPROVAL_METHODS,
 	type HumanApprovalMethod,
 	SESSION_SERVER_REQUEST_METHODS,
-	type SessionServerRequestMethod,
 	type DynamicDispatcherRegistration,
-	type TransportFrameCorrelation,
 	type TransportServerNotification,
 	type DynamicServerRequest,
 	type TransportServerRequest,
@@ -366,26 +354,15 @@ export {
 	type CodexTransportRequestOptions,
 	type CodexTransportResponse,
 	type TransportServerRequestListener,
-	type TransportServerNotificationListener,
 	type TransportStderrChunk,
 	type TransportExit,
-	type TransportIssueKind,
 	type TransportIssue,
-	type LateResponseKind,
-	type LateResponseOutcome,
-	type TransportLateMalformedPayload,
-	type TransportLateRedactedPayload,
 	type TransportLateResponseFor,
 	type TransportLateResponse,
 	type TransportSnapshot,
 	type TransportStderrSnapshot,
-	type TransportIssueListener,
-	type TransportStderrListener,
-	type TransportExitListener,
 	type Unsubscribe,
-	type CodexTransportRequestParams,
 	type CodexTransportRequest,
 	type CodexTransport,
-	type TransportRequestFailure,
 	type CodexTransportOptions,
 };

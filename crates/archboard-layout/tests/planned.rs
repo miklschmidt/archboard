@@ -2,11 +2,11 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use archboard_layout::lay_out_board;
+use archboard_layout::lay_out_picture;
 use serde_json::{Value, json};
 
 fn drawing(graph: &Value) -> Value {
-    let answer = lay_out_board(&graph.to_string(), &mut archboard_graphviz::InCore)
+    let answer = lay_out_picture(&graph.to_string(), &mut archboard_graphviz::InCore)
         .expect("a planned drawing");
     let answer: Value = serde_json::from_str(&answer).expect("a planned drawing");
     serde_json::from_str(
@@ -27,7 +27,7 @@ impl archboard_layout::Graphviz for Counting {
     }
 }
 
-/// How many graphs a board of labelled relationships costs its solve.
+/// How many graphs a picture of labelled relationships costs its solve.
 fn graphs_laid(relationships: usize) -> usize {
     let cards = (0..9).map(|i| {
         json!({"id":format!("c{i}"),"width":160,"height":60,
@@ -43,7 +43,7 @@ fn graphs_laid(relationships: usize) -> usize {
     let graph = json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
         "children":cards.collect::<Vec<_>>(),"edges":edges.collect::<Vec<_>>()});
     let mut host = Counting(0);
-    lay_out_board(&graph.to_string(), &mut host).expect("a planned drawing");
+    lay_out_picture(&graph.to_string(), &mut host).expect("a planned drawing");
     host.0
 }
 
@@ -179,7 +179,7 @@ fn two_frames_stand_apart_with_their_own_parts_and_a_line_between_their_parts() 
 
 #[test]
 fn nested_comparison_repairs_channels_through_enclosing_blocks() {
-    // Reduced from a whole-board comparison. Its restored calls exceed the
+    // Reduced from a whole-picture comparison. Its restored calls exceed the
     // small-placement search limit and need room outside their nearest blocks.
     let graph: Value =
         serde_json::from_str(include_str!("fixtures/nested-comparison.json")).unwrap();
@@ -506,7 +506,7 @@ fn a_reading_its_first_rooms_refuse_stays_dense_before_any_graphviz_placement() 
         include_str!("fixtures/refused-dense-frames.json"),
     ] {
         let mut host = Counting(0);
-        lay_out_board(graph, &mut host).expect("a planned drawing");
+        lay_out_picture(graph, &mut host).expect("a planned drawing");
         assert_eq!(host.0, 0);
     }
 }

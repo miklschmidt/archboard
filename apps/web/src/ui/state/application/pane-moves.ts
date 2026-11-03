@@ -73,4 +73,4 @@ function createPaneMoves(initial: PaneList, changed: (list: PaneList) => void): 
 	};
 }
 
-export { createPaneMoves, type PaneMoves };
+export { createPaneMoves };

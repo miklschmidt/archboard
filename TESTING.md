@@ -153,7 +153,7 @@ Structural renders use the selected scope. Sequence and flowchart renders also n
 `model rasterize` accepts the same reading selectors and needs Chromium, as [INSTALL.md](INSTALL.md#rendering-to-a-bitmap) describes.
 Render recipes retain exact architecture references for reproducible output.
 `check embeds` discovers tracked artifacts through Git and reads their embedded recipes.
-It needs no board-owned tracking list.
+It needs no tracking list in the model.
 
 ## 5. Open the browser
 

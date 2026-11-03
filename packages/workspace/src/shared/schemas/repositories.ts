@@ -2,7 +2,7 @@
 // `GET /api/repositories` (ADR 0050).
 //
 // A repository is named by its identity, or an untracked vault by its registry
-// name. Its boards are read from the vault of its chosen checkout. The vault is
+// name. Its models are read from the vault of its chosen checkout. The vault is
 // the directory the server reads, and the page keeps it only to name it back on
 // a call: it is never shown and never in an address.
 
@@ -17,7 +17,7 @@ const CheckoutEntrySchema = z.object({
 });
 
 /**
- * Why a repository shows boards, or why it shows none: its chosen checkout is
+ * Why a repository shows models, or why it shows none: its chosen checkout is
  * gone, it has no vault, or the repository has no chosen checkout at all.
  */
 const RepositoryStateSchema = z.enum(["ready", "gone", "no-vault", "unchosen"]);
@@ -43,18 +43,12 @@ const RepositoryListingSchema = z.object({
 /** The body of `PUT /api/repositories/chosen`: which checkout of which repository to read from now on. */
 const CheckoutChoiceSchema = z.object({ repository: z.string().min(1), root: z.string().min(1) });
 
-type CheckoutEntry = z.infer<typeof CheckoutEntrySchema>;
-type CheckoutChoice = z.infer<typeof CheckoutChoiceSchema>;
 type RepositoryState = z.infer<typeof RepositoryStateSchema>;
 type RepositoryEntry = z.infer<typeof RepositoryEntrySchema>;
-type RepositoryListing = z.infer<typeof RepositoryListingSchema>;
 
 export {
 	CheckoutChoiceSchema,
 	RepositoryListingSchema,
-	type CheckoutChoice,
-	type CheckoutEntry,
 	type RepositoryEntry,
-	type RepositoryListing,
 	type RepositoryState,
 };

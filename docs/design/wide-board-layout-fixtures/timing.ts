@@ -1,6 +1,6 @@
-// Times rendering the current variant of every vault board and each wide-board
+// Times rendering the current variant of every vault document and each wide-board
 // fixture, the way a pane's first picture of it is drawn: the engine warmed on
-// another board, no predecessor. Prints the first render, which lays the board
+// another document, no predecessor. Prints the first render, which lays the document
 // out, and the median of the renders after it, which reuse that layout, so a
 // layout change that spends time is seen beside the scorecard that measure.ts
 // prints. The numbers in docs/design/layout-rules.md come from here. A first
@@ -10,12 +10,12 @@
 //   bun docs/design/wide-board-layout-fixtures/timing.ts [runs]
 import fs from "node:fs";
 import path from "node:path";
-import { parseSemanticBoard } from "@archboard/board/document";
+import { parseLegacyBoard } from "@archboard/model/legacy-board";
 import { renderArchitecture } from "@archboard/renderer/bun";
-import { DEFAULT_LAYOUT_ENGINE } from "@archboard/board/render-reply";
+import { DEFAULT_LAYOUT_ENGINE } from "@archboard/model/render-reply";
 import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
-import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/model/policy";
+import { readVaultConfiguration } from "@archboard/model/vault-policy";
 
 const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";
@@ -33,19 +33,19 @@ for (const file of fs
 		policy: DEFAULT_SEMANTIC_POLICY,
 	});
 }
-const { configuration: policy } = readSemanticBoardConfiguration(vault);
+const { configuration: policy } = readVaultConfiguration(vault);
 for (const file of fs
 	.readdirSync(vault)
 	.filter((name) => name.endsWith(".semantic.json"))
 	.toSorted()) {
-	const parsed = parseSemanticBoard(JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")));
+	const parsed = parseLegacyBoard(JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")));
 	if (!parsed.ok) continue;
 	const current = parsed.board.variants.find((variant) => variant.id === parsed.board.current);
 	if (current !== undefined)
 		items.push({ name: parsed.board.name, content: current.content, policy });
 }
 
-// Warm the engine and the measurement caches once, on a board measured nowhere below.
+// Warm the engine and the measurement caches once, on a document measured nowhere below.
 await renderArchitecture({
 	policy: DEFAULT_SEMANTIC_POLICY,
 	content: orderedFixture({

@@ -176,7 +176,7 @@ pub(super) fn in_flight(group: &Group) -> Group {
 
 /// Whether a line changes its shape between two pictures. A line that keeps its
 /// shape rides along with its cards. A carry can show any other only as a line
-/// that swings across the board.
+/// that swings across the picture.
 pub(super) fn reroutes(before: &Group, after: &Group) -> bool {
     let turns = |group: &Group| {
         let steps = paths(group).stroke.map_or_else(Vec::new, |(_, shape)| {

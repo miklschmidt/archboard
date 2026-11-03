@@ -23,9 +23,9 @@ test("an embed is a tracked file of its own on disk, whatever Git would quote in
 		expect(spawnSync("git", args, { cwd: checkout }).status).toBe(0);
 	git("init", "-q");
 	fs.mkdirSync(path.join(checkout, "docs"));
-	fs.writeFileSync(path.join(checkout, "docs", "a board ü.SVG"), SVG);
+	fs.writeFileSync(path.join(checkout, "docs", "a model ü.SVG"), SVG);
 	fs.writeFileSync(path.join(checkout, "docs", "gone.svg"), SVG);
-	fs.symlinkSync("a board ü.SVG", path.join(checkout, "docs", "link.svg"));
+	fs.symlinkSync("a model ü.SVG", path.join(checkout, "docs", "link.svg"));
 	fs.mkdirSync(path.join(checkout, "site"));
 	fs.writeFileSync(path.join(checkout, "site", "moved.svg"), SVG);
 	git("add", ".");
@@ -37,5 +37,5 @@ test("an embed is a tracked file of its own on disk, whatever Git would quote in
 	fs.symlinkSync(outside, path.join(checkout, "site"));
 	const embeds = await checkoutEmbeds(checkout, AbortSignal.timeout(10_000));
 	fs.rmSync(outside, { recursive: true, force: true });
-	expect(embeds.map((embed) => embed.file)).toEqual(["docs/a board ü.SVG"]);
+	expect(embeds.map((embed) => embed.file)).toEqual(["docs/a model ü.SVG"]);
 });

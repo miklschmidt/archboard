@@ -1,6 +1,6 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
-import type { DiagramBox, DiagramTheme } from "@archboard/board/render-reply";
+import type { DiagramBox, DiagramTheme } from "@archboard/model/render-reply";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { SemanticRenderError, type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { drawnSpan, drawnTexts, labelPlates, spanFits } from "#tests/runtime/support/drawn-text.ts";
@@ -11,9 +11,9 @@ import {
 	routeEnds,
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const policy = DEFAULT_SEMANTIC_POLICY;
 
@@ -50,7 +50,7 @@ const SAMPLE: VariantContent = architecture(
 	],
 	[
 		{ id: "e1", from: "web", to: "gw", kind: "http", label: "REST", emphasis: "normal" },
-		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read board", emphasis: "hero" },
+		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read document", emphasis: "hero" },
 		{ id: "e3", from: "gw", to: "lease", kind: "call", emphasis: "normal" },
 		{ id: "e4", from: "io", to: "vault", kind: "data", label: "atomic write", emphasis: "hero" },
 		{ id: "e5", from: "lease", to: "vault", kind: "data", emphasis: "muted" },
@@ -453,7 +453,7 @@ describe("renderArchitecture", () => {
 
 	test("a label belongs to its edge, in the markup and in the atlas", async () => {
 		const rendered = await render();
-		const labelled = drawnTexts(rendered.svg).filter((text) => text.text === "read board");
+		const labelled = drawnTexts(rendered.svg).filter((text) => text.text === "read document");
 
 		expect(labelled).toHaveLength(1);
 		expect(labelled[0]!.subject).toEqual({ kind: "edge", id: "e2" });

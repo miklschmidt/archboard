@@ -1,5 +1,5 @@
 //! How the vault's policy says each subject looks: the groups a part says on
-//! its tags, its kind's chip, which way the board it opens lies (ADR 0029), and
+//! its tags, its kind's chip, which way the picture it opens lies (ADR 0029), and
 //! how each line is drawn.
 
 use std::collections::{BTreeMap, HashSet};
@@ -25,8 +25,8 @@ pub(crate) fn tags_of(node: &Node, policy: &Policy) -> Vec<GroupTag> {
         .collect()
 }
 
-/// Which way the board a part opens lies, from the part's kind, which is the
-/// level of that board, against the level of the board drawn.
+/// Which way the picture a part opens lies, from the part's kind, which is the
+/// level of that picture, against the level of the picture drawn.
 pub fn drill_direction(kind: &str, here: Option<&str>, levels: &[String]) -> DrillDirection {
     let level = |name: &str| levels.iter().position(|level| level == name);
     match (level(kind), here.and_then(level)) {
@@ -78,7 +78,7 @@ pub(crate) fn node_appearances(
 }
 
 /// The kind a joined line wears when its relationships differ
-/// (`MIXED_KIND` in `@archboard/board/views`). No vocabulary name holds a space.
+/// (`MIXED_KIND` in `@archboard/model/views`). No vocabulary name holds a space.
 const MIXED_KIND: &str = "mixed kinds";
 
 /// How a line reads: a flow's step dashed with an open head in the neutral
@@ -146,7 +146,7 @@ mod tests {
     }
 
     #[test]
-    fn says_which_way_the_board_a_part_opens_lies() {
+    fn says_which_way_the_picture_a_part_opens_lies() {
         let levels = [
             "system".to_owned(),
             "container".to_owned(),

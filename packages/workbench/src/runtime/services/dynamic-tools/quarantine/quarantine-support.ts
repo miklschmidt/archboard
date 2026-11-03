@@ -404,7 +404,6 @@ function exactTeardownProof(
 
 export {
 	DYNAMIC_QUARANTINE_WIRE_CAP,
-	type Deferred,
 	type OrdinaryWireOwners,
 	type DispatchCandidate,
 	type QuarantineWireOwner,
@@ -415,7 +414,6 @@ export {
 	fieldsOf,
 	mutationIdentity,
 	logicalKey,
-	epochKey,
 	requestEpochKey,
 	requestWireKey,
 	blockedDynamicResponse,

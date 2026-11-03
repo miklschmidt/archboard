@@ -30,7 +30,7 @@
 // a part bound to an address holds what that address declares in its root
 // module's address space. The check does not judge where a Kubernetes
 // anchor's symbol is declared: a Service, an Ingress, a route or a
-// NetworkPolicy joins two workloads that a board draws, and neither end need
+// NetworkPolicy joins two workloads that a document draws, and neither end need
 // bind it (TASK-367.19).
 
 import { readableOf, type ReadCheckout } from "#runtime/operations/code-check/checkouts.ts";
@@ -59,8 +59,8 @@ import {
 import { readsSameCode, targetIn, type RefCodes } from "#runtime/operations/code-check/ref-code.ts";
 import type { CheckoutSnapshot } from "@archboard/code-binding/resolution";
 import type { CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
-import type { SemanticNode } from "@archboard/board/content";
-import { describeSubject } from "@archboard/board/policy";
+import type { SemanticNode } from "@archboard/model/content";
+import { describeSubject } from "@archboard/model/policy";
 
 /** The adapters whose anchor may name a declaration that joins two parts and that neither end binds. */
 const JOINED_BY_DECLARATION = new Set<FileFacts["adapter"] | undefined>(["kubernetes"]);
@@ -329,4 +329,4 @@ async function judgeSupport(
 	return anchorMismatch(claim, site, anchoredUse(await facts.read(checkout, file), claim));
 }
 
-export { type SupportContext, judgeSupport };
+export { judgeSupport };

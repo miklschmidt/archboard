@@ -2,14 +2,14 @@ import { openAbout, refreshModel, listedParts } from "./support/canonical-page.t
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { releaseArchitectureClaim } from "@archboard/board/store-write";
+import { releaseArchitectureClaim } from "@archboard/model/store-write";
 import type {
 	ArchitectureCheckpointRetain,
 	ArchitectureModelRead,
 	ArchitectureClaimResult,
 	ArchitectureClaimList,
-} from "@archboard/board/model";
-import type { listArchitectureCheckpoints } from "@archboard/board/store-read";
+} from "@archboard/model/contract";
+import type { listArchitectureCheckpoints } from "@archboard/model/store-read";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";

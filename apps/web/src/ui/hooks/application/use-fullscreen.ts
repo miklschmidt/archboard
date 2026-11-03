@@ -148,4 +148,4 @@ function shellPresentationOf(
 	};
 }
 
-export { shellPresentationOf, useFullscreen, type Fullscreen, type FullscreenOptions };
+export { shellPresentationOf, useFullscreen, type Fullscreen };

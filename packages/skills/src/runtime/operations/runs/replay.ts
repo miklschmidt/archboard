@@ -7,8 +7,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { addressedVariant, type SemanticBoard } from "@archboard/board/document";
-import { DiagramThemeSchema, type DiagramTheme } from "@archboard/board/render-reply";
+import { addressedVariant, type LegacyBoard } from "@archboard/model/legacy-board";
+import { DiagramThemeSchema, type DiagramTheme } from "@archboard/model/render-reply";
 import { SKILL_EVAL_MS } from "@archboard/timing";
 import {
 	SAMPLES_PER_FRAME,
@@ -25,7 +25,7 @@ import {
 } from "#runtime/rules/outcomes/reading.ts";
 import type { TalkFixture } from "#runtime/schemas/fixture.ts";
 import type { OutcomeCheck } from "#runtime/schemas/suite.ts";
-import type { VaultCheckSchema } from "@archboard/board/policy";
+import type { VaultCheckSchema } from "@archboard/model/policy";
 
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
@@ -75,21 +75,21 @@ function spelledFromHome(home: string, absolute: string): string {
 }
 
 /**
- * The talk a fixture keeps: one walkthrough of the board as the CLI served it, each step shown
+ * The talk a fixture keeps: one walkthrough of the document as the CLI served it, each step shown
  * and said over the same stretch of voice, and the voice silent. The recorder's own schema reads
  * it, so a talk it would refuse fails the fixture rather than the author.
  * @param fixture What the fixture asks for.
- * @param board The board, as `semantic show` served it.
+ * @param document The document, as `semantic show` served it.
  * @param policy The vault check, as `archboard check semantics` served it.
  * @returns What the talk is made of, with its voice, for `keepTalk`.
- * @throws {Error} When the board has no such variant or walkthrough.
+ * @throws {Error} When the document has no such variant or walkthrough.
  */
 function talkOfFixture(
 	fixture: TalkFixture,
-	board: SemanticBoard,
+	document: LegacyBoard,
 	policy: VaultCheck,
 ): Omit<Parameters<typeof keepTalk>[0], "directory"> {
-	const address = addressedVariant(board, fixture.variant);
+	const address = addressedVariant(document, fixture.variant);
 	if (!address.ok) throw new Error(`the fixture's talk: ${address.problem}`);
 	const walkthrough = address.variant.content.walkthroughs.find(
 		(entry) => entry.name === fixture.walkthrough,
@@ -100,7 +100,7 @@ function talkOfFixture(
 	const step = (SKILL_EVAL_MS.talkStep / 1000) * TALK_SAMPLE_RATE;
 	const samples = step * walkthrough.beats.length;
 	const events: Talk["events"] = [
-		{ kind: "drawn", at: 0, version: board.version },
+		{ kind: "drawn", at: 0, version: document.version },
 		...walkthrough.beats.flatMap((beat, index): Talk["events"] => [
 			{ kind: "step", at: index * step, beat: index },
 			{
@@ -118,14 +118,14 @@ function talkOfFixture(
 		language: "en",
 		theme: fixture.theme,
 		board: {
-			name: board.name,
+			name: document.name,
 			variant: fixture.variant === undefined ? null : address.variant.id,
-			version: board.version,
+			version: document.version,
 			walkthrough: { id: walkthrough.id, name: walkthrough.name },
 			steps: walkthrough.beats.length,
 		},
 		log: { samples, baseLatencyMs: 0, events },
-		document: board,
+		document,
 		policy,
 		voice: new Int16Array(samples),
 	};
@@ -324,4 +324,4 @@ function videoRendered(check: OutcomeCheck, reading: Reading): Finding {
 	);
 }
 
-export { inHome, inspectVideo, talkOfFixture, videoRendered, videoRequests, type VideoRequest };
+export { inspectVideo, talkOfFixture, videoRendered, videoRequests };

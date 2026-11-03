@@ -89,4 +89,4 @@ async function archboardOk(
 	return answer.json;
 }
 
-export { archboard, archboardOk, jsonOf, type CliAnswer, type CliContext };
+export { archboard, archboardOk, type CliAnswer, type CliContext };

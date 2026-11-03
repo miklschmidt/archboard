@@ -2,7 +2,7 @@
 //!
 //! A line keeps its spark until it lands, and its arrowhead and ports wait for
 //! that moment. The spark then runs both ways round the edge of the card, so a
-//! board reads as one current going through its parts.
+//! picture reads as one current going through its parts.
 
 use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{
@@ -374,8 +374,8 @@ mod tests {
             Item::Group(lifeline),
             line("m", &[(300.0, 200.0), (50.0, 200.0)]),
         ];
-        let board = scene(body, &[("actor", column)]);
-        let groups = found(&board);
+        let picture = scene(body, &[("actor", column)]);
+        let groups = found(&picture);
         assert!(rims(&groups, &[(1, (0.0, 1.0))]).is_empty());
     }
 
@@ -391,8 +391,8 @@ mod tests {
             Item::Group(decision),
             line("m", &[(300.0, 150.0), (50.0, 150.0)]),
         ];
-        let board = scene(body, &[]);
-        let groups = found(&board);
+        let picture = scene(body, &[]);
+        let groups = found(&picture);
         assert!(rims(&groups, &[(1, (0.0, 1.0))]).is_empty());
     }
 
@@ -402,8 +402,8 @@ mod tests {
             card("c", rect(0.0, 0.0, 100.0, 40.0), &[]),
             line("l", &[(300.0, 20.0), (50.0, 20.0)]),
         ];
-        let board = scene(body, &[]);
-        let groups = found(&board);
+        let picture = scene(body, &[]);
+        let groups = found(&picture);
         let lit = rims(&groups, &[(1, (0.0, 0.3))]);
         let [Mover::Rim(rim)] = lit.as_slice() else {
             panic!("one rim")

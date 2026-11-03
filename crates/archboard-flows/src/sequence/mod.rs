@@ -26,7 +26,7 @@ use archboard_scene::request::{
 };
 use serde::Deserialize;
 
-use crate::board::{Flow, Node, every_step};
+use crate::content::{Flow, Node, every_step};
 use card::title_room;
 use layout::{ActiveAt, Column, DataFlowLayout, FlowLayout, PlacedStep};
 use messages::drawn;

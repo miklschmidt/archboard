@@ -6,8 +6,8 @@ import { RiFocus3Line } from "@remixicon/react";
 import { useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 
 import { cn, IconButton } from "@archboard/ui-kit/components";
-import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
-import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
+import { KindIcon } from "#ui/components/canvas/KindMarks.tsx";
+import type { KindLook } from "#ui/rules/canvas/reading/kind-look.ts";
 
 /**
  * The names of a list's columns, over the columns of its rows: as wide as a row's cells, short of

@@ -20,10 +20,10 @@ import {
 } from "@archboard/workbench/host";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";
 import {
-	boardsOnScreen,
+	paneKeysOnScreen,
 	currentSocketsByClient,
 	notePaneOpened,
-	paneBoards,
+	paneKeys,
 	paneResponse,
 	paneVaults,
 	panes,
@@ -31,7 +31,7 @@ import {
 	pendingPaneOpens,
 	primaryPane,
 	semanticPaneContextFor,
-	sendBoardlessToPane,
+	sendKeylessToPane,
 	settleAfterLayout,
 	type PendingPaneClose,
 	type PendingPaneOpen,
@@ -59,8 +59,8 @@ function noBrowserBody(what: string): Record<string, unknown> {
 
 // ─── Panes ────────────────────────────────────────────────────
 //
-// What the human is currently looking at: which pane holds which board, where
-// it sits on the display, how much of the board is on screen, and what is picked
+// What the human is currently looking at: which pane holds which model, where
+// it sits on the display, how much of the model is on screen, and what is picked
 // in it. View state, never contents — see panes.ts for why that line is
 // worth holding.
 //
@@ -77,10 +77,10 @@ const RectSchema = z.object({
 const PaneSchema = z.object({
 	clientId: z.string().min(1),
 	paneId: z.string().min(1),
-	// The board this pane adopted — what it is actually showing, which is what
+	// The model this pane adopted — what it is actually showing, which is what
 	// makes the report a description of the displayed scene rather than an echo
 	// of what the server thinks it sent.
-	board: z.string().min(1).nullable(),
+	paneKey: z.string().min(1).nullable(),
 	primary: z.boolean(),
 	focused: z.boolean(),
 	rect: RectSchema,
@@ -252,9 +252,9 @@ function awaitPaneOpen(): { pending: PendingPaneOpen; opened: Promise<PaneRegist
 /**
  * Split the canvas: one more pane, side by side with what is already there.
  *
- * It takes no board. What lands in the new pane is a separate act — `browser
- * show ... --pane <the pane this answered with>` — so that showing a board
- * stays the one thing that decides which board a pane holds (ADR 0009).
+ * It takes no model. What lands in the new pane is a separate act — `browser
+ * show ... --pane <the pane this answered with>` — so that showing a model
+ * stays the one thing that decides which model a pane holds (ADR 0009).
  * @param _req The request.
  * @param res Its response.
  */
@@ -270,7 +270,7 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
 	}
 	const askedAt = new Date().toISOString();
 	const { pending, opened } = awaitPaneOpen();
-	if (!sendBoardlessToPane(answering.clientId, { type: "pane_open" })) {
+	if (!sendKeylessToPane(answering.clientId, { type: "pane_open" })) {
 		pendingPaneOpens.delete(pending);
 		clearTimeout(pending.timeout);
 		res.status(503).json(noBrowserBody("Opening a pane"));
@@ -287,7 +287,7 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
 			success: true,
 			...paneResponse(panes.get(pane.clientId) ?? pane),
 			paneCount: onScreen,
-			onScreen: boardsOnScreen(),
+			onScreen: paneKeysOnScreen(),
 		});
 	} catch (error) {
 		res.status(504).json({ success: false, error: messageOf(error) });
@@ -379,8 +379,8 @@ function refuseUnclosable(res: Response, count: number): boolean {
 /**
  * Close one pane, named the way every other pane is named.
  *
- * Always named: unlike opening a board, which can only land somewhere visible
- * and wrong, closing takes a board off the screen, and guessing which one is
+ * Always named: unlike opening a model, which can only land somewhere visible
+ * and wrong, closing takes a model off the screen, and guessing which one is
  * the mistake that costs the human the half they were reading.
  * @param req The request.
  * @param res Its response.
@@ -403,7 +403,7 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 	}
 	const askedAt = new Date().toISOString();
 	const { pending, closed } = awaitPaneClose(target.clientId, place);
-	if (!sendBoardlessToPane(target.clientId, { type: "pane_close" })) {
+	if (!sendKeylessToPane(target.clientId, { type: "pane_close" })) {
 		pendingPaneCloses.delete(pending);
 		clearTimeout(pending.timeout);
 		res.status(503).json(noBrowserBody("Closing a pane"));
@@ -427,10 +427,10 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 				clientId: target.clientId,
 				place,
 				position,
-				board: target.board,
+				paneKey: target.paneKey,
 			},
 			paneCount: onScreen,
-			onScreen: boardsOnScreen(),
+			onScreen: paneKeysOnScreen(),
 		});
 	} catch (error) {
 		res.status(504).json({ success: false, error: messageOf(error) });
@@ -438,7 +438,7 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * Mount the pane telemetry, layout and board-showing routes.
+ * Mount the pane telemetry, layout and model-showing routes.
  * @param app The application to mount on.
  */
 function mountPaneRoutes(app: Express): void {
@@ -456,7 +456,7 @@ function mountPaneRoutes(app: Express): void {
 	app.post("/api/panes/close", asyncEndpoint(closePaneRoute));
 }
 
-export { arrivedOnBoard, mountPaneRoutes, noBrowserBody };
+export { arrivedOnModel, mountPaneRoutes, noBrowserBody };
 
 /**
  * Register a live pane, acknowledge its arrival and publish changed focus.
@@ -509,10 +509,10 @@ function noteWhatChanged(
 	previous: PaneRegistration | undefined,
 	registration: PaneRegistration,
 ): void {
-	const board = registration.board;
-	const moved = previous?.board !== board;
-	if (moved && board !== null) {
-		arrivedOnBoard(registration.clientId, board);
+	const paneKey = registration.paneKey;
+	const moved = previous?.paneKey !== paneKey;
+	if (moved && paneKey !== null) {
+		arrivedOnModel(registration.clientId, paneKey);
 	}
 	const userChanged = focusChange(previous, registration);
 	if (moved || userChanged.length > 0) {
@@ -523,7 +523,7 @@ function noteWhatChanged(
 /**
  * What of a registration the user changed by hand. Which pane they are in moves only by their
  * own hand, because nothing the server sends a browser changes it (ADR 0034); a pane that only
- * moved to another board says so in its reading, which carries its own marks, and a pane that
+ * moved to another model says so in its reading, which carries its own marks, and a pane that
  * has just opened has moved nowhere.
  * @param previous What this pane said last time, or nothing when it is new.
  * @param registration What it says now.
@@ -537,15 +537,15 @@ function focusChange(
 }
 
 /**
- * A pane is on a board, so record it and tell it where that board stands.
+ * A pane is on a model, so record it and tell it where that model stands.
  *
  * Registration is the pane saying what it is showing, and a pane that has just
- * arrived on a board may be arriving into one an agent already holds and is
+ * arrived on a model may be arriving into one an agent already holds and is
  * part way through. Being told outright is what ADR 0016 requires of every
  * arrival; a broadcast only reaches whoever was already there.
  * @param clientId The pane's client id.
- * @param board The board it is now showing.
+ * @param paneKey The model it is now showing.
  */
-function arrivedOnBoard(clientId: string, board: string): void {
-	paneBoards.set(clientId, board);
+function arrivedOnModel(clientId: string, paneKey: string): void {
+	paneKeys.set(clientId, paneKey);
 }

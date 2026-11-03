@@ -3,7 +3,7 @@ import { afterEach, expect, mock, test } from "bun:test";
 const running = new Set<string>();
 let started = 0;
 
-await mock.module("@archboard/board/store-read", () => ({
+await mock.module("@archboard/model/store-read", () => ({
 	/**
 	 * Record one watcher's life.
 	 * @param vault The followed vault.

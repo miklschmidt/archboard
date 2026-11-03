@@ -225,4 +225,4 @@ function parseStrictJson(source: string, label: string): unknown {
 	}
 }
 
-export { CanonicalJsonError, parseStrictJson };
+export { parseStrictJson };

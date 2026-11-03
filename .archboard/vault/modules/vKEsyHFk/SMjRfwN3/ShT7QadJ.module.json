@@ -27,7 +27,7 @@
     {
       "order": 7000,
       "kind": "call",
-      "label": "photograph a board, record a talk, draw its frames",
+      "label": "photograph a model, record a talk, draw its frames",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

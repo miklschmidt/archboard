@@ -174,11 +174,4 @@ function createReplayLedger(): ReplayLedger {
 	});
 }
 
-export {
-	type CallState,
-	type LogicalCallState,
-	type TerminalLogicalCallState,
-	type TerminalWireCallState,
-	type ReplayLedger,
-	createReplayLedger,
-};
+export { type CallState, type LogicalCallState, type TerminalLogicalCallState, createReplayLedger };

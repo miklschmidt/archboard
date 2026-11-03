@@ -1,9 +1,9 @@
-import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
+import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules/outcomes/reading.ts";
 // Finding the subject a check names by the name a person would call it. A
 // scenario quotes a symbol out of the source and an author writes a display
 // name for the same thing: `run_simple` is drawn as `Werkzeug run_simple` and
 // `DefaultJSONProvider` as `Default JSON provider`. Comparing the strings calls
-// an accurate board wrong, so a check matches on the words of a name and
+// an accurate document wrong, so a check matches on the words of a name and
 // accepts the qualifying words an author added to it.
 //
 // Only the evaluation's own checks read names this way. Identity is compared
@@ -11,7 +11,7 @@ import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/out
 // addressing is the contract this wraps and never replaces, and a fixture's
 // `$node(...)` placeholder names a node the fixture itself wrote.
 
-import { resolveVariant, type SemanticVariant } from "@archboard/board/document";
+import { resolveVariant, type SemanticVariant } from "@archboard/model/legacy-board";
 
 /** How well a candidate name answers the name a check asked for. */
 const NO_MATCH = 0;
@@ -231,30 +231,31 @@ function namedValue<T>(byName: ReadonlyMap<string, T>, asked: string | undefined
  * The variant an address asks for: the product's own addressing first, since
  * `payments@variant` is the contract and a variant id is not a name, and only
  * then the variant whose name reads the same.
- * @param board The board.
+ * @param document The document.
  * @param asked The address.
  * @returns The variant, or undefined.
  */
 function variantNamed(
-	board: SemanticBoard,
+	document: EvaluatedDocument,
 	asked: string | undefined,
 ): SemanticVariant | undefined {
 	return (
-		resolveVariant(board, asked) ?? namedSubject(board.variants, (variant) => variant.name, asked)
+		resolveVariant(document, asked) ??
+		namedSubject(document.variants, (variant) => variant.name, asked)
 	);
 }
 
 /**
- * The board view a check names.
- * @param board The board.
+ * The document view a check names.
+ * @param document The document.
  * @param asked The view's name.
  * @returns The view, or undefined.
  */
 function viewNamed(
-	board: SemanticBoard,
+	document: EvaluatedDocument,
 	asked: string | undefined,
-): SemanticBoard["views"][number] | undefined {
-	return namedSubject(board.views, (view) => view.name, asked);
+): EvaluatedDocument["views"][number] | undefined {
+	return namedSubject(document.views, (view) => view.name, asked);
 }
 
 export {
@@ -265,9 +266,6 @@ export {
 	namesMatch,
 	plausibleSubjects,
 	recordingMatches,
-	subjectOf,
 	variantNamed,
 	viewNamed,
-	wordsOf,
-	type NameMatch,
 };

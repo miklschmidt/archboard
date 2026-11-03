@@ -68,7 +68,7 @@ interface PositionalParameter {
  * command that does nothing with one would otherwise accept it in silence. A
  * command lists the ones it reads; any other is refused as a usage error.
  */
-type SharedOptionKey = "url" | "directory" | "board" | "doing" | "expect-version" | "as-session";
+type SharedOptionKey = "url" | "directory" | "doing" | "as-session";
 
 interface InputStage {
 	name: string;
@@ -83,7 +83,7 @@ interface CommandInput<Shape extends z.ZodRawShape> {
 	stages?: readonly InputStage[];
 }
 
-type Prerequisite = "server" | "browser" | "board" | "doing" | "claim";
+type Prerequisite = "server" | "browser" | "doing" | "claim";
 type RuntimePrerequisite = Extract<Prerequisite, "server" | "browser">;
 type CommandEffect =
 	| "read"

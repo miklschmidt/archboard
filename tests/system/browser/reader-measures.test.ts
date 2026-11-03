@@ -6,7 +6,7 @@ import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { COLUMN_MS } from "@archboard/timing";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import { browserTestRoots, pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
 import { fixtureGit } from "./support/canonical-model.ts";

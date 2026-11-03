@@ -4,7 +4,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { overdrawnRun } from "#tests/runtime/support/drawn-ink.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import fixture from "#tests/runtime/support/fixtures/facing-trunks.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 test.each(["http", "data"])(
 	"Blocks keeps opposing traffic separate between facing ports (%s)",

@@ -210,17 +210,17 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const wordmark = header?.querySelector('h1 > span[aria-hidden="true"]');
 		const named = (root, name) => [...(root?.querySelectorAll('button') ?? [])]
 			.find(node => (node.getAttribute('aria-label') ?? node.textContent ?? '').trim() === name) ?? null;
-		// The settings. Nothing in the brand bar opens a board: a person reads
+		// The settings. Nothing in the brand bar opens a model: a person reads
 		// what an agent has authored, and moving a pane is the navigator's job
 		// (ADR 0023).
 		const control = named(header, 'Settings');
 		const panes = [...document.querySelectorAll('${PANE_SECTIONS}')];
 		const pane = panes.find(node => node.getAttribute('aria-current') === 'true');
-		// The pane's own top row, level with the brand bar: where the board sits,
+		// The pane's own top row, level with the brand bar: where the model sits,
 		// the ways to read it and the pane's controls.
 		const paneHeader = pane?.querySelector('${PANE_HEADER}');
-		const board = paneHeader?.querySelector('[data-slot="model-breadcrumbs"] button');
-		// Which variant is on screen, named after the board: the fact that
+		const modelCrumb = paneHeader?.querySelector('[data-slot="model-breadcrumbs"] button');
+		// Which variant is on screen, named after the model: the fact that
 		// changes while somebody watches (ADR 0023).
 		const variant = paneHeader?.querySelector('[data-slot="model-reading-selector"]');
 		const present = paneHeader?.querySelector('button[aria-label^="Present"]');
@@ -231,19 +231,19 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const stages = document.querySelector('${STAGE_ROOT}');
 		const bar = document.querySelector('${AGENT_DOCK}');
 		// The switcher names the repository of the focused pane, a human label beside the header's.
-		const selectedBoard = nav?.querySelector('[data-slot="repository-switcher"]');
+		const selectedModel = nav?.querySelector('[data-slot="repository-switcher"]');
 		const rowLabel = nav?.querySelector('[data-row-id]');
 		// The pane's window on the picture: the room the camera fits a drawing into.
 		const picture = pane?.querySelector('[data-slot="model-diagram"]');
 		const panel = pane?.querySelector('[data-slot="model-panel"]');
-		if (!shell || !header || !wordmark || !control || !paneHeader || !board || !variant || !technical ||
-			!present || !column || !nav || !stages || !bar || !pane || !selectedBoard || !rowLabel ||
+		if (!shell || !header || !wordmark || !control || !paneHeader || !modelCrumb || !variant || !technical ||
+			!present || !column || !nav || !stages || !bar || !pane || !selectedModel || !rowLabel ||
 			!picture || !panel) {
 			throw new Error('shell matrix probe is incomplete: ' + JSON.stringify({
 				shell: !!shell, header: !!header, wordmark: !!wordmark, control: !!control,
-				paneHeader: !!paneHeader, board: !!board, variant: !!variant, technical: !!technical,
+				paneHeader: !!paneHeader, modelCrumb: !!modelCrumb, variant: !!variant, technical: !!technical,
 				present: !!present, column: !!column, nav: !!nav, stages: !!stages, bar: !!bar,
-				pane: !!pane, selectedBoard: !!selectedBoard, rowLabel: !!rowLabel,
+				pane: !!pane, selectedModel: !!selectedModel, rowLabel: !!rowLabel,
 				picture: !!picture, panel: !!panel }));
 		}
 		const round = value => Math.round(value * 1000) / 1000;
@@ -267,7 +267,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 		};
 		const flat = [shell, header, paneHeader, nav, stages, bar, pane];
-		const humanLabels = [selectedBoard, board];
+		const humanLabels = [selectedModel, modelCrumb];
 		control.focus();
 		const focusStyle = getComputedStyle(control);
 		const focusRect = control.getBoundingClientRect();
@@ -303,7 +303,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		};
 		const foreground = luminance(getComputedStyle(wordmark).color);
 		const backdrop = luminance(surface(header));
-		const boardRect = board.getBoundingClientRect();
+		const pictureRect = modelCrumb.getBoundingClientRect();
 		const presentRect = present.getBoundingClientRect();
 		const headerRect = header.getBoundingClientRect();
 		const paneHeaderRect = paneHeader.getBoundingClientRect();
@@ -327,13 +327,13 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				document.documentElement.scrollHeight > document.documentElement.clientHeight ||
 				document.body.scrollWidth > innerWidth || document.body.scrollHeight > innerHeight,
 			touchTargets,
-			state: { board: board.textContent.trim(), variant: variant.textContent.trim(),
+			state: { modelCrumb: modelCrumb.textContent.trim(), variant: variant.textContent.trim(),
 				technical: technical.textContent.trim(), connectionTrouble, pane: pane.getAttribute('aria-label'),
 				paneCount: panes.length, paneLetterCount: document.querySelectorAll('${PANE_LETTERS}').length,
 				rootChildCount: document.getElementById('root')?.childElementCount ?? 0 },
 			geometry: { shell: rect(shell), header: rect(header), paneHeader: rect(paneHeader), column: rect(column),
 				nav: rect(nav), stages: rect(stages), bar: rect(bar), pane: rect(pane), picture: rect(picture),
-				panel: rect(panel), board: rect(board), control: rect(control) },
+				panel: rect(panel), modelCrumb: rect(modelCrumb), control: rect(control) },
 			themeSnapshot: {
 				theme: document.documentElement.dataset.theme, wordmark: wordmark.textContent.trim(),
 				wordmarkSize: rect(wordmark),
@@ -342,18 +342,18 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				inkContrast: (Math.max(foreground, backdrop) + 0.05) / (Math.min(foreground, backdrop) + 0.05),
 				flatSurfaces: flat.every(node => getComputedStyle(node).backgroundImage === 'none'),
 				visibleFocus: ringVisible,
-				modelIdentity: board.textContent.trim(), stateName: variant.textContent.trim(),
-				selectedRepository: selectedBoard.getAttribute('title'),
+				modelIdentity: modelCrumb.textContent.trim(), stateName: variant.textContent.trim(),
+				selectedRepository: selectedModel.getAttribute('title'),
 				focusedPaneCount: panes.filter(node => node.getAttribute('aria-current') === 'true').length,
 				connectionTrouble,
-				headerSectionsAligned: boardRect.right < presentRect.left &&
-					Math.abs((boardRect.top + boardRect.height / 2) - (presentRect.top + presentRect.height / 2)) < 0.5,
+				headerSectionsAligned: pictureRect.right < presentRect.left &&
+					Math.abs((pictureRect.top + pictureRect.height / 2) - (presentRect.top + presentRect.height / 2)) < 0.5,
 				fontChecks,
 				fontResources: performance.getEntriesByType('resource').map(entry => entry.name)
 					.filter(name => /(?:Onest-wght|MapleMonoNL-(?:Regular|Medium)).*[.]ttf/.test(name)),
 				humanLabels: humanLabels.map(node => { const value = getComputedStyle(node); return {
 					family: value.fontFamily.toLowerCase(), transform: value.textTransform, weight: parseFloat(value.fontWeight) }; }),
-				titleType: metrics(board), bodyType: metrics(rowLabel), stateType: metrics(variant),
+				titleType: metrics(modelCrumb), bodyType: metrics(rowLabel), stateType: metrics(variant),
 				technicalType: metrics(technical), controlType: metrics(control),
 				actionTargets: actionTargets.map(({ width, height }) => ({ width, height })),
 				presentTarget: (() => { const value = rect(present); return { width: value.width, height: value.height }; })(),

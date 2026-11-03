@@ -59,7 +59,7 @@ const BLANK_SPREAD = 6;
 /** The module each beat shows, by its name in the model. */
 const BEATS = {
 	unjoined: "Walkthrough recording",
-	shallow: "server-lifecycle",
+	shallow: "workspace",
 	passThrough: "Command contract",
 } as const;
 

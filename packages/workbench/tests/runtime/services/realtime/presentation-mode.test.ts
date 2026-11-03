@@ -10,7 +10,10 @@
 
 import { expect, test } from "bun:test";
 
-import type { RealtimePresentationChange } from "#runtime/rules/realtime/presentation-mode.ts";
+import {
+	presentationSpeech,
+	type RealtimePresentationChange,
+} from "#runtime/rules/realtime/presentation-mode.ts";
 import {
 	COORDINATOR_WIRE_THREAD_ID,
 	correlation,
@@ -52,7 +55,7 @@ function settle(): Promise<void> {
 function walkthrough(language: string | null) {
 	return {
 		walkthrough: "w1",
-		name: "For the board",
+		name: "For the model",
 		recording: language === null ? null : { language },
 	};
 }
@@ -69,7 +72,7 @@ test("a narration or recording start names the walkthrough to the voice model an
 		const [recorded] = recording.session.starts;
 		const [plain] = ordinary.session.starts;
 		const base = plain?.prompt ?? "\0";
-		expect(plain?.prompt).not.toContain("For the board");
+		expect(plain?.prompt).not.toContain("For the model");
 		// A narration adds to the ordinary prompt. A recording keeps who the voice is, the
 		// ordinary prompt's leading paragraphs, and none of how it converses, since nobody is there
 		// to talk to (TASK-352, TASK-478.02).
@@ -81,7 +84,7 @@ test("a narration or recording start names the walkthrough to the voice model an
 		expect(kept.length).toBeLessThan(live.length);
 		expect(kept).toEqual(live.slice(0, kept.length));
 		for (const start of [presented, recorded]) {
-			expect(start?.prompt).toContain("For the board");
+			expect(start?.prompt).toContain("For the model");
 			// The session opens with nothing said as the user: the first step is handed over by
 			// the server.
 			expect(start?.initialItems).toEqual([]);
@@ -202,7 +205,7 @@ test("each step and leaving reach the voice model as speech, the first once the 
 		expect(said[1]).toContain('label was "read"');
 		expect(said[1]).toContain("It highlights");
 		expect(h.session.starts[0]?.prompt).toContain('"It highlights"');
-		// A pane leaves the walkthrough as well when an agent's `browser show` puts another board
+		// A pane leaves the walkthrough as well when an agent's `browser show` puts another model
 		// in it, and nothing tells the two apart, so leaving never says the user did it
 		// (TASK-293.06).
 		expect(said[2]).not.toMatch(/\buser\b/u);
@@ -213,7 +216,7 @@ test("each step and leaving reach the voice model as speech, the first once the 
 		expect(h.session.texts).toHaveLength(0);
 		expect(
 			h.session.injections.every((injection) =>
-				JSON.stringify(injection).includes("archboard_board_catalogue"),
+				JSON.stringify(injection).includes("archboard_model_catalogue"),
 			),
 		).toBe(true);
 		expect(h.session.starts).toHaveLength(1);
@@ -245,6 +248,20 @@ function paragraphs(prompt: string | null | undefined): string[] {
 		.map((one) => one.trim())
 		.filter((one) => one.length > 0);
 }
+
+test("a narrated step carries no number, and only the last says where it is", () => {
+	const step = {
+		kind: "stepped",
+		heading: "One writer",
+		body: "It owns writes.",
+		subjects: [],
+	} as const;
+	const middle = presentationSpeech({ ...step, step: 2, of: 5 }, false);
+	const last = presentationSpeech({ ...step, step: 5, of: 5 }, false);
+	expect(middle).not.toMatch(/\d/u);
+	expect(last).not.toMatch(/\d/u);
+	expect(last).not.toBe(middle);
+});
 
 test("a recording's steps reach the voice model as what to explain, in the words its prompt names, never which step they are, and leaving it is never told", async () => {
 	const source = changeSource();

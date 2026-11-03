@@ -1,5 +1,3 @@
-import { GeneralThreadToolNameSchema } from "#runtime/protocol/thread-tools/manifest.ts";
-import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import { CodexDynamicToolsError } from "#runtime/rules/dynamic-tools/errors.ts";
 import type {
 	DynamicCallerAuthority,
@@ -12,9 +10,7 @@ import {
 	type DynamicRefusalReason,
 	type DynamicRelation,
 	type DynamicStatus,
-	type DynamicToolName,
 } from "#runtime/rules/dynamic-tools/vocabulary.ts";
-import { isRecord } from "#runtime/rules/dynamic-tools/value-shape.ts";
 
 type PolicyAuthorityView<Authority extends DynamicCallerAuthority | DynamicTargetAuthority> =
 	Readonly<Omit<Authority, "linkClassification" | "threadLinkTarget">> & {
@@ -222,17 +218,6 @@ function assertWaitTargetAllowed(caller: CallerView, target: TargetView): Dynami
 }
 
 /**
- * Narrow a tool name to a mutation tool.
- * @param name Any dynamic tool name.
- * @returns The mutation tool name, or null for a read or wait tool.
- */
-function asDynamicMutationTool(name: DynamicToolName): DynamicMutationToolName | null {
-	return name === "create_thread" || name === "fork_thread" || name === "send_message_to_thread"
-		? name
-		: null;
-}
-
-/**
  * Coerce any thrown value into a dynamic-tools error so a response can name
  * its refusal code.
  * @param error Thrown value.
@@ -253,34 +238,9 @@ function dynamicErrorForResponse(
 	);
 }
 
-/**
- * Whether a value names one of the reviewed dynamic tools.
- * @param value Candidate of unknown origin.
- * @returns Whether the value is a dynamic tool name.
- */
-function isDynamicToolName(value: unknown): value is DynamicToolName {
-	return GeneralThreadToolNameSchema.safeParse(value).success;
-}
-
-/**
- * Whether a reverse request is a dynamic tool call owned by this module.
- * @param value Reverse request of unknown shape.
- * @returns Whether the request is a dynamic tool call.
- */
-function isDynamicServerRequest(value: unknown): value is DynamicServerRequest {
-	return (
-		isRecord(value) &&
-		value["method"] === "item/tool/call" &&
-		value["owner"] === "codex-dynamic-tools"
-	);
-}
-
 export {
-	asDynamicMutationTool,
 	assertMutationTargetAllowed,
 	assertWaitTargetAllowed,
 	dynamicErrorForResponse,
 	isAllowedSource,
-	isDynamicServerRequest,
-	isDynamicToolName,
 };

@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 
 /**
  * Keep legacy authority and exact input evidence visible beside the candidate.
@@ -44,7 +44,7 @@ function ModelPreviewDetails({ model }: { model: Model }): JSX.Element | null {
 					</dl>
 					<ul className="space-y-2">
 						{preview.coverage.map((board) => (
-							<li key={board.board} data-preview-board={board.board}>
+							<li key={board.board} data-preview-model={board.board}>
 								<span className="font-semibold">{board.name}</span> · {board.file}
 								{board.formerNames?.length ? (
 									<p>Former names: {board.formerNames.join(", ")}</p>

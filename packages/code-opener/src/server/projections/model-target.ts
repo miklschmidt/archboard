@@ -1,4 +1,4 @@
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import {
 	CodeTargetFailureCodeSchema,
 	type CodeTargetOpenRequest,

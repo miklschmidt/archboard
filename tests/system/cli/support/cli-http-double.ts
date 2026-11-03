@@ -57,7 +57,7 @@ function answerFor(method: string, url: URL): Response | null {
 			paneCount: 0,
 			arrangement: "none",
 			focused: null,
-			sameBoard: true,
+			sameModel: true,
 			panes: [],
 			summary: "No pane is open, so nothing is on screen.",
 			text: "No pane is open, so nothing is on screen.",
@@ -68,14 +68,14 @@ function answerFor(method: string, url: URL): Response | null {
 			success: true,
 			pane: paneRef,
 			paneCount: 2,
-			onScreen: [{ paneId: paneRef.paneId, place: paneRef.place, board: "contract" }],
+			onScreen: [{ paneId: paneRef.paneId, place: paneRef.place, model: "contract" }],
 		});
 	}
 	if (method === "POST" && url.pathname === "/api/panes/show") {
 		return Response.json({
 			success: true,
-			board: "contract",
-			identity: { board: "contract", variant: "current" },
+			model: "contract",
+			identity: { model: "contract", variant: "current" },
 			paneId: paneRef.paneId,
 			pane: paneRef,
 		});

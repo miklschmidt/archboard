@@ -16,7 +16,7 @@ import {
 	solo,
 	variant,
 } from "#tests/runtime/support/pulse-fixtures.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /**
  * The picture of one relationship with some traffic between the sample's parts.

@@ -37,7 +37,6 @@ import type {
 
 type UserInput = Extract<BrowserApproval, { readonly approvalKind: "user_input" }>;
 type Elicitation = Extract<BrowserApproval, { readonly approvalKind: "elicitation" }>;
-type Permissions = Extract<BrowserApproval, { readonly approvalKind: "permissions" }>;
 type Enumerated = Extract<
 	BrowserApproval,
 	{ readonly approvalKind: "command_execution" | "file_change" }
@@ -343,15 +342,6 @@ function ordinaryResponse(input: OrdinaryDraftInput): ApprovalResponse | null {
 }
 
 /**
- * The permissions family's response, typed to its request.
- * @param approval The request.
- * @returns Whether the request is a permissions request.
- */
-function isPermissions(approval: BrowserApproval): approval is Permissions {
-	return approval.approvalKind === "permissions";
-}
-
-/**
  * The wire draft for one ordinary decision.
  * @param input The draft input.
  * @returns The draft, or the errors that stop it.
@@ -400,11 +390,4 @@ function dynamicApprovalDraft(input: DynamicDraftInput): WorkbenchApprovalDraftR
 	return { ok: true, draft };
 }
 
-export {
-	DEFAULT_DECLINE_REASON,
-	dynamicApprovalDraft,
-	isPermissions,
-	ordinaryApprovalDraft,
-	type DynamicDraftInput,
-	type OrdinaryDraftInput,
-};
+export { dynamicApprovalDraft, ordinaryApprovalDraft };

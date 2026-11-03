@@ -10,11 +10,11 @@ import { expect, test } from "bun:test";
 import { renderArchitecture, renderSemanticView } from "#runtime/operations/render.ts";
 import { lightnessOf, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import type { DiagramTheme } from "@archboard/board/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import type { DiagramTheme } from "@archboard/model/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** A container that holds two cards, and a card beside it, joined by labelled lines. */
-const BOARD = orderedFixture({
+const DOCUMENT = orderedFixture({
 	nodes: [
 		{ id: "api", name: "Checkout API", kind: "service" },
 		{ id: "route", name: "Place order", kind: "route", parent: "api" },
@@ -121,11 +121,11 @@ function expectShadowsUnderCards(svg: string, cards: readonly string[]): void {
 }
 
 test.each(["track", "blocks"] as const)(
-	"every card's shadow lies under every card on a board (%s)",
+	"every card's shadow lies under every card on a document (%s)",
 	async (layout) => {
 		const drawing = await renderArchitecture({
 			policy: DEFAULT_SEMANTIC_POLICY,
-			content: BOARD,
+			content: DOCUMENT,
 			theme: "light",
 			layout,
 		});

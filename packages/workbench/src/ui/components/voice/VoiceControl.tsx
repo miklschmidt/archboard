@@ -123,4 +123,4 @@ function KeyMark(props: { readonly off: boolean; readonly problem: boolean }): J
 	);
 }
 
-export { VoiceControl, type VoiceControlProps };
+export { VoiceControl };

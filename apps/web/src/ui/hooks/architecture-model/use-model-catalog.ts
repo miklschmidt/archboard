@@ -13,7 +13,7 @@ import {
 	architectureSummaryQuery,
 	type ModelSummary,
 } from "#ui/clients/architecture-model/queries.ts";
-import { boardCatalogKeys, repositoriesQuery } from "#ui/clients/board-catalog/queries.ts";
+import { modelCatalogKeys, repositoriesQuery } from "#ui/clients/model-catalog/queries.ts";
 
 /** One repository and its current architecture authority. */
 interface RepositoryModel {
@@ -47,7 +47,7 @@ function catalogCommands(client: QueryClient) {
 	}
 	/** Refresh repository locations. A vault that this adds starts its own feed. */
 	function reload(): void {
-		void client.invalidateQueries({ queryKey: boardCatalogKeys.repositories });
+		void client.invalidateQueries({ queryKey: modelCatalogKeys.repositories });
 	}
 	return {
 		refresh,

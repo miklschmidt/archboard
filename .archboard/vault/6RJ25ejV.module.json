@@ -14,7 +14,7 @@
     {
       "order": 56000,
       "kind": "dependency",
-      "label": "keep board and rendering schemas in a talk",
+      "label": "keep model and rendering schemas in a talk",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

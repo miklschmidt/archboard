@@ -26,12 +26,9 @@ import {
 	observedDirectInput,
 	sourceOf,
 	statusOf,
-	allowedThreadLinkSources,
-	isAllowedThreadLinkSource,
 	isCurrentEpoch,
 	isExecutableThreadLinkStatus,
 	isRecord,
-	isThreadLinkStatus,
 } from "#runtime/rules/thread-link/thread-vocabulary.ts";
 
 /**
@@ -408,11 +405,4 @@ async function classifyCodexThreadLink(
 	return createCodexThreadLinkClassifier(options).classify(target);
 }
 
-export {
-	isAllowedThreadLinkSource,
-	allowedThreadLinkSources,
-	isThreadLinkStatus,
-	isExecutableThreadLinkStatus,
-	createCodexThreadLinkClassifier,
-	classifyCodexThreadLink,
-};
+export { createCodexThreadLinkClassifier, classifyCodexThreadLink };

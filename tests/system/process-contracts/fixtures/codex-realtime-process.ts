@@ -277,7 +277,7 @@ async function createHarness(
 			session,
 			identity,
 			coordinatorContext: {
-				read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
+				read: () => '{"type":"archboard_model_catalogue","boards":[],"omitted":0}',
 				subscribe: () => () => {},
 			},
 			currentBinding: () => (current === generation && !closed ? binding : null),

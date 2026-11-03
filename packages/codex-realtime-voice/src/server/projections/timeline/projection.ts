@@ -588,10 +588,4 @@ export {
 	TIMELINE_MAX_BYTES,
 	TIMELINE_ITEM_LIMIT,
 };
-export type {
-	ServerBrowserProjectionBudget,
-	TimelineApprovalView,
-	TimelineData,
-	TimelineItemData,
-	TimelineTurnData,
-};
+export type { ServerBrowserProjectionBudget, TimelineApprovalView, TimelineData, TimelineTurnData };

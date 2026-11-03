@@ -3,7 +3,7 @@
 // short row above had room, and a block alone on its row stood centred under
 // a wide one, not under the block its line comes from.
 import { expect, test } from "bun:test";
-import type { DiagramBox } from "@archboard/board/render-reply";
+import type { DiagramBox } from "@archboard/model/render-reply";
 import {
 	distanceToFrame,
 	routeCrosses,
@@ -21,8 +21,8 @@ interface Solved {
  * @returns A solve of one graph.
  */
 function layoutEngine(): (graph: object) => Solved {
-	const { layOutBoard } = loadCore();
-	return (graph) => JSON.parse(layOutBoard(JSON.stringify(graph))) as Solved;
+	const { layOutPicture } = loadCore();
+	return (graph) => JSON.parse(layOutPicture(JSON.stringify(graph))) as Solved;
 }
 
 /**
@@ -77,7 +77,7 @@ test("independent foundations share a row despite different incoming label owner
 				layoutOptions: { "archboard.header.size": "80" },
 				children: [card("b"), card("c")],
 			},
-			// A nested frame keeps the board on its ranks: flat frames take the grid.
+			// A nested frame keeps the document on its ranks: flat frames take the grid.
 			{
 				id: "q",
 				width: 320,

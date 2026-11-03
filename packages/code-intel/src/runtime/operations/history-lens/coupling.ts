@@ -1,4 +1,4 @@
-// Change coupling: which parts of a board change together (ADR 0045).
+// Change coupling: which parts of a document change together (ADR 0045).
 //
 // Two parts are coupled when the commits of a period that changed both pass
 // code-maat's filters: at least 5 shared commits, and a degree of at least
@@ -25,8 +25,8 @@ import type { WalkedCommit } from "#runtime/operations/history-lens/commits.ts";
 import type { ReadPart } from "#runtime/operations/history-lens/parts.ts";
 import { relatedSymbols } from "#runtime/operations/history-lens/symbol-attribution.ts";
 import type { CoupledPair } from "#shared/protocol/locality.ts";
-import { messagesOf } from "@archboard/board/flow";
-import type { VariantContent } from "@archboard/board/content";
+import { messagesOf } from "@archboard/model/flow";
+import type { VariantContent } from "@archboard/model/content";
 
 /**
  * code-maat's `--min-shared-revs`: the fewest commits a coupled pair shares.

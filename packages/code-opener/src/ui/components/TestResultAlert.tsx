@@ -75,4 +75,4 @@ function FailureActions(props: FailureActionsProps): JSX.Element | null {
 	);
 }
 
-export { TestResultAlert, type TestResultAlertProps };
+export { TestResultAlert };

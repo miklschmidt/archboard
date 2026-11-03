@@ -293,23 +293,23 @@ describe("the lint configs split app tests the way they split package tests", ()
 	});
 });
 
-describe("the frame clock rule follows the board canvas into apps/web", () => {
+describe("the frame clock rule follows the model canvas into apps/web", () => {
 	// A frame-clocked file reads the browser's clock directly, which a recording cannot step.
 	const CLOCK_READ = "export const stamp = [Date.now(), requestAnimationFrame];\n";
 	const canvas = [
-		"apps/web/src/ui/api/semantic-board-canvas/stamp.ts",
-		"apps/web/src/ui/clients/semantic-board-canvas/stamp.ts",
-		"apps/web/src/ui/components/semantic-board-canvas/Stamp.tsx",
-		"apps/web/src/ui/constants/semantic-board-canvas/stamp.ts",
-		"apps/web/src/ui/hooks/semantic-board-canvas/use-stamp.ts",
-		"apps/web/src/ui/rules/semantic-board-canvas/stamp.ts",
-		"apps/web/src/ui/state/semantic-board-canvas/stamp.ts",
-		"apps/web/src/ui/workers/semantic-board-canvas/stamp.ts",
+		"apps/web/src/ui/api/canvas/stamp.ts",
+		"apps/web/src/ui/clients/canvas/stamp.ts",
+		"apps/web/src/ui/components/canvas/Stamp.tsx",
+		"apps/web/src/ui/constants/canvas/stamp.ts",
+		"apps/web/src/ui/hooks/canvas/use-stamp.ts",
+		"apps/web/src/ui/rules/canvas/stamp.ts",
+		"apps/web/src/ui/state/canvas/stamp.ts",
+		"apps/web/src/ui/workers/canvas/stamp.ts",
 	];
 	const tests = canvas.map((file) => file.replace("/src/", "/tests/"));
 	const sibling = [
 		"apps/web/src/ui/components/shell/Stamp.tsx",
-		"apps/web/src/ui/hooks/semantic-board-canvasx/use-stamp.ts",
+		"apps/web/src/ui/hooks/canvasx/use-stamp.ts",
 	];
 	const files = Object.fromEntries(
 		[...canvas, ...tests, ...sibling].map((file) => [file, CLOCK_READ]),

@@ -1,12 +1,12 @@
 // Which parts of a pane's reading changed because the user's own hand changed them (ADR 0034).
 //
-// A reading is a settled snapshot, not an event: a pick and a board version an agent just wrote
+// A reading is a settled snapshot, not an event: a pick and a model version an agent just wrote
 // can land in the same report. So the cause is kept per part. A gesture marks the part it asked
 // to change, and the report in which that part really differs carries the mark and uses it up.
 // Whatever changes without a mark is told to nobody, which is what keeps a change the canvas or
 // an agent caused from being told to the voice model as the user's.
 
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
@@ -15,7 +15,7 @@ type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 /** The parts of a reading the marks are compared by. */
 type MarkedReading = Pick<
 	SemanticPaneContext,
-	"board" | "variant" | "view" | "selection" | "architecture"
+	"model" | "variant" | "view" | "selection" | "architecture"
 >;
 
 /** One pane's marks. */
@@ -38,19 +38,19 @@ interface UserMarks {
 	readonly take: (reading: MarkedReading) => readonly SemanticPanePart[];
 }
 
-const PARTS: readonly SemanticPanePart[] = ["board", "variant", "view", "selection"];
+const PARTS: readonly SemanticPanePart[] = ["model", "variant", "view", "selection"];
 
 /** How each part of a reading is read out of it, as something two readings can be compared by. */
 const READ: Readonly<Record<SemanticPanePart, (reading: MarkedReading) => unknown>> = {
 	/**
-	 * The board's name: its key also names the variant.
+	 * The model's name: its key also names the variant.
 	 * @param reading The reading.
 	 * @returns The name, or undefined.
 	 */
-	board: (reading) =>
+	model: (reading) =>
 		reading.architecture
 			? [reading.architecture.vault, reading.architecture.model]
-			: reading.board?.name,
+			: reading.model?.name,
 	/**
 	 * The variant's identity.
 	 * @param reading The reading.
@@ -90,8 +90,8 @@ function valueOf(reading: MarkedReading, part: SemanticPanePart): string {
  */
 function createUserMarks(): UserMarks {
 	const marked = new Set<SemanticPanePart>();
-	// The last reading that was of a drawn board. It outlives the publisher forgetting what it
-	// published when the pane moves, because a move is exactly the change a board mark is for.
+	// The last reading that was of a drawn model. It outlives the publisher forgetting what it
+	// published when the pane moves, because a move is exactly the change a model mark is for.
 	let lastDrawn: MarkedReading | null = null;
 
 	/**
@@ -110,9 +110,9 @@ function createUserMarks(): UserMarks {
 	 * @returns The parts; empty when nobody is to be told.
 	 */
 	function take(reading: MarkedReading): readonly SemanticPanePart[] {
-		// A pane between two boards reads nothing for a moment. That is not where the user
+		// A pane between two models reads nothing for a moment. That is not where the user
 		// was going, so it neither tells anybody nor uses a mark up.
-		if (reading.board === null && !reading.architecture) {
+		if (reading.model === null && !reading.architecture) {
 			return [];
 		}
 		const told = PARTS.filter((part) => marked.has(part) && changed(reading, part));
@@ -121,7 +121,7 @@ function createUserMarks(): UserMarks {
 		}
 		// A pick or a view changes in the same moment as the gesture, so a mark this report
 		// did not use was a gesture that changed nothing, and must not wait for a change
-		// somebody else makes. A board or variant is asked of the server and arrives later.
+		// somebody else makes. A model or variant is asked of the server and arrives later.
 		marked.delete("selection");
 		marked.delete("view");
 		lastDrawn = reading;

@@ -15,7 +15,7 @@
 // - Its files say so: it builds the deepest directory that holds the file
 //   that reads it, as a compose service's `build` does. A service that builds
 //   the whole repository runs only the code that no deeper build holds.
-// - The board says so: the part that owns the read is, or is inside, a part
+// - The document says so: the part that owns the read is, or is inside, a part
 //   bound to the declaration. This is how an image built elsewhere, such as a
 //   Kubernetes workload's, says which code it runs.
 //
@@ -29,7 +29,7 @@
 // infrastructure sets it. Both are configured-path evidence. They are
 // resolved where the files leave no choice: the name, the service and the
 // build directory are all written in files. They are candidates where the
-// files leave a choice, because then a right board cannot clear a warning:
+// files leave a choice, because then a right document cannot clear a warning:
 // the address names a declaration whose code is several parts, and nothing
 // says which of them it reaches; or more than one runner runs the code that
 // reads the name, and they do not set it to the same parts, as two services
@@ -111,7 +111,7 @@ interface HopSides {
 	readonly unset: readonly CodeEvidence[];
 }
 
-/** What the join gives the judgement of one board's relationships. */
+/** What the join gives the judgement of one document's relationships. */
 interface EnvironmentJoin {
 	/** The pieces from the part that reads a value to each part the value names. */
 	readonly pieces: readonly Piece[];
@@ -151,7 +151,7 @@ function readsInFile(found: FileFacts | undefined, owners: Owners, repo: string)
 }
 
 /**
- * The environment values the code of a board's parts reads, file by file.
+ * The environment values the code of a document's parts reads, file by file.
  * @param parts The read parts of one repository.
  * @param facts The pass.
  * @returns Each read, owned by the narrowest part that holds its line.
@@ -171,9 +171,9 @@ async function readsIn(
 }
 
 /**
- * The read parts of a board, by repository.
+ * The read parts of a document, by repository.
  * @param codes Each part's bound code, by its id.
- * @returns The read parts of each repository, in board order.
+ * @returns The read parts of each repository, in document order.
  */
 function partsByRepo(codes: ReadonlyMap<string, PartCode>): [ReadPart, ...ReadPart[]][] {
 	const byTree = new Map<string, [ReadPart, ...ReadPart[]]>();
@@ -199,7 +199,7 @@ function reachOf(parts: readonly ReadPart[]): Reach {
 
 /**
  * The parts a value that names a declaration reaches, when no build says
- * which code the declaration runs: the parts the board draws inside a part
+ * which code the declaration runs: the parts the document draws inside a part
  * bound to it, whose code it runs, else the parts that own it.
  * @param codes Each part's bound code, by its id.
  * @param owners The parts that own the declaration.
@@ -465,11 +465,11 @@ function firstJoins(joins: readonly [Piece, Piece][]): [Piece, Piece][] {
 }
 
 /**
- * Join the environment values the code of a board's parts reads with the
+ * Join the environment values the code of a document's parts reads with the
  * values the infrastructure that runs that code sets.
  * @param codes Each part's bound code, by its id.
  * @param facts The pass.
- * @param runners Every runner the infrastructure readers found for the board.
+ * @param runners Every runner the infrastructure readers found for the document.
  * @returns The pieces, their partners, and the sides of a relationship.
  */
 async function joinEnvironment(
@@ -481,7 +481,7 @@ async function joinEnvironment(
 	const running = runningOf(runners, lineages);
 	const runs: RunRead[] = [];
 	for (const parts of partsByRepo(codes)) {
-		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in board order
+		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in document order
 		for (const read of await readsIn(parts, facts)) {
 			runs.push({ read, runners: running.ofFile(read.repo, read.path, read.part) });
 		}
@@ -502,7 +502,6 @@ async function joinEnvironment(
 
 export {
 	type EnvironmentJoin,
-	type HopSides,
 	type Reach,
 	type Runner,
 	type Setting,

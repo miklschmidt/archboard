@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/operations/read/model-watch.ts"
+    "path": "packages/model/src/runtime/operations/read/model-watch.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#hLWF9OC5",
@@ -43,7 +43,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-watch.ts",
+        "path": "packages/model/src/runtime/operations/read/model-watch.ts",
         "symbol": "onArchitectureNews"
       },
       "id": "vKEsyHFk/0T9enjhi#dsLuZ7fl",
@@ -56,7 +56,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-watch.ts",
+        "path": "packages/model/src/runtime/operations/read/model-watch.ts",
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#U1wBMUoF",
@@ -69,7 +69,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-watch.ts",
+        "path": "packages/model/src/runtime/operations/read/model-watch.ts",
         "symbol": "readArchitectureClaims"
       },
       "id": "vKEsyHFk/0T9enjhi#Mu9aMjws",
@@ -82,7 +82,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-watch.ts",
+        "path": "packages/model/src/runtime/operations/read/model-watch.ts",
         "symbol": "watchArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#GnhBsOl1",

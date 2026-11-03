@@ -1,8 +1,8 @@
 // One replaceable activity snapshot per vault, shared by every pane.
 // Canonical claims permit several writers on separate subjects of one model.
 // Only the ordinary model feed can supply claims and durable doing attribution.
-import { watchArchitectureModel } from "@archboard/board/store-read";
-import type { ArchitectureEvent, ArchitectureClaim } from "@archboard/board/model";
+import { watchArchitectureModel } from "@archboard/model/store-read";
+import type { ArchitectureEvent, ArchitectureClaim } from "@archboard/model/contract";
 import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
 import { CLAIM_MS } from "@archboard/timing";
 
@@ -80,7 +80,7 @@ function createAgentActivity(send: (message: AgentActivityMessage) => void) {
 		if (previous?.activity.model === model) return previous;
 		forget(vault);
 		const entry: Entry = {
-			activity: { board: `model:${model}`, model, claims: [], doing: null },
+			activity: { paneKey: `model:${model}`, model, claims: [], doing: null },
 			linger: null,
 		};
 		entries.set(vault, entry);

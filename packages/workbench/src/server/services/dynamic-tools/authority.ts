@@ -21,7 +21,7 @@ import {
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 
-export interface ServerDynamicAuthorityOptions {
+interface ServerDynamicAuthorityOptions {
 	readonly identity: IdentityAuthorities;
 	readonly epoch: Pick<CodexEpochStore, "snapshot">;
 	readonly threadLink: Pick<CodexThreadLinkPort, "classify" | "read">;
@@ -435,7 +435,7 @@ export function createServerDynamicAuthorityAdapters(
 			});
 		},
 		/**
-		 * One reading of the board as the pane shows it, refused if the thread link
+		 * One reading of the model as the pane shows it, refused if the thread link
 		 * moved between the authority being issued and the context being read.
 		 * @param input The authority, the caller, and what the context is for.
 		 * @returns The context.

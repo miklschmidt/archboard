@@ -1,4 +1,4 @@
-import { ArchitectureMigrationRequestSchema } from "@archboard/board/model";
+import { ArchitectureMigrationRequestSchema } from "@archboard/model/contract";
 import { modelImportContract } from "#cli/operations/model/portable.ts";
 import { migrateArchitectureModelOnServer } from "#cli/clients/server/architecture-model.ts";
 import { z } from "zod";
@@ -6,7 +6,7 @@ import {
 	LegacyInventoryReadSchema,
 	LegacyMappingWriteSchema,
 	type LegacyInventoryRead,
-} from "@archboard/board/migration";
+} from "@archboard/model/migration";
 import {
 	readLegacyInventoryOnServer,
 	saveLegacyMappingPlanOnServer,

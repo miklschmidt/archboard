@@ -258,4 +258,4 @@ function failedExit(item: ActivityItem): number | null {
 	return item.exitCode;
 }
 
-export { ActivityRun, type ActivityRunProps };
+export { ActivityRun };

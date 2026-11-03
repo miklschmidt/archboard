@@ -578,10 +578,4 @@ async function launchHeadlessChromium(options: HeadlessChromiumOptions): Promise
 	}
 }
 
-export {
-	launchHeadlessChromium,
-	type HeadlessChromium,
-	type HeadlessChromiumOptions,
-	type HeadlessWindow,
-	type Viewport,
-};
+export { launchHeadlessChromium, type HeadlessChromium, type HeadlessWindow };

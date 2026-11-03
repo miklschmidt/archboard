@@ -2,7 +2,7 @@ import { afterAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
 const scratch = mkdtempSync(join(tmpdir(), "archboard-role-child-"));
 const checkout = join(scratch, "checkout");
@@ -32,7 +32,7 @@ test("a relationship can cite an endpoint's bound child in a sibling role folder
 	git(scratch, checkout, "add", ".");
 	git(scratch, checkout, "commit", "-q", "-m", "role implementation");
 	register(scratch, { [repo]: checkout });
-	board(vault, "Roles", [
+	document(vault, "Roles", [
 		{
 			id: "v1",
 			name: "Built",
@@ -83,12 +83,12 @@ test("a relationship can cite an endpoint's bound child in a sibling role folder
 			},
 		},
 	]);
-	const { readBoardsToCheck, checkCode } =
+	const { readStatesToCheck, checkCode } =
 		await import("#tests/runtime/support/code-check/pass.ts");
-	const read = readBoardsToCheck(vault, undefined);
-	if (!read.ok || read.boards.length !== 1)
-		throw new Error(`fixture board did not load: ${JSON.stringify(read)}`);
-	const outcome = await checkCode(vault, read.boards, new AbortController().signal, [], () => ({
+	const read = readStatesToCheck(vault, undefined);
+	if (!read.ok || read.states.length !== 1)
+		throw new Error(`fixture document did not load: ${JSON.stringify(read)}`);
+	const outcome = await checkCode(vault, read.states, new AbortController().signal, [], () => ({
 		status: "missing",
 		detail: "turned off",
 	}));

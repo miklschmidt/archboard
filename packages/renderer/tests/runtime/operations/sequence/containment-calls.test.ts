@@ -3,12 +3,12 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // A frame and its own part meet at the title divider. The line stays inside
 // the frame, clears its title and touches its child, whichever way the page reads.
 import { expect, test } from "bun:test";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { headerFoot } from "#tests/runtime/support/drawn-subjects.ts";
 import { routePoints, distanceToFrame, routeCrosses } from "#tests/runtime/support/drawn-routes.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const application = orderedFixture({
 	nodes: [
@@ -35,14 +35,14 @@ const application = orderedFixture({
 	],
 });
 
-/** The same board read through a view that keeps the frame, its part and a sibling. */
+/** The same document read through a view that keeps the frame, its part and a sibling. */
 const overview = orderedFixture({
 	nodes: application.nodes.filter((node) => node.id !== "run"),
 	edges: application.edges.filter((edge) => edge.id === "d"),
 });
 
 /**
- * The same frame with enough parts fanned inside it that the board reads
+ * The same frame with enough parts fanned inside it that the document reads
  * left to right, so the frame's own call has to come in past the title band
  * from the frame's left edge rather than down through it.
  */
@@ -71,7 +71,7 @@ const wide = orderedFixture({
  * Whether a point lies past a frame's title band: below every heading the
  * frame draws, so a line from there cannot run across the title.
  * @param point The point.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @param frame The frame's id.
  * @returns True when the point is below the title.
  */
@@ -82,9 +82,9 @@ function pastTitle(point: { y: number }, drawing: { svg: string }, frame: string
 }
 
 test.each([
-	["the whole board", application],
+	["the whole document", application],
 	["a selection view", overview],
-	["a board that reads left to right", wide],
+	["a document that reads left to right", wide],
 ])(
 	"a frame's call into its own part leaves its title divider and stays inside in %s",
 	async (_, content: VariantContent) => {

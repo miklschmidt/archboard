@@ -28,4 +28,4 @@ class WalkthroughRecordingError extends Error {
 	}
 }
 
-export { WalkthroughRecordingError, type WalkthroughRecordingErrorCode };
+export { WalkthroughRecordingError };

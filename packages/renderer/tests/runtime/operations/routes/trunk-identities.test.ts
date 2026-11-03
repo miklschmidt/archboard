@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { ambiguousTrunks } from "#tests/runtime/support/drawn-ink.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import fanout from "#tests/runtime/support/fixtures/mixed-kind-parent-fanout.json";
 
 // Reduced from Voice coordinator: Tab sessions reaches Coordinator tools and

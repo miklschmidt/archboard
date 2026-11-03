@@ -14,7 +14,7 @@
 
 import { RECORDING_MS } from "@archboard/timing";
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import type { SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import type { SemanticPaneReading } from "#ui/rules/canvas/reading/address.ts";
 
 /**
  * One line of the voice session's transcript, as far as pacing reads it: who said it, whether
@@ -49,7 +49,7 @@ interface PaceObservation {
 type PaceState =
 	/** Voice was asked for and has not gone live yet. */
 	| { readonly kind: "starting"; readonly since: number }
-	/** The talk has begun, showing the whole board before the first step. */
+	/** The talk has begun, showing the whole model before the first step. */
 	| { readonly kind: "lead"; readonly since: number }
 	/** On one step, waiting for the voice to explain it and fall quiet. */
 	| {
@@ -60,7 +60,7 @@ type PaceState =
 			readonly heard: ReadonlySet<string>;
 			/**
 			 * Whether the step has ever finished arriving. Only its first arrival is bounded: a new
-			 * version of the board redraws the picture and the step arrives again, which is no failure.
+			 * version of the model redraws the picture and the step arrives again, which is no failure.
 			 */
 			readonly landed: boolean;
 			/** Since when the step has counted as explained, or null while it does not. */
@@ -179,7 +179,7 @@ function overdue(beat: number, reading: StepReading): PaceTurn | null {
 	const { waited } = reading;
 	if (!reading.landed && waited > RECORDING_MS.speechStart) {
 		return failed(
-			`Step ${step} never finished arriving on screen. Check that the board still states the walkthrough and that step, then record again.`,
+			`Step ${step} never finished arriving on screen. Check that the model still states the walkthrough and that step, then record again.`,
 		);
 	}
 	if (reading.spoken.length === 0 && waited > RECORDING_MS.speechStart) {

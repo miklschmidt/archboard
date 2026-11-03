@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { SemanticBoard } from "@archboard/board/document";
+import type { LegacyBoard } from "@archboard/model/legacy-board";
 import {
 	CAPTURE_TILE_SIDE_PX,
 	captureFromReceipt,
@@ -31,7 +31,7 @@ const DECLARED: CaptureDeclaration = {
 function receipt(overrides: Record<string, unknown> = {}): Record<string, unknown> {
 	return {
 		success: true,
-		board: "Flask request pipeline",
+		document: "Flask request pipeline",
 		version: 4,
 		variant: { id: "v1", name: "Current", lifecycle: "current" },
 		comparedWith: null,
@@ -96,7 +96,7 @@ describe("what one capture record is", () => {
 				exitCode: 1,
 				json: null,
 				stdout: "",
-				stderr: 'Error: view "Dispatch exchange" is not on the board\n',
+				stderr: 'Error: view "Dispatch exchange" is not on the document\n',
 			},
 			import.meta.path,
 		);
@@ -248,15 +248,15 @@ describe("the visual verdict as it stands", () => {
 	});
 });
 
-/** A saved board holding only the views a capture reads. */
-const boardWith = (views: SemanticBoard["views"]) => ({ views }) as unknown as SemanticBoard;
+/** A saved document holding only the views a capture reads. */
+const documentWith = (views: LegacyBoard["views"]) => ({ views }) as unknown as LegacyBoard;
 
-describe("every view of a board", () => {
+describe("every view of a document", () => {
 	test("comes to one capture per view the author made, in its grammar, with a unique label that never reads as a tile", () => {
-		const boards = new Map([
+		const documents = new Map([
 			[
 				"Flask",
-				boardWith([
+				documentWith([
 					{ id: "w1", name: "Request path", grammar: "architecture", scope: { kind: "all" } },
 					{ id: "w2", name: "Request path!", grammar: "sequence", scope: { kind: "all" } },
 					{ id: "w3", name: "Tile 3", grammar: "architecture", scope: { kind: "all" } },
@@ -268,7 +268,7 @@ describe("every view of a board", () => {
 				{ label: "flask", board: "Flask" },
 				{ label: "views", board: "Flask", views: "every" },
 			],
-			boards,
+			documents,
 		);
 		expect(expanded).toEqual([
 			{ label: "flask", board: "Flask" },
@@ -288,27 +288,27 @@ describe("every view of a board", () => {
 		]);
 	});
 
-	test("a named capture is taken of the board and view the author actually named", () => {
-		const boards = new Map([
+	test("a named capture is taken of the document and view the author actually named", () => {
+		const documents = new Map([
 			[
 				"Flask JSON",
-				boardWith([
+				documentWith([
 					{ id: "w1", name: "Request path", grammar: "architecture", scope: { kind: "all" } },
 				]),
 			],
 		]);
 		expect(
-			expandCaptures([{ label: "path", board: "flask_json", view: "request-path" }], boards),
+			expandCaptures([{ label: "path", board: "flask_json", view: "request-path" }], documents),
 		).toEqual([{ label: "path", board: "Flask JSON", view: "Request path" }]);
 		expect(
-			expandCaptures([{ label: "path", board: "Flask JSON", view: "Session cache" }], boards),
+			expandCaptures([{ label: "path", board: "Flask JSON", view: "Session cache" }], documents),
 		).toEqual([{ label: "path", board: "Flask JSON", view: "Session cache" }]);
 	});
 
-	test("adds nothing for a board with no views or no board at all", () => {
+	test("adds nothing for a document with no views or no document at all", () => {
 		const named = { label: "flask", board: "Flask" };
 		const requests = [named, { label: "views", board: "Flask", views: "every" as const }];
-		expect(expandCaptures(requests, new Map([["Flask", boardWith([])]]))).toEqual([named]);
+		expect(expandCaptures(requests, new Map([["Flask", documentWith([])]]))).toEqual([named]);
 		expect(expandCaptures(requests, new Map())).toEqual([named]);
 	});
 });

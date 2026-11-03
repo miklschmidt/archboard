@@ -1,17 +1,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { ArchitectureModelReadSchema } from "@archboard/board/model";
-import { modelContent, inspectGroup as inspectSemanticGroup } from "@archboard/board/content";
+import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { modelContent, inspectGroup as inspectSemanticGroup } from "@archboard/model/content";
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	SemanticPolicySchema,
 	VaultDiagnosticSchema,
 	type SemanticPolicy,
-} from "@archboard/board/policy";
-import type { SemanticVariant } from "@archboard/board/document";
+} from "@archboard/model/policy";
+import type { SemanticVariant } from "@archboard/model/legacy-board";
 import type {
-	EvaluationArchitecture as SemanticBoard,
+	EvaluationArchitecture as EvaluatedDocument,
 	InspectionAttempt,
 	RenderAttempt,
 } from "#runtime/rules/outcomes/reading.ts";
@@ -81,7 +81,7 @@ async function readModel(cli: CliContext, state?: string): Promise<Model> {
 	return model;
 }
 /**
- * Adapt canonical semantic content to existing evaluation comparisons, without a board document or level.
+ * Adapt canonical semantic content to existing evaluation comparisons, without a document document or level.
  * @param model The coherent public model.
  * @returns Its exact state and semantic content.
  */
@@ -105,7 +105,7 @@ function evaluationState(model: Model): SemanticVariant {
  * @param cli The isolated command context.
  * @returns One derived evaluation record for the one live model.
  */
-async function readVault(cli: CliContext): Promise<Map<string, SemanticBoard>> {
+async function readVault(cli: CliContext): Promise<Map<string, EvaluatedDocument>> {
 	const model = await readModel(cli);
 	const proposals = await Promise.all(
 		model.proposals.map((proposal) => readModel(cli, proposal.id)),
@@ -114,7 +114,7 @@ async function readVault(cli: CliContext): Promise<Map<string, SemanticBoard>> {
 		...(model.manifest.current === null ? [] : [evaluationState(model)]),
 		...proposals.map(evaluationState),
 	];
-	const board: SemanticBoard = {
+	const document: EvaluatedDocument = {
 		id: model.manifest.id,
 		name: model.manifest.name,
 		current: model.manifest.current?.id,
@@ -123,19 +123,7 @@ async function readVault(cli: CliContext): Promise<Map<string, SemanticBoard>> {
 		revision: model.revision.digest,
 		architecture: model,
 	};
-	return new Map([[board.name, board]]);
-}
-/**
- * Read the one named canonical model for evaluation.
- * @param cli The isolated CLI context.
- * @param name The expected model name.
- * @returns The derived evaluation evidence.
- */
-async function readBoard(cli: CliContext, name: string): Promise<SemanticBoard> {
-	const vault = await readVault(cli);
-	const model = vault.get(name);
-	if (model === undefined) throw new Error(`The model ${name} is unavailable.`);
-	return model;
+	return new Map([[document.name, document]]);
 }
 /**
  * Read semantic findings through the public CLI adapter.
@@ -155,12 +143,15 @@ async function vaultDiagnostics(cli: CliContext): Promise<VaultDiagnostic[]> {
  * @param directory The artifact directory.
  * @returns The rendering attempt.
  */
-async function renderBoard(
+async function renderLegacyBoard(
 	cli: CliContext,
 	request: RenderRequest,
 	directory: string,
 ): Promise<RenderAttempt> {
-	const file = path.join(directory, `${request.board.replaceAll(/[^A-Za-z0-9._-]+/gu, "_")}.svg`);
+	const file = path.join(
+		directory,
+		`${request.document.replaceAll(/[^A-Za-z0-9._-]+/gu, "_")}.svg`,
+	);
 	fs.mkdirSync(directory, { recursive: true });
 	const answer = await archboard(cli, [
 		"model",
@@ -247,12 +238,15 @@ async function forgetCheckout(cli: CliContext, flask: string): Promise<void> {
 }
 /**
  * Retain complete canonical readings and derived outcome evidence.
- * @param boards The derived records.
+ * @param documents The derived records.
  * @param directory The evidence directory.
  */
-function writeBoards(boards: ReadonlyMap<string, SemanticBoard>, directory: string): void {
+function writeDocuments(
+	documents: ReadonlyMap<string, EvaluatedDocument>,
+	directory: string,
+): void {
 	fs.mkdirSync(directory, { recursive: true });
-	for (const [name, record] of boards)
+	for (const [name, record] of documents)
 		fs.writeFileSync(
 			path.join(directory, `${name.replaceAll(/[^A-Za-z0-9._-]+/gu, "_")}.json`),
 			JSON.stringify(record, null, 2) + "\n",
@@ -264,13 +258,11 @@ export {
 	forgetCheckout,
 	inspectGroup,
 	layFixture,
-	readBoard,
 	readConfigurationText,
 	readPolicy,
 	readVault,
-	renderBoard,
+	renderLegacyBoard,
 	vaultDiagnostics,
-	writeBoards,
-	fixturePolicy,
+	writeDocuments,
 	writeVaultConfiguration,
 };

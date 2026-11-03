@@ -2,7 +2,7 @@ import type { toggleOf } from "#ui/rules/architecture-model/expansion.ts";
 import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
 import { useCallback, type ComponentProps, type JSX, type ReactNode } from "react";
 import { Button } from "@archboard/ui-kit/components";
-import type { Model, projectModel } from "@archboard/board/content";
+import type { Model, projectModel } from "@archboard/model/content";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import type { ModuleNavigation } from "#ui/components/architecture-model/ModuleNavigation.tsx";

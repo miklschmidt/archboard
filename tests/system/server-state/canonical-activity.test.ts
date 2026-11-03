@@ -2,10 +2,10 @@ import { expect, test } from "bun:test";
 import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { readArchitectureModel } from "@archboard/board/store-read";
-import { claimArchitectureSubjects, editArchitectureModule } from "@archboard/board/store-write";
+import { readArchitectureModel } from "@archboard/model/store-read";
+import { claimArchitectureSubjects, editArchitectureModule } from "@archboard/model/store-write";
 import { CLAIM_MS } from "@archboard/timing";
-import { ArchitectureClaimResultSchema } from "@archboard/board/model";
+import { ArchitectureClaimResultSchema } from "@archboard/model/contract";
 import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { createJsonRequester } from "../support/http.ts";
@@ -92,7 +92,7 @@ test("every pane receives concurrent canonical claims on startup and reconnect",
 		expect(await activity(pane)).toMatchObject({
 			vault,
 			activity: [
-				{ board: "model:Shop", model: "Shop", claims: [first.claim, second.claim], doing: null },
+				{ paneKey: "model:Shop", model: "Shop", claims: [first.claim, second.claim], doing: null },
 			],
 		});
 		await pane.close();

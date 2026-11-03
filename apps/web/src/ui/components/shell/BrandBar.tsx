@@ -1,7 +1,7 @@
 // The top of the navigator column, level with every pane's header: the brand,
 // and the controls that belong to the whole application rather than to a pane
-// or a board: the vault's diagnostics, the settings and the theme. Nothing
-// here changes a board: a user reads an architecture an agent wrote (ADR 0023).
+// or a model: the vault's diagnostics, the settings and the theme. Nothing
+// here changes a model: a user reads an architecture an agent wrote (ADR 0023).
 
 import { RiMoonLine, RiSettings3Line, RiSunLine } from "@remixicon/react";
 import { useCallback, type JSX, type ReactNode } from "react";
@@ -91,4 +91,4 @@ function BrandBar(props: BrandBarProps): JSX.Element {
 	);
 }
 
-export { BrandBar, SETTINGS_TRIGGER_ID, type BrandBarProps };
+export { BrandBar, SETTINGS_TRIGGER_ID };

@@ -24,4 +24,4 @@ function RecoveryMessage(props: RecoveryMessageProps): JSX.Element {
 	);
 }
 
-export { RecoveryMessage, type RecoveryMessageProps };
+export { RecoveryMessage };

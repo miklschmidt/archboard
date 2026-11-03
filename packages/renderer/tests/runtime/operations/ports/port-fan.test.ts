@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import { corridorPoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
@@ -37,7 +37,7 @@ const policy = SemanticPolicySchema.parse({
 	},
 });
 
-// Taken from a dogfood board: "the pane's agent and media state" and "one per
+// Taken from a dogfood document: "the pane's agent and media state" and "one per
 // socket generation" both come onto Workbench transport from its right, and
 // their arrowheads stood a lane apart near its top-right corner.
 test("lines onto one card face from beyond one end arrive apart", async () => {

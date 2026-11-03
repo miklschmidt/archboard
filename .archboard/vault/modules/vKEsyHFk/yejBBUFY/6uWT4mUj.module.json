@@ -3,7 +3,7 @@
   "name": "Server requests",
   "kind": "module",
   "responsibility": "The one way this tab speaks JSON to the Archboard server: each call names the vault it is about",
-  "description": "A JSON request is one call, requestJson: a method and payload, with the reply trusted as the endpoint's contract and a refusal thrown in the server's own words. A reply that must match a schema is another, strictReply. Every call to a board names its vault through inVault.",
+  "description": "A JSON request is one call, requestJson: a method and payload, with the reply trusted as the endpoint's contract and a refusal thrown in the server's own words. A reply that must match a schema is another, strictReply. Every call to a model names its vault through inVault.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-requests/src/ui/clients/server-requests.ts"

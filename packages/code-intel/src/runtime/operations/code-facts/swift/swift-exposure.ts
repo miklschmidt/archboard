@@ -10,7 +10,7 @@
 // The manifest's targets are read from its syntax tree, as the resolver reads
 // them. The pass gives a file's facts after the resolver has read them, and
 // those no longer carry the package, so the manifest is parsed again here: one
-// small file for each module a board binds.
+// small file for each module a document binds.
 
 import path from "node:path";
 import { adapterOf } from "#runtime/operations/code-facts/adapters.ts";

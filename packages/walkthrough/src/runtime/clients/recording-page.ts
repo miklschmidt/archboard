@@ -1,4 +1,4 @@
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 // Driving one recording page from outside it (TASK-304).
 //
 // The page paces the talk itself; the recorder only follows it. It reads the
@@ -128,7 +128,7 @@ const OTHER_BUILD =
 function notReady(published: boolean): string {
 	const within = `within ${RECORDER_MS.pageReady / 1000} seconds`;
 	return published
-		? `The canvas page was not ready to record ${within}: the board was not drawn or Codex did not start. Open the board on the canvas to see why, then record again.`
+		? `The canvas page was not ready to record ${within}: the model was not drawn or Codex did not start. Open the model on the canvas to see why, then record again.`
 		: `The canvas page never offered a recording ${within}: the Archboard server serves a frontend built without it. Run \`archboard restart\` to build the frontend and restart the server, then record again.`;
 }
 
@@ -266,7 +266,7 @@ async function finished(
 	follow(state, following, onProgress);
 	if (performance.now() - following.changedAt > RECORDER_MS.stall) {
 		throw new RecordingPageError(
-			"The canvas page stopped reporting progress. Record again; if it keeps happening, open the board on the canvas and check voice there.",
+			"The canvas page stopped reporting progress. Record again; if it keeps happening, open the model on the canvas and check voice there.",
 			following.shown,
 		);
 	}

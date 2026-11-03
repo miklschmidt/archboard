@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import settledWall from "#tests/runtime/support/fixtures/settled-wall.json";
 import { wallHugs } from "#tests/runtime/support/drawn-checks.ts";

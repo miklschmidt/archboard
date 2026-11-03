@@ -256,4 +256,4 @@ function usageOf(contract: AnyCommandContract): string {
 	return command.createHelp().commandUsage(command);
 }
 
-export { declareCommand, usageOf, type DeclaredCommand, type Projection };
+export { declareCommand, usageOf };

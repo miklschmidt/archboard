@@ -1,6 +1,6 @@
 import { useCallback, useContext, type JSX } from "react";
 
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { Badge } from "@archboard/ui-kit/components";
 import { ModelChoiceList } from "#ui/components/architecture-model/ModelChoiceList.tsx";
 import { ModelWalkthroughContext } from "#ui/state/architecture-model/presentation.ts";

@@ -1,14 +1,14 @@
 import { expect, test } from "bun:test";
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { readArchitectureModel, readLegacyInventory } from "@archboard/board/store-read";
+import { readArchitectureModel, readLegacyInventory } from "@archboard/model/store-read";
 import {
 	claimArchitectureSubjects,
 	editArchitectureModule,
 	migrateArchitectureModel,
 	saveLegacyMappingPlan,
-} from "@archboard/board/store-write";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+} from "@archboard/model/store-write";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import {
 	createOpenerFixture,
 	jsonBody,

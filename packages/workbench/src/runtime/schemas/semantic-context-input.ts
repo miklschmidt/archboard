@@ -6,7 +6,7 @@ import type {
 	SemanticChild,
 	SemanticClaim,
 	SemanticCoordinator,
-	SemanticBoard,
+	LegacyBoard,
 	SemanticCursor,
 	SemanticCursorInput,
 	SemanticAgentSwitch,
@@ -18,14 +18,12 @@ import type {
 import {
 	byteLength,
 	clipJsonUtf8,
-	clipUtf8,
 	fail,
 	feedIdValue,
 	identityValue,
 	jsonStringByteLength,
 	nullableTextValue,
 	numberValue,
-	SemanticContextInputError,
 	textValue,
 	type BoundedValue,
 } from "#runtime/services/semantic-bounded-text.ts";
@@ -37,7 +35,7 @@ interface NormalizedContext {
 	readonly threadLink: SemanticThreadLink;
 	readonly workhorse: SemanticWorkhorse;
 	readonly coordinator: SemanticCoordinator;
-	readonly board: SemanticBoard & { readonly version: number | null };
+	readonly model: LegacyBoard & { readonly version: number | null };
 	readonly pane: SemanticPane;
 	readonly architecture: SemanticArchitecture;
 	readonly claim: SemanticClaim;
@@ -198,18 +196,18 @@ function boundedReasons(values: readonly unknown[], field: string): BoundedValue
 }
 
 /**
- * Validates the board block.
- * @param board - The board input.
- * @returns The frozen board with its version.
+ * Validates the legacy board block.
+ * @param model - The legacy board input.
+ * @returns The frozen legacy board with its version.
  */
-function normalizeBoard(
-	board: SemanticContextInput["board"],
-): BoundedValue<NormalizedContext["board"]> {
-	const key = textValue(board.key, "board.key", SEMANTIC_CONTEXT_LIMITS.boardKeyBytes);
-	const name = textValue(board.name, "board.name", SEMANTIC_CONTEXT_LIMITS.boardKeyBytes);
-	const vault = textValue(board.vault, "board.vault", SEMANTIC_CONTEXT_LIMITS.fileBytes);
-	const file = textValue(board.file, "board.file", SEMANTIC_CONTEXT_LIMITS.fileBytes);
-	const version = numberValue(board.version, "board.version");
+function normalizeModel(
+	model: SemanticContextInput["model"],
+): BoundedValue<NormalizedContext["model"]> {
+	const key = textValue(model.key, "model.key", SEMANTIC_CONTEXT_LIMITS.paneKeyBytes);
+	const name = textValue(model.name, "model.name", SEMANTIC_CONTEXT_LIMITS.paneKeyBytes);
+	const vault = textValue(model.vault, "model.vault", SEMANTIC_CONTEXT_LIMITS.fileBytes);
+	const file = textValue(model.file, "model.file", SEMANTIC_CONTEXT_LIMITS.fileBytes);
+	const version = numberValue(model.version, "model.version");
 	return {
 		value: deepFreeze({
 			key: key.value,
@@ -237,7 +235,7 @@ function normalizePane(pane: SemanticContextInput["pane"]): BoundedValue<Semanti
 }
 
 const USER_CHANGES: readonly SemanticUserChange[] = [
-	"board",
+	"model",
 	"variant",
 	"view",
 	"selection",
@@ -275,7 +273,7 @@ function agentSwitchOf(stated: SemanticAgentSwitch | undefined): SemanticAgentSw
 	const from = nullableTextValue(
 		stated.from,
 		"pane.agentSwitch.from",
-		SEMANTIC_CONTEXT_LIMITS.boardKeyBytes,
+		SEMANTIC_CONTEXT_LIMITS.paneKeyBytes,
 	);
 	const by = nullableTextValue(
 		stated.by,
@@ -286,7 +284,7 @@ function agentSwitchOf(stated: SemanticAgentSwitch | undefined): SemanticAgentSw
 }
 
 /**
- * Validates the claim block; an absent claim means nobody holds the board.
+ * Validates the claim block; an absent claim means nobody holds the model.
  * @param claim - The claim input, if supplied.
  * @returns The frozen claim.
  */
@@ -430,7 +428,7 @@ function normalizeContext(
 		"repository",
 		SEMANTIC_CONTEXT_LIMITS.repositoryBytes,
 	);
-	const board = normalizeBoard(input.board);
+	const model = normalizeModel(input.model);
 	const pane = normalizePane(input.pane);
 	const description = textValue(
 		input.description,
@@ -454,7 +452,7 @@ function normalizeContext(
 	const staleReasons = normalizeStaleReasons(input, cursorReasons, additionalStaleReasons);
 	const parts: readonly BoundedValue<unknown>[] = [
 		repository,
-		board,
+		model,
 		pane,
 		threadLink,
 		description,
@@ -470,7 +468,7 @@ function normalizeContext(
 		threadLink: threadLink.value,
 		workhorse,
 		coordinator,
-		board: board.value,
+		model: model.value,
 		pane: pane.value,
 		architecture: architecture.value,
 		claim: claim.value,
@@ -486,19 +484,14 @@ function normalizeContext(
 export {
 	type BoundedValue,
 	type NormalizedContext,
-	SemanticContextInputError,
 	fail,
 	byteLength,
 	jsonStringByteLength,
 	clipJsonUtf8,
 	feedIdValue,
-	clipUtf8,
 	textValue,
 	userChanges,
 	agentSwitchOf,
-	nullableTextValue,
-	identityValue,
-	numberValue,
 	uniqueSorted,
 	deepFreeze,
 	boundedReasons,

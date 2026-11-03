@@ -71,7 +71,6 @@ function stoppedState(reason: string): WorkbenchStoppedState {
 export {
 	type PaneSocket,
 	type WorkbenchMediaPort,
-	type WorkbenchStoppedState,
 	type WorkbenchTransportPort,
 	type WorkbenchTransportState,
 	stoppedState,

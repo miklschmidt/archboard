@@ -6,9 +6,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { DiagramGrammarSchema } from "@archboard/board/views";
-import { VariantLifecycleSchema } from "@archboard/board/document";
-import { DiagramThemeSchema } from "@archboard/board/render-reply";
+import { DiagramGrammarSchema } from "@archboard/model/views";
+import { VariantLifecycleSchema } from "@archboard/model/legacy-board";
+import { DiagramThemeSchema } from "@archboard/model/render-reply";
 import { FixtureSchema, HomePathSchema, type Fixture } from "#runtime/schemas/fixture.ts";
 import { leakageProblems } from "#runtime/services/leakage.ts";
 import {
@@ -209,7 +209,6 @@ const EveryViewCaptureSchema = z
 		views: z.literal("every"),
 	})
 	.strict();
-type EveryViewCapture = z.infer<typeof EveryViewCaptureSchema>;
 
 /** What a scenario asks to see: one named picture, or every view of a board. */
 const CaptureRequestSchema = z.union([CaptureDeclarationSchema, EveryViewCaptureSchema]);
@@ -489,31 +488,17 @@ function loadSuite(directory: string): LoadedSuite {
 
 export {
 	ARMS,
-	CHECK_KINDS,
-	FLASK_REVISIONS,
-	GUARDRAILS,
-	WORKFLOWS,
-	CaptureDeclarationSchema,
-	CaptureRequestSchema,
-	EveryViewCaptureSchema,
 	type CaptureDeclaration,
 	type CaptureRequest,
-	type EveryViewCapture,
-	CoverageSchema,
-	OutcomeCheckSchema,
 	GRADER_NAMES,
-	GradersSchema,
 	PinsSchema,
 	ScenarioSchema,
-	SuiteSchema,
 	loadSuite,
 	suiteProblems,
-	type Coverage,
 	type GraderName,
 	type Graders,
 	type LoadedSuite,
 	type OutcomeCheck,
 	type Pins,
 	type Scenario,
-	type Suite,
 };

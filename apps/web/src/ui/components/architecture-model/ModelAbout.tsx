@@ -43,7 +43,7 @@ import type { Reader } from "#ui/hooks/architecture-model/use-reader.ts";
 import { useStateTimeline } from "#ui/hooks/architecture-model/use-state-timeline.ts";
 import { modulePlaces } from "#ui/rules/architecture-model/module-places.ts";
 import type { StateTimeline } from "#ui/rules/architecture-model/state-timeline.ts";
-import { kindLookOf } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
+import { kindLookOf } from "#ui/rules/canvas/reading/kind-look.ts";
 
 /** Inputs for the page. */
 interface ModelAboutProps extends ModelSelectionDetailsProps {
@@ -355,4 +355,4 @@ function ScopePage(props: ScopePageProps): JSX.Element {
 	);
 }
 
-export { ModelAbout, scopeHead, type ModelAboutProps };
+export { ModelAbout, scopeHead };

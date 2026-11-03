@@ -10,7 +10,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
 
-use archboard_flows::board::{Step, every_step};
+use archboard_flows::content::{Step, every_step};
 use archboard_layout::{Engine, LineLook, Measured, Node, Standings, draw, shown_drawing};
 use archboard_scene::drawing::Painted;
 use archboard_scene::measure::{CardWords, measure_label, measure_node};

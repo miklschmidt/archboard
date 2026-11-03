@@ -16,7 +16,6 @@ import type {
 } from "#shared/schemas/identity-capabilities.ts";
 import {
 	assertCurrent,
-	logicalToolCallKey,
 	parseLogicalToolCallCorrelationValue,
 	parseWireRequestCorrelationValue,
 	type LogicalToolCallCorrelation,
@@ -46,7 +45,6 @@ import {
 } from "#shared/rules/identity-ledger.ts";
 import { OPERATION_ID_MAX_BYTES } from "#shared/rules/identity-operations.ts";
 import {
-	CANONICAL_ITEM_ID_MAX_LENGTH,
 	IdentityValidationError,
 	mintEpochValue,
 	mintServerValue,
@@ -60,8 +58,6 @@ import {
 	type ChildId,
 	type CodexIdentity,
 	type DynamicToolCallId,
-	type IdentityDomain,
-	type IdentityValidationCode,
 	type ItemId,
 	type JsonRpcRequestId,
 	type JsonRpcRequestIdWireValue,
@@ -483,10 +479,7 @@ function restoreIdentityAuthority(input: {
 }
 
 export {
-	CANONICAL_ITEM_ID_MAX_LENGTH,
 	OPERATION_ID_MAX_BYTES,
-	type IdentityDomain,
-	type JsonRpcRequestIdWireValue,
 	type ChildId,
 	type ChildEpoch,
 	type BrowserCommandId,
@@ -504,23 +497,16 @@ export {
 	type CodexIdentity,
 	type WireRequestCorrelation,
 	type LogicalToolCallCorrelation,
-	logicalToolCallKey,
-	type WireRequestCorrelationInput,
-	type LogicalToolCallCorrelationInput,
-	type IdentityValidationCode,
 	IdentityValidationError,
 	type IdentityValidator,
 	type OperationIdValidator,
 	type IdentityIssuer,
 	type OperationIdIssuer,
-	type CodexResponseIdentityBatch,
-	type AdoptedCodexResponseIdentityBatch,
 	type TrustedIdentityDecoder,
 	type TrustedOperationIdDecoder,
 	type OperationAuthority,
 	type IdentityAuthority,
 	type IdentityAuthorities,
-	type IdentityLedger,
 	createIdentityLedger,
 	createIdentityAuthorities,
 	createIdentityAuthority,

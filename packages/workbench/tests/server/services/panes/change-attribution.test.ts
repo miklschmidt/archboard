@@ -7,8 +7,8 @@ import {
 	claimArchitectureSubjects,
 	editArchitectureModule,
 	releaseArchitectureClaim,
-} from "@archboard/board/store-write";
-import { readArchitectureModel } from "@archboard/board/store-read";
+} from "@archboard/model/store-write";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import { semanticChangeFeed } from "#server/services/panes/change-feed.ts";
 const homes: string[] = [];
 afterEach(() => {
@@ -64,7 +64,7 @@ test("the existing agent feed attributes durable canonical edits without legacy 
 		expect.arrayContaining([
 			expect.objectContaining({
 				vault,
-				board: `model:${model.manifest.id}`,
+				model: `model:${model.manifest.id}`,
 				by: "thread-42",
 				origin: "agent",
 				doing: "Plan the initial state",

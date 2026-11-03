@@ -5,9 +5,9 @@ import type {
 } from "#runtime/clients/transport-types.ts";
 import type { CodexTransport } from "#runtime/clients/transport-types.ts";
 import type { BedrockSetupParams, LoginAccountParams } from "#runtime/schemas/authored-schemas.ts";
-import type { ClientRequestMethod, ResponseMethod } from "#runtime/protocol/protocol-methods.ts";
+import type { ClientRequestMethod } from "#runtime/protocol/protocol-methods.ts";
 import type { CodexSessionRequestParams } from "#runtime/protocol/client-request-schemas.ts";
-import type { IdentityAuthority, ThreadId, TurnId } from "#shared/rules/workbench-identity.ts";
+import type { IdentityAuthority } from "#shared/rules/workbench-identity.ts";
 import type { SessionResponsePayloads } from "#runtime/schemas/session-responses.ts";
 
 /**
@@ -75,7 +75,7 @@ export type SessionNotificationHandler = (event: TransportServerNotification) =>
 
 export const CODEX_SESSION_CONTROL: unique symbol = Symbol("codex-session-control");
 
-export interface CodexSessionControl {
+interface CodexSessionControl {
 	readonly onNotification: (event: TransportServerNotification) => void;
 	readonly onServerRequest: (request: TransportServerRequest) => void;
 	readonly dispose: () => void;
@@ -111,18 +111,18 @@ export type SessionCurrentTimeRequest = Extract<
 	SessionServerRequest,
 	{ readonly method: "currentTime/read" }
 >;
-export type SessionTokenRefreshRequest = Extract<
+type SessionTokenRefreshRequest = Extract<
 	SessionServerRequest,
 	{ readonly method: "account/chatgptAuthTokens/refresh" }
 >;
-export type SessionAttestationRequest = Extract<
+type SessionAttestationRequest = Extract<
 	SessionServerRequest,
 	{ readonly method: "attestation/generate" }
 >;
 
 export type SessionMutationOutcome = "not_delivered" | "outcome_unknown";
 
-export type CodexSessionErrorCode =
+type CodexSessionErrorCode =
 	| "already_initialized"
 	| "not_initialized"
 	| "not_account_ready"
@@ -281,5 +281,3 @@ export interface CodexSession {
 	readonly respondUnsupportedTokenRefresh: (request: SessionTokenRefreshRequest) => Promise<void>;
 	readonly respondUnsupportedAttestation: (request: SessionAttestationRequest) => Promise<void>;
 }
-
-export type { ResponseMethod, ThreadId, TurnId };

@@ -145,4 +145,4 @@ const PRESET_LABELS: Readonly<Record<OpenerSettingsReply["presets"][number]["pre
 	zed: "Zed",
 };
 
-export { OpenerChoiceGroup, type OpenerChoiceGroupProps };
+export { OpenerChoiceGroup };

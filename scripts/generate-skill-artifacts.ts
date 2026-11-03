@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // Regenerate the consumer skill's derived files in place: the JSON Schemas for
-// the persisted board document, the vault configuration and the authoring
+// the persisted model document, the vault configuration and the authoring
 // payloads, and the installation-local copy of INSTALL.md, under
 // skills/archboard/references/generated/ (ignored). `bun install` runs it, and
 // every install of the skill runs the same preparation; run it again after

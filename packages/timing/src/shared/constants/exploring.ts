@@ -1,10 +1,10 @@
-// How a board answers a hand: the motion a person feels while they poke at it,
+// How a model answers a hand: the motion a person feels while they poke at it,
 // not the motion they wait out. What these pull against is the hand itself, so
 // each is judged by how it feels under a wheel, a drag or a pointer at rest.
 
 import { durations } from "#shared/constants/durations.ts";
 
-/** The durations of exploring a board, in milliseconds. */
+/** The durations of exploring a model, in milliseconds. */
 const EXPLORING_MS = durations({
 	/**
 	 * How long the camera takes to cover most of the way to where a wheel or a
@@ -29,7 +29,7 @@ const EXPLORING_MS = durations({
 	 *
 	 * Pulls against a slow page. It is four frames at 60 Hz, so a page that drops
 	 * a frame or two still moves at its own pace; a longer cap lets one stall
-	 * throw the camera across the board.
+	 * throw the camera across the model.
 	 *
 	 * A released drag has no duration here. The camera stops where the hand lets
 	 * go of it (TASK-403), because a picture that carries on alone moves the part
@@ -45,11 +45,11 @@ const EXPLORING_MS = durations({
 	 * Pulls against the hand. A wheel or a pinch is a run of turns with no end of
 	 * its own, so at 150 ms or less the picture is drawn again and its traffic
 	 * wakes up between two turns of one zoom. Past about 600 ms the picture stays
-	 * soft and a board the reader has let go of looks stalled.
+	 * soft and a model the reader has let go of looks stalled.
 	 */
 	cameraRest: 400,
 	/**
-	 * How long the camera glides to the whole board when the fit key is pressed.
+	 * How long the camera glides to the whole model when the fit key is pressed.
 	 * Shorter than a walkthrough step (`PRESENTATION_MS.step`) because the reader
 	 * asked for it and is waiting; long enough that the path, which pulls back to
 	 * cross a long distance, can be followed.
@@ -59,7 +59,7 @@ const EXPLORING_MS = durations({
 	 * How long the pointer rests on a part before the picture lights what it is
 	 * wired to; once something is lit, the next part lights at once.
 	 *
-	 * Pulls against the pointer crossing the board: shorter than about 80 ms and
+	 * Pulls against the pointer crossing the model: shorter than about 80 ms and
 	 * the picture flashes at everything the pointer passes; longer than about
 	 * 200 ms and resting on a part to ask what it touches feels ignored. It is
 	 * well under a tip's delay (`subjectTip`), so the light comes
@@ -69,7 +69,7 @@ const EXPLORING_MS = durations({
 	/**
 	 * How long the pointer rests on a card, a container's header or a label before
 	 * the picture says more about it; once one tip is open, the next opens at once.
-	 * Pulls against the pointer crossing the board: shorter and tips flash over
+	 * Pulls against the pointer crossing the model: shorter and tips flash over
 	 * everything it passes on its way; longer and resting on a card to read it
 	 * feels ignored.
 	 */
@@ -119,23 +119,23 @@ const EXPLORING_MS = durations({
 	 * Pulls against the pick: the reader chose the part and is waiting to see
 	 * it, so it is shorter than a walkthrough step (`PRESENTATION_MS.step`); and
 	 * long enough that the move reads as a glide to the part and not a cut that
-	 * leaves the reader to find where the board went.
+	 * leaves the reader to find where the model went.
 	 */
 	reveal: 480,
 	/**
-	 * How long the flight into a card's board, or back out of it, takes.
+	 * How long the flight into a card's model, or back out of it, takes.
 	 *
-	 * Pulls against what the flight shows. The board has to grow from the size of
+	 * Pulls against what the flight shows. The model has to grow from the size of
 	 * a card to the size of the pane, often more than ten times, and the eye needs
-	 * a few frames at each size to see that it is the same board; under about half
+	 * a few frames at each size to see that it is the same model; under about half
 	 * a second that reads as a cut with a smear, and over a second the reader waits
 	 * on a picture they already chose. A walkthrough step (`PRESENTATION_MS.step`)
-	 * is longer because it also carries the reader across the board.
+	 * is longer because it also carries the reader across the model.
 	 */
 	dive: 720,
 	/**
-	 * How long the page waits for the picture of a board it is about to fly into
-	 * before it opens the board the plain way. Every board's picture is drawn ahead
+	 * How long the page waits for the picture of a model it is about to fly into
+	 * before it opens the model the plain way. Every model's picture is drawn ahead
 	 * and kept, so the wait is normally a read from storage.
 	 *
 	 * Pulls against the click: a reader who has chosen a card is waiting, so a

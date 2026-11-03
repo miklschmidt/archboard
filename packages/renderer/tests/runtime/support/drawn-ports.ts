@@ -1,5 +1,5 @@
-import type { DiagramBox } from "@archboard/board/render-reply";
-import type { VariantContent } from "@archboard/board/content";
+import type { DiagramBox } from "@archboard/model/render-reply";
+import type { VariantContent } from "@archboard/model/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { routePoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";

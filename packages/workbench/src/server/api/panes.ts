@@ -1,5 +1,3 @@
-// The panes that are open on this server: their sockets, the boards they show and what is sent to them, the broadcast that every write announces through, and what the panes say as the workbench reads it. Bun only.
-export { aggregateOf } from "#server/rules/pane/board-key.ts";
 export {
 	forgetSemanticPaneContext,
 	forgetSemanticPaneContexts,
@@ -9,10 +7,9 @@ export {
 export { panePresentations } from "#server/services/panes/presentation.ts";
 export {
 	acceptedSockets,
-	boardForNewPane,
-	boardForPane,
-	boardsOnScreen,
-	broadcast,
+	paneKeyForNewPane,
+	paneKeyOf,
+	paneKeysOnScreen,
 	clientIds,
 	clients,
 	codexSocketInstances,
@@ -21,9 +18,8 @@ export {
 	latestSocketAcceptanceByClient,
 	notePaneClosed,
 	notePaneOpened,
-	onBoardBroadcast,
-	paneBoardOf,
-	paneBoards,
+	paneKeyOfClient,
+	paneKeys,
 	paneFromRequest,
 	paneResponse,
 	panes,
@@ -32,7 +28,7 @@ export {
 	pendingPaneOpens,
 	primaryPane,
 	rejectPendingLayouts,
-	sendBoardlessToPane,
+	sendKeylessToPane,
 	sendToPane,
 	settleAfterLayout,
 	socketVaults,

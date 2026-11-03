@@ -5,7 +5,7 @@
   "responsibility": "Draws the picture and wires the camera, the gestures, the lighting and the marks to it",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx"
+    "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#0bsThTMv",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
         "symbol": "useCameraWith"
       },
       "id": "vKEsyHFk/UOXNWLhR#cdwXdyXo",
@@ -32,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
         "symbol": "surfaceMarks"
       },
       "id": "vKEsyHFk/UOXNWLhR#I1b9UiOY",
@@ -45,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
         "symbol": "usePictureTransition"
       },
       "id": "vKEsyHFk/UOXNWLhR#6xbUaU8d",
@@ -58,7 +58,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
         "symbol": "useDiagramGestures"
       },
       "id": "vKEsyHFk/UOXNWLhR#bZN2wZZn",
@@ -71,7 +71,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
         "symbol": "useLighting"
       },
       "id": "vKEsyHFk/UOXNWLhR#dH2wBxla",
@@ -84,7 +84,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-viewer-marks.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-viewer-marks.ts",
         "symbol": "lightInk"
       },
       "id": "vKEsyHFk/UOXNWLhR#eKc3FaJx",
@@ -97,7 +97,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
         "symbol": "useCodeMarks"
       },
       "id": "vKEsyHFk/UOXNWLhR#YMCk1Omy",
@@ -110,7 +110,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
         "symbol": "useDrillOpen"
       },
       "id": "vKEsyHFk/UOXNWLhR#CB6Uuw6y",
@@ -123,7 +123,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/CameraSurface.tsx",
+        "path": "apps/web/src/ui/components/canvas/CameraSurface.tsx",
         "symbol": "cameraTransform"
       },
       "id": "vKEsyHFk/UOXNWLhR#ouBCto6M",

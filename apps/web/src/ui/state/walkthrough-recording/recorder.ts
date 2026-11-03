@@ -1,7 +1,7 @@
 // One recording of one walkthrough, in the page that makes it (TASK-304).
 //
-// The page was opened on one board to record one of its walkthroughs. Until
-// it is started it only says whether it could be: the pane showing that board,
+// The page was opened on one model to record one of its walkthroughs. Until
+// it is started it only says whether it could be: the pane showing that model,
 // drawn, and an agent that can start voice. Started from a user gesture, it
 // listens (`talk-capture.ts`), asks for voice as a recording, and from then on
 // one tick asks the pacing what to do and does it: begin the talk once the
@@ -14,9 +14,9 @@ import { RECORDING_MS } from "@archboard/timing";
 import type { publishRecordingPage, recordingAskedOf } from "@archboard/walkthrough/recording";
 import { TALK_SAMPLE_RATE } from "@archboard/walkthrough/talk";
 import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/controllers";
-import { sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import { sameModelName } from "#ui/rules/canvas/reading/address.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
-import { type SemanticBoardStageProps } from "#ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
+import { type CanvasStageProps } from "#ui/components/canvas/CanvasStage.tsx";
 
 import {
 	pace,
@@ -42,7 +42,7 @@ type TalkLog = NonNullable<ReturnType<RecordingPage["talk"]>>;
 
 /** What the page address asks the existing recorder to capture. */
 type RecordingRequest = NonNullable<ReturnType<typeof recordingAskedOf>> & {
-	readonly board: string | null;
+	readonly model: string | null;
 };
 type RecordedModel = Parameters<NonNullable<RecordingPage["load"]>>[0];
 type RecordedView = {
@@ -51,7 +51,7 @@ type RecordedView = {
 };
 
 /** A step the page moves its pane to: its own choice, answering no request. */
-type RecordedStep = NonNullable<SemanticBoardStageProps["driven"]>;
+type RecordedStep = NonNullable<CanvasStageProps["driven"]>;
 
 /**
  * The step a recording moves its pane to, as the live recording and its rendering both ask for it.
@@ -85,17 +85,17 @@ function placeIn(reading: PaneReading | null, walkthrough: string): PanePlace | 
 }
 
 /**
- * Whether a pane is showing a board, drawn.
+ * Whether a pane is showing a legacy board, drawn.
  * @param reading What the pane last said it is reading, or null.
- * @param board The board, by name.
+ * @param model The legacy board, by name.
  * @returns True once it is.
  */
-function drawnOn(reading: PaneReading | null, board: string | null): boolean {
+function drawnOn(reading: PaneReading | null, model: string | null): boolean {
 	return (
-		reading?.board != null &&
+		reading?.model != null &&
 		reading.version !== null &&
-		board !== null &&
-		sameBoardName(reading.board.name, board)
+		model !== null &&
+		sameModelName(reading.model.name, model)
 	);
 }
 
@@ -127,7 +127,7 @@ function requestedPicture(
 	view: RecordedView,
 ): boolean {
 	return view.architecture === undefined
-		? drawnOn(reading, request.board)
+		? drawnOn(reading, request.model)
 		: canonicalDrawn(reading, view.architecture);
 }
 
@@ -137,7 +137,7 @@ function requestedPicture(
  * @returns Its target name or null when none was requested.
  */
 function recordingTarget(request: RecordingRequest): string | null {
-	return request.canonical?.model ?? request.board;
+	return request.canonical?.model ?? request.model;
 }
 
 /**
@@ -290,7 +290,7 @@ class WalkthroughRecorder {
 		const sources = this.#startable();
 		try {
 			this.#capture = await TalkCapture.open();
-			// The board is drawn already, and the talk begins on that picture.
+			// The model is drawn already, and the talk begins on that picture.
 			if (this.#reading !== null) this.reading(this.#reading);
 		} catch (error) {
 			this.#failure = `The page could not listen to the voice: ${words(error)}`;
@@ -342,7 +342,7 @@ class WalkthroughRecorder {
 	}
 
 	/**
-	 * Whether the page could start now: the board drawn and an agent that can start voice.
+	 * Whether the page could start now: the model drawn and an agent that can start voice.
 	 * @returns Ready, loading, or failed with why.
 	 */
 	#couldStart(): Readiness {
@@ -490,4 +490,4 @@ class WalkthroughRecorder {
 	}
 }
 
-export { WalkthroughRecorder, recordedStep, type RecordedStep, type RecordingRequest };
+export { WalkthroughRecorder, recordedStep, type RecordedStep };

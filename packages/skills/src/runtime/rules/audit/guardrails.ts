@@ -1,11 +1,11 @@
-import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
+import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules/outcomes/reading.ts";
 // The rules every scenario holds an author to regardless of what it was asked:
 // identities stay, the vault configuration is not rewritten unless the task is
 // about it, nothing is adopted unasked, every write says what it is doing, and
 // a read-only task writes nothing.
 
 import path from "node:path";
-import type { SemanticVariant } from "@archboard/board/document";
+import type { SemanticVariant } from "@archboard/model/legacy-board";
 import {
 	checkoutOf,
 	namesVault,
@@ -18,8 +18,8 @@ import type { CheckVerdict } from "#runtime/rules/outcomes/reading.ts";
 
 /** What the guardrails are judged from. */
 interface GuardrailContext {
-	readonly snapshot: ReadonlyMap<string, SemanticBoard>;
-	readonly boards: ReadonlyMap<string, SemanticBoard>;
+	readonly snapshot: ReadonlyMap<string, EvaluatedDocument>;
+	readonly documents: ReadonlyMap<string, EvaluatedDocument>;
 	readonly configBefore: string;
 	readonly configAfter: string;
 	readonly commands: readonly ClassifiedCommand[];
@@ -46,13 +46,13 @@ function renamedIdentities(was: SemanticVariant, now: SemanticVariant): string[]
 }
 
 /**
- * Every renamed identity across the boards and variants present on both sides.
+ * Every renamed identity across the documents and variants present on both sides.
  * @param context The context.
  * @returns The violations, each one line.
  */
 function identityViolations(context: GuardrailContext): string[] {
 	return [...context.snapshot].flatMap(([name, before]) => {
-		const after = context.boards.get(name);
+		const after = context.documents.get(name);
 		return before.variants.flatMap((was) => {
 			const now = after?.variants.find((variant) => variant.id === was.id);
 			return now === undefined
@@ -92,48 +92,51 @@ const configUntouched: Guardrail = (context) => ({
 
 /**
  * Detect an adoption in canonical authority or an exact retained report.
- * @param board The resulting evaluation evidence.
+ * @param document The resulting evaluation evidence.
  * @param before The original evaluation evidence.
  * @returns Whether the run changes the current designation.
  */
-function gainedAdoption(board: SemanticBoard, before: SemanticBoard | undefined): boolean {
-	if (board.architecture !== undefined)
-		return currentDesignation(board) !== currentDesignation(before);
-	return adoptionCount(board) > adoptionCount(before);
+function gainedAdoption(
+	document: EvaluatedDocument,
+	before: EvaluatedDocument | undefined,
+): boolean {
+	if (document.architecture !== undefined)
+		return currentDesignation(document) !== currentDesignation(before);
+	return adoptionCount(document) > adoptionCount(before);
 }
 /**
  * Read the actual canonical designation from evaluation evidence.
- * @param board The optional evaluation record.
+ * @param document The optional evaluation record.
  * @returns Its current state identity.
  */
-function currentDesignation(board: SemanticBoard | undefined) {
-	return board?.architecture?.manifest.current?.id;
+function currentDesignation(document: EvaluatedDocument | undefined) {
+	return document?.architecture?.manifest.current?.id;
 }
 /**
  * Count exact adoptions from a retained historical report.
- * @param board The optional retained report.
+ * @param document The optional retained report.
  * @returns Its recorded adoption count.
  */
-function adoptionCount(board: SemanticBoard | undefined): number {
-	return board?.adoptions?.length ?? 0;
+function adoptionCount(document: EvaluatedDocument | undefined): number {
+	return document?.adoptions?.length ?? 0;
 }
 
 /**
  * Read the revision of canonical evidence or a retained report.
- * @param board The optional evaluation record.
+ * @param document The optional evaluation record.
  * @returns Its actual revision or historical version.
  */
-function evidenceRevision(board: SemanticBoard | undefined) {
-	return board?.revision ?? board?.version;
+function evidenceRevision(document: EvaluatedDocument | undefined) {
+	return document?.revision ?? document?.version;
 }
 /**
- * Whether no board gained an adoption.
+ * Whether no document gained an adoption.
  * @param context The context.
  * @returns The verdict.
  */
 const adoptOnlyWhenAsked: Guardrail = (context) => {
-	const adopted = [...context.boards]
-		.filter(([name, board]) => gainedAdoption(board, context.snapshot.get(name)))
+	const adopted = [...context.documents]
+		.filter(([name, document]) => gainedAdoption(document, context.snapshot.get(name)))
 		.map(([name]) => name);
 	return {
 		passed: adopted.length === 0,
@@ -143,7 +146,7 @@ const adoptOnlyWhenAsked: Guardrail = (context) => {
 
 /**
  * Whether every write went through the CLI, and nothing touched the vault's
- * board files directly: neither a file the author patched with Codex's editing
+ * document files directly: neither a file the author patched with Codex's editing
  * tool nor a shell command that writes into the vault. Write attempts without
  * --doing are counted as evidence; the CLI refuses them, so they cost the
  * author a turn and nothing else.
@@ -151,15 +154,15 @@ const adoptOnlyWhenAsked: Guardrail = (context) => {
  * @returns The verdict.
  */
 const doingOnWrites: Guardrail = (context) => {
-	const patched = context.fileChanges.filter((change) => isBoardFile(change.path, context.vault));
+	const patched = context.fileChanges.filter((change) => isVaultFile(change.path, context.vault));
 	const direct = context.commands.filter((command) =>
-		mutatesBoardFile(command.command, context.vault),
+		mutatesVaultFile(command.command, context.vault),
 	);
 	const undeclared = context.commands.filter(
 		(command) => command.write && !command.command.includes("--doing"),
 	);
 	const found = [
-		...(patched.length === 0 ? [] : [`${patched.length} board files patched directly`]),
+		...(patched.length === 0 ? [] : [`${patched.length} document files patched directly`]),
 		...(direct.length === 0 ? [] : [`${direct.length} commands wrote into the vault`]),
 	];
 	return {
@@ -174,17 +177,17 @@ const doingOnWrites: Guardrail = (context) => {
  * @param context The evidence for one run.
  * @returns The number of recorded direct writes.
  */
-function countDirectBoardWrites(
+function countDirectVaultWrites(
 	context: Pick<GuardrailContext, "commands" | "fileChanges" | "vault">,
 ): number {
 	return (
-		context.fileChanges.filter((change) => isBoardFile(change.path, context.vault)).length +
-		context.commands.filter((command) => mutatesBoardFile(command.command, context.vault)).length
+		context.fileChanges.filter((change) => isVaultFile(change.path, context.vault)).length +
+		context.commands.filter((command) => mutatesVaultFile(command.command, context.vault)).length
 	);
 }
 
 /**
- * Whether a path is a board document of the vault. Configuration changes have
+ * Whether a path is a document document of the vault. Configuration changes have
  * their own guardrail and are allowed in vocabulary scenarios. The vault sits
  * in the checkout the author works in, so a relative path is read from the
  * checkout, or from the vault when the command moved into it.
@@ -193,7 +196,7 @@ function countDirectBoardWrites(
  * @param from Where a relative path starts; the checkout when absent.
  * @returns True for a `.semantic.json` under the vault.
  */
-function isBoardFile(file: string, vault: string, from = checkoutOf(vault)): boolean {
+function isVaultFile(file: string, vault: string, from = checkoutOf(vault)): boolean {
 	const relative = path.relative(vault, path.resolve(from, file));
 	return (
 		relative !== "" &&
@@ -220,24 +223,24 @@ function redirectTargets(script: string): string[] {
 }
 
 /**
- * Whether a shell command writes a board file of the vault: it redirects
- * into one, or a writing command names one. A read that names a board file
+ * Whether a shell command writes a document file of the vault: it redirects
+ * into one, or a writing command names one. A read that names a document file
  * — `sed -n`, `jq`, `python -m json.tool ... >/dev/null`, `2>&1` — is a read,
  * whatever else is on the line. A relative path is read from where the
  * script's `cd`s have moved it by then, starting in the checkout.
  * @param command The recorded command, possibly wrapped by the shell.
  * @param vault The run's vault.
- * @returns True when the command changes a board file.
+ * @returns True when the command changes a document file.
  */
-function mutatesBoardFile(command: string, vault: string): boolean {
+function mutatesVaultFile(command: string, vault: string): boolean {
 	const script = unwrapped(command);
 	let from = checkoutOf(vault);
 	for (const simple of simpleCommands(script)) {
 		const moved = movedTo(simple, from);
 		if (moved !== undefined) from = moved;
-		else if (writesBoardFile(simple, vault, from)) return true;
+		else if (writesVaultFile(simple, vault, from)) return true;
 	}
-	return opensBoardFileForWriting(script, vault);
+	return opensVaultFileForWriting(script, vault);
 }
 
 /**
@@ -252,27 +255,27 @@ function movedTo(simple: string, from: string): string | undefined {
 }
 
 /**
- * Whether one simple command redirects into a board file or names one as what it writes.
+ * Whether one simple command redirects into a document file or names one as what it writes.
  * @param simple The simple command.
  * @param vault The run's vault.
  * @param from Where a relative path starts.
- * @returns True when it writes a board file.
+ * @returns True when it writes a document file.
  */
-function writesBoardFile(simple: string, vault: string, from: string): boolean {
+function writesVaultFile(simple: string, vault: string, from: string): boolean {
 	return (
-		redirectTargets(simple).some((file) => isBoardFile(unquoted(file), vault, from)) ||
+		redirectTargets(simple).some((file) => isVaultFile(unquoted(file), vault, from)) ||
 		writesNamedFile(simple, vault, from)
 	);
 }
 
 /**
  * Whether a script opens a file for writing, however it is spelled, and names
- * a board file somewhere: a heredoc handed to python or node is one script.
+ * a document file somewhere: a heredoc handed to python or node is one script.
  * @param script The unwrapped script.
  * @param vault The run's vault.
  * @returns True when it does.
  */
-function opensBoardFileForWriting(script: string, vault: string): boolean {
+function opensVaultFileForWriting(script: string, vault: string): boolean {
 	return (
 		namesVault(script, vault) &&
 		/(?:\.(?:semantic|module|flows|proposal|walkthrough)\.json|model\.json|migration\.json)/u.test(
@@ -305,34 +308,36 @@ function wordsOf(simple: string): string[] {
 }
 
 /**
- * Whether one simple command is a write to a board file it names: a file
+ * Whether one simple command is a write to a document file it names: a file
  * command whose target is one, or a copy or move that lands on one.
  * @param simple The simple command.
  * @param vault The run's vault.
  * @param from Where a relative path starts.
- * @returns True for a writer whose target is a board file.
+ * @returns True for a writer whose target is a document file.
  */
 function writesNamedFile(simple: string, vault: string, from: string): boolean {
 	const words = wordsOf(simple);
-	if (!words.some((word) => isBoardFile(word, vault, from))) return false;
+	if (!words.some((word) => isVaultFile(word, vault, from))) return false;
 	const verb = words[0] ?? "";
 	if (/^(?:rm|unlink|truncate|touch|tee|rmdir)$/u.test(verb)) return true;
-	return /^(?:cp|mv)$/u.test(verb) && isBoardFile(words.at(-1) ?? "", vault, from);
+	return /^(?:cp|mv)$/u.test(verb) && isVaultFile(words.at(-1) ?? "", vault, from);
 }
 
 /**
- * Whether no board moved.
+ * Whether no document moved.
  * @param context The context.
  * @returns The verdict.
  */
 const noWrites: Guardrail = (context) => {
-	const moved = [...new Set([...context.boards.keys(), ...context.snapshot.keys()])].filter(
+	const moved = [...new Set([...context.documents.keys(), ...context.snapshot.keys()])].filter(
 		(name) =>
-			evidenceRevision(context.boards.get(name)) !== evidenceRevision(context.snapshot.get(name)),
+			evidenceRevision(context.documents.get(name)) !==
+			evidenceRevision(context.snapshot.get(name)),
 	);
 	return {
 		passed: moved.length === 0,
-		detail: moved.length === 0 ? "no board moved" : `moved, added or removed: ${moved.join(", ")}`,
+		detail:
+			moved.length === 0 ? "no document moved" : `moved, added or removed: ${moved.join(", ")}`,
 	};
 };
 
@@ -362,4 +367,4 @@ function evaluateGuardrails(names: readonly string[], context: GuardrailContext)
 	});
 }
 
-export { countDirectBoardWrites, evaluateGuardrails, type GuardrailContext };
+export { countDirectVaultWrites, evaluateGuardrails };

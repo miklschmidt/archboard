@@ -185,6 +185,5 @@ export {
 	browserFrameScheduler,
 	createVoiceOutputLevelSource,
 	type VoiceOutputFrameScheduler,
-	type VoiceOutputLevelListener,
 	type VoiceOutputLevelSource,
 };

@@ -19,7 +19,7 @@ const WAIT = { timeoutMs: 10_000 } as const;
 
 async function cameraOf(browser: AgentBrowserSession): Promise<string> {
 	return browser.eval<string>(
-		`document.querySelector('[data-slot="semantic-board-surface"]').style.transform`,
+		`document.querySelector('[data-slot="canvas-surface"]').style.transform`,
 	);
 }
 
@@ -71,7 +71,7 @@ test("one surface outlives each reading, and Back returns the camera of that rea
 		WAIT,
 	);
 	await browser.eval(
-		`window.held = ["pane-header", "model-reading", "model-diagram", "semantic-board-surface"].map((slot) => document.querySelector('[data-slot="' + slot + '"]')); true`,
+		`window.held = ["pane-header", "model-reading", "model-diagram", "canvas-surface"].map((slot) => document.querySelector('[data-slot="' + slot + '"]')); true`,
 	);
 	await openModule(browser, "Shop#Gateway");
 	const fitted = await cameraOf(browser);

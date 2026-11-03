@@ -3,13 +3,13 @@
   "name": "Picture transition",
   "kind": "function",
   "responsibility": "Carries one picture into the next: kept parts fly to their new places, departed ones fade, and the traffic's clock carries over; a picture a flight arrived at is put up as it is",
-  "description": "It writes the picture into the surface itself, once per picture, and runs the traffic of each picture, ghost and borrowed group as it puts them up. Flights read the time and their frames from the frame clock, and the picture clock its traffic runs on is read and set through it, so a replay seeks every one of them to the frame's time. The picture of a board that a flight into a card arrived at is put up as it is, with no entrance. Continuing cards carry their one shared chip and moving words; content comparison ignores the per-picture placement properties, so a moved card keeps its shared content (picture-pairing.ts).",
+  "description": "It writes the picture into the surface itself, once per picture, and runs the traffic of each picture, ghost and borrowed group as it puts them up. Flights read the time and their frames from the frame clock, and the picture clock its traffic runs on is read and set through it, so a replay seeks every one of them to the frame's time. The picture of a model that a flight into a card arrived at is put up as it is, with no entrance. Continuing cards carry their one shared chip and moving words; content comparison ignores the per-picture placement properties, so a moved card keeps its shared content (picture-pairing.ts).",
   "groups": [
     "drawing"
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts"
+    "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
@@ -22,7 +22,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
         "symbol": "frameClock"
       },
       "id": "vKEsyHFk/UOXNWLhR#xi1UCkyt",
@@ -35,7 +35,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
         "symbol": "stopTraffic"
       },
       "id": "vKEsyHFk/UOXNWLhR#iVizf8Iu",
@@ -48,7 +48,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
         "symbol": "ghostPicture"
       },
       "id": "vKEsyHFk/UOXNWLhR#AmxCEbK0",

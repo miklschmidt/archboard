@@ -142,4 +142,4 @@ function upsertLiveItem(
 	ops.publishTranscript(session);
 }
 
-export { type LiveRealtimeItem, type LiveItemIdentityMode, liveItemId, upsertLiveItem };
+export { liveItemId, upsertLiveItem };

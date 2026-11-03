@@ -368,8 +368,4 @@ function createDefaultWorkbenchHost(
 		onFatal: fatal,
 	};
 }
-export {
-	createDefaultWorkbenchHost,
-	type DefaultWorkbenchHostInput,
-	type DefaultWorkbenchHostSelectors,
-};
+export { createDefaultWorkbenchHost, type DefaultWorkbenchHostInput };

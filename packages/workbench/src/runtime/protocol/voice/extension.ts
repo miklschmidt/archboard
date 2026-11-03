@@ -48,8 +48,6 @@ export type EpochStageInput = Parameters<CodexEpochStore["stageEpoch"]>[0];
 export type EpochOperationRecord = ReturnType<CodexEpochStore["startEpoch"]>;
 /** The thread and turn evidence that confirms an operation's outcome. */
 export type EpochConfirmation = NonNullable<Parameters<CodexEpochStore["commitEpoch"]>[1]>;
-/** What asking whether an operation may still execute names. */
-export type EpochExecutionRequest = Parameters<CodexEpochStore["assertCurrent"]>[0];
 /** The proof that an operation belongs to the current epoch. */
 export type EpochExecutionProof = ReturnType<CodexEpochStore["assertCurrent"]>;
 /** The store's whole durable state. */
@@ -58,8 +56,6 @@ export type EpochSnapshot = ReturnType<CodexEpochStore["snapshot"]>;
 export type ThreadLinkTarget = Parameters<CodexThreadLinkPort["classify"]>[0];
 /** What the core concluded about a thread: executable, inspect-only or unbound, and why. */
 export type ThreadLinkClassification = Awaited<ReturnType<CodexThreadLinkPort["classify"]>>;
-/** The evidence a thread link's classification rests on. */
-export type ThreadLinkEpochProof = EpochOperationRecord | EpochExecutionProof;
 /** The wait graph that refuses a wait cycle between workhorse threads. */
 export type CodexWaitGraph = ReturnType<typeof createCodexWaitGraph>;
 /** The tool call that owns a set of wait edges. */

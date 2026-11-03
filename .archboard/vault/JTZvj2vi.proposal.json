@@ -1,11 +1,14 @@
 {
   "id": "JTZvj2vi",
-  "name": "Vello paints the board canvas and motion lives in the painter",
+  "name": "Vello paints the canvas and motion lives in the painter",
+  "formerNames": [
+    "Vello paints the board canvas and motion lives in the painter"
+  ],
   "summary": "A page paints a picture on a canvas with Vello, on WebGPU or the CPU, and the painter's stage holds all picture motion in Rust, so the DOM motion modules go and the SVG stays as the semantic layer and the export.",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
-      "path": "docs/adr/0071-vello-paints-the-board-canvas-and-motion-lives-in-the-painter.md"
+      "path": "docs/adr/0071-vello-paints-the-canvas-and-motion-lives-in-the-painter.md"
     },
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -16,8 +19,8 @@
   "lifecycle": "draft",
   "createdAt": "2026-11-01T08:52:35.463Z",
   "predecessor": "oyXXnyCV",
-  "predecessorRevision": "6b4a2a7e4127c8131b0d32d39ac186415a7f22daa00f05d44d0946d3ba4f9a43",
-  "baseline": "149fb2e15f8d739470e6e0c9e76c971ffb336616",
+  "predecessorRevision": "11c8a0679d959b4b53fccaa844d4da7e94529aeb449e41bd78ce35a914294592",
+  "baseline": "eefb07bc122a71bc2d3ad3814c5f86a7e8c0ec3a",
   "changes": [
     {
       "type": "remove",
@@ -163,7 +166,7 @@
         "name": "Picture motion",
         "kind": "function",
         "responsibility": "Turns one scene into the next as a pure function of a progress value: it pairs groups by subject id and mixes their typed geometry, opacity and transforms",
-        "description": "The entrance, the departure, the far swap and the flight into a card follow the same rule. Nothing here draws, reads a clock or keeps state between frames, so the same inputs give the same items. The durations come from @archboard/timing through the page. flight.rs holds what moves a whole picture: a flight from the last picture, a part-by-part entrance, a leaving picture, the ghost of one that left, and the board inside a card that the camera flies into.",
+        "description": "The entrance, the departure, the far swap and the flight into a card follow the same rule. Nothing here draws, reads a clock or keeps state between frames, so the same inputs give the same items. The durations come from @archboard/timing through the page. flight.rs holds what moves a whole picture: a flight from the last picture, a part-by-part entrance, a leaving picture, the ghost of one that left, and the model inside a card that the camera flies into.",
         "groups": [
           "drawing"
         ],
@@ -324,6 +327,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#U2DjfZHj",
+      "field": "order",
+      "value": 1009080
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#rouptSyK",
       "field": "description",
       "value": "A replay swaps it once, before it mounts anything. Its stepped clock runs frame callbacks and timers at their due times, and takes over the browser's own requestAnimationFrame, so a library's frames run on it too. It pauses and stands every Web Animation and CSS transition at the frame's time, and records a violation for an animation on a timeline it cannot stand. The picture stage draws its frames from it. A lint rule keeps the viewer and the subtitles on it."
@@ -345,7 +354,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-glide.ts",
+          "path": "apps/web/src/ui/hooks/canvas/use-camera-glide.ts",
           "symbol": "stageOf"
         },
         "id": "vKEsyHFk#OJfwSbjr",
@@ -369,7 +378,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
       "field": "description",
-      "value": "It writes the picture into the surface once per picture: the SVG that stays in the page under the canvas as the hidden semantic layer (picture-transition.ts). It tells the stage how the picture arrives, cut to, carried on from the last or brought in part by part, and how far the cards the two pictures share have moved; the painter does the motion. Flights read the time and their frames from the frame clock. The picture of a board that a flight into a card arrived at is put up as it is, with no entrance."
+      "value": "It writes the picture into the surface once per picture: the SVG that stays in the page under the canvas as the hidden semantic layer (picture-transition.ts). It tells the stage how the picture arrives, cut to, carried on from the last or brought in part by part, and how far the cards the two pictures share have moved; the painter does the motion. Flights read the time and their frames from the frame clock. The picture of a model that a flight into a card arrived at is put up as it is, with no entrance."
     },
     {
       "type": "assign",
@@ -383,7 +392,7 @@
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
         "symbol": "stageOf"
       }
     },
@@ -411,7 +420,7 @@
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
         "symbol": "Departure"
       }
     },
@@ -419,7 +428,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/SMjRfwN3#Kek84WN9",
       "field": "description",
-      "value": "It mounts the recording page's stage, viewer and subtitles, and no workbench, pane session or socket, so no Codex is involved. Loading a talk plays the board's entrance through first, uncaptured, so frame 0 shows the board at rest. A frame is ready once the fonts are loaded, no read is in flight, no painter is still starting, the step's picture is drawn and the page has not changed for two turns of its event loop, within RECORDING_FRAME_READY_MS. The stepped clock runs even the frames a library asks of the browser, and stands every animation at the frame's time. An animation on another timeline, or a read of another board, fails the render and names the frame.\n\nA canonical talk draws its captured model and narrative through the shared walkthrough presentation. It reads no mutable vault and needs no source repository for replay."
+      "value": "It mounts the recording page's stage, viewer and subtitles, and no workbench, pane session or socket, so no Codex is involved. Loading a talk plays the legacy board's entrance through first, uncaptured, so frame 0 shows the legacy board at rest. A frame is ready once the fonts are loaded, no read is in flight, no painter is still starting, the step's picture is drawn and the page has not changed for two turns of its event loop, within RECORDING_FRAME_READY_MS. The stepped clock runs even the frames a library asks of the browser, and stands every animation at the frame's time. An animation on another timeline, or a read of another legacy board, fails the render and names the frame.\n\nA canonical talk draws its captured model and narrative through the shared walkthrough presentation. It reads no mutable vault and needs no source repository for replay."
     },
     {
       "type": "add",
@@ -461,13 +470,13 @@
         "name": "Picture stage",
         "kind": "function",
         "responsibility": "Owns the canvas of one surface and its painter, hands the painter what the page says, and asks the frame clock for frames only while something moves",
-        "description": "Until the painter's first frame the surface shows the SVG with its ink, and a painter that cannot start leaves it so: a correct board. The SVG stays in the page under the canvas as the hidden semantic layer that search, copy, screen readers and the marks read, written by picture-transition.ts. picture-ink.ts keeps a first picture's ink back for a moment so that the painter brings the picture in. React gives the stage a host, and the stage makes each canvas inside it, so a painter that fails is released and a replacement gets a fresh canvas. picture-ink.ts then gives the SVG back the glyphs and definitions that a painted surface dropped, so complete ink shows while the replacement starts. The surface says which painter draws in data-painter, and why the GPU does not in data-painter-reason.",
+        "description": "Until the painter's first frame the surface shows the SVG with its ink, and a painter that cannot start leaves it so: a correct picture. The SVG stays in the page under the canvas as the hidden semantic layer that search, copy, screen readers and the marks read, written by picture-transition.ts. picture-ink.ts keeps a first picture's ink back for a moment so that the painter brings the picture in. React gives the stage a host, and the stage makes each canvas inside it, so a painter that fails is released and a replacement gets a fresh canvas. picture-ink.ts then gives the SVG back the glyphs and definitions that a painted surface dropped, so complete ink shows while the replacement starts. The surface says which painter draws in data-painter, and why the GPU does not in data-painter-reason.",
         "groups": [
           "drawing"
         ],
         "binding": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-stage.ts"
+          "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts"
         },
         "schemaVersion": 1,
         "id": "vKEsyHFk#9FxduWoO"
@@ -491,7 +500,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-stage.ts",
+          "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
           "symbol": "startPainter"
         },
         "id": "vKEsyHFk#NWxlWRCj",
@@ -516,7 +525,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-stage.ts",
+          "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
           "symbol": "Painter"
         },
         "id": "vKEsyHFk#kIIEgwrt",
@@ -541,7 +550,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-stage.ts",
+          "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
           "symbol": "frameClock"
         },
         "id": "vKEsyHFk#uiCl86wq",
@@ -566,7 +575,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
+          "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
           "symbol": "pickedTarget"
         },
         "id": "vKEsyHFk#CokUWpsM",
@@ -584,7 +593,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/SMjRfwN3#jQpIqcDx",
       "field": "description",
-      "value": "Keeps the talk with the board, the vault check and, when record was given --against, the variant every picture of it is read against, so a replay draws the same comparison. It starts Chromium with --disable-gpu, so the page paints on the CPU painter."
+      "value": "Keeps the talk with the model, the vault check and, when record was given --against, the variant every picture of it is read against, so a replay draws the same comparison. It starts Chromium with --disable-gpu, so the page paints on the CPU painter."
     },
     {
       "type": "assign",
@@ -604,7 +613,7 @@
       "field": "binding",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-sweep.ts"
+        "path": "apps/web/src/ui/hooks/canvas/use-sweep.ts"
       }
     },
     {
@@ -618,7 +627,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-sweep.ts",
+          "path": "apps/web/src/ui/hooks/canvas/use-sweep.ts",
           "symbol": "stageOf"
         },
         "id": "vKEsyHFk#oNKZu0fB",
@@ -650,7 +659,7 @@
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
         "symbol": "stageIn"
       }
     },
@@ -661,11 +670,11 @@
       "value": {
         "order": 990100,
         "kind": "call",
-        "label": "the board inside the card, and the flight's fades",
+        "label": "the model inside the card, and the flight's fades",
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+          "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
           "symbol": "stageOf"
         },
         "id": "vKEsyHFk#fDFYdO1w",
@@ -690,7 +699,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/code-marks.ts",
+          "path": "apps/web/src/ui/clients/canvas/subjects/code-marks.ts",
           "symbol": "stageOf"
         },
         "id": "vKEsyHFk#KTwHgUQG",
@@ -714,7 +723,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#UCjVcfWj",
       "field": "description",
-      "value": "The stage draws the board inside the card and fades the two pictures across the flight; this finds the viewport, the surface and its slots."
+      "value": "The stage draws the model inside the card and fades the two pictures across the flight; this finds the viewport, the surface and its slots."
     },
     {
       "type": "add",
@@ -731,7 +740,7 @@
         ],
         "binding": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-pick.ts"
+          "path": "apps/web/src/ui/clients/canvas/picture/picture-pick.ts"
         },
         "schemaVersion": 1,
         "id": "vKEsyHFk#IYU05cQX"
@@ -755,7 +764,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-pick.ts",
+          "path": "apps/web/src/ui/clients/canvas/picture/picture-pick.ts",
           "symbol": "stageOf"
         },
         "id": "vKEsyHFk#uDNOaatU",
@@ -785,7 +794,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#oF5Ib5A4",
       "field": "description",
-      "value": "The way, the card's box in the leaving picture when the reader went into one, and the board drawn next. The stage sends the picture on its way out: it zooms into an opened card, draws away going back, else fades."
+      "value": "The way, the card's box in the leaving picture when the reader went into one, and the model drawn next. The stage sends the picture on its way out: it zooms into an opened card, draws away going back, else fades."
     },
     {
       "type": "add",
@@ -880,7 +889,7 @@
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/CameraSurface.tsx",
+        "path": "apps/web/src/ui/components/canvas/CameraSurface.tsx",
         "symbol": "attachStage"
       }
     },
@@ -901,7 +910,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+          "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
           "symbol": "useSweep"
         },
         "id": "vKEsyHFk#LOCiLRdW",
@@ -940,7 +949,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#qbLnF7rB",
       "field": "label",
-      "value": "draw the board inside the card, and the fades"
+      "value": "draw the model inside the card, and the fades"
     },
     {
       "type": "assign",
@@ -948,7 +957,7 @@
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
         "symbol": "dive"
       }
     },
@@ -994,7 +1003,7 @@
         "kind": "sync",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+          "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
           "symbol": "useSweep"
         }
       }
@@ -1025,7 +1034,7 @@
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/CameraSurface.tsx",
+        "path": "apps/web/src/ui/components/canvas/CameraSurface.tsx",
         "symbol": "attachStage"
       }
     },
@@ -1033,7 +1042,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#8y13ofdf",
       "field": "summary",
-      "value": "Drives the viewer from a stepped clock with boards read from the talk. A frame fails if anything moved outside the clock or read another board, so the video shows what was recorded. A frame also waits for the painter to start, and a recording page paints on the CPU."
+      "value": "Drives the viewer from a stepped clock with models read from the talk. A frame fails if anything moved outside the clock or read another model, so the video shows what was recorded. A frame also waits for the painter to start, and a recording page paints on the CPU."
     },
     {
       "type": "assign",
@@ -1116,7 +1125,7 @@
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
         "symbol": "stageOf"
       }
     },
@@ -1144,7 +1153,7 @@
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-stage.ts",
+        "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
         "symbol": "enter"
       }
     },
@@ -1166,7 +1175,7 @@
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-stage.ts",
+        "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
         "symbol": "frameClock"
       }
     },

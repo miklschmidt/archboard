@@ -6,9 +6,9 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { SemanticBoardSchema } from "@archboard/board/document";
+import { LegacyBoardSchema } from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import {
 	anonymousRunId,
 	bundleForGrader,
@@ -35,7 +35,7 @@ const usage = (input: number, output: number) => ({
 	total: input + output,
 });
 
-const BOARD = SemanticBoardSchema.parse(
+const DOCUMENT = LegacyBoardSchema.parse(
 	withFixtureOrders({
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",
@@ -73,13 +73,13 @@ const SCENARIO: Scenario = {
 	sources: ["src/flask/app.py"],
 	prompt: "Create it.",
 	expectedFeatures: [
-		{ feature: "board.create", requirement: "one board", skill: ["SKILL.md#essentials"] },
+		{ feature: "board.create", requirement: "one document", skill: ["SKILL.md#essentials"] },
 		{ feature: "render.svg", requirement: "drawn", skill: ["SKILL.md#essentials"] },
 	],
 	outcomes: [{ check: "check-clean" }],
 	guardrails: [],
 	guidance: [],
-	captures: [{ label: "board", board: "Flask" }],
+	captures: [{ label: "document", board: "Flask" }],
 };
 
 const RUN: CompletedRun = {
@@ -89,7 +89,7 @@ const RUN: CompletedRun = {
 	status: "completed",
 	exitCode: 0,
 	durationMs: 1000,
-	finalMessage: "I read /run/home/.agents/skills/archboard/SKILL.md and wrote the board.",
+	finalMessage: "I read /run/home/.agents/skills/archboard/SKILL.md and wrote the document.",
 	usage: { input: 10, cached: 4, cacheWrite: null, output: 5, reasoning: null, total: 15 },
 	fileChanges: [],
 	commands: [
@@ -104,21 +104,21 @@ const RUN: CompletedRun = {
 			exposure: null,
 		},
 	],
-	boards: new Map([["Flask", BOARD]]),
+	documents: new Map([["Flask", DOCUMENT]]),
 	snapshot: new Map(),
 	policy: DEFAULT_SEMANTIC_POLICY,
 	inspections: [
 		{
-			board: "Flask",
+			document: "Flask",
 			group: "request",
 			result: { members: [{ name: "App" }], internalEdges: [], boundaryEdges: [], neighbors: [] },
 			detail: "inspected",
 		},
 	],
-	renders: [{ board: "Flask", file: "/run/renders/render-0.svg" }],
+	renders: [{ document: "Flask", file: "/run/renders/render-0.svg" }],
 	captures: [
 		{
-			label: "board",
+			label: "document",
 			board: "Flask",
 			ok: true,
 			detail: "captured 900×400 of version 2 to capture-0-board.png",
@@ -187,7 +187,7 @@ describe("blinding", () => {
 		expect(JSON.stringify(bundle.captures)).not.toContain("candidate");
 		expect(bundle.captures).toHaveLength(2);
 		expect(bundle.captures[0]).toMatchObject({
-			label: "board",
+			label: "document",
 			ok: true,
 			file: "captures/capture-0-board.png",
 			provenance: { version: 2, width: 900, height: 400, svgSha256: "ab".repeat(32) },
@@ -206,7 +206,7 @@ describe("blinding", () => {
 		const bundle = bundleForGrader(
 			{
 				...RUN,
-				renders: [{ board: "Flask", file: "/batch/runs/candidate/S00/1/renders/render-0.svg" }],
+				renders: [{ document: "Flask", file: "/batch/runs/candidate/S00/1/renders/render-0.svg" }],
 			},
 			"run-0123456789",
 		);
@@ -224,7 +224,7 @@ describe("the grader contract", () => {
 					feature: "board.create",
 					verdict: "pass",
 					evidence: "boards/Flask.json",
-					reason: "one board",
+					reason: "one document",
 					finding: null,
 				},
 				{
@@ -251,9 +251,9 @@ describe("the grader contract", () => {
 			summary: "fine",
 			concerns: [],
 			visual: {
-				inspectedCaptures: ["board"],
+				inspectedCaptures: ["document"],
 				verdict: "pass",
-				observations: [{ capture: "board", observation: "labels readable, nothing clipped" }],
+				observations: [{ capture: "document", observation: "labels readable, nothing clipped" }],
 			},
 		};
 		expect(parseGraderOutput(JSON.stringify({ runs: [verdict] })).runs[0]?.run).toBe(
@@ -288,7 +288,7 @@ describe("the grader contract", () => {
 			unmentioned: [],
 			invented: [],
 		});
-		// A name the scenario never declared is the grader's own, not a gap in the board.
+		// A name the scenario never declared is the grader's own, not a gap in the document.
 		const off = { ...verdict, features: [{ ...verdict.features[0]!, feature: "x.y" }] };
 		expect(checklistGaps(SCENARIO.expectedFeatures, off)).toEqual({
 			waived: [],

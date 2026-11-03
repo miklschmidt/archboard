@@ -178,7 +178,7 @@ fn a_step_stays_where_either_slide_leaves_a_run_too_short_for_its_two_bends() {
 
 #[test]
 fn a_step_stays_where_the_slide_leaves_the_last_run_too_short_for_its_bend_and_arrowhead() {
-    // Reduced from Board viewer's TASK-365 comparison under blocks (TASK-403):
+    // Reduced from Picture viewer's TASK-365 comparison under blocks (TASK-403):
     // the slide left 16 units, a bend of 8 and 8 of straight, under a head
     // whose ink reaches 8.8 back.
     let rising = line(&[
@@ -356,7 +356,7 @@ fn a_slide_carries_a_trunk_s_line_a_little_further_to_take_its_step_out() {
 
 #[test]
 fn a_small_offset_between_joined_runs_never_stretches_into_a_diagonal() {
-    // Reduced from Board persistence: a quarter-point offset at a block port
+    // Reduced from Picture persistence: a quarter-point offset at a block port
     // looked upright when projected onto an axis. Sliding its lower run made
     // the run above diagonal, which that projection hid from clearance tests.
     let points = line(&[

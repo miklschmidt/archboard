@@ -38,7 +38,7 @@ import {
 	type Checkout,
 	type ReadCheckout,
 } from "#runtime/operations/code-check/checkouts.ts";
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 import type { AnchorClaim, Claim } from "#runtime/operations/code-check/claims/claims.ts";
 import type { Resolve } from "#runtime/operations/code-check/resolution.ts";
 import { createSourceFacts, type FactsPass } from "#runtime/services/code-facts/reader.ts";
@@ -136,20 +136,20 @@ function anchorPinOf(
 }
 
 /**
- * A board as the check reads it: in a draft, every bound part of a repository
+ * A document as the check reads it: in a draft, every bound part of a repository
  * at the one ref the draft is read against there (`nodesAtOwnRef`), so that in
  * a stack the draft's own branch, which holds the layers below, is the code of
  * all its parts.
- * @param read The board, at the variant the check reads.
+ * @param read The document, at the variant the check reads.
  * @param checkouts Each repository's checkout.
  * @param signal Cancels the reading.
- * @returns The same board with the variant's parts as they are read.
+ * @returns The same document with the variant's parts as they are read.
  */
 async function atOwnRef(
-	read: BoardToCheck,
+	read: StateToCheck,
 	checkouts: ReadonlyMap<string, Checkout>,
 	signal: AbortSignal,
-): Promise<BoardToCheck> {
+): Promise<StateToCheck> {
 	/**
 	 * The checkout this machine reads for a repository.
 	 * @param repo The repository.
@@ -159,7 +159,7 @@ async function atOwnRef(
 		const checkout = checkouts.get(repo);
 		return checkout?.status === "read" ? checkout.root : undefined;
 	};
-	const nodes = await nodesAtOwnRef(read.board, read.variant, rootOf, { signal });
+	const nodes = await nodesAtOwnRef(read.document, read.variant, rootOf, { signal });
 	return { ...read, variant: { ...read.variant, content: { ...read.variant.content, nodes } } };
 }
 

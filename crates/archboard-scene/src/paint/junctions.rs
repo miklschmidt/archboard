@@ -479,7 +479,7 @@ mod tests {
         assert_eq!(joins[0].point, Point { x: 0.0, y: 192.0 });
     }
 
-    // Board rasterizer and Command dispatch: three branches leaving one trunk
+    // Picture rasterizer and Command dispatch: three branches leaving one trunk
     // six units apart drew three overlapping dots, a lumpy blob.
     #[test]
     fn joins_a_few_units_apart_along_one_lane_are_marked_once_from_the_first_to_the_last() {

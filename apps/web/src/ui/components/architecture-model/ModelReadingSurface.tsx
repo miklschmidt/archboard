@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { ModelAbout, scopeHead } from "#ui/components/architecture-model/ModelAbout.tsx";
 import type { AboutPlace } from "#ui/components/architecture-model/ModelAboutFrame.tsx";
@@ -30,7 +30,7 @@ import {
 	ModelComparisonNotice,
 	ModelStateStanding,
 } from "#ui/components/architecture-model/ModelStateDetails.tsx";
-import { PeekProvider } from "#ui/components/semantic-board-canvas/Peek.tsx";
+import { PeekProvider } from "#ui/components/canvas/Peek.tsx";
 import { useAboutPlace } from "#ui/hooks/architecture-model/use-about-place.ts";
 import { useHistoryOnSelection } from "#ui/hooks/architecture-model/use-history-on-selection.ts";
 import { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";

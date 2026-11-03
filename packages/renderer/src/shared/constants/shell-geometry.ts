@@ -1,5 +1,5 @@
 // The desktop shell's fixed geometry, in one place, and the page shape the
-// renderer lays a board out for (ADR 0028, ADR 0039, ADR 0043).
+// renderer lays a document out for (ADR 0028, ADR 0039, ADR 0043).
 //
 // Two kinds of number live here. The shell's are measured facts: the shell is
 // desktop-only at one viewport, and a lone pane's picture is the viewport less
@@ -13,7 +13,7 @@
 // `LAYOUT_ASPECT`, which the layouts were chosen for. The reference pane takes
 // its width from the shell, so "fit 0.65" means the same thing in a test, in a
 // note and on a screen, and its height from that aspect, so a row of the shell
-// that changes height never lays every board out again (ADR 0043).
+// that changes height never lays every document out again (ADR 0043).
 //
 // Shared by the browser, the renderer's tests and a script, so nothing here
 // reads `process` or a file.
@@ -49,7 +49,7 @@ const HANDLE_WIDTH = 1;
  */
 const CHROME_HEIGHT = 40;
 
-/** The sidebar beside a semantic diagram, holding the board's key and the selection. */
+/** The sidebar beside a semantic diagram, holding the document's key and the selection. */
 const SIDEBAR_WIDTH = 280;
 
 /**
@@ -73,10 +73,10 @@ const STAGE: Size = {
 };
 
 /**
- * The page shape the renderer lays a board out for: width over height. A
+ * The page shape the renderer lays a document out for: width over height. A
  * tuned ratio the layouts were chosen for, not a measure of the shell: a
  * plain 1.4, close to the 1272 by 899 pane the layouts were tuned against
- * before the shell lost two rows (ADR 0043). Changing it lays boards out
+ * before the shell lost two rows (ADR 0043). Changing it lays documents out
  * again: which columns loose cards take, where a wide rank wraps, and which
  * fold or packing fits best (ADR 0039).
  */
@@ -120,7 +120,6 @@ export {
 	AGENT_PANEL_WIDTH,
 	CHROME_HEIGHT,
 	FIT_MARGIN,
-	LAYOUT_ASPECT,
 	NAVIGATOR_WIDTH,
 	REFERENCE_PANE,
 	SIDEBAR_WIDTH,

@@ -38,7 +38,7 @@ interface ShellViewInputs {
 
 /**
  * One repository as the shell lists it.
- * @param entry The repository and its boards.
+ * @param entry The repository and its models.
  * @param activity What agents are doing, by vault.
  * @returns The shell's repository.
  */
@@ -97,7 +97,6 @@ function shellPanes(inputs: ShellViewInputs): ShellPane[] {
 		return {
 			status: record.status,
 			stage: inputs.panes[entry.paneId] ?? null,
-			holder: record.holder,
 		};
 	});
 }
@@ -112,10 +111,10 @@ function assembleShellView(inputs: ShellViewInputs): ShellView {
 	return {
 		theme: inputs.theme,
 		repositories: shellRepositories(inputs),
-		boardsError: inputs.catalog.error,
-		boardsLoading: inputs.catalog.loading,
+		modelsError: inputs.catalog.error,
+		modelsLoading: inputs.catalog.loading,
 		choosing: inputs.choosing === true,
-		selectedBoardKey: active.status.boardKey,
+		selectedPaneKey: active.status.paneKey,
 		panes: shellPanes(inputs),
 		activePaneId: inputs.list.activePaneId,
 		presentation: inputs.presentation,
@@ -123,4 +122,4 @@ function assembleShellView(inputs: ShellViewInputs): ShellView {
 	};
 }
 
-export { assembleShellView, type ShellViewInputs };
+export { assembleShellView };

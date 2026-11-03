@@ -11,7 +11,7 @@
 use archboard_scene::geometry::{Rect, covering};
 use archboard_scene::js;
 
-use crate::board::MessageKind;
+use crate::content::MessageKind;
 use crate::sequence::design::{
     ACTIVATION_HALF_WIDTH, MESSAGE_LABEL_GAP, MESSAGE_LINE_STEP, NEST_INSET, PILL_HEIGHT,
     PILL_PADDING_X, SELF_LABEL_GAP, SELF_LOOP_CORNER, SELF_LOOP_EXTENT, SELF_LOOP_REACH,

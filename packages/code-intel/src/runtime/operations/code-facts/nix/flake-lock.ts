@@ -10,7 +10,7 @@
 // inputs of an input are its own dependencies, not the flake's, and are not
 // read. An input reaches code the check reads only where it is a relative path
 // inside the checkout: the resolver leads it to that flake's `flake.nix`. Any
-// other input reaches code outside the checkout, and no part of the board.
+// other input reaches code outside the checkout, and no part of the document.
 // A lock that does not parse holds no facts; the names written in it are kept.
 //
 // The same resolver leads an output that is built from another output of its

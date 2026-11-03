@@ -1,11 +1,11 @@
-import { ArchitectureMigrationRequestSchema } from "@archboard/board/model";
-import { migrateArchitectureModel } from "@archboard/board/store-write";
+import { ArchitectureMigrationRequestSchema } from "@archboard/model/contract";
+import { migrateArchitectureModel } from "@archboard/model/store-write";
 import { respond } from "#server/routes/architecture/model-response.ts";
 import type { Express, Response } from "express";
 import { z } from "zod";
-import { readLegacyInventory } from "@archboard/board/store-read";
-import { saveLegacyMappingPlan } from "@archboard/board/store-write";
-import { LegacyMappingWriteSchema, type LegacyInventoryRead } from "@archboard/board/migration";
+import { readLegacyInventory } from "@archboard/model/store-read";
+import { saveLegacyMappingPlan } from "@archboard/model/store-write";
+import { LegacyMappingWriteSchema, type LegacyInventoryRead } from "@archboard/model/migration";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";
 

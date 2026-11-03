@@ -522,6 +522,4 @@ export {
 	spokenApprovalLine,
 	type ApprovalCard,
 	type ApprovalDecisionOption,
-	type ApprovalDetail,
-	type ApprovalPhase,
 };

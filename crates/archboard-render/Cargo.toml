@@ -1,6 +1,6 @@
 [package]
 name = "archboard-render"
-description = "The renderer core's one call: a board's reading, the vault's policy and the render's choices in, the picture and its key out"
+description = "The renderer core's one call: a picture's reading, the vault's policy and the render's choices in, the picture and its key out"
 version = "0.0.0"
 edition.workspace = true
 license.workspace = true

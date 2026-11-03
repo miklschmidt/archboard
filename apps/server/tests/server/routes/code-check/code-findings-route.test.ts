@@ -1,8 +1,8 @@
 // A pane reads what the last code pass found and never starts one (ADR 0046,
 // TASK-367.24). Each pass that finishes leaves its findings in the server's
-// memory, beside the version of each board it read; `GET
+// memory, beside the version of each document it read; `GET
 // /api/vault/code-findings` answers from that memory alone. A later pass
-// replaces the readings of the boards it read and keeps the others, and a pass
+// replaces the readings of the documents it read and keeps the others, and a pass
 // the caller cancelled leaves the memory as it was.
 //
 // A stand-in pass counts how often it runs, so "a read starts no pass" is
@@ -54,22 +54,22 @@ async function listen(app: express.Express): Promise<string> {
 }
 
 /**
- * The answer of a pass over some boards at their current variant, `v1`, with
- * one warning on each board it names in `warned`.
- * @param boards The boards it read, each at version 3.
- * @param warned The boards it found something on.
+ * The answer of a pass over some documents at their current variant, `v1`, with
+ * one warning on each document it names in `warned`.
+ * @param states The documents it read, each at version 3.
+ * @param warned The documents it found something on.
  * @returns The answer.
  */
-function answerOver(boards: readonly string[], warned: readonly string[]): CodeCheckAnswer {
+function answerOver(states: readonly string[], warned: readonly string[]): CodeCheckAnswer {
 	return {
 		timings: [],
-		boards: boards.map((board) => ({ board, variant: "v1", version: 3 })),
-		findings: warned.map((board) => ({
+		states: states.map((model) => ({ model, variant: "v1", version: 3 })),
+		findings: warned.map((document) => ({
 			code: "ANCHOR_SYMBOL_MISSING",
 			severity: "warning",
-			file: `${board}.semantic.json`,
+			file: `${document}.semantic.json`,
 			path: "variants[0].content.edges[0].anchor",
-			board,
+			model: document,
 			variant: "v1",
 			subject: { kind: "edge", id: "e1", name: "A -> B" },
 			message: "The anchored file neither defines nor references writeBoard.",
@@ -119,13 +119,13 @@ function named(vault = ownVault): string {
  * What a pane reads.
  * @param base The server.
  * @param vault The vault the pane shows.
- * @returns The remembered readings, by board.
+ * @returns The remembered readings, by document.
  */
 async function readFindings(base: string, vault = ownVault): Promise<Map<string, number>> {
 	const reply = await fetch(`${base}/api/vault/code-findings?${named(vault)}`);
 	expect(reply.status).toBe(200);
 	const { readings } = RememberedFindingsSchema.parse(await reply.json());
-	return new Map(readings.map((reading) => [reading.board, reading.findings.length]));
+	return new Map(readings.map((reading) => [reading.model, reading.findings.length]));
 }
 
 test("a pass fills the memory, and reading it starts no pass", async () => {
@@ -137,11 +137,11 @@ test("a pass fills the memory, and reading it starts no pass", async () => {
 
 	const reply = await fetch(`${base}/api/vault/code-findings?${named()}`);
 	const { readings } = RememberedFindingsSchema.parse(await reply.json());
-	expect(readings.map(({ board, variant, version }) => ({ board, variant, version }))).toEqual([
-		{ board: "orders", variant: "v1", version: 3 },
-		{ board: "payments", variant: "v1", version: 3 },
+	expect(readings.map(({ model, variant, version }) => ({ model, variant, version }))).toEqual([
+		{ model: "orders", variant: "v1", version: 3 },
+		{ model: "payments", variant: "v1", version: 3 },
 	]);
-	expect(readings.find((reading) => reading.board === "orders")?.findings).toHaveLength(1);
+	expect(readings.find((reading) => reading.model === "orders")?.findings).toHaveLength(1);
 	await readFindings(base);
 	expect(passes()).toBe(1);
 });
@@ -170,7 +170,7 @@ test("a cancelled pass leaves the memory as it was", async () => {
 	expect((await readFindings(base)).size).toBe(0);
 });
 
-test("what a pass found in one vault is not shown for a board of the same name in another", async () => {
+test("what a pass found in one vault is not shown for a document of the same name in another", async () => {
 	const other = mkdtempSync(join(tmpdir(), "archboard-code-findings-other-"));
 	const otherVault = vaultIn(other);
 	try {
@@ -189,7 +189,7 @@ test("canonical findings keep the exact model revision and replace only the sele
 	const updatedRevision = { digest: "b".repeat(64), files: [] };
 	const answer: CodeCheckAnswer = {
 		timings: [],
-		boards: [],
+		states: [],
 		models: [{ model: "Shop", state: "Now", revision }],
 		findings: [
 			{

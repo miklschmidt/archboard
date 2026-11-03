@@ -82,7 +82,7 @@ const PRESENTED = `(() => {
 const presentedNow = (browser: AgentBrowserSession): Promise<Presented> =>
 	browser.eval<Presented>(PRESENTED);
 
-/** A board with a walkthrough of two steps, for the tests of the box a presented one has. */
+/** A model with a walkthrough of two steps, for the tests of the box a presented one has. */
 const TOUR = {
 	...SMALL_PIPELINE,
 	walkthroughs: [
@@ -145,7 +145,7 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 	await pollUntil(
 		() => modelDrawn(browser.eval.bind(browser)),
 		Boolean,
-		"the board to be drawn before a walkthrough is presented",
+		"the model to be drawn before a walkthrough is presented",
 		WAIT,
 	);
 	await browser.eval(WATCH);

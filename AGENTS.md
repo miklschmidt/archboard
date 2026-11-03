@@ -77,7 +77,7 @@ Where things are written down:
   `.walkthrough.json` files hold narrative beats and complete reading instructions.
   Completed states and decisions live in the independent Git archive.
   A source merge, checkpoint, or approval never adopts a proposal.
-- `packages/board/src/runtime` owns coherent reads and durable writes through its public interface.
+- `packages/model/src/runtime` owns coherent reads and durable writes through its public interface.
   Submit one complete intent with its operation identity, writer, doing line, target, and full expected revision.
   The shared installer prepares signed history, journals the operation, and installs affected files through durable atomic writes.
   Only durable completion announces a change to readers.
@@ -90,8 +90,8 @@ Where things are written down:
   Retry a lost response with the exact original operation identity and request.
   Use a new identity for a changed intent.
 - Keep continuing subject identities unchanged.
-  `packages/board/src/shared/rules/ids.ts` is the only allocator of short local IDs.
-  Qualified namespaces preserve imported provenance, not board ownership.
+  `packages/model/src/shared/rules/ids.ts` is the only allocator of short local IDs.
+  Qualified namespaces preserve imported provenance, not ownership.
   Names, paths, and matching bindings never establish shared identity.
 - Retain exact checkpoints before sharing history or recording walkthroughs.
   Keep configured Git signing enabled for source commits and archive operations.

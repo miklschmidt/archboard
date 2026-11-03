@@ -9,9 +9,9 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import type { ArchitectureModelRead } from "@archboard/board/model";
-import { readLegacyInventory } from "@archboard/board/store-read";
-import { saveLegacyMappingPlan } from "@archboard/board/store-write";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
+import { readLegacyInventory } from "@archboard/model/store-read";
+import { saveLegacyMappingPlan } from "@archboard/model/store-write";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { vaultIn } from "../support/test-vault.ts";

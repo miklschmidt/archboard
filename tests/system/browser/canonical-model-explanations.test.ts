@@ -2,7 +2,10 @@ import { editCanonicalModel, pick } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { ArchitectureModelRead, ArchitectureCheckpointRetain } from "@archboard/board/model";
+import type {
+	ArchitectureModelRead,
+	ArchitectureCheckpointRetain,
+} from "@archboard/model/contract";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { prepareProductionFixture } from "../server-state/support/codex-production.ts";
@@ -188,6 +191,20 @@ async function actionStatus(browser: AgentBrowserSession, expected: string) {
 	);
 }
 
+/**
+ * Click with the mouse, again when a repaint replaced the element between the look and the click.
+ * @param browser The page.
+ * @param selector The element.
+ */
+async function clickSteady(browser: AgentBrowserSession, selector: string) {
+	await pollUntil(
+		() => browser.run(["click", selector]).then(Boolean, () => false),
+		Boolean,
+		`a click on ${selector}`,
+		WAIT,
+	);
+}
+
 async function menuReady(browser: AgentBrowserSession, action: string) {
 	await pollUntil(
 		() =>
@@ -204,14 +221,14 @@ test("keyboard and context actions expose unavailable agents, captured retry, an
 	await using resources = new AsyncDisposableStack();
 	const { fixture, server, browser } = await openReader(resources);
 	const gateway = '[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]';
-	await browser.run(["click", gateway]);
+	await clickSteady(browser, gateway);
 	await browser.run(["press", "Shift+F10"]);
 	await menuReady(browser, "explain-selection");
 	writeFileSync(
 		fixture.controlPath,
 		JSON.stringify({ ordinaryOnly: true, explanationQueue: true, accountReadFails: true }),
 	);
-	await browser.run(["click", '[data-explanation-action="explain-selection"]']);
+	await clickSteady(browser, '[data-explanation-action="explain-selection"]');
 	await actionStatus(browser, "unavailable");
 	const original = await browser.eval<string | null>(
 		`document.querySelector('[data-slot="model-explanation"]')?.getAttribute('data-action-id') ?? null`,

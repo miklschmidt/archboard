@@ -7,7 +7,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import express from "express";
-import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/model/policy";
 import { mountArchitectureConfigurationRoutes } from "#server/routes/architecture/configuration-routes.ts";
 
 const scratch = mkdtempSync(join(tmpdir(), "archboard-configuration-routes-"));

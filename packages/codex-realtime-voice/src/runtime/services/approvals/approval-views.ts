@@ -18,7 +18,7 @@ import { spokenEligibility as assessSpokenEligibility } from "#runtime/services/
 import type { JsonRpcRequestId } from "@archboard/codex-app-server/identity";
 
 /** What the read-only surface needs from the broker that owns the approvals. */
-export interface ApprovalViewContext {
+interface ApprovalViewContext {
 	/** Every approval the broker holds, which acknowledging one removes it from. */
 	readonly records: Map<JsonRpcRequestId, ApprovalRecord>;
 	/** Prove a request identity is one this workbench session issued. */
@@ -32,7 +32,7 @@ export interface ApprovalViewContext {
 }
 
 /** Everything a broker owner may read or acknowledge without settling anything. */
-export interface ApprovalViews {
+interface ApprovalViews {
 	readonly get: (requestId: JsonRpcRequestId) => ApprovalSnapshot | undefined;
 	readonly inspect: () => readonly ApprovalSnapshot[];
 	readonly acknowledge: (requestId: JsonRpcRequestId) => void;

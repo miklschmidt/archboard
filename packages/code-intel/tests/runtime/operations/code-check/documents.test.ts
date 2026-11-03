@@ -13,7 +13,7 @@ import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
 import {
-	board as fixtureBoard,
+	document as fixtureDocument,
 	git as fixtureGit,
 	register,
 	write,
@@ -50,7 +50,7 @@ beforeAll(async () => {
 	git("commit", "-q", "--no-gpg-sign", "-m", "design");
 	git("checkout", "-q", "main");
 	register(scratch, { [SHOP]: shop });
-	fixtureBoard(vault, "Shop", [
+	fixtureDocument(vault, "Shop", [
 		{
 			id: "v1",
 			name: "Built",
@@ -90,9 +90,9 @@ afterAll(() => {
  * @returns The outcome.
  */
 async function pass(variant?: string): Promise<CodeCheckOutcome> {
-	const read = check.readBoardsToCheck(vault, variant);
+	const read = check.readStatesToCheck(vault, variant);
 	if (!read.ok) throw new Error(`no draft ${variant}`);
-	return check.checkCode(vault, read.boards, new AbortController().signal);
+	return check.checkCode(vault, read.states, new AbortController().signal);
 }
 
 /**
@@ -117,7 +117,7 @@ test("a reference whose file is not at the version it names is a warning, and on
 });
 
 test("a ref the checkout cannot resolve and an unregistered repository are skipped with the reason", async () => {
-	const skips = (await pass()).skipped.filter((skip) => skip.board === "Shop");
+	const skips = (await pass()).skipped.filter((skip) => skip.model === "Shop");
 	expect(skips.map((skip) => [skip.reason, skip.variant, skip.ref?.named, skip.detail])).toEqual([
 		["ref-not-checked-out", "v1", "feat/gone", "docs/design.md"],
 		["repository-unregistered", "v1", undefined, "README.md"],

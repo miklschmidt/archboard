@@ -127,7 +127,6 @@ type WireByMethod<Wire extends { method: string }> = {
 };
 
 type CodexClientRequestParamsByMethod = ParamsByMethod<CodexClientRequest>;
-type CodexClientNotificationParamsByMethod = ParamsByMethod<CodexClientNotification>;
 type CodexServerRequestParamsByMethod = ParamsByMethod<CodexServerRequest>;
 type CodexServerNotificationParamsByMethod = ParamsByMethod<CodexServerNotification>;
 type CodexClientNotificationByMethod = WireByMethod<CodexClientNotification>;
@@ -451,28 +450,15 @@ function normalizeCodexJsonWire(value: unknown): CodexJsonValue | undefined {
 
 export {
 	CodexSafeI64Schema,
-	type CodexSafeI64,
-	type CodexJsonWire,
-	type CodexClientRequest,
-	type CodexClientNotification,
-	type CodexServerRequest,
-	type CodexServerNotification,
 	type CodexIngressConformance,
 	type CodexOutputConformance,
 	type CodexClientRequestParamsByMethod,
-	type CodexClientNotificationParamsByMethod,
 	type CodexServerRequestParamsByMethod,
 	type CodexServerNotificationParamsByMethod,
 	type CodexClientNotificationByMethod,
 	type CodexInitializeCapabilities,
 	type CodexLoginAccountParams,
-	type CodexThreadStatus,
-	type CodexTurnStatus,
-	type CodexTurnPlanStepStatus,
-	type CodexPatchChangeKindType,
-	type CodexTokenUsageBreakdown,
 	type CodexCommandExecutionApprovalDecision,
-	type CodexFileChangeApprovalDecision,
 	CODEX_CLIENT_REQUEST_METHODS,
 	CODEX_SERVER_REQUEST_METHODS,
 	CodexThreadStatusSchema,
@@ -489,6 +475,5 @@ export {
 	CodexFileChangeApprovalDecisionSchema,
 	type CodexResponseByMethod,
 	type CodexServerResponseByMethod,
-	type CodexJsonValue,
 	normalizeCodexJsonWire,
 };

@@ -3,8 +3,8 @@ import { renderArchitecture } from "#runtime/operations/render.ts";
 import { themeColor } from "#runtime/store/theme/source.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
-import { projectModel, type Model } from "@archboard/board/content";
-import { PaletteColorSchema, SemanticPolicySchema } from "@archboard/board/policy";
+import { projectModel, type Model } from "@archboard/model/content";
+import { PaletteColorSchema, SemanticPolicySchema } from "@archboard/model/policy";
 
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],

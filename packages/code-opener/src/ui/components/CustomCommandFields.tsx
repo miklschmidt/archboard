@@ -85,4 +85,4 @@ function CustomCommandFields(props: CustomCommandFieldsProps): JSX.Element {
 	);
 }
 
-export { CustomCommandFields, type CustomCommandFieldsProps };
+export { CustomCommandFields };

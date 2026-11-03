@@ -1,25 +1,21 @@
 // What a pane does with each message on its socket.
 //
-// A semantic pane hears about its board rather than receiving it. The board is
+// A semantic pane hears about its model rather than receiving it. The model is
 // a file the server reads and draws; the pane holds no copy, so nothing here
-// applies content, merges anything or decides what the board becomes (ADR
-// 0023). Eight kinds of news: which board this pane is on and in which
-// repository's vault, who is writing it, what they said they were doing, that it
-// has a new version, what an agent is doing elsewhere, what the shell should do
-// about the layout, which step of a walkthrough somebody narrating it asked for,
-// and that a checkout was chosen somewhere.
+// applies content, merges anything or decides what the model becomes (ADR
+// 0023). Five kinds of news: which model this pane is on and in which
+// repository's vault, what an agent is doing, what the shell should do about the
+// layout, which step of a walkthrough somebody narrating it asked for, and that
+// a checkout was chosen somewhere.
 
 import {
 	PanePresentRequestSchema,
 	ArchitecturePaneReadingSchema,
-} from "@archboard/board/pane-context";
-import { announceSemanticBoardChange } from "#ui/state/semantic-board-canvas/board-changes.ts";
-import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";
+} from "@archboard/model/pane-context";
+import { paneAddressOf } from "#ui/rules/canvas/reading/address.ts";
 import type {
 	AgentActivityEntry,
-	BoardIdentity,
-	DoingEntry,
-	LockHolder,
+	LegacyIdentity,
 	WebSocketMessage,
 } from "#ui/rules/pane-session/session-types.ts";
 import type { z } from "zod";
@@ -41,41 +37,27 @@ interface PanePlace {
 /** Everything a message handler may read or do. */
 interface MessageContext {
 	readonly clientId: string;
-	readonly boardKey: () => string | null;
+	readonly paneKey: () => string | null;
 	/**
 	 * The vault the pane is in: news on its socket is about this vault.
 	 * @returns The vault.
 	 */
 	readonly vault: () => string;
 	/**
-	 * This pane is on a board: the one the server addressed to it.
-	 * @param key The board key, or null when the server named none.
+	 * This pane is on a model: the one the server addressed to it.
+	 * @param key The model key, or null when the server named none.
 	 * @param identity Its identity, when the server sent one.
 	 * @param place The vault the pane is in now, when the server said.
 	 */
-	readonly adoptBoard: (
+	readonly adoptModel: (
 		key: string | null | undefined,
-		identity: BoardIdentity | null | undefined,
+		identity: LegacyIdentity | null | undefined,
 		place: PanePlace | null,
 	) => void;
-	/** The pane's board changed under it. */
-	readonly noteChange: (version: number | null) => void;
 	readonly publishStatus: () => void;
-	/**
-	 * The server said who holds the board; `mine` when it is this pane.
-	 * @param holder The holder, or null when nobody has it.
-	 * @param mine Whether this pane is the holder.
-	 */
-	readonly setHolder: (holder: LockHolder | null, mine: boolean) => void;
-	/**
-	 * What an agent said it was doing to this board.
-	 * @param entries The last few, oldest first.
-	 */
-	readonly setDoing: (entries: DoingEntry[]) => void;
 	readonly onLayoutRequest: ((request: "open" | "close") => void) | undefined;
 	readonly onPresentRequest: ((request: PanePresentRequest) => void) | undefined;
 	readonly onModelRequest?: ((request: PaneModelRequest) => void) | undefined;
-	readonly onBoardError: ((error: string) => void) | undefined;
 	readonly onAgentActivity:
 		| ((vault: string, activity: readonly AgentActivityEntry[]) => void)
 		| undefined;
@@ -86,17 +68,17 @@ interface MessageContext {
 type Handler = (context: MessageContext, data: WebSocketMessage) => void;
 
 /**
- * The server points this pane at a board: on connect, and whenever a `browser
+ * The server points this pane at a model: on connect, and whenever a `browser
  * show` moves it.
  * @param context The pane.
  * @param data The message.
  */
-function paneBoard(context: MessageContext, data: WebSocketMessage): void {
+function panePlaced(context: MessageContext, data: WebSocketMessage): void {
 	const place =
 		typeof data.vault === "string"
 			? { vault: data.vault, repository: data.repository ?? null }
 			: null;
-	context.adoptBoard(data.board, data.identity, place);
+	context.adoptModel(data.paneKey, data.identity, place);
 }
 
 /**
@@ -109,68 +91,28 @@ function paneModel(context: MessageContext, data: WebSocketMessage): void {
 	const parsed = ArchitecturePaneReadingSchema.safeParse(data.reading);
 	if (!parsed.success) return;
 	const repository = data.repository ?? null;
-	context.adoptBoard(null, null, { vault: data.vault, repository });
+	context.adoptModel(null, null, { vault: data.vault, repository });
 	context.onModelRequest?.({ reading: { ...parsed.data, model: data.model }, repository });
 }
 
 /**
- * Who is writing this board (ADR 0016). The pane that holds it is told too,
- * and has to recognise itself.
- * @param context The pane.
- * @param data The message.
- */
-function boardLock(context: MessageContext, data: WebSocketMessage): void {
-	const holder = data.holder ?? null;
-	const mine = holder !== null && holder.id === context.clientId;
-	context.setHolder(data.held === true && !mine ? holder : null, mine);
-}
-
-/**
- * A board has a new version.
+ * Whether a model's news is about the model this pane is showing.
  *
- * Announced to whichever panes are showing that board, which answer by asking
- * the server to draw it again. The announcement names the board rather than
- * carrying the change, because there is no copy in the browser to patch.
- * @param context The pane.
- * @param data The message.
- */
-function boardChanged(context: MessageContext, data: WebSocketMessage): void {
-	announceSemanticBoardChange(context.vault(), data.board ?? "", data.version ?? 0);
-	if (typeof data.board === "string" && aboutThisBoard(context, data.board)) {
-		context.noteChange(data.version ?? null);
-	}
-}
-
-/**
- * Whether a board's news is about the board this pane is showing.
- *
- * Compared by the board and not by the whole address: the news names the
+ * Compared by the model and not by the whole address: the news names the
  * aggregate, because every variant is in the one document and a write to any of
  * them is a new version of all of them. A pane reading a proposal has to redraw
  * when what it proposes to change moves under it.
  * @param context The pane.
- * @param said The board the news names.
- * @returns True when it is about this pane's board.
+ * @param said The model the news names.
+ * @returns True when it is about this pane's model.
  */
-function aboutThisBoard(context: MessageContext, said: string): boolean {
-	const mine = context.boardKey();
-	return mine !== null && boardAddressOf(said)?.board === boardAddressOf(mine)?.board;
+function aboutThisModel(context: MessageContext, said: string): boolean {
+	const mine = context.paneKey();
+	return mine !== null && paneAddressOf(said)?.model === paneAddressOf(mine)?.model;
 }
 
 /**
- * An agent said what it was doing to this board (TASK-095).
- * @param context The pane.
- * @param data The message.
- */
-function boardDoing(context: MessageContext, data: WebSocketMessage): void {
-	if (Array.isArray(data.recent)) {
-		context.setDoing(data.recent);
-	}
-	context.publishStatus();
-}
-
-/**
- * Which boards an agent is working on in one vault (ADR 0022). Boardless and
+ * Which models an agent is working on in one vault (ADR 0022). Keyless and
  * sent to every client, naming its vault; the shell replaces that vault's whole
  * map, so two panes hearing the same snapshot say the same thing twice, harmlessly.
  * @param context The pane.
@@ -179,17 +121,6 @@ function boardDoing(context: MessageContext, data: WebSocketMessage): void {
 function agentActivity(context: MessageContext, data: WebSocketMessage): void {
 	if (typeof data.vault === "string" && Array.isArray(data.activity)) {
 		context.onAgentActivity?.(data.vault, data.activity);
-	}
-}
-
-/**
- * A board could not be read or drawn.
- * @param context The pane.
- * @param data The message.
- */
-function boardError(context: MessageContext, data: WebSocketMessage): void {
-	if (typeof data.error === "string") {
-		context.onBoardError?.(data.error);
 	}
 }
 
@@ -220,7 +151,7 @@ function repositoriesChanged(context: MessageContext): void {
 /**
  * The server asks this pane to go to a step of a walkthrough, or to leave the
  * presentation (TASK-251). Where the pane is in a walkthrough is the pane's own,
- * so the request goes up to whoever draws the board; a request that does not
+ * so the request goes up to whoever draws the model; a request that does not
  * read as one is dropped, and the server hears nothing arrived.
  * @param context The pane.
  * @param data The message.
@@ -234,11 +165,7 @@ function panePresent(context: MessageContext, data: WebSocketMessage): void {
 
 const HANDLERS: Readonly<Record<string, Handler>> = {
 	pane_model: paneModel,
-	pane_board: paneBoard,
-	board_lock: boardLock,
-	board_note: boardChanged,
-	board_doing: boardDoing,
-	board_error: boardError,
+	pane_place: panePlaced,
 	agent_activity: agentActivity,
 	pane_open: paneOpen,
 	pane_close: paneClose,
@@ -256,19 +183,17 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
 /**
  * Whether a message is about this pane.
  *
- * A board's news names the board it is about. `board_note` is the exception it
- * has always been: it is addressed to this socket but is about whichever board
- * moved, and the panes showing that board answer it wherever they are.
+ * A model's news names the model it is about.
  * @param context The pane.
  * @param data The message.
  * @returns True when the message is ours to act on.
  */
 function addressesThisPane(context: MessageContext, data: WebSocketMessage): boolean {
-	if (data.type === "pane_board" || data.type === "pane_model" || data.type === "board_note") {
+	if (data.type === "pane_place" || data.type === "pane_model") {
 		return true;
 	}
-	const said = data.board;
-	return typeof said === "string" ? aboutThisBoard(context, said) : true;
+	const said = data.paneKey;
+	return typeof said === "string" ? aboutThisModel(context, said) : true;
 }
 
 /**

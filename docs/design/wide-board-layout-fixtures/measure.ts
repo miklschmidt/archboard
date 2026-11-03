@@ -1,4 +1,4 @@
-// Measures every fixture and every vault board on the scorecard a layout change
+// Measures every fixture and every vault document on the scorecard a layout change
 // is judged by (packages/renderer/tests/runtime/support/drawn-scorecard.ts): fit,
 // page area, how much of the page is card, route length, bends, crossings,
 // margin-lane ink, flank fan, how far a label sits from the line it names, the
@@ -12,20 +12,20 @@
 //
 // SAVE=run.json      also write this run's scorecards
 // AGAINST=run.json   compare this run with a saved one, measure by measure
-// ALL=1              measure every variant of every board, not only the current one
-// ENGINE=track       lay every board out with this engine, not the default one
+// ALL=1              measure every variant of every document, not only the current one
+// ENGINE=track       lay every document out with this engine, not the default one
 // PICTURES=1         write a PNG of each drawing to outdir (default .skill-evals/repro)
 //
 // A layout experiment is compared by saving a run on the tree as it is, then
 // running again with the experiment applied and AGAINST pointing at the save.
 import fs from "node:fs";
 import path from "node:path";
-import { parseSemanticBoard } from "@archboard/board/document";
+import { parseLegacyBoard } from "@archboard/model/legacy-board";
 import { REFERENCE_PANE } from "@archboard/renderer/shell-geometry";
 import { renderArchitecture } from "@archboard/renderer/bun";
-import { DEFAULT_LAYOUT_ENGINE, LayoutEngineSchema } from "@archboard/board/render-reply";
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
-import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
+import { DEFAULT_LAYOUT_ENGINE, LayoutEngineSchema } from "@archboard/model/render-reply";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/model/policy";
+import { readVaultConfiguration } from "@archboard/model/vault-policy";
 import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
 import {
 	scorecardOf,
@@ -45,16 +45,16 @@ const rasterizer = pictures
 	? (await import("@archboard/renderer/rasterizer")).createSemanticRasterizer({})
 	: null;
 
-/** One thing to measure: a board's variant, or a fixture. */
+/** One thing to measure: a document's variant, or a fixture. */
 interface Item {
 	readonly name: string;
 	readonly variant: string;
 	readonly content: unknown;
-	/** The vault's policy, which names the groups the board draws; a fixture has none of its own. */
+	/** The vault's policy, which names the groups the document draws; a fixture has none of its own. */
 	readonly policy: SemanticPolicy;
 }
 
-/** One board's saved result. */
+/** One document's saved result. */
 interface Result {
 	readonly page: string;
 	readonly reads: string;
@@ -73,12 +73,12 @@ for (const file of fs
 		policy: DEFAULT_SEMANTIC_POLICY,
 	});
 }
-const { configuration: policy } = readSemanticBoardConfiguration(vault);
+const { configuration: policy } = readVaultConfiguration(vault);
 for (const file of fs
 	.readdirSync(vault)
 	.filter((name) => name.endsWith(".semantic.json"))
 	.toSorted()) {
-	const parsed = parseSemanticBoard(JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")));
+	const parsed = parseLegacyBoard(JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")));
 	if (!parsed.ok) {
 		console.error(`unparsed ${file}: ${JSON.stringify(parsed).slice(0, 200)}`);
 		continue;
@@ -125,7 +125,9 @@ for (const item of items) {
 	const page = `${Math.round(drawn.width)}x${Math.round(drawn.height)}`;
 	results[key] = { page, reads, measures };
 	if (!header) {
-		console.log(["board", "reads", "page", ...measures.map((measure) => measure.name)].join(" | "));
+		console.log(
+			["document", "reads", "page", ...measures.map((measure) => measure.name)].join(" | "),
+		);
 		header = true;
 	}
 	console.log([key, reads, page, ...measures.map(shown)].join(" | "));

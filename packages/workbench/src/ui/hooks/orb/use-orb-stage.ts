@@ -55,4 +55,4 @@ function useOrbOffered(home: OrbHome): boolean {
 	);
 }
 
-export { OrbStageContext, useOrbOffered, useOrbPlacement, useOrbStage, type OrbPlacement };
+export { OrbStageContext, useOrbOffered, useOrbPlacement, useOrbStage };

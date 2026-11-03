@@ -1,5 +1,5 @@
-// An agent at work on a board (ADR 0022), in the status accent: lit and
-// pulsing while it claims the board, a ring while it has just written without
+// An agent at work on a model (ADR 0022), in the status accent: lit and
+// pulsing while it claims the model, a ring while it has just written without
 // a claim, and a faint ring on a closed row an agent works inside of. In the
 // tree the lamp sits on the corner of a row's marker; in Working now it has a
 // column of its own.
@@ -32,7 +32,7 @@ interface ActivityLampProps {
 }
 
 /**
- * Show at a glance that an agent works on a board, and how.
+ * Show at a glance that an agent works on a model, and how.
  * @param props The state, its words and its place.
  * @returns The lamp.
  */
@@ -48,7 +48,7 @@ function ActivityLamp(props: ActivityLampProps): JSX.Element {
 }
 
 /**
- * Light a tree row's marker for an agent at work on the board it names.
+ * Light a tree row's marker for an agent at work on the model it names.
  * @param props The state, its words and its identity hook.
  * @returns The lamp, on the marker's corner.
  */
@@ -56,4 +56,4 @@ function MarkerLamp(props: Omit<ActivityLampProps, "className">): JSX.Element {
 	return <ActivityLamp {...props} className={MARKER_CORNER} />;
 }
 
-export { ActivityLamp, MarkerLamp, type LampState };
+export { ActivityLamp, MarkerLamp };

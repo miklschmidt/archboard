@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
-import type { HeldCamera } from "#ui/hooks/semantic-board-canvas/use-auto-fit.ts";
-import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import type { HeldCamera } from "#ui/hooks/canvas/use-auto-fit.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import type { AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 
 /**
@@ -20,7 +20,7 @@ function placeOf(scene: AcceptedScene): string | undefined {
  * @param scene The accepted scene.
  * @returns What to ask for the camera of the entry the scene now lives in.
  */
-function useCameraMemory(camera: BoardCamera, scene: AcceptedScene): () => HeldCamera | null {
+function useCameraMemory(camera: PictureCamera, scene: AcceptedScene): () => HeldCamera | null {
 	const memory = useRef(new Map<string, HeldCamera>());
 	const place = placeOf(scene);
 	const entry = useRef(place);

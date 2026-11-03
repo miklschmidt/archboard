@@ -1,8 +1,8 @@
 import { cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { SemanticBoard } from "@archboard/board/document";
-import { readLegacyInventory } from "@archboard/board/store-read";
-import { retainArchitectureCheckpoint, saveLegacyMappingPlan } from "@archboard/board/store-write";
+import type { LegacyBoard } from "@archboard/model/legacy-board";
+import { readLegacyInventory } from "@archboard/model/store-read";
+import { retainArchitectureCheckpoint, saveLegacyMappingPlan } from "@archboard/model/store-write";
 import { vaultIn } from "../../support/test-vault.ts";
 import { fixtureGit, initializeSource } from "./canonical-model.ts";
 
@@ -20,8 +20,8 @@ async function legacyHistory(root: string) {
 	if (revision.exitCode !== 0) throw new Error(revision.stderr.toString());
 	const commit = revision.stdout.toString().trim();
 	const file = join(vault, "Shop.semantic.json");
-	const board = JSON.parse(readFileSync(file, "utf8")) as SemanticBoard;
-	const current = board.variants[0]!;
+	const model = JSON.parse(readFileSync(file, "utf8")) as LegacyBoard;
+	const current = model.variants[0]!;
 	const base = structuredClone(current.content);
 	current.content.nodes.find((node) => node.id === "Api")!.responsibility =
 		"Routes current requests";
@@ -90,8 +90,8 @@ async function legacyHistory(root: string) {
 	shelf.lifecycle = "shelved";
 	shelf.parent = "Old";
 	current.parent = "Old";
-	board.variants = [old, current, draft, child, shelf];
-	board.adoptions = [
+	model.variants = [old, current, draft, child, shelf];
+	model.adoptions = [
 		{
 			variant: "Now",
 			from: "Old",
@@ -99,10 +99,10 @@ async function legacyHistory(root: string) {
 			reason: "The current API is built",
 		},
 	];
-	board.shelvings = [
+	model.shelvings = [
 		{ variant: "Shelf", at: "2026-01-04T00:00:00.000Z", reason: "Keep the smaller implementation" },
 	];
-	writeFileSync(file, JSON.stringify(board));
+	writeFileSync(file, JSON.stringify(model));
 	const inventory = readLegacyInventory(vault, "Shop");
 	if (!inventory.success) throw new Error(JSON.stringify(inventory));
 	const plan = await saveLegacyMappingPlan(vault, {

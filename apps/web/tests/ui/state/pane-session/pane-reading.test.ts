@@ -6,7 +6,7 @@ import {
 	type PaneReading,
 } from "#ui/state/pane-session/pane-reading.ts";
 import { PANE_MS } from "@archboard/timing";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
@@ -27,14 +27,14 @@ async function settled(): Promise<void> {
 }
 
 /**
- * A reading of one board with one subject picked out.
+ * A reading of one model with one subject picked out.
  * @param id The selected subject.
  * @returns The reading.
  */
 function reading(id: string): PaneReading {
 	return {
 		...NOTHING_READ,
-		board: { name: "payments", key: "payments" },
+		model: { name: "payments", key: "payments" },
 		selection: [{ id }],
 	};
 }
@@ -176,12 +176,12 @@ describe("a pane whose socket came back", () => {
 		expect(sent.map((body) => body.sequence)).toEqual([0, 1]);
 	});
 
-	test("a pane that moved boards says nothing about the board it left", async () => {
+	test("a pane that moved models says nothing about the model it left", async () => {
 		const { publisher, sent } = watched();
 		publisher.publish(reading("a"));
 		await settled();
 
-		// The subjects it had picked out are subjects of a board it is no longer
+		// The subjects it had picked out are subjects of a model it is no longer
 		// showing, so repeating them would be saying something untrue.
 		publisher.reset();
 		publisher.republish();

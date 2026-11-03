@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test";
 
-import { renderArchitecture, renderBoard } from "#runtime/operations/render.ts";
+import { renderArchitecture, renderLegacyBoard } from "#runtime/operations/render.ts";
 import { bothModes, expectSamePlaces } from "#tests/runtime/support/comparison-modes.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 test("a plain proposal drawing omits comparison marks and removed context", async () => {
 	const before = orderedFixture({
@@ -20,10 +20,10 @@ test("a plain proposal drawing omits comparison marks and removed context", asyn
 			{ id: "new", name: "New worker", kind: "module" },
 		],
 	});
-	const board = SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	const document = LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
-		id: "board",
+		id: "document",
 		name: "Workers",
 		level: "system",
 		version: 1,
@@ -35,13 +35,13 @@ test("a plain proposal drawing omits comparison marks and removed context", asyn
 			{ id: "draft", name: "Draft", lifecycle: "draft", parent: "current", content: after },
 		],
 	});
-	const decorated = await renderBoard(
-		board,
+	const decorated = await renderLegacyBoard(
+		document,
 		{ variant: "draft", theme: "light" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
-	const plain = await renderBoard(
-		board,
+	const plain = await renderLegacyBoard(
+		document,
 		{ variant: "draft", theme: "light", comparison: false },
 		DEFAULT_SEMANTIC_POLICY,
 	);
@@ -66,10 +66,10 @@ test("hiding comparison marks keeps the routes of continuing relationships", asy
 	];
 	const existing = { id: "existing", from: "source", to: "sink", kind: "call" };
 	const added = { id: "added", from: "source", to: "sink", kind: "call" };
-	const board = SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	const document = LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
-		id: "board",
+		id: "document",
 		name: "Parallel connections",
 		level: "system",
 		version: 1,
@@ -92,13 +92,13 @@ test("hiding comparison marks keeps the routes of continuing relationships", asy
 			},
 		],
 	});
-	const compared = await renderBoard(
-		board,
+	const compared = await renderLegacyBoard(
+		document,
 		{ variant: "draft", theme: "light", layout: "track" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
-	const plain = await renderBoard(
-		board,
+	const plain = await renderLegacyBoard(
+		document,
 		{ variant: "draft", theme: "light", layout: "track", comparison: false },
 		DEFAULT_SEMANTIC_POLICY,
 	);
@@ -223,14 +223,14 @@ test.each([
 	},
 );
 
-// The board's lines come from its flow, which the overview does not draw.
+// The document's lines come from its flow, which the overview does not draw.
 // These stable-position regressions own Track; plain Blocks lays out only visible subjects.
 const EVERY_PART = {
 	layout: "track",
 	view: { grammar: "architecture", scope: { kind: "all" } },
 } as const;
 
-test("a board drawn from its flow keeps a line for every message the draft keeps", async () => {
+test("a document drawn from its flow keeps a line for every message the draft keeps", async () => {
 	const nodes = [
 		{ id: "web", name: "Console", kind: "ui" },
 		{ id: "api", name: "Orders API", kind: "service" },

@@ -214,7 +214,6 @@ function refusal(reason: "not_ready", message: string): SpokenApprovalToolResult
 }
 
 export {
-	REALTIME_FALLBACK_PHASES,
 	answerRefusal,
 	armedSlot,
 	clearTimer,

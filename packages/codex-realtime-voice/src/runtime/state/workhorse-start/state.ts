@@ -197,7 +197,6 @@ export {
 	emptySnapshot,
 	startingSnapshot,
 	failedSnapshot,
-	type InspectSnapshotInput,
 	inspectSnapshot,
 	readySnapshot,
 	cleanupFacts,

@@ -10,7 +10,7 @@
 // choice — reaches an author.
 //
 // The world is a directory of its own under the run, and the harness's records
-// are not in it: the board snapshot the checks diff against, the author's
+// are not in it: the document snapshot the checks diff against, the author's
 // transcript, the verdicts, the bundle the grader reads and the private
 // CODEX_HOME with the operator's credentials all sit beside it, above the only
 // directory the author can write. Reads cannot be forbidden — a workspace-write
@@ -43,7 +43,7 @@ interface RunPaths {
 	readonly authorStderr: string;
 	readonly lastMessage: string;
 	readonly snapshot: string;
-	readonly boards: string;
+	readonly documents: string;
 	readonly renders: string;
 	/** The PNGs of every diagram the scenario declared, plus their tiles. */
 	readonly captures: string;
@@ -87,7 +87,7 @@ function prepareRunDirectory(root: string): RunPaths {
 		authorStderr: path.join(root, "author.stderr.txt"),
 		lastMessage: path.join(root, "last-message.md"),
 		snapshot: path.join(root, "snapshot"),
-		boards: path.join(root, "boards"),
+		documents: path.join(root, "boards"),
 		renders: path.join(root, "renders"),
 		captures: path.join(root, "captures"),
 		manifest: path.join(root, "run.json"),
@@ -101,7 +101,7 @@ function prepareRunDirectory(root: string): RunPaths {
 		paths.xdgConfig,
 		paths.temporary,
 		paths.snapshot,
-		paths.boards,
+		paths.documents,
 		paths.renders,
 		paths.captures,
 	]) {
@@ -255,6 +255,5 @@ export {
 	prepareRunDirectory,
 	runEnvironment,
 	writeCliWrapper,
-	type AuthorSettings,
 	type RunPaths,
 };

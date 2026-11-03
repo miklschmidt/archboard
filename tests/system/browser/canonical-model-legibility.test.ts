@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -23,14 +23,14 @@ import {
 	chooseFlow,
 } from "./support/canonical-page.ts";
 import { initializeSource } from "./support/canonical-model.ts";
-import { mintId } from "@archboard/board/ids";
+import { mintId } from "@archboard/model/ids";
 import { OPAQUE_SRGB, edgeInks, sameHue, unresolvedPaints } from "./support/computed-colours.ts";
 
 /** How long any one thing here is waited for. */
 const WAIT = { timeoutMs: 6_000 } as const;
 
 /** The element the camera moves. */
-const SURFACE = "[data-slot='model-diagram'] [data-slot='semantic-board-surface']";
+const SURFACE = "[data-slot='model-diagram'] [data-slot='canvas-surface']";
 
 /** The panel beside the diagram. */
 const INSPECTOR = "[data-slot='module-details']";
@@ -234,7 +234,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	);
 	await switchTheme(browser, "light");
 
-	// The ids the board minted, found the way a viewer finds them.
+	// The ids the model minted, found the way a viewer finds them.
 	const ids = await browser.eval<Record<string, string>>(
 		`(() => {` +
 			` const found = {};` +
@@ -305,7 +305,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	);
 
 	// The other grammar, told in the same language.
-	// The views are on the board tab, which the pick moved away from.
+	// The views are on the model tab, which the pick moved away from.
 	await openAbout(browser);
 	await chooseFlow(browser, flow);
 	await pollUntil(

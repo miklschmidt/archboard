@@ -14,7 +14,7 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { z } from "zod";
-import { listArchitectureCheckpoints } from "@archboard/board/store-read";
+import { listArchitectureCheckpoints } from "@archboard/model/store-read";
 import { anchorsOf } from "@archboard/skills/citations";
 import { createInstallFixture, installFailure, shippedSkills } from "./support/install-fixture.ts";
 import { checkoutRoot } from "./support/package-cli.ts";

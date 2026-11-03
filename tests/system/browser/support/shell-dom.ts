@@ -1,6 +1,6 @@
 // Browser-side selectors for the rebuilt shell, semantics first: roles,
 // accessible names, aria state, shadcn's data-slot vocabulary, and the small
-// set of Archboard identity hooks (data-board-key, data-pane-id,
+// set of Archboard identity hooks (data-pane-key, data-pane-id,
 // data-notice-id, data-presentation). Every owner reads the shell through
 // these so a markup change is one edit here, never a class-name hunt.
 
@@ -10,11 +10,11 @@ type PageEvaluator = Pick<AgentBrowserSession, "eval">;
 
 /** The element the browser presents fullscreen: the centre stage. */
 const STAGE_ROOT = '[data-slot="pane-stages"]';
-/** The breadcrumb in the header of the pane with focus: the boards above, the board, then the variant. */
-const BOARD_BREADCRUMB = 'section[aria-current="true"] nav[aria-label="Where this board sits"]';
+/** The breadcrumb in the header of the pane with focus: the models above, the model, then the variant. */
+const MODEL_BREADCRUMB = 'section[aria-current="true"] nav[aria-label="Where this model sits"]';
 /** Every pane section. */
 const PANE_SECTIONS = 'section[aria-label^="Pane "]';
-/** A pane's top row: where its board sits, the ways to read it and the pane's controls. */
+/** A pane's top row: where its model sits, the ways to read it and the pane's controls. */
 const PANE_HEADER = '[data-slot="pane-header"]';
 /** The pane letters in the pane headers, present while two panes are open. */
 const PANE_LETTERS = '[data-slot="pane-header"] [data-slot="pane-letter"]';
@@ -22,7 +22,7 @@ const PANE_LETTERS = '[data-slot="pane-header"] [data-slot="pane-letter"]';
 const BRAND_BAR = '[data-slot="brand-bar"]';
 /** The agent at the foot of the navigator: its state, its voice and the key to the conversation. */
 const AGENT_DOCK = 'section[data-slot="agent-dock"]';
-/** The navigator: the filter, the boards and where agents are working. */
+/** The navigator: the filter, the models and where agents are working. */
 const NAVIGATOR = '[data-slot="navigator"]';
 /** The navigator's whole column: the brand bar, the navigator and the agent dock. */
 const NAVIGATOR_COLUMN = '[data-slot="navigator-column"]';
@@ -42,12 +42,11 @@ const SHELL_NOTICES = `[...document.querySelectorAll('[data-slot="alert"]')]
 /** The presented pane's bar, present only during a presentation. */
 const PRESENTATION_BAR = '[data-slot="presentation-bar"]';
 
-/** A navigator row's name by the board key it selects (identity hook); a click on it opens the row. */
-const navigatorRow = (key: string): string =>
-	`${NAVIGATOR} [data-board-key=${JSON.stringify(key)}]`;
+/** A navigator row's name by the model key it selects (identity hook); a click on it opens the row. */
+const navigatorRow = (key: string): string => `${NAVIGATOR} [data-pane-key=${JSON.stringify(key)}]`;
 
-/** The board name the header of the pane with focus shows. */
-const BOARD_NAME_EXPRESSION = `document.querySelector('${BOARD_BREADCRUMB} [data-slot="pane-board-name"]')?.textContent?.trim() ?? null`;
+/** The model name the header of the pane with focus shows. */
+const PANE_NAME_EXPRESSION = `document.querySelector('${MODEL_BREADCRUMB} [data-slot="pane-model-name"]')?.textContent?.trim() ?? null`;
 /** The authored model name in the active pane. */
 const MODEL_NAME_EXPRESSION = `document.querySelector('section[aria-current="true"] [data-slot="pane-header"] h2')?.textContent?.trim() ?? null`;
 
@@ -55,12 +54,12 @@ const MODEL_NAME_EXPRESSION = `document.querySelector('section[aria-current="tru
 const THEME_EXPRESSION = "document.documentElement.getAttribute('data-theme') ?? ''";
 
 /**
- * The board named in the header.
+ * The model named in the header.
  * @param browser The page.
- * @returns The board name, or null before a board is shown.
+ * @returns The model name, or null before a model is shown.
  */
-function boardName(browser: PageEvaluator): Promise<string | null> {
-	return browser.eval<string | null>(BOARD_NAME_EXPRESSION);
+function modelName(browser: PageEvaluator): Promise<string | null> {
+	return browser.eval<string | null>(PANE_NAME_EXPRESSION);
 }
 
 /**
@@ -96,9 +95,9 @@ async function switchTheme(browser: AgentBrowserSession, theme: "light" | "dark"
 }
 
 /**
- * Click a navigator row by board key.
+ * Click a navigator row by model key.
  * @param browser The page.
- * @param key The board key.
+ * @param key The model key.
  * @returns True when the row existed and was clicked.
  */
 function clickNavigatorRow(browser: PageEvaluator, key: string): Promise<boolean> {
@@ -167,8 +166,8 @@ function stageIsFullscreen(browser: PageEvaluator): Promise<boolean> {
 export {
 	AGENT_DOCK,
 	AGENT_PANEL,
-	BOARD_BREADCRUMB,
-	BOARD_NAME_EXPRESSION,
+	MODEL_BREADCRUMB,
+	PANE_NAME_EXPRESSION,
 	MODEL_NAME_EXPRESSION,
 	BRAND_BAR,
 	COMPOSER,
@@ -181,7 +180,7 @@ export {
 	SHELL_NOTICES,
 	STAGE_ROOT,
 	THEME_EXPRESSION,
-	boardName,
+	modelName,
 	clickNavigatorRow,
 	currentTheme,
 	dismissNotice,

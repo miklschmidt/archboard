@@ -334,7 +334,6 @@ type BrowserOwnerProjection = Omit<BrowserProjectionInput, "threadLink" | "lease
 
 export {
 	type BrowserProjectionModel,
-	type CodexAccountProjectionInput,
 	type BrowserAccountProjectionInput,
 	type CodexSettingsProjectionInput,
 	type CodexQueuedSubmissionProjectionInput,

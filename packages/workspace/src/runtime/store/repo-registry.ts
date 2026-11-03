@@ -1,9 +1,9 @@
 // The checkout registry: which repositories exist on this machine, and where.
 //
 // A binding is a logical address, a repository identity plus a path inside it
-// (CONTEXT.md), so that a vault's boards can describe any repository, not only
+// (CONTEXT.md), so that a vault's models can describe any repository, not only
 // the one whose checkout holds the vault (ADR 0049). That leaves one thing
-// unanswered on every machine that opens a board: where
+// unanswered on every machine that opens a model: where
 // `github.com/acme/payments` actually is here. ADR 0004 promised a
 // machine-local registry for it and never built one; this is it, and ADR 0011
 // says why it is the thing that replaces resolving against a working
@@ -41,9 +41,7 @@ import {
 	changeRegistry,
 	isDirectory,
 	readRegistry,
-	RegistryWriteError,
 	RepoRegistryError,
-	registryPath,
 	type RegisteredRepo,
 	type RegisteredRepoStatus,
 	type Registry,
@@ -523,20 +521,9 @@ function setLanguageServer(
 }
 
 export {
-	type RegisteredRepo,
 	type RegisteredRepoStatus,
-	type UntrackedVault,
-	type UntrackedVaultStatus,
-	type Chosen,
 	type Declared,
-	type Forgotten,
-	type RenamedVault,
-	type RegistryListing,
-	type VaultRepository,
 	RepoRegistryError,
-	RegistryWriteError,
-	registryPath,
-	readRegistry,
 	listRegistry,
 	chosenCheckouts,
 	chooseKnownCheckout,

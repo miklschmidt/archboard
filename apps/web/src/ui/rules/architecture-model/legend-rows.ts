@@ -4,13 +4,10 @@
 // kind or showing it again moves no row.
 
 import { LINE_MARKS } from "@archboard/renderer/picture";
-import type { Model, projectModel } from "@archboard/board/content";
-import type {
-	AppliedAppearance,
-	PictureLegend,
-} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import type { Model, projectModel } from "@archboard/model/content";
+import type { AppliedAppearance, PictureLegend } from "#ui/clients/canvas/reads/drawings.ts";
 import { openModules } from "#ui/rules/architecture-model/expansion.ts";
-import { kindLookOf } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
+import { kindLookOf } from "#ui/rules/canvas/reading/kind-look.ts";
 
 type Projection = ReturnType<typeof projectModel>;
 type Connection = Projection["connections"][number];
@@ -229,6 +226,5 @@ export {
 	type LegendGroup,
 	type LegendLine,
 	type LegendMark,
-	type LegendReading,
 	type LegendRow,
 };

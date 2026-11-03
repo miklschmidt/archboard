@@ -1,7 +1,10 @@
 import type { IncomingMessage } from "http";
 import { WebSocket, type RawData } from "ws";
-import { ArchitectureFeedRequestSchema, type ArchitectureFeedFrame } from "@archboard/board/model";
-import { watchArchitectureModel } from "@archboard/board/store-read";
+import {
+	ArchitectureFeedRequestSchema,
+	type ArchitectureFeedFrame,
+} from "@archboard/model/contract";
+import { watchArchitectureModel } from "@archboard/model/store-read";
 import { namedVault } from "@archboard/workbench/host";
 import { frameText } from "#server/sockets/frame-text.ts";
 

@@ -3,7 +3,7 @@
   "name": "Layout engine",
   "kind": "function",
   "responsibility": "Lays one graph out as Track or Blocks inside a layout worker",
-  "description": "serveLayoutEngine takes the core that its host compiled and answers each solve with the core's layOutBoard, which runs Graphviz in the core (ADR 0059, ADR 0060). The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab. Engine coordinates are never authored or persisted (ADR 0023).",
+  "description": "serveLayoutEngine takes the core that its host compiled and answers each solve with the core's layOutPicture, which runs Graphviz in the core (ADR 0059, ADR 0060). The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab. Engine coordinates are never authored or persisted (ADR 0023).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/shared/rules/engine/layout-engine.ts"
@@ -24,7 +24,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/renderer/src/runtime/processes/layout-worker.ts",
-        "symbol": "layOutBoard"
+        "symbol": "layOutPicture"
       },
       "id": "vKEsyHFk/OjRLKb74#T4hTbGVM",
       "to": "vKEsyHFk/OjRLKb74#mHYMkWdE"
@@ -39,8 +39,8 @@
         "path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
         "symbol": "engineAborted"
       },
-      "to": "vKEsyHFk/gbyqW4H3#JzHM3KOY",
-      "id": "vKEsyHFk#kF19dfsx"
+      "id": "vKEsyHFk#kF19dfsx",
+      "to": "vKEsyHFk/gbyqW4H3#JzHM3KOY"
     }
   ]
 }

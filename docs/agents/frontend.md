@@ -99,7 +99,7 @@ Each behavior keeps its existing public boundary and one state owner.
   Route composition connects domain interfaces.
   The URL restores each reading and the active pane.
   Selection, the camera, and live voice remain session state.
-- The `board-routing` behavior owns search parameters on the one route at `/`.
+- The `reading-routing` behavior owns search parameters on the one route at `/`.
   Canonical panes use `modelX`, `scopeX`, and `checkpointX` beside `repoX`.
   Each `repoX` names a registered repository identity, never a filesystem path.
   `repoX` alone names a pane in a repository with no model or a legacy model.
@@ -114,8 +114,8 @@ Each behavior keeps its existing public boundary and one state owner.
   Ordinary canonical state and checkpoint choices remain mutually exclusive.
   They refresh on mount, focus, reconnect, and explicit Refresh.
   A failed preview hides cached candidate content and retains the requested address for recovery.
-  Source details retain exact fingerprints, original board coverage, and proposed state mappings.
-  An original reading names its one-board coverage and retains lifecycle and standing evidence.
+  Source details retain exact fingerprints, original legacy board coverage, and proposed state mappings.
+  An original reading names its coverage of one legacy board and retains lifecycle and standing evidence.
   State evidence includes explicit draft predecessors, baseline fingerprints, conflicts, and blocked ancestry.
   Retained original files load from the returned byte envelope, independently of canonical composition.
   File inspection decodes one selected input and exposes unsupported UTF-8 as base64.
@@ -248,7 +248,7 @@ Each behavior keeps its existing public boundary and one state owner.
 Retained recording replay loads separately from the ordinary application.
 Its existing read provider supplies the captured original document, listing, policy, and empty code findings.
 Its picture provider uses the local renderer.
-No provider falls back to a live board HTTP route.
+No provider falls back to a live legacy board HTTP route.
 Canonical recordings use their captured model and the same canonical walkthrough components as ordinary playback.
 
 The left column draws its depth from the picture's tokens. `column-well` in `app.css` is the well of a list, and a row's tone is `bg-tray-sink`, so a stuck row hides what scrolls under it.
@@ -319,7 +319,7 @@ renderer refuses other selectors and rules, `!important` and values that are
 not colors. It also refuses a token that a picture uses but the file does not
 set. A new palette
 name needs its token here and its name in `PaletteColorSchema` in
-`packages/board/src/shared/schemas/semantic-policy.ts`.
+`packages/model/src/shared/schemas/semantic-policy.ts`.
 
 A picture in the page paints with the tokens themselves, so a theme switch
 redraws nothing. A standalone SVG or PNG from `model render` or
@@ -350,9 +350,9 @@ A tag selects what the picture draws of its group through the ordinary selection
 `ModelEngine` stands under the legend on a structural reading. `useAcceptedScene` reads the browser's engine and puts it on the request, so the scene key, the fit and the drawing key all name it.
 A switch is a destination like any other: the last picture stays until the other engine's drawing exists, and the selection holds.
 A flow request carries no engine, because the core lays out only architecture, so its stored drawing outlives a switch.
-`ModelHoverLight` stands under it. `clients/semantic-board-canvas/subjects/hover-light.ts` remembers in this browser whether a part the pointer rests on dims the rest of the picture, and `useLighting` reads it. A pick, a trace and a row of the sidebar light the picture either way, because each one asks a question that only the light answers.
+`ModelHoverLight` stands under it. `clients/canvas/subjects/hover-light.ts` remembers in this browser whether a part the pointer rests on dims the rest of the picture, and `useLighting` reads it. A pick, a trace and a row of the sidebar light the picture either way, because each one asks a question that only the light answers.
 `useDoorPick` turns a click on a door into a move to its module, and `ModelDoorTip` lists the door's endpoints on hover. Ctrl, a removed door and a presented step keep the ordinary pick.
-A click on the control that a door or a frame's tab wears goes to `onToggle` instead. The one rule is `toggled` in `rules/architecture-model/expansion.ts`, and the pointer, the panel and the `E` key all reach it. A module expanded beside the scope keeps `sceneBoard`, so the picture is carried, and `sceneFit` names it, so the camera lands whole.
+A click on the control that a door or a frame's tab wears goes to `onToggle` instead. The one rule is `toggled` in `rules/architecture-model/expansion.ts`, and the pointer, the panel and the `E` key all reach it. A module expanded beside the scope keeps `sceneModel`, so the picture is carried, and `sceneFit` names it, so the camera lands whole.
 Only `useModelReading` and `useModelMoves` pass `controls: true` to `projectModel`, so an export and a presented step draw neither control. The core draws the control, and `app.css` adds only its hover.
 The selection survives About.
 ModelPane owns ordinary selection across asynchronous reads.
@@ -364,7 +364,7 @@ Authored beat subjects drive the shared focus, camera glide, and emphasis rules.
 A beat that names only cards answers as a pick does: the cards and the lines between them stand in full, and what they touch stands a step fainter, in both a structural picture and a sequence.
 The camera frames everything lit.
 An ordinary reader retains its own camera while a captured presentation runs.
-On one board, the surface that comes into sight starts from the camera that the other left and glides to its own rest.
+On one model, the surface that comes into sight starts from the camera that the other left and glides to its own rest.
 Leaving a remote presentation clears its request in the pane arrival owner, so another state read cannot restart it.
 Narrative buttons start playback directly and create no popup outside the suspended reader.
 

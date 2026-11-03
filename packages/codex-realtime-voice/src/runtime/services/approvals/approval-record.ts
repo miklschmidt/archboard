@@ -200,9 +200,7 @@ export function approvalDecision(response: ApprovalResponse): ApprovalDecision {
  * @param request - The normalized request.
  * @returns The presentation, or null when the approval can only be answered on screen.
  */
-export function spokenPresentationFor(
-	request: ApprovalRequest,
-): SpokenApprovalEffectPresentation | null {
+function spokenPresentationFor(request: ApprovalRequest): SpokenApprovalEffectPresentation | null {
 	if (request.family !== "command_execution") {
 		return null;
 	}
@@ -221,7 +219,7 @@ export function spokenPresentationFor(
  * @returns The terminal state.
  * @throws {ApprovalError} When the record is somehow not terminal.
  */
-export function terminalStateOf(record: ApprovalRecord): TerminalApprovalState {
+function terminalStateOf(record: ApprovalRecord): TerminalApprovalState {
 	if (!isTerminal(record.state)) {
 		throw new ApprovalError(
 			"invalid_state",

@@ -3,7 +3,7 @@
   "name": "Shell",
   "kind": "ui",
   "responsibility": "Connects repository navigation, local agents, and canonical panes",
-  "description": "The desktop frame keeps the repository navigator, local agent controls, conversation, and canonical panes. Repository actions open current modules through the shared router. Unmigrated repositories show their migration state. Board ownership and level controls are retired.",
+  "description": "The desktop frame keeps the repository navigator, local agent controls, conversation, and canonical panes. Repository actions open current modules through the shared router. Unmigrated repositories show their migration state. Model ownership and level controls are retired.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/shell"

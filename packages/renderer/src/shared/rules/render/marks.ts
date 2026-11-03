@@ -7,7 +7,7 @@
 // so a pane holds no copy of the painter's rules. Only the placement of a
 // warning is written here.
 
-import type { EdgeEmphasis } from "@archboard/board/content";
+import type { EdgeEmphasis } from "@archboard/model/content";
 import {
 	CORNER_INSET,
 	HEAD_LENGTH,

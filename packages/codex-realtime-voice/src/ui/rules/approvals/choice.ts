@@ -161,4 +161,4 @@ function resolveApprovalChoice(
 	return null;
 }
 
-export { resolveApprovalChoice, type ResolvedChoice };
+export { resolveApprovalChoice };

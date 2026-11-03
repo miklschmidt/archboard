@@ -1,7 +1,7 @@
 //! Containers and group regions a block of cards draws inline (TASK-349). Each
 //! is a Graphviz cluster of the block's own layout, headed by its title row or
 //! its region's caption, which invisible edges hold above every member no line
-//! inside the cluster already holds; so the board's cards are ranked across
+//! inside the cluster already holds; so the picture's cards are ranked across
 //! containers, as the track engine ranks them.
 //!
 //! Reading the clusters back after Graphviz answers is `readback.rs`, and the
@@ -148,9 +148,9 @@ impl<'t> Clusters<'t> {
         Holder::Cluster(self.index[cluster])
     }
 
-    /// Every line Graphviz ranks, by where its ends stand in the board's order,
+    /// Every line Graphviz ranks, by where its ends stand in the picture's order,
     /// a container at its first member.
-    pub(crate) fn board_order(&self, vendor_of: impl Fn(&str) -> String) -> Vec<&'t Line> {
+    pub(crate) fn picture_order(&self, vendor_of: impl Fn(&str) -> String) -> Vec<&'t Line> {
         let block = self.block;
         let mut place: Map<String, f64> = block
             .items

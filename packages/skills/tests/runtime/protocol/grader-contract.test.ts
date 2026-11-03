@@ -1,7 +1,7 @@
 // The grader contract: what the prompt says once, and what a verdict must
 // carry. A verdict short of a pass says what the run did, what the skill told
 // it and where, and which authority the gap answers to; the report keeps a
-// departure from the skill apart from a board the source contradicts, and
+// departure from the skill apart from a document the source contradicts, and
 // never fails a run for an expectation the skill never taught, unless the
 // grader says so of a passage the feature itself cites. None of this runs a
 // model.
@@ -23,7 +23,7 @@ import { buildReport, type ConcernKind, type RunRecord } from "#runtime/rules/re
 import { renderReportMarkdown } from "#runtime/rules/reports/report-markdown.ts";
 
 const EXPECTED = [
-	{ feature: "board.create", requirement: "one board", skill: ["SKILL.md#essentials"] },
+	{ feature: "board.create", requirement: "one document", skill: ["SKILL.md#essentials"] },
 	{ feature: "render.svg", requirement: "drawn", skill: ["SKILL.md#essentials"] },
 ];
 
@@ -201,7 +201,7 @@ const onAxis = (axis: FindingAxis): RunVerdict =>
 		{ ...BARE, feature: "render.svg", verdict: "missing", finding: finding(axis) },
 	]);
 
-test("a feature the skill never taught fails no run; a departure or a contradicted board does", () => {
+test("a feature the skill never taught fails no run; a departure or a contradicted document does", () => {
 	expect(semanticallyCompliant(EXPECTED, onAxis("skill"))).toBe(true);
 	expect(semanticallyCompliant(EXPECTED, onAxis("conformance"))).toBe(false);
 	expect(semanticallyCompliant(EXPECTED, onAxis("truth"))).toBe(false);

@@ -132,4 +132,4 @@ function vaultReader(checkouts: ReadCheckouts, signal: AbortSignal): VaultReader
 	return { read, vaults };
 }
 
-export { vaultReader, type VaultReading };
+export { vaultReader };

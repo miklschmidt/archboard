@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { corridorPoints, routesCross } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import boardRequestPath from "#tests/runtime/support/fixtures/board-request-path.json";
+import modelRequestPath from "#tests/runtime/support/fixtures/model-request-path.json";
 import durableWriteBoundary from "#tests/runtime/support/fixtures/durable-write-boundary.json";
 
 /** The vocabulary of the dogfood vault the fixtures are taken from. */
@@ -40,11 +40,11 @@ test("a block's ports keep the order its parent settles without crossing nested 
 			expect(routesCross(routes.get(id)!, routes.get(other)!), `${id} ${other}`).toBe(false);
 });
 
-// Taken from a board of this repository: two lines join on their way to Board
+// Taken from a document of this repository: two lines join on their way to Document
 // routes. Held in order with the join parted, the parted drawing crossed less
 // and was chosen, and one of its lines ran up and round Semantic renderer.
 test("a held order does not part lines joined on their way to a card", async () => {
-	const content = orderedFixture(boardRequestPath);
+	const content = orderedFixture(modelRequestPath);
 	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	expect(corridorPoints(drawing.svg).get("3verBPcG")!.length).toBeLessThan(16);
 });

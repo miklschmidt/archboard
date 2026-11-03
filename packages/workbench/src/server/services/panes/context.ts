@@ -1,13 +1,13 @@
 // What every open pane is reading, as the pane last said it.
 //
-// A person asks "what does this do?" and means something on a screen. The board
+// A person asks "what does this do?" and means something on a screen. The model
 // file cannot answer that: a variant holds every node it has, and which one is
 // under discussion is a fact about a pane and nowhere else. So a pane reports
-// what it is reading — board, variant, view, and the subjects picked out — and
+// what it is reading — model, variant, view, and the subjects picked out — and
 // that report is what grounds the agent's context (ADR 0023).
 //
 // Two rules keep it honest. A report is never content: nothing here writes a
-// board, takes a claim or advances a version, and a pane that reports is not
+// model, takes a claim or advances a version, and a pane that reports is not
 // editing anything. And a report never outlives its pane: it is kept by client
 // id, and a read drops whatever belongs to a socket that has gone, so a closed
 // tab cannot leave a true-looking answer standing after it stopped being true.
@@ -16,11 +16,11 @@ import type { Express, Request, Response } from "express";
 import {
 	SEMANTIC_PANE_CONTEXT_ROUTE,
 	SemanticPaneContextSchema,
-} from "@archboard/board/pane-context";
+} from "@archboard/model/pane-context";
 import { publishPaneContext } from "#server/services/owner/wiring-hooks.ts";
 import { panePresentations } from "#server/services/panes/presentation.ts";
 import { paneVaults, panes } from "#server/services/panes/registry.ts";
-import { bodyOf } from "#server/services/request/board.ts";
+import { bodyOf } from "#server/services/request/request-fields.ts";
 import { requireVault, vaultOfRequest } from "#server/services/request/vault.ts";
 import type { z } from "zod";
 
@@ -106,7 +106,7 @@ function semanticPaneContexts(vault: string): readonly SemanticPaneContext[] {
 
 /**
  * Forget what one pane said it was reading, because the server moved it into
- * another vault (ADR 0050). What it picked out is of a board of the vault it
+ * another vault (ADR 0050). What it picked out is of a model of the vault it
  * left, and stays unsaid until the pane reports from the vault it is in now. A
  * report it sent from the old vault on the way is refused by its vault.
  * @param clientId The pane's client id.
@@ -189,7 +189,6 @@ export {
 	mountSemanticPaneContextRoutes,
 	recordSemanticPaneContext,
 	semanticPaneContextFor,
-	semanticPaneContexts,
 };
 
 export { onSemanticPaneContext };

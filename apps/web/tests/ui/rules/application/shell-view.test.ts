@@ -11,7 +11,7 @@ import { assembleShellView } from "#ui/rules/application/shell-view.ts";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import type { ModelCatalog } from "#ui/hooks/architecture-model/use-model-catalog.ts";
 
-const CHECKOUT = { board: "Checkout", variant: "current" };
+const CHECKOUT = { model: "Checkout", variant: "current" };
 
 /** The vault of the one repository the catalog lists. */
 const VAULT = "/work/shop/.archboard/vault";
@@ -47,17 +47,17 @@ function twoPaneRecords(): PaneRecords {
 		...emptyPaneStatus("A"),
 		clientId: "A-1",
 		connected: true,
-		board: CHECKOUT,
-		boardKey: "Checkout",
+		model: CHECKOUT,
+		paneKey: "Checkout",
 		vault: VAULT,
 		version: 3,
 	};
-	return patchRecord(patchRecord({}, "A", { status: statusA, holder: null }), "B", {
+	return patchRecord(patchRecord({}, "A", { status: statusA }), "B", {
 		...initialPaneRecord("B"),
 	});
 }
 
-test("the shell view names the active pane's board and carries its mounted panes", () => {
+test("the shell view names the active pane's model and carries its mounted panes", () => {
 	const list = addPane(initialPaneList());
 	const view = assembleShellView({
 		theme: "dark",
@@ -69,16 +69,16 @@ test("the shell view names the active pane's board and carries its mounted panes
 		notices: [],
 		agentActivity: {},
 	});
-	// Pane B is focused after being added; it shows no board.
+	// Pane B is focused after being added; it shows no model.
 	expect(view.activePaneId).toBe("B");
 	expect(view.panes.map((pane) => [pane.status.paneId, pane.stage])).toEqual([
 		["A", "pane-a"],
 		["B", "pane-b"],
 	]);
-	expect(view.selectedBoardKey).toBeNull();
+	expect(view.selectedPaneKey).toBeNull();
 });
 
-test("the focused pane's board key is the selected navigator entry", () => {
+test("the focused pane's model key is the selected navigator entry", () => {
 	const records = twoPaneRecords();
 	const view = assembleShellView({
 		theme: "light",
@@ -90,8 +90,8 @@ test("the focused pane's board key is the selected navigator entry", () => {
 		notices: [],
 		agentActivity: {},
 	});
-	expect(view.selectedBoardKey).toBe("Checkout");
-	expect(view.boardsError).toBe("offline");
+	expect(view.selectedPaneKey).toBe("Checkout");
+	expect(view.modelsError).toBe("offline");
 	expect(view.presentation).toEqual({ kind: "live", paneId: "A" });
 	expect(view.panes[0]?.stage).toBeNull();
 });
@@ -107,7 +107,7 @@ test("what an agent does in a vault is shown whether or not a pane of the tab is
 		since,
 		until: since,
 	};
-	const entry = { board: "model:Checkout", model: "Checkout", claims: [claim], doing: null };
+	const entry = { paneKey: "model:Checkout", model: "Checkout", claims: [claim], doing: null };
 	/**
 	 * The view while the tab's one pane is in a vault.
 	 * @param vault The vault.
@@ -118,8 +118,7 @@ test("what an agent does in a vault is shown whether or not a pane of the tab is
 			theme: "dark",
 			list: initialPaneList(),
 			records: patchRecord({}, "A", {
-				status: { ...emptyPaneStatus("A"), board: CHECKOUT, boardKey: "Checkout", vault },
-				holder: null,
+				status: { ...emptyPaneStatus("A"), model: CHECKOUT, paneKey: "Checkout", vault },
 			}),
 			panes: {},
 			catalog: catalogOf(),
@@ -129,7 +128,7 @@ test("what an agent does in a vault is shown whether or not a pane of the tab is
 		});
 	expect(viewWith(VAULT).repositories[0]?.activity).toEqual({ Checkout: entry });
 	// Every pane hears every vault's account (ADR 0022), so the navigator marks a
-	// board an agent has in a repository no pane is reading.
+	// model an agent has in a repository no pane is reading.
 	expect(viewWith("/work/blog/.archboard/vault").repositories[0]?.activity).toEqual({
 		Checkout: entry,
 	});
@@ -149,10 +148,10 @@ test("pane news keeps the repositories the navigator lists", () => {
 		agentActivity: {},
 	} as const;
 	const before = assembleShellView(inputs).repositories;
-	// An agent claims pane A's board: the view is assembled again, and nothing
-	// the navigator lists changed, so it keeps its rows as they were.
-	const claimed = patchRecord(records, "A", {
-		holder: { id: "agent-1", kind: "agent", since: "", until: "", process: "codex" },
+	// Pane A loses its connection: the view is assembled again, and nothing the
+	// navigator lists changed, so it keeps its rows as they were.
+	const dropped = patchRecord(records, "A", {
+		status: { ...records["A"]!.status, connected: false },
 	});
-	expect(assembleShellView({ ...inputs, records: claimed }).repositories).toBe(before);
+	expect(assembleShellView({ ...inputs, records: dropped }).repositories).toBe(before);
 });

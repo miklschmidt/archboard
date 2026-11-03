@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { modelWalkthroughQuery } from "#ui/clients/architecture-model/walkthroughs.ts";
 import { ModelWalkthrough } from "#ui/components/architecture-model/ModelWalkthrough.tsx";

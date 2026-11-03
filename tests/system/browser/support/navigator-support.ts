@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import type { z } from "zod";
 import type { RepositoryListingSchema } from "@archboard/workspace/repositories";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 
 type PanesReport = ReturnType<typeof buildPanesReport>;
 type PanesBody = Omit<PanesReport, "panes"> & {
@@ -21,7 +21,7 @@ const serverPath = join(repoRoot, "apps/server/src/server.ts");
 
 /**
  * The repository a test server lists: what a pane's address names beside its
- * board (ADR 0050). Asked as the server's own page asks.
+ * model (ADR 0050). Asked as the server's own page asks.
  * @param base The server's base URL.
  * @returns The repository's name.
  * @throws {Error} When the server lists no repository.

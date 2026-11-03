@@ -66,7 +66,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/SJ2JMVyz#npbOHMgi",
       "field": "description",
-      "value": "Each workhorse tool takes a required checkout, the directory that holds a board's vault, and the replay ledger counts the same arguments in another checkout as another call. A delegation to a checkout whose workhorse has no thread that can run turns starts it first; the other three tools refuse a checkout with no ready workhorse and say so. stop_workhorses names no checkout and no turn: it stops the whole work tree of every workhorse of the tab session, and says whether each stop is complete, partial or unconfirmed."
+      "value": "Each workhorse tool takes a required checkout, the directory that holds a model's vault, and the replay ledger counts the same arguments in another checkout as another call. A delegation to a checkout whose workhorse has no thread that can run turns starts it first; the other three tools refuse a checkout with no ready workhorse and say so. stop_workhorses names no checkout and no turn: it stops the whole work tree of every workhorse of the tab session, and says whether each stop is complete, partial or unconfirmed."
     },
     {
       "type": "assign",

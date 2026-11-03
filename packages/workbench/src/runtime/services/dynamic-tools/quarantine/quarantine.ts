@@ -497,4 +497,4 @@ function createDynamicQuarantineDispatcher(
 	return Object.freeze({ dispatch, inspect, dispose });
 }
 
-export { type DynamicQuarantineDispatcher, createDynamicQuarantineDispatcher };
+export { createDynamicQuarantineDispatcher };

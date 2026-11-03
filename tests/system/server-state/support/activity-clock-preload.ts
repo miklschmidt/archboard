@@ -1,6 +1,6 @@
 // Control model observation, activity idle time, and the claim clock at the process boundary.
 import { readFileSync } from "node:fs";
-import { BOARD_LOCK_MS, CLAIM_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS, CLAIM_MS } from "@archboard/timing";
 import { TEST_PANE_MESSAGE_POLL_MS } from "../../support/timing.ts";
 
 const clock = process.env["ARCHBOARD_TEST_ACTIVITY_CLOCK"];
@@ -27,6 +27,6 @@ globalThis.setInterval = ((
 ) =>
 	repeat(
 		handler,
-		delay === BOARD_LOCK_MS.watch ? TEST_PANE_MESSAGE_POLL_MS : delay,
+		delay === MODEL_LOCK_MS.watch ? TEST_PANE_MESSAGE_POLL_MS : delay,
 		...args,
 	)) as typeof globalThis.setInterval;

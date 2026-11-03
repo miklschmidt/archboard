@@ -1,15 +1,15 @@
 // A relabel that keeps every card's size asks for the same solves as the
 // render before it, and the engine pool answers a solve it answered before
 // at once (TASK-548.02). What this catches: such a re-render laying its
-// solves out again on the layout workers, which took a wide board's
+// solves out again on the layout workers, which took a wide document's
 // re-render from about 50 ms back to 0.8 s.
 import { afterAll, expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { compiledCore } from "#runtime/services/core.ts";
 import { createEnginePool, type EngineWorker } from "#shared/rules/engine/engine-pool.ts";
 import { installRendererHost, rendererHost } from "#shared/rules/render/host.ts";
-import { SemanticPolicySchema } from "@archboard/board/policy";
-import type { VariantContent } from "@archboard/board/content";
+import { SemanticPolicySchema } from "@archboard/model/policy";
+import type { VariantContent } from "@archboard/model/content";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
 const policy = SemanticPolicySchema.parse({
@@ -25,11 +25,11 @@ afterAll(() => {
 });
 
 /**
- * A board of two containers whose cards call each other.
+ * A document of two containers whose cards call each other.
  * @param gateway The name of one card.
- * @returns The board.
+ * @returns The document.
  */
-function board(gateway: string): VariantContent {
+function document(gateway: string): VariantContent {
 	return orderedFixture({
 		nodes: [
 			{ id: "edge", name: "Edge", kind: "module" },
@@ -80,12 +80,16 @@ test("a re-render after a relabel that keeps every card's size sends no solve to
 		},
 	});
 	try {
-		const drawn = await renderArchitecture({ content: board("Gateway"), theme: "light", policy });
+		const drawn = await renderArchitecture({
+			content: document("Gateway"),
+			theme: "light",
+			policy,
+		});
 		expect(sent).toBeGreaterThan(0);
 		sent = 0;
 		asked = 0;
 		const relabelled = await renderArchitecture({
-			content: board("Gatehouse"),
+			content: document("Gatehouse"),
 			theme: "light",
 			policy,
 		});

@@ -1,6 +1,6 @@
 // The code check reads the build dependencies between the packages of a
 // flake (ADR 0046, TASK-367.22): a package built from another package that
-// the board does not draw is an undrawn dependency, a drawn one is supported,
+// the document does not draw is an undrawn dependency, a drawn one is supported,
 // and a relationship that starts at a package whose build inputs the static
 // reading cannot follow, to another package of the flake, is skipped, never
 // reported unsupported. A relationship to code that holds no output of that
@@ -15,7 +15,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
@@ -87,7 +87,7 @@ beforeAll(async () => {
 	git(scratch, mono, "add", "-A");
 	git(scratch, mono, "commit", "-q", "--no-gpg-sign", "-m", "the flake");
 	register(scratch, { [MONO]: mono });
-	board(vault, "Mono", [
+	document(vault, "Mono", [
 		{
 			id: "v1",
 			name: "Built",
@@ -103,7 +103,7 @@ beforeAll(async () => {
 					part("pS", "api", "api/server.ts"),
 				],
 				edges: [
-					// lib is built from core, and the board says so.
+					// lib is built from core, and the document says so.
 					dependency("e1", "pL", "pC"),
 					// tool's inputs come from a package scope the reading cannot tell.
 					dependency("e2", "pT", "pL"),
@@ -118,9 +118,9 @@ beforeAll(async () => {
 		},
 	]);
 	const check = await import("#tests/runtime/support/code-check/pass.ts");
-	const read = check.readBoardsToCheck(vault, undefined);
-	if (!read.ok) throw new Error("no boards");
-	outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
+	const read = check.readStatesToCheck(vault, undefined);
+	if (!read.ok) throw new Error("no documents");
+	outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 });
 
 afterAll(() => {
@@ -131,7 +131,7 @@ afterAll(() => {
 	rmSync(scratch, { recursive: true, force: true });
 });
 
-test("a package built from another that the board does not draw is an undrawn dependency, and a drawn one is supported", () => {
+test("a package built from another that the document does not draw is an undrawn dependency, and a drawn one is supported", () => {
 	const found = outcome.findings.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
 	expect(found.toSorted()).toEqual(
 		[

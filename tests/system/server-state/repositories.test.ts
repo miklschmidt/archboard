@@ -1,16 +1,16 @@
 import { canonicalCapture, seedCanonicalFixture } from "../support/canonical-fixture.ts";
 // The repositories the navigator lists, and choosing a checkout from the page
 // (ADR 0050, TASK-472.05). One owned server with a registry of its own knows a
-// repository with two checkouts, each with a vault. A pane shows a board of the
-// chosen checkout; choosing the other moves the pane there with its board, and
-// a show of another vault's board moves a named pane into that vault.
+// repository with two checkouts, each with a vault. A pane shows a model of the
+// chosen checkout; choosing the other moves the pane there with its model, and
+// a show of another vault's model moves a named pane into that vault.
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { cpSync, mkdirSync, realpathSync, symlinkSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { WebSocket, type RawData } from "ws";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { readArchitectureModel } from "@archboard/model/store-read";
 
 import {
 	createRepositoryFixture,
@@ -109,7 +109,7 @@ describe.serial("the repositories of the navigator", () => {
 		seedCanonicalFixture(fixture.vault, "notes", []);
 		const pane = await openPaneSession(server.base, createRequester(server), {
 			clientId: "pane-unread",
-			board: "notes",
+			model: "notes",
 		});
 		resources.defer(() => pane.close());
 		const inMain = createRequester({ ...server, vault });
@@ -123,8 +123,8 @@ describe.serial("the repositories of the navigator", () => {
 		const mark = pane.mark();
 		const reader = await inMain("/api/panes/show", { method: "POST", doing: false, body });
 		expect(reader.status).toBe(200);
-		const moved = await pane.waitFor("pane_board", mark);
-		expect(moved).toMatchObject({ board: null, vault, repository: ORDERS });
+		const moved = await pane.waitFor("pane_place", mark);
+		expect(moved).toMatchObject({ paneKey: null, vault, repository: ORDERS });
 	});
 
 	test("choosing a checkout moves the panes that showed the old one, and a show moves a named pane", async () => {
@@ -152,17 +152,17 @@ describe.serial("the repositories of the navigator", () => {
 
 		const pane = await openPaneSession(server.base, inMain, {
 			clientId: "pane-orders",
-			board: "payments",
+			model: "payments",
 		});
 		resources.defer(() => pane.close());
 		// A pane of another tab, in a vault the choice does not touch.
 		const elsewhere = await openPaneSession(server.base, inServed, {
 			clientId: "pane-elsewhere",
-			board: "notes",
+			model: "notes",
 		});
 		resources.defer(() => elsewhere.close());
 
-		// Choosing the worktree moves the pane into its vault and keeps its board,
+		// Choosing the worktree moves the pane into its vault and keeps its model,
 		// which the worktree has not got, and every tab is told to list again.
 		const mark = pane.mark();
 		const elsewhereMark = elsewhere.mark();
@@ -172,16 +172,16 @@ describe.serial("the repositories of the navigator", () => {
 			body: JSON.stringify({ repository: ORDERS, root: worktree }),
 		});
 		expect(chose.status).toBe(200);
-		const moved = await pane.waitFor("pane_board", mark);
-		expect(moved).toMatchObject({ board: "payments", vault: worktreeVault, repository: ORDERS });
+		const moved = await pane.waitFor("pane_place", mark);
+		expect(moved).toMatchObject({ paneKey: "payments", vault: worktreeVault, repository: ORDERS });
 		await pane.waitFor("repositories_changed", mark);
 		expect(await elsewhere.waitFor("repositories_changed", elsewhereMark)).toBeDefined();
 		expect((await listed()).find((each) => each.name === ORDERS)?.vault).toBe(worktreeVault);
 
-		// A show names the pane and the vault of another repository's board, and the
+		// A show names the pane and the vault of another repository's model, and the
 		// pane moves into that vault.
 		const beforeShow = pane.mark();
-		const shown = await inServed<{ board: string; repository: string | null }>("/api/panes/show", {
+		const shown = await inServed<{ model: string; repository: string | null }>("/api/panes/show", {
 			method: "POST",
 			doing: false,
 			body: { reading: { model: "Fixture" }, pane: pane.clientId },
@@ -212,7 +212,7 @@ describe.serial("the repositories of the navigator", () => {
 		seedCanonicalFixture(mainVault, "ledger", []);
 		const away = await openPaneSession(server.base, inWorktree, {
 			clientId: "pane-away",
-			board: "ledger",
+			model: "ledger",
 		});
 		await away.close();
 
@@ -224,7 +224,7 @@ describe.serial("the repositories of the navigator", () => {
 		expect(chose.status).toBe(200);
 
 		// The page never heard of the move, so its socket comes back naming the vault
-		// it was in. The server puts it where it moved it, on the board it held.
+		// it was in. The server puts it where it moved it, on the model it held.
 		const endpoint = new URL(server.base);
 		endpoint.protocol = "ws:";
 		endpoint.search = new URLSearchParams({
@@ -239,8 +239,8 @@ describe.serial("the repositories of the navigator", () => {
 			back.once("error", fail);
 		});
 		expect(first).toMatchObject({
-			type: "pane_board",
-			board: "ledger",
+			type: "pane_place",
+			paneKey: "ledger",
 			vault: mainVault,
 			repository: ORDERS,
 		});
@@ -261,7 +261,7 @@ describe.serial("the repositories of the navigator", () => {
 			createRequester({ ...server, vault: mainVault }),
 			{
 				clientId: "pane-left-behind",
-				board: "payments",
+				model: "payments",
 			},
 		);
 		resources.defer(() => pane.close());
@@ -269,8 +269,8 @@ describe.serial("the repositories of the navigator", () => {
 		// that checkout's server. This server follows the registry it reads all the same.
 		const used = pane.mark();
 		cli("repo", "use", worktree);
-		expect(await pane.waitFor("pane_board", used)).toMatchObject({
-			board: "payments",
+		expect(await pane.waitFor("pane_place", used)).toMatchObject({
+			paneKey: "payments",
 			vault: vaultOf(worktree),
 			repository: ORDERS,
 		});
@@ -281,13 +281,13 @@ describe.serial("the repositories of the navigator", () => {
 		expect(refused.status).toBe(422);
 		expect(((await refused.json()) as { code: string }).code).toBe("CHECKOUT_UNUSABLE");
 		await pane.sync();
-		expect(pane.events.slice(mark).filter((event) => event.type === "pane_board")).toEqual([]);
+		expect(pane.events.slice(mark).filter((event) => event.type === "pane_place")).toEqual([]);
 
-		// With a vault it is chosen, and the pane moves there with its board.
+		// With a vault it is chosen, and the pane moves there with its model.
 		const fixVault = vaultOf(fix);
 		expect((await choose(fix)).status).toBe(200);
-		const moved = await pane.waitFor("pane_board", mark);
-		expect(moved).toMatchObject({ board: "payments", vault: fixVault, repository: ORDERS });
+		const moved = await pane.waitFor("pane_place", mark);
+		expect(moved).toMatchObject({ paneKey: "payments", vault: fixVault, repository: ORDERS });
 	});
 
 	test("a vault that a link leads out of the layout is not listed", async () => {
@@ -337,7 +337,7 @@ describe.serial("the repositories of the navigator", () => {
 			body: {
 				clientId: pane.clientId,
 				paneId: pane.clientId,
-				board: null,
+				model: null,
 				variant: null,
 				view: null,
 				selection: [],

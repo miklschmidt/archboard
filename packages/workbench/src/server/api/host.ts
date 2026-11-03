@@ -9,13 +9,11 @@ export {
 	serverUrl,
 } from "#server/services/host/listener-address.ts";
 export {
-	boardOfRequest,
 	bodyOf,
-	bodyString,
 	isRecord,
 	messageOf,
 	queryString,
-} from "#server/services/request/board.ts";
+} from "#server/services/request/request-fields.ts";
 export {
 	namedVault,
 	requireVault,

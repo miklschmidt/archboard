@@ -50,8 +50,4 @@ function createDynamicAuthorityTokenIssuer(): DynamicAuthorityTokenIssuer {
 	return Object.freeze({ issue, owns, retire, retireAll });
 }
 
-export {
-	type DynamicAuthorityToken,
-	type DynamicAuthorityTokenIssuer,
-	createDynamicAuthorityTokenIssuer,
-};
+export { type DynamicAuthorityToken, createDynamicAuthorityTokenIssuer };

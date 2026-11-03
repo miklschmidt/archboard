@@ -4,7 +4,7 @@ import { z } from "zod";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import type { CommandContext } from "#cli/protocol/contract/contract.ts";
 import {
-	BOARD_SKILL,
+	CONSUMER_SKILL,
 	BUNDLED_SKILLS,
 	type BundledSkill,
 	type SkillDestination,
@@ -14,7 +14,7 @@ import {
 	resolveExplicitDir,
 	resolveTarget,
 } from "#cli/operations/install-skill/skill-destination.ts";
-import { setUpRepository, withoutOldBlock } from "#cli/operations/install-skill/repo-setup.ts";
+import { setUpRepository } from "#cli/operations/install-skill/repo-setup.ts";
 import { prepareSkillArtifacts } from "@archboard/skills/distribution";
 import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 
@@ -63,7 +63,6 @@ const InstallSkillSetupResultSchema = z.object({
 	vaultIgnored: z.boolean(),
 	removedBlocks: z.array(z.string()),
 });
-type InstallSkillSetupResult = z.infer<typeof InstallSkillSetupResultSchema>;
 
 const SkillFilesSchema = z.number().int().nonnegative();
 
@@ -132,13 +131,13 @@ interface PlannedSkill {
 
 /**
  * Copies one skill into its staging directory, prepared the way an install carries it: the
- * board skill also gets its generated schemas and portable install manual.
+ * model skill also gets its generated schemas and portable install manual.
  * @param plan - The skill to stage.
  * @param staging - The empty staging directory beside its target.
  */
 function stageSkill(plan: PlannedSkill, staging: string): void {
 	fs.cpSync(plan.source, staging, { recursive: true });
-	if (plan.skill === BOARD_SKILL) {
+	if (plan.skill === CONSUMER_SKILL) {
 		prepareSkillArtifacts(staging, { root: SOURCE_CHECKOUT });
 	}
 }
@@ -353,16 +352,4 @@ const installSkillContract = defineCommand({
 	},
 });
 
-export {
-	BUNDLED_SKILLS,
-	InstallSkillInputSchema,
-	type InstallSkillInput,
-	InstallSkillRequestSchema,
-	type InstallSkillRequest,
-	InstallSkillSetupResultSchema,
-	type InstallSkillSetupResult,
-	InstallSkillResultSchema,
-	type InstallSkillResult,
-	installSkillContract,
-	withoutOldBlock,
-};
+export { installSkillContract };

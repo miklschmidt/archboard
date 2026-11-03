@@ -34,7 +34,6 @@ const RepoLanguageServerResultSchema = z.object({
 	servers: LanguageServersSchema,
 	registry: z.string(),
 });
-type RepoLanguageServerResult = z.infer<typeof RepoLanguageServerResultSchema>;
 const repoLanguageServerContract = defineCommand({
 	path: ["repo", "language-server"],
 	shared: [],
@@ -233,10 +232,4 @@ async function workingDirectoryCheckout(
 	return { repo: checkout.identity, root: checkout.root };
 }
 
-export {
-	RepoLanguageServerInputSchema,
-	type RepoLanguageServerInput,
-	RepoLanguageServerResultSchema,
-	type RepoLanguageServerResult,
-	repoLanguageServerContract,
-};
+export { repoLanguageServerContract };

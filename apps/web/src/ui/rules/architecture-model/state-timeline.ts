@@ -4,7 +4,7 @@
 // parallel branches. A shelved state ends its branch. A model with no current state has no adopted
 // line, and its first drafts stand on the line in its place. Pure.
 
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { standingSuffix } from "#ui/rules/architecture-model/standing.ts";
 
 type State = NonNullable<Model["states"]>[number];

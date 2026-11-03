@@ -1,11 +1,11 @@
 ---
 id: TASK-563
 title: Polish the reader before PR 26 merges
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-02T13:25:00Z'
-updated_date: '2026-11-03T00:28:00Z'
+updated_date: '2026-11-03T02:35:00Z'
 labels:
   - reader
   - design
@@ -41,10 +41,10 @@ The owner's running list of reader problems found while testing PR 26. Each new 
 - [x] #17 A frame's recess reads as a well: the wall meets its corner at the rim, not at the floor (One run's world)
 - [x] #18 A well's side walls are real soft shadows on its floor, with no flat band, so the depth reads from one viewpoint
 - [x] #19 A well's shadows stay gentle on the light ground, and its top wall stands a little brighter than its floor on the dark ground
-- [ ] #20 Holding Space over the canvas shows an open hand, a press turns it into a closed hand, and a press with Space picks nothing
-- [ ] #21 A part that takes a click shows a pointer on the picture, and a frame's floor does not
-- [ ] #22 Every interactive element of the app shows a pointer under the mouse
-- [ ] #23 The walkthrough's voice model is triggered correctly on the new renderer, and it presents each beat as its prompt asks
+- [x] #20 Holding Space over the canvas shows an open hand, a press turns it into a closed hand, and a press with Space picks nothing
+- [x] #21 A part that takes a click shows a pointer on the picture, and a frame's floor does not
+- [x] #22 Every interactive element of the app shows a pointer under the mouse
+- [x] #23 The walkthrough's voice model is triggered correctly on the new renderer, and it presents each beat as its prompt asks
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -69,4 +69,6 @@ Well (owner, 2026-11-03): the flat side bands are gone. The floor reaches both s
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
 Polished the reader before PR 26 merges. A tip stands against its part. A chosen line's label wears the ring and the line keeps its ink. A right click on a part opens a menu at the cursor that explains it or copies a reference, and the browser keeps its menu elsewhere. A card widens for its tags. A label stays off its own line wherever any route allows. A flowchart's lines join on one lane. A door takes the colour of its group or kind, or stands neutral, and a module with no parts stands as its card. A reading that the dense layout refuses stays dense. A frame's recess reads as a well. The model gains an Application kind, and Page start to Talk contract is a call. INSTALL.md gives a route without Nix, and the project requires Bun 1.4.4 and the patched Node.js releases, with the server held to survive a socket error under them. All 17 README assets show the final picture. Gate 24 passed on the final code, and an independent review approved the final diff. codex-live-voice.test.ts failed once on an earlier run and on no run since. Risks and open decisions stay in the PR: the module icon in flowcharts is undecided, no test owns the words that move with a sliding line, and the rustup route was not run on macOS or Debian.
+
+Cursors: a part or control that takes a click shows a pointer, an empty canvas shows the arrow, Space shows an open hand and a press a closed one, and a press or double click with Space picks nothing. One base rule in app.css gives every enabled interactive element the pointer. The voice audit ran real narrations on the web-shop walkthrough with a muted page and a silent microphone. The first step reached the voice before it connected and was lost in 3 of 3 runs. A pane now holds arrival while voice connects and for 1.5 s after, and the first step spoke in 12 of 15 runs. A live step now begins with the recording's lead-in and carries no number, which ended the screen talk and the spoken numbers. A resize no longer tells a step twice, and a slow first step is still told. Sol approved 3 rounds. The complete gate passed at the top of the stack. Risk: no real microphone was measured, and 3 of 15 first steps stopped at a sound.
 <!-- SECTION:FINAL_SUMMARY:END -->

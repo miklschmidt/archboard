@@ -191,4 +191,4 @@ function agentActions(targets: AgentActionTargets): AgentActions {
 	};
 }
 
-export { agentActions, type AgentActionTargets };
+export { agentActions };

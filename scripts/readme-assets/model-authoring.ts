@@ -1,14 +1,14 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
-import { modelContent, subjectsOf } from "@archboard/board/content";
-import type { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
+import { modelContent, subjectsOf } from "@archboard/model/content";
+import type { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
 import {
 	ArchitectureModelReadSchema,
 	ArchitectureClaimResultSchema,
 	ArchitectureModuleEditResultSchema,
 	type ArchitectureModuleEdit,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { scratch, type TakeServer } from "./kit.ts";

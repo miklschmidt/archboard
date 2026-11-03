@@ -1,5 +1,5 @@
-// A part that opens another board is marked with which way that board lies,
-// read from the part's kind against the level of the board drawn (ADR 0029),
+// A part that opens another document is marked with which way that document lies,
+// read from the part's kind against the level of the document drawn (ADR 0029),
 // and the mark takes room beside the name without cutting it.
 //
 // What is guarded: the direction each part's mark says, in both grammars and
@@ -14,8 +14,8 @@
 // its ring. A frame's name drawn from far away once kept no room for the
 // frame's far mark, so a long name ran under it.
 import { expect, test } from "bun:test";
-import type { DiagramBox, LayoutEngineName } from "@archboard/board/render-reply";
-import type { DiagramGrammar } from "@archboard/board/views";
+import type { DiagramBox, LayoutEngineName } from "@archboard/model/render-reply";
+import type { DiagramGrammar } from "@archboard/model/views";
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import {
 	bodyShift,
@@ -25,11 +25,11 @@ import {
 import { subjectGroups, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
 import { drawnSpan, drawnTexts } from "#tests/runtime/support/drawn-text.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const OPENS = { board: "elsewhere", variant: { kind: "current" } };
 
-/** Each part, and the way the board it opens lies from a board at the service level. */
+/** Each part, and the way the document it opens lies from a document at the service level. */
 const PARTS = [
 	{ id: "whole", name: "The platform as a whole", kind: "system", drill: "up" },
 	{ id: "peer", name: "A neighbouring service with a long name", kind: "service", drill: "across" },
@@ -77,7 +77,8 @@ function marksOf(svg: string, id: string): string[] {
 
 for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 	test(
-		grammar + " marks each part that opens a board with the way it lies, and draws its name whole",
+		grammar +
+			" marks each part that opens a document with the way it lies, and draws its name whole",
 		async () => {
 			const { svg } = await renderSemanticView({
 				policy: DEFAULT_SEMANTIC_POLICY,
@@ -98,7 +99,7 @@ for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 	);
 }
 
-/** Each part that opens a board, on a small card and on a large one. */
+/** Each part that opens a document, on a small card and on a large one. */
 const SIZED = PARTS.filter(({ drill }) => drill !== undefined).flatMap(({ id, name, kind }) => [
 	{ id, name: kind, kind },
 	{
@@ -109,7 +110,7 @@ const SIZED = PARTS.filter(({ drill }) => drill !== undefined).flatMap(({ id, na
 	},
 ]);
 
-/** Those parts in a frame that opens a board too, asked along in order. */
+/** Those parts in a frame that opens a document too, asked along in order. */
 const FRAMED = orderedFixture({
 	nodes: [
 		{ id: "frame", name: "What they make up", kind: "system", drillDown: OPENS },
@@ -271,7 +272,7 @@ test("an architecture keeps a frame's far name clear of its far mark", async () 
 			nodes: [
 				{
 					id: "frame",
-					name: "the frame that holds every part of the board store",
+					name: "the frame that holds every part of the document store",
 					kind: "system",
 					drillDown: OPENS,
 				},

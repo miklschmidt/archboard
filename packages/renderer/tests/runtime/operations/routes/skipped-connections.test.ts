@@ -1,11 +1,11 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import { LayoutEngineSchema } from "@archboard/model/render-reply";
 import { across, along, breadth, depth } from "#tests/runtime/support/drawn-reading.ts";
 import { routePoints, routeCrosses } from "#tests/runtime/support/drawn-routes.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 test.each(LayoutEngineSchema.options)(
 	"a proposal skip clears its chain and retains its label (%s)",

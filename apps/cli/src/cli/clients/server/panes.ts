@@ -27,16 +27,16 @@ interface PaneRef {
 interface PaneLayoutResponse {
 	success: true;
 	pane?: PaneRef | null;
-	closed?: PaneRef & { board: string };
+	closed?: PaneRef & { paneKey: string };
 	paneCount: number;
-	onScreen: Array<{ paneId: string; place: string; board: string }>;
+	onScreen: Array<{ paneId: string; place: string; paneKey: string }>;
 }
 
-type ShowBoardResponse = {
+type ShowModelResponse = {
 	success: true;
 	model: string;
 	reading: import("zod").infer<
-		typeof import("@archboard/board/pane-context").ArchitecturePaneReadingSchema
+		typeof import("@archboard/model/pane-context").ArchitecturePaneReadingSchema
 	>;
 	revision: unknown;
 	repository: string | null;
@@ -75,7 +75,7 @@ function closePane(spec: string): Promise<PaneLayoutResponse> {
 }
 
 /**
- * Point one pane at one board, as an agent: the shell's own shows come from the page, so a show
+ * Point one pane at one model, as an agent: the shell's own shows come from the page, so a show
  * from here says it is an agent's, and which agent session it is when the invocation named one.
  * The voice and its coordinator are told an agent moved the pane, unless it was their own
  * session (TASK-293.06).
@@ -83,12 +83,12 @@ function closePane(spec: string): Promise<PaneLayoutResponse> {
  * @param pane The pane spec, when the caller named one.
  * @returns What the pane is showing now.
  */
-function showBoardInPane(
-	reading: ShowBoardResponse["reading"],
+function showModelInPane(
+	reading: ShowModelResponse["reading"],
 	pane?: string,
-): Promise<ShowBoardResponse> {
+): Promise<ShowModelResponse> {
 	const { session } = statedInvocation();
-	return requestJson<ShowBoardResponse>(
+	return requestJson<ShowModelResponse>(
 		"/api/panes/show",
 		posting({
 			reading,
@@ -99,4 +99,4 @@ function showBoardInPane(
 	);
 }
 
-export { type ShowBoardResponse, closePane, getPanes, openPane, showBoardInPane };
+export { type ShowModelResponse, closePane, getPanes, openPane, showModelInPane };

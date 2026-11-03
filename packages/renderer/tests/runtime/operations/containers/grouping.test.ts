@@ -1,6 +1,6 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import { themeColor } from "#runtime/store/theme/source.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
@@ -99,7 +99,7 @@ const nodes = [
 	{ id: "api", name: "API", kind: "api", parent: "plain" },
 ];
 
-test("the cards of a group stand together on the board", async () => {
+test("the cards of a group stand together on the document", async () => {
 	const nodes = ["a", "b", "c", "d", "e", "f"].map((id, at) => ({
 		id,
 		name: `Card ${id}`,

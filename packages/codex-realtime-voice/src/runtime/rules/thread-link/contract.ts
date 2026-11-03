@@ -1,29 +1,18 @@
-import type {
-	ActiveEpoch,
-	EpochOperationRecord,
-	EpochOperationStatus,
-	EpochOperationOutcome,
-} from "#runtime/store/epoch/manifest-contract.ts";
+import type { ActiveEpoch, EpochOperationRecord } from "#runtime/store/epoch/manifest-contract.ts";
 import type { CodexEpochStore, EpochExecutionProof } from "#runtime/store/epoch/contract.ts";
 import type {
 	CodexSession,
-	SessionLoadedThreadPageResult,
 	SessionThread,
-	SessionThreadPageResult,
 	SessionThreadSource,
 } from "@archboard/codex-app-server/session";
 import type { ChildEpoch, ChildId, ThreadId } from "@archboard/codex-app-server/identity";
-import type {
-	ThreadLinkReason as AuthoredThreadLinkReason,
-	ThreadLinkState as AuthoredThreadLinkState,
-} from "#runtime/rules/instructions/context-policy.ts";
+import type { ThreadLinkReason as AuthoredThreadLinkReason } from "#runtime/rules/instructions/context-policy.ts";
 import type { AdditionalContextPolicy } from "#runtime/rules/instructions/context-policy.ts";
 
 type ThreadLinkReason = AuthoredThreadLinkReason;
 type ThreadLinkReasonCode = ThreadLinkReason;
 type ThreadLinkCondition =
 	AdditionalContextPolicy["threadLink"]["reasonPrecedence"][number]["condition"];
-type ThreadLinkState = AuthoredThreadLinkState;
 type ThreadLinkStatus = SessionThread["status"]["type"];
 type ThreadLinkSource = SessionThreadSource;
 type ThreadLinkAllowedSource = Extract<ThreadLinkSource, "cli" | "vscode" | "exec" | "appServer">;
@@ -209,13 +198,11 @@ export {
 	type ThreadLinkReason,
 	type ThreadLinkReasonCode,
 	type ThreadLinkCondition,
-	type ThreadLinkState,
 	type ThreadLinkStatus,
 	type ThreadLinkSource,
 	type ThreadLinkAllowedSource,
 	type ThreadLinkExecutableStatus,
 	type ThreadLinkCurrentEpoch,
-	type ThreadLinkCurrentEpochSource,
 	type ThreadLinkEpochAuthority,
 	type ThreadLinkEpochProof,
 	type ThreadLinkTarget,
@@ -227,7 +214,6 @@ export {
 	type UnboundThreadLink,
 	type ThreadLinkSnapshot,
 	type ThreadLinkClassification,
-	type ThreadLinkClassificationErrorCode,
 	CodexThreadLinkError,
 	CodexThreadLinkConflictError,
 	type ThreadLinkCasToken,
@@ -237,12 +223,4 @@ export {
 	type ThreadLinkBindingStore,
 	type CodexThreadLinkClassifier,
 	type CodexThreadLinkPort,
-	type EpochExecutionProof,
-	type EpochOperationOutcome,
-	type EpochOperationRecord,
-	type EpochOperationStatus,
-	type SessionLoadedThreadPageResult,
-	type SessionThread,
-	type SessionThreadPageResult,
-	type SessionThreadSource,
 };

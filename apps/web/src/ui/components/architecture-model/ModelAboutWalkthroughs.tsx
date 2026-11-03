@@ -17,12 +17,12 @@ import {
 import { useCallback, useContext, useMemo, useState, type CSSProperties, type JSX } from "react";
 
 import { Button, cn, IconButton } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/board/content";
-import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
+import type { Model } from "@archboard/model/content";
+import { KindIcon } from "#ui/components/canvas/KindMarks.tsx";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
-import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
+import type { KindLook } from "#ui/rules/canvas/reading/kind-look.ts";
 import { ModelWalkthroughContext } from "#ui/state/architecture-model/presentation.ts";
 
 type Walkthrough = Model["walkthroughs"][number];

@@ -412,10 +412,7 @@ function queueIds(
 }
 
 export {
-	INPUT_LIMIT_BYTES,
 	ATTENTION_FLAGS,
-	type MutationOperation,
-	type QueueMutation,
 	type SettledDelivery,
 	type OperationState,
 	type RawNotification,
@@ -427,10 +424,8 @@ export {
 	freeze,
 	boundedDetail,
 	sameCall,
-	sameTarget,
 	sameBinding,
 	sameWorkhorse,
-	snapshotTarget,
 	snapshotBinding,
 	snapshotCall,
 	operationRpc,

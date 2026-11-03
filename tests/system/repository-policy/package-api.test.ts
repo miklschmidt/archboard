@@ -16,7 +16,7 @@ const ADOPTERS: {
 	name: string;
 	areas: string[];
 }[] = [
-	{ name: "board", areas: ["shared", "runtime"] },
+	{ name: "model", areas: ["shared", "runtime"] },
 	{ name: "codex-app-server", areas: ["shared", "runtime"] },
 	{ name: "workspace", areas: ["shared", "runtime", "server"] },
 	{ name: "code-binding", areas: ["shared", "runtime"] },
@@ -219,14 +219,14 @@ describe("no code outside the packages names a private package path", () => {
 
 	test("the scan names a private path and spares the rest, in a synthetic file", () => {
 		const text = [
-			`mock.module("../../packages/board/src/runtime/store/doing.ts", () => ({}));`, // 1: private
-			`const p = join(root, \`packages/board/src/shared/ids/ids.ts\`);`, // 2: private
-			`import x from "../../packages/board/src/shared/api/ids.ts";`, // 3: a public file still needs its exported name
+			`mock.module("../../packages/model/src/runtime/store/doing.ts", () => ({}));`, // 1: private
+			`const p = join(root, \`packages/model/src/shared/ids/ids.ts\`);`, // 2: private
+			`import x from "../../packages/model/src/shared/api/ids.ts";`, // 3: a public file still needs its exported name
 			`const f = "packages/alpha/src/shared/x.ts";`, // 4: not a package here
-			`/** Mirrors \`packages/board/src/runtime/store/doing.ts\`. */`, // 5: comment
-			`// "packages/board/src/runtime/store/doing.ts"`, // 6: comment
+			`/** Mirrors \`packages/model/src/runtime/store/doing.ts\`. */`, // 5: comment
+			`// "packages/model/src/runtime/store/doing.ts"`, // 6: comment
 		].join("\n");
-		expect(privatePackagePathLines(text, ["board", "process"])).toEqual([1, 2, 3]);
+		expect(privatePackagePathLines(text, ["model", "process"])).toEqual([1, 2, 3]);
 	});
 });
 
@@ -235,7 +235,7 @@ describe("the api checks", () => {
 		expect(
 			exportsOutsideApi(
 				{
-					"./document": "./src/shared/api/document.ts",
+					"./legacy-board": "./src/shared/api/legacy-board.ts",
 					"./ids": "./src/shared/rules/ids.ts",
 					"./write": "./src/runtime/operations/write/write.ts",
 					"./nested": "./src/shared/api/deeper/nested.ts",
@@ -269,14 +269,14 @@ describe("the api checks", () => {
 		const files = {
 			"shared/api/document.ts": `export { a } from "#shared/rules/a.ts";\n`,
 			"shared/api/star.ts": `export * from "#shared/rules/a.ts";\n`,
-			"shared/rules/b.ts": `import { a } from "#shared/api/document.ts";\n`,
+			"shared/rules/b.ts": `import { a } from "#shared/api/legacy-board.ts";\n`,
 			"runtime/c.ts": `import { a } from "#shared/rules/a.ts";\n`,
-			"runtime/d.ts": `import { mintId } from "@archboard/board/ids";\n`,
-			"runtime/e.ts": `import { x } from "@archboard/board/private-thing";\n`,
+			"runtime/d.ts": `import { mintId } from "@archboard/model/ids";\n`,
+			"runtime/e.ts": `import { x } from "@archboard/model/private-thing";\n`,
 			"shared/rules/relative.ts": `import { a } from "../api/document.ts";\n`,
 			"shared/rules/type.ts": `type A = import("../api/document.ts").A;\n`,
 		};
-		expect(privateFilesImportingApi(files, "board", ["document", "ids"])).toEqual([
+		expect(privateFilesImportingApi(files, "model", ["legacy-board", "ids"])).toEqual([
 			"shared/rules/b.ts",
 			"runtime/d.ts",
 			"shared/rules/relative.ts",

@@ -420,7 +420,7 @@ fn a_picture_with_no_traffic_never_asks_for_frames_on_its_account() {
     assert!(!frame(&mut stage, 1000.0).1);
 }
 
-/// How much a frame draws in the middle of a flight out of a card whose board
+/// How much a frame draws in the middle of a flight out of a card whose picture
 /// has one far part, at a far blend.
 fn drawn_in_a_card(far: bool) -> usize {
     let mut stage = stage_of(Vec::new());
@@ -438,7 +438,7 @@ fn drawn_in_a_card(far: bool) -> usize {
 }
 
 #[test]
-fn the_board_inside_a_card_stands_in_the_far_view_of_the_board_around_it() {
+fn the_picture_inside_a_card_stands_in_the_far_view_of_the_picture_around_it() {
     assert!(drawn_in_a_card(true) > drawn_in_a_card(false));
 }
 

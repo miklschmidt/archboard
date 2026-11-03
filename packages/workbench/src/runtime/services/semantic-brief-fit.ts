@@ -47,7 +47,7 @@ function copyContext(context: NormalizedContext): BriefContext {
 		threadLink: { ...context.threadLink },
 		workhorse: { ...context.workhorse },
 		coordinator: { ...context.coordinator },
-		board: { ...context.board },
+		model: { ...context.model },
 		pane: { ...context.pane },
 		architecture: {
 			variant: architecture.variant === null ? null : { ...architecture.variant },
@@ -88,9 +88,9 @@ function serializableBrief(
 		repository: context.repository,
 		workhorse: context.workhorse,
 		coordinator: context.coordinator,
-		board: context.board,
+		model: context.model,
 		pane: context.pane,
-		version: context.board.version,
+		version: context.model.version,
 		architecture: context.architecture,
 		claim: context.claim,
 		doing: context.doing,
@@ -280,7 +280,7 @@ function squeeze(
 	// The selected identities first, before any text is given room back. They are
 	// what an agent acts on, and they are short; the identity slots below are
 	// display text whose minimum — an ellipsis — still leaves the brief valid. A
-	// maximal repository path and board path together exceed the whole brief, so
+	// maximal repository path and model path together exceed the whole brief, so
 	// refilling them first is how a single selected node gets squeezed out by
 	// paths nobody is going to act on.
 	fitArray(parts, context, originals.selection, (value) => {

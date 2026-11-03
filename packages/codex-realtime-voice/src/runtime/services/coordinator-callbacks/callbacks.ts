@@ -26,7 +26,7 @@ import type {
 	CoordinatorCallbackSource,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 
-export const CALLBACK_BUFFER_LIMIT = 64;
+const CALLBACK_BUFFER_LIMIT = 64;
 
 interface PendingCallback {
 	readonly key: string;
@@ -472,8 +472,3 @@ export function createCodexCoordinatorCallbacks(
 		},
 	});
 }
-
-export {
-	coordinatorCallbackKey,
-	normalizeCoordinatorCallback,
-} from "#runtime/rules/coordinator-callbacks/normalize.ts";

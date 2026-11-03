@@ -528,4 +528,4 @@ function createCoordinatorStarter(
 	return Object.freeze({ start, onNotification });
 }
 
-export { type CoordinatorStartHooks, createCoordinatorStarter };
+export { createCoordinatorStarter };

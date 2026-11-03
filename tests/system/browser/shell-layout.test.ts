@@ -83,8 +83,8 @@ const READ_PANE_LETTERS = `(() => {
 })()`;
 
 /**
- * What the navigator says an agent is doing on the one board: the latest
- * doing line under "Working now", and whether the board's row carries the lamp.
+ * What the navigator says an agent is doing on the one model: the latest
+ * doing line under "Working now", and whether the model's row carries the lamp.
  */
 const READ_ACTIVITY = `(() => {
 	const nav = document.querySelector('${NAVIGATOR}');
@@ -154,8 +154,8 @@ test(
 		);
 		await pollUntil(
 			() => browser.eval<string | null>(MODEL_NAME_EXPRESSION),
-			(board) => board === "fixedpoint",
-			"fixedpoint to become the visible board",
+			(shown) => shown === "fixedpoint",
+			"fixedpoint to become the visible model",
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await pollUntil(
@@ -170,7 +170,7 @@ test(
 		await pollUntil(
 			() => modelDrawn(browser.eval.bind(browser)),
 			Boolean,
-			"the board to be drawn in its pane",
+			"the model to be drawn in its pane",
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await browser.eval<boolean>("document.fonts.ready.then(() => true)");
@@ -246,7 +246,7 @@ test(
 			expect(snapshot.visibleFocus).toBe(true);
 			expect(snapshot.modelIdentity).toBe("fixedpoint");
 			expect(snapshot.stateName).toContain(proposal.name);
-			// The navigator marks the board the one focused pane reads.
+			// The navigator marks the model the one focused pane reads.
 			expect(snapshot.selectedRepository).toBe(repository);
 			expect(snapshot.focusedPaneCount).toBe(1);
 			// A live socket says nothing in the pane header.

@@ -56,14 +56,14 @@ type Browser = Awaited<ReturnType<typeof createAgentBrowser>>;
 /** The pane's canvas, remembered once drawn (the loading stage is replaced) so its identity can be checked at the end. */
 function paneCanvas(
 	browser: Browser,
-): Promise<{ panes: number; board: string | null; drawn: boolean }> {
+): Promise<{ panes: number; model: string | null; drawn: boolean }> {
 	return browser.eval(`(() => {
 		const canvas = document.querySelector('${PANE_SECTIONS} ${MODEL_STAGE}');
 		const drawn = Boolean(canvas?.querySelector('[data-slot="model-diagram"] svg'));
 		if (canvas && drawn && !window.__codexTextWorkbenchCanvas) window.__codexTextWorkbenchCanvas = canvas;
 		return {
 			panes: document.querySelectorAll('${PANE_SECTIONS}').length,
-			board: ${MODEL_NAME_EXPRESSION},
+			model: ${MODEL_NAME_EXPRESSION},
 			drawn,
 		};
 	})()`);
@@ -128,8 +128,8 @@ test(
 		runServerCli(server, ["browser", "show", "workbench", "--pane", "primary"]);
 		await pollUntil(
 			() => paneCanvas(browser),
-			(value) => value.panes === 1 && value.board === "workbench" && value.drawn,
-			"the seeded board to draw in the one pane",
+			(value) => value.panes === 1 && value.model === "workbench" && value.drawn,
+			"the seeded model to draw in the one pane",
 		);
 		await browser.run(["console", "--clear"]);
 		await browser.run(["errors", "--clear"]);

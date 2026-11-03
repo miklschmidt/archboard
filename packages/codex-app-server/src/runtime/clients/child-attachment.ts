@@ -71,4 +71,4 @@ function attachChildListeners(
 }
 
 export { attachChildListeners, destroyQuietly };
-export type { ChildAttachment, ChildListenerHandlers };
+export type { ChildAttachment };

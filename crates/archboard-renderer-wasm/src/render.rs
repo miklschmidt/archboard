@@ -28,7 +28,7 @@ import type { Rendered } from "./types.ts";
 export interface RenderHost {
     /**
      * One measured graph laid out the way its root options name, answered as
-     * `layOutBoard` answers it. The signal calls off a solve that still waits
+     * `layOutPicture` answers it. The signal calls off a solve that still waits
      * for an engine: it is refused with the signal's reason. One an engine
      * already lays out answers all the same, and the render may still read it.
      */

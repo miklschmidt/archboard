@@ -1,4 +1,4 @@
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 
 const NO_STATES: Readonly<NonNullable<Model["states"]>> = Object.freeze([]);
 

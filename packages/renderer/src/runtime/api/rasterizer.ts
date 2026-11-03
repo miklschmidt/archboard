@@ -6,7 +6,4 @@ export {
 	SemanticRasterReceiptSchema,
 	ArchitectureRasterReceiptSchema,
 } from "#runtime/operations/rasterizer/receipt.ts";
-export {
-	createSemanticRasterizer,
-	SemanticRasterError,
-} from "#runtime/services/rasterizer/rasterizer.ts";
+export { createSemanticRasterizer } from "#runtime/services/rasterizer/rasterizer.ts";

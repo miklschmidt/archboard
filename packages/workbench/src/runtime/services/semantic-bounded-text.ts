@@ -282,17 +282,13 @@ function numberValue(value: unknown, field: string): number | null {
 
 export {
 	type BoundedValue,
-	SemanticContextInputError,
 	fail,
 	byteLength,
 	jsonStringByteLength,
-	fitsJsonUtf8,
 	clipJsonUtf8,
 	feedIdValue,
-	clipUtf8,
 	textValue,
 	nullableTextValue,
-	assertIdentityText,
 	identityValue,
 	numberValue,
 };

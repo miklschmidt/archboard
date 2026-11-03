@@ -2,7 +2,7 @@
 // place to open, and a reader's place follows the subject through a list that changes.
 
 import { expect, test } from "bun:test";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import {
 	changeAfter,
 	changeList,

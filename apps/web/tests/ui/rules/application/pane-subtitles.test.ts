@@ -2,7 +2,7 @@
 //
 // What is guarded: the voice's words are subtitled while a session carries audio, and a
 // recording's only on the page that records it (TASK-304, TASK-306): the server shares one voice
-// session between its browsers, and a recording narrates a board nobody elsewhere is looking at.
+// session between its browsers, and a recording narrates a model nobody elsewhere is looking at.
 
 import { expect, test } from "bun:test";
 

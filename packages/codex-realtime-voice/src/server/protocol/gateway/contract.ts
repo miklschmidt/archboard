@@ -2,7 +2,6 @@ import type {
 	BrowserCommand,
 	BrowserCommandLease,
 	BrowserSnapshot,
-	BrowserThreadLink,
 	DeliveryOutcome,
 } from "#shared/schemas/browser/snapshot.ts";
 import type { BrowserDynamicApprovalResponse } from "#shared/schemas/dynamic-approval/approval.ts";
@@ -25,7 +24,6 @@ import type { SupportedLoginAccountParams } from "@archboard/codex-app-server/se
 import type {
 	BrowserGatewayAccountReadResult,
 	BrowserGatewayCommandResult,
-	BrowserGatewayDeltaMessage,
 	BrowserGatewayErrorCode,
 	BrowserGatewayMessage,
 	BrowserGatewaySnapshotMessage,
@@ -67,52 +65,31 @@ export type BrowserAccountLoginCommand = Omit<
 	Extract<BrowserCommand, { readonly command: "accountLogin" }>,
 	"login"
 > & { readonly login: SupportedLoginAccountParams };
-export type BrowserAccountLoginCancelCommand = Extract<
+type BrowserAccountLoginCancelCommand = Extract<
 	BrowserCommand,
 	{ readonly command: "accountLoginCancel" }
 >;
-export type BrowserAccountLogoutCommand = Extract<
-	BrowserCommand,
-	{ readonly command: "accountLogout" }
->;
-export type BrowserThreadLinkCreateCommand = Extract<
+type BrowserAccountLogoutCommand = Extract<BrowserCommand, { readonly command: "accountLogout" }>;
+type BrowserThreadLinkCreateCommand = Extract<
 	BrowserCommand,
 	{ readonly command: "threadLinkCreate" }
 >;
-export type BrowserTextStartCommand = Extract<BrowserCommand, { readonly command: "start" }>;
-export type BrowserTextSteerCommand = Extract<BrowserCommand, { readonly command: "steer" }>;
-export type BrowserTextInterruptCommand = Extract<
-	BrowserCommand,
-	{ readonly command: "interrupt" }
->;
-export type BrowserQueueAddCommand = Extract<BrowserCommand, { readonly command: "queueAdd" }>;
-export type BrowserQueueUpdateCommand = Extract<
-	BrowserCommand,
-	{ readonly command: "queueUpdate" }
->;
-export type BrowserQueueDeleteCommand = Extract<
-	BrowserCommand,
-	{ readonly command: "queueDelete" }
->;
-export type BrowserQueueReorderCommand = Extract<
-	BrowserCommand,
-	{ readonly command: "queueReorder" }
->;
-export type BrowserQueueStartCommand = Extract<BrowserCommand, { readonly command: "queueStart" }>;
-export type BrowserRealtimeStartCommand = Extract<
-	BrowserCommand,
-	{ readonly command: "realtimeStart" }
->;
-export type BrowserRealtimeAppendTextCommand = Extract<
+type BrowserTextStartCommand = Extract<BrowserCommand, { readonly command: "start" }>;
+type BrowserTextSteerCommand = Extract<BrowserCommand, { readonly command: "steer" }>;
+type BrowserTextInterruptCommand = Extract<BrowserCommand, { readonly command: "interrupt" }>;
+type BrowserQueueAddCommand = Extract<BrowserCommand, { readonly command: "queueAdd" }>;
+type BrowserQueueUpdateCommand = Extract<BrowserCommand, { readonly command: "queueUpdate" }>;
+type BrowserQueueDeleteCommand = Extract<BrowserCommand, { readonly command: "queueDelete" }>;
+type BrowserQueueReorderCommand = Extract<BrowserCommand, { readonly command: "queueReorder" }>;
+type BrowserQueueStartCommand = Extract<BrowserCommand, { readonly command: "queueStart" }>;
+type BrowserRealtimeStartCommand = Extract<BrowserCommand, { readonly command: "realtimeStart" }>;
+type BrowserRealtimeAppendTextCommand = Extract<
 	BrowserCommand,
 	{ readonly command: "realtimeAppendText" }
 >;
-export type BrowserRealtimeStopCommand = Extract<
-	BrowserCommand,
-	{ readonly command: "realtimeStop" }
->;
+type BrowserRealtimeStopCommand = Extract<BrowserCommand, { readonly command: "realtimeStop" }>;
 
-export interface BrowserLeaseBinding {
+interface BrowserLeaseBinding {
 	readonly browserId: BrowserConnectionId;
 	readonly connection: BrowserConnectionInstance;
 	readonly chatId: string;
@@ -141,7 +118,7 @@ export interface BrowserProjectionContext {
 	readonly mediaReady: boolean;
 }
 
-export interface BrowserProjectionDisconnectContext {
+interface BrowserProjectionDisconnectContext {
 	readonly browserId: BrowserConnectionId;
 	readonly chatId: string;
 	/** Exact process-local socket identity; reusable browser ids are insufficient. */
@@ -237,7 +214,7 @@ export interface BrowserTextActions {
 	) => Promise<BrowserActionResult>;
 }
 
-export interface BrowserQueueActions {
+interface BrowserQueueActions {
 	readonly add: (
 		command: BrowserQueueAddCommand,
 		context: BrowserActionContext,
@@ -456,8 +433,6 @@ export interface CodexWorkbenchGateway {
 	readonly dispose: () => Promise<void>;
 }
 
-export type { BrowserCommandLease, BrowserSnapshot, BrowserThreadLink, ThreadLinkBindingSnapshot };
-
 /**
  * The gateway envelope is authored once in `shared` so the browser transport
  * can import the same declarations; server callers keep importing it from here.
@@ -465,8 +440,6 @@ export type { BrowserCommandLease, BrowserSnapshot, BrowserThreadLink, ThreadLin
 export type {
 	BrowserGatewayAccountReadResult,
 	BrowserGatewayCommandResult,
-	BrowserGatewayDeltaMessage,
-	BrowserGatewayErrorCode,
 	BrowserGatewayMessage,
 	BrowserGatewaySnapshotMessage,
 	BrowserSnapshotDelta,

@@ -155,4 +155,4 @@ function runOrb(canvas: HTMLCanvasElement, feed: OrbFeed, reducedMotion: boolean
 	return { wake, stop };
 }
 
-export { runOrb, type OrbFeed, type OrbRunner };
+export { runOrb, type OrbRunner };

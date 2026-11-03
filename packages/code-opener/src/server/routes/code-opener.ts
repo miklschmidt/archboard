@@ -50,7 +50,7 @@ type BindingLookup =
 	| { ok: true; binding: CodeBinding }
 	| {
 			ok: false;
-			code: "BOARD_NOT_FOUND" | "ELEMENT_NOT_FOUND" | "BINDING_UNAVAILABLE";
+			code: "BINDING_UNAVAILABLE";
 			error: string;
 	  };
 
@@ -74,8 +74,6 @@ const BODY_PARSER_FAILURES: ReadonlySet<string> = new Set([
 /** HTTP statuses for the failure codes that are not a plain 422 refusal. */
 const FAILURE_STATUSES: Readonly<Partial<Record<CodeTargetFailureCode, number>>> = {
 	CROSS_ORIGIN_REFUSED: 403,
-	BOARD_NOT_FOUND: 404,
-	ELEMENT_NOT_FOUND: 404,
 	MODEL_UNAVAILABLE: 404,
 	CHECKOUT_IDENTITY_CHANGED: 409,
 	CHECKOUT_ON_OTHER_REF: 409,
@@ -93,9 +91,9 @@ const pass: RequestHandler = (_request, _response, next) => {
 	next();
 };
 
-export interface CodeOpenerRouteDependencies {
-	/** Reads the binding a node carries, off the board of the vault the call names. */
-	bindingForElement(board: string, element: string, vault: string): BindingLookup;
+interface CodeOpenerRouteDependencies {
+	/** Reads the binding a node carries, off the model of the vault the call names. */
+	bindingForElement(model: string, element: string, vault: string): BindingLookup;
 	/** Resolves a binding to the code it opens, in the checkout the vault the call names reads. */
 	resolveTarget(
 		binding: CodeBinding,
@@ -117,18 +115,18 @@ export interface CodeOpenerRouteDependencies {
 }
 
 /**
- * Reads the code binding a node on a board carries.
+ * Reads the code binding a node on a model carries.
  *
- * The variant the pane is showing is part of the board key it sends, so a
+ * The variant the pane is showing is part of the model key it sends, so a
  * proposal's binding is read off the proposal rather than off whatever is
  * current: a person following code from a draft lands in the code that draft
  * names (ADR 0023).
- * @param _vault The vault root the board lives in.
- * @param _boardKey The board the node is on, variant and all.
+ * @param _vault The vault root the model lives in.
+ * @param _paneKey The model the node is on, variant and all.
  * @param _subjectId The node whose binding is wanted.
- * @returns The binding, or which of board, node or binding was missing.
+ * @returns The binding, or which of model, node or binding was missing.
  */
-function canonicalBinding(_vault: string, _boardKey: string, _subjectId: string): BindingLookup {
+function canonicalBinding(_vault: string, _paneKey: string, _subjectId: string): BindingLookup {
 	return {
 		ok: false,
 		code: "BINDING_UNAVAILABLE",
@@ -385,7 +383,7 @@ export async function openInEditor(
 
 /**
  * Builds the opener routes: settings read, save, reset and test, and code-target activation.
- * @param vault Names the vault root whose boards carry the bindings a request opens; asked
+ * @param vault Names the vault root whose models carry the bindings a request opens; asked
  * per request, because every call names its own vault (ADR 0049).
  * @param overrides Dependencies replaced by the Archboard server or by tests.
  * @returns The opener router.
@@ -397,14 +395,14 @@ export function createCodeOpenerRouter(
 	const dependencies = {
 		...DEFAULT_DEPENDENCIES,
 		/**
-		 * Reads the binding off the board of the vault.
-		 * @param board The board the node is on.
+		 * Reads the binding off the legacy board of the vault.
+		 * @param model The legacy board the node is on.
 		 * @param element The node whose binding is wanted.
 		 * @param vaultRoot The vault the call named.
-		 * @returns The binding, or which of board, node or binding was missing.
+		 * @returns The binding, or which of legacy board, node or binding was missing.
 		 */
-		bindingForElement: (board: string, element: string, vaultRoot: string) =>
-			canonicalBinding(vaultRoot, board, element),
+		bindingForElement: (model: string, element: string, vaultRoot: string) =>
+			canonicalBinding(vaultRoot, model, element),
 		...overrides,
 	};
 	const router = Router();

@@ -124,7 +124,6 @@ const UnknownDynamicToolResponseSchema = z
 	});
 
 const DynamicToolResponseSchema = ValidDynamicToolResponseSchema;
-const DynamicToolCallResponseSchema = DynamicToolResponseSchema;
 
 export {
 	DYNAMIC_TOOL_REFUSAL_REASONS,
@@ -133,14 +132,10 @@ export {
 	OpaqueIdSchema,
 	JsonObjectSchema,
 	DynamicToolOkEnvelopeSchema,
-	DynamicToolRefusedEnvelopeSchema,
-	DynamicToolApprovalRequiredEnvelopeSchema,
 	DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
 	DynamicToolOutcomeUnknownEnvelopeSchema,
 	DynamicToolEnvelopeSchema,
-	DynamicToolEnvelopeTextSchema,
 	ValidDynamicToolResponseSchema,
 	UnknownDynamicToolResponseSchema,
 	DynamicToolResponseSchema,
-	DynamicToolCallResponseSchema,
 };

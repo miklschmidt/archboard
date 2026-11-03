@@ -1,9 +1,9 @@
 import { useCallback, useContext, useEffect, useMemo } from "react";
-import { DiagramGrammarSchema } from "@archboard/board/views";
+import { DiagramGrammarSchema } from "@archboard/model/views";
 import { ModelExplanationContext } from "#ui/state/architecture-model/explanations.ts";
 import { NOTHING_READ, type PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import type { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import type { ExplanationInvocation } from "#ui/clients/architecture-model/explanations.ts";
 import { useComparisonSavedAt } from "#ui/hooks/architecture-model/use-comparison-saved-at.ts";
 import { comparedWith } from "#ui/rules/architecture-model/comparison-choices.ts";
