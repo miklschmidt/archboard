@@ -9,12 +9,13 @@ import {
 	type BundledSkill,
 	type SkillDestination,
 	countFiles,
+	expandHome,
 	findSkillSource,
 	resolveAgent,
 	resolveExplicitDir,
 	resolveTarget,
 } from "#cli/operations/install-skill/skill-destination.ts";
-import { setUpRepository } from "#cli/operations/install-skill/repo-setup.ts";
+import { checkoutRootOf, setUpRepository } from "#cli/operations/install-skill/repo-setup.ts";
 import { prepareSkillArtifacts } from "@archboard/skills/distribution";
 import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 
@@ -77,6 +78,7 @@ const InstallSkillResultSchema = z.union([
 		success: z.literal(true),
 		mode: z.string(),
 		root: z.string(),
+		install: z.enum(["link", "copy"]),
 		skills: z.array(
 			z.object({ skill: z.enum(BUNDLED_SKILLS), target: z.string(), files: SkillFilesSchema }),
 		),
@@ -102,17 +104,12 @@ function resolveDestination(input: InstallSkillRequest): SkillDestination {
 }
 
 /**
- * The existing install at the target, refusing to manage a symlink somebody else placed.
+ * The existing install at a copy's target, refusing to manage a symlink somebody else placed.
  * @param target - The skill directory to replace.
  * @returns Whether something is there to replace.
  */
-function existingInstall(target: string): boolean {
-	let lstat: fs.Stats | undefined;
-	try {
-		lstat = fs.lstatSync(target);
-	} catch {
-		/* target does not exist yet */
-	}
+function existingCopy(target: string): boolean {
+	const lstat = fs.lstatSync(target, { throwIfNoEntry: false });
 	if (lstat?.isSymbolicLink()) {
 		throw new Error(
 			`${target} is a symlink; refusing to replace it. Remove it manually if you want the CLI to manage this install.`,
@@ -165,15 +162,15 @@ function swapIn(plan: PlannedSkill, staging: string, context: CommandContext): v
  * a staging that fails leaves every previous install exactly as it was.
  * @param root - The skills root.
  * @param context - The command context that receives the diagnostics.
- * @returns Each installed skill, its directory and how many files it holds.
+ * @returns Each installed skill and its directory.
  */
-function installSkillFiles(
+function copySkills(
 	root: string,
 	context: CommandContext,
-): { skill: BundledSkill; target: string; files: number }[] {
+): { skill: BundledSkill; target: string }[] {
 	const planned = BUNDLED_SKILLS.map((skill): PlannedSkill => {
 		const target = path.join(root, skill);
-		return { skill, source: findSkillSource(skill), target, replaces: existingInstall(target) };
+		return { skill, source: findSkillSource(skill), target, replaces: existingCopy(target) };
 	});
 	fs.mkdirSync(root, { recursive: true });
 	const staged: { plan: PlannedSkill; staging: string }[] = [];
@@ -192,7 +189,106 @@ function installSkillFiles(
 		}
 		throw error;
 	}
-	return planned.map(({ skill, target }) => ({ skill, target, files: countFiles(target) }));
+	return planned.map(({ skill, target }) => ({ skill, target }));
+}
+
+/**
+ * What is installed at a skill directory of the root, as a diagnostic names it.
+ * @param target - The skill directory in the skills root.
+ * @returns "a copy", "a link to <place>", or undefined when nothing is there.
+ */
+function existingInstall(target: string): string | undefined {
+	const lstat = fs.lstatSync(target, { throwIfNoEntry: false });
+	if (!lstat) return undefined;
+	return lstat.isSymbolicLink() ? `a link to ${fs.readlinkSync(target)}` : "a copy";
+}
+
+/**
+ * Points one skill directory of the root at its source in this checkout. A link that already
+ * points there stays; a copy or a link to another place is replaced, and the diagnostic names it.
+ * @param source - The skill directory in this checkout.
+ * @param target - The skill directory in the skills root.
+ * @param context - The command context that receives the diagnostics.
+ */
+function linkSkill(source: string, target: string, context: CommandContext): void {
+	const was = existingInstall(target);
+	if (was === `a link to ${source}`) return;
+	const staging = path.join(path.dirname(target), `.${path.basename(target)}-link-${process.pid}`);
+	fs.rmSync(staging, { force: true });
+	fs.symlinkSync(source, staging, "dir");
+	if (was !== undefined) {
+		fs.rmSync(target, { recursive: true, force: true });
+		context.diagnostic(`Replaced ${was} at ${target} with a link to ${source}`);
+	}
+	fs.renameSync(staging, target);
+}
+
+/**
+ * Links every bundled skill in the root to its directory in this checkout, so a `git pull` and
+ * `bun install` keep it current with no further step. The consumer skill's generated files are
+ * prepared in the checkout, where the link finds them.
+ * @param root - The skills root.
+ * @param context - The command context that receives the diagnostics.
+ * @returns Each installed skill and its link.
+ */
+function linkSkills(
+	root: string,
+	context: CommandContext,
+): { skill: BundledSkill; target: string }[] {
+	prepareSkillArtifacts(findSkillSource(CONSUMER_SKILL), { root: SOURCE_CHECKOUT });
+	fs.mkdirSync(root, { recursive: true });
+	return BUNDLED_SKILLS.map((skill) => {
+		const target = path.join(root, skill);
+		linkSkill(findSkillSource(skill), target, context);
+		return { skill, target };
+	});
+}
+
+/**
+ * Resolves links in the existing part of an install path, including when its skills root is new.
+ * @param directory - An absolute path.
+ * @returns The physical path with any missing directories appended.
+ */
+function realInstallPath(directory: string): string {
+	if (fs.existsSync(directory)) return fs.realpathSync(directory);
+	return path.join(realInstallPath(path.dirname(directory)), path.basename(directory));
+}
+
+/**
+ * Whether a path is a directory or lies below it.
+ * @param child - The path to test.
+ * @param parent - The directory.
+ * @returns True when the path is inside the directory.
+ */
+function isInside(child: string, parent: string): boolean {
+	const relative = path.relative(realInstallPath(parent), realInstallPath(child));
+	return relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+}
+
+/**
+ * Installs the skills into the destination. A skills root inside the repository is committed
+ * with it and read on other machines, so it gets a copy. Every other root is this machine's own,
+ * so it links to this checkout.
+ * @param request - The validated install request.
+ * @param destination - Where the skills go.
+ * @param context - The command context that receives the diagnostics.
+ * @returns How the skills were installed, and each skill with its directory and file count.
+ */
+function installSkills(
+	request: InstallSkillRequest,
+	destination: SkillDestination,
+	context: CommandContext,
+): { install: "link" | "copy"; skills: { skill: BundledSkill; target: string; files: number }[] } {
+	const repo = checkoutRootOf(expandHome(request.repo ?? process.cwd()));
+	const install = request.dir !== undefined && isInside(destination.root, repo) ? "copy" : "link";
+	const installed =
+		install === "copy"
+			? copySkills(destination.root, context)
+			: linkSkills(destination.root, context);
+	return {
+		install,
+		skills: installed.map((entry) => ({ ...entry, files: countFiles(entry.target) })),
+	};
 }
 
 /**
@@ -217,7 +313,7 @@ async function executeInstallSkill(
 	}
 	const request = context.parse(InstallSkillRequestSchema, input);
 	const destination = resolveDestination(request);
-	const skills = installSkillFiles(destination.root, context);
+	const { install, skills } = installSkills(request, destination, context);
 	const setup = request.noSetup
 		? undefined
 		: await setUpRepository({
@@ -228,6 +324,7 @@ async function executeInstallSkill(
 		success: true,
 		mode: destination.mode,
 		root: destination.root,
+		install,
 		skills,
 		...(setup ? { setup } : {}),
 	};
@@ -238,7 +335,9 @@ const installSkillContract = defineCommand({
 	shared: [],
 	summary: "Install the bundled agent skills and set this repository up",
 	description:
-		"Copies the bundled skills into a skills root (~/.agents/skills by default), then makes the " +
+		"Links the bundled skills from a skills root (~/.agents/skills by default) to this checkout, " +
+		"so that a git pull updates them. A --dir inside the repository gets a copy instead, because " +
+		"the repository carries it to other machines. Then the installer makes the " +
 		"repository's vault, <repo>/.archboard/vault, when it has none, and registers the repository " +
 		"so that a browser lists it. A command run in the repository finds that vault without any " +
 		"setting, so nothing is written into CLAUDE.md or AGENTS.md. A block that an earlier version wrote there is removed, and nothing else in the " +

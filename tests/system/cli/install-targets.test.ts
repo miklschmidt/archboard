@@ -72,6 +72,7 @@ describe("install targets", () => {
 			vault: join(repo, ".archboard", "vault"),
 			vaultCreated: true,
 		});
+		expect(result.install, diagnostic).toBe("link");
 		expect(() => {
 			fixture.assertSkillBytes(root);
 		}, diagnostic).not.toThrow();
@@ -127,29 +128,63 @@ describe("install targets", () => {
 		}
 	});
 
-	test("honors custom targets and refuses to replace a symlink", () => {
+	test("links a root outside the repository to the checkout, and replaces a copy or another link", () => {
 		using fixture = createInstallFixture();
 		const repo = fixture.repo("custom");
 		const custom = join(fixture.root, "custom-root");
+		mkdirSync(join(custom, "archboard"), { recursive: true });
+		writeFileSync(join(custom, "archboard", "SKILL.md"), "an older copy\n");
+		symlinkSync(join(fixture.root, "elsewhere"), join(custom, "archboard-pr"), "dir");
 		const result = fixture.install(repo, ["--dir", custom]);
 		const diagnostic = installFailure(result.spawn);
-		expect(result, diagnostic).toMatchObject({ mode: "dir", root: custom });
-		expect(() => {
-			fixture.assertSkillBytes(custom);
-		}, diagnostic).not.toThrow();
+		expect(result, diagnostic).toMatchObject({ mode: "dir", root: custom, install: "link" });
+		for (const skill of shippedSkills) {
+			const target = join(custom, skill);
+			expect(lstatSync(target).isSymbolicLink(), diagnostic).toBe(true);
+			expect(realpathSync(target), diagnostic).toBe(
+				realpathSync(join(checkoutRoot, "skills", skill)),
+			);
+		}
+		expect(result.spawn.stderr.match(/Replaced/gu)?.length, diagnostic).toBe(2);
+		expect(() => fixture.assertSkillBytes(custom), diagnostic).not.toThrow();
+		const again = fixture.install(repo, ["--dir", custom]);
+		expect(again.spawn.stderr, installFailure(again.spawn)).not.toContain("Replaced");
+	});
+
+	test("copies into a root inside the repository and refuses to replace a symlink there", () => {
+		using fixture = createInstallFixture();
+		const repo = fixture.repo("local");
+		const local = join(repo, ".agents", "skills");
+		const result = fixture.install(repo, ["--dir", local, "--no-setup"]);
+		const diagnostic = installFailure(result.spawn);
+		expect(result, diagnostic).toMatchObject({ mode: "dir", root: local, install: "copy" });
+		expect(lstatSync(join(local, "archboard")).isSymbolicLink(), diagnostic).toBe(false);
+		expect(() => fixture.assertSkillBytes(local), diagnostic).not.toThrow();
 		const linkedRepo = fixture.repo("linked");
-		const linkedRoot = join(fixture.root, "linked-root");
-		mkdirSync(linkedRoot);
+		const linkedRoot = join(linkedRepo, ".agents", "skills");
+		mkdirSync(linkedRoot, { recursive: true });
 		const linkedTarget = join(linkedRoot, "archboard");
-		symlinkSync(join(fixture.root, "custom-root", "archboard"), linkedTarget, "dir");
-		const refused = fixture.run(linkedRepo, ["--dir", linkedRoot]);
+		symlinkSync(join(local, "archboard"), linkedTarget, "dir");
+		const refused = fixture.run(linkedRepo, ["--dir", linkedRoot, "--no-setup"]);
 		expect(refused.status, installFailure(refused)).not.toBe(0);
-		expect(refused.stderr, installFailure(refused)).toContain(
-			"is a symlink; refusing to replace it",
-		);
 		expect(lstatSync(linkedTarget).isSymbolicLink(), installFailure(refused)).toBe(true);
 		// The refusal comes before any skill is swapped in, so none of them is half installed.
 		expect(readdirSync(linkedRoot), installFailure(refused)).toEqual(["archboard"]);
+	});
+
+	test("copies into a repository reached through a directory link", () => {
+		using fixture = createInstallFixture();
+		const repo = fixture.repo("real-repository");
+		fixture.git(repo, "init", "--quiet");
+		const alias = join(fixture.root, "repository-link");
+		symlinkSync(repo, alias, "dir");
+		const root = join(alias, ".agents", "skills");
+		const result = fixture.install(alias, ["--dir", root, "--no-setup"]);
+		const diagnostic = installFailure(result.spawn);
+		expect(result.install, diagnostic).toBe("copy");
+		for (const skill of shippedSkills) {
+			expect(lstatSync(join(root, skill)).isSymbolicLink(), diagnostic).toBe(false);
+		}
 	});
 
 	test("makes the vault and writes no agent document, and a rerun changes nothing", async () => {
