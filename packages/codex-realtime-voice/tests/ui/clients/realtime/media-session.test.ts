@@ -100,6 +100,24 @@ describe("realtime browser media session", () => {
 		env.assertReleased();
 	});
 
+	test("hands the voice's receivers to the host once the remote audio is built", async () => {
+		const env = new FakeBrowser();
+		const heard: unknown[][] = [];
+		const media = createRealtimeMediaSession(realtimeServer(env), {
+			environment: env.environment(),
+			/**
+			 * Hear the voice's receivers.
+			 * @param receivers The receivers.
+			 */
+			receivers: (receivers) => {
+				heard.push(receivers.map((receiver) => receiver.track));
+			},
+		});
+		await media.start(correlation());
+		expect(heard).toEqual([[env.peers[0]!.remoteTrack]]);
+		await media.dispose();
+	});
+
 	test("overlapping starts own their snapshots and superseded resources", async () => {
 		const env = new FakeBrowser();
 		const media = session(env);

@@ -64,6 +64,16 @@ const RECORDING_MS = durations({
 	 */
 	tapDrain: 1000,
 	/**
+	 * How much of the voice the recording's browser holds before playing it: the WebRTC receiver's
+	 * `jitterBufferTarget`. The voice's packets come unevenly at the start of each sentence. With
+	 * the browser's own conversational target, the buffer is 30 to 50 ms between sentences, and a
+	 * recording on 2026-11-03 ran dry nine times in 83 s: 1.5 s of the voice was invented and
+	 * 1.8 s was stretched, which a listener hears as a call with bad reception. The buffer then
+	 * grew to between 200 and 650 ms. Nobody talks back to a recording, so it starts with that
+	 * much and loses nothing but latency.
+	 */
+	voiceBuffer: 600,
+	/**
 	 * How often the page decides whether to move on. It reads the voice's output
 	 * level and transcript, both already in memory; a tenth of a second is below
 	 * what a viewer notices in a pause.

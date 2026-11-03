@@ -28,9 +28,9 @@ Read a system that you did not write, and see where its design costs the most. F
 
 Plan the next step before anyone writes code. Ask for a change and see it drawn against today's architecture, weigh competing options side by side, and adopt the one that ships: the architecture it replaces becomes history, kept with the reason it changed. The Codex voice can explain the selected architecture while you explore its modules. One command can film it into a narrated video for a design review or a pull request.
 
-**Hear Archboard explain itself**. Its own architecture, narrated by the Codex voice. Turn the sound on.
+**Hear what Archboard does**. A tour from a first map to a narrated video, told by the Codex voice over Archboard's own architecture. Turn the sound on.
 
-https://github.com/user-attachments/assets/41949554-ca44-44f0-af88-dfd577a29c40
+https://github.com/user-attachments/assets/fbf65954-b46e-4443-9cb6-66989e4521bb
 
 ## What you can do with it
 
@@ -179,7 +179,7 @@ gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this cha
 
 **A pull request, explained to its reviewers**: why the change exists, what it changed, and where to look closely. Turn the sound on.
 
-https://github.com/user-attachments/assets/7e44af90-c1b4-4af5-8268-9eb2ec3732d2
+https://github.com/user-attachments/assets/32f64c93-c3b4-4fae-99f1-ddcfb489917c
 
 <p align="center"><sub>Each video is an Archboard recording.</sub></p>
 
@@ -208,7 +208,7 @@ Add a sequence diagram of what happens when a shopper places an order, from the 
 
 Give the tour once, and every new hire can play it back. A newcomer's walkthrough starts with two modules and adds a few at each step until the whole path is on screen. It stops at the place where things go wrong and ends on the one sentence worth remembering.
 
-https://github.com/user-attachments/assets/c88c63a1-6e00-4f37-ba58-081ee50f0519
+https://github.com/user-attachments/assets/2aad9784-93c6-4138-b0be-8df127ec755a
 
 <p align="center"><sub>"How stock is reserved", six steps through the example shop. Turn the sound on.</sub></p>
 

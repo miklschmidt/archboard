@@ -79,6 +79,19 @@ const TalkEventSchema = z.discriminatedUnion("kind", [
 ]);
 type TalkEvent = z.infer<typeof TalkEventSchema>;
 
+/**
+ * How the voice arrived, as the browser's WebRTC receiver counted it in samples at the voice's
+ * 48 kHz (its `inbound-rtp` statistics). A clean voice has none of either.
+ */
+const ReceptionSchema = z
+	.object({
+		/** Samples the receiver made up because the voice had not arrived: what a listener hears as a dropout. */
+		concealedSamples: SampleSchema,
+		/** Samples it added or removed to slow the voice down or speed it up while it waited for packets. */
+		stretchedSamples: SampleSchema,
+	})
+	.strict();
+
 /** What the live pass's page hands over: the log of the talk, stamped on the voice's clock. */
 const TalkLogSchema = z
 	.object({
@@ -86,6 +99,8 @@ const TalkLogSchema = z
 		samples: SampleSchema,
 		/** How far the voice's clock ran behind what was heard, in milliseconds, as the page measured it. */
 		baseLatencyMs: z.number().nonnegative(),
+		/** How the voice arrived, when the page could count it. */
+		reception: ReceptionSchema.optional(),
 		events: z.array(TalkEventSchema),
 	})
 	.strict();
@@ -138,6 +153,8 @@ const TalkSchema = z
 				channels: z.literal(1),
 				samples: SampleSchema,
 				baseLatencyMs: z.number().nonnegative(),
+				/** How the voice arrived. A talk kept before it was counted has none. */
+				reception: ReceptionSchema.optional(),
 			})
 			.strict(),
 		events: z.array(TalkEventSchema),
@@ -187,6 +204,7 @@ function talkFrom(parts: TalkParts): ReturnType<typeof TalkSchema.safeParse> {
 			channels: 1,
 			samples: parts.log.samples,
 			baseLatencyMs: parts.log.baseLatencyMs,
+			...(parts.log.reception === undefined ? {} : { reception: parts.log.reception }),
 		},
 		events: parts.log.events,
 		document: parts.document,

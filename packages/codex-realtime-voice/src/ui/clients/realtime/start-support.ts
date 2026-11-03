@@ -22,12 +22,15 @@ import {
 } from "#ui/clients/realtime/run.ts";
 import type { RealtimeMediaSnapshot, Run } from "#ui/clients/realtime/run.ts";
 import type { VoiceOutputLevelSource } from "#ui/clients/output-level/level-source.ts";
+import type { RealtimeMediaSessionOptions } from "#ui/state/realtime/session-contract.ts";
 
 /** What the start stages need from the session that owns the run. */
 interface RunController {
 	readonly server: RealtimeServer;
 	readonly environment: RealtimeMediaEnvironment;
 	readonly outputLevel: VoiceOutputLevelSource;
+	/** Hears the voice's receivers once its remote audio is built. */
+	readonly receivers: NonNullable<RealtimeMediaSessionOptions["receivers"]>;
 	/** True once the run is no longer the current, live one. */
 	readonly inactive: (run: Run) => boolean;
 	readonly publish: (run: Run, state: RealtimeState) => void;

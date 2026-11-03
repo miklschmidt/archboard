@@ -40,7 +40,9 @@ function usePageRecorder(opening: WorkspaceAddress): WalkthroughRecorder | null 
 function recordedMedia(
 	recorder: WalkthroughRecorder | null,
 ): BrowserWorkbenchMediaOwnerOptions | undefined {
-	return recorder === null ? undefined : { audioElements: recorder.audioElements };
+	return recorder === null
+		? undefined
+		: { audioElements: recorder.audioElements, receivers: recorder.receivers };
 }
 
 /** What the panes are given that depends on whether the page is a recording. */

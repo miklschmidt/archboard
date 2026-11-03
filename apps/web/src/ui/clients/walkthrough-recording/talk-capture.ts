@@ -6,8 +6,11 @@
 // it with the frame it began at, silence included, so the voice's samples and
 // the graph's clock are one count. An event is stamped with the graph's clock
 // when it happens, which is at most one render callback from the sound heard
-// then, well under one frame of video. Nothing here draws or captures a
-// picture: the picture is rendered from the talk afterwards, frame by frame.
+// then, well under one frame of video. What the voice says is the exception: the
+// browser holds the voice for `RECORDING_MS.voiceBuffer` before it plays it, and
+// the words are not held, so a line is stamped that much after it arrives, when
+// its sound is heard. Nothing here draws or captures a picture: the picture is
+// rendered from the talk afterwards, frame by frame.
 
 import { RECORDING_MS } from "@archboard/timing";
 import type { publishRecordingPage } from "@archboard/walkthrough/recording";
@@ -24,6 +27,9 @@ declare class AudioWorkletProcessor {
 }
 declare function registerProcessor(name: string, processor: typeof AudioWorkletProcessor): void;
 declare const currentFrame: number;
+
+/** How long after a line arrives its sound is heard, in samples: what the browser buffers of the voice. */
+const VOICE_BUFFER_SAMPLES = Math.round((RECORDING_MS.voiceBuffer * TALK_SAMPLE_RATE) / 1000);
 
 /** The name the tap is registered by in the audio worklet. */
 const TAP = "archboard-talk-tap";
@@ -244,7 +250,11 @@ class TalkCapture {
 		const origin = this.#origin ?? this.#now();
 		const end = Math.max(1, this.#now() - origin);
 		this.#ended = true;
-		this.#events.push({ kind: "end", at: end });
+		// A line stamped when it is heard may come after an event that happened later, or after the end.
+		const events = this.#events
+			.map((event) => (event.at > end ? { ...event, at: end } : event))
+			.toSorted((left, right) => left.at - right.at);
+		events.push({ kind: "end", at: end });
 		await this.#drained(origin + end);
 		const samples = this.#samples(origin, end);
 		this.close();
@@ -253,7 +263,7 @@ class TalkCapture {
 			log: {
 				samples: end,
 				baseLatencyMs: this.#context.baseLatency * 1000,
-				events: [...this.#events],
+				events,
 			},
 		};
 	}
@@ -274,10 +284,11 @@ class TalkCapture {
 	/**
 	 * Stamp an event with the graph's clock, once the talk has begun.
 	 * @param event The event, without its moment.
+	 * @param heardAfter How many samples after now it is heard.
 	 */
-	#stamp(event: Unstamped): void {
+	#stamp(event: Unstamped, heardAfter = 0): void {
 		if (this.#origin === null || this.#ended) return;
-		this.#events.push({ ...event, at: this.#now() - this.#origin });
+		this.#events.push({ ...event, at: this.#now() - this.#origin + heardAfter });
 	}
 
 	/** Stamp each line of the voice's that reads other than it did. */
@@ -296,7 +307,10 @@ class TalkCapture {
 		const reads = `${line.final ? "final" : "partial"}:${line.text}`;
 		if (this.#said.get(line.itemId) === reads) return;
 		this.#said.set(line.itemId, reads);
-		this.#stamp({ kind: "said", itemId: line.itemId, text: line.text, final: line.final });
+		this.#stamp(
+			{ kind: "said", itemId: line.itemId, text: line.text, final: line.final },
+			VOICE_BUFFER_SAMPLES,
+		);
 	}
 
 	/**

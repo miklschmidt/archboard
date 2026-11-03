@@ -27,7 +27,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "f04c0e93380dfb4eb1bc2a6f457d5f07c6b35579f7151721e88c03538e842bd5"
+			"hash": "330634aab6cfd607d7102e7a174e901e47e6b4e882aa67999141f889733386e1"
 		},
 		{
 			"name": "hero",
@@ -91,7 +91,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "ef08fe49ad3e098ae00a50d2b304389d49b54dd348d8645808d325056c4146b3"
+			"hash": "6b7bd5ae48254c821bb2aa24ed42b0cb111b65e77332779263bb5162ca99da7e"
 		},
 		{
 			"name": "plan",
@@ -180,7 +180,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "b436c5e2461f685881ed0e986b1dde7695f7901a0fa6e6ceae65d83bc7b8f64c"
+			"hash": "6c5ab6fb9c4870d93927fcc7b5ade5cf480bf7d9e723ce181842d1a4a903cb00"
 		},
 		{
 			"name": "sequence",
@@ -207,7 +207,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "f06c671ce67435ff47464ec6bc79228bf74b205e1034f07e8aefebf11dc27b10"
+			"hash": "dfb5a57d5e682053d12aecd6548f8edde63f4d2d9e8cae9db4fa6ba1a2f86b9a"
 		},
 		{
 			"name": "newcomer",
@@ -239,7 +239,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "b436c5e2461f685881ed0e986b1dde7695f7901a0fa6e6ceae65d83bc7b8f64c"
+			"hash": "6c5ab6fb9c4870d93927fcc7b5ade5cf480bf7d9e723ce181842d1a4a903cb00"
 		},
 		{
 			"name": "drill-down",
@@ -354,7 +354,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "f06c671ce67435ff47464ec6bc79228bf74b205e1034f07e8aefebf11dc27b10"
+			"hash": "dfb5a57d5e682053d12aecd6548f8edde63f4d2d9e8cae9db4fa6ba1a2f86b9a"
 		},
 		{
 			"name": "architecture",

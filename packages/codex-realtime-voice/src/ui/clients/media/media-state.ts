@@ -10,6 +10,7 @@ import type {
 } from "#shared/protocol/realtime-contract.ts";
 import type { createRealtimeMediaSession } from "#ui/clients/realtime/media-session.ts";
 import type { RealtimeMediaEnvironment } from "#ui/state/realtime/environment.ts";
+import type { RealtimeMediaSessionOptions } from "#ui/state/realtime/session-contract.ts";
 import type { RealtimeMediaSession } from "#ui/clients/realtime/media-session.ts";
 import type { RealtimeMediaSnapshot } from "#ui/clients/realtime/media-session.ts";
 import type { BrowserWorkbenchTransport } from "#ui/state/transport/contract.ts";
@@ -73,6 +74,8 @@ interface BrowserWorkbenchMediaOwnerOptions {
 	readonly environment?: RealtimeMediaEnvironment;
 	/** Where the remote audio element comes from and is mounted. */
 	readonly audioElements?: BrowserAudioElementPort;
+	/** Hears the voice's receivers once its remote audio is built. */
+	readonly receivers?: RealtimeMediaSessionOptions["receivers"];
 	/** Whether this browser can carry realtime media at all. */
 	readonly mediaSupported?: () => boolean;
 }

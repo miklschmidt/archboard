@@ -51,7 +51,7 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 	explainer: narratedProducer({
 		name: "explainer",
 		vault: ".archboard/vault",
-		walkthrough: "From modules to durable architecture",
+		walkthrough: "What Archboard does",
 	}),
 	plan,
 	"code-evidence": codeEvidence,

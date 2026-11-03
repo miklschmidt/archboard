@@ -36,7 +36,13 @@ import {
 	type RecordingContainer,
 	type RecordingState,
 } from "#shared/protocol/recording-page.ts";
-import { TALK_VOICE_FILE, talkFrom, type Talk, type TalkLog } from "#shared/protocol/talk.ts";
+import {
+	TALK_SAMPLE_RATE,
+	TALK_VOICE_FILE,
+	talkFrom,
+	type Talk,
+	type TalkLog,
+} from "#shared/protocol/talk.ts";
 import {
 	isJsonRecord,
 	type HeadlessChromium,
@@ -438,6 +444,13 @@ async function keptTalk(
 	const talk = talkOf(request, talked.log, talked.steps);
 	const directory = writeTalk({ talk, voice: voiceSamples(voice), place: request.talk });
 	request.say(`Kept the talk in ${directory}.`);
+	const lost = talk.audio.reception?.concealedSamples ?? 0;
+	if (lost > 0) {
+		const ms = Math.round((lost * 1000) / TALK_SAMPLE_RATE);
+		request.say(
+			`The voice dropped out for ${ms} ms while it was recorded. Record again for a clean voice.`,
+		);
+	}
 	return { talk, directory, leftBehind: talked.leftBehind };
 }
 
