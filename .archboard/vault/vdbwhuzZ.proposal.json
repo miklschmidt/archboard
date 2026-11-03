@@ -1,11 +1,15 @@
 {
   "id": "vdbwhuzZ",
   "name": "A flowchart lays out from its flow and a flow opens in the reading that fits",
-  "summary": "The flowchart lays a flow out from its structure in one pass and breaks a long run into columns, so a long flow fits a desktop pane, and a flow opens in the reading that its pane shows larger.",
+  "summary": "The flowchart lays a flow out from its structure in one pass, breaks a long run into columns and ends every long line at a lettered jump, so a long flow fits a desktop pane without lines round its blocks, and a flow opens in the reading that its pane shows larger.",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "docs/adr/0073-a-flowchart-lays-out-from-its-flow-and-a-flow-opens-in-the-reading-that-fits.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/design/flowchart-layout-research.md"
     }
   ],
   "schemaVersion": 1,
@@ -27,13 +31,13 @@
       "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#0idmUHd2",
       "field": "responsibility",
-      "value": "Lays out one flow's logic from its structure: steps on one axis, answers side by side, loops as hexagons, long runs in columns"
+      "value": "Lays out one flow's logic from its structure: steps on one axis, answers side by side, long lines and column breaks as lettered jumps"
     },
     {
       "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#0idmUHd2",
       "field": "description",
-      "value": "A flow is a run of blocks, and each block is a box, a decision or a loop. The layout stacks a run on one axis, stands the answers of a decision side by side, and draws a loop's line back on the left of its steps. A run that is taller than its column height breaks into even columns, and the line between them rises in the gap. The core keeps the column height at which the reference pane shows the picture largest (ADR 0073). No layout engine takes part, so the lines cross nowhere."
+      "value": "A flow is a run of blocks: a box, a decision, a guard, a landing or a loop. The layout stacks a run on one axis, with steps that follow each other close and no line between them, and stands the answers of a decision side by side, the taller of two straight on down. A line that would run far round other blocks jumps: it stops at a jump out and goes on at the jump in of the same letter and ink. The short answer of a guard jumps to the landing where its long answer ends, a long loop jumps back to its hexagon and on from beside it, and a run that is taller than its column height breaks into even columns that jump from one to the next. The core keeps the column height at which the reference pane shows the picture largest, and letters the jumps in the order the picture holds them (ADR 0073). No layout engine takes part, so the lines cross nowhere."
     },
     {
       "type": "assign",
@@ -67,7 +71,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#XFJazS8y",
       "field": "label",
-      "value": "lay the blocks out and break long runs into columns"
+      "value": "lay the blocks out in columns and letter the jumps"
     },
     {
       "type": "assign",

@@ -4,7 +4,7 @@ Date: 2026-11-03
 Scope: decide where a tall structured flowchart breaks into columns, and where its lines run.
 The current layout is [ADR 0073](../adr/0073-a-flowchart-lays-out-from-its-flow-and-a-flow-opens-in-the-reading-that-fits.md).
 `crates/archboard-flows/src/flowchart/layout/mod.rs` and `branches.rs` implement it.
-The research changed no code.
+The research itself changed no code.
 Every claim about a source cites it, and [Sources](#sources) lists them with notes on access.
 A claim marked **abstract only** rests on the abstract alone.
 Text marked **Inference** is my reasoning, not a claim of a source.
@@ -62,6 +62,17 @@ The owner also asked whether research exists on how to lay these charts out well
   Allow a cut only at a decision or after a join, and prefer the decision cut that the owner proposes.
   Fall back to an even-height cut only inside a long run of plain steps.
   For those runs, let the flow author name the phases, because only the author knows them.
+
+## Outcome
+
+The section [What this means for this flowchart](#what-this-means-for-this-flowchart) argues for the owner's sketch.
+A prototype on the long flows of this repository showed that cuts at decisions alone left the long lines in place.
+ADR 0073 took another way, and TASK-572 built it.
+A line that would run far now jumps: it stops at a lettered jump out and goes on at the jump in of the same letter.
+This is the named jump of the open question [Long join lines](#open-questions), as a DRAKON address or an ISO 5807 connector.
+It replaces the rising line between columns, the long line of a short answer to its join, and a long loop's lines round its body.
+The cut of a column still falls at the balanced height, and never in front of a decision or a landing.
+No reader test compares jumps with drawn lines yet.
 
 ## Findings
 
