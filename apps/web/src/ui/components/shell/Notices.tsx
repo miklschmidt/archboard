@@ -13,7 +13,7 @@ import { Alert, Button, buttonVariants, IconButton } from "@archboard/ui-kit/com
 import type { ShellActions, ShellNotice, ShellNoticeAction } from "#ui/rules/shell/contracts.ts";
 
 /** A 24px outline action with two-pixel corners. */
-const TOASTER_STYLE = { fontFamily: "var(--font-sans)" };
+const TOASTER_STYLE = { fontFamily: "var(--font-sans)", position: "absolute" } as const;
 
 const ACTION_CLASS = "rounded-chip font-medium";
 
@@ -130,7 +130,7 @@ function Notice(props: NoticeProps): JSX.Element {
 	return (
 		<Alert
 			variant={notice.tone}
-			className="bg-popover text-popover-foreground w-96 rounded-xl border p-4 shadow-lg"
+			className="bg-popover text-popover-foreground w-full rounded-xl border p-4 shadow-lg"
 		>
 			{notice.tone === "destructive" ? <RiErrorWarningLine /> : <RiInformationLine />}
 			<Alert.Title className="pr-6">{notice.title}</Alert.Title>
