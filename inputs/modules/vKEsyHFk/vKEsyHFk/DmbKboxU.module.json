@@ -2,7 +2,7 @@
   "order": 29000,
   "name": "model",
   "kind": "package",
-  "responsibility": "The canonical model contract and its rules, the coherent reader and durable writer, the signed archive of its history, and legacy decoding for migration and retained originals",
+  "responsibility": "The canonical model contract and its one reader and durable writer",
   "groups": [
     "packages",
     "writes"

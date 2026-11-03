@@ -11,6 +11,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#UCjVcfWj",
   "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
+  "formerNames": [
+    "Place a board in its card"
+  ],
   "outgoing": [
     {
       "order": 67000,
@@ -25,8 +28,5 @@
       "id": "vKEsyHFk/UOXNWLhR#AEEOu1vG",
       "to": "vKEsyHFk/UOXNWLhR#n5No6FUy"
     }
-  ],
-  "formerNames": [
-    "Place a board in its card"
   ]
 }

@@ -10,6 +10,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#b6D8IxT0",
   "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "formerNames": [
+    "Board level mark"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -24,8 +27,5 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [],
-  "formerNames": [
-    "Board level mark"
-  ]
+  "outgoing": []
 }
