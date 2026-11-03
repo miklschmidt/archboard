@@ -7,13 +7,15 @@
 //! decision's answers stand side by side below its diamond and leave it from
 //! its points, and a loop runs its line back up beside the steps it repeats.
 //! A flowchart too tall for the reference pane breaks its runs of steps into
-//! columns side by side (`frames.rs`). It is painted by the architecture
-//! painter: the frames, the lines and their words are an architecture's, the
-//! message boxes are cards, and only the diamonds, hexagons and terminals are
-//! drawn as shapes of their own. Every line meets a shape at a point of its
-//! outline: a box and a terminal at the middle of their top and foot, a
-//! diamond at its points, a hexagon at its flat top and foot and its side
-//! points.
+//! columns side by side (`frames.rs`). A line that would run far round other
+//! blocks, or from one column to the next, jumps: it stops at a jump out and
+//! goes on at the jump in of the same letter and ink. It is painted by the
+//! architecture painter: the frames, the lines and their words are an
+//! architecture's, the message boxes are cards, and only the diamonds,
+//! hexagons, terminals and jumps are drawn as shapes of their own. Every line
+//! meets a shape at a point of its outline: a box and a terminal at the middle
+//! of their top and foot, a diamond at its points, a hexagon at its flat top
+//! and foot and its side points.
 
 mod frames;
 mod graph;
@@ -41,7 +43,7 @@ use serde::Deserialize;
 use crate::content::{Flow, Node};
 use frames::{Header, Page, fitted};
 use graph::{Answer, Block, Graph, SHAPE_KIND, flowchart_of};
-use layout::{DONE, REPEAT};
+use layout::{DONE, REPEAT, Run};
 
 /// The widest a shape's words run before they wrap.
 const SHAPE_WORDS_WIDTH: f64 = 150.0;
@@ -113,6 +115,20 @@ fn shape_size(shape: FlowchartShape, name: &str) -> (Vec<String>, f64, f64) {
             )
         }
         FlowchartShape::Start | FlowchartShape::End => (words, TERMINAL.0, TERMINAL.1),
+        // The layout sizes a jump where it places it.
+        FlowchartShape::Jump { .. } => (words, 0.0, 0.0),
+    }
+}
+
+/// A node drawn as a shape of its own, at a size.
+fn shape_node(node: NodeFacts, width: f64, height: f64) -> MeasuredNode<NodeFacts> {
+    MeasuredNode {
+        node,
+        width,
+        height,
+        header_height: 0.0,
+        runs: Vec::new(),
+        headers: None,
     }
 }
 
@@ -148,15 +164,7 @@ fn measured(
             };
             let (lines, width, height) = shape_size(shape, &node.name);
             words.insert(node.id.clone(), lines);
-            let measured = MeasuredNode {
-                node: node.facts(),
-                width,
-                height,
-                header_height: 0.0,
-                runs: Vec::new(),
-                headers: None,
-            };
-            (node.id.clone(), measured)
+            (node.id.clone(), shape_node(node.facts(), width, height))
         })
         .collect();
     (nodes, words)
@@ -167,7 +175,15 @@ fn measured(
 fn line_words(blocks: &[Block], words: &mut HashMap<String, MeasuredLabel>) {
     for block in blocks {
         match block {
-            Block::Step(_) | Block::Terminal(_) => {}
+            Block::Step(_) | Block::Terminal(_) | Block::Land(_) => {}
+            Block::Guard { side, main, .. } => {
+                for label in [&side.label, main] {
+                    words
+                        .entry(label.clone())
+                        .or_insert_with(|| measure::measure_label(label));
+                }
+                line_words(&side.blocks, words);
+            }
             Block::Decision { answers, .. } => {
                 for Answer { label, blocks } in answers {
                     words
@@ -189,13 +205,33 @@ fn line_words(blocks: &[Block], words: &mut HashMap<String, MeasuredLabel>) {
 }
 
 /// The page as the painter draws it: every frame and box with its words,
-/// every line along its corners with its words. Its lines cross nowhere, so
-/// no line hops another, and the layout owns where they run.
+/// every line along its corners with its words, and how each line reads: one
+/// that joins another line has no arrowhead. Its lines cross nowhere, so no
+/// line hops another, and the layout owns where they run.
 fn drawing_of(
     page: Page,
     graph: &Graph,
     nodes: &HashMap<String, MeasuredNode<NodeFacts>>,
-) -> Painted {
+) -> (Painted, BTreeMap<String, LineAppearance>) {
+    let next = LineAppearance {
+        name: "Next".to_owned(),
+        color: None,
+        dash: Dash::Solid,
+        arrowhead: Arrowhead::Filled,
+    };
+    let joining = LineAppearance {
+        arrowhead: Arrowhead::None,
+        ..next.clone()
+    };
+    let lines = page
+        .runs
+        .iter()
+        .enumerate()
+        .map(|(order, run)| {
+            let look = if run.joins { &joining } else { &next };
+            (edge_id(run, order), look.clone())
+        })
+        .collect();
     let boxes: HashMap<String, _> = page.boxes.into_iter().collect();
     let frames: HashMap<String, _> = page.frames.into_iter().collect();
     let placed = |id: &str, depth: f64, bounds| {
@@ -221,7 +257,7 @@ fn drawing_of(
         .enumerate()
         .map(|(order, run)| DrawingEdge {
             edge: EdgeFacts {
-                id: format!("{}>{}#{order}", run.from, run.to),
+                id: edge_id(&run, order),
                 from: run.from,
                 to: run.to,
                 kind: NEXT_KIND.to_owned(),
@@ -247,10 +283,51 @@ fn drawing_of(
         edges: drawing.edges.clone(),
         bridges: Vec::new(),
     };
-    PaintedDrawing {
+    let painted = PaintedDrawing {
         frozen: true,
         drawing,
         bridged,
+    };
+    (painted, lines)
+}
+
+/// A line's id: the nodes it runs between, and where it stands among the
+/// page's lines, since two lines can run between the same two nodes.
+fn edge_id(run: &Run, order: usize) -> String {
+    format!("{}>{}#{order}", run.from, run.to)
+}
+
+/// Every end of a jump on the page as a shape of its own, in its flow's
+/// frame: each jump numbered in the order the page holds its ends, and
+/// lettered from A by that number.
+fn add_jumps(
+    page: &mut Page,
+    graph: &mut Graph,
+    nodes: &mut HashMap<String, MeasuredNode<NodeFacts>>,
+    words: &mut BTreeMap<String, Vec<String>>,
+) {
+    let mut numbers: HashMap<String, u32> = HashMap::new();
+    let mut count = 0;
+    for (flow, marker) in std::mem::take(&mut page.markers) {
+        let number = *numbers.entry(marker.jump.clone()).or_insert_with(|| {
+            count += 1;
+            count - 1
+        });
+        let letter = char::from_u32(u32::from('A') + number % 26)
+            .unwrap_or_default()
+            .to_string();
+        let shape = FlowchartShape::Jump {
+            end: marker.end,
+            number,
+        };
+        let facts = graph.add_jump(&flow, &marker.id, shape, letter.clone());
+        let bounds = marker.bounds;
+        nodes.insert(
+            marker.id.clone(),
+            shape_node(facts, bounds.width, bounds.height),
+        );
+        words.insert(marker.id.clone(), vec![letter]);
+        page.boxes.push((marker.id, bounds));
     }
 }
 
@@ -317,8 +394,8 @@ fn node_appearances(
 
 /// Every flow of a reading laid out as a flowchart, as the painter's request.
 pub fn picture(request: FlowchartRequest) -> PaintRequest {
-    let graph = flowchart_of(&request.flows, &request.parts);
-    let (nodes, words) = measured(&graph);
+    let mut graph = flowchart_of(&request.flows, &request.parts);
+    let (mut nodes, mut words) = measured(&graph);
     let sizes: HashMap<String, (f64, f64)> = nodes
         .iter()
         .map(|(id, node)| (id.clone(), (node.width, node.height)))
@@ -339,24 +416,13 @@ pub fn picture(request: FlowchartRequest) -> PaintRequest {
     for chart in &graph.charts {
         line_words(&chart.blocks, &mut line_words_measured);
     }
-    let page = fitted(&graph.charts, &headers, &sizes, &line_words_measured);
-    let drawing = drawing_of(page, &graph, &nodes);
-    let next = LineAppearance {
-        name: "Next".to_owned(),
-        color: None,
-        dash: Dash::Solid,
-        arrowhead: Arrowhead::Filled,
-    };
+    let mut page = fitted(&graph.charts, &headers, &sizes, &line_words_measured);
+    add_jumps(&mut page, &mut graph, &mut nodes, &mut words);
+    let (drawing, lines) = drawing_of(page, &graph, &nodes);
     // Its frames, lines and boxes are painted as an architecture's, its shapes
     // as their own, and its atlas holds only what a reader can pick: the
     // flows and their steps.
     let appearances = node_appearances(&drawing, &graph, &request.node_kinds);
-    let lines = drawing
-        .drawing
-        .edges
-        .iter()
-        .map(|edge| (edge.edge.id.clone(), next.clone()))
-        .collect();
     let shapes = graph
         .shapes
         .iter()

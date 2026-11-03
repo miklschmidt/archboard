@@ -15,7 +15,7 @@ use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::paint::design::DIAGRAM_MARGIN;
 
 use super::graph::Chart;
-use super::layout::{Layout, Run};
+use super::layout::{Layout, Marker, Run};
 
 /// The room between a frame and what it holds, as a container's.
 const FRAME_INSET: f64 = 20.0;
@@ -50,6 +50,8 @@ pub(super) struct Page {
     pub frames: Vec<(String, Rect)>,
     /// Every box and shape, by node.
     pub boxes: Vec<(String, Rect)>,
+    /// Every end of a jump, by the flow whose frame holds it.
+    pub markers: Vec<(String, Marker)>,
     /// Every line.
     pub runs: Vec<Run>,
     /// How many times a run of blocks broke into another column.
@@ -64,6 +66,7 @@ fn page(charts: &[Chart], headers: &HashMap<String, Header>, layout: &Layout<'_>
         height: 0.0,
         frames: Vec::new(),
         boxes: Vec::new(),
+        markers: Vec::new(),
         runs: Vec::new(),
         breaks: 0,
     };
@@ -91,6 +94,8 @@ fn page(charts: &[Chart], headers: &HashMap<String, Header>, layout: &Layout<'_>
             },
         ));
         page.boxes.extend(blocks.boxes);
+        page.markers
+            .extend((blocks.markers.into_iter()).map(|marker| (chart.flow.clone(), marker)));
         page.runs.extend(blocks.runs);
         page.breaks += blocks.breaks;
         page.width = page.width.max(width + 2.0 * DIAGRAM_MARGIN);

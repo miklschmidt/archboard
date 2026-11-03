@@ -4,25 +4,30 @@
 //! blocks alone.
 //!
 //! A run of blocks stacks on one axis, so a run of steps reads as one straight
-//! line. A decision stands its answers side by side below its diamond: the
+//! line, and steps that follow each other stack close with no line between
+//! them. A decision stands its answers side by side below its diamond: the
 //! first leaves the diamond's left point, the last its right point, and any
-//! other its foot. Each answer keeps its own spacing, and its loose ends drop
-//! below the longest answer and join on the diamond's axis, so a short answer
-//! ends at the top and its line runs on to the join. A loop stands the blocks
-//! it repeats below its hexagon, runs the line back up on their left and the
-//! line out on their right.
+//! other its foot, but the taller of two answers runs straight on down out of
+//! the foot. Each answer keeps its own spacing, and its loose ends drop below
+//! the longest answer and join on the diamond's axis. A guard, a decision whose
+//! one answer is far longer, carries the run on below its diamond and stands
+//! its short answer beside the run, down to a jump. A loop stands the blocks it
+//! repeats below its hexagon and runs the line back up on their left and the
+//! line out on their right; a long body jumps back to the hexagon instead, and
+//! the run jumps on from beside the hexagon when it is done.
 //!
 //! A run taller than the column height it is given breaks into columns side by
-//! side, between two of its blocks and never next to a terminal, each column
-//! as short as that many columns can be. The line from the foot of one column
-//! rises in the gap beside it and enters the next column from above. Each
-//! block is laid out in its own frame of reference, the top left corner of its
-//! box at the origin, and moved into place by the block that holds it.
+//! side, between two of its blocks and never next to a terminal or in front of
+//! a decision, each column as short as that many columns can be. The foot of
+//! one column ends at a jump that the next column starts at. Each block is laid
+//! out in its own frame of reference, the top left corner of its box at the
+//! origin, and moved into place by the block that holds it.
 
 use std::collections::HashMap;
 
 use archboard_scene::drawing::MeasuredLabel;
 use archboard_scene::geometry::{BEND_RADIUS, Point, Rect};
+use archboard_scene::request::JumpEnd;
 
 use super::graph::Block;
 
@@ -33,15 +38,19 @@ pub(super) const DONE: &str = "done";
 
 /// The room between two blocks of a run, which the line between them crosses.
 const STEP_GAP: f64 = 24.0;
-/// The room between two columns of a run; the line to the next column rises
-/// in its middle.
+/// The room between two steps that follow each other, which stack with no
+/// line between them.
+const STACK_GAP: f64 = 4.0;
+/// The room between two columns of a run.
 const COLUMN_GAP: f64 = 48.0;
 /// How far a line runs straight before and after a bend that turns it once:
 /// a bend and as long a straight again.
 const RUN: f64 = 2.0 * BEND_RADIUS;
-/// How far above the columns of a broken run the line to the next column runs:
-/// a bend down from it and the straight run an arrowhead needs.
-const RISE: f64 = 4.0 * BEND_RADIUS;
+/// How wide and tall a jump in is: a disc.
+const JUMP_IN: f64 = 30.0;
+/// How wide a jump out is across its line, and how long along it, its point
+/// included.
+const JUMP_OUT: (f64, f64) = (30.0, 36.0);
 /// How many halvings settle the least column height that holds a run in as
 /// many columns.
 const BALANCING: u32 = 24;
@@ -58,6 +67,35 @@ pub(super) struct Run {
     pub words: Option<(MeasuredLabel, Rect)>,
     /// Where it starts, every corner it turns at, and where it ends.
     pub points: Vec<Point>,
+    /// Whether it ends on another line, which it joins with no arrowhead,
+    /// rather than in a node.
+    pub joins: bool,
+}
+
+impl Run {
+    /// A loose end out of a node, along points.
+    fn out_of(from: &str, words: Option<(MeasuredLabel, Rect)>, points: Vec<Point>) -> Run {
+        Run {
+            from: from.to_owned(),
+            to: String::new(),
+            words,
+            points,
+            joins: false,
+        }
+    }
+}
+
+/// One end of a jump as it is laid out.
+#[derive(Clone, Debug)]
+pub(super) struct Marker {
+    /// The marker's own id.
+    pub id: String,
+    /// The jump it is an end of: the id of the jump's in.
+    pub jump: String,
+    /// Which end it is.
+    pub end: JumpEnd,
+    /// Where it stands.
+    pub bounds: Rect,
 }
 
 /// A block laid out in its own frame of reference: the top left corner of its
@@ -74,13 +112,43 @@ pub(super) struct Laid {
     pub head: String,
     /// Every box and shape the block holds, by node.
     pub boxes: Vec<(String, Rect)>,
+    /// Every end of a jump the block holds.
+    pub markers: Vec<Marker>,
     /// Every line that starts and ends in the block.
     pub runs: Vec<Run>,
-    /// The lines out of the block, each run to its foot, for the block that
-    /// holds it to carry on to whatever comes next.
+    /// The lines out of the block, where they stand, for the block that holds
+    /// it to carry on to whatever comes next.
     pub ends: Vec<Run>,
+    /// The lines that end on the run's line, to enter whatever comes next.
+    pub joins: Vec<Run>,
     /// How many times a run of blocks in it broke into another column.
     pub breaks: usize,
+    /// Whether it is a step, which stacks on a step before it.
+    pub stacks: bool,
+    /// Whether the run's line runs straight on through it, entering nothing.
+    pub passes: bool,
+    /// Whether its line out ends beside it, for the run to jump on from below it.
+    pub jumps_on: bool,
+}
+
+impl Default for Laid {
+    fn default() -> Self {
+        Laid {
+            width: 0.0,
+            height: 0.0,
+            entry: at(0.0, 0.0),
+            head: String::new(),
+            boxes: Vec::new(),
+            markers: Vec::new(),
+            runs: Vec::new(),
+            ends: Vec::new(),
+            joins: Vec::new(),
+            breaks: 0,
+            stacks: false,
+            passes: false,
+            jumps_on: false,
+        }
+    }
 }
 
 impl Laid {
@@ -88,9 +156,6 @@ impl Laid {
     /// decision's diamond or a loop's hexagon, with nothing below it yet.
     fn shape(id: &str, width: f64, height: f64) -> Laid {
         Laid {
-            width: 0.0,
-            height: 0.0,
-            entry: at(0.0, 0.0),
             head: id.to_owned(),
             boxes: vec![(
                 id.to_owned(),
@@ -101,9 +166,7 @@ impl Laid {
                     height,
                 },
             )],
-            runs: Vec::new(),
-            ends: Vec::new(),
-            breaks: 0,
+            ..Laid::default()
         }
     }
 
@@ -120,8 +183,15 @@ impl Laid {
         shift(&mut self.entry);
         self.boxes
             .iter_mut()
-            .for_each(|(_, bounds)| shift_box(bounds));
-        for run in self.runs.iter_mut().chain(&mut self.ends) {
+            .map(|(_, bounds)| bounds)
+            .chain(self.markers.iter_mut().map(|marker| &mut marker.bounds))
+            .for_each(shift_box);
+        for run in self
+            .runs
+            .iter_mut()
+            .chain(&mut self.ends)
+            .chain(&mut self.joins)
+        {
             run.points.iter_mut().for_each(shift);
             run.words
                 .iter_mut()
@@ -133,9 +203,32 @@ impl Laid {
     /// Take in a block laid out inside this one, its loose ends left for the caller.
     fn hold(&mut self, inner: Laid) -> Vec<Run> {
         self.boxes.extend(inner.boxes);
+        self.markers.extend(inner.markers);
         self.runs.extend(inner.runs);
         self.breaks += inner.breaks;
         inner.ends
+    }
+
+    /// One end of a jump in the block.
+    fn mark(&mut self, id: &str, jump: &str, end: JumpEnd, bounds: Rect) {
+        self.markers.push(Marker {
+            id: id.to_owned(),
+            jump: jump.to_owned(),
+            end,
+            bounds,
+        });
+    }
+
+    /// How far down the block reaches: its foot, or lower where a guard's
+    /// short answer hangs beside the blocks after it. Every block's entry is
+    /// at its top.
+    fn bottom(&self) -> f64 {
+        self.boxes
+            .iter()
+            .map(|(_, bounds)| bounds)
+            .chain(self.markers.iter().map(|marker| &marker.bounds))
+            .map(|bounds| bounds.y + bounds.height)
+            .fold(self.entry.y + self.height, f64::max)
     }
 
     /// The block finished at its extent, from its leftmost reach to its
@@ -152,6 +245,16 @@ fn at(x: f64, y: f64) -> Point {
     Point { x, y }
 }
 
+/// A box of a size, its top left corner at a point.
+fn rect(corner: Point, (width, height): (f64, f64)) -> Rect {
+    Rect {
+        x: corner.x,
+        y: corner.y,
+        width,
+        height,
+    }
+}
+
 /// Where a loose end stands now.
 fn last(run: &Run) -> Point {
     run.points.last().copied().unwrap_or_else(|| at(0.0, 0.0))
@@ -164,6 +267,13 @@ fn finished(ends: Vec<Run>, point: Point, head: &str) -> impl Iterator<Item = Ru
         head.clone_into(&mut run.to);
         run
     })
+}
+
+/// Where the lowest of some loose ends stands.
+fn lowest(ends: &[Run]) -> Option<Point> {
+    ends.iter()
+        .map(last)
+        .max_by(|one, other| one.y.total_cmp(&other.y))
 }
 
 /// Every loose end carried on along points.
@@ -190,49 +300,34 @@ fn most(values: impl Iterator<Item = f64>) -> f64 {
     values.fold(0.0, f64::max)
 }
 
-/// Carry a loose end from the foot of one column to the top of the next: down
-/// from the block it leaves, or on along the join it runs on, to the gap
-/// between the columns, up the gap, and over to the next column's axis. The
-/// lowest it runs.
-fn to_next_column(run: &mut Run, gap: f64, axis: f64) -> f64 {
-    let foot = last(run);
-    let sideways = run
-        .points
-        .len()
-        .checked_sub(2)
-        .and_then(|index| run.points.get(index))
-        .is_some_and(|before| (before.y - foot.y).abs() < f64::EPSILON);
-    let below = if sideways {
-        // It came along a join to the axis: it runs on along the join instead.
-        run.points.pop();
-        foot.y
-    } else {
-        run.points.push(at(foot.x, foot.y + RUN));
-        foot.y + RUN
-    };
-    run.points
-        .extend([at(gap, below), at(gap, BEND_RADIUS), at(axis, BEND_RADIUS)]);
-    below
+/// The room between two blocks one under the other, by whether each stacks:
+/// close between two steps, a line's room otherwise.
+fn gap(above: bool, below: bool) -> f64 {
+    if above && below { STACK_GAP } else { STEP_GAP }
 }
 
 /// How many blocks of a run stand in each column when each column takes as
-/// many as fit under a height, at least one, and never a terminal alone.
+/// many as fit under a height, at least one. A column never holds a terminal
+/// alone, and never breaks in front of a decision, which stays at the foot of
+/// the steps that lead to it, or of a landing, which stays with the blocks it
+/// follows.
 fn fill(blocks: &[Block], laid: &[Laid], column: f64) -> Vec<usize> {
-    let terminal = |index: usize| matches!(blocks.get(index), Some(Block::Terminal(_)));
     let mut columns = vec![0];
     let mut height = 0.0;
     for (index, block) in laid.iter().enumerate() {
         let held = columns.last().copied().unwrap_or(0);
-        let grown = height + STEP_GAP + block.height;
-        let breaks = held > 0
-            && grown > column
-            && !(held == 1 && terminal(index - 1))
-            && !(index == laid.len() - 1 && terminal(index));
+        let grown = if held == 0 {
+            block.height
+        } else {
+            height + gap(laid[index - 1].stacks, block.stacks) + block.height
+        };
+        let breaks = grown > column && may_break(blocks, index, held);
         if breaks {
             columns.push(0);
         }
-        height = if breaks || held == 0 {
-            block.height
+        // A column after a break starts at the jump in from the one before.
+        height = if breaks {
+            JUMP_IN + STEP_GAP + block.height
         } else {
             grown
         };
@@ -243,45 +338,146 @@ fn fill(blocks: &[Block], laid: &[Laid], column: f64) -> Vec<usize> {
     columns
 }
 
+/// Whether a run may break into a new column in front of one of its blocks,
+/// with a count of blocks in the column so far.
+fn may_break(blocks: &[Block], index: usize, held: usize) -> bool {
+    let terminal = |index: usize| matches!(blocks.get(index), Some(Block::Terminal(_)));
+    let alone =
+        (held == 1 && terminal(index - 1)) || (index == blocks.len() - 1 && terminal(index));
+    let follows = matches!(
+        blocks[index],
+        Block::Decision { .. } | Block::Guard { .. } | Block::Land(_)
+    );
+    held > 0 && !alone && !follows
+}
+
+/// How far the blocks after a guard reach out from the run's axis on one side,
+/// as far down below the guard as its short answer hangs beside them.
+fn beside<'a>(after: impl Iterator<Item = &'a Laid>, left: bool, depth: f64) -> f64 {
+    let mut reach = 0.0;
+    let mut top = STEP_GAP;
+    let mut above: Option<&Laid> = None;
+    for block in after {
+        if let Some(above) = above {
+            top += above.height + gap(above.stacks, block.stacks);
+        }
+        if top >= depth {
+            break;
+        }
+        let out = if left {
+            block.entry.x
+        } else {
+            block.width - block.entry.x
+        };
+        reach = f64::max(reach, out);
+        above = Some(block);
+    }
+    reach
+}
+
 /// A run of blocks as it is stacked: what it holds so far, the lines out of
 /// its last block, and where its next column starts.
 struct Stack {
     chain: Laid,
+    /// The lines out of the last block placed.
     open: Vec<Run>,
+    /// The lines that end on the run's line, to enter the next block placed.
+    joins: Vec<Run>,
+    /// The node of the last block placed, which names a jump after it.
+    last: String,
+    /// Whether the last block placed jumps on.
+    jumps_on: bool,
     /// Where the next column's left edge stands.
     left: f64,
-    /// Where each column's first block stands.
-    top: f64,
+    /// The last column's axis.
+    axis: f64,
 }
 
 impl Stack {
     /// One column of blocks on one axis, every line into each of them drawn.
+    /// A column after the first starts at the jump from the foot of the one
+    /// before.
     fn column(&mut self, column: Vec<Laid>, first: bool) {
         let axis = self.left + most(column.iter().map(|block| block.entry.x));
         let right = axis + most(column.iter().map(|block| block.width - block.entry.x));
-        if !first {
-            // The line from the foot of the column before rises in the gap
-            // beside it and enters this column from above.
-            let gap = self.left - COLUMN_GAP / 2.0;
-            for run in &mut self.open {
-                let below = to_next_column(run, gap, axis);
-                self.chain.height = self.chain.height.max(below);
+        self.axis = axis;
+        let mut y = 0.0;
+        let mut above: Option<(bool, f64)> = None;
+        for (index, block) in column.into_iter().enumerate() {
+            if let Some((stacks, foot)) = above {
+                y = foot + gap(stacks, block.stacks);
+                if stacks && block.stacks {
+                    // A step on a step before it: no line between them.
+                    self.open.clear();
+                }
             }
-        }
-        let mut y = self.top;
-        for block in column {
+            if (index == 0 && !first) || self.jumps_on {
+                y += self.jump(at(axis, y));
+            }
             let offset = at(axis - block.entry.x, y);
-            y += block.height;
-            self.place(block.moved(offset));
-            self.chain.height = self.chain.height.max(y);
-            y += STEP_GAP;
+            let block = block.moved(offset);
+            above = Some((block.stacks, y + block.height));
+            self.chain.height = self.chain.height.max(block.bottom());
+            self.jumps_on = block.jumps_on;
+            self.place(block);
         }
         self.chain.width = right;
         self.left = right + COLUMN_GAP;
     }
 
+    /// The lines out of the last block end at a jump out, and the run goes on
+    /// from the jump's in at a point: how far the in and the room below it
+    /// reach down from that point. A line out that ends beside its block ends
+    /// at a tag that points on across; any other at a tag below its end.
+    fn jump(&mut self, resume: Point) -> f64 {
+        let (out, into) = (format!("{}~out", self.last), format!("{}~in", self.last));
+        let foot = lowest(&self.open).unwrap_or_else(|| at(self.axis, self.chain.height));
+        let (end, bounds, enters) = if self.jumps_on {
+            let (across, along) = JUMP_OUT;
+            let bounds = rect(at(foot.x, foot.y - across / 2.0), (along, across));
+            (JumpEnd::OutRight, bounds, foot)
+        } else {
+            let top = at(foot.x, foot.y + STEP_GAP);
+            let bounds = rect(at(top.x - JUMP_OUT.0 / 2.0, top.y), JUMP_OUT);
+            (JumpEnd::OutDown, bounds, top)
+        };
+        self.chain.mark(&out, &into, end, bounds);
+        let open = std::mem::take(&mut self.open);
+        self.chain.runs.extend(finished(open, enters, &out));
+        for mut run in self.joins.drain(..) {
+            out.clone_into(&mut run.to);
+            self.chain.runs.push(run);
+        }
+        let disc = rect(at(resume.x - JUMP_IN / 2.0, resume.y), (JUMP_IN, JUMP_IN));
+        self.chain.mark(&into, &into, JumpEnd::In, disc);
+        self.chain.height = self
+            .chain
+            .height
+            .max(bounds.y + bounds.height)
+            .max(disc.y + disc.height);
+        self.open.push(Run::out_of(
+            &into,
+            None,
+            vec![at(resume.x, resume.y + JUMP_IN)],
+        ));
+        self.jumps_on = false;
+        JUMP_IN + STEP_GAP
+    }
+
     /// One block in its place, the lines out of the block before carried into it.
-    fn place(&mut self, block: Laid) {
+    fn place(&mut self, mut block: Laid) {
+        self.last.clone_from(&block.head);
+        if block.passes {
+            let foot = block.entry.y + block.height;
+            carried(&mut self.open, |end| vec![at(end.x, foot)]);
+            self.joins.append(&mut block.joins);
+            self.chain.hold(block);
+            return;
+        }
+        for mut run in self.joins.drain(..) {
+            block.head.clone_into(&mut run.to);
+            self.chain.runs.push(run);
+        }
         if self.chain.head.is_empty() {
             self.chain.entry = block.entry;
             self.chain.head.clone_from(&block.head);
@@ -293,16 +489,13 @@ impl Stack {
         self.open = self.chain.hold(block);
     }
 
-    /// The run, its loose ends carried down to its foot.
+    /// The run, its loose ends those of its last block. A run whose last
+    /// block jumps on goes on from the jump's in at its foot.
     fn finish(mut self) -> Laid {
-        let foot = self.chain.height;
-        carried(&mut self.open, |end| {
-            if end.y < foot {
-                vec![at(end.x, foot)]
-            } else {
-                Vec::new()
-            }
-        });
+        if self.jumps_on {
+            self.jump(at(self.axis, self.chain.height + STEP_GAP));
+        }
+        self.open.append(&mut self.joins);
         self.chain.ends = self.open;
         self.chain
     }
@@ -331,41 +524,44 @@ impl Layout<'_> {
         &self.words[text]
     }
 
-    /// One block laid out.
-    fn block(&self, block: &Block) -> Laid {
+    /// One block laid out, with the blocks after it in its run, laid out
+    /// already, which a guard's short answer stands beside. A step stands as
+    /// wide as a width.
+    fn block<'a>(&self, block: &Block, width: f64, after: impl Iterator<Item = &'a Laid>) -> Laid {
         match block {
-            Block::Step(id) | Block::Terminal(id) => self.step(id),
+            Block::Step(id) => Laid {
+                stacks: true,
+                ..self.step(id, width)
+            },
+            Block::Terminal(id) => self.step(id, self.size(id).0),
             Block::Decision { id, answers } => self.decision(id, answers),
-            Block::Loop { id, body } => self.repeat(id, body),
+            Block::Loop { id, body, back } => match back {
+                Some(back) => self.repeat_by_jumps(id, body, back),
+                None => self.repeat(id, body),
+            },
+            Block::Guard {
+                id,
+                side,
+                main,
+                first,
+                lands,
+            } => self.guard(id, side, main, *first, lands, after),
+            Block::Land(id) => branches::land(id),
         }
     }
 
     /// A box: a line enters the middle of its top and leaves the middle of its foot.
-    fn step(&self, id: &str) -> Laid {
-        let (width, height) = self.size(id);
+    fn step(&self, id: &str, width: f64) -> Laid {
+        let height = self.size(id).1;
         let middle = width / 2.0;
         Laid {
             width,
             height,
             entry: at(middle, 0.0),
             head: id.to_owned(),
-            boxes: vec![(
-                id.to_owned(),
-                Rect {
-                    x: 0.0,
-                    y: 0.0,
-                    width,
-                    height,
-                },
-            )],
-            runs: Vec::new(),
-            ends: vec![Run {
-                from: id.to_owned(),
-                to: String::new(),
-                words: None,
-                points: vec![at(middle, height)],
-            }],
-            breaks: 0,
+            boxes: vec![(id.to_owned(), rect(at(0.0, 0.0), (width, height)))],
+            ends: vec![Run::out_of(id, None, vec![at(middle, height)])],
+            ..Laid::default()
         }
     }
 
@@ -392,25 +588,36 @@ impl Layout<'_> {
 
     /// A run of blocks stacked on one axis in each column, its columns side by
     /// side, every line between two of its blocks drawn. Its loose ends are
-    /// those of its last block, run to its foot.
+    /// those of its last block. Steps that follow each other stand as wide as
+    /// the widest of them.
     pub(super) fn chain(&self, blocks: &[Block]) -> Laid {
-        let laid: Vec<Laid> = blocks.iter().map(|block| self.block(block)).collect();
+        let width = |block: &Block| match block {
+            Block::Step(id) => self.size(id).0,
+            _ => 0.0,
+        };
+        let widths: Vec<f64> = blocks
+            .chunk_by(|one, other| matches!((one, other), (Block::Step(_), Block::Step(_))))
+            .flat_map(|stack| std::iter::repeat_n(most(stack.iter().map(width)), stack.len()))
+            .collect();
+        // Last to first, so that a guard knows the blocks after it.
+        let mut laid: Vec<Laid> = Vec::with_capacity(blocks.len());
+        for (block, width) in blocks.iter().zip(widths).rev() {
+            let block = self.block(block, width, laid.iter().rev());
+            laid.push(block);
+        }
+        laid.reverse();
         let columns = self.columns(blocks, &laid);
-        let breaks = columns.len() - 1;
         let mut stack = Stack {
             chain: Laid {
-                width: 0.0,
-                height: 0.0,
-                entry: at(0.0, 0.0),
-                head: String::new(),
-                boxes: Vec::new(),
-                runs: Vec::new(),
-                ends: Vec::new(),
-                breaks,
+                breaks: columns.len() - 1,
+                ..Laid::default()
             },
             open: Vec::new(),
+            joins: Vec::new(),
+            last: String::new(),
+            jumps_on: false,
             left: 0.0,
-            top: if breaks > 0 { RISE } else { 0.0 },
+            axis: 0.0,
         };
         let mut laid = laid.into_iter();
         for (number, count) in columns.into_iter().enumerate() {
