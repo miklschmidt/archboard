@@ -185,7 +185,10 @@ function unbridgedCrossings(drawing: RenderedDiagram): string[] {
 			for (const stretch of one.ink)
 				for (const crossed of other.ink) {
 					const at = crossingOf(stretch, crossed);
-					if (at === undefined || seen.some((point) => Math.hypot(point.x - at.x, point.y - at.y) < 1))
+					if (
+						at === undefined ||
+						seen.some((point) => Math.hypot(point.x - at.x, point.y - at.y) < 1)
+					)
 						continue;
 					seen.push(at);
 					found.push(`${one.id} × ${other.id} at ${at.x.toFixed(1)},${at.y.toFixed(1)}`);
