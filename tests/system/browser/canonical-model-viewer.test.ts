@@ -160,7 +160,7 @@ test("canonical modules open their authored details without writing architecture
 	await server.assertRunning();
 }, 30_000);
 
-test("canonical subject claims name the agent and let the reader take back control", async () => {
+test("canonical subject claims show their purpose, not their writer, and let the reader take back control", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "claimed-model");
 	const vault = vaultIn(root);
@@ -216,7 +216,7 @@ test("canonical subject claims name the agent and let the reader take back contr
 	const notice = await browser.eval<string>(
 		`document.querySelector('[data-slot="model-claim"]').textContent`,
 	);
-	expect(notice).toContain("Agent Ada");
+	expect(notice).not.toContain("Agent Ada");
 	expect(notice).toContain("Explain gateway responsibility");
 	expect(notice).toContain("Gateway");
 	await browser.run(["click", '[data-slot="model-take-back"]']);

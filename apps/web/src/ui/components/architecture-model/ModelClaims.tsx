@@ -55,9 +55,10 @@ interface ModelClaimProps extends ModelClaimsProps {
 }
 
 /**
- * Taking back a claim changes runtime ownership, never authored architecture.
+ * Taking back a claim changes runtime ownership, never authored architecture. The writer stays
+ * out: it is an identity such as a thread's, which says nothing to a reader.
  * @param props The exact claim identity and its current subject names.
- * @returns The writer, purpose, subjects, time, and take-back control.
+ * @returns The state, subjects, purpose, time, and take-back control.
  */
 function ModelClaim(props: ModelClaimProps): JSX.Element {
 	const { vault, claim, model } = props;
@@ -85,7 +86,7 @@ function ModelClaim(props: ModelClaimProps): JSX.Element {
 		>
 			<div className="min-w-0 flex-1">
 				<p className="truncate">
-					<span className="font-semibold">{claim.writer}</span> · {claimedStateName(claim, model)} ·{" "}
+					<span className="font-semibold">{claimedStateName(claim, model)}</span> ·{" "}
 					{claimedSubjects(claim, model)}
 				</p>
 				<p className="truncate">{claim.reason}</p>
