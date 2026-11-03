@@ -1,7 +1,9 @@
 // Activating a code target: the person asks for the code a model subject is
-// bound to, and the server opens it. The model and the subject's stable
-// identity go to the server, which owns the binding, the opener and the
-// checkout registry; the browser never reads a local path.
+// bound to, or for a file an agent's answer names, and the server opens it. The
+// model and the subject's stable identity go to the server, which owns the
+// binding, the opener and the checkout registry; the browser never reads a
+// local path. A named file goes as the answer wrote it, and the server opens it
+// only inside a checkout that the vault reads.
 
 import type {
 	CodeTargetNotice,
@@ -23,7 +25,7 @@ type CodeTargetActivationOptions = {
 	onNotice: (notice: CodeTargetNotice) => void;
 } & (
 	| { paneKey: string | null; elementId: string }
-	| { target: Extract<CodeTargetOpenRequest, { model: string }> }
+	| { target: Exclude<CodeTargetOpenRequest, { board: string }> }
 );
 
 /**

@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } f
 
 import { LiveBinding } from "#ui/state/application/live-binding.ts";
 import { livePanesOver } from "#ui/rules/application/live-panes.ts";
-import { presentationNotice } from "#ui/rules/application/notices.ts";
+import { codeTargetShellNotice, presentationNotice } from "#ui/rules/application/notices.ts";
 import { paneEvents } from "#ui/rules/application/pane-events.ts";
 import { recordFor, type PaneRecords } from "#ui/rules/application/pane-records.ts";
 import { createShellActions, vaultOf } from "#ui/clients/application/shell-actions.ts";
@@ -57,6 +57,8 @@ import { Tooltip } from "@archboard/ui-kit/components";
 import { paneAddressOf, paneKeyFor } from "#ui/rules/canvas/reading/address.ts";
 import { RecordingStage } from "#ui/components/walkthrough-recording/RecordingStage.tsx";
 import { OrbStageProvider, VoiceSurfaceProvider } from "@archboard/workbench/voice";
+import { AnswerFilesContext, type AnswerFile } from "@archboard/workbench/agent";
+import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { AgentDockSlot, AgentPanelSlot } from "#ui/components/application/AgentSurfaceSlots.tsx";
 import { PresentationVoiceKey } from "#ui/components/application/PresentationVoiceKey.tsx";
 import { SettingsHosts } from "#ui/components/application/SettingsHosts.tsx";
@@ -263,6 +265,23 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	);
 	const agent = useAgentSurfaces(workbench, showConversation);
 	const { raise } = notices;
+	// A file an agent's answer names opens through the focused pane's vault, as the page's other
+	// requests do, so it opens only inside a checkout that vault reads.
+	const openAnswerFile = useCallback(
+		(file: AnswerFile): void =>
+			activateCodeTarget({
+				vault: livePanes.active.status.vault ?? start.first,
+				target: file,
+				/**
+				 * Tell the person what the open deserves.
+				 * @param notice What happened.
+				 */
+				onNotice: (notice): void => {
+					raise(codeTargetShellNotice(notice));
+				},
+			}),
+		[livePanes, start.first, raise],
+	);
 	// A refused exit stays with the presentation, where the person is; a
 	// refused entry becomes a notice in the workspace they are still in.
 	const onRefused = useCallback(
@@ -471,20 +490,22 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 				<OrbStageProvider>
 					{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
 					<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
-						<Tooltip.Provider>
-							<Shell
-								view={view}
-								actions={actions}
-								diagnostics={diagnostics}
-								voiceControls={slots.voiceControls}
-								agentDock={slots.dock}
-								agentPanel={slots.panel}
-								agentPanelOpen={agent.panel.open}
-								onAgentPanelClose={agent.panel.closePanel}
-								attachStage={fullscreen.attachStage}
-							/>
-							<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
-						</Tooltip.Provider>
+						<AnswerFilesContext value={openAnswerFile}>
+							<Tooltip.Provider>
+								<Shell
+									view={view}
+									actions={actions}
+									diagnostics={diagnostics}
+									voiceControls={slots.voiceControls}
+									agentDock={slots.dock}
+									agentPanel={slots.panel}
+									agentPanelOpen={agent.panel.open}
+									onAgentPanelClose={agent.panel.closePanel}
+									attachStage={fullscreen.attachStage}
+								/>
+								<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
+							</Tooltip.Provider>
+						</AnswerFilesContext>
 					</VoiceSurfaceProvider>
 				</OrbStageProvider>
 			</ModelDraftContext>

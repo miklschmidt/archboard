@@ -1,0 +1,62 @@
+{
+  "id": "4XGQBqQA",
+  "name": "Answer links to local files open in the editor",
+  "summary": "A link in an agent's answer to a local file opens that file through the code opener, held to the checkouts the vault reads, instead of sending the browser to a page of the Archboard server.",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0018-code-targets-resolve-at-presentation-and-local-opening-is-a-server-capability.md"
+    }
+  ],
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-03T13:38:01.640Z",
+  "predecessor": "oyXXnyCV",
+  "predecessorRevision": "c674c7627c291c429f1877b7a7901f59df43edac4be5769074ff4864f4c4b6f9",
+  "baseline": "600dc0666413620d57c9b998b7972c11508bbf9f",
+  "changes": [
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#4LDuKQvq",
+      "field": "description",
+      "value": "Sends the legacy board, the subject's id and the vault of the pane it is in to the Archboard server, which owns the binding, the opener and the checkout registry, and opens the code at the branch or commit the binding pins. The browser never reads a local path. Also draws the dialog that reads, tests and saves the opener settings. Canonical activation names the model, subject, and selected state or exact checkpoint. The existing opener and notices retain source refusals without substituting current code. A preview code action names the saved mapping origin. The server resolves the current preview before opening its authored binding. A file an agent's answer names goes with its line as the answer wrote it, and the server opens it only inside a checkout that the vault reads."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+      "field": "responsibility",
+      "value": "Resolves a node's binding, or a file an agent's answer names, against this machine and opens it"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+      "field": "description",
+      "value": "The existing code opener also resolves an explicit migration preview before opening the candidate module binding. It refuses stale plans rather than using installed or legacy subjects. A file an agent's answer names opens as the binding it would be, in the innermost checkout that the vault reads and that holds it. Any other path opens nothing."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#SHr2ohzU",
+      "kind": "relationship",
+      "value": {
+        "order": 8100,
+        "kind": "call",
+        "label": "open a file an agent's answer names",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/components/application/Application.tsx",
+          "symbol": "activateCodeTarget"
+        },
+        "id": "vKEsyHFk#SHr2ohzU",
+        "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#SHr2ohzU",
+      "placement": {
+        "holder": "vKEsyHFk#mlSnLR16"
+      }
+    }
+  ]
+}

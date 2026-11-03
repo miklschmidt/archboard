@@ -70,3 +70,21 @@ Tests must therefore cover both halves together. The first half is that the
 browser can activate local file and directory targets or open the GitHub
 fallback. The second half is that the raw note still contains only the portable
 binding and unrelated human-authored links.
+
+## Amendment of 2026-11-03: a file an agent's answer names
+
+Codex writes a local file in its answer as a markdown link to the file's
+absolute path, with an optional line, for example
+`[app.ts](/abs/path/app.ts:12)`. The browser reads such a link as a page of the
+Archboard server, so the link went nowhere. The conversation and an explanation
+now send the path and its line to the same open route, through the vault of the
+focused pane.
+
+The server opens that path only as a binding of the vault would open it. It
+finds the innermost checkout that holds the real path among the checkouts that
+the vault reads, and it resolves the path in that checkout through the binding
+resolver. A path in no such checkout, or a link inside a checkout that leads out
+of it, opens nothing and says which checkout to choose. So the browser still
+cannot make the server open an arbitrary file: it reaches only what a binding of
+the vault can already reach. A failed open offers no GitHub link, because the
+answer read the checkout's working tree, not a recorded ref.

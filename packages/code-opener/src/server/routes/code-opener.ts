@@ -38,6 +38,7 @@ import { launchOpener, resolveOpenerCommand, type LaunchResult } from "#server/l
 import { resolveInVault } from "#server/projections/resolve-target.ts";
 import { parseActivationRequest } from "#server/projections/activation-request.ts";
 import { canonicalModelTarget } from "#server/projections/model-target.ts";
+import { namedPathBinding } from "#server/projections/named-path.ts";
 import { symbolLine } from "@archboard/code-intel/code-facts";
 import {
 	planOpenerCommand,
@@ -164,6 +165,15 @@ const DEFAULT_DEPENDENCIES: Omit<CodeOpenerRouteDependencies, "bindingForElement
 	runMutation: async (_request, _name, work) => work(new AbortController().signal),
 };
 
+/** An open of the code a node or a module is bound to. */
+type BoundRequest = Exclude<CodeTargetOpenRequest, { path: string }>;
+
+/** What an open reads the binding, the checkout and the editor through. */
+type OpeningDependencies = Pick<
+	CodeOpenerRouteDependencies,
+	"bindingForElement" | "resolveTarget" | "launch"
+>;
+
 /**
  * Select a binding through the reader that owns the addressed architecture.
  * @param request The legacy board or canonical module address.
@@ -173,10 +183,10 @@ const DEFAULT_DEPENDENCIES: Omit<CodeOpenerRouteDependencies, "bindingForElement
  * @returns The effective binding and resolver target or an opening refusal.
  */
 async function activationTarget(
-	request: CodeTargetOpenRequest,
+	request: BoundRequest,
 	vault: string,
 	signal: AbortSignal,
-	dependencies: CodeOpenerRouteDependencies,
+	dependencies: Pick<OpeningDependencies, "bindingForElement" | "resolveTarget">,
 ) {
 	if ("model" in request) return canonicalModelTarget(vault, request);
 	const found = dependencies.bindingForElement(request.board, request.element, vault);
@@ -186,6 +196,75 @@ async function activationTarget(
 		binding: found.binding,
 		target: await dependencies.resolveTarget(found.binding, signal, vault),
 	};
+}
+
+/**
+ * Opens the code a node or a module is bound to, at the line that defines its symbol.
+ * @param request The legacy board or canonical module address.
+ * @param vault The explicitly addressed vault.
+ * @param signal The owning request cancellation signal.
+ * @param response The response to write.
+ * @param dependencies The binding reader, the checkout resolver and the launcher.
+ * @returns Once the response is written.
+ */
+async function openBound(
+	request: BoundRequest,
+	vault: string,
+	signal: AbortSignal,
+	response: Response,
+	dependencies: OpeningDependencies,
+): Promise<void> {
+	const found = await activationTarget(request, vault, signal, dependencies);
+	if (!found.ok) return sendFailure(response, found);
+	const opening = openable(found.target, found.binding);
+	if (!opening.ok) return sendFailure(response, opening.failure, opening.status, found.binding);
+	const { target } = opening;
+	// The line is read from the working tree. A checkout on another ref than the
+	// binding pins never gets here with a GitHub link, because it was refused above,
+	// so the link names the line only where the checkout is on the pinned ref or the
+	// binding pins none (its link is GitHub's default branch).
+	const line = await symbolLine(found.binding, target, signal);
+	const current = readOpenerSelection();
+	if (!current.ok)
+		return sendFailure(response, current, statusFor(current.code), found.binding, line);
+	const launched = await openInEditor(current.selection, target.target, {
+		line,
+		launch: dependencies.launch,
+	});
+	if (!launched.ok)
+		return sendFailure(response, launched, statusFor(launched.code), found.binding, line);
+	response.json(openedReply(target));
+}
+
+/**
+ * Opens a file an agent's answer names, at the line it names. The answer read the checkout's
+ * working tree, so a failure offers no GitHub link in its place.
+ * @param request The file and its line.
+ * @param vault The explicitly addressed vault, whose checkouts the file must be in.
+ * @param signal The owning request cancellation signal.
+ * @param response The response to write.
+ * @param dependencies The checkout resolver and the launcher.
+ * @returns Once the response is written.
+ */
+async function openNamedPath(
+	request: Extract<CodeTargetOpenRequest, { path: string }>,
+	vault: string,
+	signal: AbortSignal,
+	response: Response,
+	dependencies: Pick<OpeningDependencies, "resolveTarget" | "launch">,
+): Promise<void> {
+	const named = namedPathBinding(vault, request.path);
+	if (!named.ok) return sendFailure(response, named);
+	const target = await dependencies.resolveTarget(named.binding, signal, vault);
+	if (!target.ok) return sendFailure(response, target);
+	const current = readOpenerSelection();
+	if (!current.ok) return sendFailure(response, current);
+	const launched = await openInEditor(current.selection, target.target, {
+		line: request.line,
+		launch: dependencies.launch,
+	});
+	if (!launched.ok) return sendFailure(response, launched);
+	response.json(openedReply(target));
 }
 
 /**
@@ -510,27 +589,9 @@ export function createCodeOpenerRouter(
 				const activation = parseActivationRequest(request);
 				if (!activation.ok) return sendFailure(response, activation.failure, 400);
 				const vaultRoot = vault(request);
-				const found = await activationTarget(activation.request, vaultRoot, signal, dependencies);
-				if (!found.ok) return sendFailure(response, found);
-				const opening = openable(found.target, found.binding);
-				if (!opening.ok)
-					return sendFailure(response, opening.failure, opening.status, found.binding);
-				const { target } = opening;
-				// The line is read from the working tree. A checkout on another ref than the
-				// binding pins never gets here with a GitHub link, because it was refused above,
-				// so the link names the line only where the checkout is on the pinned ref or the
-				// binding pins none (its link is GitHub's default branch).
-				const line = await symbolLine(found.binding, target, signal);
-				const current = readOpenerSelection();
-				if (!current.ok)
-					return sendFailure(response, current, statusFor(current.code), found.binding, line);
-				const launched = await openInEditor(current.selection, target.target, {
-					line,
-					launch: dependencies.launch,
-				});
-				if (!launched.ok)
-					return sendFailure(response, launched, statusFor(launched.code), found.binding, line);
-				response.json(openedReply(target));
+				return "path" in activation.request
+					? openNamedPath(activation.request, vaultRoot, signal, response, dependencies)
+					: openBound(activation.request, vaultRoot, signal, response, dependencies);
 			}),
 		),
 	);
