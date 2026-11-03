@@ -23,6 +23,13 @@ afterAll(async () => {
 
 test("a link to a local file opens the file, and a web link still opens a new tab", async () => {
 	const opened: AnswerFile[] = [];
+	/**
+	 * Remember a file the answer asked to open.
+	 * @param file The file.
+	 */
+	const open = (file: AnswerFile): void => {
+		opened.push(file);
+	};
 	const text = [
 		"[Observation command](/Users/msc/repo/scripts/command.ts:24) passes the endpoint.",
 		"See [the docs](https://example.com/docs).",
@@ -34,7 +41,7 @@ test("a link to a local file opens the file, and a web link still opens a new ta
 		root.render(
 			createElement(
 				AnswerFilesContext,
-				{ value: (file: AnswerFile) => opened.push(file) },
+				{ value: open },
 				createElement(AgentAnswer, { text, running: false }),
 			),
 		);
