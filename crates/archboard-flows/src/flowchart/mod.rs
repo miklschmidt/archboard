@@ -3,7 +3,7 @@
 //! hexagons, from a start to an end, in a frame that names the flow.
 //!
 //! The flowchart is laid out from the structure of its flow (ADR 0073,
-//! `layout.rs`), with no solve: a run of steps stacks on one axis, a
+//! `layout/`), with no solve: a run of steps stacks on one axis, a
 //! decision's answers stand side by side below its diamond and leave it from
 //! its points, and a loop runs its line back up beside the steps it repeats.
 //! A flowchart too tall for the reference pane breaks its runs of steps into

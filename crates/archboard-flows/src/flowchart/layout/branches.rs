@@ -9,8 +9,8 @@ use archboard_scene::geometry::Point;
 use archboard_scene::request::JumpEnd;
 
 use super::{
-    DONE, JUMP_IN, JUMP_OUT, Laid, Layout, REPEAT, RUN, Run, STEP_GAP, at, beside, carried,
-    finished, lowest, most, rect, words_at,
+    DONE, JUMP_IN, JUMP_OUT, Laid, Layout, REPEAT, RUN, Run, STEP_GAP, at, carried, finished, gap,
+    lowest, most, rect, words_at,
 };
 use crate::flowchart::graph::{Answer, Block};
 
@@ -24,6 +24,30 @@ const WORDS_BELOW: f64 = 16.0;
 /// How far below the longest answer the answers of a decision join, so that
 /// each line's bend into the join reads on its own.
 const JOIN_ROOM: f64 = 3.0 * RUN;
+
+/// How far the blocks after a guard reach out from the run's axis on one side,
+/// as far down below the guard as its short answer hangs beside them.
+fn beside<'a>(after: impl Iterator<Item = &'a Laid>, left: bool, depth: f64) -> f64 {
+    let mut reach = 0.0;
+    let mut top = STEP_GAP;
+    let mut above: Option<&Laid> = None;
+    for block in after {
+        if let Some(above) = above {
+            top += above.height + gap(above.stacks, block.stacks);
+        }
+        if top >= depth {
+            break;
+        }
+        let out = if left {
+            block.entry.x
+        } else {
+            block.width - block.entry.x
+        };
+        reach = f64::max(reach, out);
+        above = Some(block);
+    }
+    reach
+}
 
 /// One answer of a decision laid out: its words, and its blocks if it has any.
 struct Lane<'a> {

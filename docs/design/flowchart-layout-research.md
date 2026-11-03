@@ -3,7 +3,7 @@
 Date: 2026-11-03
 Scope: decide where a tall structured flowchart breaks into columns, and where its lines run.
 The current layout is [ADR 0073](../adr/0073-a-flowchart-lays-out-from-its-flow-and-a-flow-opens-in-the-reading-that-fits.md).
-`crates/archboard-flows/src/flowchart/layout/mod.rs` and `branches.rs` implement it.
+`crates/archboard-flows/src/flowchart/layout/` implements it.
 The research itself changed no code.
 Every claim about a source cites it, and [Sources](#sources) lists them with notes on access.
 A claim marked **abstract only** rests on the abstract alone.
