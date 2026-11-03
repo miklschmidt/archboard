@@ -19,8 +19,8 @@
   "lifecycle": "draft",
   "createdAt": "2026-11-01T08:52:35.463Z",
   "predecessor": "oyXXnyCV",
-  "predecessorRevision": "11c8a0679d959b4b53fccaa844d4da7e94529aeb449e41bd78ce35a914294592",
-  "baseline": "eefb07bc122a71bc2d3ad3814c5f86a7e8c0ec3a",
+  "predecessorRevision": "4d7b46ecb8527dc1a5140a997724170c5c2ce35fbaf82264b9e321c060d473e2",
+  "baseline": "617e1c9f264d855643a45a84a132770a752c1636",
   "changes": [
     {
       "type": "remove",
