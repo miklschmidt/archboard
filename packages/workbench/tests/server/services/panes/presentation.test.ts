@@ -3,9 +3,11 @@
 // The failures this guards are the ones that make a narrator talk about a
 // picture nobody can see: answering before the step has arrived, mistaking the
 // pane's previous position for an answer, going on as if nothing happened when
-// a user stepped by hand, and waiting for ever on a pane that has gone.
+// a user stepped by hand, waiting for ever on a pane that has gone, and staying
+// silent over a step that landed after the wait for it ended.
 
-import { describe, expect, test } from "bun:test";
+import { describe, expect, jest, test } from "bun:test";
+import { PANE_MS } from "@archboard/timing";
 import {
 	createPanePresentations,
 	type UserPresentationChange,
@@ -102,6 +104,34 @@ describe("a walkthrough step asked of a pane", () => {
 		says(null);
 		expect(changes.map((change) => change.presentation?.beat ?? null)).toEqual([0, 1, null]);
 		expect(changes[1]?.presentation?.arrived).toBe(true);
+	});
+
+	test("tells a step once while the camera moves on it again, and again when a user returns to it", () => {
+		const { says, changes } = harness();
+		says(at(1, true, null));
+		says(at(1, false, null));
+		says(at(1, true, null));
+		says(at(2, true, null));
+		says(at(1, false, null));
+		says(at(1, true, null));
+		expect(changes.map((change) => change.presentation?.beat)).toEqual([1, 2, 1]);
+	});
+
+	test("is still told when it lands after the wait for it ended", async () => {
+		jest.useFakeTimers();
+		try {
+			const { port, sent, says, changes } = harness();
+			const asked = port.present({ clientId: "client-a", walkthrough: "w1", beat: 0 });
+			const request = sent[0]!.request;
+			says(at(0, false, request));
+			jest.advanceTimersByTime(PANE_MS.presentationArrival);
+			expect(await asked).toEqual({ kind: "refused", reason: "timeout" });
+			says(at(0, true, request));
+			says(at(0, true, request));
+			expect(changes.map((change) => change.presentation)).toEqual([at(0, true, request)]);
+		} finally {
+			jest.useRealTimers();
+		}
 	});
 
 	test("is refused for a pane that has gone, when replaced by a later request, and when the server stops", async () => {

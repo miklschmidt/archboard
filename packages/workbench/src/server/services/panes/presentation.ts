@@ -124,8 +124,8 @@ interface PanePresentations {
 	 *
 	 * Called for a report the pane-context store kept, so an overtaken report
 	 * never reaches here. It settles the request the pane was sent when the report
-	 * answers it, and otherwise tells the listeners when the position is one a
-	 * user chose and is not the one the pane last said.
+	 * answers it, and otherwise tells the listeners when the position is one no
+	 * waiting request explains and is not the one the pane last said.
 	 * @param report The pane's report.
 	 */
 	readonly note: (report: SemanticPaneContext) => void;
@@ -171,18 +171,22 @@ function answerTo(waiting: Pending, said: SemanticPanePresentation | null): Pres
 }
 
 /**
- * Whether a position is one a user chose: a step nobody asked for, or an empty
- * pane that was presenting a moment ago.
+ * Whether a position is one no waiting request explains: a step nobody asked
+ * for, an empty pane that was presenting a moment ago, or a step that lands after
+ * the wait for it ended, which nothing else will tell.
  * @param before Where the pane last said it was, or null.
  * @param said Where it says it is now, or null.
- * @returns True when a user's hand moved it from where it was.
+ * @param waiting The unanswered request, or undefined when the pane has none.
+ * @returns True when the pane stands somewhere new, unasked.
  */
-function movedByPerson(
+function movedUnasked(
 	before: SemanticPanePresentation | null,
 	said: SemanticPanePresentation | null,
+	waiting: Pending | undefined,
 ): boolean {
 	if (said === null) return before !== null;
-	return said.answering === null && (!sameStep(before, said) || arrivedSince(before, said));
+	const asked = said.answering !== null && waiting !== undefined;
+	return !asked && (!sameStep(before, said) || arrivedSince(before, said));
 }
 
 /**
@@ -196,6 +200,23 @@ function arrivedSince(
 	said: SemanticPanePresentation,
 ): boolean {
 	return said.arrived && before?.arrived !== true;
+}
+
+/**
+ * What to remember of a report. A step stays arrived when the camera moves on it
+ * again, as it does when the pane is resized: it is the same step, and a voice
+ * told it again would start it over.
+ * @param before Where the pane last said it was, or null.
+ * @param said Where it says it is now, or null.
+ * @returns The position to compare the next report with.
+ */
+function remembered(
+	before: SemanticPanePresentation | null,
+	said: SemanticPanePresentation | null,
+): SemanticPanePresentation | null {
+	return said !== null && before?.arrived === true && sameStep(before, said)
+		? { ...said, arrived: true }
+		: said;
 }
 
 /**
@@ -299,9 +320,9 @@ function refuseTakenOver(waiting: Pending | undefined): void {
 function noteReport(ledger: PresentationLedger, report: SemanticPaneContext): void {
 	const said = report.presentation ?? null;
 	const before = ledger.lastSaid.get(report.clientId) ?? null;
-	ledger.lastSaid.set(report.clientId, said);
+	ledger.lastSaid.set(report.clientId, remembered(before, said));
 	const waiting = ledger.pending.get(report.clientId);
-	if (settledBy(waiting, said) || !movedByPerson(before, said)) {
+	if (settledBy(waiting, said) || !movedUnasked(before, said, waiting)) {
 		return;
 	}
 	refuseTakenOver(waiting);

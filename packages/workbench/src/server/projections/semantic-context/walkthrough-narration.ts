@@ -178,7 +178,7 @@ panePresentations.onUserChange(tell);
  *
  * The step then reaches the voice model the way every step the user moves to does. A step that
  * never arrives, because the pane closed or the user moved first, is not told: where the user
- * moved is.
+ * moved is. A step that lands after the wait ended is told by the pane's report of it.
  * @param clientId The narrated pane's client id.
  */
 async function openNarration(clientId: string): Promise<void> {

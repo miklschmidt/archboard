@@ -89,8 +89,8 @@ const PANE_MS = durations({
 	 * picture flight when it changes view (`PICTURE_MS.transition`, 640) after the
 	 * new picture has been fetched and drawn, then the report's debounce
 	 * (`PANE_MS.selectionDebounce`, 150) and a round trip: a couple of seconds at worst.
-	 * It pulls against a voice that stays silent until that step reaches it, so it
-	 * is far shorter than a layout's bound.
+	 * It ends the wait on a pane that has gone. A step that lands later is still told
+	 * by the report that says so, so a slow pane only delays the voice.
 	 */
 	presentationArrival: 8000,
 });
