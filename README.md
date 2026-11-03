@@ -304,16 +304,19 @@ Put a diagram of the Payments module in docs/design.md, and keep it current.
 
 ## Archboard next to the usual diagram tools
 
-|                                         |            Archboard             |    Mermaid · D2    |         Excalidraw · draw.io         |     Structurizr · LikeC4     |                  IcePanel                  |
-| --------------------------------------- | :------------------------------: | :----------------: | :----------------------------------: | :--------------------------: | :----------------------------------------: |
-| Who places the boxes                    |       the renderer, always       |  a layout engine   | you, or an agent placing coordinates |   a layout engine, or you    |              you, on a canvas              |
-| Written by                              | your coding agent, through a CLI |    you, in text    |             you, by hand             |        you, in a DSL         | you, in a web app, or an agent through MCP |
-| Proposals drawn against today           |       ✅ module by module        |         no         |                  no                  |              no              |       ✅ drafts, but not through MCP       |
-| History with the reason for each change |                ✅                |      git log       |               git log                | git log, ADRs in Structurizr |       versions and decision records        |
-| Narrated walkthroughs and video         |                ✅                |         no         |                  no                  | step-through views, no voice |        step-through flows, no voice        |
-| Sequence views over the same modules    |                ✅                | a separate diagram |                  no                  |       ✅ dynamic views       |        flows drawn over the diagram        |
-| Modules bound to code                   |        ✅ opens the file         |       links        |                links                 |            links             |      links to repositories and files       |
-| Several agents writing safely           |   ✅ claims and version checks   |         no         |                  no                  |              no              |       no, MCP writes the live model        |
+|                                          |                               Archboard                               |    Mermaid · D2    |         Excalidraw · draw.io         |     Structurizr · LikeC4     |                  IcePanel                  |
+| ---------------------------------------- | :-------------------------------------------------------------------: | :----------------: | :----------------------------------: | :--------------------------: | :----------------------------------------: |
+| Who places the boxes                     |                         the renderer, always                          |  a layout engine   | you, or an agent placing coordinates |   a layout engine, or you    |              you, on a canvas              |
+| Written by                               |                   your coding agent, through a CLI                    |    you, in text    |             you, by hand             |        you, in a DSL         | you, in a web app, or an agent through MCP |
+| Proposals drawn against today            |                          ✅ module by module                          |         no         |                  no                  |              no              |       ✅ drafts, but not through MCP       |
+| History with the reason for each change  |                                  ✅                                   |      git log       |               git log                | git log, ADRs in Structurizr |       versions and decision records        |
+| Narrated walkthroughs and video          |                                  ✅                                   |         no         |                  no                  | step-through views, no voice |        step-through flows, no voice        |
+| Sequence views over the same modules     |                                  ✅                                   | a separate diagram |                  no                  |       ✅ dynamic views       |        flows drawn over the diagram        |
+| Modules bound to code                    |                           ✅ opens the file                           |       links        |                links                 |            links             |      links to repositories and files       |
+| Dependencies the map leaves out          |    ✅ [the code check](#find-where-the-map-and-the-code-disagree)     |         no         |                  no                  |              no              |    no, it flags moved or deleted links     |
+| Git history read by module               | ✅ [what changes together](#read-the-change-through-the-architecture) |         no         |                  no                  |              no              |                     no                     |
+| Design smells from the model and history |            ✅ [Measures](#find-the-smells-in-your-design)             |         no         |                  no                  |              no              |                     no                     |
+| Several agents writing safely            |                     ✅ claims and version checks                      |         no         |                  no                  |              no              |       no, MCP writes the live model        |
 
 <sub>What each tool does out of the box, as of September 2026. IcePanel as of November 2026.</sub>
 
