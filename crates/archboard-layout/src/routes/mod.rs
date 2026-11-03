@@ -1,8 +1,8 @@
 //! The crossing pass every architecture drawing takes after layout
 //! (`shared/rules/layout/routes`): a fan whose lanes cross is put in order
 //! (`fans`) and a crossing folded into two corners moves onto straight runs
-//! (`folded`), and then one line hops each crossing
-//! where a hop fits, or the two cross plainly (`crossings`). The lines a reader
+//! (`folded`), and then one line hops each crossing (`crossings`), so every
+//! crossing has an arc wherever a line runs straight past a hop's feet. The lines a reader
 //! sees and the straight runs a hop stands on are `drawn_lines`; where a hop
 //! may stand and what it draws is `hops`.
 
@@ -20,7 +20,7 @@ mod tests;
 use archboard_scene::request::{Arrowhead, Dash};
 use serde::{Deserialize, Serialize};
 
-pub(crate) use crossings::{bridge_crossings, bridge_planned, bridge_unfolded};
+pub(crate) use crossings::{bridge_crossings, bridge_unfolded};
 pub(crate) use folded::unfold_crossings;
 
 /// How a relationship's line is drawn: its dash and its head, as the vault's

@@ -92,14 +92,18 @@ fn a_hop_keeps_a_labels_clearance_from_it_bulging_away_where_it_must() {
 
 // Archboard server (graphviz): an arc stood fifteen points from the tip of the
 // arrowhead of the line it crossed; and a crossing past the head, but still on
-// its approach, was refused a hop and cut (the user, 2026-09-27).
+// its approach, was refused a hop and cut (the user, 2026-09-27). A crossing
+// with no arc read worse (TASK-570): beside the head, the hop bulges away.
 #[test]
-fn a_hop_keeps_clear_of_another_lines_arrowhead_and_stands_across_its_approach_past_the_head() {
+fn a_hop_beside_another_lines_arrowhead_bulges_away_and_stands_across_its_approach_past_the_head() {
     let near = bridged(&drawing(&[
         down_from(50.0, 0.0, 200.0),
         across_from(100.0, 150.0, 35.0),
     ]));
-    assert_eq!(near.bridges, Vec::<DrawingBridge>::new());
+    let (edge, under) = lone_hop(&near);
+    assert_eq!((edge, under), ("0", vec!["1"]));
+    // The head points left at 35, so the hop bulges right, away from it.
+    assert_eq!(bulge_of(&near.bridges[0]).0, 0.0);
     let past = bridged(&drawing(&[
         down_from(50.0, 0.0, 200.0),
         across_from(100.0, 150.0, 28.0),

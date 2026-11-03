@@ -16,7 +16,7 @@ use crate::ecma::{js_max, js_min, min, sign};
 pub(super) use crate::geometry::Axis;
 
 /// Two straight pieces closer than this across their axis draw as one line.
-const SHARED_INK: f64 = 2.0;
+pub(super) const SHARED_INK: f64 = 2.0;
 
 /// The routes of a drawing, as this pass reads them.
 pub(super) type Edges = [DrawingEdge<EdgeFacts>];
@@ -305,14 +305,15 @@ fn ends_inside(line: &[&Run], one: &Run, end: f64) -> bool {
 }
 
 /// How far a drawn line runs straight and alone on either side of a
-/// coordinate: the shorter of the two stretches.
-pub(super) fn straightness(runs: &[Run], run: &Run, coordinate: f64) -> f64 {
+/// coordinate: the shorter of the two stretches, short of its ends'
+/// approaches when `rooms` asks.
+pub(super) fn straightness(runs: &[Run], run: &Run, coordinate: f64, rooms: bool) -> f64 {
     min(line_runs(runs, run).into_iter().map(|other| {
         let whole = extent_of(other, false);
         if coordinate <= whole.low || coordinate >= whole.high {
             return js_max(whole.low - coordinate, coordinate - whole.high);
         }
-        let clear = extent_of(other, true);
+        let clear = extent_of(other, rooms);
         js_min(coordinate - clear.low, clear.high - coordinate)
     }))
 }

@@ -19,7 +19,9 @@ use crate::constants::APPROACH_STRAIGHT;
 use crate::ecma::{hypot, js_max, js_min, max, min, sign, sorted_by};
 
 use super::clearance::curve_boxes;
-use super::drawn_lines::{Axis, Run, line_runs, on_run, straight_through};
+use super::drawn_lines::{
+    Axis, Run, SHARED_INK, fixed_of, line_runs, on_run, straight_through, straightness,
+};
 use super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS, LineLook};
 
 /// Straight line kept past a hop, before a bend, a join or an end's approach.
@@ -42,6 +44,10 @@ const BOX_CLEARANCE: f64 = BRIDGE_CLEARANCE * 2.0;
 /// on parallel lines keep, since an arc bulging across another's path reads as
 /// one knot with it.
 const CROSSWISE_CLEARANCE: f64 = BRIDGE_RADIUS;
+
+/// Straight line a hop that must stand keeps from a bend, an end or another
+/// hop along its line.
+const FORCED_GAP: f64 = 1.0;
 
 /// Which way a hop bulges: 1 up from a line across and right of a line down,
 /// or -1, for a lone hop only the other side has room for, the other way.
@@ -136,7 +142,7 @@ pub(super) fn overlaps(a: Rect, b: Rect) -> bool {
 
 /// Two quarter circles with a shared crest over a cluster of crossings, as the
 /// displaced piece of the route only.
-fn hump(run: &Run, first: f64, last: f64, bulge: Bulge) -> Curve {
+pub(super) fn hump(run: &Run, first: f64, last: f64, bulge: Bulge) -> Curve {
     let radius = BRIDGE_RADIUS * bulge;
     let tangent = (4.0 * (2.0_f64.sqrt() - 1.0) * radius) / 3.0;
     let along = tangent.abs();
@@ -218,6 +224,34 @@ pub(super) fn crest_along(
     let high = run.axis.of(on_run(run, last + (BRIDGE_RADIUS + room), 0.0));
     straight_through(runs, run, js_min(low, high), js_max(low, high))
         .then(|| hump(run, first, last, bulge))
+}
+
+/// Whether a hop fits over a coordinate along a run: its drawn line runs
+/// straight a hop's radius and a little more on either side, short of its
+/// ends' approaches when `rooms` asks, and clear of every hop on that line.
+pub(super) fn hop_fits(scene: &HopScene<'_>, run: &Run, coordinate: f64, rooms: bool) -> bool {
+    let axis = run.axis;
+    let across = axis.across();
+    let straight = straightness(&scene.runs, run, coordinate, rooms);
+    let clear = min(std::iter::once(straight).chain(
+        scene
+            .hops
+            .iter()
+            .filter(|hop| {
+                hop.axis == axis && (across.of(hop.curve.from) - fixed_of(run)).abs() <= SHARED_INK
+            })
+            .map(|hop| {
+                let [one, other] = [axis.of(hop.curve.from), axis.of(curve_end(&hop.curve))];
+                let (low, high) = (js_min(one, other), js_max(one, other));
+                js_max(0.0, js_max(low - coordinate, coordinate - high))
+            }),
+    ));
+    clear >= BRIDGE_RADIUS + FORCED_GAP
+}
+
+/// Where a curve ends.
+fn curve_end(curve: &Curve) -> Point {
+    segment_start(curve, curve.segments.len())
 }
 
 /// Whether a line runs straight and alone beneath where a hop over it would

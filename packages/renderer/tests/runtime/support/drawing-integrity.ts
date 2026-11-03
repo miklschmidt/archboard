@@ -4,6 +4,7 @@ import type { VariantContent } from "@archboard/model/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { collinearPorts } from "#tests/runtime/support/drawn-ports.ts";
+import { unbridgedCrossings } from "#tests/runtime/support/drawn-crossings.ts";
 import {
 	ambiguousTrunks,
 	labelsOffRuns,
@@ -60,6 +61,7 @@ export function expectDrawingIntact(
 		content.edges.map(({ id }) => id).toSorted(),
 	);
 	expect(slants(drawing), "routes on a slant").toEqual([]);
+	expect(unbridgedCrossings(drawing), "crossings with no arc").toEqual([]);
 	expect(labelsAcrossWalls(drawing), "labels across a container's edge").toEqual([]);
 	if (layout === "track") {
 		expect(nearLanes(drawing), "lines closer than a lane").toEqual([]);

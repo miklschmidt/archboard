@@ -1095,10 +1095,10 @@ Small scopes compare two widths after the eight normal candidates, with at most 
 The widest shelf can place two of the largest children together.
 Parents reuse measured children instead of recursively rebuilding them for each candidate.
 
-Crossing decoration now tries arcs at only the first 128 crossings, with at most four radii per crossing.
-Later crossings retain the existing plain crossing and junction cuts.
-This bounds arc collision work across the whole drawing, including dense large boards.
-The bound follows stable route order and does not depend on time.
+Crossing decoration first tried arcs at only the first 128 crossings, without the cluster plans of Track.
+That left 472 crossings with no arc across the dogfood vault, so TASK-570 removed the bound.
+Planned drawings now take the same crossing pass as Track drawings.
+The first render of the whole dogfood model in Blocks went from about 610 ms to about 640 ms.
 
 The final simplicity pass removes the old Blocks nesting mode and its fanout and nested-placement modules.
 It also removes Blocks-only branches from projection, card construction, routing, wrapping, settlement, and endpoint handling.

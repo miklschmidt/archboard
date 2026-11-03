@@ -1,9 +1,10 @@
 //! Crossings along one line close enough for their hops to touch: who rises
 //! over them, and under how many arcs.
 
+use super::super::BRIDGE_RADIUS;
 use super::{
-    DrawingBridge, Emphasis, across, across_from, bridged, down, down_from, drawing, drawn, hops,
-    points,
+    DrawingBridge, Emphasis, across, across_from, bridged, curve_bounds, down, down_from, drawing,
+    drawn, hops, points,
 };
 
 /// The hops among a crossing pass's bridges.
@@ -67,7 +68,7 @@ fn a_line_rises_over_one_crossing_of_a_cluster_whose_crest_cannot_stand() {
         across(50.0),
         // Turns eight below the crossing: it cannot rise, but a hop passes over it.
         points(&[(40.0, 0.0), (40.0, 64.0), (0.0, 64.0)]),
-        // Ends ten above the crossing: nothing rises over it.
+        // Ends ten above the crossing: no full hop rises over it.
         down_from(60.0, 100.0, 40.0),
     ]));
     let hop = result.bridges.iter().find(|bridge| hops(bridge)).unwrap();
@@ -75,8 +76,9 @@ fn a_line_rises_over_one_crossing_of_a_cluster_whose_crest_cannot_stand() {
         (hop.edge_id.as_str(), hop.under.as_slice()),
         ("0", ["1".to_owned()].as_slice())
     );
-    // The crossing nothing rises over is crossed plainly, with no gap cut in either line.
-    assert_eq!(hops_of(&result.bridges).len(), result.bridges.len());
+    // Every crossing has an arc, and no gap is cut in either line.
+    assert_eq!(hops_of(&result.bridges).len(), 2);
+    assert_eq!(result.bridges.len(), 2);
 }
 
 // Code review: a crest over two lines spanned a line ending between them,
@@ -93,14 +95,16 @@ fn a_crest_never_spans_a_crossing_it_does_not_hop() {
         let (from, to) = (bridge.curve.from, bridge.curve.end());
         let spans =
             from.x.min(to.x) < 50.0 && from.x.max(to.x) > 50.0 && from.y == 50.0 && to.y == 50.0;
-        assert!(!spans);
+        assert!(!spans || bridge.under.contains(&"2".to_owned()));
     }
 }
 
 // Browser application (blocks): a line hopped one line and was hopped by
-// another sixteen apart, the two arcs one knot.
+// another sixteen apart, the two arcs one knot. A line hopped along its
+// cluster rises at the rest of it only where the line crossing it has no room
+// for a hop, since every crossing has an arc (TASK-570).
 #[test]
-fn a_line_is_above_or_beneath_along_all_of_one_cluster_never_both() {
+fn a_line_hopped_along_its_cluster_rises_there_only_where_the_other_has_no_room() {
     let result = bridged(&drawing(&[
         // Turns fourteen below its second crossing: it can hop that one alone,
         // but has no room for a crest over both.
@@ -109,20 +113,25 @@ fn a_line_is_above_or_beneath_along_all_of_one_cluster_never_both() {
         // Turns six before the crossing: it cannot rise.
         points(&[(86.0, 200.0), (86.0, 116.0), (200.0, 116.0)]),
     ]));
-    let hops = hops_of(&result.bridges);
-    let over = hops
-        .iter()
-        .filter(|bridge| bridge.under.iter().any(|id| id == "0"));
-    assert_eq!(over.count(), 1);
-    assert!(!hops.iter().any(|bridge| bridge.edge_id == "0"));
+    let hops: Vec<(&str, &[String])> = hops_of(&result.bridges)
+        .into_iter()
+        .map(|bridge| (bridge.edge_id.as_str(), bridge.under.as_slice()))
+        .collect();
+    assert_eq!(
+        hops,
+        [
+            ("1", ["0".to_owned()].as_slice()),
+            ("0", ["2".to_owned()].as_slice())
+        ]
+    );
+    assert_eq!(result.bridges.len(), 2);
 }
 
-// Agent workbench (blocks): a solid line rose over two dashed lines sixteen
-// apart under one long brace, where no hop reads cleaner (the user,
-// 2026-09-27). Archboard server: the solid line was then cut at each dashed
-// line with no arc over the gap, and read as broken (TASK-408).
+// Archboard server: a solid line was cut at each dashed line close across it
+// with no arc over the gap, and read as broken (TASK-408). It then crossed
+// them plainly, with no arc to say which line passes over (TASK-570).
 #[test]
-fn dashed_lines_close_together_across_a_solid_line_are_not_hopped_and_the_lines_cross_plainly() {
+fn a_solid_line_rises_over_dashed_lines_close_together_under_one_crest() {
     let result = bridged(&drawn(
         &[down_from(50.0, 0.0, 150.0), across(50.0), across(66.0)],
         &[
@@ -130,15 +139,21 @@ fn dashed_lines_close_together_across_a_solid_line_are_not_hopped_and_the_lines_
             (2, "event", Emphasis::Normal),
         ],
     ));
-    // No crest stands and no line is cut: every hop and every cut is a bridge.
-    assert_eq!(result.bridges, Vec::<DrawingBridge>::new());
+    assert_eq!(result.bridges.len(), 1);
+    let crest = &result.bridges[0];
+    assert!(hops(crest));
+    assert_eq!(
+        (crest.edge_id.as_str(), crest.under.as_slice()),
+        ("0", ["1".to_owned(), "2".to_owned()].as_slice())
+    );
 }
 
 // Agent workbench (blocks): a line hopped one line sixteen past where a
 // weightier line it could not rise over was cut through it. The weightier
-// line hops it instead, and the line is cut where no hop has room beside that one.
+// line hops it instead, and beside that one it hops the line too near its own
+// bend to rise, since every crossing has an arc (TASK-570).
 #[test]
-fn a_weightier_line_hops_a_line_that_cannot_rise_over_it_and_no_hop_stands_beside_that_one() {
+fn a_weightier_line_hops_a_line_that_cannot_rise_over_it_and_it_hops_the_one_beside() {
     let result = bridged(&drawn(
         &[
             // Starts twenty above the weightier line, too near to rise over it.
@@ -153,11 +168,18 @@ fn a_weightier_line_hops_a_line_that_cannot_rise_over_it_and_no_hop_stands_besid
         .into_iter()
         .map(|bridge| (bridge.edge_id.as_str(), bridge.under.as_slice()))
         .collect();
-    assert_eq!(hops, [("1", ["0".to_owned()].as_slice())]);
+    assert_eq!(
+        hops,
+        [
+            ("1", ["0".to_owned()].as_slice()),
+            ("0", ["2".to_owned()].as_slice())
+        ]
+    );
 }
 
 // Archboard server (blocks): a line hopped a line eight points from where a
-// weightier line hopped it, the two arcs one knot.
+// weightier line hopped it, the two arcs one knot. Where a crossing has no
+// other arc, the line across rises a hop's radius clear of the first.
 #[test]
 fn hops_on_crossing_lines_keep_a_hops_radius_between_them() {
     let result = bridged(&drawn(
@@ -169,9 +191,9 @@ fn hops_on_crossing_lines_keep_a_hops_radius_between_them() {
         ],
         &[(1, "call", Emphasis::Hero)],
     ));
-    let hops: Vec<&str> = hops_of(&result.bridges)
-        .into_iter()
-        .map(|bridge| bridge.edge_id.as_str())
-        .collect();
-    assert_eq!(hops, ["1"]);
+    let hops = hops_of(&result.bridges);
+    let ids: Vec<&str> = hops.iter().map(|bridge| bridge.edge_id.as_str()).collect();
+    assert_eq!(ids, ["1", "0"]);
+    let [first, second] = [hops[0], hops[1]].map(|hop| curve_bounds(&hop.curve));
+    assert!(second.x - (first.x + first.width) >= BRIDGE_RADIUS);
 }
