@@ -121,12 +121,17 @@ archboard install-skill --agent claude-code
 Use `--agent claude-code` for Claude Code. Without it, the installer sets up
 Codex. The installer does these things:
 
-1. It copies two skills into a skills directory: `archboard`, which writes
-   and reads canonical models, and `archboard-pr`, which gives a pull request an
-   architecture explainer. The default directory is `~/.agents/skills`, which
-   Codex reads. With `--agent claude-code` it is `~/.claude/skills`. Each copy
-   replaces an earlier copy. If a target is a symlink, the installer stops and
-   changes nothing.
+1. It links two skills from a skills directory to the `skills/` directory of
+   this checkout: `archboard`, which writes and reads canonical models, and
+   `archboard-pr`, which gives a pull request an architecture explainer. The
+   default directory is `~/.agents/skills`, which Codex reads. With
+   `--agent claude-code` it is `~/.claude/skills`. Each link replaces an earlier
+   copy or a link to another place, and the installer names what it replaced.
+   A `git pull` and `bun install` update the linked skills.
+   If `--dir` names a directory inside the repository, the installer copies the
+   skills there instead, because the repository carries them to other machines.
+   If a target in that directory is a symlink, the installer stops and changes
+   nothing.
 2. If the repository has no `.archboard/vault`, the installer creates that directory.
    An empty vault receives a `.archboard/config.yaml` file with the default vocabulary.
    It initializes a canonical planning model through the signed model installer.
@@ -622,9 +627,9 @@ archboard restart
 
 `archboard restart` stops the Archboard server, builds the frontend and starts
 the server on the new source. If the build fails, the server stays stopped.
-`archboard status` reports a server that runs older source. Run
-`archboard install-skill` again in each repository to update its copy of the
-skills.
+`archboard status` reports a server that runs older source. The linked skills
+follow the checkout. If a repository holds a copy of the skills, run
+`archboard install-skill --dir <that directory>` again to update it.
 
 There is no uninstall command. To remove archboard, delete these things:
 

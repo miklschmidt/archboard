@@ -370,7 +370,7 @@ cd ~/code/your-project
 archboard install-skill --agent claude-code     # omit --agent for Codex
 ```
 
-The installer copies the consumer skills to `~/.claude/skills` for Claude Code or `~/.agents/skills` for Codex. It initializes an empty canonical model in a new vault. Existing architecture requires explicit migration. Commit authored inputs with your code. Commands find the vault from the working directory or `-C <dir>`. Then ask your agent:
+The installer links the consumer skills from `~/.claude/skills` for Claude Code or `~/.agents/skills` for Codex to this checkout, so a `git pull` updates them. It initializes an empty canonical model in a new vault. Existing architecture requires explicit migration. Commit authored inputs with your code. Commands find the vault from the working directory or `-C <dir>`. Then ask your agent:
 
 ```text
 Describe this repository with canonical modules, their responsibilities, and their relationships.

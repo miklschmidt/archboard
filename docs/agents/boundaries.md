@@ -530,7 +530,7 @@ interface.
 - `./distribution` is `prepareSkillArtifacts`. It prepares the copy of the skill that the checkout, the installer and
   `generate:skill-artifacts` ship: the JSON Schemas that Zod renders for canonical manifests, modules, flows, operations, and vault policy (`runtime/projections/schemas.ts`), and the installation-local manual
   (`runtime/operations/distribution/prepare.ts`). The CLI's `install-skill` keeps which skills it ships and how it
-  stages and copies them.
+  links or copies them.
 - `./evaluation` is `runEvaluationCommand`, the whole command line of `bun run eval:skill`
   (`runtime/operations/evaluation/command.ts`): `check`, `run`, `grade`, `pin` and `report`. `scripts/evaluate-skill.ts`
   passes it the arguments and the checkout. The evaluation is human-run and never part of the gate: real Codex authors

@@ -22,6 +22,7 @@ const setupSchema = z.object({
 const installResultSchema = z.object({
 	mode: z.string(),
 	root: z.string(),
+	install: z.enum(["link", "copy"]),
 	skills: z.array(z.object({ skill: z.string(), target: z.string() })),
 	setup: setupSchema.optional(),
 });

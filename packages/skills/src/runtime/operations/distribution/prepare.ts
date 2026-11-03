@@ -81,36 +81,48 @@ function installedInstallDocument(root: string, revision: string): string {
 }
 
 /**
+ * Writes one file only when its bytes change, through a sibling temporary file, so a reader never
+ * sees it missing or half written.
+ * @param file The file to write.
+ * @param contents What it holds.
+ */
+function writeIfChanged(file: string, contents: string): void {
+	if (fs.existsSync(file) && fs.readFileSync(file, "utf8") === contents) return;
+	const temporary = `${file}.${process.pid}.tmp`;
+	fs.writeFileSync(temporary, contents);
+	fs.renameSync(temporary, file);
+}
+
+/**
  * Prepares one skill directory: writes the generated schemas and the
- * installation-local manual into its `references/generated/` directory, replacing
- * whatever an earlier preparation left there.
+ * installation-local manual into its `references/generated/` directory, and
+ * removes whatever else an earlier preparation left there.
  *
  * Deterministic for one source state, and free of side effects until called: the
  * schemas are rendered from the Zod authorities on each call, and nothing is
- * written anywhere else.
+ * written anywhere else. A file whose bytes are already right is left alone, so
+ * preparing the checkout's own skill again, as a linked install does, changes nothing.
  * @param skill The skill directory to prepare, the tracked one or a copy.
  * @param source The checkout the derived files come from.
  * @returns What was written.
  */
 function prepareSkillArtifacts(skill: string, source: PreparationSource): PreparedSkill {
 	const directory = path.join(skill, GENERATED_DIRECTORY);
-	fs.rmSync(directory, { recursive: true, force: true });
-	fs.mkdirSync(directory, { recursive: true });
 	const revision = source.revision ?? checkoutRevision(source.root);
-	const files: string[] = [];
-	for (const generated of generatedSchemas()) {
-		fs.writeFileSync(
-			path.join(directory, generated.file),
-			`${JSON.stringify(generated.schema, null, "\t")}\n`,
-		);
-		files.push(path.join(GENERATED_DIRECTORY, generated.file));
+	const generated = new Map<string, string>();
+	for (const schema of generatedSchemas()) {
+		generated.set(schema.file, `${JSON.stringify(schema.schema, null, "\t")}\n`);
 	}
-	fs.writeFileSync(
-		path.join(directory, INSTALL_DOCUMENT),
-		installedInstallDocument(source.root, revision),
-	);
-	files.push(path.join(GENERATED_DIRECTORY, INSTALL_DOCUMENT));
-	return { directory, files };
+	generated.set(INSTALL_DOCUMENT, installedInstallDocument(source.root, revision));
+	fs.mkdirSync(directory, { recursive: true });
+	for (const stale of fs.readdirSync(directory)) {
+		if (!generated.has(stale)) fs.rmSync(path.join(directory, stale), { recursive: true });
+	}
+	for (const [file, contents] of generated) writeIfChanged(path.join(directory, file), contents);
+	return {
+		directory,
+		files: [...generated.keys()].map((file) => path.join(GENERATED_DIRECTORY, file)),
+	};
 }
 
 export { prepareSkillArtifacts };
