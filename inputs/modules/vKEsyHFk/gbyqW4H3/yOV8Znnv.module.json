@@ -11,6 +11,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#yOV8Znnv",
   "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
+  "formerNames": [
+    "Board answer"
+  ],
   "outgoing": [
     {
       "order": 12000,
@@ -42,8 +45,5 @@
       "id": "vKEsyHFk/vKEsyHFk#8j8wv5FT",
       "to": "vKEsyHFk#vZUWUgyb"
     }
-  ],
-  "formerNames": [
-    "Board answer"
   ]
 }
