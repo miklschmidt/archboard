@@ -1,3 +1,5 @@
+import { Notices } from "#ui/components/shell/Notices.tsx";
+import type { ShellNotice } from "#ui/rules/shell/contracts.ts";
 // The centre: one or two panes side by side. Each pane draws one header row,
 // and the shell hands it what the shell owns of that row: the pane's letter
 // while there are two, the pane's own controls, and under the row the claim
@@ -27,6 +29,7 @@ import { RecoveryMessage } from "#ui/components/shell/RecoveryMessage.tsx";
 
 /** Inputs for the stage row. */
 interface PaneStagesProps {
+	notices: readonly ShellNotice[];
 	panes: readonly ShellPane[];
 	activePaneId: string;
 	/** The places in the left column that the focused pane fills. */
@@ -109,8 +112,9 @@ function PaneStages(props: PaneStagesProps): JSX.Element {
 			ref={attachStage}
 			data-slot="pane-stages"
 			data-presenting={presented ? "" : undefined}
-			className="bg-sidebar flex min-h-0 min-w-0 flex-1 flex-col"
+			className="bg-sidebar relative flex min-h-0 min-w-0 flex-1 flex-col"
 		>
+			<Notices notices={props.notices} actions={actions} />
 			<PresentationChrome
 				presentation={presentation}
 				presented={presented}

@@ -13,7 +13,6 @@ import type { ShellActions, ShellView } from "#ui/rules/shell/contracts.ts";
 import { BrandBar } from "#ui/components/shell/BrandBar.tsx";
 import { ConversationColumns } from "#ui/components/shell/ConversationColumns.tsx";
 import { Navigator } from "#ui/components/shell/Navigator.tsx";
-import { Notices } from "#ui/components/shell/Notices.tsx";
 import { PaneStages } from "#ui/components/shell/PaneStages.tsx";
 
 /**
@@ -86,9 +85,9 @@ function Shell(props: ShellProps): JSX.Element {
 				onClose={props.onAgentPanelClose ?? noop}
 				conversation={props.agentPanel}
 			>
-				<Notices notices={view.notices} actions={actions} />
 				<PaneStages
 					panes={view.panes}
+					notices={view.notices}
 					activePaneId={view.activePaneId}
 					presentation={view.presentation}
 					column={column}
