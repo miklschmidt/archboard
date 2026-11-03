@@ -187,10 +187,11 @@ function activityTime(activity: AgentActivityEntry): string | null {
 }
 
 /**
- * Show each concurrent claim without implying exclusive model ownership.
+ * Show each concurrent claim without implying exclusive model ownership. A writer is an
+ * identity such as a thread's, which says nothing to a reader, so only its words show.
  * @param props The model's observed claims and durable operation.
  * @param props.activity The exact server snapshot.
- * @returns The last doing line and each current writer's own reason.
+ * @returns The last doing line and each current claim's own reason.
  */
 function ActivityDetails({ activity }: { activity: AgentActivityEntry }): JSX.Element {
 	return (
@@ -198,11 +199,9 @@ function ActivityDetails({ activity }: { activity: AgentActivityEntry }): JSX.El
 			{activity.doing !== null && (
 				<span
 					data-slot="activity-doing"
-					data-writer={activity.doing.writer}
 					style={DOING_STYLE}
 					className="text-body text-muted-foreground truncate"
 				>
-					<span className="sr-only">{activity.doing.writer}: </span>
 					{activity.doing.doing}
 				</span>
 			)}
@@ -210,14 +209,11 @@ function ActivityDetails({ activity }: { activity: AgentActivityEntry }): JSX.El
 				<span
 					key={claim.id}
 					data-claim-id={claim.id}
-					data-writer={claim.writer}
 					style={DOING_STYLE}
-					className="text-body text-muted-foreground flex w-full gap-1.5"
+					title={claim.reason}
+					className="text-body text-muted-foreground truncate"
 				>
-					<span className="shrink-0 font-medium">{claim.writer}</span>
-					<span className="truncate" title={claim.reason}>
-						{claim.reason}
-					</span>
+					{claim.reason}
 				</span>
 			))}
 		</>
