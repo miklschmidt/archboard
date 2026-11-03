@@ -3,8 +3,8 @@
 // The failures this guards are the ones that make a narrator talk about a
 // picture nobody can see: answering before the step has arrived, mistaking the
 // pane's previous position for an answer, going on as if nothing happened when
-// a user stepped by hand, waiting for ever on a pane that has gone, and staying
-// silent over a step that landed after the wait for it ended.
+// a user stepped by hand, waiting for ever on a pane that has gone, and giving
+// up on a pane that is only slow.
 
 import { describe, expect, jest, test } from "bun:test";
 import { PANE_MS } from "@archboard/timing";
@@ -35,6 +35,10 @@ function harness(live = true) {
 		},
 	});
 	port.onUserChange((change) => changes.push(change));
+	/** The pane goes. */
+	function gone(): void {
+		live = false;
+	}
 	let sequence = 0;
 	/**
 	 * The pane says where its presentation is.
@@ -55,7 +59,7 @@ function harness(live = true) {
 		};
 		port.note(report);
 	}
-	return { port, sent, changes, says };
+	return { port, sent, changes, says, gone };
 }
 
 /**
@@ -117,18 +121,23 @@ describe("a walkthrough step asked of a pane", () => {
 		expect(changes.map((change) => change.presentation?.beat)).toEqual([1, 2, 1]);
 	});
 
-	test("is still told when it lands after the wait for it ended", async () => {
+	test("waits for a slow pane for as long as it lives, even on a step it stands on", async () => {
 		jest.useFakeTimers();
 		try {
-			const { port, sent, says, changes } = harness();
+			const { port, sent, says, changes, gone } = harness();
+			says(at(0, true, null));
 			const asked = port.present({ clientId: "client-a", walkthrough: "w1", beat: 0 });
 			const request = sent[0]!.request;
 			says(at(0, false, request));
-			jest.advanceTimersByTime(PANE_MS.presentationArrival);
-			expect(await asked).toEqual({ kind: "refused", reason: "timeout" });
+			jest.advanceTimersByTime(PANE_MS.presentationPaneCheck * 3);
 			says(at(0, true, request));
-			says(at(0, true, request));
-			expect(changes.map((change) => change.presentation)).toEqual([at(0, true, request)]);
+			expect(await asked).toEqual({ kind: "arrived", presentation: at(0, true, request) });
+			expect(changes).toHaveLength(1);
+
+			const lost = port.present({ clientId: "client-a", walkthrough: "w1", beat: 1 });
+			gone();
+			jest.advanceTimersByTime(PANE_MS.presentationPaneCheck);
+			expect(await lost).toEqual({ kind: "refused", reason: "no_pane" });
 		} finally {
 			jest.useRealTimers();
 		}

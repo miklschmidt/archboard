@@ -81,18 +81,19 @@ const PANE_MS = durations({
 	 */
 	layoutTimeout: 10_000,
 	/**
-	 * How long the server waits for a pane to say a walkthrough step it asked for
-	 * has finished arriving: the first step of a narration (TASK-251).
+	 * How often the server looks whether a pane it asked for a walkthrough step is
+	 * still there: the first step of a narration (TASK-251).
 	 *
 	 * The acknowledgement is the pane's own report, for the same reason a layout's
 	 * is a registration. A step costs the glide (`PRESENTATION_MS.step`, 900), or a
 	 * picture flight when it changes view (`PICTURE_MS.transition`, 640) after the
 	 * new picture has been fetched and drawn, then the report's debounce
 	 * (`PANE_MS.selectionDebounce`, 150) and a round trip: a couple of seconds at worst.
-	 * It ends the wait on a pane that has gone. A step that lands later is still told
-	 * by the report that says so, so a slow pane only delays the voice.
+	 * A slow pane keeps its request, because the voice stays silent until that step
+	 * reaches it. Only a pane that has gone ends the wait, so this bounds how long a
+	 * dead request lingers and nothing a person sees.
 	 */
-	presentationArrival: 8000,
+	presentationPaneCheck: 8000,
 });
 
 export { PANE_MS };

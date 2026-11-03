@@ -40,8 +40,6 @@ type PresentRefusal =
 	| "superseded"
 	/** A user stepped by hand or left while the step was on its way. */
 	| "person_took_over"
-	/** The pane never said the step arrived. */
-	| "timeout"
 	/** The server is stopping. */
 	| "stopping";
 
@@ -124,8 +122,8 @@ interface PanePresentations {
 	 *
 	 * Called for a report the pane-context store kept, so an overtaken report
 	 * never reaches here. It settles the request the pane was sent when the report
-	 * answers it, and otherwise tells the listeners when the position is one no
-	 * waiting request explains and is not the one the pane last said.
+	 * answers it, and otherwise tells the listeners when the position is one a
+	 * user chose and is not the one the pane last said.
 	 * @param report The pane's report.
 	 */
 	readonly note: (report: SemanticPaneContext) => void;
@@ -171,22 +169,18 @@ function answerTo(waiting: Pending, said: SemanticPanePresentation | null): Pres
 }
 
 /**
- * Whether a position is one no waiting request explains: a step nobody asked
- * for, an empty pane that was presenting a moment ago, or a step that lands after
- * the wait for it ended, which nothing else will tell.
+ * Whether a position is one a user chose: a step nobody asked for, or an empty
+ * pane that was presenting a moment ago.
  * @param before Where the pane last said it was, or null.
  * @param said Where it says it is now, or null.
- * @param waiting The unanswered request, or undefined when the pane has none.
- * @returns True when the pane stands somewhere new, unasked.
+ * @returns True when a user's hand moved it from where it was.
  */
-function movedUnasked(
+function movedByPerson(
 	before: SemanticPanePresentation | null,
 	said: SemanticPanePresentation | null,
-	waiting: Pending | undefined,
 ): boolean {
 	if (said === null) return before !== null;
-	const asked = said.answering !== null && waiting !== undefined;
-	return !asked && (!sameStep(before, said) || arrivedSince(before, said));
+	return said.answering === null && (!sameStep(before, said) || arrivedSince(before, said));
 }
 
 /**
@@ -267,9 +261,10 @@ function awaitAnswer(
 	const { pending } = ledger;
 	const request = `present:${randomUUID()}`;
 	return new Promise<PresentOutcome>((resolve) => {
-		const timer = setTimeout(() => {
-			settle({ kind: "refused", reason: "timeout" });
-		}, PANE_MS.presentationArrival);
+		// A slow pane keeps its request, so only a pane that has gone ends the wait.
+		const watch = setInterval(() => {
+			if (parts.paneFor(clientId) === null) settle({ kind: "refused", reason: "no_pane" });
+		}, PANE_MS.presentationPaneCheck);
 		/**
 		 * End the wait once, whoever ends it.
 		 * @param outcome How it ended.
@@ -279,7 +274,7 @@ function awaitAnswer(
 				return;
 			}
 			pending.delete(clientId);
-			clearTimeout(timer);
+			clearInterval(watch);
 			resolve(outcome);
 		}
 		pending.set(clientId, {
@@ -322,7 +317,7 @@ function noteReport(ledger: PresentationLedger, report: SemanticPaneContext): vo
 	const before = ledger.lastSaid.get(report.clientId) ?? null;
 	ledger.lastSaid.set(report.clientId, remembered(before, said));
 	const waiting = ledger.pending.get(report.clientId);
-	if (settledBy(waiting, said) || !movedUnasked(before, said, waiting)) {
+	if (settledBy(waiting, said) || !movedByPerson(before, said)) {
 		return;
 	}
 	refuseTakenOver(waiting);
