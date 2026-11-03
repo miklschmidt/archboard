@@ -1,15 +1,12 @@
-// Persistent notices above the canvas. A message that carries a recovery
-// action is never a toast: it stays up until the person chooses or dismisses.
-// They stack flat above the panes, one-pixel rules between them, never
-// floating over the canvas.
-
+import { Toaster, toast } from "@archboard/ui-kit/components";
+import { NOTICE_TIMEOUT_MS } from "@archboard/timing";
 import {
 	RiCloseLine,
 	RiErrorWarningLine,
 	RiExternalLinkLine,
 	RiInformationLine,
 } from "@remixicon/react";
-import { useCallback, type JSX } from "react";
+import { useCallback, useEffect, useRef, type JSX } from "react";
 
 import { GitHubHttpsUrlSchema, type CodeTargetNotice } from "@archboard/code-opener/opening";
 import { Alert, Button, buttonVariants, IconButton } from "@archboard/ui-kit/components";
@@ -131,14 +128,14 @@ function Notice(props: NoticeProps): JSX.Element {
 	return (
 		<Alert
 			variant={notice.tone}
-			className="bg-background flex min-h-10 flex-row items-center gap-x-3 rounded-none border-0 px-4 py-1.5 has-data-[slot=alert-action]:pr-3 *:[svg]:translate-y-0"
+			className="bg-popover text-popover-foreground w-96 rounded-xl border p-4 shadow-lg"
 		>
 			{notice.tone === "destructive" ? <RiErrorWarningLine /> : <RiInformationLine />}
-			<Alert.Title className="shrink-0">{notice.title}</Alert.Title>
-			<Alert.Description className="min-w-0 flex-1 truncate" title={notice.description}>
+			<Alert.Title className="pr-6">{notice.title}</Alert.Title>
+			<Alert.Description className="min-w-0 break-words" title={notice.description}>
 				{notice.description}
 			</Alert.Description>
-			<Alert.Action className="static ml-auto flex shrink-0 items-center gap-2">
+			<Alert.Action className="static col-start-2 mt-2 flex flex-wrap items-center gap-2">
 				{notice.actions.map((action) => (
 					<NoticeAction
 						key={actionKey(action)}
@@ -166,22 +163,35 @@ interface NoticesProps {
 }
 
 /**
- * Every persistent notice, stacked above the canvas with a one-pixel rule
- * between each and under the last.
+ * Shell notices presented as floating, dismissible toasts.
  * @param props The notices and the shell actions.
  * @returns The stack, or nothing when there is no notice.
  */
-function Notices(props: NoticesProps): JSX.Element | null {
-	if (props.notices.length === 0) {
-		return null;
-	}
-	return (
-		<div className="bg-border flex shrink-0 flex-col gap-px border-b">
-			{props.notices.map((notice) => (
-				<Notice key={notice.id} notice={notice} actions={props.actions} />
-			))}
-		</div>
+function Notices(props: NoticesProps): JSX.Element {
+	const previous = useRef<readonly ShellNotice[]>([]);
+	useEffect(() => {
+		for (const notice of props.notices) {
+			if (previous.current.includes(notice)) continue;
+			toast.custom(() => <Notice notice={notice} actions={props.actions} />, {
+				id: notice.id,
+				duration:
+					notice.actions.length > 0 || notice.tone === "destructive" ? Infinity : NOTICE_TIMEOUT_MS,
+				onAutoClose: () => props.actions.dismissNotice(notice.id),
+				onDismiss: () => props.actions.dismissNotice(notice.id),
+			});
+		}
+		for (const notice of previous.current) {
+			if (!props.notices.some((current) => current.id === notice.id)) toast.dismiss(notice.id);
+		}
+		previous.current = props.notices;
+	}, [props.notices, props.actions]);
+	useEffect(
+		() => () => {
+			for (const notice of previous.current) toast.dismiss(notice.id);
+		},
+		[],
 	);
+	return <Toaster position="bottom-right" />;
 }
 
 export { Notices };
