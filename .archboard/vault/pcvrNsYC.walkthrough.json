@@ -2,6 +2,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#pcvrNsYC",
   "name": "What Archboard does",
+  "formerNames": [
+    "From modules to durable architecture"
+  ],
   "summary": "What an architect who works with a coding agent does with Archboard, and the parts that do it.",
   "target": {
     "state": "oyXXnyCV"
@@ -11,9 +14,10 @@
       "title": "Your agent draws the map",
       "narrative": "Point Claude Code or Codex at a repository. The agent reads the code and tells Archboard what the system is: its services, stores and queues, what contains what, and how they talk. Archboard draws every line. Nobody drags a box, so the picture never drifts away from the model.",
       "reading": {
+        "scope": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
         "selection": [
           "vKEsyHFk/vKEsyHFk#TBnOCNx2",
-          "vKEsyHFk/vKEsyHFk#8XKRkSHl"
+          "vKEsyHFk/6E6hL0Zk#nU6dNHBE"
         ],
         "focus": [],
         "filters": {
@@ -28,8 +32,9 @@
       "title": "Read a system you did not write",
       "narrative": "Open the model in your browser. Start with the big parts, open any module to see what it holds, and jump straight to the code it names. You learn a codebase from its map first, and from its files second.",
       "reading": {
+        "scope": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "selection": [
-          "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+          "vKEsyHFk/yejBBUFY#POloYnX3",
           "vKEsyHFk/vKEsyHFk#7hdbqGFn"
         ],
         "focus": [],
@@ -45,8 +50,10 @@
       "title": "See where the design costs the most",
       "narrative": "Measures counts what each module hides, what only passes calls on, and what changes with it in Git. The code check finds calls that the map leaves out. You get the facts behind each design smell, and you decide what they mean.",
       "reading": {
+        "scope": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
         "selection": [
-          "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+          "vKEsyHFk/HBlhIeSD#radK8osF",
+          "vKEsyHFk/HBlhIeSD#5SMX69gS"
         ],
         "focus": [],
         "filters": {
@@ -61,9 +68,10 @@
       "title": "Plan the change before the code",
       "narrative": "Ask your agent for a change, and Archboard draws it as a proposal over today's architecture. Put two options side by side. When one ships, adopt it with its reason, and the architecture that it replaces stays in history.",
       "reading": {
+        "scope": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "selection": [
-          "vKEsyHFk/vKEsyHFk#DmbKboxU",
-          "vKEsyHFk/vKEsyHFk#8XKRkSHl"
+          "vKEsyHFk/yejBBUFY#wlbLOPSH",
+          "vKEsyHFk/vKEsyHFk#DmbKboxU"
         ],
         "focus": [],
         "filters": {
@@ -78,9 +86,10 @@
       "title": "Ask about what you see",
       "narrative": "Select any part and ask Codex about it, in text or by voice. The question carries exactly what is on your screen, so the answer is about this picture.",
       "reading": {
+        "scope": "vKEsyHFk/vKEsyHFk#lU0khwR0",
         "selection": [
-          "vKEsyHFk/vKEsyHFk#sw4oFps0",
-          "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+          "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+          "vKEsyHFk/yejBBUFY#hO56iL2W"
         ],
         "focus": [],
         "filters": {
@@ -95,9 +104,10 @@
       "title": "Share it as a picture or a narrated video",
       "narrative": "Render any reading as an SVG for a design document, or record a walkthrough like this one for a pull request or a new teammate. It all runs on your own machine: the server, the agent and the renderer.",
       "reading": {
+        "scope": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
         "selection": [
-          "vKEsyHFk/vKEsyHFk#5zIYNuw1",
-          "vKEsyHFk/vKEsyHFk#OHywsFXm"
+          "vKEsyHFk/SMjRfwN3#gTwVYQo9",
+          "vKEsyHFk/vKEsyHFk#VgzgNAGW"
         ],
         "focus": [],
         "filters": {
@@ -108,8 +118,5 @@
       },
       "id": "vKEsyHFk#QvR2lRZb"
     }
-  ],
-  "formerNames": [
-    "From modules to durable architecture"
   ]
 }
