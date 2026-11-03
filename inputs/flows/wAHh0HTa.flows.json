@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#3x2lgrhZ",
       "name": "Start the session",
+      "summary": "Initializes the Codex child, reads its requirements and configuration, and proves that it uses exactly the storage prepared for it. Held notifications go out only after that proof.",
       "participants": [
         "vKEsyHFk/wAHh0HTa#xtHoCCnF",
         "vKEsyHFk/9ncuT5DP#jylkTBp7",
@@ -212,12 +213,12 @@
             }
           ]
         }
-      ],
-      "summary": "Initializes the Codex child, reads its requirements and configuration, and proves that it uses exactly the storage prepared for it. Held notifications go out only after that proof."
+      ]
     },
     {
       "id": "vKEsyHFk/wAHh0HTa#zSCvXJVY",
       "name": "Send one request",
+      "summary": "Takes a mutation such as thread/start through the session's gate, identity proof and wire decoder before one frame goes out. A failed send is not_delivered, and an untrusted answer is outcome_unknown.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#6Jjha6LN",
         "vKEsyHFk/wAHh0HTa#JBu1uGdl",
@@ -569,12 +570,12 @@
             }
           ]
         }
-      ],
-      "summary": "Takes a mutation such as thread/start through the session's gate, identity proof and wire decoder before one frame goes out. A failed send is not_delivered, and an untrusted answer is outcome_unknown."
+      ]
     },
     {
       "id": "vKEsyHFk/wAHh0HTa#fNGi0n1g",
       "name": "Answer a request the child makes",
+      "summary": "Answers the child's reverse requests: the time for a thread issued to the current child, and a policy refusal for token refresh or attestation. Another epoch's request gets an error.",
       "participants": [
         "vKEsyHFk/wAHh0HTa#ql0DevMk",
         "vKEsyHFk/wAHh0HTa#3FR6mev4"
@@ -733,8 +734,7 @@
             }
           ]
         }
-      ],
-      "summary": "Answers the child's reverse requests: the time for a thread issued to the current child, and a policy refusal for token refresh or attestation. Another epoch's request gets an error."
+      ]
     }
   ]
 }

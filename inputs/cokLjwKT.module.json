@@ -8,8 +8,8 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-router"
   },
-  "parent": "vKEsyHFk/OjRLKb74#tppVDaSZ",
   "schemaVersion": 1,
   "id": "vKEsyHFk#cokLjwKT",
+  "parent": "vKEsyHFk/OjRLKb74#tppVDaSZ",
   "outgoing": []
 }

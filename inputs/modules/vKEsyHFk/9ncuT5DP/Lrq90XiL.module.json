@@ -19,19 +19,6 @@
   ],
   "outgoing": [
     {
-      "order": 88000,
-      "kind": "event",
-      "label": "one socket on the host's path, naming its tab",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/voice-client/voice-client.ts",
-        "symbol": "socketUrl"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#zbMLgKmk",
-      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
-    },
-    {
       "order": 70034,
       "kind": "call",
       "label": "create browser media ownership",
@@ -56,6 +43,19 @@
       },
       "id": "vKEsyHFk#RPZfWIL0",
       "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    },
+    {
+      "order": 88000,
+      "kind": "event",
+      "label": "one socket on the host's path, naming its tab",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/ui/clients/voice-client/voice-client.ts",
+        "symbol": "socketUrl"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#zbMLgKmk",
+      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
     }
   ]
 }
