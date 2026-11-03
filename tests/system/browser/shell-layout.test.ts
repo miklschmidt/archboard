@@ -445,7 +445,7 @@ test(
 						flat: notice.closest('[data-sonner-toast]') !== null,
 						text: text.textContent?.trim() ?? '' };
 				})()`),
-			(layout) => layout?.text === PERSISTENT_NOTICE_TEXT,
+			(layout) => layout?.text === PERSISTENT_NOTICE_TEXT && layout.insidePanes,
 			"the canvas-contained recovery notice to render",
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
@@ -454,6 +454,7 @@ test(
 			throw new Error("the canvas-contained recovery notice did not render");
 		}
 		expect(notice.parentIsPanes).toBe(true);
+		await browser.run(["screenshot", "/tmp/archboard-toast-proof.png"]);
 		expect(notice.insidePanes).toBe(true);
 		expect(notice.width).toBeGreaterThan(300);
 		expect(notice.copyType.family).toContain("archboard onest");
