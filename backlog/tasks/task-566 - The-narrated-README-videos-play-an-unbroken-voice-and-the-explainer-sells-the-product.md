@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-03T04:09:00Z'
-updated_date: '2026-11-03T04:09:00Z'
+updated_date: '2026-11-03T04:37:00Z'
 labels:
   - readme
   - voice
@@ -32,7 +32,8 @@ The owner also asked that the explainer walkthrough be rewritten as a marketing 
 - [ ] #1 A recording buffers the voice through the WebRTC receiver's jitterBufferTarget, with the duration and its reason in @archboard/timing
 - [ ] #2 A kept talk records how much of the voice the receiver concealed and stretched, and model record says when the voice dropped out
 - [ ] #3 The explainer walkthrough presents Archboard's use cases and overall system design in plain words
-- [ ] #4 The explainer, pr-walkthrough and newcomer videos are recorded again, each with no concealed voice and subtitles that do not lag the voice, and README.md links the new attachments
+- [ ] #4 A recorded step reaches the voice as an instruction, so the narration explains each step and asks the listener nothing
+- [ ] #5 The explainer, pr-walkthrough and newcomer videos are recorded again, each with no concealed voice and subtitles that do not lag the voice, and README.md links the new attachments
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -44,3 +45,10 @@ The owner also asked that the explainer walkthrough be rewritten as a marketing 
 4. Rewrite the explainer walkthrough through model edit.
 5. Record the three narrated videos, check each for concealment and subtitle timing, attach them and update README.md.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Found during re-recording: since PR 19 every recording answered each step as speech from a person and ended on a question. PR 19 changed the recorded lead-in from "Explain in your own words" to "Speak now about this". Restored the instruction, kept the heading out.
+Explainer beats now open one module each: root readings fit about thirty modules in the frame and nothing was legible.
+<!-- SECTION:NOTES:END -->
