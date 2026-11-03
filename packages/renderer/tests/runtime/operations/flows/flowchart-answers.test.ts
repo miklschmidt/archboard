@@ -1,7 +1,8 @@
 // A decision's answers leave it from separate points (TASK-491, ADR 0073):
 // the first from the left, the last from the right, and any other from the
-// bottom. Each line leaves sideways and stays beside the diamond down to its
-// words.
+// bottom, but the taller of two answers runs straight down out of the bottom.
+// Each line from a side point leaves sideways and stays beside the diamond
+// down to its words.
 //
 // What is guarded: where each answer starts and how it runs out of its
 // point, that no answer steps back under its diamond above its words, and
@@ -273,19 +274,15 @@ function leavesSideways(points: readonly At[], side: number, way: -1 | 1, foot: 
 }
 
 describe("a decision's answers leave it from separate points", () => {
-	test("two answers leave from its left and right points, each sideways before it turns down", async () => {
+	test("of two answers the taller runs straight down, and the other leaves its side point sideways", async () => {
 		const { out, diamond } = await answersOf(TWO, "d1");
 		expect(out.length).toBe(2);
-		const [left, right] = out;
-		for (const [line, x] of [
-			[left!, diamond.left],
-			[right!, diamond.right],
-		] as const) {
-			expect(line[0]!.x).toBeCloseTo(x, 0);
-			expect(line[0]!.y).toBeCloseTo(diamond.middle, 0);
-		}
-		expect(leavesSideways(left!, diamond.left, -1, diamond.foot)).toBe(true);
-		expect(leavesSideways(right!, diamond.right, 1, diamond.foot)).toBe(true);
+		const [side, straight] = out;
+		expect(side![0]!.x).toBeCloseTo(diamond.left, 0);
+		expect(side![0]!.y).toBeCloseTo(diamond.middle, 0);
+		expect(leavesSideways(side!, diamond.left, -1, diamond.foot)).toBe(true);
+		expect(straight![0]!.x).toBeCloseTo((diamond.left + diamond.right) / 2, 0);
+		expect(straight![0]!.y).toBeCloseTo(diamond.foot, 0);
 	});
 
 	test("three answers leave from its left, bottom and right points", async () => {
@@ -300,7 +297,7 @@ describe("a decision's answers leave it from separate points", () => {
 		expect(leavesSideways(right!, diamond.right, 1, diamond.foot)).toBe(true);
 	});
 
-	test("answers take the sides that cross no line, a loop's line back up included", async () => {
+	test("the answers of a decision in a loop cross no line", async () => {
 		const { svg } = await renderSemanticView({
 			policy: DEFAULT_SEMANTIC_POLICY,
 			content: LOOPED,
@@ -314,7 +311,7 @@ describe("a decision's answers leave it from separate points", () => {
 		expect(crossing).toEqual([]);
 		const { out, diamond } = await answersOf(LOOPED, "d3");
 		expect(leavesSideways(out[0]!, diamond.left, -1, diamond.foot)).toBe(true);
-		expect(leavesSideways(out.at(-1)!, diamond.right, 1, diamond.foot)).toBe(true);
+		expect(out.at(-1)![0]!.y).toBeCloseTo(diamond.foot, 0);
 	});
 
 	test("an answer from a side point stays beside its diamond down to its words", async () => {
