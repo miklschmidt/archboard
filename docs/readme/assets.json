@@ -27,7 +27,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "f04c0e93380dfb4eb1bc2a6f457d5f07c6b35579f7151721e88c03538e842bd5"
+			"hash": "330634aab6cfd607d7102e7a174e901e47e6b4e882aa67999141f889733386e1"
 		},
 		{
 			"name": "hero",
@@ -207,7 +207,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "f06c671ce67435ff47464ec6bc79228bf74b205e1034f07e8aefebf11dc27b10"
+			"hash": "dfb5a57d5e682053d12aecd6548f8edde63f4d2d9e8cae9db4fa6ba1a2f86b9a"
 		},
 		{
 			"name": "newcomer",
@@ -354,7 +354,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "f06c671ce67435ff47464ec6bc79228bf74b205e1034f07e8aefebf11dc27b10"
+			"hash": "dfb5a57d5e682053d12aecd6548f8edde63f4d2d9e8cae9db4fa6ba1a2f86b9a"
 		},
 		{
 			"name": "architecture",
