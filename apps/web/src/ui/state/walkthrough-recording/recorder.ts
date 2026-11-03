@@ -26,6 +26,7 @@ import {
 } from "#ui/rules/walkthrough-recording/pacing.ts";
 import { TalkCapture } from "#ui/clients/walkthrough-recording/talk-capture.ts";
 import { recordingAudioElements } from "#ui/clients/walkthrough-recording/voice-audio.ts";
+import { bufferVoice, receptionOf } from "#ui/clients/walkthrough-recording/voice-reception.ts";
 import {
 	agentReadiness,
 	readVoice,
@@ -167,11 +168,19 @@ class WalkthroughRecorder {
 	readonly page: RecordingPage;
 	/** Where each pane's media owner makes its audio elements: here, heard by the recording. */
 	readonly audioElements: BrowserAudioElementPort;
+	/**
+	 * Buffer the voice for the recording, and keep its receivers to count how it arrived.
+	 * @param receivers The voice's receivers.
+	 */
+	readonly receivers = (receivers: Parameters<typeof bufferVoice>[0]): void => {
+		this.#receivers = bufferVoice(receivers);
+	};
 	readonly #request: RecordingRequest;
 	readonly #listeners = new Set<() => void>();
 	#sources: RecordingSources | null = null;
 	#reading: PaneReading | null = null;
 	#voice: MediaStream | null = null;
+	#receivers: readonly RTCRtpReceiver[] = [];
 	#capture: TalkCapture | null = null;
 	#talk: PaceState | null = null;
 	#kept: { readonly voice: Blob; readonly log: TalkLog } | null = null;
@@ -460,7 +469,9 @@ class WalkthroughRecorder {
 		const capture = this.#capture;
 		if (capture === null) return;
 		try {
-			this.#kept = await capture.finish();
+			const kept = await capture.finish();
+			const reception = await receptionOf(this.#receivers);
+			this.#kept = reception === undefined ? kept : { ...kept, log: { ...kept.log, reception } };
 			this.#stopVoice();
 		} catch (error) {
 			this.#fail(`The talk could not be kept: ${words(error)}`);

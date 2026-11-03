@@ -277,10 +277,10 @@ function createBrowserWorkbenchMediaOwner(
 				requireCurrentStart(active, operation);
 			},
 		});
-		const media = createMediaSession(
-			server,
-			options.environment === undefined ? {} : { environment: options.environment },
-		);
+		const media = createMediaSession(server, {
+			...(options.environment === undefined ? {} : { environment: options.environment }),
+			...(options.receivers === undefined ? {} : { receivers: options.receivers }),
+		});
 		active.media = media;
 		active.server = server;
 		// The realtime session publishes every browser-originated change to its

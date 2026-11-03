@@ -92,6 +92,7 @@ function attachRemote(controller: RunController, run: Run): void {
 	run.remoteStream = controller.environment.createMediaStream(
 		receivers.map((receiver) => receiver.track),
 	);
+	controller.receivers(receivers);
 	if (controller.inactive(run)) {
 		return;
 	}

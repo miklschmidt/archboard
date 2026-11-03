@@ -195,6 +195,10 @@ the account's Codex usage.
   the walkthrough or voice changes. A replay records the hash of all
   the sources, so `readme:check` cannot tell that the model or the walkthrough
   changed after the talk was recorded: check that yourself before you replay.
+- The talk also keeps how the voice arrived (`audio.reception`): the samples
+  that the browser made up or stretched while it waited for the voice's
+  packets. If `model record` says that the voice dropped out, record again.
+  A dropout sounds like a call with bad reception.
 - GitHub plays a video with sound only from an attachment, so the narrated
   MP4s are attached like the clips (see below).
 

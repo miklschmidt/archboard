@@ -8,7 +8,7 @@ import type {
 	RealtimeUnsubscribe,
 	RealtimeCorrelation,
 } from "#ui/state/realtime/contract.ts";
-import type { RealtimeMediaEnvironment } from "#ui/state/realtime/environment.ts";
+import type { RealtimeMediaEnvironment, RealtimeReceiver } from "#ui/state/realtime/environment.ts";
 import { isStopFailure } from "#ui/clients/realtime/run.ts";
 import type { RealtimeMediaSnapshot, Run } from "#ui/clients/realtime/run.ts";
 import type { VoiceOutputLevelSource } from "#ui/clients/output-level/level-source.ts";
@@ -41,6 +41,11 @@ interface RealtimeMediaSession {
 /** Construction options; the browser environment is the default. */
 interface RealtimeMediaSessionOptions {
 	readonly environment?: RealtimeMediaEnvironment;
+	/**
+	 * Hears the voice's receivers once its remote audio is built, so a host can tune or measure
+	 * how the voice is received: a recording buffers more of it than a conversation can.
+	 */
+	readonly receivers?: (receivers: readonly RealtimeReceiver[]) => void;
 }
 
 /** An error state a run can fail into. */

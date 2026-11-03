@@ -41,10 +41,15 @@ import type {
 	RealtimeMediaSessionOptions,
 } from "#ui/state/realtime/session-contract.ts";
 
+/** A host that does not ask for the voice's receivers leaves them as the browser made them. */
+function noReceivers(): void {
+	// Nothing to tune.
+}
+
 /**
  * Creates the session.
  * @param server The neutral realtime server.
- * @param options The environment, when not the browser's own.
+ * @param options The environment, when not the browser's own, and who hears the voice's receivers.
  * @returns The session.
  */
 function createRealtimeMediaSession(
@@ -286,6 +291,7 @@ function createRealtimeMediaSession(
 		server,
 		environment,
 		outputLevel,
+		receivers: options.receivers ?? noReceivers,
 		inactive,
 		/**
 		 * Publishes visibly.
