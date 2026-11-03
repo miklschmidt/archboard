@@ -1,5 +1,5 @@
-import { Toaster, toast } from "@archboard/ui-kit/components";
-import { NOTICE_TIMEOUT_MS } from "@archboard/timing";
+import { Toaster, toast } from "sonner";
+import { SHELL_CLOCK_MS } from "@archboard/timing";
 import {
 	RiCloseLine,
 	RiErrorWarningLine,
@@ -182,7 +182,9 @@ function Notices(props: NoticesProps): JSX.Element {
 			};
 			const id = toast.custom(() => <Notice notice={notice} actions={props.actions} />, {
 				duration:
-					notice.actions.length > 0 || notice.tone === "destructive" ? Infinity : NOTICE_TIMEOUT_MS,
+					notice.actions.length > 0 || notice.tone === "destructive"
+						? Infinity
+						: SHELL_CLOCK_MS.notice,
 				onAutoClose: dismiss,
 				onDismiss: dismiss,
 			});
@@ -196,7 +198,7 @@ function Notices(props: NoticesProps): JSX.Element {
 		},
 		[],
 	);
-	return <Toaster position="bottom-right" />;
+	return <Toaster position="bottom-right" style={{ fontFamily: "var(--font-sans)" }} />;
 }
 
 export { Notices };

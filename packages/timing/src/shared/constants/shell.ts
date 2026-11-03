@@ -17,6 +17,8 @@ import { durations } from "#shared/constants/durations.ts";
  * back learns it before they would have given up on it.
  */
 const SHELL_CLOCK_MS = durations({
+	/** Time to read an informational toast before it leaves the canvas. */
+	notice: 6000,
 	/** How often the navigator re-reads how long ago each agent spoke. */
 	ageTick: 5000,
 	/** How often the agent dock counts a running turn's seconds. */

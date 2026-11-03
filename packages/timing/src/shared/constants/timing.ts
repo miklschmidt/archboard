@@ -61,5 +61,3 @@ export {
 	PRESENTATION_MS,
 } from "#shared/constants/diagram-motion.ts";
 export { SUBTITLE_MS, VOICE_MS } from "#shared/constants/voice-motion.ts";
-
-export { NOTICE_TIMEOUT_MS } from "#shared/constants/notices.ts";

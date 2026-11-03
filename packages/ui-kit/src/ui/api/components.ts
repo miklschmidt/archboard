@@ -26,5 +26,3 @@ export { cn } from "#ui/rules/class-names.ts";
 export { usesCommandKey } from "#ui/rules/command-key.ts";
 export type { DialogError } from "#ui/rules/dialog-error.ts";
 export { shownRepository } from "#ui/rules/shown-name.ts";
-
-export { Toaster, toast } from "#ui/components/Toaster.tsx";
