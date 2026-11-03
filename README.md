@@ -304,18 +304,20 @@ Put a diagram of the Payments module in docs/design.md, and keep it current.
 
 ## Archboard next to the usual diagram tools
 
-|                                         |            Archboard             |    Mermaid · D2    |         Excalidraw · draw.io         |     Structurizr · LikeC4     |
-| --------------------------------------- | :------------------------------: | :----------------: | :----------------------------------: | :--------------------------: |
-| Who places the boxes                    |       the renderer, always       |  a layout engine   | you, or an agent placing coordinates |   a layout engine, or you    |
-| Written by                              | your coding agent, through a CLI |    you, in text    |             you, by hand             |        you, in a DSL         |
-| Proposals drawn against today           |       ✅ module by module        |         no         |                  no                  |              no              |
-| History with the reason for each change |                ✅                |      git log       |               git log                | git log, ADRs in Structurizr |
-| Narrated walkthroughs and video         |                ✅                |         no         |                  no                  | step-through views, no voice |
-| Sequence views over the same modules    |                ✅                | a separate diagram |                  no                  |       ✅ dynamic views       |
-| Modules bound to code                   |        ✅ opens the file         |       links        |                links                 |            links             |
-| Several agents writing safely           |   ✅ claims and version checks   |         no         |                  no                  |              no              |
+|                                         |            Archboard             |    Mermaid · D2    |         Excalidraw · draw.io         |     Structurizr · LikeC4     |                  IcePanel                  |
+| --------------------------------------- | :------------------------------: | :----------------: | :----------------------------------: | :--------------------------: | :----------------------------------------: |
+| Who places the boxes                    |       the renderer, always       |  a layout engine   | you, or an agent placing coordinates |   a layout engine, or you    |              you, on a canvas              |
+| Written by                              | your coding agent, through a CLI |    you, in text    |             you, by hand             |        you, in a DSL         | you, in a web app, or an agent through MCP |
+| Proposals drawn against today           |       ✅ module by module        |         no         |                  no                  |              no              |       ✅ drafts, but not through MCP       |
+| History with the reason for each change |                ✅                |      git log       |               git log                | git log, ADRs in Structurizr |       versions and decision records        |
+| Narrated walkthroughs and video         |                ✅                |         no         |                  no                  | step-through views, no voice |        step-through flows, no voice        |
+| Sequence views over the same modules    |                ✅                | a separate diagram |                  no                  |       ✅ dynamic views       |        flows drawn over the diagram        |
+| Modules bound to code                   |        ✅ opens the file         |       links        |                links                 |            links             |      links to repositories and files       |
+| Several agents writing safely           |   ✅ claims and version checks   |         no         |                  no                  |              no              |       no, MCP writes the live model        |
 
-<sub>What each tool does out of the box, as of September 2026.</sub>
+<sub>What each tool does out of the box, as of September 2026. IcePanel as of November 2026.</sub>
+
+[IcePanel](https://icepanel.io/) is a hosted service, and it also does things that Archboard does not. A team edits and comments on one shared model in the browser. IcePanel can sync that model with deployment data from production. Its MCP server is available on paid plans only.
 
 ## Archboard next to PR Lens and Archify
 
