@@ -22,6 +22,7 @@
 // the mark.
 
 import { cornerWarning, lineWarning } from "@archboard/renderer/picture";
+import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import {
 	lineTo,
 	mix,
@@ -271,17 +272,28 @@ const MARKERS: Readonly<Record<string, (groups: readonly Element[]) => void>> = 
 };
 
 /**
+ * Draw the warning on one subject.
+ * @param groups The subject's groups.
+ */
+function markSubject(groups: Element[]): void {
+	MARKERS[groups[0]?.getAttribute("data-semantic-kind") ?? ""]?.(groups);
+}
+
+/**
  * Draw the warning on every subject the code check warns about, and take away
  * every warning drawn for a subject it no longer warns about.
- * @param root The picture.
+ * @param picture The picture, and the surface it is on.
+ * @param picture.root The picture's root.
+ * @param picture.surface Its surface, whose stage draws the warnings.
  * @param warned The subjects, by id.
  */
-function markCodeWarnings(root: Element, warned: ReadonlySet<string>): void {
+function markCodeWarnings(
+	{ root, surface }: { readonly root: Element; readonly surface: HTMLElement },
+	warned: ReadonlySet<string>,
+): void {
+	stageOf(surface)?.setWarnings(warned);
 	for (const mark of root.querySelectorAll(`[${CODE_MARK_ATTRIBUTE}]`)) mark.remove();
-	for (const id of warned) {
-		const groups = groupsOf(root, id);
-		MARKERS[groups[0]?.getAttribute("data-semantic-kind") ?? ""]?.(groups);
-	}
+	for (const id of warned) markSubject(groupsOf(root, id));
 }
 
 export { markCodeWarnings };

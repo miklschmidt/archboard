@@ -1,7 +1,9 @@
 //! Labels use existing private ink. They never alter a route's bends.
 
+pub(super) mod own;
 mod trunk;
 
+use own::{Own, keeps, meets};
 pub(super) use trunk::{branches, from_part, seat};
 
 use super::{
@@ -246,10 +248,22 @@ impl<'a> Slots<'a> {
         edge: usize,
         path: &[Point],
     ) -> Option<(Rect, bool)> {
+        let own = Own { edge, path };
+        spot_on(model, own, path, self.shape, &self.strokes, &self.labels)
+    }
+    /// A spot that may stand beside the route's other stretches, for a route with no better.
+    pub(super) fn any_slot(
+        &self,
+        model: &Model<'_>,
+        edge: usize,
+        path: &[Point],
+    ) -> Option<(Rect, bool)> {
         slot_index(model, edge, self.shape, path, &self.strokes, &self.labels)
     }
 }
 
+/// Where a route's words stand: clear of the route's other stretches, or as a fallback beside
+/// them when the route leaves no such spot, because a line keeps its words.
 fn slot_index(
     model: &Model<'_>,
     edge: usize,
@@ -258,6 +272,22 @@ fn slot_index(
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Option<(Rect, bool)> {
+    spot_on(model, Own { edge, path }, path, shape, index, labels).or_else(|| {
+        let free = Own { edge, path: &[] };
+        let (at, _) = spot_on(model, free, path, shape, index, labels)?;
+        Some((at, true))
+    })
+}
+
+fn spot_on(
+    model: &Model<'_>,
+    own: Own<'_>,
+    path: &[Point],
+    shape: &Shape,
+    index: &StrokeIndex,
+    labels: &super::label_space::Labels,
+) -> Option<(Rect, bool)> {
+    let edge = own.edge;
     let label = model.edges[edge].label()?;
     let size = Rect {
         x: 0.0,
@@ -267,7 +297,7 @@ fn slot_index(
     };
     if let Some(&part_first) = shape.trunk.get(&edge) {
         let spans = index.private(edge, &from_part(path, part_first));
-        return nearest(&spans, size, shape, edge, index, labels).map(|at| (at, false));
+        return nearest(&spans, size, shape, own, index, labels).map(|at| (at, false));
     }
     let mut spans = index.private(edge, path);
     spans.sort_by(|a, b| {
@@ -275,10 +305,10 @@ fn slot_index(
             .total_cmp(&length(&[a.a, a.b]))
             .then(a.before.total_cmp(&b.before))
     });
-    let midway = midway(&spans, size, shape, edge, index, labels);
+    let midway = midway(&spans, size, shape, own, index, labels);
     midway
         .map(|at| (at, false))
-        .or_else(|| nearest(&spans, size, shape, edge, index, labels).map(|at| (at, true)))
+        .or_else(|| nearest(&spans, size, shape, own, index, labels).map(|at| (at, true)))
 }
 
 /// The middle of the longest run that holds the words.
@@ -286,7 +316,7 @@ fn midway(
     spans: &[Span],
     size: Rect,
     shape: &Shape,
-    edge: usize,
+    own: Own<'_>,
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Option<Rect> {
@@ -299,8 +329,11 @@ fn midway(
             f64::midpoint(span.a.y, span.b.y)
         };
         let label = at(span, position, size);
-        (length(&[span.a, span.b]) >= required + 32.0 && clear(shape, edge, label, index, labels))
-            .then_some(label)
+        let kept = inflate(label, 12.01);
+        (length(&[span.a, span.b]) >= required + 32.0
+            && own.others(span).all(|stretch| !meets(kept, stretch))
+            && clear(shape, own.edge, label, index, labels))
+        .then_some(label)
     })
 }
 
@@ -308,7 +341,7 @@ fn nearest(
     spans: &[Span],
     size: Rect,
     shape: &Shape,
-    edge: usize,
+    own: Own<'_>,
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Option<Rect> {
@@ -318,7 +351,7 @@ fn nearest(
         if best.is_some_and(|(distance, _)| span.before > distance) {
             continue;
         }
-        for spot in spots_for(span, size, shape, edge, index, labels) {
+        for spot in spots_for(span, size, shape, own, index, labels) {
             if best.is_none_or(|(distance, _)| spot.0.total_cmp(&distance).is_lt()) {
                 best = Some(spot);
             }
@@ -331,7 +364,7 @@ fn spots_for(
     span: Span,
     size: Rect,
     shape: &Shape,
-    edge: usize,
+    own: Own<'_>,
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Vec<(f64, Rect)> {
@@ -360,12 +393,15 @@ fn spots_for(
     for &r in shape.labels.values() {
         protect(inflate(r, 8.02));
     }
+    for stretch in own.others(span) {
+        protect(inflate(stretch, 12.02));
+    }
     let window = search_window(a, b, across, across_half, horizontal);
-    index.touching(edge, window, |r| protect(inflate(r, 12.02)));
+    index.touching(own.edge, window, |r| protect(inflate(r, 12.02)));
     spots.extend(free.into_iter().filter_map(|(lo, hi)| {
         let position = if a < b { lo } else { hi };
         let label = at(span, position, size);
-        clear(shape, edge, label, index, labels)
+        clear(shape, own.edge, label, index, labels)
             .then_some((span.before + (position - a).abs(), label))
     }));
     spots
@@ -442,18 +478,6 @@ pub(super) fn arrange(model: &Model<'_>, shape: &mut Shape) -> Option<usize> {
     Some(fallbacks)
 }
 
-/// Whether a drawing dressed with its trunks' words keeps a plate where it stands: each
-/// plate there was seated around the others, and moving one can unseat the next.
-fn keeps(
-    shape: &Shape,
-    edge: usize,
-    at: Rect,
-    strokes: &StrokeIndex,
-    labels: &super::label_space::Labels,
-) -> bool {
-    !shape.trunk.is_empty() && clear(shape, edge, at, strokes, labels)
-}
-
 fn available(
     model: &Model<'_>,
     shape: &Shape,
@@ -488,7 +512,8 @@ fn consistent(
             continue;
         }
         let old = shape.labels.remove(&edge)?;
-        if keeps(shape, edge, old, strokes, labels) {
+        let path = &shape.routes[index].points;
+        if keeps(shape, Own { edge, path }, old, strokes, labels) {
             shape.labels.insert(edge, old);
             continue;
         }
@@ -541,7 +566,9 @@ fn update(
             continue;
         }
         let old = shape.labels.remove(&edge);
-        if let Some(kept) = old.filter(|&at| keeps(shape, edge, at, strokes, labels)) {
+        let path = &shape.routes[index].points;
+        if let Some(kept) = old.filter(|&at| keeps(shape, Own { edge, path }, at, strokes, labels))
+        {
             shape.labels.insert(edge, kept);
             labels.remember(edge, kept);
             continue;

@@ -112,7 +112,7 @@ function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Prop
 		<SelectPrimitive.Item
 			data-slot="select-item"
 			className={cn(
-				"data-highlighted:bg-foreground/8 focus:bg-foreground/8 text-control rounded-control relative flex min-h-7 w-full cursor-default items-center gap-1.5 py-1 pr-7 pl-2 font-normal outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-selected:font-medium [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+				"data-highlighted:bg-foreground/8 focus:bg-foreground/8 text-control rounded-control relative flex min-h-7 w-full items-center gap-1.5 py-1 pr-7 pl-2 font-normal outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-selected:font-medium [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
 				className,
 			)}
 			{...props}
@@ -149,7 +149,7 @@ function SelectScrollUpButton({
 		<SelectPrimitive.ScrollUpArrow
 			data-slot="select-scroll-up-button"
 			className={cn(
-				"bg-popover top-0 z-10 flex w-full cursor-default items-center justify-center py-1 [&_svg:not([class*='size-'])]:size-4",
+				"bg-popover top-0 z-10 flex w-full items-center justify-center py-1 [&_svg:not([class*='size-'])]:size-4",
 				className,
 			)}
 			{...props}
@@ -167,7 +167,7 @@ function SelectScrollDownButton({
 		<SelectPrimitive.ScrollDownArrow
 			data-slot="select-scroll-down-button"
 			className={cn(
-				"bg-popover bottom-0 z-10 flex w-full cursor-default items-center justify-center py-1 [&_svg:not([class*='size-'])]:size-4",
+				"bg-popover bottom-0 z-10 flex w-full items-center justify-center py-1 [&_svg:not([class*='size-'])]:size-4",
 				className,
 			)}
 			{...props}

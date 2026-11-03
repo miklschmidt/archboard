@@ -97,7 +97,7 @@ fn definitions(palette: &palette::Palette) -> Vec<Definition> {
     }
     defined.extend(slab::slab_definitions(palette));
     defined.extend(ports::port_definitions(palette));
-    defined.push(tray::well_shade(palette));
+    defined.extend(tray::well_shades(palette));
     defined
 }
 

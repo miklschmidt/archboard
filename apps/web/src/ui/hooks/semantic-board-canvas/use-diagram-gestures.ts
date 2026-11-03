@@ -23,13 +23,18 @@ import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/sema
 import type { Gesture } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import { useTouchPinch } from "#ui/hooks/semantic-board-canvas/use-touch-pinch.ts";
+import { typingIn } from "#ui/hooks/shell/use-find-shortcut.ts";
 import {
 	capturePointer,
 	hasTravelled,
 	takePointerToDrag,
 	type Drag,
 } from "#ui/clients/semantic-board-canvas/subjects/pointer-gesture.ts";
-import { openableAt } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
+import { pickedTarget } from "#ui/clients/semantic-board-canvas/picture/picture-pick.ts";
+import {
+	openableAt,
+	tipTargetAt,
+} from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
 import { controlAt, subjectAt } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 
 /** What the gestures act on. */
@@ -87,11 +92,16 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 	readonly keyboard: Pick<HTMLAttributes<HTMLElement>, "onKeyDown">;
 	readonly gesture: Gesture;
 	readonly pointer: DiagramPointer;
+	/** The class of the cursor the canvas shows. */
+	readonly cursor: string;
 } {
 	const { camera, atlas, onSelect, onSelectArea, onHover, dismissTip, openDown } = inputs;
 	const [gesture, setGesture] = useState<Gesture>("idle");
 	const drag = useRef<CanvasDrag | null>(null);
 	const space = useSpacePan(onSelectArea !== undefined);
+	// Whether the press under way holds the picture, and whether the pointer rests on a part.
+	const [grabbed, setGrabbed] = useState(false);
+	const [over, setOver] = useState(false);
 	const [rectangle, setRectangle] = useState<DiagramBox | null>(null);
 	const dragged = useRef(false);
 	// What the last press landed on, carried from pointerup to the click that
@@ -112,6 +122,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 				setRectangle(null);
 				dragged.current = true;
 				pressed.current = null;
+				setGrabbed(true);
 				setGesture("dragging");
 				return;
 			}
@@ -119,7 +130,8 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 				return;
 			}
 			if (onSelectArea !== undefined) event.currentTarget.focus({ preventScroll: true });
-			const subject = subjectAt(event.target, atlas);
+			const subject = subjectAt(pickedTarget(event), atlas);
+			const action = dragAction(event.button, subject, onSelectArea !== undefined, space);
 			// What was pressed is decided here and nowhere else. By the time a click
 			// arrives the diagram may have been panned, and the click may have been
 			// retargeted by pointer capture; neither can change what was under the
@@ -131,12 +143,14 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 				x: event.clientX,
 				y: event.clientY,
 				pressed: subject,
-				control: controlAt(event.target),
-				action: dragAction(event.button, subject, onSelectArea !== undefined, space.current),
+				control: controlAt(pickedTarget(event)),
+				action,
+				space,
 				toggle: event.ctrlKey || event.metaKey,
 				captured: false,
 			};
 			dragged.current = false;
+			setGrabbed(action === "pan" && grabsAtOnce(event.button, subject, space));
 			// A press stops a zoom or an ease where it is, before anything else is decided.
 			camera.stop();
 			setGesture("pressed");
@@ -159,7 +173,10 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 	const panStep = useCallback(
 		(started: CanvasDrag, event: PointerEvent<HTMLElement>): void => {
 			const panned = dragged.current || hasTravelled(started, event.clientX, event.clientY);
-			if (panned && !dragged.current) setGesture("dragging");
+			if (panned && !dragged.current) {
+				setGrabbed(true);
+				setGesture("dragging");
+			}
 			dragged.current = panned;
 			drag.current = {
 				...started,
@@ -193,6 +210,14 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 		[onSelectArea],
 	);
 
+	const hover = useCallback(
+		(event: PointerEvent<HTMLElement>): void => {
+			setOver(takesClick(pickedTarget(event), event.clientY));
+			onHover(event);
+		},
+		[onHover],
+	);
+
 	const onPointerMove = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
 			if (pinch.move(event)) {
@@ -200,7 +225,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 			}
 			const started = drag.current;
 			if (started === null) {
-				onHover(event);
+				hover(event);
 				return;
 			}
 			if (started.pointerId !== event.pointerId) {
@@ -212,13 +237,13 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 			// the pointer with nothing held.
 			if (event.buttons === 0) {
 				abandon();
-				onHover(event);
+				hover(event);
 				return;
 			}
 			if (started.action === "select") selectStep(started, event);
 			else panStep(started, event);
 		},
-		[abandon, onHover, panStep, pinch, selectStep],
+		[abandon, hover, panStep, pinch, selectStep],
 	);
 
 	const onPointerUp = useCallback(
@@ -233,6 +258,8 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 			}
 			finishSelection(started, event);
 			pressed.current = { subject: started.pressed, control: started.control };
+			// The hand moves the picture, so a press with Space picks nothing, even one that stayed put.
+			if (started.space) dragged.current = true;
 			drag.current = null;
 			setGesture("idle");
 			if (started.captured) {
@@ -276,10 +303,10 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 			// A click with no press behind it can only have been synthesised; there
 			// its own target is the only thing there is to go on.
 			onSelect(
-				landed === null ? subjectAt(event.target, atlas) : landed.subject,
+				landed === null ? subjectAt(pickedTarget(event), atlas) : landed.subject,
 				event.ctrlKey || event.metaKey,
 				event.detail > 1,
-				landed === null ? controlAt(event.target) : landed.control,
+				landed === null ? controlAt(pickedTarget(event)) : landed.control,
 			);
 		},
 		[onSelect, atlas],
@@ -289,7 +316,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 	// level down, when it has one.
 	const onDoubleClick = useCallback(
 		(event: ReactMouseEvent<HTMLElement>): void => {
-			if (!controlAt(event.target)) openDown(openableAt(event.target, event.clientY));
+			if (!controlAt(pickedTarget(event))) openDown(openableAt(pickedTarget(event), event.clientY));
 		},
 		[openDown],
 	);
@@ -306,6 +333,12 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 		rectangle,
 		keyboard: { onKeyDown },
 		gesture,
+		cursor: cursorClass({
+			held: gesture !== "idle" && grabbed,
+			space,
+			over,
+			selectable: onSelectArea !== undefined,
+		}),
 		pointer: {
 			onPointerDown,
 			onPointerMove,
@@ -322,36 +355,90 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
  * @param enabled Whether this canvas supports primary rectangle selection.
  * @returns The held modifier without changing keyboard actions outside the canvas.
  */
-function useSpacePan(enabled: boolean) {
-	const held = useRef(false);
+function useSpacePan(enabled: boolean): boolean {
+	const [held, setHeld] = useState(false);
 	useEffect(() => {
 		if (!enabled) return undefined;
 		/**
-		 * Remember the physical modifier independently of the focused control.
+		 * Remember the physical modifier independently of the focused control. A space
+		 * typed into a field is a word gap, not a hand.
 		 * @param event The keyboard transition.
 		 */
-		function change(event: KeyboardEvent): void {
-			if (event.code === "Space") held.current = event.type === "keydown";
+		function press(event: KeyboardEvent): void {
+			if (event.code === "Space" && !typingIn(event)) setHeld(true);
+		}
+		/**
+		 * Let go of the modifier wherever the key comes up.
+		 * @param event The keyboard transition.
+		 */
+		function lift(event: KeyboardEvent): void {
+			if (event.code === "Space") setHeld(false);
 		}
 		/** Clear a modifier when the browser loses keyboard ownership. */
 		function clear(): void {
-			held.current = false;
+			setHeld(false);
 		}
-		window.addEventListener("keydown", change);
-		window.addEventListener("keyup", change);
+		window.addEventListener("keydown", press);
+		window.addEventListener("keyup", lift);
 		window.addEventListener("blur", clear);
 		return (): void => {
-			window.removeEventListener("keydown", change);
-			window.removeEventListener("keyup", change);
+			window.removeEventListener("keydown", press);
+			window.removeEventListener("keyup", lift);
 			window.removeEventListener("blur", clear);
 		};
 	}, [enabled]);
 	return held;
 }
 
+/**
+ * Whether a click on a place picks something: a part with a tip, or a control.
+ * A frame's floor has neither, so it stays part of the canvas.
+ * @param target What the pointer is over.
+ * @param clientY Where the pointer is, down the screen.
+ * @returns True when a click does something there.
+ */
+function takesClick(target: EventTarget | null, clientY: number): boolean {
+	return controlAt(target) || tipTargetAt(target, clientY) !== null;
+}
+
+/**
+ * Whether a pan press holds the picture at once. A plain press on a part can still be a click.
+ * @param button The pressed button.
+ * @param subject The subject under the press.
+ * @param space Whether the reader holds Space.
+ * @returns True when nothing but a pan can come of the press.
+ */
+function grabsAtOnce(button: number, subject: string | null, space: boolean): boolean {
+	return button !== 0 || subject === null || space;
+}
+
+/**
+ * The cursor of a canvas: a hand when a press moves the picture, closed while it
+ * holds the picture, and a pointer over what takes a click.
+ * @param state What the reader is doing.
+ * @param state.held Whether a press holds the picture.
+ * @param state.space Whether the reader holds Space.
+ * @param state.over Whether the pointer rests on what takes a click.
+ * @param state.selectable Whether a drag on empty canvas selects instead of moving the picture.
+ * @returns The cursor's class.
+ */
+function cursorClass(state: {
+	readonly held: boolean;
+	readonly space: boolean;
+	readonly over: boolean;
+	readonly selectable: boolean;
+}): string {
+	if (state.held) return "cursor-grabbing";
+	if (state.space) return "cursor-grab";
+	if (state.over) return "cursor-pointer";
+	return state.selectable ? "cursor-default" : "cursor-grab";
+}
+
 /** One pressed pointer with its fixed selection or panning intent. */
 interface CanvasDrag extends Drag {
 	readonly action: "pan" | "select";
+	/** Whether the reader held Space when they pressed. */
+	readonly space: boolean;
 	readonly toggle: boolean;
 	/** Whether the press landed on the control that a subject wears. */
 	readonly control: boolean;

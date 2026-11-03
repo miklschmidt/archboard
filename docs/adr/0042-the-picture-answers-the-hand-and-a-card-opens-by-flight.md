@@ -59,6 +59,9 @@ The picture gives five answers. Each has one owner in `src/ui/semantic-board-can
    when the picture changes under the flight. A second request ends the first at
    once and is made the plain way. A press, a turn of the wheel or a key (Tab and
    the modifier keys excepted) ends a flight at its end and goes no further.
+   ADR 0071 amends this: a move to a deeper module flies through the nearest drawn
+   card that holds it, a move at the same depth never flies, and the plain way
+   between two boards of the tree is a passage.
 
 ## How the picture is marked
 

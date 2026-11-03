@@ -168,12 +168,14 @@ const testCache = {
 const coreCache = {
 	input: [
 		"crates/**",
+		".cargo/config.toml",
 		"Cargo.toml",
 		"clippy.toml",
 		"Cargo.lock",
 		"flake.nix",
 		"flake.lock",
 		"packages/renderer/assets/fonts/*.ttf",
+		"packages/renderer/assets/theme.css",
 	],
 	output: [],
 	env: analysisCache.env,

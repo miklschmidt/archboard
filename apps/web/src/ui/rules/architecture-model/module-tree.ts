@@ -50,6 +50,24 @@ function moduleTree(content: Pick<VariantContent, "nodes">): ModuleTree {
 }
 
 /**
+ * Every module in the order the tree shows it.
+ * @param content The complete content of the reading, in authored order.
+ * @returns The ids, each branch before what is below it.
+ */
+function moduleOrder(content: Pick<VariantContent, "nodes">): readonly string[] {
+	/**
+	 * A branch and everything below it.
+	 * @param branch The branch.
+	 * @returns The ids.
+	 */
+	const walk = (branch: ModuleBranch): readonly string[] => [
+		...branch.steps,
+		...branch.children.flatMap(walk),
+	];
+	return moduleForest(content).flatMap(walk);
+}
+
+/**
  * The branches that a reading of a module keeps open.
  * @param tree The tree.
  * @param id The open module, or null for the roots.
@@ -129,6 +147,7 @@ function upFrom(tree: ModuleTree, id: string | null): string | null {
 }
 
 export {
+	moduleOrder,
 	moduleTree,
 	pathTo,
 	siblingOf,

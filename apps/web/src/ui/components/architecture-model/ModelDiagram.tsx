@@ -1,5 +1,9 @@
 import { useAutoFit } from "#ui/hooks/semantic-board-canvas/use-auto-fit.ts";
-import { beatFocus, subjectMarks } from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
+import {
+	beatFocus,
+	beatLight,
+	subjectMarks,
+} from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
 import { moveCameraByKey } from "#ui/clients/semantic-board-canvas/picture/camera-keys.ts";
 import { useLighting } from "#ui/hooks/semantic-board-canvas/use-lighting.ts";
 import {
@@ -12,7 +16,6 @@ import {
 	type KeyboardEvent,
 	type PointerEvent,
 } from "react";
-import { everyStep } from "@archboard/board/flow";
 import type { DiagramBox } from "@archboard/board/render-reply";
 import type { projectModel } from "@archboard/board/content";
 import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
@@ -32,20 +35,24 @@ import type { Trace } from "#ui/components/semantic-board-canvas/Peek.tsx";
 import { pictureReach } from "#ui/rules/architecture-model/picture-reach.ts";
 import { usePictureTransition } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
 import { useReveal } from "#ui/hooks/semantic-board-canvas/use-reveal.ts";
+import { useStageLook } from "#ui/hooks/semantic-board-canvas/use-stage-look.ts";
 import { useStickyHeads } from "#ui/hooks/semantic-board-canvas/use-sticky-heads.ts";
 import { useSweep } from "#ui/hooks/semantic-board-canvas/use-sweep.ts";
-import { useTrafficRest } from "#ui/hooks/semantic-board-canvas/use-traffic-rest.ts";
 import { useViewerMarks } from "#ui/hooks/semantic-board-canvas/use-viewer-marks.ts";
 import { markCodeWarnings } from "#ui/clients/semantic-board-canvas/subjects/code-marks.ts";
 import { surfaceMarks } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
 import { useCameraHandover } from "#ui/hooks/architecture-model/use-camera-handover.ts";
 import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.ts";
-import { SubjectTipBox } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
+import {
+	SubjectTipBox,
+	TipPlace,
+} from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
 import {
 	subjectTip,
 	type TipTarget,
 } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
+import { useAreaSelection } from "#ui/hooks/architecture-model/use-area-selection.ts";
 import { useCameraMemory } from "#ui/hooks/architecture-model/use-camera-memory.ts";
 import { useDoorPick } from "#ui/hooks/architecture-model/use-door-pick.ts";
 import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
@@ -115,10 +122,8 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		[model.modules, onOpen],
 	);
 	const focus = useSceneFocus(scene);
-	const veil = useMemo(
-		() => (focus.drawn.length === 0 ? null : new Set(focus.drawn)),
-		[focus.drawn],
-	);
+	const beat = useMemo(() => beatLight(focus), [focus]);
+	const { veil } = beat;
 	// Before the picture moves, so the memory holds the camera that the reader left.
 	const recall = useCameraMemory(camera, scene);
 	const staged = usePictureTransition(surface, drawing, {
@@ -160,7 +165,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		onPick: onSelect,
 	});
 	const { pick, openDown } = useDoorPick(scene, open, onPick, props.onToggle);
-	const { pointer, gesture, rectangle, keyboard } = useDiagramGestures({
+	const { pointer, gesture, rectangle, keyboard, cursor } = useDiagramGestures({
 		camera,
 		atlas: drawing.atlas,
 		onSelect: pick,
@@ -180,11 +185,31 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		},
 		[keyboard, camera, drawing, reducedMotion, lighting],
 	);
-	useSceneMarks(staged, scene, { selected, warnings: props.warnings, focus, veil, lighting });
+	useSceneMarks(staged, scene, {
+		selected,
+		warnings: props.warnings,
+		focus,
+		veil,
+		reach: beat.reach ?? lighting.reach,
+		lighting,
+	});
+	const standing = veil ?? lighting.standing;
 	useSweep(staged, lighting.light, lighting.reach, reducedMotion);
 	useRelease(gesture === "dragging", lighting.release);
 	useStickyHeads(staged, drawing.atlas);
-	useTrafficRest(surface, camera, gesture === "dragging");
+	useStageLook(
+		staged,
+		{
+			probing: lighting.mode,
+			veiled: veil !== null,
+			presenting,
+			standing,
+			reach: beat.reach ?? lighting.reach,
+			reducedMotion,
+		},
+		hasFarView(scene),
+		props.pending,
+	);
 	useSceneArrival(surface, scene.presentation, props.onPresentation);
 	useAttention(lighting.resting, single, props.onAttention);
 	// Like the retained diagram, this pan-and-zoom surface needs a tab stop and
@@ -199,7 +224,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 			aria-busy={props.pending}
 			tabIndex={0}
 			aria-label="Module diagram"
-			className={diagramClass(leaving)}
+			className={`${diagramClass(leaving)} ${cursor}`}
 			ref={attachViewport}
 			{...pointer}
 			onPointerLeave={tip.leave}
@@ -225,8 +250,10 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 				onWholeScope={props.onWholeScope}
 				onOpenState={props.onOpenState}
 			/>
-			<ModelSubjectTip target={tip.shown} scene={scene} camera={camera} />
-			<ModelLineTip target={tip.shown} model={model} projection={projection} />
+			<TipPlace tip={tip} standing={standing}>
+				<ModelSubjectTip target={tip.shown} scene={scene} camera={camera} />
+				<ModelLineTip target={tip.shown} model={model} projection={projection} />
+			</TipPlace>
 			<LeavingPart departure={leaving} at="spinner" />
 			{rectangle !== null && <ModelSelectionRectangle rectangle={rectangle} />}
 		</section>
@@ -331,7 +358,7 @@ function useSceneTip(
 	camera: BoardCamera,
 	lighting: ReturnType<typeof useLighting>,
 ) {
-	const { shown, onHover: tipHover, dismiss } = useSubjectTip({ drawing, camera });
+	const { shown, at, onHover: tipHover, dismiss } = useSubjectTip({ drawing, camera });
 	const { onHover: lightHover, release } = lighting;
 	const onHover = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
@@ -344,7 +371,7 @@ function useSceneTip(
 		dismiss();
 		release();
 	}, [dismiss, release]);
-	return { shown, onHover, dismiss, leave };
+	return { shown, at, onHover, dismiss, leave };
 }
 
 /**
@@ -375,48 +402,8 @@ function ModelSubjectTip(props: {
 	const far = useCameraWith(props.camera, seenFromFar) && hasFarView(scene);
 	const appearance = scene.picture.appearances.find((one) => one.id === target?.id);
 	const tip = target === null ? null : subjectTip(scene.projection, target, appearance, far);
-	if (target === null || !isDoor(scene.projection, target.id))
-		return <SubjectTipBox target={target} tip={tip} />;
+	if (target === null || !isDoor(scene.projection, target.id)) return <SubjectTipBox tip={tip} />;
 	return <ModelDoorTip target={target} scene={scene} said={tip} appearance={appearance} />;
-}
-
-/**
- * Select the subjects a rectangle on the viewport meets.
- * @param scene The accepted scene.
- * @param camera The pane's camera.
- * @param onSelectMany Told what the rectangle met.
- * @returns The rectangle's handler.
- */
-function useAreaSelection(
-	scene: AcceptedScene,
-	camera: BoardCamera,
-	onSelectMany: ModelDiagramProps["onSelectMany"],
-) {
-	const { projection, picture } = scene;
-	return useCallback(
-		(rectangle: DiagramBox, toggle: boolean): void => {
-			const pose = camera.view().camera;
-			const area = {
-				x: (rectangle.x - pose.x) / pose.scale,
-				y: (rectangle.y - pose.y) / pose.scale,
-				width: rectangle.width / pose.scale,
-				height: rectangle.height / pose.scale,
-			};
-			const known = new Set(
-				[
-					...projection.content.nodes,
-					...projection.content.edges,
-					...projectionSteps(projection),
-				].map((subject) => subject.id),
-			);
-			const boxes = { ...picture.atlas.regions, ...picture.atlas.nodes, ...picture.atlas.edges };
-			const ids = Object.entries(boxes)
-				.filter(([id, box]) => known.has(id) && intersects(box, area))
-				.map(([id]) => id);
-			onSelectMany(ids, toggle);
-		},
-		[camera, picture.atlas, onSelectMany, projection],
-	);
 }
 
 /** What the viewer marks on the picture of a scene. */
@@ -425,6 +412,7 @@ interface SceneMarks {
 	warnings: ReadonlySet<string> | undefined;
 	focus: ReturnType<typeof useSceneFocus>;
 	veil: ReadonlySet<string> | null;
+	reach: ReadonlyMap<string, number> | null;
 	lighting: ReturnType<typeof useLighting>;
 }
 
@@ -439,18 +427,22 @@ function useSceneMarks(
 	scene: AcceptedScene,
 	marks: SceneMarks,
 ): void {
-	const { selected, warnings, focus, veil, lighting } = marks;
+	const { selected, warnings, focus, veil, reach, lighting } = marks;
 	const { connections } = scene.projection;
 	const warned = useMemo(() => projectedMarks(warnings, connections), [warnings, connections]);
 	// Before the viewer's marks, so a line's group made to hold a warning is lit and veiled with the rest.
 	useLayoutEffect(() => {
-		if (staged !== null) markCodeWarnings(staged.root, warned);
+		if (staged !== null) markCodeWarnings(staged, warned);
 	}, [staged, warned]);
 	const attended = useMemo(
 		() => projectedMarks(subjectMarks(null, focus, [...selected]), connections),
 		[focus, selected, connections],
 	);
-	useViewerMarks(staged, { attended, veil: veil ?? lighting.standing, reach: lighting.reach });
+	useViewerMarks(staged, {
+		attended,
+		veil: veil ?? lighting.standing,
+		reach,
+	});
 }
 
 /**
@@ -536,15 +528,6 @@ function projectedMarks(
 }
 
 /**
- * Only steps in the complete selected flow are selectable in its diagram.
- * @param projection The reading whose bounds the renderer returns.
- * @returns Canonical step identities, including nested control steps.
- */
-function projectionSteps(projection: ReturnType<typeof projectModel>) {
-	return projection.content.flows.flatMap((flow) => everyStep(flow.steps));
-}
-
-/**
  * Draw immediate selection feedback in viewport coordinates.
  * @param props The current pointer rectangle.
  * @param props.rectangle Its bounds in CSS pixels.
@@ -568,21 +551,6 @@ function ModelSelectionRectangle(props: { rectangle: DiagramBox }): JSX.Element 
 			className="border-primary bg-primary/10 pointer-events-none absolute border"
 			style={style}
 		/>
-	);
-}
-
-/**
- * Select only subjects whose drawn bounds meet the visible rectangle.
- * @param box The renderer-owned subject bounds.
- * @param area The selection in diagram units.
- * @returns Whether the subject intersects the selection.
- */
-function intersects(box: DiagramBox, area: DiagramBox): boolean {
-	return (
-		box.x <= area.x + area.width &&
-		box.x + box.width >= area.x &&
-		box.y <= area.y + area.height &&
-		box.y + box.height >= area.y
 	);
 }
 

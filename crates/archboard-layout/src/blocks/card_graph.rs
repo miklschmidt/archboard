@@ -306,7 +306,11 @@ impl CardLayout<'_> {
         let crowded: Vec<(String, f64)> = widths
             .iter()
             .filter(|&(name, &width)| {
-                self.tree.cards.contains_key(name.as_str()) && width > self.size_of(name).width
+                self.tree
+                    .cards
+                    .get(name.as_str())
+                    .is_some_and(|card| !card.door)
+                    && width > self.size_of(name).width
             })
             .map(|(name, &width)| (name.clone(), width))
             .collect();

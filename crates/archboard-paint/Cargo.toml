@@ -1,0 +1,25 @@
+[package]
+name = "archboard-paint"
+description = "The painter: a scene and its presentation drawn on a canvas, and every in-between of two scenes"
+version = "0.0.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+archboard-scene = { path = "../archboard-scene" }
+# A picture's glyphs are drawn from the outlines of the core's own faces.
+archboard-text = { path = "../archboard-text" }
+# The geometry and paint types that the two Vello painters share (ADR 0071).
+kurbo = "0.13"
+peniko = "0.6"
+# A page states what it marks as JSON.
+serde = { version = "1", features = ["derive"] }
+# The painter of a machine with no usable WebGPU, and of every test (ADR 0071).
+vello_cpu = { version = "0.3", default-features = false, features = ["std", "u8_pipeline"] }
+
+[dev-dependencies]
+serde_json = { version = "1", features = ["float_roundtrip"] }

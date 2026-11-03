@@ -5,7 +5,7 @@
 //! reader who searches, copies or listens.
 
 use archboard_text::Face;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::drawing::DiagramFont;
@@ -16,7 +16,7 @@ use crate::scene::colour::Colour;
 
 /// One glyph of a run: the glyph in its face, and where its origin stands
 /// from the run's point, in font units (every face has 1000 to the em).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct GlyphPlace {
     /// The face the glyph is drawn from: the run's own, or the face a
     /// character the run's face has no glyph for falls back to.
@@ -30,7 +30,7 @@ pub struct GlyphPlace {
 }
 
 /// One run of words, shaped.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct Text {
     /// The left end of its baseline: where its first glyph's origin stands.
@@ -109,7 +109,7 @@ impl Text {
 
 /// A Remix Icon, by the name it is exported under, drawn from its own 24-unit
 /// square into a square `size` wide at the origin.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Icon {
     /// The icon drawn: the one asked for, or the icon for a name the set does not have.
     pub name: String,
@@ -121,7 +121,7 @@ pub struct Icon {
 
 /// What is drawn in a box of its own: everything in `view` scaled and moved
 /// to fill `frame`, nothing outside it.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Viewport {
     /// Where it is drawn.
     pub frame: Rect,

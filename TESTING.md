@@ -8,7 +8,7 @@ and test a change. [INSTALL.md](INSTALL.md) covers installation on a machine.
 
 ## 1. Prepare the checkout
 
-Vite+ requires Node.js `^22.18.0 || ^24.11.0 || >=26.0.0` for build and validation tools.
+Build and validation tools require Node.js `^22.23.4 || ^24.22.1 || >=26.12.1`.
 Bun runs the product and its tests.
 
 ```bash

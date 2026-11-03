@@ -235,6 +235,7 @@ describe("doors", () => {
 			{ id: "other", parent: "open" },
 			{ id: "inner", parent: "part" },
 			{ id: "lone", responsibility: "Reached by one part", binding: binding("src/lone.ts") },
+			{ id: "behind", parent: "lone" },
 			{ id: "shared", responsibility: "Reached by two parts" },
 		],
 		[
@@ -251,6 +252,12 @@ describe("doors", () => {
 		expect(door).toMatchObject({ name: "lone" });
 		expect(door?.responsibility).toBeUndefined();
 		expect(door).not.toHaveProperty("codePath");
+	});
+
+	test("a module with no parts stands as its card, because a door would open onto that card", () => {
+		const card = reading.content.nodes.find((node) => node.id === "shared");
+		expect(card).not.toHaveProperty("door");
+		expect(card?.responsibility).toBe("Reached by two parts");
 	});
 
 	test("a line ends on the part that reaches a door", () => {
@@ -470,6 +477,7 @@ describe("focus", () => {
 			{ id: "a", parent: "system", responsibility: "Focused", binding: binding("src/a.ts") },
 			{ id: "b", parent: "system" },
 			{ id: "c", parent: "system", responsibility: "A neighbour" },
+			{ id: "behind", parent: "c" },
 		],
 		[
 			{ id: "between", from: "a", to: "b" },

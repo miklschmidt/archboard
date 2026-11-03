@@ -13,12 +13,14 @@
 //! here it is drawn out of the point on that side: it runs out sideways and
 //! turns down where it was laid out, clear of the diamond (`from_side`).
 //!
-//! A line is moved in one of two ways: it turns in just outside the box to the
-//! middle, or its first leg moves over to the middle and the run after its
-//! first turn starts there instead. A line that leaves a shape turns in where
-//! it can, so it still passes the words of its answer, which stand beside its
-//! first leg; a line that reaches a shape moves its last leg where it can. A
-//! line that reaches a shape is the same line read backwards.
+//! A line is moved in one of three ways: it turns in just outside the box to
+//! the middle, or its first leg moves over to the middle and the run after its
+//! first turn starts there instead, or a straight line a few units off the
+//! middle slides whole along the card at its other end. A line that leaves a
+//! shape turns in where it can, so it still passes the words of its answer,
+//! which stand beside its first leg; a line that reaches a shape moves its last
+//! leg where it can. A line that reaches a shape is the same line read
+//! backwards.
 
 use archboard_scene::geometry::{
     BEND_RADIUS, Curve, EPSILON, Point, Rect, Segment, curve_through, segment_start, vertices_of,
@@ -33,6 +35,8 @@ const APPROACH_STRAIGHT: f64 = 12.0;
 /// How far beyond the turn out of a point a line runs before it turns again,
 /// so the two turns do not touch.
 const CLEAR: f64 = 4.0;
+/// The farthest a straight line slides: past this it has room to turn in.
+pub(super) const SLIDE: f64 = BEND_RADIUS * 2.0;
 
 /// Which end of a line is moved: where it leaves a shape, or where it arrives.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -170,8 +174,36 @@ fn turned_in(corners: &[Point], start: Point, reach: f64) -> Option<Vec<Point>> 
     Some(points)
 }
 
+/// A straight line slid whole so that it starts at the middle of the side, its
+/// other end kept on its card, clear of the card's corners. Nothing where the
+/// line is far enough off the middle to turn in: a turn with no run in it
+/// leaves two lines beside each other where the lines into a shape should join.
+fn slid(corners: &[Point], start: Point, card: Option<Rect>) -> Option<Vec<Point>> {
+    let ([from, to], Some(card)) = (corners, card) else {
+        return None;
+    };
+    if apart(start, *from) >= SLIDE {
+        return None;
+    }
+    let moved = Point {
+        x: to.x + start.x - from.x,
+        y: to.y + start.y - from.y,
+    };
+    let on_card =
+        |at: f64, low: f64, size: f64| at >= low + BEND_RADIUS && at <= low + size - BEND_RADIUS;
+    let kept = if start.x == from.x {
+        on_card(moved.y, card.y, card.height)
+    } else {
+        on_card(moved.x, card.x, card.width)
+    };
+    kept.then(|| vec![start, moved])
+}
+
 /// The corners of a line's first legs moved to start at the middle of a side.
-fn started_at(corners: &[Point], start: Point, end: End) -> Option<Vec<Point>> {
+fn started_at(corners: &[Point], start: Point, end: End, card: Option<Rect>) -> Option<Vec<Point>> {
+    if let Some(whole) = slid(corners, start, card) {
+        return Some(whole);
+    }
     if end == End::Arrives {
         return moved_leg(corners, start)
             .or_else(|| turned_in(corners, start, APPROACH_STRAIGHT + BEND_RADIUS));
@@ -193,7 +225,7 @@ fn rejoined(corners: &[Point], rest: Vec<Segment>) -> Curve {
 /// A line that leaves a shape, moved to leave from the middle of the side it
 /// crosses: where it leaves it keeps its first leg, which its words stand
 /// beside, and turns in; where it arrives it moves its last leg.
-fn from_middle(curve: Curve, bounds: Rect, end: End) -> Curve {
+fn from_middle(curve: Curve, bounds: Rect, end: End, card: Option<Rect>) -> Curve {
     let (corners, rest) = first_legs(&curve);
     let way = match corners.as_slice() {
         [first, second, ..] => axis_way(*first, *second),
@@ -206,7 +238,7 @@ fn from_middle(curve: Curve, bounds: Rect, end: End) -> Curve {
     if apart(start, curve.from) < EPSILON {
         return curve;
     }
-    match started_at(&corners, start, end) {
+    match started_at(&corners, start, end, card) {
         None => curve,
         Some(turned) => rejoined(&turned, rest),
     }
@@ -235,18 +267,24 @@ fn from_side(curve: &Curve, bounds: Rect) -> Option<Curve> {
 
 /// A line with each end that meets a diamond or a terminal moved to the
 /// middle of the side it crosses, or, where it was laid out to leave beside
-/// the shape, out of the point on that side.
-pub(super) fn at_shape_points(curve: Curve, from: Option<Rect>, to: Option<Rect>) -> Curve {
+/// the shape, out of the point on that side. `card` is the card at the line's
+/// other end, when the line can slide along it.
+pub(super) fn at_shape_points(
+    curve: Curve,
+    from: Option<Rect>,
+    to: Option<Rect>,
+    card: Option<Rect>,
+) -> Curve {
     let left = match from {
         None => curve,
         Some(bounds) => match from_side(&curve, bounds) {
             Some(side) => side,
-            None => from_middle(curve, bounds, End::Leaves),
+            None => from_middle(curve, bounds, End::Leaves, card),
         },
     };
     match to {
         None => left,
-        Some(bounds) => reversed(&from_middle(reversed(&left), bounds, End::Arrives)),
+        Some(bounds) => reversed(&from_middle(reversed(&left), bounds, End::Arrives, card)),
     }
 }
 
@@ -355,15 +393,48 @@ mod tests {
             height: 34.0,
         };
         let curve = curve_through(&[point(70.0, 34.0), point(70.0, 120.0)], true);
-        let moved = at_shape_points(curve, Some(terminal), None);
+        let moved = at_shape_points(curve, Some(terminal), None, None);
         assert_eq!(moved.from, point(48.0, 34.0));
         assert_eq!(moved.end(), point(70.0, 120.0));
+    }
+
+    // A person chooses a repository's checkout: a line four units off the middle
+    // of End ran beside the others into it, and kinked over at its foot.
+    #[test]
+    fn a_straight_line_a_few_units_off_a_terminal_slides_along_its_card_to_join_the_others() {
+        let end = Rect {
+            x: 40.0,
+            y: 1377.0,
+            width: 96.0,
+            height: 34.0,
+        };
+        let card = Rect {
+            x: 40.0,
+            y: 859.0,
+            width: 180.0,
+            height: 72.0,
+        };
+        let line = || curve_through(&[point(84.0, 931.0), point(84.0, 1377.0)], true);
+        let moved = at_shape_points(line(), None, Some(end), Some(card));
+        assert_eq!(
+            vertices_of(&moved),
+            [point(88.0, 931.0), point(88.0, 1377.0)]
+        );
+
+        // The card ends before the middle, so the line turns in at its foot.
+        let narrow = Rect {
+            width: 52.0,
+            ..card
+        };
+        let moved = at_shape_points(line(), None, Some(end), Some(narrow));
+        assert_eq!(moved.from, point(84.0, 931.0));
+        assert_eq!(moved.end(), point(88.0, 1377.0));
     }
 
     #[test]
     fn an_answer_held_beside_its_diamond_runs_out_of_the_side_point() {
         let curve = curve_through(&[point(-30.0, 50.0), point(-30.0, 150.0)], true);
-        let moved = at_shape_points(curve, Some(DIAMOND), None);
+        let moved = at_shape_points(curve, Some(DIAMOND), None, None);
         assert_eq!(moved.from, point(0.0, 25.0));
         assert_eq!(moved.end(), point(-30.0, 150.0));
     }

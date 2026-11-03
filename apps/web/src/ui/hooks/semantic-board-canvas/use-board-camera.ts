@@ -510,13 +510,14 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 		(shift: { readonly x: number; readonly y: number }): void => {
 			if (shift.x === 0 && shift.y === 0) return;
 			motion.halt();
+			settle();
 			// Known at once: a glide asked for in the same commit starts from where
 			// the camera follows to, not from where it was.
 			const current = read().camera;
 			const followed = panCamera(current, shift.x * current.scale, shift.y * current.scale);
 			write({ camera: followed, instant: true });
 		},
-		[motion, read, write],
+		[motion, settle, read, write],
 	);
 	return useMemo(
 		() => ({

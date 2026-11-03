@@ -4,7 +4,7 @@
 // relationships and the parts at their other ends stay as drawn, and the rest
 // recedes. A part that is picked lights its connections for as long as it is
 // picked. The pointer resting on another part lights that one's more lightly,
-// and gives the pick back when it goes. A row of the sidebar's list lights the
+// and gives the pick back when it goes, unless the reader turned that off. A row of the sidebar's list lights the
 // relationship it is about while it is pointed at. A trace asked of the picked
 // part lights, beyond its connections, everything it reaches in one direction,
 // each further hop more faintly. Several subjects picked at once stay as drawn,
@@ -18,6 +18,7 @@ import { useMemo, type PointerEvent } from "react";
 
 import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { Peeked, Trace } from "#ui/components/semantic-board-canvas/Peek.tsx";
+import { useHoverLight } from "#ui/hooks/semantic-board-canvas/use-hover-light.ts";
 import { useRestingPart } from "#ui/hooks/semantic-board-canvas/use-resting-part.ts";
 import {
 	litBySeveral,
@@ -166,13 +167,17 @@ function reachBeyond(
 function useLighting(inputs: LightingInputs): Lighting {
 	const { content: wiring, atlas, selection, several = null, veil } = inputs;
 	const { part, parts, onHover, release } = useRestingPart(atlas);
+	const hovering = useHoverLight() === "on";
 	const trace = traceOf(inputs);
-	const poked = pokedBy(inputs, trace, part);
+	const poked = pokedBy(inputs, trace, hovering ? part : null);
 	const lit = useMemo(
 		() =>
-			litInPicture(wiring, atlas, poked === part ? parts : [poked].filter((id) => id !== null)) ??
-			litBySeveral(wiring, several),
-		[wiring, atlas, poked, part, parts, several],
+			litInPicture(
+				wiring,
+				atlas,
+				hovering && poked === part ? parts : [poked].filter((id) => id !== null),
+			) ?? litBySeveral(wiring, several),
+		[wiring, atlas, hovering, poked, part, parts, several],
 	);
 	const reach = useMemo(
 		() => (lit === null ? null : reachBeyond(inputs, trace, poked === selection)),

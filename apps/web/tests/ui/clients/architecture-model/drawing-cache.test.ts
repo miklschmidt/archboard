@@ -13,6 +13,7 @@ afterAll(driveFramesFrom(clock));
 
 const DRAWING = {
 	svg: '<svg width="100" height="100"><rect data-semantic-id="Service" width="80" height="40" /></svg>',
+	painting: "{}",
 	width: 100,
 	height: 100,
 	atlas: {

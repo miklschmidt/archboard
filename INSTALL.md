@@ -14,29 +14,70 @@ archboard itself, read [TESTING.md](TESTING.md).
 
 You need these things:
 
-- Linux or macOS, Bash, Git, and Bun 1.4.3 or newer. Bun must be on the `PATH` of
+- Linux or macOS, Bash, Git, and Bun 1.4.4 or newer. Bun must be on the `PATH` of
   every process that runs archboard.
-- Node.js that satisfies `^22.18.0 || ^24.11.0 || >=26.0.0`, for the Vite+ build and validation tools.
+- Node.js that satisfies `^22.23.4 || ^24.22.1 || >=26.12.1`, for the Vite+ build and validation tools. These are the security releases of October 2026 and later.
 - A desktop browser, to read architecture. The browser layout is for desktop
   screens only.
-- Nix with flakes, to build the renderer core. `nix develop` in the checkout
-  gives Bun and the Rust tools. Without Nix, install the Rust toolchain with the
-  `wasm32-unknown-unknown` target, `lld`, and `wasm-bindgen-cli` 0.2.129.
+- The Rust tools that build the renderer core. Section 1 installs them with
+  Nix or with rustup.
 - Chromium or Google Chrome, only to draw PNG files and to record videos.
 - `ffmpeg` with libx264 and aac, or Nix, only to record videos. If there is no
   `ffmpeg`, the recorder runs `nixpkgs#ffmpeg-headless` through Nix.
 
 ## 1. Install archboard on the machine
 
-Run these commands once:
+Clone the repository once:
 
 ```bash
 git clone https://github.com/miklschmidt/archboard.git ~/Projects/archboard
 cd ~/Projects/archboard
-nix develop
+```
+
+Then build it in one of the two ways below. If `nix --version` works and the
+machine has flakes turned on, use Nix. Otherwise use rustup.
+
+### Build with Nix
+
+The shell in `flake.nix` gives Bun and the Rust tools. It does not give Node.js.
+It does not run on an Intel Mac, because the pinned nixpkgs dropped
+`x86_64-darwin`. On an Intel Mac, build with rustup.
+
+```bash
+nix develop --command bash -c 'bun install && bun run build'
+```
+
+### Build with rustup
+
+Install these things first:
+
+- A C compiler and `ar`, because a build script compiles C. On Debian or Ubuntu,
+  run `apt install build-essential`. On macOS, run `xcode-select --install`.
+- rustup, from <https://rustup.rs>.
+
+Then run these commands in the checkout:
+
+```bash
+rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown
+rustup override set stable
+cargo install wasm-bindgen-cli --locked --version "$(awk -F'"' '/^name = "wasm-bindgen"$/ { getline; print $2 }' Cargo.lock)"
 bun install
 bun run build
 ```
+
+`rustup override set` chooses that toolchain for this checkout and leaves your
+default as it is. Keep `~/.cargo/bin` on your `PATH`, because it holds
+`wasm-bindgen`. That program must have the version of the `wasm-bindgen` crate in
+`Cargo.lock`, so run the `cargo install` command again after each `git pull`. It
+does nothing when the version is the same.
+
+`flake.nix` is the list of the tools, if a build reports that a tool is missing.
+`package.json` pins Bun, `Cargo.lock` pins wasm-bindgen, and `flake.lock` pins
+Rust. The `lld` in that list is for the Rust of nixpkgs. A rustup toolchain has
+its own linker. The stable toolchain can be newer than the pin: rustc 1.99.1
+built the core on 2026-11-02, when the pin gave 1.99.0.
+
+### After the build
 
 If `bun install` fails while it extracts a package, run it again. `bun install`
 also installs the Codex version that archboard is pinned to, inside the
@@ -45,11 +86,14 @@ that Codex passes its checks. A Codex on your `PATH` is not used.
 
 `bun run build` builds the renderer core to WebAssembly and the browser
 application into `dist/frontend`. Without it, the page tells you to run the
-build. The server and the CLI run from the TypeScript in `apps/` and
-`packages/`. If the renderer core was built from other sources than the
-checkout holds, they refuse to draw and name `bun run build:core` (ADR 0059). After each `git pull`,
-run `bun install` and `bun run build` again. `bun install` also links the workspace
-packages into `node_modules`, and the server does not start without those links.
+build. A build needs the Rust tools only when the core's sources changed. The
+server and the CLI run from the TypeScript in `apps/` and `packages/`. If the
+renderer core was built from other sources than the checkout holds, they refuse
+to draw and name `bun run build:core` (ADR 0059). After each `git pull`, run
+`bun install` and `bun run build` again, in the way that you built it. With rustup,
+run the `cargo install` command first. `bun install`
+also links the workspace packages into `node_modules`, and the server does not
+start without those links.
 
 ## 2. Put the CLI on your PATH
 
@@ -558,11 +602,29 @@ gh 2.99 or newer.
 
 ## Update and remove
 
-To update archboard, run `git pull` and `bun install` in the checkout, then
-run `archboard restart`. It stops the Archboard server, builds the frontend
-and starts the server on the new source. `archboard status` reports a server
-that runs older source. Run `archboard install-skill` again in each repository to
-update its copy of the skills.
+To update archboard, run `git pull` in the checkout. Make sure that `bun --version`
+and `node --version` still satisfy [What you need](#what-you-need), because nothing
+refuses an older one. Then run `bun install` and
+`archboard restart` with the Rust tools on your `PATH`, because the restart builds
+the renderer core when its sources changed. With Nix, run this command:
+
+```bash
+nix develop --command bash -c 'bun install && archboard restart'
+```
+
+With rustup, run these commands in the checkout:
+
+```bash
+cargo install wasm-bindgen-cli --locked --version "$(awk -F'"' '/^name = "wasm-bindgen"$/ { getline; print $2 }' Cargo.lock)"
+bun install
+archboard restart
+```
+
+`archboard restart` stops the Archboard server, builds the frontend and starts
+the server on the new source. If the build fails, the server stays stopped.
+`archboard status` reports a server that runs older source. Run
+`archboard install-skill` again in each repository to update its copy of the
+skills.
 
 There is no uninstall command. To remove archboard, delete these things:
 

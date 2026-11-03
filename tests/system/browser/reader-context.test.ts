@@ -297,7 +297,11 @@ test("the right column follows what a reader looks at, and the left tabs hold th
 	await drawn(browser);
 
 	// A door lists what it stands for on hover, and one click opens it.
-	await browser.run(["hover", DOOR]);
+	const door = await browser.eval<{ x: number; y: number }>(`(() => {
+		const box = document.querySelector('${DOOR}').getBoundingClientRect();
+		return { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
+	})()`);
+	await browser.run(["mouse", "move", String(door.x), String(door.y)]);
 	await pollUntil(
 		() =>
 			browser.eval<number>(

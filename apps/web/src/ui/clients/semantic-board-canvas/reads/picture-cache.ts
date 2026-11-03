@@ -60,6 +60,7 @@ type ModelDrawing = Awaited<ReturnType<ReturnType<typeof prepareContentHere>["dr
 const ModelDrawingSchema = ArchitectureRenderResultSchema.options[0]
 	.pick({ svg: true, width: true, height: true, atlas: true, placed: true })
 	.extend({
+		painting: z.string(),
 		appearances: SemanticRenderReplySchema.options[0].shape.appearances,
 		legend: SemanticRenderReplySchema.options[0].shape.legend,
 		readingDirection: z

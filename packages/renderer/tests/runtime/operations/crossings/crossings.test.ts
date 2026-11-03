@@ -30,7 +30,7 @@ function routes(svg: string) {
 			/<g data-semantic-kind="edge" data-semantic-id="([^"]+)"([^>]*)>([\s\S]*?)<\/g>/gu,
 		),
 	]
-		.filter((group) => group[3]?.includes('class="ab-halo"'))
+		.filter((group) => group[2]?.includes("data-line-dash"))
 		.map((group) => ({
 			id: group[1]!,
 			width: Number(

@@ -1,7 +1,7 @@
 //! A door: a module outside the open frame, drawn as a bright button. It takes
 //! the finish of a primary action in its group's colour, or its kind's when it
-//! has no group, and that colour stays bright on both themes. Its icon shows its
-//! kind. The arrow at its right end says where the door lies in the tree from the
+//! has no group, and that colour stays bright on both themes. A door with neither
+//! stands in a card's tone. Its icon shows its kind. The arrow at its right end says where the door lies in the tree from the
 //! open module. This is the one place a door's look lives.
 
 use crate::drawing::{DoorWay, Node, TextRun, Toggle};

@@ -345,7 +345,7 @@ function withLinesOf(content: DrawnContent, depicted: DrawnContent): DrawnConten
 }
 
 /**
- * Draw exactly the focused subjects and their mutual lines, with the rest as doors (rule 11).
+ * Draw exactly the focused subjects and their mutual lines, with the rest as doors or, when they hold no parts, cards (rule 11).
  * Closed selected modules represent their hidden parts.
  * @param complete The complete depicted content.
  * @param scope The underlying recursive scope.
@@ -454,7 +454,7 @@ function focusEndpoint(
  * @param connections Its projected lines.
  * @param framing What the picture nests, and which of its cards are doors.
  * @param framing.parents Containers whose visible children remain nested.
- * @param framing.doors Cards that stand for what the reading touches.
+ * @param framing.doors The modules outside the reading that a line reaches. One that holds parts is a door, and one with none has nothing to open, so it stands as its card.
  * @param framing.toggles What a door and a frame offer a live reader, if one draws the picture.
  * @returns Renderer content without private evidence or file metadata.
  */
@@ -474,7 +474,7 @@ function drawingContent(
 			.map((node) => {
 				const { description: _description, binding: _binding, ...drawn } = node;
 				const card = withToggle(
-					doors.has(node.id)
+					doors.has(node.id) && childrenOf.has(node.id)
 						? nameOnly(drawn, doorWay(byId, node.id, open))
 						: withCodePath(drawn, node, childrenOf),
 					framing.toggles,

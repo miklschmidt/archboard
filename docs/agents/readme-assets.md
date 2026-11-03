@@ -127,8 +127,8 @@ Choose a module whose panel describes the current model accurately.
 The take refuses missing counts and a module that no longer demonstrates its beat.
 Each refusal names the module and gives a recovery step.
 
-Diagram surface demonstrates Unjoined with at least one unjoined connection.
-Retained reads demonstrates Entries with several entry points and no hidden parts.
+Walkthrough recording demonstrates Unjoined with at least one unjoined connection.
+server-lifecycle demonstrates Entries with several entry points and no hidden parts.
 Command contract demonstrates Pass-through with at least one entry that passes a call on.
 The clip ends on its About page, where each such entry names its target.
 The terminal prints the summary of `archboard model locality`.

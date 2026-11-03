@@ -23,6 +23,7 @@ function drawing(offset: number, vertical = false, origin = 120): RenderedDiagra
 	});
 	return {
 		svg: `<g data-semantic-kind="edge" data-semantic-id="one"><path d="M${point(100, origin)} L${point(40, origin)}" marker-end="url(#head)"/></g><g data-semantic-kind="edge" data-semantic-id="two"><path d="M${point(140, origin + offset)} L${point(200, origin + offset)}" marker-end="url(#head)"/></g>`,
+		painting: "",
 		width: 240,
 		height: 240,
 		appearances: [],

@@ -40,37 +40,6 @@ interface FrameClock {
 	 * @param timer The timer.
 	 */
 	readonly cancelAfter: (timer: number) => void;
-	/**
-	 * Where a picture's own clock stands: the clock its traffic runs on.
-	 * @param root The picture's root.
-	 * @returns Its time in seconds, or nothing when it runs no traffic.
-	 */
-	readonly pictureTime: (root: SVGSVGElement) => number | undefined;
-	/**
-	 * Stand a picture's own clock somewhere.
-	 * @param root The picture's root, in the page.
-	 * @param seconds Where.
-	 */
-	readonly setPictureTime: (root: SVGSVGElement, seconds: number) => void;
-}
-
-/**
- * The id of an animation that runs on its picture's own clock: a picture's
- * traffic, which a copy of the picture carries on from where it was rather than
- * starting again. Every other animation runs from when it began.
- */
-const PICTURE_CLOCK = "picture-clock";
-
-/**
- * The animations that run on a picture's own clock.
- * @param root The picture's root.
- * @returns Them, or none where the browser cannot list them.
- */
-function pictureAnimations(root: SVGSVGElement): Animation[] {
-	if (typeof root.getAnimations !== "function") return [];
-	return root
-		.getAnimations({ subtree: true })
-		.filter((animation) => animation.id === PICTURE_CLOCK);
 }
 
 /** The browser's own clocks, read when they are asked for, so a test can stand in for them. */
@@ -114,27 +83,6 @@ const browserClock: FrameClock = {
 	cancelAfter: (timer) => {
 		window.clearTimeout(timer);
 	},
-	/**
-	 * Where a picture's own clock stands. Its animations were started together,
-	 * but one that has finished stands still at its end, so the one furthest
-	 * along says.
-	 * @param root The picture's root.
-	 * @returns Its time in seconds, or nothing when it runs no traffic.
-	 */
-	pictureTime: (root) => {
-		const times = pictureAnimations(root).flatMap(({ currentTime }) =>
-			typeof currentTime === "number" ? [currentTime] : [],
-		);
-		return times.length === 0 ? undefined : Math.max(...times) / 1000;
-	},
-	/**
-	 * Stand a picture's own clock somewhere.
-	 * @param root The picture's root.
-	 * @param seconds Where.
-	 */
-	setPictureTime: (root, seconds) => {
-		for (const animation of pictureAnimations(root)) animation.currentTime = seconds * 1000;
-	},
 };
 
 let current: FrameClock = browserClock;
@@ -160,4 +108,4 @@ function driveFramesFrom(clock: FrameClock): () => void {
 	};
 }
 
-export { PICTURE_CLOCK, driveFramesFrom, frameClock, type FrameClock };
+export { driveFramesFrom, frameClock, type FrameClock };

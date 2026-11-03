@@ -20,6 +20,8 @@ const EXPLORING_MS = durations({
 	 * it follows a drag.
 	 */
 	cameraEase: 80,
+	/** The short ease of a keyed move or a fit, which the painter gives the camera. */
+	cameraSettle: 100,
 	/**
 	 * The longest one frame of a zoom or an ease counts for. A frame that comes
 	 * late, after the tab was hidden or the page stalled, moves the camera by no
@@ -46,15 +48,6 @@ const EXPLORING_MS = durations({
 	 * soft and a board the reader has let go of looks stalled.
 	 */
 	cameraRest: 400,
-	/**
-	 * How long traffic takes to come back to its full speed, from standing still.
-	 *
-	 * Pulls against the eye. At 500 ms or less the pulses lurch into motion, which
-	 * reads as a switch; past about two seconds the lines look sluggish for as
-	 * long as the reader has already looked at the board. It eases in and out, so
-	 * the first moments are barely a creep.
-	 */
-	trafficStart: 1500,
 	/**
 	 * How long the camera glides to the whole board when the fit key is pressed.
 	 * Shorter than a walkthrough step (`PRESENTATION_MS.step`) because the reader

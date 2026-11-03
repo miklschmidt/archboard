@@ -9,12 +9,12 @@ import { expect, test } from "bun:test";
 
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
+import { PULSE_INK } from "#shared/protocol/generated/core/marks.ts";
 import {
 	cornerWarning,
 	HEAD_LENGTH,
 	lineInk,
 	lineWidth,
-	pulseInk,
 	standingMark,
 } from "#shared/rules/render/marks.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
@@ -55,7 +55,7 @@ test("a pane draws the pins, warnings, inks and heads the picture draws", async 
 	const line = drawn.svg.split('data-semantic-id="ab"')[1]!;
 	expect(line).toContain(`stroke:${lineInk(SKY)}`);
 	expect(line).toContain(`stroke-width="${lineWidth("normal")}"`);
-	expect(drawn.svg).toContain(pulseInk(SKY));
+	expect(drawn.svg).toContain(PULSE_INK[SKY]);
 
 	const head = /marker-end="url\(#([^)]+)\)"/u.exec(line)![1]!;
 	const marker = new RegExp(`<marker id="${head}"[^>]*>`, "u").exec(drawn.svg)![0];

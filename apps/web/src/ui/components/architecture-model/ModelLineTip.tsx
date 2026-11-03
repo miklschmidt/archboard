@@ -1,11 +1,8 @@
-import { useMemo, type JSX } from "react";
-import { Tooltip } from "@archboard/ui-kit/components";
+import type { JSX } from "react";
 import type { Model, projectModel } from "@archboard/board/content";
 import { kindNames, lineEnds } from "#ui/components/architecture-model/ModelConnections.tsx";
-import {
-	tipAnchor,
-	type TipTarget,
-} from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
+import { TipCard } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
+import type { TipTarget } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
 
 type Projection = ReturnType<typeof projectModel>;
 
@@ -22,26 +19,18 @@ interface ModelLineTipProps {
  */
 function ModelLineTip(props: ModelLineTipProps): JSX.Element | null {
 	const { target, model, projection } = props;
-	const part = target?.part === "line" ? target.anchor : null;
-	const anchor = useMemo(() => (part === null ? null : tipAnchor(part)), [part]);
 	const connection = projection.connections.find(({ line }) => line.id === target?.id);
-	if (anchor === null || connection === undefined || connection.joins.length === 1) return null;
+	if (target?.part !== "line" || connection === undefined || connection.joins.length === 1) {
+		return null;
+	}
 	return (
-		<Tooltip open>
-			<Tooltip.Content
-				anchor={anchor}
-				sideOffset={10}
-				look="card"
-				data-slot="model-line-tip"
-				className="w-max max-w-96 flex-col items-stretch gap-2"
-			>
-				<p className="text-body font-semibold">
-					{lineEnds(connection.line, model, projection.reference)}
-				</p>
-				<p className="text-technical text-muted-foreground">{kindNames(model, connection.joins)}</p>
-				<TipRelationships edges={connection.joins} model={model} reference={projection.reference} />
-			</Tooltip.Content>
-		</Tooltip>
+		<TipCard slot="model-line-tip">
+			<p className="text-body font-semibold">
+				{lineEnds(connection.line, model, projection.reference)}
+			</p>
+			<p className="text-technical text-muted-foreground">{kindNames(model, connection.joins)}</p>
+			<TipRelationships edges={connection.joins} model={model} reference={projection.reference} />
+		</TipCard>
 	);
 }
 

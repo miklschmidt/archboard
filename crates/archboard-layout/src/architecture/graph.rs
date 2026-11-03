@@ -13,7 +13,7 @@ use indexmap::IndexMap;
 use super::content::{Content, Edge, Node};
 use super::measured::Measured;
 use crate::ecma;
-use crate::graph::GROUPS;
+use crate::graph::{DOOR, GROUPS};
 use crate::json::J;
 
 /// The option marking a child a relationship from outside its container reaches (ADR 0044).
@@ -133,6 +133,9 @@ fn node_of(node: &Node, measured: &MeasuredNode<NodeFacts>, order: f64, first: O
             ENTRY_POINT.to_owned(),
             J::str(if first { "true" } else { "false" }),
         ));
+    }
+    if node.door.is_some() {
+        options.push((DOOR.to_owned(), J::str("true")));
     }
     let order_group = node.responsibility.as_ref().map_or_else(
         || text(node.order),

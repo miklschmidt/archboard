@@ -10,12 +10,15 @@
 import { useLayoutEffect } from "react";
 
 import type { StagedPicture } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
-import { lightInk } from "#ui/clients/semantic-board-canvas/subjects/lit-ink.ts";
+import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import {
 	markReach,
 	markSubjects,
 	markVeil,
 } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
+
+/** No subjects. */
+const NOTHING: ReadonlySet<string> = new Set();
 
 /** What the viewer is attending to, and what a presented step veils. */
 interface ViewerMarks {
@@ -25,6 +28,7 @@ interface ViewerMarks {
 	readonly veil: ReadonlySet<string> | null;
 	/** How many hops beyond the first each subject a trace reached is; null without a trace. */
 	readonly reach: ReadonlyMap<string, number> | null;
+	/** Where every subject ended up, which says which of them are lines. */
 }
 
 /**
@@ -41,14 +45,12 @@ function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void
 	useLayoutEffect(() => {
 		if (picture !== null) {
 			markSubjects(picture.root, attended);
-			lightInk(picture.root);
 		}
 	}, [picture, attended]);
 	// The veil is its own mark, independent of attention.
 	useLayoutEffect(() => {
 		if (picture !== null) {
 			markVeil(picture.surface, veil);
-			lightInk(picture.root);
 		}
 	}, [picture, veil]);
 	// A trace grades what it reached by how far it is, on top of the veil's marks.
@@ -57,6 +59,15 @@ function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void
 			markReach(picture.surface, reach);
 		}
 	}, [picture, reach]);
+	// The painter draws what these marks said to the SVG's stylesheet.
+	useLayoutEffect(() => {
+		if (picture !== null) {
+			stageOf(picture.surface)?.setMarks({
+				selected: attended,
+				whole: veil ?? NOTHING,
+			});
+		}
+	}, [picture, attended, veil]);
 }
 
 export { useViewerMarks };

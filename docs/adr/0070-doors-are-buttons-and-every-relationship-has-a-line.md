@@ -27,6 +27,9 @@ look from a mockup. A door keeps its color on both themes, and no palette color
 turns pale or brown. The reason is that `--bright-<name>` is the dark value of
 the palette color on either ground.
 
+A door keeps its measured size wherever it stands. The owner saw doors grow to
+the height of the cards beside them and ruled that a door never grows.
+
 The arrow on a door points up, sideways or down by the depth of its module
 against the open module. Across this repository, 296 doors lead up, 326 lead
 sideways and none lead down, because a door is a child of the common ancestor.
@@ -70,8 +73,8 @@ and the panel of the selected line shows them.
 
 ## Rule 6 is deleted, so every relationship has a line
 
-If a reading held more than 18 lines and a longer path joined the ends of a line,
-rule 6 took that line off the picture. The caption then said that the line
+Rule 6 held for a reading of more than 18 lines. If a longer path joined the
+ends of a line there, rule 6 took that line off the picture. The caption then said that the line
 followed from that path. That claim was false: a path through a third part does
 not state what the dropped line states.
 So the budget, its count, the caption's statement, `Show every line` and
@@ -93,8 +96,8 @@ picture. A selection still never refits the picture.
 ## A sequence or a flowchart keeps its 0.6 landing
 
 If a sequence or a flowchart fits whole at 0.6 or more, it lands whole. Any other
-flow lands at 0.6 on the head of its frame. The reason is that a tall flowchart
-lands at about 0.19 when whole, and nobody can read it there.
+flow lands at 0.6 on the head of its frame. Drawn whole, a tall flowchart lands
+at about 0.19, and nobody can read it there.
 
 ## Consequences
 
@@ -121,3 +124,22 @@ module ends on that module's card, which stands for the part.
 The repair took the lines drawn from 1,794 to 1,807 and the total area from
 187.8 M to 173.7 M. The readings that pass the fit gate went from 107 of 115 to
 104 of 112, and the same 8 readings miss.
+
+## Amendment of 2026-11-02: a door with no color takes no gold
+
+A door whose group and kind name no color used to take the gold of a primary
+action. Gold marks what is chosen, so a reading of such doors looked chosen
+everywhere. A door with no color now stands in a card's tone. A color on a door
+then says that the door belongs to a group or a colored kind.
+
+## Amendment of 2026-11-02: a module with no parts stands as a card
+
+The owner saw doors of modules that hold no parts. One click opened a reading of
+one card with a way back, and the door had hidden what that card says. So a door
+now stands only for a module that holds parts. A module outside the open one
+with no parts stands as its card beside the frame, with its responsibility and
+its code path. A click selects it, as a click selects any card. The frame shows
+that such a card is not a part.
+
+The same rule holds in a focus and in a comparison. A removed module that holds
+parts is still a door with nowhere to open, so a click selects it.

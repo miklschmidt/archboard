@@ -117,3 +117,22 @@ with theirs, and apply the six changes again. The `qsort` vectors must come
 from musl's `qsort.c`. Then render the corpus before and after
 (`bun scripts/render-corpus.ts`): every drawing must be unchanged, or each
 change must be one the update means to make.
+
+## vello_encoding 0.11.0
+
+[vello_encoding](https://github.com/linebender/vello) holds the buffer sizes of
+Vello, which paints the browser canvas
+([ADR 0071](../../docs/adr/0071-vello-paints-the-board-canvas-and-motion-lives-in-the-painter.md)).
+
+- Crate: `vello_encoding`, through `[patch.crates-io]` in the root `Cargo.toml`.
+- Source: its crates.io archive of version 0.11.0. The commit that imports it
+  holds the archive's files unchanged, less `Cargo.lock`, `Cargo.toml.orig`,
+  `.cargo-ok` and `.cargo_vcs_info.json`.
+- Licence: Apache 2.0 or MIT (`LICENSE-APACHE`, `LICENSE-MIT`).
+
+archboard changed one thing. `BufferSizes::new` in `src/config.rs` allocates
+twice upstream's tiles and twice upstream's path commands, and each change says
+`archboard:`. Upstream's sizes are fixed, and a frame that runs out of them draws
+nothing and reports nothing, so the canvas keeps the last frame. A large board
+ran out of them at one wheel notch on a canvas of 13 million pixels. The two
+buffers use 48 MB more GPU memory.

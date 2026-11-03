@@ -343,8 +343,9 @@ The stretch of the edge of the well under an edge tab.
 What a frame holds reaches the frame here, and what stands outside reaches it on its outline.
 
 **Door**:
-A module outside the open one that a line reaches, drawn as a bright button whose arrow points up, sideways or down by its place in the module tree.
-One click opens it, its plus, when it holds parts, expands it, its tip lists the endpoints behind its lines, and Ctrl with a click selects it (ADR 0070).
+A module outside the open one that holds parts and that a line reaches, drawn as a bright button whose arrow points up, sideways or down by its place in the module tree.
+One click opens it, its plus expands it, its tip lists the endpoints behind its lines, and Ctrl with a click selects it.
+A module with no parts stands as its card instead, beside the frame (ADR 0070).
 _Avoid_: nearby context, external (that is a kind)
 
 **Line**:
@@ -426,7 +427,7 @@ It draws the root modules of a model, each one closed.
 _Avoid_: overview, whole board, summary view, default view
 
 **Focus**:
-A reading narrowed to exact chosen subjects and their mutual lines, where the rest become doors.
+A reading narrowed to exact chosen subjects and their mutual lines, where the rest become doors, or cards when they hold no parts.
 It changes the reading and never creates a module or changes containment.
 _Avoid_: zoom, isolate, spotlight
 
@@ -516,8 +517,12 @@ _Avoid_: impact analysis, blast radius, dependency graph
 
 **Dive**:
 How opening a module looks: the module's picture stands inside its card, and the camera flies into the card until the picture fills the pane.
-Going back out runs the flight the other way, and a flight that cannot happen becomes a plain change.
+Going back out runs the flight the other way, and a flight that cannot happen becomes a Passage.
 _Avoid_: drill-down, zoom transition, page transition, animation
+
+**Passage**:
+How a move between two boards looks when the camera has no card to fly through: the two boards travel as one, sideways to a board at the same depth, in to a deeper board and out to a shallower one.
+_Avoid_: page transition, slide, crossfade
 
 ### States and proposals
 

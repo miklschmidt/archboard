@@ -5,14 +5,17 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::drawing::{DrawingEdge, EdgeFacts, Painted};
-use archboard_scene::geometry::{Curve, EPSILON, Point, Rect, Segment};
+use archboard_scene::drawing::{DrawingBridge, DrawingEdge, EdgeFacts, Painted};
+use archboard_scene::geometry::{Curve, EPSILON, Point, Rect, Segment, curve_bounds, inflate};
 use archboard_scene::js;
 use archboard_scene::request::FlowchartShape;
 
 use super::SIDE_RUN;
 use super::graph::Graph;
-use super::ports::{at_shape_points, on_outline};
+use super::ports::{SLIDE, at_shape_points, on_outline};
+
+/// How near two straight lanes stand when they draw as one line.
+const ONE_LANE: f64 = 3.0;
 
 /// The drawing with each decision's box cut to its diamond: it was laid out
 /// wider on either side by an answer's sideways run and its words' room.
@@ -65,6 +68,21 @@ fn pointed(shaped: Shaped) -> Option<Rect> {
         .map(|(_, bounds)| bounds)
 }
 
+/// Whether a bridge stands within a line's reach: on it, or on a lane it could
+/// slide to or draw as one with. Such a line keeps its place, because the bridges
+/// are settled. The place decides and not the bridge's names, which give one
+/// line of a trunk.
+fn under_a_bridge(curve: &Curve, bridges: &[DrawingBridge]) -> bool {
+    let line = inflate(curve_bounds(curve), SLIDE + ONE_LANE);
+    bridges.iter().any(|bridge| {
+        let piece = curve_bounds(&bridge.curve);
+        line.x < piece.x + piece.width
+            && piece.x < line.x + line.width
+            && line.y < piece.y + piece.height
+            && piece.y < line.y + line.height
+    })
+}
+
 /// The drawing with every line that meets a shape carried on to its outline,
 /// and every line that meets a decision or a terminal turned to the middle of
 /// the side it crosses.
@@ -75,14 +93,66 @@ pub(super) fn with_outlines(mut drawing: Painted, graph: &Graph) -> Painted {
         .iter()
         .map(|card| (card.measured.node.id.clone(), card.bounds))
         .collect();
+    let bridges = drawing.bridged.bridges.clone();
     let shaped = |id: &str| -> Shaped { Some((graph.shape(id)?, *boxes.get(id)?)) };
+    let card_of = |routed: &DrawingEdge<EdgeFacts>, from: Shaped, to: Shaped| {
+        let id = match (pointed(from), pointed(to)) {
+            (None, Some(_)) => &routed.edge.from,
+            (Some(_), None) => &routed.edge.to,
+            _ => return None,
+        };
+        let free = !under_a_bridge(&routed.curve, &bridges);
+        boxes.get(id).copied().filter(|_| free)
+    };
     let on_shapes = |routed: &mut DrawingEdge<EdgeFacts>| {
         let from = shaped(&routed.edge.from);
         let to = shaped(&routed.edge.to);
-        let turned = at_shape_points(routed.curve.clone(), pointed(from), pointed(to));
+        let card = card_of(routed, from, to);
+        let turned = at_shape_points(routed.curve.clone(), pointed(from), pointed(to), card);
+        if let (Some(words), Some(_)) = (&mut routed.label, card) {
+            let (was, is) = if pointed(from).is_none() {
+                (routed.curve.from, turned.from)
+            } else {
+                (routed.curve.end(), turned.end())
+            };
+            words.bounds.x += is.x - was.x;
+            words.bounds.y += is.y - was.y;
+        }
         routed.curve = outlined(turned, from, to);
     };
     drawing.drawing.edges.iter_mut().for_each(on_shapes);
     drawing.bridged.edges.iter_mut().for_each(on_shapes);
     drawing
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn straight(from: (f64, f64), to: (f64, f64)) -> Curve {
+        let [from, to] = [from, to].map(|(x, y)| Point { x, y });
+        Curve {
+            from,
+            segments: vec![Segment::Line { to }],
+        }
+    }
+
+    #[test]
+    fn a_line_stays_where_a_bridge_stands_within_its_reach() {
+        let bridges = [DrawingBridge {
+            edge_id: "named".to_owned(),
+            under: vec!["crossed".to_owned()],
+            curve: straight((100.0, 40.0), (100.0, 60.0)),
+            join: Some(true),
+        }];
+        let stays = |from, to| under_a_bridge(&straight(from, to), &bridges);
+        assert!(stays((100.0, 0.0), (100.0, 400.0)), "the line it names");
+        assert!(stays((102.0, 0.0), (102.0, 400.0)), "a line of its trunk");
+        assert!(stays((0.0, 50.0), (200.0, 50.0)), "a line beneath it");
+        assert!(
+            stays((84.0, 0.0), (84.0, 400.0)),
+            "a line that could slide to it"
+        );
+        assert!(!stays((120.0, 0.0), (120.0, 400.0)), "a lane of its own");
+    }
 }

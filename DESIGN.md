@@ -201,6 +201,10 @@ every role and changes the values. The file theme.css holds both themes.
 
 **The Untouched Picture Rule.** The renderer draws the picture. The shell never paints gold, shadow or decoration on a card in it.
 
+**The One Ring Rule.** The gold ring goes round a card, a door, a frame or a relationship's label that is chosen. A line keeps its own ink, and the light says which lines stand.
+
+**The Clear Tip Rule.** A reader rests on a part to read it and to see what it touches. So a tip stands against its part, on the nearest spot that leaves the part and what lights round it in view. On a dense picture it hides dim parts first, and it takes no pointer.
+
 ## Typography
 
 **Display Font:** Big Shoulders Display (served as Archboard Display).
@@ -283,15 +287,20 @@ The file app.css holds the values for both themes and gives each one a
 The picture has a depth vocabulary of its own, and the renderer draws it. Its
 light falls from above. A card is a slab: a lit top face, a front edge along
 its foot and a soft shadow below it. A container is a neutral well cut into
-the page, its floor only just darker than the page. One inner shadow falls from
-the whole of its top edge, and a lit lip runs along its bottom. Its name stands
+the page, its floor only just darker than the page. A reader sees it from below
+its foot, so it shows one wall: the top wall, which thins to nothing round both
+top corners. A side wall stands edge on, and what shows of it is the soft shadow
+its rim leaves on the floor. One inner shadow falls from the whole of its top
+edge, stronger than those of the sides, and a lit lip runs along its bottom. Its name stands
 on a tab, a lighter piece raised on that edge. The tab's left side is the well's
 left side, its top corners have the well's radius, and it meets the edge on the
 right in one crisp concave curve. The well's top edge runs on under the tab, so
-a line parts the tab from the floor. The tab hugs its words with 12 units on
+a line parts the tab from the floor. That edge is the rim of the well: it turns
+down at both top corners, and at the left the tab fills the corner
+above it. The tab hugs its words with 12 units on
 either side, and one outline runs round the tab and the well. The first row of
 cards stands as far under the edge as from the sides and the bottom of the well.
-In a live reader, a door that holds parts ends with a plus behind a thin rule, and
+In a live reader, a door ends with a plus behind a thin rule, and
 the tab of an expanded module ends with a minus in the same place. The piece keeps its
 look, and only the control takes a plate under the pointer. An export and a presented
 step draw neither control.
@@ -300,9 +309,12 @@ alone.
 A group shows on each of its cards as a tag at the top right, the same bright
 piece as in the Legend, and the cards of a group stand together. No frame is
 drawn round a group. A card's face and front edge stay neutral in every group.
-A door is a bright button with the finish of a primary action, in the color of
-its group, or of its kind when it has no group, in both themes. Its arrow
-points up, sideways or down by where its module lies in the tree.
+A door is a bright button for a module that holds parts, with the finish of a
+primary action, in the color of its group, or of its kind when it has no group,
+in both themes. A module with no parts stands as its card. A door with
+neither color stands in a card's tone and takes no gold, so two doors that share
+a color share something real. Its arrow points up, sideways or down by where its
+module lies in the tree.
 The code path stands at a card's foot in Maple Mono NL at 10.5 units, its
 folders dimmed and its file bright, as far from the foot as the name stands from
 the top. Below a scale of 0.857 a picture draws its far view: one fixed type scale
@@ -361,11 +373,19 @@ along the line on both grounds.
 
 ### Named Rules
 
-**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. A select or a menu takes 160ms to arrive and 110ms to leave. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
+**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. No shell layer over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. A select or a menu takes 160ms to arrive and 110ms to leave. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
+
+**The Cursor Says What a Press Does Rule.** Whatever answers a click shows a pointer, in the shell and on the picture. A frame's floor is canvas, so it shows the arrow. Holding Space over the canvas shows an open hand, a press closes it, and a press with Space picks nothing.
 
 **The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part or several parts are picked out, or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede far under an opacity filter, so that what stays is plainly on top. Several picks keep only themselves and the lines between them. The shell lays no layer, blur or halo over the picture to do it.
 
-**The Card Is a Window Rule.** A card that opens a board is a window onto it. The board opens when the camera flies into the card, and going back flies out of it. The board's picture sits inside the card, in the picture's own units, so one camera carries both and the board that opens stands where the board in the card stood. The shell adds no layer for the flight.
+**The Card Is a Window Rule.** A card that opens a board is a window onto it. The board opens when the camera flies into the card, and going back flies out of it. The board's picture sits inside the card, in the picture's own units, so one camera carries both and the board that opens stands where the board in the card stood. The board blooms out of its middle as the camera flies in, and gathers again on the way back. The shell adds no layer for the flight.
+
+**The Focus Pull Rule.** A move on the canvas is a rack of focus, and the painter draws it as part of the picture. What the reader goes to stays sharp. What they leave falls out of focus and sinks into the ground. A door stays sharp while the board round it softens a little, and a picture comes into focus from its middle. A picture at rest is never soft, and a shell layer never blurs it. With reduced motion, or on the CPU painter, there is no blur.
+
+**The Depth Rule.** A move between boards shows where the next board stands in the module tree. The modules nest, so a deeper board lies inside this one and a shallower board lies round it. A move to a board at the same depth carries the reader sideways along a strip of boards, in the order of the module tree. A move to a deeper board zooms into it, and a move to a shallower board zooms out to it. The camera flies through a card when the board shows one on the way, and otherwise the two boards zoom as one. The move never depends on the route: a card, a door, a crumb, the list and Back all take the same way. A view of one board stays on that board and has no way through the tree. With reduced motion, every move is a cut.
+
+**The Spark Rule.** A board's lines are drawn, and they never flash on together. A spark leaves each card that nothing feeds and runs along its lines. Where a spark lands, it runs both ways round the edge of the card and goes out, and the card's own lines start, so the board builds along the way its parts talk. A label arrives as the spark reaches it. The cards land first, so the board can be read while the lines run. A move between two pictures does the same for each line that changes its shape: the old line leaves, the cards settle on a clean ground, and a spark draws the new line. A line never swings across the board, and a line that keeps its shape rides with its cards. A spark takes the line's color toward the text, so it stands out on both grounds. A traffic pulse stays light, because it travels on a line that already stands. With reduced motion, every line is there at once.
 
 **The Planes Not Lines Rule.** Regions read as layered planes. A one-pixel rule stays only where it draws the edge of a control or a card, or where it divides regions on one plane.
 
@@ -791,7 +811,7 @@ Keyboard focus follows the subtitles control to the surface that takes it over.
 
 ### Don't:
 
-- **Do not** put backdrop-filter, filter, blur or a looping animation over the picture viewport.
+- **Do not** put a shell layer with backdrop-filter, filter, blur or a looping animation over the picture viewport. The painter's focus is the picture's own, and it ends with the move.
 - **Do not** take a control out of a row when it cannot be used. Dim it and say why in its tooltip, so the row does not move.
 - **Do not** paint gold or decoration onto a card in the picture.
 - **Do not** use a grey-black blur or a halo without an offset as a shadow.

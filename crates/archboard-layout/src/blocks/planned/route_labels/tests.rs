@@ -95,3 +95,106 @@ fn blocked_midpoints_use_the_nearest_clear_private_spot_without_rerouting() {
     assert_eq!(label.y, 488.0);
     assert_eq!(shape.routes[0].points, path);
 }
+
+#[test]
+fn words_never_stand_across_another_stretch_of_their_own_line() {
+    let graph = graph();
+    let model = Model::new(&graph).unwrap();
+    let route: &[(f64, f64)] = &[
+        (100.0, 100.0),
+        (100.0, 900.0),
+        (140.0, 900.0),
+        (140.0, 300.0),
+    ];
+    let shape = drawing(&[("ab", route)]);
+    let path: Vec<Point> = route.iter().map(|&(x, y)| Point { x, y }).collect();
+    let edge = model.edge_index["ab"];
+    let (label, _) = Slots::new(&model, &shape)
+        .slot(&model, edge, &path)
+        .expect("words have a place on the line");
+    // Both legs run side by side below 300, closer than the words are wide.
+    assert!(label.y + label.height < 300.0);
+}
+
+#[test]
+fn a_route_that_leaves_its_words_no_spot_off_its_own_line_still_carries_them() {
+    let graph = graph();
+    let model = Model::new(&graph).unwrap();
+    let route: &[(f64, f64)] = &[
+        (100.0, 100.0),
+        (100.0, 300.0),
+        (140.0, 300.0),
+        (140.0, 100.0),
+    ];
+    let shape = drawing(&[("ab", route)]);
+    let path: Vec<Point> = route.iter().map(|&(x, y)| Point { x, y }).collect();
+    let edge = model.edge_index["ab"];
+    let slots = Slots::new(&model, &shape);
+    assert!(slots.slot(&model, edge, &path).is_none());
+    let (_, fallback) = slots
+        .any_slot(&model, edge, &path)
+        .expect("a line keeps its words");
+    assert!(fallback);
+}
+
+#[test]
+fn words_that_stand_over_another_stretch_of_their_own_line_are_not_kept() {
+    let route: &[(f64, f64)] = &[
+        (100.0, 100.0),
+        (100.0, 300.0),
+        (140.0, 300.0),
+        (140.0, 100.0),
+    ];
+    let path: Vec<Point> = route.iter().map(|&(x, y)| Point { x, y }).collect();
+    let own = Own {
+        edge: 0,
+        path: &path,
+    };
+    let words = |x| Rect {
+        x,
+        y: 188.0,
+        width: 80.0,
+        height: 24.0,
+    };
+    assert!(!own.rides_one(words(60.0)));
+    assert!(own.rides_one(words(-30.0)));
+}
+
+#[test]
+fn a_trunk_line_with_no_spot_off_its_own_line_waits_for_room() {
+    let graph = graph();
+    let model = Model::new(&graph).unwrap();
+    let route: &[(f64, f64)] = &[
+        (100.0, 100.0),
+        (100.0, 300.0),
+        (140.0, 300.0),
+        (140.0, 100.0),
+    ];
+    let mut shape = drawing(&[("ab", route)]);
+    let edge = model.edge_index["ab"];
+    assert_eq!(seat(&model, &mut shape, &[edge]), vec![edge]);
+}
+
+#[test]
+fn a_drawing_knows_when_words_stand_on_their_own_line() {
+    let graph = graph();
+    let model = Model::new(&graph).unwrap();
+    let route: &[(f64, f64)] = &[
+        (100.0, 100.0),
+        (100.0, 300.0),
+        (140.0, 300.0),
+        (140.0, 100.0),
+    ];
+    let mut shape = drawing(&[("ab", route)]);
+    let edge = model.edge_index["ab"];
+    let words = |x| Rect {
+        x,
+        y: 188.0,
+        width: 80.0,
+        height: 24.0,
+    };
+    shape.labels.insert(edge, words(-30.0));
+    assert!(own::words_clear(&model, &shape));
+    shape.labels.insert(edge, words(60.0));
+    assert!(!own::words_clear(&model, &shape));
+}

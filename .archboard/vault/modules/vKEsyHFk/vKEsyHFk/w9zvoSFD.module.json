@@ -3,13 +3,16 @@
   "name": "code-binding",
   "kind": "package",
   "responsibility": "A node's code binding and where its path lives in a checkout",
+  "groups": [
+    "code",
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-binding"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
-  "parent": "vKEsyHFk/vKEsyHFk#fssx6Gaq",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

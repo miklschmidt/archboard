@@ -98,7 +98,7 @@ function sizeOf(picture: Seen): Size {
  */
 function legInto(parent: Seen, card: string, child: Seen, room: Size): Leg | null {
 	const box = subjectBox(parent.atlas, card);
-	const fit = cameraFor(room, { kind: "whole", content: sizeOf(child) });
+	const fit = cameraFor(room, { kind: "landing", content: sizeOf(child) });
 	if (box === null || fit === null) {
 		return null;
 	}
@@ -119,7 +119,7 @@ function legInto(parent: Seen, card: string, child: Seen, room: Size): Leg | nul
  */
 function legOut(parent: Seen, card: string, child: Seen, room: Size, seen: Camera): Leg | null {
 	const box = subjectBox(parent.atlas, card);
-	const fit = cameraFor(room, { kind: "whole", content: sizeOf(parent) });
+	const fit = cameraFor(room, { kind: "landing", content: sizeOf(parent) });
 	if (box === null || fit === null) {
 		return null;
 	}

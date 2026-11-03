@@ -182,6 +182,8 @@ function addressReading(url: URL, request: RecordingPageAddress): void {
  */
 function recordingFlags(microphone: string): readonly string[] {
 	return [
+		// The page paints in software, as the render does, so the talk needs no GPU.
+		"--disable-gpu",
 		// A screen larger than the window, or the window is held to the headless default.
 		"--screen-info={2560x1600}",
 		"--autoplay-policy=no-user-gesture-required",

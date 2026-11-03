@@ -1,7 +1,7 @@
 {
   "order": 11005,
   "name": "Browser",
-  "kind": "service",
+  "kind": "app",
   "responsibility": "Reads architecture; owns the camera, the view, the walkthrough and the selection, and nothing else",
   "description": "It also carries voice: the Archboard server negotiates the session with Codex for the page, and the microphone and the voice then travel over the connection that negotiation opens.",
   "binding": {

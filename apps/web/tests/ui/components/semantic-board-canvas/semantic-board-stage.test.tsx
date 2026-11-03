@@ -21,6 +21,7 @@ import {
 	surface,
 	viewport,
 } from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
+import { calls } from "#tests/ui/support/semantic-board-canvas/recording-stage.ts";
 import { EXPLORING_MS } from "@archboard/timing";
 import {
 	cameraNow,
@@ -90,6 +91,7 @@ test("a drawn board is fitted to the pane, and `0` puts it back", async () => {
 		frames.run(EXPLORING_MS.cameraFit / 2);
 		expect(surface().hasAttribute("data-camera-motion")).toBe(true);
 		expect(cameraNow()).not.toEqual(fit);
+		expect(calls("setCamera").at(-1)?.[0]).toEqual(cameraNow());
 		frames.run(EXPLORING_MS.cameraFit);
 		expect(surface().hasAttribute("data-camera-motion")).toBe(false);
 		expect(cameraNow()).toEqual(fit);

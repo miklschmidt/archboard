@@ -89,13 +89,22 @@ test.each([
 	["a crumb up to a module that holds the open one", "Shop#Handler", "Shop#Gateway", "out"],
 	["a child's card", "Shop#Gateway", "Shop#Handler", "into"],
 	["a part deeper than the next level", "Shop#Gateway", "Shop#Decode", "into"],
-	["a module on another branch", "Shop#Handler", "Shop#Worker", "across"],
+	["a shallower module on another branch", "Shop#Handler", "Shop#Worker", "out"],
+	["a deeper module on another branch", "Shop#Worker", "Shop#Decode", "into"],
+	["a module at the same depth", "Shop#Handler", "Shop#Queue", "across"],
 ] as const)("the picture leaves the same way for every route to %s", (_name, from, to, way) => {
 	const cards = to === "Shop#Handler" ? ["Shop#Handler"] : [];
 	const before = accepted(request({ scope: from }), cards);
 	const asked = request({ scope: to });
 	expect(leavingTo(before, asked)?.way).toBe(way);
 	expect(nextScene(before, asked, drawing([]), NOTHING)?.heading?.way).toBe(way);
+});
+
+test("a board at the same depth stands on the side the module tree lists it", () => {
+	const first = accepted(request({ scope: "Shop#Gateway" }), []);
+	const last = accepted(request({ scope: "Shop#Worker" }), []);
+	expect(leavingTo(first, request({ scope: "Shop#Worker" }))?.side).toBe("right");
+	expect(leavingTo(last, request({ scope: "Shop#Gateway" }))?.side).toBe("left");
 });
 
 test("a picture stays while the next reading of its subject is drawn", () => {
@@ -126,12 +135,20 @@ test("a state, comparison or filter is carried on one board, and a focus starts 
 	);
 });
 
-test("only the entered subject justifies a flight", () => {
-	const open = accepted(request({ scope: "Shop#Gateway" }), ["Shop#Handler"]);
+test("a flight goes by way of a card on the reader's way through the tree", () => {
+	const open = accepted(request({ scope: "Shop#Gateway" }), ["Shop#Handler", "Shop#Worker"]);
 	expect(moveTo(open, "Shop#Handler")).toEqual({ kind: "into", card: "Shop#Handler" });
-	expect(moveTo(open, "Shop#Decode")).toEqual({ kind: "into", card: null });
+	expect(moveTo(open, "Shop#Decode")).toEqual({ kind: "into", card: "Shop#Handler" });
+	expect(moveTo(open, "Shop#Queue")).toEqual({ kind: "into", card: "Shop#Worker" });
+	expect(moveTo(open, "Shop#Worker")).toEqual({ kind: "plain" });
 	expect(moveTo(open, null)).toEqual({ kind: "out", card: "Shop#Gateway" });
 	expect(moveTo(open, "Shop#Gateway")).toEqual({ kind: "plain" });
+	const bare = accepted(request({ scope: "Shop#Gateway" }), []);
+	expect(moveTo(bare, "Shop#Queue")).toEqual({ kind: "into", card: null });
+	const deep = accepted(request({ scope: "Shop#Decode" }), []);
+	expect(moveTo(deep, "Shop#Gateway")).toEqual({ kind: "out", card: "Shop#Handler" });
+	expect(moveTo(deep, null)).toEqual({ kind: "out", card: "Shop#Gateway" });
+	expect(moveTo(deep, "Shop#Worker")).toEqual({ kind: "plain" });
 	const flow = accepted(request({ grammar: "sequence", flow: "Shop#Flow" }));
 	expect(moveTo(flow, "Shop#Gateway")).toEqual({ kind: "plain" });
 	expect(moveTo(null, "Shop#Gateway")).toEqual({ kind: "plain" });

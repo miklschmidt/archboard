@@ -17,6 +17,41 @@ import type { Camera, Size } from "#ui/rules/semantic-board-canvas/camera/camera
 /** How much a glide prefers zooming out over panning; the value d3-zoom uses. */
 const RHO = Math.SQRT2;
 
+/** The cubic curve of a glide's time: a start the eye can catch, then a long settle. */
+const GLIDE_CURVE = { x1: 0.45, y1: 0, x2: 0.15, y2: 1 };
+
+/** How many halvings find a point of the curve closely enough for a frame. */
+const CURVE_STEPS = 24;
+
+/**
+ * One axis of the glide's curve.
+ * @param one Its first control value.
+ * @param other Its second control value.
+ * @param at How far along the curve.
+ * @returns The value there.
+ */
+function alongCurve(one: number, other: number, at: number): number {
+	const rest = 1 - at;
+	return 3 * rest * rest * at * one + 3 * rest * at * at * other + at * at * at;
+}
+
+/**
+ * How far along its path a glide is, the same curve a flight moves its cards on.
+ * @param t How far through its time, 0 to 1.
+ * @returns How far along its path, 0 to 1.
+ */
+function glideEase(t: number): number {
+	const { x1, y1, x2, y2 } = GLIDE_CURVE;
+	let low = 0;
+	let high = 1;
+	for (let step = 0; step < CURVE_STEPS; step += 1) {
+		const middle = (low + high) / 2;
+		if (alongCurve(x1, x2, middle) < t) low = middle;
+		else high = middle;
+	}
+	return alongCurve(y1, y2, (low + high) / 2);
+}
+
 /** Below this distance, in diagram units, a glide only zooms. */
 const NEAR = 1e-6;
 
@@ -118,4 +153,4 @@ function glidePath(from: Camera, to: Camera, viewport: Size): (t: number) => Cam
 	return (t) => (t >= 1 ? to : t <= 0 ? from : cameraOf(path(t), viewport));
 }
 
-export { glidePath };
+export { glideEase, glidePath };

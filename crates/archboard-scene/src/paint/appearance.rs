@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 use crate::geometry::Rect;
 use crate::js;
 use crate::paint::build::{Items, concat, shape};
-use crate::paint::colour::{Inked, Share, ToneStep, inked_over, mixed, tinted};
+use crate::paint::colour::{Inked, Share, ToneStep, inked_over, light_dark, mixed, tinted};
 use crate::paint::design::{
     CARD_THICKNESS, CHIP_THICKNESS, ICON_CHIP_RADIUS, ICON_CHIP_SIZE, PILL_RADIUS, PILL_THICKNESS,
     SLAB_RADIUS,
@@ -32,15 +32,11 @@ const TRAY_SINK_MAX: Share = Share {
     dark: 0.8,
 };
 const LABEL_EDGE: f64 = 0.6;
-/// How far a well's walls go from its floor toward the shade of a front edge.
-const TOP_WALL: Share = Share {
-    light: 0.8,
-    dark: 0.45,
-};
-const SIDE_WALL: Share = Share {
-    light: 0.4,
-    dark: 0.28,
-};
+/// How far a well's top wall goes from its floor toward the shade of a front edge.
+const TOP_WALL: f64 = 0.8;
+/// How far it goes toward the lit lip on the dark ground, where a shade of the floor
+/// would be lost in the shadow under it.
+const DARK_TOP_WALL: f64 = 0.15;
 const CHIP_FACE: Inked = Inked {
     light: ToneStep::new(0.955, 0.17),
     dark: 0.2,
@@ -87,8 +83,10 @@ fn floor_at(depth: f64, palette: &Palette) -> Colour {
 pub(super) fn tray_look(palette: &Palette, depth: f64) -> TrayLook {
     let floor = floor_at(depth, palette);
     TrayLook {
-        top_wall: tinted(&floor, Some(&palette.slab_deep), TOP_WALL),
-        side_wall: tinted(&floor, Some(&palette.slab_deep), SIDE_WALL),
+        top_wall: light_dark(
+            &mixed(&floor, &palette.slab_deep, TOP_WALL),
+            &mixed(&floor, &palette.tray_lip, DARK_TOP_WALL),
+        ),
         floor,
         tab: palette.tray_tab.clone(),
         line: palette.tray_line.clone(),

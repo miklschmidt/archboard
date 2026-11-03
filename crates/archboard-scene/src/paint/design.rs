@@ -65,7 +65,7 @@ pub(crate) const SLAB_RADIUS: f64 = 8.0;
 pub(crate) const CARD_THICKNESS: f64 = 4.0;
 /// How far the lit lip of a tray shows below its floor.
 pub(crate) const TRAY_LIP: f64 = 2.0;
-/// How thick a well shows its walls, the top wall and the two side walls alike.
+/// How tall a well shows its top wall.
 pub(crate) const TRAY_WALL: f64 = 6.0;
 /// How far a container's words stand in from the outer edge of its box.
 const HEADER_SLAB_INSET: f64 = 8.0;
@@ -180,6 +180,8 @@ pub const LINE_WIDTH: f64 = 1.4;
 pub const HERO_LINE_WIDTH: f64 = 2.2;
 /// How wide a double line's rails stand, side to side.
 pub const RAILS: f64 = 3.6;
+/// The gap a double line's rails leave down its middle.
+pub const RAIL_GAP: f64 = 1.2;
 /// The room between an architecture card's edge and its chip and words.
 pub const ARCHITECTURE_CARD_PADDING: f64 = 16.0;
 /// The room between an architecture card's chip and its words.

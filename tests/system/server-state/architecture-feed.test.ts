@@ -1,8 +1,11 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
+import { once } from "node:events";
 import { mkdtempSync, rmSync } from "node:fs";
+import { connect } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { ArchitectureFeedFrameSchema, type ArchitectureFeedFrame } from "@archboard/board/model";
+import { openArchitectureFeed } from "../support/architecture-feed.ts";
 import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -47,4 +50,21 @@ test("one socket follows every vault of a tab and names a vault it cannot read",
 			[second, "architecture_snapshot"],
 		].toSorted(),
 	);
+});
+
+test("a malformed frame ends its own socket and leaves the server serving", async () => {
+	const { host, hostname, port } = new URL(server.base);
+	const socket = connect(Number(port), hostname);
+	await once(socket, "connect");
+	socket.write(
+		`GET /api/architecture/events HTTP/1.1\r\nHost: ${host}\r\nUpgrade: websocket\r\n` +
+			"Connection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n" +
+			"Sec-WebSocket-Version: 13\r\n\r\n",
+	);
+	await once(socket, "data");
+	// Reserved bits and an unknown opcode: a frame that no client may send.
+	socket.write(Buffer.from([0xff, 0x80, 1, 2, 3, 4]));
+	await once(socket, "close");
+	using feed = await openArchitectureFeed(server.base, first);
+	expect((await feed.next()).type).toBe("architecture_snapshot");
 });

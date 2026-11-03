@@ -1,0 +1,1705 @@
+{
+	"id": "architecture:root",
+	"layoutOptions": { "archboard.blocks.nesting": "blocks" },
+	"children": [
+		{
+			"id": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+			"width": 291.22,
+			"height": 36,
+			"layoutOptions": {
+				"archboard.order": "4",
+				"archboard.order-group": "[\"app\",\"Authors named boards: one short-lived process per command, run by the source of the archboard checkout it stands in, writing no board itself\"]",
+				"archboard.header.size": "36"
+			},
+			"children": [
+				{
+					"id": "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "1",
+						"archboard.order-group": "[\"module\",\"The seam a bound command is run through, with its contract and the signal\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "2",
+						"archboard.order-group": "[\"module\",\"The table of every command, and the caller that hands this module its argv\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
+					"width": 340.1300048828125,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "3",
+						"archboard.order-group": "[\"module\",\"Turns argv and the command table into one bounded invocation; callers outside reach it only through what its index exports\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/vKEsyHFk#yEgsaWnA",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "9",
+						"archboard.order-group": "[\"service\",\"Publishes PNG and HTML to the native desktop clipboard; retains Linux ownership until another copy replaces it\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/IbGtfJE2#fRFvnVRE",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "11",
+						"archboard.entry": "true",
+						"archboard.order-group": "[\"module\",\"The CLI under test, both as the author's tool and as the harness's own way of laying a fixture and reading a vault\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/nAmiQ3Vc#Gq93nL5x",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "13",
+						"archboard.order-group": "[\"module\",\"Parses contract inputs, validates results, installs successful artifacts and presents declared outcomes\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/XppR9owz#o5zkAtUT",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "27",
+						"archboard.order-group": "[\"module\",\"Runs one bound command contract: parse, prerequisites, handler, presentation; callers reach it only through its root files\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/XppR9owz#bLpk2XKU",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "28",
+						"archboard.order-group": "[\"module\",\"The command table and every command family's contracts and handlers\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/0T9enjhi#nSTHru5x",
+					"width": 340,
+					"height": 95.602,
+					"layoutOptions": {
+						"archboard.order": "34",
+						"archboard.order-group": "[\"module\",\"Selects and invokes the declared CLI contract\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/XppR9owz#RC1mDWQR",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "35",
+						"archboard.order-group": "[\"module\",\"Publishes PNG and HTML to the native desktop clipboard; retains Linux ownership until another copy replaces it\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/XppR9owz#OM6pX371",
+					"width": 340,
+					"height": 163.602,
+					"layoutOptions": {
+						"archboard.order": "36",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Takes argv from the process to one selected command: hands over to the checkout whose source runs, refuses a removed environment variable, finds the command in the table and bounds its run\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/XppR9owz#dHZeNcMs",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "37",
+						"archboard.order-group": "[\"module\",\"The CLI's clients of the Archboard server: one file for each route family, each with its refusals, over the shared request path\"]"
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+			"width": 269.76,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "5",
+				"archboard.door": "true",
+				"archboard.order-group": "11004"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+			"width": 183.51999999999998,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "6",
+				"archboard.door": "true",
+				"archboard.order-group": "11005"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
+			"width": 340,
+			"height": 88,
+			"layoutOptions": {
+				"archboard.order": "7",
+				"archboard.groups": "agent",
+				"archboard.order-group": "[\"external\",\"Runs each host's tab sessions as one private child over stdio.\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
+			"width": 477.14,
+			"height": 36,
+			"layoutOptions": {
+				"archboard.order": "8",
+				"archboard.order-group": "[\"module\",\"Measures one version of the agent skill against another, on real authors and real checkouts\"]",
+				"archboard.header.size": "36"
+			},
+			"children": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+					"width": 340,
+					"height": 146.602,
+					"layoutOptions": {
+						"archboard.order": "0",
+						"archboard.entry": "true",
+						"archboard.order-group": "[\"module\",\"run, grade, report, check and pin, and the cancellation a person's interrupt becomes: the command line of the evaluation, kept in the skills package behind its one evaluation entry\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/IbGtfJE2#PCxTuzNW",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "22",
+						"archboard.order-group": "[\"module\",\"Reads and validates every canonical input, then plans, runs and resumes the batch, and keeps the copy of the candidate skill that the batch measures\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "23",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Everything one author turn stands in: a private home, a pinned checkout, a server of its own, the installed skill, and the fixture laid through the CLI\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/IbGtfJE2#hu0RfGwG",
+					"width": 340,
+					"height": 146.602,
+					"layoutOptions": {
+						"archboard.order": "24",
+						"archboard.order-group": "[\"module\",\"What a run is held to and what it left behind: the rules, the verdicts that need no model, the pictures of every board, and the class of each command the author ran\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/IbGtfJE2#RrIatpuG",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "25",
+						"archboard.order-group": "[\"module\",\"Grades the ungraded runs in chunks with a blinded workspace, through the Codex or the Claude grader, and asks again for the runs whose answer fell short\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/IbGtfJE2#tDDQDe92",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "26",
+						"archboard.order-group": "[\"module\",\"Joins each run with the verdict of every grader that graded it, says where two graders agree, and compares the arms per scenario and workflow\"]"
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#IOCRa8GO",
+			"width": 340,
+			"height": 129.602,
+			"layoutOptions": {
+				"archboard.order": "10",
+				"archboard.order-group": "[\"config\",\"The scenarios, fixtures, pins, grader settings, coverage and rubric, kept outside every skill package on purpose\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#1snXnK3G",
+			"width": 340,
+			"height": 88,
+			"layoutOptions": {
+				"archboard.order": "12",
+				"archboard.order-group": "[\"external\",\"The author, and one of the two graders; pinned to an exact version a batch refuses to differ from\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#9TIT63Qz",
+			"width": 340,
+			"height": 88,
+			"layoutOptions": {
+				"archboard.order": "14",
+				"archboard.order-group": "[\"external\",\"The other grader, run with read-only tools and none of the operator's settings\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+			"width": 340,
+			"height": 112.602,
+			"layoutOptions": {
+				"archboard.order": "15",
+				"archboard.groups": "packages",
+				"archboard.order-group": "[\"package\",\"Every duration, grouped by the subsystem that owns it, with what it pulls against\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+			"width": 340,
+			"height": 95.602,
+			"layoutOptions": {
+				"archboard.order": "16",
+				"archboard.groups": "packages",
+				"archboard.order-group": "[\"package\",\"Logs a line and shows a thrown value as text\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#Biz0M6Ld",
+			"width": 343.28,
+			"height": 36,
+			"layoutOptions": {
+				"archboard.order": "17",
+				"archboard.groups": "packages",
+				"archboard.order-group": "[\"package\",\"Owns a child process group and ends it, and runs git in its own group\"]",
+				"archboard.header.size": "36"
+			},
+			"children": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#RfwX9gsx",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "38",
+						"archboard.entry": "true",
+						"archboard.order-group": "[\"module\",\"Runs supervised Git processes with exact input and optional untrimmed object output\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk#R3jPedS8",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "40",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Starts a child in a process group of its own, observes it and ends the whole group\"]"
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#tdKalihR",
+			"width": 208.28,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "18",
+				"archboard.groups": "packages",
+				"archboard.door": "true",
+				"archboard.order-group": "27000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
+			"width": 232.06,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "29",
+				"archboard.groups": "code packages",
+				"archboard.door": "true",
+				"archboard.order-group": "28000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+			"width": 159.86,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "19",
+				"archboard.groups": "packages writes",
+				"archboard.door": "true",
+				"archboard.order-group": "29000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#I1uPm6KX",
+			"width": 340,
+			"height": 129.602,
+			"layoutOptions": {
+				"archboard.order": "31",
+				"archboard.order-group": "[\"module\",\"bun run eval:skill: hands the process's arguments and this checkout to the package's one evaluation entry, and holds nothing else\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+			"width": 186.1,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "32",
+				"archboard.groups": "drawing packages",
+				"archboard.door": "true",
+				"archboard.order-group": "30000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+			"width": 202.04000000000002,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "30",
+				"archboard.groups": "code packages",
+				"archboard.door": "true",
+				"archboard.order-group": "31000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#vEVm326r",
+			"width": 275.9,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "33",
+				"archboard.groups": "child packages",
+				"archboard.door": "true",
+				"archboard.order-group": "32000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#doujM3ih",
+			"width": 252.76,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "20",
+				"archboard.groups": "packages",
+				"archboard.door": "true",
+				"archboard.order-group": "33000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
+			"width": 223.34,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "21",
+				"archboard.groups": "packages walkthrough",
+				"archboard.door": "true",
+				"archboard.order-group": "35000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/XppR9owz#kdK2HT99",
+			"width": 340,
+			"height": 105,
+			"layoutOptions": {
+				"archboard.order": "39",
+				"archboard.order-group": "[\"external\",\"The Git remote of a repository that this machine has no checkout of, whose default branch holds the vault an embed names\"]"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "vKEsyHFk/IbGtfJE2#EZG5L7jf",
+			"sources": ["vKEsyHFk/IbGtfJE2#JaLEafPa"],
+			"targets": ["vKEsyHFk/IbGtfJE2#PCxTuzNW"],
+			"layoutOptions": {
+				"archboard.order": "1000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#EZG5L7jf:label",
+					"text": "to Suite loader, Batch orchestrator +1",
+					"width": 197.94000244140625,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#ygYCKQLQ",
+			"sources": ["vKEsyHFk/IbGtfJE2#PCxTuzNW"],
+			"targets": ["vKEsyHFk/IbGtfJE2#IOCRa8GO"],
+			"layoutOptions": {
+				"archboard.order": "2000",
+				"archboard.relationship.kind": "data",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "data"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#ygYCKQLQ:label",
+					"text": "scenarios, fixtures,\npins, graders, rubric",
+					"width": 114.7300033569336,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#DJsFb8l6",
+			"sources": ["vKEsyHFk/IbGtfJE2#JaLEafPa"],
+			"targets": ["vKEsyHFk/IbGtfJE2#RrIatpuG"],
+			"layoutOptions": {
+				"archboard.order": "4000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "hero",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#DJsFb8l6:label",
+					"text": "grade what has not been graded",
+					"width": 176.3800048828125,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#hlCNYU50",
+			"sources": ["vKEsyHFk/IbGtfJE2#JaLEafPa"],
+			"targets": ["vKEsyHFk/IbGtfJE2#tDDQDe92"],
+			"layoutOptions": {
+				"archboard.order": "5000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#hlCNYU50:label",
+					"text": "write the report",
+					"width": 95.52999877929688,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/nAmiQ3Vc#MFROOcqh",
+			"sources": ["vKEsyHFk/nAmiQ3Vc#EMV2VjBX"],
+			"targets": ["vKEsyHFk/nAmiQ3Vc#MmMnif7e"],
+			"layoutOptions": {
+				"archboard.order": "5000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "hero",
+				"archboard.relationship.traffic": "on",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/nAmiQ3Vc#MFROOcqh:label",
+					"text": "contract + signal",
+					"width": 99.73999786376953,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#GYwjzXJJ",
+			"sources": ["vKEsyHFk/IbGtfJE2#PCxTuzNW"],
+			"targets": ["vKEsyHFk/IbGtfJE2#8O4XNZOZ"],
+			"layoutOptions": {
+				"archboard.order": "6000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#GYwjzXJJ:label",
+					"text": "to Pinned checkout, Skill install +1",
+					"width": 180.11000061035156,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/XppR9owz#34TPgaMW",
+			"sources": ["vKEsyHFk/XppR9owz#o5zkAtUT"],
+			"targets": ["vKEsyHFk/XppR9owz#bLpk2XKU"],
+			"layoutOptions": {
+				"archboard.order": "7000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/XppR9owz#34TPgaMW:label",
+					"text": "with Runtime control,\nModel comparison +10",
+					"width": 126.13999938964844,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0",
+			"sources": ["vKEsyHFk/nAmiQ3Vc#Swj3xzmd"],
+			"targets": ["vKEsyHFk/nAmiQ3Vc#EMV2VjBX"],
+			"layoutOptions": {
+				"archboard.order": "7000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0:label",
+					"text": "to runCliWith, Registry",
+					"width": 127.56999969482422,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#xKVVomRU",
+			"sources": ["vKEsyHFk/IbGtfJE2#I1uPm6KX"],
+			"targets": ["vKEsyHFk/XppR9owz#OM6pX371"],
+			"layoutOptions": {
+				"archboard.order": "8000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#xKVVomRU:label",
+					"text": "the CLI under test",
+					"width": 106,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/nAmiQ3Vc#wMSceuzp",
+			"sources": ["vKEsyHFk/nAmiQ3Vc#EMV2VjBX"],
+			"targets": ["vKEsyHFk/vKEsyHFk#doujM3ih"],
+			"layoutOptions": {
+				"archboard.order": "10000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/nAmiQ3Vc#wMSceuzp:label",
+					"text": "to Invocation context, Server client",
+					"width": 187.13999938964844,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#9sL5gPEN",
+			"sources": ["vKEsyHFk/IbGtfJE2#8O4XNZOZ"],
+			"targets": ["vKEsyHFk/IbGtfJE2#1snXnK3G"],
+			"layoutOptions": {
+				"archboard.order": "11000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "hero",
+				"archboard.relationship.traffic": "on",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#9sL5gPEN:label",
+					"text": "one author turn",
+					"width": 94.41000366210938,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#VYAeNogH",
+			"sources": ["vKEsyHFk/IbGtfJE2#8O4XNZOZ"],
+			"targets": ["vKEsyHFk/IbGtfJE2#hu0RfGwG"],
+			"layoutOptions": {
+				"archboard.order": "12000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#VYAeNogH:label",
+					"text": "with Captures, Guardrails +2",
+					"width": 154.42999267578125,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/HBlhIeSD#4GkwbIhi",
+			"sources": ["vKEsyHFk/XppR9owz#o5zkAtUT"],
+			"targets": ["vKEsyHFk/vKEsyHFk#cPOdAA3f"],
+			"layoutOptions": {
+				"archboard.order": "12000",
+				"archboard.relationship.kind": "http",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "http"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/HBlhIeSD#4GkwbIhi:label",
+					"text": "health: is this the\nserver of this checkout",
+					"width": 129.27999877929688,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#DcdR8rPv",
+			"sources": ["vKEsyHFk/vKEsyHFk#xr1MHYE7"],
+			"targets": ["vKEsyHFk/XppR9owz#OM6pX371"],
+			"layoutOptions": {
+				"archboard.order": "13000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#DcdR8rPv:label",
+					"text": "run local architecture commands",
+					"width": 176.4499969482422,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#J5WjwmUn",
+			"sources": ["vKEsyHFk/XppR9owz#bLpk2XKU"],
+			"targets": ["vKEsyHFk/vKEsyHFk#tdKalihR"],
+			"layoutOptions": {
+				"archboard.order": "14000",
+				"archboard.relationship.kind": "data",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "data"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#J5WjwmUn:label",
+					"text": "register its checkout; choose\nand forget checkouts",
+					"width": 158.6300048828125,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#OPwTCiKt",
+			"sources": ["vKEsyHFk/XppR9owz#bLpk2XKU"],
+			"targets": ["vKEsyHFk/vKEsyHFk#5zIYNuw1"],
+			"layoutOptions": {
+				"archboard.order": "16000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#OPwTCiKt:label",
+					"text": "to Walkthrough recorder,\nWalkthrough video +1",
+					"width": 139.26000213623047,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#RwZDQDsa",
+			"sources": ["vKEsyHFk/IbGtfJE2#8O4XNZOZ"],
+			"targets": ["vKEsyHFk/vKEsyHFk#5zIYNuw1"],
+			"layoutOptions": {
+				"archboard.order": "17000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#RwZDQDsa:label",
+					"text": "to Recorded talks",
+					"width": 104.26000213623047,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/XppR9owz#QmcmQeFK",
+			"sources": ["vKEsyHFk/XppR9owz#bLpk2XKU"],
+			"targets": ["vKEsyHFk/XppR9owz#dHZeNcMs"],
+			"layoutOptions": {
+				"archboard.order": "17000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/XppR9owz#QmcmQeFK:label",
+					"text": "to Canonical model client,\nVault inspection client +2",
+					"width": 143.04000091552734,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#xovfrY1j",
+			"sources": ["vKEsyHFk/IbGtfJE2#RrIatpuG"],
+			"targets": ["vKEsyHFk/IbGtfJE2#1snXnK3G"],
+			"layoutOptions": {
+				"archboard.order": "18000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#xovfrY1j:label",
+					"text": "resume the grading thread",
+					"width": 146.5800018310547,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#sp1HWQNm",
+			"sources": ["vKEsyHFk/XppR9owz#RC1mDWQR"],
+			"targets": ["vKEsyHFk/vKEsyHFk#yEgsaWnA"],
+			"layoutOptions": {
+				"archboard.order": "18000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#sp1HWQNm:label",
+					"text": "copy PNG and HTML together",
+					"width": 163.5800018310547,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#2X7jYiVB",
+			"sources": ["vKEsyHFk/IbGtfJE2#RrIatpuG"],
+			"targets": ["vKEsyHFk/IbGtfJE2#9TIT63Qz"],
+			"layoutOptions": {
+				"archboard.order": "19000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#2X7jYiVB:label",
+					"text": "resume the grading session",
+					"width": 150.99000549316406,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#wImHhbk7",
+			"sources": ["vKEsyHFk/XppR9owz#OM6pX371"],
+			"targets": ["vKEsyHFk/vKEsyHFk#tdKalihR"],
+			"layoutOptions": {
+				"archboard.order": "19000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#wImHhbk7:label",
+					"text": "to Source checkout",
+					"width": 113.31999969482422,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/nAmiQ3Vc#y6ueYYtZ",
+			"sources": ["vKEsyHFk/nAmiQ3Vc#EMV2VjBX"],
+			"targets": ["vKEsyHFk/vKEsyHFk#DmbKboxU"],
+			"layoutOptions": {
+				"archboard.order": "20000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/nAmiQ3Vc#y6ueYYtZ:label",
+					"text": "which known vaults bind\na checkout with none",
+					"width": 138.4000015258789,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#LzlhpsS7",
+			"sources": ["vKEsyHFk/IbGtfJE2#tDDQDe92"],
+			"targets": ["vKEsyHFk/IbGtfJE2#RrIatpuG"],
+			"layoutOptions": {
+				"archboard.order": "20000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#LzlhpsS7:label",
+					"text": "to Grading session,\nGrader image delivery",
+					"width": 124.94000244140625,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/XppR9owz#Hb5DPGx6",
+			"sources": ["vKEsyHFk/XppR9owz#bLpk2XKU"],
+			"targets": ["vKEsyHFk/vKEsyHFk#doujM3ih"],
+			"layoutOptions": {
+				"archboard.order": "21000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/XppR9owz#Hb5DPGx6:label",
+					"text": "to Server launcher, Restart +2",
+					"width": 162.27999877929688,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/SMjRfwN3#IOU51tal",
+			"sources": ["vKEsyHFk/XppR9owz#bLpk2XKU"],
+			"targets": ["vKEsyHFk/vKEsyHFk#6nZjwK9W"],
+			"layoutOptions": {
+				"archboard.order": "22000",
+				"archboard.relationship.kind": "rpc",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "rpc"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/SMjRfwN3#IOU51tal:label",
+					"text": "to Walkthrough recordings",
+					"width": 146.69000244140625,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#H6GBSJO0",
+			"sources": ["vKEsyHFk#R3jPedS8"],
+			"targets": ["vKEsyHFk/vKEsyHFk#7nWcEvFx"],
+			"layoutOptions": {
+				"archboard.order": "22000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#H6GBSJO0:label",
+					"text": "error codes",
+					"width": 74.79999923706055,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/HBlhIeSD#trvs8oQv",
+			"sources": ["vKEsyHFk/XppR9owz#dHZeNcMs"],
+			"targets": ["vKEsyHFk/vKEsyHFk#cPOdAA3f"],
+			"layoutOptions": {
+				"archboard.order": "23000",
+				"archboard.relationship.kind": "http",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "http"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/HBlhIeSD#trvs8oQv:label",
+					"text": "to HTTP serving, Panes\nand the workbench",
+					"width": 130.44000244140625,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/XppR9owz#EBy8Rjwh",
+			"sources": ["vKEsyHFk/XppR9owz#dHZeNcMs"],
+			"targets": ["vKEsyHFk/vKEsyHFk#doujM3ih"],
+			"layoutOptions": {
+				"archboard.order": "23000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/XppR9owz#EBy8Rjwh:label",
+					"text": "to Request transport,\nInvocation context",
+					"width": 122.48999786376953,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/nAmiQ3Vc#LIOeNd3K",
+			"sources": ["vKEsyHFk/nAmiQ3Vc#EMV2VjBX"],
+			"targets": ["vKEsyHFk/vKEsyHFk#tdKalihR"],
+			"layoutOptions": {
+				"archboard.order": "23000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/nAmiQ3Vc#LIOeNd3K:label",
+					"text": "find the vault and\nregister what holds it",
+					"width": 121.69000244140625,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#7eSdILxB",
+			"sources": ["vKEsyHFk#R3jPedS8"],
+			"targets": ["vKEsyHFk/vKEsyHFk#sZ4chHDX"],
+			"layoutOptions": {
+				"archboard.order": "23000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#7eSdILxB:label",
+					"text": "cleanup durations",
+					"width": 105.4000015258789,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/XppR9owz#REIYPxdO",
+			"sources": ["vKEsyHFk/XppR9owz#OM6pX371"],
+			"targets": ["vKEsyHFk/vKEsyHFk#doujM3ih"],
+			"layoutOptions": {
+				"archboard.order": "24000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/XppR9owz#REIYPxdO:label",
+					"text": "to Server client,\nRemoved variables +1",
+					"width": 121.87000274658203,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/nAmiQ3Vc#4vu1Jkwi",
+			"sources": ["vKEsyHFk/nAmiQ3Vc#MmMnif7e"],
+			"targets": ["vKEsyHFk/nAmiQ3Vc#Gq93nL5x"],
+			"layoutOptions": {
+				"archboard.order": "24000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/nAmiQ3Vc#4vu1Jkwi:label",
+					"text": "executeCommand",
+					"width": 106.06999969482422,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#VqSf4PHA",
+			"sources": ["vKEsyHFk/vKEsyHFk#tdKalihR"],
+			"targets": ["vKEsyHFk/0T9enjhi#RfwX9gsx"],
+			"layoutOptions": {
+				"archboard.order": "24000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#VqSf4PHA:label",
+					"text": "git in its own process group",
+					"width": 153.0500030517578,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#eclUOkMc",
+			"sources": ["vKEsyHFk/IbGtfJE2#I1uPm6KX"],
+			"targets": ["vKEsyHFk/IbGtfJE2#fRFvnVRE"],
+			"layoutOptions": {
+				"archboard.order": "24000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "hero",
+				"archboard.relationship.traffic": "on",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#eclUOkMc:label",
+					"text": "one command, one answer",
+					"width": 147.55999755859375,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#NJCua3tZ",
+			"sources": ["vKEsyHFk/IbGtfJE2#1snXnK3G"],
+			"targets": ["vKEsyHFk/IbGtfJE2#fRFvnVRE"],
+			"layoutOptions": {
+				"archboard.order": "31000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#NJCua3tZ:label",
+					"text": "the author's archboard commands",
+					"width": 183.11000061035156,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#Tt8yC8yW",
+			"sources": ["vKEsyHFk/IbGtfJE2#fRFvnVRE"],
+			"targets": ["vKEsyHFk/IbGtfJE2#8O4XNZOZ"],
+			"layoutOptions": {
+				"archboard.order": "32000",
+				"archboard.relationship.kind": "http",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "http"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#Tt8yC8yW:label",
+					"text": "the run's reads and writes,\neach naming its vault",
+					"width": 146.87000274658203,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#DzWFLBp6",
+			"sources": ["vKEsyHFk/IbGtfJE2#RrIatpuG"],
+			"targets": ["vKEsyHFk/IbGtfJE2#8O4XNZOZ"],
+			"layoutOptions": {
+				"archboard.order": "34000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#DzWFLBp6:label",
+					"text": "to Run isolation, Pinned checkout +1",
+					"width": 191.6699981689453,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#t7IxZjEX",
+			"sources": ["vKEsyHFk/IbGtfJE2#tDDQDe92"],
+			"targets": ["vKEsyHFk/IbGtfJE2#hu0RfGwG"],
+			"layoutOptions": {
+				"archboard.order": "36000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#t7IxZjEX:label",
+					"text": "exposure as today's classifier reads it",
+					"width": 198.7899932861328,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#7Gbj2xDB",
+			"sources": ["vKEsyHFk/IbGtfJE2#tDDQDe92"],
+			"targets": ["vKEsyHFk/IbGtfJE2#PCxTuzNW"],
+			"layoutOptions": {
+				"archboard.order": "38000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#7Gbj2xDB:label",
+					"text": "to Skill citations, Batch orchestrator",
+					"width": 191.60000610351562,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#f9xJZD6m",
+			"sources": ["vKEsyHFk/vKEsyHFk#vEVm326r"],
+			"targets": ["vKEsyHFk#R3jPedS8"],
+			"layoutOptions": {
+				"archboard.order": "43000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#f9xJZD6m:label",
+					"text": "own the Codex process group",
+					"width": 162.92999267578125,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#s7YzBWCX",
+			"sources": ["vKEsyHFk/IbGtfJE2#RrIatpuG"],
+			"targets": ["vKEsyHFk/IbGtfJE2#PCxTuzNW"],
+			"layoutOptions": {
+				"archboard.order": "43000",
+				"archboard.relationship.kind": "data",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "data"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#s7YzBWCX:label",
+					"text": "where the kept skill lives",
+					"width": 136.70999908447266,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#NSENtfOa",
+			"sources": ["vKEsyHFk/vKEsyHFk#OHywsFXm"],
+			"targets": ["vKEsyHFk#R3jPedS8"],
+			"layoutOptions": {
+				"archboard.order": "44000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#NSENtfOa:label",
+					"text": "own the Chromium process group",
+					"width": 181.02000427246094,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#DElPMBfe",
+			"sources": ["vKEsyHFk/IbGtfJE2#RrIatpuG"],
+			"targets": ["vKEsyHFk/IbGtfJE2#hu0RfGwG"],
+			"layoutOptions": {
+				"archboard.order": "45000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#DElPMBfe:label",
+					"text": "to Command classifier, Captures",
+					"width": 174.52999877929688,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#q7GKxqKL",
+			"sources": ["vKEsyHFk/vKEsyHFk#doujM3ih"],
+			"targets": ["vKEsyHFk#R3jPedS8"],
+			"layoutOptions": {
+				"archboard.order": "45000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#q7GKxqKL:label",
+					"text": "observe and stop the server process",
+					"width": 194.25,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#VJXR3kbp",
+			"sources": ["vKEsyHFk/IbGtfJE2#8O4XNZOZ"],
+			"targets": ["vKEsyHFk#R3jPedS8"],
+			"layoutOptions": {
+				"archboard.order": "46000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#VJXR3kbp:label",
+					"text": "own each evaluation process group",
+					"width": 189.3699951171875,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#PoidUOm3",
+			"sources": ["vKEsyHFk/IbGtfJE2#hu0RfGwG"],
+			"targets": ["vKEsyHFk/IbGtfJE2#PCxTuzNW"],
+			"layoutOptions": {
+				"archboard.order": "47000",
+				"archboard.relationship.kind": "data",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "data"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#PoidUOm3:label",
+					"text": "the check kinds the suite names",
+					"width": 172.89999389648438,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/XppR9owz#l1mVF45a",
+			"sources": ["vKEsyHFk/XppR9owz#OM6pX371"],
+			"targets": ["vKEsyHFk/XppR9owz#o5zkAtUT"],
+			"layoutOptions": {
+				"archboard.order": "48000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/XppR9owz#l1mVF45a:label",
+					"text": "to Bootstrap, Status +2",
+					"width": 130.55999755859375,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#CBwiWYsr",
+			"sources": ["vKEsyHFk/IbGtfJE2#I1uPm6KX"],
+			"targets": ["vKEsyHFk/IbGtfJE2#JaLEafPa"],
+			"layoutOptions": {
+				"archboard.order": "50000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#CBwiWYsr:label",
+					"text": "argv and the checkout",
+					"width": 126.94000244140625,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/SMjRfwN3#Kiapa8dj",
+			"sources": ["vKEsyHFk/IbGtfJE2#RrIatpuG"],
+			"targets": ["vKEsyHFk/vKEsyHFk#OHywsFXm"],
+			"layoutOptions": {
+				"archboard.order": "52000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": []
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#wSGdfYDg",
+			"sources": ["vKEsyHFk/IbGtfJE2#8O4XNZOZ"],
+			"targets": ["vKEsyHFk/vKEsyHFk#DmbKboxU"],
+			"layoutOptions": {
+				"archboard.order": "55000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#wSGdfYDg:label",
+					"text": "validate canonical evaluation inputs",
+					"width": 190.5399932861328,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/XppR9owz#CfLy7gvx",
+			"sources": ["vKEsyHFk/XppR9owz#bLpk2XKU"],
+			"targets": ["vKEsyHFk/vKEsyHFk#cPOdAA3f"],
+			"layoutOptions": {
+				"archboard.order": "57000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/XppR9owz#CfLy7gvx:label",
+					"text": "to HTTP serving, Start and stop",
+					"width": 170.72999572753906,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#LYFH1rhE",
+			"sources": ["vKEsyHFk/IbGtfJE2#hu0RfGwG"],
+			"targets": ["vKEsyHFk/vKEsyHFk#OHywsFXm"],
+			"layoutOptions": {
+				"archboard.order": "58000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#LYFH1rhE:label",
+					"text": "interpret rasterization receipts",
+					"width": 166.85000610351562,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/XppR9owz#iDjPNIJS",
+			"sources": ["vKEsyHFk/XppR9owz#o5zkAtUT"],
+			"targets": ["vKEsyHFk/vKEsyHFk#doujM3ih"],
+			"layoutOptions": {
+				"archboard.order": "59000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/XppR9owz#iDjPNIJS:label",
+					"text": "to Server launcher",
+					"width": 108.1500015258789,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/XppR9owz#NAzwezpK",
+			"sources": ["vKEsyHFk/XppR9owz#o5zkAtUT"],
+			"targets": ["vKEsyHFk/vKEsyHFk#tdKalihR"],
+			"layoutOptions": {
+				"archboard.order": "64000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/XppR9owz#NAzwezpK:label",
+					"text": "the --url default",
+					"width": 95.5999984741211,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#BQM4Vgnm",
+			"sources": ["vKEsyHFk/0T9enjhi#nSTHru5x"],
+			"targets": ["vKEsyHFk/vKEsyHFk#DmbKboxU"],
+			"layoutOptions": {
+				"archboard.order": "75000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#BQM4Vgnm:label",
+					"text": "which known vaults bind\na checkout with none",
+					"width": 138.4000015258789,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/XppR9owz#pn92tto1",
+			"sources": ["vKEsyHFk/XppR9owz#bLpk2XKU"],
+			"targets": ["vKEsyHFk/XppR9owz#kdK2HT99"],
+			"layoutOptions": {
+				"archboard.order": "95000",
+				"archboard.relationship.kind": "data",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "data"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/XppR9owz#pn92tto1:label",
+					"text": "the default branch vault,\nshallow and sparse",
+					"width": 136.8300018310547,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/XppR9owz#T67XkF7L",
+			"sources": ["vKEsyHFk/XppR9owz#OM6pX371"],
+			"targets": ["vKEsyHFk/XppR9owz#bLpk2XKU"],
+			"layoutOptions": {
+				"archboard.order": "98000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/XppR9owz#T67XkF7L:label",
+					"text": "with Migration commands,\nModel edit commands +4",
+					"width": 146.12000274658203,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#zlSipRtX",
+			"sources": ["vKEsyHFk/vKEsyHFk#DmbKboxU"],
+			"targets": ["vKEsyHFk/0T9enjhi#RfwX9gsx"],
+			"layoutOptions": {
+				"archboard.order": "223000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#zlSipRtX:label",
+					"text": "from Architecture runtime API",
+					"width": 162.75999450683594,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#WjFwNiFy",
+			"sources": ["vKEsyHFk/0T9enjhi#RfwX9gsx"],
+			"targets": ["vKEsyHFk#R3jPedS8"],
+			"layoutOptions": {
+				"archboard.order": "980150",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#WjFwNiFy:label",
+					"text": "whether a group still runs",
+					"width": 141.37000274658203,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#ImS2FjJd",
+			"sources": ["vKEsyHFk/XppR9owz#bLpk2XKU"],
+			"targets": ["vKEsyHFk/vKEsyHFk#DmbKboxU"],
+			"layoutOptions": {
+				"archboard.order": "1003000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#ImS2FjJd:label",
+					"text": "derive the interface and its counts",
+					"width": 184.3300018310547,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#inbTEHtR",
+			"sources": ["vKEsyHFk/XppR9owz#bLpk2XKU"],
+			"targets": ["vKEsyHFk/vKEsyHFk#OHywsFXm"],
+			"layoutOptions": {
+				"archboard.order": "1008010",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#inbTEHtR:label",
+					"text": "draw a recipe to PNG",
+					"width": 121.97000122070312,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#5yYA6WLY",
+			"sources": ["vKEsyHFk/XppR9owz#bLpk2XKU"],
+			"targets": ["vKEsyHFk/vKEsyHFk#w9zvoSFD"],
+			"layoutOptions": {
+				"archboard.order": "1008020",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#5yYA6WLY:label",
+					"text": "the checkouts embeds read from",
+					"width": 177.10000610351562,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#hbm71jgF",
+			"sources": ["vKEsyHFk/XppR9owz#dHZeNcMs"],
+			"targets": ["vKEsyHFk/vKEsyHFk#7nWcEvFx"],
+			"layoutOptions": {
+				"archboard.order": "1008040",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{ "id": "vKEsyHFk#hbm71jgF:label", "text": "read an answer", "width": 93.5, "height": 31 }
+			]
+		},
+		{
+			"id": "vKEsyHFk#BnbTGVun",
+			"sources": ["vKEsyHFk/XppR9owz#bLpk2XKU"],
+			"targets": ["vKEsyHFk/vKEsyHFk#6HYaX0mK"],
+			"layoutOptions": {
+				"archboard.order": "1008070",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#BnbTGVun:label",
+					"text": "read a code check answer",
+					"width": 144.98999786376953,
+					"height": 31
+				}
+			]
+		}
+	]
+}

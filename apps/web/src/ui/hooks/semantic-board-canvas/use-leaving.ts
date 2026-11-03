@@ -3,11 +3,8 @@
 
 import { useLayoutEffect } from "react";
 
-import {
-	leavePicture,
-	stayPicture,
-	type Departure,
-} from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
+import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
+import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import type { StagedPicture } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
 
 /**
@@ -24,15 +21,9 @@ function useLeaving(
 ): Departure | null {
 	const departure = leaving ?? null;
 	useLayoutEffect(() => {
-		const root = picture?.root;
-		if (!(root instanceof SVGElement)) {
-			return;
-		}
-		if (departure === null) {
-			stayPicture(root);
-		} else {
-			leavePicture(root, departure, reducedMotion);
-		}
+		const stage = picture === null ? null : stageOf(picture.surface);
+		if (departure === null) stage?.stay();
+		else stage?.leave(departure, reducedMotion);
 	}, [picture, departure, reducedMotion]);
 	return departure;
 }

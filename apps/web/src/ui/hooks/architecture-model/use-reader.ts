@@ -146,6 +146,7 @@ function useReader(inputs: ReaderInputs) {
 		area,
 		scene,
 		reading: request.reading,
+		projection: request.projection,
 		model,
 		reference: comparison.reference,
 		reducedMotion,

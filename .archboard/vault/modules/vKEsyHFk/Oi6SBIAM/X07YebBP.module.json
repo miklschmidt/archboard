@@ -41,6 +41,19 @@
       "to": "vKEsyHFk#OY4JPr8G"
     },
     {
+      "order": 6000,
+      "kind": "event",
+      "label": "board and agent news; the vault a pane is in",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+        "symbol": "sendStartingBoard"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#gK39PRbo",
+      "to": "vKEsyHFk#iORmkZrI"
+    },
+    {
       "order": 15000,
       "kind": "call",
       "label": "register the page's socket",
@@ -131,19 +144,6 @@
       "to": "vKEsyHFk#9VahN2IU"
     },
     {
-      "order": 1008000,
-      "kind": "call",
-      "label": "keep a vault's news running; send a new page the snapshots",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
-        "symbol": "acceptWebSocketConnection"
-      },
-      "id": "vKEsyHFk#ImhHUqRg",
-      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
-    },
-    {
       "order": 143000,
       "kind": "call",
       "label": "vault-scoped current event stream",
@@ -155,6 +155,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#tDk3zmci",
       "to": "vKEsyHFk/0T9enjhi#hLWF9OC5"
+    },
+    {
+      "order": 1008000,
+      "kind": "call",
+      "label": "keep a vault's news running; send a new page the snapshots",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+        "symbol": "acceptWebSocketConnection"
+      },
+      "id": "vKEsyHFk#ImhHUqRg",
+      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
     }
   ]
 }

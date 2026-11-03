@@ -115,42 +115,6 @@ const pick = (browser: AgentBrowserSession, id: string): Promise<unknown> =>
 			` view.dispatchEvent(new MouseEvent("click", where)); })()`,
 	);
 
-/**
- * Whether the words on one relationship are on top of every dot on the page,
- * as the browser itself resolves it.
- *
- * Every dot, not only the ones riding this relationship: routes cross, and a
- * picture where each relationship carried its own words would decide a crossing
- * by whichever of the two was drawn second. `compareDocumentPosition` answers
- * the painting order, and `elementFromPoint` answers what a person's pointer
- * would find over the words.
- * @param browser The page.
- * @param id The relationship's or message's semantic id.
- * @returns What is hit at the centre of the pill, how many traffic marks there are, and whether all are painted first.
- */
-const overThePill = (
-	browser: AgentBrowserSession,
-	id: string,
-): Promise<{ hit: string; traffic: number; trafficFirst: boolean }> =>
-	browser.eval(
-		`(() => {` +
-			// A pulse draws shapes of its own, rectangles among them: the plate is the
-			// rectangle that is neither a glow nor part of a pulse.
-			` const pill = [...document.querySelectorAll("${SURFACE} [data-semantic-id='${id}'] rect")]` +
-			`  .find((rect) => !rect.classList.contains("ab-halo") && rect.closest(".ab-pulse") === null);` +
-			` const traffic = [...document.querySelectorAll("${SURFACE} .ab-pulse")];` +
-			` const at = pill.getBoundingClientRect();` +
-			` const under = document.elementFromPoint(` +
-			`   Math.round(at.x + at.width / 2), Math.round(at.y + at.height / 2));` +
-			` return {` +
-			`  hit: under === null ? "nothing" : under.tagName.toLowerCase() +` +
-			`   (under.closest(".ab-pulse") === null ? "" : ".ab-pulse"),` +
-			`  traffic: traffic.length,` +
-			`  trafficFirst: traffic.length > 0 && traffic.every((mark) =>` +
-			`   (pill.compareDocumentPosition(mark) & Node.DOCUMENT_POSITION_PRECEDING) !== 0),` +
-			` }; })()`,
-	);
-
 test("a reader sees what changed, what belongs together and what is unsettled", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "model-legibility");
@@ -289,32 +253,14 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	expect(await unresolvedPaints(browser, SURFACE)).toEqual([]);
 
 	// One ink from end to end. The band behind the line was already coloured;
-	// what a reader could not see is that the line, its arrowhead and its dots
-	// belonged to it rather than being grey scenery over the top.
+	// what a reader could not see is that the line belonged to it rather than
+	// being grey scenery over the top.
 	const added = await edgeInks(browser, SURFACE, ids["added"] ?? "");
-	expect(added.head).toBe(added.line);
 	expect(sameHue(added.line, added.band)).toBe(true);
-	// The pulses carry the relationship's colour with white mixed in, the band's hue.
-	expect(added.streams.length).toBe(1);
-	for (const stream of added.streams) {
-		for (const part of stream.split("|")) {
-			expect(sameHue(part, added.band)).toBe(true);
-		}
-	}
-	// A relationship the proposal dropped is still drawn, in its own ink, and
-	// sends nothing: a removed line that looked like live traffic would be the
-	// picture claiming the proposal still has it.
+	// A relationship the proposal dropped is still drawn, in its own ink.
 	const gone = await edgeInks(browser, SURFACE, ids["gone"] ?? "");
 	expect(sameHue(gone.line, gone.band)).toBe(true);
-	expect(gone.head).toBe(gone.line);
-	expect(gone.streams).toHaveLength(0);
 	expect(gone.line).not.toBe(added.line);
-
-	// The words on a relationship are on top of the dots crossing it.
-	const words = await overThePill(browser, ids["hero"] ?? "");
-	expect(words.traffic).toBeGreaterThan(0);
-	expect(words.trafficFirst).toBe(true);
-	expect(words.hit).not.toEndWith(".ab-pulse");
 
 	// Configured types keep distinct chips even when the nodes share a group.
 	const writePath = await iconInk(browser, "Gateway");
@@ -358,7 +304,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 		WAIT,
 	);
 
-	// The other grammar, told in the same language: the plate is over the dots.
+	// The other grammar, told in the same language.
 	// The views are on the board tab, which the pick moved away from.
 	await openAbout(browser);
 	await chooseFlow(browser, flow);
@@ -371,18 +317,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 		"the exchange to be drawn",
 		WAIT,
 	);
-	const stepId = await browser.eval<string>(
-		`document.querySelector("${SURFACE} [data-semantic-kind='step']").dataset.semanticId`,
-	);
-	// The exchange's pulses, each in the colours of its message.
-	expect(
-		await browser.eval<number>(`document.querySelectorAll("${SURFACE} .ab-pulse").length`),
-	).toBeGreaterThan(0);
 	expect(await unresolvedPaints(browser, SURFACE)).toEqual([]);
-	const message = await overThePill(browser, stepId);
-	expect(message.traffic).toBeGreaterThan(0);
-	expect(message.trafficFirst).toBe(true);
-	expect(message.hit).not.toEndWith(".ab-pulse");
 
 	// And all of it again on the other ground. The inks change, because they are
 	// picked for the ground they are drawn on; what they say does not.
@@ -407,7 +342,6 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	expect(await unresolvedPaints(browser, SURFACE)).toEqual([]);
 	const darkAdded = await edgeInks(browser, SURFACE, ids["added"] ?? "");
 	expect(sameHue(darkAdded.line, darkAdded.band)).toBe(true);
-	expect(darkAdded.head).toBe(darkAdded.line);
 	expect(darkAdded.line).not.toBe(added.line);
 	const darkWritePath = await iconInk(browser, "Gateway");
 	expect(await iconInk(browser, "Queue")).not.toBe(darkWritePath);

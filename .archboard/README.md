@@ -51,7 +51,6 @@ The existing source owners provide useful starting scopes:
 | CLI                | `vKEsyHFk/vKEsyHFk#TBnOCNx2` | `apps/cli`                      |
 | Server             | `vKEsyHFk/vKEsyHFk#cPOdAA3f` | `apps/server`                   |
 | Browser            | `vKEsyHFk/vKEsyHFk#6nZjwK9W` | `apps/web`                      |
-| Shared packages    | `vKEsyHFk/vKEsyHFk#fssx6Gaq` | `packages`                      |
 | Model runtime      | `vKEsyHFk/0T9enjhi#1VHRyajb` | `packages/board`                |
 | Renderer           | `vKEsyHFk/vKEsyHFk#OHywsFXm` | `packages/renderer`             |
 | Core render        | `vKEsyHFk/OjRLKb74#nmyK8UOO` | `crates/archboard-render/src`   |

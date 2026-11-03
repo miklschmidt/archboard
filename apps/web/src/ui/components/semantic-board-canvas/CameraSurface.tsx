@@ -1,9 +1,18 @@
 // The element the camera moves, and the picture is written into. It is the one
 // thing drawn again on every move of the camera (TASK-385.02).
 
-import { useMemo, type CSSProperties, type JSX } from "react";
+import {
+	useCallback,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+	type CSSProperties,
+	type JSX,
+} from "react";
 
 import { EXPLORING_MS, PRESENTATION_MS } from "@archboard/timing";
+import { attachStage, stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import {
 	useCameraView,
 	type BoardCamera,
@@ -50,7 +59,19 @@ function surfaceClass(
 	moving: boolean,
 ): string {
 	const base = `${SURFACE_CLASS}${layerClass(gesture, moving)}`;
-	return gesture !== "idle" || reducedMotion || following ? base : `${base} ${EASED_CLASS}`;
+	return cameraEases(gesture, reducedMotion, following) ? `${base} ${EASED_CLASS}` : base;
+}
+
+/**
+ * Whether the camera eases to where it was told: a keyed move or a fit. A press
+ * tracks the pointer, and a move that follows the picture lands in its frame.
+ * @param gesture Where a press on the diagram stands.
+ * @param reducedMotion Whether the person asked for reduced motion.
+ * @param following Whether the camera last moved to follow the picture.
+ * @returns Whether it eases.
+ */
+function cameraEases(gesture: Gesture, reducedMotion: boolean, following: boolean): boolean {
+	return gesture === "idle" && !reducedMotion && !following;
 }
 
 /** What the surface the camera moves is drawn with. */
@@ -79,6 +100,30 @@ function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 	const { attach, size, gesture, reducedMotion, marks } = props;
 	const { camera, instant, moving } = useCameraView(props.camera);
 	const { width, height } = size;
+	const canvas = useRef<HTMLDivElement>(null);
+	const [surface, setSurface] = useState<HTMLDivElement | null>(null);
+	const attachSurface = useCallback(
+		(element: HTMLDivElement | null): void => {
+			setSurface(element);
+			attach(element);
+		},
+		[attach],
+	);
+	// A stage lives as long as its surface, and it stands before the pane shows a
+	// picture: a child's layout effect runs before its parent's.
+	useLayoutEffect(
+		() =>
+			surface === null || canvas.current === null
+				? undefined
+				: attachStage(surface, canvas.current),
+		[surface],
+	);
+	const eases = cameraEases(gesture, reducedMotion, instant);
+	useLayoutEffect(() => {
+		if (surface !== null) {
+			stageOf(surface)?.setCamera(camera, eases ? EXPLORING_MS.cameraSettle : 0);
+		}
+	}, [surface, camera, eases]);
 	const style = useMemo<CSSProperties>(
 		() => ({
 			width,
@@ -91,12 +136,19 @@ function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 		[width, height, camera],
 	);
 	return (
-		<div
-			ref={attach}
-			data-slot="semantic-board-surface"
-			style={style}
-			className={`${surfaceClass(gesture, reducedMotion, instant, moving)}${marks}`}
-		/>
+		<>
+			<div
+				ref={canvas}
+				aria-hidden="true"
+				className="pointer-events-none absolute inset-0 size-full"
+			/>
+			<div
+				ref={attachSurface}
+				data-slot="semantic-board-surface"
+				style={style}
+				className={`${surfaceClass(gesture, reducedMotion, instant, moving)}${marks}`}
+			/>
+		</>
 	);
 }
 

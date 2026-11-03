@@ -47,4 +47,4 @@ function useFindShortcut(onFind: () => void): void {
 	}, [onFind]);
 }
 
-export { useFindShortcut };
+export { typingIn, useFindShortcut };

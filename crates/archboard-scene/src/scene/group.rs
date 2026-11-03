@@ -7,7 +7,7 @@
 //! a part was drawn, which way the board it opens lies, where a view's words
 //! move to.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::drawing::Toggle;
@@ -17,7 +17,7 @@ use crate::scene::definition::MaskId;
 use crate::scene::shape::Pointer;
 
 /// Which sort of subject a group draws.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "kebab-case")]
 #[expect(
     missing_docs,
@@ -32,7 +32,7 @@ pub enum SubjectKind {
 }
 
 /// The subject a group draws: which sort it is, its id, and how it stands.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct Subject {
     /// Which sort of subject it is.
     pub kind: SubjectKind,
@@ -47,7 +47,7 @@ pub struct Subject {
 /// A scale about the origin, followed by a move.
 /// A point `(px, py)` maps to `(px * scale + x, py * scale + y)`.
 /// An absent scale is 1.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Transform {
     /// How far right.
     pub x: f64,
@@ -67,7 +67,7 @@ impl Transform {
 }
 
 /// How a relationship's line was drawn: its kind's appearance and its kind.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct LineFacts {
     /// The appearance its kind gives it.
     pub appearance: LineAppearance,
@@ -76,7 +76,7 @@ pub struct LineFacts {
 }
 
 /// Which part of its subject a shadow is cast by, when not its whole block.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum ShadowOf {
     /// A message's label plate.
@@ -86,7 +86,7 @@ pub enum ShadowOf {
 }
 
 /// A part of the page an export adds, or the frame of a planned board.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(tag = "slot", rename_all = "camelCase")]
 pub enum Slot {
     /// The dashed frame and label of a board nothing on which is built.
@@ -101,7 +101,7 @@ pub enum Slot {
 }
 
 /// What a legend's entry keys.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum EntryKind {
     /// A comparison's mark.
@@ -117,7 +117,7 @@ pub enum EntryKind {
 }
 
 /// What a group is to the picture it is part of, with the facts that come with it.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "role", content = "facts", rename_all = "kebab-case")]
 pub enum Role {
     /// A part drawn as a card, or a participant's card, and how it was drawn.
@@ -193,7 +193,7 @@ pub enum Role {
 }
 
 /// A group: what it is, what it draws, how its parts are shown, and its parts.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Group {
     /// What the group is to the picture.
     pub role: Role,

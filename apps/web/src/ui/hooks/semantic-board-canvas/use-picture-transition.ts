@@ -1,13 +1,10 @@
 // Owning what is on the surface: the picture, and the moments between one
 // picture and the next.
 //
-// The surface element is React's; what is inside it is this hook's. React
-// never templates the picture, because a picture that is being carried from
-// one state to another is not a string a render could produce — it is the next
-// picture, with the last one's geometry borrowed for a few hundred milliseconds.
-// So the markup is written here, once per picture, and a picture that arrives
-// while the last is still in flight lands the last one first: the surface is
-// never left somewhere between three pictures.
+// The surface element is React's; what is inside it is this hook's. The markup
+// is written here, once per picture, and the stage is told how the picture
+// arrives: cut to, carried from the last, or brought in part by part. A picture
+// that arrives while the last is still in flight lands the last one first.
 //
 // What is on the surface is an external fact as far as React is concerned —
 // the DOM was written behind its back — so it is read back through a store the
@@ -17,21 +14,16 @@ import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
 import { PICTURE_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
+import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import {
-	ghostPicture,
-	type Departure,
-} from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
-import { enterPicture } from "#ui/clients/semantic-board-canvas/picture/picture-entrance.ts";
-import {
+	NO_SHIFT,
 	continuousPictures,
 	sharedShift,
 	stagePicture,
-	transitionPicture,
 	type MovingPicture,
-	type PictureTransition,
 	type Shift,
 } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
-import { stopTraffic } from "#ui/clients/semantic-board-canvas/picture/picture-traffic.ts";
+import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 
 /** The picture on the surface, as something to mark up. */
 interface StagedPicture {
@@ -41,11 +33,8 @@ interface StagedPicture {
 	readonly root: Element;
 }
 
-/** A transition being driven, and the way to stop driving it. */
-interface Flight {
-	readonly transition: PictureTransition;
-	readonly stop: () => void;
-}
+/** The way to stop waiting for a picture to move into place. */
+type Flight = () => void;
 
 /** What the surface was last given, and on which element. */
 interface Shown {
@@ -108,23 +97,23 @@ function carriedOn(last: MovingPicture, next: MovingPicture, presenting = false)
 }
 
 /**
- * The picture the next one is carried from, when it is carried rather than cut to.
+ * Whether the last picture is carried into the next, rather than cut from.
  * @param last What the surface was last given, if anything.
  * @param surface The surface the picture goes on.
  * @param drawing The picture.
  * @param motion Whether the person asked for no motion, and whether a walkthrough is presented.
- * @returns The last picture, or null when this one is simply shown.
+ * @returns True when the last picture moves into this one.
  */
-function carriedFrom(
+function carriesOn(
 	last: Shown | null,
 	surface: HTMLElement,
 	drawing: MovingPicture,
 	motion: Pick<PictureMotion, "reducedMotion" | "presenting">,
-): MovingPicture | null {
+): boolean {
 	if (last?.surface !== surface || motion.reducedMotion || !frameClock().animates) {
-		return null;
+		return false;
 	}
-	return carriedOn(last.drawing, drawing, motion.presenting === true) ? last.drawing : null;
+	return carriedOn(last.drawing, drawing, motion.presenting === true);
 }
 
 /**
@@ -152,47 +141,27 @@ function entersAfresh(
 }
 
 /**
- * Drive a transition from now to its end, one frame at a time.
- * @param transition The transition.
- * @param duration How long it takes.
- * @param onLanded What to do once it has finished.
+ * Wait, frame by frame, for a picture to move into place.
+ * @param duration How long that takes.
+ * @param onLanded What to do once it has.
  * @returns The flight, with the way to stop it.
  */
-function fly(transition: PictureTransition, duration: number, onLanded: () => void): Flight {
+function fly(duration: number, onLanded: () => void): Flight {
 	const clock = frameClock();
-	const started = clock.now();
+	const landsAt = clock.now() + duration;
 	let frame = 0;
 	/**
-	 * Draw one frame, and ask for the next until the last.
+	 * Land at the first frame past the end, or ask for the next.
 	 * @param now The frame's time.
 	 */
 	function tick(now: number): void {
-		const progress = (now - started) / duration;
-		if (progress < 1) {
-			transition.seek(progress);
-			frame = clock.requestFrame(tick);
-			return;
-		}
-		transition.finish();
-		onLanded();
+		if (now < landsAt) frame = clock.requestFrame(tick);
+		else onLanded();
 	}
 	frame = clock.requestFrame(tick);
-	/** Stop asking for frames. */
-	function stop(): void {
+	return () => {
 		clock.cancelFrame(frame);
-	}
-	return { transition, stop };
-}
-
-/**
- * Land a flight where it was going, at once.
- * @param flight The flight, if one is up.
- */
-function land(flight: Flight | null): void {
-	if (flight !== null) {
-		flight.stop();
-		flight.transition.finish();
-	}
+	};
 }
 
 /**
@@ -254,29 +223,52 @@ function movedSince(seenAt: Point | null, surface: HTMLElement): Point {
 		: { x: seenAt.x - now.x, y: seenAt.y - now.y };
 }
 
+/** How long each way of arriving takes to move into place. */
+const ARRIVAL_MS = { carried: PICTURE_MS.transition, entered: PICTURE_MS.entry, cut: null };
+
 /**
- * Put the next picture on the surface: cut to it, carry the last one into it,
- * or bring it in part by part when there is nothing to carry it from. Either
- * way, a picture of the same board tells the camera how far the shared cards
- * moved before anything is painted.
+ * How a picture arrives.
+ * @param next What to show, where, and how it may move.
+ * @returns Carried from the last one, entered part by part when there is
+ * nothing to carry it from, or cut to.
+ */
+function arrivalOf(next: NextPicture): keyof typeof ARRIVAL_MS {
+	const { surface, last, drawing, reducedMotion } = next;
+	if (carriesOn(last, surface, drawing, next)) return "carried";
+	return entersAfresh(last, surface, drawing, reducedMotion) ? "entered" : "cut";
+}
+
+/**
+ * Tell the stage how a picture arrives.
+ * @param next What to show, where, and how it may move.
+ * @param shift How far the shared cards moved.
+ * @returns How long it takes to move into place, or null for a cut.
+ */
+function arrive(next: NextPicture, shift: Shift): number | null {
+	const { surface, drawing, heading, seenAt } = next;
+	const stage = stageOf(surface);
+	const arrival = arrivalOf(next);
+	if (arrival === "carried") stage?.carry(drawing.painting, shift);
+	else if (arrival === "entered") {
+		stage?.enter(drawing.painting, heading, movedSince(seenAt, surface));
+	} else stage?.show(drawing.painting);
+	return ARRIVAL_MS[arrival];
+}
+
+/**
+ * Put the next picture on the surface. A picture of the same board tells the
+ * camera how far the shared cards moved before anything is painted.
  * @param next What to show, where, and how it may move.
  * @param onLanded What to do once a flight has landed.
  * @returns The flight, or null for a cut.
  */
 function showPicture(next: NextPicture, onLanded: () => void): Flight | null {
-	const { surface, last, drawing, reducedMotion, keepStill, heading, seenAt } = next;
+	const { surface, last, drawing, keepStill } = next;
 	const shift = shiftFrom(last, surface, drawing, next.presenting === true);
-	const from = carriedFrom(last, surface, drawing, next);
 	if (shift !== undefined) keepStill(shift);
-	if (from !== null) {
-		return fly(transitionPicture(surface, from, drawing, shift), PICTURE_MS.transition, onLanded);
-	}
-	if (entersAfresh(last, surface, drawing, reducedMotion)) {
-		if (last?.surface === surface) ghostPicture(surface, heading, movedSince(seenAt, surface));
-		return fly(enterPicture(surface, drawing), PICTURE_MS.entry, onLanded);
-	}
-	stagePicture(surface, drawing.svg);
-	return null;
+	stagePicture(surface, drawing);
+	const duration = arrive(next, shift ?? NO_SHIFT);
+	return duration === null ? null : fly(duration, onLanded);
 }
 
 /**
@@ -290,6 +282,17 @@ function publish(store: PictureStore, surface: HTMLElement | null): void {
 	for (const listener of store.listeners) {
 		listener();
 	}
+}
+
+/**
+ * Whether a surface already shows a picture.
+ * @param last What the surface was last given, if anything.
+ * @param surface The surface.
+ * @param drawing The picture.
+ * @returns True when nothing on the surface would change.
+ */
+function standsOn(last: Shown | null, surface: HTMLElement, drawing: MovingPicture): boolean {
+	return last?.surface === surface && last.drawing.svg === drawing.svg;
 }
 
 /**
@@ -329,13 +332,14 @@ function usePictureTransition(
 		// The same picture again, as another answer: a picture read twice while
 		// it is on its way arrives twice. Nothing on the surface changes, so a
 		// flight carrying it keeps flying rather than being landed by itself.
-		if (surface === null || (last?.surface === surface && last.drawing.svg === drawing.svg)) {
-			if (surface !== null) shown.current = { surface, drawing };
+		if (surface === null) return;
+		if (standsOn(last, surface, drawing)) {
+			shown.current = { surface, drawing };
 			return;
 		}
-		// A picture arriving mid-flight lands the flight first, so the surface
-		// is showing exactly the picture the new transition is told it is.
-		land(flight.current);
+		// A picture arriving mid-flight stops the wait for the last one. The stage
+		// carries on from what shows, so the reader sees no jump.
+		flight.current?.();
 		shown.current = { surface, drawing };
 		const next = {
 			surface,
@@ -350,7 +354,6 @@ function usePictureTransition(
 		flight.current = showPicture(next, () => {
 			flight.current = null;
 			surface.toggleAttribute(PICTURE_MOTION_ATTRIBUTE, false);
-			publish(store.current, surface);
 		});
 		surface.toggleAttribute(PICTURE_MOTION_ATTRIBUTE, flight.current !== null);
 		publish(store.current, surface);
@@ -361,13 +364,11 @@ function usePictureTransition(
 	useLayoutEffect(() => {
 		seen.current = reducedMotion ? null : paneAt(surface);
 	});
-	// Leaving the surface stops asking for frames; what it showed does not matter any more.
-	// Its traffic stops with it: an animation does not stop when its element goes.
+	// Leaving the surface stops waiting; what it showed does not matter any more.
 	useLayoutEffect(
 		() => (): void => {
-			flight.current?.stop();
+			flight.current?.();
 			flight.current = null;
-			if (shown.current !== null) stopTraffic(shown.current.surface);
 		},
 		[],
 	);

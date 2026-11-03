@@ -304,10 +304,6 @@ function registerSocket(ws: WebSocket, req: IncomingMessage, vault: string): Reg
 		latestSocketAcceptanceByClient.set(clientId, acceptanceToken);
 	}
 	ws.on("close", () => forgetClosedSocket(ws, acceptanceToken));
-	ws.on("error", (error) => {
-		logger.error("WebSocket error:", error);
-		clients.delete(ws);
-	});
 	return { vault, clientId, tabSessionId, acceptanceToken, codexInstance };
 }
 
@@ -496,6 +492,11 @@ function startWebSocketServer(): void {
 	owner.on("connection", (socket, request) => {
 		acceptedSockets.add(socket);
 		socket.once("close", () => acceptedSockets.delete(socket));
+		// A socket error with no listener would end the whole server, whichever socket it hit.
+		socket.on("error", (error) => {
+			logger.error("WebSocket error:", error);
+			socket.terminate();
+		});
 		if (isArchitectureFeed(request)) {
 			serveArchitectureFeed(socket);
 			return;

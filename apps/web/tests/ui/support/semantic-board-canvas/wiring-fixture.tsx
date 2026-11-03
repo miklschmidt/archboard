@@ -16,6 +16,7 @@ interface Node {
 	readonly name: string;
 	readonly kind: string;
 	readonly parent?: string;
+	readonly description?: string;
 }
 
 // Orders holds a handler and a queue; Shipping holds a worker. The gateway calls
@@ -25,9 +26,9 @@ const NODES: readonly Node[] = [
 	{ id: "orders", name: "Orders", kind: "service" },
 	{ id: "shipping", name: "Shipping", kind: "service" },
 	{ id: "h", name: "Handler", kind: "route", parent: "orders" },
-	{ id: "q", name: "Queue", kind: "queue", parent: "orders" },
+	{ id: "q", name: "Queue", kind: "queue", parent: "orders", description: "Holds orders." },
 	{ id: "w", name: "Worker", kind: "job", parent: "shipping" },
-	{ id: "l", name: "Ledger", kind: "datastore" },
+	{ id: "l", name: "Ledger", kind: "datastore", description: "Keeps what was shipped." },
 	{ id: "g", name: "Gateway", kind: "route" },
 ];
 const EDGES = [

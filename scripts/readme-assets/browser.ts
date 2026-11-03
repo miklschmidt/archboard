@@ -354,8 +354,8 @@ class Browser {
 	}
 
 	/**
-	 * Start a private Chromium. It composites on the GPU when the machine has one, as a person's
-	 * browser does: headless Chromium composites in software otherwise, which stalls glides.
+	 * Start a private Chromium with no GPU, so that Vello paints on the CPU: a WebGPU canvas shows
+	 * nothing in headless Chromium today (ADR 0071).
 	 * @returns The browser.
 	 */
 	static async start(): Promise<Browser> {
@@ -368,8 +368,7 @@ class Browser {
 				"--hide-scrollbars",
 				"--force-color-profile=srgb",
 				"--autoplay-policy=no-user-gesture-required",
-				"--enable-gpu",
-				"--disable-gpu-rasterization",
+				"--disable-gpu",
 			],
 			startupTimeoutMs: CALL_MS,
 			cleanupTimeoutMs: 5_000,

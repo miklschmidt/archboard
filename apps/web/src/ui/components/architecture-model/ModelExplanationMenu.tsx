@@ -27,6 +27,7 @@ interface MenuProps {
 	unavailable: boolean;
 	onAction: (action: Action) => void;
 }
+type ChoicesProps = Omit<MenuProps, "open" | "onOpenChange">;
 interface ChoiceProps {
 	action: Action;
 	disabled: boolean;
@@ -39,20 +40,6 @@ interface ChoiceProps {
  * @returns Local agent actions with explicit unavailable choices.
  */
 function ModelExplanationMenu(props: MenuProps): JSX.Element {
-	const relationships = new Set([
-		...props.model.relationships.map((edge) => edge.id),
-		...(props.model.comparison?.subjects
-			.filter((entry) => entry.subjectKind === "relationship")
-			.map((entry) => entry.id) ?? []),
-	]);
-	const enabled: Record<Action, boolean> = {
-		"explain-selection": props.selected.size > 0,
-		"explain-relationship":
-			props.selected.size > 0 && [...props.selected].every((id) => relationships.has(id)),
-		"trace-flow": true,
-		"explain-proposal":
-			props.model.selectedState?.lifecycle === "draft" && props.model.comparison !== undefined,
-	};
 	return (
 		<DropdownMenu open={props.open} onOpenChange={props.onOpenChange}>
 			<DropdownMenu.Trigger
@@ -69,18 +56,45 @@ function ModelExplanationMenu(props: MenuProps): JSX.Element {
 					nothing.
 				</p>
 				<DropdownMenu.Separator />
-				{(
-					["explain-selection", "explain-relationship", "trace-flow", "explain-proposal"] as const
-				).map((action) => (
-					<ActionChoice
-						key={action}
-						action={action}
-						disabled={props.unavailable || !enabled[action]}
-						onAction={props.onAction}
-					/>
-				))}
+				<ExplanationChoices {...props} />
 			</DropdownMenu.Content>
 		</DropdownMenu>
+	);
+}
+
+/**
+ * Each action a reading offers, with the ones that do not apply shown disabled.
+ * @param props The selected subjects and their coherent reading.
+ * @returns The choices.
+ */
+function ExplanationChoices(props: ChoicesProps): JSX.Element {
+	const relationships = new Set([
+		...props.model.relationships.map((edge) => edge.id),
+		...(props.model.comparison?.subjects
+			.filter((entry) => entry.subjectKind === "relationship")
+			.map((entry) => entry.id) ?? []),
+	]);
+	const enabled: Record<Action, boolean> = {
+		"explain-selection": props.selected.size > 0,
+		"explain-relationship":
+			props.selected.size > 0 && [...props.selected].every((id) => relationships.has(id)),
+		"trace-flow": true,
+		"explain-proposal":
+			props.model.selectedState?.lifecycle === "draft" && props.model.comparison !== undefined,
+	};
+	return (
+		<>
+			{(
+				["explain-selection", "explain-relationship", "trace-flow", "explain-proposal"] as const
+			).map((action) => (
+				<ActionChoice
+					key={action}
+					action={action}
+					disabled={props.unavailable || !enabled[action]}
+					onAction={props.onAction}
+				/>
+			))}
+		</>
 	);
 }
 
@@ -101,4 +115,4 @@ function ActionChoice(props: ChoiceProps): JSX.Element {
 	);
 }
 
-export { ModelExplanationMenu };
+export { ExplanationChoices, ModelExplanationMenu };

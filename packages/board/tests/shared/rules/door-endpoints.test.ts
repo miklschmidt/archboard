@@ -9,6 +9,7 @@ const model = {
 		{ id: "inner", name: "Inner", kind: "module", order: 2, parent: "part" },
 		{ id: "other", name: "Other", kind: "module", order: 3, parent: "open" },
 		{ id: "door", name: "Door", kind: "module", order: 4 },
+		{ id: "behind", name: "Behind", kind: "module", order: 5, parent: "door" },
 	],
 	relationships: [
 		{ id: "deep", from: "inner", to: "door", kind: "call", order: 0, emphasis: "normal" },

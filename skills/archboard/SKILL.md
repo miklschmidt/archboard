@@ -165,7 +165,8 @@ Never claim frontend acceptance, adoption, publication, or migration without the
 
 ## References
 
-[Setup](references/setup.md) covers installation and local source tooling.
+[The installation guide](references/generated/INSTALL.md) covers installing, building and updating archboard, with or without Nix.
+[Setup](references/setup.md) covers the language servers of the code check.
 [Schema references](references/schemas.md) point to generated runtime contracts.
 [Canonical models](references/canonical-models.md) describe authoring and history operations.
 [The design lens](references/design-lens.md) says what interface, locality, and footprint facts mean.

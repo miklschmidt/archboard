@@ -3,13 +3,16 @@
   "name": "workbench",
   "kind": "package",
   "responsibility": "Archboard's host of the voice package: board context, domain tools, narration, pane routing, and the visual workbench shell",
+  "groups": [
+    "agent",
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#sw4oFps0",
-  "parent": "vKEsyHFk/vKEsyHFk#fssx6Gaq",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

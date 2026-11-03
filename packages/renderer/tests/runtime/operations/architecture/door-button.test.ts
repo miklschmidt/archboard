@@ -42,6 +42,7 @@ const model = {
 		module("added", "service", "top"),
 		module("removed", "service", "top"),
 		module("uncoloured", "plain", "top"),
+		...doors.map((id) => module(`inside ${id}`, "plain", id)),
 	],
 	relationships: doors.map((to, order) => ({
 		id: to,
@@ -72,7 +73,7 @@ test("a door takes its group's colour, or else its kind's, in a picture that sta
 	const drawing = await renderArchitecture({ content, policy, standing });
 	expectDrawingIntact(drawing, content, "blocks");
 	const face = (id: string) => /url\(#ab-door-([a-z]+)\)/u.exec(door(drawing.svg, id))?.[1];
-	expect(doors.map(face)).toEqual(["pink", "teal", "blue", undefined, "primary"]);
+	expect(doors.map(face)).toEqual(["pink", "teal", "blue", undefined, "neutral"]);
 });
 
 test("a door's colours are the bright values of the dark theme, on both themes", () => {

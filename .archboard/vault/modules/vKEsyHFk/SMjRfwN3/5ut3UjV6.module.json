@@ -1,7 +1,7 @@
 {
   "order": 31002,
   "name": "Grader image delivery",
-  "kind": "service",
+  "kind": "module",
   "responsibility": "Prepares captured images and delivery receipts for the grading run",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",

@@ -185,7 +185,8 @@ async function fit(page: Page): Promise<void> {
 /**
  * Take the pointer off whatever it rests on, and put it on empty canvas: a point of a pane's
  * picture that no drawn subject covers. A pointer over a row of the Right panel peeks at that row's
- * part and washes out the selected one, so a clip moves it away once it has clicked.
+ * part and washes out the selected one, so a clip moves it away once it has clicked. A painter
+ * answers the pointer, so the subjects are read by their boxes, not from the point.
  * @param page The shell.
  * @param pane The pane whose canvas it rests on.
  * @throws {Error} When the pane's picture has no empty point.
@@ -196,10 +197,12 @@ async function restPointer(page: Page, pane = "A"): Promise<void> {
 		const stage = document.querySelector("[data-slot='pane-stage'][data-pane='${pane}']");
 		if (!stage) return null;
 		const box = stage.getBoundingClientRect();
+		const parts = [...stage.querySelectorAll("[data-semantic-id]")].map((part) => part.getBoundingClientRect());
+		const drawn = (x, y) => parts.some((part) => x >= part.left && x <= part.right && y >= part.top && y <= part.bottom);
 		for (let y = box.bottom - 48; y > box.top + 48; y -= 32) {
 			for (let x = box.left + 48; x < box.right - 48; x += 32) {
 				const element = document.elementFromPoint(x, y);
-				if (element && element.closest("[data-slot='semantic-board-surface']") && !element.closest("[data-semantic-id], [data-slot='model-panel']")) {
+				if (element && element.closest("[data-slot='model-diagram']") && !element.closest("[data-slot='model-panel']") && !drawn(x, y)) {
 					return { x: Math.round(x), y: Math.round(y) };
 				}
 			}

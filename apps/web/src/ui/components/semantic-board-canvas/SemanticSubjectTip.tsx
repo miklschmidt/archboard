@@ -1,6 +1,7 @@
-// The tip over the part of the picture the pointer rests on: a small card that
+// The tip about the part of the picture the pointer rests on: a small card that
 // says what the part is, drawn as the picture draws its kind, and what the
-// picture leaves out about it.
+// picture leaves out about it. It stands against the part, on the spot that
+// leaves what the part lights in view.
 
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -13,7 +14,7 @@ import {
 	type ReactNode,
 } from "react";
 
-import { cn, Tooltip } from "@archboard/ui-kit/components";
+import { cn } from "@archboard/ui-kit/components";
 
 import {
 	RelationshipSample,
@@ -24,12 +25,11 @@ import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board
 import { vaultCheckQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import {
 	subjectTip,
-	tipAnchor,
 	type SubjectTip,
-	type TipAnchor,
 	type TipTarget,
 } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
+import { useTipPlace, type PlacedTip } from "#ui/hooks/semantic-board-canvas/use-tip-place.ts";
 
 /**
  * What the picture has to add about the part under the pointer, placed against it.
@@ -54,52 +54,74 @@ function SemanticSubjectTip(props: {
 		target === null
 			? null
 			: tipOver(target, props.appearance, props.reading, props.far, levels, props.overview);
-	return <SubjectTipBox target={target} tip={tip} />;
+	return <SubjectTipBox tip={tip} />;
 }
 
 /**
- * Lay a tip beside the part it is about.
- * @param props The part and what to say.
- * @param props.target The part under the pointer, or null.
+ * Where a picture's tips stand. It rests in the pane's corner and moves by a
+ * transform, so that the room it has never narrows the tip it measures.
+ * @param props The open tip, the light and the tips.
+ * @param props.tip The open tip.
+ * @param props.standing What the light leaves standing, or null.
+ * @param props.children The tips.
+ * @returns The place, which takes no pointer.
+ */
+function TipPlace(props: {
+	readonly tip: PlacedTip;
+	readonly standing: ReadonlySet<string> | null;
+	readonly children: ReactNode;
+}): JSX.Element {
+	const { place, style } = useTipPlace(props.tip, props.standing);
+	return (
+		<div
+			ref={place}
+			data-slot="picture-tip-place"
+			className="pointer-events-none absolute top-0 left-0 z-10 flex max-h-[calc(100%-1.5rem)] max-w-[min(24rem,calc(100%-1.5rem))] flex-col gap-2"
+			style={style}
+		>
+			{props.children}
+		</div>
+	);
+}
+
+/**
+ * One tip's card: a small panel on the popover surface.
+ * @param props The card.
+ * @param props.slot What the card is.
+ * @param props.children What it says.
+ * @returns The card.
+ */
+function TipCard(props: { readonly slot: string; readonly children: ReactNode }): JSX.Element {
+	return (
+		<div
+			data-slot={props.slot}
+			className="bg-popover text-popover-foreground border-border text-body shadow-float animate-in fade-in-0 flex min-h-0 w-max max-w-full min-w-[min(14rem,100%)] flex-col items-stretch gap-2.5 rounded-lg border px-3.5 py-3 [overflow-wrap:anywhere]"
+		>
+			{props.children}
+		</div>
+	);
+}
+
+/**
+ * A tip about a part of the picture.
+ * @param props What to say.
  * @param props.tip What the tip says, or null.
  * @param props.children What a reader of this subject says beside it.
  * @returns The tip, or nothing.
  */
 function SubjectTipBox(props: {
-	readonly target: TipTarget | null;
 	readonly tip: SubjectTip | null;
 	readonly children?: ReactNode;
 }): JSX.Element | null {
 	const { tip } = props;
-	const anchor = useTipAnchor(props.target);
-	if (tip === null || anchor === null) {
+	if (tip === null) {
 		return null;
 	}
 	return (
-		<Tooltip open>
-			<Tooltip.Content
-				anchor={anchor}
-				sideOffset={10}
-				look="card"
-				data-slot="semantic-subject-tip"
-				className="w-max min-w-56 flex-col items-stretch gap-2.5"
-			>
-				<TipLines tip={tip}>{props.children}</TipLines>
-			</Tooltip.Content>
-		</Tooltip>
+		<TipCard slot="semantic-subject-tip">
+			<TipLines tip={tip}>{props.children}</TipLines>
+		</TipCard>
 	);
-}
-
-/**
- * What a tip is placed against: the part it is over, drawn without its traffic.
- * The same for as long as the tip is over one part, so the tip is not placed
- * afresh on every render.
- * @param target The part whose tip is open, or null.
- * @returns The anchor, or null when no tip is open.
- */
-function useTipAnchor(target: TipTarget | null): TipAnchor | null {
-	const part = target?.anchor ?? null;
-	return useMemo(() => (part === null ? null : tipAnchor(part)), [part]);
 }
 
 /**
@@ -248,4 +270,4 @@ function useCut(element: { readonly current: HTMLElement | null }): boolean {
 	return cut;
 }
 
-export { SemanticSubjectTip, SubjectTipBox };
+export { SemanticSubjectTip, SubjectTipBox, TipCard, TipPlace };

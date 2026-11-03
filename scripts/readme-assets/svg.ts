@@ -35,7 +35,7 @@ interface DiagramSpec {
 	/** The authored structural or flow reading; repository roots when absent. */
 	readonly reading?: Pick<
 		z.input<typeof ArchitectureRenderRequestSchema>,
-		"module" | "flow" | "grammar" | "state" | "checkpoint"
+		"module" | "flow" | "grammar" | "state" | "checkpoint" | "focus"
 	>;
 	/** An index thumbnail cut from the picture: its file, its theme, and the region's width. */
 	readonly thumbnail?: {
@@ -136,7 +136,7 @@ async function subsetFaces(svg: string, work: string): Promise<string> {
  */
 function subjectArguments(spec: DiagramSpec): readonly string[] {
 	return Object.entries(spec.reading ?? {}).flatMap(([key, value]) =>
-		value === undefined ? [] : [`--${key}`, value],
+		[value ?? []].flat().flatMap((one) => [`--${key}`, one]),
 	);
 }
 

@@ -6,7 +6,7 @@ The package runs one private Codex app-server process, which is the process that
 
 ## Requirements
 
-- Bun 1.4.3 or newer.
+- Bun 1.4.4 or newer.
 - The `@openai/codex` package at exactly version 0.160.0. The package refuses every other version.
 - Node.js on `PATH`, because `@openai/codex` starts Codex with a Node.js script. A server that you start with `bun run <script>` needs no Node.js: `bun run` puts its own `node` on `PATH`.
 - Linux or macOS.

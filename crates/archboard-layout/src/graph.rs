@@ -121,6 +121,8 @@ pub(crate) const GROUPS: &str = "archboard.groups";
 pub(crate) const GROUP_CAPTIONS: &str = "archboard.group.captions";
 /// The option marking a child an entry point of its container.
 pub(crate) const ENTRY_POINT: &str = "archboard.entry";
+/// The option marking a card a door, which keeps its measured size in any cell.
+pub(crate) const DOOR: &str = "archboard.door";
 /// The option carrying each size a container's header can take.
 pub(crate) const HEADER_STEPS: &str = "archboard.header.steps";
 /// The option marking a line that leaves its source from the source's points.

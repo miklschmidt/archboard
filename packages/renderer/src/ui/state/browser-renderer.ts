@@ -26,6 +26,7 @@ import {
 } from "#shared/rules/render/board.ts";
 import { installRendererHost } from "#shared/rules/render/host.ts";
 import { loadBrowserCore, type BrowserCore } from "#ui/clients/core.ts";
+import { warmPainter } from "#ui/clients/painter.ts";
 import { loadDiagramIcons, loadedIconPaths } from "#ui/state/diagram-icons.ts";
 import {
 	createEnginePool,
@@ -85,6 +86,9 @@ const WARM_UP_GRAPH = JSON.stringify({
 
 /** Make this page a renderer host. Once per page: later calls keep the first. */
 function startBrowserRenderer(): void {
+	// A browser takes up to a second to compile the GPU's pipelines, so the page's painter
+	// starts as the page starts, ahead of its first picture.
+	warmPainter();
 	if (started !== undefined) return;
 	const solve = createEnginePool(startLayoutWorker, workerCeiling(navigator.hardwareConcurrency));
 	installRendererHost({

@@ -6,6 +6,7 @@
 // is scenery. Going through the atlas also means the browser never has to
 // parse the picture to know what is on it.
 
+import type { ProbeMode } from "#ui/rules/semantic-board-canvas/picture/picture-light.ts";
 import type {
 	SemanticAtlas,
 	SemanticBox,
@@ -28,13 +29,6 @@ const TRAFFIC_ATTRIBUTE = "data-traffic";
  * never part of what a box around a subject is measured from.
  */
 const PULSE_CLASS = "ab-pulse";
-
-/**
- * The class the inside of a port carries (the renderer's `PORT_CLASS`): where a
- * line's end runs into a slot cut through a card's foot, drawn where the card
- * lands, not where it is in flight.
- */
-const PORT_CLASS = "ab-port";
 
 /**
  * The attribute a mark lists its members in, space-separated: a junction mark
@@ -134,73 +128,6 @@ function markSubjects(surface: Element, attended: ReadonlySet<string>): void {
 	for (const group of surface.querySelectorAll(MARKED)) {
 		const id = markedId(group);
 		group.classList.toggle(SELECTED_CLASS, id !== null && attended.has(id));
-	}
-	raiseSelected(surface);
-}
-
-/**
- * The groups a selection draws over everything else: a card, a line, a step.
- * Never a container, a flow or a participant's lifeline,
- * each of which runs under what it holds or crosses.
- */
-const RAISED = `[data-semantic-kind='edge'],[data-semantic-kind='step'],[data-depiction='card'],[${TRAFFIC_ATTRIBUTE}]`;
-
-/**
- * The groups that draw a line on an architecture picture, a relationship's route
- * and its traffic: raised over the other lines, but under the cards, so a
- * selected line's ring and its pulses never lie on the face of a card it runs
- * into, and show only in the ports cut in it.
- */
-const LINES = `[data-semantic-kind='edge'],[${TRAFFIC_ATTRIBUTE}]`;
-
-/**
- * The first card drawn after a group, which a raised line goes under.
- * @param group The group.
- * @returns The card's group, or null when no card is drawn after it.
- */
-function nextCard(group: Element): Element | null {
-	for (let next = group.nextElementSibling; next !== null; next = next.nextElementSibling) {
-		if (next.matches("[data-depiction='card']")) return next;
-	}
-	return null;
-}
-
-/** Where each raised group stood before it was raised, to go back to when it is let go. */
-const raisedFrom = new WeakMap<Element, Comment>();
-
-/**
- * Draw every selected card, line and step over the rest of the picture, and
- * put each one no longer selected back where the picture drew it. A picture
- * draws its parts in layers, so a selected line ran under the lines and
- * labels drawn after it; raised, it is drawn last among its siblings, in
- * the order the picture drew the selected ones.
- * @param surface The element the picture was put into.
- */
-function raiseSelected(surface: Element): void {
-	for (const group of surface.querySelectorAll(MARKED)) {
-		raise(group, group.classList.contains(SELECTED_CLASS) && group.matches(RAISED));
-	}
-}
-
-/**
- * Draw one group last among its siblings, leaving a mark where it stood, or
- * put it back on its mark.
- * @param group The group.
- * @param raised Whether it is drawn last.
- */
-function raise(group: Element, raised: boolean): void {
-	const slot = raisedFrom.get(group);
-	if (raised === (slot !== undefined)) return;
-	if (slot === undefined) {
-		const mark = group.ownerDocument.createComment("");
-		group.before(mark);
-		raisedFrom.set(group, mark);
-		const card = group.matches(LINES) ? nextCard(group) : null;
-		if (card === null) group.parentNode?.append(group);
-		else card.before(group);
-	} else {
-		slot.replaceWith(group);
-		raisedFrom.delete(group);
 	}
 }
 
@@ -307,9 +234,6 @@ const PROBING_CLASS = "is-probing";
 /** The class it adds when the pointer rests on a part, which lights more lightly than a pick. */
 const PROBING_LIGHT_CLASS = "is-probing-light";
 
-/** How strongly the picture answers a poke: to the part picked out, or to one the pointer rests on. */
-type ProbeMode = "pick" | "hover";
-
 /**
  * The classes the surface itself carries for the picture's stylesheet: that a
  * presented step veils the picture, that it is seen from far away, where each
@@ -339,65 +263,13 @@ function surfaceMarks({
 	return `${veiled ? ` ${VEILED_CLASS}` : ""}${far ? ` ${FAR_VIEW_CLASS}` : ""}${lighting}`;
 }
 
-/** Every class the viewer puts on a subject's group; none of them is the renderer's. */
-const VIEWER_MARKS: readonly string[] = [SELECTED_CLASS, LIT_CLASS, ...REACH_CLASSES];
-
-/**
- * The viewer's marks on a surface, by subject.
- * @param surface The surface.
- * @returns Each marked subject's marks.
- */
-function marksOn(surface: Element): Map<string, string[]> {
-	const marked = new Map<string, string[]>();
-	for (const group of surface.querySelectorAll(MARKED)) {
-		const marks = VIEWER_MARKS.filter((mark) => group.classList.contains(mark));
-		const id = markedId(group);
-		if (id !== null && marks.length > 0) {
-			marked.set(id, marks);
-		}
-	}
-	return marked;
-}
-
-/**
- * Put a picture back on a surface without it ever being seen unmarked.
- *
- * The marks the viewer draws — attention and a presented step's veil —
- * are put on the markup after it is staged, and a flight that lands stages the
- * picture again from its string. Between the two a frame could be painted with
- * none of them, and whatever they light or veil would be seen to switch off and
- * fade back. So the marks the surface carries now are copied onto the fresh
- * markup, subject by subject, as it goes up; the marks' own effects bring them
- * up to date afterwards as they always do.
- * @param surface The surface.
- * @param stage Put the picture up.
- */
-function keepingMarks(surface: Element, stage: () => void): void {
-	const marked = marksOn(surface);
-	stage();
-	for (const group of surface.querySelectorAll(MARKED)) {
-		const marks = marked.get(markedId(group) ?? "");
-		if (marks !== undefined) {
-			group.classList.add(...marks);
-		}
-	}
-	raiseSelected(surface);
-}
-
 export {
-	LIT_CLASS,
-	PORT_CLASS,
 	PULSE_CLASS,
-	SELECTED_CLASS,
 	SUBJECT_ATTRIBUTE,
-	TRAFFIC_ATTRIBUTE,
 	controlAt,
-	isSubject,
-	keepingMarks,
 	markReach,
 	markSubjects,
 	markVeil,
-	raise,
 	subjectAt,
 	subjectBox,
 	surfaceMarks,

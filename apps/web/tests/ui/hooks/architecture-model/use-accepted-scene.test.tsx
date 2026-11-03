@@ -37,6 +37,10 @@ let renderer = neverDrawn;
 // Each drawing here arrives when the test says so.
 await mock.module("@archboard/renderer/browser", () => ({
 	/**
+	 * Nothing paints here.
+	 * @returns Nothing.
+	 */
+	/**
 	 * A renderer that does what the test asks.
 	 * @returns A drawing step.
 	 */

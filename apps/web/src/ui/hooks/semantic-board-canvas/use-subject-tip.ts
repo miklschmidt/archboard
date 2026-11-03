@@ -4,7 +4,11 @@
 // once to the next part while one is open. It belongs to the picture and the
 // camera it opened under: a pan, a zoom or a new picture puts the part
 // somewhere else, so the tip closes rather than pointing at where it was.
+//
+// A tip opens against its part, and `useTipPlace` finds it the spot that leaves
+// what the part lights in view.
 
+import { pickedTarget } from "#ui/clients/semantic-board-canvas/picture/picture-pick.ts";
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
 import { EXPLORING_MS } from "@archboard/timing";
@@ -12,6 +16,7 @@ import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import {
 	tipTargetAt,
+	type TipPoint,
 	type TipTarget,
 } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
 
@@ -22,16 +27,22 @@ interface TipScene {
 	readonly camera: Pick<BoardCamera, "subscribe">;
 }
 
-/** An open tip, and the picture it opened on. */
+/** An open tip, the picture it opened on, and where the pointer rested. */
 interface OpenTip {
 	readonly drawing: object;
 	readonly target: TipTarget;
+	readonly at: TipPoint;
 }
+
+/** Where a tip that is not open has its pointer. */
+const NOWHERE: TipPoint = { x: 0, y: 0 };
 
 /** The open tip, and what moves it. */
 interface SubjectTipControls {
 	/** The part whose tip is open, or null. */
 	readonly shown: TipTarget | null;
+	/** Where the pointer rested when the open tip opened. */
+	readonly at: TipPoint;
 	/**
 	 * The pointer moved over the picture while no gesture is under way.
 	 * @param event The move.
@@ -59,8 +70,9 @@ function samePart(a: TipTarget, b: TipTarget): boolean {
 function useSubjectTip(scene: TipScene): SubjectTipControls {
 	const [open, setOpen] = useState<OpenTip | null>(null);
 	const waiting = useRef<{ readonly target: TipTarget; readonly timer: number } | null>(null);
+	const pointer = useRef(NOWHERE);
 	const shown =
-		open !== null && open.drawing === scene.drawing && open.target.anchor.isConnected
+		open !== null && open.drawing === scene.drawing && open.target.drawn.isConnected
 			? open.target
 			: null;
 
@@ -84,16 +96,17 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 
 	const onHover = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
-			const target = tipTargetAt(event.target, event.clientY);
+			const target = tipTargetAt(pickedTarget(event), event.clientY);
 			if (target === null) {
 				dismiss();
 				return;
 			}
+			pointer.current = { x: event.clientX, y: event.clientY };
 			if (shown !== null) {
 				// One tip is open: the next opens at once, and the same one stays.
 				forget();
 				if (!samePart(shown, target)) {
-					setOpen({ target, drawing });
+					setOpen({ target, drawing, at: pointer.current });
 				}
 				return;
 			}
@@ -105,14 +118,14 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 				target,
 				timer: frameClock().after(EXPLORING_MS.subjectTip, () => {
 					waiting.current = null;
-					setOpen({ target, drawing });
+					setOpen({ target, drawing, at: pointer.current });
 				}),
 			};
 		},
 		[shown, drawing, dismiss, forget],
 	);
 
-	return { shown, onHover, dismiss };
+	return { shown, at: open?.at ?? NOWHERE, onHover, dismiss };
 }
 
 export { useSubjectTip };

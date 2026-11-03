@@ -31,23 +31,41 @@ const PICTURE_MS = durations({
 	 * reads as a jump with a smear on it; longer than about three quarters and the
 	 * board feels like it is waiting for the animation rather than the reader.
 	 * Everything below is a fraction of this one number, so the whole choreography
-	 * shortens or lengthens together.
+	 * shortens or lengthens together. Sparks that redraw lines run on past it, up to
+	 * `drawEnd` of it, once the rest of the move has landed.
 	 */
 	transition: 640,
+	/**
+	 * How long the shutter samples a sideways passage, in milliseconds.
+	 * A longer sample smears words too far to read during travel.
+	 */
+	shutter: 8,
+	/**
+	 * How long the picture on the stage takes to step back once the next one is on
+	 * its way. A large board takes a moment to lay out, and this answers the click
+	 * at once. A flight then goes on from where this stands.
+	 */
+	awaitIn: 160,
+	/** How long a picture takes to step forward again, as a flight starts or the wait ends. */
+	awaitOut: 300,
 	/**
 	 * How long a pane takes to bring in a picture it has nothing to carry from:
 	 * the first picture of a page, another board, another view of this one.
 	 *
-	 * The picture is built up the way it is read: frames, then cards in reading
-	 * order, then the lines between cards already there, so the eye lands on the
-	 * structure before the detail. Pulls against the wait itself: somebody who asked
-	 * for a board wants to read it, so the whole entrance is barely longer than a
-	 * transition, and a card is readable well before the last line is drawn.
+	 * A first picture or another view blooms out of its middle: frames, then cards
+	 * in a wave, then the lines between them drawn on with light at their heads, and
+	 * each label as its line reaches it. A card the last picture also drew flies from
+	 * where it stood. Another board comes in on a passage over the same time, which
+	 * takes the reader sideways, in or out along the module tree.
+	 * Pulls against the wait itself: somebody who asked for a board wants to read
+	 * it, so the cards land in this time and a card is readable well before the
+	 * last line is drawn. The sparks that draw the lines run on up to `drawEnd` of it.
 	 */
 	entry: 760,
 	/**
 	 * How long the picture a pane is leaving takes to go, when it goes to another
-	 * board or view rather than turning into the next picture.
+	 * board or view rather than turning into the next picture. On a passage, this
+	 * is the time of the first step that answers the click.
 	 *
 	 * Short on purpose: it is only there so the old picture is not snatched away,
 	 * and it runs underneath the next picture's entrance.
@@ -70,6 +88,32 @@ const PICTURE_MS = durations({
 	 * every later open waiting, and no error says so.
 	 */
 	storeWait: 400,
+	/**
+	 * The longest step the painter's clock takes in one frame.
+	 *
+	 * A busy GPU or a long task holds a frame back, and a flight that runs on through the stall
+	 * reaches the reader finished. Past this, the stage's time waits for the frames that show it.
+	 * Pulls against a slow painter: a machine whose frames all take longer sees every motion
+	 * stretched, so this stays above the 33 ms of a recording's slowest frame.
+	 */
+	longestStep: 50,
+	/**
+	 * How long a first picture's ink waits for its painter before the SVG shows.
+	 *
+	 * A painter that arrives in time brings the picture in, and otherwise the page has no entrance
+	 * at all. Pulls against a blank board: a painter usually starts within 150 ms of its picture,
+	 * but a browser can take a second to give a GPU, or never give one, and a reader must see
+	 * a correct board.
+	 */
+	painterGrace: 400,
+	/**
+	 * How soon after one GPU failure a second one leaves the board on the CPU painter.
+	 *
+	 * A stopped device can come back: a GPU process that restarted gives a new one, so the stage
+	 * starts a GPU painter again without a reload. Pulls against a failure that repeats, which
+	 * must not rebuild the painter over and over.
+	 */
+	gpuRetry: 30_000,
 });
 
 /**
@@ -109,27 +153,58 @@ const PICTURE_TRANSITION_PHASES = Object.freeze({
 	 * the last layer of the picture, once the lines they name are in place.
 	 */
 	labelsStart: 0.66,
+	/**
+	 * The parts inside a door that opens show between these two, riding inside the
+	 * door as it grows, so that no frame travels empty.
+	 */
+	insideStart: 0.08,
+	insideEnd: 0.46,
+	/**
+	 * A line whose route changes shape does not swing across the board: a board of
+	 * lines swinging at once is a tangle. It fades out with what leaves, and a spark
+	 * redraws it from here, once the cards are nearly in place.
+	 */
+	drawStart: 0.42,
+	/**
+	 * The last spark lands by here. This is past 1, because the lines go on after the
+	 * rest of the move has landed. Pulls against a reader who waits for the last line:
+	 * shorter than about a second and a half and a board of lines reads as a flicker;
+	 * the cards are in place long before it, so a longer run costs little, but past
+	 * about two seconds it stops being a gesture.
+	 */
+	drawEnd: 3.0,
 });
 
 /** When, as fractions of `PICTURE_MS.entry`, each part of a picture arrives. */
 const PICTURE_ENTRY_PHASES = Object.freeze({
-	/** Frames fade in over the first part. */
-	framesEnd: 0.35,
-	/** The first card in reading order begins here, and the last begins by `cardsStartBy`. */
-	cardsStart: 0.04,
-	cardsStartBy: 0.4,
-	/** How long each card takes to arrive. */
-	cardSpan: 0.42,
-	/** The first line begins drawing here, and the last by `linesStartBy`. */
-	linesStart: 0.34,
-	linesStartBy: 0.62,
-	/** How long each line takes to draw on. */
-	lineSpan: 0.38,
+	/** The page's furniture fades in over the first part. */
+	framesEnd: 0.3,
 	/**
-	 * Every connection label only the new picture has arrives from here to the
-	 * end, all together. Timed by its own line, labels came in scattered batches
-	 * of every size and each one in a blink; together at the end they arrive as
-	 * the last layer of the picture, once the lines they name are in place.
+	 * How long the front that opens the containers takes to leave the middle and pass the last
+	 * of them. Pulls against the wave of cards, which must land on a floor: the front runs ahead
+	 * of `cardsStartBy`. Much shorter than this and a well as large as the board reads as a pop.
+	 */
+	regionSpan: 0.6,
+	/** The card nearest the middle begins here, and the farthest begins by `cardsStartBy`. */
+	cardsStart: 0.06,
+	cardsStartBy: 0.36,
+	/** How long each card takes to arrive. */
+	cardSpan: 0.48,
+	/** Sparks start to run along the lines here, from the cards that nothing feeds. */
+	linesStart: 0.32,
+	/**
+	 * The last spark lands by here. This is past 1, because the lines go on after the
+	 * rest of the entrance has landed. A board of a hundred lines drawn in less than a
+	 * second is a flash, and sparks that run for much over two seconds hold up a reader
+	 * who is already reading the cards.
+	 */
+	drawEnd: 2.8,
+	/** How long a line's pulses take to come in once the line is drawn. */
+	pulseSpan: 0.12,
+	/**
+	 * What stands on the lines and belongs to none of them, the marks where routes
+	 * join, arrives from here to the end. A label that names a line arrives as the
+	 * spark reaches it.
 	 */
 	labelsStart: 0.66,
 });
@@ -179,8 +254,8 @@ const PRESENTATION_MS = durations({
  * and the start of the responsibility), and back. The chip moves and grows into
  * the tile and the words move between their places while they fade (TASK-428).
  * Both views fade over the whole of it, one in as the other goes out, so the
- * words never fade out together. The swap happens once the camera has come to
- * rest (TASK-405).
+ * words never fade out together. On a painted board the swap starts the moment the
+ * camera crosses the line, so it runs with a zoom or a flight (TASK-562).
  *
  * Pulls against the eye that follows the chip. Shorter than about 200 ms the
  * chip jumps rather than travels, and the change of the words reads as a cut.

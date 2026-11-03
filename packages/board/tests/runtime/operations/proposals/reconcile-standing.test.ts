@@ -71,6 +71,31 @@ test("independent arrivals keep stable identities and avoid automatically assign
 	expect(reading.selectedState).not.toHaveProperty("standing");
 });
 
+test("a removal from current reaches a draft that retired an identity of its own", async () => {
+	const { vault } = fixture();
+	await editArchitectureModule(vault, {
+		...(await request(vault)),
+		changes: [
+			{ type: "add-module", module: { name: "Spare", kind: "service", order: 40 } },
+			{ type: "add-module", module: { name: "Old", kind: "service", order: 41 } },
+		],
+	});
+	const added = readArchitectureModel(vault);
+	if (!added.success) throw new Error(JSON.stringify(added));
+	const idOf = (name: string) => added.modules.find((module) => module.name === name)!.id;
+	const draft = await proposal(vault, "Without the spare", "Current", [
+		{ type: "remove-module", subject: idOf("Spare") },
+	]);
+	const removed = await editArchitectureModule(vault, {
+		...(await request(vault)),
+		changes: [{ type: "remove-module", subject: idOf("Old") }],
+	});
+	expect(removed).toMatchObject({ success: true, reconciliation: false });
+	const reading = await selected(vault, draft.target.state!);
+	expect(reading.modules.map((module) => module.name)).not.toContain("Old");
+	expect(reading.manifest.retiredIds).toContain(idOf("Spare"));
+});
+
 test("a draft created from an unsettled proposal starts blocked rather than appearing settled", async () => {
 	const { vault } = fixture();
 	const parent = await proposal(vault, "Queued", "Current", [

@@ -1,11 +1,13 @@
 //! A frame is a well cut into whatever holds it, and its tab is a raised piece
-//! that stands on the well's edge. The well shows its depth as a slab does: walls
-//! inside its box, a shaded top wall, a floor a step below and a lit lip at its
-//! foot. Each band thins round a corner into the next, as an inset box shadow
-//! does. The top edge and inner shadow cross the whole width, under the tab too,
-//! so the edge parts the tab from the well. One closed path goes round the tab and
-//! the well, with one radius at every corner, and the tab's left side is the
-//! well's. A tray casts no shadow.
+//! that stands on the well's edge. The picture looks at a well from below its foot,
+//! so it shows one wall: the top wall, which is the rim less itself moved down, and
+//! so thins to nothing round both top corners. A side wall stands edge on, and what
+//! shows of it is the soft shadow its rim leaves on the floor. The floor stands a
+//! step below, with a lit lip at its foot. The top edge and inner shadow cross the
+//! whole width, under the tab too, so the edge parts the tab from the well. The rim
+//! turns down at both top corners, and at the left the tab fills the corner above
+//! it. One closed path goes round the tab and the well, with one radius at every
+//! corner, and the tab's left side is the well's. A tray casts no shadow.
 
 use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::build::{Items, lines, point, shape};
@@ -13,12 +15,13 @@ use crate::paint::design::{BAND_RADIUS, TRAY_LIP, TRAY_WALL};
 use crate::paint::flowchart_shapes::ring;
 use crate::paint::palette::Palette;
 use crate::paint::polygon::Polygon;
-use crate::paint::slab::{plate, slab_seat, solid_ghost};
+use crate::paint::shadow::{falling, shadow_ink};
+use crate::paint::slab::{Rim, plate, rim_band, slab_seat, solid_ghost};
 use crate::paint::standing::{OUTLINE_WIDTH, ink_of, outline_dash};
 use crate::request::Standing;
 use crate::scene::{
     Colour, Definition, Gradient, GradientForm, GradientId, Paint, PathStep, Pointer, Purpose,
-    Shape, Stop, Stroke,
+    Shape, Stroke,
 };
 
 /// How a tray looks: its floor, its tab and the line round it.
@@ -26,7 +29,6 @@ use crate::scene::{
 pub(super) struct TrayLook {
     pub floor: Colour,
     pub top_wall: Colour,
-    pub side_wall: Colour,
     pub tab: Colour,
     pub line: Colour,
 }
@@ -34,9 +36,16 @@ pub(super) struct TrayLook {
 /// How heavy the line round a tray is.
 const LINE_WIDTH: f64 = 1.0;
 /// How far the inner shadow reaches down the floor from the top wall.
-const SHADE_REACH: f64 = BAND_RADIUS;
-/// The corners of a well's floor, which keep the walls even round the top.
-const FLOOR_RADIUS: f64 = BAND_RADIUS - TRAY_WALL;
+const TOP_SHADE: f64 = 14.0;
+/// How far the shadow of a side reaches across the floor.
+const SIDE_SHADE: f64 = 12.0;
+/// How strong the shadow of a side is, against the top wall's.
+const SIDE_STRENGTH: f64 = 0.7;
+
+/// How wide a band of shadow is painted: its reach, and the far corners it rounds past that.
+const fn band_of(reach: f64) -> f64 {
+    reach + BAND_RADIUS
+}
 
 /// What a frame draws: its box, and the box of the tab at its top left.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -96,8 +105,8 @@ impl Well {
         self.frame.y + self.frame.height - TRAY_LIP
     }
 
-    /// The side walls' box, below the top wall, whose band thins round its corners.
-    fn sides(&self) -> Rect {
+    /// The floor's box: the well's whole width, below the top wall and above the lip.
+    fn floor(&self) -> Rect {
         let top = self.edge() + TRAY_WALL;
         Rect {
             y: top,
@@ -106,15 +115,31 @@ impl Well {
         }
     }
 
-    /// The floor's box: inside the walls and the lip.
-    fn floor(&self) -> Rect {
-        let top = self.edge() + TRAY_WALL;
-        Rect {
-            x: self.frame.x + TRAY_WALL,
-            y: top,
-            width: self.frame.width - 2.0 * TRAY_WALL,
-            height: self.wall_foot() - top,
-        }
+    /// The bands of shadow on the floor, each rounded as the floor is. Where two
+    /// overlap, they darken the corner as an inset shadow does.
+    fn shades(&self) -> [(Rect, GradientId); 3] {
+        let floor = self.floor();
+        let side = Rect {
+            width: band_of(SIDE_SHADE),
+            ..floor
+        };
+        [
+            (
+                Rect {
+                    height: band_of(TOP_SHADE),
+                    ..floor
+                },
+                GradientId::WellShade,
+            ),
+            (side, GradientId::WellLeftShade),
+            (
+                Rect {
+                    x: self.right() - side.width,
+                    ..side
+                },
+                GradientId::WellRightShade,
+            ),
+        ]
     }
 
     /// Up a left side, round the top of the tab, and out along the concave foot.
@@ -168,11 +193,24 @@ impl Well {
         steps
     }
 
-    /// The well alone, its top edge straight across and its left corner square.
+    /// The rim's start: down the left side, under the tab's corner.
+    fn rim_start(&self) -> Point {
+        point(self.frame.x, self.edge() + BAND_RADIUS)
+    }
+
+    /// The rim's left corner, from its start to the well's top edge.
+    fn rim_corner(&self) -> PathStep {
+        corner(point(self.frame.x + BAND_RADIUS, self.edge()), true)
+    }
+
+    /// The well alone, its top edge straight across between two rounded corners.
     fn well(&self, foot: f64) -> Vec<PathStep> {
-        let mut steps = vec![PathStep::Move {
-            to: point(self.frame.x, self.edge()),
-        }];
+        let mut steps = vec![
+            PathStep::Move {
+                to: self.rim_start(),
+            },
+            self.rim_corner(),
+        ];
         steps.extend(self.round_well(foot));
         steps
     }
@@ -180,64 +218,29 @@ impl Well {
     /// The one line round the tab and the well, with the well's edge under the tab.
     fn line(&self) -> Vec<PathStep> {
         let mut steps = self.silhouette(self.frame.y + self.frame.height);
-        steps.push(PathStep::Move {
-            to: point(self.frame.x, self.edge()),
-        });
-        steps.push(PathStep::Across {
-            x: round_coord(self.foot_end()),
-        });
-        steps
-    }
-
-    /// The tab's face, down to the well's edge.
-    fn face(&self) -> Vec<PathStep> {
-        let mut steps = self.over_tab(self.edge());
-        steps.push(PathStep::Close);
-        steps
-    }
-
-    /// The floor's path. A side wall has no wall below it to turn into, so the foot
-    /// of the floor curves as far up as the box does, and the wall thins to nothing.
-    fn floor_path(&self) -> Vec<PathStep> {
-        let floor = self.floor();
-        let (left, right) = (floor.x, floor.x + floor.width);
-        let (top, foot) = (floor.y, floor.y + floor.height);
-        let arc = |radius: Point, to: Point| PathStep::Arc {
-            radius,
-            clockwise: true,
-            to,
-        };
-        let (upper, lower) = (
-            point(FLOOR_RADIUS, FLOOR_RADIUS),
-            point(FLOOR_RADIUS, BAND_RADIUS),
-        );
-        vec![
+        steps.extend([
             PathStep::Move {
-                to: point(left, top + FLOOR_RADIUS),
+                to: self.rim_start(),
             },
-            arc(upper, point(left + FLOOR_RADIUS, top)),
+            self.rim_corner(),
             PathStep::Across {
-                x: round_coord(right - FLOOR_RADIUS),
+                x: round_coord(self.foot_end()),
             },
-            arc(upper, point(right, top + FLOOR_RADIUS)),
-            PathStep::Down {
-                y: round_coord(foot - BAND_RADIUS),
-            },
-            arc(lower, point(right - FLOOR_RADIUS, foot)),
-            PathStep::Across {
-                x: round_coord(left + FLOOR_RADIUS),
-            },
-            arc(lower, point(left, foot - BAND_RADIUS)),
-            PathStep::Close,
-        ]
+        ]);
+        steps
     }
 
-    /// The band of the inner shadow the top wall throws down the floor.
-    fn shade(&self) -> Rect {
-        Rect {
-            height: SHADE_REACH,
-            ..self.floor()
-        }
+    /// The tab's face, down to the well's edge and round the rim's corner.
+    fn face(&self) -> Vec<PathStep> {
+        let mut steps = self.over_tab(self.rim_start().y);
+        steps.extend([
+            PathStep::Across {
+                x: round_coord(self.frame.x + BAND_RADIUS),
+            },
+            corner(self.rim_start(), false),
+            PathStep::Close,
+        ]);
+        steps
     }
 }
 
@@ -255,8 +258,8 @@ fn solid(steps: Vec<PathStep>) -> Shape {
     Shape::path(Purpose::Solid, steps).pointer(Pointer::None)
 }
 
-/// What a frame draws under its tab: the lip, the walls, the floor and the inner
-/// shadow. A removed frame draws nothing here.
+/// What a frame draws under its tab: the lip, the floor, the inner shadow and the
+/// top wall. A removed frame draws nothing here.
 pub(super) fn well_body(
     well: &Well,
     look: &TrayLook,
@@ -267,15 +270,22 @@ pub(super) fn well_body(
         return Items::new();
     }
     let foot = well.frame.y + well.frame.height;
-    lines(vec![
+    let mut items = vec![
         shape(solid(well.well(foot)).filled(&palette.tray_lip)),
-        shape(solid(well.well(well.wall_foot())).filled(&look.top_wall)),
-        shape(plate(well.sides(), BAND_RADIUS).filled(&look.side_wall)),
-        shape(solid(well.floor_path()).filled(&look.floor)),
-        shape(plate(well.shade(), FLOOR_RADIUS).filled(Paint::Gradient {
-            id: GradientId::WellShade,
-        })),
-    ])
+        shape(solid(well.well(well.wall_foot())).filled(&look.floor)),
+    ];
+    items.extend(
+        well.shades()
+            .map(|(band, id)| shape(plate(band, BAND_RADIUS).filled(Paint::Gradient { id }))),
+    );
+    items.push(rim_band(
+        well.body(),
+        BAND_RADIUS,
+        TRAY_WALL,
+        Rim::Top,
+        &look.top_wall,
+    ));
+    lines(items)
 }
 
 /// A tab's face on the well's edge, and the one line round the tab and the well.
@@ -322,31 +332,51 @@ pub(super) fn tab_view(
     ])
 }
 
-/// The floor's box, where a viewer lays a sequence's moving head.
+/// The floor's box clear of the side shadows, where a viewer lays a sequence's
+/// moving head.
 pub(super) fn floor_of(rect: Rect) -> Rect {
     Rect {
-        x: rect.x + TRAY_WALL,
+        x: rect.x + SIDE_SHADE,
         y: rect.y + TRAY_WALL,
-        width: rect.width - 2.0 * TRAY_WALL,
+        width: rect.width - 2.0 * SIDE_SHADE,
         height: rect.height - TRAY_WALL - TRAY_LIP,
     }
 }
 
-/// The inner shadow of a well: dark at its top edge, fading down it.
-pub(super) fn well_shade(palette: &Palette) -> Definition {
-    let stop = |offset: f64, opacity: Option<f64>| Stop {
-        offset: Some(offset),
-        colour: palette.slab_shadow.clone(),
-        opacity,
+/// The inner shadow of a well: what falls from its top wall, and what each side
+/// leaves on the floor, which is weaker because the light falls straight down.
+pub(super) fn well_shades(palette: &Palette) -> Vec<Definition> {
+    let at = |x: f64, y: f64| Point { x, y };
+    let band = |id: GradientId, line: (Point, Point), reach: f64, strength: f64| {
+        Definition::Gradient(Gradient {
+            id,
+            form: GradientForm::Linear {
+                line: Some(line),
+                user_space: false,
+            },
+            stops: falling(&shadow_ink(palette, strength), reach / band_of(reach)),
+        })
     };
-    Definition::Gradient(Gradient {
-        id: GradientId::WellShade,
-        form: GradientForm::Linear {
-            line: Some((Point { x: 0.0, y: 0.0 }, Point { x: 0.0, y: 1.0 })),
-            user_space: false,
-        },
-        stops: vec![stop(0.0, None), stop(1.0, Some(0.0))],
-    })
+    vec![
+        band(
+            GradientId::WellShade,
+            (at(0.0, 0.0), at(0.0, 1.0)),
+            TOP_SHADE,
+            1.0,
+        ),
+        band(
+            GradientId::WellLeftShade,
+            (at(0.0, 0.0), at(1.0, 0.0)),
+            SIDE_SHADE,
+            SIDE_STRENGTH,
+        ),
+        band(
+            GradientId::WellRightShade,
+            (at(1.0, 0.0), at(0.0, 0.0)),
+            SIDE_SHADE,
+            SIDE_STRENGTH,
+        ),
+    ]
 }
 
 #[cfg(test)]
@@ -377,18 +407,79 @@ mod tests {
         };
         let well = Well { frame, tab };
         let line = well.line();
-        let [round, edge] = starts(&line)[..] else {
+        let [round, rim] = starts(&line)[..] else {
             panic!("one path round the tab and the well, and the edge under the tab");
         };
         assert_eq!(round.x, frame.x);
-        assert_eq!(edge, point(frame.x, frame.y + tab.height));
+        assert_eq!(rim, point(frame.x, frame.y + tab.height + BAND_RADIUS));
         assert_eq!(
             line.last(),
             Some(&PathStep::Across {
                 x: frame.x + tab.width + BAND_RADIUS
             })
         );
-        // The floor stands inside the well's walls, and its shadow stays on the floor.
-        assert_eq!(well.shade().y, edge.y + TRAY_WALL);
+    }
+
+    #[test]
+    fn the_floor_reaches_both_sides_where_only_a_shadow_marks_the_wall() {
+        let frame = Rect {
+            x: 40.0,
+            y: 20.0,
+            width: 500.0,
+            height: 300.0,
+        };
+        let tab = Rect {
+            height: 36.0,
+            width: 200.0,
+            ..frame
+        };
+        let well = Well { frame, tab };
+        let floor = well.floor();
+        assert_eq!((floor.x, floor.width), (frame.x, frame.width));
+        // Each band of shadow stands on the floor, against its own edge.
+        let [top, left, right] = well.shades().map(|(band, _)| band);
+        assert_eq!((top.x, top.y, top.width), (floor.x, floor.y, floor.width));
+        assert_eq!(
+            (left.x, left.y, left.height),
+            (floor.x, floor.y, floor.height)
+        );
+        assert_eq!(right.x + right.width, floor.x + floor.width);
+    }
+
+    #[test]
+    fn the_rim_rounds_at_both_top_corners_and_the_tab_fills_the_left_one() {
+        let frame = Rect {
+            x: 40.0,
+            y: 20.0,
+            width: 500.0,
+            height: 300.0,
+        };
+        let tab = Rect {
+            height: 36.0,
+            width: 200.0,
+            ..frame
+        };
+        let well = Well { frame, tab };
+        let edge = frame.y + tab.height;
+        let left = corner(point(frame.x + BAND_RADIUS, edge), true);
+        let right = corner(point(frame.x + frame.width, edge + BAND_RADIUS), true);
+        let rim = well.well(frame.y + frame.height);
+        assert_eq!(
+            rim[0],
+            PathStep::Move {
+                to: well.rim_start()
+            }
+        );
+        assert_eq!(rim[1], left);
+        assert!(rim.contains(&right));
+        // The tab's foot meets the rim's corner and turns back along it, so no gap stands there.
+        let face = well.face();
+        assert_eq!(
+            face[0],
+            PathStep::Move {
+                to: well.rim_start()
+            }
+        );
+        assert_eq!(face[face.len() - 2], corner(well.rim_start(), false));
     }
 }

@@ -1,0 +1,1295 @@
+{
+	"id": "architecture:root",
+	"layoutOptions": { "archboard.blocks.nesting": "blocks" },
+	"children": [
+		{
+			"id": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+			"width": 199.22,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "0",
+				"archboard.door": "true",
+				"archboard.order-group": "11003"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+			"width": 269.76,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "1",
+				"archboard.door": "true",
+				"archboard.order-group": "11004"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+			"width": 183.51999999999998,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "2",
+				"archboard.door": "true",
+				"archboard.order-group": "11005"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+			"width": 340,
+			"height": 112.602,
+			"layoutOptions": {
+				"archboard.order": "3",
+				"archboard.order-group": "[\"datastore\",\"Stores canonical modules, relationships, flows, proposals, and walkthroughs\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+			"width": 340,
+			"height": 95.602,
+			"layoutOptions": {
+				"archboard.order": "4",
+				"archboard.groups": "packages",
+				"archboard.order-group": "[\"package\",\"Logs a line and shows a thrown value as text\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#Biz0M6Ld",
+			"width": 179.28,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "5",
+				"archboard.groups": "packages",
+				"archboard.door": "true",
+				"archboard.order-group": "26000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#tdKalihR",
+			"width": 208.28,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "6",
+				"archboard.groups": "packages",
+				"archboard.door": "true",
+				"archboard.order-group": "27000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
+			"width": 232.06,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "8",
+				"archboard.groups": "code packages",
+				"archboard.door": "true",
+				"archboard.order-group": "28000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+			"width": 202.04000000000002,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "9",
+				"archboard.groups": "code packages",
+				"archboard.door": "true",
+				"archboard.order-group": "31000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#7hdbqGFn",
+			"width": 227.78,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "10",
+				"archboard.groups": "code packages",
+				"archboard.door": "true",
+				"archboard.order-group": "34000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+			"width": 210.9,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "11",
+				"archboard.groups": "agent packages",
+				"archboard.door": "true",
+				"archboard.order-group": "36000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#LDqRcaY1",
+			"width": 149.76,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "7",
+				"archboard.groups": "packages",
+				"archboard.door": "true",
+				"archboard.order-group": "37000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#EekL5c17",
+			"width": 348.18,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "16",
+				"archboard.door": "true",
+				"archboard.order-group": "48000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#1VHRyajb",
+			"width": 570.02,
+			"height": 36,
+			"layoutOptions": {
+				"archboard.order": "19",
+				"archboard.order-group": "[\"module\",\"Reads and edits one canonical model with durable history and explicit sharing\"]",
+				"archboard.header.size": "36"
+			},
+			"children": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "12",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"function\",\"Reads current, draft, and retained architecture before resolving explicit references and bound source\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/0T9enjhi#ZLJy8ivl",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "13",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Defines canonical meaning, state comparisons, exact revisions, model references, and immutable foreign pins\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "14",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Retains, reopens and shares exact architecture with audited logical corrections\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "15",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Retains exact architecture and reads its immutable records\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "17",
+						"archboard.groups": "writes",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Applies current, proposal, reconciliation and settlement intents through one claimed signed family installation and exact retry.\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "20",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Materializes compact proposals, reconciles families, and prepares explicit adoption or shelving through the same durable writer.\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/0T9enjhi#CLdaoYy3",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "18",
+						"archboard.groups": "writes",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Resumes exact logged images and completes retention before announcing a write\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/yejBBUFY#IgYndyJd",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "22",
+						"archboard.entry": "true",
+						"archboard.order-group": "[\"module\",\"Projects canonical module scopes into shared renderer content\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk#DKzh4lMo",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "23",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Derives a module's interface from the relationships that reach it, with the counts that describe it\"]"
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#ffFYC0XR",
+			"width": 340,
+			"height": 88,
+			"layoutOptions": {
+				"archboard.order": "21",
+				"archboard.order-group": "[\"external\",\"Retains explicitly published history under a named archive ref\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#Jx4O72DO",
+			"width": 340,
+			"height": 129.602,
+			"layoutOptions": {
+				"archboard.order": "24",
+				"archboard.order-group": "[\"module\",\"Merges stable subjects and complete step placements through shared three-way semantic rules\"]"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "vKEsyHFk/6E6hL0Zk#oYfZ2qnC",
+			"sources": ["vKEsyHFk/vKEsyHFk#7hdbqGFn"],
+			"targets": ["vKEsyHFk/0T9enjhi#cNaEpWjJ"],
+			"layoutOptions": {
+				"archboard.order": "11000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/6E6hL0Zk#oYfZ2qnC:label",
+					"text": "to Read entry",
+					"width": 85.33999633789062,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#fVxcoo6Q",
+			"sources": ["vKEsyHFk/vKEsyHFk#6HYaX0mK"],
+			"targets": ["vKEsyHFk/0T9enjhi#cNaEpWjJ"],
+			"layoutOptions": {
+				"archboard.order": "27000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#fVxcoo6Q:label",
+					"text": "to Read entry",
+					"width": 85.33999633789062,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#wSGdfYDg",
+			"sources": ["vKEsyHFk/vKEsyHFk#LDqRcaY1"],
+			"targets": ["vKEsyHFk/0T9enjhi#cNaEpWjJ"],
+			"layoutOptions": {
+				"archboard.order": "55000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#wSGdfYDg:label",
+					"text": "validate canonical evaluation inputs",
+					"width": 190.5399932861328,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#RnWLqued",
+			"sources": ["vKEsyHFk/0T9enjhi#Zeo3aQWz"],
+			"targets": ["vKEsyHFk/0T9enjhi#ZRq51Ecz"],
+			"layoutOptions": {
+				"archboard.order": "70013",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#RnWLqued:label",
+					"text": "to Archive location,\nArchive object I/O +1",
+					"width": 119.47000122070312,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#c0DxX92y",
+			"sources": ["vKEsyHFk/0T9enjhi#KJy5yYuq"],
+			"targets": ["vKEsyHFk/0T9enjhi#ZRq51Ecz"],
+			"layoutOptions": {
+				"archboard.order": "70020",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#c0DxX92y:label",
+					"text": "to Archive object I/O,\nArchive location +1",
+					"width": 122.97000122070312,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#N8bivOLt",
+			"sources": ["vKEsyHFk/0T9enjhi#EekL5c17"],
+			"targets": ["vKEsyHFk/0T9enjhi#ZRq51Ecz"],
+			"layoutOptions": {
+				"archboard.order": "70028",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#N8bivOLt:label",
+					"text": "to Archive object I/O,\nArchive location +1",
+					"width": 122.97000122070312,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#PxGHOuMG",
+			"sources": ["vKEsyHFk/0T9enjhi#Bd4GPG6d"],
+			"targets": ["vKEsyHFk/vKEsyHFk#7nWcEvFx"],
+			"layoutOptions": {
+				"archboard.order": "70050",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#PxGHOuMG:label",
+					"text": "report structured failures",
+					"width": 140.05999755859375,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#25PfRoN2",
+			"sources": ["vKEsyHFk/0T9enjhi#cNaEpWjJ"],
+			"targets": ["vKEsyHFk/vKEsyHFk#8XKRkSHl"],
+			"layoutOptions": {
+				"archboard.order": "70100",
+				"archboard.relationship.kind": "data",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "data"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#25PfRoN2:label",
+					"text": "read one coherent revision",
+					"width": 147.76000213623047,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#3sW3Kpz8",
+			"sources": ["vKEsyHFk/0T9enjhi#CLdaoYy3"],
+			"targets": ["vKEsyHFk/vKEsyHFk#8XKRkSHl"],
+			"layoutOptions": {
+				"archboard.order": "70200",
+				"archboard.relationship.kind": "data",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "data"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#3sW3Kpz8:label",
+					"text": "install each file of an operation",
+					"width": 166.49000549316406,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#dhlSXT9F",
+			"sources": ["vKEsyHFk/0T9enjhi#Bd4GPG6d"],
+			"targets": ["vKEsyHFk/vKEsyHFk#8XKRkSHl"],
+			"layoutOptions": {
+				"archboard.order": "70300",
+				"archboard.relationship.kind": "data",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "data"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#dhlSXT9F:label",
+					"text": "retain the exact inputs",
+					"width": 127.81999969482422,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#gbyUsyjt",
+			"sources": ["vKEsyHFk/0T9enjhi#Zeo3aQWz"],
+			"targets": ["vKEsyHFk/vKEsyHFk#8XKRkSHl"],
+			"layoutOptions": {
+				"archboard.order": "70400",
+				"archboard.relationship.kind": "data",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "data"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#gbyUsyjt:label",
+					"text": "read the inputs an edit starts from",
+					"width": 183.5500030517578,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/yejBBUFY#scByKwmU",
+			"sources": ["vKEsyHFk/vKEsyHFk#6nZjwK9W"],
+			"targets": ["vKEsyHFk/yejBBUFY#IgYndyJd"],
+			"layoutOptions": {
+				"archboard.order": "75000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/yejBBUFY#scByKwmU:label",
+					"text": "projectModel",
+					"width": 83,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
+			"sources": ["vKEsyHFk/0T9enjhi#EekL5c17"],
+			"targets": ["vKEsyHFk/0T9enjhi#cNaEpWjJ"],
+			"layoutOptions": {
+				"archboard.order": "76000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#1Rd0xfYJ:label",
+					"text": "with Read entry,\nNarrative playback +1",
+					"width": 122.33000183105469,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/Oi6SBIAM#6kzjcG2u",
+			"sources": ["vKEsyHFk/vKEsyHFk#sw4oFps0"],
+			"targets": ["vKEsyHFk/0T9enjhi#cNaEpWjJ"],
+			"layoutOptions": {
+				"archboard.order": "79000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/Oi6SBIAM#6kzjcG2u:label",
+					"text": "to Read entry",
+					"width": 85.33999633789062,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#41Ear2yX",
+			"sources": ["vKEsyHFk/0T9enjhi#cNaEpWjJ"],
+			"targets": ["vKEsyHFk/0T9enjhi#ZLJy8ivl"],
+			"layoutOptions": {
+				"archboard.order": "94000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": []
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#iXs0a5bj",
+			"sources": ["vKEsyHFk/vKEsyHFk#cPOdAA3f"],
+			"targets": ["vKEsyHFk/0T9enjhi#Bd4GPG6d"],
+			"layoutOptions": {
+				"archboard.order": "98000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#iXs0a5bj:label",
+					"text": "to Portable model operations,\nArchive publication +1",
+					"width": 161.41000366210938,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#1RheXFhl",
+			"sources": ["vKEsyHFk/0T9enjhi#ZRq51Ecz"],
+			"targets": ["vKEsyHFk/0T9enjhi#ZLJy8ivl"],
+			"layoutOptions": {
+				"archboard.order": "104000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#1RheXFhl:label",
+					"text": "to Canonical operation\ncontracts, Model contract",
+					"width": 143.06999969482422,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#ZWlFN4et",
+			"sources": ["vKEsyHFk/vKEsyHFk#cPOdAA3f"],
+			"targets": ["vKEsyHFk/0T9enjhi#ZLJy8ivl"],
+			"layoutOptions": {
+				"archboard.order": "108000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#ZWlFN4et:label",
+					"text": "to Canonical operation\ncontracts, Model contract",
+					"width": 143.06999969482422,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/HBlhIeSD#DDgCzWpy",
+			"sources": ["vKEsyHFk/vKEsyHFk#cPOdAA3f"],
+			"targets": ["vKEsyHFk/0T9enjhi#Zeo3aQWz"],
+			"layoutOptions": {
+				"archboard.order": "109000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/HBlhIeSD#DDgCzWpy:label",
+					"text": "to Canonical subject\nclaims, Edit entry",
+					"width": 117.61000061035156,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#PatiT3PG",
+			"sources": ["vKEsyHFk/0T9enjhi#ZLJy8ivl"],
+			"targets": ["vKEsyHFk/vKEsyHFk#w9zvoSFD"],
+			"layoutOptions": {
+				"archboard.order": "130000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#PatiT3PG:label",
+					"text": "the binding schema of a module",
+					"width": 171.77999877929688,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#dsLuZ7fl",
+			"sources": ["vKEsyHFk/0T9enjhi#cNaEpWjJ"],
+			"targets": ["vKEsyHFk/0T9enjhi#CLdaoYy3"],
+			"layoutOptions": {
+				"archboard.order": "140000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#dsLuZ7fl:label",
+					"text": "to Canonical local news,\nCanonical recovery state",
+					"width": 139.6999969482422,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#tDk3zmci",
+			"sources": ["vKEsyHFk/vKEsyHFk#cPOdAA3f"],
+			"targets": ["vKEsyHFk/0T9enjhi#cNaEpWjJ"],
+			"layoutOptions": {
+				"archboard.order": "143000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#tDk3zmci:label",
+					"text": "to Read entry, Canonical\nmodel subscription",
+					"width": 137.37000274658203,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#ROJixHYk",
+			"sources": ["vKEsyHFk/0T9enjhi#CLdaoYy3"],
+			"targets": ["vKEsyHFk/vKEsyHFk#tdKalihR"],
+			"layoutOptions": {
+				"archboard.order": "145000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#ROJixHYk:label",
+					"text": "to Atomic file replacement",
+					"width": 145.5999984741211,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#2PHWJ0zL",
+			"sources": ["vKEsyHFk/0T9enjhi#CLdaoYy3"],
+			"targets": ["vKEsyHFk/0T9enjhi#ZRq51Ecz"],
+			"layoutOptions": {
+				"archboard.order": "154000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#2PHWJ0zL:label",
+					"text": "to Archive location, Archive objects",
+					"width": 189.05999755859375,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#aI4dCY36",
+			"sources": ["vKEsyHFk/0T9enjhi#Zeo3aQWz"],
+			"targets": ["vKEsyHFk/0T9enjhi#CLdaoYy3"],
+			"layoutOptions": {
+				"archboard.order": "157000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#aI4dCY36:label",
+					"text": "to Canonical recovery state,\nCanonical local news +1",
+					"width": 155.36000061035156,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#FNRbx70t",
+			"sources": ["vKEsyHFk/0T9enjhi#Zeo3aQWz"],
+			"targets": ["vKEsyHFk/0T9enjhi#ZLJy8ivl"],
+			"layoutOptions": {
+				"archboard.order": "159000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#FNRbx70t:label",
+					"text": "to Canonical operation contracts,\nCanonical flow contracts",
+					"width": 179.82000732421875,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#cLBlxUZe",
+			"sources": ["vKEsyHFk/0T9enjhi#Bd4GPG6d"],
+			"targets": ["vKEsyHFk/vKEsyHFk#Biz0M6Ld"],
+			"layoutOptions": {
+				"archboard.order": "162000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#cLBlxUZe:label",
+					"text": "to Git process commands",
+					"width": 141.4499969482422,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#Tay0NoqL",
+			"sources": ["vKEsyHFk/0T9enjhi#Bd4GPG6d"],
+			"targets": ["vKEsyHFk/vKEsyHFk#tdKalihR"],
+			"layoutOptions": {
+				"archboard.order": "163000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": []
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#IIpdyxCj",
+			"sources": ["vKEsyHFk/0T9enjhi#Bd4GPG6d"],
+			"targets": ["vKEsyHFk/0T9enjhi#ffFYC0XR"],
+			"layoutOptions": {
+				"archboard.order": "164000",
+				"archboard.relationship.kind": "data",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "data"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#IIpdyxCj:label",
+					"text": "Explicit complete fetch and\nnon-forced publication",
+					"width": 150.44000244140625,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#6v2wIOX0",
+			"sources": ["vKEsyHFk/0T9enjhi#Bd4GPG6d"],
+			"targets": ["vKEsyHFk/0T9enjhi#ZLJy8ivl"],
+			"layoutOptions": {
+				"archboard.order": "165000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#6v2wIOX0:label",
+					"text": "to Model contract",
+					"width": 105.0199966430664,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#XCyLrwKb",
+			"sources": ["vKEsyHFk/0T9enjhi#Bd4GPG6d"],
+			"targets": ["vKEsyHFk/0T9enjhi#ZRq51Ecz"],
+			"layoutOptions": {
+				"archboard.order": "180000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#XCyLrwKb:label",
+					"text": "to Archive location,\nArchive object I/O +1",
+					"width": 119.47000122070312,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#HuWEB6r9",
+			"sources": ["vKEsyHFk/0T9enjhi#KJy5yYuq"],
+			"targets": ["vKEsyHFk/0T9enjhi#cNaEpWjJ"],
+			"layoutOptions": {
+				"archboard.order": "193000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#HuWEB6r9:label",
+					"text": "with Read entry,\nCanonical navigation +3",
+					"width": 134.02999877929688,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#26VVxTms",
+			"sources": ["vKEsyHFk/0T9enjhi#KJy5yYuq"],
+			"targets": ["vKEsyHFk/0T9enjhi#Bd4GPG6d"],
+			"layoutOptions": {
+				"archboard.order": "194000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#26VVxTms:label",
+					"text": "with Retained reading,\nForeign revision pins +1",
+					"width": 130.83999633789062,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#Wb4yWBbs",
+			"sources": ["vKEsyHFk/0T9enjhi#KJy5yYuq"],
+			"targets": ["vKEsyHFk/0T9enjhi#ZLJy8ivl"],
+			"layoutOptions": {
+				"archboard.order": "198000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#Wb4yWBbs:label",
+					"text": "to Canonical operation\ncontracts, Model contract",
+					"width": 143.06999969482422,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#5J0MoNa1",
+			"sources": ["vKEsyHFk/0T9enjhi#Zeo3aQWz"],
+			"targets": ["vKEsyHFk/0T9enjhi#Bd4GPG6d"],
+			"layoutOptions": {
+				"archboard.order": "207000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#5J0MoNa1:label",
+					"text": "to Retained reading,\nForeign revision pins",
+					"width": 118.68000030517578,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#AjGkFCES",
+			"sources": ["vKEsyHFk/0T9enjhi#cNaEpWjJ"],
+			"targets": ["vKEsyHFk/0T9enjhi#Bd4GPG6d"],
+			"layoutOptions": {
+				"archboard.order": "212000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#AjGkFCES:label",
+					"text": "with Retained reading,\nForeign revision pins +2",
+					"width": 132.52999877929688,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#RQgSYJGP",
+			"sources": ["vKEsyHFk/0T9enjhi#cNaEpWjJ"],
+			"targets": ["vKEsyHFk/vKEsyHFk#Biz0M6Ld"],
+			"layoutOptions": {
+				"archboard.order": "213000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{ "id": "vKEsyHFk/0T9enjhi#RQgSYJGP:label", "text": "git", "width": 40, "height": 31 }
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#NmLgBfWk",
+			"sources": ["vKEsyHFk/0T9enjhi#KJy5yYuq"],
+			"targets": ["vKEsyHFk/0T9enjhi#Jx4O72DO"],
+			"layoutOptions": {
+				"archboard.order": "216000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#NmLgBfWk:label",
+					"text": "reconcile complete meaning",
+					"width": 154.1699981689453,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#WIHdjwjn",
+			"sources": ["vKEsyHFk/0T9enjhi#Zeo3aQWz"],
+			"targets": ["vKEsyHFk/0T9enjhi#cNaEpWjJ"],
+			"layoutOptions": {
+				"archboard.order": "220000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#WIHdjwjn:label",
+					"text": "with Canonical subject claims,\nCanonical edit preparation +2",
+					"width": 163.97999572753906,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#zlSipRtX",
+			"sources": ["vKEsyHFk/0T9enjhi#ZRq51Ecz"],
+			"targets": ["vKEsyHFk/vKEsyHFk#Biz0M6Ld"],
+			"layoutOptions": {
+				"archboard.order": "223000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#zlSipRtX:label",
+					"text": "to Git process commands",
+					"width": 141.4499969482422,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#OkD6iLu5",
+			"sources": ["vKEsyHFk/0T9enjhi#Zeo3aQWz"],
+			"targets": ["vKEsyHFk/0T9enjhi#KJy5yYuq"],
+			"layoutOptions": {
+				"archboard.order": "229000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#OkD6iLu5:label",
+					"text": "with Canonical structure candidate,\nCanonical edit preparation +1",
+					"width": 190.33999633789062,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#1H1Ks46q",
+			"sources": ["vKEsyHFk/0T9enjhi#CLdaoYy3"],
+			"targets": ["vKEsyHFk/0T9enjhi#Bd4GPG6d"],
+			"layoutOptions": {
+				"archboard.order": "232000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#1H1Ks46q:label",
+					"text": "with Portable model\noperations, Retained reading +1",
+					"width": 169.85000610351562,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#zRILT0vc",
+			"sources": ["vKEsyHFk/0T9enjhi#CLdaoYy3"],
+			"targets": ["vKEsyHFk/vKEsyHFk#Biz0M6Ld"],
+			"layoutOptions": {
+				"archboard.order": "233000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#zRILT0vc:label",
+					"text": "to Git process commands",
+					"width": 141.4499969482422,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#E7pOpTZi",
+			"sources": ["vKEsyHFk/0T9enjhi#EekL5c17"],
+			"targets": ["vKEsyHFk/0T9enjhi#ZLJy8ivl"],
+			"layoutOptions": {
+				"archboard.order": "242000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#E7pOpTZi:label",
+					"text": "to Model contract",
+					"width": 105.0199966430664,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#9xNbt1EA",
+			"sources": ["vKEsyHFk/0T9enjhi#EekL5c17"],
+			"targets": ["vKEsyHFk/0T9enjhi#Bd4GPG6d"],
+			"layoutOptions": {
+				"archboard.order": "243000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#9xNbt1EA:label",
+					"text": "with Retained reading",
+					"width": 125.16000366210938,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#xGduus4r",
+			"sources": ["vKEsyHFk/0T9enjhi#EekL5c17"],
+			"targets": ["vKEsyHFk/0T9enjhi#KJy5yYuq"],
+			"layoutOptions": {
+				"archboard.order": "247000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#xGduus4r:label",
+					"text": "derives explicit\ncompact draft changes",
+					"width": 131.29000091552734,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#WTjwnArK",
+			"sources": ["vKEsyHFk/0T9enjhi#EekL5c17"],
+			"targets": ["vKEsyHFk/0T9enjhi#Zeo3aQWz"],
+			"layoutOptions": {
+				"archboard.order": "258000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#WTjwnArK:label",
+					"text": "to Canonical structure\ncandidate, Edit entry",
+					"width": 126.2699966430664,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/0T9enjhi#tnCVPY3T",
+			"sources": ["vKEsyHFk/0T9enjhi#EekL5c17"],
+			"targets": ["vKEsyHFk/0T9enjhi#CLdaoYy3"],
+			"layoutOptions": {
+				"archboard.order": "259000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/0T9enjhi#tnCVPY3T:label",
+					"text": "to Canonical recovery\nstate, Canonical local news",
+					"width": 149.63999938964844,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#UDGtsZfv",
+			"sources": ["vKEsyHFk/0T9enjhi#KJy5yYuq"],
+			"targets": ["vKEsyHFk#DKzh4lMo"],
+			"layoutOptions": {
+				"archboard.order": "998000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#UDGtsZfv:label",
+					"text": "each compared state's interface",
+					"width": 174.36000061035156,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#ImS2FjJd",
+			"sources": ["vKEsyHFk/vKEsyHFk#TBnOCNx2"],
+			"targets": ["vKEsyHFk#DKzh4lMo"],
+			"layoutOptions": {
+				"archboard.order": "1003000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#ImS2FjJd:label",
+					"text": "derive the interface and its counts",
+					"width": 184.3300018310547,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#YUNbvrVu",
+			"sources": ["vKEsyHFk/vKEsyHFk#6nZjwK9W"],
+			"targets": ["vKEsyHFk#DKzh4lMo"],
+			"layoutOptions": {
+				"archboard.order": "1005000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#YUNbvrVu:label",
+					"text": "the selected module's interface",
+					"width": 169.8699951171875,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#s1kzuMxy",
+			"sources": ["vKEsyHFk/yejBBUFY#IgYndyJd"],
+			"targets": ["vKEsyHFk#DKzh4lMo"],
+			"layoutOptions": {
+				"archboard.order": "1006000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#s1kzuMxy:label",
+					"text": "which parts callers reach",
+					"width": 139.4199981689453,
+					"height": 31
+				}
+			]
+		}
+	]
+}

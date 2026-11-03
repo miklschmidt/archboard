@@ -1,0 +1,35 @@
+[package]
+name = "archboard-painter-wasm"
+description = "The painter as WebAssembly, for the browser: Vello on WebGPU, and Vello on the CPU otherwise"
+version = "0.0.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# This crate is a browser's: a native build of the workspace compiles it empty,
+# so that no native test or lint builds a GPU stack that nothing there uses.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+archboard-paint = { path = "../archboard-paint" }
+archboard-scene = { path = "../archboard-scene" }
+futures-channel = "0.3"
+js-sys = "0.3"
+kurbo = "0.13"
+peniko = "0.6"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+vello = { version = "0.11", default-features = false, features = ["wgpu"] }
+wasm-bindgen = "0.2.129"
+wasm-bindgen-futures = "0.4.79"
+web-sys = { version = "0.3.106", features = [
+	"CanvasRenderingContext2d",
+	"HtmlCanvasElement",
+	"ImageData",
+	"OffscreenCanvas",
+] }
+wgpu = { version = "30", default-features = false, features = ["webgpu", "wgsl"] }

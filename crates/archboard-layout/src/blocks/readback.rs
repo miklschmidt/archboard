@@ -67,7 +67,7 @@ impl Clusters<'_> {
         }
         {
             let within = |name: &str| self.span_of(name, clusters, width);
-            let card = |name: &str| cards.contains_key(name);
+            let card = |name: &str| cards.get(name).is_some_and(|card| !card.door);
             let around = |card: &str| self.block.cluster_of.get(card).cloned();
             let room = Room {
                 gap: LINED_UP_GAP,

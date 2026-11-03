@@ -14,7 +14,7 @@ use crate::paint::design::{
     PART_NOTE_LINE, PART_NOTE_SIZE, PART_PATH_GAP, PART_PATH_LINE, PART_PATH_SIZE, PART_TITLE_LINE,
     PART_TITLE_SIZE, TAB_CHIP, TAB_FAR_CHIP, TAB_FAR_DROP, TAB_FAR_MOST, TAB_FAR_NAME,
     TAB_FAR_PATH, TAB_HEIGHT, TAB_ICON_GAP, TAB_MOST, TAB_PADDING, TAB_PATH_GAP, TAB_SHOULDER,
-    TAG_BESIDE, TAG_FONT, TAG_GAP, TAG_HEIGHT, TAG_INSET, TAG_PADDING, TAG_SIZE, TOGGLE_ROOM,
+    TAG_BESIDE, TAG_FONT, TAG_GAP, TAG_INSET, TAG_PADDING, TAG_SIZE, TOGGLE_ROOM,
 };
 use crate::request::GroupTag;
 
@@ -260,16 +260,20 @@ fn one_line<N>(node: N, words: &CardWords<'_>, beside: f64) -> MeasuredNode<N> {
 }
 
 /// How wide a row of tags stands at a scale of its near size.
-pub(crate) fn tags_width(tags: &[&str], scale: f64) -> f64 {
+fn tags_width(tags: &[&str], scale: f64) -> f64 {
     let wide = |tag: &&str| width(tag, TAG_FONT, TAG_SIZE * scale) + 2.0 * TAG_PADDING * scale;
     let words: f64 = tags.iter().map(wide).sum();
     words + (tags.len().saturating_sub(1)) as f64 * TAG_GAP * scale
 }
 
-/// Whether a row of tags takes a row of its own above a card's name: where it
-/// beside the name would leave the name less than half of the words' width.
-fn own_row(tags: f64, room: f64) -> bool {
-    tags > room / 2.0
+/// How much of a name's row a row of tags takes: the tags end nearer the edge
+/// than the words do.
+fn tags_beside(tags: f64) -> f64 {
+    if tags == 0.0 {
+        0.0
+    } else {
+        tags + TAG_BESIDE - (ARCHITECTURE_CARD_PADDING - TAG_INSET)
+    }
 }
 
 /// Where a card's row of tags ends: at its top right corner, clear of a drill mark.
@@ -279,34 +283,9 @@ pub(crate) fn tag_end(card_width: f64, drills: bool) -> f64 {
 
 /// How far a row of tags beside a name stands above that name's baseline.
 const TAG_ABOVE: f64 = 16.0;
-
 /// Where a card's row of tags stands, from the baseline of its name.
-pub(crate) fn tag_top(tags: f64, card_width: f64, baseline: f64) -> f64 {
-    let left = ARCHITECTURE_CARD_PADDING + ICON_CHIP_SIZE + ARCHITECTURE_ICON_GAP;
-    if own_row(tags, card_width - left - ARCHITECTURE_CARD_PADDING) {
-        TAG_INSET
-    } else {
-        baseline - TAG_ABOVE
-    }
-}
-
-/// What the name of a card gives up to the tags beside it, and what the row
-/// above it adds.
-fn tag_room(tags: f64, room: f64) -> (f64, f64) {
-    if tags == 0.0 {
-        (0.0, 0.0)
-    } else if own_row(tags, room) {
-        (
-            0.0,
-            TAG_HEIGHT + TAG_INSET - ARCHITECTURE_CARD_PADDING + TAG_BESIDE,
-        )
-    } else {
-        // The tags end nearer the edge than the words do.
-        (
-            tags + TAG_BESIDE - (ARCHITECTURE_CARD_PADDING - TAG_INSET),
-            0.0,
-        )
-    }
+pub(crate) fn tag_top(baseline: f64) -> f64 {
+    baseline - TAG_ABOVE
 }
 
 /// How far a card's name stands below its top: the margin its path keeps at its foot.
@@ -356,20 +335,31 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
     let title = paragraph(words.name, title_style.font, title_style.size);
     let note = paragraph(words.responsibility.unwrap_or(""), NOTE.font, NOTE.size);
     let far = far_name_width(words.name);
-    let named = title.natural_width() + marked + left + padding;
-    let least = js_max(js_max(size.least, far + marked), named);
+    let name = title.natural_width() + marked;
+    let least = js_max(js_max(size.least, far + marked), name + left + padding);
     // A note that outgrows the card takes the most width, never a width of its
     // own, so a row of cards reads as one set.
-    let width = if note.natural_width() + left + padding <= least {
+    let plain = if note.natural_width() + left + padding <= least {
         js_min(size.most, least)
     } else {
         size.most
     };
+    // Tags stand on the name's row and the card widens for them, so the name
+    // keeps the room it has without them.
+    let beside = tags_beside(tags);
+    let width = js_max(
+        plain,
+        left + js_min(name, plain - left - padding) + beside + padding,
+    );
     let available = width - left - padding;
-    let (beside, above) = tag_room(tags, available);
-    let top = padding + above;
-    let titles = runs_for(&title, title_style, available - marked - beside, left, top);
-    let titled = top + titles.len() as f64 * title_style.line;
+    let titles = runs_for(
+        &title,
+        title_style,
+        available - marked - beside,
+        left,
+        padding,
+    );
+    let titled = padding + titles.len() as f64 * title_style.line;
     let note_top = titled + ARCHITECTURE_NOTE_GAP;
     let notes = runs_for(&note, NOTE, available, left, note_top);
     let told = if notes.is_empty() {
@@ -496,24 +486,41 @@ mod tests {
     }
 
     #[test]
-    fn a_tag_never_covers_a_name_and_two_tags_take_their_own_row_when_they_must() {
+    fn a_card_widens_for_its_tags_so_they_never_cover_its_name_or_move_it() {
         let name = "Canonical checkpoint operations";
-        let one = tagged(None, name, &[tag("Workhorse")]);
         let ends = |node: &MeasuredNode<()>| {
             let title = node.runs.iter().filter(|run| run.role == TextRole::Title);
             title.map(|run| run.x + run.width).fold(0.0, f64::max)
         };
-        let tags = tags_width(&["Workhorse"], 1.0);
-        assert!(ends(&one) <= tag_end(one.width, false) - tags);
-        let wide = [
-            tag("A very long group name of this model"),
-            tag("And another"),
-        ];
-        let both = tagged(None, name, &wide);
-        let held: Vec<&str> = wide.iter().map(|tag| tag.name.as_str()).collect();
-        let row = tags_width(&held, 1.0);
-        let top = tag_top(row, both.width, both.runs[0].y);
-        assert!(top + TAG_HEIGHT < both.runs[0].y - both.runs[0].font_size);
+        let plain = tagged(Some("src"), name, &[]);
+        for held in [
+            vec![tag("Workhorse")],
+            vec![tag("Agent"), tag("Workspace packages")],
+            vec![
+                tag("A very long group name of this model"),
+                tag("And another"),
+            ],
+        ] {
+            let card = tagged(Some("src"), name, &held);
+            let names: Vec<&str> = held.iter().map(|tag| tag.name.as_str()).collect();
+            let row = tags_width(&names, 1.0);
+            assert!(ends(&card) <= tag_end(card.width, false) - row);
+            assert_eq!(card.runs[0].y, plain.runs[0].y);
+            assert_eq!(card.height, plain.height);
+        }
+    }
+
+    #[test]
+    fn a_name_that_wraps_alone_wraps_the_same_beside_its_tags() {
+        let name = "A name far longer than any card is allowed to stand on one line of its own";
+        let lines = |node: &MeasuredNode<()>| {
+            let title = node.runs.iter().filter(|run| run.role == TextRole::Title);
+            title.map(|run| run.text.clone()).collect::<Vec<_>>()
+        };
+        let plain = tagged(None, name, &[]);
+        let card = tagged(None, name, &[tag("Agent"), tag("Workspace packages")]);
+        assert_eq!(lines(&card), lines(&plain));
+        assert!(card.width > plain.width);
     }
 
     #[test]

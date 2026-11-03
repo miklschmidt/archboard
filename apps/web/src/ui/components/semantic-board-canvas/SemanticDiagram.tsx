@@ -22,7 +22,10 @@ import { moveCameraByKey } from "#ui/clients/semantic-board-canvas/picture/camer
 import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
 import { LeavingPart } from "#ui/components/semantic-board-canvas/LeavingPart.tsx";
-import { SemanticSubjectTip } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
+import {
+	SemanticSubjectTip,
+	TipPlace,
+} from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
 import { STAGE_CLASS } from "#ui/components/semantic-board-canvas/SemanticStageStates.tsx";
 import {
 	useCameraWith,
@@ -38,11 +41,11 @@ import { usePeeked } from "#ui/hooks/semantic-board-canvas/use-peek.ts";
 import { usePictureTransition } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
 import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
 import { seenFromFar } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
+import { useStageLook } from "#ui/hooks/semantic-board-canvas/use-stage-look.ts";
 import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.ts";
 import { useViewerMarks } from "#ui/hooks/semantic-board-canvas/use-viewer-marks.ts";
 import { useStickyHeads } from "#ui/hooks/semantic-board-canvas/use-sticky-heads.ts";
 import { useSweep } from "#ui/hooks/semantic-board-canvas/use-sweep.ts";
-import { useTrafficRest } from "#ui/hooks/semantic-board-canvas/use-traffic-rest.ts";
 import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import {
 	NO_FOCUS,
@@ -130,6 +133,8 @@ interface SemanticDiagramProps {
 	group: GroupSelection | null;
 	/** What a presented step's veil leaves standing; null for no veil. */
 	veil: ReadonlySet<string> | null;
+	/** How many hops from a presented step's cards what they touch stands. */
+	reach?: ReadonlyMap<string, number> | null;
 	/**
 	 * The picture is on its way out: the reader went to another board, and
 	 * this one is kept only to be seen leaving while that one is drawn.
@@ -253,7 +258,8 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		() => subjectMarks(selection, focus, props.group?.members),
 		[selection, focus, props.group],
 	);
-	useViewerMarks(picture, { attended, veil: lighting.standing, reach: lighting.reach });
+	const reach = props.reach ?? lighting.reach;
+	useViewerMarks(picture, { attended, veil: lighting.standing, reach });
 	useSweep(picture, lighting.light, lighting.reach, reducedMotion);
 	useStickyHeads(picture, drawing.atlas);
 	// Seen from far away, each card's name is drawn larger in place of what it
@@ -262,6 +268,19 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	// the middle of a move.
 	const far = useCameraWith(camera, seenFromFar);
 	const marks = surfaceMarks({ veiled: props.veil !== null, far, probing: lighting.mode });
+	useStageLook(
+		picture,
+		{
+			probing: lighting.mode,
+			veiled: props.veil !== null,
+			presenting: props.presenting != null,
+			standing: lighting.standing,
+			reach,
+			reducedMotion,
+		},
+		true,
+		false,
+	);
 	const tip = useSubjectTip({ drawing, camera });
 	const { dismiss: dismissTip, onHover: tipHover } = tip;
 	const { onHover: lightHover, release: leave } = lighting;
@@ -277,7 +296,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		leave();
 	}, [dismissTip, leave]);
 	const openDown = useDrillOpen(reading, props.onOpenDown);
-	const { gesture, pointer } = useDiagramGestures({
+	const { gesture, pointer, cursor } = useDiagramGestures({
 		camera,
 		atlas: drawing.atlas,
 		onSelect,
@@ -289,10 +308,6 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	useEffect(() => {
 		if (gesture === "dragging") leave();
 	}, [gesture, leave]);
-	// A drag, a pinch, a wheel or a key draws a frame for every move, and moving
-	// traffic paints its lines again in each of them. The traffic stands still until
-	// the camera has rested, and then comes back gently.
-	useTrafficRest(surface, camera, gesture === "dragging");
 
 	const onKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLElement>): void => {
@@ -340,9 +355,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					{...pointer}
 					onPointerLeave={onPointerLeave}
 					onWheel={dismissTip}
-					className={`relative flex min-h-0 min-w-0 flex-1 touch-none overflow-hidden outline-none ${
-						gesture === "idle" ? "cursor-grab" : "cursor-grabbing"
-					}`}
+					className={`relative flex min-h-0 min-w-0 flex-1 touch-none overflow-hidden outline-none ${cursor}`}
 				>
 					{/* The picture inside is the transition's to write, never React's:
 					    see `usePictureTransition`. */}
@@ -356,13 +369,15 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					/>
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}
-				<SemanticSubjectTip
-					target={tip.shown}
-					appearance={drawing.appearances.find((one) => one.id === tip.shown?.id)}
-					reading={reading}
-					far={far}
-					overview={drawing.view === null}
-				/>
+				<TipPlace tip={tip} standing={lighting.standing}>
+					<SemanticSubjectTip
+						target={tip.shown}
+						appearance={drawing.appearances.find((one) => one.id === tip.shown?.id)}
+						reading={reading}
+						far={far}
+						overview={drawing.view === null}
+					/>
+				</TipPlace>
 				<LeavingPart departure={departure} at="spinner" />
 			</div>
 		</section>

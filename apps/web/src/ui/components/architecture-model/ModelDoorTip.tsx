@@ -35,7 +35,7 @@ function ModelDoorTip(props: ModelDoorTipProps): JSX.Element {
 	const { model, projection } = scene;
 	const { id } = target;
 	return (
-		<SubjectTipBox target={target} tip={doorSays(props)}>
+		<SubjectTipBox tip={doorSays(props)}>
 			<DoorEndpoints
 				door={id}
 				model={moduleSource(model, projection, id)}

@@ -3,6 +3,7 @@
 use super::model::Model;
 use super::shape::{CLEAR, Shape};
 use crate::geometry::{Point, Rect, Side};
+use crate::graph::DOOR;
 use crate::track::chains::LANE;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -55,13 +56,20 @@ fn choose_port(
     }
     let at = shape.wall(endpoint, side);
     let kinds = kinds_of(model, incidents);
-    if !room(at, side, kinds.len(), source) {
+    let door = model.endpoints[endpoint].node.option(DOOR).is_some();
+    // A door cannot widen for its incoming fan. Keep its ports inside the rounded corners
+    // with the twelve-point line gap that the geometry guard requires.
+    let (margin, spacing) = match (source, door) {
+        (true, _) => (12.0, 8.0),
+        (false, true) => (12.0, 12.0),
+        (false, false) => (20.0, LANE),
+    };
+    if !room(at, side, kinds.len(), margin, spacing) {
         return None;
     }
     let index = kinds
         .iter()
         .position(|kind| *kind == model.treatments[edge])?;
-    let margin = if source { 12.0 } else { 20.0 };
     let point = distributed(at, index, kinds.len(), incidents.len(), toward, margin);
     let selected = on_wall(at, side, point, margin);
     if kinds.len() != 1 {
@@ -229,13 +237,12 @@ fn kinds_of<'a>(model: &'a Model<'_>, incidents: &[usize]) -> Vec<&'a str> {
     kinds
 }
 
-fn room(at: Rect, side: Side, count: usize, source: bool) -> bool {
+fn room(at: Rect, side: Side, count: usize, margin: f64, spacing: f64) -> bool {
     let span = if matches!(side, Side::Top | Side::Bottom) {
         at.width
     } else {
         at.height
     };
-    let (margin, spacing) = if source { (12.0, 8.0) } else { (20.0, LANE) };
     count <= 1 || (span - 2.0 * margin) / ((count - 1) as f64) >= spacing
 }
 

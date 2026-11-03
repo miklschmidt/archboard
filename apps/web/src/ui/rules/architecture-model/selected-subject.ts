@@ -140,13 +140,13 @@ function opensAsModule(
 }
 
 /**
- * Whether a subject is a door of the reading: a module outside it that a line reaches.
+ * Whether the reading draws a subject as a door.
  * @param projection The reading.
  * @param id The subject.
  * @returns True for a door.
  */
 function isDoor(projection: Projection, id: string): boolean {
-	return projection.context.some((module) => module.id === id);
+	return projection.content.nodes.some((node) => node.id === id && node.door !== undefined);
 }
 
 /**
@@ -301,4 +301,5 @@ export {
 	type Connection,
 	type ModuleInterface,
 	type SelectedSubject,
+	type SelectionReading,
 };

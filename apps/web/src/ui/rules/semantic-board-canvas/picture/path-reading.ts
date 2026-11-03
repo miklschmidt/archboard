@@ -2,10 +2,9 @@
 //
 // The renderer writes a route as straight legs and rounded corners — moves,
 // lines, horizontals, verticals, cubics and quadratics, closed or not — and
-// every one of those is a cubic or can be written as one exactly. Reading them
-// all into the one shape is what lets two routes be compared and interpolated
-// segment by segment in `path-morph`. A path with several subpaths or an arc
-// is not a route and is refused rather than approximated.
+// every one of those is a cubic or can be written as one exactly. A path with
+// several subpaths or an arc is not a route and is refused rather than
+// approximated.
 //
 // Nothing here touches a DOM.
 

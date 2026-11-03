@@ -19,7 +19,7 @@ mod labels;
 #[cfg(test)]
 pub(crate) use cards::TAB_NEAR;
 pub use cards::{CardWords, measure_node};
-pub(crate) use cards::{DOOR_FAR, tab_far, tab_runs, tag_end, tag_top, tags_width};
+pub(crate) use cards::{DOOR_FAR, tab_far, tab_runs, tag_end, tag_top};
 pub use far::{FarCard, FarWords, far_scale_for, far_words};
 pub use flow_frame::measure_flow_frame;
 pub use labels::{measure_label, message_lines, note_lines};

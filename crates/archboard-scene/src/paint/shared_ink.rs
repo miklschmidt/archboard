@@ -192,11 +192,10 @@ fn drawn_for_run(edges: &[Edge], runs: &[Run], run: &Run) -> Vec<Curve> {
 
 /// Whether two turns are the same turn drawn twice: both ends in one place.
 fn same_turn(a: &Curve, b: &Curve) -> bool {
-    let ends = [a.from, a.segments[0].to()];
-    [b.from, b.segments[0].to()].iter().all(|point| {
-        ends.iter()
-            .any(|end| js::hypot(end.x - point.x, end.y - point.y) <= SHARED_INK)
-    })
+    let near = |one: Point, other: Point| js::hypot(one.x - other.x, one.y - other.y) <= SHARED_INK;
+    let (first, last) = (a.from, a.segments[0].to());
+    let (start, end) = (b.from, b.segments[0].to());
+    (near(first, start) && near(last, end)) || (near(first, end) && near(last, start))
 }
 
 /// For each route's index, the stretches and turns of its ink another route draws.
@@ -276,6 +275,21 @@ mod tests {
         }
     }
 
+    /// A route that makes one quarter turn between two points.
+    fn turn(id: &str, from: (f64, f64), to: (f64, f64)) -> Edge {
+        let [from, to] = [from, to].map(|(x, y)| Point { x, y });
+        let mut edge = line(id, 0.0, 0.0, false);
+        edge.curve = Curve {
+            from,
+            segments: vec![Segment::Cubic {
+                first: Point { x: to.x, y: from.y },
+                second: Point { x: to.x, y: from.y },
+                to,
+            }],
+        };
+        edge
+    }
+
     fn cut_from(curve: &Curve) -> (f64, f64) {
         (curve.from.x, curve.segments[0].to().x)
     }
@@ -295,5 +309,22 @@ mod tests {
         ];
         let shared = shared_ink(&edges);
         assert_eq!(cut_from(&shared[&1][0]), (HEAD_LENGTH, 100.0));
+    }
+
+    // A person chooses a repository's checkout: a kink a few units wide stood
+    // within reach of one end of a line's last bend, and the line lost the bend.
+    #[test]
+    fn a_small_turn_at_one_end_of_a_wider_turn_leaves_it_its_ink() {
+        let edges = [
+            turn("kink", (86.0, 1357.0), (88.0, 1359.0)),
+            turn("bend", (96.0, 1349.0), (88.0, 1357.0)),
+        ];
+        assert!(shared_ink(&edges).is_empty());
+
+        let edges = [
+            turn("bend", (96.0, 1349.0), (88.0, 1357.0)),
+            turn("again", (96.0, 1350.0), (88.0, 1358.0)),
+        ];
+        assert_eq!(shared_ink(&edges).len(), 1);
     }
 }

@@ -11,12 +11,12 @@
 
 use std::sync::OnceLock;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use skrifa::font::Font;
 use ts_rs::TS;
 
 /// One face: a family at a weight, which together name exactly one file.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub enum Face {
     /// Onest at 400, the variable file at its default instance.
