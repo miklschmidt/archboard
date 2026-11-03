@@ -24,11 +24,12 @@ pub use far::{FarCard, FarWords, far_scale_for, far_words};
 pub use flow_frame::measure_flow_frame;
 pub use labels::{measure_label, message_lines, note_lines};
 
-/// The face a font names: Onest or Maple Mono NL, at 400 or at 500. A weight that
-/// is not 500 is the regular face, the only other weight the files hold.
+/// The face a font names: Onest at 400, 500 or 700, or Maple Mono NL at 400 or
+/// 500. A weight the files do not hold is the regular face.
 pub fn face(font: DiagramFont) -> Face {
     match (font.family, font.weight) {
         (FontFamily::Sans, 500) => Face::SansMedium,
+        (FontFamily::Sans, 700) => Face::SansBold,
         (FontFamily::Sans, _) => Face::SansRegular,
         (FontFamily::Mono, 500) => Face::MonoMedium,
         (FontFamily::Mono, _) => Face::MonoRegular,

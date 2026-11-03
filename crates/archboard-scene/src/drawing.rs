@@ -27,8 +27,8 @@ pub enum FontFamily {
 pub struct DiagramFont {
     /// Which family.
     pub family: FontFamily,
-    /// Which weight: only 400 and 500 exist as files.
-    #[ts(type = "400 | 500")]
+    /// Which weight: 400 and 500 exist as files, and 700 for Onest alone.
+    #[ts(type = "400 | 500 | 700")]
     pub weight: u16,
 }
 
