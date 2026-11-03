@@ -87,11 +87,8 @@ pub(crate) fn sequence<H: Host>(request: &RenderRequest, host: &H) -> Result<Out
 ///
 /// # Errors
 ///
-/// A solve the host failed or answered unreadably.
-pub(crate) async fn flowchart<H: Host>(
-    request: &RenderRequest,
-    host: &H,
-) -> Result<Outline, String> {
+/// Icons the host cannot read.
+pub(crate) fn flowchart<H: Host>(request: &RenderRequest, host: &H) -> Result<Outline, String> {
     let told = request.told();
     if told.flows.is_empty() {
         return Ok(Outline::Nothing);
@@ -118,9 +115,7 @@ pub(crate) async fn flowchart<H: Host>(
         document,
         icons: icons_of(host, &icons)?,
     };
-    Ok(Outline::Paint(Box::new(
-        flowchart::picture(chart, host).await?,
-    )))
+    Ok(Outline::Paint(Box::new(flowchart::picture(chart))))
 }
 
 /// How many of a thing there are, in words a screen reader can say.
