@@ -1,6 +1,7 @@
-// A decision's answers leave it from separate points (TASK-491): left and
-// right, and the bottom for a third. Each line leaves sideways, stays beside
-// the diamond down to its words, and takes the side that crosses no line.
+// A decision's answers leave it from separate points (TASK-491, ADR 0073):
+// the first from the left, the last from the right, and any other from the
+// bottom. Each line leaves sideways and stays beside the diamond down to its
+// words.
 //
 // What is guarded: where each answer starts and how it runs out of its
 // point, that no answer steps back under its diamond above its words, and
