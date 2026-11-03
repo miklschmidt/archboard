@@ -181,7 +181,7 @@ function Notices(props: NoticesProps): JSX.Element {
 			if (current.current.has(notice)) continue;
 			/** Remove shell state only while this exact notice remains current. */
 			const dismiss = (): void => {
-				if (current.current.has(notice)) props.actions.dismissNotice(notice.id);
+				if (current.current.get(notice) === id) props.actions.dismissNotice(notice.id);
 			};
 			const id = toast.custom(() => <Notice notice={notice} actions={props.actions} />, {
 				duration: isPersistent(notice) ? Infinity : SHELL_CLOCK_MS.notice,
