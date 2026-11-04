@@ -17,6 +17,8 @@ import nightlyBatchRaw from "../diagrams/nightly-batch.svg?raw";
 import nightlyBatchUrl from "../diagrams/nightly-batch.svg?url";
 import flowchartRaw from "../diagrams/place-order-flowchart.svg?raw";
 import flowchartUrl from "../diagrams/place-order-flowchart.svg?url";
+import orderSequenceRaw from "../diagrams/place-order-sequence.svg?raw";
+import orderSequenceUrl from "../diagrams/place-order-sequence.svg?url";
 import queuedRaw from "../diagrams/queued-fulfilment.svg?raw";
 import queuedUrl from "../diagrams/queued-fulfilment.svg?url";
 
@@ -61,6 +63,7 @@ export const drawings = {
 	inventory: drawing(inventoryUrl, inventoryRaw),
 	checkout: drawing(checkoutUrl, checkoutRaw),
 	flowchart: drawing(flowchartUrl, flowchartRaw),
+	orderSequence: drawing(orderSequenceUrl, orderSequenceRaw),
 } satisfies Record<string, Drawing>;
 
 /**

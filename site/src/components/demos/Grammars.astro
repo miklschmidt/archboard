@@ -1,6 +1,7 @@
 ---
 // One model, three grammars: the shop's architecture, and its "Place an order" flow as a
-// sequence and as a flowchart. Every drawing is a real render over the same module identities.
+// sequence and as a flowchart, with its two decisions and its retry loop. Every drawing is a real
+// render over the same module identities (site/scripts/render-diagrams.sh).
 import { drawings } from "../../lib/diagrams";
 
 const views = [
@@ -14,16 +15,16 @@ const views = [
 	{
 		key: "sequence",
 		label: "Sequence",
-		drawing: drawings.sequence,
+		drawing: drawings.orderSequence,
 		command: 'archboard model render --flow "Place an order" --grammar sequence --out order.svg',
-		alt: "Sequence diagram 'Place an order': the storefront posts an order, Place order reserves the items, charges the card, writes the paid order and sends the receipt up to three times.",
+		alt: "Sequence diagram 'Place an order': Place order reserves the items, answers 409 when one is sold out, charges the card, releases the items and answers 402 when the bank declines, and otherwise writes the paid order and sends the receipt until it is accepted, three tries at most.",
 	},
 	{
 		key: "flowchart",
 		label: "Flowchart",
 		drawing: drawings.flowchart,
 		command: 'archboard model render --flow "Place an order" --grammar flowchart --out order.svg',
-		alt: "Flowchart of 'Place an order': each message is a step, from POST /orders to order confirmed.",
+		alt: "Flowchart of 'Place an order': from POST /orders, a decision on stock leads to 409 sold out or to the card charge, a decision on the bank's answer leads to releasing the items and 402 card declined or to writing the paid order, and a loop sends the receipt until it is accepted before the order is confirmed.",
 	},
 ];
 ---
@@ -119,7 +120,7 @@ const views = [
 		display: grid;
 		grid-template: minmax(0, 1fr) / minmax(0, 1fr);
 		place-items: center;
-		height: clamp(320px, 40vw, 540px);
+		height: clamp(320px, 44vw, 640px);
 		padding: 20px;
 		border-radius: 6px;
 		background: oklch(0.2 0.006 75);
