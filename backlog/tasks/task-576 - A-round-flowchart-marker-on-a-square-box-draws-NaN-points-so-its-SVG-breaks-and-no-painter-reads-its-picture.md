@@ -3,11 +3,11 @@ id: TASK-576
 title: >-
   Most flowcharts draw NaN points in a round marker at their top, so their SVG
   breaks and no painter reads them
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-04T19:29:00Z'
-updated_date: '2026-11-04T21:24:00Z'
+updated_date: '2026-11-04T21:29:00Z'
 labels:
   - bug
   - renderer
@@ -31,9 +31,9 @@ The spike for docs/design/painter-webgl-fallback.md found this with `bun scripts
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 No drawing of the corpus holds NaN or Infinity in its SVG path data, in either theme
-- [ ] #2 Every painting of the corpus reads in `Painter.show` with no error
-- [ ] #3 A jump-in disc on its square box draws itself and its shadow in points that a painter reads back, and a focused test owns that case
+- [x] #1 No drawing of the corpus holds NaN or Infinity in its SVG path data, in either theme
+- [x] #2 Every painting of the corpus reads in `Painter.show` with no error
+- [x] #3 A jump-in disc on its square box draws itself and its shadow in points that a painter reads back, and a focused test owns that case
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -55,4 +55,16 @@ Cause: PR #34 (110c0bd11) added the jump-in disc, a JUMP_IN by JUMP_IN (30 by 30
 Fix: `terminal_outline` stops each half one step short on a square box, so the disc is 32 distinct points of the same circle. A pill keeps its 34 points.
 
 Revised AC #3: start and end terminals have a fixed 96 by 34 box, so only the jump-in disc reaches a square box. The criterion now names that case.
+
+Verification, small corpus (`render-corpus.ts render <out> --engines blocks --variants current --comparison off --themes light,dark --svg`, 524 drawings): before the fix, 140 of 148 flowchart SVGs held NaN and 140 flowchart paintings refused to read as `Painting` ("invalid type: null, expected f64"). After the fix, 0 SVGs hold NaN or Infinity, no painting holds a null x or y, and all 524 paintings read as `Painting`, the type that `Painter.show` parses. `render-corpus.ts compare` shows that exactly those 140 flowchart drawings changed, and no architecture or sequence drawing.
+
+Tracked drawings: none changes. The seven tracked SVGs are architecture and sequence drawings, and their corpus drawings are byte-identical. `readme:check` (16 of 17 stale) and `check embeds` (both architecture embeds outdated) report staleness that predates this fix: no manifest source lies under crates/, and architecture drawings never reach the flowchart shapes.
+
+Gate: `bun run check` passed, 21 of 21 tasks, no cache hits.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A jump-in disc (PR #34) is drawn by `terminal_outline` on a square 30 by 30 box. There the two half circles met, the outline repeated two points, and `inset` turned each zero-length side into NaN corners in the eight shadow bands of every disc. So 140 of 148 flowcharts held NaN in their SVG, and every painter refused their painting. `terminal_outline` now stops each half one step short on a square box, so the disc is the same circle in 32 distinct points. Pills keep their outline. A focused test in `flowchart_shapes.rs` paints a disc and its shadow and reads the result back as a painter does. It failed with the painter error before the fix. The corpus now holds no NaN, every painting reads, and `bun run check` passes. No tracked drawing changed. Start and end terminals were never affected.
+<!-- SECTION:FINAL_SUMMARY:END -->
