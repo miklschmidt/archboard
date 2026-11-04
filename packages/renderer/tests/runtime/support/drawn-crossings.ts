@@ -120,6 +120,21 @@ type DrawnArc = {
 type Box = { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number };
 
 /**
+ * The box around some points, widened by a mark's radius when given.
+ * @param points The points of the shape.
+ * @param radius How far its ink reaches past them.
+ * @returns The bounds of its ink.
+ */
+function boxOf(points: readonly DrawnPoint[], radius = 0): Box {
+	return {
+		x0: Math.min(...points.map((point) => point.x)) - radius,
+		y0: Math.min(...points.map((point) => point.y)) - radius,
+		x1: Math.max(...points.map((point) => point.x)) + radius,
+		y1: Math.max(...points.map((point) => point.y)) + radius,
+	};
+}
+
+/**
  * A route's arcs.
  * @param id The route's relationship.
  * @param d The route's path.
@@ -127,7 +142,7 @@ type Box = { readonly x0: number; readonly y0: number; readonly x1: number; read
  */
 function arcsOf(id: string, d: string): DrawnArc[] {
 	const pieces = piecesOf(d);
-	const arcs = [...arcPieces(pieces)].sort((a, b) => a - b);
+	const arcs = [...arcPieces(pieces)].toSorted((a, b) => a - b);
 	const found: DrawnArc[] = [];
 	for (const [index, piece] of arcs.entries()) {
 		if (arcs[index - 1] === piece - 1) continue;
@@ -136,16 +151,47 @@ function arcsOf(id: string, d: string): DrawnArc[] {
 		const axis = axisOf(pieces[piece - 1])!;
 		const line = axis === "x" ? pieces[piece]!.from.y : pieces[piece]!.from.x;
 		const points = pieces.slice(piece, last + 1).flatMap((one) => [one.from, one.to]);
-		const box = {
-			x0: Math.min(...points.map((point) => point.x)),
-			y0: Math.min(...points.map((point) => point.y)),
-			x1: Math.max(...points.map((point) => point.x)),
-			y1: Math.max(...points.map((point) => point.y)),
-		};
+		const box = boxOf(points);
 		const middle = axis === "x" ? (box.y0 + box.y1) / 2 : (box.x0 + box.x1) / 2;
 		found.push({ id, axis, line, side: Math.sign(middle - line), box });
 	}
 	return found;
+}
+
+/**
+ * The ink bounds of junction dots and the round-ended bars that gather nearby joins.
+ * @param svg The rendered document.
+ * @returns One box per mark in the junction layer.
+ */
+function junctionBoxes(svg: string): Box[] {
+	const boxes: Box[] = [];
+	for (const group of svg.matchAll(/<g class="ab-junctions"[^>]*>([\s\S]*?)<\/g>/gu))
+		for (const mark of group[1]!.matchAll(
+			/<(circle|path)\b([^>]*\bdata-members="[^"]*"[^>]*)>/gu,
+		)) {
+			const attributes = new Map(
+				[...mark[2]!.matchAll(/([\w-]+)="([^"]*)"/gu)].map((attribute) => [
+					attribute[1]!,
+					attribute[2]!,
+				]),
+			);
+			if (mark[1] === "circle")
+				boxes.push(
+					boxOf(
+						[{ x: Number(attributes.get("cx")), y: Number(attributes.get("cy")) }],
+						Number(attributes.get("r")),
+					),
+				);
+			else {
+				const points = piecesOf(attributes.get("d") ?? "").flatMap((piece) => [
+					piece.from,
+					piece.to,
+				]);
+				if (points.length > 0)
+					boxes.push(boxOf(points, Number(attributes.get("stroke-width")) / 2));
+			}
+		}
+	return boxes;
 }
 
 /**
@@ -209,8 +255,9 @@ function crossingOf(one: Stretch, other: Stretch): DrawnPoint | undefined {
 	const q = { x: other[0].x - one[0].x, y: other[0].y - one[0].y };
 	const t = (q.x * s.y - q.y * s.x) / across;
 	const u = (q.x * r.y - q.y * r.x) / across;
-	const inside = (value: number) => value > 1e-6 && value < 1 - 1e-6;
-	return inside(t) && inside(u) ? { x: one[0].x + t * r.x, y: one[0].y + t * r.y } : undefined;
+	return t > 1e-6 && t < 1 - 1e-6 && u > 1e-6 && u < 1 - 1e-6
+		? { x: one[0].x + t * r.x, y: one[0].y + t * r.y }
+		: undefined;
 }
 
 /**
@@ -270,7 +317,7 @@ function unbridgedCrossings(drawing: RenderedDiagram): string[] {
  * @param drawing The rendered document.
  * @returns Each such place, by what crowds and where.
  */
-function crowdedArcs(drawing: RenderedDiagram): string[] {
+function crowdedArcs(drawing: Pick<RenderedDiagram, "svg">): string[] {
 	const arcs: DrawnArc[] = [];
 	for (const arc of [...routePaths(drawing.svg)].flatMap(([id, d]) => arcsOf(id, d))) {
 		const copy = arcs.some(
@@ -285,22 +332,18 @@ function crowdedArcs(drawing: RenderedDiagram): string[] {
 		);
 		if (!copy) arcs.push(arc);
 	}
-	const where = (box: Box) => `${box.x0.toFixed(1)},${box.y0.toFixed(1)}`;
 	const found: string[] = [];
 	for (const [index, one] of arcs.entries())
 		for (const other of arcs.slice(index + 1)) {
 			if (one.axis !== other.axis || gapOf(one.box, other.box) >= ARC_SPACE) continue;
 			const apart = other.line - one.line;
 			if (Math.abs(apart) <= SHARED_INK)
-				found.push(`${one.id} and ${other.id} side by side at ${where(one.box)}`);
+				found.push(`${one.id} and ${other.id} side by side at ${cornerOf(one.box)}`);
 			else if (one.side === Math.sign(apart) && other.side === -one.side)
-				found.push(`${one.id} and ${other.id} facing at ${where(one.box)}`);
+				found.push(`${one.id} and ${other.id} facing at ${cornerOf(one.box)}`);
 		}
-	for (const mark of drawing.svg.matchAll(
-		/<circle cx="([-\d.]+)" cy="([-\d.]+)" r="([\d.]+)"[^>]*data-members=/gu,
-	)) {
-		const [x, y, r] = [Number(mark[1]), Number(mark[2]), Number(mark[3])];
-		const box = { x0: x - r, y0: y - r, x1: x + r, y1: y + r };
+	for (const box of junctionBoxes(drawing.svg)) {
+		const [x, y] = [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2];
 		for (const arc of arcs) {
 			const [along, beside, low, high] =
 				arc.axis === "x" ? [x, y, arc.box.x0, arc.box.x1] : [y, x, arc.box.y0, arc.box.y1];
@@ -311,10 +354,19 @@ function crowdedArcs(drawing: RenderedDiagram): string[] {
 				Math.abs(apart) > SHARED_INK &&
 				Math.sign(apart) === arc.side;
 			if (into && gapOf(arc.box, box) < MARK_SPACE)
-				found.push(`${arc.id} bulging into a junction at ${where(box)}`);
+				found.push(`${arc.id} bulging into a junction at ${cornerOf(box)}`);
 		}
 	}
 	return found;
+}
+
+/**
+ * A box's low corner, for a drawing diagnostic.
+ * @param box The bounds of the ink.
+ * @returns Its coordinates.
+ */
+function cornerOf(box: Box): string {
+	return `${box.x0.toFixed(1)},${box.y0.toFixed(1)}`;
 }
 
 export { crowdedArcs, unbridgedCrossings };

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-03T18:42:00Z'
-updated_date: '2026-11-04T01:38:00Z'
+updated_date: '2026-11-04T01:43:00Z'
 labels:
   - renderer
 dependencies: []
@@ -54,6 +54,10 @@ Review scope: git diff a30e697de..cd274c2c1 in fix/crossing-hop-crowding. These 
 Review finding R1 verified: crowding.rs stopped at the first overlapping route or keepout, so forced candidates did not use their worst clearance. A fixed-geometry regression failed when obstacle order changed. Removed both early returns so all obstacles contribute to the score.
 
 Review finding R2 verified: turned flipped a standing hop without testing the new side of each line beneath it. A fixed-geometry regression put the flipped arc into a nearby bend. Flip candidates now require passes_beneath on the new side at every crossing of the standing rise. The regression passes and both crossings retain full-size arcs.
+
+Review finding R3 verified: crowdedArcs read junction circles but omitted the round-ended paths that paint nearby joins as bars. A regression passed for a touching dot but failed for a touching bar. The assertion now reads both shapes from the junction layer and includes the bar stroke radius. The touched assertion file also passes its lint rules after removing nested pure helpers and using toSorted.
+
+Review validation: the requested Rust tests passed (203 tests), and clippy passed. The core build, TypeScript analysis, and lint of the touched TypeScript files passed. The requested renderer operations run passed 754 tests and failed only Browser hosting (blocks), with the label overlap already recorded above. After the final lint cleanup, all 17 focused crossing and gate drawing tests passed. Each of the three regression tests failed before its corresponding fix. The task stays In Progress for the owner to finish integration.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
