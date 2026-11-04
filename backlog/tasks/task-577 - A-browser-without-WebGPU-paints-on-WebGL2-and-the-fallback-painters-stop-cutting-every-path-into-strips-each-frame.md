@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-04T21:13:00Z'
-updated_date: '2026-11-04T22:14:00Z'
+updated_date: '2026-11-04T22:34:00Z'
 labels:
   - painter
   - renderer
@@ -95,6 +95,26 @@ Affected subjects: Painter choice vKEsyHFk#hKrzJUPf, its call vKEsyHFk#irHUnOY7,
 
 - Safari, Firefox with the shipped tier, Windows, macOS, Android, a headed WebGPU run, a vello_gpu panic, the llvmpipe name in Firefox, the far view in the bench, traffic lines (never kept on any painter).
 - The marketing site branch derives PainterFailure from startPainter, so its failures need the new painter field on merge, and its picture-stage.ts conflicts with this branch.
+
+Review against b11f377f1 (2026-11-04)
+
+Standards fixes:
+- 4d864dde3 corrects the shader claim in ADR 0074 and the design note. WebGlRenderer::begin starts compilation before the software refusal.
+- 712071d21 refuses invalid benchmark selections and empty runs, reports painter failures with a nonzero exit, and waits for browser termination before removing profiles.
+
+Spec fixes:
+- 3f48426ca installs a fresh fallback canvas only after its painter starts. A CPU startup failure now leaves the caller's canvas available for disposal or retry.
+- 816e9891b reports WebGL context loss before subscription and releases the listener if subscription triggers immediate replacement.
+- a3d76ddd0 removes a late replacement canvas when its stage was disposed.
+- 941b61655 counts retained child paths until their final owner releases them. Cache eviction cannot hide a retained graph from the 600,000-element budget.
+- e249e17e2 requires requested parity painters and propagates drawing failures. A missing painter cannot produce a successful zero-comparison report.
+- b0b7787ab simplifies the fallback branches and keeps the picture stage within its existing lint limits.
+
+The existing proposal w4XB6eBv remains accurate. These fixes enforce its canvas recovery, painter selection, and retained-part contracts. They add no architectural intent, so no second proposal is needed.
+
+Verification passed: 174 archboard-paint tests, 5 archboard-painter-wasm tests, native crate clippy, WASM crate clippy with warnings denied, build:core, bunx vp run types, 25 focused TypeScript tests, the semantic traffic browser owner, scoped typed lint, formatting, and diff whitespace inspection. Focused script runs prove both failure exits and a valid CPU benchmark.
+
+Limits: the review did not repeat the full corpus or the before/after performance series. TASK-576 malformed flowcharts now stop parity explicitly. Cross-platform browser behavior and recovery from a real Vello GPU panic remain unverified.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
