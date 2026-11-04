@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "q9TUBeZT",
+  "name": "Archboard",
+  "current": {
+    "id": "oudWyvwK",
+    "name": "How Archboard works",
+    "summary": "A coding agent states what a system is through the CLI, and the renderer draws every card and line for the people who read it.",
+    "predecessor": null,
+    "baseline": "693ea5d49a1baddf88aadb54e2b258ede0c23a6a",
+    "createdAt": "2026-11-04T21:29:17.008Z",
+    "adoptedAt": "2026-11-04T21:29:18.200Z",
+    "reason": "The site draws this model in its hero.",
+    "previousCurrent": null
+  },
+  "retiredIds": []
+}

@@ -5,7 +5,7 @@
 
 import { startPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
 import own from "../paintings/own.json";
-import paintingUrl from "../paintings/own.slab.painting.json?url";
+import paintingUrl from "../paintings/own.painting.json?url";
 import { whileVisible } from "./reveal";
 
 /**
@@ -13,9 +13,7 @@ import { whileVisible } from "./reveal";
  * @returns The point, in the picture's units.
  */
 function hub(): { x: number; y: number } {
-	const card = own.cards.reduce((most, next) =>
-		next.lines.length > most.lines.length ? next : most,
-	);
+	const card = own.cards.reduce((most, next) => (next.lines > most.lines ? next : most));
 	const [x = 0, y = 0, width = 0, height = 0] = card.box;
 	return { x: x + width / 2, y: y + height / 2 };
 }

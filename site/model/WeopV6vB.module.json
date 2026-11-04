@@ -1,0 +1,10 @@
+{
+  "order": 44,
+  "name": "History",
+  "kind": "datastore",
+  "responsibility": "Signed checkpoints of every state",
+  "schemaVersion": 1,
+  "id": "q9TUBeZT#WeopV6vB",
+  "parent": "q9TUBeZT#8asrTSy2",
+  "outgoing": []
+}

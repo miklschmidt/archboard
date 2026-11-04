@@ -446,6 +446,7 @@ export default defineConfig({
 	fmt: {
 		ignorePatterns: [
 			".archboard/vault/**",
+			"site/model/**",
 			"examples/**/*.semantic.json",
 			"examples/web-shop/**/*.json",
 			"examples/web-shop/.archboard/config.yaml",

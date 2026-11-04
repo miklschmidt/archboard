@@ -1,0 +1,31 @@
+{
+  "order": 42,
+  "name": "Canonical model",
+  "kind": "datastore",
+  "responsibility": "One file for each module, with the lines it owns",
+  "schemaVersion": 1,
+  "id": "q9TUBeZT#JY7vNPEy",
+  "parent": "q9TUBeZT#8asrTSy2",
+  "outgoing": [
+    {
+      "order": 65,
+      "kind": "data",
+      "label": "checkpoints",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "q9TUBeZT#At3lLvM5",
+      "to": "q9TUBeZT#WeopV6vB"
+    },
+    {
+      "order": 70,
+      "kind": "dependency",
+      "label": "code bindings",
+      "emphasis": "normal",
+      "id": "q9TUBeZT#DItFWU8w",
+      "to": "q9TUBeZT#1G8NR5HF"
+    }
+  ]
+}

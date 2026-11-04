@@ -9,8 +9,8 @@ type-checks it with `astro check`.
 
 ## Work on the site
 
-The hero paints Archboard's own architecture live, with the product's painter. The painter and
-its painting must come from one build of the renderer core. Make both from the repository root,
+The hero and the section about Archboard's own model use the product's painter. The painter and
+its paintings must come from one build of the renderer core. Make both from the repository root,
 inside `nix develop`:
 
 ```sh
@@ -19,7 +19,7 @@ bun run build:core
 bun site/scripts/paint.ts
 ```
 
-Run `bun site/scripts/paint.ts` again after a change to the renderer core or to
+Run `bun site/scripts/paint.ts` again after a change to the renderer core, to `site/model` or to
 `.archboard/vault`. The paintings go to `src/paintings/`, which Git ignores.
 
 Then run these commands in this folder:
@@ -46,10 +46,17 @@ Every diagram on the page is real output of the Archboard renderer, in the dark 
   `docs/readme/`, which the README also uses.
 - The other drawings are in `src/diagrams/`. `bun run render` draws them again from
   `examples/web-shop`.
-- The hero's drawing is the whole of `.archboard/vault`, painted by `scripts/paint.ts` in flat
-  relief. The painter draws it on canvases, and the hero's shader lays them on the table and
-  raises each card as a tile. The painter is the product's own, imported from
-  `packages/renderer/src/ui/clients/painter.ts`.
+- The hero draws `site/model`, a small model made for the site. It shows how an agent states a
+  system through the CLI and how Archboard draws it for the people who read it. `scripts/paint.ts`
+  renders it with every container open, in flat relief, and records where each card, tray, label
+  and route lies beside the painting.
+- The hero's code is in `src/scripts/hero/`. The product's painter, imported from
+  `packages/renderer/src/ui/clients/painter.ts`, paints the picture once on the CPU into still
+  images. One WebGL shader then does everything that moves: it lays the images on a table in
+  perspective, raises each card as a tile, sinks each tray, and sends light along the real routes
+  of the lines. The light reaches each card by the quickest route from the agents, so the entry
+  has no hand-placed timing.
+- The section about Archboard's own model paints the whole of `.archboard/vault` live.
 - The fonts come from `packages/renderer/assets/fonts/`, the same files the renderer uses.
 - The voice orb is the product's own code, imported from `packages/workbench/src/ui/clients/orb/`
   and `packages/workbench/src/ui/rules/orb/`. The site points `@archboard/timing` at
@@ -59,6 +66,30 @@ Every diagram on the page is real output of the Archboard renderer, in the dark 
 
 The counts in Measures and Changes together are real rows of Archboard's own model, read on
 2026-11-04. They are in `src/lib/measures.ts`.
+
+## Change the hero's model
+
+`site/model` is a canonical model in a flat folder, so the CLI does not find it in this checkout.
+To read or change it, copy it into a scratch holder outside the checkout and use a private
+server, as `scripts/render-diagrams.sh` does. Run these commands from the repository root, with
+a free port in `ARCHBOARD_URL`:
+
+```sh
+work=$(mktemp -d)
+mkdir -p "$work/holder/.archboard"
+cp -r site/model "$work/holder/.archboard/vault"
+git init -q "$work/holder"
+export ARCHBOARD_URL="http://127.0.0.1:4390" ARCHBOARD_REPOS="$work/repos.json"
+export ARCHBOARD_NO_AUTOSTART=1 XDG_STATE_HOME="$work/state"
+bin/archboard repo add "$work/holder"
+bin/archboard start
+bin/archboard -C "$work/holder" model read
+```
+
+Change it with `model claim` and `model edit`, as the [archboard skill](../skills/archboard/SKILL.md)
+describes. The holder's vault has no history yet, so run `model archive-init` before the first
+change. Then copy the vault's files back into `site/model`, run `bin/archboard stop`, and paint
+the hero again.
 
 ## Draw the diagrams again
 

@@ -1,0 +1,34 @@
+{
+  "order": 20,
+  "name": "Codex",
+  "kind": "agent",
+  "responsibility": "Reads your code and states what the system is",
+  "schemaVersion": 1,
+  "id": "q9TUBeZT#fEGOCrfM",
+  "outgoing": [
+    {
+      "order": 20,
+      "kind": "call",
+      "label": "states meaning",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "q9TUBeZT#OEz3OodP",
+      "to": "q9TUBeZT#jOiYJByJ"
+    },
+    {
+      "order": 40,
+      "kind": "data",
+      "label": "writes",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "q9TUBeZT#oP5R8u73",
+      "to": "q9TUBeZT#1G8NR5HF"
+    }
+  ]
+}

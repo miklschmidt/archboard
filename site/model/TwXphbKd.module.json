@@ -1,0 +1,19 @@
+{
+  "order": 43,
+  "name": "Proposals",
+  "kind": "datastore",
+  "responsibility": "The next change, drawn before any code",
+  "schemaVersion": 1,
+  "id": "q9TUBeZT#TwXphbKd",
+  "parent": "q9TUBeZT#8asrTSy2",
+  "outgoing": [
+    {
+      "order": 60,
+      "kind": "dependency",
+      "label": "against",
+      "emphasis": "normal",
+      "id": "q9TUBeZT#5KVpVE4p",
+      "to": "q9TUBeZT#JY7vNPEy"
+    }
+  ]
+}
