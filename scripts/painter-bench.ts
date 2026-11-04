@@ -300,8 +300,9 @@ async function main(): Promise<void> {
 	const results: unknown[] = [];
 	try {
 		for (const size of run.sizes) {
-			for (const painter of run.painters) {
-				for (let attempt = 0; attempt < run.runs; attempt += 1) {
+			// The painters take turns, so that a change in the machine's load reaches each alike.
+			for (let attempt = 0; attempt < run.runs; attempt += 1) {
+				for (const painter of run.painters) {
 					const id = `${painter}-${size}-${String(attempt)}`;
 					const reported = new Promise<string>((resolve, reject) => {
 						waiting.set(id, resolve);
