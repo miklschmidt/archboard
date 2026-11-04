@@ -167,7 +167,7 @@ const source = `<span class="ln">21</span>  <span class="k">const</span> order =
 		display: block;
 		font-size: inherit;
 	}
-	.ln {
+	.source :global(.ln) {
 		display: inline-block;
 		width: 3.2em;
 		padding-right: 1em;
@@ -175,10 +175,10 @@ const source = `<span class="ln">21</span>  <span class="k">const</span> order =
 		color: var(--ink-faint);
 		user-select: none;
 	}
-	.k {
-		color: var(--violet);
+	.source :global(.k) {
+		color: var(--violet-text);
 	}
-	.hl {
+	.source :global(.hl) {
 		display: inline-block;
 		width: 100%;
 		background: color-mix(in oklch, var(--changed) 16%, transparent);

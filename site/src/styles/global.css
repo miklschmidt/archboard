@@ -84,6 +84,12 @@
 	--cyan: oklch(0.797 0.134 211.5);
 	--neutral: oklch(0.72 0.01 80);
 
+	/* Text variants keep the secondary-text contrast floor without changing data marks. */
+	--changed-text: color-mix(in oklch, var(--changed) 80%, var(--ink));
+	--removed-text: color-mix(in oklch, var(--removed) 80%, var(--ink));
+	--sky-text: color-mix(in oklch, var(--sky) 85%, var(--ink));
+	--violet-text: color-mix(in oklch, var(--violet) 65%, var(--ink));
+
 	/* Depth: a lit top edge, a contact shadow and a warm soft shadow below. */
 	--shadow-raised:
 		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.06 0.004 75 / 0.7),
