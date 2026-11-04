@@ -26,9 +26,13 @@ reviews:
       instructions: >-
         This is the canonical architecture model of the repository. The
         archboard CLI writes it; nobody edits these JSON files by hand. Do not
-        suggest edits to the JSON or to IDs. Review only whether the model
-        meaning (modules, relationships, flows, code bindings) agrees with the
-        code change in this PR, and name the module or flow that disagrees.
+        suggest edits to the JSON or to IDs. If the PR changes code, review
+        whether the model meaning (modules, relationships, flows, code
+        bindings) agrees with that change, and name the module or flow that
+        disagrees. If the PR changes only the model, such as a proposal or a
+        walkthrough, review whether the changed modules, relationships, flows
+        and narrative beats agree with each other and with the rest of the
+        model.
     - path: "backlog/**"
       instructions: >-
         The Backlog.md CLI writes these files; nobody edits them by hand. Do
@@ -69,8 +73,11 @@ reviews:
           Fail if the PR description or any commit message in the PR holds a
           `Co-Authored-By` trailer that names Claude, Anthropic, Codex, OpenAI,
           GPT or any AI model, a "Generated with" line, a robot emoji credit
-          line, or another AI credit line. Name the commit or the line. Pass
-          otherwise. Other trailers, such as `Refs: TASK-123`, pass.
+          line, or another line that credits an AI with authorship. Name the
+          commit or the line. Pass otherwise. Other trailers, such as
+          `Refs: TASK-123`, pass. A line that states how the change was
+          reviewed or tested, such as `Reviewed with sol-loop: 2 rounds with
+          gpt-6.1-sol`, is evidence, not credit, and passes.
       - name: "Lint and type rules kept"
         mode: error
         instructions: >-
