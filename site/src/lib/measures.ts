@@ -1,6 +1,6 @@
 // Measures of Archboard's own model, read on 2026-11-04 from this repository: `archboard model
 // inspect <module>` for the interface counts and `archboard model locality` for a year of Git
-// history (509 parts read, 2323 commits, 66 coupled pairs). A module with no parts has no
+// history at a33217fc4 (509 parts read, 2320 commits, 66 coupled pairs). A module with no parts has no
 // interface, so its interface counts are empty.
 
 export interface MeasureRow {
@@ -38,7 +38,7 @@ export const measureRows: MeasureRow[] = [
 		hidden: 7,
 		passThrough: 0,
 		callers: 13,
-		commits: 567,
+		commits: 564,
 		changesWith: 0,
 		unjoined: 0,
 	},
