@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 
 use crate::drawing::Edge;
-use crate::geometry::{Curve, Point, Segment, round_coord, vertices_of};
+use crate::geometry::{Curve, Point, Rect, Segment, round_coord, vertices_of};
 use crate::js;
 use crate::paint::build::{Items, concat, grouped, point, shape};
 use crate::paint::styles::stroke_width;
@@ -366,18 +366,43 @@ pub(super) fn mark_radius(width: f64) -> f64 {
     width + JUNCTION_REACH
 }
 
-/// The marks for every join, in the ink and weight of the heavier line there:
-/// each route with the ink its line is drawn in.
-pub(super) fn junction_marks(routes: &[(&Edge, Colour)]) -> Items {
+/// Every join of some routes, each at its place: one mark per place, or one
+/// bar for joins a few units apart along one lane.
+fn junctions_of<'a>(routes: impl IntoIterator<Item = &'a Edge>) -> Vec<Junction> {
     let join_routes: Vec<JoinRoute> = routes
-        .iter()
-        .map(|(route, _)| JoinRoute {
+        .into_iter()
+        .map(|route| JoinRoute {
             corners: vertices_of(&route.curve),
             bends: bends_of(&route.curve),
             width: stroke_width(route.edge.emphasis),
         })
         .collect();
-    let junctions = gathered(joins_of(&join_routes));
+    gathered(joins_of(&join_routes))
+}
+
+/// The box each junction mark of some routes is drawn in, for what keeps
+/// clear of the marks: the crossing pass stands no hop on one.
+pub fn junction_boxes(routes: &[Edge]) -> Vec<Rect> {
+    junctions_of(routes)
+        .into_iter()
+        .map(|junction| {
+            let radius = mark_radius(junction.width);
+            let until = junction.until.unwrap_or(junction.point);
+            let [from, to] = [junction.point, until];
+            Rect {
+                x: js::js_min(from.x, to.x) - radius,
+                y: js::js_min(from.y, to.y) - radius,
+                width: (from.x - to.x).abs() + radius * 2.0,
+                height: (from.y - to.y).abs() + radius * 2.0,
+            }
+        })
+        .collect()
+}
+
+/// The marks for every join, in the ink and weight of the heavier line there:
+/// each route with the ink its line is drawn in.
+pub(super) fn junction_marks(routes: &[(&Edge, Colour)]) -> Items {
+    let junctions = junctions_of(routes.iter().map(|(route, _)| *route));
     if junctions.is_empty() {
         return Items::new();
     }

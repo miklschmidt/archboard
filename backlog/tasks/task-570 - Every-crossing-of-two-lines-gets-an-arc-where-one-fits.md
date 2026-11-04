@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-03T18:42:00Z'
-updated_date: '2026-11-03T19:50:00Z'
+updated_date: '2026-11-04T01:00:00Z'
 labels:
   - renderer
 dependencies: []
@@ -29,6 +29,7 @@ The owner reported on 2026-11-03 that crossing lines often get no arc: two lines
 - [x] #5 An audit of every scope of the dogfood vault and examples/web-shop in both engines reports zero crossings with no arc
 - [x] #6 The first render of the whole dogfood model in Blocks stays within 10 percent of main
 - [x] #7 bun run check passes
+- [ ] #8 No arc stands side by side with another on one line, faces another across neighbouring lines, or bulges into a junction mark, in any scope of the dogfood vault and examples/web-shop in either engine, with every hop at its full radius; the shared drawing check holds it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -43,6 +44,8 @@ The owner reported on 2026-11-03 that crossing lines often get no arc: two lines
 Audit (SVG check, every scope, both engines, light theme): main 1278 crossings with no arc across .archboard/vault and examples/web-shop; this branch 0. The integrity check fails on main for 4 of the 6 fixed fixture cases (Flask dependencies blocks, Dense system map track and blocks, Nested public API blocks). First render of the whole dogfood model in Blocks: about 610 ms on main, about 640 ms on this branch. The owner rejected smaller hops on 2026-11-03, so every hop keeps the full radius. The architecture model makes no claim about the crossing pass, so no proposal is needed. wide-pictures (benchmark lane) fails on main for Browser hosting with "labels over their own line"; that failure predates this task.
 
 Sol review round 1 (gpt-6.1-sol, xhigh): S1 (integrity check misses a line passing exactly through a corner sample point) and S2 (drop the one-point gap past a forced hop foot) declined as rare-case nits: the audit finds 0 corner crossings and 0 crossings with no arc with the gap kept. bun run check passed on 7d595bb08 (21 of 21 tasks).
+
+Owner follow-up (2026-11-04): forced hops crowded each other and junction marks. Measured with the new crowdedArcs check over every scope of .archboard/vault and examples/web-shop in both engines: 113 crowded arcs at a30e697de, 0 after. The forced stage now picks the least crowded of its own hop, the hops beside it grown into one crest, a bundle of the lines crossing its cluster, and its hop with a facing hop turned; ties go to the option adding the fewest arcs. Junction marks come from the painter's own rule (archboard_scene::paint::junction_boxes). crowdedArcs runs in expectDrawingIntact and fails 4 gate fixtures at a30e697de. First render of the whole Blocks model: about 640 ms before, about 680 ms after.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

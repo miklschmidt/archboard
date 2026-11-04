@@ -9,9 +9,14 @@
 //! cluster (`clusters`): its crossers hop it one each where every one may and
 //! every hop fits, else its line rises over all of it under one crest, else
 //! over single crossings of it where it is the upper line at the rest. A
-//! crossing no plan settles still hops where a hop fits, and else wherever a
-//! line runs straight past both of a hop's feet, so every crossing has an arc
-//! (TASK-570). Beside a join, the line that does not join rises.
+//! crossing no plan settles still hops where a hop fits, and else gets the
+//! least crowded arc that stands wherever a line runs straight past both of a
+//! hop's feet (`forced`): its own hop, the hops beside it grown into one
+//! crest, the lines crossing its cluster hopping it as one bundle, or its hop
+//! with a hop it would face turned. So every crossing has an arc, and arcs do
+//! not stand side by side on one line, face each other or bulge into a
+//! junction mark wherever another arc avoids it (TASK-570). Beside a join,
+//! the line that does not join rises.
 
 use std::collections::BTreeMap;
 
@@ -23,14 +28,14 @@ use crate::constants::BEND_RADIUS;
 use crate::ecma::{js_min, max, min, round, sign, sorted_by};
 
 use super::clusters::{Cluster, Clusters, at_on, clusters_of, sides_of};
+use super::crowding::{crowded, near_own_head};
 use super::drawn_lines::{
     DrawnCrossing, Edges, Line, drawn_crossings, join_near, piece_of, straight_runs, straightness,
     weight,
 };
 use super::folded::unfold_crossings;
 use super::hops::{
-    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, crowded, look_of, near_own_head,
-    passes_beneath, replace_runs,
+    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, look_of, passes_beneath, replace_runs,
 };
 use super::{BRIDGE_RADIUS, LineLook};
 
@@ -41,7 +46,7 @@ mod forced;
 const FULL_ROOM: f64 = HOP_MARGIN + BEND_RADIUS;
 
 /// The least a rising line keeps past each foot, where no line has a bend's room.
-const LEAST_ROOM: f64 = HOP_MARGIN;
+pub(super) const LEAST_ROOM: f64 = HOP_MARGIN;
 
 /// Straight line on a crossing's shorter side past which a line has all the
 /// room a hop could want.
@@ -55,7 +60,7 @@ const JOIN_REACH: f64 = BRIDGE_RADIUS;
 
 /// One run rising over some crossings of one of its clusters, under one hop or crest.
 #[derive(Clone, Debug)]
-struct Rise {
+pub(super) struct Rise {
     cluster: usize,
     crossings: Vec<usize>,
 }
@@ -77,9 +82,10 @@ struct Settling<'a> {
     lines: &'a BTreeMap<String, LineLook>,
     crossings: Vec<DrawnCrossing>,
     clusters: Clusters,
-    bridges: Vec<DrawingBridge>,
-    /// The hops each route's straight segments carry, by segment.
-    replacements: Vec<BTreeMap<usize, Vec<Curve>>>,
+    /// The rise each standing hop stands for, beside its hop in the scene's.
+    stood: Vec<Rise>,
+    /// The lines cut beneath a joining line with no hop.
+    cuts: Vec<DrawingBridge>,
     settled: Vec<bool>,
     /// The cluster whose line rose over each crossing, where one did.
     risen: Vec<Option<usize>>,
@@ -160,41 +166,49 @@ impl Settling<'_> {
         }
     }
 
-    /// Record one standing hop: its bridge, and the hop on every route of the
-    /// rising trunk, which `crest_along` found each to hold all of.
+    /// Record one standing hop over a rise's crossings.
     fn stand(&mut self, rise: &Rise, curve: Curve) {
-        let run_index = self.cluster(rise.cluster).run;
         for &crossing in &rise.crossings {
             self.settled[crossing] = true;
             self.risen[crossing] = Some(rise.cluster);
         }
-        let mut under = Vec::new();
-        let mut members = Vec::new();
-        for &crossing in &rise.crossings {
-            let (line, beneath) = self.sides(rise.cluster, crossing);
-            under.extend(self.ids_of(beneath));
-            members.extend(line.members.iter().copied());
-        }
-        let edge_id = self.edges()[self.scene.runs[run_index].edge_index]
-            .edge
-            .id
-            .clone();
-        self.bridges.push(DrawingBridge {
-            edge_id,
-            under: unique(under),
-            curve: curve.clone(),
-            join: None,
-        });
-        let run = &self.scene.runs[run_index];
-        for member in unique(members) {
-            let member = &self.scene.runs[member];
-            self.replacements[member.edge_index]
-                .entry(member.segment_index)
-                .or_default()
-                .push(carried(&curve, run, member));
-        }
-        let axis = run.axis;
+        let axis = self.scene.runs[self.cluster(rise.cluster).run].axis;
+        self.stood.push(rise.clone());
         self.scene.hops.push(Hop::new(curve, axis));
+    }
+
+    /// The bridges the standing hops draw, then the cuts, and the hop each
+    /// route's straight segments carry, by segment: the hop on every route of
+    /// the rising trunk, which `crest_along` found each to hold all of.
+    fn finish(self) -> (Vec<DrawingBridge>, Vec<BTreeMap<usize, Vec<Curve>>>) {
+        let mut replacements: Vec<BTreeMap<usize, Vec<Curve>>> =
+            vec![BTreeMap::new(); self.edges().len()];
+        let mut bridges = Vec::new();
+        for (rise, hop) in self.stood.iter().zip(&self.scene.hops) {
+            let run = &self.scene.runs[self.cluster(rise.cluster).run];
+            let mut under = Vec::new();
+            let mut members = Vec::new();
+            for &crossing in &rise.crossings {
+                let (line, beneath) = self.sides(rise.cluster, crossing);
+                under.extend(self.ids_of(beneath));
+                members.extend(line.members.iter().copied());
+            }
+            for member in unique(members) {
+                let member = &self.scene.runs[member];
+                replacements[member.edge_index]
+                    .entry(member.segment_index)
+                    .or_default()
+                    .push(carried(&hop.curve, run, member));
+            }
+            bridges.push(DrawingBridge {
+                edge_id: self.edges()[run.edge_index].edge.id.clone(),
+                under: unique(under),
+                curve: hop.curve.clone(),
+                join: None,
+            });
+        }
+        bridges.extend(self.cuts);
+        (bridges, replacements)
     }
 
     /// The ids of the routes a drawn line holds, each once.
@@ -421,7 +435,7 @@ impl Settling<'_> {
             ),
             join: Some(true),
         };
-        self.bridges.push(bridge);
+        self.cuts.push(bridge);
     }
 
     /// Settle every crossing: the cluster plans in their order, then a hop
@@ -525,17 +539,18 @@ pub(crate) fn bridge_unfolded(
         risen: vec![None; crossings.len()],
         crossings,
         clusters,
-        bridges: Vec::new(),
-        replacements: vec![BTreeMap::new(); edges.len()],
+        stood: Vec::new(),
+        cuts: Vec::new(),
     };
     state.settle();
+    let (bridges, replacements) = state.finish();
     Bridged {
         edges: edges
             .iter()
-            .zip(&state.replacements)
+            .zip(&replacements)
             .map(|(edge, replacements)| replace_runs(edge, replacements))
             .collect(),
-        bridges: state.bridges,
+        bridges,
     }
 }
 

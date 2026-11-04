@@ -1,10 +1,13 @@
-// Where two drawn lines cross with no arc over the crossing, read off the SVG.
+// Where two drawn lines cross with no arc over the crossing, and where arcs
+// crowd each other or a junction mark, read off the SVG.
 //
 // Every crossing of two lines gets an arc (TASK-570): one line hops the other,
 // so a reader sees which passes over. A crossing left plain, or a line cut
 // beneath another with no arc over the gap, reads as a join or a break. This
 // reads each route's own path, leaves out its arcs, and finds where the rest
-// of two routes' ink crosses.
+// of two routes' ink crosses. Two arcs side by side on one line, two arcs
+// facing each other across neighbouring lines, or an arc bulging into a
+// junction mark read as one knot.
 
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import type { DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
@@ -28,6 +31,15 @@ const STRAIGHT = 0.01;
 
 /** The chords a corner is read as, enough to find where a line crosses it. */
 const CORNER_CHORDS = 8;
+
+/** Routes this close across share one drawn line. */
+const SHARED_INK = 2;
+
+/** Clear space two arcs keep between them before they read as one knot. */
+const ARC_SPACE = 6;
+
+/** Clear space an arc keeps from a junction mark. */
+const MARK_SPACE = 3;
 
 /**
  * A route path's pieces. The renderer writes absolute `M`, `L` and `C` commands.
@@ -93,6 +105,58 @@ function arcPieces(pieces: readonly Piece[]): Set<number> {
 		for (let arc = index; arc <= last; arc++) arcs.add(arc);
 	}
 	return arcs;
+}
+
+/** One arc of a route: the line it leaves, which way it bulges, and its box. */
+type DrawnArc = {
+	readonly id: string;
+	readonly axis: "x" | "y";
+	readonly line: number;
+	readonly side: number;
+	readonly box: Box;
+};
+
+/** A box, by its low and high corners. */
+type Box = { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number };
+
+/**
+ * A route's arcs.
+ * @param id The route's relationship.
+ * @param d The route's path.
+ * @returns Its arcs, in order.
+ */
+function arcsOf(id: string, d: string): DrawnArc[] {
+	const pieces = piecesOf(d);
+	const arcs = [...arcPieces(pieces)].sort((a, b) => a - b);
+	const found: DrawnArc[] = [];
+	for (const [index, piece] of arcs.entries()) {
+		if (arcs[index - 1] === piece - 1) continue;
+		let last = piece;
+		while (arcs.includes(last + 1)) last++;
+		const axis = axisOf(pieces[piece - 1])!;
+		const line = axis === "x" ? pieces[piece]!.from.y : pieces[piece]!.from.x;
+		const points = pieces.slice(piece, last + 1).flatMap((one) => [one.from, one.to]);
+		const box = {
+			x0: Math.min(...points.map((point) => point.x)),
+			y0: Math.min(...points.map((point) => point.y)),
+			x1: Math.max(...points.map((point) => point.x)),
+			y1: Math.max(...points.map((point) => point.y)),
+		};
+		const middle = axis === "x" ? (box.y0 + box.y1) / 2 : (box.x0 + box.x1) / 2;
+		found.push({ id, axis, line, side: Math.sign(middle - line), box });
+	}
+	return found;
+}
+
+/**
+ * How far apart two boxes lie: the larger of their gaps across and down, 0
+ * where they overlap.
+ * @param a A box.
+ * @param b Another.
+ * @returns The gap.
+ */
+function gapOf(a: Box, b: Box): number {
+	return Math.max(0, b.x0 - a.x1, a.x0 - b.x1, b.y0 - a.y1, a.y0 - b.y1);
 }
 
 /**
@@ -197,4 +261,60 @@ function unbridgedCrossings(drawing: RenderedDiagram): string[] {
 	return found;
 }
 
-export { unbridgedCrossings };
+/**
+ * Every place two arcs, or an arc and a junction mark, crowd each other: two
+ * arcs side by side on one line, which one crest would draw; two arcs on
+ * neighbouring lines bulging toward each other; an arc bulging into a
+ * junction mark beside the line it passes over.
+ * The routes of one trunk draw one arc each, and those count once.
+ * @param drawing The rendered document.
+ * @returns Each such place, by what crowds and where.
+ */
+function crowdedArcs(drawing: RenderedDiagram): string[] {
+	const arcs: DrawnArc[] = [];
+	for (const arc of [...routePaths(drawing.svg)].flatMap(([id, d]) => arcsOf(id, d))) {
+		const copy = arcs.some(
+			(other) =>
+				other.axis === arc.axis &&
+				Math.abs(other.line - arc.line) <= SHARED_INK &&
+				["x0", "y0", "x1", "y1"].every(
+					(corner) =>
+						Math.abs(other.box[corner as keyof Box] - arc.box[corner as keyof Box]) <=
+						SHARED_INK + STRAIGHT,
+				),
+		);
+		if (!copy) arcs.push(arc);
+	}
+	const where = (box: Box) => `${box.x0.toFixed(1)},${box.y0.toFixed(1)}`;
+	const found: string[] = [];
+	for (const [index, one] of arcs.entries())
+		for (const other of arcs.slice(index + 1)) {
+			if (one.axis !== other.axis || gapOf(one.box, other.box) >= ARC_SPACE) continue;
+			const apart = other.line - one.line;
+			if (Math.abs(apart) <= SHARED_INK)
+				found.push(`${one.id} and ${other.id} side by side at ${where(one.box)}`);
+			else if (one.side === Math.sign(apart) && other.side === -one.side)
+				found.push(`${one.id} and ${other.id} facing at ${where(one.box)}`);
+		}
+	for (const mark of drawing.svg.matchAll(
+		/<circle cx="([-\d.]+)" cy="([-\d.]+)" r="([\d.]+)"[^>]*data-members=/gu,
+	)) {
+		const [x, y, r] = [Number(mark[1]), Number(mark[2]), Number(mark[3])];
+		const box = { x0: x - r, y0: y - r, x1: x + r, y1: y + r };
+		for (const arc of arcs) {
+			const [along, beside, low, high] =
+				arc.axis === "x" ? [x, y, arc.box.x0, arc.box.x1] : [y, x, arc.box.y0, arc.box.y1];
+			const apart = beside - arc.line;
+			const into =
+				along > low &&
+				along < high &&
+				Math.abs(apart) > SHARED_INK &&
+				Math.sign(apart) === arc.side;
+			if (into && gapOf(arc.box, box) < MARK_SPACE)
+				found.push(`${arc.id} bulging into a junction at ${where(box)}`);
+		}
+	}
+	return found;
+}
+
+export { crowdedArcs, unbridgedCrossings };

@@ -4,11 +4,13 @@
 //! (`folded`), and then one line hops each crossing (`crossings`), so every
 //! crossing has an arc wherever a line runs straight past a hop's feet. The lines a reader
 //! sees and the straight runs a hop stands on are `drawn_lines`; where a hop
-//! may stand and what it draws is `hops`.
+//! may stand and what it draws is `hops`; how near it comes to what it keeps
+//! clear of is `crowding`.
 
 mod clearance;
 mod clusters;
 mod crossings;
+mod crowding;
 mod drawn_lines;
 mod fans;
 mod folded;
