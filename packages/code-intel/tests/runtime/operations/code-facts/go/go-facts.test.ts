@@ -14,7 +14,7 @@
 import { afterAll, expect, test } from "bun:test";
 import { createCodeFacts } from "#runtime/services/code-facts/reader.ts";
 import type { SyntaxFacts } from "#runtime/operations/code-facts/facts.ts";
-import { fixtureDirectory } from "#tests/runtime/support/code-facts/checkout.ts";
+import { fixtureCheckout, fixtureDirectory } from "#tests/runtime/support/code-facts/checkout.ts";
 
 const checkout = fixtureDirectory("go-shop");
 const facts = createCodeFacts();
@@ -109,6 +109,25 @@ test("a test sees its package's names, and a test package imports the package it
 	expect(await targets("ledger/ledger_external_test.go")).toMatchObject({
 		"ledger.New call": "ledger/ledger.go#New",
 	});
+});
+
+test("an explicit import alias wins over the package clause even when it matches the path's last element", async () => {
+	const aliased = fixtureCheckout({
+		"go.mod": "module example.com/demo\n",
+		"caller/caller.go":
+			'package caller\nimport fmtx "example.com/demo/fmtx"\nfunc Run() { fmtx.Cents() }\n',
+		"fmtx/fmtx.go": "package format\nfunc Cents() {}\n",
+	});
+	try {
+		const read = await facts.pass(new AbortController().signal).read(aliased, "caller/caller.go");
+		if (read?.adapter !== "go") throw new Error("not read as Go");
+		expect(read.references.find((use) => use.symbol === "fmtx.Cents")?.target).toEqual({
+			path: "fmtx/fmtx.go",
+			symbol: "Cents",
+		});
+	} finally {
+		aliased.remove();
+	}
 });
 
 test("a go.mod requires the modules of the checkout as build dependencies of their directories", async () => {

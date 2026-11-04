@@ -39,7 +39,6 @@
 import path from "node:path";
 import type {
 	Definition,
-	Import,
 	ImportResolver,
 	ModuleReading,
 	ParsedFacts,
@@ -49,8 +48,8 @@ import type {
 	Target,
 } from "#runtime/operations/code-facts/facts.ts";
 import {
-	defaultName,
 	type GoFacts,
+	type GoImport,
 	isGoFacts,
 } from "#runtime/operations/code-facts/go/go-adapter.ts";
 import type { CheckoutFiles } from "#runtime/operations/code-facts/modules/module-resolution.ts";
@@ -249,10 +248,10 @@ function packageNamed(
  * @param pkg The package.
  * @returns The name; none for a blank or a dot import.
  */
-function importedName(found: Import, pkg: GoPackage): string | undefined {
+function importedName(found: GoImport, pkg: GoPackage): string | undefined {
 	const local = found.names[0]?.local;
 	if (local === undefined || local === ".") return undefined;
-	return local === defaultName(found.specifier) ? pkg.name : local;
+	return found.alias ?? pkg.name;
 }
 
 /** What the imports of one file reach. */

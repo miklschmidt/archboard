@@ -31,8 +31,15 @@ import { ANY, type RunSyntax, valueMark } from "#runtime/operations/code-facts/r
 import { spansOf, type Spans } from "#runtime/operations/code-facts/spans.ts";
 import { unparsedOf } from "#runtime/operations/code-facts/unparsed.ts";
 
+/** A Go import, retaining an explicit alias separately from an inferred name. */
+type GoImport = Import & { readonly alias: string | undefined };
+
 /** The facts of a Go file, with its package and the names it binds in a narrower scope. */
-type GoFacts = ParsedFacts & { readonly package: string; readonly scoped: readonly string[] };
+type GoFacts = ParsedFacts & {
+	readonly imports: readonly GoImport[];
+	readonly package: string;
+	readonly scoped: readonly string[];
+};
 
 /** The captures of one file, by what the query calls them. */
 interface Captured {
@@ -212,16 +219,18 @@ function defaultName(specifier: string): string {
  * @param unparsed The file's unparsed code.
  * @returns The import, or undefined for one that did not parse.
  */
-function importOf(node: Node, unparsed: Spans): Import | undefined {
+function importOf(node: Node, unparsed: Spans): GoImport | undefined {
 	const specifier = pathOf(node);
 	if (specifier === undefined || unparsed.holds(node.startIndex)) return undefined;
-	const local = node.childForFieldName("name")?.text ?? defaultName(specifier);
+	const alias = node.childForFieldName("name")?.text;
+	const local = alias ?? defaultName(specifier);
 	return {
 		specifier,
 		line: node.startPosition.row + 1,
 		names: local === "_" ? [] : [{ imported: "*", local, typeOnly: false }],
 		typeOnly: false,
 		reexport: false,
+		alias,
 	};
 }
 
@@ -324,4 +333,4 @@ function isGoFacts(facts: ParsedFacts | undefined): facts is GoFacts {
 	return facts !== undefined && "package" in facts && "scoped" in facts;
 }
 
-export { defaultName, type GoFacts, goFacts, isGoFacts };
+export { type GoFacts, type GoImport, goFacts, isGoFacts };
