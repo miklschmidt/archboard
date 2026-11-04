@@ -118,3 +118,9 @@ knowledge_base:
       - "CONTEXT.md"
       - "PRODUCT.md"
       - "docs/agents/*.md"
+
+# Users report bugs as GitHub issues. Each new issue gets related code and a
+# complexity assessment.
+issue_enrichment:
+  auto_enrich:
+    enabled: true
