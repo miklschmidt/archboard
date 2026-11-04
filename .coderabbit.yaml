@@ -43,7 +43,6 @@ reviews:
 
   pre_merge_checks:
     title:
-      mode: warning
       # Squash merges use the PR title as their commit subject.
       requirements: >-
         The title must follow Conventional Commits. Start with a type, an
@@ -59,7 +58,6 @@ reviews:
       mode: "off"
     custom_checks:
       - name: "PR body sections"
-        mode: warning
         instructions: >-
           Pass if the PR description has the level-two headings
           `## Summary`, `## Evidence` and `## Merge Danger`, in that order,
