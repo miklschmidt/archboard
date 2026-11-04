@@ -18,6 +18,7 @@ const starting: {
 	retry?: boolean | undefined;
 	failed?: string | undefined;
 	stoppedBeforeListening?: boolean;
+	replaceCanvas?: boolean;
 } = {};
 const painter = new Proxy(
 	{},
@@ -70,7 +71,7 @@ await mock.module("@archboard/renderer/browser", () => ({
 					return;
 				}
 				let next = canvas;
-				if (failure !== undefined) {
+				if (failure !== undefined || starting.replaceCanvas) {
 					next = document.createElement("canvas");
 					canvas.replaceWith(next);
 				}
@@ -111,6 +112,7 @@ beforeEach(() => {
 	delete starting.failCall;
 	delete starting.settle;
 	delete starting.stoppedBeforeListening;
+	delete starting.replaceCanvas;
 	clock = createSteppedClock(0);
 	leave.push(driveFramesFrom(clock));
 });
@@ -316,6 +318,17 @@ test("a painter that finishes startup after disposal is freed", async () => {
 	leave.pop()?.();
 	await start("cpu");
 	expect(taken).toEqual(["free"]);
+	expect(surface.hasAttribute("data-painter")).toBe(false);
+});
+
+test("disposal removes a replacement canvas before the stage accepts its painter", async () => {
+	const { surface, host } = await surfaceWithAPicture();
+	starting.replaceCanvas = true;
+	starting.settle?.("webgl");
+	leave.pop()?.();
+	await flushStartup();
+	expect(taken).toEqual(["free"]);
+	expect(host.childNodes.length).toBe(0);
 	expect(surface.hasAttribute("data-painter")).toBe(false);
 });
 

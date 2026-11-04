@@ -423,6 +423,7 @@ class PictureStage {
 	#employ(next: StartedPainter): void {
 		if (this.#disposed) {
 			next.painter.free();
+			next.canvas.remove();
 			return;
 		}
 		this.#started = next;
