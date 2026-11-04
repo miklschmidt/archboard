@@ -131,15 +131,14 @@ function startCpu(canvas: HTMLCanvasElement, dark: boolean, reason: string): Sta
 }
 
 /**
- * A canvas that has held no context, in place of one that has. A canvas that
+ * A detached canvas that has held no context. A canvas that
  * took a WebGPU or a WebGL2 context never takes a 2D one.
  * @param canvas The canvas.
- * @returns The new canvas, in the same place.
+ * @returns The new canvas, ready for a painter to start before it replaces the old one.
  */
 function freshCanvas(canvas: HTMLCanvasElement): HTMLCanvasElement {
 	const fresh = canvas.cloneNode(false);
 	if (!(fresh instanceof HTMLCanvasElement)) throw new Error("A canvas did not copy as a canvas.");
-	canvas.replaceWith(fresh);
 	return fresh;
 }
 
@@ -244,13 +243,22 @@ async function startPainter(
 	failure?: PainterFailure,
 ): Promise<StartedPainter> {
 	await loadPainter();
-	if (failure === undefined) return startBest(canvas, dark);
-	// A canvas that held a GPU context takes no 2D context, and its surface may be what failed.
-	const target = freshCanvas(canvas);
-	if (failure.painter === "webgl") return startCpu(target, dark, failure.reason);
-	return failure.retry
-		? startBest(target, dark, failure.reason)
-		: startWebgl(target, dark, failure.reason);
+	let next: StartedPainter;
+	if (failure === undefined) {
+		next = await startBest(canvas, dark);
+	} else {
+		// A canvas that held a GPU context takes no 2D context, and its surface may be what failed.
+		const target = freshCanvas(canvas);
+		next =
+			failure.painter === "webgl"
+				? startCpu(target, dark, failure.reason)
+				: failure.retry
+					? await startBest(target, dark, failure.reason)
+					: startWebgl(target, dark, failure.reason);
+	}
+	// A failed start leaves the caller's canvas in place, so it can still dispose or retry it.
+	if (next.canvas !== canvas) canvas.replaceWith(next.canvas);
+	return next;
 }
 
 export { startPainter, warmPainter };

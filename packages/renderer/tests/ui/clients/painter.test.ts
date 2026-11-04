@@ -4,6 +4,8 @@ import { expect, mock, test } from "bun:test";
 const stops: ((reason: string) => void)[] = [];
 /** Why WebGL2 refuses the next canvas, or nothing when it starts. */
 const webgl: { refusal?: string } = {};
+/** Why the CPU refuses the next canvas, or nothing when it starts. */
+const cpu: { refusal?: string } = {};
 await mock.module("#shared/protocol/generated/core/archboard_painter_wasm.js", () => ({
 	/**
 	 * Load the controlled painter.
@@ -41,7 +43,10 @@ await mock.module("#shared/protocol/generated/core/archboard_painter_wasm.js", (
 		 * Start a controlled CPU painter.
 		 * @returns The painter.
 		 */
-		cpu: () => ({}),
+		cpu: () => {
+			if (cpu.refusal !== undefined) throw new Error(cpu.refusal);
+			return {};
+		},
 	},
 }));
 const { startPainter } = await import("#ui/clients/painter.ts");
@@ -90,6 +95,7 @@ async function inPage(adapter: boolean, run: () => Promise<void>): Promise<void>
 		if (previous === undefined) Reflect.deleteProperty(globalThis, "ARCHBOARD_CORE_SOURCE_HASH");
 		else Object.defineProperty(globalThis, "ARCHBOARD_CORE_SOURCE_HASH", previous);
 		delete webgl.refusal;
+		delete cpu.refusal;
 		await GlobalRegistrator.unregister();
 	}
 }
@@ -178,5 +184,21 @@ test("a WebGL2 painter that stopped at work gives way to the CPU on a fresh canv
 		});
 		expect(next.kind).toBe("cpu");
 		expect(next.canvas).not.toBe(canvas);
+	});
+});
+
+test("a failed CPU fallback keeps the caller's canvas for disposal and retry", async () => {
+	await inPage(false, async () => {
+		webgl.refusal = "WebGL2 unavailable";
+		cpu.refusal = "2D context unavailable";
+		const canvas = pageCanvas();
+		const host = canvas.parentElement;
+		await expect(startPainter(canvas, false)).rejects.toBeDefined();
+		expect(host?.querySelector("canvas")).toBe(canvas);
+		delete cpu.refusal;
+		const next = await startPainter(canvas, false);
+		expect(next.kind).toBe("cpu");
+		expect(host?.querySelector("canvas")).toBe(next.canvas);
+		expect(next.canvas.isConnected).toBe(true);
 	});
 });
