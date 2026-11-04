@@ -1,13 +1,20 @@
-//! Spike: Vello GPU (sparse strips) on WebGL2. The CPU makes the strips of
-//! each path, and a WebGL2 fragment pass fills and composes them. It runs the
-//! same `Canvas` contract as Vello on WebGPU and on the CPU (ADR 0071).
+//! Vello GPU on WebGL2, the painter of a page with no usable WebGPU (ADR 0074).
+//! This thread cuts each path into sparse strips, and a WebGL2 fragment pass
+//! fills and composes them. It draws the same `Canvas` calls as Vello on the
+//! CPU, and it keeps its parts as the CPU canvas does.
 
 use archboard_paint::canvas::{Canvas, Ink};
+use archboard_paint::parts::Keeper;
 use kurbo::{Affine, BezPath};
 use peniko::{BlendMode, Color, Compose, Fill, Mix};
 use vello_gpu::{RenderSize, Resources, Scene, WebGlRenderer, WebGlTextureBindings};
-use wasm_bindgen::JsError;
+use wasm_bindgen::{JsCast, JsError};
 use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
+
+use crate::software::is_software;
+
+/// The parameter of `WEBGL_debug_renderer_info` that names the renderer itself.
+const UNMASKED_RENDERER_WEBGL: u32 = 0x9246;
 
 /// One frame's drawing, as strips made on this thread.
 pub(crate) struct WebGlCanvas {
@@ -79,7 +86,7 @@ impl Canvas for WebGlCanvas {
 pub(crate) struct WebGlTarget {
     renderer: WebGlRenderer,
     resources: Resources,
-    canvas: WebGlCanvas,
+    canvas: Keeper<WebGlCanvas>,
     size: (u16, u16),
 }
 
@@ -89,7 +96,7 @@ pub(crate) struct WebGlTarget {
     reason = "this is the shape map_err asks for"
 )]
 fn refused(error: vello_gpu::WebGlError) -> JsError {
-    JsError::new(&format!("WebGL refused: {error:?}"))
+    JsError::new(&format!("WebGL2 refused: {error}"))
 }
 
 /// A side of a canvas as the renderer counts it.
@@ -101,18 +108,53 @@ fn side(pixels: u32) -> u16 {
     pixels as u16
 }
 
+/// A frame's drawing, empty, at a size in pixels.
+fn drawing_of(size: (u16, u16)) -> WebGlCanvas {
+    WebGlCanvas {
+        scene: Scene::new(size.0, size.1),
+    }
+}
+
+/// The name of the renderer under a canvas's WebGL2 context, when it draws in
+/// software. A browser can give a software renderer with no performance
+/// caveat: Chrome gives `SwiftShader` so, and Firefox never reports the caveat.
+fn software_renderer(canvas: &HtmlCanvasElement) -> Option<String> {
+    let gl = canvas
+        .get_context("webgl2")
+        .ok()
+        .flatten()?
+        .dyn_into::<WebGl2RenderingContext>()
+        .ok()?;
+    let unmasked = gl
+        .get_extension("WEBGL_debug_renderer_info")
+        .ok()
+        .flatten()
+        .is_some();
+    let name = gl
+        .get_parameter(if unmasked {
+            UNMASKED_RENDERER_WEBGL
+        } else {
+            WebGl2RenderingContext::RENDERER
+        })
+        .ok()?
+        .as_string()?;
+    is_software(&name).then_some(name)
+}
+
 impl WebGlTarget {
-    /// Start Vello GPU on a canvas's WebGL2 context. It refuses a software
-    /// rasterizer, because it asks for `failIfMajorPerformanceCaveat`.
+    /// Start Vello GPU on a canvas's WebGL2 context. It refuses a context with a
+    /// major performance caveat, and a software renderer before it waits for
+    /// its shaders.
     pub(crate) fn start(canvas: &HtmlCanvasElement) -> Result<WebGlTarget, JsError> {
         let size = (side(canvas.width()), side(canvas.height()));
-        let (renderer, resources) = WebGlRenderer::new(canvas).map_err(refused)?;
+        let (starting, resources) = WebGlRenderer::begin(canvas).map_err(refused)?;
+        if let Some(name) = software_renderer(canvas) {
+            return Err(JsError::new(&format!("WebGL2 draws in software: {name}.")));
+        }
         Ok(WebGlTarget {
-            renderer,
+            renderer: starting.finish().map_err(refused)?,
             resources,
-            canvas: WebGlCanvas {
-                scene: Scene::new(size.0, size.1),
-            },
+            canvas: Keeper::new(drawing_of(size), (f64::from(size.0), f64::from(size.1))),
             size,
         })
     }
@@ -120,12 +162,13 @@ impl WebGlTarget {
     /// Change the size of the canvas, in pixels.
     pub(crate) fn resize(&mut self, width: u32, height: u32) {
         self.size = (side(width), side(height));
-        self.canvas.scene.reset_and_resize(self.size.0, self.size.1);
+        self.canvas
+            .replace(drawing_of(self.size), (f64::from(width), f64::from(height)));
     }
 
     /// The canvas of the next frame, empty.
-    pub(crate) fn begin(&mut self) -> &mut WebGlCanvas {
-        self.canvas.scene.reset();
+    pub(crate) fn begin(&mut self) -> &mut Keeper<WebGlCanvas> {
+        self.canvas.canvas().scene.reset();
         &mut self.canvas
     }
 
@@ -137,29 +180,12 @@ impl WebGlTarget {
         };
         self.renderer
             .render(
-                &self.canvas.scene,
+                &self.canvas.canvas().scene,
                 &mut self.resources,
                 &size,
                 &WebGlTextureBindings::new(),
                 Color::TRANSPARENT,
             )
             .map_err(refused)
-    }
-
-    /// Wait for the GPU to finish the frame: read one pixel back. Only a
-    /// measurement asks for this.
-    pub(crate) fn wait(&self) {
-        let gl: &WebGl2RenderingContext = self.renderer.gl_context();
-        let mut pixel = [0_u8; 4];
-        gl.read_pixels_with_opt_u8_array(
-            0,
-            0,
-            1,
-            1,
-            WebGl2RenderingContext::RGBA,
-            WebGl2RenderingContext::UNSIGNED_BYTE,
-            Some(&mut pixel),
-        )
-        .ok();
     }
 }

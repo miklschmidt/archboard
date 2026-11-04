@@ -9,13 +9,14 @@ import { PICTURE_MS } from "@archboard/timing";
 const taken: string[] = [];
 
 /** How a painter's start ends. */
-type Outcome = "cpu" | "gpu" | "failed";
+type Outcome = "cpu" | "webgl" | "gpu" | "failed";
 
 /** Startup and failure are controlled at the painter boundary. */
 const starting: {
 	settle?: (outcome: Outcome) => void;
 	failCall?: string;
 	retry?: boolean | undefined;
+	failed?: string | undefined;
 	stoppedBeforeListening?: boolean;
 } = {};
 const painter = new Proxy(
@@ -46,6 +47,7 @@ await mock.module("@archboard/renderer/browser", () => ({
 	 * @param canvas The canvas.
 	 * @param _dark The theme.
 	 * @param failure The GPU failure, if any.
+	 * @param failure.painter The painter that failed.
 	 * @param failure.reason What went wrong.
 	 * @param failure.retry Whether the GPU gets another try.
 	 * @returns The started painter.
@@ -53,10 +55,11 @@ await mock.module("@archboard/renderer/browser", () => ({
 	startPainter: (
 		canvas: HTMLCanvasElement,
 		_dark: boolean,
-		failure?: { reason: string; retry: boolean },
+		failure?: { painter: string; reason: string; retry: boolean },
 	) =>
 		new Promise((resolve, reject) => {
 			starting.retry = failure?.retry;
+			starting.failed = failure?.painter;
 			/**
 			 * Finish startup with the chosen outcome.
 			 * @param outcome How startup ends.
@@ -237,6 +240,23 @@ test("a stopped GPU gets one more try, and a second failure soon after ends the 
 	clock.runFrame();
 	await flushStartup();
 	expect(starting.retry).toBe(false);
+});
+
+test("a WebGL2 painter that fails at work gives way to the CPU painter", async () => {
+	const { surface, host } = await surfaceWithAPicture();
+	await start("webgl");
+	expect(surface.getAttribute("data-painter")).toBe("webgl");
+	const original = host.firstChild;
+	starting.failCall = "frame";
+	stageOf(surface)?.setFarLine(1, 0);
+	clock.runFrame();
+	expect(surface.querySelector("use")).not.toBeNull();
+	await flushStartup();
+	expect(starting.failed).toBe("webgl");
+	expect(starting.retry).toBe(false);
+	await start("cpu");
+	expect(host.firstChild).not.toBe(original);
+	expect(surface.getAttribute("data-painter")).toBe("cpu");
 });
 
 test("a GPU that stops before subscription restarts after startup releases its guard", async () => {

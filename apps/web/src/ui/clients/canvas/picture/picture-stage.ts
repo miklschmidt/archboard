@@ -70,7 +70,7 @@ class PictureStage {
 	#starting = false;
 	/** Stop hearing about the GPU this stage's painter stands on. */
 	#stopWatchingGpu: (() => void) | undefined;
-	/** When this stage's GPU painter last failed at work. */
+	/** When this stage's WebGPU painter last failed at work. */
 	#gpuFailedAt = Number.NEGATIVE_INFINITY;
 	#disposed = false;
 	#frame: number | null = null;
@@ -435,20 +435,30 @@ class PictureStage {
 	}
 
 	/**
-	 * Replace a painter that failed at work: a GPU painter by another, the first time, and a
-	 * GPU painter that fails again soon by Vello on the CPU.
+	 * Replace a painter that failed at work: a WebGPU painter by another, the first time, and by
+	 * the next painter down when it fails again soon. A WebGL2 painter gives way to Vello on the CPU.
 	 * @param cause What went wrong.
 	 */
 	#replacePainter(cause: unknown): void {
 		const failed = this.#started;
 		if (failed === null || this.#disposed) return;
 		this.#retire(cause);
-		if (failed.kind !== "gpu") return;
+		if (failed.kind === "cpu") return;
+		const reason = cause instanceof Error ? cause.message : "The GPU painter failed.";
+		void this.#start({ painter: failed.kind, reason, retry: this.#retriesGpu(failed.kind) });
+	}
+
+	/**
+	 * Whether a failed painter gets another try: only WebGPU does, unless it failed soon before.
+	 * @param kind The painter that failed.
+	 * @returns Whether it gets another try.
+	 */
+	#retriesGpu(kind: StartedPainter["kind"]): boolean {
+		if (kind !== "gpu") return false;
 		const now = frameClock().now();
 		const retry = now - this.#gpuFailedAt > PICTURE_MS.gpuRetry;
 		this.#gpuFailedAt = now;
-		const reason = cause instanceof Error ? cause.message : "The GPU painter failed.";
-		void this.#start({ reason, retry });
+		return retry;
 	}
 
 	/**
@@ -472,14 +482,16 @@ class PictureStage {
 	};
 
 	/**
-	 * Ask for the next frame. Traffic on the CPU rests as long as its last frame took, which
-	 * leaves a reader half of the thread. A recording's clock stands still, so nothing rests there.
+	 * Ask for the next frame. Traffic on a painter that cuts its strips on this thread, on WebGL2
+	 * or on the CPU, rests as long as its last frame took, which leaves a reader half of the
+	 * thread. A recording's clock stands still, so nothing rests there.
 	 * @param now The last frame's time.
 	 * @param cost How long the last frame took.
 	 */
 	#nextFrame(now: number, cost: number): void {
 		const started = this.#started;
-		if (started?.kind === "cpu" && cost > 0 && started.painter.trafficAlone(now)) {
+		const strips = started !== null && started.kind !== "gpu";
+		if (strips && cost > 0 && started.painter.trafficAlone(now)) {
 			if (this.#rest !== null) frameClock().cancelAfter(this.#rest);
 			this.#rest = frameClock().after(cost, () => {
 				this.#rest = null;

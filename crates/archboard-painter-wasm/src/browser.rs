@@ -6,6 +6,7 @@ use archboard_paint::clock::StageClock;
 use archboard_paint::cpu::CpuCanvas;
 use archboard_paint::flight::DiveWay;
 use archboard_paint::palette::Theme;
+use archboard_paint::parts::Keeper;
 use archboard_paint::presentation::{Camera, Light, Marks};
 use archboard_paint::stage::Stage;
 use archboard_scene::geometry::Rect;
@@ -15,19 +16,15 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::{Clamped, JsCast};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
 
-#[cfg(feature = "webgpu")]
 use crate::gpu::{GpuTarget, warm};
-#[cfg(feature = "webgl")]
 use crate::webgl::WebGlTarget;
 
 /// Where a frame lands.
 enum Target {
-    #[cfg(feature = "webgpu")]
     Gpu(Box<GpuTarget>),
-    #[cfg(feature = "webgl")]
     WebGl(Box<WebGlTarget>),
     Cpu {
-        canvas: Box<CpuCanvas>,
+        canvas: Box<Keeper<CpuCanvas>>,
         context: CanvasRenderingContext2d,
     },
 }
@@ -69,10 +66,9 @@ pub struct Painter {
     stage: Stage,
     clock: StageClock,
     target: Target,
-    /// Spike: how long the last frame took to encode and to render, in ms.
+    /// How long the last frame took to draw on its canvas and to render, in
+    /// milliseconds.
     times: [f64; 2],
-    /// Spike: whether a WebGL frame waits for the GPU before it ends.
-    waits: bool,
 }
 
 /// The page's clock, in milliseconds.
@@ -84,7 +80,6 @@ fn clock_now() -> f64 {
 
 #[wasm_bindgen]
 impl Painter {
-    #[cfg(feature = "webgpu")]
     /// Start the GPU of this page, ready for its canvases. It ends when the GPU
     /// finished a first frame, and `stopped` hears why the GPU stopped, if it does.
     ///
@@ -95,7 +90,6 @@ impl Painter {
         warm(stopped).await
     }
 
-    #[cfg(feature = "webgpu")]
     /// Start Vello on WebGPU on a canvas, with the GPU of this page.
     ///
     /// # Errors
@@ -110,7 +104,6 @@ impl Painter {
             clock: StageClock::default(),
             target: Target::Gpu(Box::new(target)),
             times: [0.0; 2],
-            waits: false,
         })
     }
 
@@ -131,21 +124,24 @@ impl Painter {
             stage: Stage::new(theme_of(dark), (f64::from(width), f64::from(height))),
             clock: StageClock::default(),
             target: Target::Cpu {
-                canvas: Box::new(cpu_canvas(width, height)),
+                canvas: Box::new(Keeper::new(
+                    cpu_canvas(width, height),
+                    (f64::from(width), f64::from(height)),
+                )),
                 context,
             },
             times: [0.0; 2],
-            waits: false,
         })
     }
 
-    #[cfg(feature = "webgl")]
-    /// Spike: start Vello GPU on WebGL2 on a canvas.
+    /// Start Vello GPU on WebGL2 on a canvas.
     ///
     /// # Errors
     ///
-    /// The canvas gave no WebGL2 context, or only one with a major performance
-    /// caveat, such as a software rasterizer.
+    /// The canvas gave no WebGL2 context, only one with a major performance
+    /// caveat, or one that draws in software, or its shaders did not build. A
+    /// canvas that took a WebGL2 context takes no 2D one, so the page falls back
+    /// on a new canvas.
     pub fn webgl(canvas: &HtmlCanvasElement, dark: bool) -> Result<Painter, JsError> {
         let size = (f64::from(canvas.width()), f64::from(canvas.height()));
         let target = WebGlTarget::start(canvas)?;
@@ -154,17 +150,19 @@ impl Painter {
             clock: StageClock::default(),
             target: Target::WebGl(Box::new(target)),
             times: [0.0; 2],
-            waits: false,
         })
     }
 
-    /// Spike: how long the last frame took to encode and to render, in ms.
+    /// How long the last frame took to draw on its canvas and to render, in
+    /// milliseconds: what `scripts/painter-bench.ts` reports. Drawing on a
+    /// strip canvas cuts the strips.
     #[wasm_bindgen(js_name = lastTimes)]
     pub fn last_times(&self) -> Vec<f64> {
         self.times.to_vec()
     }
 
-    /// Spike: what a frame of a moment draws, as fills, strokes and layers.
+    /// What a frame of a moment draws, as fills, strokes and layers, for a
+    /// measurement to name its picture.
     #[wasm_bindgen(js_name = countFrame)]
     #[expect(
         clippy::cast_possible_truncation,
@@ -179,13 +177,6 @@ impl Painter {
             count.strokes as u32,
             count.layers as u32,
         ]
-    }
-
-    /// Spike: make each WebGL frame wait for the GPU, so that its render time
-    /// holds the GPU's work.
-    #[wasm_bindgen(js_name = setWaits)]
-    pub fn set_waits(&mut self, waits: bool) {
-        self.waits = waits;
     }
 
     /// Put a picture on the stage.
@@ -442,11 +433,12 @@ impl Painter {
     pub fn resize(&mut self, width: u32, height: u32) {
         self.stage.set_size((f64::from(width), f64::from(height)));
         match &mut self.target {
-            #[cfg(feature = "webgpu")]
             Target::Gpu(target) => target.resize(width, height),
-            #[cfg(feature = "webgl")]
             Target::WebGl(target) => target.resize(width, height),
-            Target::Cpu { canvas, .. } => **canvas = cpu_canvas(width, height),
+            Target::Cpu { canvas, .. } => canvas.replace(
+                cpu_canvas(width, height),
+                (f64::from(width), f64::from(height)),
+            ),
         }
     }
 
@@ -466,38 +458,34 @@ impl Painter {
     pub fn frame(&mut self, now: f64) -> Result<bool, JsError> {
         let now = self.clock.at(now);
         let started = clock_now();
-        let (changing, encoded) = match &mut self.target {
-            #[cfg(feature = "webgpu")]
+        let (changing, drawn) = match &mut self.target {
             Target::Gpu(target) => {
                 let changing = self.stage.draw(target.begin(), now);
-                let encoded = clock_now();
+                let drawn = clock_now();
                 target.finish()?;
-                (changing, encoded)
+                (changing, drawn)
             }
-            #[cfg(feature = "webgl")]
             Target::WebGl(target) => {
                 let changing = self.stage.draw(target.begin(), now);
-                let encoded = clock_now();
+                let drawn = clock_now();
                 target.finish()?;
-                if self.waits {
-                    target.wait();
-                }
-                (changing, encoded)
+                (changing, drawn)
             }
             Target::Cpu { canvas, context } => {
-                canvas.begin();
+                canvas.canvas().begin();
                 let changing = self.stage.draw(&mut **canvas, now);
-                let encoded = clock_now();
-                let width = canvas.width();
-                let image = ImageData::new_with_u8_clamped_array(Clamped(canvas.finish()), width)
+                let drawn = clock_now();
+                let pixels = canvas.canvas();
+                let width = pixels.width();
+                let image = ImageData::new_with_u8_clamped_array(Clamped(pixels.finish()), width)
                     .map_err(|error| refused(&error))?;
                 context
                     .put_image_data(&image, 0.0, 0.0)
                     .map_err(|error| refused(&error))?;
-                (changing, encoded)
+                (changing, drawn)
             }
         };
-        self.times = [encoded - started, clock_now() - encoded];
+        self.times = [drawn - started, clock_now() - drawn];
         Ok(changing)
     }
 }
