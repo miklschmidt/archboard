@@ -3,7 +3,9 @@
 // A Go package is the `.go` files directly in one directory that share a
 // package clause. Its tests (`_test.go`) see the package's names, and no
 // other file sees theirs. A test file whose clause is `<name>_test` is a
-// package of its own, which imports the package it tests.
+// package of its own, which imports the package it tests. A file that
+// `//go:build ignore` leaves out of every build, such as a generator, is in
+// no package.
 //
 // An import path names a package below a module: the module path that a
 // `go.mod` declares, and the directory below that file. Every `go.mod` of the
@@ -199,7 +201,8 @@ function indexOf(pkg: GoPackage, exportedOnly: boolean, tests: boolean): Package
 }
 
 /**
- * The Go files directly in a directory, with their facts.
+ * The Go files of the packages directly in a directory, with their facts:
+ * none that a build constraint leaves out of every build.
  * @param checkout The checkout's files.
  * @param parsed Reads a file's facts.
  * @param directory The directory.
@@ -217,7 +220,7 @@ async function factsIn(
 	for (const file of files) {
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time, through the pass's queue of parses
 		const facts = await parsed(file);
-		if (isGoFacts(facts)) read.set(file, facts);
+		if (isGoFacts(facts) && !facts.ignored) read.set(file, facts);
 	}
 	return read;
 }

@@ -39,6 +39,8 @@ type GoFacts = ParsedFacts & {
 	readonly imports: readonly GoImport[];
 	readonly package: string;
 	readonly scoped: readonly string[];
+	/** A build constraint keeps the file out of its package, as a generator's `//go:build ignore`. */
+	readonly ignored: boolean;
 };
 
 /** The captures of one file, by what the query calls them. */
@@ -318,10 +320,26 @@ function goFacts(tree: Tree, grammar: Grammar): GoFacts {
 		imports,
 		unparsed: unparsedOf(captured.unparsed),
 		package: pkg?.namedChildren[0]?.text ?? "",
+		ignored: ignoredByBuild(tree.rootNode.text),
 		scoped: [...new Set(captured.binding.map((node) => node.text))].filter(
 			(name) => !fileLevel.has(name),
 		),
 	};
+}
+
+/** The build constraint that keeps a file out of every build. */
+const IGNORE_CONSTRAINT = /^\/\/go:build\s+ignore\s*$/mu;
+
+/**
+ * Whether a file is out of its package: `//go:build ignore` before its
+ * package clause, as a generator in a library's directory writes, often with
+ * `package main`. The go command builds it only when it is named.
+ * @param text The file's text.
+ * @returns True when it is.
+ */
+function ignoredByBuild(text: string): boolean {
+	const clause = text.search(/^package\s/mu);
+	return IGNORE_CONSTRAINT.test(clause === -1 ? text : text.slice(0, clause));
 }
 
 /**
@@ -333,4 +351,4 @@ function isGoFacts(facts: ParsedFacts | undefined): facts is GoFacts {
 	return facts !== undefined && "package" in facts && "scoped" in facts;
 }
 
-export { type GoFacts, type GoImport, goFacts, isGoFacts };
+export { type GoFacts, type GoImport, goFacts, ignoredByBuild, isGoFacts };

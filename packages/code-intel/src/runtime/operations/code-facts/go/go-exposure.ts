@@ -2,10 +2,12 @@
 // files directly in one directory. Each of its files but its tests is a root
 // file, because a package exports its capitalized names from whichever file
 // declares them. A package `main` is a program that no other package can
-// import, so it exposes nothing. A directory below the package's is another
-// package, which can call it. No file stands for a Go package, as `index.ts`
-// stands for its directory.
+// import, so it exposes nothing. A file that `//go:build ignore` leaves out of
+// every build, such as a generator, is no file of the package. A directory
+// below the package's is another package, which can call it. No file stands for
+// a Go package, as `index.ts` stands for its directory.
 
+import { ignoredByBuild } from "#runtime/operations/code-facts/go/go-adapter.ts";
 import type { ExposureRule } from "#runtime/operations/code-facts/modules/module-exposure.ts";
 import type { CheckoutFiles } from "#runtime/operations/code-facts/modules/module-resolution.ts";
 import type { FactsPass } from "#runtime/services/code-facts/reader.ts";
@@ -36,8 +38,9 @@ function goRootFiles(
 			(file) => GO_FILE.test(file) && !TEST_FILE.test(file) && directoryOf(file) === directory,
 		)
 		.toSorted();
-	const program = files.some((file) => MAIN.test(pass.text(checkout, file) ?? ""));
-	return Promise.resolve(program ? [] : files);
+	const built = files.filter((file) => !ignoredByBuild(pass.text(checkout, file) ?? ""));
+	const program = built.some((file) => MAIN.test(pass.text(checkout, file) ?? ""));
+	return Promise.resolve(program ? [] : built);
 }
 
 /**
