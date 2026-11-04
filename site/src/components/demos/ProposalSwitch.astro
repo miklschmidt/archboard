@@ -252,11 +252,12 @@ const proposal = drawings.queued;
 				show(button.dataset["show"] ?? "proposal");
 			});
 		}
-		if (prefersReducedMotion()) continue;
+		// The motion preference is read at each turn, so changing it mid-visit takes effect.
 		whileVisible(root, (visible) => {
 			window.clearInterval(timer);
 			if (!visible || touched) return;
 			timer = window.setInterval(() => {
+				if (prefersReducedMotion()) return;
 				show(root.dataset["state"] === "proposal" ? "today" : "proposal");
 			}, 4200);
 		});

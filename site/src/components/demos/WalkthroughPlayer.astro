@@ -274,7 +274,6 @@ const first = walkthrough.beats[0];
 		const segments = [...root.querySelectorAll<HTMLElement>(".seg")];
 		const orb = root.querySelector<HTMLCanvasElement>("[data-orb]");
 		if (!stage || !figure || !title || !subtitle || !count || !narrate || !orb) continue;
-		const still = prefersReducedMotion();
 
 		let index = 0;
 		let playing = false;
@@ -315,11 +314,11 @@ const first = walkthrough.beats[0];
 					const span = document.createElement("span");
 					span.className = "w";
 					span.textContent = word;
-					if (!speak || still) span.classList.add("is-said");
+					if (!speak || prefersReducedMotion()) span.classList.add("is-said");
 					return at === 0 ? [span] : [document.createTextNode(" "), span];
 				}),
 			);
-			if (!speak || still) return;
+			if (!speak || prefersReducedMotion()) return;
 			const spans = [...subtitle.querySelectorAll<HTMLElement>(".w")];
 			let at = 0;
 			const say = () => {
@@ -357,9 +356,9 @@ const first = walkthrough.beats[0];
 		drawVoiceOrb(orb, () => (playing ? level : 0.05));
 		show(0, false);
 
-		if (still) continue;
+		// The motion preference is read at each start, so changing it mid-visit takes effect.
 		whileVisible(root, (visible) => {
-			if (visible && !onScreen && !playing && !paused) setPlaying(true);
+			if (visible && !onScreen && !playing && !paused && !prefersReducedMotion()) setPlaying(true);
 			if (!visible && playing) setPlaying(false);
 			onScreen = visible;
 		});
