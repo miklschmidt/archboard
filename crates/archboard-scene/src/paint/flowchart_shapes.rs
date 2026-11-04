@@ -40,10 +40,17 @@ const JUMP_EDGE: f64 = -0.12;
 const CAP_MIDDLE: f64 = 0.36;
 
 /// A terminal's outline: a box with a half circle at each end, each half drawn in `END_SIDES` steps.
+/// On a square box the halves meet and make a disc, so each half stops one
+/// step short: its last point is the first of the other half.
 fn terminal_outline(rect: Rect) -> Polygon {
     let r = rect.height / 2.0;
+    let last = if rect.width > rect.height {
+        END_SIDES
+    } else {
+        END_SIDES - 1
+    };
     let end = |centre: f64, from: f64| -> Vec<Point> {
-        (0..=END_SIDES)
+        (0..=last)
             .map(|step| {
                 let angle = from + (PI * f64::from(step)) / f64::from(END_SIDES);
                 Point {
@@ -430,5 +437,41 @@ impl FlowchartShapes<'_> {
                 warning_on_line(Some(warning), unsettled, palette),
             ]),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::scene::Item;
+
+    #[test]
+    fn a_jump_in_disc_and_its_shadow_reach_a_painter_whole() {
+        let card: Node = serde_json::from_str(
+            r#"{"measured": {"node": {"id": "in", "order": 0, "name": "B"},
+                "width": 30, "height": 30, "headerHeight": 0, "runs": []},
+                "box": {"x": 771, "y": 111, "width": 30, "height": 30}, "depth": 0}"#,
+        )
+        .expect("the card reads");
+        let disc = ShapedCard {
+            shape: FlowchartShape::Jump {
+                end: JumpEnd::In,
+                number: 1,
+            },
+            words: vec!["B".to_owned()],
+        };
+        let shapes = BTreeMap::from([("in".to_owned(), disc)]);
+        let painter = FlowchartShapes {
+            shapes: &shapes,
+            palette: &Palette::of_page(),
+        };
+        let drawn = [
+            painter.shadow(&card, None),
+            painter.paint(&card, None, false),
+        ]
+        .concat();
+        // A painting writes a point that is not a number as null, and no painter reads null back.
+        let painting = serde_json::to_string(&drawn).expect("the items write");
+        serde_json::from_str::<Vec<Item>>(&painting).expect("a painter reads every point");
     }
 }
