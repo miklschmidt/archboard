@@ -4,15 +4,12 @@
 // spark draws each line, then the traffic runs, as the product draws a picture (DESIGN.md, the
 // Spark Rule). With reduced motion, everything is there at once.
 
-import { prefersReducedMotion } from "./reveal";
+import { animate } from "./reveal";
 import { sparkLine } from "./spark";
 
 const TILT = 16;
 /** How faint a card is before the agent maps it. */
 const WAITING = 0.16;
-
-/** Wait a number of milliseconds. */
-const wait = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
 
 interface Parts {
 	svg: SVGSVGElement;
@@ -78,28 +75,36 @@ function setWaiting(element: SVGElement): void {
 	element.style.translate = "0 0";
 }
 
-/**
- * Type one dock line, character by character.
- * @param line The line.
- * @param still Whether to skip the typing.
- */
-async function typeLine(line: HTMLElement, still: boolean): Promise<void> {
+/** Type one dock line on visible time. */
+async function typeLine(
+	line: HTMLElement,
+	stage: HTMLElement,
+	signal: AbortSignal,
+): Promise<number> {
 	const text = line.querySelector<HTMLElement>(".text");
 	const full = line.dataset["text"] ?? "";
 	line.classList.remove("is-pending");
-	if (!text || still) return;
+	if (!text) return 0;
 	if (!line.classList.contains("is-command")) {
 		text.textContent = full;
-		return;
+		return 0;
 	}
 	line.classList.add("is-typing");
-	const step = 14;
-	for (let index = 1; index <= full.length; index++) {
-		text.textContent = full.slice(0, index);
-		await wait(step);
+	const duration = full.length * 14;
+	try {
+		await animate(
+			stage,
+			duration,
+			(progress) => {
+				text.textContent = full.slice(0, Math.ceil(full.length * progress));
+			},
+			signal,
+		);
+		await animate(stage, 180, () => {}, signal);
+	} finally {
+		line.classList.remove("is-typing");
 	}
-	await wait(180);
-	line.classList.remove("is-typing");
+	return duration + 180;
 }
 
 /** Set up the hero window, if the page has one. */
@@ -110,7 +115,10 @@ export function mountHeroWindow(): void {
 	const svg = frame?.querySelector<SVGSVGElement>("[data-picture] svg");
 	const replay = document.querySelector<HTMLButtonElement>("[data-replay]");
 	if (!stage || !tilt || !frame || !svg || !replay) return;
-	const still = prefersReducedMotion();
+	const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+	const controller = new AbortController();
+	const { signal } = controller;
+	const wait = (ms: number) => animate(stage, ms, () => {}, signal);
 
 	// The window keeps its laid-out width (narrower on a phone, where only the canvas shows) and
 	// scales to the stage.
@@ -119,16 +127,17 @@ export function mountHeroWindow(): void {
 	new ResizeObserver(fit).observe(stage);
 	fit();
 
-	if (!still) {
-		const lean = () => {
-			const box = stage.getBoundingClientRect();
-			const progress = Math.min(1, Math.max(0, 1 - box.top / (window.innerHeight * 0.9)));
-			tilt.style.setProperty("--tilt", `${(TILT * (1 - progress)).toFixed(2)}deg`);
-		};
-		lean();
-		window.addEventListener("scroll", lean, { passive: true });
-		window.addEventListener("resize", lean);
-	}
+	const lean = () => {
+		const box = stage.getBoundingClientRect();
+		const progress = Math.min(1, Math.max(0, 1 - box.top / (window.innerHeight * 0.9)));
+		tilt.style.setProperty(
+			"--tilt",
+			`${(motion.matches ? 0 : TILT * (1 - progress)).toFixed(2)}deg`,
+		);
+	};
+	lean();
+	window.addEventListener("scroll", lean, { passive: true });
+	window.addEventListener("resize", lean);
 
 	const parts = partsOf(svg);
 	const lines = [...document.querySelectorAll<HTMLElement>("[data-dock] [data-line]")];
@@ -142,12 +151,14 @@ export function mountHeroWindow(): void {
 		for (const traffic of parts.traffic) setShown(traffic, false, 0);
 		for (const line of lines) {
 			line.classList.add("is-pending");
+			line.classList.remove("is-typing");
 			const text = line.querySelector<HTMLElement>(".text");
 			if (text) text.textContent = "";
 		}
 	};
 
 	const cue = async (name: string | undefined) => {
+		signal.throwIfAborted();
 		if (name === "claim") frame.setAttribute("data-claimed", "");
 		if (name === "release") frame.removeAttribute("data-claimed");
 		// A card or a label lands with the shadow it casts.
@@ -156,67 +167,103 @@ export function mountHeroWindow(): void {
 			for (const shadow of parts.shadowsOf.get(id) ?? []) setShown(shadow, true, ms);
 		};
 		if (name === "cards") {
-			parts.nodes.forEach((node, index) =>
-				setTimeout(() => land(node.dataset["semanticId"] ?? "", node, 520), 200 + index * 150),
+			await Promise.all(
+				parts.nodes.map(async (node, index) => {
+					await wait(200 + index * 150);
+					land(node.dataset["semanticId"] ?? "", node, 520);
+					await wait(520);
+				}),
 			);
+			return 200 + Math.max(0, parts.nodes.length - 1) * 150 + 520;
 		}
 		if (name === "lines") {
-			parts.edges.forEach((edge, index) =>
-				setTimeout(async () => {
-					await sparkLine(edge, 760);
+			await Promise.all(
+				parts.edges.map(async (edge, index) => {
+					await wait(index * 170);
+					await sparkLine(edge, 760, signal);
 					const id = edge.dataset["semanticId"] ?? "";
 					const label = parts.labels.get(id);
 					if (label) land(id, label, 360);
-				}, index * 170),
+					await wait(360);
+				}),
 			);
+			return Math.max(0, parts.edges.length - 1) * 170 + 760 + 360;
 		}
 		if (name === "show") {
 			for (const traffic of parts.traffic) setShown(traffic, true, 900);
 		}
+		return 0;
 	};
 
-	let run = 0;
+	let playing = false;
 	const play = async () => {
-		const mine = ++run;
+		// The hidden replay button can still receive an already-queued click.
+		if (playing || motion.matches || signal.aborted) return;
+		playing = true;
 		replay.hidden = true;
 		replay.classList.remove("is-shown");
 		reset();
-		const start = performance.now();
-		const byTime = new Map<number, HTMLElement[]>();
-		for (const line of lines) {
-			const at = Number(line.dataset["at"] ?? 0);
-			byTime.set(at, [...(byTime.get(at) ?? []), line]);
+		try {
+			let elapsed = 0;
+			// The desktop and mobile docks contain copies of the same lines.
+			const byTime = new Map<number, HTMLElement[]>();
+			for (const line of lines) {
+				const at = Number(line.dataset["at"] ?? 0);
+				byTime.set(at, [...(byTime.get(at) ?? []), line]);
+			}
+			for (const [at, group] of [...byTime.entries()].sort((a, b) => a[0] - b[0])) {
+				await wait(Math.max(0, at - elapsed));
+				elapsed = Math.max(at, elapsed);
+				const durations = await Promise.all(group.map((line) => typeLine(line, stage, signal)));
+				elapsed += Math.max(...durations);
+				elapsed += await cue(group[0]?.dataset["cue"]);
+			}
+
+			await wait(2200);
+			replay.hidden = false;
+			replay.classList.add("is-shown");
+		} catch (error) {
+			if (!signal.aborted) throw error;
+		} finally {
+			playing = false;
 		}
-		for (const [at, group] of [...byTime.entries()].sort((a, b) => a[0] - b[0])) {
-			await wait(Math.max(0, at - (performance.now() - start)));
-			if (mine !== run) return;
-			await Promise.all(group.map((line) => typeLine(line, false)));
-			if (mine !== run) return;
-			void cue(group[0]?.dataset["cue"]);
-		}
-		await wait(2200);
-		if (mine !== run) return;
-		replay.hidden = false;
-		requestAnimationFrame(() => replay.classList.add("is-shown"));
 	};
 
-	if (still) {
-		for (const line of lines) void typeLine(line, true);
+	const showAll = () => {
+		if (!motion.matches) return;
+		controller.abort();
+		frame.removeAttribute("data-claimed");
+		for (const part of [
+			...parts.nodes,
+			...parts.shadows,
+			...parts.edges,
+			...parts.labels.values(),
+			...parts.traffic,
+		]) {
+			setShown(part, true, 0);
+		}
+		for (const line of lines) {
+			line.classList.remove("is-pending", "is-typing");
+			const text = line.querySelector<HTMLElement>(".text");
+			if (text) text.textContent = line.dataset["text"] ?? "";
+		}
+		replay.hidden = true;
+		lean();
+	};
+	motion.addEventListener("change", showAll);
+	if (motion.matches) {
+		showAll();
 		return;
 	}
 
 	reset();
 	replay.addEventListener("click", () => void play());
-	const begin = () => {
-		const observer = new IntersectionObserver(
-			(entries) => {
-				if (!entries.some((entry) => entry.isIntersecting)) return;
-				observer.disconnect();
-				void play();
-			},
-			{ threshold: 0 },
-		);
-		observer.observe(stage);
-	};
-	void document.fonts.ready.then(() => setTimeout(begin, 350));
+	void document.fonts.ready.then(async () => {
+		try {
+			await wait(350);
+			await play();
+		} catch (error) {
+			if (!signal.aborted) throw error;
+		}
+	});
 }
