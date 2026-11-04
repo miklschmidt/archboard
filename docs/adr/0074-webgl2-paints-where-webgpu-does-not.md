@@ -38,7 +38,8 @@ The page chooses once for a canvas, from what the browser says:
 
 The refusal by name is necessary. Chrome gave SwiftShader with no performance caveat, and Firefox ignores the caveat flag.
 When the browser gives `WEBGL_debug_renderer_info`, the name comes from it. Otherwise it comes from the plain renderer name.
-The page refuses before it waits for the shaders, so a refusal costs no compile.
+The renderer starts compiling and linking its shaders when it creates the context.
+The page refuses before it waits for that work to finish.
 The rule reads no frame back, as before.
 
 The order lives in `startPainter` of `@archboard/renderer`.
