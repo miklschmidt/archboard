@@ -109,16 +109,17 @@ async function typeLine(
 
 /** Set up the hero window, if the page has one. */
 export function mountHeroWindow(): void {
+	const playback = document.querySelector<HTMLElement>("[data-hero-playback]");
 	const stage = document.querySelector<HTMLElement>("[data-window-stage]");
 	const tilt = document.querySelector<HTMLElement>("[data-window-tilt]");
 	const frame = document.querySelector<HTMLElement>("[data-window]");
 	const svg = frame?.querySelector<SVGSVGElement>("[data-picture] svg");
 	const replay = document.querySelector<HTMLButtonElement>("[data-replay]");
-	if (!stage || !tilt || !frame || !svg || !replay) return;
+	if (!playback || !stage || !tilt || !frame || !svg || !replay) return;
 	const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 	const controller = new AbortController();
 	const { signal } = controller;
-	const wait = (ms: number) => animate(stage, ms, () => {}, signal);
+	const wait = (ms: number) => animate(playback, ms, () => {}, signal);
 
 	// The window keeps its laid-out width (narrower on a phone, where only the canvas shows) and
 	// scales to the stage.
@@ -140,7 +141,7 @@ export function mountHeroWindow(): void {
 	window.addEventListener("resize", lean);
 
 	const parts = partsOf(svg);
-	const lines = [...document.querySelectorAll<HTMLElement>("[data-dock] [data-line]")];
+	const lines = [...playback.querySelectorAll<HTMLElement>("[data-dock] [data-line]")];
 
 	const reset = () => {
 		frame.removeAttribute("data-claimed");
@@ -180,7 +181,7 @@ export function mountHeroWindow(): void {
 			await Promise.all(
 				parts.edges.map(async (edge, index) => {
 					await wait(index * 170);
-					await sparkLine(edge, 760, signal);
+					await sparkLine(edge, playback, 760, signal);
 					const id = edge.dataset["semanticId"] ?? "";
 					const label = parts.labels.get(id);
 					if (label) land(id, label, 360);
@@ -214,7 +215,7 @@ export function mountHeroWindow(): void {
 			for (const [at, group] of [...byTime.entries()].sort((a, b) => a[0] - b[0])) {
 				await wait(Math.max(0, at - elapsed));
 				elapsed = Math.max(at, elapsed);
-				const durations = await Promise.all(group.map((line) => typeLine(line, stage, signal)));
+				const durations = await Promise.all(group.map((line) => typeLine(line, playback, signal)));
 				elapsed += Math.max(...durations);
 				elapsed += await cue(group[0]?.dataset["cue"]);
 			}

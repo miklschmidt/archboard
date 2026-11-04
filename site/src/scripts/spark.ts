@@ -6,11 +6,17 @@ import { animate } from "./reveal";
 /**
  * Draw one relationship of an inline drawing with a spark.
  * @param edge The relationship's group: its halo, its line and its ports.
+ * @param playback The presentation whose visibility controls playback.
  * @param ms How long the spark runs.
  * @param signal Cancels the spark when playback ends.
  * @returns After the line is drawn.
  */
-export async function sparkLine(edge: SVGGElement, ms: number, signal: AbortSignal): Promise<void> {
+export async function sparkLine(
+	edge: SVGGElement,
+	playback: Element,
+	ms: number,
+	signal: AbortSignal,
+): Promise<void> {
 	const path = [...edge.querySelectorAll<SVGPathElement>(":scope > path")].find(
 		(candidate) => !candidate.classList.contains("ab-halo"),
 	);
@@ -36,7 +42,7 @@ export async function sparkLine(edge: SVGGElement, ms: number, signal: AbortSign
 
 	try {
 		await animate(
-			edge,
+			playback,
 			ms,
 			(t) => {
 				const eased = 1 - Math.pow(1 - t, 3);
