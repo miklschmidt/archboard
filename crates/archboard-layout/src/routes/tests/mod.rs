@@ -5,6 +5,7 @@
 //! in `clusters`, and a drawing with some subjects left out in `shown`.
 
 mod clusters;
+mod crowding;
 mod ink;
 mod layering;
 mod shown;

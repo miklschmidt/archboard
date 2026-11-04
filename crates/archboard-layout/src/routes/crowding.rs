@@ -64,9 +64,6 @@ fn route_crowding(scene: &HopScene<'_>, allowed: &[&Run], bounds: Rect, curve: &
                 })
             });
             nearest = js_min(nearest, pieces_crowding(&bridge_boxes, pieces));
-            if nearest <= 0.0 {
-                return nearest;
-            }
         }
     }
     nearest
@@ -136,9 +133,6 @@ fn crowding_among<'h>(
         .chain(boxes)
         .chain(marks)
         .chain(hops));
-    if nearest <= 0.0 {
-        return nearest;
-    }
     let mut allowed = own;
     for under in beneath {
         allowed.extend(line_runs(&scene.runs, under));

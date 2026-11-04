@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-03T18:42:00Z'
-updated_date: '2026-11-04T01:00:00Z'
+updated_date: '2026-11-04T01:35:00Z'
 labels:
   - renderer
 dependencies: []
@@ -36,6 +36,8 @@ The owner reported on 2026-11-03 that crossing lines often get no arc: two lines
 
 <!-- SECTION:PLAN:BEGIN -->
 1. Settle planned drawings through bridge_unfolded and delete bridge_planned with its 128-crossing cap. 2. one_each yields no plan when a crosser may not rise, so crest plans run. 3. Add a last stage (crossings/forced.rs) that stands a full-size hop on a line that runs straight past its feet, ranked by look, cluster consistency and arrowhead approach. 4. Add unbridgedCrossings to the shared drawing integrity check. 5. Update the Rust tests that asserted plain crossings or cuts.
+
+Review cd274c2c1: reproduce verified scoring or drawing assertion defects, fix each defect in a separate commit, and run the requested Rust and renderer tests.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -46,6 +48,10 @@ Audit (SVG check, every scope, both engines, light theme): main 1278 crossings w
 Sol review round 1 (gpt-6.1-sol, xhigh): S1 (integrity check misses a line passing exactly through a corner sample point) and S2 (drop the one-point gap past a forced hop foot) declined as rare-case nits: the audit finds 0 corner crossings and 0 crossings with no arc with the gap kept. bun run check passed on 7d595bb08 (21 of 21 tasks).
 
 Owner follow-up (2026-11-04): forced hops crowded each other and junction marks. Measured with the new crowdedArcs check over every scope of .archboard/vault and examples/web-shop in both engines: 113 crowded arcs at a30e697de, 0 after. The forced stage now picks the least crowded of its own hop, the hops beside it grown into one crest, a bundle of the lines crossing its cluster, and its hop with a facing hop turned; ties go to the option adding the fewest arcs. Junction marks come from the painter's own rule (archboard_scene::paint::junction_boxes). crowdedArcs runs in expectDrawingIntact and fails 4 gate fixtures at a30e697de. First render of the whole Blocks model: about 640 ms before, about 680 ms after.
+
+Review scope: git diff a30e697de..cd274c2c1 in fix/crossing-hop-crowding. These corrections keep the existing renderer architecture accurate, so no architecture proposal is needed.
+
+Review finding R1 verified: crowding.rs stopped at the first overlapping route or keepout, so forced candidates did not use their worst clearance. A fixed-geometry regression failed when obstacle order changed. Removed both early returns so all obstacles contribute to the score.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
