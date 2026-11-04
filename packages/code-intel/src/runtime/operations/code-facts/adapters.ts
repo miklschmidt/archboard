@@ -57,6 +57,9 @@ import {
 	wrappersIn,
 } from "#runtime/operations/code-facts/objc/objc-adapter.ts";
 import { createKubernetesResolver } from "#runtime/operations/code-facts/kubernetes/kubernetes-resolution.ts";
+import { goFacts } from "#runtime/operations/code-facts/go/go-adapter.ts";
+import { goModFacts } from "#runtime/operations/code-facts/go/go-mod.ts";
+import { createGoResolver } from "#runtime/operations/code-facts/go/go-resolution.ts";
 import { flakeFacts } from "#runtime/operations/code-facts/nix/nix-adapter.ts";
 import { pythonFacts } from "#runtime/operations/code-facts/python/python-adapter.ts";
 import { rustFacts } from "#runtime/operations/code-facts/rust/rust-adapter.ts";
@@ -150,6 +153,9 @@ const SWIFT_MANIFEST = treeSitter(
 /** Rust through tree-sitter-rust; a `Cargo.toml` beside it with Bun's TOML parser (TASK-540). */
 const RUST = treeSitter("tree-sitter-rust/tree-sitter-rust.wasm", "rust.scm", rustFacts);
 
+/** Go through tree-sitter-go; a package is a directory, and each `go.mod` names a module (TASK-575). */
+const GO = treeSitter("tree-sitter-go/tree-sitter-go.wasm", "go.scm", goFacts);
+
 /** Every adapter, one entry each. */
 const ADAPTERS: readonly Adapter[] = [
 	{
@@ -172,6 +178,7 @@ const ADAPTERS: readonly Adapter[] = [
 		reads: { ".rs": RUST, "Cargo.toml": cargoFacts },
 		resolver: createRustResolver,
 	},
+	{ name: "go", reads: { ".go": GO, "go.mod": goModFacts }, resolver: createGoResolver },
 	{
 		name: "terraform",
 		reads: { ".tf": TERRAFORM, ".tofu": TERRAFORM },
