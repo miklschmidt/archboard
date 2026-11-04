@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-04T15:39:00Z'
-updated_date: '2026-11-04T20:43:00Z'
+updated_date: '2026-11-04T22:45:00Z'
 labels: []
 dependencies: []
 ordinal: 1019000
@@ -86,4 +86,20 @@ Hero table and live model (2026-11-04, owner direction: merge the renderer into 
 - The site workflow installs the repository, builds the core and paints the hero inside nix develop, with path filters for the core, the model and the vault; actionlint passes. DESIGN.md records the table (e9bf37a0e).
 Evidence: bun run check inside nix develop, 21/21 successful, exit 0, on a0bc9d549. GPU (RTX 4090, Chrome WebGPU, headed): hero at 120 fps with three painters; CPU painter headless: one still level, raised tiles, no traffic; the model viewport redraws a scroll step in about 32 ms on the CPU painter.
 Open: TASK-576 (NaN in most flowchart start markers) also breaks site/src/diagrams/place-order-flowchart.svg (24 NaN paths); owner to decide whether it belongs on this branch.
+
+Hero rework (2026-11-04, owner direction: a jaw-dropping, smooth entry, less yellow, a different scope, a model made for the site):
+- site/model is a small canonical model made for the hero, "How Archboard works": Claude Code and Codex state meaning through the archboard CLI; Your repository holds Source code, Canonical model, Proposals and History; the Archboard server holds Server, Code check and Renderer core; the Browser holds Panes and Painter. It was authored through the CLI on a private server and passes archboard check. The format check ignores site/model, like .archboard/vault (f66c5f8c5). Its policy is block YAML (41477ca8f).
+- The hero paints the picture once with the product's painter on the CPU (startCpuPainter, 66ecaae73) into still images. Starting WebGPU for the hero held the page on a cold profile; the CPU paint takes about 70 ms and now yields to the page between its steps.
+- One WebGL shader does everything that moves (site/src/scripts/hero/): a camera that settles on a critically damped spring onto a diagonal, light that runs from the agents along the real routes and draws each line, cards that rise as tiles when the light reaches them, trays that sink as it enters them, traffic with a steady glow on every traffic line, and the card under the pointer lifting and lighting its lines. Line light is neutral or the line's own colour; no yellow lamp.
+- The camera fits the cards and trays to the room below the words and to the canvas width. A stage holds the words and a room of at least 280 to 400 px, so short laptop screens keep the table below the words and run it on below the fold; portrait screens show a close part of the system.
+- The shader host compiles with KHR_parallel_shader_compile where offered (56c4e2c57). The closing field lost its unused drawing path and table-drawing.ts (933ae5aee).
+Evidence:
+- Production build, headed Chrome on the RTX 4090, fresh profile, NVIDIA shader cache off: 120 fps from 1.15 s after load to the end of the entry, p99 8.5 ms, no slow frame after load. In the first second, frames up to 366 ms come from the page's first style and layout pass (about 90 ms) and script start; the table is still empty then.
+- Headless and headed cold compile of the hero shader: about 135 ms at its first draw, during load.
+- astro check: 0 errors, 0 warnings, 0 hints. Policy lint on painter.ts and vite.config.ts: exit 0. Format check on the changed files: clean. paint.ts output is byte for byte the same after the policy rewrite.
+- Reviewed still frames at 1920x1080, 1536x864, 1440x900, 1366x768, 1280x720, 1280x650, 2560x1080, 2560x1440 and 390x844, with and without reduced motion, and the pointer lift on the real GPU.
+Open:
+- On a cold GPU cache, scrolling into Archboard draws itself starts the WebGPU painter and stalls frames for about 1.6 s, with gaps up to 408 ms. It is outside the hero. Starting that painter on the CPU, or before the reader nears it, would remove it.
+- One headed recording showed no WebGL at all and a 3 s gap in another run; neither repeated in seven later runs.
+- The delegated code review and the full gate for this round are still to run before a pull request.
 <!-- SECTION:NOTES:END -->
