@@ -274,7 +274,10 @@ async function main(): Promise<void> {
 		"/page.js": [PAGE_SCRIPT, "text/javascript"],
 		"/fixture.json": [fixture.json, "application/json"],
 		"/painter.js": [Bun.file(join(run.core, "archboard_painter_wasm.js")), "text/javascript"],
-		"/painter.wasm": [Bun.file(join(run.core, "archboard_painter_wasm_bg.wasm")), "application/wasm"],
+		"/painter.wasm": [
+			Bun.file(join(run.core, "archboard_painter_wasm_bg.wasm")),
+			"application/wasm",
+		],
 		"/theme.css": [Bun.file("packages/renderer/assets/theme.css"), "text/css"],
 	};
 	const server = Bun.serve({
@@ -307,7 +310,10 @@ async function main(): Promise<void> {
 					let limit: ReturnType<typeof setTimeout> | undefined;
 					const reported = new Promise<string>((resolve, reject) => {
 						waiting.set(id, resolve);
-						limit = setTimeout(() => reject(new Error(`${id} did not report in time.`)), RUN_LIMIT_MS);
+						limit = setTimeout(
+							() => reject(new Error(`${id} did not report in time.`)),
+							RUN_LIMIT_MS,
+						);
 					});
 					const query = new URLSearchParams({
 						id,
