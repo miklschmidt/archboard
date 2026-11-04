@@ -3,6 +3,9 @@
 // painter (ADR 0071) draws on a canvas. A painting belongs to the painter of the same build, so the
 // site's build makes both from one checkout and keeps neither in Git.
 //
+// The hero lays its painting on the table, without a ground, and raises the cards itself. The
+// model's viewport shows the drawing as the app does.
+//
 // Run from the repository root, inside `nix develop`, after `bun run build:core`:
 //   bun site/scripts/paint.ts
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -17,7 +20,7 @@ const model = await readArchitectureModel(".archboard/vault", undefined, undefin
 if (!model.success)
 	throw new Error(`The repository's vault did not read: ${JSON.stringify(model)}`);
 const reading = projectModel(model, null, null, {}, undefined);
-const drawn = await renderArchitecture({
+const request = {
 	content: reading.content,
 	variant: reading.complete,
 	held: reading.held,
@@ -26,9 +29,10 @@ const drawn = await renderArchitecture({
 	grammar: "architecture",
 	policy: model.policy,
 	theme: "dark",
-});
+} as const;
+const [drawn, slab] = await Promise.all([renderArchitecture(request), renderArchitecture(request)]);
 
-// The site lays the drawing on its own ground, so the painting draws none.
+// The hero lays the drawing on its own ground, so its painting draws none.
 const painting = JSON.parse(drawn.painting) as { scene: { background: unknown } };
 painting.scene.background = { colour: "transparent" };
 
@@ -65,6 +69,7 @@ const corner = Math.max(...cards.map((card) => card.radius ?? 0));
 
 mkdirSync(OUT, { recursive: true });
 writeFileSync(join(OUT, "own.painting.json"), JSON.stringify(painting));
+writeFileSync(join(OUT, "own.slab.painting.json"), slab.painting);
 writeFileSync(
 	join(OUT, "own.json"),
 	`${JSON.stringify({ width: drawn.width, height: drawn.height, corner, cards }, null, "\t")}\n`,

@@ -1,26 +1,38 @@
 ---
-// Archboard's own architecture, from this repository's vault, as the README embeds it. The
-// drawing is large, so the reader drags it, or scrolls it with the keyboard.
+// Archboard's own architecture, from this repository's vault, painted live by the product's
+// painter. The drawing is large, so the reader drags it, scrolls it, or moves it with the keyboard.
+// Where the painter cannot start, the README's drawing of the same vault stands in.
+import own from "../../paintings/own.json";
 import { drawings } from "../../lib/diagrams";
 
-const own = drawings.architecture;
+const fallback = drawings.architecture;
 ---
 
 <figure class="own table">
-	<div class="viewport" data-pan tabindex="0" aria-label="Archboard's own architecture. Drag or use the arrow keys to look around.">
-		<img
-			src={own.url}
-			width={own.width}
-			height={own.height}
-			alt="Archboard's programs, the browser, Agent CLI and server, around the architecture inputs, with each workspace package that holds parts as a door. External systems include Codex, Claude CLI, headless Chromium, ffmpeg and the Git remotes."
-			loading="lazy"
-			decoding="async"
-			draggable="false"
-		/>
+	<div
+		class="viewport"
+		data-own-model
+		tabindex="0"
+		role="img"
+		aria-label="Archboard's own architecture: its programs, the browser, Agent CLI and server, around the architecture inputs, with each workspace package that holds parts. External systems include Codex, Claude CLI, headless Chromium, ffmpeg and the Git remotes. Drag or use the arrow keys to look around."
+	>
+		<div class="sheet" data-sheet style={`aspect-ratio: ${String(own.width)} / ${String(own.height)}`}>
+			<canvas class="paint" aria-hidden="true"></canvas>
+		</div>
+		<template data-fallback>
+			<img
+				src={fallback.url}
+				width={fallback.width}
+				height={fallback.height}
+				alt=""
+				decoding="async"
+				draggable="false"
+			/>
+		</template>
 	</div>
 	<figcaption class="caption">
-		Archboard's own model, from <code>.archboard/vault</code> in its repository, drawn with
-		<code>archboard model render</code>. Drag to look around.
+		Archboard's own model, from <code>.archboard/vault</code> in its repository, painted live by the
+		same painter the app uses. Drag to look around.
 	</figcaption>
 </figure>
 
@@ -43,6 +55,16 @@ const own = drawings.architecture;
 	.viewport:active {
 		cursor: grabbing;
 	}
+	/* The sheet is as large as the drawing, so the viewport scrolls it. The canvas stays in view. */
+	.sheet {
+		width: max(2400px, 200%);
+	}
+	.paint {
+		position: sticky;
+		top: 0;
+		left: 0;
+		display: block;
+	}
 	.viewport img {
 		width: max(1800px, 160%);
 		max-width: none;
@@ -59,21 +81,25 @@ const own = drawings.architecture;
 </style>
 
 <script>
-	for (const viewport of document.querySelectorAll<HTMLElement>("[data-pan]")) {
+	import { paintOwnModel } from "../../scripts/own-model";
+
+	for (const viewport of document.querySelectorAll<HTMLElement>("[data-own-model]")) {
+		// The painter loads once the reader nears the drawing.
+		const near = new IntersectionObserver(
+			(entries) => {
+				if (!entries.some((entry) => entry.isIntersecting)) return;
+				near.disconnect();
+				void paintOwnModel(viewport).then((painted) => {
+					if (painted) return;
+					const fallback = viewport.querySelector<HTMLTemplateElement>("[data-fallback]");
+					viewport.querySelector("[data-sheet]")?.replaceWith(fallback?.content.cloneNode(true) ?? "");
+				});
+			},
+			{ rootMargin: "800px 0px" },
+		);
+		near.observe(viewport);
+
 		let start: { x: number; y: number; left: number; top: number } | null = null;
-		const image = viewport.querySelector("img");
-		// Open on a spot, in the drawing's own coordinates, where no card is cut at the edges: a
-		// wide view frames the server, Browser and Codex CLI row over the packages under it, a
-		// narrow one frames Browser over renderer. Re-check these after the README drawing changes.
-		const center = () => {
-			if (!image?.naturalWidth) return;
-			const focus = viewport.clientWidth >= 900 ? { x: 1256, y: 662 } : { x: 1309, y: 545 };
-			const scale = image.clientWidth / image.naturalWidth;
-			viewport.scrollLeft = focus.x * scale - viewport.clientWidth / 2;
-			viewport.scrollTop = focus.y * scale - viewport.clientHeight / 2;
-		};
-		if (image?.complete) center();
-		else image?.addEventListener("load", center, { once: true });
 		viewport.addEventListener("pointerdown", (event) => {
 			if (event.pointerType !== "mouse") return;
 			start = { x: event.clientX, y: event.clientY, left: viewport.scrollLeft, top: viewport.scrollTop };
