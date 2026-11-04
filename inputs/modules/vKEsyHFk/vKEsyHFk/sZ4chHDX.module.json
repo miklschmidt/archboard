@@ -3,6 +3,9 @@
   "name": "timing",
   "kind": "package",
   "responsibility": "Every duration, grouped by the subsystem that owns it, with what it pulls against",
+  "groups": [
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/timing"
@@ -15,8 +18,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "groups": [
-    "packages"
-  ]
+  "outgoing": []
 }

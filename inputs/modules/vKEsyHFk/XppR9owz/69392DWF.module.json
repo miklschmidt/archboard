@@ -49,8 +49,8 @@
         "path": "apps/cli/src/cli/operations/model/rasterize.ts",
         "symbol": "createSemanticRasterizer"
       },
-      "to": "vKEsyHFk/SMjRfwN3#KyQxypRC",
-      "id": "vKEsyHFk#inbTEHtR"
+      "id": "vKEsyHFk#inbTEHtR",
+      "to": "vKEsyHFk/SMjRfwN3#KyQxypRC"
     }
   ]
 }

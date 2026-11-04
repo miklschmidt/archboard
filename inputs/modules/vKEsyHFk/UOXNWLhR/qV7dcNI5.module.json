@@ -14,6 +14,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#qV7dcNI5",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "formerNames": [
+    "Board reads"
+  ],
   "outgoing": [
     {
       "order": 70009,
@@ -28,8 +31,5 @@
       "id": "vKEsyHFk#vOEGQ4ga",
       "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
     }
-  ],
-  "formerNames": [
-    "Board reads"
   ]
 }

@@ -1,0 +1,32 @@
+{
+  "order": 14000,
+  "name": "Painter choice",
+  "kind": "function",
+  "responsibility": "Chooses the painter of a canvas once, from what the browser says: Vello on WebGPU when it gives a real adapter and a device, Vello on the CPU otherwise",
+  "description": "A software adapter, or none, sends the canvas to the CPU painter, and the rule reads no frame back. If the GPU fails to start or in a frame, the CPU painter takes over on a fresh canvas, because a canvas that held a WebGPU context never takes a 2D one. The caller shows which painter draws, and why the GPU does not.",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/ui/clients/painter.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#hKrzJUPf",
+  "parent": "vKEsyHFk/yejBBUFY#hDWpDois",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "start the GPU or the CPU painter",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/clients/painter.ts",
+        "symbol": "Painter"
+      },
+      "id": "vKEsyHFk#irHUnOY7",
+      "to": "vKEsyHFk#UpjzNLKH"
+    }
+  ]
+}

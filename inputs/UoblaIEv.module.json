@@ -34,8 +34,8 @@
         "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
         "symbol": "SubtitlesToggle"
       },
-      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc",
-      "id": "vKEsyHFk#tJGMgOeT"
+      "id": "vKEsyHFk#tJGMgOeT",
+      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
     },
     {
       "order": 980230,
@@ -47,8 +47,8 @@
         "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
         "symbol": "VoiceControl"
       },
-      "to": "vKEsyHFk#ZTh8T7Ym",
-      "id": "vKEsyHFk#pzWBfyor"
+      "id": "vKEsyHFk#pzWBfyor",
+      "to": "vKEsyHFk#ZTh8T7Ym"
     }
   ]
 }

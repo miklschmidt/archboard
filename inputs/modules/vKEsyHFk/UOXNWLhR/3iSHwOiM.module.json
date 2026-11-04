@@ -2,8 +2,8 @@
   "order": 22000,
   "name": "Picture transition",
   "kind": "function",
-  "responsibility": "Carries one picture into the next: kept parts fly to their new places, departed ones fade, and the traffic's clock carries over; a picture a flight arrived at is put up as it is",
-  "description": "It writes the picture into the surface itself, once per picture, and runs the traffic of each picture, ghost and borrowed group as it puts them up. Flights read the time and their frames from the frame clock, and the picture clock its traffic runs on is read and set through it, so a replay seeks every one of them to the frame's time. The picture of a model that a flight into a card arrived at is put up as it is, with no entrance. Continuing cards carry their one shared chip and moving words; content comparison ignores the per-picture placement properties, so a moved card keeps its shared content (picture-pairing.ts).",
+  "responsibility": "Decides how a picture arrives: kept parts fly to their new places, departed ones fade, and a picture a flight arrived at is put up as it is",
+  "description": "It writes the picture into the surface once per picture: the SVG that stays in the page under the canvas as the hidden semantic layer (picture-transition.ts). It tells the stage how the picture arrives, cut to, carried on from the last or brought in part by part, and how far the cards the two pictures share have moved; the painter does the motion. Flights read the time and their frames from the frame clock. The picture of a model that a flight into a card arrived at is put up as it is, with no entrance.",
   "groups": [
     "drawing"
   ],
@@ -31,25 +31,25 @@
     {
       "order": 40000,
       "kind": "call",
-      "label": "run the traffic of what it puts up",
+      "label": "how the picture arrives",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
-        "symbol": "stopTraffic"
+        "symbol": "stageOf"
       },
       "id": "vKEsyHFk/UOXNWLhR#iVizf8Iu",
-      "to": "vKEsyHFk/UOXNWLhR#n5No6FUy"
+      "to": "vKEsyHFk#9FxduWoO"
     },
     {
       "order": 115000,
-      "kind": "call",
-      "label": "ghost the leaving picture",
+      "kind": "dependency",
+      "label": "where the reader went, for the picture leaving",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
-        "symbol": "ghostPicture"
+        "symbol": "Departure"
       },
       "id": "vKEsyHFk/UOXNWLhR#AmxCEbK0",
       "to": "vKEsyHFk/UOXNWLhR#oF5Ib5A4"
