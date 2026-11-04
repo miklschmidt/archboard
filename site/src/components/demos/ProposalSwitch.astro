@@ -23,6 +23,7 @@ const proposal = drawings.queued;
 	<div class="stage">
 		<img
 			class="view today"
+			aria-hidden="true"
 			src={today.url}
 			width={today.width}
 			height={today.height}
@@ -236,6 +237,7 @@ const proposal = drawings.queued;
 			const forward = state === "proposal";
 			root.dataset["state"] = state;
 			for (const button of buttons) button.setAttribute("aria-pressed", String(button.dataset["show"] === state));
+			for (const view of root.querySelectorAll(".view")) view.setAttribute("aria-hidden", String(!view.classList.contains(state)));
 			if (beam && !prefersReducedMotion()) {
 				beam.classList.remove("is-sweeping", "back");
 				void beam.offsetWidth;

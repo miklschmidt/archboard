@@ -18,6 +18,7 @@ const first = walkthrough.beats[0];
 		</figure>
 		<img
 			class="view sequence"
+			aria-hidden="true"
 			src={sequence.url}
 			width={sequence.width}
 			height={sequence.height}
@@ -284,6 +285,7 @@ const first = walkthrough.beats[0];
 
 		const select = (beat: Beat) => {
 			stage.dataset["grammar"] = beat.grammar;
+			for (const view of stage.querySelectorAll(".view")) view.setAttribute("aria-hidden", String(!view.classList.contains(beat.grammar)));
 			for (const lit of figure.querySelectorAll(".is-lit, .is-selected")) lit.classList.remove("is-lit", "is-selected");
 			figure.classList.toggle("is-focused", beat.selection.length > 0);
 			for (const id of beat.selection) {
