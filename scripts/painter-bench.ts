@@ -1,15 +1,17 @@
-// Spike (docs/design/painter-webgl-fallback.md): time the painters on one
-// picture of a corpus. A page paints the picture under a moving camera for a
-// number of frames and reports the gap between frames and the time each frame
-// took to encode and to render. It runs in a real browser with a window, and
-// it reports through the server, so any browser can run it.
+// Time the painters on one picture of a corpus (docs/design/painter-webgl-fallback.md).
+// A page paints the picture under a moving camera for a number of frames and
+// reports the gap between frames, the time of each frame, and how much of it
+// drew on the canvas and how much rendered. A strip canvas cuts its strips
+// while it draws. Each run opens a fresh browser, and it reports through the
+// server, so any browser can run it.
 //
 // Make a corpus with paintings, then run from the repository root in `nix develop`,
 // after `bun run build:core`:
 //   bun scripts/render-corpus.ts render <corpus> --engines blocks --svg
 //   bun scripts/painter-bench.ts <corpus> <out> --only "(whole model) | blocks | dark"
 //     [--painters gpu,webgl,cpu] [--sizes 1920x1080] [--runs 3] [--frames 540]
-//     [--browser google-chrome] [--flags=--disable-features=WebGPUService] [--waits]
+//     [--browser google-chrome] [--flags=--disable-features=WebGPUService]
+//     [--core <directory of a painter build>]
 
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -32,6 +34,9 @@ const Corpus = z.record(
 	z.string(),
 	z.object({ width: z.number(), height: z.number(), sha256: z.string() }),
 );
+
+/** What a page reports of one run. */
+const Reported = z.record(z.string(), z.unknown());
 
 /** The page: one canvas over the whole window. */
 const PAGE = `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/theme.css">
@@ -90,7 +95,6 @@ try {
 	} else if (kind === "webgl") painter = Painter.webgl(canvas, fixture.dark);
 	else painter = Painter.cpu(canvas, fixture.dark);
 	const startMs = performance.now() - started;
-	painter.setWaits(asked.get("waits") === "1");
 	painter.show(fixture.painting);
 	painter.setFarLine(0, 0);
 	painter.setTrafficShown(false);
@@ -133,7 +137,6 @@ try {
 				environment,
 				painter: kind,
 				size: [width, height],
-				waits: asked.get("waits") === "1",
 				paths: { fills, strokes, layers },
 				walk: quantiles(walks),
 				startMs,
@@ -166,7 +169,8 @@ interface Run {
 	readonly frames: number;
 	readonly browser: string;
 	readonly flags: readonly string[];
-	readonly waits: boolean;
+	/** The directory of the painter build to measure. */
+	readonly core: string;
 }
 
 /**
@@ -184,7 +188,7 @@ function runOfArguments(): Run {
 			frames: { type: "string", default: "540" },
 			browser: { type: "string", default: "google-chrome" },
 			flags: { type: "string", default: "" },
-			waits: { type: "boolean", default: false },
+			core: { type: "string", default: CORE },
 		},
 	});
 	const [corpus, out] = positionals;
@@ -201,7 +205,7 @@ function runOfArguments(): Run {
 		frames: Number(values.frames),
 		browser: values.browser,
 		flags: values.flags.split(" ").filter((flag) => flag !== ""),
-		waits: values.waits,
+		core: values.core,
 	};
 }
 
@@ -265,16 +269,19 @@ async function main(): Promise<void> {
 	const fixture = fixtureOf(run);
 	console.log(`Fixture: ${fixture.name}`);
 	const waiting = new Map<string, (body: string) => void>();
-	const files: Readonly<Record<string, readonly [string, string]>> = {
-		"/painter.js": [join(CORE, "archboard_painter_wasm.js"), "text/javascript"],
-		"/painter.wasm": [join(CORE, "archboard_painter_wasm_bg.wasm"), "application/wasm"],
-		"/theme.css": ["packages/renderer/assets/theme.css", "text/css"],
+	const files: Readonly<Record<string, readonly [Blob | string, string]>> = {
+		"/": [PAGE, "text/html"],
+		"/page.js": [PAGE_SCRIPT, "text/javascript"],
+		"/fixture.json": [fixture.json, "application/json"],
+		"/painter.js": [Bun.file(join(run.core, "archboard_painter_wasm.js")), "text/javascript"],
+		"/painter.wasm": [Bun.file(join(run.core, "archboard_painter_wasm_bg.wasm")), "application/wasm"],
+		"/theme.css": [Bun.file("packages/renderer/assets/theme.css"), "text/css"],
 	};
 	const server = Bun.serve({
 		port: 0,
 		hostname: "127.0.0.1",
 		/**
-		 * Answer one request.
+		 * Answer one request: a run's report, or a file of the page.
 		 * @param request The request.
 		 * @returns The answer.
 		 */
@@ -284,17 +291,10 @@ async function main(): Promise<void> {
 				waiting.get(pathname.slice("/result/".length))?.(await request.text());
 				return new Response(null, { status: 204 });
 			}
-			if (pathname === "/") return new Response(PAGE, { headers: { "content-type": "text/html" } });
-			if (pathname === "/page.js") {
-				return new Response(PAGE_SCRIPT, { headers: { "content-type": "text/javascript" } });
-			}
-			if (pathname === "/fixture.json") {
-				return new Response(fixture.json, { headers: { "content-type": "application/json" } });
-			}
 			const file = files[pathname];
 			return file === undefined
 				? new Response(null, { status: 404 })
-				: new Response(Bun.file(file[0]), { headers: { "content-type": file[1] } });
+				: new Response(file[0], { headers: { "content-type": file[1] } });
 		},
 	});
 	const results: unknown[] = [];
@@ -304,16 +304,16 @@ async function main(): Promise<void> {
 			for (let attempt = 0; attempt < run.runs; attempt += 1) {
 				for (const painter of run.painters) {
 					const id = `${painter}-${size}-${String(attempt)}`;
+					let limit: ReturnType<typeof setTimeout> | undefined;
 					const reported = new Promise<string>((resolve, reject) => {
 						waiting.set(id, resolve);
-						setTimeout(() => reject(new Error(`${id} did not report in time.`)), RUN_LIMIT_MS);
+						limit = setTimeout(() => reject(new Error(`${id} did not report in time.`)), RUN_LIMIT_MS);
 					});
 					const query = new URLSearchParams({
 						id,
 						painter,
 						size,
 						frames: String(run.frames),
-						waits: run.waits ? "1" : "0",
 					});
 					const close = openBrowser(
 						run.browser,
@@ -322,14 +322,13 @@ async function main(): Promise<void> {
 					);
 					try {
 						// oxlint-disable-next-line no-await-in-loop -- one browser measures at a time
-						const body = {
-							...(JSON.parse(await reported) as Record<string, unknown>),
-							load: loadavg()[0],
-						};
+						const page = Reported.parse(JSON.parse(await reported));
+						const body = { ...page, load: loadavg()[0] };
 						results.push({ id, ...body });
 						writeFileSync(join(run.out, `${id}.json`), JSON.stringify(body, null, "\t"));
-						console.log(id, JSON.stringify(body["error"] ?? body["gap"]));
+						console.log(id, JSON.stringify(page["error"] ?? page["gap"]));
 					} finally {
+						clearTimeout(limit);
 						close();
 						// oxlint-disable-next-line no-await-in-loop -- let the browser go before the next starts
 						await Bun.sleep(1500);

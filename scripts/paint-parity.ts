@@ -1,13 +1,14 @@
-// Hold the painters to the SVG (ADR 0071). Every drawing of a corpus is put in
-// one real browser three ways: as its SVG, on Vello on the GPU and on Vello on
-// the CPU, near and far, and the rasters are compared with a tolerance a reader
-// cannot see. It says which readings differ most and keeps the worst places.
+// Hold the painters to the SVG (ADR 0071, ADR 0074). Every drawing of a corpus
+// is put in one real browser as its SVG and on each painter: Vello on WebGPU,
+// Vello GPU on WebGL2 and Vello on the CPU, near and far. The rasters are
+// compared with a tolerance a reader cannot see. It says which readings differ
+// most and keeps the worst places.
 //
 // Make a corpus with paintings, then run from the repository root in `nix develop`,
 // after `bun run build:core`:
 //   bun scripts/render-corpus.ts render <corpus> --engines blocks --svg
-//   bun scripts/paint-parity.ts <corpus> <out> [--painters gpu,cpu] [--views near,far,traffic]
-//     [--only substring] [--browser google-chrome] [--worst 12]
+//   bun scripts/paint-parity.ts <corpus> <out> [--painters gpu,webgl,cpu] [--views near,far,traffic]
+//     [--only substring] [--browser google-chrome] [--worst 12] [--every 7]
 //
 // The browser runs with a window, because a GPU adapter is what the run is about.
 // A painter's raster is read from its canvas in the frame it drew, because a
@@ -416,7 +417,7 @@ interface Run {
 	readonly only: string;
 	readonly browser: string;
 	readonly worst: number;
-	/** Spike: compare only every so many readings, for a sample of the corpus. */
+	/** Compare only every so many readings, for a sample of the corpus. */
 	readonly every: number;
 }
 
@@ -527,7 +528,7 @@ async function main(): Promise<void> {
 				const view = { name, painters: run.painters };
 				// oxlint-disable-next-line no-await-in-loop -- one page shows one reading at a time
 				const found = await compareReading(page, run.out, reading, view).catch((error: unknown) => {
-					// Spike: a painting that no painter reads is the core's fault, not a painter's.
+					// A painting that no painter reads is a fault of the core, not of a painter.
 					console.log(`Skipped ${reading.key} ${name}: ${String(error).slice(0, 160)}`);
 					return [];
 				});
