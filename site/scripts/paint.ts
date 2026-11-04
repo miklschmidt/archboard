@@ -30,7 +30,11 @@ const request = {
 	policy: model.policy,
 	theme: "dark",
 } as const;
-const [drawn, slab] = await Promise.all([renderArchitecture(request), renderArchitecture(request)]);
+// The hero raises the cards itself, so its painting draws them flat.
+const [drawn, slab] = await Promise.all([
+	renderArchitecture({ ...request, relief: "flat" }),
+	renderArchitecture(request),
+]);
 
 // The hero lays the drawing on its own ground, so its painting draws none.
 const painting = JSON.parse(drawn.painting) as { scene: { background: unknown } };
