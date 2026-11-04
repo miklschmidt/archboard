@@ -55,9 +55,10 @@ function compile(gl: WebGL2RenderingContext, type: number, source: string): WebG
 /**
  * Run a fragment shader over a canvas.
  * @param options The canvas, the shader and its uniforms.
- * @returns Whether the shader runs.
+ * @returns Ask for a frame, which a still canvas needs when what it draws changes; null when the
+ * shader does not run.
  */
-export function runShader(options: ShaderOptions): boolean {
+export function runShader(options: ShaderOptions): (() => void) | null {
 	const { canvas, fragment, uniforms, maxRatio = 1.5, alpha = false, stillTime = 8 } = options;
 	const gl = canvas.getContext("webgl2", {
 		alpha,
@@ -65,7 +66,7 @@ export function runShader(options: ShaderOptions): boolean {
 		premultipliedAlpha: true,
 		powerPreference: "low-power",
 	});
-	if (!gl) return false;
+	if (!gl) return null;
 	let resources: { program: WebGLProgram; buffer: WebGLBuffer } | undefined;
 	const locations = new Map<string, WebGLUniformLocation | null>();
 	const release = () => {
@@ -105,7 +106,7 @@ export function runShader(options: ShaderOptions): boolean {
 		resources = { program, buffer };
 		return true;
 	};
-	if (!initialize()) return false;
+	if (!initialize()) return null;
 	const location = (name: string) => {
 		if (!resources) return null;
 		if (!locations.has(name)) locations.set(name, gl.getUniformLocation(resources.program, name));
@@ -174,5 +175,7 @@ export function runShader(options: ShaderOptions): boolean {
 		motion.removeEventListener("change", update);
 		release();
 	});
-	return true;
+	return () => {
+		if (visible && resources && !gl.isContextLost() && motion.matches) draw(stillTime);
+	};
 }

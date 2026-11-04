@@ -2,6 +2,7 @@
 // override the origin and base path for another host.
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "astro/config";
+import { coreSourceHash } from "../packages/renderer/src/runtime/store/core-sources.ts";
 
 const repository = fileURLToPath(new URL("..", import.meta.url));
 // The voice orb is the product's own code, which imports the durations package by name. The site
@@ -22,5 +23,7 @@ export default defineConfig({
 		// The fonts and the README's drawings live in the repository, outside the site.
 		server: { fs: { allow: [repository] } },
 		resolve: { alias: { "@archboard/timing": timing } },
+		// The product's painter refuses a build of other sources than the checkout holds.
+		define: { ARCHBOARD_CORE_SOURCE_HASH: JSON.stringify(coreSourceHash()) },
 	},
 });

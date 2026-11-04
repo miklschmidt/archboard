@@ -149,5 +149,15 @@ import { links } from "../lib/links";
 <script>
 	import { lightField } from "../scripts/field";
 	const canvas = document.querySelector<HTMLCanvasElement>("[data-field]");
-	if (canvas) lightField(canvas, { pitch: 0.5, lift: 1.8, traffic: 1 });
+	// The painter and its painting load once the page is idle, and the drawing arrives on the
+	// table when they are ready.
+	const idle = new Promise<void>((done) => {
+		if ("requestIdleCallback" in window) requestIdleCallback(() => done(), { timeout: 1200 });
+		else setTimeout(done, 300);
+	});
+	const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	const drawing = idle
+		.then(() => import("../scripts/table-drawing"))
+		.then(({ paintTable }) => paintTable(still));
+	if (canvas) lightField(canvas, { pitch: 0.5, lift: 1.8, traffic: 1, grid: false }, drawing);
 </script>

@@ -9,7 +9,20 @@ type-checks it with `astro check`.
 
 ## Work on the site
 
-Run these commands in this folder:
+The hero paints Archboard's own architecture live, with the product's painter. The painter and
+its painting must come from one build of the renderer core. Make both from the repository root,
+inside `nix develop`:
+
+```sh
+bun install
+bun run build:core
+bun site/scripts/paint.ts
+```
+
+Run `bun site/scripts/paint.ts` again after a change to the renderer core or to
+`.archboard/vault`. The paintings go to `src/paintings/`, which Git ignores.
+
+Then run these commands in this folder:
 
 ```sh
 bun install
@@ -33,6 +46,10 @@ Every diagram on the page is real output of the Archboard renderer, in the dark 
   `docs/readme/`, which the README also uses.
 - The other drawings are in `src/diagrams/`. `bun run render` draws them again from
   `examples/web-shop`.
+- The hero's drawing is the whole of `.archboard/vault`, painted by `scripts/paint.ts` in flat
+  relief. The painter draws it on canvases, and the hero's shader lays them on the table and
+  raises each card as a tile. The painter is the product's own, imported from
+  `packages/renderer/src/ui/clients/painter.ts`.
 - The fonts come from `packages/renderer/assets/fonts/`, the same files the renderer uses.
 - The voice orb is the product's own code, imported from `packages/workbench/src/ui/clients/orb/`
   and `packages/workbench/src/ui/rules/orb/`. The site points `@archboard/timing` at
@@ -71,7 +88,9 @@ stop, the script keeps those files and prints a command to retry the stop.
 ## Deploy
 
 `.github/workflows/site.yml` builds the site on each pull request that changes the site, the
-README drawings, the social card, the fonts or the voice orb's code. A push to `main` with such a change deploys it.
+README drawings, the social card, the fonts, the voice orb's code, the renderer core or
+Archboard's own model. It builds the core and paints the hero inside `nix develop` first. A push
+to `main` with such a change deploys it.
 You can also start the workflow by hand from the Actions tab.
 
 GitHub Pages must use GitHub Actions as its source. To set it, open the repository settings,

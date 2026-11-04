@@ -1,7 +1,8 @@
 name: Site
 
 # The marketing site in site/ builds on every pull request that changes it or the repository
-# files it imports (the README drawings, the social card, the fonts and the voice orb's code),
+# files it imports or draws from (the README drawings, the social card, the fonts, the voice
+# orb's code, and the renderer core, its painter and the architecture model that paint the hero),
 # and deploys to GitHub Pages from main.
 on:
   workflow_dispatch:
@@ -11,7 +12,18 @@ on:
       - site/**
       - docs/readme/**
       - docs/assets/**
-      - packages/renderer/assets/fonts/**
+      - .archboard/vault/**
+      - crates/**
+      - Cargo.toml
+      - Cargo.lock
+      - .cargo/**
+      - flake.nix
+      - flake.lock
+      - scripts/build-core.ts
+      - package.json
+      - bun.lock
+      - packages/model/**
+      - packages/renderer/**
       - packages/workbench/package.json
       - packages/workbench/src/ui/clients/orb/**
       - packages/workbench/src/ui/rules/orb/**
@@ -24,7 +36,18 @@ on:
       - site/**
       - docs/readme/**
       - docs/assets/**
-      - packages/renderer/assets/fonts/**
+      - .archboard/vault/**
+      - crates/**
+      - Cargo.toml
+      - Cargo.lock
+      - .cargo/**
+      - flake.nix
+      - flake.lock
+      - scripts/build-core.ts
+      - package.json
+      - bun.lock
+      - packages/model/**
+      - packages/renderer/**
       - packages/workbench/package.json
       - packages/workbench/src/ui/clients/orb/**
       - packages/workbench/src/ui/rules/orb/**
@@ -44,7 +67,7 @@ jobs:
   build:
     name: Build the site
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: site
@@ -53,16 +76,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v2.2.0
+      - name: Set up Node.js and Bun
+        uses: voidzero-dev/setup-vp@v1.21.2
         with:
-          bun-version: 1.4.4
+          version-file: package.json
+          node-version: "26"
+          cache: true
+          run-install: false
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+      # The hero's painter and its painting come from one build of the renderer core (ADR 0059,
+      # ADR 0071), and the flake's dev shell holds the Rust tools that build it.
+      - name: Setup Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Install the repository's dependencies
+        working-directory: .
+        run: nix develop --command bun install --frozen-lockfile
+
+      - name: Build the renderer core
+        working-directory: .
+        run: nix develop --command bun run build:core
+
+      - name: Paint the hero's drawing
+        working-directory: .
+        run: nix develop --command bun site/scripts/paint.ts
+
+      - name: Install the site's dependencies
+        run: nix develop --command bun install --frozen-lockfile
 
       - name: Type-check and build
-        run: bun run build
+        run: nix develop --command bun run build
 
       - name: Upload the Pages artifact
         if: github.event_name != 'pull_request'
