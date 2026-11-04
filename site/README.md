@@ -42,15 +42,27 @@ The counts in Measures and Changes together are real rows of Archboard's own mod
 ## Draw the diagrams again
 
 If a renderer change alters how a drawing looks, draw the site's drawings again and commit
-them. The site build does not render, because rendering needs the full Archboard build. Run
-this command from a built checkout, inside `nix develop`:
+them. The site build does not render, because rendering needs the full Archboard build.
+From the repository root, prepare the renderer:
+
+```sh
+nix develop
+bun install
+bun run build
+cd site
+```
+
+Then draw the site diagrams:
 
 ```sh
 bun run render
 ```
 
-The script starts a private Archboard server with its own port and state. It reads a copy of
-the example shop, so it changes no registered repository.
+The script starts a private Archboard server with its own port and repository registry.
+On Linux, `XDG_STATE_HOME` also isolates its runtime state. macOS uses the shared Archboard
+state directory. The script reads a copy of the example shop, so it changes no registered
+repository. It stops the server before it removes temporary files. If the server fails to
+stop, the script keeps those files and prints a command to retry the stop.
 
 ## Deploy
 

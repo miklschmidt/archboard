@@ -3,7 +3,8 @@
 #
 # A private Archboard server reads a copy of examples/web-shop, like the README's quick start,
 # and `archboard model render` draws each reading in the dark theme into site/src/diagrams.
-# The server has its own port, registry and state, so the run touches no registered repository.
+# The server has its own port and registry. On Linux, it also has private runtime state.
+# The run touches no registered repository.
 # Run it from a built checkout, inside `nix develop`, after a renderer change. Commit the SVGs.
 set -euo pipefail
 
@@ -21,7 +22,11 @@ export ARCHBOARD_NO_AUTOSTART=1
 export XDG_STATE_HOME="$work/state"
 
 stop() {
-	"$cli" stop >/dev/null 2>&1 || true
+	if ! "$cli" stop >/dev/null; then
+		printf 'Could not stop the render server at %s. Kept its registry and state in %s.\n' "$ARCHBOARD_URL" "$work" >&2
+		printf 'Retry: ARCHBOARD_URL=%q ARCHBOARD_REPOS=%q XDG_STATE_HOME=%q %q stop\n' "$ARCHBOARD_URL" "$ARCHBOARD_REPOS" "$XDG_STATE_HOME" "$cli" >&2
+		exit 1
+	fi
 	rm -rf "$work"
 }
 trap stop EXIT
