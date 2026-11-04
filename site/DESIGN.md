@@ -325,7 +325,7 @@ A feature is a grid of prose beside a demonstration, centered vertically. The de
 
 Inside components the rhythm steps in 4px, 8px, 12px, 16px and 24px. Panels pad 18px to 24px. Trays pad 6px. Prose lines stay near 36em, leads near 38em, and notes under a demonstration run up to 52em.
 
-Responsive behaviour is simple and observed. At 1000px the pipeline and the quick start stack. At 960px features and the walkthrough player stack. At 900px section heads, tab bars and tiles stack. At 860px the nav links hide and the FAQ goes to one column. At 760px the hero window shows only its canvas, laid out at 760 by 600 and scaled to the column. A copy of the agent's lines appears beneath it. The comparison table becomes one block per row that names every tool. The footer drops to two columns. At 420px the GitHub label hides. The review looked at 1440 by 900 and 390 by 844.
+Responsive behaviour is simple and observed. At 1000px the pipeline and the quick start stack. At 960px features and the walkthrough player stack. At 900px section heads, tab bars and the share bento stack. The bento is one grid: the document tile spans both rows at the left, and the embed and question tiles share the right, each tile's visual taking the height its row gives it. At 860px the nav links hide and the FAQ goes to one column. At 760px the hero window shows only its canvas, laid out at 760 by 600 and scaled to the column. A copy of the agent's lines appears beneath it. The comparison table becomes one block per row that names every tool. The footer drops to two columns. At 420px the GitHub label hides. The review looked at 1440 by 900 and 390 by 844.
 
 ## Elevation & Depth
 
