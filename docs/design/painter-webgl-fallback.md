@@ -280,8 +280,7 @@ A canvas that took a WebGL2 context takes no 2D context. So step 3 needs a fresh
 - Chrome 155 with `--use-angle=swiftshader --enable-unsafe-swiftshader` gave a context with no caveat. In the spike, Vello GPU then drew the largest picture at 933 ms a frame, the median of five frames.
 
 So `Painter.webgl` also reads the renderer's name. When `WEBGL_debug_renderer_info` is there, it reads `UNMASKED_RENDERER_WEBGL`. Otherwise it reads `RENDERER`.
-It reads the name after the context exists. Shader compilation and linking have already started,
-but a refusal does not wait for that work to finish.
+It reads the name after the context exists. By then the shaders compile and link, but a refusal does not wait for that work to finish.
 Firefox reports a generalized renderer name, for example "NVIDIA GeForce GTX 980, or similar". Nobody made sure that its name for llvmpipe still says llvmpipe.
 
 A recording keeps the CPU painter by the normal rule. Chrome 155 with `--disable-gpu` gave no WebGL2 context, and `Painter.webgl` refused.

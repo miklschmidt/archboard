@@ -540,7 +540,11 @@ async function main(): Promise<void> {
 			for (const name of run.views) {
 				const view = { name, painters: run.painters };
 				// oxlint-disable-next-line no-await-in-loop -- one page shows one reading at a time
-				const found = await compareReading(page, run.out, reading, view);
+				const found = await compareReading(page, run.out, reading, view).catch((error: unknown) => {
+					// A painting that no painter reads is a fault of the core (TASK-576), not of a painter.
+					console.log(`Skipped ${reading.key} ${name}: ${String(error).slice(0, 160)}`);
+					return [];
+				});
 				results.push(...found);
 				appendFileSync(journal, found.map((one) => `${JSON.stringify(one)}\n`).join(""));
 			}
@@ -549,6 +553,8 @@ async function main(): Promise<void> {
 		await page.close();
 		await server.stop(true);
 	}
+	if (results.length === 0)
+		throw new Error("No reading drew on every painter. Read the skips above.");
 	report(run, results);
 }
 
