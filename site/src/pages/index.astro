@@ -14,6 +14,7 @@ import CompetingOptions from "../components/demos/CompetingOptions.astro";
 import DocsTiles from "../components/demos/DocsTiles.astro";
 import DrillDown from "../components/demos/DrillDown.astro";
 import EvidenceTabs from "../components/demos/EvidenceTabs.astro";
+import Footprint from "../components/demos/Footprint.astro";
 import Grammars from "../components/demos/Grammars.astro";
 import HistoryTimeline from "../components/demos/HistoryTimeline.astro";
 import Measures from "../components/demos/Measures.astro";
@@ -27,7 +28,7 @@ import { links } from "../lib/links";
 
 <Base
 	title="Archboard: understand the code your agents write"
-	description="Your coding agent maps the system it builds. Follow a feature into the code, see where the map and the code disagree, and review each proposed change against what exists."
+	description="Plan each change with your coding agent on a map of the system before it writes a line. Follow any feature into the code, and see every place where the map and the code disagree."
 >
 	<Nav />
 	<main id="main">
@@ -86,8 +87,9 @@ import { links } from "../lib/links";
 		<Section id="plan" title="See the change before anyone builds it.">
 			<Fragment slot="lead">
 				<p>
-					Ask your agent for a change and you get a proposal, drawn against what exists. New modules
-					arrive green, changed ones orange, and removed ones stay on the page as red ghosts.
+					Plan before your agent writes a line. Ask for a change and you get a proposal, drawn against
+					what exists. New modules arrive green, changed ones orange, and removed ones stay on the page
+					as red ghosts.
 				</p>
 				<p>Current architecture stays as it is until the proposal ships.</p>
 			</Fragment>
@@ -111,6 +113,18 @@ import { links } from "../lib/links";
 			<div class="options-wrap">
 				<CompetingOptions />
 			</div>
+
+			<Feature title="Hold the build to the plan">
+				<p>
+					When your agent builds the change, the footprint sets the branch against its proposal. It
+					reads the commits through each module's code binding and sorts every change into three lists.
+				</p>
+				<p>
+					Work outside the plan shows up before review, and so does planned work the branch has not
+					done yet.
+				</p>
+				<Footprint slot="demo" />
+			</Feature>
 
 			<Feature title="Keep a record that remembers why" flip>
 				<p>
@@ -171,8 +185,8 @@ import { links } from "../lib/links";
 		<Section id="share" title="Share what your agent found.">
 			<Fragment slot="lead">
 				<p>
-					Put a drawing in a design document, an ADR or a pull request, or let a walkthrough explain a
-					change one step at a time.
+					Put a drawing in a design document, an ADR or a pull request, and it never goes stale. Or let
+					a walkthrough explain a change one step at a time.
 				</p>
 			</Fragment>
 
@@ -202,9 +216,9 @@ import { links } from "../lib/links";
 		<Section id="compare" title="Where Archboard fits.">
 			<Fragment slot="lead">
 				<p>
-					Plenty of tools explain code or draw diagrams, and some are the quicker choice for a first look.
-					Archboard keeps one model of the system your agents build, checks it against the code, and
-					draws each change against it.
+					Most tools explain code after your agent wrote it. Archboard starts before the first line: your
+					agent plans the change on a map of what exists, you choose, and the map stays bound to the code
+					as it ships.
 				</p>
 			</Fragment>
 			<CompareTable />

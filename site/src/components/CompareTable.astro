@@ -1,17 +1,17 @@
 ---
-// Where Archboard fits, job by job: the quicker or better-known choices for each job, from each
-// vendor's public pages as of November 2026, and what Archboard does for the same job. It names
-// no tool as worse and claims nothing as Archboard's alone. On a phone each row becomes a block.
+// Where Archboard fits, job by job, planning first: what people use for each job today, from each
+// vendor's public pages as of November 2026, and what Archboard does for the same job. On a phone
+// each row becomes a block.
 const rows: { job: string; others: string; archboard: string }[] = [
 	{
-		job: "A first look at an unfamiliar repository",
-		others: "Ask your agent, or open DeepWiki or GitDiagram. Both are quick, and their public versions are free.",
-		archboard: "Your agent writes a model into the repository, so the next session starts from it instead of from nothing.",
+		job: "Planning a change before your agent writes it",
+		others: "Plan mode in your agent, or a design doc. The plan is prose, and nothing holds the code to it.",
+		archboard: "Your agent drafts the change as a proposal on the map of what exists, or two options side by side. You choose before any code exists, and the footprint shows whether the branch stayed inside the plan.",
 	},
 	{
-		job: "Finding your way in the editor",
-		others: "Windsurf Codemaps, or a code graph such as GitNexus, maps calls and files where you work.",
-		archboard: "The model holds responsibilities: services, stores and the routes between them, each bound to its file or symbol.",
+		job: "Reviewing a change",
+		others: "Read the diff, or an agent's summary of the pull request.",
+		archboard: "Review the plan, not only the diff. The proposal draws the change against current architecture, and adopting it records the reason and keeps the old architecture as an exact checkpoint.",
 	},
 	{
 		job: "Checking the map against the code",
@@ -19,18 +19,23 @@ const rows: { job: string; others: string; archboard: string }[] = [
 		archboard: "The code check finds broken bindings, relationships drawn backwards and calls the model leaves out, and says which it resolved and which it matched only by name.",
 	},
 	{
-		job: "Reviewing a change",
-		others: "Read the diff, or an agent's summary of the pull request.",
-		archboard: "A proposal draws the change against current architecture. Adopting it records the reason and keeps the old architecture as an exact checkpoint.",
+		job: "A first look at an unfamiliar repository",
+		others: "Ask your agent, or open DeepWiki or GitDiagram, and start over next session.",
+		archboard: "Your agent writes the map into the repository once, and every later session starts from it.",
+	},
+	{
+		job: "Finding your way in the editor",
+		others: "Windsurf Codemaps, or a code graph such as GitNexus, maps calls and files where you work.",
+		archboard: "The model holds responsibilities: services, stores and the routes between them, each bound to its file or symbol.",
 	},
 	{
 		job: "Diagrams for docs and pull requests",
-		others: "Mermaid or D2 in Markdown. GitHub draws Mermaid in place.",
-		archboard: "Every drawing comes from the one model. The embed check names the drawings that are out of date, and one command draws them again.",
+		others: "Mermaid or D2 in Markdown, redrawn by hand when the system moves.",
+		archboard: "Every drawing comes from the one model, and tracked embeds never go stale: one command redraws every drawing a change touched.",
 	},
 	{
 		job: "A shared architecture practice",
-		others: "IcePanel, Structurizr, LikeC4 and CodeViz keep a model too, and they now work with agents.",
+		others: "IcePanel, Structurizr, LikeC4 or CodeViz, in a tool of their own.",
 		archboard: "The model is files in your repository, written by your agent through the CLI, with proposals, reasons and checkpoints. It runs locally.",
 	},
 ];
@@ -39,12 +44,12 @@ const rows: { job: string; others: string; archboard: string }[] = [
 <div class="compare table" data-reveal>
 	<div class="scroll">
 		<table>
-			<caption class="sr-only">Where Archboard fits, job by job, next to other good choices</caption>
+			<caption class="sr-only">Where Archboard fits, job by job, next to what people use today</caption>
 			<thead>
 				<tr>
 					<th scope="col" class="row-head">The job</th>
-					<th scope="col">Good choices today</th>
-					<th scope="col" class="ours">What Archboard does</th>
+					<th scope="col">What people use today</th>
+					<th scope="col" class="ours">With Archboard</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -52,8 +57,8 @@ const rows: { job: string; others: string; archboard: string }[] = [
 					rows.map((row) => (
 						<tr>
 							<th scope="row" class="row-head">{row.job}</th>
-							<td data-label="Good choices today">{row.others}</td>
-							<td class="ours" data-label="What Archboard does">{row.archboard}</td>
+							<td data-label="What people use today">{row.others}</td>
+							<td class="ours" data-label="With Archboard">{row.archboard}</td>
 						</tr>
 					))
 				}
@@ -61,9 +66,7 @@ const rows: { job: string; others: string; archboard: string }[] = [
 		</table>
 	</div>
 	<p class="caption foot">
-		From each tool's public pages, read in November 2026. Some of these tools also do what Archboard
-		does not: IcePanel lets a team edit and comment on one shared model in the browser, and Codemaps
-		lives inside the editor.
+		Other tools as their public pages describe them in November 2026.
 	</p>
 </div>
 

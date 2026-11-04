@@ -1,0 +1,148 @@
+---
+// A branch held to its plan: the three lists `archboard model footprint` answers for the example
+// shop's Queued fulfilment proposal. The branch and its changes are an example. The lists and their
+// meaning are the command's (skills/archboard/references/design-lens.md, Footprint).
+import KindChip from "../KindChip.astro";
+import type { Kind } from "../../lib/icons";
+
+const groups: { title: string; note: string; outside?: boolean; modules: { name: string; kind: Kind }[] }[] = [
+	{
+		title: "Planned and changed",
+		note: "The branch built what the proposal names.",
+		modules: [
+			{ name: "Checkout API", kind: "service" },
+			{ name: "Fulfilment worker", kind: "job" },
+			{ name: "Order events", kind: "queue" },
+		],
+	},
+	{
+		title: "Changed outside the plan",
+		note: "Did the branch leave the plan, or does the plan miss a module?",
+		outside: true,
+		modules: [{ name: "Basket cache", kind: "cache" }],
+	},
+	{
+		title: "Planned, not changed yet",
+		note: "Is the work still to do, or does the module need no code change?",
+		modules: [{ name: "Payment webhook", kind: "route" }],
+	},
+];
+---
+
+<div class="footprint table">
+	<p class="command mono">
+		<span class="ps">$</span> archboard model footprint --base main --state "Queued fulfilment"
+	</p>
+	<div class="groups">
+		{
+			groups.map((group) => (
+				<section class:list={["group", { outside: group.outside }]} aria-label={group.title}>
+					<p class="group-head">
+						<span class="group-title">{group.title}</span>
+						<span class="count mono">{group.modules.length}</span>
+					</p>
+					<ul class="modules">
+						{group.modules.map((module) => (
+							<li>
+								<KindChip kind={module.kind} size={20} />
+								<span>{module.name}</span>
+							</li>
+						))}
+					</ul>
+					<p class="note">{group.note}</p>
+				</section>
+			))
+		}
+	</div>
+</div>
+<p class="caption example-caption">Example branch for the shop's Queued fulfilment proposal.</p>
+
+<style>
+	.footprint {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 6px;
+		background: var(--chrome);
+	}
+	.command {
+		margin: 0;
+		padding: 14px 16px;
+		border-radius: 6px;
+		background: oklch(0.155 0.005 75);
+		box-shadow: inset 0 0 0 1px var(--rule);
+		font-size: 0.8125rem;
+		line-height: 1.6;
+		color: var(--ink);
+		overflow-wrap: anywhere;
+	}
+	.ps {
+		color: var(--gold-mark);
+	}
+	.groups {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 6px;
+	}
+	.group {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		padding: 16px;
+		border-radius: 6px;
+		background: var(--plane);
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+	.group.outside {
+		background: color-mix(in oklch, var(--changed) 7%, var(--plane));
+		box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--changed) 45%, transparent);
+	}
+	.group-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 12px;
+		margin: 0;
+	}
+	.group-title {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.outside .group-title {
+		color: var(--changed-text);
+	}
+	.count {
+		font-size: 0.8125rem;
+		color: var(--ink-muted);
+	}
+	.modules {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.modules li {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		font-size: 0.875rem;
+		color: var(--ink);
+	}
+	.note {
+		margin: auto 0 0;
+		font-size: 0.8125rem;
+		line-height: 1.5;
+		color: var(--ink-muted);
+	}
+	.example-caption {
+		margin-top: 14px;
+	}
+	@media (max-width: 760px) {
+		.groups {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>

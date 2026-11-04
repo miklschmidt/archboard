@@ -518,7 +518,7 @@
 	],
 	"narrative": {
 		"northStar": "The Lit Drafting Table at Night",
-		"overview": "The site is one long page in a dark room. Warm graphite planes stack under a light from above. Each plane has a lit top edge, a thin contact line and a soft warm shadow beneath it. Real drawings from the Archboard renderer lie on these planes and bring every colour the page has. The page leads with the reader's problem, understanding the code their agents write, and proves that nobody places a box, so the renderer's drawings carry the proof and the chrome stays quiet.\n\nOne gold does the choosing. It marks the brand, the one action of a region, and what is selected. The type is tall condensed capitals for what a region is about, plain sans for every other word, and mono for commands, paths and counts. The values come from the renderer's dark theme in `packages/renderer/assets/theme.css`, and the type scale belongs to the site. The product's shell is a different surface with a light theme and keeps its own record at the repository root.\n\nThe build carries out the direction contract as written. The hero is left-aligned over a WebGL lamp and grid. A mock Archboard window in perspective holds the real example-shop drawing and builds itself line by line while real CLI commands type out. Each later section uses a different demonstration form: a sortable table, tabs, a switch, two panes, a timeline, a player, a zoom, a claim. The owner rejects three things. The first is the category default: a centered hero over a flat screenshot, then a grid of same-size icon cards. The others are a light theme and any label above a heading.",
+		"overview": "The site is one long page in a dark room. Warm graphite planes stack under a light from above. Each plane has a lit top edge, a thin contact line and a soft warm shadow beneath it. Real drawings from the Archboard renderer lie on these planes and bring every colour the page has. The page leads with the reader's problem, understanding the code their agents write, puts planning before the first line of code, and proves that nobody places a box, so the renderer's drawings carry the proof and the chrome stays quiet.\n\nOne gold does the choosing. It marks the brand, the one action of a region, and what is selected. The type is tall condensed capitals for what a region is about, plain sans for every other word, and mono for commands, paths and counts. The values come from the renderer's dark theme in `packages/renderer/assets/theme.css`, and the type scale belongs to the site. The product's shell is a different surface with a light theme and keeps its own record at the repository root.\n\nThe build carries out the direction contract as written. The hero is left-aligned over a WebGL lamp and grid. A mock Archboard window in perspective holds the real example-shop drawing and builds itself line by line while real CLI commands type out. Each later section uses a different demonstration form: a sortable table, tabs, a switch, two panes, a timeline, a player, a zoom, a claim. The owner rejects three things. The first is the category default: a centered hero over a flat screenshot, then a grid of same-size icon cards. The others are a light theme and any label above a heading.",
 		"keyCharacteristics": [
 			"Dark only. `color-scheme: dark` is set in the stylesheet and in a meta tag.",
 			"Planes, not lines. Depth comes from stacked tones, a lit top edge and a shadow, and edges are inset rings, not borders.",
@@ -612,7 +612,7 @@
 			"Do run every new loop only while visible, and give it a still state for reduced motion.",
 			"Do give each demonstration its own form, and keep the composition left-aligned.",
 			"Do label mock interface data as an example.",
-			"Do say what the product does and where it stops. Name the quicker alternatives for a job, state the platform, license and model-provider limits before the install step, and put the renderer's implementation under the outcome it explains."
+			"Do make bold claims that a command backs, and name the command. Put planning first wherever the page compares jobs, state the platform, license and model-provider limits before the install step, and put the renderer's implementation under the outcome it explains."
 		],
 		"donts": [
 			"Do not add a light theme, a theme switch or a second accent hue.",
@@ -624,7 +624,6 @@
 			"Do not use state colours or kind brights as decoration.",
 			"Do not lay gold, shadow or blur over a renderer drawing.",
 			"Do not build a grid of same-size icon cards, or a centered hero over a flat screenshot.",
-			"Do not claim that a capability is Archboard's alone, that the map stays current by itself, that local means nothing reaches a model provider, or that the renderer is faster than another tool without a published measurement.",
 			"Do not edit or reuse the product's root `DESIGN.md`. It records the light application shell, which is a different surface."
 		]
 	}
