@@ -91,42 +91,69 @@ impl Settling<'_> {
     }
 
     /// The arcs that could stand over a crossing, in the order they are
-    /// tried: a hop on each line crossing either of its clusters, where each
-    /// line's look lets it rise over the cluster's; a hop of its own on each
-    /// line that runs straight past both of its feet (`ranked`), bulging the
-    /// usual way, then the other; on each line, the hops beside it grown into
-    /// one crest over it too; the bundles the looks do not allow; the bundle
-    /// again, with the hops its cluster's line stands over it taken down; and
-    /// each hop of its own that faces another with that one turned.
+    /// tried (`more_arcs`), up to the first clear of other ink: the one
+    /// `chosen` takes.
     fn arcs_over(&mut self, crossing: usize) -> Vec<Arcs> {
-        let (mut arcs, unlooked): (Vec<Arcs>, Vec<Arcs>) = self
+        let (mut arcs, mut unlooked): (Vec<Arcs>, Vec<Arcs>) = self
             .bundles(crossing, false)
             .into_iter()
             .partition(|bundle| bundle.looked);
-        for cluster in self.ranked(crossing) {
-            for bulge in [1.0, -1.0] {
-                let rise = Rise {
-                    cluster,
-                    crossings: vec![crossing],
-                };
-                let curve = self.hop_over(cluster, crossing, bulge);
-                arcs.push(self.judged(vec![(rise, curve)], Vec::new()));
+        for stage in 0..4 {
+            if arcs.iter().any(|arc| arc.near > 1.0) {
+                break;
             }
-        }
-        for cluster in self.risers(crossing) {
-            arcs.extend(self.grown(cluster, crossing));
-        }
-        arcs.extend(unlooked);
-        arcs.extend(self.bundles(crossing, true));
-        let alone: Vec<(Rise, Curve)> = arcs
-            .iter()
-            .filter(|arc| arc.replaces.is_empty() && arc.rises.len() == 1 && arc.near <= 1.0)
-            .map(|arc| arc.rises[0].clone())
-            .collect();
-        for (rise, curve) in alone {
-            arcs.extend(self.turned(&rise, &curve));
+            self.more_arcs(stage, crossing, &mut arcs, &mut unlooked);
         }
         arcs
+    }
+
+    /// After the bundles over a crossing that the looks allow, the arcs tried
+    /// at each later stage: a hop of its own on each line that runs straight
+    /// past both of its feet (`ranked`), bulging the usual way, then the
+    /// other; on each line, the hops beside it grown into one crest over it
+    /// too; the bundles the looks do not allow, and the bundle again with the
+    /// hops its cluster's line stands over it taken down; and each hop of its
+    /// own that faces another with that one turned.
+    fn more_arcs(
+        &mut self,
+        stage: usize,
+        crossing: usize,
+        arcs: &mut Vec<Arcs>,
+        unlooked: &mut Vec<Arcs>,
+    ) {
+        match stage {
+            0 => {
+                for cluster in self.ranked(crossing) {
+                    for bulge in [1.0, -1.0] {
+                        let rise = Rise {
+                            cluster,
+                            crossings: vec![crossing],
+                        };
+                        let curve = self.hop_over(cluster, crossing, bulge);
+                        arcs.push(self.judged(vec![(rise, curve)], Vec::new()));
+                    }
+                }
+            }
+            1 => {
+                for cluster in self.risers(crossing) {
+                    arcs.extend(self.grown(cluster, crossing));
+                }
+            }
+            2 => {
+                arcs.append(unlooked);
+                arcs.extend(self.bundles(crossing, true));
+            }
+            _ => {
+                let alone: Vec<(Rise, Curve)> = arcs
+                    .iter()
+                    .filter(|arc| arc.replaces.is_empty() && arc.rises.len() == 1)
+                    .map(|arc| arc.rises[0].clone())
+                    .collect();
+                for (rise, curve) in alone {
+                    arcs.extend(self.turned(&rise, &curve));
+                }
+            }
+        }
     }
 
     /// The lines a hop of a crossing's own fits on, by their clusters,
@@ -273,6 +300,9 @@ impl Settling<'_> {
     /// What a look at the drawing finds with some standing hops, by their
     /// index, taken down.
     fn without<T>(&mut self, hops: &[usize], look: impl FnOnce(&Self) -> T) -> T {
+        if hops.is_empty() {
+            return look(self);
+        }
         let standing = self.scene.hops.clone();
         self.scene.hops = standing
             .iter()
