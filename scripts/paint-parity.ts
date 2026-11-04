@@ -101,7 +101,11 @@ window.keepPainter = async (kind, file) => {
 	shown(canvas);
 	painter.resize(width, height);
 	painter.setTheme(theme === "dark");
-	painter.show(painting);
+	try {
+		painter.show(painting);
+	} catch (error) {
+		return String(error);
+	}
 	painter.setCamera(0, 0, scale, 0, 0);
 	painter.setFarLine(far ? Number.POSITIVE_INFINITY : 0, 0);
 	painter.setTrafficShown(traffic);
@@ -110,6 +114,7 @@ window.keepPainter = async (kind, file) => {
 	const copy = new OffscreenCanvas(width, height);
 	copy.getContext("2d").drawImage(canvas, 0, 0);
 	await fetch(file, { method: "PUT", body: await copy.convertToBlob({ type: "image/png" }) });
+	return null;
 };
 window.showSvg = async () => {
 	const { markup, theme, scale, far, traffic } = window.reading;
@@ -387,11 +392,21 @@ async function compareReading(
 	await page.evaluate("window.showSvg()");
 	await capture(page, size, join(out, `${stem}.svg.png`));
 	const results: Result[] = [];
+	const unread: string[] = [];
 	for (const painter of view.painters) {
-		// oxlint-disable-next-line no-await-in-loop -- one page shows one painter at a time
-		await page.evaluate(
-			`window.keepPainter(${JSON.stringify(painter)}, ${JSON.stringify(`/${stem}.${painter}.png`)})`,
-		);
+		const refusal = z
+			.string()
+			.nullable()
+			.parse(
+				// oxlint-disable-next-line no-await-in-loop -- one page shows one painter at a time
+				await page.evaluate(
+					`window.keepPainter(${JSON.stringify(painter)}, ${JSON.stringify(`/${stem}.${painter}.png`)})`,
+				),
+			);
+		if (refusal !== null) {
+			unread.push(`${painter}: ${refusal}`);
+			continue;
+		}
 		const compared = Compared.parse(
 			// oxlint-disable-next-line no-await-in-loop -- one page shows one painter at a time
 			await page.evaluate(
@@ -405,7 +420,20 @@ async function compareReading(
 			rmSync(join(out, `${stem}.${painter}.diff.png`));
 		}
 	}
+	reportUnread(stem, unread, view.painters.length);
 	return results;
+}
+
+/**
+ * Skip a painting only when every requested painter rejects it (TASK-576).
+ * @param stem The reading and view.
+ * @param unread The painters that rejected the painting, with their reasons.
+ * @param requested How many painters the run requested.
+ */
+function reportUnread(stem: string, unread: readonly string[], requested: number): void {
+	if (unread.length === 0) return;
+	if (unread.length < requested) throw new Error(`${stem} failed to read on ${unread.join("; ")}`);
+	console.log(`Skipped ${stem}: ${unread.join("; ").slice(0, 160)}`);
 }
 
 /** What a run was told to compare. */
@@ -540,11 +568,7 @@ async function main(): Promise<void> {
 			for (const name of run.views) {
 				const view = { name, painters: run.painters };
 				// oxlint-disable-next-line no-await-in-loop -- one page shows one reading at a time
-				const found = await compareReading(page, run.out, reading, view).catch((error: unknown) => {
-					// A painting that no painter reads is a fault of the core (TASK-576), not of a painter.
-					console.log(`Skipped ${reading.key} ${name}: ${String(error).slice(0, 160)}`);
-					return [];
-				});
+				const found = await compareReading(page, run.out, reading, view);
 				results.push(...found);
 				appendFileSync(journal, found.map((one) => `${JSON.stringify(one)}\n`).join(""));
 			}
