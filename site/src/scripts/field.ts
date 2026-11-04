@@ -1,6 +1,7 @@
 // The drafting table under the lamp: a grid in perspective, lit by a warm pool of light that
-// follows the pointer, with light travelling along its lines the way traffic travels along the
-// relationships of a picture.
+// sits on the table under the pointer, with light travelling along its lines the way traffic
+// travels along the relationships of a picture. Without a pointer the lamp rests to the right of
+// the words.
 
 import { runShader } from "./gl";
 
@@ -8,6 +9,7 @@ const FRAGMENT = `#version 300 es
 precision highp float;
 uniform vec2 uRes;
 uniform float uTime;
+// Where the lamp hangs on the canvas, 0..1 from the bottom left.
 uniform vec2 uLamp;
 uniform float uScroll;
 uniform float uPitch;
@@ -39,12 +41,22 @@ float pulse(float s, float lane, float t) {
 	return d > 0.0 ? exp(-d * 0.55) : exp(d * 12.0);
 }
 
-void main() {
-	vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
-	vec3 ro = vec3(0.0, uLift, 0.0);
+// The camera's ray through one pixel.
+vec3 ray(vec2 frag) {
+	vec2 uv = (frag - 0.5 * uRes) / uRes.y;
 	vec3 rd = normalize(vec3(uv.x, uv.y, 1.25));
 	float c = cos(uPitch), s = sin(uPitch);
-	rd = vec3(rd.x, rd.y * c - rd.z * s, rd.y * s + rd.z * c);
+	return vec3(rd.x, rd.y * c - rd.z * s, rd.y * s + rd.z * c);
+}
+
+void main() {
+	vec3 ro = vec3(0.0, uLift, 0.0);
+	vec3 rd = ray(gl_FragCoord.xy);
+	// The lamp's ray meets the table where the pointer is. A ray at or above the horizon meets it
+	// far away, so the lamp never leaves the table.
+	vec3 lampRay = ray(uLamp * uRes);
+	vec2 lamp = (ro + lampRay * (-ro.y / min(lampRay.y, -0.04))).xz;
+	lamp.y += uScroll * 1.5;
 
 	vec3 col = GROUND;
 	if (rd.y < -0.0005) {
@@ -68,8 +80,6 @@ void main() {
 		float coarse = clamp(1.0 - max(FW.x, FW.y) * 2.5, 0.0, 1.0);
 		float fog = exp(-t * 0.12);
 
-		// The lamp hangs to the right of the words, and the pointer moves it.
-		vec2 lamp = vec2(2.1 + uLamp.x * 1.8, 5.6 + uLamp.y * 1.4);
 		float ld = length((w - lamp) * vec2(1.0, 0.8));
 		float pool = exp(-ld * ld * 0.28);
 		float wide = exp(-ld * 0.32);
@@ -105,6 +115,26 @@ export interface FieldPreset {
 	traffic: number;
 }
 
+/** Where the lamp rests without a pointer, on the table: right of the words and up the page. */
+const REST = { x: 2.1, z: 5.6 };
+
+/**
+ * Where a point on the table appears on the canvas, through the shader's camera.
+ * @param preset The camera.
+ * @param aspect The canvas's width over its height.
+ * @returns The point on the canvas, 0..1 from the bottom left.
+ */
+function onCanvas(preset: FieldPreset, aspect: number): { x: number; y: number } {
+	const c = Math.cos(preset.pitch);
+	const s = Math.sin(preset.pitch);
+	const down = -preset.lift;
+	const depth = -s * down + c * REST.z;
+	return {
+		x: ((1.25 * REST.x) / depth) / aspect + 0.5,
+		y: (1.25 * (c * down + s * REST.z)) / depth + 0.5,
+	};
+}
+
 /**
  * Light the drafting table on one canvas.
  * @param canvas The canvas, sized by CSS.
@@ -113,18 +143,15 @@ export interface FieldPreset {
 export function lightField(canvas: HTMLCanvasElement, preset: FieldPreset): void {
 	const host = canvas.parentElement ?? canvas;
 	const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-	const lamp = { x: 0, y: 0 };
-	const target = { x: 0, y: 0 };
+	let lamp: { x: number; y: number } | undefined;
+	let pointer: { x: number; y: number } | undefined;
+	let previous: number | undefined;
 	let scroll = 0;
 	host.addEventListener("pointermove", (event) => {
-		if (motion.matches) return;
-		const box = host.getBoundingClientRect();
-		target.x = ((event.clientX - box.left) / box.width) * 2 - 1;
-		target.y = 1 - ((event.clientY - box.top) / box.height) * 2;
+		pointer = { x: event.clientX, y: event.clientY };
 	});
 	host.addEventListener("pointerleave", () => {
-		target.x = 0;
-		target.y = 0;
+		pointer = undefined;
 	});
 
 	runShader({
@@ -134,19 +161,26 @@ export function lightField(canvas: HTMLCanvasElement, preset: FieldPreset): void
 		stillTime: 14,
 		uniforms: (gl, at, frame) => {
 			const still = motion.matches;
-			if (still) {
-				lamp.x = 0;
-				lamp.y = 0;
-				scroll = 0;
-			} else {
+			const rest = onCanvas(preset, frame.width / frame.height);
+			let target = rest;
+			if (still) scroll = 0;
+			else {
 				const box = host.getBoundingClientRect();
 				scroll = Math.min(1, Math.max(0, -box.top / Math.max(1, box.height)));
+				// Read the pointer against the canvas each frame, so a scroll keeps the lamp under it.
+				const field = canvas.getBoundingClientRect();
+				target = pointer
+					? {
+							x: (pointer.x - field.left) / field.width,
+							y: Math.max(-0.2, 1 - (pointer.y - field.top) / field.height),
+						}
+					: { x: rest.x + Math.sin(frame.time * 0.13) * 0.03, y: rest.y };
 			}
-			const drift = still ? 0 : Math.sin(frame.time * 0.13) * 0.18;
-			if (!still) {
-				lamp.x += (target.x + drift - lamp.x) * 0.035;
-				lamp.y += (target.y - lamp.y) * 0.035;
-			}
+			// The lamp follows its target with a short, frame-rate-independent lag.
+			const ease = lamp && !still ? 1 - Math.exp(-((frame.time - (previous ?? frame.time)) * 7)) : 1;
+			previous = frame.time;
+			lamp = lamp ?? target;
+			lamp = { x: lamp.x + (target.x - lamp.x) * ease, y: lamp.y + (target.y - lamp.y) * ease };
 			gl.uniform2f(at("uRes"), frame.width, frame.height);
 			gl.uniform1f(at("uTime"), frame.time);
 			gl.uniform2f(at("uLamp"), lamp.x, lamp.y);
