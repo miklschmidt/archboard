@@ -80,7 +80,7 @@ The painter's WebAssembly holds all three painters, with no Cargo feature.
 - The runs drew the largest picture at 1920 by 1080 in headless Chrome 155 on an RTX 4090. A WebGL2 frame fell from 20.9 ms to 15.0 ms of main thread. Its frames over 25 ms fell from 361 to 154 of 540.
 - On the same runs, a CPU frame fell from 35.5 ms to 29.2 ms. Its frames over 25 ms fell from 539 to 419 of 540.
 - A first frame now records its parts, so it takes longer: 40 to 43 ms against 33 ms on WebGL2, and 57 to 58 ms against 51 ms on the CPU.
-- On the full corpus, WebGL2 matched the CPU painter against the SVG. On no comparison did the two differ by more than 0.14 percentage points of ink.
+- On the full corpus, flowcharts included, WebGL2 matched the CPU painter against the SVG. On no comparison did the two differ by more than 0.14 percentage points of ink.
 - A strip frame still costs about 14 ms on that picture. The walk, the glyphs, the long outlines and the polylines share that time, and no single waste remains. Strips kept under a still camera need an interface that `vello_cpu` and `vello_gpu` do not offer.
 - A line that holds traffic changes each frame, so no painter keeps it.
 - A WebGL2 painter has no lens, so a move on it shows no blur, as on the CPU.

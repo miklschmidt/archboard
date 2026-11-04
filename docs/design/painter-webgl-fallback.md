@@ -304,8 +304,8 @@ The script reads the WebGL2 raster from its canvas in the task that drew it, bef
 
 The run of 2026-11-04 compared the whole corpus with the WebGL2 painter and the CPU painter, in headless Chrome 155 on the RTX 4090.
 The corpus held 524 drawings: 228 architecture pictures, 148 sequences and 148 flowcharts, in the dark and the light theme.
-Every painter refused 140 of the flowcharts, because their paintings hold `null` in place of numbers.
-All of those numbers sit in one shadow path of a flowchart card. TASK-576 tracks that fault.
+Every painter refused 140 of the flowcharts, because their paintings held `null` in place of numbers.
+All of those numbers sat in one shadow path of a flowchart card. TASK-576 fixed that fault on `main` in #41.
 The other 384 drawings gave 1,536 comparisons.
 
 | Painter | Near, mean | Near, worst | Far, mean | Far, worst |
@@ -316,6 +316,15 @@ The other 384 drawings gave 1,536 comparisons.
 The worst comparison of both painters is the whole model of this repository in the light theme, near.
 The two painters differed by at most 0.14 percentage points of ink on any one comparison, and by 0.005 on average.
 The light theme averaged 0.36% near and 0.24% far, and the dark theme 0.10% and 0.06%.
+
+A second run compared the 148 flowcharts of a corpus rendered after #41, with no reading skipped. It gave 592 comparisons.
+
+| Painter | Near, mean | Near, worst | Far, mean | Far, worst |
+| ------- | ---------- | ----------- | --------- | ---------- |
+| WebGL2  | 0.272%     | 0.89%       | 0.124%    | 0.55%      |
+| CPU     | 0.270%     | 0.88%       | 0.120%    | 0.55%      |
+
+On the flowcharts the two painters differed by at most 0.027 percentage points of ink on any one comparison.
 
 In motion, the films of [the Vello painter](vello-painter.md) read each frame from the canvas on a held clock.
 They work on a WebGL2 canvas the same way, but nobody filmed a move on it.

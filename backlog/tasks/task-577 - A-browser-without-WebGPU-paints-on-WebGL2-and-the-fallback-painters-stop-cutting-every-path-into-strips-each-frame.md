@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-04T21:13:00Z'
-updated_date: '2026-11-04T22:34:00Z'
+updated_date: '2026-11-04T22:58:00Z'
 labels:
   - painter
   - renderer
@@ -115,6 +115,13 @@ The existing proposal w4XB6eBv remains accurate. These fixes enforce its canvas 
 Verification passed: 174 archboard-paint tests, 5 archboard-painter-wasm tests, native crate clippy, WASM crate clippy with warnings denied, build:core, bunx vp run types, 25 focused TypeScript tests, the semantic traffic browser owner, scoped typed lint, formatting, and diff whitespace inspection. Focused script runs prove both failure exits and a valid CPU benchmark.
 
 Limits: the review did not repeat the full corpus or the before/after performance series. TASK-576 malformed flowcharts now stop parity explicitly. Cross-platform browser behavior and recovery from a real Vello GPU panic remain unverified.
+
+## After the rebase on #41
+
+- #41 fixed the flowchart NaN points (TASK-576). A corpus rendered after it holds no null in its 148 flowcharts.
+- Parity on those 148 flowcharts (webgl, cpu): 592 comparisons, none skipped. WebGL2 near 0.272% mean (0.89% worst), far 0.124% (0.55%). CPU near 0.270% (0.88%), far 0.120% (0.55%). Largest WebGL2-CPU difference 0.027 points.
+- After the review fixes, the product page in headless Chrome 155 again painted webgl, moved to cpu after loseContext() with one canvas left, and painted cpu with the reason under SwiftShader and --disable-gpu.
+- Review with sol-loop: 3 rounds on gpt-6.1-sol at xhigh, approved. bun run check passed on the reviewed branch. PR: https://github.com/miklschmidt/archboard/pull/42
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
