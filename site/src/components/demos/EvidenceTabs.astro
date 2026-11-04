@@ -105,7 +105,7 @@ const views: { key: string; icon: IconName; label: string; line: string }[] = [
 					and which change together, including pairs with no authored relationship.
 				</p>
 				<p>
-					Set a branch against its proposal with <code>archboard model footprint --base main</code>, and
+					Set a branch against its proposal with <code>archboard model footprint --state "Queued fulfilment" --base main</code>, and
 					your agent sees changes outside the plan before it adopts it.
 				</p>
 			</div>
@@ -201,6 +201,7 @@ const views: { key: string; icon: IconName; label: string; line: string }[] = [
 		text-wrap: pretty;
 	}
 	.copy code {
+		white-space: normal;
 		padding: 0.12em 0.4em;
 		border-radius: var(--radius-chip);
 		background: var(--card);
