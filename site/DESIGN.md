@@ -220,7 +220,7 @@ components:
 
 **Creative North Star: "The Lit Drafting Table at Night"**
 
-The site is one long page in a dark room. Warm graphite planes stack under a light from above. Each plane has a lit top edge, a thin contact line and a soft warm shadow beneath it. Real drawings from the Archboard renderer lie on these planes and bring every colour the page has. The page claims that nobody places a box, so the renderer's drawings carry the proof and the chrome stays quiet.
+The site is one long page in a dark room. Warm graphite planes stack under a light from above. Each plane has a lit top edge, a thin contact line and a soft warm shadow beneath it. Real drawings from the Archboard renderer lie on these planes and bring every colour the page has. The page leads with the reader's problem, understanding the code their agents write, and proves that nobody places a box, so the renderer's drawings carry the proof and the chrome stays quiet.
 
 One gold does the choosing. It marks the brand, the one action of a region, and what is selected. The type is tall condensed capitals for what a region is about, plain sans for every other word, and mono for commands, paths and counts. The values come from the renderer's dark theme in `packages/renderer/assets/theme.css`, and the type scale belongs to the site. The product's shell is a different surface with a light theme and keeps its own record at the repository root.
 
@@ -294,7 +294,7 @@ The kind brights appear in the kind chip, which follows the renderer's own map, 
 
 ### Hierarchy
 
-- **Display** (800, clamp(3.4rem, 10.5vw, 6rem), 0.9, +0.012em, capitals): The hero line only, capped at 12ch. The closing head uses the headline weight at clamp(3.2rem, 9vw, 6rem).
+- **Display** (800, clamp(3.4rem, 10.5vw, 6rem), 0.9, +0.012em, capitals): The hero line only, capped at 20ch. The closing head uses the headline weight at clamp(3.2rem, 9vw, 6rem).
 - **Headline** (780, clamp(2.6rem, 6.4vw, 4.75rem), 0.92, +0.012em, capitals): Each section head, capped at 14ch and set in two or three lines.
 - **Claim** (720, clamp(2rem, 3.4vw, 2.75rem), 0.95, +0.005em, capitals): A capability's name, capped at 16ch. It sits between the section head and the prose.
 - **Wordmark** (560, 22px in the nav, 20px in the footer, 17px in the mock window, +0.08em, capitals): The brand name beside the mark.
@@ -317,7 +317,7 @@ The mock window and the demo panels set smaller type (10.5px to 13px) because th
 
 ## Layout
 
-The page is one left-aligned column of chapters. A container holds 1240px of content between gutters of clamp(16px, 4vw, 40px). Every row uses it, the nav and the hero window too, so the logo, the headline, the window and each section start on one left edge. Nothing is centered except the closing call. The page runs in this order: hero, a belt of languages, how it works, understand, plan, present, Archboard draws itself, comparison, quick start, questions, closing, footer.
+The page is one left-aligned column of chapters. A container holds 1240px of content between gutters of clamp(16px, 4vw, 40px). Every row uses it, the nav and the hero window too, so the logo, the headline, the window and each section start on one left edge. Nothing is centered except the closing call. The page runs in this order: hero, a belt of languages, understand (zoom, one request, the code check, Measures), plan, how it works (the pipeline, the renderer's technical detail, agents in plain sight, Archboard drawing itself), share (pictures for documents, the walkthrough), where it fits, quick start, questions, closing, footer. The order answers the reader's next question: how a feature works and where the map is wrong, what the next change does, then how the drawing is made and how to share it.
 
 A section opens with padding-top of clamp(96px, 14vw, 200px) and no bottom padding. Its head is a two-column grid, 7fr for the capitals and 5fr for the lead. The columns align at their bottom edge with a 24px by 64px gap and a bottom margin of clamp(48px, 6vw, 80px). Below 900px the head stacks.
 
@@ -453,6 +453,7 @@ The real checkout drawing and sequence diagram sit on a plane. A raised box hold
 - **Do** run every new loop only while visible, and give it a still state for reduced motion.
 - **Do** give each demonstration its own form, and keep the composition left-aligned.
 - **Do** label mock interface data as an example.
+- **Do** say what the product does and where it stops. Name the quicker alternatives for a job, state the platform, license and model-provider limits before the install step, and put the renderer's implementation under the outcome it explains.
 
 ### Don't:
 
@@ -465,4 +466,5 @@ The real checkout drawing and sequence diagram sit on a plane. A raised box hold
 - **Do not** use state colours or kind brights as decoration.
 - **Do not** lay gold, shadow or blur over a renderer drawing.
 - **Do not** build a grid of same-size icon cards, or a centered hero over a flat screenshot.
+- **Do not** claim that a capability is Archboard's alone, that the map stays current by itself, that local means nothing reaches a model provider, or that the renderer is faster than another tool without a published measurement.
 - **Do not** edit or reuse the product's root `DESIGN.md`. It records the light application shell, which is a different surface.

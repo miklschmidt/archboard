@@ -19,7 +19,11 @@ const items = [
 	},
 	{
 		q: "Does the diagram stay in sync with the code?",
-		a: "Your agent keeps it in sync. archboard check code reports broken source evidence, missing dependencies between mapped modules, and boundaries that disagree with the code. Your agent reads that evidence and updates the model through an explicit proposal.",
+		a: "Not by itself. Your agent updates the model in the same task as the code. archboard check code reports broken source evidence, missing dependencies between mapped modules, and boundaries that disagree with the code. Your agent reads that evidence and updates the model through an explicit proposal.",
+	},
+	{
+		q: "Does my code leave my machine?",
+		a: "The model, the server and the rendering run on your machine. Your coding agent and the Codex voice run on their providers' models, and they receive what they read or what you tell them. Their providers' data policies apply.",
 	},
 	{
 		q: "Is the traffic animation real traffic?",
@@ -28,6 +32,10 @@ const items = [
 	{
 		q: "Is it safe to run?",
 		a: "The server binds to 127.0.0.1 and has no authentication, so keep it on loopback. To use it from another machine, use an SSH tunnel.",
+	},
+	{
+		q: "Can I use it at work?",
+		a: "Yes, if you are an individual, or your organization has fewer than 50 people and under US$1,000,000 in annual revenue, and you do not offer Archboard as a hosted service. Other use needs another license. Each version becomes MIT-licensed four years after its first publication.",
 	},
 	{
 		q: "Is it stable?",

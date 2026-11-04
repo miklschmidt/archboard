@@ -8,11 +8,11 @@ import { links } from "../lib/links";
 <section class="hero" id="top" aria-labelledby="hero-title">
 	<canvas class="field" data-field aria-hidden="true"></canvas>
 	<div class="container hero-copy">
-		<h1 id="hero-title" class="display h1">Nobody places<br />a box.</h1>
+		<h1 id="hero-title" class="display h1">Understand the code <br />your agents write.</h1>
 		<div class="hero-row">
 			<p class="lead">
-				Your coding agent reads the code and tells Archboard what the system is. Archboard draws
-				every line.
+				Your coding agent maps the system it builds. Follow a feature into the code, see where the
+				map and the code disagree, and review the next change against what exists.
 			</p>
 			<div class="hero-actions">
 				<a class="btn btn-gold" href="#quick-start">Get started <Icon name="arrowRight" /></a>
@@ -23,6 +23,7 @@ import { links } from "../lib/links";
 			<li>For Claude Code and Codex</li>
 			<li>Linux and macOS</li>
 			<li>Runs locally from a clone</li>
+			<li>Source-available</li>
 		</ul>
 	</div>
 	<div class="container hero-window" data-hero-playback data-loop>
@@ -31,8 +32,8 @@ import { links } from "../lib/links";
 			<DockLines />
 		</div>
 		<p class="caption window-caption">
-			A mock of the Archboard window around a real drawing of the example shop. The renderer drew
-			every card and line. The commands are the real CLI.
+			A mock of the Archboard window around a real drawing of the example shop. Nobody placed a box:
+			the renderer drew every card and line. The commands are the real CLI.
 		</p>
 	</div>
 </section>
@@ -71,7 +72,8 @@ import { links } from "../lib/links";
 	.h1 {
 		font-size: clamp(3.4rem, 10.5vw, 6rem);
 		font-weight: 800;
-		max-width: 12ch;
+		max-width: 20ch;
+		text-wrap: balance;
 	}
 	.hero-row {
 		display: flex;
@@ -121,6 +123,9 @@ import { links } from "../lib/links";
 		max-width: 52em;
 	}
 	@media (max-width: 760px) {
+		.h1 br {
+			display: none;
+		}
 		.dock-mirror {
 			display: block;
 			margin-top: 16px;
