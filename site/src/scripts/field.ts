@@ -130,7 +130,7 @@ function onCanvas(preset: FieldPreset, aspect: number): { x: number; y: number }
 	const down = -preset.lift;
 	const depth = -s * down + c * REST.z;
 	return {
-		x: ((1.25 * REST.x) / depth) / aspect + 0.5,
+		x: (1.25 * REST.x) / depth / aspect + 0.5,
 		y: (1.25 * (c * down + s * REST.z)) / depth + 0.5,
 	};
 }
@@ -177,7 +177,8 @@ export function lightField(canvas: HTMLCanvasElement, preset: FieldPreset): void
 					: { x: rest.x + Math.sin(frame.time * 0.13) * 0.03, y: rest.y };
 			}
 			// The lamp follows its target with a short, frame-rate-independent lag.
-			const ease = lamp && !still ? 1 - Math.exp(-((frame.time - (previous ?? frame.time)) * 7)) : 1;
+			const ease =
+				lamp && !still ? 1 - Math.exp(-((frame.time - (previous ?? frame.time)) * 7)) : 1;
 			previous = frame.time;
 			lamp = lamp ?? target;
 			lamp = { x: lamp.x + (target.x - lamp.x) * ease, y: lamp.y + (target.y - lamp.y) * ease };
