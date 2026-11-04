@@ -14,6 +14,7 @@
 import path from "node:path";
 import { cargoWorkspaceOf } from "#runtime/operations/language-servers/cargo-workspace.ts";
 import { compileDatabaseOf } from "#runtime/operations/language-servers/compile-database.ts";
+import { goWorkspaceOf } from "#runtime/operations/language-servers/go-workspace.ts";
 import { dotnetProjectOf } from "#runtime/operations/language-servers/dotnet-solution.ts";
 import { pythonProjectOf } from "#runtime/operations/language-servers/python-environment.ts";
 import { swiftPackageOf } from "#runtime/operations/language-servers/swift-package.ts";
@@ -152,6 +153,14 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
 		opensFiles: true,
 		indexProgress: "rustAnalyzer/cachePriming",
 		project: cargoWorkspaceOf,
+	},
+	// gopls loads the workspace's packages through the go command before it
+	// answers, so a question waits until that load ends. Its project is the
+	// nearest go.work, else the module (go-workspace.ts, TASK-575).
+	go: {
+		languageIds: { ".go": "go" },
+		opensFiles: true,
+		project: goWorkspaceOf,
 	},
 };
 

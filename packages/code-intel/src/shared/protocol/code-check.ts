@@ -189,7 +189,7 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   fetches, with no plan JSON named for its root module (TASK-367.17). Its
  *   `detail` names the module call.
  * - `language-server-missing`: a language that has no server in a checkout.
- *   Python, C, C++, Objective-C, C# and Swift have no default server: an agent
+ *   Python, C, C++, Objective-C, C#, Swift, Rust and Go have no default server: an agent
  *   that works in the repository configures one for its checkout (`archboard
  *   repo language-server`), so the check runs no code of a checkout that
  *   nobody agreed to run. Also a configured command that is not installed.
@@ -203,7 +203,8 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   project file for csharp-ls to load, or a C, C++ or Objective-C file with
  *   no `compile_commands.json` in its checkout, or one that lists no command,
  *   without which clangd only guesses its flags (TASK-367.15), or a Rust file
- *   that no `Cargo.toml` holds (TASK-540). Said once for
+ *   that no `Cargo.toml` holds (TASK-540), or a Go file that no `go.mod` holds
+ *   (TASK-575). Said once for
  *   the project, with its checkout's `repo`; its uses stay as code facts read
  *   them. Its `detail` names the language, the project and why.
  * - `language-server-failed`: a language server that did not start, did not

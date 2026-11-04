@@ -211,7 +211,8 @@ type AdapterName =
 	| "nix"
 	| "terraform"
 	| "swift"
-	| "rust";
+	| "rust"
+	| "go";
 
 /**
  * An import with the checkout file it resolves to, where the adapter can

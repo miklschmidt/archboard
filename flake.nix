@@ -72,6 +72,10 @@
               # The language server `archboard check --code` asks about Rust
               # names, once `repo language-server rust` configures it.
               pkgs.rust-analyzer
+              # gopls answers Go names once `repo language-server go`
+              # configures it, and it runs the go command to load packages.
+              pkgs.go
+              pkgs.gopls
             ];
             # rust-analyzer reads the standard library's source from here.
             RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";

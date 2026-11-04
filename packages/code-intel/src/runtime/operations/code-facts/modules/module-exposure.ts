@@ -9,7 +9,8 @@
 // `__init__.py`. A Swift module is a target of its package, and each of its
 // files is a root file (swift-exposure.ts). A Rust crate's root file is its
 // `lib.rs`, and a module's is its `mod.rs` or the file beside its directory
-// (rust-exposure.ts). A C, C++ or Objective-C
+// (rust-exposure.ts). A Go package is the files directly in its directory,
+// each a root file but its tests (go-exposure.ts). A C, C++ or Objective-C
 // module's root files are its public headers (c-exposure.ts): an `.m` file
 // is a source file that pairs with its header, and a class extension in it
 // exposes nothing. A Terraform or OpenTofu module is
@@ -46,6 +47,7 @@ import {
 	rustHolds,
 	rustRootFiles,
 } from "#runtime/operations/code-facts/rust/rust-exposure.ts";
+import { GO } from "#runtime/operations/code-facts/go/go-exposure.ts";
 import { SWIFT_FILE, swiftRootFiles } from "#runtime/operations/code-facts/swift/swift-exposure.ts";
 import { isTerraformFile } from "#runtime/operations/code-facts/terraform/terraform-address.ts";
 import {
@@ -367,6 +369,7 @@ const RULES: readonly ExposureRule[] = [
 	PYTHON,
 	SWIFT,
 	RUST,
+	GO,
 	C,
 	CSHARP,
 	TERRAFORM,
@@ -580,4 +583,11 @@ async function moduleExposure(
 	return undefined;
 }
 
-export { type ExposedName, type ModuleExposure, moduleExposure, moduleOf, within };
+export {
+	type ExposedName,
+	type ExposureRule,
+	type ModuleExposure,
+	moduleExposure,
+	moduleOf,
+	within,
+};
