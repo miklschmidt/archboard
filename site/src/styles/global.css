@@ -449,7 +449,11 @@ samp {
 
 /* A looping animation runs only while its part of the page is on screen (reveal.ts). */
 .is-paused,
-.is-paused * {
+.is-paused::before,
+.is-paused::after,
+.is-paused *,
+.is-paused *::before,
+.is-paused *::after {
 	animation-play-state: paused !important;
 }
 
