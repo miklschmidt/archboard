@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-03T18:42:00Z'
-updated_date: '2026-11-04T01:43:00Z'
+updated_date: '2026-11-04T01:49:00Z'
 labels:
   - renderer
 dependencies: []
@@ -29,7 +29,7 @@ The owner reported on 2026-11-03 that crossing lines often get no arc: two lines
 - [x] #5 An audit of every scope of the dogfood vault and examples/web-shop in both engines reports zero crossings with no arc
 - [x] #6 The first render of the whole dogfood model in Blocks stays within 10 percent of main
 - [x] #7 bun run check passes
-- [ ] #8 No arc stands side by side with another on one line, faces another across neighbouring lines, or bulges into a junction mark, in any scope of the dogfood vault and examples/web-shop in either engine, with every hop at its full radius; the shared drawing check holds it
+- [x] #8 No arc stands side by side with another on one line, faces another across neighbouring lines, or bulges into a junction mark, in any scope of the dogfood vault and examples/web-shop in either engine, with every hop at its full radius; the shared drawing check holds it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -58,6 +58,8 @@ Review finding R2 verified: turned flipped a standing hop without testing the ne
 Review finding R3 verified: crowdedArcs read junction circles but omitted the round-ended paths that paint nearby joins as bars. A regression passed for a touching dot but failed for a touching bar. The assertion now reads both shapes from the junction layer and includes the bar stroke radius. The touched assertion file also passes its lint rules after removing nested pure helpers and using toSorted.
 
 Review validation: the requested Rust tests passed (203 tests), and clippy passed. The core build, TypeScript analysis, and lint of the touched TypeScript files passed. The requested renderer operations run passed 754 tests and failed only Browser hosting (blocks), with the label overlap already recorded above. After the final lint cleanup, all 17 focused crossing and gate drawing tests passed. Each of the three regression tests failed before its corresponding fix. The task stays In Progress for the owner to finish integration.
+
+Integrated review fixes f41e31204, 87229c377, f5f994666 onto fix/crossing-hops. On f5f994666: every scope of .archboard/vault and examples/web-shop in both engines has 0 crossings with no arc and 0 crowded arcs (dots and bars); bun run check passed 21 of 21 tasks; first render of the whole Blocks model about 667 ms (PR head a30e697de about 630 ms, main about 610 ms, within 10 percent).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
