@@ -127,8 +127,12 @@ describe("the flowchart view", () => {
 		for (const id of ["s2", "l1", "s3", "s4"]) {
 			expect(atlas.nodes[id]!.y).toBeGreaterThan(bottom(decision));
 		}
+		// The step after it comes after every answer: below them, or at the
+		// top of a column to their right when the flowchart breaks there.
 		for (const id of ["s2", "s4"]) {
-			expect(atlas.nodes["s5"]!.y).toBeGreaterThan(bottom(atlas.nodes[id]!));
+			const answer = atlas.nodes[id]!;
+			const after = atlas.nodes["s5"]!;
+			expect(after.y > bottom(answer) || after.x > answer.x + answer.width).toBe(true);
 		}
 		// The flow is the frame every step stands in.
 		for (const id of ["s1", "d1", "l1", "s5"]) {

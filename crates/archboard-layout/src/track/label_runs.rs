@@ -2,9 +2,6 @@
 //! in the order Graphviz stood them, or in the order of where they want to be
 //! when that crosses fewer lines, spaced, so that the fewest lines jog at their
 //! labels, then each as near where it wants to be as that allows.
-//!
-//! Before all of that, no box stands where its line would step back under the
-//! decision it comes down from (TASK-491).
 
 use crate::constants::LABEL_LABEL_CLEARANCE;
 use crate::ecma::{abs, js_max, js_min, or, sorted_by, unique};
@@ -20,12 +17,10 @@ pub(crate) struct Slider {
     pub reaches: Vec<(f64, f64)>,
     /// Where its line leaves the station above and enters the one below.
     pub ends: [f64; 2],
-    /// Which way runs back under the decision when its line comes down from a side point of one.
-    pub inward: f64,
 }
 
-/// A placement's cost: steps back under a decision, jogs, jogs too short to turn whole, displacement.
-type Cost = [f64; 4];
+/// A placement's cost: jogs, jogs too short to turn whole, displacement.
+type Cost = [f64; 3];
 
 /// The shortest jog a line turns with two whole bends and a straight run between them.
 const WHOLE_JOG: f64 = 2.0 * LANE;
@@ -40,11 +35,6 @@ fn cost_at(slider: &Slider, centre: f64) -> Cost {
         .map(|&(low, high)| js_max(js_max(low - centre, centre - high), 0.0))
         .collect();
     [
-        if (centre - slider.reaches[0].0) * slider.inward > TOLERANCE {
-            1.0
-        } else {
-            0.0
-        },
         off.iter().filter(|&&d| d > TOLERANCE).count() as f64,
         off.iter()
             .filter(|&&d| d > TOLERANCE && d < WHOLE_JOG - TOLERANCE)
@@ -55,18 +45,13 @@ fn cost_at(slider: &Slider, centre: f64) -> Cost {
 
 /// Two costs together.
 fn plus(one: &Cost, other: &Cost) -> Cost {
-    [
-        one[0] + other[0],
-        one[1] + other[1],
-        one[2] + other[2],
-        one[3] + other[3],
-    ]
+    [one[0] + other[0], one[1] + other[1], one[2] + other[2]]
 }
 
-/// Whether one cost is lower than another: fewer steps back under a decision, fewer jogs, then less displacement.
+/// Whether one cost is lower than another: fewer jogs, then less displacement.
 fn cheaper(one: &Cost, other: &Cost) -> bool {
-    match (0..3).find(|&index| one[index] != other[index]) {
-        None => one[3] < other[3] - TOLERANCE,
+    match (0..2).find(|&index| one[index] != other[index]) {
+        None => one[2] < other[2] - TOLERANCE,
         Some(at) => one[at] < other[at],
     }
 }
@@ -291,7 +276,6 @@ mod tests {
             wanted: end,
             reaches: vec![(end, end), (end, end)],
             ends: [end, end],
-            inward: 0.0,
         }
     }
 

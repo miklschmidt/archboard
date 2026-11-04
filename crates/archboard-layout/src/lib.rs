@@ -30,6 +30,7 @@ pub use architecture::{
 };
 pub use blocks::choosing::pair_crossings;
 pub use blocks::place::lay_out_picture;
+pub use constants::fit_in;
 pub use routes::LineLook;
 
 /// Graphviz: lay out one graph and answer its `json0` output, y inverted. The

@@ -197,14 +197,6 @@ fn slide(
     source: bool,
     offset: f64,
 ) -> Option<Vec<Point>> {
-    // A straight run moves both ends. Never move an authored flow point.
-    if (source || points.len() == 2)
-        && model.edges[edge]
-            .option(crate::graph::FROM_POINTS)
-            .is_some()
-    {
-        return None;
-    }
     let (at, next) = end(points, source);
     let horizontal = at.y == next.y;
     let mut path = points.to_vec();

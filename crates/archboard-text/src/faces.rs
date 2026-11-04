@@ -1,5 +1,5 @@
 //! The faces a picture's words are set in, as the font files the core
-//! carries in its build: the four faces a drawing names, and the faces a
+//! carries in its build: the five faces a drawing names, and the faces a
 //! character falls back to where its own face has no glyph for it.
 //!
 //! The files are the bundled fonts of the renderer package
@@ -23,6 +23,8 @@ pub enum Face {
     SansRegular,
     /// Onest at 500, the static Medium file.
     SansMedium,
+    /// Onest at 700, the static Bold file.
+    SansBold,
     /// Maple Mono NL at 400.
     MonoRegular,
     /// Maple Mono NL at 500.
@@ -50,9 +52,10 @@ pub struct Extent {
 
 impl Face {
     /// Every face, in the order of their files.
-    pub const ALL: [Face; 8] = [
+    pub const ALL: [Face; 9] = [
         Face::SansRegular,
         Face::SansMedium,
+        Face::SansBold,
         Face::MonoRegular,
         Face::MonoMedium,
         Face::GreekRegular,
@@ -66,6 +69,7 @@ impl Face {
         match self {
             Face::SansRegular => "Onest-wght-v1.000.ttf",
             Face::SansMedium => "Onest-Medium-v1.000.ttf",
+            Face::SansBold => "Onest-Bold-v1.000.ttf",
             Face::MonoRegular => "MapleMonoNL-Regular-Subset-v7.9.ttf",
             Face::MonoMedium => "MapleMonoNL-Medium-Subset-v7.9.ttf",
             Face::GreekRegular => "NotoSans-Greek-Regular-v2.015.ttf",
@@ -83,7 +87,9 @@ impl Face {
             Face::SansRegular | Face::MonoRegular => {
                 &[Face::GreekRegular, Face::Symbols, Face::Math]
             }
-            Face::SansMedium | Face::MonoMedium => &[Face::GreekMedium, Face::Symbols, Face::Math],
+            Face::SansMedium | Face::SansBold | Face::MonoMedium => {
+                &[Face::GreekMedium, Face::Symbols, Face::Math]
+            }
             Face::GreekRegular | Face::GreekMedium | Face::Symbols | Face::Math => &[],
         }
     }
@@ -101,6 +107,9 @@ impl Face {
             }
             Face::SansMedium => {
                 include_bytes!("../../../packages/renderer/assets/fonts/Onest-Medium-v1.000.ttf")
+            }
+            Face::SansBold => {
+                include_bytes!("../../../packages/renderer/assets/fonts/Onest-Bold-v1.000.ttf")
             }
             Face::MonoRegular => {
                 include_bytes!(
@@ -129,7 +138,8 @@ impl Face {
 
     /// The face's font, read once.
     pub(crate) fn font(self) -> &'static Font {
-        static FONTS: [OnceLock<Font>; 8] = [const { OnceLock::new() }; 8];
+        static FONTS: [OnceLock<Font>; Face::ALL.len()] =
+            [const { OnceLock::new() }; Face::ALL.len()];
         FONTS[self as usize].get_or_init(|| {
             Font::new(self.bytes(), 0)
                 .unwrap_or_else(|| panic!("the bundled font {} reads as a font", self.file()))

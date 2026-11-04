@@ -17,6 +17,11 @@ import type { AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 /** What the moves act on. */
 interface ReaderMoveInputs {
 	readonly location: ReturnType<typeof useModelLocation>;
+	/**
+	 * Open a flow in the reading that fits it best.
+	 * @param id The flow.
+	 */
+	readonly openFlow: (id: string) => void;
 	readonly tree: ModuleTree;
 	/** The module the reading opens. */
 	readonly opened: string | null;
@@ -41,8 +46,8 @@ interface ReaderMoveInputs {
  */
 function useReaderMoves(inputs: ReaderMoveInputs): (move: ReaderMove) => boolean {
 	const { location, tree, opened, flows, selection, scene, camera, reducedMotion } = inputs;
-	const { onOpen, onToggle } = inputs;
-	const { grammar, flow, focus, setFocus, selectFlow, selectGrammar } = location;
+	const { onOpen, onToggle, openFlow } = inputs;
+	const { grammar, flow, focus, setFocus, selectGrammar } = location;
 	const { ids, select } = selection;
 	const structural = grammar === "architecture";
 	const picture = scene?.picture;
@@ -58,10 +63,10 @@ function useReaderMoves(inputs: ReaderMoveInputs): (move: ReaderMove) => boolean
 	const walkFlows = useCallback(
 		(step: number): boolean => {
 			const next = flows[flows.findIndex((entry) => entry.id === flow) + step];
-			if (next !== undefined) selectFlow(next.id);
+			if (next !== undefined) openFlow(next.id);
 			return next !== undefined;
 		},
-		[flows, flow, selectFlow],
+		[flows, flow, openFlow],
 	);
 	const walkOpen = useCallback(
 		(from: string, step: number): boolean => {

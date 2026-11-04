@@ -4,6 +4,7 @@ import type { Destination } from "#ui/components/architecture-model/ModelColumn.
 import type { Page } from "#ui/components/architecture-model/ModelHeading.tsx";
 import { useAcceptedScene } from "#ui/hooks/architecture-model/use-accepted-scene.ts";
 import { useChangeWalk } from "#ui/hooks/architecture-model/use-change-walk.ts";
+import { useFlowReadings } from "#ui/hooks/architecture-model/use-flow-readings.ts";
 import { useModelMoves } from "#ui/hooks/architecture-model/use-model-moves.ts";
 import { useModelReading } from "#ui/hooks/architecture-model/use-model-reading.ts";
 import { useProjectedSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
@@ -178,10 +179,19 @@ function useReader(inputs: ReaderInputs) {
 		selection.ids.size > 0,
 		reviewsChanges(model),
 	);
+	const flowReadings = useFlowReadings({
+		model,
+		entry: request.entry,
+		structure,
+		camera,
+		showFlow: location.showFlow,
+	});
+	const { openFlow } = flowReadings;
 	const walk = useChangeWalk({
 		model,
 		reference: comparison.reference,
 		location,
+		openFlow,
 		opened,
 		selected: selection.ids,
 		onList: places.onList,
@@ -190,6 +200,7 @@ function useReader(inputs: ReaderInputs) {
 	const frames = useMemo(() => openModules(shown.projection), [shown.projection]);
 	const choices = useReaderChoices({
 		location,
+		flows: flowReadings,
 		model,
 		opened,
 		frames,
@@ -200,6 +211,7 @@ function useReader(inputs: ReaderInputs) {
 	});
 	const onMove = useReaderMoves({
 		location,
+		openFlow,
 		tree,
 		opened,
 		flows: depicted.flows,
@@ -229,6 +241,7 @@ function useReader(inputs: ReaderInputs) {
 		onOpen,
 		onToggle,
 		onMove,
+		openFlow,
 	};
 }
 

@@ -20,6 +20,13 @@ Open Font License 1.1; the exact license texts sit beside the binaries.
   (`crates/archboard-text/src/faces.rs`).
   SHA-256:
   `c3014cae121488aea22ae5b50b584db332f130189be95217edf57469ef297cec`.
+- `Onest-Bold-v1.000.ttf` is the static Bold face, `fonts/ttf/Onest-Bold.ttf`
+  of the same `1.000` release's archive `onest-fonts.zip` (archive SHA-256
+  `e44491d1f892716036307beddb4cad5adae52aac7fb70f8c274198c8aea3cb15`). The
+  renderer draws the weight 700 of a diagram with it, which only the letters
+  of a flowchart's jump markers use.
+  SHA-256:
+  `550c8eac408188241ed5d5a8f1934653dedcf5f52e237cc80ef04d79f22b0b38`.
 - `OFL-Onest-1.1.txt` is the upstream license text, normalized to LF line
   endings with trailing whitespace removed, from the
   [OFL file](https://github.com/google/fonts/blob/d0754ee7cddf8ba879f1f8884e3ca2b5e1b100f8/ofl/onest/OFL.txt).
@@ -28,13 +35,13 @@ Open Font License 1.1; the exact license texts sit beside the binaries.
 
 The official static release has no SemiBold file. The variable runtime file is
 therefore required for the application weights 400, 500, 600, and 700. The
-separate static Medium file is the diagrams' weight 500, byte-pinned to the same
-1.000 design. The shell's stylesheet does not register it.
+separate static Medium and Bold files are the diagrams' weights 500 and 700,
+byte-pinned to the same 1.000 design. The shell's stylesheet registers neither.
 
-The renderer core builds `Onest-wght-v1.000.ttf`, `Onest-Medium-v1.000.ttf` and
-the two Maple Mono NL files into itself, shapes every word of a diagram with them, and
-writes the outline of each glyph a picture uses into that picture (ADR 0059). A
-browser loads no diagram font.
+The renderer core builds `Onest-wght-v1.000.ttf`, `Onest-Medium-v1.000.ttf`,
+`Onest-Bold-v1.000.ttf` and the two Maple Mono NL files into itself, shapes
+every word of a diagram with them, and writes the outline of each glyph a
+picture uses into that picture (ADR 0059). A browser loads no diagram font.
 
 ## Maple Mono NL 7.9
 

@@ -374,7 +374,7 @@ async function chooseFound(browser: AgentBrowserSession, text: string, id: strin
 
 export { chooseFound };
 
-/** Choose a flow, which draws its sequence. */
+/** Choose a flow, which opens in the reading that its pane shows larger (ADR 0073). */
 async function chooseFlow(browser: AgentBrowserSession, id: string): Promise<void> {
 	await openDestination(browser, "flows");
 	const row = `[data-flow-id=${JSON.stringify(id)}]`;
@@ -382,7 +382,24 @@ async function chooseFlow(browser: AgentBrowserSession, id: string): Promise<voi
 	await browser.run(["click", row]);
 }
 
-export { chooseFlow };
+/**
+ * Wait for the reading to show a grammar, as a flow does once both of its readings are drawn.
+ * @param browser The page.
+ * @param grammar The grammar to wait for.
+ */
+async function showsGrammar(browser: AgentBrowserSession, grammar: string): Promise<void> {
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-reading"][data-grammar="${grammar}"]') !== null`,
+			),
+		Boolean,
+		`the ${grammar} reading`,
+		{ timeoutMs: 10_000 },
+	);
+}
+
+export { chooseFlow, showsGrammar };
 
 /** Start an authored narrative from the Walkthroughs destination. */
 async function startModelWalkthrough(browser: AgentBrowserSession, id: string): Promise<void> {

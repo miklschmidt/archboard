@@ -6,6 +6,7 @@ import type { ModelAddress } from "#ui/rules/reading-routing/address.ts";
 import type { Model } from "@archboard/model/content";
 import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
 import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
+import type { FlowGrammar } from "#ui/rules/architecture-model/flow-fit.ts";
 
 type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
 
@@ -273,17 +274,11 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		},
 		[grammar, explore],
 	);
-	const selectFlow = useCallback(
-		(next: string): void => {
-			if (next !== flow) explore({ flow: next });
+	const showFlow = useCallback(
+		(id: string, reading: FlowGrammar): void => {
+			explore({ flow: id, grammar: reading });
 		},
-		[flow, explore],
-	);
-	const openFlow = useCallback(
-		(id: string): void => {
-			explore({ flow: id, grammar: grammar === "flowchart" ? "flowchart" : "sequence" });
-		},
-		[grammar, explore],
+		[explore],
 	);
 	const selectState = useCallback(
 		(next: string | null): void => {
@@ -349,11 +344,10 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		compareAgainst,
 		openRetained,
 		showWholeScope,
-		openFlow,
+		showFlow,
 		grammar,
 		flow,
 		selectGrammar,
-		selectFlow,
 		model,
 		scope,
 		checkpoint,

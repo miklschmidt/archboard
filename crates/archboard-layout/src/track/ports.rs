@@ -94,10 +94,7 @@ impl Track<'_> {
                 continue;
             }
             let free = |side: End| {
-                let fixed = |request: &&PortRequest| {
-                    let station = self.station(self.net(request.nets[0]).at(side));
-                    request.side == side && station.at.is_none()
-                };
+                let fixed = |request: &&PortRequest| request.side == side;
                 requests.iter().filter(fixed).count()
             };
             let count = free(End::Top).max(free(End::Bottom));
@@ -153,30 +150,7 @@ impl Track<'_> {
 
     /// Give the ports on one face of a card.
     fn place_ports(&mut self, item: ItemId, requests: &[&PortRequest]) {
-        let bx = self.scene.item(item).bx;
-        let held: Vec<usize> = (0..requests.len())
-            .filter(|&index| {
-                let request = requests[index];
-                self.station(self.net(request.nets[0]).at(request.side))
-                    .at
-                    .is_some()
-            })
-            .collect();
-        for &index in &held {
-            let request = requests[index];
-            for &net in &request.nets {
-                let at = self
-                    .station(self.net(net).at(request.side))
-                    .at
-                    .expect("a held point");
-                self.net_mut(net).set_x_at(request.side, bx.x + at);
-            }
-        }
-        let rest: Vec<&PortRequest> = (0..requests.len())
-            .filter(|index| !held.contains(index))
-            .map(|index| requests[index])
-            .collect();
-        let ordered = sorted_by(&rest, |one, other| {
+        let ordered = sorted_by(requests, |one, other| {
             or(one.wanted - other.wanted, one.order - other.order)
         });
         let wanted: Vec<f64> = ordered.iter().map(|request| request.wanted).collect();

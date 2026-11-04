@@ -120,9 +120,6 @@ impl<'a, 'g> Probe<'a, 'g> {
         ) {
             return Some(reason);
         }
-        if !super::points::follows(model, index, shape, points) {
-            return Some("declared point");
-        }
         if shape
             .labels
             .get(&index)
@@ -266,7 +263,7 @@ pub(super) fn foreign(model: &Model<'_>, topology: &Topology, edge: usize, scope
         && frame != Some(to)
 }
 
-/// Source approaches depend on the endpoint geometry and declared flow points.
+/// Source approaches depend on the endpoint geometry.
 pub(super) fn tails(model: &Model<'_>, index: usize, shape: &Shape) -> Vec<Vec<Point>> {
     let target = center(shape.endpoints[&model.ends[index].1]);
     model.endpoints[model.ends[index].0]

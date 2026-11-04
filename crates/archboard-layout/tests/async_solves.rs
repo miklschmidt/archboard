@@ -95,7 +95,6 @@ fn picture() -> (Content, Measured) {
             header_height: 0.0,
             runs: Vec::new(),
             headers: None,
-            pointed: None,
         },
     );
     (content, measured)
@@ -177,7 +176,6 @@ fn stacking_picture() -> (Content, Measured) {
                 },
                 runs: Vec::new(),
                 headers: None,
-                pointed: None,
             },
         );
     }

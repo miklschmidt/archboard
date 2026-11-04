@@ -453,6 +453,7 @@ _Avoid_: sequence view, data-flow view, sequence diagram (for the reading)
 **Flowchart reading**:
 A reading in the `flowchart` grammar.
 It draws one flow's steps from a start to an end: a message as a box, a decision as a diamond with a labelled line for each alternative, and a loop as a hexagon (ADR 0053).
+A run of steps that is too tall for the pane breaks into columns side by side (ADR 0073).
 _Avoid_: flowchart view, logic view, decision tree, activity diagram
 
 **Projection**:

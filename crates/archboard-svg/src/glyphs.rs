@@ -65,6 +65,7 @@ fn glyph_id(face: Face, glyph: u32) -> String {
     let code = match face {
         Face::SansRegular => "s4",
         Face::SansMedium => "s5",
+        Face::SansBold => "s7",
         Face::MonoRegular => "m4",
         Face::MonoMedium => "m5",
         Face::GreekRegular => "n4",

@@ -167,12 +167,34 @@ pub enum FlowchartShape {
     Start,
     /// Where a flow ends.
     End,
+    /// One end of a jump (ADR 0073): a line stops at a jump out and goes on
+    /// at the jump in of the same jump, which shares its letter and its ink.
+    Jump {
+        /// Which end it is.
+        end: JumpEnd,
+        /// Which jump of the picture it ends, counted in the order the picture
+        /// holds them.
+        number: u32,
+    },
+}
+
+/// Which end of a jump a marker is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub enum JumpEnd {
+    /// Where a line stops, drawn as a tag that points down: the line came down into its top.
+    OutDown,
+    /// Where a line stops, drawn as a tag that points right: the line came across into its left.
+    OutRight,
+    /// Where the lines that stopped go on, drawn as a disc.
+    In,
 }
 
 impl FlowchartShape {
-    /// Whether it is where a flow starts or ends, which no reader picks.
-    pub fn is_terminal(self) -> bool {
-        matches!(self, FlowchartShape::Start | FlowchartShape::End)
+    /// Whether it is a step of the flow, which a reader picks: a decision or
+    /// a loop, and never a terminal or a jump.
+    pub fn is_step(self) -> bool {
+        matches!(self, FlowchartShape::Decision | FlowchartShape::Loop)
     }
 }
 
@@ -181,7 +203,7 @@ impl FlowchartShape {
 pub struct ShapedCard {
     /// Which shape it is drawn as.
     pub shape: FlowchartShape,
-    /// Its name, wrapped into the lines it is set in.
+    /// Its name, wrapped into the lines it is set in: a jump's letter.
     pub words: Vec<String>,
 }
 

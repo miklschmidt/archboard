@@ -1,50 +1,153 @@
-//! A flow read as a flowchart (ADR 0053): the graph the track engine lays out.
+//! A flow read as a flowchart (ADR 0053): the boxes and shapes it draws, and
+//! the blocks the layout sets them out in (ADR 0073).
 //!
 //! Each flow becomes a frame that holds its steps, from a start terminal to an
 //! end terminal. A message is a box: what happens, done by the part that
 //! receives it, and who sends it to whom under its words. A decision is a
-//! diamond with one line out for each alternative, labelled with the answer;
-//! the steps of each alternative run below it, and the last of every
-//! alternative joins the step after the decision, which is how a flowchart
-//! says that the alternatives rejoin. An alternative with no step joins it
-//! straight from the diamond. A loop is a hexagon holding its condition: a
-//! line labelled "repeat" runs into the steps it repeats, the last of them
-//! runs back up to it, and a line labelled "done" leaves it for the step after.
+//! diamond with one answer for each alternative, each answer a run of blocks of
+//! its own below it; the last of every answer joins the step after the
+//! decision, which is how a flowchart says that the alternatives rejoin. A loop
+//! is a hexagon holding its condition, with the blocks it repeats below it.
 //!
-//! Nothing here is written anywhere: the graph is built for one picture, from
+//! A line that would run far round other blocks jumps instead (ADR 0073): it
+//! stops at a jump out and goes on at the jump in of the same letter. A
+//! decision whose one answer holds far more blocks than the other is a guard:
+//! the long answer carries the run on, and the short one jumps to a landing
+//! where the long one ends. The end of a long loop body jumps back to its
+//! hexagon. The layout adds the jumps between columns.
+//!
+//! Nothing here is written anywhere: the blocks are built for one picture, from
 //! the flow as the picture holds it. Its boxes carry the steps' own ids, so a
-//! reader who picks one has picked the step; its lines and terminals carry ids
+//! reader who picks one has picked the step; its terminals and jumps carry ids
 //! of the picture's own, which name no subject.
 
 use std::collections::{BTreeMap, HashMap};
 
-use archboard_layout::{Content, Edge, Node as GraphNode};
-use archboard_scene::drawing::Emphasis;
+use archboard_layout::Node as GraphNode;
+use archboard_scene::drawing::NodeFacts;
 use archboard_scene::paint::design::FLOW_KIND;
 use archboard_scene::request::FlowchartShape;
 
 use crate::content::{Flow, Message, Node, Step};
 
-/// The kind of a flow's frame.
 /// The kind of a decision, a loop or a terminal, which is drawn by its shape
 /// and never by its kind.
 pub(super) const SHAPE_KIND: &str = "flowchart-shape";
-/// The kind of every line: one step leads to the next.
-pub(super) const NEXT_KIND: &str = "next";
-/// The line into the steps a loop repeats.
-const REPEAT: &str = "repeat";
-/// The line out of a loop once it is done.
-const DONE: &str = "done";
 
-/// Every flow of a reading as one flowchart graph.
+/// One block of a run of steps: what the layout stacks, and sets side by side.
+#[derive(Clone, Debug)]
+pub(super) enum Block {
+    /// A message's box.
+    Step(String),
+    /// A flow's start or end, which a run of steps never breaks away from.
+    Terminal(String),
+    /// A decision's diamond, with its answers side by side below it.
+    Decision {
+        /// The decision's step.
+        id: String,
+        /// Its answers, in the order the flow tells them.
+        answers: Vec<Answer>,
+    },
+    /// A loop's hexagon, with the blocks it repeats below it.
+    Loop {
+        /// The loop's step.
+        id: String,
+        /// The blocks it repeats.
+        body: Vec<Block>,
+        /// The jump in beside the hexagon that the end of a long body jumps
+        /// back to; none where the line back runs up beside a short body.
+        back: Option<String>,
+    },
+    /// A decision with one answer far longer than the other: the long answer's
+    /// blocks carry the run on below the diamond, and the short answer stands
+    /// beside them and ends at a jump to where they end.
+    Guard {
+        /// The decision's step.
+        id: String,
+        /// The short answer.
+        side: Answer,
+        /// The long answer's words, on the line down out of the diamond's foot.
+        main: String,
+        /// Whether the short answer is the first the flow tells, which leaves
+        /// the diamond's left point; the last leaves its right point.
+        first: bool,
+        /// The jump in that the short answer jumps to.
+        lands: String,
+    },
+    /// Where the jumps of one or more guards land on the run: a jump in
+    /// beside the run's line, whose line joins it.
+    Land(String),
+}
+
+/// How many more blocks the long answer of a decision holds than its short
+/// one before the short one ends at a jump, and how many blocks a loop
+/// repeats before the end of its body jumps back to its hexagon.
+const JUMP_BLOCKS: usize = 4;
+
+/// How many blocks a run holds, its answers and loops counted in.
+fn count(blocks: &[Block]) -> usize {
+    blocks
+        .iter()
+        .map(|block| match block {
+            Block::Decision { answers, .. } => {
+                1 + answers
+                    .iter()
+                    .map(|answer| count(&answer.blocks))
+                    .sum::<usize>()
+            }
+            Block::Loop { body, .. } => 1 + count(body),
+            Block::Guard { side, .. } => 1 + count(&side.blocks),
+            Block::Step(_) | Block::Terminal(_) => 1,
+            Block::Land(_) => 0,
+        })
+        .sum()
+}
+
+/// Which answer of a decision of two carries the run on: one that holds at
+/// least `JUMP_BLOCKS` more blocks than the other.
+fn long_answer(answers: &[Answer]) -> Option<usize> {
+    let [first, second] = answers else {
+        return None;
+    };
+    let (first, second) = (count(&first.blocks), count(&second.blocks));
+    if first >= second + JUMP_BLOCKS {
+        Some(0)
+    } else if second >= first + JUMP_BLOCKS {
+        Some(1)
+    } else {
+        None
+    }
+}
+
+/// One answer of a decision: its words, and the blocks it runs through.
+#[derive(Clone, Debug)]
+pub(super) struct Answer {
+    /// The alternative's label, which its line out of the diamond carries.
+    pub label: String,
+    /// Its steps as blocks; none where the answer joins the next step at once.
+    pub blocks: Vec<Block>,
+}
+
+/// One flow's frame and the blocks it holds, from its start to its end.
+#[derive(Clone, Debug)]
+pub(super) struct Chart {
+    /// The flow, whose frame holds the blocks.
+    pub flow: String,
+    /// Its start, its steps and its end.
+    pub blocks: Vec<Block>,
+}
+
+/// Every flow of a reading as one flowchart.
 #[derive(Clone, Debug)]
 pub(super) struct Graph {
-    /// The flows as frames, their steps and terminals as nodes, and every line between.
-    pub content: Content,
+    /// The flows as frames, and their steps and terminals, in the order drawn.
+    pub nodes: Vec<GraphNode>,
     /// The nodes drawn as shapes of their own, by id.
     pub shapes: BTreeMap<String, FlowchartShape>,
     /// What a reader can pick: every flow and every step drawn, in the order drawn.
     pub subjects: Vec<String>,
+    /// Each flow's blocks.
+    pub charts: Vec<Chart>,
 }
 
 impl Graph {
@@ -52,18 +155,60 @@ impl Graph {
     pub(super) fn shape(&self, id: &str) -> Option<FlowchartShape> {
         self.shapes.get(id).copied()
     }
+
+    /// Add an end of a jump, which the layout places in a flow's frame: a
+    /// shape of its own, named by its jump's letter. What the painter reads
+    /// of it.
+    pub(super) fn add_jump(
+        &mut self,
+        flow: &str,
+        id: &str,
+        shape: FlowchartShape,
+        letter: String,
+    ) -> NodeFacts {
+        self.shapes.insert(id.to_owned(), shape);
+        let order = self.nodes.len();
+        let jump = node(
+            id.to_owned(),
+            order,
+            letter,
+            SHAPE_KIND.to_owned(),
+            Some(flow.to_owned()),
+            None,
+        );
+        let facts = jump.facts();
+        self.nodes.push(jump);
+        facts
+    }
 }
 
-/// A loose end the next step joins: the node it leaves, and what its line says.
-struct Exit<'a> {
-    from: String,
-    label: Option<&'a str>,
+/// One node of the graph.
+fn node(
+    id: String,
+    order: usize,
+    name: String,
+    kind: String,
+    parent: Option<String>,
+    responsibility: Option<String>,
+) -> GraphNode {
+    GraphNode {
+        id,
+        order: order as f64,
+        name,
+        kind,
+        parent,
+        responsibility,
+        code_path: None,
+        door: None,
+        toggle: None,
+        groups: Vec::new(),
+        drills: false,
+    }
 }
 
 /// The graph as it is built, and the frame the steps being built stand in.
 struct Building<'a> {
     nodes: Vec<GraphNode>,
-    edges: Vec<Edge>,
     shapes: BTreeMap<String, FlowchartShape>,
     subjects: Vec<String>,
     /// The variant's nodes, by id, for the parts a message runs between.
@@ -71,40 +216,19 @@ struct Building<'a> {
     flow: String,
 }
 
-impl<'a> Building<'a> {
+impl Building<'_> {
     /// Add one node to the frame being built.
     fn add_node(&mut self, id: String, name: String, kind: String, responsibility: Option<String>) {
-        self.nodes.push(GraphNode {
-            id,
-            order: self.nodes.len() as f64,
-            name,
-            kind,
-            parent: Some(self.flow.clone()),
-            responsibility,
-            code_path: None,
-            door: None,
-            toggle: None,
-            groups: Vec::new(),
-            drills: false,
-        });
+        let parent = Some(self.flow.clone());
+        let order = self.nodes.len();
+        self.nodes
+            .push(node(id, order, name, kind, parent, responsibility));
     }
 
-    /// Join every loose end to one node.
-    fn link(&mut self, exits: &[Exit<'_>], to: &str) {
-        for exit in exits {
-            let order = self.edges.len();
-            self.edges.push(Edge {
-                id: format!("{}>{to}#{order}", exit.from),
-                order: order as f64,
-                from: exit.from.clone(),
-                to: to.to_owned(),
-                kind: NEXT_KIND.to_owned(),
-                emphasis: Emphasis::Normal,
-                label: exit.label.map(str::to_owned),
-                traffic: None,
-                two_way: false,
-            });
-        }
+    /// Add one node drawn as a shape of its own.
+    fn add_shape(&mut self, id: &str, shape: FlowchartShape, name: &str) {
+        self.shapes.insert(id.to_owned(), shape);
+        self.add_node(id.to_owned(), name.to_owned(), SHAPE_KIND.to_owned(), None);
     }
 
     /// What one part is called in a message box's line of who sends to whom.
@@ -121,22 +245,86 @@ impl<'a> Building<'a> {
         }
     }
 
-    /// Add one step's node: a box for a message, a diamond for a decision, a
-    /// hexagon for a loop.
-    fn add_step(&mut self, step: &Step) {
+    /// One step's block, its own steps built in first: a box for a message,
+    /// a diamond for a decision, a hexagon for a loop.
+    fn block(&mut self, step: &Step) -> Block {
         self.subject(step.id());
-        let (shape, name) = match step {
-            Step::Message(message) => return self.add_message(message),
-            Step::Decision(decision) => (FlowchartShape::Decision, &decision.question),
-            Step::Loop(repeat) => (FlowchartShape::Loop, &repeat.condition),
-        };
-        self.shapes.insert(step.id().to_owned(), shape);
-        self.add_node(
-            step.id().to_owned(),
-            name.clone(),
-            SHAPE_KIND.to_owned(),
-            None,
-        );
+        match step {
+            Step::Message(message) => {
+                self.add_message(message);
+                Block::Step(message.id.clone())
+            }
+            Step::Decision(decision) => {
+                self.add_shape(&decision.id, FlowchartShape::Decision, &decision.question);
+                let answers = decision
+                    .alternatives
+                    .iter()
+                    .map(|alternative| Answer {
+                        label: alternative.label.clone(),
+                        blocks: self.blocks(&alternative.steps),
+                    })
+                    .collect();
+                Block::Decision {
+                    id: decision.id.clone(),
+                    answers,
+                }
+            }
+            Step::Loop(repeat) => {
+                self.add_shape(&repeat.id, FlowchartShape::Loop, &repeat.condition);
+                let mut body = self.blocks(&repeat.steps);
+                // A long body jumps back to its hexagon. A landing at its end
+                // would only lead into that jump, so the guards that land
+                // there jump back to the hexagon too.
+                let back = (count(&body) >= JUMP_BLOCKS).then(|| {
+                    match body.pop_if(|block| matches!(block, Block::Land(_))) {
+                        Some(Block::Land(lands)) => lands,
+                        _ => format!("{}~again", repeat.id),
+                    }
+                });
+                Block::Loop {
+                    id: repeat.id.clone(),
+                    body,
+                    back,
+                }
+            }
+        }
+    }
+
+    /// A run of steps' blocks, in order. A decision with one far longer
+    /// answer is a guard: the long answer's blocks carry on in the run, and a
+    /// landing for the short answer's jump follows them, one landing for the
+    /// guards whose long answers end together.
+    fn blocks(&mut self, steps: &[Step]) -> Vec<Block> {
+        let mut run = Vec::new();
+        for step in steps {
+            let block = self.block(step);
+            let Block::Decision { id, mut answers } = block else {
+                run.push(block);
+                continue;
+            };
+            let Some(long) = long_answer(&answers) else {
+                run.push(Block::Decision { id, answers });
+                continue;
+            };
+            let main = answers.remove(long);
+            let side = answers.remove(0);
+            let (lands, landed) = match main.blocks.last() {
+                Some(Block::Land(lands)) => (lands.clone(), true),
+                _ => (format!("{id}~land"), false),
+            };
+            run.push(Block::Guard {
+                id,
+                side,
+                main: main.label,
+                first: long == 1,
+                lands: lands.clone(),
+            });
+            run.extend(main.blocks);
+            if !landed {
+                run.push(Block::Land(lands));
+            }
+        }
+        run
     }
 
     /// A message's box: what happens, set as a card of the part that receives
@@ -157,122 +345,56 @@ impl<'a> Building<'a> {
         self.add_node(step.id.clone(), name, kind, Some(responsibility));
     }
 
-    /// Chain a run of steps after some loose ends: the loose ends the step
-    /// after the run joins.
-    fn chain(&mut self, steps: &'a [Step], exits: Vec<Exit<'a>>) -> Vec<Exit<'a>> {
-        let mut open = exits;
-        for step in steps {
-            self.add_step(step);
-            self.link(&open, step.id());
-            open = self.exits_of(step);
-        }
-        open
-    }
-
-    /// The loose ends one step leaves, its own steps chained in first.
-    fn exits_of(&mut self, step: &'a Step) -> Vec<Exit<'a>> {
-        match step {
-            Step::Decision(decision) => decision
-                .alternatives
-                .iter()
-                .flat_map(|alternative| {
-                    self.chain(
-                        &alternative.steps,
-                        vec![Exit {
-                            from: decision.id.clone(),
-                            label: Some(&alternative.label),
-                        }],
-                    )
-                })
-                .collect(),
-            Step::Loop(repeat) => {
-                let last = self.chain(
-                    &repeat.steps,
-                    vec![Exit {
-                        from: repeat.id.clone(),
-                        label: Some(REPEAT),
-                    }],
-                );
-                self.link(&last, &repeat.id);
-                vec![Exit {
-                    from: repeat.id.clone(),
-                    label: Some(DONE),
-                }]
-            }
-            Step::Message(message) => vec![Exit {
-                from: message.id.clone(),
-                label: None,
-            }],
-        }
-    }
-
     /// Add one flow: its frame, its terminals and its steps.
-    fn add_flow(&mut self, flow: &'a Flow) {
-        self.nodes.push(GraphNode {
-            id: flow.id.clone(),
-            order: self.nodes.len() as f64,
-            name: flow.name.clone(),
-            kind: FLOW_KIND.to_owned(),
-            parent: None,
-            responsibility: flow.summary.clone(),
-            code_path: None,
-            door: None,
-            toggle: None,
-            groups: Vec::new(),
-            drills: false,
-        });
+    fn add_flow(&mut self, flow: &Flow) -> Chart {
+        self.nodes.push(node(
+            flow.id.clone(),
+            self.nodes.len(),
+            flow.name.clone(),
+            FLOW_KIND.to_owned(),
+            None,
+            flow.summary.clone(),
+        ));
         self.subject(&flow.id);
         self.flow.clone_from(&flow.id);
         let start = format!("{}~start", flow.id);
-        self.add_node(
-            start.clone(),
-            "Start".to_owned(),
-            SHAPE_KIND.to_owned(),
-            None,
-        );
-        self.shapes.insert(start.clone(), FlowchartShape::Start);
-        let exits = self.chain(
-            &flow.steps,
-            vec![Exit {
-                from: start,
-                label: None,
-            }],
-        );
+        self.add_shape(&start, FlowchartShape::Start, "Start");
+        let mut blocks = vec![Block::Terminal(start)];
+        blocks.extend(self.blocks(&flow.steps));
         let end = format!("{}~end", flow.id);
-        self.add_node(end.clone(), "End".to_owned(), SHAPE_KIND.to_owned(), None);
-        self.shapes.insert(end.clone(), FlowchartShape::End);
-        self.link(&exits, &end);
+        self.add_shape(&end, FlowchartShape::End, "End");
+        blocks.push(Block::Terminal(end));
+        Chart {
+            flow: flow.id.clone(),
+            blocks,
+        }
     }
 }
 
-/// Every flow of a reading as one flowchart graph.
+/// Every flow of a reading as one flowchart.
 pub(super) fn flowchart_of(flows: &[Flow], parts: &[Node]) -> Graph {
     let mut building = Building {
         nodes: Vec::new(),
-        edges: Vec::new(),
         shapes: BTreeMap::new(),
         subjects: Vec::new(),
         parts: parts.iter().map(|part| (part.id.as_str(), part)).collect(),
         flow: String::new(),
     };
-    for flow in flows {
-        building.add_flow(flow);
-    }
+    let charts = flows.iter().map(|flow| building.add_flow(flow)).collect();
     Graph {
-        content: Content {
-            nodes: building.nodes,
-            edges: building.edges,
-        },
+        nodes: building.nodes,
         shapes: building.shapes,
         subjects: building.subjects,
+        charts,
     }
 }
 
 #[cfg(test)]
-mod tests {
+pub(super) mod tests {
     use super::*;
 
-    fn flow() -> Vec<Flow> {
+    /// A flow with a message, a decision with an empty answer, and a loop.
+    pub(crate) fn flow() -> Vec<Flow> {
         serde_json::from_str(
             r#"[{"id":"f","name":"Order","participants":["a","b"],"steps":[
                 {"id":"m","from":"a","to":"b","label":"place"},
@@ -285,7 +407,8 @@ mod tests {
         .unwrap()
     }
 
-    fn parts() -> Vec<Node> {
+    /// The parts the flow runs between.
+    pub(crate) fn parts() -> Vec<Node> {
         serde_json::from_str(
             r#"[{"id":"a","order":0,"name":"Shop","kind":"service"},
                 {"id":"b","order":1,"name":"Billing","kind":"database"}]"#,
@@ -294,27 +417,21 @@ mod tests {
     }
 
     #[test]
-    fn a_flow_runs_from_its_start_through_its_steps_to_its_end() {
+    fn a_flow_runs_from_its_start_through_its_blocks_to_its_end() {
         let graph = flowchart_of(&flow(), &parts());
-        let lines: Vec<(&str, &str, Option<&str>)> = graph
-            .content
-            .edges
+        let [chart] = graph.charts.as_slice() else {
+            panic!("one flow, one chart");
+        };
+        let ids: Vec<&str> = chart.blocks.iter().map(id_of).collect();
+        assert_eq!(ids, ["f~start", "m", "d", "l", "f~end"]);
+        let Block::Decision { answers, .. } = &chart.blocks[2] else {
+            panic!("the decision");
+        };
+        let shape: Vec<(&str, usize)> = answers
             .iter()
-            .map(|edge| (edge.from.as_str(), edge.to.as_str(), edge.label.as_deref()))
+            .map(|answer| (answer.label.as_str(), answer.blocks.len()))
             .collect();
-        assert_eq!(
-            lines,
-            [
-                ("f~start", "m", None),
-                ("m", "d", None),
-                ("d", "s", Some("yes")),
-                ("s", "l", None),
-                ("d", "l", Some("no")),
-                ("l", "r", Some("repeat")),
-                ("r", "l", None),
-                ("l", "f~end", Some("done")),
-            ]
-        );
+        assert_eq!(shape, [("yes", 1), ("no", 0)]);
         assert_eq!(graph.subjects, ["f", "m", "d", "s", "l", "r"]);
         assert_eq!(
             ["d", "l", "f~end", "m"].map(|id| graph.shape(id)),
@@ -327,17 +444,139 @@ mod tests {
         );
     }
 
+    /// The id a block carries.
+    fn id_of(block: &Block) -> &str {
+        match block {
+            Block::Step(id)
+            | Block::Terminal(id)
+            | Block::Land(id)
+            | Block::Decision { id, .. }
+            | Block::Loop { id, .. }
+            | Block::Guard { id, .. } => id,
+        }
+    }
+
+    /// A flow whose steps are given as JSON.
+    pub(crate) fn flow_of(steps: &str) -> Vec<Flow> {
+        serde_json::from_str(&format!(
+            r#"[{{"id":"f","name":"Jumps","participants":["a","b"],"steps":[{steps}]}}]"#
+        ))
+        .unwrap()
+    }
+
+    /// Messages, as JSON steps, with ids from a prefix.
+    pub(crate) fn messages(prefix: &str, count: usize) -> String {
+        (0..count)
+            .map(|index| {
+                format!(
+                    r#"{{"id":"{prefix}{index}","from":"a","to":"b","label":"{prefix} {index}"}}"#
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    }
+
+    /// A decision of two answers, as a JSON step.
+    pub(crate) fn decision(id: &str, first: &str, second: &str) -> String {
+        format!(
+            r#"{{"id":"{id}","kind":"decision","question":"{id}?","alternatives":[
+                {{"label":"no","steps":[{first}]}},{{"label":"yes","steps":[{second}]}}]}}"#
+        )
+    }
+
+    #[test]
+    fn a_far_longer_answer_carries_the_run_on_and_the_short_one_jumps_to_where_it_ends() {
+        let inner = decision("inner", "", &messages("i", 4));
+        let outer = decision("outer", &messages("s", 1), &inner);
+        let steps = [outer, messages("after", 1)].join(",");
+        let graph = flowchart_of(&flow_of(&steps), &parts());
+        let blocks = &graph.charts[0].blocks;
+        let ids: Vec<&str> = blocks.iter().map(id_of).collect();
+        assert_eq!(
+            ids,
+            [
+                "f~start",
+                "outer",
+                "inner",
+                "i0",
+                "i1",
+                "i2",
+                "i3",
+                "inner~land",
+                "after0",
+                "f~end"
+            ]
+        );
+        let guards: Vec<(&str, &str, &str, bool, usize)> = blocks
+            .iter()
+            .filter_map(|block| match block {
+                Block::Guard {
+                    side,
+                    main,
+                    first,
+                    lands,
+                    ..
+                } => Some((
+                    side.label.as_str(),
+                    main.as_str(),
+                    lands.as_str(),
+                    *first,
+                    side.blocks.len(),
+                )),
+                _ => None,
+            })
+            .collect();
+        // Both long answers end together, so both short ones land at one place.
+        assert_eq!(
+            guards,
+            [
+                ("no", "yes", "inner~land", true, 1),
+                ("no", "yes", "inner~land", true, 0)
+            ]
+        );
+    }
+
+    #[test]
+    fn a_long_loop_jumps_back_and_takes_over_a_landing_at_the_end_of_its_body() {
+        let guarded = format!(
+            r#"{{"id":"l","kind":"loop","condition":"each","steps":[{}]}}"#,
+            decision("d", "", &messages("m", 4))
+        );
+        let plain = format!(
+            r#"{{"id":"p","kind":"loop","condition":"each","steps":[{}]}}"#,
+            messages("p", 4)
+        );
+        let short = format!(
+            r#"{{"id":"q","kind":"loop","condition":"each","steps":[{}]}}"#,
+            messages("q", 3)
+        );
+        let graph = flowchart_of(&flow_of(&[guarded, plain, short].join(",")), &parts());
+        let loops: Vec<(&str, Option<&str>, Vec<&str>)> = graph.charts[0]
+            .blocks
+            .iter()
+            .filter_map(|block| match block {
+                Block::Loop { id, body, back } => Some((
+                    id.as_str(),
+                    back.as_deref(),
+                    body.iter().map(id_of).collect(),
+                )),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            loops,
+            [
+                ("l", Some("d~land"), vec!["d", "m0", "m1", "m2", "m3"]),
+                ("p", Some("p~again"), vec!["p0", "p1", "p2", "p3"]),
+                ("q", None, vec!["q0", "q1", "q2"]),
+            ]
+        );
+    }
+
     #[test]
     fn a_message_box_is_a_card_of_its_receiver_saying_who_sends_to_whom() {
         let graph = flowchart_of(&flow(), &parts());
-        let node = |id: &str| {
-            graph
-                .content
-                .nodes
-                .iter()
-                .find(|node| node.id == id)
-                .unwrap()
-        };
+        let node = |id: &str| graph.nodes.iter().find(|node| node.id == id).unwrap();
         assert_eq!(
             (
                 node("m").kind.as_str(),

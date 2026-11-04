@@ -93,6 +93,13 @@ pub const PILL_TEXT_SIZE: f64 = 9.0;
 pub const SHAPE_TEXT_SIZE: f64 = 11.0;
 /// The room one line of a flowchart shape's words takes.
 pub const SHAPE_TEXT_LINE: f64 = 14.0;
+/// The letter of a flowchart's jump marker: Onest Bold, which reads at a glance.
+pub(crate) const JUMP_FONT: DiagramFont = DiagramFont {
+    family: FontFamily::Sans,
+    weight: 700,
+};
+/// The size of a jump marker's letter.
+pub(crate) const JUMP_TEXT_SIZE: f64 = 16.0;
 /// The corner radius of a label plate.
 pub(crate) const PILL_RADIUS: f64 = 4.0;
 

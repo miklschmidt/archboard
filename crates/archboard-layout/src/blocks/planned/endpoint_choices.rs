@@ -78,10 +78,7 @@ pub(super) fn aligned(
     let (from, to) = model.ends[edge];
     let a = shape.endpoints[&from];
     let b = shape.endpoints[&to];
-    let source_slides = model.outgoing[from].len() == 1
-        && model.edges[edge]
-            .option(crate::graph::FROM_POINTS)
-            .is_none();
+    let source_slides = model.outgoing[from].len() == 1;
     let target_slides = model.incoming[to].len() == 1;
     let vertical = tail.attachment.x == tail.approach.x && head.attachment.x == head.approach.x;
     let horizontal = tail.attachment.y == tail.approach.y && head.attachment.y == head.approach.y;
@@ -161,9 +158,6 @@ fn extra(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<sup
     let mut ports = Vec::new();
 
     let (endpoint, toward) = if source { (from, b) } else { (to, a) };
-    if super::points::pointed(model, endpoint) {
-        return ports;
-    }
     let incidents: Vec<_> = model.outgoing[endpoint]
         .iter()
         .map(|&e| (e, true))

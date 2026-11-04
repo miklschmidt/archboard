@@ -1,4 +1,4 @@
-import { openAbout, pick } from "./support/canonical-page.ts";
+import { openAbout, pick, showsGrammar } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -225,7 +225,7 @@ test("proposal comparison draws removed definitions from its coherent base and e
 		await browser.run(index === 0 ? ["click", '[data-slot="model-change-next"]'] : ["press", "n"]);
 		await standsOn(browser, id, `${index + 1} of ${rows.length}`);
 	}
-	expect((await walkPlace(browser)).grammar).toBe("sequence");
+	await showsGrammar(browser, "sequence");
 	await browser.run(["press", "p"]);
 	await standsOn(browser, rows.at(-2) ?? "", `${rows.length - 1} of ${rows.length}`);
 	await browser.run(["press", "n"]);

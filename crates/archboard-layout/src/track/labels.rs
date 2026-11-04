@@ -9,7 +9,7 @@
 //! of where they want to be when that crosses fewer lines (`label_runs.rs`).
 
 use crate::constants::{CONTAINER_INSET, LABEL_CARD_CLEARANCE, LABEL_LABEL_CLEARANCE};
-use crate::ecma::{abs, js_max, js_min, max, min, number_key, sign, sort_by, sorted_by, via_text};
+use crate::ecma::{abs, js_max, js_min, max, min, number_key, sort_by, sorted_by, via_text};
 use crate::geometry::Rect;
 use crate::track::chains::{Kind, LANE, StationId, Track};
 use crate::track::channels::{End, NetId};
@@ -166,8 +166,7 @@ fn clear_on_band(scene: &Placement, item: ItemId, bx: &Rect, lanes: &[f64]) -> b
 }
 
 impl Track<'_> {
-    /// The x a station's line can reach it at: a card's face, the one point
-    /// of the card its line is held to, or a single x.
+    /// The x a station's line can reach it at: a card's face, or a single x.
     fn reach(&self, station: StationId) -> (f64, f64) {
         let one = self.station(station);
         if one.kind != Kind::Card {
@@ -175,9 +174,6 @@ impl Track<'_> {
             return (x, x);
         }
         let bx = self.scene.item(one.item.expect("a card")).bx;
-        if let Some(at) = one.at {
-            return (bx.x + at, bx.x + at);
-        }
         let margin = js_min(FACE_MARGIN, bx.width / 2.0);
         (bx.x + margin, bx.x + bx.width - margin)
     }
@@ -220,15 +216,6 @@ impl Track<'_> {
         )
     }
 
-    /// Which way from a station a line steps back under its card.
-    fn inward_from(&self, station: StationId) -> f64 {
-        let one = self.station(station);
-        let Some(at) = one.at else {
-            return 0.0;
-        };
-        sign(self.scene.item(one.item.expect("a card")).bx.width / 2.0 - at)
-    }
-
     /// Every label box that sits on a line, with where it wants its centre.
     fn sliders_of(&self, nets: &[NetId]) -> Vec<Slider> {
         let mut into: Map<ItemId, NetId> = Map::default();
@@ -254,7 +241,6 @@ impl Track<'_> {
                         self.reach_from(below, End::Bottom),
                     ],
                     ends: [self.net(above).top_x, self.net(below).bottom_x],
-                    inward: self.inward_from(self.net(above).top),
                 })
             })
             .collect()
@@ -384,14 +370,7 @@ impl Track<'_> {
             self.station(label).kind == Kind::Label && self.station(other).kind != Kind::Label
         })
         .collect();
-        let mut settled: Set<ItemId> = nets
-            .iter()
-            .filter(|&&net| {
-                let net = self.net(net);
-                self.station(net.top).at.is_some() && self.station(net.bottom).kind == Kind::Label
-            })
-            .map(|&net| self.station(self.net(net).bottom).item.expect("a label"))
-            .collect();
+        let mut settled: Set<ItemId> = Set::default();
         for (label, other) in pairs {
             let item = self.station(label).item.expect("a label");
             let shift = self.meeting_x(other, item) - centre_x(self.scene.item(item));

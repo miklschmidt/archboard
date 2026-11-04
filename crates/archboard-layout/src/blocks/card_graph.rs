@@ -3,7 +3,6 @@
 //! label's box, the first rank and the last held by invisible edges.
 
 use crate::geometry::Side;
-use crate::graph::FROM_POINTS;
 use crate::track::grid::grid_edges;
 use crate::track::scene::{Map, Set};
 use crate::viz::{Attrs, Edge, Graph, Node, Subgraph, Value, box_node};
@@ -184,20 +183,12 @@ impl CardLayout<'_> {
         // A wrapped item sits a row of cards and its labels lower for each row it is lowered.
         let minlen = 1.0 + 2.0 * self.arranged.lowered.get(&head).copied().unwrap_or(0) as f64;
         let weight = self.clusters.weight_of(&tail, &head);
-        let leaves = line
-            .edge
-            .option(FROM_POINTS)
-            .filter(|_| tail == line.edge.source());
         let leg = |id: String| {
-            let mut attributes = Attrs::of([
+            Attrs::of([
                 ("id", Value::from(id)),
                 ("minlen", Value::Num(minlen)),
                 ("weight", Value::Num(weight)),
-            ]);
-            if let Some(point) = leaves {
-                attributes.set("tailport", point);
-            }
-            attributes
+            ])
         };
         let Some(label) = label else {
             let attributes = leg(id.clone());

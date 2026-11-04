@@ -8,13 +8,12 @@
 //! one track, and a branch down to each end. Likewise those that enter one
 //! card face; when they also share the card they end on, the trunk is one line
 //! from face to face. Cards spread their ports along a face, each as close to
-//! the other end as spacing allows, but for a line held to one point of its
-//! card, which stands there and shares a trunk only with lines held to the
-//! same point; each channel's units get tracks as `tracks.rs` stacks them.
+//! the other end as spacing allows; each channel's units get tracks as
+//! `tracks.rs` stacks them.
 
 use std::rc::Rc;
 
-use crate::ecma::{abs, js_max, js_min, max, min, number_key, sign, sorted_by, unique};
+use crate::ecma::{abs, js_max, js_min, max, min, sign, sorted_by, unique};
 use crate::geometry::Rect;
 use crate::track::chains::{Kind, LANE, StationId, Track};
 use crate::track::scene::{ItemId, Map, Set};
@@ -313,9 +312,9 @@ impl Track<'_> {
     }
 
     /// The nets not yet in a trunk that end on one card face, grouped by card,
-    /// channel, kind and standing, and by the point they are held to, if any.
+    /// channel, kind and standing.
     fn sharing(&self, nets: &[NetId], side: End) -> Vec<Vec<NetId>> {
-        type Key = (usize, Rc<str>, Option<u64>);
+        type Key = (usize, Rc<str>);
         let mut groups: Map<ItemId, Map<Key, Vec<NetId>>> = Map::default();
         for &id in nets {
             let net = self.net(id);
@@ -323,11 +322,7 @@ impl Track<'_> {
             if net.trunk.is_some() || station.kind != Kind::Card {
                 continue;
             }
-            let key = (
-                net.channel,
-                Rc::clone(&net.kind),
-                station.at.map(number_key),
-            );
+            let key = (net.channel, Rc::clone(&net.kind));
             groups
                 .entry(station.item.expect("a card"))
                 .or_default()

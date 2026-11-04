@@ -182,7 +182,7 @@ impl Renderer {
         let outline = match request.grammar {
             Grammar::Architecture => architecture::picture(request, &self.layouts, host).await?,
             Grammar::Sequence => flows::sequence(request, host)?,
-            Grammar::Flowchart => flows::flowchart(request, host).await?,
+            Grammar::Flowchart => flows::flowchart(request, host)?,
         };
         Ok(match outline {
             Outline::Nothing => Rendered::Empty {

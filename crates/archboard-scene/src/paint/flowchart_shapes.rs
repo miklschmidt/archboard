@@ -1,6 +1,7 @@
 //! The shapes a flowchart draws that are not boxes (ADR 0053): a decision's
 //! diamond, a loop's hexagon, and the rounded terminals where a flow starts and
-//! ends, each a block of the gold of a primary action.
+//! ends, each a block of the gold of a primary action; and the markers at the
+//! ends of a jump (ADR 0073), each jump in an ink of its own.
 
 use std::collections::BTreeMap;
 use std::f64::consts::PI;
@@ -10,14 +11,16 @@ use crate::geometry::{Point, Rect};
 use crate::js;
 use crate::paint::build::{Items, concat, group, lines, point, shape, text};
 use crate::paint::cards::{HALO_INSET, HALO_WIDTH};
-use crate::paint::design::{CARD_THICKNESS, PILL_FONT, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE};
+use crate::paint::design::{
+    CARD_THICKNESS, JUMP_FONT, JUMP_TEXT_SIZE, PILL_FONT, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE,
+};
 use crate::paint::palette::Palette;
 use crate::paint::polygon::{Polygon, inset, polygon_path};
 use crate::paint::shadow::{SHADOW_REACH, polygon_shadow};
 use crate::paint::slab::{SlabLook, shadow_group, solid_ghost, solid_seat, solid_slab};
 use crate::paint::standing::{OUTLINE_WIDTH, standing_pin_at, subject, warning_on_line};
 use crate::paint::styles::Styles;
-use crate::request::{FlowchartShape, ShapedCard, Standing};
+use crate::request::{FlowchartShape, JumpEnd, PaletteColor, ShapedCard, Standing};
 use crate::scene::{
     Colour, Definition, Gradient, GradientForm, GradientId, Paint, Purpose, Role, Shape, Stop,
     SubjectKind, Text, Token,
@@ -25,6 +28,16 @@ use crate::scene::{
 
 const CORNER: f64 = 5.0;
 const END_SIDES: u32 = 16;
+/// How round a jump tag's corners are.
+const TAG_CORNER: f64 = 3.0;
+/// How far along a jump tag its sides run, as a share of its length, before
+/// they meet in its point.
+const TAG_SHOULDER: f64 = 0.55;
+/// How much darker a jump marker's front edge is than its face, in OKLCH lightness.
+const JUMP_EDGE: f64 = -0.12;
+/// How far below a capital's middle its baseline stands, as a share of its
+/// size: half the height of an Onest capital.
+const CAP_MIDDLE: f64 = 0.36;
 
 /// A terminal's outline: a box with a half circle at each end, each half drawn in `END_SIDES` steps.
 fn terminal_outline(rect: Rect) -> Polygon {
@@ -45,8 +58,38 @@ fn terminal_outline(rect: Rect) -> Polygon {
     outline
 }
 
+/// A jump out's outline: a tag whose point is the way its line went on.
+fn tag_outline(end: JumpEnd, rect: Rect) -> Polygon {
+    let Rect {
+        x,
+        y,
+        width,
+        height,
+    } = rect;
+    let at = |x, y| Point { x, y };
+    if end == JumpEnd::OutRight {
+        let shoulder = x + width * TAG_SHOULDER;
+        return vec![
+            at(x, y),
+            at(shoulder, y),
+            at(x + width, y + height / 2.0),
+            at(shoulder, y + height),
+            at(x, y + height),
+        ];
+    }
+    let shoulder = y + height * TAG_SHOULDER;
+    vec![
+        at(x, y),
+        at(x + width, y),
+        at(x + width, shoulder),
+        at(x + width / 2.0, y + height),
+        at(x, shoulder),
+    ]
+}
+
 /// A shape's outline in its box: a diamond for a decision, a hexagon for a loop,
-/// a rounded pill for a start or an end.
+/// a rounded pill for a start or an end, a tag for a jump out and a disc for a
+/// jump in.
 fn outline_of(shape: FlowchartShape, rect: Rect) -> Polygon {
     let Rect {
         x,
@@ -94,22 +137,105 @@ fn outline_of(shape: FlowchartShape, rect: Rect) -> Polygon {
                 Point { x, y: middle },
             ]
         }
-        FlowchartShape::Start | FlowchartShape::End => terminal_outline(rect),
+        FlowchartShape::Start
+        | FlowchartShape::End
+        | FlowchartShape::Jump {
+            end: JumpEnd::In, ..
+        } => terminal_outline(rect),
+        FlowchartShape::Jump { end, .. } => tag_outline(end, rect),
+    }
+}
+
+/// The face of each jump in turn, and the ink of the letter on it: black on
+/// the light theme and white on the dark one, then rose, lime, orange and
+/// indigo. Lime and orange take their bright values on the light theme too.
+fn jump_inks(number: u32) -> (Colour, Colour) {
+    let themed = |light: Colour, dark: Colour| Colour::LightDark {
+        light: Box::new(light),
+        dark: Box::new(dark),
+    };
+    let bright = |color| themed(Colour::Bright { color }, Colour::palette(color));
+    match number % 5 {
+        0 => (
+            themed(Colour::Black, Colour::White),
+            themed(Colour::White, Colour::Black),
+        ),
+        1 => (Colour::palette(PaletteColor::Rose), Colour::White),
+        2 => (bright(PaletteColor::Lime), Colour::Black),
+        3 => (bright(PaletteColor::Orange), Colour::Black),
+        _ => (Colour::palette(PaletteColor::Indigo), Colour::White),
     }
 }
 
 /// How a shape's slab looks: a gold face with the primary edge, its corners
-/// rounded but for a terminal's, whose outline is already round.
+/// rounded but for a terminal's, whose outline is already round; a jump's in
+/// the ink of its jump, a tag's corners rounded less.
 fn look_of(shape: FlowchartShape) -> SlabLook {
-    SlabLook {
+    let gold = SlabLook {
         face: Paint::from(GradientId::FlowGold),
         soft: false,
         lit: Token::PrimaryTop.into(),
         edge: Token::PrimaryEdge.into(),
         thickness: CARD_THICKNESS,
-        radius: if shape.is_terminal() { 0.0 } else { CORNER },
+        radius: CORNER,
         sheen: false,
+    };
+    match shape {
+        FlowchartShape::Decision | FlowchartShape::Loop => gold,
+        FlowchartShape::Start | FlowchartShape::End => SlabLook {
+            radius: 0.0,
+            ..gold
+        },
+        FlowchartShape::Jump { end, number } => {
+            let (face, _) = jump_inks(number);
+            SlabLook {
+                face: Paint::from(face.clone()),
+                lit: face.clone(),
+                edge: Colour::Shifted {
+                    ink: Box::new(face),
+                    lightness: JUMP_EDGE,
+                    chroma: 0.0,
+                },
+                radius: if end == JumpEnd::In { 0.0 } else { TAG_CORNER },
+                ..gold
+            }
+        }
     }
+}
+
+/// A jump's letter, centred on the body of its marker: a disc's face above
+/// its front edge, a tag's square part and a third of its point.
+fn jump_letter(end: JumpEnd, rect: Rect, words: &[String], fill: &Colour) -> Items {
+    let point_share = (1.0 - TAG_SHOULDER) / 3.0;
+    let (centre, body) = match end {
+        JumpEnd::OutDown => (
+            rect.x + rect.width / 2.0,
+            rect.height * (TAG_SHOULDER + point_share),
+        ),
+        JumpEnd::OutRight => (
+            rect.x + rect.width * (TAG_SHOULDER + point_share) / 2.0,
+            rect.height - CARD_THICKNESS,
+        ),
+        JumpEnd::In => (rect.x + rect.width / 2.0, rect.height - CARD_THICKNESS),
+    };
+    let baseline = rect.y + body / 2.0 + JUMP_TEXT_SIZE * CAP_MIDDLE;
+    concat(
+        words
+            .iter()
+            .map(|letter| {
+                text(
+                    Text::set(
+                        point(centre, baseline),
+                        JUMP_FONT,
+                        JUMP_TEXT_SIZE,
+                        fill.clone(),
+                        letter,
+                    )
+                    .centred(),
+                )
+            })
+            .collect(),
+    )
 }
 
 /// One stop of the gold.
@@ -237,10 +363,12 @@ impl FlowchartShapes<'_> {
             SHADOW_REACH,
             self.palette,
         );
-        let is_step = !shaped.shape.is_terminal();
         shadow_group(
             cast,
-            is_step.then_some(card.measured.node.id.as_str()),
+            shaped
+                .shape
+                .is_step()
+                .then_some(card.measured.node.id.as_str()),
             None,
         )
     }
@@ -253,14 +381,17 @@ impl FlowchartShapes<'_> {
         let rect = card.bounds;
         let outline = outline_of(shaped.shape, rect);
         let foreground = Colour::from(Token::PrimaryForeground);
-        if shaped.shape.is_terminal() {
+        if !shaped.shape.is_step() {
+            let words = match shaped.shape {
+                FlowchartShape::Jump { end, number } => {
+                    jump_letter(end, rect, &shaped.words, &jump_inks(number).1)
+                }
+                _ => centred_words(rect, &shaped.words, &foreground),
+            };
             return group(
                 Role::Shape,
                 None,
-                lines(vec![
-                    solid_slab(&outline, &look, palette, None),
-                    centred_words(rect, &shaped.words, &foreground),
-                ]),
+                lines(vec![solid_slab(&outline, &look, palette, None), words]),
             );
         }
         let pin = side_near(

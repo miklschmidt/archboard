@@ -34,7 +34,7 @@ const REFERENCE_PANE_HEIGHT: f64 = REFERENCE_WIDTH / LAYOUT_ASPECT;
 
 /// A drawing's fit in the reference pane: the scale that shows it whole,
 /// capped at one (`fitIn` of shell-geometry.ts).
-pub(crate) fn fit_in(width: f64, height: f64) -> f64 {
+pub fn fit_in(width: f64, height: f64) -> f64 {
     let scale = crate::ecma::js_min(REFERENCE_PANE_WIDTH / width, REFERENCE_PANE_HEIGHT / height);
     crate::ecma::js_min(1.0, scale)
 }
