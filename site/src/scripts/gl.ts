@@ -1,5 +1,7 @@
 // A small WebGL2 host: one full-screen triangle and one fragment shader, drawn while its canvas
 // is on screen. A shader that fails to compile leaves the canvas empty, and the CSS ground shows.
+// Where the browser compiles shaders in parallel, the page goes on while it does: the host asks
+// once a frame whether the program is ready, and draws from the first frame that it is.
 
 import { whileVisible } from "./reveal";
 
@@ -33,30 +35,10 @@ export interface ShaderOptions {
 }
 
 /**
- * Compile one shader stage.
- * @param gl The context.
- * @param type The stage.
- * @param source Its GLSL.
- * @returns The shader, or null when it did not compile.
- */
-function compile(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader | null {
-	const shader = gl.createShader(type);
-	if (!shader) return null;
-	gl.shaderSource(shader, source);
-	gl.compileShader(shader);
-	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-		console.warn(gl.getShaderInfoLog(shader));
-		gl.deleteShader(shader);
-		return null;
-	}
-	return shader;
-}
-
-/**
  * Run a fragment shader over a canvas.
  * @param options The canvas, the shader and its uniforms.
  * @returns Ask for a frame, which a still canvas needs when what it draws changes; null when the
- * shader does not run.
+ * browser has no WebGL2.
  */
 export function runShader(options: ShaderOptions): (() => void) | null {
 	const { canvas, fragment, uniforms, maxRatio = 1.5, alpha = false, stillTime = 8 } = options;
@@ -67,35 +49,65 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 		powerPreference: "low-power",
 	});
 	if (!gl) return null;
+	const parallel = gl.getExtension("KHR_parallel_shader_compile");
 	let resources: { program: WebGLProgram; buffer: WebGLBuffer } | undefined;
+	let linking: { program: WebGLProgram; shaders: WebGLShader[] } | undefined;
 	const locations = new Map<string, WebGLUniformLocation | null>();
 	const release = () => {
 		if (resources) {
 			gl.deleteBuffer(resources.buffer);
 			gl.deleteProgram(resources.program);
 		}
+		if (linking) {
+			for (const shader of linking.shaders) gl.deleteShader(shader);
+			gl.deleteProgram(linking.program);
+		}
 		resources = undefined;
+		linking = undefined;
 		locations.clear();
 	};
+	/** Compile and link the program, which may finish after this returns. */
 	const initialize = () => {
-		const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
-		const frag = compile(gl, gl.FRAGMENT_SHADER, fragment);
 		const program = gl.createProgram();
-		if (vertex && frag && program) {
-			gl.attachShader(program, vertex);
-			gl.attachShader(program, frag);
-			gl.linkProgram(program);
+		if (!program) return;
+		const shaders: WebGLShader[] = [];
+		for (const [type, source] of [
+			[gl.VERTEX_SHADER, VERTEX],
+			[gl.FRAGMENT_SHADER, fragment],
+		] as const) {
+			const shader = gl.createShader(type);
+			if (!shader) continue;
+			gl.shaderSource(shader, source);
+			gl.compileShader(shader);
+			gl.attachShader(program, shader);
+			shaders.push(shader);
 		}
-		if (vertex) gl.deleteShader(vertex);
-		if (frag) gl.deleteShader(frag);
-		if (!vertex || !frag || !program || !gl.getProgramParameter(program, gl.LINK_STATUS)) {
-			if (program) gl.deleteProgram(program);
-			return false;
-		}
-		const buffer = gl.createBuffer();
+		gl.linkProgram(program);
+		linking = { program, shaders };
+	};
+	/**
+	 * Take the program once it is linked.
+	 * @returns Whether it is ready to draw: false while it still links, and after it failed.
+	 */
+	const linked = (): boolean => {
+		if (resources) return true;
+		if (!linking) return false;
+		const { program, shaders } = linking;
+		if (parallel && !gl.getProgramParameter(program, parallel.COMPLETION_STATUS_KHR)) return false;
+		linking = undefined;
+		const buffer = gl.getProgramParameter(program, gl.LINK_STATUS) ? gl.createBuffer() : null;
 		if (!buffer) {
+			for (const shader of shaders) {
+				const log = gl.getShaderInfoLog(shader);
+				if (log) console.warn(log);
+			}
+			for (const shader of shaders) gl.deleteShader(shader);
 			gl.deleteProgram(program);
 			return false;
+		}
+		for (const shader of shaders) {
+			gl.detachShader(program, shader);
+			gl.deleteShader(shader);
 		}
 		gl.useProgram(program);
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -106,7 +118,7 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 		resources = { program, buffer };
 		return true;
 	};
-	if (!initialize()) return null;
+	initialize();
 	const location = (name: string) => {
 		if (!resources) return null;
 		if (!locations.has(name)) locations.set(name, gl.getUniformLocation(resources.program, name));
@@ -144,7 +156,11 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 	const update = () => {
 		cancelAnimationFrame(frame);
 		previous = undefined;
-		if (!visible || !resources || gl.isContextLost()) return;
+		if (!visible || gl.isContextLost()) return;
+		if (!linked()) {
+			if (linking) frame = requestAnimationFrame(update);
+			return;
+		}
 		resize();
 		if (motion.matches) draw(stillTime);
 		else frame = requestAnimationFrame(loop);
@@ -161,6 +177,7 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 		cancelAnimationFrame(frame);
 		canvas.classList.remove("is-live");
 		resources = undefined;
+		linking = undefined;
 		locations.clear();
 	});
 	canvas.addEventListener("webglcontextrestored", () => {
