@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-04T15:39:00Z'
-updated_date: '2026-11-04T18:13:00Z'
+updated_date: '2026-11-04T19:23:00Z'
 labels: []
 dependencies: []
 ordinal: 1019000
@@ -68,4 +68,14 @@ Evidence (2026-11-04, final branch at 34435ad2b on origin/main 15ffafb4a):
 - AC6 is open: the workflow exists and passes actionlint, but its first pull request run and the first deploy from main are still to come, and GitHub Pages must first be set to Source: GitHub Actions.
 
 Owner review: the Flowchart tab of the grammar demo ran 348px past its frame, over its command and the next feature. Fixed in the commit after 930cb9fb0: the frame's grid now has explicit tracks. A browser sweep of every interactive state at 1440, 1024 and 390 wide finds no drawing past its frame, and it reports the overflow when the fix is undone.
+
+Owner review, second round (2026-11-04):
+- Hero and nav share one left edge, and the hero window straightens as it scrolls fully into view (38d6b1733). The quick start names the Node.js versions the build tools need (ac0d90bfe).
+- The walkthrough's voice orb is the product's own runner, dynamics and painter, fed by the subtitle words (e356ba101).
+- Copy pass from the market research: the headline is 'Understand the code your agents write', the sections follow the reader's next question, the comparison is job by job, and the platform, local scope and license come before the install (36b036fe0).
+- Planning first and bold claims, at the owner's request: the hero lead and the comparison lead with planning, the plan section shows model footprint holding a branch to its proposal, and tracked embeds never go stale (1d0f933c6).
+- Reveals rise visibly from transparent and 32px low once a part's top clears the bottom 15% of the view. The FAQ items reveal through a wrapper because their own transition replaced the reveal's (2c86e1c53).
+- The grid's lamp casts the pointer's ray onto the table, so its light sits under the cursor in the hero and the closing (722124cc3, 8582dc9b0).
+- The Grammars demo draws Place an order with its stock and payment decisions and its receipt loop. render-diagrams.sh rewrites the flow on its disposable copy after the other drawings (e83cbc00a).
+- Still open: the slow Archboard draws itself demo waits on the WebGL fallback research for the painter.
 <!-- SECTION:NOTES:END -->
