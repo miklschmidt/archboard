@@ -253,12 +253,9 @@ async function startPainter(
 	} else {
 		// A canvas that held a GPU context takes no 2D context, and its surface may be what failed.
 		const target = freshCanvas(canvas);
-		next =
-			failure.painter === "webgl"
-				? startCpu(target, dark, failure.reason)
-				: failure.retry
-					? await startBest(target, dark, failure.reason)
-					: startWebgl(target, dark, failure.reason);
+		if (failure.painter === "webgl") next = startCpu(target, dark, failure.reason);
+		else if (failure.retry) next = await startBest(target, dark, failure.reason);
+		else next = startWebgl(target, dark, failure.reason);
 	}
 	// A failed start leaves the caller's canvas in place, so it can still dispose or retry it.
 	if (next.canvas !== canvas) canvas.replaceWith(next.canvas);

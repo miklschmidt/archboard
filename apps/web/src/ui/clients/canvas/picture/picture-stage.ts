@@ -448,20 +448,13 @@ class PictureStage {
 		this.#retire(cause);
 		if (failed.kind === "cpu") return;
 		const reason = cause instanceof Error ? cause.message : "The GPU painter failed.";
-		void this.#start({ painter: failed.kind, reason, retry: this.#retriesGpu(failed.kind) });
-	}
-
-	/**
-	 * Whether a failed painter gets another try: only WebGPU does, unless it failed soon before.
-	 * @param kind The painter that failed.
-	 * @returns Whether it gets another try.
-	 */
-	#retriesGpu(kind: StartedPainter["kind"]): boolean {
-		if (kind !== "gpu") return false;
-		const now = frameClock().now();
-		const retry = now - this.#gpuFailedAt > PICTURE_MS.gpuRetry;
-		this.#gpuFailedAt = now;
-		return retry;
+		let retry = false;
+		if (failed.kind === "gpu") {
+			const now = frameClock().now();
+			retry = now - this.#gpuFailedAt > PICTURE_MS.gpuRetry;
+			this.#gpuFailedAt = now;
+		}
+		void this.#start({ painter: failed.kind, reason, retry });
 	}
 
 	/**
