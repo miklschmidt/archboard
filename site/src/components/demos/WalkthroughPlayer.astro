@@ -219,6 +219,10 @@ const first = walkthrough.beats[0];
 	.ctl:hover {
 		background: var(--slab);
 	}
+	.ctl:disabled {
+		opacity: 0.6;
+		cursor: default;
+	}
 	.ctl.narrate {
 		padding: 0 16px;
 		color: var(--gold-ink);
@@ -355,6 +359,13 @@ const first = walkthrough.beats[0];
 
 		drawVoiceOrb(orb, () => (playing ? level : 0.05));
 		show(0, false);
+		const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+		const settle = () => {
+			narrate.disabled = motion.matches;
+			if (motion.matches) setPlaying(false);
+		};
+		motion.addEventListener("change", settle);
+		settle();
 
 		// The motion preference is read at each start, so changing it mid-visit takes effect.
 		whileVisible(root, (visible) => {
