@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-04T15:39:00Z'
-updated_date: '2026-11-04T17:00:00Z'
+updated_date: '2026-11-04T17:35:00Z'
 labels: []
 dependencies: []
 ordinal: 1019000
@@ -27,6 +27,12 @@ Archboard has only its README to explain itself. The owner asked on 2026-11-04 f
 - [ ] #6 A GitHub workflow builds the site on pull requests that touch it and deploys it to GitHub Pages from main when the site or its inputs change
 <!-- AC:END -->
 
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Boundary review: trace script selectors, inlined SVG references, duplicated dock playback, and motion ownership. Fix confirmed contract defects, then build and exercise the static site. The fixes preserve the model and CLI contracts, so no architecture proposal is needed.
+<!-- SECTION:PLAN:END -->
+
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
@@ -46,4 +52,6 @@ Evidence (2026-11-04):
 - No element overflows the viewport at 390, 768, 1024, 1440, 1920 and 2560 wide.
 - WebGL draw counts over 2 s: hero field 44 at the top and 0 mid page; closing field 82 at the bottom. With prefers-reduced-motion: 0 draws at the top and the bottom, 8/8 hero cards shown, 0 reveals below full opacity, 0 pending dock lines.
 - actionlint reports nothing for .github/workflows/site.yml.
+
+Script/markup boundary review against 15ffafb4a...19cc8466f: Standards had no additional findings. Four Spec findings were fixed: native SVG traffic ignored CSS pause control (2fc489ce3), generated typing carets escaped the pause selector (d1661fe85), the mobile dock stalled when only the window stage left the viewport (99143f47a), and active narration continued after reduced motion changed (bfc562e7b). The changes preserve the canonical architecture and consumer CLI contracts, so no model proposal is needed. Validation: site build reports 0 errors, 0 warnings, 0 hints. Root vp formatting and git diff --check pass. Chromium confirms that SVG clocks freeze off screen, during hidden-tab visibility events, under reduced motion, and in the inactive walkthrough view. SVG clocks resume when visible. Generated carets pause and resume. Mobile playback completes all seven lines in both docks with the stage off screen. Reduced-motion startup shows all eight hero nodes, no pending dock lines, and full reveal opacity. Changing reduced motion during narration settles all words and disables narration. All six tabs select their matching panels. Prefixed SVG URL references resolve. Browser reports no errors. Shared preview snapshots timed out twice, so behavior evidence uses the requested agent-browser session.
 <!-- SECTION:NOTES:END -->
