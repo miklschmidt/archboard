@@ -113,8 +113,11 @@ const views = [
 			var(--shadow-raised),
 			inset 0 -2px 0 var(--gold-mark);
 	}
+	/* Explicit tracks give the image's 100% height a size to resolve against, so a tall drawing
+	   fits the frame instead of growing to its natural height. */
 	.picture {
 		display: grid;
+		grid-template: minmax(0, 1fr) / minmax(0, 1fr);
 		place-items: center;
 		height: clamp(320px, 40vw, 540px);
 		padding: 20px;
