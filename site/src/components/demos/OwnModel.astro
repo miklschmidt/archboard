@@ -61,11 +61,17 @@ const own = drawings.architecture;
 <script>
 	for (const viewport of document.querySelectorAll<HTMLElement>("[data-pan]")) {
 		let start: { x: number; y: number; left: number; top: number } | null = null;
-		const center = () => {
-			viewport.scrollLeft = (viewport.scrollWidth - viewport.clientWidth) * 0.42;
-			viewport.scrollTop = (viewport.scrollHeight - viewport.clientHeight) * 0.3;
-		};
 		const image = viewport.querySelector("img");
+		// Open on a spot, in the drawing's own coordinates, where no card is cut at the edges: a
+		// wide view frames the server, Browser and Codex CLI row over the packages under it, a
+		// narrow one frames Browser over renderer. Re-check these after the README drawing changes.
+		const center = () => {
+			if (!image?.naturalWidth) return;
+			const focus = viewport.clientWidth >= 900 ? { x: 1256, y: 662 } : { x: 1309, y: 545 };
+			const scale = image.clientWidth / image.naturalWidth;
+			viewport.scrollLeft = focus.x * scale - viewport.clientWidth / 2;
+			viewport.scrollTop = focus.y * scale - viewport.clientHeight / 2;
+		};
 		if (image?.complete) center();
 		else image?.addEventListener("load", center, { once: true });
 		viewport.addEventListener("pointerdown", (event) => {

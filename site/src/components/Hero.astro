@@ -12,8 +12,7 @@ import { links } from "../lib/links";
 		<div class="hero-row">
 			<p class="lead">
 				Your coding agent reads the code and tells Archboard what the system is. Archboard draws
-				every line, draws each proposed change against what is built, and keeps the reason for
-				every change.
+				every line.
 			</p>
 			<div class="hero-actions">
 				<a class="btn btn-gold" href="#quick-start">Get started <Icon name="arrowRight" /></a>
@@ -41,7 +40,7 @@ import { links } from "../lib/links";
 <style>
 	.hero {
 		position: relative;
-		padding-top: clamp(56px, 9vw, 120px);
+		padding-top: clamp(48px, 7vw, 96px);
 		isolation: isolate;
 	}
 	.field {
@@ -76,13 +75,12 @@ import { links } from "../lib/links";
 	}
 	.hero-row {
 		display: flex;
-		flex-wrap: wrap;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: 24px 48px;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 28px;
 	}
 	.hero-row .lead {
-		max-width: 34em;
+		max-width: 30em;
 	}
 	.hero-actions {
 		display: flex;
@@ -113,7 +111,7 @@ import { links } from "../lib/links";
 		box-shadow: 0 0 10px oklch(0.86 0.125 86 / 0.6);
 	}
 	.hero-window {
-		margin-top: clamp(48px, 7vw, 96px);
+		margin-top: clamp(40px, 5vw, 72px);
 	}
 	.dock-mirror {
 		display: none;

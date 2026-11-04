@@ -149,27 +149,6 @@ const views = [
 </style>
 
 <script>
-	for (const root of document.querySelectorAll<HTMLElement>("[data-grammars]")) {
-		const tabs = [...root.querySelectorAll<HTMLButtonElement>("[data-tab]")];
-		const select = (tab: HTMLButtonElement, focus: boolean) => {
-			for (const other of tabs) {
-				const on = other === tab;
-				other.setAttribute("aria-selected", String(on));
-				other.tabIndex = on ? 0 : -1;
-				const panel = root.querySelector<HTMLElement>(`[data-panel="${other.dataset["tab"]}"]`);
-				if (panel) panel.hidden = !on;
-			}
-			if (focus) tab.focus();
-		};
-		tabs.forEach((tab, index) => {
-			tab.addEventListener("click", () => select(tab, false));
-			tab.addEventListener("keydown", (event) => {
-				const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
-				if (!step) return;
-				event.preventDefault();
-				const next = tabs[(index + step + tabs.length) % tabs.length];
-				if (next) select(next, true);
-			});
-		});
-	}
+	import { mountTabs } from "../../scripts/tabs";
+	for (const root of document.querySelectorAll<HTMLElement>("[data-grammars]")) mountTabs(root);
 </script>

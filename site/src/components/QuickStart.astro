@@ -5,7 +5,8 @@ import { links } from "../lib/links";
 
 const tryIt = `git clone https://github.com/miklschmidt/archboard.git && cd archboard
 nix develop --command bash -c 'bun install && bun run build'
-mkdir -p ~/archboard-example/.archboard && cp -r examples/web-shop ~/archboard-example/.archboard/vault
+mkdir -p ~/archboard-example/.archboard && \\
+  cp -r examples/web-shop ~/archboard-example/.archboard/vault
 git -C ~/archboard-example init
 git -C ~/archboard-example remote add origin https://example.invalid/web-shop.git
 ./bin/archboard -C ~/archboard-example model import \\

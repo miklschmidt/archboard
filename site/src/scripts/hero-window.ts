@@ -1,13 +1,15 @@
 // The hero's window: it scales to its column, it lies tilted on the table and stands up as the
-// page scrolls, and its drawing builds itself while the agent's commands type out. The cards
-// land first, then a spark draws each line, then the traffic runs, as the product draws a
-// picture (DESIGN.md, the Spark Rule). With reduced motion, everything is there at once.
+// page scrolls, and its drawing builds itself while the agent's commands type out. The cards wait
+// as faint outlines, so the window is never empty; they land when the agent maps them, then a
+// spark draws each line, then the traffic runs, as the product draws a picture (DESIGN.md, the
+// Spark Rule). With reduced motion, everything is there at once.
 
 import { prefersReducedMotion } from "./reveal";
 import { sparkLine } from "./spark";
 
-const DESIGN_WIDTH = 1280;
 const TILT = 16;
+/** How faint a card is before the agent maps it. */
+const WAITING = 0.16;
 
 /** Wait a number of milliseconds. */
 const wait = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
@@ -67,6 +69,16 @@ function setShown(element: SVGElement | HTMLElement, shown: boolean, ms = 420): 
 }
 
 /**
+ * Show a card as a faint outline that waits for the agent.
+ * @param element The card.
+ */
+function setWaiting(element: SVGElement): void {
+	element.style.transition = "none";
+	element.style.opacity = String(WAITING);
+	element.style.translate = "0 0";
+}
+
+/**
  * Type one dock line, character by character.
  * @param line The line.
  * @param still Whether to skip the typing.
@@ -76,13 +88,12 @@ async function typeLine(line: HTMLElement, still: boolean): Promise<void> {
 	const full = line.dataset["text"] ?? "";
 	line.classList.remove("is-pending");
 	if (!text || still) return;
-	const command = line.classList.contains("is-command") || line.classList.contains("is-you");
-	if (!command) {
+	if (!line.classList.contains("is-command")) {
 		text.textContent = full;
 		return;
 	}
 	line.classList.add("is-typing");
-	const step = line.classList.contains("is-you") ? 12 : 22;
+	const step = 14;
 	for (let index = 1; index <= full.length; index++) {
 		text.textContent = full.slice(0, index);
 		await wait(step);
@@ -101,7 +112,10 @@ export function mountHeroWindow(): void {
 	if (!stage || !tilt || !frame || !svg || !replay) return;
 	const still = prefersReducedMotion();
 
-	const fit = () => stage.style.setProperty("--scale", String(stage.clientWidth / DESIGN_WIDTH));
+	// The window keeps its laid-out width (narrower on a phone, where only the canvas shows) and
+	// scales to the stage.
+	const fit = () =>
+		stage.style.setProperty("--scale", String(stage.clientWidth / frame.offsetWidth));
 	new ResizeObserver(fit).observe(stage);
 	fit();
 
@@ -121,7 +135,7 @@ export function mountHeroWindow(): void {
 
 	const reset = () => {
 		frame.removeAttribute("data-claimed");
-		for (const node of parts.nodes) setShown(node, false, 0);
+		for (const node of parts.nodes) setWaiting(node);
 		for (const shadow of parts.shadows) setShown(shadow, false, 0);
 		for (const edge of parts.edges) setShown(edge, false, 0);
 		for (const label of parts.labels.values()) setShown(label, false, 0);
@@ -200,7 +214,7 @@ export function mountHeroWindow(): void {
 				observer.disconnect();
 				void play();
 			},
-			{ threshold: 0.25 },
+			{ threshold: 0 },
 		);
 		observer.observe(stage);
 	};

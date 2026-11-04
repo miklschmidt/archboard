@@ -33,7 +33,6 @@ const first = walkthrough.beats[0];
 		<div class="box-body">
 			<canvas class="orb" data-orb aria-hidden="true"></canvas>
 			<div class="words">
-				<p class="walk-name">{walkthrough.name}</p>
 				<p class="beat-title" data-beat-title aria-live="polite">{first?.title}</p>
 				<p class="subtitle" data-subtitle>{first?.narrative}</p>
 			</div>
@@ -162,10 +161,6 @@ const first = walkthrough.beats[0];
 		flex-direction: column;
 		gap: 10px;
 		min-height: 260px;
-	}
-	.walk-name {
-		font-size: 0.8125rem;
-		color: var(--ink-muted);
 	}
 	.beat-title {
 		font-size: 1.375rem;

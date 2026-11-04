@@ -14,14 +14,19 @@ export interface MeasureRow {
 	unjoined: number;
 }
 
+// Unjoined comes first: the table opens sorted by it, and a phone shows only the first columns.
 export const measureColumns = [
+	{
+		key: "unjoined",
+		label: "Unjoined",
+		hint: "Modules that change with this one and have no authored relationship",
+	},
+	{ key: "changesWith", label: "Changes with", hint: "Modules that change in the same commits" },
+	{ key: "commits", label: "Commits", hint: "Commits in the last year" },
 	{ key: "entries", label: "Entries", hint: "Parts that outside relationships reach" },
 	{ key: "hidden", label: "Hidden", hint: "Parts that nothing outside reaches" },
 	{ key: "passThrough", label: "Pass-through", hint: "Entries that only pass a call on" },
 	{ key: "callers", label: "Callers", hint: "Modules outside that call in" },
-	{ key: "commits", label: "Commits", hint: "Commits in the last year" },
-	{ key: "changesWith", label: "Changes with", hint: "Modules that change in the same commits" },
-	{ key: "unjoined", label: "Unjoined", hint: "Of those, the ones with no authored relationship" },
 ] as const;
 
 export type MeasureKey = (typeof measureColumns)[number]["key"];

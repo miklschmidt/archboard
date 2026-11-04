@@ -13,7 +13,7 @@ const { title, flip = false, wide = false, id } = Astro.props;
 
 <article class:list={["feature", { flip, wide }]} id={id} data-reveal>
 	<div class="copy">
-		<h3 class="h3">{title}</h3>
+		<h3 class="display feature-title">{title}</h3>
 		<div class="text"><slot /></div>
 	</div>
 	<div class="demo"><slot name="demo" /></div>

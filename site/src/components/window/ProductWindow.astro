@@ -1,6 +1,7 @@
 ---
 // A mock of the Archboard shell around a real drawing of the example shop. The window is laid
 // out at 1280 by 760 and scaled to its column, so it keeps the shell's proportions at any width.
+// On a phone it shows only the canvas, so the drawing stays large enough to read.
 import DockLines from "./DockLines.astro";
 import Inspector from "./Inspector.astro";
 import Navigator from "./Navigator.astro";
@@ -50,9 +51,11 @@ const picture = inline(drawings.webShop.raw, "hero");
 <style>
 	.window-stage {
 		--scale: 1;
+		--window-width: 1280px;
+		--window-height: 760px;
 		position: relative;
 		width: 100%;
-		height: calc(760px * var(--scale));
+		height: calc(var(--window-height) * var(--scale));
 		perspective: 2400px;
 		perspective-origin: 50% 100%;
 	}
@@ -69,8 +72,8 @@ const picture = inline(drawings.webShop.raw, "hero");
 		display: grid;
 		grid-template-columns: 290px 1fr 290px;
 		grid-template-rows: 44px 1fr;
-		width: 1280px;
-		height: 760px;
+		width: var(--window-width);
+		height: var(--window-height);
 		overflow: hidden;
 		border-radius: 12px;
 		background: var(--plane);
@@ -260,6 +263,21 @@ const picture = inline(drawings.webShop.raw, "hero");
 	}
 	.replay:hover {
 		background: var(--slab);
+	}
+	@media (max-width: 760px) {
+		.window-stage {
+			--window-width: 760px;
+			--window-height: 600px;
+		}
+		.window {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.column-head,
+		.panel-head,
+		.left,
+		.window > :global([data-inspector]) {
+			display: none;
+		}
 	}
 </style>
 

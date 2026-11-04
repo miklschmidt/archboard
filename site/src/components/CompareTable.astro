@@ -1,6 +1,7 @@
 ---
 // The README's comparison with the usual diagram tools, out of the box, as of September 2026,
-// with IcePanel and the three analysis rows as of November 2026.
+// with IcePanel and the three analysis rows as of November 2026. On a phone each row becomes a
+// block that names every tool, so no column hides off screen.
 import Icon from "./Icon.astro";
 
 const tools = ["Archboard", "Mermaid · D2", "Excalidraw · draw.io", "Structurizr · LikeC4", "IcePanel"];
@@ -69,7 +70,7 @@ const rows: { label: string; cells: Cell[] }[] = [
 						<tr>
 							<th scope="row" class="row-head">{row.label}</th>
 							{row.cells.map((cell, index) => (
-								<td class:list={{ ours: index === 0, no: cell === "no" }}>
+								<td class:list={{ ours: index === 0, no: cell === "no" }} data-tool={tools[index]}>
 									{typeof cell === "string" ? (
 										cell
 									) : (
@@ -176,5 +177,70 @@ const rows: { label: string; cells: Cell[] }[] = [
 	.foot {
 		padding: 14px 10px 6px;
 		max-width: 60em;
+	}
+	@media (max-width: 760px) {
+		.scroll {
+			overflow: visible;
+			background: none;
+			box-shadow: none;
+		}
+		table,
+		tbody,
+		tr,
+		th,
+		td {
+			display: block;
+		}
+		table {
+			min-width: 0;
+		}
+		thead {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+		}
+		tbody {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+		}
+		tr {
+			padding: 14px 14px 10px;
+			border-radius: 6px;
+			background: var(--well);
+			box-shadow: var(--shadow-well);
+		}
+		tbody tr + tr > * {
+			box-shadow: none;
+		}
+		.row-head {
+			position: static;
+			width: auto;
+			min-width: 0;
+			padding: 0 0 8px;
+			background: none;
+			font-weight: 600;
+		}
+		td {
+			display: grid;
+			grid-template-columns: 8.5em minmax(0, 1fr);
+			gap: 12px;
+			padding: 6px 0;
+		}
+		td::before {
+			content: attr(data-tool);
+			font-size: 0.8125rem;
+			color: var(--ink-muted);
+		}
+		td.ours {
+			margin: 2px -8px;
+			padding: 6px 8px;
+			border-radius: 4px;
+		}
+		td.ours::before {
+			color: var(--gold-mark);
+		}
 	}
 </style>

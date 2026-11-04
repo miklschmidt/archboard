@@ -10,14 +10,12 @@ import Languages from "../components/Languages.astro";
 import Nav from "../components/Nav.astro";
 import QuickStart from "../components/QuickStart.astro";
 import Section from "../components/Section.astro";
-import ChangesTogether from "../components/demos/ChangesTogether.astro";
-import CodeEvidence from "../components/demos/CodeEvidence.astro";
 import CompetingOptions from "../components/demos/CompetingOptions.astro";
 import DocsTiles from "../components/demos/DocsTiles.astro";
 import DrillDown from "../components/demos/DrillDown.astro";
+import EvidenceTabs from "../components/demos/EvidenceTabs.astro";
 import Grammars from "../components/demos/Grammars.astro";
 import HistoryTimeline from "../components/demos/HistoryTimeline.astro";
-import InterfaceCompare from "../components/demos/InterfaceCompare.astro";
 import Measures from "../components/demos/Measures.astro";
 import OwnModel from "../components/demos/OwnModel.astro";
 import Pipeline from "../components/demos/Pipeline.astro";
@@ -73,43 +71,7 @@ import { links } from "../lib/links";
 				<Measures slot="demo" />
 			</Feature>
 
-			<Feature title="Find where the map and the code disagree" flip>
-				<p>
-					Bind a module to its file or to a function, class or value. <code>archboard check code</code>
-					finds broken bindings, relationships drawn backwards, and calls between mapped modules that
-					the architecture leaves out.
-				</p>
-				<p>
-					Each piece of evidence says whether analysis resolved it or matched it only by name. It can
-					follow a connection across a network hop where application code and infrastructure declare
-					both ends.
-				</p>
-				<CodeEvidence slot="demo" />
-			</Feature>
-
-			<Feature title="See what a module exposes before you change it">
-				<p>
-					A module's interface is what its outside callers reach. Archboard shows the entry points, the
-					hidden parts behind them and the callers that depend on them.
-				</p>
-				<p>
-					Compare two states and the interface changes come first, because an interface change costs
-					every caller.
-				</p>
-				<InterfaceCompare slot="demo" />
-			</Feature>
-
-			<Feature title="Read the change through the architecture" flip>
-				<p>
-					Archboard maps each commit onto the modules it touched. See which modules change most often,
-					and which change together, including pairs with no authored relationship.
-				</p>
-				<p>
-					Set a branch against its proposal with <code>archboard model footprint --base main</code>, and
-					your agent sees changes outside the plan before it adopts it.
-				</p>
-				<ChangesTogether slot="demo" />
-			</Feature>
+			<EvidenceTabs />
 		</Section>
 
 		<Section id="plan" title="See the change before anyone builds it.">
@@ -131,7 +93,7 @@ import { links } from "../lib/links";
 			</div>
 
 			<div class="options-head" data-reveal>
-				<h3 class="h3">Weigh competing options side by side</h3>
+				<h3 class="display feature-title">Weigh competing options side by side</h3>
 				<p class="body">
 					Branch two drafts from one starting point and open them in two panes. Both compare against the
 					same root, and neither touches current architecture.
@@ -167,7 +129,8 @@ import { links } from "../lib/links";
 				<WalkthroughPlayer />
 				<div class="walk-foot">
 					<p class="caption">
-						The example shop's own walkthrough. In Archboard the Codex voice speaks each step. Here the
+						The example shop's own walkthrough, “How an order is placed today”. In Archboard the Codex
+						voice speaks each step. Here the
 						words play without sound. <a href={links.walkthroughs}>Hear a narrated pull-request video</a>.
 					</p>
 					<pre class="walk-cmd mono"><span class="ps">$</span> archboard model record --checkpoint &lt;id&gt; --walkthrough "Why checkout stops waiting" --out pr-128.mp4</pre>
@@ -222,29 +185,6 @@ import { links } from "../lib/links";
 			<div data-reveal>
 				<OwnModel />
 			</div>
-			<ol class="flow">
-				<li data-reveal>
-					<span class="flow-step mono">1</span>
-					<p>
-						Your agent reads source and authors modules, containment, outgoing relationships, flows and
-						walkthroughs through <code>archboard model</code> commands.
-					</p>
-				</li>
-				<li data-reveal style="--reveal-delay: 100">
-					<span class="flow-step mono">2</span>
-					<p>
-						The runtime checks the claims and the exact revision, retains a checkpoint, signs it when Git
-						has a signer, and installs the change durably.
-					</p>
-				</li>
-				<li data-reveal style="--reveal-delay: 200">
-					<span class="flow-step mono">3</span>
-					<p>
-						The local renderer draws the selected reading in the browser or as an exported file. Opening a
-						module changes scope without copying content.
-					</p>
-				</li>
-			</ol>
 		</Section>
 
 		<Section id="compare" title="Next to the tools you know.">
@@ -327,33 +267,8 @@ import { links } from "../lib/links";
 	.tiles-wrap {
 		margin-top: clamp(88px, 10vw, 152px);
 	}
-	.flow {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 24px 40px;
-		margin: 40px 0 0;
-		padding: 0;
-		list-style: none;
-	}
-	.flow li {
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
-		padding-top: 16px;
-		box-shadow: inset 0 1px 0 var(--rule-strong);
-		color: var(--ink-body);
-	}
-	.flow-step {
-		color: var(--gold-mark);
-		font-size: 0.8125rem;
-	}
-	.flow code {
-		font-size: 0.82em;
-		color: var(--ink);
-	}
 	@media (max-width: 900px) {
-		.options-head,
-		.flow {
+		.options-head {
 			grid-template-columns: minmax(0, 1fr);
 		}
 	}
