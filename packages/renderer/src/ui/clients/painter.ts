@@ -154,6 +154,10 @@ function contextLoss(canvas: HTMLCanvasElement): NonNullable<StartedPainter["whe
 		const lost = (): void => {
 			listener("The WebGL2 context was lost.");
 		};
+		if (canvas.getContext("webgl2")?.isContextLost()) {
+			lost();
+			return () => undefined;
+		}
 		canvas.addEventListener("webglcontextlost", lost, { once: true });
 		return () => canvas.removeEventListener("webglcontextlost", lost);
 	};

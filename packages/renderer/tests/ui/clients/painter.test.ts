@@ -162,6 +162,23 @@ test("with no WebGPU adapter a canvas paints on WebGL2 and hears its context los
 	});
 });
 
+test("a WebGL2 context lost before subscription still reports its loss", async () => {
+	await inPage(false, async () => {
+		const canvas = pageCanvas();
+		const started = await startPainter(canvas, false);
+		Object.defineProperty(canvas, "getContext", {
+			value: () => ({ isContextLost: () => true }),
+		});
+		canvas.dispatchEvent(new Event("webglcontextlost"));
+		const lost = mock();
+		const detach = listen(started, lost);
+		expect(lost).toHaveBeenCalledTimes(1);
+		detach();
+		canvas.dispatchEvent(new Event("webglcontextlost"));
+		expect(lost).toHaveBeenCalledTimes(1);
+	});
+});
+
 test("a WebGL2 refusal paints on the CPU on a fresh canvas", async () => {
 	await inPage(false, async () => {
 		webgl.refusal = "WebGL2 draws in software: SwiftShader.";

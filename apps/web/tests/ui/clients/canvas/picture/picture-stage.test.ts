@@ -89,7 +89,7 @@ await mock.module("@archboard/renderer/browser", () => ({
 							delete starting.stoppedBeforeListening;
 							listener("device stopped before subscription");
 						}
-						return () => undefined;
+						return () => taken.push("stopWatchingGpu");
 					},
 				});
 			};
@@ -266,6 +266,17 @@ test("a GPU that stops before subscription restarts after startup releases its g
 	expect(taken.filter((call) => call === "free")).toHaveLength(1);
 	expect(stageOf(surface)?.starting).toBe(true);
 	expect(starting.retry).toBe(true);
+	await start("cpu");
+	expect(surface.getAttribute("data-painter")).toBe("cpu");
+});
+
+test("a WebGL2 loss during subscription releases its listener before CPU replacement", async () => {
+	const { surface } = await surfaceWithAPicture();
+	starting.stoppedBeforeListening = true;
+	await start("webgl");
+	expect(taken.filter((call) => call === "free")).toHaveLength(1);
+	expect(taken.filter((call) => call === "stopWatchingGpu")).toHaveLength(1);
+	expect(starting.failed).toBe("webgl");
 	await start("cpu");
 	expect(surface.getAttribute("data-painter")).toBe("cpu");
 });

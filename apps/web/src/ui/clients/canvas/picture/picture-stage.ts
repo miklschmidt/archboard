@@ -429,9 +429,11 @@ class PictureStage {
 		this.#canvas = next.canvas;
 		briefPainter(next.painter, this.#held, this.#ink.arrive, pageIsDark(), frameClock().now());
 		this.#invalidate();
-		this.#stopWatchingGpu = next.whenGpuStops?.((reason) => {
+		const stopWatchingGpu = next.whenGpuStops?.((reason) => {
 			this.#replacePainter(new Error(reason));
 		});
+		if (this.#started === next) this.#stopWatchingGpu = stopWatchingGpu;
+		else stopWatchingGpu?.();
 	}
 
 	/**
