@@ -38,8 +38,8 @@ The page chooses once for a canvas, from what the browser says:
 
 The refusal by name is necessary. Chrome gave SwiftShader with no performance caveat, and Firefox ignores the caveat flag.
 When the browser gives `WEBGL_debug_renderer_info`, the name comes from it. Otherwise it comes from the plain renderer name.
-The renderer starts compiling and linking its shaders when it creates the context.
-The page refuses before it waits for that work to finish.
+The page reads the name once, from a context on a scratch canvas, before any canvas takes a context of its own.
+So a refusal compiles no shader, and every later canvas of the page gets the same answer at once.
 The rule reads no frame back, as before.
 
 The order lives in `startPainter` of `@archboard/renderer`.
@@ -84,7 +84,7 @@ The painter's WebAssembly holds all three painters, with no Cargo feature.
 - A strip frame still costs about 14 ms on that picture. The walk, the glyphs, the long outlines and the polylines share that time, and no single waste remains. Strips kept under a still camera need an interface that `vello_cpu` and `vello_gpu` do not offer.
 - A line that holds traffic changes each frame, so no painter keeps it.
 - A WebGL2 painter has no lens, so a move on it shows no blur, as on the CPU.
-- WebGL2 starts in 17 to 19 ms, because it compiles its shaders.
+- WebGL2 starts in 20 to 21 ms, because it compiles its shaders, and the first start of a page also reads the renderer's name.
 - The painter's WebAssembly is 5,198,113 bytes raw and 1,654,151 bytes after gzip.
 - A Rust panic in `vello_gpu` traps the module that holds every painter. This change did not test what a trap leaves. The SVG ink stays as the last fallback.
 - Recordings and README takes keep the CPU painter, because `--disable-gpu` gives no WebGL2 context.

@@ -3,13 +3,15 @@
 //! fills and composes them. It draws the same `Canvas` calls as Vello on the
 //! CPU, and it keeps its parts as the CPU canvas does.
 
+use std::cell::OnceCell;
+
 use archboard_paint::canvas::{Canvas, Ink};
 use archboard_paint::parts::Keeper;
 use kurbo::{Affine, BezPath};
 use peniko::{BlendMode, Color, Compose, Fill, Mix};
 use vello_gpu::{RenderSize, Resources, Scene, WebGlRenderer, WebGlTextureBindings};
-use wasm_bindgen::{JsCast, JsError};
-use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
+use wasm_bindgen::{JsCast, JsError, JsValue};
+use web_sys::{HtmlCanvasElement, WebGl2RenderingContext, WebglLoseContext};
 
 use crate::software::is_software;
 
@@ -115,42 +117,81 @@ fn drawing_of(size: (u16, u16)) -> WebGlCanvas {
     }
 }
 
-/// The name of the renderer under a canvas's WebGL2 context, when it draws in
-/// software. A browser can give a software renderer with no performance
-/// caveat: Chrome gives `SwiftShader` so, and Firefox never reports the caveat.
-fn software_renderer(canvas: &HtmlCanvasElement) -> Option<String> {
-    let gl = canvas
-        .get_context("webgl2")
+thread_local! {
+    /// The page's WebGL2 renderer when it draws in software, once a probe read it.
+    static SOFTWARE: OnceCell<Option<String>> = const { OnceCell::new() };
+}
+
+/// The name of this page's WebGL2 renderer, when it draws in software. A
+/// browser can give a software renderer with no performance caveat: Chrome
+/// gives `SwiftShader` so, and Firefox never reports the caveat. The page reads
+/// it once, so that a refusal gives no canvas a context and compiles no shader.
+fn software_renderer() -> Option<String> {
+    SOFTWARE.with(|software| software.get_or_init(probe).clone())
+}
+
+/// Read the renderer's name from a context on a scratch canvas, and let the
+/// context go. No answer lets the canvas's own start decide.
+fn probe() -> Option<String> {
+    let gl = scratch_context()?;
+    let name = renderer_name(&gl);
+    if let Some(lose) = gl.get_extension("WEBGL_lose_context").ok().flatten() {
+        lose.unchecked_into::<WebglLoseContext>().lose_context();
+    }
+    name.filter(|name| is_software(name))
+}
+
+/// A WebGL2 context on a canvas that no page shows, asked for as Vello GPU asks:
+/// with no major performance caveat.
+fn scratch_context() -> Option<WebGl2RenderingContext> {
+    let scratch = web_sys::window()?
+        .document()?
+        .create_element("canvas")
+        .ok()?
+        .dyn_into::<HtmlCanvasElement>()
+        .ok()?;
+    let options = js_sys::Object::new();
+    js_sys::Reflect::set(
+        &options,
+        &"failIfMajorPerformanceCaveat".into(),
+        &JsValue::TRUE,
+    )
+    .ok()?;
+    scratch
+        .get_context_with_context_options("webgl2", &options)
         .ok()
         .flatten()?
         .dyn_into::<WebGl2RenderingContext>()
-        .ok()?;
+        .ok()
+}
+
+/// The name of a context's renderer: its unmasked name where the browser gives
+/// it, and its plain name otherwise.
+fn renderer_name(gl: &WebGl2RenderingContext) -> Option<String> {
     let unmasked = gl
         .get_extension("WEBGL_debug_renderer_info")
         .ok()
         .flatten()
         .is_some();
-    let name = gl
-        .get_parameter(if unmasked {
-            UNMASKED_RENDERER_WEBGL
-        } else {
-            WebGl2RenderingContext::RENDERER
-        })
-        .ok()?
-        .as_string()?;
-    is_software(&name).then_some(name)
+    gl.get_parameter(if unmasked {
+        UNMASKED_RENDERER_WEBGL
+    } else {
+        WebGl2RenderingContext::RENDERER
+    })
+    .ok()?
+    .as_string()
 }
 
 impl WebGlTarget {
-    /// Start Vello GPU on a canvas's WebGL2 context. It refuses a context with a
-    /// major performance caveat, and a software renderer before it waits for
-    /// its shaders.
+    /// Start Vello GPU on a canvas's WebGL2 context. It refuses a software
+    /// renderer before the canvas takes a context, and a context with a major
+    /// performance caveat.
     pub(crate) fn start(canvas: &HtmlCanvasElement) -> Result<WebGlTarget, JsError> {
-        let size = (side(canvas.width()), side(canvas.height()));
-        let (starting, resources) = WebGlRenderer::begin(canvas).map_err(refused)?;
-        if let Some(name) = software_renderer(canvas) {
+        if let Some(name) = software_renderer() {
             return Err(JsError::new(&format!("WebGL2 draws in software: {name}.")));
         }
+        let size = (side(canvas.width()), side(canvas.height()));
+        let (starting, resources) = WebGlRenderer::begin(canvas).map_err(refused)?;
         Ok(WebGlTarget {
             renderer: starting.finish().map_err(refused)?,
             resources,

@@ -280,7 +280,10 @@ A canvas that took a WebGL2 context takes no 2D context. So step 3 needs a fresh
 - Chrome 155 with `--use-angle=swiftshader --enable-unsafe-swiftshader` gave a context with no caveat. In the spike, Vello GPU then drew the largest picture at 933 ms a frame, the median of five frames.
 
 So `Painter.webgl` also reads the renderer's name. When `WEBGL_debug_renderer_info` is there, it reads `UNMASKED_RENDERER_WEBGL`. Otherwise it reads `RENDERER`.
-It reads the name after the context exists. By then the shaders compile and link, but a refusal does not wait for that work to finish.
+It reads the name once per page, from a context on a scratch canvas, before any canvas takes a context of its own.
+A first version read the name from the canvas's own context, after Vello GPU had started to compile its shaders there.
+Under SwiftShader in Chrome 155, that refusal cost 12 to 69 ms of main thread on every canvas.
+Now the first refusal of a page costs 33 ms, and each later one less than 0.1 ms. On the RTX 4090 the probe adds about 4 ms to the first start.
 Firefox reports a generalized renderer name, for example "NVIDIA GeForce GTX 980, or similar". Nobody made sure that its name for llvmpipe still says llvmpipe.
 
 A recording keeps the CPU painter by the normal rule. Chrome 155 with `--disable-gpu` gave no WebGL2 context, and `Painter.webgl` refused.
@@ -417,7 +420,7 @@ A first headed run of 60 frames gave a mean gap of 8.3 ms at 120 Hz, with no slo
 
 ### Start
 
-`Painter.webgl` takes 17 to 19 ms to start in Chrome, because it compiles its shaders at once. In the spike, Firefox took 36 to 56 ms.
+`Painter.webgl` takes 20 to 21 ms to start in Chrome, because it compiles its shaders at once, and the first start of a page reads the renderer's name. It took 17 to 19 ms before the probe. In the spike, Firefox took 36 to 56 ms.
 The CPU painter starts in 2.8 to 3.7 ms.
 
 ## What it costs
@@ -444,7 +447,8 @@ Vello on WebGPU costs 1,689,389 bytes raw and 429,815 bytes after gzip.
 The other 52 run only in the build. They compile the WESL shaders to GLSL: `wesl`, `lalrpop`, `logos`, `regex`, `petgraph` and their dependencies.
 Every new package is under MIT, Apache-2.0 or the Unlicense.
 No new tool joins the dev shell, and `bun run build:core` builds the tier with no change to `scripts/build-core.ts`.
-Nobody measured the added time of a clean build.
+Each of the gate's four Cargo builds compiles these packages, and the hosted runner caches no Rust build.
+On it, the Rust phase of the gate took 16.5 minutes against 8.5 minutes on `main`. So the gate's time limit rose from 30 to 45 minutes.
 
 ### Risks
 
@@ -497,7 +501,6 @@ Run on an idle machine, because load moved these numbers by a third.
 - The far view in the bench, which sets the far line to 0.
 - Strips kept under a still camera, and a glyph atlas.
 - `vello_gpu` on wgpu's WebGL backend, a WebGL pass over `vello_cpu`, Canvas 2D, CanvasKit, femtovg, and `vello_cpu` with threads.
-- The added time of a clean build.
 - What a `vello_gpu` panic leaves in the module.
 - Whether Firefox's renderer name reveals llvmpipe.
 - A share of the general public with WebGPU.
