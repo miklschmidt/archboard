@@ -3,10 +3,11 @@ id: TASK-572
 title: >-
   Long flowchart lines jump: a far exit, a long loop and a column break end at
   lettered jump markers
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-03T23:38:00Z'
+updated_date: '2026-11-04T00:04:00Z'
 labels:
   - renderer
   - flows
@@ -27,14 +28,14 @@ PR 34 broke a long flowchart into columns, but the owner found the result hard t
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Steps that follow each other in a run stack close with no line between them, as wide as the widest of them
-- [ ] #2 Of a decision of two answers, the taller answer runs straight on down out of the diamond foot
-- [ ] #3 A decision whose one answer holds at least four more blocks than the other carries the long answer on in the run; the short answer stands beside the run, clear of the blocks beside it, and ends at a jump out to a jump in where the long answer ends, and guards whose long answers end together share one jump in
-- [ ] #4 A loop that repeats four or more blocks jumps from the end of its body back to a jump in beside its hexagon, and its done line ends at a jump out beside the hexagon, from which the run goes on below the loop
-- [ ] #5 A column ends at a jump out and the next column starts at its jump in, with no line between columns
-- [ ] #6 Each jump has one letter and one ink for all its markers, counted in the order the picture holds them; an out marker is a tag that points the way its line went and an in marker is a disc; the letter is Onest Bold, bundled in the core
-- [ ] #7 The answers of a decision join below the longest answer with room for each bend
-- [ ] #8 ADR 0073 and the architecture proposal for the flowchart layout describe the jumps
+- [x] #1 Steps that follow each other in a run stack close with no line between them, as wide as the widest of them
+- [x] #2 Of a decision of two answers, the taller answer runs straight on down out of the diamond foot
+- [x] #3 A decision whose one answer holds at least four more blocks than the other carries the long answer on in the run; the short answer stands beside the run, clear of the blocks beside it, and ends at a jump out to a jump in where the long answer ends, and guards whose long answers end together share one jump in
+- [x] #4 A loop that repeats four or more blocks jumps from the end of its body back to a jump in beside its hexagon, and its done line ends at a jump out beside the hexagon, from which the run goes on below the loop
+- [x] #5 A column ends at a jump out and the next column starts at its jump in, with no line between columns
+- [x] #6 Each jump has one letter and one ink for all its markers, counted in the order the picture holds them; an out marker is a tag that points the way its line went and an in marker is a disc; the letter is Onest Bold, bundled in the core
+- [x] #7 The answers of a decision join below the longest answer with room for each bend
+- [x] #8 ADR 0073 and the architecture proposal for the flowchart layout describe the jumps
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -46,3 +47,18 @@ PR 34 broke a long flowchart into columns, but the owner found the result hard t
 4. Rust tests own stacking, guards, long loops, column jumps and jump pairing; rendered proof on the long dogfood flows in light and dark.
 5. Update ADR 0073, the research note and proposal vdbwhuzZ; review with sol-loop; land on PR 34.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation: graph.rs builds Guard, Land and Loop{back} blocks; layout/stack.rs fills columns and jumps between them; layout/branches.rs lays out guards, landings and long loops; every marker id derives from block ids ({guard}~jump, {guard}~land, {loop}~back, {loop}~again, {block}~out and {block}~in), and picture() numbers and letters the jumps in page order. The paint request carries FlowchartShape::Jump{end, number}; flowchart_shapes.rs draws tags, discs, letters and inks. Onest Bold 1.000 is Face::SansBold.
+Fixes found while proving: a long loop or guard whose body broke into columns placed its jump out under the loop axis (slanted line), and a body end ran down to its tallest column before jumping; the jump out now stands right below the end, and chain ends are no longer carried to the run foot.
+Review: sol-loop, 2 rounds with gpt-6.1-sol on xhigh. S1 [blocker] count() counted generated landings as blocks; fixed in b3b19f13a. Round 2 approved.
+Verification: archboard-flows tests (13 flowchart tests); renderer tests flow-logic and flowchart-answers updated to the straight answer and to columns; bun run check 21 of 21 lanes; rasters of "Grading a batch" (0.53 of full size in the reference pane), "A context change reaches a workhorse" (0.45, from 0.26 on main) and "A canonical edit becomes durable" (whole at full size) on both themes; headless browser session of the reader on both themes; proposal vdbwhuzZ edited, checkpoint e1a5e44b967cb9e436f0706e2c1d60d590b5935e.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A long flowchart line that would run far round other blocks now jumps: it stops at a jump out, a tag that points the way it went, and goes on at the jump in with the same letter, a disc. Each jump has one letter in Onest Bold and one ink (black or white, rose, lime, orange, indigo; lime and orange bright on the light theme). Guards jump their short answers to a landing where the long answer ends, long loops jump back to their hexagon and on from beside it, and columns jump from foot to top. Steps that follow each other stack with no line between them, the taller of two answers runs straight down, and joins get room. ADR 0073, the research note and proposal vdbwhuzZ describe it. Verified by Rust and renderer tests, bun run check, rasters and a browser session on both themes, and two Sol review rounds. Follow-up outside this task: TASK-571 for junctions in architecture readings; guards are still chosen by block count, not line length.
+<!-- SECTION:FINAL_SUMMARY:END -->

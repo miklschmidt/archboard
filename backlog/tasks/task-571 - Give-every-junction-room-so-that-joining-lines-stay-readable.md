@@ -4,6 +4,7 @@ title: Give every junction room, so that joining lines stay readable
 status: To Do
 assignee: []
 created_date: '2026-11-03T18:46:00Z'
+updated_date: '2026-11-04T00:04:00Z'
 labels:
   - renderer
   - layout
@@ -24,3 +25,9 @@ Where several lines join, the renderer draws them into a knot that a reader cann
 - [ ] #3 Nested flowchart decisions that end at the same place join at junctions a reader can follow, not a stack of joins in one spot
 - [ ] #4 A rendered owner covers a flowchart with nested decisions that end together and an architecture reading with a shared-trunk junction
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+TASK-572 gave the joins of flowchart decisions three bends of room below the longest answer and replaced the joins of lopsided decisions with jumps to one landing. The architecture junctions and a rendered owner for them are still open.
+<!-- SECTION:NOTES:END -->
