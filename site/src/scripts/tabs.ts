@@ -21,11 +21,28 @@ export function mountTabs(root: HTMLElement): void {
 	tabs.forEach((tab, index) => {
 		tab.addEventListener("click", () => select(tab, false));
 		tab.addEventListener("keydown", (event) => {
-			const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key] ?? 0;
-			if (!step) return;
+			if (event.altKey || event.ctrlKey || event.metaKey) return;
+			let nextIndex: number;
+			switch (event.key) {
+				case "Home":
+					nextIndex = 0;
+					break;
+				case "End":
+					nextIndex = tabs.length - 1;
+					break;
+				case "ArrowRight":
+					nextIndex = (index + 1) % tabs.length;
+					break;
+				case "ArrowLeft":
+					nextIndex = (index - 1 + tabs.length) % tabs.length;
+					break;
+				default:
+					return;
+			}
+			const next = tabs[nextIndex];
+			if (!next) return;
 			event.preventDefault();
-			const next = tabs[(index + step + tabs.length) % tabs.length];
-			if (next) select(next, true);
+			select(next, true);
 		});
 	});
 }
