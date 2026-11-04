@@ -3,11 +3,11 @@ id: TASK-577
 title: >-
   A browser without WebGPU paints on WebGL2, and the fallback painters stop
   cutting every path into strips each frame
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-04T21:13:00Z'
-updated_date: '2026-11-04T22:09:00Z'
+updated_date: '2026-11-04T22:14:00Z'
 labels:
   - painter
   - renderer
@@ -33,7 +33,7 @@ A browser with no WebGPU paints the canvas on the CPU painter (ADR 0071). On the
 - [x] #6 The cause of the strip cost is named from a measurement of the code, and a change in the painter removes it
 - [x] #7 The same bench on the same picture and load gives the main-thread frame time of the CPU and WebGL2 painters before and after the change
 - [x] #8 ADR 0071 or a new record states the three-tier order and what changed about vello_hybrid
-- [ ] #9 bun run check passes
+- [x] #9 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -96,3 +96,15 @@ Affected subjects: Painter choice vKEsyHFk#hKrzJUPf, its call vKEsyHFk#irHUnOY7,
 - Safari, Firefox with the shipped tier, Windows, macOS, Android, a headed WebGPU run, a vello_gpu panic, the llvmpipe name in Firefox, the far view in the bench, traffic lines (never kept on any painter).
 - The marketing site branch derives PainterFailure from startPainter, so its failures need the new painter field on merge, and its picture-stage.ts conflicts with this branch.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+startPainter now tries WebGPU, then Vello GPU on WebGL2, then the CPU painter (ADR 0074). WebGL2 refuses a software renderer by its name, and a WebGL2 failure or a lost context moves the canvas to the CPU painter on a fresh canvas. The product canvas and the marketing site share the order.
+
+The strip cost came from the painter: the CPU and WebGL2 canvases kept no parts, so each frame rebuilt every path, expanded every stroke and cut offscreen paths. A keeper in crates/archboard-paint/src/parts now keeps them. On the largest picture at 1920x1080 (same bench, load 1.2 to 2.2), a WebGL2 frame fell from 20.9 to 15.0 ms and a CPU frame from 35.5 to 29.2 ms. A first frame is about 7 ms slower, because it records its parts.
+
+Parity on the full corpus: WebGL2 matches the CPU painter within 0.14 points of ink. 140 flowcharts could not be compared on any painter (TASK-576). bun run check passed.
+
+Not verified: Safari, Firefox with the shipped tier, Windows, macOS, Android, a headed WebGPU run, a vello_gpu panic. The model holds the change as draft proposal w4XB6eBv, a child of JTZvj2vi.
+<!-- SECTION:FINAL_SUMMARY:END -->
