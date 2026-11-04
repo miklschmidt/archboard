@@ -1,0 +1,122 @@
+---
+// The README's questions, in its words.
+const items = [
+	{
+		q: "Can I move a box?",
+		a: "No, and that is the point. If a picture says something wrong, fix the meaning and the renderer redraws it. If the meaning is right and the picture is not, that is a renderer bug, and the repair benefits every reading.",
+	},
+	{
+		q: "Does Archboard score my design?",
+		a: "No. Measures states how many entries a module has, what it hides and what changes with it. A count can look bad for a good reason. You and your agent read the code and judge.",
+	},
+	{
+		q: "Which agents does it work with?",
+		a: "Any agent that can run a CLI can author the architecture model. archboard install-skill sets up Claude Code and Codex. The agent in the browser, the voice, narration and recordings run on Codex, as Archboard's own private app-server with its own sign-in.",
+	},
+	{
+		q: "Where does the architecture live?",
+		a: "A vault at .archboard/vault holds one model. Each .module.json file owns a module and its outgoing relationships. Separate files hold flows, active proposals and walkthroughs. Git tracks them. An independent archive keeps exact history and completed decisions.",
+	},
+	{
+		q: "Does the diagram stay in sync with the code?",
+		a: "Your agent keeps it in sync. archboard check code reports broken source evidence, missing dependencies between mapped modules, and boundaries that disagree with the code. Your agent reads that evidence and updates the model through an explicit proposal.",
+	},
+	{
+		q: "Is the traffic animation real traffic?",
+		a: "No. The agent marks which relationships carry the hot path, and the renderer animates them. It illustrates how a request flows. It is not a measurement.",
+	},
+	{
+		q: "Is it safe to run?",
+		a: "The server binds to 127.0.0.1 and has no authentication, so keep it on loopback. To use it from another machine, use an SSH tunnel.",
+	},
+	{
+		q: "Is it stable?",
+		a: "Archboard is young and moves fast. Its interfaces change often, and it is not published to npm: run it from a clone. It targets desktop browsers on Linux and macOS.",
+	},
+];
+---
+
+<div class="faq">
+	{
+		items.map((item) => (
+			<details class="item" data-reveal>
+				<summary>
+					<span>{item.q}</span>
+					<span class="sign" aria-hidden="true" />
+				</summary>
+				<p>{item.a}</p>
+			</details>
+		))
+	}
+</div>
+
+<style>
+	.faq {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 8px 24px;
+		align-items: start;
+	}
+	.item {
+		border-radius: var(--radius-panel);
+		background: var(--plane);
+		box-shadow: inset 0 0 0 1px var(--rule);
+		transition:
+			background-color 200ms var(--ease-out),
+			box-shadow 200ms var(--ease-out);
+	}
+	.item[open] {
+		background: var(--card);
+		box-shadow:
+			var(--shadow-float),
+			inset 0 0 0 1px var(--rule);
+	}
+	summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		padding: 18px 20px;
+		font-weight: 600;
+		color: var(--ink);
+		cursor: pointer;
+		list-style: none;
+	}
+	summary::-webkit-details-marker {
+		display: none;
+	}
+	.sign {
+		position: relative;
+		flex: none;
+		width: 14px;
+		height: 14px;
+	}
+	.sign::before,
+	.sign::after {
+		content: "";
+		position: absolute;
+		left: 0;
+		top: 6px;
+		width: 14px;
+		height: 2px;
+		border-radius: 1px;
+		background: var(--gold-mark);
+		transition: rotate 220ms var(--ease-out);
+	}
+	.sign::after {
+		rotate: 90deg;
+	}
+	.item[open] .sign::after {
+		rotate: 0deg;
+	}
+	.item p {
+		padding: 0 20px 20px;
+		color: var(--ink-body);
+		max-width: 40em;
+	}
+	@media (max-width: 860px) {
+		.faq {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>

@@ -1,0 +1,95 @@
+---
+// One capability: a short account beside a working piece that shows it.
+interface Props {
+	title: string;
+	flip?: boolean;
+	/** The demonstration takes the wider share of the row. */
+	wide?: boolean;
+	id?: string;
+}
+
+const { title, flip = false, wide = false, id } = Astro.props;
+---
+
+<article class:list={["feature", { flip, wide }]} id={id} data-reveal>
+	<div class="copy">
+		<h3 class="h3">{title}</h3>
+		<div class="text"><slot /></div>
+	</div>
+	<div class="demo"><slot name="demo" /></div>
+</article>
+
+<style>
+	.feature {
+		display: grid;
+		grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+		align-items: center;
+		gap: 40px clamp(40px, 6vw, 96px);
+	}
+	.feature + :global(.feature) {
+		margin-top: clamp(88px, 10vw, 152px);
+	}
+	.feature.wide {
+		grid-template-columns: minmax(0, 3fr) minmax(0, 8fr);
+	}
+	.feature.flip {
+		grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+	}
+	.feature.flip .copy {
+		order: 2;
+	}
+	.copy {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+	.text {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		color: var(--ink-body);
+		text-wrap: pretty;
+	}
+	.text :global(ul) {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		padding: 0;
+		list-style: none;
+	}
+	.text :global(li) {
+		position: relative;
+		padding-left: 20px;
+	}
+	.text :global(li)::before {
+		content: "";
+		position: absolute;
+		left: 2px;
+		top: 0.62em;
+		width: 7px;
+		height: 7px;
+		border-radius: 1px;
+		background: var(--gold-mark);
+	}
+	.text :global(code) {
+		padding: 0.12em 0.4em;
+		border-radius: var(--radius-chip);
+		background: var(--card);
+		color: var(--ink);
+		font-size: 0.82em;
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+	.demo {
+		min-width: 0;
+	}
+	@media (max-width: 960px) {
+		.feature,
+		.feature.wide,
+		.feature.flip {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.feature.flip .copy {
+			order: 0;
+		}
+	}
+</style>

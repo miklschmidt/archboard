@@ -1,0 +1,68 @@
+---
+import "../styles/global.css";
+import displayFont from "../../../packages/renderer/assets/fonts/BigShouldersDisplay-wght.ttf?url";
+import bodyFont from "../../../packages/renderer/assets/fonts/Onest-wght-v1.000.ttf?url";
+import socialCard from "../../../docs/assets/archboard-social-card.jpg?url";
+
+interface Props {
+	title: string;
+	description: string;
+}
+
+const { title, description } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const image = new URL(socialCard, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="color-scheme" content="dark" />
+		<meta name="theme-color" content="#090806" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+		<link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+		<link rel="preload" href={displayFont} as="font" type="font/ttf" crossorigin />
+		<link rel="preload" href={bodyFont} as="font" type="font/ttf" crossorigin />
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:image" content={image} />
+		<meta name="twitter:card" content="summary_large_image" />
+		<script is:inline>
+			document.documentElement.classList.add("js");
+		</script>
+	</head>
+	<body>
+		<a class="skip" href="#main">Skip to content</a>
+		<slot />
+		<script>
+			import { observeReveals } from "../scripts/reveal";
+			observeReveals();
+		</script>
+	</body>
+</html>
+
+<style>
+	.skip {
+		position: fixed;
+		left: 16px;
+		top: -60px;
+		z-index: 100;
+		padding: 10px 14px;
+		border-radius: var(--radius-control);
+		background: var(--gold);
+		color: var(--gold-ink);
+		font-weight: 600;
+		text-decoration: none;
+		transition: top 160ms var(--ease-out);
+	}
+	.skip:focus-visible {
+		top: 16px;
+	}
+</style>

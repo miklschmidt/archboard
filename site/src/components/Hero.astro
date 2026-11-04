@@ -1,0 +1,150 @@
+---
+import Icon from "./Icon.astro";
+import DockLines from "./window/DockLines.astro";
+import ProductWindow from "./window/ProductWindow.astro";
+import { links } from "../lib/links";
+---
+
+<section class="hero" id="top" aria-labelledby="hero-title">
+	<canvas class="field" data-field aria-hidden="true"></canvas>
+	<div class="container hero-copy">
+		<h1 id="hero-title" class="display h1">Nobody places<br />a box.</h1>
+		<div class="hero-row">
+			<p class="lead">
+				Your coding agent reads the code and tells Archboard what the system is. Archboard draws
+				every line, draws each proposed change against what is built, and keeps the reason for
+				every change.
+			</p>
+			<div class="hero-actions">
+				<a class="btn btn-gold" href="#quick-start">Get started <Icon name="arrowRight" /></a>
+				<a class="btn btn-quiet" href={links.repository}><Icon name="github" /> View on GitHub</a>
+			</div>
+		</div>
+		<ul class="facts" aria-label="What it runs with">
+			<li>For Claude Code and Codex</li>
+			<li>Linux and macOS</li>
+			<li>Runs locally from a clone</li>
+		</ul>
+	</div>
+	<div class="container wide hero-window">
+		<ProductWindow />
+		<div class="dock-mirror" aria-hidden="true">
+			<DockLines />
+		</div>
+		<p class="caption window-caption">
+			A mock of the Archboard window around a real drawing of the example shop. The renderer drew
+			every card and line. The commands are the real CLI.
+		</p>
+	</div>
+</section>
+
+<style>
+	.hero {
+		position: relative;
+		padding-top: clamp(56px, 9vw, 120px);
+		isolation: isolate;
+	}
+	.field {
+		position: absolute;
+		inset: -64px 0 auto 0;
+		height: clamp(640px, calc(100svh + 64px), 1120px);
+		width: 100%;
+		z-index: -1;
+		opacity: 0;
+		transition: opacity 1600ms var(--ease-out);
+		mask-image: linear-gradient(180deg, black 60%, transparent 100%);
+	}
+	.field:global(.is-live) {
+		opacity: 1;
+	}
+	.hero::before {
+		content: "";
+		position: absolute;
+		inset: -64px 0 0;
+		z-index: -2;
+		background: radial-gradient(60% 45% at 68% 22%, oklch(0.24 0.03 82 / 0.5), transparent 70%);
+	}
+	.hero-copy {
+		display: flex;
+		flex-direction: column;
+		gap: clamp(24px, 3vw, 36px);
+	}
+	.h1 {
+		font-size: clamp(3.4rem, 10.5vw, 6rem);
+		font-weight: 800;
+		max-width: 12ch;
+	}
+	.hero-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 24px 48px;
+	}
+	.hero-row .lead {
+		max-width: 34em;
+	}
+	.hero-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12px;
+	}
+	.facts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px 28px;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		font-size: 0.9375rem;
+		color: var(--ink-muted);
+	}
+	.facts li {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.facts li::before {
+		content: "";
+		width: 6px;
+		height: 6px;
+		border-radius: 1px;
+		background: var(--gold-mark);
+		box-shadow: 0 0 10px oklch(0.86 0.125 86 / 0.6);
+	}
+	.hero-window {
+		margin-top: clamp(48px, 7vw, 96px);
+	}
+	.dock-mirror {
+		display: none;
+	}
+	.window-caption {
+		margin-top: 20px;
+		max-width: 52em;
+	}
+	@media (max-width: 760px) {
+		.dock-mirror {
+			display: block;
+			margin-top: 16px;
+			padding: 16px;
+			border-radius: var(--radius-panel);
+			background: var(--plane);
+			box-shadow:
+				var(--shadow-float),
+				inset 0 0 0 1px var(--rule);
+		}
+		.dock-mirror :global(.dock-lines) {
+			font-size: 14px;
+		}
+		.dock-mirror :global(.line.is-command),
+		.dock-mirror :global(.line.is-reply) {
+			font-size: 12.5px;
+		}
+	}
+</style>
+
+<script>
+	import { lightField } from "../scripts/field";
+	const canvas = document.querySelector<HTMLCanvasElement>("[data-field]");
+	if (canvas) lightField(canvas, { pitch: 0.5, lift: 1.8, traffic: 1 });
+</script>

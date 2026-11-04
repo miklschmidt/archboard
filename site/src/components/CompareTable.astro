@@ -1,0 +1,180 @@
+---
+// The README's comparison with the usual diagram tools, out of the box, as of September 2026,
+// with IcePanel and the three analysis rows as of November 2026.
+import Icon from "./Icon.astro";
+
+const tools = ["Archboard", "Mermaid · D2", "Excalidraw · draw.io", "Structurizr · LikeC4", "IcePanel"];
+type Cell = string | { yes: string };
+const rows: { label: string; cells: Cell[] }[] = [
+	{
+		label: "Who places the boxes",
+		cells: [{ yes: "the renderer, always" }, "a layout engine", "you, or an agent placing coordinates", "a layout engine, or you", "you or an agent, or the auto-layout viewer"],
+	},
+	{
+		label: "Written by",
+		cells: [{ yes: "your coding agent, through a CLI" }, "you, in text", "you, by hand", "you, in a DSL", "you, or an agent through MCP or the API"],
+	},
+	{
+		label: "Proposals drawn against today",
+		cells: [{ yes: "module by module" }, "no", "no", "no", { yes: "drafts, but not through MCP" }],
+	},
+	{
+		label: "History with the reason for each change",
+		cells: [{ yes: "" }, "git log", "git log", "git log, ADRs in Structurizr", "versions and decision records"],
+	},
+	{
+		label: "Narrated walkthroughs and video",
+		cells: [{ yes: "" }, "no", "no", "step-through views, no voice", "step-through flows, no voice"],
+	},
+	{
+		label: "Sequence views over the same modules",
+		cells: [{ yes: "" }, "a separate diagram", "no", { yes: "dynamic views" }, "flows, or sequence diagrams by export"],
+	},
+	{
+		label: "Modules bound to code",
+		cells: [{ yes: "opens the file" }, "links", "links", "links", "links to repositories and files"],
+	},
+	{
+		label: "Dependencies the map leaves out",
+		cells: [{ yes: "the code check" }, "no", "no", "no", "no, it flags moved or deleted links"],
+	},
+	{
+		label: "Git history read by module",
+		cells: [{ yes: "what changes together" }, "no", "no", "no", "no"],
+	},
+	{
+		label: "Design smells from the model and history",
+		cells: [{ yes: "Measures" }, "no", "no", "no", "no"],
+	},
+	{
+		label: "Several agents writing safely",
+		cells: [{ yes: "claims and version checks" }, "no", "no", "no", "MCP edits the live model, no draft tools"],
+	},
+];
+---
+
+<div class="compare table" data-reveal>
+	<div class="scroll">
+		<table>
+			<caption class="sr-only">Archboard next to the usual diagram tools, out of the box</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="row-head"><span class="sr-only">Capability</span></th>
+					{tools.map((tool, index) => <th scope="col" class:list={{ ours: index === 0 }}>{tool}</th>)}
+				</tr>
+			</thead>
+			<tbody>
+				{
+					rows.map((row) => (
+						<tr>
+							<th scope="row" class="row-head">{row.label}</th>
+							{row.cells.map((cell, index) => (
+								<td class:list={{ ours: index === 0, no: cell === "no" }}>
+									{typeof cell === "string" ? (
+										cell
+									) : (
+										<span class="yes">
+											<Icon name="check" size={16} />
+											{cell.yes && <span>{cell.yes}</span>}
+											{!cell.yes && <span class="sr-only">yes</span>}
+										</span>
+									)}
+								</td>
+							))}
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</div>
+	<p class="caption foot">
+		What each tool does out of the box, as of September 2026. IcePanel and the three analysis rows as
+		of November 2026. IcePanel also does things Archboard does not: a team edits and comments on one
+		shared model in the browser, and its viewer lays the model out automatically.
+	</p>
+</div>
+
+<style>
+	.compare {
+		padding: 6px;
+		background: var(--chrome);
+	}
+	.scroll {
+		overflow-x: auto;
+		border-radius: 6px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	table {
+		width: 100%;
+		min-width: 960px;
+		border-collapse: separate;
+		border-spacing: 0;
+		font-size: 0.875rem;
+		line-height: 1.45;
+	}
+	th,
+	td {
+		padding: 14px 16px;
+		text-align: left;
+		vertical-align: top;
+	}
+	thead th {
+		position: sticky;
+		top: 0;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--ink-muted);
+		background: var(--well);
+		box-shadow: inset 0 -1px 0 var(--rule);
+		white-space: nowrap;
+	}
+	thead th.ours {
+		color: var(--ink);
+	}
+	tbody tr + tr > * {
+		box-shadow: inset 0 1px 0 oklch(1 0.01 85 / 0.05);
+	}
+	.row-head {
+		position: sticky;
+		left: 0;
+		z-index: 1;
+		width: 220px;
+		min-width: 200px;
+		background: var(--well);
+		font-weight: 500;
+		color: var(--ink);
+	}
+	td {
+		color: var(--ink-body);
+	}
+	td.no {
+		color: var(--ink-faint);
+	}
+	.ours {
+		background: color-mix(in oklch, var(--gold-mark) 6%, var(--plane));
+	}
+	thead .ours {
+		background: color-mix(in oklch, var(--gold-mark) 9%, var(--plane));
+		box-shadow:
+			inset 0 -1px 0 var(--rule),
+			inset 0 2px 0 var(--gold-mark);
+	}
+	td.ours {
+		color: var(--ink);
+	}
+	.yes {
+		display: inline-flex;
+		align-items: flex-start;
+		gap: 8px;
+	}
+	.yes :global(svg) {
+		flex: none;
+		margin-top: 1px;
+		color: var(--gold-mark);
+	}
+	.foot {
+		padding: 14px 10px 6px;
+		max-width: 60em;
+	}
+</style>

@@ -1,0 +1,85 @@
+---
+// Archboard's own architecture, from this repository's vault, as the README embeds it. The
+// drawing is large, so the reader drags it, or scrolls it with the keyboard.
+import { drawings } from "../../lib/diagrams";
+
+const own = drawings.architecture;
+---
+
+<figure class="own table">
+	<div class="viewport" data-pan tabindex="0" aria-label="Archboard's own architecture. Drag or use the arrow keys to look around.">
+		<img
+			src={own.url}
+			width={own.width}
+			height={own.height}
+			alt="Archboard's programs, the browser, Agent CLI and server, around the architecture inputs, with each workspace package that holds parts as a door. External systems include Codex, Claude CLI, headless Chromium, ffmpeg and the Git remotes."
+			loading="lazy"
+			decoding="async"
+			draggable="false"
+		/>
+	</div>
+	<figcaption class="caption">
+		Archboard's own model, from <code>.archboard/vault</code> in its repository, drawn with
+		<code>archboard model render</code>. Drag to look around.
+	</figcaption>
+</figure>
+
+<style>
+	.own {
+		margin: 0;
+		padding: 6px;
+		background: var(--chrome);
+	}
+	.viewport {
+		height: clamp(360px, 58vw, 680px);
+		overflow: auto;
+		border-radius: 6px;
+		background: oklch(0.2 0.006 75);
+		box-shadow: inset 0 0 0 1px var(--rule);
+		cursor: grab;
+		scrollbar-width: thin;
+		overscroll-behavior: contain;
+	}
+	.viewport:active {
+		cursor: grabbing;
+	}
+	.viewport img {
+		width: max(1800px, 160%);
+		max-width: none;
+		height: auto;
+		user-select: none;
+	}
+	.caption {
+		padding: 12px 10px 6px;
+	}
+	.caption code {
+		font-size: 0.8em;
+		color: var(--ink);
+	}
+</style>
+
+<script>
+	for (const viewport of document.querySelectorAll<HTMLElement>("[data-pan]")) {
+		let start: { x: number; y: number; left: number; top: number } | null = null;
+		const center = () => {
+			viewport.scrollLeft = (viewport.scrollWidth - viewport.clientWidth) * 0.42;
+			viewport.scrollTop = (viewport.scrollHeight - viewport.clientHeight) * 0.3;
+		};
+		const image = viewport.querySelector("img");
+		if (image?.complete) center();
+		else image?.addEventListener("load", center, { once: true });
+		viewport.addEventListener("pointerdown", (event) => {
+			if (event.pointerType !== "mouse") return;
+			start = { x: event.clientX, y: event.clientY, left: viewport.scrollLeft, top: viewport.scrollTop };
+			viewport.setPointerCapture(event.pointerId);
+		});
+		viewport.addEventListener("pointermove", (event) => {
+			if (!start) return;
+			viewport.scrollLeft = start.left - (event.clientX - start.x);
+			viewport.scrollTop = start.top - (event.clientY - start.y);
+		});
+		const end = () => (start = null);
+		viewport.addEventListener("pointerup", end);
+		viewport.addEventListener("pointercancel", end);
+	}
+</script>

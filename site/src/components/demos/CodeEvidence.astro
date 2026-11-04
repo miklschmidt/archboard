@@ -1,0 +1,193 @@
+---
+// A warning from the code check as the Right panel steps through it, beside the source line
+// that supports it. The checkout is a small example, like the README's.
+import Icon from "../Icon.astro";
+
+const source = `<span class="ln">21</span>  <span class="k">const</span> order = <span class="k">await</span> validateOrder(basket);
+<span class="ln">22</span>  <span class="k">const</span> payment = <span class="k">await</span> chargeCard(order);
+<span class="hl"><span class="ln">23</span>  <span class="k">await</span> saveOrder({ ...order, payment });</span>
+<span class="ln">24</span>  <span class="k">return</span> confirm(order.id);`;
+---
+
+<div class="evidence table">
+	<div class="panel">
+		<div class="panel-head">
+			<span class="count"><Icon name="alert" size={15} /> Warnings</span>
+			<span class="stepper" aria-hidden="true">
+				<span class="step"><Icon name="chevronLeft" size={14} /></span>
+				<span class="mono">1 of 3</span>
+				<span class="step"><Icon name="chevronRight" size={14} /></span>
+			</span>
+		</div>
+		<div class="finding">
+			<span class="chip missing">Missing relationship</span>
+			<p class="route">
+				<span>Place order</span>
+				<Icon name="arrowRight" size={14} />
+				<span>Save order</span>
+			</p>
+			<p class="explain">
+				Place order calls Save order, and the architecture has no relationship between them.
+			</p>
+			<p class="strength"><Icon name="check" size={14} /> Resolved by analysis, not matched by name</p>
+		</div>
+	</div>
+	<figure class="source">
+		<figcaption class="file">
+			<Icon name="fileCode" size={14} />
+			<span class="mono">src/orders/place-order.ts</span>
+		</figcaption>
+		<pre><code set:html={source} /></pre>
+	</figure>
+</div>
+
+<style>
+	.evidence {
+		display: grid;
+		grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+		gap: 6px;
+		padding: 6px;
+		background: var(--chrome);
+	}
+	.panel {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		padding: 16px;
+		border-radius: 6px;
+		background: var(--plane);
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+	.panel-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+	.count {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.count :global(svg) {
+		color: var(--changed);
+	}
+	.stepper {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		color: var(--ink-muted);
+	}
+	.stepper .mono {
+		font-size: 0.75rem;
+	}
+	.step {
+		display: inline-grid;
+		place-items: center;
+		width: 24px;
+		height: 24px;
+		border-radius: 3px;
+		background: var(--raised);
+		box-shadow: var(--shadow-raised);
+		color: var(--ink);
+	}
+	.finding {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		padding: 14px;
+		border-radius: 4px;
+		background: var(--card);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px color-mix(in oklch, var(--changed) 45%, transparent);
+	}
+	.chip.missing {
+		align-self: flex-start;
+		color: oklch(0.2 0.03 50);
+		background: var(--changed);
+	}
+	.route {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.route :global(svg) {
+		color: var(--ink-muted);
+	}
+	.explain {
+		font-size: 0.875rem;
+		line-height: 1.5;
+		color: var(--ink-body);
+	}
+	.strength {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 0.8125rem;
+		color: var(--ink-muted);
+	}
+	.strength :global(svg) {
+		color: var(--added);
+	}
+	.source {
+		display: flex;
+		flex-direction: column;
+		margin: 0;
+		border-radius: 6px;
+		background: oklch(0.155 0.005 75);
+		box-shadow: inset 0 0 0 1px var(--rule);
+		overflow: hidden;
+	}
+	.file {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		height: 38px;
+		padding: 0 14px;
+		color: var(--ink-muted);
+		box-shadow: inset 0 -1px 0 var(--rule);
+	}
+	.file .mono {
+		font-size: 0.75rem;
+	}
+	pre {
+		margin: 0;
+		padding: 14px 0;
+		font-size: 0.78rem;
+		line-height: 1.85;
+		color: var(--ink-body);
+		overflow-x: auto;
+	}
+	pre code {
+		display: block;
+		font-size: inherit;
+	}
+	.ln {
+		display: inline-block;
+		width: 3.2em;
+		padding-right: 1em;
+		text-align: right;
+		color: var(--ink-faint);
+		user-select: none;
+	}
+	.k {
+		color: var(--violet);
+	}
+	.hl {
+		display: inline-block;
+		width: 100%;
+		background: color-mix(in oklch, var(--changed) 16%, transparent);
+		box-shadow: inset 2px 0 0 var(--changed);
+		color: var(--ink);
+	}
+	@media (max-width: 640px) {
+		.evidence {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>

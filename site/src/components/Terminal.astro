@@ -1,0 +1,104 @@
+---
+// A terminal that shows commands and what they answered. Commands are copyable text.
+export interface TerminalLine {
+	kind: "command" | "out" | "warn" | "ok" | "dim";
+	text: string;
+}
+
+interface Props {
+	lines: TerminalLine[];
+	title?: string;
+	class?: string;
+}
+
+const { lines, title = "Terminal", class: className } = Astro.props;
+---
+
+<div class:list={["terminal", className]}>
+	<div class="bar" aria-hidden="true">
+		<span class="lights"><i></i><i></i><i></i></span>
+		<span class="title">{title}</span>
+	</div>
+	<pre class="body"><code>{
+		lines.map((line) => (
+			<span class:list={["t", `t-${line.kind}`]}>
+				{line.kind === "command" && <span class="ps" aria-hidden="true">$</span>}
+				<span class="tx">{line.text}</span>
+			</span>
+		))
+	}</code></pre>
+</div>
+
+<style>
+	.terminal {
+		border-radius: var(--radius-panel);
+		background: oklch(0.155 0.005 75);
+		box-shadow:
+			var(--shadow-float),
+			inset 0 0 0 1px var(--rule);
+		overflow: hidden;
+	}
+	.bar {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		height: 34px;
+		padding: 0 12px;
+		background: var(--chrome);
+		box-shadow: inset 0 -1px 0 var(--rule);
+	}
+	.lights {
+		display: inline-flex;
+		gap: 6px;
+	}
+	.lights i {
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		background: var(--slab);
+	}
+	.title {
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: var(--ink-muted);
+	}
+	.body {
+		margin: 0;
+		padding: 16px 18px 18px;
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		line-height: 1.7;
+		color: var(--ink-body);
+		white-space: normal;
+		overflow-x: auto;
+	}
+	/* Each line is a block, so the template's whitespace collapses and copied text keeps its lines. */
+	.t {
+		display: block;
+	}
+	.tx {
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+	.body code {
+		font-size: inherit;
+	}
+	.t-command {
+		color: var(--ink);
+	}
+	.ps {
+		color: var(--gold-mark);
+	}
+	.t-out {
+		color: var(--ink-muted);
+	}
+	.t-dim {
+		color: var(--ink-faint);
+	}
+	.t-warn {
+		color: var(--changed);
+	}
+	.t-ok {
+		color: var(--added);
+	}
+</style>

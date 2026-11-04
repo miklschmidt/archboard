@@ -1,0 +1,203 @@
+---
+// Stock API's interface in two states of the example shop, as `archboard model compare
+// --state "Queued fulfilment" --against current` reports it: the proposal hides Release route,
+// gains Fulfilment worker as a caller and loses Place order and Timeout guard.
+import Terminal from "../Terminal.astro";
+
+const states = [
+	{
+		name: "Synchronous checkout",
+		tag: "Current",
+		measures: [3, 0, 3],
+		entries: ["Availability route", "Reserve route", "Release route"],
+		hidden: [] as string[],
+		callers: ["Storefront", "Place order", "Timeout guard"],
+	},
+	{
+		name: "Queued fulfilment",
+		tag: "Proposal",
+		measures: [2, 1, 2],
+		entries: ["Availability route", "Reserve route"],
+		hidden: ["Release route"],
+		callers: ["Storefront", "Fulfilment worker"],
+	},
+];
+const labels = ["Entries", "Hidden", "Callers"];
+---
+
+<div class="compare">
+	<div class="states">
+		{
+			states.map((state, index) => (
+				<div class:list={["state", { proposal: index === 1 }]}>
+					<div class="state-head">
+						<p class="module">Stock API</p>
+						<span class="chip tag">{state.tag}</span>
+					</div>
+					<p class="state-name">{state.name}</p>
+					<dl class="counts">
+						{labels.map((label, at) => (
+							<div>
+								<dt>{label}</dt>
+								<dd>{state.measures[at]}</dd>
+							</div>
+						))}
+					</dl>
+					<ul class="parts">
+						{state.entries.map((name) => (
+							<li class="entry">{name}</li>
+						))}
+						{state.hidden.map((name) => (
+							<li class="hidden">{name}</li>
+						))}
+					</ul>
+					<p class="callers">
+						<span class="muted">Callers</span> {state.callers.join(", ")}
+					</p>
+				</div>
+			))
+		}
+	</div>
+	<Terminal
+		title="archboard model compare"
+		lines={[
+			{ kind: "command", text: 'archboard model compare --state "Queued fulfilment" --against current' },
+			{ kind: "out", text: '"Queued fulfilment" read against "Synchronous checkout" (explicit).' },
+			{
+				kind: "warn",
+				text: 'Interface of "Stock API": now hidden Release route; callers gained Fulfilment worker; callers lost Place order, Timeout guard.',
+			},
+			{ kind: "out", text: "Subjects: 23 added, 14 removed, 10 changed, 47 unchanged." },
+		]}
+	/>
+</div>
+
+<style>
+	.compare {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+	.states {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px;
+	}
+	.state {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		padding: 18px;
+		border-radius: var(--radius-panel);
+		background: var(--plane);
+		box-shadow:
+			var(--shadow-float),
+			inset 0 0 0 1px var(--rule);
+	}
+	.state.proposal {
+		box-shadow:
+			var(--shadow-float),
+			inset 0 0 0 1px color-mix(in oklch, var(--changed) 40%, transparent);
+	}
+	.state-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+	}
+	.module {
+		font-family: var(--font-display);
+		font-size: 1.375rem;
+		font-weight: 650;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--ink);
+		line-height: 1;
+	}
+	.tag {
+		background: var(--card);
+		color: var(--ink-muted);
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+	.proposal .tag {
+		color: oklch(0.2 0.03 50);
+		background: var(--changed);
+		box-shadow: none;
+	}
+	.state-name {
+		font-size: 0.875rem;
+		color: var(--ink-muted);
+		margin-top: -6px;
+	}
+	.counts {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 4px;
+		margin: 0;
+	}
+	.counts div {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: 8px 10px;
+		border-radius: 4px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	.counts dt {
+		font-size: 0.75rem;
+		color: var(--ink-muted);
+	}
+	.counts dd {
+		margin: 0;
+		font-family: var(--font-mono);
+		font-size: 1.125rem;
+		color: var(--ink);
+	}
+	.parts {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		font-size: 0.875rem;
+	}
+	.parts li {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 6px 10px;
+		border-radius: 3px;
+		background: var(--card);
+		color: var(--ink);
+	}
+	.parts li::before {
+		content: "";
+		width: 8px;
+		height: 8px;
+		border-radius: 2px;
+		background: var(--violet);
+	}
+	.parts li.hidden {
+		background: transparent;
+		color: var(--ink-muted);
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+	.parts li.hidden::before {
+		background: transparent;
+		box-shadow: inset 0 0 0 1.5px var(--ink-faint);
+	}
+	.proposal .parts li.hidden {
+		box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--changed) 50%, transparent);
+	}
+	.callers {
+		font-size: 0.8125rem;
+		color: var(--ink-body);
+	}
+	@media (max-width: 560px) {
+		.states {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>

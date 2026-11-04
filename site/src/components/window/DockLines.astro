@@ -1,0 +1,99 @@
+---
+// The agent's conversation and commands, as the hero types them.
+import { heroScript } from "../../lib/hero-script";
+
+interface Props {
+	class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<ol class:list={["dock-lines", className]} data-dock>
+	{
+		heroScript.map((line) => (
+			<li
+				class:list={["line", `is-${line.kind}`]}
+				data-line
+				data-at={line.at}
+				data-cue={line.cue}
+				data-text={line.text}
+			>
+				{line.kind === "you" && <span class="who">You</span>}
+				{line.kind === "command" && <span class="prompt">$</span>}
+				<span class="text">{line.text}</span>
+			</li>
+		))
+	}
+</ol>
+
+<style>
+	.dock-lines {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 7px;
+		font-size: 12px;
+		line-height: 1.5;
+	}
+	.line {
+		display: flex;
+		gap: 7px;
+		min-height: 1.5em;
+	}
+	.line.is-you {
+		flex-direction: column;
+		gap: 2px;
+		padding: 8px 10px;
+		margin-bottom: 4px;
+		border-radius: 4px;
+		background: var(--card);
+		box-shadow: var(--shadow-raised);
+		color: var(--ink);
+	}
+	.who {
+		font-size: 10.5px;
+		font-weight: 600;
+		color: var(--ink-muted);
+	}
+	.line.is-command,
+	.line.is-reply {
+		font-family: var(--font-mono);
+		font-size: 10.5px;
+		line-height: 1.55;
+	}
+	.line.is-command {
+		color: var(--ink);
+	}
+	.prompt {
+		color: var(--gold-mark);
+		flex: none;
+	}
+	.line.is-reply {
+		padding-left: 14px;
+		color: var(--ink-muted);
+	}
+	.text {
+		word-break: break-word;
+	}
+	:global(.js) .line.is-pending {
+		display: none;
+	}
+	.line.is-typing .text::after {
+		content: "";
+		display: inline-block;
+		width: 0.55em;
+		height: 1.05em;
+		margin-left: 1px;
+		vertical-align: -0.15em;
+		background: var(--gold-mark);
+		animation: caret 900ms steps(1) infinite;
+	}
+	@keyframes caret {
+		50% {
+			opacity: 0;
+		}
+	}
+</style>

@@ -1,0 +1,226 @@
+---
+// The Measures tab, rebuilt for the page over Archboard's own numbers. Each column header sorts
+// the rows, as in the shell. No score: every count describes the model or its commits.
+import { measureColumns, measureRows } from "../../lib/measures";
+
+const sortKey = "unjoined";
+const sorted = [...measureRows].sort((a, b) => (b[sortKey] ?? -1) - (a[sortKey] ?? -1));
+const most = Object.fromEntries(
+	measureColumns.map((column) => [column.key, Math.max(1, ...measureRows.map((row) => row[column.key] ?? 0))]),
+);
+---
+
+<div class="measures table" data-measures>
+	<div class="head">
+		<p class="title">Measures</p>
+		<p class="note">Archboard's own model, a year of its Git history</p>
+	</div>
+	<div class="scroll">
+		<table>
+			<caption class="sr-only">Measures of Archboard's own modules. Select a column header to sort.</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="name-col">Module</th>
+					{
+						measureColumns.map((column) => (
+							<th scope="col" aria-sort={column.key === sortKey ? "descending" : "none"}>
+								<button type="button" data-sort={column.key} title={column.hint}>
+									{column.label}
+									<span class="arrow" aria-hidden="true" />
+								</button>
+							</th>
+						))
+					}
+				</tr>
+			</thead>
+			<tbody>
+				{
+					sorted.map((row) => (
+						<tr data-row={JSON.stringify(row)}>
+							<th scope="row" class="name-col">{row.name}</th>
+							{measureColumns.map((column) => (
+								<td
+									data-key={column.key}
+									class:list={{ "is-sorted": column.key === sortKey }}
+									style={`--r: ${((row[column.key] ?? 0) / (most[column.key] ?? 1)).toFixed(3)}`}
+								>
+									{row[column.key] ?? "–"}
+								</td>
+							))}
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<style>
+	.measures {
+		padding: 6px;
+		background: var(--chrome);
+	}
+	.head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 16px;
+		padding: 12px 14px 14px;
+	}
+	.title {
+		font-weight: 600;
+		color: var(--ink);
+		font-size: 0.9375rem;
+	}
+	.note {
+		font-size: 0.8125rem;
+		color: var(--ink-muted);
+	}
+	.scroll {
+		overflow-x: auto;
+		border-radius: 6px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	table {
+		width: 100%;
+		min-width: 680px;
+		border-collapse: separate;
+		border-spacing: 0;
+		font-size: 0.8125rem;
+	}
+	th,
+	td {
+		height: 38px;
+		padding: 0 10px;
+		text-align: right;
+		white-space: nowrap;
+	}
+	thead th {
+		height: 42px;
+		font-weight: 500;
+		color: var(--ink-muted);
+		box-shadow: inset 0 -1px 0 var(--rule);
+	}
+	thead button {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		padding: 4px 6px;
+		margin-right: -6px;
+		border: 0;
+		border-radius: 3px;
+		background: none;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: inherit;
+		cursor: pointer;
+		transition:
+			color 160ms var(--ease-out),
+			background-color 160ms var(--ease-out);
+	}
+	thead button:hover {
+		color: var(--ink);
+		background: oklch(1 0.01 85 / 0.05);
+	}
+	th[aria-sort="descending"] button,
+	th[aria-sort="ascending"] button {
+		color: var(--ink);
+		box-shadow: inset 0 -2px 0 var(--gold-mark);
+		border-radius: 3px 3px 0 0;
+	}
+	.arrow {
+		width: 0;
+		height: 0;
+		border-inline: 4px solid transparent;
+		border-top: 5px solid currentColor;
+		opacity: 0;
+	}
+	th[aria-sort="descending"] .arrow {
+		opacity: 1;
+	}
+	th[aria-sort="ascending"] .arrow {
+		opacity: 1;
+		rotate: 180deg;
+	}
+	.name-col {
+		text-align: left;
+		padding-left: 14px;
+		width: 34%;
+	}
+	tbody th {
+		font-weight: 500;
+		color: var(--ink);
+	}
+	tbody tr {
+		transition: background-color 160ms var(--ease-out);
+	}
+	tbody tr:hover {
+		background: oklch(1 0.01 85 / 0.035);
+	}
+	tbody tr + tr > * {
+		box-shadow: inset 0 1px 0 oklch(1 0.01 85 / 0.05);
+	}
+	td {
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
+		color: var(--ink-body);
+	}
+	td.is-sorted {
+		color: var(--ink);
+	}
+	td.is-sorted {
+		background: linear-gradient(
+			to left,
+			color-mix(in oklch, var(--gold-mark) 16%, transparent) calc(var(--r) * 100%),
+			transparent 0
+		);
+		box-shadow: inset -2px 0 0 color-mix(in oklch, var(--gold-mark) calc(var(--r) * 90%), transparent);
+	}
+</style>
+
+<script>
+	import type { MeasureKey, MeasureRow } from "../../lib/measures";
+
+	for (const root of document.querySelectorAll<HTMLElement>("[data-measures]")) {
+		const body = root.querySelector("tbody");
+		const buttons = [...root.querySelectorAll<HTMLButtonElement>("[data-sort]")];
+		if (!body) continue;
+		let current: MeasureKey = "unjoined";
+		let descending = true;
+		const sort = (key: MeasureKey) => {
+			descending = key === current ? !descending : true;
+			current = key;
+			const rows = [...body.querySelectorAll<HTMLTableRowElement>("tr")];
+			const value = (row: HTMLTableRowElement) => {
+				const data = JSON.parse(row.dataset["row"] ?? "{}") as MeasureRow;
+				return data[key] ?? (descending ? -1 : Number.POSITIVE_INFINITY);
+			};
+			rows.sort((a, b) => (descending ? value(b) - value(a) : value(a) - value(b)));
+			const before = new Map(rows.map((row) => [row, row.getBoundingClientRect().top]));
+			body.append(...rows);
+			for (const row of rows) {
+				for (const cell of row.querySelectorAll<HTMLElement>("td")) {
+					cell.classList.toggle("is-sorted", cell.dataset["key"] === key);
+				}
+				const moved = (before.get(row) ?? 0) - row.getBoundingClientRect().top;
+				if (moved && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+					row.animate([{ transform: `translateY(${moved}px)` }, { transform: "none" }], {
+						duration: 420,
+						easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+					});
+				}
+			}
+			for (const button of buttons) {
+				const th = button.closest("th");
+				th?.setAttribute(
+					"aria-sort",
+					button.dataset["sort"] === key ? (descending ? "descending" : "ascending") : "none",
+				);
+			}
+		};
+		for (const button of buttons) {
+			button.addEventListener("click", () => sort(button.dataset["sort"] as MeasureKey));
+		}
+	}
+</script>

@@ -1,0 +1,22 @@
+{
+	"name": "archboard-site",
+	"version": "0.0.0",
+	"private": true,
+	"description": "The marketing site of Archboard, published to GitHub Pages.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"scripts": {
+		"dev": "astro dev",
+		"build": "astro check && astro build",
+		"preview": "astro preview",
+		"render": "scripts/render-diagrams.sh"
+	},
+	"dependencies": {
+		"astro": "7.4.5",
+		"remixicon": "4.9.1"
+	},
+	"devDependencies": {
+		"@astrojs/check": "0.9.12",
+		"typescript": "6.0.3"
+	}
+}
