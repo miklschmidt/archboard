@@ -2,8 +2,8 @@
 //! afresh, byte for byte, while the camera moves (ADR 0074). The picture is the
 //! dogfood vault's "Codex session", the fixture of `archboard-scene`.
 
-use super::Keeper;
-use crate::canvas::{Canvas, Count};
+use super::{Keeper, MOST_KEPT};
+use crate::canvas::{Canvas, Count, Ink, PartKey};
 use crate::cpu::CpuCanvas;
 use crate::palette::Theme;
 use crate::presentation::Camera;
@@ -11,6 +11,8 @@ use crate::stage::Stage;
 use archboard_scene::paint::paint;
 use archboard_scene::request::PaintRequest;
 use archboard_scene::scene::Painting;
+use kurbo::{Affine, BezPath, PathEl, Point};
+use peniko::Color;
 
 /// The paint request of "Codex session".
 const REQUEST: &str =
@@ -103,4 +105,47 @@ fn a_kept_part_draws_its_strokes_as_their_outlines() {
     assert!(kept.strokes < afresh.strokes, "{kept:?} {afresh:?}");
     assert_eq!(kept.fills + kept.strokes, afresh.fills + afresh.strokes);
     assert_eq!(kept.layers, afresh.layers);
+}
+
+/// Enough path storage that two separate copies exceed the keeper's budget.
+fn large_path() -> BezPath {
+    BezPath::from_vec(vec![PathEl::MoveTo(Point::ORIGIN); MOST_KEPT / 2 + 1])
+}
+
+/// Record one filled path without rasterizing its geometry.
+fn keep_fill(keeper: &mut Keeper<Count>, key: PartKey, path: &BezPath) {
+    assert!(keeper.keep());
+    keeper.fill(path, &Ink::Solid(Color::BLACK), false);
+    keeper.kept(key, Affine::IDENTITY);
+}
+
+#[test]
+fn evicted_children_still_count_while_their_parent_holds_them() {
+    let mut keeper = Keeper::new(Count::default(), (10.0, 10.0));
+    let path = large_path();
+    assert!(keeper.keep());
+    for key in [PartKey::Text(1), PartKey::Text(2)] {
+        keep_fill(&mut keeper, key, &path);
+    }
+    keeper.kept(PartKey::Text(3), Affine::IDENTITY);
+    // A root must not keep an over-budget graph alive after the child index
+    // was cleared. It still draws once, and later parts can be kept normally.
+    assert!(!keeper.again(PartKey::Text(3), Affine::IDENTITY));
+    assert_eq!(keeper.canvas().fills, 2);
+    keep_fill(&mut keeper, PartKey::Text(4), &BezPath::new());
+    assert!(keeper.again(PartKey::Text(4), Affine::IDENTITY));
+}
+
+#[test]
+fn shared_child_paths_count_once() {
+    let mut keeper = Keeper::new(Count::default(), (10.0, 10.0));
+    let path = large_path();
+    keep_fill(&mut keeper, PartKey::Text(1), &path);
+    assert!(keeper.keep());
+    for _ in 0..2 {
+        assert!(keeper.again(PartKey::Text(1), Affine::IDENTITY));
+    }
+    keeper.kept(PartKey::Text(2), Affine::IDENTITY);
+    assert!(keeper.again(PartKey::Text(1), Affine::IDENTITY));
+    assert!(keeper.again(PartKey::Text(2), Affine::IDENTITY));
 }

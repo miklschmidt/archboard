@@ -5,6 +5,7 @@
 //! the path, and the outline of a stroke. A kept part holds those, so a frame
 //! that draws it again cuts only the strips.
 
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -82,9 +83,19 @@ impl Command {
 }
 
 /// What a part draws, in its own space.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct Part {
     commands: Vec<Command>,
+    elements: usize,
+    /// Count each allocation until its last owner, including a parent part,
+    /// releases it. Clearing the index alone need not release a child's paths.
+    retained: Rc<Cell<usize>>,
+}
+
+impl Drop for Part {
+    fn drop(&mut self) {
+        self.retained.set(self.retained.get() - self.elements);
+    }
 }
 
 /// A canvas that keeps each part a walk draws, so that a later frame draws it
@@ -98,7 +109,7 @@ pub struct Keeper<C> {
     parts: HashMap<PartKey, Rc<Part>>,
     /// The parts being drawn, the innermost last.
     recording: Vec<Vec<Command>>,
-    kept: usize,
+    retained: Rc<Cell<usize>>,
 }
 
 impl<C: Canvas> Keeper<C> {
@@ -110,7 +121,7 @@ impl<C: Canvas> Keeper<C> {
             transform: Affine::IDENTITY,
             parts: HashMap::new(),
             recording: Vec::new(),
-            kept: 0,
+            retained: Rc::default(),
         }
     }
 
@@ -317,16 +328,18 @@ impl<C: Canvas> Canvas for Keeper<C> {
     }
 
     fn kept(&mut self, key: PartKey, transform: Affine) {
+        let commands = self.recording.pop().unwrap_or_default();
+        let elements = commands.iter().map(Command::elements).sum::<usize>();
+        self.retained.set(self.retained.get() + elements);
         let part = Rc::new(Part {
-            commands: self.recording.pop().unwrap_or_default(),
+            commands,
+            elements,
+            retained: Rc::clone(&self.retained),
         });
-        let elements = part.commands.iter().map(Command::elements).sum::<usize>();
-        if self.kept + elements > MOST_KEPT {
+        if self.retained.get() > MOST_KEPT {
             self.parts.clear();
-            self.kept = 0;
         }
-        if elements <= MOST_KEPT {
-            self.kept += elements;
+        if self.retained.get() <= MOST_KEPT {
             self.parts.insert(key, Rc::clone(&part));
         }
         self.draw_part(part, transform);
