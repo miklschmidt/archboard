@@ -17,9 +17,8 @@ reviews:
     base_branches: [".*"]
 
   path_filters:
-    # Third-party sources that keep upstream's files (crates/vendor/README.md,
-    # docs/design/vendor/README.md).
-    - "!crates/vendor/**"
+    # Reading copies are not shipped (docs/design/vendor/README.md).
+    # Keep crates/vendor eligible: it contains Archboard's runtime patches.
     - "!docs/design/vendor/**"
 
   path_instructions:
