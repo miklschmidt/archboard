@@ -1,11 +1,11 @@
 ---
 id: TASK-575
 title: The code check reads Go
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-04T18:46:00Z'
-updated_date: '2026-11-04T19:06:00Z'
+updated_date: '2026-11-04T19:27:00Z'
 labels: []
 dependencies: []
 ordinal: 1019000
@@ -19,12 +19,12 @@ archboard check code has syntax adapters for TypeScript, Python, C, C++, Objecti
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An anchor or binding symbol on a Go function, method (Type.Method), type, constant or variable resolves to its definition, and a missing one is reported as for the other languages
-- [ ] #2 The check knows what a Go package exports (capitalized names, and the exported methods and fields of exported types), and a part bound to a package directory reads its exposure
-- [ ] #3 A call from one bound Go package to another that the model does not draw is reported as RELATIONSHIP_UNDRAWN, resolving import paths through go.mod module paths, go.work members, local replace directives and import aliases
-- [ ] #4 gopls is a configurable language server for Go (archboard repo language-server go gopls), with go.work or go.mod as its project and a file no go.mod holds reported as unready
-- [ ] #5 Tests own the adapter on a small Go fixture module, as the other languages fixtures do
-- [ ] #6 The archboard skill, INSTALL.md, README, check help and ADR 0046 name Go as a supported language, the grammar package and what gopls runs
+- [x] #1 An anchor or binding symbol on a Go function, method (Type.Method), type, constant or variable resolves to its definition, and a missing one is reported as for the other languages
+- [x] #2 The check knows what a Go package exports (capitalized names, and the exported methods and fields of exported types), and a part bound to a package directory reads its exposure
+- [x] #3 A call from one bound Go package to another that the model does not draw is reported as RELATIONSHIP_UNDRAWN, resolving import paths through go.mod module paths, go.work members, local replace directives and import aliases
+- [x] #4 gopls is a configurable language server for Go (archboard repo language-server go gopls), with go.work or go.mod as its project and a file no go.mod holds reported as unready
+- [x] #5 Tests own the adapter on a small Go fixture module, as the other languages fixtures do
+- [x] #6 The archboard skill, INSTALL.md, README, check help and ADR 0046 name Go as a supported language, the grammar package and what gopls runs
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -48,4 +48,22 @@ Decisions: a Go import is build-dependency evidence, as a Swift import is, becau
 Evidence so far: the fixture passes go vet, go test and go run with go 1.26.9, also go vet with GOOS=darwin. The real gopls 0.24.0 resolves book.Post (shop/main.go:14) to ledger/ledger.go:18 across the modules of the go.work.
 
 Standard library probe (go 1.26.9 GOROOT/src, testdata left out): 6,496 files, 2.77 M lines, 364,798 definitions, no error; net/http (111 files, 78 k lines) read in 1.1 s. Two files hold unparsed parts, which the check reports as unknown, never missing: runtime/secret/secret_test.go:58 uses new(expr) (Go 1.26), and encoding/json/v2/arshal_test.go:2049-2083 calls a local function named make with one argument. Both are limits of tree-sitter-go 0.25.0.
+
+Evidence per criterion:
+- #1: go-check.test.ts (ANCHOR_SYMBOL_MISSING e2, BINDING_SYMBOL_MISSING pGone, the anchor books.New holds); go-facts.test.ts definitions with kind, visibility and exposure.
+- #2: go-check.test.ts EXPOSED_UNUSED pLed names Archive; exposure-unknown only for the package main pShop; go-facts.test.ts hidden.Close is exported but not exposed.
+- #3: go-check.test.ts RELATIONSHIP_UNDRAWN pLed and pMoney from the shop (resolved; the listed piece is the import, the first evidence in each file) and RELATIONSHIP_BACKWARDS e3 on the resolved call money.Add; go-facts.test.ts leads books.New (alias), money.Parse (subpackage of another go.work module), format.Cents (package clause other than its directory) and shop/go.mod require (local replace) to their files and directories.
+- #4: go-server.test.ts: stand-in starts in the go.work and opens the file; a module without go.work starts in the module; a file no go.mod holds is unready once; the real gopls 0.24.0 resolves book.Post to ledger/ledger.go:18.
+- #5: the go-shop fixture passes go vet, go test and go run (go 1.26.9).
+- #6: INSTALL.md (Go section), README, check and repo language-server help, skills/archboard/references/setup.md, docs/design/design-checks.md, ADR 0046 (package table and server list).
+
+Review: sol-loop, 2 rounds with gpt-6.1-sol at xhigh. Round 1: S1 (an explicit alias equal to the directory name lost its targets when the package clause differed) and S2 (locals inside function literals of package var initializers became package definitions), both fixed with tests (1c57958be, f08681455). Round 2: approved.
+
+Gate: bun run check inside nix develop passed 21/21 after the rebase onto origin/main 1041ccd5f.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check reads Go. A tree-sitter-go 0.25.0 adapter reads definitions, uses, imports, the package clause and go.mod require lines, and resolves import paths through the module path of every go.mod in the checkout, so go.work members and local replaces resolve. A package exposes its capitalized names from the non-test files of its directory; package main exposes nothing. gopls is a configurable server (no default, as rust-analyzer), and the nix dev shell gives go and gopls so the real gopls test runs. Verified on the go-shop fixture, with the real gopls, on the Go standard library (6,496 files, no error) and with the full gate. Limits: names two build-constrained files define, dot-import names and methods through values need gopls; tree-sitter-go 0.25.0 cannot read new(expr) of Go 1.26.
+<!-- SECTION:FINAL_SUMMARY:END -->
