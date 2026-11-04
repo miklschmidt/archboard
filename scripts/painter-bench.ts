@@ -199,10 +199,16 @@ function runOfArguments(): Run {
 		corpus,
 		out,
 		only: values.only,
-		painters: values.painters.split(","),
-		sizes: values.sizes.split(","),
-		runs: Number(values.runs),
-		frames: Number(values.frames),
+		painters: z
+			.array(z.enum(["gpu", "webgl", "cpu"]))
+			.min(1)
+			.parse(values.painters.split(",")),
+		sizes: z
+			.array(z.string().regex(/^[1-9]\d*x[1-9]\d*$/u))
+			.min(1)
+			.parse(values.sizes.split(",")),
+		runs: z.coerce.number().int().positive().parse(values.runs),
+		frames: z.coerce.number().int().positive().parse(values.frames),
 		browser: values.browser,
 		flags: values.flags.split(" ").filter((flag) => flag !== ""),
 		core: values.core,
@@ -232,9 +238,15 @@ function fixtureOf(run: Run): { readonly name: string; readonly json: string } {
  * @param browser The browser's program.
  * @param flags What else the browser is told.
  * @param url The page.
+ * @param failed Reject the run if its browser cannot start or exits before reporting.
  * @returns Close the browser and remove its profile.
  */
-function openBrowser(browser: string, flags: readonly string[], url: string): () => void {
+function openBrowser(
+	browser: string,
+	flags: readonly string[],
+	url: string,
+	failed: (error: Error) => void,
+): () => Promise<void> {
 	const profile = mkdtempSync(join(tmpdir(), "painter-bench-"));
 	const firefox = browser.includes("firefox");
 	if (firefox) {
@@ -252,9 +264,21 @@ function openBrowser(browser: string, flags: readonly string[], url: string): ()
 	const launch = firefox
 		? ["-no-remote", "-new-instance", "-profile", profile, ...flags, url]
 		: [`--user-data-dir=${profile}`, "--no-first-run", "--no-default-browser-check", ...flags, url];
-	const child = spawn(browser, launch, { stdio: "ignore" });
-	return () => {
+	let child: ReturnType<typeof spawn>;
+	try {
+		child = spawn(browser, launch, { stdio: "ignore" });
+	} catch (error) {
+		rmSync(profile, { recursive: true, force: true });
+		throw error;
+	}
+	child.once("error", failed);
+	child.once("exit", (code, signal) => {
+		failed(new Error(`The browser exited before reporting (${String(code ?? signal)}).`));
+	});
+	const stopped = new Promise<void>((resolve) => child.once("close", () => resolve()));
+	return async () => {
 		child.kill("SIGKILL");
+		await stopped;
 		rmSync(profile, { recursive: true, force: true });
 	};
 }
@@ -300,45 +324,59 @@ async function main(): Promise<void> {
 				: new Response(file[0], { headers: { "content-type": file[1] } });
 		},
 	});
-	const results: unknown[] = [];
+	/**
+	 * Measure one fresh browser and release its process and profile before returning.
+	 * @param painter The painter.
+	 * @param size The canvas size.
+	 * @param attempt The repetition.
+	 * @returns The report with its run identity and load.
+	 */
+	async function measureOne(
+		painter: string,
+		size: string,
+		attempt: number,
+	): Promise<z.infer<typeof Reported>> {
+		const id = `${painter}-${size}-${String(attempt)}`;
+		const { promise: reported, resolve, reject } = Promise.withResolvers<string>();
+		waiting.set(id, resolve);
+		const limit = setTimeout(
+			() => reject(new Error(`${id} did not report in time.`)),
+			RUN_LIMIT_MS,
+		);
+		const query = new URLSearchParams({
+			id,
+			painter,
+			size,
+			frames: String(run.frames),
+		});
+		let close: (() => Promise<void>) | undefined;
+		try {
+			close = openBrowser(
+				run.browser,
+				run.flags,
+				`http://127.0.0.1:${String(server.port)}/?${query.toString()}`,
+				reject,
+			);
+			const page = Reported.parse(JSON.parse(await reported));
+			const body = { ...page, load: loadavg()[0] };
+			writeFileSync(join(run.out, `${id}.json`), JSON.stringify(body, null, "\t"));
+			console.log(id, JSON.stringify(page["error"] ?? page["gap"]));
+			return { id, ...body };
+		} finally {
+			clearTimeout(limit);
+			waiting.delete(id);
+			await close?.();
+			await Bun.sleep(1500);
+		}
+	}
+	const results: z.infer<typeof Reported>[] = [];
 	try {
 		for (const size of run.sizes) {
 			// The painters take turns, so that a change in the machine's load reaches each alike.
 			for (let attempt = 0; attempt < run.runs; attempt += 1) {
 				for (const painter of run.painters) {
-					const id = `${painter}-${size}-${String(attempt)}`;
-					let limit: ReturnType<typeof setTimeout> | undefined;
-					const reported = new Promise<string>((resolve, reject) => {
-						waiting.set(id, resolve);
-						limit = setTimeout(
-							() => reject(new Error(`${id} did not report in time.`)),
-							RUN_LIMIT_MS,
-						);
-					});
-					const query = new URLSearchParams({
-						id,
-						painter,
-						size,
-						frames: String(run.frames),
-					});
-					const close = openBrowser(
-						run.browser,
-						run.flags,
-						`http://127.0.0.1:${String(server.port)}/?${query.toString()}`,
-					);
-					try {
-						// oxlint-disable-next-line no-await-in-loop -- one browser measures at a time
-						const page = Reported.parse(JSON.parse(await reported));
-						const body = { ...page, load: loadavg()[0] };
-						results.push({ id, ...body });
-						writeFileSync(join(run.out, `${id}.json`), JSON.stringify(body, null, "\t"));
-						console.log(id, JSON.stringify(page["error"] ?? page["gap"]));
-					} finally {
-						clearTimeout(limit);
-						close();
-						// oxlint-disable-next-line no-await-in-loop -- let the browser go before the next starts
-						await Bun.sleep(1500);
-					}
+					// oxlint-disable-next-line no-await-in-loop -- one browser measures at a time
+					results.push(await measureOne(painter, size, attempt));
 				}
 			}
 		}
@@ -349,6 +387,9 @@ async function main(): Promise<void> {
 		join(run.out, "bench.json"),
 		JSON.stringify({ fixture: fixture.name, results }, null, "\t"),
 	);
+	if (results.some((result) => result["error"] !== undefined)) {
+		throw new Error("A painter failed. Read the errors in bench.json before comparing timings.");
+	}
 }
 
 await main();

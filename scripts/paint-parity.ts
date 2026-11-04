@@ -444,8 +444,14 @@ function runOfArguments(): Run {
 	return {
 		corpus,
 		out,
-		painters: z.array(z.enum(["gpu", "webgl", "cpu"])).min(1).parse(values.painters.split(",")),
-		views: z.array(z.enum(["near", "far", "traffic"])).min(1).parse(values.views.split(",")),
+		painters: z
+			.array(z.enum(["gpu", "webgl", "cpu"]))
+			.min(1)
+			.parse(values.painters.split(",")),
+		views: z
+			.array(z.enum(["near", "far", "traffic"]))
+			.min(1)
+			.parse(values.views.split(",")),
 		only: values.only,
 		browser: values.browser,
 		worst: Number(values.worst),
@@ -488,7 +494,9 @@ async function pageReady(page: Page, run: Run): Promise<void> {
 	const available = z.array(z.string()).parse(await page.evaluate("window.availablePainters"));
 	const missing = run.painters.filter((kind) => !available.includes(kind));
 	if (missing.length > 0) {
-		throw new Error(`This browser gave no ${missing.join(", ")} painter. Name another with --browser.`);
+		throw new Error(
+			`This browser gave no ${missing.join(", ")} painter. Name another with --browser.`,
+		);
 	}
 }
 
@@ -518,7 +526,8 @@ function report(run: Run, results: readonly Result[]): void {
 async function main(): Promise<void> {
 	const run = runOfArguments();
 	const readings = readingsOf(run);
-	if (readings.length === 0) throw new Error("No readings match this run. Check --only and --every.");
+	if (readings.length === 0)
+		throw new Error("No readings match this run. Check --only and --every.");
 	mkdirSync(run.out, { recursive: true });
 	const server = servePage(run.out);
 	const page = await openPage(run.browser, `http://127.0.0.1:${server.port}/`);
