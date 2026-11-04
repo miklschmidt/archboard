@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-04T15:39:00Z'
-updated_date: '2026-11-04T17:39:00Z'
+updated_date: '2026-11-04T18:13:00Z'
 labels: []
 dependencies: []
 ordinal: 1019000
@@ -66,4 +66,6 @@ Evidence (2026-11-04, final branch at 34435ad2b on origin/main 15ffafb4a):
 - Motion over 2 s at 1440x900: the hero field draws and the hero SVG clock advances 1.97 s at the top; mid page, no shader draws and the clock is frozen; at the bottom only the closing field draws. With prefers-reduced-motion: no draws, the clock is frozen, 8/8 hero cards show, no reveal below full opacity, no pending dock line, and the language list is wrapped. CSS loops in [data-loop] report paused off screen and running on screen.
 - actionlint reports nothing for .github/workflows/site.yml.
 - AC6 is open: the workflow exists and passes actionlint, but its first pull request run and the first deploy from main are still to come, and GitHub Pages must first be set to Source: GitHub Actions.
+
+Owner review: the Flowchart tab of the grammar demo ran 348px past its frame, over its command and the next feature. Fixed in the commit after 930cb9fb0: the frame's grid now has explicit tracks. A browser sweep of every interactive state at 1440, 1024 and 390 wide finds no drawing past its frame, and it reports the overflow when the fix is undone.
 <!-- SECTION:NOTES:END -->
