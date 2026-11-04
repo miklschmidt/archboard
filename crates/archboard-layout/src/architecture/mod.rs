@@ -23,9 +23,7 @@ pub use graph::Standings;
 pub use measured::Measured;
 pub use solving::{InProcess, Laying, Solver, Unsolved};
 
-use crate::routes::{
-    LineLook, bridge_crossings, bridge_planned, bridge_unfolded, unfold_crossings,
-};
+use crate::routes::{LineLook, bridge_crossings, bridge_unfolded, unfold_crossings};
 
 /// Which engine lays an architecture out (TASK-348, ADR 0040).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -62,7 +60,7 @@ pub async fn draw<S: Solver>(
     let drawing = page::fitted_page(drawn::drawing_of(content, measured, &placed));
     let frozen = placed.planned;
     let bridged = if frozen {
-        bridge_planned(&drawing, &measured.lines)
+        bridge_unfolded(&drawing, &measured.lines)
     } else {
         bridge_crossings(&drawing, &measured.lines)
     };
@@ -120,12 +118,7 @@ pub fn shown_drawing<S: BuildHasher>(
         .into_iter()
         .filter(|edge| shown(&edge.edge.id))
         .collect();
-    let bridge = if drawing.frozen {
-        bridge_planned
-    } else {
-        bridge_unfolded
-    };
-    let bridged = bridge(
+    let bridged = bridge_unfolded(
         &ArchitectureDrawing {
             edges: routes,
             ..kept.clone()

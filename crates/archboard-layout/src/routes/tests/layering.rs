@@ -92,14 +92,18 @@ fn a_hop_keeps_a_labels_clearance_from_it_bulging_away_where_it_must() {
 
 // Archboard server (graphviz): an arc stood fifteen points from the tip of the
 // arrowhead of the line it crossed; and a crossing past the head, but still on
-// its approach, was refused a hop and cut (the user, 2026-09-27).
+// its approach, was refused a hop and cut (the user, 2026-09-27). A crossing
+// with no arc read worse (TASK-570): beside the head, the hop bulges away.
 #[test]
-fn a_hop_keeps_clear_of_another_lines_arrowhead_and_stands_across_its_approach_past_the_head() {
+fn a_hop_beside_another_lines_arrowhead_bulges_away_and_stands_across_its_approach_past_the_head() {
     let near = bridged(&drawing(&[
         down_from(50.0, 0.0, 200.0),
         across_from(100.0, 150.0, 35.0),
     ]));
-    assert_eq!(near.bridges, Vec::<DrawingBridge>::new());
+    let (edge, under) = lone_hop(&near);
+    assert_eq!((edge, under), ("0", vec!["1"]));
+    // The head points left at 35, so the hop bulges right, away from it.
+    assert_eq!(bulge_of(&near.bridges[0]).0, 0.0);
     let past = bridged(&drawing(&[
         down_from(50.0, 0.0, 200.0),
         across_from(100.0, 150.0, 28.0),
@@ -119,4 +123,40 @@ fn a_solid_line_hops_a_dashed_one_with_the_least_room_past_its_feet_as_it_hops_a
     assert_eq!(lone_hop(&dashed), ("0", vec!["1"]));
     // Between two solid lines, one of them hops.
     assert!(bridged(&drawing(&routes)).bridges.iter().any(hops));
+}
+
+#[test]
+fn turning_a_facing_hop_keeps_the_beneath_lines_bend_clear() {
+    // The first hop clears the bend only above its line. A second hop facing
+    // it must not turn that standing arc down into the bend to make room.
+    let mut before = drawn(
+        &[
+            across(50.0),
+            points(&[(50.0, 0.0), (50.0, 62.0), (100.0, 62.0)]),
+            across(40.0),
+        ],
+        &[(0, "call", Emphasis::Hero)],
+    );
+    before.edges[2].label = Some(PlacedLabel {
+        bounds: Rect {
+            x: 40.0,
+            y: 24.0,
+            width: 20.0,
+            height: 11.0,
+        },
+        measured: MeasuredLabel {
+            width: 20.0,
+            height: 11.0,
+            runs: Vec::new(),
+        },
+    });
+    let result = bridged(&before);
+    assert_eq!(result.bridges.len(), 2);
+    assert!(result.bridges.iter().all(hops));
+    let hop = result
+        .bridges
+        .iter()
+        .find(|hop| hop.edge_id == "0")
+        .unwrap();
+    assert_eq!(bulge_of(hop).1, 0.0, "{:#?}", result.bridges);
 }

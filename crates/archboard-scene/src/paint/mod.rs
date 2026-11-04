@@ -49,6 +49,7 @@ mod toggle;
 mod traffic;
 mod tray;
 
+pub use junctions::junction_boxes;
 pub use legend_entries::{Applied, Drawn, PictureLegend, picture_legend};
 pub use marks::{ViewerMarks, viewer_marks};
 

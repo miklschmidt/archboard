@@ -333,7 +333,7 @@ test("no line shows through a removed relationship's label", async () => {
 // showed.
 test("the crossing pass reads each line's dash from the vault's own policy", async () => {
 	const content = structuredClone(CROSSED);
-	for (const edge of content.edges) if (edge.from === "a") edge.kind = "stream";
+	for (const edge of content.edges) if (edge.from === "c") edge.kind = "stream";
 	/**
 	 * How many lines a stream line hops, with the stream kind drawn one way: a
 	 * hop is a piece of the mask of the line beneath it, with an arc in it,
@@ -360,10 +360,10 @@ test("the crossing pass reads each line's dash from the vault's own policy", asy
 		);
 		const lines = routes(svg);
 		return lines
-			.filter(({ id }) => !id.startsWith("a"))
+			.filter(({ id }) => !id.startsWith("c"))
 			.flatMap(({ mask }) => pieces.get(mask ?? "") ?? [])
 			.filter((start) =>
-				lines.some(({ id, paths }) => id.startsWith("a") && paths[0]!.includes(start)),
+				lines.some(({ id, paths }) => id.startsWith("c") && paths[0]!.includes(start)),
 			).length;
 	};
 	// Drawn dashed, a stream line rises over a solid call only where nothing else

@@ -5,6 +5,7 @@
 //! in `clusters`, and a drawing with some subjects left out in `shown`.
 
 mod clusters;
+mod crowding;
 mod ink;
 mod layering;
 mod shown;
@@ -185,22 +186,22 @@ fn a_line_that_turns_just_before_a_crossing_does_not_hop_it() {
     assert_eq!(lone_hop(&result), ("0", vec!["1"]));
 }
 
+// A line crossing a trunk just past a join was cut with no arc over the gap
+// (TASK-570): it hops the trunk instead, and the joining trunk stays whole.
 #[test]
-fn a_line_hops_a_trunk_beside_a_join_and_is_cut_clear_of_the_join_at_it() {
-    for (x, joined) in [(160.0, true), (164.8, false), (168.0, false)] {
+fn a_line_hops_a_trunk_beside_a_join_and_the_trunk_stays_whole() {
+    for x in [160.0, 164.8, 168.0] {
         let result = bridged(&drawing(&[
             points(&[(0.0, 100.0), (200.0, 100.0)]),
             points(&[(152.0, 0.0), (152.0, 100.0), (200.0, 100.0)]),
             points(&[(x, 0.0), (x, 200.0)]),
         ]));
-        let cut = result
-            .bridges
-            .iter()
-            .find(|bridge| bridge.under.iter().any(|id| id == "2"));
-        let is_cut = cut.is_some_and(|cut| cut.edge_id == "0" && cut.join == Some(true));
-        assert_eq!(is_cut, joined, "x={x}");
+        assert!(result.bridges.iter().all(hops), "x={x}");
         let hop = result.bridges.iter().find(|bridge| bridge.edge_id == "2");
-        assert_eq!(hop.is_some_and(hops), !joined, "x={x}");
+        assert!(
+            hop.is_some_and(|hop| hop.under.contains(&"0".to_owned())),
+            "x={x}"
+        );
     }
 }
 

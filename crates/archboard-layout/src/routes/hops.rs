@@ -11,15 +11,15 @@ use std::collections::BTreeMap;
 
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingEdge, EdgeFacts, NodeFacts};
 use archboard_scene::geometry::{
-    Curve, Point, Rect, Segment, curve_bounds, inflate, reversed, segment_start,
+    Curve, Point, Rect, Segment, curve_bounds, reversed, segment_start,
 };
+use archboard_scene::paint::junction_boxes;
 use archboard_scene::request::{Arrowhead, Dash};
 
 use crate::constants::APPROACH_STRAIGHT;
 use crate::ecma::{hypot, js_max, js_min, max, min, sign, sorted_by};
 
-use super::clearance::curve_boxes;
-use super::drawn_lines::{Axis, Run, line_runs, on_run, straight_through};
+use super::drawn_lines::{Axis, Run, SHARED_INK, fixed_of, on_run, straight_through, straightness};
 use super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS, LineLook};
 
 /// Straight line kept past a hop, before a bend, a join or an end's approach.
@@ -33,15 +33,9 @@ const HOP_REACH: f64 = BRIDGE_RADIUS + HOP_MARGIN;
 /// seen to pass beneath rather than to end at the line or turn onto it.
 const FAR_REACH: f64 = BRIDGE_CLEARANCE;
 
-/// Clear space a hop keeps from a card, a label, a title or an arrowhead: twice
-/// what it keeps from a line, since an arc five points from a label's edge
-/// reads as touching it.
-const BOX_CLEARANCE: f64 = BRIDGE_CLEARANCE * 2.0;
-
-/// Clear space between hops on crossing lines: a hop's radius, twice what hops
-/// on parallel lines keep, since an arc bulging across another's path reads as
-/// one knot with it.
-const CROSSWISE_CLEARANCE: f64 = BRIDGE_RADIUS;
+/// Straight line a hop that must stand keeps from a bend, an end or another
+/// hop along its line.
+const FORCED_GAP: f64 = 1.0;
 
 /// Which way a hop bulges: 1 up from a line across and right of a line down,
 /// or -1, for a lone hop only the other side has room for, the other way.
@@ -52,7 +46,7 @@ pub(super) type Bulge = f64;
 pub(super) struct Hop {
     pub(super) curve: Curve,
     pub(super) axis: Axis,
-    bounds: Rect,
+    pub(super) bounds: Rect,
 }
 
 impl Hop {
@@ -81,17 +75,19 @@ pub(super) struct HopScene<'a> {
     pub(super) runs: Vec<Run>,
     /// Cards, labels, titles and arrowheads.
     pub(super) keepouts: Vec<Keepout>,
+    /// The boxes the painter draws junction marks in.
+    pub(super) marks: Vec<Rect>,
     /// Every hop that stands.
     pub(super) hops: Vec<Hop>,
-    ink: Vec<Vec<Ink>>,
+    pub(super) ink: Vec<Vec<Ink>>,
 }
 
 /// Bounds of one unchanged route segment, with its finer boxes measured only
 /// if a proposed hop reaches it. Both live for one crossing pass.
 #[derive(Debug)]
-struct Ink {
-    bounds: Rect,
-    pieces: OnceCell<Vec<Rect>>,
+pub(super) struct Ink {
+    pub(super) bounds: Rect,
+    pub(super) pieces: OnceCell<Vec<Rect>>,
 }
 
 impl<'a> HopScene<'a> {
@@ -121,8 +117,9 @@ impl<'a> HopScene<'a> {
             .collect();
         Self {
             drawing,
-            runs,
             keepouts: keepouts_of(drawing, lines),
+            marks: junction_boxes(&drawing.edges),
+            runs,
             hops: Vec::new(),
             ink,
         }
@@ -136,7 +133,7 @@ pub(super) fn overlaps(a: Rect, b: Rect) -> bool {
 
 /// Two quarter circles with a shared crest over a cluster of crossings, as the
 /// displaced piece of the route only.
-fn hump(run: &Run, first: f64, last: f64, bulge: Bulge) -> Curve {
+pub(super) fn hump(run: &Run, first: f64, last: f64, bulge: Bulge) -> Curve {
     let radius = BRIDGE_RADIUS * bulge;
     let tangent = (4.0 * (2.0_f64.sqrt() - 1.0) * radius) / 3.0;
     let along = tangent.abs();
@@ -218,6 +215,34 @@ pub(super) fn crest_along(
     let high = run.axis.of(on_run(run, last + (BRIDGE_RADIUS + room), 0.0));
     straight_through(runs, run, js_min(low, high), js_max(low, high))
         .then(|| hump(run, first, last, bulge))
+}
+
+/// Whether a hop fits over a coordinate along a run: its drawn line runs
+/// straight a hop's radius and a little more on either side, short of its
+/// ends' approaches when `rooms` asks, and clear of every hop on that line.
+pub(super) fn hop_fits(scene: &HopScene<'_>, run: &Run, coordinate: f64, rooms: bool) -> bool {
+    let axis = run.axis;
+    let across = axis.across();
+    let straight = straightness(&scene.runs, run, coordinate, rooms);
+    let clear = min(std::iter::once(straight).chain(
+        scene
+            .hops
+            .iter()
+            .filter(|hop| {
+                hop.axis == axis && (across.of(hop.curve.from) - fixed_of(run)).abs() <= SHARED_INK
+            })
+            .map(|hop| {
+                let [one, other] = [axis.of(hop.curve.from), axis.of(curve_end(&hop.curve))];
+                let (low, high) = (js_min(one, other), js_max(one, other));
+                js_max(0.0, js_max(low - coordinate, coordinate - high))
+            }),
+    ));
+    clear >= BRIDGE_RADIUS + FORCED_GAP
+}
+
+/// Where a curve ends.
+pub(super) fn curve_end(curve: &Curve) -> Point {
+    segment_start(curve, curve.segments.len())
 }
 
 /// Whether a line runs straight and alone beneath where a hop over it would
@@ -340,116 +365,27 @@ fn keepouts_of(
     cards.chain(titles).chain(labels).chain(heads).collect()
 }
 
-/// Whether a route piece other than those of the lines a hump rides and
-/// passes over lies in its space; refined cubic bounds keep the clearance
-/// without treating empty hulls as ink.
-fn route_obstructs(scene: &HopScene<'_>, allowed: &[&Run], bounds: Rect, curve: &Curve) -> bool {
-    let bridge_boxes: Vec<Rect> = curve_boxes(curve)
-        .into_iter()
-        .map(|piece| inflate(piece, BRIDGE_CLEARANCE))
-        .collect();
-    scene
-        .drawing
-        .edges
-        .iter()
-        .enumerate()
-        .any(|(edge_index, edge)| {
-            edge.curve
-                .segments
-                .iter()
-                .enumerate()
-                .any(|(segment_index, segment)| {
-                    let ink = &scene.ink[edge_index][segment_index];
-                    if !overlaps(bounds, ink.bounds) {
-                        return false;
-                    }
-                    if allowed.iter().any(|piece| {
-                        piece.edge_index == edge_index && piece.segment_index == segment_index
-                    }) {
-                        return false;
-                    }
-                    ink.pieces
-                        .get_or_init(|| {
-                            curve_boxes(&Curve {
-                                from: segment_start(&edge.curve, segment_index),
-                                segments: vec![*segment],
-                            })
-                        })
-                        .iter()
-                        .any(|&piece| {
-                            bridge_boxes
-                                .iter()
-                                .any(|&bridge_box| overlaps(bridge_box, piece))
-                        })
-                })
-        })
-}
-
-/// Whether a crest touches a card, a label, a title, an arrowhead other than
-/// its own line's, an accepted hop or a crest standing with it, or another
-/// line's ink than the lines it passes over (`beneath`, by their drawers).
-pub(super) fn crowded(
-    scene: &HopScene<'_>,
-    run: &Run,
-    beneath: &[&Run],
-    curve: &Curve,
-    pending: &[Hop],
-) -> bool {
-    let own = line_runs(&scene.runs, run);
-    let curve_bounds = curve_bounds(curve);
-    let bounds = inflate(curve_bounds, BRIDGE_CLEARANCE);
-    let clear = inflate(curve_bounds, BOX_CLEARANCE);
-    let near_other = scene
-        .keepouts
-        .iter()
-        .filter(|keepout| {
-            !own.iter()
-                .any(|mine| Some(mine.edge_index) == keepout.edge_index)
-        })
-        .any(|keepout| overlaps(clear, keepout.bounds));
-    if near_other {
-        return true;
+/// A hop bulging the other way from its line.
+pub(super) fn flipped(hop: &Hop) -> Curve {
+    let across = hop.axis.across();
+    let line = across.of(hop.curve.from);
+    let mirror = |point: Point| across.with(point, 2.0 * line - across.of(point));
+    Curve {
+        from: hop.curve.from,
+        segments: hop
+            .curve
+            .segments
+            .iter()
+            .map(|segment| match *segment {
+                Segment::Line { to } => Segment::Line { to: mirror(to) },
+                Segment::Cubic { first, second, to } => Segment::Cubic {
+                    first: mirror(first),
+                    second: mirror(second),
+                    to: mirror(to),
+                },
+            })
+            .collect(),
     }
-    if scene
-        .hops
-        .iter()
-        .chain(pending)
-        .any(|hop| touches(hop, curve_bounds, run.axis))
-    {
-        return true;
-    }
-    let mut allowed = own;
-    for under in beneath {
-        allowed.extend(line_runs(&scene.runs, under));
-    }
-    route_obstructs(scene, &allowed, bounds, curve)
-}
-
-/// Whether a crest comes near the arrowhead of its own line: a hop stood so
-/// close to the head it leads into reads as a knot at the card.
-pub(super) fn near_own_head(scene: &HopScene<'_>, run: &Run, curve: &Curve) -> bool {
-    let own: Vec<usize> = line_runs(&scene.runs, run)
-        .into_iter()
-        .map(|mine| mine.edge_index)
-        .collect();
-    let clear = inflate(curve_bounds(curve), BOX_CLEARANCE);
-    scene.keepouts.iter().any(|keepout| {
-        keepout
-            .edge_index
-            .is_some_and(|edge_index| own.contains(&edge_index))
-            && overlaps(clear, keepout.bounds)
-    })
-}
-
-/// Whether a new crest on a run of `axis` comes nearer a standing hop than
-/// their lines allow.
-fn touches(hop: &Hop, bounds: Rect, axis: Axis) -> bool {
-    let clearance = if hop.axis == axis {
-        BRIDGE_CLEARANCE
-    } else {
-        CROSSWISE_CLEARANCE
-    };
-    overlaps(inflate(bounds, clearance), inflate(hop.bounds, clearance))
 }
 
 /// A route with its straight pieces' accepted hops spliced in, in order along

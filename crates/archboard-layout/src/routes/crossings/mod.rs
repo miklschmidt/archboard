@@ -6,11 +6,17 @@
 //! other. The more emphasised line rises; between equals, the line with more
 //! straight room, then the later-painted. A dashed or dotted line never rises
 //! over a solid one. Crossings along one run closer than a crest's reach are a
-//! cluster (`clusters`): its crossers hop it one each where every hop fits,
-//! else its line rises over all of it under one crest, else over single
-//! crossings of it where it is the upper line at the rest. A crossing no plan
-//! settles still hops where a hop fits; where none stands, the two lines cross
-//! plainly and both stay whole, and only beside a join is a line cut.
+//! cluster (`clusters`): its crossers hop it one each where every one may and
+//! every hop fits, else its line rises over all of it under one crest, else
+//! over single crossings of it where it is the upper line at the rest. A
+//! crossing no plan settles still hops where a hop fits, and else gets the
+//! least crowded arc that stands wherever a line runs straight past both of a
+//! hop's feet (`forced`): its own hop, the hops beside it grown into one
+//! crest, the lines crossing its cluster hopping it as one bundle, or its hop
+//! with a hop it would face turned. So every crossing has an arc, and arcs do
+//! not stand side by side on one line, face each other or bulge into a
+//! junction mark wherever another arc avoids it (TASK-570). Beside a join,
+//! the line that does not join rises.
 
 use std::collections::BTreeMap;
 
@@ -22,23 +28,25 @@ use crate::constants::BEND_RADIUS;
 use crate::ecma::{js_min, max, min, round, sign, sorted_by};
 
 use super::clusters::{Cluster, Clusters, at_on, clusters_of, sides_of};
+use super::crowding::{crowded, near_own_head};
 use super::drawn_lines::{
     DrawnCrossing, Edges, Line, drawn_crossings, join_near, piece_of, straight_runs, straightness,
     weight,
 };
 use super::folded::unfold_crossings;
 use super::hops::{
-    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, crowded, look_of, near_own_head,
-    passes_beneath, replace_runs,
+    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, look_of, passes_beneath, replace_runs,
 };
 use super::{BRIDGE_RADIUS, LineLook};
+
+mod forced;
 
 /// The straight line a rising line keeps past each foot: a bend's room, so a
 /// bend a few points past a hop never draws one squiggle with it.
 const FULL_ROOM: f64 = HOP_MARGIN + BEND_RADIUS;
 
 /// The least a rising line keeps past each foot, where no line has a bend's room.
-const LEAST_ROOM: f64 = HOP_MARGIN;
+pub(super) const LEAST_ROOM: f64 = HOP_MARGIN;
 
 /// Straight line on a crossing's shorter side past which a line has all the
 /// room a hop could want.
@@ -47,21 +55,20 @@ const ROOM_CAP: f64 = BRIDGE_RADIUS + FULL_ROOM;
 /// How much straighter one line must run through a crossing to count as the straighter.
 const STRAIGHTER: f64 = 0.5;
 
-/// How near a join a cut must be to keep the joining line whole: within a hop's radius.
+/// How near a join a crossing must be for the joining line to stay whole: within a hop's radius.
 const JOIN_REACH: f64 = BRIDGE_RADIUS;
 
 /// One run rising over some crossings of one of its clusters, under one hop or crest.
 #[derive(Clone, Debug)]
-struct Rise {
+pub(super) struct Rise {
     cluster: usize,
     crossings: Vec<usize>,
 }
 
-/// Rises that stand together or not at all, and the crossings left plain when they do.
+/// Rises that stand together or not at all.
 #[derive(Clone, Debug)]
 struct Plan {
     rises: Vec<Rise>,
-    plain: Vec<usize>,
     /// The straight line each rising line keeps past its feet.
     room: f64,
     /// Where it comes in the order plans are tried, lower first.
@@ -75,10 +82,13 @@ struct Settling<'a> {
     lines: &'a BTreeMap<String, LineLook>,
     crossings: Vec<DrawnCrossing>,
     clusters: Clusters,
-    bridges: Vec<DrawingBridge>,
-    /// The hops each route's straight segments carry, by segment.
-    replacements: Vec<BTreeMap<usize, Vec<Curve>>>,
+    /// The rise each standing hop stands for, beside its hop in the scene's.
+    stood: Vec<Rise>,
+    /// The lines cut beneath a joining line with no hop.
+    cuts: Vec<DrawingBridge>,
     settled: Vec<bool>,
+    /// The cluster whose line rose over each crossing, where one did.
+    risen: Vec<Option<usize>>,
 }
 
 impl Settling<'_> {
@@ -141,11 +151,8 @@ impl Settling<'_> {
         .then_some(curve)
     }
 
-    /// Stand every rise of a plan and leave its plain crossings plain, or do nothing.
+    /// Stand every rise of a plan, or do nothing.
     fn attempt(&mut self, plan: &Plan) {
-        if plan.plain.iter().any(|&crossing| self.settled[crossing]) {
-            return;
-        }
         let mut crests: Vec<Hop> = Vec::new();
         for rise in &plan.rises {
             let Some(curve) = self.crest_of(rise, plan.room, &crests) else {
@@ -157,45 +164,51 @@ impl Settling<'_> {
         for (rise, crest) in plan.rises.iter().zip(crests) {
             self.stand(rise, crest.curve);
         }
-        for &crossing in &plan.plain {
-            self.cross(crossing);
-        }
     }
 
-    /// Record one standing hop: its bridge, and the hop on every route of the
-    /// rising trunk, which `crest_along` found each to hold all of.
+    /// Record one standing hop over a rise's crossings.
     fn stand(&mut self, rise: &Rise, curve: Curve) {
-        let run_index = self.cluster(rise.cluster).run;
         for &crossing in &rise.crossings {
             self.settled[crossing] = true;
+            self.risen[crossing] = Some(rise.cluster);
         }
-        let mut under = Vec::new();
-        let mut members = Vec::new();
-        for &crossing in &rise.crossings {
-            let (line, beneath) = self.sides(rise.cluster, crossing);
-            under.extend(self.ids_of(beneath));
-            members.extend(line.members.iter().copied());
-        }
-        let edge_id = self.edges()[self.scene.runs[run_index].edge_index]
-            .edge
-            .id
-            .clone();
-        self.bridges.push(DrawingBridge {
-            edge_id,
-            under: unique(under),
-            curve: curve.clone(),
-            join: None,
-        });
-        let run = &self.scene.runs[run_index];
-        for member in unique(members) {
-            let member = &self.scene.runs[member];
-            self.replacements[member.edge_index]
-                .entry(member.segment_index)
-                .or_default()
-                .push(carried(&curve, run, member));
-        }
-        let axis = run.axis;
+        let axis = self.scene.runs[self.cluster(rise.cluster).run].axis;
+        self.stood.push(rise.clone());
         self.scene.hops.push(Hop::new(curve, axis));
+    }
+
+    /// The bridges the standing hops draw, then the cuts, and the hop each
+    /// route's straight segments carry, by segment: the hop on every route of
+    /// the rising trunk, which `crest_along` found each to hold all of.
+    fn finish(self) -> (Vec<DrawingBridge>, Vec<BTreeMap<usize, Vec<Curve>>>) {
+        let mut replacements: Vec<BTreeMap<usize, Vec<Curve>>> =
+            vec![BTreeMap::new(); self.edges().len()];
+        let mut bridges = Vec::new();
+        for (rise, hop) in self.stood.iter().zip(&self.scene.hops) {
+            let run = &self.scene.runs[self.cluster(rise.cluster).run];
+            let mut under = Vec::new();
+            let mut members = Vec::new();
+            for &crossing in &rise.crossings {
+                let (line, beneath) = self.sides(rise.cluster, crossing);
+                under.extend(self.ids_of(beneath));
+                members.extend(line.members.iter().copied());
+            }
+            for member in unique(members) {
+                let member = &self.scene.runs[member];
+                replacements[member.edge_index]
+                    .entry(member.segment_index)
+                    .or_default()
+                    .push(carried(&hop.curve, run, member));
+            }
+            bridges.push(DrawingBridge {
+                edge_id: self.edges()[run.edge_index].edge.id.clone(),
+                under: unique(under),
+                curve: hop.curve.clone(),
+                join: None,
+            });
+        }
+        bridges.extend(self.cuts);
+        (bridges, replacements)
     }
 
     /// The ids of the routes a drawn line holds, each once.
@@ -237,7 +250,7 @@ impl Settling<'_> {
         let run = &runs[self.cluster(rise.cluster).run];
         min(rise.crossings.iter().map(|&crossing| {
             let point = self.crossings[crossing].point;
-            js_min(ROOM_CAP, straightness(runs, run, run.axis.of(point)))
+            js_min(ROOM_CAP, straightness(runs, run, run.axis.of(point), true))
         }))
     }
 
@@ -245,26 +258,12 @@ impl Settling<'_> {
     /// rising lines outweigh the lines beneath them, then those between
     /// equals, then those whose rising lines are lighter; within each, by
     /// stage; then the roomier; then the later-painted. Nothing where a line
-    /// in it may not stand over the one beneath it. A plain crossing of the
-    /// cluster still has an upper line: the cluster's line, over its crosser.
-    fn plan_of(
-        &self,
-        stage: f64,
-        room: f64,
-        rises: Vec<Rise>,
-        plain: Vec<usize>,
-        cluster: Option<usize>,
-    ) -> Option<Plan> {
+    /// in it may not stand over the one beneath it.
+    fn plan_of(&self, stage: f64, room: f64, rises: Vec<Rise>) -> Option<Plan> {
         let mut leads = Vec::new();
         for rise in &rises {
             for &crossing in &rise.crossings {
                 let (upper, lower) = self.sides(rise.cluster, crossing);
-                leads.push(self.lead_over(upper, lower));
-            }
-        }
-        if let Some(cluster) = cluster {
-            for &crossing in &plain {
-                let (upper, lower) = self.sides(cluster, crossing);
                 leads.push(self.lead_over(upper, lower));
             }
         }
@@ -279,12 +278,7 @@ impl Settling<'_> {
         ));
         // Round the room so a hair of floating noise never outranks paint order.
         let key = [-sign(weight), stage, -round(roomy / STRAIGHTER), -painted];
-        Some(Plan {
-            rises,
-            plain,
-            room,
-            key,
-        })
+        Some(Plan { rises, room, key })
     }
 
     /// Whether the lines beneath a rise pass beneath it at every crossing of it.
@@ -304,25 +298,20 @@ impl Settling<'_> {
         }
     }
 
-    /// The plan of a cluster's crossers hopping it one each. A dashed crosser
-    /// of a solid line may not rise over it, and its crossing is left plain
-    /// instead: a solid line under one long crest over dashed lines close
-    /// together read worse (the owner, 2026-09-27).
+    /// The plan of a cluster's crossers hopping it one each. Nothing where a
+    /// crosser may not rise over the cluster's line, such as a dashed crosser
+    /// of a solid line: the cluster's line rises over it instead, since a
+    /// crossing left plain has no arc to say which line passes over
+    /// (TASK-570).
     fn one_each(&self, cluster: usize) -> Option<Plan> {
         let mut rises: Vec<Rise> = Vec::new();
-        let mut plain = Vec::new();
         for &crossing in &self.cluster(cluster).crossings {
-            let (line, crosser) = self.sides(cluster, crossing);
-            if self.lead_over(crosser, line).is_none() {
-                plain.push(crossing);
-                continue;
-            }
             let rise = self.whole_of(self.other_cluster(cluster, crossing));
             if !rises.iter().any(|one| one.cluster == rise.cluster) {
                 rises.push(rise);
             }
         }
-        self.plan_of(0.0, FULL_ROOM, rises, plain, Some(cluster))
+        self.plan_of(0.0, FULL_ROOM, rises)
     }
 
     /// The plans one cluster offers, by stage: its crossers hopping it one
@@ -345,43 +334,47 @@ impl Settling<'_> {
             plans.extend(self.one_each(cluster));
         }
         if alone {
-            plans.extend(self.plan_of(0.0, FULL_ROOM, vec![self.whole_of(cluster)], vec![], None));
+            plans.extend(self.plan_of(0.0, FULL_ROOM, vec![self.whole_of(cluster)]));
         }
         if several {
-            plans.extend(self.plan_of(1.0, FULL_ROOM, vec![self.whole_of(cluster)], vec![], None));
-            plans.extend(self.plan_of(2.0, LEAST_ROOM, vec![self.whole_of(cluster)], vec![], None));
+            plans.extend(self.plan_of(1.0, FULL_ROOM, vec![self.whole_of(cluster)]));
+            plans.extend(self.plan_of(2.0, LEAST_ROOM, vec![self.whole_of(cluster)]));
         }
         for &crossing in crossings {
             let single = Rise {
                 cluster,
                 crossings: vec![crossing],
             };
-            plans.extend(self.plan_of(3.0, LEAST_ROOM, vec![single], vec![], None));
+            plans.extend(self.plan_of(3.0, LEAST_ROOM, vec![single]));
         }
         plans.retain(|plan| plan.rises.iter().all(|rise| self.passable(rise)));
         plans
     }
 
-    /// Hop a crossing no plan settled: the line that would stay whole where it
-    /// is cut rises over it alone first, then the other line, with the least
-    /// room; bulging the usual way first, then, where only the other side is
-    /// clear of a bend, the other way. A crossing where a line joins or parts
-    /// is left to be cut clear of the join. True when a hop stands.
-    fn hop_alone(&mut self, crossing: usize) -> bool {
-        let (joined, first_stays) = self.upper_of(crossing);
-        if joined {
-            return false;
-        }
+    /// The lines that may rise over a crossing alone, by their clusters, the
+    /// one to try first first: the line that would stay whole, then the
+    /// other. Beside a join only the line that does not join rises, since an
+    /// arc on the joining line would part the join from its mark.
+    fn risers(&self, crossing: usize) -> Vec<usize> {
         let [first, second] = self.clusters.of[crossing];
-        let order = if first_stays {
-            [first, second]
-        } else {
-            [second, first]
-        };
+        match self.upper_of(crossing) {
+            (true, true) => vec![second],
+            (true, false) => vec![first],
+            (false, true) => vec![first, second],
+            (false, false) => vec![second, first],
+        }
+    }
+
+    /// Hop a crossing no plan settled: each line that may rise over it alone,
+    /// in order, with the least room; bulging the usual way first, then, where
+    /// only the other side is clear of a bend, the other way. True when a hop
+    /// stands.
+    fn hop_alone(&mut self, crossing: usize) -> bool {
+        let order = self.risers(crossing);
         [1.0, -1.0].into_iter().any(|bulge| {
             order
-                .into_iter()
-                .any(|cluster| self.rise_alone(cluster, crossing, bulge))
+                .iter()
+                .any(|&cluster| self.rise_alone(cluster, crossing, bulge))
         })
     }
 
@@ -413,11 +406,12 @@ impl Settling<'_> {
         true
     }
 
-    /// Settle a crossing that no hop stands over. The two lines cross plainly
-    /// and both stay whole, since a gap with no arc over it reads as a break in
-    /// the line (TASK-408). Only beside a join is a line cut: the line that
-    /// joins stays whole, and the other is cut beneath it clear of the join's
-    /// mark, so the crossing does not read as a four-way join.
+    /// Settle a crossing that no hop stands over, where neither line has the
+    /// least straight room a hop needs. The two lines cross plainly and both
+    /// stay whole, since a gap with no arc over it reads as a break in the
+    /// line (TASK-408). Only beside a join is a line cut: the line that joins
+    /// stays whole, and the other is cut beneath it clear of the join's mark,
+    /// so the crossing does not read as a four-way join.
     fn cross(&mut self, crossing: usize) {
         self.settled[crossing] = true;
         let (joined, one_joins) = self.upper_of(crossing);
@@ -441,7 +435,29 @@ impl Settling<'_> {
             ),
             join: Some(true),
         };
-        self.bridges.push(bridge);
+        self.cuts.push(bridge);
+    }
+
+    /// Settle every crossing: the cluster plans in their order, then a hop
+    /// over each crossing they left, then a hop with less room over each crossing
+    /// still left, and last a plain crossing where no hop fits at all.
+    fn settle(&mut self) {
+        let plans: Vec<Plan> = (0..self.clusters.all.len())
+            .flat_map(|cluster| self.plans_of(cluster))
+            .collect();
+        for plan in sorted_by(&plans, by_key) {
+            self.attempt(&plan);
+        }
+        for crossing in 0..self.crossings.len() {
+            if !self.settled[crossing] {
+                self.hop_alone(crossing);
+            }
+        }
+        for crossing in 0..self.crossings.len() {
+            if !self.settled[crossing] && !self.force(crossing) {
+                self.cross(crossing);
+            }
+        }
     }
 
     /// Which of a crossing's two lines would stay whole: a line that joins or
@@ -465,7 +481,7 @@ impl Settling<'_> {
             [
                 weight,
                 solid,
-                straightness(runs, drawer, drawer.axis.of(*point)) / STRAIGHTER,
+                straightness(runs, drawer, drawer.axis.of(*point), true) / STRAIGHTER,
                 drawer.edge_index as f64,
             ]
         });
@@ -497,30 +513,14 @@ fn by_key(a: &Plan, b: &Plan) -> f64 {
         .map_or(0.0, |(value, other)| value - other)
 }
 
-/// Raises one line over each crossing where a hop fits, and lets the two
-/// lines cross plainly wherever none does, on routes whose folded crossings
-/// have already moved onto straight runs (`bridgeUnfolded`). No placement
-/// moves, and painters and interaction geometry share the resulting curves.
+/// Raises one line over each crossing, and lets the two lines cross plainly
+/// only where neither runs straight past a hop's feet, on routes whose folded crossings
+/// have already moved onto straight runs (`bridgeUnfolded`) or whose planner
+/// fixed them. No placement moves, and painters and interaction geometry
+/// share the resulting curves.
 pub(crate) fn bridge_unfolded(
     drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
     lines: &BTreeMap<String, LineLook>,
-) -> Bridged<EdgeFacts> {
-    settle(drawing, lines, false)
-}
-
-/// Planned routes reserve crossings already. Each crossing gets at most four
-/// fixed-radius hop attempts, without competing cluster plans or route changes.
-pub(crate) fn bridge_planned(
-    drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
-    lines: &BTreeMap<String, LineLook>,
-) -> Bridged<EdgeFacts> {
-    settle(drawing, lines, true)
-}
-
-fn settle(
-    drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
-    lines: &BTreeMap<String, LineLook>,
-    planned: bool,
 ) -> Bridged<EdgeFacts> {
     let edges = &drawing.edges;
     let runs = straight_runs(edges);
@@ -536,34 +536,21 @@ fn settle(
         scene: HopScene::new(drawing, runs, lines),
         lines,
         settled: vec![false; crossings.len()],
+        risen: vec![None; crossings.len()],
         crossings,
         clusters,
-        bridges: Vec::new(),
-        replacements: vec![BTreeMap::new(); edges.len()],
+        stood: Vec::new(),
+        cuts: Vec::new(),
     };
-    if !planned {
-        let plans: Vec<Plan> = (0..state.clusters.all.len())
-            .flat_map(|cluster| state.plans_of(cluster))
-            .collect();
-        for plan in sorted_by(&plans, by_key) {
-            state.attempt(&plan);
-        }
-    }
-    // Each crossing has at most four arc attempts. The complete planned drawing
-    // spends at most 512 attempts; later crossings retain their clear straight runs.
-    for crossing in 0..state.crossings.len() {
-        let try_hop = !planned || crossing < 128;
-        if !state.settled[crossing] && (!try_hop || !state.hop_alone(crossing)) {
-            state.cross(crossing);
-        }
-    }
+    state.settle();
+    let (bridges, replacements) = state.finish();
     Bridged {
         edges: edges
             .iter()
-            .zip(&state.replacements)
+            .zip(&replacements)
             .map(|(edge, replacements)| replace_runs(edge, replacements))
             .collect(),
-        bridges: state.bridges,
+        bridges,
     }
 }
 
