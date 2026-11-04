@@ -52,6 +52,7 @@ const views = [
 				<div
 					class="panel"
 					role="tabpanel"
+					tabindex="0"
 					id={`grammar-panel-${view.key}`}
 					aria-labelledby={`grammar-tab-${view.key}`}
 					data-panel={view.key}
@@ -67,7 +68,7 @@ const views = [
 							decoding="async"
 						/>
 					</div>
-					<p class="command mono">
+					<p class="command mono" tabindex="0">
 						<span class="ps">$</span> {view.command}
 					</p>
 				</div>

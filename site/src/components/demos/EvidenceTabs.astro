@@ -54,7 +54,7 @@ const views: { key: string; icon: IconName; label: string; line: string }[] = [
 		}
 	</div>
 	<div class="panels">
-		<div class="panel" role="tabpanel" id="evidence-panel-code" aria-labelledby="evidence-tab-code" data-panel="code">
+		<div class="panel" role="tabpanel" tabindex="0" id="evidence-panel-code" aria-labelledby="evidence-tab-code" data-panel="code">
 			<div class="copy">
 				<p>
 					Bind a module to its file or to a function, class or value. <code>archboard check code</code>
@@ -72,6 +72,7 @@ const views: { key: string; icon: IconName; label: string; line: string }[] = [
 		<div
 			class="panel"
 			role="tabpanel"
+			tabindex="0"
 			id="evidence-panel-interface"
 			aria-labelledby="evidence-tab-interface"
 			data-panel="interface"
@@ -92,6 +93,7 @@ const views: { key: string; icon: IconName; label: string; line: string }[] = [
 		<div
 			class="panel"
 			role="tabpanel"
+			tabindex="0"
 			id="evidence-panel-changes"
 			aria-labelledby="evidence-tab-changes"
 			data-panel="changes"

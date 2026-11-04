@@ -19,7 +19,7 @@ const { lines, title = "Terminal", class: className } = Astro.props;
 		<span class="lights"><i></i><i></i><i></i></span>
 		<span class="title">{title}</span>
 	</div>
-	<pre class="body"><code>{
+	<pre class="body" tabindex="0"><code>{
 		lines.map((line) => (
 			<span class:list={["t", `t-${line.kind}`]}>
 				{line.kind === "command" && <span class="ps" aria-hidden="true">$</span>}

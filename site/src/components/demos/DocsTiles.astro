@@ -33,7 +33,7 @@ const picture = drawings.inventory;
 				The CLI exports self-contained SVG and PNG from the same model the browser reads. The SVG draws
 				its own glyphs, so it needs no font, and its traffic keeps moving.
 			</p>
-			<pre class="cmd"><code><span class="ps">$</span> archboard model render --scope 'Shop/MKhTEYqf#HYDbL5fE' \
+			<pre class="cmd" tabindex="0"><code><span class="ps">$</span> archboard model render --scope 'Shop/MKhTEYqf#HYDbL5fE' \
     --out docs/design/inventory.svg
 <span class="ps">$</span> archboard model rasterize --scope 'Shop/MKhTEYqf#HYDbL5fE' \
     --scale 2 --out docs/design/inventory.png</code></pre>
@@ -46,7 +46,7 @@ const picture = drawings.inventory;
 				A tracked drawing carries its exact render recipe. After an architecture change, the embed
 				check names the drawings that are out of date, and <code>--fix</code> redraws them.
 			</p>
-			<pre class="cmd"><code><span class="ps">$</span> archboard check embeds
+			<pre class="cmd" tabindex="0"><code><span class="ps">$</span> archboard check embeds
 <span class="ps">$</span> archboard check embeds --fix</code></pre>
 		</div>
 	</article>
