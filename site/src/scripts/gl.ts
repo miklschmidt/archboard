@@ -1,14 +1,14 @@
 // A small WebGL2 host: one full-screen triangle and one fragment shader, drawn while its canvas
 // is on screen. A shader that fails to compile leaves the canvas empty, and the CSS ground shows.
 
-import { prefersReducedMotion, whileVisible } from "./reveal";
+import { whileVisible } from "./reveal";
 
 const VERTEX = `#version 300 es
 in vec2 position;
 void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
 
 export interface Frame {
-	/** Seconds since the shader started. */
+	/** Seconds of visible motion. */
 	time: number;
 	/** Canvas size in device pixels. */
 	width: number;
@@ -46,6 +46,7 @@ function compile(gl: WebGL2RenderingContext, type: number, source: string): WebG
 	gl.compileShader(shader);
 	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
 		console.warn(gl.getShaderInfoLog(shader));
+		gl.deleteShader(shader);
 		return null;
 	}
 	return shader;
@@ -65,32 +66,59 @@ export function runShader(options: ShaderOptions): boolean {
 		powerPreference: "low-power",
 	});
 	if (!gl) return false;
-	const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
-	const frag = compile(gl, gl.FRAGMENT_SHADER, fragment);
-	const program = gl.createProgram();
-	if (!vertex || !frag || !program) return false;
-	gl.attachShader(program, vertex);
-	gl.attachShader(program, frag);
-	gl.linkProgram(program);
-	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return false;
-	gl.useProgram(program);
-
-	const buffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-	const position = gl.getAttribLocation(program, "position");
-	gl.enableVertexAttribArray(position);
-	gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-
+	let resources: { program: WebGLProgram; buffer: WebGLBuffer } | undefined;
 	const locations = new Map<string, WebGLUniformLocation | null>();
+	const release = () => {
+		if (resources) {
+			gl.deleteBuffer(resources.buffer);
+			gl.deleteProgram(resources.program);
+		}
+		resources = undefined;
+		locations.clear();
+	};
+	const initialize = () => {
+		const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
+		const frag = compile(gl, gl.FRAGMENT_SHADER, fragment);
+		const program = gl.createProgram();
+		if (vertex && frag && program) {
+			gl.attachShader(program, vertex);
+			gl.attachShader(program, frag);
+			gl.linkProgram(program);
+		}
+		if (vertex) gl.deleteShader(vertex);
+		if (frag) gl.deleteShader(frag);
+		if (!vertex || !frag || !program || !gl.getProgramParameter(program, gl.LINK_STATUS)) {
+			if (program) gl.deleteProgram(program);
+			return false;
+		}
+		const buffer = gl.createBuffer();
+		if (!buffer) {
+			gl.deleteProgram(program);
+			return false;
+		}
+		gl.useProgram(program);
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+		const position = gl.getAttribLocation(program, "position");
+		gl.enableVertexAttribArray(position);
+		gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+		resources = { program, buffer };
+		return true;
+	};
+	if (!initialize()) return false;
 	const location = (name: string) => {
-		if (!locations.has(name)) locations.set(name, gl.getUniformLocation(program, name));
+		if (!resources) return null;
+		if (!locations.has(name)) locations.set(name, gl.getUniformLocation(resources.program, name));
 		return locations.get(name) ?? null;
 	};
 
-	const still = prefersReducedMotion();
+	const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 	let width = 0;
 	let height = 0;
+	let visible = false;
+	let frame = 0;
+	let elapsed = 0;
+	let previous: number | undefined;
 	const resize = () => {
 		const ratio = Math.min(window.devicePixelRatio || 1, maxRatio);
 		width = Math.max(1, Math.round(canvas.clientWidth * ratio));
@@ -101,35 +129,50 @@ export function runShader(options: ShaderOptions): boolean {
 		}
 		gl.viewport(0, 0, width, height);
 	};
-
 	const draw = (time: number) => {
 		uniforms(gl, location, { time, width, height });
 		gl.drawArrays(gl.TRIANGLES, 0, 3);
+		canvas.classList.add("is-live");
 	};
-
-	let running = false;
-	let frame = 0;
-	const start = performance.now();
 	const loop = (now: number) => {
-		if (!running) return;
-		draw((now - start) / 1000);
+		elapsed += now - (previous ?? now);
+		previous = now;
+		draw(elapsed / 1000);
 		frame = requestAnimationFrame(loop);
 	};
-
-	new ResizeObserver(() => {
-		resize();
-		if (still || !running) draw(stillTime);
-	}).observe(canvas);
-	resize();
-	draw(stillTime);
-	canvas.classList.add("is-live");
-
-	if (still) return true;
-	whileVisible(canvas, (visible) => {
-		if (visible === running) return;
-		running = visible;
+	const update = () => {
 		cancelAnimationFrame(frame);
-		if (running) frame = requestAnimationFrame(loop);
+		previous = undefined;
+		if (!visible || !resources || gl.isContextLost()) return;
+		resize();
+		if (motion.matches) draw(stillTime);
+		else frame = requestAnimationFrame(loop);
+	};
+	const observer = new ResizeObserver(update);
+	observer.observe(canvas);
+	const stopWatching = whileVisible(canvas, (onScreen) => {
+		visible = onScreen;
+		update();
+	});
+	motion.addEventListener("change", update);
+	canvas.addEventListener("webglcontextlost", (event) => {
+		event.preventDefault();
+		cancelAnimationFrame(frame);
+		canvas.classList.remove("is-live");
+		resources = undefined;
+		locations.clear();
+	});
+	canvas.addEventListener("webglcontextrestored", () => {
+		initialize();
+		update();
+	});
+	window.addEventListener("pagehide", (event) => {
+		if (event.persisted) return;
+		cancelAnimationFrame(frame);
+		observer.disconnect();
+		stopWatching();
+		motion.removeEventListener("change", update);
+		release();
 	});
 	return true;
 }

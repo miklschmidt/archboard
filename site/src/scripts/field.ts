@@ -3,7 +3,6 @@
 // relationships of a picture.
 
 import { runShader } from "./gl";
-import { prefersReducedMotion } from "./reveal";
 
 const FRAGMENT = `#version 300 es
 precision highp float;
@@ -113,30 +112,20 @@ export interface FieldPreset {
  */
 export function lightField(canvas: HTMLCanvasElement, preset: FieldPreset): void {
 	const host = canvas.parentElement ?? canvas;
+	const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 	const lamp = { x: 0, y: 0 };
 	const target = { x: 0, y: 0 };
 	let scroll = 0;
-	const still = prefersReducedMotion();
-
-	if (!still) {
-		host.addEventListener("pointermove", (event) => {
-			const box = host.getBoundingClientRect();
-			target.x = ((event.clientX - box.left) / box.width) * 2 - 1;
-			target.y = 1 - ((event.clientY - box.top) / box.height) * 2;
-		});
-		host.addEventListener("pointerleave", () => {
-			target.x = 0;
-			target.y = 0;
-		});
-		window.addEventListener(
-			"scroll",
-			() => {
-				const box = host.getBoundingClientRect();
-				scroll = Math.min(1, Math.max(0, -box.top / Math.max(1, box.height)));
-			},
-			{ passive: true },
-		);
-	}
+	host.addEventListener("pointermove", (event) => {
+		if (motion.matches) return;
+		const box = host.getBoundingClientRect();
+		target.x = ((event.clientX - box.left) / box.width) * 2 - 1;
+		target.y = 1 - ((event.clientY - box.top) / box.height) * 2;
+	});
+	host.addEventListener("pointerleave", () => {
+		target.x = 0;
+		target.y = 0;
+	});
 
 	runShader({
 		canvas,
@@ -144,9 +133,20 @@ export function lightField(canvas: HTMLCanvasElement, preset: FieldPreset): void
 		maxRatio: 1.25,
 		stillTime: 14,
 		uniforms: (gl, at, frame) => {
+			const still = motion.matches;
+			if (still) {
+				lamp.x = 0;
+				lamp.y = 0;
+				scroll = 0;
+			} else {
+				const box = host.getBoundingClientRect();
+				scroll = Math.min(1, Math.max(0, -box.top / Math.max(1, box.height)));
+			}
 			const drift = still ? 0 : Math.sin(frame.time * 0.13) * 0.18;
-			lamp.x += (target.x + drift - lamp.x) * 0.035;
-			lamp.y += (target.y - lamp.y) * 0.035;
+			if (!still) {
+				lamp.x += (target.x + drift - lamp.x) * 0.035;
+				lamp.y += (target.y - lamp.y) * 0.035;
+			}
 			gl.uniform2f(at("uRes"), frame.width, frame.height);
 			gl.uniform1f(at("uTime"), frame.time);
 			gl.uniform2f(at("uLamp"), lamp.x, lamp.y);
