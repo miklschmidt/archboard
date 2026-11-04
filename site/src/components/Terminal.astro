@@ -1,7 +1,7 @@
 ---
 // A terminal that shows commands and what they answered. Commands are copyable text.
 export interface TerminalLine {
-	kind: "command" | "out" | "warn" | "ok" | "dim";
+	kind: "command" | "out" | "warn" | "ok";
 	text: string;
 }
 
@@ -91,9 +91,6 @@ const { lines, title = "Terminal", class: className } = Astro.props;
 	}
 	.t-out {
 		color: var(--ink-muted);
-	}
-	.t-dim {
-		color: var(--ink-faint);
 	}
 	.t-warn {
 		color: var(--changed);

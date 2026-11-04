@@ -62,7 +62,6 @@
 	--gold-bottom: oklch(0.8 0.142 81);
 	--gold-edge: oklch(0.58 0.11 74);
 	--gold-ink: oklch(0.2 0.02 70);
-	--gold-tint: oklch(0.29 0.045 80);
 	--mark-hi: oklch(0.89 0.105 90);
 	--mark-lo: oklch(0.72 0.13 75);
 
@@ -437,6 +436,12 @@ samp {
 		opacity: 1;
 		transform: none;
 	}
+}
+
+/* A looping animation runs only while its part of the page is on screen (reveal.ts). */
+.is-paused,
+.is-paused * {
+	animation-play-state: paused !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

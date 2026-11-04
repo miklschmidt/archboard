@@ -42,8 +42,9 @@ const image = new URL(socialCard, Astro.site);
 		<a class="skip" href="#main">Skip to content</a>
 		<slot />
 		<script>
-			import { observeReveals } from "../scripts/reveal";
+			import { observeReveals, pauseLoopsOffscreen } from "../scripts/reveal";
 			observeReveals();
+			pauseLoopsOffscreen();
 		</script>
 	</body>
 </html>

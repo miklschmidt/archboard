@@ -41,3 +41,10 @@ export function whileVisible(element: Element, onChange: (visible: boolean) => v
 	}).observe(element);
 	document.addEventListener("visibilitychange", update);
 }
+
+/** Pause the CSS loops inside each [data-loop] element while it is off screen (global.css). */
+export function pauseLoopsOffscreen(): void {
+	for (const element of document.querySelectorAll("[data-loop]")) {
+		whileVisible(element, (visible) => element.classList.toggle("is-paused", !visible));
+	}
+}

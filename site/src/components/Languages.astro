@@ -18,7 +18,7 @@ const items = [
 ];
 ---
 
-<section class="languages" aria-label="What the code check reads">
+<section class="languages" aria-label="What the code check reads" data-loop>
 	<p class="intro">The code check reads</p>
 	<div class="belt">
 		<ul class="track">
@@ -67,7 +67,8 @@ const items = [
 		letter-spacing: 0.03em;
 		text-transform: uppercase;
 		white-space: nowrap;
-		color: var(--ink-faint);
+		/* Display-size words: about Lc 57, over the large-text floor. */
+		color: color-mix(in oklch, var(--ink-muted) 70%, var(--ink-faint));
 		transition: color 200ms var(--ease-out);
 	}
 	.track li:hover {
