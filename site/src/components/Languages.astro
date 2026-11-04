@@ -1,6 +1,6 @@
 ---
-// What the code check reads, from the README: one line, its label at the left and a slow belt of
-// languages running out from under it. The belt stops for reduced motion.
+// What the code check reads, from the README: one line inside the page's margins, its label at the
+// left and a slow belt of languages running out from under it. The belt stops for reduced motion.
 const items = [
 	"TypeScript",
 	"Python",
@@ -34,19 +34,20 @@ const items = [
 </section>
 
 <style>
+	/* The line keeps to the page's container: the label starts at its left edge, and the belt fades
+	   out at its right edge. */
 	.languages {
 		display: flex;
 		align-items: center;
 		padding-top: clamp(72px, 9vw, 120px);
+		padding-inline: max(var(--gutter), calc((100% - var(--measure)) / 2));
 	}
-	/* The label starts where the page's container starts. */
 	.intro {
 		flex: none;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 4px;
-		padding-left: max(var(--gutter), calc((100% - var(--measure)) / 2));
 		padding-right: 4px;
 		font-size: 0.9375rem;
 		color: var(--ink-muted);
@@ -104,7 +105,6 @@ const items = [
 	}
 	.languages:not(.is-animated) .belt {
 		flex-basis: 100%;
-		margin-inline: max(var(--gutter), calc((100% - var(--measure)) / 2));
 		overflow: visible;
 		mask-image: none;
 	}
