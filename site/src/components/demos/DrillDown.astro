@@ -28,9 +28,9 @@ const vars = [
 <div class="drill table" data-drill data-loop style={vars}>
 	<div class="bar">
 		<nav class="crumbs" aria-label="Breadcrumbs">
-			<button type="button" class="crumb" data-back>Shop</button>
+			<button type="button" class="crumb" data-back disabled aria-current="page">Shop</button>
 			<span class="sep" aria-hidden="true"><Icon name="chevronRight" size={14} /></span>
-			<span class="crumb here" data-here>Inventory service</span>
+			<span class="crumb here" data-here aria-hidden="true">Inventory service</span>
 		</nav>
 		<button type="button" class="open" data-open>
 			Open Inventory service <Icon name="arrowRight" size={16} />
@@ -251,8 +251,22 @@ const vars = [
 <script>
 	for (const root of document.querySelectorAll<HTMLElement>("[data-drill]")) {
 		const set = (open: boolean) => {
+			const moveFocus = root.contains(document.activeElement);
 			root.classList.toggle("is-open", open);
 			root.querySelector(".inner")?.setAttribute("aria-hidden", String(!open));
+			const outer = root.querySelector<HTMLElement>(".outer");
+			if (outer) outer.inert = open;
+			const crumb = root.querySelector<HTMLButtonElement>("[data-back]");
+			if (crumb) {
+				crumb.disabled = !open;
+				if (open) crumb.removeAttribute("aria-current");
+				else crumb.setAttribute("aria-current", "page");
+			}
+			const here = root.querySelector("[data-here]");
+			here?.setAttribute("aria-hidden", String(!open));
+			if (open) here?.setAttribute("aria-current", "page");
+			else here?.removeAttribute("aria-current");
+			if (moveFocus) root.querySelector<HTMLButtonElement>(open ? "[data-back-button]" : ".bar [data-open]")?.focus();
 		};
 		for (const button of root.querySelectorAll("[data-open]")) button.addEventListener("click", () => set(true));
 		for (const button of root.querySelectorAll("[data-back], [data-back-button]"))
