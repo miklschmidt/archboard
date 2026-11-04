@@ -113,10 +113,13 @@ reviews:
 
 knowledge_base:
   code_guidelines:
+    # Product rules and source guidance supplement the default agent files.
     filePatterns:
       - "CONTEXT.md"
       - "PRODUCT.md"
-      - "docs/agents/*.md"
+      # These guides govern source outside their own documentation directory.
+      - files: "docs/agents/*.md"
+        applyTo: "**"
 
 # Users report bugs as GitHub issues. Each new issue gets related code and a
 # complexity assessment.
