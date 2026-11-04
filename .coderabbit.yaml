@@ -44,11 +44,13 @@ reviews:
   pre_merge_checks:
     title:
       mode: warning
+      # Squash merges use the PR title as their commit subject.
       requirements: >-
-        The title becomes the squash-merge commit subject. It must follow
-        Conventional Commits: `type(scope): summary` or `type: summary`, with
-        type one of feat, fix, docs, refactor, perf, test, build, ci, chore or
-        revert, and a lowercase summary that states the user-visible result.
+        The title must follow Conventional Commits. Start with a type, an
+        optional scope in parentheses, and an optional `!` for a breaking
+        change, followed by a colon, a space and a short description. Use
+        feat for features and fix for fixes. Other types, such as style,
+        docs, refactor, perf, test, build, ci, chore and revert, are allowed.
     # The custom check below holds the description to the repository's form.
     description:
       mode: "off"
