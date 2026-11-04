@@ -193,6 +193,20 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 	}
 
 	/**
+	 * The user asked for a part to change. A reading still waiting for the debounce shows
+	 * what came before this gesture, so it goes first: otherwise it could use up this mark,
+	 * and the report that really carries the change would be told to nobody.
+	 * @param part The part their gesture was about.
+	 */
+	function userChanged(part: SemanticPanePart): void {
+		if (pending !== null) {
+			if (timer !== null) clearTimeout(timer);
+			flush();
+		}
+		marks.mark(part);
+	}
+
+	/**
 	 * Say so when the reader dropped a report as overtaken.
 	 *
 	 * It means this publisher is racing itself, or has been restarted without a
@@ -250,7 +264,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 	return {
 		flush: flushLatest,
 		publish,
-		userChanged: marks.mark,
+		userChanged,
 		userChangeFailed: marks.unmark,
 		republish,
 		reset,

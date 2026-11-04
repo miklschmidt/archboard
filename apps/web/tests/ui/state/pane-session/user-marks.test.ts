@@ -154,6 +154,27 @@ describe("what a report says the user changed", () => {
 		expect(sent[1]?.byUser).toBeUndefined();
 	});
 
+	test("a view asked for while a pick still waits is said with the view that arrives later", async () => {
+		const { publisher, sent } = watched();
+		publisher.publish(reading("payments", null));
+		await settled();
+
+		// The pick is still inside the debounce when the view is asked for, and the view is drawn
+		// only after a layout.
+		publisher.userChanged("selection");
+		publisher.publish(reading("payments", "lease"));
+		publisher.userChanged("view");
+		await settled();
+		publisher.publish({
+			...reading("payments", "lease"),
+			view: { id: "focus", name: "Focus", grammar: "architecture" },
+		});
+		await settled();
+		publisher.dispose();
+
+		expect(sent.map((body) => body.byUser)).toEqual([undefined, ["selection"], ["view"]]);
+	});
+
 	test("saying a reading again after a reconnect credits nobody", async () => {
 		const { publisher, sent } = watched();
 		publisher.userChanged("selection");
