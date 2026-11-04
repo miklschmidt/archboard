@@ -224,7 +224,7 @@ The site is one long page in a dark room. Warm graphite planes stack under a lig
 
 One gold does the choosing. It marks the brand, the one action of a region, and what is selected. The type is tall condensed capitals for what a region is about, plain sans for every other word, and mono for commands, paths and counts. The values come from the renderer's dark theme in `packages/renderer/assets/theme.css`, and the type scale belongs to the site. The product's shell is a different surface with a light theme and keeps its own record at the repository root.
 
-The build carries out the direction contract as written. The hero is left-aligned over a WebGL lamp and grid. A mock Archboard window in perspective holds the real example-shop drawing and builds itself line by line while real CLI commands type out. Each later section uses a different demonstration form: a sortable table, tabs, a switch, two panes, a timeline, a player, a zoom, a claim. The owner rejects three things. The first is the category default: a centered hero over a flat screenshot, then a grid of same-size icon cards. The others are a light theme and any label above a heading.
+The build carries out the direction contract as written. The hero is left-aligned over a WebGL drafting table that carries Archboard's own architecture, painted live, its cards raised as tiles under the lamp. A mock Archboard window in perspective holds the real example-shop drawing and builds itself line by line while real CLI commands type out. Each later section uses a different demonstration form: a sortable table, tabs, a switch, two panes, a timeline, a player, a zoom, a claim. The owner rejects three things. The first is the category default: a centered hero over a flat screenshot, then a grid of same-size icon cards. The others are a light theme and any label above a heading.
 
 **Key Characteristics:**
 
@@ -233,7 +233,7 @@ The build carries out the direction contract as written. The hero is left-aligne
 - One gold in a few finishes. Every other colour in the page is state, kind or the renderer's own.
 - Display capitals for section heads and feature claims. Sans for prose. Mono for data.
 - Left-aligned composition. Only the closing call is centered.
-- Light moves along lines: a lamp pool, traffic on the grid, and sparks that draw lines. Nothing moves for decoration alone.
+- Light moves along lines: a lamp pool, traffic on the table and along the drawing's lines, and sparks that draw lines. Nothing moves for decoration alone.
 - Every drawing is real renderer output.
 
 ## Colors
@@ -410,6 +410,7 @@ Every diagram on the page is Archboard renderer output in the dark theme. The dr
 
 - `docs/readme/web-shop-dark.svg`, `docs/readme/sequence-dark.svg` and `docs/readme/architecture-dark.svg` come from the README's asset build. They are the example shop, the "Place an order" sequence and Archboard's own architecture.
 - `site/src/diagrams/checkout-api.svg`, `inventory-service.svg`, `live-events.svg`, `nightly-batch.svg`, `place-order-flowchart.svg`, `place-order-sequence.svg` and `queued-fulfilment.svg` come from `site/scripts/render-diagrams.sh`. It runs a private Archboard server over a copy of the example shop and calls `archboard model render`. The two `place-order` drawings come last. Before them, the script rewrites the copy's "Place an order" flow from `site/scripts/place-order-logic.changes.json`, so the Grammars demo shows the flow's stock and payment decisions and its receipt loop. The walkthrough keeps the README's sequence, because the example's walkthrough narrates that flow. Draw them again after a renderer change and commit them.
+- The hero's table and the model's viewport show the whole of `.archboard/vault`, painted live by the product's painter (ADR 0071). `site/scripts/paint.ts` paints it at build time into `site/src/paintings/`, which Git ignores, because a painting belongs to the painter of the same core build. The hero's painting has no ground. The viewport's painting is the app's own look. Where no painter starts, the viewport shows `docs/readme/architecture-dark.svg`.
 - The one raster is `docs/assets/archboard-social-card.jpg`, the existing social card, used as `og:image`.
 - The favicon, `site/public/favicon.svg`, is a hand-written SVG of the brand mark. The mark component draws the same shape in the page, as the shell's brand does.
 - Icons are Remix Icon line glyphs, inlined as SVG through `site/src/lib/icons.ts`. The kind chips use the icons and colours the renderer gives each kind.
@@ -418,7 +419,9 @@ Every diagram on the page is Archboard renderer output in the dark theme. The dr
 
 ### Signature: the lit field
 
-A WebGL2 shader draws a grid in perspective on warm ground. A lamp pool follows the pointer and drifts. Major and minor lines read like engineering paper. Pulses of light run along the major lines in the kind colours. The hero uses pitch 0.5, lift 1.8 and traffic 1. The closing uses pitch 0.95, lift 2.2 and traffic 1.3. Scroll slides the grid. The canvas fades in over 1600ms only after the first frame draws. If WebGL2 or the shader fails, the canvas stays empty and the CSS ground and wash show.
+A WebGL2 shader draws a table in perspective on warm ground. A lamp pool follows the pointer and drifts. Pulses of light in the kind colours run along the lanes of an engineering grid. The closing draws the grid's major and minor lines too. The hero does not, because its drawing has lines of its own. The hero uses pitch 0.5, lift 1.8 and traffic 1. The closing uses pitch 0.95, lift 2.2 and traffic 1.3. Scroll slides the table. The canvas fades in over 1600ms only after the first frame draws. If WebGL2 or the shader fails, the canvas stays empty and the CSS ground and wash show.
+
+The hero's table carries Archboard's own architecture. Once the page is idle, the product's painter starts on three canvases: the whole picture at 2560 pixels across, and two finer bands that follow the part of the table nearest the eye as the page scrolls. The shader samples the finest band that holds each point, so near cards stay sharp. The painter brings the picture in over 1.9 seconds, the product's entry slowed by 2.5, and runs its traffic. Each card stands up as a rounded tile 0.05 table units thick as it arrives, nearest the middle first. The tile's top is the painted card, its body is the card's own tone at 55%, its top edge is rounded off and catches the lamp, and it casts a soft shadow away from the lamp. Left of the words' edge only the lamp shows the drawing. When the pointer rests on a card for 180ms, the painter lights the card, its lines and the cards at their other ends over 420ms, dims the rest to half, rings the card, and the tile lifts 0.1 units off the table. The CPU painter draws the whole picture once, without traffic, as under reduced motion.
 
 ### Signature: the hero window
 
