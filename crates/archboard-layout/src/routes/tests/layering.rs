@@ -124,3 +124,39 @@ fn a_solid_line_hops_a_dashed_one_with_the_least_room_past_its_feet_as_it_hops_a
     // Between two solid lines, one of them hops.
     assert!(bridged(&drawing(&routes)).bridges.iter().any(hops));
 }
+
+#[test]
+fn turning_a_facing_hop_keeps_the_beneath_lines_bend_clear() {
+    // The first hop clears the bend only above its line. A second hop facing
+    // it must not turn that standing arc down into the bend to make room.
+    let mut before = drawn(
+        &[
+            across(50.0),
+            points(&[(50.0, 0.0), (50.0, 62.0), (100.0, 62.0)]),
+            across(40.0),
+        ],
+        &[(0, "call", Emphasis::Hero)],
+    );
+    before.edges[2].label = Some(PlacedLabel {
+        bounds: Rect {
+            x: 40.0,
+            y: 24.0,
+            width: 20.0,
+            height: 11.0,
+        },
+        measured: MeasuredLabel {
+            width: 20.0,
+            height: 11.0,
+            runs: Vec::new(),
+        },
+    });
+    let result = bridged(&before);
+    assert_eq!(result.bridges.len(), 2);
+    assert!(result.bridges.iter().all(hops));
+    let hop = result
+        .bridges
+        .iter()
+        .find(|hop| hop.edge_id == "0")
+        .unwrap();
+    assert_eq!(bulge_of(hop).1, 0.0, "{:#?}", result.bridges);
+}

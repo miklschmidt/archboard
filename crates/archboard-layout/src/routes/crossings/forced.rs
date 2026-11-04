@@ -10,11 +10,11 @@ use super::super::crowding::{
     CROSSWISE_CLEARANCE, facing_crowding, facing_hops, forced_crowding, knot_crowding,
     mark_crowding, own_head_crowding,
 };
-use super::super::drawn_lines::{Run, along, on_run};
-use super::super::hops::{Bulge, Hop, crest_along, flipped, hop_fits, hump};
+use super::super::drawn_lines::{Axis, Run, along, on_run};
+use super::super::hops::{Bulge, Hop, crest_along, flipped, hop_fits, hump, passes_beneath};
 use super::super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS};
 use super::{LEAST_ROOM, Rise, Settling, at_on};
-use crate::ecma::{js_min, max, min};
+use crate::ecma::{js_min, max, min, sign};
 
 /// How near two hops along one line stand before they read as one knot: the
 /// clear space each keeps from the other.
@@ -218,18 +218,32 @@ impl Settling<'_> {
     }
 
     /// A hop over one crossing standing with each hop it would face turned
-    /// to bulge the other way.
+    /// to bulge the other way, where its lines beneath stay straight under it.
     fn turned(&mut self, rise: &Rise, curve: &Curve) -> Vec<Arcs> {
         let run = &self.scene.runs[self.cluster(rise.cluster).run];
         facing_hops(&self.scene, run, curve)
             .into_iter()
-            .map(|index| {
+            .filter_map(|index| {
                 let turned = flipped(&self.scene.hops[index]);
-                let rises = vec![
-                    (self.stood[index].clone(), turned),
-                    (rise.clone(), curve.clone()),
-                ];
-                self.judged(rises, vec![index])
+                let standing = &self.stood[index];
+                let crest = turned.segments[0].to();
+                let bulge = match self.scene.hops[index].axis {
+                    Axis::X => sign(turned.from.y - crest.y),
+                    Axis::Y => sign(crest.x - turned.from.x),
+                };
+                if !standing.crossings.iter().all(|&crossing| {
+                    let beneath = &self.scene.runs[self.sides(standing.cluster, crossing).1.drawer];
+                    passes_beneath(
+                        &self.scene.runs,
+                        beneath,
+                        self.crossings[crossing].point,
+                        bulge,
+                    )
+                }) {
+                    return None;
+                }
+                let rises = vec![(standing.clone(), turned), (rise.clone(), curve.clone())];
+                Some(self.judged(rises, vec![index]))
             })
             .collect()
     }

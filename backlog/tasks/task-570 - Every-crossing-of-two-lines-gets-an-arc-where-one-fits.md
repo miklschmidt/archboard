@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-03T18:42:00Z'
-updated_date: '2026-11-04T01:35:00Z'
+updated_date: '2026-11-04T01:38:00Z'
 labels:
   - renderer
 dependencies: []
@@ -52,6 +52,8 @@ Owner follow-up (2026-11-04): forced hops crowded each other and junction marks.
 Review scope: git diff a30e697de..cd274c2c1 in fix/crossing-hop-crowding. These corrections keep the existing renderer architecture accurate, so no architecture proposal is needed.
 
 Review finding R1 verified: crowding.rs stopped at the first overlapping route or keepout, so forced candidates did not use their worst clearance. A fixed-geometry regression failed when obstacle order changed. Removed both early returns so all obstacles contribute to the score.
+
+Review finding R2 verified: turned flipped a standing hop without testing the new side of each line beneath it. A fixed-geometry regression put the flipped arc into a nearby bend. Flip candidates now require passes_beneath on the new side at every crossing of the standing rise. The regression passes and both crossings retain full-size arcs.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
