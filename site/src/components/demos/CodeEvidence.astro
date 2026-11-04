@@ -3,10 +3,13 @@
 // that supports it. The checkout is a small example, like the README's.
 import Icon from "../Icon.astro";
 
-const source = `<span class="ln">21</span>  <span class="k">const</span> order = <span class="k">await</span> validateOrder(basket);
-<span class="ln">22</span>  <span class="k">const</span> payment = <span class="k">await</span> chargeCard(order);
-<span class="hl"><span class="ln">23</span>  <span class="k">await</span> saveOrder({ ...order, payment });</span>
-<span class="ln">24</span>  <span class="k">return</span> confirm(order.id);`;
+const source = `<span class="ln">18</span><span class="k">export async function</span> placeOrder(basket) {
+<span class="ln">19</span>  <span class="k">const</span> order = <span class="k">await</span> validateOrder(basket);
+<span class="ln">20</span>  <span class="k">const</span> payment = <span class="k">await</span> chargeCard(order);
+<span class="hl"><span class="ln">21</span>  <span class="k">await</span> saveOrder({ ...order, payment });</span>
+<span class="ln">22</span>  <span class="k">await</span> sendReceipt(order);
+<span class="ln">23</span>  <span class="k">return</span> confirm(order.id);
+<span class="ln">24</span>}`;
 ---
 
 <div class="evidence table">
@@ -45,7 +48,8 @@ const source = `<span class="ln">21</span>  <span class="k">const</span> order =
 <style>
 	.evidence {
 		display: grid;
-		grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+		/* The source takes the wider share, so its longest line fits without a scrollbar. */
+		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
 		gap: 6px;
 		padding: 6px;
 		background: var(--chrome);
@@ -110,12 +114,17 @@ const source = `<span class="ln">21</span>  <span class="k">const</span> order =
 		color: oklch(0.2 0.03 50);
 		background: var(--changed);
 	}
+	/* A name never breaks inside itself; in a narrow panel the second name moves to its own line. */
 	.route {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 8px;
+		gap: 4px 8px;
 		font-weight: 600;
 		color: var(--ink);
+	}
+	.route span {
+		white-space: nowrap;
 	}
 	.route :global(svg) {
 		color: var(--ink-muted);

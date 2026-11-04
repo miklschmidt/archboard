@@ -317,7 +317,7 @@ The mock window and the demo panels set smaller type (10.5px to 13px) because th
 
 ## Layout
 
-The page is one left-aligned column of chapters. A container holds 1240px of content between gutters of clamp(16px, 4vw, 40px). The nav and the hero window use a wide container of 1440px. Nothing is centered except the closing call. The page runs in this order: hero, a belt of languages, how it works, understand, plan, present, Archboard draws itself, comparison, quick start, questions, closing, footer.
+The page is one left-aligned column of chapters. A container holds 1240px of content between gutters of clamp(16px, 4vw, 40px). Every row uses it, the nav and the hero window too, so the logo, the headline, the window and each section start on one left edge. Nothing is centered except the closing call. The page runs in this order: hero, a belt of languages, how it works, understand, plan, present, Archboard draws itself, comparison, quick start, questions, closing, footer.
 
 A section opens with padding-top of clamp(96px, 14vw, 200px) and no bottom padding. Its head is a two-column grid, 7fr for the capitals and 5fr for the lead. The columns align at their bottom edge with a 24px by 64px gap and a bottom margin of clamp(48px, 6vw, 80px). Below 900px the head stacks.
 
@@ -334,7 +334,7 @@ Depth is layered tone plus a light from above. A plane is lighter than the one u
 ### Shadow Vocabulary
 
 - **Raised** (`box-shadow: inset 0 1px 0 oklch(1 0.01 85 / 0.09), 0 1px 0 oklch(0.06 0.004 75 / 0.7), 0 2px 6px -1px oklch(0.06 0.006 75 / 0.5)`): A control's face, a selected tab, a chip with weight.
-- **Float** (`box-shadow: inset 0 1px 0 oklch(1 0.01 85 / 0.09), 0 1px 1px oklch(0.06 0.004 75 / 0.6), 0 12px 24px -8px oklch(0.06 0.006 75 / 0.6), 0 32px 64px -24px oklch(0.06 0.006 75 / 0.7)`): A step card, a terminal, an open FAQ item, a pipeline card.
+- **Float** (`box-shadow: inset 0 1px 0 oklch(1 0.01 85 / 0.09), 0 1px 1px oklch(0.06 0.004 75 / 0.6), 0 12px 24px -8px oklch(0.06 0.006 75 / 0.6), 0 32px 64px -24px oklch(0.06 0.006 75 / 0.7)`): A step card, an open FAQ item, a pipeline card.
 - **Table** (`box-shadow: inset 0 1px 0 oklch(1 0.01 85 / 0.09), 0 2px 0 oklch(0.06 0.004 75 / 0.6), 0 24px 48px -16px oklch(0.06 0.006 75 / 0.75), 0 64px 120px -48px oklch(0.04 0.006 75 / 0.9)`): The table every demonstration lies on.
 - **Well** (`box-shadow: inset 0 2px 4px oklch(0.04 0.004 75 / 0.6), inset 0 -1px 0 oklch(1 0.01 85 / 0.09)`): A trough for tabs, rails and tables, and a pressed quiet button.
 - **Hairline ring** (`box-shadow: inset 0 0 0 1px oklch(1 0.01 85 / 0.09)`): The edge of every plane, in place of a border.
@@ -391,9 +391,9 @@ Edges are inset hairline rings, never borders. The only borders are the CSS tria
 - **Style:** 22px high, 0 8px padding, 2px radius, 0.75rem at 600. The solid orange chip uses Changed Ink on Changed Orange. The tinted chip uses orange text on a 14% orange tint with a 40% ring. The quiet chip uses a Well face with mono text.
 - **Kind chip:** A square with a radius of 24% of its size. A 20% tint of the kind colour sits over Slab, and the kind's Remix icon takes the kind colour. It copies the chip the renderer draws on a card.
 
-### Code and terminals
+### Code
 
-- **Style:** Code Bed floor, a hairline ring, 6px radius, mono at 0.72rem to 0.8125rem with 1.7 line height. Commands are Ink and replies are Muted Ink. A `$` prompt is Lamp Gold. A warning is Changed Text and a success is Added Green. A block that can scroll sideways takes keyboard focus. The terminal adds a 34px Chrome bar with three 9px Slab dots.
+- **Style:** Code Bed floor, a hairline ring, 6px radius, mono at 0.72rem to 0.8125rem with 1.7 line height. Commands are Ink and replies are Muted Ink. A `$` prompt is Lamp Gold. A warning is Changed Text and a success is Added Green. A block that can scroll sideways takes keyboard focus.
 - **Copy:** Each block copies as one command list.
 
 ### Navigation
@@ -422,7 +422,7 @@ A WebGL2 shader draws a grid in perspective on warm ground. A lamp pool follows 
 
 ### Signature: the hero window
 
-A mock Archboard shell at 1280 by 760 holds the real web-shop drawing. It scales to its column and lies tilted at 16 degrees in a 2400px perspective. It stands up as the page scrolls. When it enters view the agent's lines type at 14ms a character. Cards wait as outlines at 16% opacity, then land 150ms apart. A spark draws each line in 760ms, 170ms apart, and its label lands as the spark does. Traffic fades in over 900ms. A Replay button appears 2.2s after the last line. A caption below the window says that it is a mock around a real drawing.
+A mock Archboard shell at 1280 by 760 holds the real web-shop drawing. It scales to its column. While part of it is below the fold, it leans back by up to 12 degrees in a 2400px perspective. It is straight once all of it is in view, so a tall screen shows it straight from the start. When it enters view the agent's lines type at 14ms a character. Cards wait as outlines at 16% opacity, then land 150ms apart. A spark draws each line in 760ms, 170ms apart, and its label lands as the spark does. Traffic fades in over 900ms. A Replay button appears 2.2s after the last line. A caption below the window says that it is a mock around a real drawing.
 
 ### Signature: the walkthrough player
 

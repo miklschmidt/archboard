@@ -1,13 +1,14 @@
-// The hero's window: it scales to its column, it lies tilted on the table and stands up as the
-// page scrolls, and its drawing builds itself while the agent's commands type out. The cards wait
-// as faint outlines, so the window is never empty; they land when the agent maps them, then a
-// spark draws each line, then the traffic runs, as the product draws a picture (DESIGN.md, the
-// Spark Rule). With reduced motion, everything is there at once.
+// The hero's window: it scales to its column, it leans back while part of it is below the fold
+// and stands straight once all of it is in view, and its drawing builds itself while the agent's
+// commands type out. The cards wait as faint outlines, so the window is never empty; they land
+// when the agent maps them, then a spark draws each line, then the traffic runs, as the product
+// draws a picture (DESIGN.md, the Spark Rule). With reduced motion, everything is there at once.
 
 import { animate } from "./reveal";
 import { sparkLine } from "./spark";
 
-const TILT = 16;
+/** How far the window leans back while it enters the viewport, in degrees. */
+const TILT = 12;
 /** How faint a card is before the agent maps it. */
 const WAITING = 0.16;
 
@@ -128,9 +129,11 @@ export function mountHeroWindow(): void {
 	new ResizeObserver(fit).observe(stage);
 	fit();
 
+	// How much of the window is in view from below: none at the fold, all once its bottom edge is
+	// on screen. A window that the viewport holds whole is straight.
 	const lean = () => {
 		const box = stage.getBoundingClientRect();
-		const progress = Math.min(1, Math.max(0, 1 - box.top / (window.innerHeight * 0.9)));
+		const progress = Math.min(1, Math.max(0, (window.innerHeight - box.top) / box.height));
 		tilt.style.setProperty(
 			"--tilt",
 			`${(motion.matches ? 0 : TILT * (1 - progress)).toFixed(2)}deg`,

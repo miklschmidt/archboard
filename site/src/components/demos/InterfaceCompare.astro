@@ -2,7 +2,6 @@
 // Stock API's interface in two states of the example shop, as `archboard model compare
 // --state "Queued fulfilment" --against current` reports it: the proposal hides Release route,
 // gains Fulfilment worker as a caller and loses Place order and Timeout guard.
-import Terminal from "../Terminal.astro";
 
 const states = [
 	{
@@ -58,18 +57,13 @@ const labels = ["Entries", "Hidden", "Callers"];
 			))
 		}
 	</div>
-	<Terminal
-		title="archboard model compare"
-		lines={[
-			{ kind: "command", text: 'archboard model compare --state "Queued fulfilment" --against current' },
-			{ kind: "out", text: '"Queued fulfilment" read against "Synchronous checkout" (explicit).' },
-			{
-				kind: "warn",
-				text: 'Interface of "Stock API": now hidden Release route; callers gained Fulfilment worker; callers lost Place order, Timeout guard.',
-			},
-			{ kind: "out", text: "Subjects: 23 added, 14 removed, 10 changed, 47 unchanged." },
-		]}
-	/>
+	<div class="answer mono">
+		<p><span class="ps">$</span> archboard model compare --state "Queued fulfilment" --against current</p>
+		<p class="warn">
+			Interface of "Stock API": now hidden Release route; callers gained Fulfilment worker; callers
+			lost Place order, Timeout guard.
+		</p>
+	</div>
 </div>
 
 <style>
@@ -194,6 +188,25 @@ const labels = ["Entries", "Hidden", "Callers"];
 	.callers {
 		font-size: 0.8125rem;
 		color: var(--ink-body);
+	}
+	/* The command and the line of its answer that the cards show, without a terminal's chrome. */
+	.answer {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 12px 14px;
+		border-radius: 6px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+		font-size: 0.75rem;
+		line-height: 1.6;
+		color: var(--ink-body);
+	}
+	.ps {
+		color: var(--gold-mark);
+	}
+	.warn {
+		color: var(--changed-text);
 	}
 	@media (max-width: 560px) {
 		.states {

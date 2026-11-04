@@ -310,9 +310,6 @@ samp {
 	margin-inline: auto;
 	padding-inline: var(--gutter);
 }
-.wide {
-	max-width: calc(1440px + var(--gutter) * 2);
-}
 
 .sr-only {
 	position: absolute;
