@@ -276,6 +276,17 @@ pub struct ExportFrame {
     pub legend_only: Option<bool>,
 }
 
+/// How the blocks of a picture are drawn.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum Relief {
+    /// Raised: a front edge along each foot and a shadow below.
+    #[default]
+    Slab,
+    /// Flat, for a host that raises the blocks itself: each face spans its whole box, with no edge and no shadow.
+    Flat,
+}
+
 /// The comparison a picture is read against, and the page around it.
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -290,6 +301,9 @@ pub struct PageRequest {
     pub unsettled: Vec<String>,
     /// Whether the picture describes something nobody has built.
     pub unbuilt: bool,
+    /// How the blocks are drawn; raised when absent.
+    #[serde(default)]
+    pub relief: Relief,
     /// What an export carries beside its drawing.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]

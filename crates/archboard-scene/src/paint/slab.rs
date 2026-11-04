@@ -216,6 +216,9 @@ pub(super) fn slab_shadow(
     if standing == Some(Standing::Removed) {
         return ghost(rect, radius, palette);
     }
+    if palette.flat {
+        return Items::new();
+    }
     smooth_shadow(rect, radius, lift.reach())
 }
 
@@ -238,7 +241,7 @@ pub(super) fn shadow_under(
     standing: Option<Standing>,
     part: Option<ShadowOf>,
 ) -> Items {
-    if standing == Some(Standing::Removed) {
+    if standing == Some(Standing::Removed) || palette.flat {
         return Items::new();
     }
     shadow_group(
@@ -246,6 +249,11 @@ pub(super) fn shadow_under(
         Some(member),
         part,
     )
+}
+
+/// How tall a block's front edge shows: none when the picture draws blocks flat.
+fn thickness_of(look: &SlabLook, palette: &Palette) -> f64 {
+    if palette.flat { 0.0 } else { look.thickness }
 }
 
 /// The light that falls off down a face.
@@ -269,7 +277,7 @@ pub(super) fn slab(
         return Items::new();
     }
     let face = Rect {
-        height: rect.height - look.thickness,
+        height: rect.height - thickness_of(look, palette),
         ..rect
     };
     let lit = Rect {
@@ -278,10 +286,14 @@ pub(super) fn slab(
         ..face
     };
     lines(vec![
-        shape(Shape {
-            clip: cut.cloned(),
-            ..plate(rect, look.radius).filled(&look.edge)
-        }),
+        if palette.flat {
+            Items::new()
+        } else {
+            shape(Shape {
+                clip: cut.cloned(),
+                ..plate(rect, look.radius).filled(&look.edge)
+            })
+        },
         shape(plate(face, look.radius).filled(glint_of(&look.lit, palette))),
         shape(plate(lit, look.radius).filled(look.face.clone())),
         if look.sheen {
@@ -347,7 +359,7 @@ pub(super) fn solid_slab(
             body,
             Point {
                 x: 0.0,
-                y: -look.thickness,
+                y: -thickness_of(look, palette),
             },
         ),
     );
@@ -362,7 +374,11 @@ pub(super) fn solid_slab(
         ),
     );
     lines(vec![
-        shape(solid(body, radius).filled(&look.edge)),
+        if palette.flat {
+            Items::new()
+        } else {
+            shape(solid(body, radius).filled(&look.edge))
+        },
         shape(solid(&face, radius).filled(glint_of(&look.lit, palette))),
         shape(solid(&lit, radius).filled(look.face.clone())),
         if look.sheen {

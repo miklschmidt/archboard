@@ -1,5 +1,5 @@
 //! Print the TypeScript types of the core's contract: what a render answers,
-//! the theme colours a host gives it and the frame an export asks for, with
+//! the theme colours a host gives it, the frame an export asks for and the relief, with
 //! every type they name (ADR 0059). `scripts/build-core.ts` writes them beside
 //! the WebAssembly build, so the TypeScript side never holds a copy of its own.
 //!
@@ -10,7 +10,7 @@ use std::any::TypeId;
 use std::collections::{BTreeMap, HashSet};
 
 use archboard_render::Rendered;
-use archboard_scene::request::{ExportFrame, ThemeColors};
+use archboard_scene::request::{ExportFrame, Relief, ThemeColors};
 use archboard_scene::scene::AtlasBox;
 use ts_rs::{Config, TS, TypeVisitor};
 
@@ -219,6 +219,7 @@ fn main() {
     // What the host gives a render and asks of an export.
     declarations.visit::<ThemeColors>();
     declarations.visit::<ExportFrame>();
+    declarations.visit::<Relief>();
     // Named only in the TypeScript written by hand for an atlas's boxes.
     declarations.visit::<AtlasBox>();
     let mut file = String::from(

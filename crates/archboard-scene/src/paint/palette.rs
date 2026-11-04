@@ -61,6 +61,8 @@ pub(super) struct Palette {
     pub standing_changed: Colour,
     /// A subject the variant it is read against has and this one does not.
     pub standing_removed: Colour,
+    /// Whether blocks are drawn flat, for a host that raises them itself: no front edge, no shadow.
+    pub flat: bool,
 }
 
 impl Palette {
@@ -94,6 +96,7 @@ impl Palette {
             standing_added: Token::StandingAdded.into(),
             standing_changed: Token::StandingChanged.into(),
             standing_removed: Token::StandingRemoved.into(),
+            flat: false,
         }
     }
 }

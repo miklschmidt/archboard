@@ -5,7 +5,9 @@ use std::collections::{BTreeMap, HashSet};
 
 use crate::drawing::{Node, Painted, ReadingDirection, TextRole};
 use crate::measure::{FarCard, far_scale_for};
-use crate::request::{ArchitecturePicture, PaintRequest, Picture, SequencePicture, Standing};
+use crate::request::{
+    ArchitecturePicture, PaintRequest, Picture, Relief, SequencePicture, Standing,
+};
 use crate::scene::{Atlas, Boxes, Definition, Head, HeadInk, Item, MarkerId, Scene};
 
 mod appearance;
@@ -196,7 +198,10 @@ pub fn paint(request: &PaintRequest) -> Scene {
         icons: &request.icons,
         far_scale: picture_far_scale(&request.picture),
     };
-    let palette = &palette::Palette::of_page();
+    let palette = &palette::Palette {
+        flat: request.page.relief == Relief::Flat,
+        ..palette::Palette::of_page()
+    };
     let page = &request.page;
     let unsettled = standing::Unsettled::from(&page.unsettled);
     let painted = standing::Standings::from(if page.plain {
@@ -296,7 +301,7 @@ mod tests {
 
     use super::paint;
     use crate::request::{PaintRequest, Standing};
-    use crate::scene::{Item, Motion, Role, Scene, Subject, SubjectKind};
+    use crate::scene::{Colour, Item, Motion, Paint, Role, Scene, Subject, SubjectKind, Token};
 
     /// The sort of role a group plays, its facts aside.
     fn sort(role: &Role) -> std::mem::Discriminant<Role> {
@@ -350,9 +355,47 @@ mod tests {
 
     /// The scene of the test picture.
     fn painted() -> Scene {
+        painted_with(REQUEST)
+    }
+
+    /// The scene of a request written like the test picture's.
+    fn painted_with(request: &str) -> Scene {
         let request: PaintRequest =
-            serde_json::from_str(&REQUEST.replace("EDGE", EDGE)).expect("the request reads");
+            serde_json::from_str(&request.replace("EDGE", EDGE)).expect("the request reads");
         paint(&request)
+    }
+
+    /// How many shapes are filled with the slab edge colour, and how many shadows are laid.
+    fn edges_and_shadows(scene: &Scene) -> (usize, usize) {
+        let items = every(&scene.body);
+        let edge = Paint::from(Colour::from(Token::SlabEdge));
+        let edges = items
+            .iter()
+            .filter(|item| matches!(item, Item::Shape(shape) if shape.fill.as_ref() == Some(&edge)))
+            .count();
+        let shadows = items
+            .iter()
+            .filter(
+                |item| matches!(item, Item::Group(group) if matches!(group.role, Role::Shadow(_))),
+            )
+            .count();
+        (edges, shadows)
+    }
+
+    #[test]
+    fn a_flat_relief_draws_no_front_edge_and_no_shadow() {
+        let (edges, shadows) = edges_and_shadows(&painted());
+        assert!(edges > 0 && shadows > 0, "the default relief raises a card");
+        let flat = REQUEST.replace(
+            r#""unbuilt": false"#,
+            r#""unbuilt": false, "relief": "flat""#,
+        );
+        assert_eq!(edges_and_shadows(&painted_with(&flat)), (0, 0));
+        let slab = REQUEST.replace(
+            r#""unbuilt": false"#,
+            r#""unbuilt": false, "relief": "slab""#,
+        );
+        assert_eq!(edges_and_shadows(&painted_with(&slab)), (edges, shadows));
     }
 
     #[test]

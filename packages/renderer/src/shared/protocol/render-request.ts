@@ -6,7 +6,12 @@ import type { SemanticPolicy } from "@archboard/model/policy";
 import type { LayoutEngineName, StandaloneTheme } from "@archboard/model/render-reply";
 import type { DiagramGrammar } from "@archboard/model/views";
 import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/model/content";
-import type { Drawn, ExportFrame, NothingDrawn } from "#shared/protocol/generated/core/types.ts";
+import type {
+	Drawn,
+	ExportFrame,
+	NothingDrawn,
+	Relief,
+} from "#shared/protocol/generated/core/types.ts";
 
 /** How one subject stands against the variant it is compared with. */
 type SubjectStanding = ChangeKind;
@@ -121,6 +126,12 @@ interface DiagramRenderRequest {
 	 * variant and view of such a document is framed alike.
 	 */
 	readonly unbuilt?: boolean | undefined;
+	/**
+	 * How the blocks are drawn: `"slab"` raises each with a front edge and a shadow; `"flat"`
+	 * paints each face over its whole box with neither, for a host that raises them itself.
+	 * Cards keep their size and place either way. Absent means `"slab"`.
+	 */
+	readonly relief?: Relief | undefined;
 	/**
 	 * The level of the document drawn. A part that opens another document is marked
 	 * with which way that document lies, read from the part's kind against this
