@@ -180,6 +180,9 @@ The decision has these parts:
   `cargo metadata`, the build scripts and the procedural macros of the
   workspace, and `cargo check` after it loads, so it runs the code of the
   repository.
+- Go (TASK-575) has no default server either. gopls runs the go command, which
+  can download modules and the toolchain that a `go.mod` names, and runs the C
+  compiler for a package that uses cgo.
 - `language-servers.json` and `ARCHBOARD_LANGUAGE_SERVERS` are gone. The `false`
   value is gone too, because nothing needs it now. INSTALL.md and the consumer
   skill say that a configured server runs the code of the repository. So an agent
@@ -911,10 +914,14 @@ the exact upstream tag (TASK-367.01).
 | `@lumis-sh/wasm-swift`                  | 0.26.3  | MIT        | Swift                  |
 | `@lumis-sh/wasm-nix`                    | 0.26.3  | MIT        | Nix                    |
 | `tree-sitter-rust`                      | 0.24.0  | MIT        | Rust                   |
+| `tree-sitter-go`                        | 0.25.0  | MIT        | Go                     |
 
 The user approved this list on 2026-10-06, as the notes of TASK-367.01 record.
 The user approved `tree-sitter-rust` 0.24.0 on 2026-10-25 for TASK-540. It adds
-15 MB to `node_modules`, of which 1.1 MB is `.wasm`.
+15 MB to `node_modules`, of which 1.1 MB is `.wasm`. The user asked for the Go
+adapter on 2026-11-04 for TASK-575, which needs `tree-sitter-go` 0.25.0, the
+upstream release of the tree-sitter organization. It adds 3.8 MB to
+`node_modules`, and web-tree-sitter 0.27.0 loads its `.wasm` (ABI 15).
 
 They are runtime dependencies, pinned to these exact versions. A grammar
 release can rename the nodes that a query names, so an upgrade is a task of its

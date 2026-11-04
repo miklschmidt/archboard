@@ -409,6 +409,7 @@ A language server reads a checkout the way your editor does. For most languages,
 - csharp-ls evaluates the MSBuild files of the solution.
 - sourcekit-lsp evaluates `Package.swift`.
 - rust-analyzer runs `cargo metadata`, the build scripts and the procedural macros of the Cargo workspace, and `cargo check` after it loads.
+- gopls runs the go command to load the packages of the workspace. The go command can download modules, and the Go toolchain that a `go.mod` names. For a package that uses cgo, it runs the C compiler.
 
 So archboard starts such a language server only for a checkout where you, or the agent that works in that repository, configured it. Then the Archboard server runs the language server as your editor does. It uses the command and arguments that you configured. It uses the environment of the Archboard server, which is the environment of the command that started it (see [section 5](#5-start-the-archboard-server-and-sign-in-to-codex)). The check adds no flag, no variable and no rewritten file.
 
@@ -429,7 +430,7 @@ In a monorepo, the check reads the root only. A package that installs another ve
 
 ### The other languages
 
-Python, C, C++, Objective-C, C#, Swift and Rust have no default server. To configure one, follow these steps:
+Python, C, C++, Objective-C, C#, Swift, Rust and Go have no default server. To configure one, follow these steps:
 
 1. Install the server.
 2. If you did not register the checkout yet, run `archboard repo add` (see [Code bindings](#code-bindings)).
@@ -439,7 +440,7 @@ Python, C, C++, Objective-C, C#, Swift and Rust have no default server. To confi
 archboard repo language-server <language> <command> [--arg=<argument>]...
 ```
 
-The language is `python`, `csharp`, `swift`, `c` or `rust`. The language `c` covers C, C++ and Objective-C. The command is a program on the `PATH` of the Archboard server, or the absolute path of a program. Write an argument that starts with `-` as `--arg=<argument>`.
+The language is `python`, `csharp`, `swift`, `c`, `rust` or `go`. The language `c` covers C, C++ and Objective-C. The command is a program on the `PATH` of the Archboard server, or the absolute path of a program. Write an argument that starts with `-` as `--arg=<argument>`.
 
 `--repo <identity>` names another repository, and the command then configures its chosen checkout. Without it, the command configures the known checkout that holds the working directory. `--remove` removes the server of the language. `archboard repo list` shows the configured servers of each checkout. `archboard repo forget` removes them with the checkout.
 
@@ -518,6 +519,16 @@ The check reads `.rs` files and each `Cargo.toml`. It starts rust-analyzer in th
 rust-analyzer runs `cargo check` after it loads, as it does in your editor. That writes into the `target` directory of the workspace. On this repository (24 cores, rust-analyzer 2026-10-12), the rust-analyzer part of a check took 5.7 seconds with a warm `target` directory.
 
 If no `Cargo.toml` holds the file, the check says `language-server-unready` once. Its uses stay candidates.
+
+#### Go
+
+Install gopls, for example with `go install golang.org/x/tools/gopls@latest` or `nix profile install nixpkgs#gopls`. gopls also needs the `go` command on the `PATH` of the Archboard server. This repository's `nix develop` shell gives both. Then run `archboard repo language-server go gopls`.
+
+The check reads `.go` files and each `go.mod`. A Go package is the `.go` files directly in one directory. An import path leads to a package through the module path that a `go.mod` of the checkout declares, so the modules of a `go.work` and a local `replace` resolve too. The check starts gopls in the nearest directory above the file that holds a `go.work`, else in the directory of the nearest `go.mod`. So one server answers for every module of a workspace. The check opens the file and asks for definitions. gopls answers after it loads the packages of the workspace.
+
+The syntax reading has limits. A name that two files of a package define, as files with other build constraints can, leads nowhere. The names that a dot import brings in lead nowhere. A method called through a value, such as `book.Post()`, needs gopls.
+
+If no `go.mod` holds the file, the check says `language-server-unready` once. Its uses stay candidates.
 
 ## Rendering to a bitmap
 

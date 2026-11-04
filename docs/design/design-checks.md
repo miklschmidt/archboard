@@ -1849,6 +1849,7 @@ them on npm. Both are built from the exact upstream tag.
 | `@lumis-sh/wasm-swift`                  | 0.26.3  | MIT        | Swift                  |
 | `@lumis-sh/wasm-nix`                    | 0.26.3  | MIT        | Nix                    |
 | `tree-sitter-rust`                      | 0.24.0  | MIT        | Rust (TASK-540)        |
+| `tree-sitter-go`                        | 0.25.0  | MIT        | Go (TASK-575)          |
 
 They also install `tree-sitter-javascript` 0.23.1, two nested
 `tree-sitter-c` 0.23.6, `node-addon-api` 8.9.2 and `node-gyp-build` 4.8.4, all
@@ -1870,11 +1871,12 @@ commands that reproduce these numbers.
 | C# and .NET | `using` plus type references, `ProjectReference`          | `public`, `internal`, `InternalsVisibleTo`                        | csharp-ls or the Roslyn language server |
 | Swift       | module `import`, type references, `Package.swift` targets | `open`, `public`, `package`, `internal`, `fileprivate`, `private` | sourcekit-lsp                           |
 | Rust        | `use`, `mod`, paths, `Cargo.toml` dependencies            | `pub` items of `lib.rs` and `mod.rs`, `pub use` re-exports        | rust-analyzer                           |
+| Go          | `import` paths through `go.mod` module paths, `require`   | capitalized names of a package directory                          | gopls                                   |
 | Objective-C | `#import`, `@import`, message sends                       | public headers, class extensions in `.m`                          | clangd                                  |
 | C and C++   | `#include` through `compile_commands.json`                | public headers, `static`, anonymous namespaces                    | clangd                                  |
 
-In C# and Swift, the files of one project or module see each other without an
-import. There, file dependencies come from references to names that another
+In C#, Swift and Go, the files of one project, module or package see each
+other without an import. There, file dependencies come from references to names that another
 file defines.
 
 ### Infrastructure and Nix
