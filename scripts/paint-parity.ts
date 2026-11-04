@@ -90,7 +90,7 @@ const svg = document.getElementById("svg");
 const shown = (element) => {
 	for (const one of [...document.querySelectorAll("canvas"), svg]) one.style.display = one === element ? "block" : "none";
 };
-window.hasGpu = gpu !== null;
+window.availablePainters = Object.keys(painters).filter((kind) => painters[kind] !== null);
 window.keepPainter = async (kind, file) => {
 	const painter = painters[kind];
 	const canvas = document.getElementById(kind);
@@ -429,7 +429,7 @@ function runOfArguments(): Run {
 	const { values, positionals } = parseArgs({
 		allowPositionals: true,
 		options: {
-			painters: { type: "string", default: "gpu,cpu" },
+			painters: { type: "string", default: "gpu,webgl,cpu" },
 			views: { type: "string", default: "near,far" },
 			only: { type: "string", default: "" },
 			browser: { type: "string", default: "google-chrome" },
@@ -444,12 +444,12 @@ function runOfArguments(): Run {
 	return {
 		corpus,
 		out,
-		painters: values.painters.split(","),
-		views: values.views.split(","),
+		painters: z.array(z.enum(["gpu", "webgl", "cpu"])).min(1).parse(values.painters.split(",")),
+		views: z.array(z.enum(["near", "far", "traffic"])).min(1).parse(values.views.split(",")),
 		only: values.only,
 		browser: values.browser,
 		worst: Number(values.worst),
-		every: Number(values.every),
+		every: z.coerce.number().int().positive().parse(values.every),
 	};
 }
 
@@ -485,8 +485,10 @@ function readingsOf(run: Run): readonly Reading[] {
 async function pageReady(page: Page, run: Run): Promise<void> {
 	// oxlint-disable-next-line no-await-in-loop -- the page says it is ready only once
 	while ((await page.evaluate("window.ready === true")) !== true) await Bun.sleep(100);
-	if ((await page.evaluate("window.hasGpu")) !== true && run.painters.includes("gpu")) {
-		throw new Error("This browser gave no GPU painter. Name another with --browser.");
+	const available = z.array(z.string()).parse(await page.evaluate("window.availablePainters"));
+	const missing = run.painters.filter((kind) => !available.includes(kind));
+	if (missing.length > 0) {
+		throw new Error(`This browser gave no ${missing.join(", ")} painter. Name another with --browser.`);
 	}
 }
 
@@ -515,6 +517,8 @@ function report(run: Run, results: readonly Result[]): void {
  */
 async function main(): Promise<void> {
 	const run = runOfArguments();
+	const readings = readingsOf(run);
+	if (readings.length === 0) throw new Error("No readings match this run. Check --only and --every.");
 	mkdirSync(run.out, { recursive: true });
 	const server = servePage(run.out);
 	const page = await openPage(run.browser, `http://127.0.0.1:${server.port}/`);
@@ -523,15 +527,11 @@ async function main(): Promise<void> {
 	const journal = join(run.out, "parity.jsonl");
 	try {
 		await pageReady(page, run);
-		for (const reading of readingsOf(run)) {
+		for (const reading of readings) {
 			for (const name of run.views) {
 				const view = { name, painters: run.painters };
 				// oxlint-disable-next-line no-await-in-loop -- one page shows one reading at a time
-				const found = await compareReading(page, run.out, reading, view).catch((error: unknown) => {
-					// A painting that no painter reads is a fault of the core, not of a painter.
-					console.log(`Skipped ${reading.key} ${name}: ${String(error).slice(0, 160)}`);
-					return [];
-				});
+				const found = await compareReading(page, run.out, reading, view);
 				results.push(...found);
 				appendFileSync(journal, found.map((one) => `${JSON.stringify(one)}\n`).join(""));
 			}
