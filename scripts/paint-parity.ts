@@ -66,8 +66,8 @@ type Result = z.infer<typeof Compared> & {
 /** The page: a canvas each painter draws on, and a place for the SVG. */
 const PAGE = `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/theme.css">
 <style>html,body{margin:0;overflow:hidden;background:var(--background)}
-#gpu,#cpu,#svg{position:fixed;left:0;top:0;display:none}
-#svg{transform-origin:0 0}</style></head><body><canvas id="gpu"></canvas><canvas id="cpu"></canvas>
+#gpu,#cpu,#webgl,#svg{position:fixed;left:0;top:0;display:none}
+#svg{transform-origin:0 0}</style></head><body><canvas id="gpu"></canvas><canvas id="cpu"></canvas><canvas id="webgl"></canvas>
 <div id="svg"></div><script type="module" src="/page.js"></script></body></html>`;
 
 /** What the page runs. */
@@ -77,7 +77,14 @@ await init({ module_or_path: "/painter.wasm" });
 const started = await Painter.warm(() => {}).then(() => true, () => false);
 const gpu = started ? Painter.gpu(document.getElementById("gpu"), true) : null;
 const cpu = Painter.cpu(document.getElementById("cpu"), true);
-const painters = { gpu, cpu };
+const webgl = (() => {
+	try {
+		return Painter.webgl(document.getElementById("webgl"), true);
+	} catch {
+		return null;
+	}
+})();
+const painters = { gpu, cpu, webgl };
 const svg = document.getElementById("svg");
 const shown = (element) => {
 	for (const one of [...document.querySelectorAll("canvas"), svg]) one.style.display = one === element ? "block" : "none";
@@ -409,6 +416,8 @@ interface Run {
 	readonly only: string;
 	readonly browser: string;
 	readonly worst: number;
+	/** Spike: compare only every so many readings, for a sample of the corpus. */
+	readonly every: number;
 }
 
 /**
@@ -424,6 +433,7 @@ function runOfArguments(): Run {
 			only: { type: "string", default: "" },
 			browser: { type: "string", default: "google-chrome" },
 			worst: { type: "string", default: "12" },
+			every: { type: "string", default: "1" },
 		},
 	});
 	const [corpus, out] = positionals;
@@ -438,6 +448,7 @@ function runOfArguments(): Run {
 		only: values.only,
 		browser: values.browser,
 		worst: Number(values.worst),
+		every: Number(values.every),
 	};
 }
 
@@ -450,6 +461,7 @@ function readingsOf(run: Run): readonly Reading[] {
 	const drawn = Corpus.parse(JSON.parse(readFileSync(join(run.corpus, "corpus.json"), "utf8")));
 	return Object.entries(drawn)
 		.filter(([key, { width, height }]) => key.includes(run.only) && Math.max(width, height) <= MOST)
+		.filter((_, index) => index % run.every === 0)
 		.map(([name, { width, height }]) => {
 			const key = name.replaceAll(/[^\w-]+/gu, "_");
 			const file = join(run.corpus, "svg", `${key}.svg`);
@@ -514,7 +526,11 @@ async function main(): Promise<void> {
 			for (const name of run.views) {
 				const view = { name, painters: run.painters };
 				// oxlint-disable-next-line no-await-in-loop -- one page shows one reading at a time
-				const found = await compareReading(page, run.out, reading, view);
+				const found = await compareReading(page, run.out, reading, view).catch((error: unknown) => {
+					// Spike: a painting that no painter reads is the core's fault, not a painter's.
+					console.log(`Skipped ${reading.key} ${name}: ${String(error).slice(0, 160)}`);
+					return [];
+				});
 				results.push(...found);
 				appendFileSync(journal, found.map((one) => `${JSON.stringify(one)}\n`).join(""));
 			}

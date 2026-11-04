@@ -4,9 +4,11 @@
 
 #[cfg(target_arch = "wasm32")]
 mod browser;
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "webgpu"))]
 mod gpu;
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "webgpu"))]
 mod lens;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(any(all(target_arch = "wasm32", feature = "webgpu"), test))]
 mod page_gpu;
+#[cfg(all(target_arch = "wasm32", feature = "webgl"))]
+mod webgl;
