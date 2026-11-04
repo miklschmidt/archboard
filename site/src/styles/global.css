@@ -290,6 +290,9 @@ samp {
 	color: var(--ink-muted);
 	text-wrap: pretty;
 }
+.example-caption {
+	margin-top: 12px;
+}
 .mono {
 	font-family: var(--font-mono);
 	font-size: 0.8125rem;

@@ -10,9 +10,9 @@ const picture = drawings.inventory;
 
 <div class="tiles">
 	<article class="tile doc table" data-reveal>
-		<div class="doc-page">
+		<div class="doc-page" role="img" aria-label="Example design document with an Archboard drawing of Inventory service and its parts.">
 			<p class="doc-path mono"><Icon name="fileText" size={14} /> docs/design/inventory.md</p>
-			<h4 class="doc-title">Inventory</h4>
+			<p class="doc-title">Inventory</p>
 			<p class="doc-text">
 				Stock API is the only way in. The reservation ledger sets items aside only while enough are
 				left, in one transaction with the counts.
@@ -71,6 +71,7 @@ const picture = drawings.inventory;
 		</div>
 	</article>
 </div>
+<p class="caption example-caption">Example design document and explanation controls.</p>
 
 <style>
 	.tiles {
