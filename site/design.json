@@ -595,7 +595,7 @@
 			},
 			{
 				"name": "The Pause Rule",
-				"body": "Motion carries meaning, and it stops once nobody can see it. Every loop runs only while its element is on screen and the tab is visible. The fields, the orb, the narration and the proposal switch's autoplay do this through one helper, `whileVisible`. A CSS loop sits inside an element marked `data-loop`, and `pauseLoopsOffscreen` pauses its animations while that element is off screen. Under `prefers-reduced-motion: reduce`, a shader draws one still frame. Scroll-driven tilt and parallax turn off. Autoplay and narration do not start. A global rule cuts every CSS animation and transition to 0.01ms and one iteration. A new loop follows both.",
+				"body": "Motion carries meaning, and it stops once nobody can see it. Every loop runs only while its element is on screen and the tab is visible. The fields, the orb, the narration and the proposal switch's autoplay do this through one helper, `whileVisible`. A CSS loop sits inside an element marked `data-loop`, and `pauseLoopsOffscreen` pauses its animations while that element is off screen. Moving content offers a way to stop it: the language belt has a Show all control that stops it and wraps every language, and with reduced motion it shows the wrapped list from the start. Under `prefers-reduced-motion: reduce`, a shader draws one still frame. Scroll-driven tilt and parallax turn off. Autoplay and narration do not start. A global rule cuts every CSS animation and transition to 0.01ms and one iteration. A new loop follows both.",
 				"section": "components"
 			},
 			{

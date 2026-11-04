@@ -255,10 +255,11 @@ State colours keep the meaning they have in the product.
 - **Added Green** (oklch(0.792 0.209 151.711)): Added in a proposal, and a command that succeeded.
 - **Changed Orange** (oklch(0.77 0.17 52)): Changed in a proposal, a warning, and the missing-relationship chip. Text on a filled orange chip is Changed Ink (oklch(0.2 0.03 50)).
 - **Removed Red** (oklch(0.76 0.16 22)): Removed in a proposal, and a refused action.
+- **Text variants** (`--changed-text`, `--removed-text`, `--sky-text`, `--violet-text`): A state or kind colour mixed toward Ink, so words set in it reach the Lc 60 floor. Words use the variant. Marks, rings and swatches keep the pure colour.
 
 ### Tertiary
 
-The kind brights appear in the kind chip, which follows the renderer's own map, and in the drawings themselves. The kinds are: user interface pink, service blue, data store emerald, external neutral, cache yellow, module teal, function cyan, route violet, queue orange, job amber. Three small data marks borrow a bright. Sky (oklch(0.7535 0.139 232.66)) colours the keys in one JSON excerpt. Violet (oklch(0.709 0.159 293.5)) colours code keywords and the swatch of a module's entry points. The cache chip is the one place where the yellow bright and the gold are the same value.
+The kind brights appear in the kind chip, which follows the renderer's own map, and in the drawings themselves. The kinds are: user interface pink, service blue, data store emerald, external neutral, cache yellow, module teal, function cyan, route violet, queue orange, job amber. Three small data marks borrow a bright. Sky (oklch(0.7535 0.139 232.66)) colours the keys in one JSON excerpt, through its text variant. Violet (oklch(0.709 0.159 293.5)) colours code keywords through its text variant, and the swatch of a module's entry points in its pure value. The cache chip is the one place where the yellow bright and the gold are the same value.
 
 ### Neutral
 
@@ -392,7 +393,7 @@ Edges are inset hairline rings, never borders. The only borders are the CSS tria
 
 ### Code and terminals
 
-- **Style:** Code Bed floor, a hairline ring, 6px radius, mono at 0.72rem to 0.8125rem with 1.7 line height. Commands are Ink, replies are Muted Ink, and dim lines are Faint Ink. A `$` prompt is Lamp Gold. A warning is Changed Orange and a success is Added Green. The terminal adds a 34px Chrome bar with three 9px Slab dots.
+- **Style:** Code Bed floor, a hairline ring, 6px radius, mono at 0.72rem to 0.8125rem with 1.7 line height. Commands are Ink and replies are Muted Ink. A `$` prompt is Lamp Gold. A warning is Changed Text and a success is Added Green. A block that can scroll sideways takes keyboard focus. The terminal adds a 34px Chrome bar with three 9px Slab dots.
 - **Copy:** Each block copies as one command list.
 
 ### Navigation
@@ -433,7 +434,7 @@ The real checkout drawing and sequence diagram sit on a plane. A raised box hold
 
 **The Spark Order Rule.** A picture builds in one order: the cards land, a spark draws each line, then the traffic runs. Lines never appear all at once. This repeats the product's own Spark Rule. With reduced motion, everything is there at once.
 
-**The Pause Rule.** Motion carries meaning, and it stops once nobody can see it. Every loop runs only while its element is on screen and the tab is visible. The fields, the orb, the narration and the proposal switch's autoplay do this through one helper, `whileVisible`. A CSS loop sits inside an element marked `data-loop`, and `pauseLoopsOffscreen` pauses its animations while that element is off screen. Under `prefers-reduced-motion: reduce`, a shader draws one still frame. Scroll-driven tilt and parallax turn off. Autoplay and narration do not start. A global rule cuts every CSS animation and transition to 0.01ms and one iteration. A new loop follows both.
+**The Pause Rule.** Motion carries meaning, and it stops once nobody can see it. Every loop runs only while its element is on screen and the tab is visible. The fields, the orb, the narration and the proposal switch's autoplay do this through one helper, `whileVisible`. A CSS loop sits inside an element marked `data-loop`, and `pauseLoopsOffscreen` pauses its animations while that element is off screen. Moving content offers a way to stop it: the language belt has a Show all control that stops it and wraps every language, and with reduced motion it shows the wrapped list from the start. Under `prefers-reduced-motion: reduce`, a shader draws one still frame. Scroll-driven tilt and parallax turn off. Autoplay and narration do not start. A global rule cuts every CSS animation and transition to 0.01ms and one iteration. A new loop follows both.
 
 **The Settle Rule.** Content is visible without script. With script, a revealed block starts at 60% opacity and 8px low, settles over 700ms with the ease-out curve, and does so once. A reader who scrolls fast never meets an empty band.
 
