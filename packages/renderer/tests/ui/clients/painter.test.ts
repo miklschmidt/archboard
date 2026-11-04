@@ -166,8 +166,19 @@ test("a WebGL2 context lost before subscription still reports its loss", async (
 	await inPage(false, async () => {
 		const canvas = pageCanvas();
 		const started = await startPainter(canvas, false);
+		const lostContext = {
+			/**
+			 * Say that the context is lost.
+			 * @returns It is.
+			 */
+			isContextLost: () => true,
+		};
 		Object.defineProperty(canvas, "getContext", {
-			value: () => ({ isContextLost: () => true }),
+			/**
+			 * Give the canvas's WebGL2 context, already lost.
+			 * @returns The context.
+			 */
+			value: () => lostContext,
 		});
 		canvas.dispatchEvent(new Event("webglcontextlost"));
 		const lost = mock();
@@ -210,7 +221,11 @@ test("a failed CPU fallback keeps the caller's canvas for disposal and retry", a
 		cpu.refusal = "2D context unavailable";
 		const canvas = pageCanvas();
 		const host = canvas.parentElement;
-		await expect(startPainter(canvas, false)).rejects.toBeDefined();
+		const refused = await startPainter(canvas, false).then(
+			() => null,
+			(error: unknown) => error,
+		);
+		expect(refused).toBeInstanceOf(Error);
 		expect(host?.querySelector("canvas")).toBe(canvas);
 		delete cpu.refusal;
 		const next = await startPainter(canvas, false);
