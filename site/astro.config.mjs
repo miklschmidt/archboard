@@ -1,5 +1,5 @@
-// The site is static. GitHub Pages serves it under the repository's name, and the deploy
-// workflow passes the origin and base path that configure-pages reports.
+// GitHub Pages serves the static site under /archboard. Environment variables can
+// override the origin and base path for another host.
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "astro/config";
 

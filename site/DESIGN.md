@@ -405,7 +405,7 @@ Edges are inset hairline rings, never borders. The only borders are the CSS tria
 
 ### Pictures
 
-Every diagram on the page is Archboard renderer output in the dark theme, drawn from the example shop in `examples/web-shop`. The site ships no generated raster and no hand-drawn diagram. Provenance:
+Every diagram on the page is Archboard renderer output in the dark theme. The drawings show the example shop or Archboard's own model. The social card is the only raster image. Provenance:
 
 - `docs/readme/web-shop-dark.svg`, `docs/readme/sequence-dark.svg` and `docs/readme/architecture-dark.svg` come from the README's asset build. They are the example shop, the "Place an order" sequence and Archboard's own architecture.
 - `site/src/diagrams/checkout-api.svg`, `inventory-service.svg`, `live-events.svg`, `nightly-batch.svg`, `place-order-flowchart.svg` and `queued-fulfilment.svg` come from `site/scripts/render-diagrams.sh`. It runs a private Archboard server over a copy of the example shop and calls `archboard model render`. Draw them again after a renderer change and commit them.
