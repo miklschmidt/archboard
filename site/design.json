@@ -365,8 +365,8 @@
 			},
 			{
 				"name": "reveal",
-				"value": "700ms",
-				"purpose": "A block settles from 60% opacity and 8px low, once."
+				"value": "800ms to 1000ms",
+				"purpose": "A block rises from transparent and 32px low, once, when its top clears the bottom 15% of the view."
 			},
 			{
 				"name": "sweep",
@@ -595,8 +595,8 @@
 				"section": "components"
 			},
 			{
-				"name": "The Settle Rule",
-				"body": "Content is visible without script. With script, a revealed block starts at 60% opacity and 8px low, settles over 700ms with the ease-out curve, and does so once. A reader who scrolls fast never meets an empty band.",
+				"name": "The Rise Rule",
+				"body": "Content is visible without script. With script, a revealed block waits transparent and 32px low until its top clears the bottom 15% of the view. Then it fades in over 800ms and rises over 1000ms with the ease-out curve, once. Siblings stagger by 100ms to 120ms. If the page script never runs, an inline fallback shows every block after 3 seconds.",
 				"section": "components"
 			}
 		],

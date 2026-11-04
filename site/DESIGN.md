@@ -436,7 +436,7 @@ The real checkout drawing and sequence diagram sit on a plane. A raised box hold
 
 **The Pause Rule.** Motion carries meaning, and it stops once nobody can see it. Every loop runs only while its element is on screen and the tab is visible. The fields, the orb, the narration and the proposal switch's autoplay do this through one helper, `whileVisible`. A CSS loop sits inside an element marked `data-loop`, and `pauseLoopsOffscreen` pauses its animations while that element is off screen. Moving content offers a way to stop it: the language belt has a Show all control that stops it and wraps every language, and with reduced motion it shows the wrapped list from the start. Under `prefers-reduced-motion: reduce`, a shader draws one still frame. Scroll-driven tilt and parallax turn off. Autoplay and narration do not start. A global rule cuts every CSS animation and transition to 0.01ms and one iteration. A new loop follows both.
 
-**The Settle Rule.** Content is visible without script. With script, a revealed block starts at 60% opacity and 8px low, settles over 700ms with the ease-out curve, and does so once. A reader who scrolls fast never meets an empty band.
+**The Rise Rule.** Content is visible without script. With script, a revealed block waits transparent and 32px low until its top clears the bottom 15% of the view. Then it fades in over 800ms and rises over 1000ms with the ease-out curve, once. Siblings stagger by 100ms to 120ms. If the page script never runs, an inline fallback shows every block after 3 seconds.
 
 ## Do's and Don'ts
 

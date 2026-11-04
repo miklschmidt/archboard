@@ -36,6 +36,11 @@ const image = new URL(socialCard, Astro.site);
 		<meta name="twitter:card" content="summary_large_image" />
 		<script is:inline>
 			document.documentElement.classList.add("js");
+			// If the page script never observes the reveals, show every part rather than leave it hidden.
+			setTimeout(() => {
+				if (document.documentElement.dataset.reveals) return;
+				for (const item of document.querySelectorAll("[data-reveal]")) item.classList.add("is-in");
+			}, 3000);
 		</script>
 	</head>
 	<body>

@@ -427,15 +427,15 @@ samp {
 	background: currentColor;
 }
 
-/* Reveal: content stays visible without script; with it, a section settles in once. It starts
-   mostly there, so a reader who scrolls fast never meets an empty band. */
+/* Reveal: content stays visible without script; with it, a part rises into place once, when its
+   top clears the bottom of the view (reveal.ts). */
 @media (prefers-reduced-motion: no-preference) {
 	.js [data-reveal] {
-		opacity: 0.6;
-		transform: translateY(8px);
+		opacity: 0;
+		transform: translateY(32px);
 		transition:
-			opacity 700ms var(--ease-out),
-			transform 700ms var(--ease-out);
+			opacity 800ms var(--ease-out),
+			transform 1000ms var(--ease-out);
 		transition-delay: calc(var(--reveal-delay, 0) * 1ms);
 	}
 	.js [data-reveal].is-in {

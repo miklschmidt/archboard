@@ -1,8 +1,12 @@
-// Sections ease in once as they enter the view. Without script, or with reduced motion,
+// Sections rise in once as they enter the view. Without script, or with reduced motion,
 // everything is simply there.
 
-/** Mark each [data-reveal] element when it first enters the view. */
+/**
+ * Mark each [data-reveal] element when its top clears the bottom 15% of the view, so the reader
+ * sees it arrive. The page's inline fallback shows everything if this never runs.
+ */
 export function observeReveals(): void {
+	document.documentElement.dataset["reveals"] = "observed";
 	const items = document.querySelectorAll<HTMLElement>("[data-reveal]");
 	if (!("IntersectionObserver" in window)) {
 		items.forEach((item) => item.classList.add("is-in"));
@@ -16,7 +20,7 @@ export function observeReveals(): void {
 				observer.unobserve(entry.target);
 			}
 		},
-		{ rootMargin: "0px 0px -12% 0px", threshold: 0.08 },
+		{ rootMargin: "0px 0px -15% 0px", threshold: 0 },
 	);
 	items.forEach((item) => observer.observe(item));
 }

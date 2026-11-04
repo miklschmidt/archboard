@@ -46,14 +46,16 @@ const items = [
 
 <div class="faq">
 	{
-		items.map((item) => (
-			<details class="item" data-reveal>
-				<summary>
-					<span>{item.q}</span>
-					<span class="sign" aria-hidden="true" />
-				</summary>
-				<p>{item.a}</p>
-			</details>
+		items.map((item, index) => (
+			<div data-reveal style={`--reveal-delay: ${(index % 2) * 100}`}>
+				<details class="item">
+					<summary>
+						<span>{item.q}</span>
+						<span class="sign" aria-hidden="true" />
+					</summary>
+					<p>{item.a}</p>
+				</details>
+			</div>
 		))
 	}
 </div>
