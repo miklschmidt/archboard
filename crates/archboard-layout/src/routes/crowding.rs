@@ -81,11 +81,11 @@ fn pieces_crowding(crest: &[Rect], ink: &[Rect]) -> f64 {
     )
 }
 
-/// How near a crest comes to a card, a label, a title, a junction mark, an
-/// arrowhead other than its own line's, an accepted hop or a crest standing
-/// with it, or another line's ink than the lines it passes over (`beneath`, by
-/// their drawers), as a share of the clear space it keeps from each: at most
-/// 1 where one crowds it, infinite where none comes within reach.
+/// How near a crest comes to a card, a label, a title, an arrowhead other
+/// than its own line's, an accepted hop or a crest standing with it, or
+/// another line's ink than the lines it passes over (`beneath`, by their
+/// drawers), as a share of the clear space it keeps from each: at most 1
+/// where one crowds it, infinite where none comes within reach.
 pub(super) fn crowding(
     scene: &HopScene<'_>,
     run: &Run,
@@ -93,25 +93,17 @@ pub(super) fn crowding(
     curve: &Curve,
     pending: &[Hop],
 ) -> f64 {
-    crowding_among(
-        scene,
-        run,
-        beneath,
-        curve,
-        scene.hops.iter().chain(pending),
-        false,
-    )
+    crowding_among(scene, run, beneath, curve, scene.hops.iter().chain(pending))
 }
 
 /// How near a crest comes to what crowds it (`crowding`), of the hops only
-/// those given, and of the junction marks all with `marks`, none without.
+/// those given.
 fn crowding_among<'h>(
     scene: &HopScene<'_>,
     run: &Run,
     beneath: &[&Run],
     curve: &Curve,
     hops: impl Iterator<Item = &'h Hop>,
-    marks: bool,
 ) -> f64 {
     let own = line_runs(&scene.runs, run);
     let curve_bounds = curve_bounds(curve);
@@ -123,16 +115,8 @@ fn crowding_among<'h>(
                 .any(|mine| Some(mine.edge_index) == keepout.edge_index)
         })
         .filter_map(|keepout| share(gap(curve_bounds, keepout.bounds), BOX_CLEARANCE));
-    let marks = scene
-        .marks
-        .iter()
-        .filter(|_| marks)
-        .filter_map(|&mark| share(gap(curve_bounds, mark), BOX_CLEARANCE));
     let hops = hops.filter_map(|hop| hop_crowding(hop, curve_bounds, run.axis));
-    let nearest = min(std::iter::once(f64::INFINITY)
-        .chain(boxes)
-        .chain(marks)
-        .chain(hops));
+    let nearest = min(std::iter::once(f64::INFINITY).chain(boxes).chain(hops));
     let mut allowed = own;
     for under in beneath {
         allowed.extend(line_runs(&scene.runs, under));
@@ -195,10 +179,10 @@ fn hop_crowding(hop: &Hop, bounds: Rect, axis: Axis) -> Option<f64> {
 }
 
 /// How near a crest that must stand comes to what crowds it, as `crowding`
-/// reads it but for the hops along its axis and the junction marks: a hop on
-/// a line beside it that bulges the same way stands beside it as one bundle
-/// passing over, one it would read as one knot with is `knot_crowding`'s,
-/// and a mark `mark_crowding`'s.
+/// reads it but for the hops along its axis: a hop on a line beside it that
+/// bulges the same way stands beside it as one bundle passing over, and one
+/// it would read as one knot with is `knot_crowding`'s. A junction mark it
+/// bulges into is `mark_crowding`'s.
 pub(super) fn forced_crowding(
     scene: &HopScene<'_>,
     run: &Run,
@@ -206,7 +190,7 @@ pub(super) fn forced_crowding(
     curve: &Curve,
 ) -> f64 {
     let crosswise = scene.hops.iter().filter(|hop| hop.axis != run.axis);
-    crowding_among(scene, run, beneath, curve, crosswise, false)
+    crowding_among(scene, run, beneath, curve, crosswise)
 }
 
 /// How near a crest comes to a junction mark it bulges into, within the span

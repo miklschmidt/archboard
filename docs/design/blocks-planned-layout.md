@@ -1098,7 +1098,7 @@ Parents reuse measured children instead of recursively rebuilding them for each 
 Crossing decoration first tried arcs at only the first 128 crossings, without the cluster plans of Track.
 That left 472 crossings with no arc across the dogfood vault, so TASK-570 removed the bound.
 Planned drawings now take the same crossing pass as Track drawings.
-The first render of the whole dogfood model in Blocks went from about 610 ms to about 640 ms.
+The first render of the whole dogfood model in Blocks went from about 597 ms to about 647 ms.
 
 The final simplicity pass removes the old Blocks nesting mode and its fanout and nested-placement modules.
 It also removes Blocks-only branches from projection, card construction, routing, wrapping, settlement, and endpoint handling.
