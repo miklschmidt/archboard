@@ -52,6 +52,7 @@ const kind = asked.get("painter");
 const [width, height] = asked.get("size").split("x").map(Number);
 const frames = Number(asked.get("frames"));
 const report = (body) => fetch("/result/" + asked.get("id"), { method: "PUT", body: JSON.stringify(body) });
+const fail = (error) => report({ painter: kind, size: [width, height], error: String(error) });
 const probe = (attributes) => {
 	const gl = document.createElement("canvas").getContext("webgl2", attributes);
 	if (gl === null) return null;
@@ -122,13 +123,18 @@ try {
 	let index = 0;
 	let last = 0;
 	const step = (stamp) => {
-		const [x, y, scale] = camera(index);
-		painter.setCamera(x, y, scale, 0, stamp);
-		const before = performance.now();
-		painter.frame(stamp);
-		const call = performance.now() - before;
-		const [encode, render] = painter.lastTimes();
-		if (index >= ${WARM_FRAMES}) rows.push({ gap: stamp - last, call, encode, render });
+		try {
+			const [x, y, scale] = camera(index);
+			painter.setCamera(x, y, scale, 0, stamp);
+			const before = performance.now();
+			painter.frame(stamp);
+			const call = performance.now() - before;
+			const [encode, render] = painter.lastTimes();
+			if (index >= ${WARM_FRAMES}) rows.push({ gap: stamp - last, call, encode, render });
+		} catch (error) {
+			fail(error);
+			return;
+		}
 		last = stamp;
 		index += 1;
 		if (rows.length < frames) requestAnimationFrame(step);
@@ -154,7 +160,7 @@ try {
 		requestAnimationFrame(step);
 	});
 } catch (error) {
-	report({ painter: kind, size: [width, height], error: String(error) });
+	fail(error);
 }
 `;
 
