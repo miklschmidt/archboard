@@ -1,11 +1,11 @@
 ---
 id: TASK-570
 title: Every crossing of two lines gets an arc where one fits
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-03T18:42:00Z'
-updated_date: '2026-11-04T01:49:00Z'
+updated_date: '2026-11-04T11:04:00Z'
 labels:
   - renderer
 dependencies: []
@@ -60,10 +60,14 @@ Review finding R3 verified: crowdedArcs read junction circles but omitted the ro
 Review validation: the requested Rust tests passed (203 tests), and clippy passed. The core build, TypeScript analysis, and lint of the touched TypeScript files passed. The requested renderer operations run passed 754 tests and failed only Browser hosting (blocks), with the label overlap already recorded above. After the final lint cleanup, all 17 focused crossing and gate drawing tests passed. Each of the three regression tests failed before its corresponding fix. The task stays In Progress for the owner to finish integration.
 
 Integrated review fixes f41e31204, 87229c377, f5f994666 onto fix/crossing-hops. On f5f994666: every scope of .archboard/vault and examples/web-shop in both engines has 0 crossings with no arc and 0 crowded arcs (dots and bars); bun run check passed 21 of 21 tasks; first render of the whole Blocks model about 667 ms (PR head a30e697de about 630 ms, main about 610 ms, within 10 percent).
+
+Rebased onto main 110c0bd11 (#34). bun run check passed 21 of 21 tasks on the rebased branch. Audit of every scope of .archboard/vault and examples/web-shop in both engines: 0 crossings with no arc, 0 crowded arcs. First render of the whole Blocks model measured about 670 ms against about 597 ms on main (12 percent), over the AC #6 limit. Without the forced stage the branch renders in about 628 ms, so the forced stage costs about 22 ms and the full cluster plans of Blocks (AC #1) the rest. a92244a5e stops trying forced arcs at the first clear one and skips copying the standing hops when none comes down: about 647 ms (8.4 percent over main), the same audit totals over the same 4163 arcs, archboard-layout tests and clippy clean, renderer operations 754 of 755 (only the Browser hosting benchmark failure already recorded).
+
+Sol review of a92244a5e (gpt-6.1-sol, xhigh): pass, no findings.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Every crossing of two lines now gets a full-size arc. Blocks drawings take the same crossing pass as Track (bridge_planned and its 128-crossing cap are gone). The one-each cluster plan yields when a crosser may not rise, so a solid line rises over close dashed lines under one crest. A last stage (routes/crossings/forced.rs) stands a full hop wherever one line runs straight past both feet; beside a join the non-joining line rises. The shared drawing integrity check fails on any crossing with no arc. Audit: 1278 crossings with no arc on main, 0 on this branch. First Blocks render of the whole dogfood model: about 610 ms to about 640 ms. Risk: dense spots can show two hops side by side. Follow-up outside this task: the benchmark case Browser hosting fails "labels over their own line" on main too.
+Every crossing of two lines now gets a full-size arc, and no arc crowds another or a junction mark. Blocks drawings take the same crossing pass as Track (bridge_planned and its 128-crossing cap are gone). The one-each cluster plan yields when a crosser may not rise, so a solid line rises over close dashed lines under one crest. A last stage (routes/crossings/forced.rs) stands the first clear of these, or the least crowded: a bundle of hops on the lines crossing the cluster, a full hop where one line runs straight past both feet, the hops beside it grown into one crest, or its hop with a facing hop turned. Junction marks come from the painter's own rule (archboard_scene::paint::junction_boxes). The shared drawing integrity check fails on any crossing with no arc and on any crowded arc. Audit: 1278 crossings with no arc and 113 crowded arcs before, 0 and 0 after, every hop at full radius. First Blocks render of the whole dogfood model: about 597 ms on main, about 647 ms on this branch (8.4 percent). Risks: where every other arc would knot, a dashed line can rise over a solid one; render time sits near the 10 percent limit. Follow-up outside this task: the benchmark case Browser hosting fails labels over their own line on main too.
 <!-- SECTION:FINAL_SUMMARY:END -->
