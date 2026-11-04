@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-04T15:39:00Z'
-updated_date: '2026-11-04T19:23:00Z'
+updated_date: '2026-11-04T20:43:00Z'
 labels: []
 dependencies: []
 ordinal: 1019000
@@ -78,4 +78,12 @@ Owner review, second round (2026-11-04):
 - The grid's lamp casts the pointer's ray onto the table, so its light sits under the cursor in the hero and the closing (722124cc3, 8582dc9b0).
 - The Grammars demo draws Place an order with its stock and payment decisions and its receipt loop. render-diagrams.sh rewrites the flow on its disposable copy after the other drawings (e83cbc00a).
 - Still open: the slow Archboard draws itself demo waits on the WebGL fallback research for the painter.
+
+Hero table and live model (2026-11-04, owner direction: merge the renderer into the hero, no grid, raised cards):
+- The hero's drafting table carries the whole of .archboard/vault, painted live by the product's painter (startPainter from packages/renderer). site/scripts/paint.ts paints it at build time into the ignored site/src/paintings/, because a painting belongs to the painter of the same core build. Three painters draw it: the whole picture, and two finer bands that follow the table nearest the eye, so near cards stay sharp (owner saw pixelation with one texture). The shader marches each card as a rounded tile with a lit bevel, a body in the card's tone and a cast shadow, and lifts the card the pointer rests on while the painter lights its lines. The hero drops the static grid and keeps the travelling light; the closing keeps its grid (6f8a43048).
+- The core takes relief: "flat" (2eb0167e9, cherry-picked from an implementer worktree), so the hero's painting has no front edge or drop shadow under the 3D tiles. The default drawing is unchanged (a0bc9d549).
+- Archboard draws itself now paints the same vault live in a native scroll viewport instead of the README's animated SVG as an image, which re-rasterised every frame (6f79a2100). The README SVG stands in when no painter starts.
+- The site workflow installs the repository, builds the core and paints the hero inside nix develop, with path filters for the core, the model and the vault; actionlint passes. DESIGN.md records the table (e9bf37a0e).
+Evidence: bun run check inside nix develop, 21/21 successful, exit 0, on a0bc9d549. GPU (RTX 4090, Chrome WebGPU, headed): hero at 120 fps with three painters; CPU painter headless: one still level, raised tiles, no traffic; the model viewport redraws a scroll step in about 32 ms on the CPU painter.
+Open: TASK-576 (NaN in most flowchart start markers) also breaks site/src/diagrams/place-order-flowchart.svg (24 NaN paths); owner to decide whether it belongs on this branch.
 <!-- SECTION:NOTES:END -->
