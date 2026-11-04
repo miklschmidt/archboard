@@ -11,12 +11,14 @@ Read the ADR for the decision. Read this note before you change a painter, a mov
 | `crates/archboard-paint`                                  | The `Canvas` trait, the walk over a scene, the palette, picking, and all motion as pure Rust. |
 | `crates/archboard-paint/src/between`                      | One scene turning into the next, the entrance and the departure.                              |
 | `crates/archboard-paint/src/stage`                        | One canvas's picture and all that a frame of it needs.                                        |
-| `crates/archboard-painter-wasm`                           | The `Painter` class that a page holds, and `vello` on WebGPU.                                 |
+| `crates/archboard-paint/src/parts`                        | The parts that both strip painters keep between frames.                                       |
+| `crates/archboard-painter-wasm`                           | The `Painter` class that a page holds, `vello` on WebGPU and `vello_gpu` on WebGL2.           |
 | `packages/renderer/src/ui/clients/painter.ts`             | The choice of painter.                                                                        |
 | `apps/web/src/ui/clients/canvas/picture/picture-stage.ts` | One surface's stage. It tells the painter what the page says, and it asks for frames.         |
 | `apps/web/src/ui/clients/canvas/picture/picture-ink.ts`   | A first picture's ink, held back for a moment while its painter starts.                       |
 
-`vello` and `vello_cpu` share peniko and kurbo, so one `Canvas` trait serves both.
+`vello`, `vello_gpu` and `vello_cpu` share peniko and kurbo, so one `Canvas` trait serves all three.
+[ADR 0074](../adr/0074-webgl2-paints-where-webgpu-does-not.md) and [the WebGL fallback](painter-webgl-fallback.md) hold the WebGL2 painter.
 
 ## What the SVG gave for free
 
@@ -215,6 +217,9 @@ In a toggle the mean gap is 23.4 ms, and in a dive it is 12.4 ms.
 Traffic alone used to take the whole thread, with a mean gap of 24.7 ms. It now rests after each frame for as long as that frame took.
 On a small picture the painter takes 21% of the main thread with traffic running, against 8% on the old page.
 A quarter of the frame goes to the gradient tables of `vello_common`, which it builds again each frame.
+These runs came before TASK-577. The CPU painter now keeps its settled parts, as the GPU canvas does.
+On the largest picture at 1920 by 1080, that cut its frame from 35.5 ms to 29.2 ms of main thread.
+[The WebGL fallback](painter-webgl-fallback.md#why-the-strips-cost-20-ms) holds the cause and the runs.
 
 In the Firefox 158 runs on Linux on 2026-11-01, the browser exposed no WebGPU, so it took the CPU painter.
 It drew the largest picture correctly at 1920x1080.

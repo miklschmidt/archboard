@@ -13,6 +13,8 @@ This record also changes how three earlier decisions are carried out, but not wh
 [ADR 0041](0041-a-recording-is-a-talk-rendered-frame-by-frame.md) keeps its frame clock, and
 [ADR 0042](0042-the-picture-answers-the-hand-and-a-card-opens-by-flight.md) keeps its flights.
 [The Vello painter](../design/vello-painter.md) holds the measurements and the method.
+[ADR 0074](0074-webgl2-paints-where-webgpu-does-not.md) replaces the rule of this record for the choice of painter, and its clause on `vello_hybrid`.
+WebGL2 now paints between WebGPU and the CPU.
 
 ## Context
 
@@ -99,6 +101,8 @@ frames from the frame clock only while something moves. The DOM motion modules a
 gone, so the viewer has one motion system.
 
 ### The painter is chosen once, from what the browser says
+
+ADR 0074 replaces this section with three painters. It keeps the fresh canvas and the reasons on the surface.
 
 If `requestAdapter({ powerPreference: "high-performance" })` gives a non-fallback
 adapter and a device, `vello` paints. Otherwise `vello_cpu` paints. The rule reads no
