@@ -113,9 +113,30 @@ export function animate(
 	});
 }
 
-/** Pause the CSS loops inside each [data-loop] element while it is off screen (global.css). */
+/** Pause CSS loops and the renderer's inline SVG timelines when nobody can see them. */
 export function pauseLoopsOffscreen(): void {
 	for (const element of document.querySelectorAll("[data-loop]")) {
 		whileVisible(element, (visible) => element.classList.toggle("is-paused", !visible));
+	}
+	const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+	for (const svg of document.querySelectorAll("svg")) {
+		if (!svg.querySelector("animateTransform")) continue;
+		const view = svg.closest("[aria-hidden]");
+		let visible = false;
+		const update = () => {
+			if (visible && !motion.matches && view?.getAttribute("aria-hidden") !== "true") {
+				svg.unpauseAnimations();
+			} else svg.pauseAnimations();
+		};
+		whileVisible(svg, (onScreen) => {
+			visible = onScreen;
+			update();
+		});
+		motion.addEventListener("change", update);
+		if (view)
+			new MutationObserver(update).observe(view, {
+				attributes: true,
+				attributeFilter: ["aria-hidden"],
+			});
 	}
 }

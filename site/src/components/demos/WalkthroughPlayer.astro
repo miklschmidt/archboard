@@ -13,7 +13,7 @@ const first = walkthrough.beats[0];
 
 <div class="player table" data-walkthrough={JSON.stringify(walkthrough.beats)}>
 	<div class="stage" data-grammar="architecture">
-		<figure class="view architecture" role="img" aria-label={`Checkout API opened, drawn by Archboard: ${drawings.checkout.label}`}>
+		<figure class="view architecture" role="img" aria-hidden="false" aria-label={`Checkout API opened, drawn by Archboard: ${drawings.checkout.label}`}>
 			<Fragment set:html={picture} />
 		</figure>
 		<img
