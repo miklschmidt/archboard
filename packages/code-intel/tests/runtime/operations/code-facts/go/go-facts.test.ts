@@ -130,6 +130,35 @@ test("an explicit import alias wins over the package clause even when it matches
 	}
 });
 
+test("locals inside package variable initializers are not package definitions", async () => {
+	const initialized = fixtureCheckout({
+		"values.go": `package values
+var Handler = func() { const Local = 1; var Internal = Local; _ = Internal }
+var (
+	Grouped = func() { var Nested = 1; _ = Nested }
+	Value = 1
+)
+const (
+	First = 1
+	Second = 2
+)
+`,
+	});
+	try {
+		const read = await facts.pass(new AbortController().signal).read(initialized, "values.go");
+		if (read?.adapter !== "go") throw new Error("not read as Go");
+		expect(read.definitions.map((each) => each.symbol)).toEqual([
+			"Handler",
+			"Grouped",
+			"Value",
+			"First",
+			"Second",
+		]);
+	} finally {
+		initialized.remove();
+	}
+});
+
 test("a go.mod requires the modules of the checkout as build dependencies of their directories", async () => {
 	expect(await targets("shop/go.mod")).toEqual({
 		"example.com/ledger build-dependency": "ledger/#*",

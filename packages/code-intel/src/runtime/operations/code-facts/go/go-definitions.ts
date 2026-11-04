@@ -162,7 +162,9 @@ function typesOf(declaration: Node): Definition[] {
  * @returns Them.
  */
 function valuesOf(declaration: Node): Definition[] {
-	const specs = declaration.descendantsOfType(["const_spec", "var_spec"]);
+	const specs = declaration.namedChildren.flatMap((node) =>
+		node.type === "var_spec_list" ? node.namedChildren : [node],
+	);
 	return specs.flatMap((spec) => {
 		const values = spec.childForFieldName("value")?.namedChildren ?? [];
 		return spec.childrenForFieldName("name").map((name, index) => {
