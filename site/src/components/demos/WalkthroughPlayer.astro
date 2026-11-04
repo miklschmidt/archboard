@@ -148,14 +148,16 @@ const first = walkthrough.beats[0];
 		align-items: start;
 		flex: 1;
 	}
+	/* The product's orb canvas: 84px, with its 64px ring in the middle and room around it for
+	   the rings of light. The painter reads its colours from these tokens, and the plate is the
+	   box it sits on. */
 	.orb {
-		width: 64px;
-		height: 64px;
-		border-radius: 50%;
-		background: radial-gradient(circle at 40% 35%, var(--mark-hi), var(--mark-lo) 60%, transparent 62%);
-	}
-	.orb:global(.is-live) {
-		background: none;
+		--card: var(--raised);
+		--primary: var(--gold);
+		width: 84px;
+		max-width: none;
+		height: 84px;
+		margin: -10px;
 	}
 	.words {
 		display: flex;
@@ -264,7 +266,7 @@ const first = walkthrough.beats[0];
 
 <script>
 	import { prefersReducedMotion, whileVisible } from "../../scripts/reveal";
-	import { drawVoiceOrb } from "../../scripts/voice-orb";
+	import { mountVoiceOrb, type OrbMode } from "../../scripts/voice-orb";
 	import type { Beat } from "../../lib/walkthrough";
 
 	for (const root of document.querySelectorAll<HTMLElement>("[data-walkthrough]")) {
@@ -282,7 +284,9 @@ const first = walkthrough.beats[0];
 		let index = 0;
 		let playing = false;
 		let timer = 0;
-		let level = 0;
+		/** The word being said: when it started, how long it sounds, its syllables and how loud it is. */
+		let word: { at: number; ms: number; syllables: number; peak: number } | null = null;
+		let startedAt = 0;
 		let onScreen = false;
 		let paused = false;
 
@@ -329,16 +333,22 @@ const first = walkthrough.beats[0];
 				if (!playing) return;
 				const span = spans[at];
 				if (!span) {
-					level = 0;
+					word = null;
 					timer = window.setTimeout(() => show(index + 1, true), 1600);
 					return;
 				}
 				span.classList.add("is-said");
 				const length = (span.textContent ?? "").length;
-				level = 0.45 + Math.min(0.55, length / 12);
+				const ms = 150 + length * 38;
+				word = {
+					at: performance.now(),
+					ms: ms * 0.8,
+					syllables: Math.max(1, Math.round(length / 3)),
+					peak: 0.025 + Math.min(0.045, length * 0.006),
+				};
 				segments[index]?.style.setProperty("--progress", String((at + 1) / spans.length));
 				at += 1;
-				timer = window.setTimeout(say, 150 + length * 38);
+				timer = window.setTimeout(say, ms);
 			};
 			timer = window.setTimeout(say, 500);
 		};
@@ -346,8 +356,10 @@ const first = walkthrough.beats[0];
 		const setPlaying = (value: boolean) => {
 			playing = value;
 			narrate.setAttribute("aria-pressed", String(value));
-			level = 0;
+			word = null;
+			startedAt = performance.now();
 			show(index, value);
+			wakeOrb();
 		};
 
 		narrate.addEventListener("click", () => {
@@ -357,7 +369,22 @@ const first = walkthrough.beats[0];
 		root.querySelector("[data-prev]")?.addEventListener("click", () => show(index - 1, playing));
 		root.querySelector("[data-next]")?.addEventListener("click", () => show(index + 1, playing));
 
-		drawVoiceOrb(orb, () => (playing ? level : 0.05));
+		// The voice connects for half a second, the time before the first word, then speaks. A
+		// paused narration listens, and the lines breathe.
+		const voiceMode = (): OrbMode => {
+			if (!playing) return "listening";
+			return performance.now() - startedAt < 500 ? "starting" : "speaking";
+		};
+		// The level of the word being said: one swell for each syllable, the first the loudest.
+		const voiceLevel = () => {
+			if (!playing || !word) return 0;
+			const t = performance.now() - word.at;
+			if (t >= word.ms) return 0;
+			const step = word.ms / word.syllables;
+			const loudness = Math.floor(t / step) === 0 ? 1 : 0.75;
+			return word.peak * loudness * Math.sin((Math.PI * (t % step)) / step);
+		};
+		const wakeOrb = mountVoiceOrb(orb, { mode: voiceMode, level: voiceLevel });
 		show(0, false);
 		const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 		const settle = () => {

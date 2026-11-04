@@ -245,7 +245,7 @@ The palette is warm graphite at hue 75, one gold, and a few meaning colours. Pla
 - **Drafting Gold** (oklch(0.831 0.134 84.5)): The flat gold. It fills the text selection and the skip link, and it rings the card that invites a click (the drill-down hint ring).
 - **Lamp Gold** (oklch(0.86 0.125 86)): The gold on dark that carries marks. It sets the focus outline, link underlines, and list and fact markers. It also sets the `$` prompt, selected-tab underlines, the sorted column, the FAQ sign, wires and the current-history node. It matches the renderer's yellow.
 - **Gold Button Face** (oklch(0.87 0.135 88) to oklch(0.8 0.142 81)): The vertical gradient on the primary button, edged by Gold Edge (oklch(0.58 0.11 74)). Text on it is Gold Ink (oklch(0.2 0.02 70)).
-- **Mark Gradient** (oklch(0.89 0.105 90) to oklch(0.72 0.13 75)): The brand mark only, and the orb's idle disc.
+- **Mark Gradient** (oklch(0.89 0.105 90) to oklch(0.72 0.13 75)): The brand mark, and the voice orb's lines and ring.
 
 ### Secondary
 
@@ -426,7 +426,7 @@ A mock Archboard shell at 1280 by 760 holds the real web-shop drawing. It scales
 
 ### Signature: the walkthrough player
 
-The real checkout drawing and sequence diagram sit on a plane. A raised box holds a step rail, a gold voice orb shader, the beat's title and word-by-word subtitles, and prev, Narrate and next controls. Each beat rings its parts with the renderer's gold ring and dims the rest to 28%. Narration starts as the player comes on screen. It stops as the player leaves. A pause by the reader holds. The words play without sound.
+The real checkout drawing and sequence diagram sit on a plane. A raised box holds a step rail, the voice orb, the beat's title and word-by-word subtitles, and prev, Narrate and next controls. The orb is the product's own: the agent dock's runner, dynamics and painter from `packages/workbench/src/ui/clients/orb` and `rules/orb`, drawn on a 2D canvas. It is a lens in a gold ring with eleven ruled lines that record the voice's level, so a syllable swells in the middle of the front line and rolls back through the sheet. The subtitles' words stand in for the measured level of the Codex voice: one swell for each syllable, at the levels of normal speech. The voice connects for half a second when narration starts, and a paused narration listens while its lines breathe. Each beat rings its parts with the renderer's gold ring and dims the rest to 28%. Narration starts as the player comes on screen. It stops as the player leaves. A pause by the reader holds. The words play without sound.
 
 ### Named Rules
 

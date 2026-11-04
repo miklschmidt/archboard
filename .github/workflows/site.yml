@@ -1,7 +1,8 @@
 name: Site
 
 # The marketing site in site/ builds on every pull request that changes it or the repository
-# files it imports, and deploys to GitHub Pages from main.
+# files it imports (the README drawings, the social card, the fonts and the voice orb's code),
+# and deploys to GitHub Pages from main.
 on:
   workflow_dispatch:
   push:
@@ -11,6 +12,11 @@ on:
       - docs/readme/**
       - docs/assets/**
       - packages/renderer/assets/fonts/**
+      - packages/workbench/package.json
+      - packages/workbench/src/ui/clients/orb/**
+      - packages/workbench/src/ui/rules/orb/**
+      - packages/workbench/src/ui/state/orb/**
+      - packages/timing/**
       - .github/workflows/site.yml
   pull_request:
     branches: [main]
@@ -19,6 +25,11 @@ on:
       - docs/readme/**
       - docs/assets/**
       - packages/renderer/assets/fonts/**
+      - packages/workbench/package.json
+      - packages/workbench/src/ui/clients/orb/**
+      - packages/workbench/src/ui/rules/orb/**
+      - packages/workbench/src/ui/state/orb/**
+      - packages/timing/**
       - .github/workflows/site.yml
 
 concurrency:

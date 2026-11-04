@@ -4,6 +4,11 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "astro/config";
 
 const repository = fileURLToPath(new URL("..", import.meta.url));
+// The voice orb is the product's own code, which imports the durations package by name. The site
+// does not install the repository's workspaces, so the name points at the package's source.
+const timing = fileURLToPath(
+	new URL("../packages/timing/src/shared/constants/timing.ts", import.meta.url),
+);
 
 export default defineConfig({
 	site: process.env.SITE_ORIGIN ?? "https://miklschmidt.github.io",
@@ -16,5 +21,6 @@ export default defineConfig({
 	vite: {
 		// The fonts and the README's drawings live in the repository, outside the site.
 		server: { fs: { allow: [repository] } },
+		resolve: { alias: { "@archboard/timing": timing } },
 	},
 });

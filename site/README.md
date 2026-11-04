@@ -34,6 +34,10 @@ Every diagram on the page is real output of the Archboard renderer, in the dark 
 - The other drawings are in `src/diagrams/`. `bun run render` draws them again from
   `examples/web-shop`.
 - The fonts come from `packages/renderer/assets/fonts/`, the same files the renderer uses.
+- The voice orb is the product's own code, imported from `packages/workbench/src/ui/clients/orb/`
+  and `packages/workbench/src/ui/rules/orb/`. The site points `@archboard/timing` at
+  `packages/timing` in `astro.config.mjs` and `tsconfig.json`, because it does not install the
+  repository's workspaces.
 - The social card is `docs/assets/archboard-social-card.jpg`.
 
 The counts in Measures and Changes together are real rows of Archboard's own model, read on
@@ -67,7 +71,7 @@ stop, the script keeps those files and prints a command to retry the stop.
 ## Deploy
 
 `.github/workflows/site.yml` builds the site on each pull request that changes the site, the
-README drawings, the social card or the fonts. A push to `main` with such a change deploys it.
+README drawings, the social card, the fonts or the voice orb's code. A push to `main` with such a change deploys it.
 You can also start the workflow by hand from the Actions tab.
 
 GitHub Pages must use GitHub Actions as its source. To set it, open the repository settings,
