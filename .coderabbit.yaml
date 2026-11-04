@@ -53,9 +53,6 @@ reviews:
     # The custom check below holds the description to the repository's form.
     description:
       mode: "off"
-    # Work is tracked in Backlog.md, not in GitHub issues.
-    issue_assessment:
-      mode: "off"
     # The repository does not require docstring coverage.
     docstrings:
       mode: "off"
