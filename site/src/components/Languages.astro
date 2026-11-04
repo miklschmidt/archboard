@@ -18,9 +18,12 @@ const items = [
 ];
 ---
 
-<section class="languages" aria-label="What the code check reads" data-loop>
-	<p class="intro">The code check reads</p>
-	<div class="belt">
+<section class="languages" aria-label="What the code check reads" data-languages data-loop>
+	<div class="intro">
+		<p>The code check reads</p>
+		<button type="button" class="toggle" data-language-toggle aria-controls="code-languages" aria-expanded="true" hidden>Animate languages</button>
+	</div>
+	<div class="belt" id="code-languages">
 		<ul class="track">
 			{items.map((item) => <li>{item}</li>)}
 		</ul>
@@ -39,11 +42,25 @@ const items = [
 	/* The label starts where the page's container starts. */
 	.intro {
 		flex: none;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 4px;
 		padding-left: max(var(--gutter), calc((100% - var(--measure)) / 2));
 		padding-right: 4px;
 		font-size: 0.9375rem;
 		color: var(--ink-muted);
 		white-space: nowrap;
+	}
+	.toggle {
+		min-height: 24px;
+		padding: 0 6px;
+		border: 0;
+		border-radius: var(--radius-control);
+		background: var(--raised);
+		color: var(--ink-muted);
+		font-size: 0.75rem;
+		cursor: pointer;
 	}
 	.belt {
 		flex: 1;
@@ -67,20 +84,38 @@ const items = [
 		letter-spacing: 0.03em;
 		text-transform: uppercase;
 		white-space: nowrap;
-		/* Display-size words: about Lc 57, over the large-text floor. */
-		color: color-mix(in oklch, var(--ink-muted) 70%, var(--ink-faint));
+		color: var(--ink-muted);
 		transition: color 200ms var(--ease-out);
 	}
 	.track li:hover {
 		color: var(--ink);
 	}
 	@media (prefers-reduced-motion: no-preference) {
-		.track {
+		.is-animated .track {
 			animation: belt 46s linear infinite;
 		}
 		.belt:hover .track {
 			animation-play-state: paused;
 		}
+	}
+	.languages:not(.is-animated) {
+		flex-wrap: wrap;
+		gap: 16px;
+	}
+	.languages:not(.is-animated) .belt {
+		flex-basis: 100%;
+		margin-inline: max(var(--gutter), calc((100% - var(--measure)) / 2));
+		overflow: visible;
+		mask-image: none;
+	}
+	.languages:not(.is-animated) .track {
+		flex: 1;
+		flex-wrap: wrap;
+		gap: 12px 28px;
+		padding: 0;
+	}
+	.languages:not(.is-animated) .track[aria-hidden="true"] {
+		display: none;
 	}
 	@keyframes belt {
 		to {
@@ -88,3 +123,25 @@ const items = [
 		}
 	}
 </style>
+
+<script>
+	const root = document.querySelector<HTMLElement>("[data-languages]");
+	const button = root?.querySelector<HTMLButtonElement>("[data-language-toggle]");
+	if (root && button) {
+		const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+		let expanded = false;
+		const update = () => {
+			const animated = !expanded && !motion.matches;
+			root.classList.toggle("is-animated", animated);
+			button.hidden = motion.matches;
+			button.textContent = animated ? "Show all" : "Animate languages";
+			button.setAttribute("aria-expanded", String(!animated));
+		};
+		button.addEventListener("click", () => {
+			expanded = !expanded;
+			update();
+		});
+		motion.addEventListener("change", update);
+		update();
+	}
+</script>
