@@ -1,30 +1,37 @@
-// The routes of the picture's lines as the table's shader reads them. Light travels along a line,
-// so every pixel near one must know which line it lies on, how far from it, and how far along it.
-// The routes become straight runs in one texture, and a grid over the picture names, for each of
-// its cells, the runs that pass near it, so a pixel reads a few runs instead of every one.
+// The routes of the picture's lines as the table's shader reads them. Each line is a beam of light
+// that floats above its route, so every pixel near one must know which beam it sees, how far off,
+// and how far along it. The routes become straight runs in one texture, and a grid over the
+// picture names, for each of its cells, every run whose light reaches it. A ray reads the cells it
+// crosses on its way down through the beams, so it reads a few runs instead of every one, and
+// never misses one whose light reaches it.
 
 import type { Plan } from "./plan";
 
 /** How many texels wide each texture is. */
 export const ROUTE_TEXELS = 1024;
 
-/** How many runs one cell of the grid names at most. The shader's SLOTS. */
-export const SLOTS = 12;
-
 /** How wide a cell of the grid is, in the picture's units. */
 export const CELL = 16;
 
-/** How near a pixel must be to a run for its light to reach it, in the picture's units. */
-export const REACH = 36;
+/** How far a beam's light reaches from its axis, in the picture's units. */
+export const SHINE = 12;
+
+/** How far a beam takes to rise from its tile to its own height at each end, in the picture's units. */
+export const RAMP = 32;
+
+/** How far a straight run may pass from the points of a bend it stands for, in the picture's units. */
+const STRAY = 0.25;
 
 /** The routes, ready to load into two float textures. */
 export interface Routes {
 	/** Two texels a run: its ends, then where it starts along its line, its length and the line. */
 	readonly runs: Float32Array;
 	readonly runRows: number;
-	/** SLOTS / 4 texels a cell, each run's number or -1. */
+	/** `stride` texels a cell, each run's number or -1 after the last. */
 	readonly grid: Float32Array;
 	readonly gridRows: number;
+	/** How many texels each cell takes: as many as the fullest cell needs. */
+	readonly stride: number;
 	/** How many cells across and down the grid has. */
 	readonly cells: readonly [number, number];
 }
@@ -37,13 +44,30 @@ export interface Routes {
 export function buildRoutes(plan: Plan): Routes {
 	const runs: number[][] = [];
 	plan.lines.forEach((line, index) => {
+		// A beam's height follows a curve near each end, so the runs there are short enough to follow it.
+		const cuts = [0.25, 0.5, 0.75, 1].flatMap((part) => [RAMP * part, line.length - RAMP * part]);
 		let along = 0;
 		for (const piece of line.route) {
-			for (let at = 2; at < piece.length; at += 2) {
-				const [ax = 0, ay = 0, bx = 0, by = 0] = piece.slice(at - 2, at + 2);
-				const span = Math.hypot(bx - ax, by - ay);
+			const points: { x: number; y: number }[] = [];
+			for (let at = 0; at + 1 < piece.length; at += 2)
+				points.push({ x: piece[at] ?? 0, y: piece[at + 1] ?? 0 });
+			for (const [a, b] of pairs(straighten(points))) {
+				const span = Math.hypot(b.x - a.x, b.y - a.y);
 				if (span < 1e-3) continue;
-				runs.push([ax, ay, bx, by, along, span, index, 0]);
+				const within = cuts.filter((cut) => cut > along + 0.5 && cut < along + span - 0.5);
+				const marks = [0, ...within.map((cut) => (cut - along) / span).sort((x, y) => x - y), 1];
+				for (const [from, to] of pairs(marks)) {
+					runs.push([
+						a.x + (b.x - a.x) * from,
+						a.y + (b.y - a.y) * from,
+						a.x + (b.x - a.x) * to,
+						a.y + (b.y - a.y) * to,
+						along + span * from,
+						span * (to - from),
+						index,
+						0,
+					]);
+				}
 				along += span;
 			}
 		}
@@ -53,8 +77,8 @@ export function buildRoutes(plan: Plan): Routes {
 	const down = Math.ceil(plan.height / CELL);
 	const cells: number[][] = Array.from({ length: across * down }, () => []);
 	runs.forEach(([ax = 0, ay = 0, bx = 0, by = 0], run) => {
-		const [left, right] = [Math.min(ax, bx) - REACH, Math.max(ax, bx) + REACH];
-		const [top, bottom] = [Math.min(ay, by) - REACH, Math.max(ay, by) + REACH];
+		const [left, right] = [Math.min(ax, bx) - SHINE, Math.max(ax, bx) + SHINE];
+		const [top, bottom] = [Math.min(ay, by) - SHINE, Math.max(ay, by) + SHINE];
 		for (
 			let y = Math.max(0, Math.floor(top / CELL));
 			y <= Math.min(down - 1, Math.floor(bottom / CELL));
@@ -65,42 +89,56 @@ export function buildRoutes(plan: Plan): Routes {
 				x <= Math.min(across - 1, Math.floor(right / CELL));
 				x++
 			) {
-				// A cell keeps the runs that pass nearest its middle when more than SLOTS reach it.
+				// A run is named by every cell that holds a point its light reaches.
 				const middle = { x: (x + 0.5) * CELL, y: (y + 0.5) * CELL };
-				const near = distance(middle, ax, ay, bx, by);
-				if (near > REACH + CELL * 0.71) continue;
+				if (distance(middle, ax, ay, bx, by) > SHINE + CELL * 0.71) continue;
 				cells[y * across + x]?.push(run);
 			}
 		}
 	});
-	cells.forEach((list, cell) => {
-		if (list.length <= SLOTS) return;
-		const middle = {
-			x: ((cell % across) + 0.5) * CELL,
-			y: (Math.floor(cell / across) + 0.5) * CELL,
-		};
-		const near = (run: number) => {
-			const [ax = 0, ay = 0, bx = 0, by = 0] = runs[run] ?? [];
-			return distance(middle, ax, ay, bx, by);
-		};
-		list.sort((one, other) => near(one) - near(other));
-		list.length = SLOTS;
-	});
-
 	const runTexels = runs.length * 2;
 	const runRows = Math.max(1, Math.ceil(runTexels / ROUTE_TEXELS));
 	const runData = new Float32Array(runRows * ROUTE_TEXELS * 4);
 	runs.forEach((run, index) => runData.set(run, index * 8));
 
-	const perCell = SLOTS / 4;
-	const gridRows = Math.max(1, Math.ceil((cells.length * perCell) / ROUTE_TEXELS));
+	const stride = Math.max(1, Math.ceil(Math.max(...cells.map((list) => list.length)) / 4));
+	const gridRows = Math.max(1, Math.ceil((cells.length * stride) / ROUTE_TEXELS));
 	const gridData = new Float32Array(gridRows * ROUTE_TEXELS * 4).fill(-1);
-	cells.forEach((list, cell) => {
-		list.forEach((run, slot) => {
-			gridData[cell * perCell * 4 + slot] = run;
-		});
-	});
-	return { runs: runData, runRows, grid: gridData, gridRows, cells: [across, down] };
+	cells.forEach((list, cell) => gridData.set(list, cell * stride * 4));
+	return { runs: runData, runRows, grid: gridData, gridRows, stride, cells: [across, down] };
+}
+
+/**
+ * Each item of a list beside the next.
+ * @param items The list.
+ * @returns The pairs.
+ */
+function pairs<T>(items: readonly T[]): [T, T][] {
+	return items.slice(1).map((item, index) => [items[index] as T, item]);
+}
+
+/**
+ * A route's points with each bend kept as the fewest straight runs that pass within STRAY of it.
+ * @param points The points.
+ * @returns The points kept.
+ */
+function straighten(points: readonly { x: number; y: number }[]): { x: number; y: number }[] {
+	const first = points[0];
+	if (!first || points.length < 3) return [...points];
+	const kept = [first];
+	let anchor = 0;
+	for (let index = 2; index < points.length; index++) {
+		const [a = first, b = first] = [points[anchor], points[index]];
+		const fits = points
+			.slice(anchor + 1, index)
+			.every((point) => distance(point, a.x, a.y, b.x, b.y) <= STRAY);
+		if (!fits) {
+			anchor = index - 1;
+			kept.push(points[anchor] ?? first);
+		}
+	}
+	kept.push(points.at(-1) ?? first);
+	return kept;
 }
 
 /**

@@ -6,7 +6,7 @@
 //
 // A table in perspective needs more pixels near the eye than far away, so the picture is painted
 // at more than one scale: the first image holds all of it, and each further image holds a part
-// nearer the eye, finer.
+// nearer the eye, finer. The table says how fine each must be.
 
 import { startCpuPainter } from "../../../../packages/renderer/src/ui/clients/painter.ts";
 import paintingUrl from "../../paintings/hero.painting.json?url";
@@ -15,33 +15,38 @@ import { plan } from "./plan";
 /** A part of the picture: its left, top, right and bottom edges, 0..1 across and down it. */
 export type Region = readonly [number, number, number, number];
 
+/** A part of the picture to paint, and how finely: pixels for each unit of the picture. */
+export interface Part {
+	readonly region: Region;
+	readonly density: number;
+}
+
 /** One image of the picture, and the part of the picture it holds. */
 export interface Level {
 	readonly image: ImageBitmap;
 	readonly region: Region;
 }
 
-/** The widest image a level is painted at, in pixels. */
-const WIDEST = 3072;
+/** The longest side an image is painted at: every GPU with WebGL2 takes it as a texture. */
+const SIDE = 8192;
 
-/** The tallest image a level is painted at, in pixels. */
-const TALLEST = 2048;
+/** The most pixels an image is painted at: every browser takes them in one canvas. */
+const AREA = 4096 * 4096;
 
 /**
- * A part of the picture grown to the shape of the image that holds it, which is at most
- * WIDEST × TALLEST, from its left and its bottom, which lies nearest the eye.
- * @param region The part.
- * @returns The part, and the size of its image.
+ * The size of a part's image: as fine as the part asks, as far as SIDE and AREA allow.
+ * @param part The part.
+ * @returns The part's region, and the size of its image.
  */
-function sized(region: Region): { region: Region; width: number; height: number } {
+function sized({ region, density }: Part): { region: Region; width: number; height: number } {
 	const [left, top, right, bottom] = region;
 	const across = (right - left) * plan.width;
 	const down = (bottom - top) * plan.height;
-	const scale = Math.min(WIDEST / across, TALLEST / down);
+	const scale = Math.min(density, SIDE / across, SIDE / down, Math.sqrt(AREA / (across * down)));
 	return {
 		region,
-		width: Math.round(across * scale),
-		height: Math.round(down * scale),
+		width: Math.max(1, Math.round(across * scale)),
+		height: Math.max(1, Math.round(down * scale)),
 	};
 }
 
@@ -55,14 +60,14 @@ function yieldToPage(): Promise<void> {
 
 /**
  * Paint the picture, once for each part.
- * @param regions The parts, the whole picture first.
+ * @param parts The parts, the whole picture first.
  * @returns The images, or null when no painter starts or the painting does not read.
  */
-export async function paintPicture(regions: readonly Region[]): Promise<Level[] | null> {
+export async function paintPicture(parts: readonly Part[]): Promise<Level[] | null> {
 	try {
 		const painting = fetch(paintingUrl).then((answer) => answer.text());
 		const first = document.createElement("canvas");
-		const sizes = regions.map(sized);
+		const sizes = parts.map(sized);
 		first.width = sizes[0]?.width ?? 1;
 		first.height = sizes[0]?.height ?? 1;
 		const { painter, canvas } = await startCpuPainter(first, true);

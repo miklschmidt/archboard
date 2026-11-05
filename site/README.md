@@ -49,13 +49,15 @@ Every diagram on the page is real output of the Archboard renderer, in the dark 
 - The hero draws `site/model`, a small model made for the site. It shows how an agent states a
   system through the CLI and how Archboard draws it for the people who read it. `scripts/paint.ts`
   renders it with every container open, in flat relief, and records where each card, tray, label
-  and route lies beside the painting.
+  and route lies beside the painting. The painting has no lines, because the hero draws each line
+  itself.
 - The hero's code is in `src/scripts/hero/`. The product's painter, imported from
   `packages/renderer/src/ui/clients/painter.ts`, paints the picture once on the CPU into still
   images. One WebGL shader then does everything that moves: it lays the images on a table in
-  perspective, raises each card as a tile, sinks each tray, and sends light along the real routes
-  of the lines. The light reaches each card by the quickest route from the agents, so the entry
-  has no hand-placed timing.
+  perspective, raises each card as a tile and sinks each tray. It draws each line as a laser that
+  floats above the line's real route, with the line's label on a plate. The light that draws the
+  lasers reaches each card by the quickest route from the agents, so the entry has no hand-placed
+  timing.
 - The section about Archboard's own model paints the whole of `.archboard/vault` live.
 - The fonts come from `packages/renderer/assets/fonts/`, the same files the renderer uses.
 - The voice orb is the product's own code, imported from `packages/workbench/src/ui/clients/orb/`

@@ -4,8 +4,9 @@
 //
 // The hero draws the site's own model, `site/model`: how an agent, Archboard and its reader work
 // together. Its painting has no ground and draws its cards flat, because the hero lays it on a
-// table and stands each card up itself. Beside it goes what the hero needs to know of the picture:
-// where each card, tray and label lies, and the route of every line, from its source to its target.
+// table and stands each card up itself. It paints no lines either: the hero draws each line as a
+// beam of light above the table. Beside it goes what the hero needs to know of the picture: where
+// each card, tray and label lies, and the route of every line, from its source to its target.
 //
 // The model's viewport shows the whole of `.archboard/vault`, Archboard's own model, as the app
 // draws it.
@@ -71,7 +72,24 @@ async function read(vault: string, open: boolean) {
 }
 
 /**
- * The points of a path, each piece apart, bends cut into straight runs.
+ * Whether a point goes on the way a run came: the run from `before` to `at` is straight and level
+ * or upright, and the point lies on it, beyond `at`.
+ * @param before Where the run came from.
+ * @param at Where it is.
+ * @param point The point.
+ * @returns Whether it does.
+ */
+function goesOn(before: Point, at: Point, point: Point): boolean {
+	const level = Math.abs(before.y - at.y) < 0.01 && Math.abs(point.y - at.y) < 0.01;
+	const upright = Math.abs(before.x - at.x) < 0.01 && Math.abs(point.x - at.x) < 0.01;
+	if (level) return Math.sign(at.x - before.x) === Math.sign(point.x - at.x);
+	if (upright) return Math.sign(at.y - before.y) === Math.sign(point.y - at.y);
+	return false;
+}
+
+/**
+ * The points of a path, each piece apart, bends cut into straight runs. A hop over another line
+ * runs straight on: the hero's beams float at their own heights, so they pass each other.
  * @param steps The path's steps.
  * @returns Its pieces.
  */
@@ -114,7 +132,17 @@ function flatten(steps: readonly Step[]): Point[][] {
 			);
 		}
 	};
-	for (const step of steps) {
+	for (let index = 0; index < steps.length; index++) {
+		const step = steps[index];
+		const next = steps[index + 1];
+		const before = piece.at(-2);
+		// A hop is two curves that leave a run and come back to it, where the run goes on.
+		if (step?.step === "cubic" && next?.step === "cubic" && before && goesOn(before, at, next.to)) {
+			to(next.to);
+			index++;
+			continue;
+		}
+		if (!step) continue;
 		switch (step.step) {
 			case "move":
 				if (piece.length > 1) pieces.push(piece);
@@ -242,9 +270,14 @@ function apart(point: Point, [x = 0, y = 0, width = 0, height = 0]: readonly num
 async function hero() {
 	const { reading, request } = await read("site/model", true);
 	const drawn = await renderArchitecture({ ...request, relief: "flat" });
-	const painting = JSON.parse(drawn.painting) as { scene: { background: unknown; body: unknown } };
+	const painting = JSON.parse(drawn.painting) as { scene: { background: unknown; body: Item[] } };
 	painting.scene.background = { colour: "transparent" };
 	const found = groups(painting.scene.body);
+	// The hero draws each line as a beam, so the picture keeps no line, junction or traffic of its own.
+	painting.scene.body = painting.scene.body.filter(
+		(item) =>
+			item.item !== "group" || !["line", "junctions", "traffic"].includes(roleOf(item) ?? ""),
+	);
 	const of = (role: string) => found.filter((group) => roleOf(group) === role);
 
 	// A tray is the well a container's parts stand in, and its region adds the tab of its name.

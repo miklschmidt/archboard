@@ -4,9 +4,9 @@
 // painter paints the picture once, so a frame costs the shader alone.
 
 import { runShader } from "../gl";
-import type { Level } from "./picture";
+import type { Level, Part, Region } from "./picture";
 import { edges, plan } from "./plan";
-import { buildRoutes, ROUTE_TEXELS } from "./routes";
+import { buildRoutes, ROUTE_TEXELS, SHINE } from "./routes";
 import { compose, ENTRY } from "./score";
 import { FRAGMENT, LIMITS } from "./shader";
 
@@ -16,6 +16,18 @@ const SHEET = { left: -WIDTH / 2, near: -(WIDTH * plan.height) / plan.width / 2,
 
 /** How thick a card's tile stands, how high the pointer lifts it, and how deep a tray sinks. */
 const TILE = { thickness: 0.055, lifted: 0.1, tray: 0.03 };
+
+/**
+ * Each kind of line's beam: how high it floats, in table units, and how thick it is. A main line
+ * floats highest and burns thickest, a dotted line lowest, as beads, so beams that cross pass each
+ * other. A beam meets each of its tiles this far up the tile's side.
+ */
+const BEAM = {
+	hero: { height: 0.044, thick: 1.25 },
+	normal: { height: 0.038, thick: 1 },
+	dotted: { height: 0.032, thick: 0 },
+	plug: 0.6,
+} as const;
 
 /**
  * How the camera looks at the picture: its turn and its tilt down in radians, its focal length,
@@ -40,14 +52,23 @@ const ACROSS = { landscape: 0.94, portrait: 4.2 };
  */
 const ARRIVAL = { distance: 1.5, yaw: 0.26, pitch: 0.22, x: 0.2, z: 0.5, from: 0.25, rate: 1.5 };
 
+/** The most device pixels the table draws for each CSS pixel. */
+const RATIO = 2;
+
+/**
+ * How much finer than the canvas shows it the picture is painted, at the densest point each image
+ * serves: enough that the camera can come a little nearer as the page scrolls.
+ */
+const FINER = 1.1;
+
 /** How quickly a card lifts toward the pointer, the rest dims, and the lines light, per second. */
 const RATES = { lift: 10, focus: 7, light: 9, look: 3 };
 
 /** How long the pointer rests on a card before it lights: a pointer passing over lights nothing. */
 const DWELL = 0.12;
 
-/** The light of each kind of line, by the colour its kind draws in; a line of no colour is white. */
-const COLOURS = ["teal", "pink", "sky", "violet", "blue", "emerald", "cyan", "indigo"] as const;
+/** The colour of every beam's light. */
+const LIGHT = "sky";
 
 interface Camera {
 	x: number;
@@ -324,18 +345,22 @@ function roomOf(canvas: HTMLCanvasElement, words: HTMLElement | null): Room {
 }
 
 /**
- * The parts of the picture its images hold: the whole, and the part the lower canvas shows at rest,
- * where the table comes nearest the eye.
+ * The parts of the picture its images hold, and how finely each is painted: the whole, and the
+ * part the lower canvas shows at rest, where the table comes nearest the eye. Each image is as fine
+ * as the densest point it serves, as large as the screen lets the canvas grow.
  * @param canvas The canvas the table lights.
  * @param words The words the picture leaves room for.
- * @returns The parts, 0..1 across and down the picture.
+ * @returns The parts.
  */
-export function pictureRegions(
-	canvas: HTMLCanvasElement,
-	words: HTMLElement | null,
-): [number, number, number, number][] {
+export function pictureParts(canvas: HTMLCanvasElement, words: HTMLElement | null): Part[] {
 	const aspect = canvas.clientWidth / Math.max(1, canvas.clientHeight);
 	const camera = fit(aspect, roomOf(canvas, words));
+	const scale = SHEET.width / plan.width;
+	/** Where a point of the table lies on the picture, 0..1 across and down it. */
+	const onPicture = (point: { x: number; z: number }) => ({
+		x: (point.x - SHEET.left) / scale / plan.width,
+		y: 1 - (point.z - SHEET.near) / scale / plan.height,
+	});
 	const corners = [
 		{ x: 0.0, y: 0.0 },
 		{ x: 1.0, y: 0.0 },
@@ -343,41 +368,89 @@ export function pictureRegions(
 		{ x: 1.0, y: 0.32 },
 	]
 		.map((point) => onTable(camera, aspect, point))
-		.filter((point) => point !== null);
-	const scale = SHEET.width / plan.width;
-	const across = corners.map((point) => (point.x - SHEET.left) / scale / plan.width);
-	const down = corners.map((point) => 1 - (point.z - SHEET.near) / scale / plan.height);
+		.filter((point) => point !== null)
+		.map(onPicture);
 	const clamp = (value: number) => Math.min(1, Math.max(0, value));
-	const near: [number, number, number, number] = [
-		clamp(Math.min(...across) - 0.03),
-		clamp(Math.min(...down) - 0.03),
-		clamp(Math.max(...across) + 0.03),
-		clamp(Math.max(...down) + 0.03),
+	const near: Region = [
+		clamp(Math.min(...corners.map((point) => point.x)) - 0.03),
+		clamp(Math.min(...corners.map((point) => point.y)) - 0.03),
+		clamp(Math.max(...corners.map((point) => point.x)) + 0.03),
+		clamp(Math.max(...corners.map((point) => point.y)) + 0.03),
 	];
-	return [[0, 0, 1, 1], near];
+
+	// How much the near image serves a point, as the shader blends the two: all of it inside its
+	// part, less within a twenty-fifth of the part from an edge that the picture does not share.
+	const nearness = (at: { x: number; y: number }) => {
+		const [left, top, right, bottom] = near;
+		const [u, v] = [(at.x - left) / (right - left), (at.y - top) / (bottom - top)];
+		if (u < 0 || v < 0 || u > 1 || v > 1) return 0;
+		const reach = Math.min(
+			left > 0 ? u : 1,
+			top > 0 ? v : 1,
+			right < 1 ? 1 - u : 1,
+			bottom < 1 ? 1 - v : 1,
+		);
+		return Math.min(1, reach / 0.04);
+	};
+	// How many device pixels a unit of the picture covers, at its densest where each image serves:
+	// along the pixel's shorter reach, which anisotropic filtering keeps sharp.
+	const ratio = Math.min(window.devicePixelRatio || 1, RATIO);
+	const [wide, tall] = [canvas.clientWidth * ratio, canvas.clientHeight * ratio];
+	const densest = [0, 0];
+	const steps = 40;
+	for (let row = 0; row <= steps; row++) {
+		for (let column = 0; column <= steps; column++) {
+			const point = { x: column / steps, y: row / steps };
+			const here = onTable(camera, aspect, point);
+			const across = onTable(camera, aspect, { x: point.x + 1 / wide, y: point.y });
+			const up = onTable(camera, aspect, { x: point.x, y: point.y + 1 / tall });
+			if (!here || !across || !up) continue;
+			const at = onPicture(here);
+			if (at.x < 0 || at.y < 0 || at.x > 1 || at.y > 1) continue;
+			const reach = Math.min(
+				Math.hypot(across.x - here.x, across.z - here.z),
+				Math.hypot(up.x - here.x, up.z - here.z),
+			);
+			const served = nearness(at);
+			if (served > 0) densest[1] = Math.max(densest[1] ?? 0, scale / reach);
+			if (served < 1) densest[0] = Math.max(densest[0] ?? 0, scale / reach);
+		}
+	}
+	const [whole = 1, nearer = whole] = densest;
+	return [
+		{ region: [0, 0, 1, 1], density: whole * FINER },
+		{ region: near, density: Math.max(whole, nearer) * FINER },
+	];
 }
+
+/** How long the canvas keeps its size before the picture is painted again for it, in milliseconds. */
+const SETTLE = 400;
 
 /**
  * Light the hero's table on its canvas.
  * @param canvas The canvas, sized by CSS.
- * @param drawing The picture's images, once they are painted.
+ * @param paint Paint the picture's images, for the parts that a function gives once the painter is
+ * ready.
  * @param words The words the picture leaves room for, and lies darker behind.
  */
 export function lightTable(
 	canvas: HTMLCanvasElement,
-	drawing: Promise<Level[] | null>,
+	paint: (parts: () => Part[]) => Promise<Level[] | null>,
 	words: HTMLElement | null,
 ): void {
 	const host = canvas.parentElement ?? canvas;
 	const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 	const score = compose();
 	const routes = buildRoutes(plan);
-	const glowOf = new Map<string, [number, number, number]>(
-		COLOURS.map((name) => [name, token(name)] as const),
-	);
-	const white: [number, number, number] = [0.62, 0.68, 0.78];
+	const light = token(LIGHT);
 
+	// The picture's images, the parts they were painted for, and new images on their way to the
+	// table. When the canvas comes to need a finer picture than it has, as when its window grows,
+	// or another part of it, the picture is painted again.
 	let levels: Level[] | null = null;
+	let painted: Part[] = [];
+	let arriving: Level[] | null = null;
+	let settling = 0;
 	let ready: number | undefined;
 	let pointer: { x: number; y: number } | undefined;
 	host.addEventListener("pointermove", (event) => {
@@ -426,7 +499,7 @@ export function lightTable(
 	const labelBoxes = plan.labels.slice(0, LIMITS.labels).flatMap((label) => edges(label.box));
 	const lineColours = (moving: boolean) =>
 		plan.lines.slice(0, LIMITS.lines).flatMap((line, index) => {
-			const [r, g, b] = (line.color ? glowOf.get(line.color) : undefined) ?? white;
+			const [r, g, b] = light;
 			const speed = line.traffic && moving ? line.traffic.speed * 1.9 + (index % 3) * 9 : 0;
 			return [r, g, b, speed];
 		});
@@ -437,7 +510,7 @@ export function lightTable(
 	const redraw = runShader({
 		canvas,
 		fragment: FRAGMENT,
-		maxRatio: 1.5,
+		maxRatio: RATIO,
 		stillTime: 30,
 		uniforms: (gl, at, frame) => {
 			const still = motion.matches;
@@ -464,8 +537,13 @@ export function lightTable(
 				x: look.x + (target.x - look.x) * follow(RATES.look),
 				y: look.y + (target.y - look.y) * follow(RATES.look),
 			};
-			if (!rest || rest.aspect !== aspect)
+			if (!rest || rest.aspect !== aspect) {
+				if (rest) {
+					window.clearTimeout(settling);
+					settling = window.setTimeout(repaint, SETTLE);
+				}
 				rest = { aspect, camera: fit(aspect, roomOf(canvas, words)), words: wordsOf() };
+			}
 			const away = 1 - arrived;
 			const camera: Camera = {
 				...rest.camera,
@@ -534,6 +612,15 @@ export function lightTable(
 				held !== null && held.gl === gl && gl.isTexture(held.texture);
 			if (!fresh(textures.runs)) textures.runs = floats(gl, 2, routes.runs, routes.runRows);
 			if (!fresh(textures.grid)) textures.grid = floats(gl, 3, routes.grid, routes.gridRows);
+			if (arriving) {
+				for (const held of [textures.level0, textures.level1])
+					if (held?.gl === gl) gl.deleteTexture(held.texture);
+				for (const level of levels ?? []) level.image.close();
+				levels = arriving;
+				arriving = null;
+				textures.level0 = null;
+				textures.level1 = null;
+			}
 			if (levels && !fresh(textures.level0)) {
 				textures.level0 = levels[0] ? picture(gl, 0, levels[0].image) : null;
 				textures.level1 = levels[1] ? picture(gl, 1, levels[1].image) : null;
@@ -555,6 +642,7 @@ export function lightTable(
 				[0, 1].flatMap((index) => [...(levels?.[index]?.region ?? [0, 0, 1, 1])]),
 			);
 			gl.uniform2i(at("uCells"), routes.cells[0], routes.cells[1]);
+			gl.uniform1i(at("uCellTexels"), routes.stride);
 
 			// Before the picture arrives, the table holds nothing.
 			const live = levels !== null && t >= 0;
@@ -571,22 +659,38 @@ export function lightTable(
 			const cards = plan.cards.slice(0, LIMITS.cards);
 			gl.uniform1i(at("uCardCount"), cards.length);
 			gl.uniform4fv(at("uCardBox"), cardBoxes);
-			gl.uniform4fv(
-				at("uCardPose"),
-				cards.flatMap((card, index) => {
-					const since = t - (score.cards[index] ?? 0);
-					const rise = live ? easeOut(since / ENTRY.rise) : 0;
-					const base =
-						(card.tray >= 0 ? -(trays[card.tray]?.[0] ?? 0) : 0) + (lift[index] ?? 0) * TILE.lifted;
-					const face = live ? smooth(0, ENTRY.rise * 0.65, since) : 0;
-					const flash = live && since > 0 && Number.isFinite(since) ? Math.exp(-since * 4.5) : 0;
-					return [base, base + TILE.thickness * rise, face, flash];
-				}),
-			);
+			const poses = cards.map((card, index) => {
+				const since = t - (score.cards[index] ?? 0);
+				const rise = live ? easeOut(since / ENTRY.rise) : 0;
+				const base =
+					(card.tray >= 0 ? -(trays[card.tray]?.[0] ?? 0) : 0) + (lift[index] ?? 0) * TILE.lifted;
+				const face = live ? smooth(0, ENTRY.rise * 0.65, since) : 0;
+				const flash = live && since > 0 && Number.isFinite(since) ? Math.exp(-since * 4.5) : 0;
+				return [base, base + TILE.thickness * rise, face, flash];
+			});
+			gl.uniform4fv(at("uCardPose"), poses.flat());
 			gl.uniform1fv(at("uCardLit"), cardLit.slice(0, LIMITS.cards));
 			gl.uniform1f(at("uCorner"), Math.max(...plan.cards.map((card) => card.radius)) * scale);
 
 			const lines = plan.lines.slice(0, LIMITS.lines);
+			// A beam meets each of its tiles part of the way up the tile's side, as the tile stands now.
+			const plug = (card: number) => {
+				const [base = 0, top = 0] = poses[card] ?? [];
+				return base + (top - base) * BEAM.plug;
+			};
+			const beams = lines.map((line) => {
+				const kind =
+					line.dash === "dotted" ? BEAM.dotted : line.emphasis === "hero" ? BEAM.hero : BEAM.normal;
+				return [plug(line.from), plug(line.to), kind.height, kind.thick];
+			});
+			gl.uniform4fv(at("uLineBeam"), beams.flat());
+			// How low and how high the beams' light reaches: a ray meets it only between.
+			const heights = beams.flatMap(([from = 0, to = 0, height = 0]) => [from, to, height]);
+			gl.uniform2f(
+				at("uBeamSpan"),
+				Math.min(...heights) - SHINE * scale,
+				Math.max(...heights) + SHINE * scale,
+			);
 			gl.uniform4fv(at("uLineColor"), still ? colours.still : colours.moving);
 			gl.uniform4fv(
 				at("uLineReveal"),
@@ -622,19 +726,43 @@ export function lightTable(
 			const labels = plan.labels.slice(0, LIMITS.labels);
 			gl.uniform1i(at("uLabelCount"), labels.length);
 			gl.uniform4fv(at("uLabelBox"), labelBoxes);
-			gl.uniform2fv(
+			gl.uniform3fv(
 				at("uLabelPose"),
 				labels.flatMap((label, index) => [
 					label.line,
 					live ? smooth(score.labels[index] ?? 0, (score.labels[index] ?? 0) + ENTRY.label, t) : 0,
+					label.at,
 				]),
 			);
 		},
 	});
-	void drawing.then((painted) => {
-		levels = painted;
-		redraw?.();
-	});
+	/**
+	 * Paint the picture for some parts, and bring the images to the table.
+	 * @param parts The parts, once the painter is ready.
+	 */
+	const paintFor = (parts: () => Part[]) => {
+		void paint(() => (painted = parts())).then((images) => {
+			if (!images) return;
+			for (const level of arriving ?? []) level.image.close();
+			arriving = images;
+			redraw?.();
+		});
+	};
+	/** Paint the picture again when the canvas needs a part finer, or one the images do not hold. */
+	function repaint() {
+		const needs = pictureParts(canvas, words);
+		const holds = (inner: Region, outer: Region) =>
+			inner[0] >= outer[0] - 0.02 &&
+			inner[1] >= outer[1] - 0.02 &&
+			inner[2] <= outer[2] + 0.02 &&
+			inner[3] <= outer[3] + 0.02;
+		const stale = needs.some((part, index) => {
+			const had = painted[index];
+			return !had || part.density > had.density * 1.15 || !holds(part.region, had.region);
+		});
+		if (stale && painted.length > 0) paintFor(() => needs);
+	}
+	paintFor(() => pictureParts(canvas, words));
 	if (redraw) {
 		host.addEventListener("pointermove", () => {
 			if (motion.matches) redraw();
