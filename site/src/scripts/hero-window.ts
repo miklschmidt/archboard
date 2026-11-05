@@ -13,6 +13,7 @@ import shop from "../paintings/shop.json";
 import paintingUrl from "../paintings/shop.painting.json?url";
 import { PHASES } from "./painter-phases";
 import { animate, whileVisible } from "./reveal";
+import { typeLine } from "./type-line";
 
 /** How far the window leans back while it enters the viewport, in degrees. */
 const TILT = 12;
@@ -51,38 +52,6 @@ async function paintShop(canvas: HTMLCanvasElement): Promise<Shop | null> {
 		console.warn("The window's painter did not start.", cause);
 		return null;
 	}
-}
-
-/** Type one dock line on visible time. */
-async function typeLine(
-	line: HTMLElement,
-	stage: HTMLElement,
-	signal: AbortSignal,
-): Promise<number> {
-	const text = line.querySelector<HTMLElement>(".text");
-	const full = line.dataset["text"] ?? "";
-	line.classList.remove("is-pending");
-	if (!text) return 0;
-	if (!line.classList.contains("is-command")) {
-		text.textContent = full;
-		return 0;
-	}
-	line.classList.add("is-typing");
-	const duration = full.length * 14;
-	try {
-		await animate(
-			stage,
-			duration,
-			(progress) => {
-				text.textContent = full.slice(0, Math.ceil(full.length * progress));
-			},
-			signal,
-		);
-		await animate(stage, 180, () => {}, signal);
-	} finally {
-		line.classList.remove("is-typing");
-	}
-	return duration + 180;
 }
 
 /** Set up the hero window, if the page has one. */
