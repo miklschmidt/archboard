@@ -47,12 +47,9 @@ const ENTRIES = [
 /** The skills a release ships, under `skills/`. */
 const SKILLS = ["archboard", "archboard-pr"];
 
-/** The glue of the core, its WebAssembly, and the panic guard that the glue imports. */
+/** The glue of the core and its WebAssembly. */
 const CORE_GLUE = "archboard_renderer_wasm.js";
 const CORE_WASM = "archboard_renderer_wasm_bg.wasm";
-const CORE_GUARD_SOURCE = "packages/renderer/src/shared/rules/render/core-guard.ts";
-const CORE_GUARD_IMPORT = '"#shared/rules/render/core-guard.ts"';
-const CORE_GUARD = "core-guard.js";
 
 /** What one compile made. */
 interface CompiledRelease {
@@ -160,29 +157,22 @@ async function compileExecutable(target: Target, outfile: string): Promise<void>
 }
 
 /**
- * Copy the core's build, with its glue importing the panic guard from beside it.
+ * Copy the core's build. The glue imports the panic guard of the renderer through the package's
+ * `#` imports, which `core/` lacks, so the glue is bundled with the guard into one module.
  * @param directory The `core/` directory of the package.
- * @throws {Error} When the glue no longer imports the guard as the build writes it.
+ * @throws {Error} When the glue does not bundle.
  */
 async function layOutCore(directory: string): Promise<void> {
 	mkdirSync(directory, { recursive: true });
-	const glue = readFileSync(path.join(CORE_BUILD_DIRECTORY, CORE_GLUE), "utf8");
-	if (glue.split(CORE_GUARD_IMPORT).length !== 2) {
-		refuse(`${CORE_GLUE} does not import ${CORE_GUARD_IMPORT} once. Update the release build.`);
-	}
-	writeFileSync(
-		path.join(directory, CORE_GLUE),
-		glue.replace(CORE_GUARD_IMPORT, `"./${CORE_GUARD}"`),
-	);
-	cpSync(path.join(CORE_BUILD_DIRECTORY, CORE_WASM), path.join(directory, CORE_WASM));
-	const guard = await Bun.build({
-		entrypoints: [path.join(CHECKOUT, CORE_GUARD_SOURCE)],
+	const glue = await Bun.build({
+		entrypoints: [path.join(CORE_BUILD_DIRECTORY, CORE_GLUE)],
 		target: "bun",
 		format: "esm",
 	});
-	const [output] = guard.outputs;
-	if (!guard.success || output === undefined) refuse(`${CORE_GUARD_SOURCE} did not build.`);
-	writeFileSync(path.join(directory, CORE_GUARD), await output.text());
+	const [output] = glue.outputs;
+	if (!glue.success || output === undefined) refuse(`${CORE_GLUE} did not bundle.`);
+	writeFileSync(path.join(directory, CORE_GLUE), await output.text());
+	cpSync(path.join(CORE_BUILD_DIRECTORY, CORE_WASM), path.join(directory, CORE_WASM));
 }
 
 /**

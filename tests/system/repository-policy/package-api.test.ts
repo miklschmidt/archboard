@@ -133,6 +133,8 @@ describe.each(ADOPTERS)("the api folder of $name", ({ name, areas }) => {
 // places name a package file as a file, not as a module to load, and each says why.
 const PRIVATE_PATH_FILE_USES: Record<string, string> = {
 	"scripts/generate-codex-app-server-contract.ts": "writes the generated contract into the package",
+	"scripts/release/compile.ts":
+		"embeds the modules that start on their own at the checkout paths where programRoot finds them",
 	"tests/system/repository-policy/package-api.test.ts": "holds the synthetic paths of its own scan",
 	"tests/system/repository-policy/package-graph.test.ts":
 		"holds disposable graph fixtures with intentional private imports",
