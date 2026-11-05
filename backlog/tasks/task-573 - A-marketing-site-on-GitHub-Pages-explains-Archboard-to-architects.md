@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-04T15:39:00Z'
-updated_date: '2026-11-04T22:45:00Z'
+updated_date: '2026-11-05T00:45:00Z'
 labels: []
 dependencies: []
 ordinal: 1019000
@@ -102,4 +102,13 @@ Open:
 - On a cold GPU cache, scrolling into Archboard draws itself starts the WebGPU painter and stalls frames for about 1.6 s, with gaps up to 408 ms. It is outside the hero. Starting that painter on the CPU, or before the reader nears it, would remove it.
 - One headed recording showed no WebGL at all and a 3 s gap in another run; neither repeated in seven later runs.
 - The delegated code review and the full gate for this round are still to run before a pull request.
+
+Hero lasers and 4K (2026-11-05, owner direction: pristine at 4K, then lines as floating beams, then light-blue lasers like the canvasui Laser):
+- de1bb1893: each line is a light-blue laser above its route, with its label on a floating plate. The painting keeps no lines. The route grid lists every run within reach of a cell, and each ray walks the cells it crosses, so no glow stops at a cell edge. The black notches the owner saw came from the old cap of 4 runs of one line in a cell. The light shed on the table is weaker, so trays show no band. The table draws at up to 2 device px per CSS px, pixels near an outline take 5 rays, each image is as fine as the screen needs, and a resize that needs more paints again. The shader host draws fewer pixels while a quarter of the frames take over 20 ms, and stops after two failed trials in a row.
+- The canvasui Laser is MIT plus Commons Clause, which forbids redistributing a ported version, so the shader takes its look and none of its code.
+Evidence:
+- GPU time at 4K on the RTX 4090, timer queries under a 4x load that holds the clocks: the scene without beams costs 1.6 ms a ray and the beams 0.5 ms. At light load a frame reads about 3.7 ms, because the GPU clocks down.
+- Pacing at 4K with a 16x load: 3 of 4 runs settle at 2038 to 2093 px wide with no missed frames. One fails a trial during the entry, recovers, and settles at 2346 px wide with about one frame in ten missed. With an 8x load: one step to 3047 px, no missed frames. With no load: 3840x2160 throughout.
+- Cold compile about 165 ms. astro check: 0 errors, 0 warnings, 0 hints. Format check on the changed files: clean.
+Open: the delegated code review and the full gate still run before a pull request.
 <!-- SECTION:NOTES:END -->
