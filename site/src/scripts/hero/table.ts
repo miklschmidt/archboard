@@ -91,7 +91,13 @@ interface Camera {
  * @returns Red, green and blue.
  */
 function token(name: string): [number, number, number] {
-	const value = getComputedStyle(document.documentElement).getPropertyValue(`--${name}`);
+	// The token is read as a computed colour, which the browser writes in one form: the build's
+	// minifier writes the token itself in another, such as oklch(75.35% .139 232.66).
+	const probe = document.createElement("i");
+	probe.style.color = `var(--${name})`;
+	document.body.append(probe);
+	const value = getComputedStyle(probe).color;
+	probe.remove();
 	const [l = 0.8, c = 0, h = 0] = (/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/u.exec(value) ?? [])
 		.slice(1)
 		.map(Number);

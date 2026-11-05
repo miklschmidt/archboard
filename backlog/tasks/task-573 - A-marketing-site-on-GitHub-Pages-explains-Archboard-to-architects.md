@@ -1,11 +1,11 @@
 ---
 id: TASK-573
 title: A marketing site on GitHub Pages explains Archboard to architects
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-04T15:39:00Z'
-updated_date: '2026-11-05T03:42:00Z'
+updated_date: '2026-11-05T11:35:00Z'
 labels: []
 dependencies: []
 ordinal: 1019000
@@ -24,7 +24,7 @@ Archboard has only its README to explain itself. The owner asked on 2026-11-04 f
 - [x] #3 Every diagram on the site is real Archboard renderer output, and a script in site/ makes the renders that the site keeps
 - [x] #4 The site is dark only, uses the Archboard display, body and mono faces from the renderer package, and works from 390px to wide desktop
 - [x] #5 Shader and motion effects honor prefers-reduced-motion and stop when off screen
-- [ ] #6 A GitHub workflow builds the site on pull requests that touch it and deploys it to GitHub Pages from main when the site or its inputs change
+- [x] #6 A GitHub workflow builds the site on pull requests that touch it and deploys it to GitHub Pages from main when the site or its inputs change
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -36,6 +36,8 @@ Archboard has only its README to explain itself. The owner asked on 2026-11-04 f
 4. Add two WebGL fields and a voice orb on one shader host. Every loop pauses off screen and in a hidden tab and stops under reduced motion.
 5. Add .github/workflows/site.yml: build on pull requests that touch the site or its inputs, deploy to GitHub Pages from main.
 6. Run the Impeccable finish review and record site/DESIGN.md. Run the delegated code reviews by scope and boundary, then the complete gate.
+
+7. Fix what the deployed site shows wrong and show the realtime Codex voice: the hero's beam colour, Go in the belt, and a Talk section. Review it with sol-loop by scope and boundary.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -153,4 +155,40 @@ Evidence (production build of 2e0912f7c, headless Chrome with ANGLE on Vulkan):
 - A lost and restored WebGL context draws the table again. No browser on this machine offers KHR_parallel_shader_compile, so the A5 line itself rests on the WebGL specification.
 - At 390x844 the table, the hero window and the own figure work, with no horizontal overflow.
 - astro check: 0 errors, 0 warnings, 0 hints. Format check on the changed files: clean.
+
+Live site, beams, Go and the voice (2026-11-05). Owner direction: find why the live beams are white, and add Go to the languages. Show that the Codex voice is realtime and a full agent:
+- Deploy: PR #43 merged as 454088b41. The Site run on main built the site and deployed it to GitHub Pages. The live page and every asset that it names answer 200 at https://miklschmidt.github.io/archboard/.
+- 320803564: the beams burned white on the live site. The production minifier writes --sky as oklch(75.35% .139 232.66), and the table's parser read only plain numbers, so it fell back to a grey. The table now reads the token's computed colour, which the browser writes as oklch(0.7535 0.139 232.66).
+- 8c9e29ba6: the language belt lists Go after Rust, as the README does.
+- bdceb58ee: a section, Talk to your architecture, sits between Understand and Plan, and the nav links to it. Its relay plays a conversation about the example shop. The voice hands the question to the coordinator, and the coordinator reads the architecture and hands the work to the workhorse. The workhorse reads the code, drafts Queued fulfilment and compares it. The relay runs on visible time, pauses and resumes with Talk, and stands whole with reduced motion.
+- a963d7a4f: DESIGN.md records the relay, and its sentences over 25 words are split.
+Evidence (production build, headless Chrome with ANGLE on Vulkan):
+- Before: the live hero draws every beam white. After: the hero of the same build draws the beams sky blue. The page reads the computed token oklch(0.7535 0.139 232.66) beside the minified oklch(75.35% .139 232.66).
+- The relay waits hidden until it is on screen and shows all 20 lines by 38 s. No thread panel stays raised while the voice speaks. With reduced motion, all 20 lines stand at once and the button is hidden. On an iPhone 14 viewport, it plays to the end with no horizontal overflow. No page errors or warnings.
+- astro check: 0 errors, 0 warnings, 0 hints. bun run fmt changed nothing outside these files.
+- bun run check inside nix develop: 21 of 21 tasks, exit 0, on a963d7a4f.
+
+Code review of the live-site changes (2026-11-05, owner direction: full send):
+- sol-loop on gpt-6.1-sol at xhigh through T3 Code, on 454088b41..245849688. Round 1 ran one reviewer for each of three parts. The first part held the beam fix, the belt and the moved helpers. The second held the talk relay. The third was the boundary: the helpers that the relay shares with the hero window and the walkthrough player. Round 2 checked the fixes and approved them with no new findings.
+- Taken: AB1 (7b9684312) the orb reads the relay's visible clock, so a word does not expire while the relay is off screen. B2 (0997faa9a) a pause keeps the line under way on screen. B1 (07529d105, reworded) the lead says that only a command with a yes-or-no decision can be answered aloud, as spoken-presentation.ts allows.
+Evidence:
+- Production build in headless Chrome with ANGLE on Vulkan: a pause in the middle of the voice's first answer keeps all 5 shown lines visible. Nothing advances in 3 s of pause, Talk resumes the speech, and all 20 lines arrive. No page errors or warnings.
+- astro check: 0 errors, 0 warnings, 0 hints. bun run fmt: clean.
+- AC #6: the Site workflow built the site on PR #43. The push of 454088b41 to main built the site and deployed it to GitHub Pages (run 41967013365). The live page and every asset that it names answered 200.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Archboard now has a dark marketing site in site/. It is an Astro project with its own lockfile, outside the product workspaces, and it makes the README's case to software and cloud architects. Every diagram on it is real renderer output.
+
+- The hero's drafting table is one WebGL2 scene over a model made for the site, which the product's CPU painter paints. Its lines are sky-blue lasers with smoke.
+- The hero window types an agent's commands and paints the example shop with the app's entrance.
+- A Talk section shows that the Codex voice is realtime and works through a fast coordinator and a Codex workhorse.
+- Archboard's own architecture is painted live, in the painter order of ADR 0074.
+- .github/workflows/site.yml builds the site on pull requests that touch it and deploys it to GitHub Pages from main. PR #43 deployed it first.
+
+Verification: bun run check passes 21 of 21 tasks, and astro check reports no errors, warnings or hints. Browser runs of the production build cover every fallback, every motion state and widths from 390 px. The live site was checked after the deploy.
+
+Risks and follow-ups: a first visit with a cold GPU driver cache freezes the page twice for 300 to 400 ms while the driver compiles the painter's shaders. The CPU painter stays allocated when a painting fails to load, a CodeRabbit finding declined in PR #43. The painter's carry dims three shop cards for about 300 ms and is not filed. The hero window keeps the CPU painter, a departure from ADR 0074 that the owner can reverse.
+<!-- SECTION:FINAL_SUMMARY:END -->

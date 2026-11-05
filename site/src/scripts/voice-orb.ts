@@ -52,3 +52,45 @@ export function mountVoiceOrb(canvas: HTMLCanvasElement, feed: OrbFeed): () => v
 		if (visible) runner.wake();
 	};
 }
+
+/** A word being said: when it started, how long it sounds, its syllables and how loud it is. */
+export interface SpokenWord {
+	at: number;
+	ms: number;
+	syllables: number;
+	peak: number;
+}
+
+/**
+ * Say a word at the pace of normal speech.
+ * @param text The word.
+ * @param at When it starts, in milliseconds.
+ * @returns The word, and how long it takes before the next word starts.
+ */
+export function sayWord(text: string, at: number): { word: SpokenWord; ms: number } {
+	const ms = 150 + text.length * 38;
+	return {
+		word: {
+			at,
+			ms: ms * 0.8,
+			syllables: Math.max(1, Math.round(text.length / 3)),
+			peak: 0.025 + Math.min(0.045, text.length * 0.006),
+		},
+		ms,
+	};
+}
+
+/**
+ * The voice's level as it says a word: one swell for each syllable, the first the loudest.
+ * @param word The word being said, if any.
+ * @param now The time now, in milliseconds.
+ * @returns The level, 0..1.
+ */
+export function wordLevel(word: SpokenWord | null, now: number): number {
+	if (!word) return 0;
+	const t = now - word.at;
+	if (t < 0 || t >= word.ms) return 0;
+	const step = word.ms / word.syllables;
+	const loudness = Math.floor(t / step) === 0 ? 1 : 0.75;
+	return word.peak * loudness * Math.sin((Math.PI * (t % step)) / step);
+}

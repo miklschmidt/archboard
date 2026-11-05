@@ -22,6 +22,7 @@ import OwnModel from "../components/demos/OwnModel.astro";
 import Pipeline from "../components/demos/Pipeline.astro";
 import ProposalSwitch from "../components/demos/ProposalSwitch.astro";
 import TakeBack from "../components/demos/TakeBack.astro";
+import TalkRelay from "../components/demos/TalkRelay.astro";
 import WalkthroughPlayer from "../components/demos/WalkthroughPlayer.astro";
 import { links } from "../lib/links";
 ---
@@ -83,6 +84,28 @@ import { links } from "../lib/links";
 				</ul>
 				<Measures slot="demo" />
 			</Feature>
+		</Section>
+
+		<Section id="talk" title="Talk to your architecture.">
+			<Fragment slot="lead">
+				<p>
+					Press Talk and ask out loud. The Codex voice answers in real time, and it does more than
+					narrate. It reads the code, proposes a change to the architecture and builds it, like any
+					Codex agent.
+				</p>
+				<p>
+					Behind the voice, a fast coordinator reads the architecture and decides what the voice says.
+					It hands sustained work to a full Codex thread in your checkout. That thread's approvals come
+					to the pane. When running a command needs only your yes or no, you can say it aloud.
+				</p>
+			</Fragment>
+			<div class="talk-stage" data-reveal>
+				<TalkRelay />
+				<p class="caption">
+					An example conversation about the example shop. In Archboard you speak, and the voice answers
+					aloud. Here the words play without sound.
+				</p>
+			</div>
 		</Section>
 
 		<Section id="plan" title="See the change before anyone builds it.">
@@ -250,12 +273,14 @@ import { links } from "../lib/links";
 </Base>
 
 <style>
-	.plan-stage {
+	.plan-stage,
+	.talk-stage {
 		display: flex;
 		flex-direction: column;
 		gap: 16px;
 	}
 	.plan-stage .caption,
+	.talk-stage .caption,
 	.walk-foot .caption {
 		max-width: 52em;
 	}

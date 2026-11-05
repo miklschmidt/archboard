@@ -266,7 +266,7 @@ const first = walkthrough.beats[0];
 
 <script>
 	import { prefersReducedMotion, whileVisible } from "../../scripts/reveal";
-	import { mountVoiceOrb, type OrbMode } from "../../scripts/voice-orb";
+	import { mountVoiceOrb, sayWord, wordLevel, type OrbMode, type SpokenWord } from "../../scripts/voice-orb";
 	import type { Beat } from "../../lib/walkthrough";
 
 	for (const root of document.querySelectorAll<HTMLElement>("[data-walkthrough]")) {
@@ -284,8 +284,8 @@ const first = walkthrough.beats[0];
 		let index = 0;
 		let playing = false;
 		let timer = 0;
-		/** The word being said: when it started, how long it sounds, its syllables and how loud it is. */
-		let word: { at: number; ms: number; syllables: number; peak: number } | null = null;
+		/** The word being said. */
+		let word: SpokenWord | null = null;
 		let startedAt = 0;
 		let onScreen = false;
 		let paused = false;
@@ -338,17 +338,11 @@ const first = walkthrough.beats[0];
 					return;
 				}
 				span.classList.add("is-said");
-				const length = (span.textContent ?? "").length;
-				const ms = 150 + length * 38;
-				word = {
-					at: performance.now(),
-					ms: ms * 0.8,
-					syllables: Math.max(1, Math.round(length / 3)),
-					peak: 0.025 + Math.min(0.045, length * 0.006),
-				};
+				const said = sayWord(span.textContent ?? "", performance.now());
+				word = said.word;
 				segments[index]?.style.setProperty("--progress", String((at + 1) / spans.length));
 				at += 1;
-				timer = window.setTimeout(say, ms);
+				timer = window.setTimeout(say, said.ms);
 			};
 			timer = window.setTimeout(say, 500);
 		};
@@ -375,15 +369,7 @@ const first = walkthrough.beats[0];
 			if (!playing) return "listening";
 			return performance.now() - startedAt < 500 ? "starting" : "speaking";
 		};
-		// The level of the word being said: one swell for each syllable, the first the loudest.
-		const voiceLevel = () => {
-			if (!playing || !word) return 0;
-			const t = performance.now() - word.at;
-			if (t >= word.ms) return 0;
-			const step = word.ms / word.syllables;
-			const loudness = Math.floor(t / step) === 0 ? 1 : 0.75;
-			return word.peak * loudness * Math.sin((Math.PI * (t % step)) / step);
-		};
+		const voiceLevel = () => (playing ? wordLevel(word, performance.now()) : 0);
 		const wakeOrb = mountVoiceOrb(orb, { mode: voiceMode, level: voiceLevel });
 		show(0, false);
 		const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
