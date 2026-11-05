@@ -734,16 +734,16 @@ An app is a layer-8 workspace in `apps/<name>/` that holds what the packages lef
 runs `apps/cli/src/bin.ts`. The checkout hand-off needs the launcher's real path to equal its root
 path, so the launcher cannot be a symlink.
 
-`bin.ts` first decides the installation. A release executable started with the server argument of its
-`serverCommand` imports the server's entry through `releaseServerModule` and runs no command (ADR 0075).
+`bin.ts` first decides the installation. A release executable started with the arguments of its
+`serverCommand` imports the `serverModule` of `installation()` and runs no command (ADR 0075).
 Otherwise `bin.ts` imports the checkout hand-off, then the bootstrap that extracts `--url`.
 For commands other than help, it checks for retired environment variables before it imports the
 command table. Help returns before prerequisite checks or command execution. The command table
 still imports configuration and logging modules.
 
 Never import the server there: the CLI reaches it by spawning the `serverCommand` of `installation()`.
-The release's server process is the one place that loads the server's entry, by the URL that
-`programModule` gives, and it is a process of its own. Nothing imports the app.
+The server process of a release is the one place that loads the server's entry by its URL, and it
+is a process of its own. Nothing imports the app.
 The root `generate:cli-contract` script, the system tests and the skill evaluation spawn it by
 path, and `archboard install-skill --print-source` is how a test learns which skills it ships.
 

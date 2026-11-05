@@ -2,12 +2,12 @@
 //
 //   bin/archboard           the executable: the CLI, and with its internal first argument the server
 //   frontend/               the browser bundle that `bun run build` made
-//   core/                   the renderer glue, WebAssembly and theme colours that the server loads
+//   core/                   the renderer glue and WebAssembly that the server loads
 //   skills/                 the archboard and archboard-pr skills
 //   archboard-release.json  the version, the commit, the core source hash and the Codex version
 //
-// The grammars of the code check and the reviewed texts of the workbench are embedded in the
-// executable, so the package holds no file the program finds beside its source.
+// The grammars of the code check, the reviewed texts of the workbench and the theme colours are
+// embedded in the executable, so the package holds no file the program finds beside its source.
 // Run it in a checkout after `bun run build`:
 //
 //   bun scripts/release/compile.ts --target bun-linux-x64 --out <directory>
@@ -27,13 +27,7 @@ import {
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { z } from "zod";
-import {
-	CHECKOUT,
-	CORE_BUILD_DIRECTORY,
-	CORE_THEME_COLORS,
-	loadCore,
-} from "@archboard/renderer/core";
-import type { ReleaseMarker } from "@archboard/workspace/installation";
+import { CHECKOUT, CORE_BUILD_DIRECTORY, loadCore } from "@archboard/renderer/core";
 
 /** The platforms a release is built for. */
 const TARGETS = ["bun-linux-x64", "bun-linux-arm64", "bun-darwin-arm64"] as const;
@@ -41,8 +35,8 @@ type Target = (typeof TARGETS)[number];
 
 /**
  * The modules that start on their own, by their path in a checkout. The first is the
- * executable's own entry. The others are imported or started by those paths through
- * `programModule` of the installation, which is why the repository is the build's root.
+ * executable's own entry. The others are imported or started by those paths below the
+ * `programRoot` of the installation, which is why the repository is the build's root.
  */
 const ENTRIES = [
 	"apps/cli/src/bin.ts",
@@ -64,7 +58,7 @@ const CORE_GUARD = "core-guard.js";
 interface CompiledRelease {
 	readonly directory: string;
 	readonly executable: string;
-	readonly marker: ReleaseMarker;
+	readonly marker: ReturnType<typeof releaseMarker>;
 }
 
 /**
@@ -77,11 +71,12 @@ function refuse(message: string): never {
 }
 
 /**
- * The version, the commit, the hash of the checkout's core build and the pinned Codex.
+ * The version, the commit, the hash of the checkout's core build and the pinned Codex, which the
+ * installation module reads from `archboard-release.json`.
  * @returns The marker of the release.
  * @throws {Error} When the core is missing or stale, or the checkout has no commit.
  */
-function releaseMarker(): ReleaseMarker {
+function releaseMarker() {
 	const manifest = z
 		.object({ version: z.string(), dependencies: z.object({ "@openai/codex": z.string() }) })
 		.parse(JSON.parse(readFileSync(path.join(CHECKOUT, "package.json"), "utf8")));
@@ -179,9 +174,7 @@ async function layOutCore(directory: string): Promise<void> {
 		path.join(directory, CORE_GLUE),
 		glue.replace(CORE_GUARD_IMPORT, `"./${CORE_GUARD}"`),
 	);
-	for (const file of [CORE_WASM, CORE_THEME_COLORS]) {
-		cpSync(path.join(CORE_BUILD_DIRECTORY, file), path.join(directory, file));
-	}
+	cpSync(path.join(CORE_BUILD_DIRECTORY, CORE_WASM), path.join(directory, CORE_WASM));
 	const guard = await Bun.build({
 		entrypoints: [path.join(CHECKOUT, CORE_GUARD_SOURCE)],
 		target: "bun",
@@ -238,4 +231,4 @@ if (import.meta.main) {
 	process.stdout.write(`${JSON.stringify(made, null, "\t")}\n`);
 }
 
-export { compileRelease, TARGETS, type CompiledRelease, type ReleaseMarker, type Target };
+export { compileRelease, TARGETS, type CompiledRelease, type Target };

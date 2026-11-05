@@ -11,20 +11,22 @@
 const argv = process.argv.slice(2);
 
 // A process that is neither a release nor in a checkout has no program to run (ADR 0075).
-const { installation, releaseServerModule } = await import("@archboard/workspace/installation");
+const { installation } = await import("@archboard/workspace/installation");
+let installed: ReturnType<typeof installation>;
 try {
-	installation();
+	installed = installation();
 } catch (error) {
 	const { errorMessage } = await import("@archboard/diagnostics/thrown-error");
 	process.stderr.write(`Error: ${errorMessage(error)}\n`);
 	process.exit(1);
 }
 
-// A release is one executable: started as its server, it runs the server's
-// entry, which it embeds, and no command (ADR 0075).
-const serverModule = releaseServerModule(argv);
-if (serverModule !== null) {
-	await import(serverModule);
+// A release is one executable, and its serverCommand starts it again with the
+// server's argument. Started so, it runs the server's entry, which it embeds,
+// and no command (ADR 0075).
+const [, ...serverArguments] = installed.serverCommand;
+if (installed.mode === "release" && argv.join("\0") === serverArguments.join("\0")) {
+	await import(installed.serverModule);
 } else {
 	// Inside another archboard checkout, that checkout's source runs the command
 	// (ADR 0049). Decided first, so that it gets the environment as it was given.

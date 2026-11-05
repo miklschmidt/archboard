@@ -41,9 +41,6 @@ const releaseMarker = z.object({
 	codexVersion: z.string(),
 });
 
-/** What a release build records about itself, as `scripts/release/compile.ts` writes it. */
-type ReleaseMarker = z.infer<typeof releaseMarker>;
-
 /** Where the hash of the core sources that the running core must match comes from. */
 type CoreHashSource =
 	/** Hash the sources of this checkout, as a build of the core did. */
@@ -71,8 +68,20 @@ interface Installation {
 	 * `node_modules`, or in the platform package of a release.
 	 */
 	readonly codexLocation: { readonly installedIn: string } | { readonly releasedIn: string };
-	/** The executable and arguments that start the server. */
+	/**
+	 * The directory below which the program's own modules lie at their paths in a checkout: the
+	 * checkout root, or the root of the file system that a release executable embeds, the directory
+	 * of `Bun.main`. `scripts/release/compile.ts` compiles every module that starts on its own, the
+	 * server and the layout worker, with the repository as its root.
+	 */
+	readonly programRoot: string;
+	/**
+	 * The executable and arguments that start the server. A release starts its own executable
+	 * with `--internal-server`, which then imports `serverModule` and runs no command.
+	 */
 	readonly serverCommand: readonly [string, ...string[]];
+	/** The URL of the server's entry below `programRoot`. */
+	readonly serverModule: string;
 	readonly coreHash: CoreHashSource;
 }
 
@@ -161,6 +170,7 @@ function releaseAt(root: string, executable: string): Installation {
 			"RELEASE_MARKER_INVALID",
 		);
 	}
+	const programRoot = path.dirname(Bun.main);
 	return {
 		mode: "release",
 		root,
@@ -170,7 +180,9 @@ function releaseAt(root: string, executable: string): Installation {
 		skillsDirectory: path.join(root, "skills"),
 		binDirectory: path.dirname(fs.realpathSync(executable)),
 		codexLocation: { releasedIn: root },
+		programRoot,
 		serverCommand: [executable, RELEASE_SERVER_ARGUMENT],
+		serverModule: pathToFileURL(path.join(programRoot, SERVER_ENTRY)).href,
 		coreHash: { kind: "marker", hash: parsed.data.coreSourceHash },
 	};
 }
@@ -216,7 +228,9 @@ function checkoutAt(root: string, executable: string): Installation {
 		skillsDirectory: path.join(root, "skills"),
 		binDirectory: path.join(root, "bin"),
 		codexLocation: { installedIn: root },
+		programRoot: root,
 		serverCommand: [executable, path.join(root, SERVER_ENTRY)],
+		serverModule: pathToFileURL(path.join(root, SERVER_ENTRY)).href,
 		coreHash: { kind: "sources", root },
 	};
 }
@@ -260,49 +274,12 @@ function installation(): Installation {
 	return decided;
 }
 
-/**
- * The URL of a module of the program that starts on its own, as the server or a
- * worker does. A checkout runs the file at that path below its root. The
- * executable of a release embeds the module at the same path below the root of
- * its embedded file system, the directory of `Bun.main`, because
- * `scripts/release/compile.ts` compiles every such entry with the repository as
- * its root.
- * @param checkoutPath The module's path relative to a checkout root.
- * @param from The installation; the one this process runs by default.
- * @returns The module's URL, to import or to start a worker from.
- */
-function programModule(
-	checkoutPath: string,
-	from: Pick<Installation, "mode" | "root"> = installation(),
-): string {
-	const root = from.mode === "release" ? path.dirname(Bun.main) : from.root;
-	return pathToFileURL(path.join(root, checkoutPath)).href;
-}
-
-/**
- * The server's entry when this process is a release executable started as its
- * server, which is how a release runs its `serverCommand`.
- * @param argv The arguments after the executable.
- * @param from The installation; the one this process runs by default.
- * @returns The URL of the server's entry to import, or null for a CLI command.
- */
-function releaseServerModule(
-	argv: readonly string[],
-	from: Pick<Installation, "mode" | "root"> = installation(),
-): string | null {
-	return from.mode === "release" && argv[0] === RELEASE_SERVER_ARGUMENT
-		? programModule(SERVER_ENTRY, from)
-		: null;
-}
-
 export {
 	CHECKOUT_BIN,
 	installation,
 	isArchboardCheckout,
-	programModule,
 	RELEASE_MARKER,
 	RELEASE_SERVER_ARGUMENT,
-	releaseServerModule,
 	resolveInstallation,
 };
-export type { CoreHashSource, Installation, ReleaseMarker };
+export type { CoreHashSource, Installation };
