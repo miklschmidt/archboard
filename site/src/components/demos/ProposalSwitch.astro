@@ -1,0 +1,265 @@
+---
+// Today's shop and the Queued fulfilment proposal drawn against it, both real renders. A beam of
+// light sweeps across as the reading changes. The reader switches, or it alternates on its own
+// until they do.
+import { drawings } from "../../lib/diagrams";
+
+const today = drawings.webShop;
+const proposal = drawings.queued;
+---
+
+<div class="switch table" data-proposal-switch data-state="proposal">
+	<div class="bar">
+		<div class="segments" role="group" aria-label="Reading">
+			<button type="button" data-show="today" aria-pressed="false">Today</button>
+			<button type="button" data-show="proposal" aria-pressed="true">Queued fulfilment</button>
+		</div>
+		<ul class="legend" aria-label="Comparison marks">
+			<li><span class="swatch added"></span>Added</li>
+			<li><span class="swatch changed"></span>Changed</li>
+			<li><span class="swatch removed"></span>Removed</li>
+		</ul>
+	</div>
+	<div class="stage">
+		<img
+			class="view today"
+			aria-hidden="true"
+			src={today.url}
+			width={today.width}
+			height={today.height}
+			alt={`Today's shop, drawn by Archboard: ${today.label}. Checkout waits on stock, the card and the receipt email.`}
+			loading="lazy"
+			decoding="async"
+		/>
+		<img
+			class="view proposal"
+			src={proposal.url}
+			width={proposal.width}
+			height={proposal.height}
+			alt="The Queued fulfilment proposal drawn against today: new modules Order events and Fulfilment worker in green, changed relationships in orange, removed ones as red ghosts."
+			loading="lazy"
+			decoding="async"
+		/>
+		<span class="beam" aria-hidden="true"></span>
+	</div>
+	<p class="foot mono">
+		<span class="ok">23 added</span> · <span class="removed-text">14 removed</span> ·
+		<span class="warn">10 changed</span> · 47 unchanged
+	</p>
+</div>
+
+<style>
+	.switch {
+		padding: 6px;
+		background: var(--chrome);
+	}
+	.bar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 8px 8px 12px;
+	}
+	.segments {
+		display: inline-flex;
+		gap: 2px;
+		padding: 3px;
+		border-radius: 6px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	.segments button {
+		height: 32px;
+		padding: 0 14px;
+		border: 0;
+		border-radius: 4px;
+		background: transparent;
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--ink-muted);
+		cursor: pointer;
+		transition:
+			color 160ms var(--ease-out),
+			background-color 160ms var(--ease-out),
+			box-shadow 160ms var(--ease-out);
+	}
+	.segments button:hover {
+		color: var(--ink);
+	}
+	.segments button[aria-pressed="true"] {
+		background: var(--raised);
+		color: var(--ink);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 -2px 0 var(--gold-mark);
+	}
+	.legend {
+		display: flex;
+		gap: 16px;
+		list-style: none;
+		margin: 0;
+		padding: 0 6px;
+		font-size: 0.8125rem;
+		color: var(--ink-muted);
+	}
+	.legend li {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+	}
+	.swatch {
+		width: 16px;
+		height: 10px;
+		border-radius: 2px;
+	}
+	.swatch.added {
+		box-shadow: inset 0 0 0 2px var(--added);
+	}
+	.swatch.changed {
+		background: repeating-linear-gradient(90deg, var(--changed) 0 4px, transparent 4px 7px) top / 100% 2px no-repeat,
+			repeating-linear-gradient(90deg, var(--changed) 0 4px, transparent 4px 7px) bottom / 100% 2px no-repeat;
+		box-shadow:
+			inset 2px 0 0 var(--changed),
+			inset -2px 0 0 var(--changed);
+	}
+	.swatch.removed {
+		background: repeating-linear-gradient(90deg, var(--removed) 0 4px, transparent 4px 7px) top / 100% 2px no-repeat,
+			repeating-linear-gradient(90deg, var(--removed) 0 4px, transparent 4px 7px) bottom / 100% 2px no-repeat;
+		opacity: 0.9;
+	}
+	.stage {
+		position: relative;
+		display: grid;
+		grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+		aspect-ratio: 1481 / 860;
+		border-radius: 6px;
+		background: oklch(0.2 0.006 75);
+		box-shadow: inset 0 0 0 1px var(--rule);
+		overflow: hidden;
+	}
+	.view {
+		grid-area: 1 / 1;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		padding: 2.5%;
+		transition:
+			clip-path 900ms var(--ease-in-out),
+			opacity 900ms var(--ease-in-out),
+			filter 900ms var(--ease-in-out);
+	}
+	.today {
+		clip-path: inset(0 0 0 100%);
+	}
+	.proposal {
+		clip-path: inset(0 0 0 0);
+	}
+	[data-state="today"] .today {
+		clip-path: inset(0 0 0 0);
+	}
+	[data-state="today"] .proposal {
+		clip-path: inset(0 100% 0 0);
+	}
+	.beam {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		width: 2px;
+		background: linear-gradient(180deg, transparent, var(--gold-mark) 20%, white 50%, var(--gold-mark) 80%, transparent);
+		box-shadow:
+			0 0 18px 4px oklch(0.86 0.125 86 / 0.45),
+			0 0 60px 12px oklch(0.86 0.125 86 / 0.18);
+		opacity: 0;
+		pointer-events: none;
+	}
+	.beam.is-sweeping {
+		animation: sweep 900ms var(--ease-in-out);
+	}
+	.beam.is-sweeping.back {
+		animation-name: sweep-back;
+	}
+	@keyframes sweep {
+		0% {
+			left: 0;
+			opacity: 0;
+		}
+		12%,
+		88% {
+			opacity: 1;
+		}
+		100% {
+			left: 100%;
+			opacity: 0;
+		}
+	}
+	@keyframes sweep-back {
+		0% {
+			left: 100%;
+			opacity: 0;
+		}
+		12%,
+		88% {
+			opacity: 1;
+		}
+		100% {
+			left: 0;
+			opacity: 0;
+		}
+	}
+	.foot {
+		padding: 12px 10px 6px;
+		font-size: 0.75rem;
+		color: var(--ink-muted);
+	}
+	.ok {
+		color: var(--added);
+	}
+	.warn {
+		color: var(--changed-text);
+	}
+	.removed-text {
+		color: var(--removed-text);
+	}
+</style>
+
+<script>
+	import { prefersReducedMotion, whileVisible } from "../../scripts/reveal";
+
+	for (const root of document.querySelectorAll<HTMLElement>("[data-proposal-switch]")) {
+		const buttons = [...root.querySelectorAll<HTMLButtonElement>("[data-show]")];
+		const beam = root.querySelector<HTMLElement>(".beam");
+		let timer = 0;
+		let touched = false;
+		const show = (state: string) => {
+			if (root.dataset["state"] === state) return;
+			const forward = state === "proposal";
+			root.dataset["state"] = state;
+			for (const button of buttons) button.setAttribute("aria-pressed", String(button.dataset["show"] === state));
+			for (const view of root.querySelectorAll(".view")) view.setAttribute("aria-hidden", String(!view.classList.contains(state)));
+			if (beam && !prefersReducedMotion()) {
+				beam.classList.remove("is-sweeping", "back");
+				void beam.offsetWidth;
+				beam.classList.add("is-sweeping");
+				beam.classList.toggle("back", !forward);
+			}
+		};
+		for (const button of buttons) {
+			button.addEventListener("click", () => {
+				touched = true;
+				window.clearInterval(timer);
+				show(button.dataset["show"] ?? "proposal");
+			});
+		}
+		// The motion preference is read at each turn, so changing it mid-visit takes effect.
+		whileVisible(root, (visible) => {
+			window.clearInterval(timer);
+			if (!visible || touched) return;
+			timer = window.setInterval(() => {
+				if (prefersReducedMotion()) return;
+				show(root.dataset["state"] === "proposal" ? "today" : "proposal");
+			}, 4200);
+		});
+	}
+</script>

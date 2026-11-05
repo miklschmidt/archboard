@@ -1,0 +1,469 @@
+/* The site's world: the lit drafting table at night. Warm graphite planes stack under a light
+   from above, one gold marks what is chosen and the one action of a region, and the pictures
+   that Archboard draws bring every other colour. The values come from the renderer's dark
+   theme (packages/renderer/assets/theme.css); the type scale is the site's own. */
+
+@font-face {
+	font-family: "Archboard Display";
+	src: url("../../../packages/renderer/assets/fonts/BigShouldersDisplay-wght.ttf")
+		format("truetype");
+	font-weight: 100 900;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Archboard Onest";
+	src: url("../../../packages/renderer/assets/fonts/Onest-wght-v1.000.ttf") format("truetype");
+	font-weight: 100 900;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Archboard Maple Mono";
+	src: url("../../../packages/renderer/assets/fonts/MapleMonoNL-Regular-Subset-v7.9.ttf")
+		format("truetype");
+	font-weight: 400;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Archboard Maple Mono";
+	src: url("../../../packages/renderer/assets/fonts/MapleMonoNL-Medium-Subset-v7.9.ttf")
+		format("truetype");
+	font-weight: 500;
+	font-display: swap;
+}
+
+:root {
+	color-scheme: dark;
+
+	/* Planes, from the floor of the room up to a card's face. */
+	--ground: oklch(0.135 0.005 75);
+	--chrome: oklch(0.165 0.005 75);
+	--plane: oklch(0.2 0.006 75);
+	--card: oklch(0.235 0.007 75);
+	--raised: oklch(0.255 0.008 78);
+	--slab: oklch(0.31 0.007 75);
+	--well: oklch(0.14 0.005 75);
+	--highlight: oklch(1 0.01 85 / 0.09);
+	--rule: oklch(1 0.01 85 / 0.09);
+	--rule-strong: oklch(1 0.01 85 / 0.15);
+
+	/* Words. Body text keeps APCA Lc 75 on every plane, secondary text Lc 60. */
+	--ink: oklch(0.955 0.006 90);
+	--ink-body: oklch(0.86 0.008 85);
+	--ink-muted: oklch(0.78 0.008 85);
+	--ink-faint: oklch(0.62 0.01 80);
+
+	/* The one gold. */
+	--gold: oklch(0.831 0.134 84.5);
+	--gold-mark: oklch(0.86 0.125 86);
+	--gold-top: oklch(0.87 0.135 88);
+	--gold-bottom: oklch(0.8 0.142 81);
+	--gold-edge: oklch(0.58 0.11 74);
+	--gold-ink: oklch(0.2 0.02 70);
+	--mark-hi: oklch(0.89 0.105 90);
+	--mark-lo: oklch(0.72 0.13 75);
+
+	/* State, with the meaning it has in the product. */
+	--live: oklch(0.849 0.207 128.8);
+	--added: oklch(0.792 0.209 151.711);
+	--changed: oklch(0.77 0.17 52);
+	--removed: oklch(0.76 0.16 22);
+
+	/* The picture's named colours on graphite. */
+	--sky: oklch(0.7535 0.139 232.66);
+	--blue: oklch(0.7137 0.1434 254.6);
+	--teal: oklch(0.7845 0.1325 181.9);
+	--emerald: oklch(0.773 0.1535 163.2);
+	--violet: oklch(0.709 0.159 293.5);
+	--pink: oklch(0.725 0.175 349.8);
+	--orange: oklch(0.7576 0.159 55.9);
+	--yellow: oklch(0.86 0.125 86);
+	--amber: oklch(0.837 0.164 84.4);
+	--cyan: oklch(0.797 0.134 211.5);
+	--neutral: oklch(0.72 0.01 80);
+
+	/* Text variants keep the secondary-text contrast floor without changing data marks. */
+	--changed-text: color-mix(in oklch, var(--changed) 80%, var(--ink));
+	--removed-text: color-mix(in oklch, var(--removed) 80%, var(--ink));
+	--sky-text: color-mix(in oklch, var(--sky) 85%, var(--ink));
+	--violet-text: color-mix(in oklch, var(--violet) 65%, var(--ink));
+
+	/* Depth: a lit top edge, a contact shadow and a warm soft shadow below. */
+	--shadow-raised:
+		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.06 0.004 75 / 0.7),
+		0 2px 6px -1px oklch(0.06 0.006 75 / 0.5);
+	--shadow-float:
+		inset 0 1px 0 var(--highlight), 0 1px 1px oklch(0.06 0.004 75 / 0.6),
+		0 12px 24px -8px oklch(0.06 0.006 75 / 0.6), 0 32px 64px -24px oklch(0.06 0.006 75 / 0.7);
+	--shadow-table:
+		inset 0 1px 0 var(--highlight), 0 2px 0 oklch(0.06 0.004 75 / 0.6),
+		0 24px 48px -16px oklch(0.06 0.006 75 / 0.75), 0 64px 120px -48px oklch(0.04 0.006 75 / 0.9);
+	--shadow-well: inset 0 2px 4px oklch(0.04 0.004 75 / 0.6), inset 0 -1px 0 var(--highlight);
+
+	--font-display: "Archboard Display", "Big Shoulders Display", sans-serif;
+	--font-body: "Archboard Onest", ui-sans-serif, system-ui, sans-serif;
+	--font-mono: "Archboard Maple Mono", ui-monospace, monospace;
+
+	--radius-chip: 2px;
+	--radius-control: 4px;
+	--radius-panel: 6px;
+	--radius-table: 10px;
+
+	--gutter: clamp(16px, 4vw, 40px);
+	--measure: 1240px;
+	--section-space: clamp(96px, 14vw, 200px);
+
+	--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	background: var(--ground);
+	scroll-behavior: smooth;
+	scroll-padding-top: 88px;
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+	scrollbar-color: var(--slab) var(--ground);
+}
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	background: var(--ground);
+	color: var(--ink-body);
+	font-family: var(--font-body);
+	font-size: 1.0625rem;
+	line-height: 1.6;
+	font-weight: 400;
+	font-feature-settings: "ss01" 0;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+	overflow-x: clip;
+}
+
+::selection {
+	background: var(--gold);
+	color: var(--gold-ink);
+}
+
+::-webkit-scrollbar {
+	width: 12px;
+	height: 12px;
+}
+::-webkit-scrollbar-track {
+	background: var(--ground);
+}
+::-webkit-scrollbar-thumb {
+	background: var(--slab);
+	border: 3px solid var(--ground);
+	border-radius: 8px;
+}
+
+:focus-visible {
+	outline: 2px solid var(--gold-mark);
+	outline-offset: 3px;
+	border-radius: var(--radius-control);
+}
+
+img,
+svg,
+canvas,
+video {
+	display: block;
+	max-width: 100%;
+}
+
+img {
+	height: auto;
+}
+
+/* Inline code in prose keeps a flag such as --fix on one line. */
+:not(pre) > code {
+	white-space: nowrap;
+}
+
+a {
+	color: inherit;
+	text-decoration-color: color-mix(in oklch, var(--gold-mark) 70%, transparent);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.22em;
+}
+a:hover {
+	text-decoration-color: var(--gold-mark);
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+figure,
+dl,
+dd,
+pre {
+	margin: 0;
+}
+
+button {
+	font: inherit;
+	color: inherit;
+}
+
+code,
+kbd,
+pre,
+samp {
+	font-family: var(--font-mono);
+	font-size: 0.875em;
+}
+
+/* Type. Tall capitals name what a region is about; plain sans carries every other word. */
+.display {
+	font-family: var(--font-display);
+	font-weight: 780;
+	text-transform: uppercase;
+	letter-spacing: 0.012em;
+	line-height: 0.9;
+	color: var(--ink);
+	text-wrap: balance;
+}
+
+.h1 {
+	font-size: clamp(3.4rem, 9.2vw, 6rem);
+}
+.h2 {
+	font-size: clamp(2.6rem, 6.4vw, 4.75rem);
+	line-height: 0.92;
+}
+/* A capability's claim: the display face at the middle size, between the section heads and the
+   prose. */
+.feature-title {
+	font-size: clamp(2rem, 3.4vw, 2.75rem);
+	font-weight: 720;
+	line-height: 0.95;
+	letter-spacing: 0.005em;
+	max-width: 16ch;
+}
+
+.h3 {
+	font-family: var(--font-body);
+	font-size: clamp(1.25rem, 2vw, 1.5rem);
+	line-height: 1.25;
+	font-weight: 600;
+	letter-spacing: -0.012em;
+	color: var(--ink);
+	text-wrap: balance;
+}
+.lead {
+	font-size: clamp(1.125rem, 1.6vw, 1.3125rem);
+	line-height: 1.55;
+	color: var(--ink-body);
+	max-width: 38em;
+	text-wrap: pretty;
+}
+.body {
+	color: var(--ink-body);
+	max-width: 36em;
+	text-wrap: pretty;
+}
+.muted {
+	color: var(--ink-muted);
+}
+.small {
+	font-size: 0.9375rem;
+	line-height: 1.55;
+}
+.caption {
+	font-size: 0.875rem;
+	line-height: 1.5;
+	color: var(--ink-muted);
+	text-wrap: pretty;
+}
+.example-caption {
+	margin-top: 12px;
+}
+.mono {
+	font-family: var(--font-mono);
+	font-size: 0.8125rem;
+	line-height: 1.6;
+	font-variant-numeric: tabular-nums;
+}
+.ink {
+	color: var(--ink);
+}
+
+/* Layout. */
+.container {
+	width: 100%;
+	max-width: calc(var(--measure) + var(--gutter) * 2);
+	margin-inline: auto;
+	padding-inline: var(--gutter);
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Buttons. The primary action is a physical piece of gold; the quiet one is a raised plane. */
+.btn {
+	--h: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	height: var(--h);
+	padding: 0 20px;
+	border-radius: var(--radius-control);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	letter-spacing: -0.005em;
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
+	border: 0;
+	transition:
+		transform 160ms var(--ease-out),
+		box-shadow 160ms var(--ease-out),
+		background-color 160ms var(--ease-out),
+		color 160ms var(--ease-out);
+}
+.btn svg {
+	width: 18px;
+	height: 18px;
+	flex: none;
+}
+.btn-small {
+	--h: 34px;
+	padding: 0 14px;
+	font-size: 0.875rem;
+}
+.btn-gold {
+	color: var(--gold-ink);
+	background: linear-gradient(180deg, var(--gold-top), var(--gold-bottom));
+	box-shadow:
+		inset 0 1px 0 oklch(1 0.02 90 / 0.55),
+		inset 0 0 0 1px var(--gold-edge),
+		0 1px 0 oklch(0.06 0.004 75 / 0.8),
+		0 6px 16px -6px oklch(0.55 0.12 75 / 0.55);
+}
+.btn-gold:hover {
+	transform: translateY(-1px);
+	box-shadow:
+		inset 0 1px 0 oklch(1 0.02 90 / 0.6),
+		inset 0 0 0 1px var(--gold-edge),
+		0 2px 0 oklch(0.06 0.004 75 / 0.8),
+		0 12px 28px -8px oklch(0.6 0.13 78 / 0.6);
+}
+.btn-gold:active {
+	transform: translateY(1px);
+	box-shadow:
+		inset 0 2px 3px oklch(0.45 0.1 70 / 0.6),
+		inset 0 0 0 1px var(--gold-edge);
+}
+.btn-quiet {
+	color: var(--ink);
+	background: var(--raised);
+	box-shadow:
+		var(--shadow-raised),
+		inset 0 0 0 1px var(--rule);
+}
+.btn-quiet:hover {
+	background: var(--slab);
+	transform: translateY(-1px);
+}
+.btn-quiet:active {
+	transform: translateY(1px);
+	box-shadow: var(--shadow-well);
+}
+
+/* A table: the plane a demonstration lies on, lit from above. */
+.table {
+	position: relative;
+	background: var(--plane);
+	border-radius: var(--radius-table);
+	box-shadow:
+		var(--shadow-table),
+		inset 0 0 0 1px var(--rule);
+	isolation: isolate;
+}
+
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 22px;
+	padding: 0 8px;
+	border-radius: var(--radius-chip);
+	font-size: 0.75rem;
+	font-weight: 600;
+	line-height: 1;
+	white-space: nowrap;
+}
+
+.dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	flex: none;
+	background: currentColor;
+}
+
+/* Reveal: content stays visible without script; with it, a part rises into place once, when its
+   top clears the bottom of the view (reveal.ts). */
+@media (prefers-reduced-motion: no-preference) {
+	.js [data-reveal] {
+		opacity: 0;
+		transform: translateY(32px);
+		transition:
+			opacity 800ms var(--ease-out),
+			transform 1000ms var(--ease-out);
+		transition-delay: calc(var(--reveal-delay, 0) * 1ms);
+	}
+	.js [data-reveal].is-in {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* A looping animation runs only while its part of the page is on screen (reveal.ts). */
+.is-paused,
+.is-paused::before,
+.is-paused::after,
+.is-paused *,
+.is-paused *::before,
+.is-paused *::after {
+	animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		transition-delay: 0ms !important;
+	}
+}

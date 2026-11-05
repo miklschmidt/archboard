@@ -1,0 +1,47 @@
+{
+  "order": 52,
+  "name": "Server",
+  "kind": "service",
+  "responsibility": "Serves live readings to every pane",
+  "schemaVersion": 1,
+  "id": "q9TUBeZT#YB2S45SE",
+  "parent": "q9TUBeZT#cJMRcSvL",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "data",
+      "label": "reads",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "q9TUBeZT#WQPMNyLo",
+      "to": "q9TUBeZT#JY7vNPEy"
+    },
+    {
+      "order": 110,
+      "kind": "call",
+      "label": "draws readings",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "q9TUBeZT#LZfVAj1Y",
+      "to": "q9TUBeZT#VlYL9u2R"
+    },
+    {
+      "order": 130,
+      "kind": "http",
+      "label": "live readings",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "q9TUBeZT#DkSJjkcD",
+      "to": "q9TUBeZT#WTZjpPZH"
+    }
+  ]
+}

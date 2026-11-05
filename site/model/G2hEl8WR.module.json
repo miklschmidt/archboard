@@ -1,0 +1,27 @@
+{
+  "order": 54,
+  "name": "Code check",
+  "kind": "service",
+  "responsibility": "Finds where the map and the code disagree",
+  "schemaVersion": 1,
+  "id": "q9TUBeZT#G2hEl8WR",
+  "parent": "q9TUBeZT#cJMRcSvL",
+  "outgoing": [
+    {
+      "order": 80,
+      "kind": "dependency",
+      "label": "reads",
+      "emphasis": "normal",
+      "id": "q9TUBeZT#W5P2fkc8",
+      "to": "q9TUBeZT#1G8NR5HF"
+    },
+    {
+      "order": 90,
+      "kind": "dependency",
+      "label": "compares",
+      "emphasis": "normal",
+      "id": "q9TUBeZT#Ryr48jLY",
+      "to": "q9TUBeZT#JY7vNPEy"
+    }
+  ]
+}

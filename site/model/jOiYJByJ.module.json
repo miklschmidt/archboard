@@ -1,0 +1,34 @@
+{
+  "order": 30,
+  "name": "archboard CLI",
+  "kind": "app",
+  "responsibility": "Takes one complete intent at a time",
+  "schemaVersion": 1,
+  "id": "q9TUBeZT#jOiYJByJ",
+  "outgoing": [
+    {
+      "order": 50,
+      "kind": "data",
+      "label": "one intent",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "q9TUBeZT#dRS4spTX",
+      "to": "q9TUBeZT#JY7vNPEy"
+    },
+    {
+      "order": 55,
+      "kind": "data",
+      "label": "drafts",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "q9TUBeZT#toDlBHeN",
+      "to": "q9TUBeZT#TwXphbKd"
+    }
+  ]
+}

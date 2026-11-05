@@ -1,0 +1,146 @@
+[
+	{ "type": "remove-flow", "subject": "Shop/MKhTEYqf#yRuuRooQ" },
+	{
+		"type": "add-flow",
+		"collection": "Web shop",
+		"flow": {
+			"name": "Place an order",
+			"summary": "One press of Pay: stock first, then the card. A declined card gives the stock back.",
+			"participants": [
+				"Shop/MKhTEYqf#cgbB3aQp",
+				"Shop/MKhTEYqf#kZjjfq1m",
+				"Shop/MKhTEYqf#VONp3yKV",
+				"Shop/MKhTEYqf#HYDbL5fE",
+				"Shop/MKhTEYqf#ZaOafnWt",
+				"Shop/MKhTEYqf#wlyh3hT6",
+				"Shop/MKhTEYqf#lXgq75bO"
+			],
+			"steps": [
+				{
+					"from": "Shop/MKhTEYqf#cgbB3aQp",
+					"to": "Shop/MKhTEYqf#kZjjfq1m",
+					"label": "POST /orders",
+					"kind": "sync"
+				},
+				{
+					"from": "Shop/MKhTEYqf#kZjjfq1m",
+					"to": "Shop/MKhTEYqf#kZjjfq1m",
+					"label": "load and price the basket",
+					"kind": "self"
+				},
+				{
+					"from": "Shop/MKhTEYqf#kZjjfq1m",
+					"to": "Shop/MKhTEYqf#VONp3yKV",
+					"label": "start the 10 s clock",
+					"kind": "async",
+					"note": "if 10 s pass first, the guard releases the stock and refunds the card"
+				},
+				{
+					"from": "Shop/MKhTEYqf#kZjjfq1m",
+					"to": "Shop/MKhTEYqf#HYDbL5fE",
+					"label": "reserve the items",
+					"kind": "sync"
+				},
+				{
+					"from": "Shop/MKhTEYqf#HYDbL5fE",
+					"to": "Shop/MKhTEYqf#kZjjfq1m",
+					"label": "reserved, or sold out",
+					"kind": "return"
+				},
+				{
+					"kind": "decision",
+					"question": "Is every item in stock?",
+					"alternatives": [
+						{
+							"label": "in stock",
+							"steps": [
+								{
+									"from": "Shop/MKhTEYqf#kZjjfq1m",
+									"to": "Shop/MKhTEYqf#ZaOafnWt",
+									"label": "charge the card",
+									"kind": "sync",
+									"note": "the items stay reserved while the bank answers"
+								},
+								{
+									"from": "Shop/MKhTEYqf#ZaOafnWt",
+									"to": "Shop/MKhTEYqf#kZjjfq1m",
+									"label": "paid, or declined",
+									"kind": "return"
+								},
+								{
+									"kind": "decision",
+									"question": "Did the bank accept the card?",
+									"alternatives": [
+										{
+											"label": "paid",
+											"steps": [
+												{
+													"from": "Shop/MKhTEYqf#kZjjfq1m",
+													"to": "Shop/MKhTEYqf#wlyh3hT6",
+													"label": "write the paid order",
+													"kind": "sync"
+												},
+												{
+													"kind": "loop",
+													"condition": "until the receipt is accepted, 3 tries at most",
+													"steps": [
+														{
+															"from": "Shop/MKhTEYqf#kZjjfq1m",
+															"to": "Shop/MKhTEYqf#lXgq75bO",
+															"label": "send the receipt",
+															"kind": "sync"
+														},
+														{
+															"from": "Shop/MKhTEYqf#lXgq75bO",
+															"to": "Shop/MKhTEYqf#kZjjfq1m",
+															"label": "accepted, or try again",
+															"kind": "return"
+														}
+													]
+												},
+												{
+													"from": "Shop/MKhTEYqf#kZjjfq1m",
+													"to": "Shop/MKhTEYqf#cgbB3aQp",
+													"label": "order confirmed",
+													"kind": "return"
+												}
+											]
+										},
+										{
+											"label": "declined",
+											"steps": [
+												{
+													"from": "Shop/MKhTEYqf#kZjjfq1m",
+													"to": "Shop/MKhTEYqf#HYDbL5fE",
+													"label": "release the items",
+													"kind": "async"
+												},
+												{
+													"from": "Shop/MKhTEYqf#kZjjfq1m",
+													"to": "Shop/MKhTEYqf#cgbB3aQp",
+													"label": "402 card declined",
+													"kind": "return"
+												}
+											]
+										}
+									]
+								}
+							]
+						},
+						{
+							"label": "sold out",
+							"steps": [
+								{
+									"from": "Shop/MKhTEYqf#kZjjfq1m",
+									"to": "Shop/MKhTEYqf#cgbB3aQp",
+									"label": "409 sold out",
+									"kind": "return"
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	}
+]

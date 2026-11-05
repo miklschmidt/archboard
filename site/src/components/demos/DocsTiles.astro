@@ -1,0 +1,338 @@
+---
+// Pictures that leave the application, as one bento: a reading in a design document takes the
+// tall tile, the embed check that keeps every tracked drawing current takes the top right, and the
+// question a reader asks about a selected part takes the bottom right. Each tile's visual takes
+// whatever height the row gives it, so no tile ends in an empty band.
+import Icon from "../Icon.astro";
+import KindChip from "../KindChip.astro";
+import { drawings } from "../../lib/diagrams";
+
+const picture = drawings.inventory;
+
+/** Drawings the example tracks. An architecture change left two of them outdated. */
+const tracked = [
+	{ path: "docs/design/inventory.svg", outdated: true },
+	{ path: "docs/adr/0007-queue.png", outdated: true },
+	{ path: "docs/architecture.svg", outdated: false },
+];
+---
+
+<div class="bento">
+	<article class="tile docs table" data-reveal>
+		<div class="tile-copy">
+			<h3 class="h3">Pictures for docs, ADRs and pull requests</h3>
+			<p class="body small">
+				The CLI exports self-contained SVG and PNG from the same model the browser reads. The SVG draws
+				its own glyphs, so it needs no font, and its traffic keeps moving.
+			</p>
+		</div>
+		<div class="doc-page" role="img" aria-label="Example design document with an Archboard drawing of Inventory service and its parts.">
+			<p class="doc-path mono"><Icon name="fileText" size={14} /> docs/design/inventory.md</p>
+			<p class="doc-title">Inventory</p>
+			<p class="doc-text">
+				Stock API is the only way in. The reservation ledger sets items aside only while enough are
+				left, in one transaction with the counts.
+			</p>
+			<img
+				src={picture.url}
+				width={picture.width}
+				height={picture.height}
+				alt="Inside Inventory service: Stock API, Reservation ledger, Warehouse sync and Stock DB."
+				loading="lazy"
+				decoding="async"
+			/>
+			<p class="doc-figure mono">docs/design/inventory.svg · current</p>
+		</div>
+		<pre class="cmd" tabindex="0"><code><span class="ps">$</span> archboard model render --scope 'Shop/MKhTEYqf#HYDbL5fE' \
+    --out docs/design/inventory.svg
+<span class="ps">$</span> archboard model rasterize --scope 'Shop/MKhTEYqf#HYDbL5fE' \
+    --scale 2 --out docs/design/inventory.png</code></pre>
+	</article>
+
+	<article class="tile embeds table" data-reveal style="--reveal-delay: 100">
+		<div class="tile-copy">
+			<h3 class="h3">Embeds that never go stale</h3>
+			<p class="body small">
+				Every tracked drawing carries its exact render recipe. Change the architecture, run one
+				command, and every diagram in your docs, ADRs and pull requests is current again.
+			</p>
+		</div>
+		<div class="stage">
+			<ul class="tracked" aria-label="Tracked drawings after the fix">
+				{
+					tracked.map((drawing, index) => (
+						<li style={`--flip-delay: ${1200 + index * 260}ms`}>
+							<Icon name="image" size={15} />
+							<span class="path mono">{drawing.path}</span>
+							<span class:list={["state", { flips: drawing.outdated }]}>
+								{drawing.outdated && (
+									<span class="was" aria-hidden="true">
+										outdated
+									</span>
+								)}
+								<span class="now">
+									<Icon name="check" size={13} /> current
+								</span>
+							</span>
+						</li>
+					))
+				}
+			</ul>
+			<pre class="cmd" tabindex="0"><code><span class="ps">$</span> archboard check embeds --fix</code></pre>
+		</div>
+	</article>
+
+	<article class="tile ask table" data-reveal style="--reveal-delay: 200">
+		<div class="tile-copy">
+			<h3 class="h3">Ask your architecture</h3>
+			<p class="body small">
+				Select a part and choose Explain with Codex, or press Talk and ask aloud. The local agent gets
+				the exact reading and the selection, and it changes nothing.
+			</p>
+		</div>
+		<div class="stage">
+			<p class="ask-selected">
+				<KindChip kind="function" size={20} />
+				<span class="ink">Timeout guard</span>
+				<span class="muted small">selected</span>
+			</p>
+			<div class="ask-buttons">
+				<span class="ask-btn"><Icon name="question" size={15} /> Explain with Codex</span>
+				<span class="ask-btn"><Icon name="mic" size={15} /> Talk</span>
+			</div>
+			<p class="reply">
+				<span class="reply-who"><Icon name="voice" size={14} /> Codex</span>
+				Timeout guard starts a 10 s clock when an order arrives. If the payment has not answered by
+				then, it releases the stock and refunds the card.
+			</p>
+		</div>
+	</article>
+</div>
+<p class="caption example-caption">Example design document, tracked drawings and explanation.</p>
+
+<style>
+	.bento {
+		display: grid;
+		grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+		gap: 16px;
+	}
+	.tile {
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+		padding: 28px;
+		background: var(--chrome);
+	}
+	.docs {
+		grid-row: span 2;
+	}
+	.tile-copy {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+	/* A tile's visual takes the height its row gives it and centres what it shows. */
+	.stage {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 14px;
+		padding: 18px;
+		border-radius: 6px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	.doc-page {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		padding: 24px;
+		border-radius: 6px;
+		background: oklch(0.2 0.006 75);
+		box-shadow:
+			var(--shadow-float),
+			inset 0 0 0 1px var(--rule);
+	}
+	.doc-path {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 0.72rem;
+		color: var(--ink-muted);
+	}
+	.doc-title {
+		margin: 4px 0 0;
+		font-size: 1.5rem;
+		font-weight: 650;
+		letter-spacing: -0.01em;
+		color: var(--ink);
+	}
+	.doc-text {
+		font-size: 0.9375rem;
+		color: var(--ink-body);
+	}
+	.doc-page img {
+		width: 100%;
+		border-radius: 4px;
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+	.doc-figure {
+		font-size: 0.72rem;
+		color: var(--ink-muted);
+	}
+	.cmd {
+		margin: 0;
+		padding: 14px 16px;
+		border-radius: 6px;
+		background: oklch(0.155 0.005 75);
+		box-shadow: inset 0 0 0 1px var(--rule);
+		font-size: 0.76rem;
+		line-height: 1.8;
+		color: var(--ink);
+		overflow-x: auto;
+	}
+	.stage .cmd {
+		background: var(--plane);
+	}
+	.cmd code {
+		font-size: inherit;
+	}
+	.ps {
+		color: var(--gold-mark);
+	}
+	.tracked {
+		display: flex;
+		flex-direction: column;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.tracked li {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 10px;
+		padding: 10px 2px;
+		color: var(--ink-muted);
+	}
+	.tracked li + li {
+		box-shadow: inset 0 1px 0 var(--rule);
+	}
+	.path {
+		overflow: hidden;
+		font-size: 0.78rem;
+		color: var(--ink);
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	/* Both labels share one cell, so the chip keeps its width while it turns. */
+	.state {
+		display: inline-grid;
+		justify-items: end;
+	}
+	.state > span {
+		grid-area: 1 / 1;
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		padding: 2px 8px;
+		border-radius: var(--radius-chip);
+		font-size: 0.75rem;
+		font-weight: 600;
+		white-space: nowrap;
+		transition:
+			opacity 320ms var(--ease-out),
+			translate 320ms var(--ease-out);
+		transition-delay: var(--flip-delay);
+	}
+	.was {
+		opacity: 0;
+		color: var(--changed-text);
+		background: color-mix(in oklch, var(--changed) 16%, transparent);
+	}
+	.now {
+		color: var(--ink);
+		background: var(--raised);
+	}
+	/* Without script the list shows the result. With it, a tile in view starts outdated, and the
+	   fix turns each outdated drawing current in turn. */
+	:global(.js) .embeds:not(:global(.is-in)) .flips .was {
+		opacity: 1;
+	}
+	:global(.js) .embeds:not(:global(.is-in)) .flips .now {
+		opacity: 0;
+		translate: 0 4px;
+	}
+	.ask-selected {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin: 0;
+		font-weight: 600;
+	}
+	.ask-selected .small {
+		font-weight: 400;
+	}
+	.ask-buttons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.ask-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		height: 32px;
+		padding: 0 12px;
+		border-radius: 4px;
+		background: var(--raised);
+		color: var(--ink);
+		font-size: 0.8125rem;
+		font-weight: 600;
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule);
+	}
+	.reply {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		margin: 0;
+		padding: 12px 14px;
+		border-radius: 6px;
+		background: var(--plane);
+		box-shadow: inset 0 0 0 1px var(--rule);
+		font-size: 0.875rem;
+		line-height: 1.55;
+		color: var(--ink-body);
+	}
+	.reply-who {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--gold-mark);
+	}
+	@media (max-width: 900px) {
+		.bento {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.docs {
+			grid-row: auto;
+		}
+	}
+	@media (max-width: 560px) {
+		.tile {
+			padding: 20px;
+		}
+		.stage,
+		.doc-page {
+			padding: 14px;
+		}
+		.path {
+			font-size: 0.72rem;
+		}
+	}
+</style>

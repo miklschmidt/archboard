@@ -1,0 +1,309 @@
+---
+import Base from "../layouts/Base.astro";
+import Closing from "../components/Closing.astro";
+import CompareTable from "../components/CompareTable.astro";
+import Faq from "../components/Faq.astro";
+import Feature from "../components/Feature.astro";
+import Footer from "../components/Footer.astro";
+import Hero from "../components/Hero.astro";
+import Languages from "../components/Languages.astro";
+import Nav from "../components/Nav.astro";
+import QuickStart from "../components/QuickStart.astro";
+import Section from "../components/Section.astro";
+import CompetingOptions from "../components/demos/CompetingOptions.astro";
+import DocsTiles from "../components/demos/DocsTiles.astro";
+import DrillDown from "../components/demos/DrillDown.astro";
+import EvidenceTabs from "../components/demos/EvidenceTabs.astro";
+import Footprint from "../components/demos/Footprint.astro";
+import Grammars from "../components/demos/Grammars.astro";
+import HistoryTimeline from "../components/demos/HistoryTimeline.astro";
+import Measures from "../components/demos/Measures.astro";
+import OwnModel from "../components/demos/OwnModel.astro";
+import Pipeline from "../components/demos/Pipeline.astro";
+import ProposalSwitch from "../components/demos/ProposalSwitch.astro";
+import TakeBack from "../components/demos/TakeBack.astro";
+import WalkthroughPlayer from "../components/demos/WalkthroughPlayer.astro";
+import { links } from "../lib/links";
+---
+
+<Base
+	title="Archboard: understand the code your agents write"
+	description="Plan each change with your coding agent on a map of the system before it writes a line. Follow any feature into the code, and see every place where the map and the code disagree."
+>
+	<Nav />
+	<main id="main">
+		<Hero />
+		<Languages />
+
+		<Section id="understand" title="Follow a feature into the code.">
+			<Fragment slot="lead">
+				<p>
+					Open the map your agent wrote. Go from the whole system into one service, follow a payment
+					message by message, and check each claim against the code.
+				</p>
+			</Fragment>
+
+			<Feature title="Zoom from the system into a service" flip>
+				<p>
+					Open a module to see its parts and the connections that cross its boundary. Open a part to go
+					deeper. Breadcrumbs lead back through the same model, and nothing is copied on the way.
+				</p>
+				<p>Select the Inventory service card to fly into it.</p>
+				<DrillDown slot="demo" />
+			</Feature>
+
+			<Feature title="Follow one request, step by step" wide>
+				<p>
+					Ask what happens as a shopper pays, and get every path: who calls whom, what comes back, which
+					branch runs when the card is declined, and which call retries until it lands. Your agent traces
+					each message to the code that sends it.
+				</p>
+				<p>
+					The architecture, the sequence and the flowchart are three readings of one model. They share
+					its module identities, so a proposal that changes an exchange shows which messages changed.
+				</p>
+				<Grammars slot="demo" />
+			</Feature>
+
+			<EvidenceTabs />
+
+			<Feature title="Find the parts worth investigating" wide>
+				<p>
+					Measures counts what each module exposes, what it hides and what it only passes through, and
+					reads Git history for the modules that change together. Sort by any column to see where to
+					read first.
+				</p>
+				<ul>
+					<li>Many entries over few hidden parts can point to a shallow module.</li>
+					<li>Unjoined counts modules that change together with no relationship between them.</li>
+					<li>
+						There is no score. The questions come from John Ousterhout's <em>A Philosophy of Software
+						Design</em>, and you and your agent read the code and judge.
+					</li>
+				</ul>
+				<Measures slot="demo" />
+			</Feature>
+		</Section>
+
+		<Section id="plan" title="See the change before anyone builds it.">
+			<Fragment slot="lead">
+				<p>
+					Plan before your agent writes a line. Ask for a change and you get a proposal, drawn against
+					what exists. New modules arrive green, changed ones orange, and removed ones stay on the page
+					as red ghosts.
+				</p>
+				<p>Current architecture stays as it is until the proposal ships.</p>
+			</Fragment>
+
+			<div class="plan-stage" data-reveal>
+				<ProposalSwitch />
+				<p class="caption">
+					The example shop's Queued fulfilment proposal: checkout answers once the payment starts, and a
+					worker reserves the stock and sends the receipt. The counts are the answer of
+					<code>archboard model compare</code>.
+				</p>
+			</div>
+
+			<div class="sub-head" data-reveal>
+				<h3 class="display feature-title">Weigh competing options side by side</h3>
+				<p class="body">
+					Branch two drafts from one starting point and open them in two panes. Both compare against the
+					same root, and neither touches current architecture.
+				</p>
+			</div>
+			<div class="options-wrap">
+				<CompetingOptions />
+			</div>
+
+			<Feature title="Hold the build to the plan">
+				<p>
+					When your agent builds the change, the footprint sets the branch against its proposal. It
+					reads the commits through each module's code binding and sorts every change into three lists.
+				</p>
+				<p>
+					Work outside the plan shows up before review, and so does planned work the branch has not
+					done yet.
+				</p>
+				<Footprint slot="demo" />
+			</Feature>
+
+			<Feature title="Keep a record that remembers why" flip>
+				<p>
+					When a proposal ships, your agent adopts it and records the reason. The architecture it
+					replaces stays available as an exact checkpoint, and a shelved proposal keeps its reason too.
+				</p>
+				<p>
+					Retained history lives in a separate Git archive, published only when you choose. Module files,
+					flows, walkthroughs and active proposals stay in the repository for code review.
+				</p>
+				<HistoryTimeline slot="demo" />
+			</Feature>
+		</Section>
+
+		<Section id="how" title="Nobody places a box.">
+			<Fragment slot="lead">
+				<p>
+					Your agent describes the system: its services, stores and queues, what contains what, and how
+					they talk, in what order. Archboard handles the drawing. No file stores a box position or a
+					layout rule.
+				</p>
+				<p>
+					The agent that changes the code updates the model in the same task, and the code check shows
+					where the two disagree. A renderer fix redraws every reading, history included.
+				</p>
+			</Fragment>
+			<Pipeline />
+			<p class="caption engine" data-reveal>
+				One Rust core places the modules, routes the lines and shapes every word. The CLI and the browser
+				run the same core as WebAssembly, with the same bundled fonts, so a picture reads the same in the
+				app, in an SVG and in a PNG.
+			</p>
+
+			<Feature title="Agents work in plain sight">
+				<p>
+					An agent claims the subjects it plans to change. Each pane shows the writer, the purpose, the
+					subjects and the start time.
+				</p>
+				<p>
+					Take back control ends the claim, and the server refuses the former intent. Every write names
+					the exact revision it read, so a stale write is refused too.
+				</p>
+				<TakeBack slot="demo" />
+			</Feature>
+
+			<div class="sub-head" data-reveal>
+				<h3 class="display feature-title">Archboard draws itself</h3>
+				<p class="body">
+					Archboard keeps its own architecture in its repository and changes it through proposals, with
+					the same commands a consumer uses.
+				</p>
+			</div>
+			<div data-reveal>
+				<OwnModel />
+			</div>
+		</Section>
+
+		<Section id="share" title="Share what your agent found.">
+			<Fragment slot="lead">
+				<p>
+					Put a drawing in a design document, an ADR or a pull request, and it never goes stale. Or let
+					a walkthrough explain a change one step at a time.
+				</p>
+			</Fragment>
+
+			<DocsTiles />
+
+			<div class="sub-head" data-reveal>
+				<h3 class="display feature-title">Let the architecture explain itself</h3>
+				<p class="body">
+					A walkthrough is an authored tour through readings. Press Narrate and the Codex voice explains
+					each step while the camera follows the selected parts. One command films the tour for a design
+					review or a pull request.
+				</p>
+			</div>
+			<div class="walk" data-reveal>
+				<WalkthroughPlayer />
+				<div class="walk-foot">
+					<p class="caption">
+						The example shop's own walkthrough, “How an order is placed today”. In Archboard the Codex
+						voice speaks each step. Here the
+						words play without sound. <a href={links.walkthroughs}>Hear a narrated pull-request video</a>.
+					</p>
+					<pre class="walk-cmd mono" tabindex="0"><span class="ps">$</span> archboard model record --checkpoint &lt;id&gt; --walkthrough "Why checkout stops waiting" --out pr-128.mp4</pre>
+				</div>
+			</div>
+		</Section>
+
+		<Section id="compare" title="Where Archboard fits.">
+			<Fragment slot="lead">
+				<p>
+					Most tools explain code after your agent wrote it. Archboard starts before the first line: your
+					agent plans the change on a map of what exists, you choose, and the map stays bound to the code
+					as it ships.
+				</p>
+			</Fragment>
+			<CompareTable />
+		</Section>
+
+		<Section id="quick-start" title="Run it from a clone.">
+			<Fragment slot="lead">
+				<p>
+					Archboard runs on Linux and macOS, from a clone. The server binds to 127.0.0.1, and the model,
+					the rendering and repository access stay on your machine.
+				</p>
+				<p>
+					It is source-available, not open source. Individuals and organizations with fewer than 50
+					people and under US$1,000,000 in annual revenue can use it in production. Larger use needs
+					another license.
+				</p>
+			</Fragment>
+			<QuickStart />
+		</Section>
+
+		<Section id="faq" title="Questions.">
+			<Faq />
+		</Section>
+
+		<Closing />
+	</main>
+	<Footer />
+</Base>
+
+<style>
+	.plan-stage {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+	.plan-stage .caption,
+	.walk-foot .caption {
+		max-width: 52em;
+	}
+	.caption code {
+		font-size: 0.85em;
+		color: var(--ink);
+	}
+	/* A heading inside a section, for a demonstration that is not a feature row. */
+	.sub-head {
+		display: grid;
+		grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+		align-items: end;
+		gap: 16px 96px;
+		margin: clamp(88px, 10vw, 140px) 0 32px;
+	}
+	/* The renderer's technical detail sits under the pipeline, below the outcome it explains. */
+	.engine {
+		max-width: 52em;
+		margin: 20px 0 clamp(88px, 10vw, 152px);
+	}
+	.options-wrap {
+		margin-bottom: clamp(88px, 10vw, 152px);
+	}
+	.walk {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+	.walk-foot {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 12px 32px;
+	}
+	.walk-cmd {
+		margin: 0;
+		font-size: 0.75rem;
+		color: var(--ink-muted);
+		overflow-x: auto;
+		max-width: 100%;
+	}
+	.ps {
+		color: var(--gold-mark);
+	}
+	@media (max-width: 900px) {
+		.sub-head {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>

@@ -1,0 +1,170 @@
+---
+// The example shop's retained history: the states it kept, and the reason recorded when one was
+// adopted or shelved. Names, dates and reasons are the answer of `archboard model proposals`.
+
+const events = [
+	{
+		when: "2026-10-27",
+		kind: "Adopted",
+		name: "Synchronous checkout",
+		text: "The shop now draws its inventory internals inside the Inventory service that owns them. All earlier readings and the other proposals stay available.",
+		tone: "adopted",
+	},
+	{
+		when: "2026-11-01",
+		kind: "Shelved",
+		name: "Queued fulfilment, first draft",
+		text: "Rebuilt on Synchronous checkout, which replaced the state this draft started from.",
+		tone: "shelved",
+	},
+	{
+		when: "2026-11-01",
+		kind: "Proposal",
+		name: "Queued fulfilment",
+		text: "Answer the shopper once the payment has started; stock and the receipt move to a queue-fed worker.",
+		tone: "proposal",
+	},
+];
+---
+
+<div class="history table">
+	<div class="current">
+		<span class="dot"></span>
+		<p class="ink strong">Current: Synchronous checkout</p>
+		<span class="chip">Exact checkpoints</span>
+	</div>
+	<ol class="events">
+		{
+			events.map((event) => (
+				<li class:list={["event", event.tone]}>
+					<span class="rail" aria-hidden="true">
+						<span class="node" />
+					</span>
+					<div class="event-body">
+						<p class="event-head">
+							<span class="kind">{event.kind}</span>
+							<span class="ink strong">{event.name}</span>
+							<time class="mono when">{event.when}</time>
+						</p>
+						<p class="text">{event.text}</p>
+					</div>
+				</li>
+			))
+		}
+	</ol>
+</div>
+
+<style>
+	.history {
+		padding: 6px;
+		background: var(--chrome);
+	}
+	.current {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 14px 16px;
+		border-radius: 6px;
+		background: var(--card);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px color-mix(in oklch, var(--gold-mark) 30%, transparent);
+	}
+	.current .dot {
+		color: var(--gold-mark);
+		box-shadow: 0 0 12px oklch(0.86 0.125 86 / 0.7);
+	}
+	.current .chip {
+		margin-left: auto;
+		background: var(--well);
+		color: var(--ink-muted);
+		font-family: var(--font-mono);
+		font-weight: 400;
+	}
+	.strong {
+		font-weight: 600;
+	}
+	.events {
+		list-style: none;
+		margin: 6px 0 0;
+		padding: 10px 8px 6px;
+		display: flex;
+		flex-direction: column;
+	}
+	.event {
+		display: grid;
+		grid-template-columns: 28px 1fr;
+		gap: 8px;
+	}
+	.rail {
+		position: relative;
+		display: flex;
+		justify-content: center;
+	}
+	.rail::before {
+		content: "";
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		width: 2px;
+		background: var(--rule-strong);
+	}
+	.event:first-child .rail::before {
+		top: 14px;
+	}
+	.event:last-child .rail::before {
+		bottom: calc(100% - 14px);
+	}
+	.node {
+		position: relative;
+		margin-top: 8px;
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: var(--chrome);
+		box-shadow: inset 0 0 0 2px var(--ink-faint);
+	}
+	.adopted .node {
+		background: var(--gold-mark);
+		box-shadow: 0 0 0 4px oklch(0.86 0.125 86 / 0.18);
+	}
+	.proposal .node {
+		box-shadow: inset 0 0 0 2px var(--changed);
+	}
+	.event-body {
+		padding: 4px 8px 18px;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.event-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 4px 10px;
+	}
+	.kind {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--ink-muted);
+	}
+	.adopted .kind {
+		color: var(--gold-mark);
+	}
+	.when {
+		margin-left: auto;
+		font-size: 0.75rem;
+		color: var(--ink-muted);
+	}
+	.text {
+		font-size: 0.875rem;
+		line-height: 1.55;
+		color: var(--ink-body);
+	}
+	.shelved .node {
+		box-shadow: inset 0 0 0 2px var(--ink-faint);
+	}
+	.shelved .text {
+		color: var(--ink-muted);
+	}
+</style>

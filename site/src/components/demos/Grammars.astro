@@ -1,0 +1,159 @@
+---
+// One model, three grammars: the shop's architecture, and its "Place an order" flow as a
+// sequence and as a flowchart, with its two decisions and its retry loop. Every drawing is a real
+// render over the same module identities (site/scripts/render-diagrams.sh).
+import { drawings } from "../../lib/diagrams";
+
+const views = [
+	{
+		key: "architecture",
+		label: "Architecture",
+		drawing: drawings.webShop,
+		command: "archboard model render --out shop.svg",
+		alt: "The shop's architecture: Storefront, Checkout API, Inventory service, Basket cache, Orders DB and the external providers.",
+	},
+	{
+		key: "sequence",
+		label: "Sequence",
+		drawing: drawings.orderSequence,
+		command: 'archboard model render --flow "Place an order" --grammar sequence --out order.svg',
+		alt: "Sequence diagram 'Place an order': Place order reserves the items, answers 409 when one is sold out, charges the card, releases the items and answers 402 when the bank declines, and otherwise writes the paid order and sends the receipt until it is accepted, three tries at most.",
+	},
+	{
+		key: "flowchart",
+		label: "Flowchart",
+		drawing: drawings.flowchart,
+		command: 'archboard model render --flow "Place an order" --grammar flowchart --out order.svg',
+		alt: "Flowchart of 'Place an order': from POST /orders, a decision on stock leads to 409 sold out or to the card charge, a decision on the bank's answer leads to releasing the items and 402 card declined or to writing the paid order, and a loop sends the receipt until it is accepted before the order is confirmed.",
+	},
+];
+---
+
+<div class="grammars table" data-grammars>
+	<div class="tabs" role="tablist" aria-label="Diagram grammar">
+		{
+			views.map((view, index) => (
+				<button
+					type="button"
+					role="tab"
+					id={`grammar-tab-${view.key}`}
+					aria-controls={`grammar-panel-${view.key}`}
+					aria-selected={index === 1 ? "true" : "false"}
+					tabindex={index === 1 ? 0 : -1}
+					data-tab={view.key}
+				>
+					{view.label}
+				</button>
+			))
+		}
+	</div>
+	<div class="panels">
+		{
+			views.map((view, index) => (
+				<div
+					class="panel"
+					role="tabpanel"
+					tabindex="0"
+					id={`grammar-panel-${view.key}`}
+					aria-labelledby={`grammar-tab-${view.key}`}
+					data-panel={view.key}
+					hidden={index !== 1}
+				>
+					<div class="picture">
+						<img
+							src={view.drawing.url}
+							width={view.drawing.width}
+							height={view.drawing.height}
+							alt={view.alt}
+							loading="lazy"
+							decoding="async"
+						/>
+					</div>
+					<p class="command mono" tabindex="0">
+						<span class="ps">$</span> {view.command}
+					</p>
+				</div>
+			))
+		}
+	</div>
+</div>
+
+<style>
+	.grammars {
+		padding: 6px;
+		background: var(--chrome);
+	}
+	.tabs {
+		display: inline-flex;
+		gap: 2px;
+		margin: 6px 6px 12px;
+		padding: 3px;
+		border-radius: 6px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	.tabs button {
+		height: 34px;
+		padding: 0 16px;
+		border: 0;
+		border-radius: 4px;
+		background: transparent;
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--ink-muted);
+		cursor: pointer;
+		transition: color 160ms var(--ease-out);
+	}
+	.tabs button:hover {
+		color: var(--ink);
+	}
+	.tabs button[aria-selected="true"] {
+		background: var(--raised);
+		color: var(--ink);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 -2px 0 var(--gold-mark);
+	}
+	/* Explicit tracks give the image's 100% height a size to resolve against, so a tall drawing
+	   fits the frame instead of growing to its natural height. */
+	.picture {
+		display: grid;
+		grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+		place-items: center;
+		height: clamp(320px, 44vw, 640px);
+		padding: 20px;
+		border-radius: 6px;
+		background: oklch(0.2 0.006 75);
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+	.picture img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+	.panel:not([hidden]) .picture img {
+		animation: arrive 520ms var(--ease-out);
+	}
+	@keyframes arrive {
+		from {
+			opacity: 0;
+			filter: blur(4px);
+			scale: 0.985;
+		}
+	}
+	.command {
+		padding: 12px 10px 6px;
+		font-size: 0.75rem;
+		color: var(--ink-muted);
+		overflow-x: auto;
+		white-space: nowrap;
+	}
+	.ps {
+		color: var(--gold-mark);
+	}
+</style>
+
+<script>
+	import { mountTabs } from "../../scripts/tabs";
+	for (const root of document.querySelectorAll<HTMLElement>("[data-grammars]")) mountTabs(root);
+</script>

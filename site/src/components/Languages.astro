@@ -1,0 +1,147 @@
+---
+// What the code check reads, from the README: one line inside the page's margins, its label at the
+// left and a slow belt of languages running out from under it. The belt stops for reduced motion.
+const items = [
+	"TypeScript",
+	"Python",
+	"C#",
+	"Swift",
+	"Rust",
+	"C",
+	"C++",
+	"Objective-C",
+	"Terraform",
+	"OpenTofu",
+	"Kubernetes manifests",
+	"Docker Compose",
+	"Nix flakes",
+];
+---
+
+<section class="languages" aria-label="What the code check reads" data-languages data-loop>
+	<div class="intro">
+		<p>The code check reads</p>
+		<button type="button" class="toggle" data-language-toggle aria-controls="code-languages" aria-expanded="true" hidden>Animate languages</button>
+	</div>
+	<div class="belt" id="code-languages">
+		<ul class="track">
+			{items.map((item) => <li>{item}</li>)}
+		</ul>
+		<ul class="track" aria-hidden="true">
+			{items.map((item) => <li>{item}</li>)}
+		</ul>
+	</div>
+</section>
+
+<style>
+	/* The line keeps to the page's container: the label starts at its left edge, and the belt fades
+	   out at its right edge. */
+	.languages {
+		display: flex;
+		align-items: center;
+		padding-top: clamp(72px, 9vw, 120px);
+		padding-inline: max(var(--gutter), calc((100% - var(--measure)) / 2));
+	}
+	.intro {
+		flex: none;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 4px;
+		padding-right: 4px;
+		font-size: 0.9375rem;
+		color: var(--ink-muted);
+		white-space: nowrap;
+	}
+	.toggle {
+		min-height: 24px;
+		padding: 0 6px;
+		border: 0;
+		border-radius: var(--radius-control);
+		background: var(--raised);
+		color: var(--ink-muted);
+		font-size: 0.75rem;
+		cursor: pointer;
+	}
+	.belt {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		overflow: hidden;
+		mask-image: linear-gradient(90deg, transparent, black 10%, black 88%, transparent);
+	}
+	.track {
+		display: flex;
+		flex: none;
+		gap: 56px;
+		padding: 0 28px;
+		margin: 0;
+		list-style: none;
+	}
+	.track li {
+		font-family: var(--font-display);
+		font-size: clamp(1.75rem, 3vw, 2.5rem);
+		font-weight: 650;
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+		white-space: nowrap;
+		color: var(--ink-muted);
+		transition: color 200ms var(--ease-out);
+	}
+	.track li:hover {
+		color: var(--ink);
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.is-animated .track {
+			animation: belt 46s linear infinite;
+		}
+		.belt:hover .track {
+			animation-play-state: paused;
+		}
+	}
+	.languages:not(.is-animated) {
+		flex-wrap: wrap;
+		gap: 16px;
+	}
+	.languages:not(.is-animated) .belt {
+		flex-basis: 100%;
+		overflow: visible;
+		mask-image: none;
+	}
+	.languages:not(.is-animated) .track {
+		flex: 1;
+		flex-wrap: wrap;
+		gap: 12px 28px;
+		padding: 0;
+	}
+	.languages:not(.is-animated) .track[aria-hidden="true"] {
+		display: none;
+	}
+	@keyframes belt {
+		to {
+			transform: translateX(-100%);
+		}
+	}
+</style>
+
+<script>
+	const root = document.querySelector<HTMLElement>("[data-languages]");
+	const button = root?.querySelector<HTMLButtonElement>("[data-language-toggle]");
+	if (root && button) {
+		const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+		let expanded = false;
+		const update = () => {
+			const animated = !expanded && !motion.matches;
+			root.classList.toggle("is-animated", animated);
+			button.hidden = motion.matches;
+			button.textContent = animated ? "Show all" : "Animate languages";
+			button.setAttribute("aria-expanded", String(!animated));
+		};
+		button.addEventListener("click", () => {
+			expanded = !expanded;
+			update();
+		});
+		motion.addEventListener("change", update);
+		update();
+	}
+</script>

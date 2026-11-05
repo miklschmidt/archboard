@@ -1,0 +1,304 @@
+---
+// A mock of the Archboard shell around the example shop, which the product's painter draws. The
+// window is laid out at 1280 by 760 and scaled to its column, so it keeps the shell's proportions
+// at any width. On a phone it shows only the canvas, so the drawing stays large enough to read.
+// The renderer's SVG of the same picture stands under the painter's canvas, for a page without
+// script, with reduced motion, or where the painter does not start.
+import DockLines from "./DockLines.astro";
+import Inspector from "./Inspector.astro";
+import Navigator from "./Navigator.astro";
+import Icon from "../Icon.astro";
+import Mark from "../Mark.astro";
+import { drawings } from "../../lib/diagrams";
+
+const shop = drawings.webShop;
+---
+
+<div class="window-stage" data-window-stage>
+	<div class="window-tilt" data-window-tilt>
+		<div class="window" data-window>
+			<div class="column-head">
+				<Mark size={18} id="window-mark" />
+				<span class="wordmark">archboard</span>
+			</div>
+			<div class="pane-head">
+				<span class="crumb">Shop</span>
+				<span class="state"><span class="dot"></span> Current: Synchronous checkout</span>
+				<span class="claim" data-claim>
+					<span class="dot"></span> codex is mapping the shop
+				</span>
+				<span class="voice"><Icon name="voice" size={14} /> Codex</span>
+			</div>
+			<div class="panel-head">Selection</div>
+			<div class="left">
+				<Navigator />
+				<div class="dock">
+					<p class="dock-title"><Icon name="terminal" size={13} /> Agent</p>
+					<DockLines />
+				</div>
+			</div>
+			<div class="picture" data-picture>
+				<figure class="drawing" role="img" aria-label={`The example shop, drawn by Archboard: ${shop.label}`}>
+					<img src={shop.url} width={shop.width} height={shop.height} alt="" decoding="async" />
+				</figure>
+				<canvas class="paint" aria-hidden="true"></canvas>
+				<button class="replay" type="button" data-replay hidden>
+					<Icon name="back" size={15} /> Replay
+				</button>
+			</div>
+			<Inspector />
+		</div>
+	</div>
+</div>
+
+<style>
+	.window-stage {
+		--scale: 1;
+		--window-width: 1280px;
+		--window-height: 760px;
+		position: relative;
+		width: 100%;
+		height: calc(var(--window-height) * var(--scale));
+		perspective: 2400px;
+		perspective-origin: 50% 100%;
+	}
+	.window-tilt {
+		--tilt: 0deg;
+		height: 100%;
+		transform-origin: 50% 100%;
+		transform: rotateX(var(--tilt));
+		will-change: transform;
+	}
+	.window {
+		scale: var(--scale);
+		transform-origin: 0 0;
+		display: grid;
+		grid-template-columns: 290px 1fr 290px;
+		grid-template-rows: 44px 1fr;
+		width: var(--window-width);
+		height: var(--window-height);
+		overflow: hidden;
+		border-radius: 12px;
+		background: var(--plane);
+		box-shadow:
+			inset 0 1px 0 oklch(1 0.01 85 / 0.12),
+			inset 0 0 0 1px var(--rule-strong),
+			0 2px 0 oklch(0.06 0.004 75 / 0.6),
+			0 40px 80px -24px oklch(0.03 0.004 75 / 0.85),
+			0 100px 160px -40px oklch(0.03 0.004 75 / 0.9);
+		color: var(--ink-body);
+		font-family: var(--font-body);
+	}
+	.column-head,
+	.pane-head,
+	.panel-head {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 0 16px;
+		background: var(--chrome);
+		box-shadow: inset 0 -1px 0 var(--rule);
+		font-size: 12.5px;
+		position: relative;
+		z-index: 1;
+	}
+	.column-head {
+		box-shadow:
+			inset 0 -1px 0 var(--rule),
+			inset -1px 0 0 var(--rule);
+		gap: 9px;
+		align-items: center;
+	}
+	.wordmark {
+		font-family: var(--font-display);
+		font-size: 17px;
+		font-weight: 560;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--ink);
+		margin-top: 2px;
+	}
+	.panel-head {
+		box-shadow:
+			inset 0 -1px 0 var(--rule),
+			inset 1px 0 0 var(--rule);
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.crumb {
+		font-weight: 650;
+		color: var(--ink);
+		font-size: 13px;
+	}
+	.state,
+	.claim,
+	.voice {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		height: 24px;
+		padding: 0 9px;
+		border-radius: 3px;
+		font-size: 11.5px;
+		background: var(--card);
+		box-shadow: var(--shadow-raised);
+		color: var(--ink-muted);
+	}
+	.state .dot {
+		color: var(--gold-mark);
+		width: 6px;
+		height: 6px;
+	}
+	.claim {
+		color: var(--ink);
+		background: color-mix(in srgb, var(--live) 14%, var(--card));
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px color-mix(in srgb, var(--live) 40%, transparent);
+		opacity: 0;
+		translate: 0 4px;
+		transition:
+			opacity 300ms var(--ease-out),
+			translate 300ms var(--ease-out);
+	}
+	.claim .dot {
+		color: var(--live);
+		width: 6px;
+		height: 6px;
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 25%, transparent);
+		animation: live 1.6s var(--ease-in-out) infinite;
+	}
+	:global(.window[data-claimed]) .claim {
+		opacity: 1;
+		translate: 0 0;
+	}
+	@keyframes live {
+		50% {
+			box-shadow: 0 0 0 5px color-mix(in srgb, var(--live) 5%, transparent);
+		}
+	}
+	.voice {
+		margin-left: auto;
+	}
+	.left {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: 1fr auto;
+		min-height: 0;
+		background: var(--chrome);
+		box-shadow: inset -1px 0 0 var(--rule);
+	}
+	.dock {
+		display: flex;
+		flex-direction: column;
+		margin: 10px;
+		padding: 12px;
+		height: 318px;
+		border-radius: 6px;
+		background: oklch(0.205 0.007 75);
+		box-shadow:
+			inset 0 1px 0 var(--highlight),
+			0 -10px 24px -14px oklch(0.04 0.006 75 / 0.9),
+			inset 0 0 0 1px var(--rule);
+		overflow: hidden;
+	}
+	.dock-title {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin-bottom: 10px;
+		font-size: 11.5px;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.picture {
+		position: relative;
+		display: grid;
+		place-items: center;
+		padding: 20px 16px;
+		min-height: 0;
+		overflow: hidden;
+		background:
+			radial-gradient(120% 80% at 50% 0%, oklch(0.23 0.012 80 / 0.6), transparent 60%),
+			var(--plane);
+	}
+	.drawing {
+		width: 100%;
+	}
+	.drawing img {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+	/* While the painter draws the picture, its canvas covers the SVG. */
+	.paint {
+		display: none;
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+	.picture[data-painting] .paint {
+		display: block;
+	}
+	.picture[data-painting] .drawing img {
+		visibility: hidden;
+	}
+	.dock :global(.dock-lines) {
+		flex: 1;
+		min-height: 0;
+		overflow: hidden;
+		justify-content: flex-end;
+	}
+	.replay {
+		position: absolute;
+		right: 16px;
+		bottom: 16px;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		height: 30px;
+		padding: 0 12px;
+		border: 0;
+		border-radius: 4px;
+		background: var(--raised);
+		color: var(--ink);
+		font-size: 0.8125rem;
+		font-weight: 600;
+		box-shadow:
+			var(--shadow-float),
+			inset 0 0 0 1px var(--rule);
+		cursor: pointer;
+		opacity: 0;
+		transition: opacity 300ms var(--ease-out);
+	}
+	.replay.is-shown {
+		opacity: 1;
+	}
+	.replay[hidden] {
+		display: none;
+	}
+	.replay:hover {
+		background: var(--slab);
+	}
+	@media (max-width: 760px) {
+		.window-stage {
+			--window-width: 760px;
+			--window-height: 600px;
+		}
+		.window {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.column-head,
+		.panel-head,
+		.left,
+		.window > :global([data-inspector]) {
+			display: none;
+		}
+	}
+</style>
+
+<script>
+	import { mountHeroWindow } from "../../scripts/hero-window";
+	mountHeroWindow();
+</script>

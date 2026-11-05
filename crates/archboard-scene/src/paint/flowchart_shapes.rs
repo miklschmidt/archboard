@@ -360,7 +360,7 @@ impl FlowchartShapes<'_> {
     /// The shadow under a card drawn as its shape.
     pub(super) fn shadow(&self, card: &Node, standing: Option<Standing>) -> Items {
         let shaped = &self.shapes[&card.measured.node.id];
-        if standing == Some(Standing::Removed) {
+        if standing == Some(Standing::Removed) || self.palette.flat {
             return Items::new();
         }
         let look = look_of(shaped.shape);

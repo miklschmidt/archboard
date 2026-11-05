@@ -1,0 +1,404 @@
+---
+// A walkthrough playing over real drawings: the example shop's "How an order is placed today".
+// Each beat selects its parts with the renderer's own gold ring and dims the rest. The subtitles
+// arrive word by word and the orb moves with them. In the product the Codex voice speaks them.
+import Icon from "../Icon.astro";
+import { drawings, inline } from "../../lib/diagrams";
+import { walkthrough } from "../../lib/walkthrough";
+
+const picture = inline(drawings.checkout.raw, "walk");
+const sequence = drawings.sequence;
+const first = walkthrough.beats[0];
+---
+
+<div class="player table" data-walkthrough={JSON.stringify(walkthrough.beats)}>
+	<div class="stage" data-grammar="architecture">
+		<figure class="view architecture" role="img" aria-hidden="false" aria-label={`Checkout API opened, drawn by Archboard: ${drawings.checkout.label}`}>
+			<Fragment set:html={picture} />
+		</figure>
+		<img
+			class="view sequence"
+			aria-hidden="true"
+			src={sequence.url}
+			width={sequence.width}
+			height={sequence.height}
+			alt="Sequence diagram of placing an order: Place order reserves the items, then charges the card, then saves the order and sends the receipt."
+			loading="lazy"
+			decoding="async"
+		/>
+	</div>
+	<div class="box">
+		<div class="rail" aria-hidden="true">
+			{walkthrough.beats.map((_, index) => <span class:list={["seg", { "is-on": index === 0 }]} />)}
+		</div>
+		<div class="box-body">
+			<canvas class="orb" data-orb aria-hidden="true"></canvas>
+			<div class="words">
+				<p class="beat-title" data-beat-title aria-live="polite">{first?.title}</p>
+				<p class="subtitle" data-subtitle>{first?.narrative}</p>
+			</div>
+		</div>
+		<div class="controls">
+			<span class="mono step-count" data-step-count>1 / {walkthrough.beats.length}</span>
+			<div class="buttons">
+				<button type="button" class="ctl" data-prev aria-label="Previous step"><Icon name="chevronLeft" /></button>
+				<button type="button" class="ctl narrate" data-narrate aria-pressed="false">
+					<span class="when-paused"><Icon name="play" size={16} /> Narrate</span>
+					<span class="when-playing"><Icon name="pause" size={16} /> Pause</span>
+				</button>
+				<button type="button" class="ctl" data-next aria-label="Next step"><Icon name="chevronRight" /></button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+	.player {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 380px;
+		background: var(--chrome);
+		overflow: hidden;
+	}
+	.stage {
+		position: relative;
+		display: grid;
+		place-items: center;
+		min-height: 560px;
+		padding: 28px;
+		background:
+			radial-gradient(90% 70% at 40% 30%, oklch(0.235 0.012 80 / 0.7), transparent 70%),
+			oklch(0.2 0.006 75);
+	}
+	.view {
+		grid-area: 1 / 1;
+		width: 100%;
+		max-height: 620px;
+		margin: 0;
+		transition:
+			opacity 520ms var(--ease-in-out),
+			filter 520ms var(--ease-in-out),
+			scale 520ms var(--ease-in-out);
+	}
+	.view.architecture :global(svg) {
+		width: 100%;
+		height: auto;
+		max-height: 620px;
+	}
+	.view.sequence {
+		object-fit: contain;
+		height: 100%;
+	}
+	.stage[data-grammar="architecture"] .sequence,
+	.stage[data-grammar="sequence"] .architecture {
+		opacity: 0;
+		filter: blur(6px);
+		scale: 0.97;
+		pointer-events: none;
+	}
+	.architecture :global(g[data-semantic-kind]) {
+		transition: opacity 420ms var(--ease-out);
+		cursor: default;
+	}
+	.architecture:global(.is-focused) :global(g[data-semantic-kind]:not(.is-lit)),
+	.architecture:global(.is-focused) :global(g.ab-shadow),
+	.architecture:global(.is-focused) :global(g[data-traffic]) {
+		opacity: 0.28;
+	}
+	.box {
+		display: flex;
+		flex-direction: column;
+		gap: 18px;
+		padding: 22px;
+		background: var(--raised);
+		box-shadow:
+			inset 1px 0 0 var(--rule),
+			inset 0 1px 0 var(--highlight);
+	}
+	.rail {
+		display: flex;
+		gap: 4px;
+	}
+	.seg {
+		flex: 1;
+		height: 4px;
+		border-radius: 4px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+		overflow: hidden;
+		position: relative;
+	}
+	.seg::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: var(--gold-mark);
+		transform-origin: left;
+		transform: scaleX(var(--fill, 0));
+	}
+	.seg.is-done::after {
+		--fill: 1;
+	}
+	.seg.is-on::after {
+		--fill: var(--progress, 0.06);
+	}
+	.box-body {
+		display: grid;
+		grid-template-columns: 64px 1fr;
+		gap: 16px;
+		align-items: start;
+		flex: 1;
+	}
+	/* The product's orb canvas: 84px, with its 64px ring in the middle and room around it for
+	   the rings of light. The painter reads its colours from these tokens, and the plate is the
+	   box it sits on. */
+	.orb {
+		--card: var(--raised);
+		--primary: var(--gold);
+		width: 84px;
+		max-width: none;
+		height: 84px;
+		margin: -10px;
+	}
+	.words {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		min-height: 260px;
+	}
+	.beat-title {
+		font-size: 1.375rem;
+		line-height: 1.25;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+		color: var(--ink);
+		text-wrap: balance;
+	}
+	.subtitle {
+		font-size: 1rem;
+		line-height: 1.6;
+		color: var(--ink-body);
+	}
+	.subtitle :global(.w) {
+		opacity: 0.18;
+		transition: opacity 260ms var(--ease-out);
+	}
+	.subtitle :global(.w.is-said) {
+		opacity: 1;
+	}
+	.controls {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+	.step-count {
+		font-size: 0.75rem;
+		color: var(--ink-muted);
+	}
+	.buttons {
+		display: flex;
+		gap: 6px;
+	}
+	.ctl {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		height: 36px;
+		min-width: 36px;
+		padding: 0 10px;
+		border: 0;
+		border-radius: 4px;
+		background: var(--card);
+		color: var(--ink);
+		font-size: 0.875rem;
+		font-weight: 600;
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule);
+		cursor: pointer;
+		transition: background-color 160ms var(--ease-out);
+	}
+	.ctl:hover {
+		background: var(--slab);
+	}
+	.ctl:disabled {
+		opacity: 0.6;
+		cursor: default;
+	}
+	.ctl.narrate {
+		padding: 0 16px;
+		color: var(--gold-ink);
+		background: linear-gradient(180deg, var(--gold-top), var(--gold-bottom));
+		box-shadow:
+			inset 0 1px 0 oklch(1 0.02 90 / 0.55),
+			inset 0 0 0 1px var(--gold-edge),
+			0 1px 0 oklch(0.06 0.004 75 / 0.8);
+	}
+	.ctl.narrate:hover {
+		background: linear-gradient(180deg, var(--gold-top), var(--gold-top));
+	}
+	.when-paused,
+	.when-playing {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.when-playing,
+	.narrate[aria-pressed="true"] .when-paused {
+		display: none;
+	}
+	.narrate[aria-pressed="true"] .when-playing {
+		display: inline-flex;
+	}
+	@media (max-width: 960px) {
+		.player {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.stage {
+			min-height: 0;
+			padding: 16px;
+		}
+		.words {
+			min-height: 220px;
+		}
+	}
+</style>
+
+<script>
+	import { prefersReducedMotion, whileVisible } from "../../scripts/reveal";
+	import { mountVoiceOrb, type OrbMode } from "../../scripts/voice-orb";
+	import type { Beat } from "../../lib/walkthrough";
+
+	for (const root of document.querySelectorAll<HTMLElement>("[data-walkthrough]")) {
+		const beats = JSON.parse(root.dataset["walkthrough"] ?? "[]") as Beat[];
+		const stage = root.querySelector<HTMLElement>(".stage");
+		const figure = root.querySelector<HTMLElement>(".view.architecture");
+		const title = root.querySelector<HTMLElement>("[data-beat-title]");
+		const subtitle = root.querySelector<HTMLElement>("[data-subtitle]");
+		const count = root.querySelector<HTMLElement>("[data-step-count]");
+		const narrate = root.querySelector<HTMLButtonElement>("[data-narrate]");
+		const segments = [...root.querySelectorAll<HTMLElement>(".seg")];
+		const orb = root.querySelector<HTMLCanvasElement>("[data-orb]");
+		if (!stage || !figure || !title || !subtitle || !count || !narrate || !orb) continue;
+
+		let index = 0;
+		let playing = false;
+		let timer = 0;
+		/** The word being said: when it started, how long it sounds, its syllables and how loud it is. */
+		let word: { at: number; ms: number; syllables: number; peak: number } | null = null;
+		let startedAt = 0;
+		let onScreen = false;
+		let paused = false;
+
+		const select = (beat: Beat) => {
+			stage.dataset["grammar"] = beat.grammar;
+			for (const view of stage.querySelectorAll(".view")) view.setAttribute("aria-hidden", String(!view.classList.contains(beat.grammar)));
+			for (const lit of figure.querySelectorAll(".is-lit, .is-selected")) lit.classList.remove("is-lit", "is-selected");
+			figure.classList.toggle("is-focused", beat.selection.length > 0);
+			for (const id of beat.selection) {
+				for (const part of figure.querySelectorAll(`[data-semantic-id="${id}"]`)) {
+					part.classList.add("is-lit");
+					if (!part.hasAttribute("data-semantic-part")) part.classList.add("is-selected");
+				}
+			}
+		};
+
+		const show = (next: number, speak: boolean) => {
+			window.clearTimeout(timer);
+			index = (next + beats.length) % beats.length;
+			const beat = beats[index];
+			if (!beat) return;
+			select(beat);
+			title.textContent = beat.title;
+			count.textContent = `${index + 1} / ${beats.length}`;
+			segments.forEach((segment, at) => {
+				segment.classList.toggle("is-on", at === index);
+				segment.classList.toggle("is-done", at < index);
+				segment.style.setProperty("--progress", "0.06");
+			});
+			const words = beat.narrative.split(" ");
+			subtitle.replaceChildren(
+				...words.flatMap((word, at) => {
+					const span = document.createElement("span");
+					span.className = "w";
+					span.textContent = word;
+					if (!speak || prefersReducedMotion()) span.classList.add("is-said");
+					return at === 0 ? [span] : [document.createTextNode(" "), span];
+				}),
+			);
+			if (!speak || prefersReducedMotion()) return;
+			const spans = [...subtitle.querySelectorAll<HTMLElement>(".w")];
+			let at = 0;
+			const say = () => {
+				if (!playing) return;
+				const span = spans[at];
+				if (!span) {
+					word = null;
+					timer = window.setTimeout(() => show(index + 1, true), 1600);
+					return;
+				}
+				span.classList.add("is-said");
+				const length = (span.textContent ?? "").length;
+				const ms = 150 + length * 38;
+				word = {
+					at: performance.now(),
+					ms: ms * 0.8,
+					syllables: Math.max(1, Math.round(length / 3)),
+					peak: 0.025 + Math.min(0.045, length * 0.006),
+				};
+				segments[index]?.style.setProperty("--progress", String((at + 1) / spans.length));
+				at += 1;
+				timer = window.setTimeout(say, ms);
+			};
+			timer = window.setTimeout(say, 500);
+		};
+
+		const setPlaying = (value: boolean) => {
+			playing = value;
+			narrate.setAttribute("aria-pressed", String(value));
+			word = null;
+			startedAt = performance.now();
+			show(index, value);
+			wakeOrb();
+		};
+
+		narrate.addEventListener("click", () => {
+			paused = playing;
+			setPlaying(!playing);
+		});
+		root.querySelector("[data-prev]")?.addEventListener("click", () => show(index - 1, playing));
+		root.querySelector("[data-next]")?.addEventListener("click", () => show(index + 1, playing));
+
+		// The voice connects for half a second, the time before the first word, then speaks. A
+		// paused narration listens, and the lines breathe.
+		const voiceMode = (): OrbMode => {
+			if (!playing) return "listening";
+			return performance.now() - startedAt < 500 ? "starting" : "speaking";
+		};
+		// The level of the word being said: one swell for each syllable, the first the loudest.
+		const voiceLevel = () => {
+			if (!playing || !word) return 0;
+			const t = performance.now() - word.at;
+			if (t >= word.ms) return 0;
+			const step = word.ms / word.syllables;
+			const loudness = Math.floor(t / step) === 0 ? 1 : 0.75;
+			return word.peak * loudness * Math.sin((Math.PI * (t % step)) / step);
+		};
+		const wakeOrb = mountVoiceOrb(orb, { mode: voiceMode, level: voiceLevel });
+		show(0, false);
+		const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+		const settle = () => {
+			narrate.disabled = motion.matches;
+			if (motion.matches) setPlaying(false);
+		};
+		motion.addEventListener("change", settle);
+		settle();
+
+		// The motion preference is read at each start, so changing it mid-visit takes effect.
+		whileVisible(root, (visible) => {
+			if (visible && !onScreen && !playing && !paused && !prefersReducedMotion()) setPlaying(true);
+			if (!visible && playing) setPlaying(false);
+			onScreen = visible;
+		});
+	}
+</script>

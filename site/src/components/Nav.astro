@@ -1,0 +1,151 @@
+---
+import Icon from "./Icon.astro";
+import Mark from "./Mark.astro";
+import { links } from "../lib/links";
+
+const items = [
+	{ href: "#understand", label: "Understand" },
+	{ href: "#plan", label: "Plan" },
+	{ href: "#share", label: "Share" },
+	{ href: "#compare", label: "Compare" },
+];
+---
+
+<header class="nav" data-nav>
+	<div class="container nav-row">
+		<a class="brand" href="#top" aria-label="archboard, back to the top">
+			<Mark size={24} id="nav-mark" />
+			<span class="wordmark" aria-hidden="true">archboard</span>
+		</a>
+		<nav aria-label="Sections">
+			<ul>
+				{
+					items.map((item) => (
+						<li>
+							<a href={item.href}>{item.label}</a>
+						</li>
+					))
+				}
+			</ul>
+		</nav>
+		<div class="nav-actions">
+			<a class="github" href={links.repository} aria-label="Archboard on GitHub">
+				<Icon name="github" size={20} />
+				<span>GitHub</span>
+			</a>
+			<a class="btn btn-gold btn-small" href="#quick-start">Get started</a>
+		</div>
+	</div>
+</header>
+
+<style>
+	.nav {
+		position: sticky;
+		top: 0;
+		z-index: 50;
+		height: 64px;
+		transition:
+			background-color 240ms var(--ease-out),
+			box-shadow 240ms var(--ease-out);
+	}
+	.nav.is-stuck {
+		background: var(--chrome);
+		box-shadow:
+			inset 0 -1px 0 var(--rule),
+			0 10px 24px -12px oklch(0.04 0.006 75 / 0.8);
+	}
+	.nav-row {
+		display: flex;
+		align-items: center;
+		gap: 32px;
+		height: 100%;
+	}
+	.brand {
+		display: inline-flex;
+		align-items: flex-end;
+		gap: 11px;
+		text-decoration: none;
+		color: var(--ink);
+		flex: none;
+	}
+	.wordmark {
+		font-family: var(--font-display);
+		font-size: 22px;
+		line-height: 22px;
+		font-weight: 560;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		margin-bottom: -2px;
+	}
+	nav {
+		flex: 1;
+	}
+	nav ul {
+		display: flex;
+		gap: 4px;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+	nav a {
+		display: inline-flex;
+		align-items: center;
+		height: 34px;
+		padding: 0 12px;
+		border-radius: var(--radius-control);
+		font-size: 0.9375rem;
+		font-weight: 500;
+		color: var(--ink-muted);
+		text-decoration: none;
+		transition:
+			color 160ms var(--ease-out),
+			background-color 160ms var(--ease-out);
+	}
+	nav a:hover {
+		color: var(--ink);
+		background: oklch(1 0.01 85 / 0.05);
+	}
+	.nav-actions {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.github {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		height: 34px;
+		padding: 0 12px;
+		border-radius: var(--radius-control);
+		font-size: 0.9375rem;
+		font-weight: 500;
+		color: var(--ink-muted);
+		text-decoration: none;
+		transition: color 160ms var(--ease-out);
+	}
+	.github:hover {
+		color: var(--ink);
+	}
+	@media (max-width: 860px) {
+		nav {
+			display: none;
+		}
+		.nav-actions {
+			margin-left: auto;
+		}
+	}
+	@media (max-width: 420px) {
+		.github span {
+			display: none;
+		}
+	}
+</style>
+
+<script>
+	const nav = document.querySelector<HTMLElement>("[data-nav]");
+	if (nav) {
+		const update = () => nav.classList.toggle("is-stuck", window.scrollY > 8);
+		update();
+		window.addEventListener("scroll", update, { passive: true });
+	}
+</script>

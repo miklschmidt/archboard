@@ -1,0 +1,224 @@
+---
+// From the agent to the picture: the command the agent runs, the file it leaves in the vault
+// (an excerpt of the example's real Place order module, which holds no coordinates), and the
+// drawing the renderer makes of it.
+import Icon from "../Icon.astro";
+import { drawings } from "../../lib/diagrams";
+
+const picture = drawings.checkout;
+const moduleExcerpt = `{
+  <span class="k">"name"</span>: <span class="s">"Place order"</span>,
+  <span class="k">"kind"</span>: <span class="s">"route"</span>,
+  <span class="k">"parent"</span>: <span class="s">"Shop/MKhTEYqf#lwmpnaVU"</span>,
+  <span class="k">"outgoing"</span>: [{
+    <span class="k">"label"</span>: <span class="s">"charge the card, and wait"</span>,
+    <span class="k">"to"</span>: <span class="s">"Shop/MKhTEYqf#ZaOafnWt"</span>
+  }, ...]
+}`;
+---
+
+<div class="pipeline" data-loop>
+	<div class="stage-card" data-reveal>
+		<p class="stage-title"><Icon name="terminal" size={16} /> Your agent states it</p>
+		<pre class="code" tabindex="0"><code><span class="ps">$</span> archboard model edit \
+    --input change.json \
+    --doing "mapping checkout"</code></pre>
+		<p class="note">Claude Code or Codex reads the code and writes meaning through the CLI.</p>
+	</div>
+	<span class="wire" aria-hidden="true"><span class="pulse"></span></span>
+	<div class="stage-card" data-reveal style="--reveal-delay: 120">
+		<p class="stage-title"><Icon name="fileCode" size={16} /> The vault keeps it</p>
+		<p class="path mono">
+			.archboard/<wbr />vault/<wbr />modules/<wbr />Shop/<wbr />MKhTEYqf/<wbr />kZjjfq1m.module.json
+		</p>
+		<pre class="code json" tabindex="0"><code set:html={moduleExcerpt} /></pre>
+		<p class="note">No x, no y, no width. Git reviews it like code.</p>
+	</div>
+	<span class="wire" aria-hidden="true"><span class="pulse"></span></span>
+	<div class="stage-card picture-card" data-reveal style="--reveal-delay: 240">
+		<p class="stage-title"><Icon name="image" size={16} /> Archboard draws it</p>
+		<div class="thumb">
+			<img
+				src={picture.url}
+				width={picture.width}
+				height={picture.height}
+				alt="Checkout API opened: Basket route, Place order and Timeout guard inside it, with the modules they reach."
+				loading="lazy"
+				decoding="async"
+			/>
+		</div>
+		<p class="note">The renderer places every card and routes every line, in the browser and in exports.</p>
+	</div>
+</div>
+
+<style>
+	.pipeline {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1.15fr) 40px minmax(0, 1fr);
+		align-items: start;
+	}
+	.stage-card {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		padding: 20px;
+		border-radius: var(--radius-table);
+		background: var(--plane);
+		box-shadow:
+			var(--shadow-float),
+			inset 0 0 0 1px var(--rule);
+		min-width: 0;
+	}
+	.stage-title {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.stage-title :global(svg) {
+		color: var(--gold-mark);
+	}
+	.code {
+		margin: 0;
+		padding: 14px 16px;
+		border-radius: 6px;
+		background: oklch(0.155 0.005 75);
+		box-shadow: inset 0 0 0 1px var(--rule);
+		font-size: 0.78rem;
+		line-height: 1.7;
+		color: var(--ink);
+		overflow-x: auto;
+	}
+	.code code {
+		font-size: inherit;
+	}
+	.ps {
+		color: var(--gold-mark);
+	}
+	.json :global(.k) {
+		color: var(--sky-text);
+	}
+	.json :global(.s) {
+		color: var(--ink-body);
+	}
+	.json {
+		color: var(--ink-muted);
+	}
+	.path {
+		font-size: 0.7rem;
+		color: var(--ink-muted);
+		margin-bottom: -4px;
+	}
+	.note {
+		font-size: 0.875rem;
+		line-height: 1.5;
+		color: var(--ink-muted);
+	}
+	.thumb {
+		display: grid;
+		place-items: center;
+		padding: 10px;
+		border-radius: 6px;
+		background: oklch(0.2 0.006 75);
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+	.thumb img {
+		width: 100%;
+		max-height: 260px;
+		object-fit: contain;
+	}
+	/* A wire leaves each card at the height of its first code line. */
+	.wire {
+		position: relative;
+		align-self: start;
+		margin-top: 76px;
+		height: 2px;
+		margin-inline: 6px;
+		background: repeating-linear-gradient(
+			90deg,
+			color-mix(in oklch, var(--gold-mark) 55%, transparent) 0 6px,
+			transparent 6px 10px
+		);
+		clip-path: inset(-8px 0);
+	}
+	.wire::before,
+	.wire::after {
+		content: "";
+		position: absolute;
+		top: -3px;
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--gold-mark);
+		box-shadow: 0 0 10px var(--gold-mark);
+	}
+	.wire::before {
+		left: 0;
+	}
+	.wire::after {
+		right: 0;
+	}
+	.pulse {
+		position: absolute;
+		top: 0;
+		left: -50%;
+		width: 50%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, var(--gold-mark), white);
+		box-shadow: 0 0 12px 2px color-mix(in oklch, var(--gold-mark) 70%, transparent);
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.pulse {
+			animation: travel 1.8s linear infinite;
+		}
+	}
+	@keyframes travel {
+		to {
+			left: 100%;
+		}
+	}
+	@media (max-width: 1000px) {
+		.pipeline {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 0;
+		}
+		.wire {
+			justify-self: center;
+			width: 2px;
+			height: 40px;
+			margin-block: 6px;
+			background: repeating-linear-gradient(
+				180deg,
+				color-mix(in oklch, var(--gold-mark) 55%, transparent) 0 6px,
+				transparent 6px 10px
+			);
+			clip-path: inset(0 -8px);
+		}
+		.wire::before,
+		.wire::after {
+			left: -3px;
+		}
+		.wire::before {
+			top: 0;
+		}
+		.wire::after {
+			top: auto;
+			right: auto;
+			bottom: 0;
+		}
+		.pulse {
+			left: 0;
+			top: -50%;
+			width: 100%;
+			height: 50%;
+			background: linear-gradient(180deg, transparent, var(--gold-mark), white);
+			animation-name: drop;
+		}
+		@keyframes drop {
+			to {
+				top: 100%;
+			}
+		}
+	}
+</style>

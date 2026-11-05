@@ -1,0 +1,23 @@
+{
+  "order": 53,
+  "name": "Renderer core",
+  "kind": "engine",
+  "responsibility": "Places every card and routes every line",
+  "schemaVersion": 1,
+  "id": "q9TUBeZT#VlYL9u2R",
+  "parent": "q9TUBeZT#cJMRcSvL",
+  "outgoing": [
+    {
+      "order": 120,
+      "kind": "render",
+      "label": "paintings",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "q9TUBeZT#CxtBaJtr",
+      "to": "q9TUBeZT#A4tSuC9b"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "order": 61,
+  "name": "Panes",
+  "kind": "ui",
+  "responsibility": "Open any module into its parts",
+  "schemaVersion": 1,
+  "id": "q9TUBeZT#WTZjpPZH",
+  "parent": "q9TUBeZT#CXLlEMBM",
+  "outgoing": []
+}

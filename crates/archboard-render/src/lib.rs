@@ -115,6 +115,7 @@ fn page_request(request: &RenderRequest) -> PageRequest {
         plain: request.plain(),
         unsettled: request.unsettled.clone(),
         unbuilt: request.unbuilt,
+        relief: request.relief,
         frame: request.frame.clone(),
     }
 }

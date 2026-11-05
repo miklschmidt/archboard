@@ -9,7 +9,7 @@ use archboard_flows::content::Flow;
 use archboard_flows::flowchart::KindLook;
 use archboard_layout::{Content, Edge, Engine, Node};
 use archboard_scene::request::{
-    Arrowhead, Dash, ExportFrame, PaletteColor, StandaloneTheme, Standing, ThemeColors,
+    Arrowhead, Dash, ExportFrame, PaletteColor, Relief, StandaloneTheme, Standing, ThemeColors,
 };
 use indexmap::IndexMap;
 use serde::Deserialize;
@@ -138,6 +138,9 @@ pub struct RenderRequest {
     /// Whether the picture says nothing it describes is built (ADR 0031).
     #[serde(default)]
     pub unbuilt: bool,
+    /// How the picture's blocks are drawn; raised when absent.
+    #[serde(default)]
+    pub relief: Relief,
     /// The level of the picture drawn (ADR 0029).
     #[serde(default)]
     pub level: Option<String>,

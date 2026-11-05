@@ -262,4 +262,17 @@ async function startPainter(
 	return next;
 }
 
-export { startPainter, warmPainter };
+/**
+ * Start the CPU painter of a canvas without asking for the GPU. A picture that is painted once
+ * and then only read, as an image, costs the CPU a few milliseconds, while starting WebGPU can hold
+ * the page for hundreds of milliseconds the first time a browser compiles its pipelines.
+ * @param canvas The canvas, sized in pixels.
+ * @param dark Whether the page is dark.
+ * @returns The painter.
+ */
+async function startCpuPainter(canvas: HTMLCanvasElement, dark: boolean): Promise<StartedPainter> {
+	await loadPainter();
+	return startCpu(canvas, dark, "The picture is painted once, on the CPU.");
+}
+
+export { startCpuPainter, startPainter, warmPainter };

@@ -1,0 +1,10 @@
+{
+  "order": 41,
+  "name": "Source code",
+  "kind": "code",
+  "responsibility": "What your agents write",
+  "schemaVersion": 1,
+  "id": "q9TUBeZT#1G8NR5HF",
+  "parent": "q9TUBeZT#8asrTSy2",
+  "outgoing": []
+}

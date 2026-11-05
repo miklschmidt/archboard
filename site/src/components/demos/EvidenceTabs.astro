@@ -1,0 +1,244 @@
+---
+// Three ways Archboard checks the model against the code and its history, in one panel: the
+// code check, a module's interface, and what changes together. A tab picks one; the panels
+// share one height, so switching does not move the page.
+import ChangesTogether from "./ChangesTogether.astro";
+import CodeEvidence from "./CodeEvidence.astro";
+import InterfaceCompare from "./InterfaceCompare.astro";
+import Icon from "../Icon.astro";
+import type { IconName } from "../../lib/icons";
+
+const views: { key: string; icon: IconName; label: string; line: string }[] = [
+	{
+		key: "code",
+		icon: "code",
+		label: "Where the map and the code disagree",
+		line: "Broken bindings, backwards lines, missing calls",
+	},
+	{
+		key: "interface",
+		icon: "stack",
+		label: "What a module exposes",
+		line: "Entry points, hidden parts and callers",
+	},
+	{
+		key: "changes",
+		icon: "commit",
+		label: "What changes together",
+		line: "Each commit, read through the modules it touched",
+	},
+];
+---
+
+<div class="evidence table" data-evidence data-reveal>
+	<div class="tabs" role="tablist" aria-label="Checks against the code">
+		{
+			views.map((view, index) => (
+				<button
+					type="button"
+					role="tab"
+					class="tab"
+					id={`evidence-tab-${view.key}`}
+					aria-controls={`evidence-panel-${view.key}`}
+					aria-selected={index === 0 ? "true" : "false"}
+					tabindex={index === 0 ? 0 : -1}
+					data-tab={view.key}
+				>
+					<Icon name={view.icon} size={18} />
+					<span class="tab-words">
+						<span class="tab-label">{view.label}</span>
+						<span class="tab-line">{view.line}</span>
+					</span>
+				</button>
+			))
+		}
+	</div>
+	<div class="panels">
+		<div class="panel" role="tabpanel" tabindex="0" id="evidence-panel-code" aria-labelledby="evidence-tab-code" data-panel="code">
+			<div class="copy">
+				<p>
+					Bind a module to its file or to a function, class or value. <code>archboard check code</code>
+					finds broken bindings, relationships drawn backwards, and calls between mapped modules that
+					the architecture leaves out.
+				</p>
+				<p>
+					Each piece of evidence says whether analysis resolved it or matched it only by name. It can
+					follow a connection across a network hop where application code and infrastructure declare
+					both ends.
+				</p>
+			</div>
+			<div class="demo"><CodeEvidence /></div>
+		</div>
+		<div
+			class="panel"
+			role="tabpanel"
+			tabindex="0"
+			id="evidence-panel-interface"
+			aria-labelledby="evidence-tab-interface"
+			data-panel="interface"
+			hidden
+		>
+			<div class="copy">
+				<p>
+					A module's interface is what its outside callers reach. Archboard shows the entry points, the
+					hidden parts behind them and the callers that depend on them.
+				</p>
+				<p>
+					Compare two states and the interface changes come first, because an interface change costs
+					every caller.
+				</p>
+			</div>
+			<div class="demo"><InterfaceCompare /></div>
+		</div>
+		<div
+			class="panel"
+			role="tabpanel"
+			tabindex="0"
+			id="evidence-panel-changes"
+			aria-labelledby="evidence-tab-changes"
+			data-panel="changes"
+			hidden
+		>
+			<div class="copy">
+				<p>
+					Archboard maps each commit onto the modules it touched. See which modules change most often,
+					and which change together, including pairs with no authored relationship.
+				</p>
+				<p>
+					Set a branch against its proposal with <code>archboard model footprint --state "Queued fulfilment" --base main</code>, and
+					your agent sees changes outside the plan before it adopts it.
+				</p>
+			</div>
+			<div class="demo"><ChangesTogether /></div>
+		</div>
+	</div>
+</div>
+
+<style>
+	.evidence {
+		margin-block: clamp(88px, 10vw, 152px);
+		padding: 6px;
+		background: var(--chrome);
+	}
+	.tabs {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 4px;
+		padding: 4px;
+		border-radius: 8px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	.tab {
+		display: flex;
+		align-items: flex-start;
+		gap: 12px;
+		padding: 14px 16px;
+		border: 0;
+		border-radius: 5px;
+		background: none;
+		text-align: left;
+		color: var(--ink-muted);
+		cursor: pointer;
+		transition:
+			background 200ms var(--ease-out),
+			color 200ms var(--ease-out);
+	}
+	.tab :global(svg) {
+		flex: none;
+		margin-top: 2px;
+	}
+	.tab:hover {
+		color: var(--ink);
+		background: oklch(1 0.01 85 / 0.04);
+	}
+	.tab[aria-selected="true"] {
+		color: var(--ink);
+		background: var(--raised);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 -2px 0 var(--gold-mark);
+	}
+	.tab[aria-selected="true"] :global(svg) {
+		color: var(--gold-mark);
+	}
+	.tab-words {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+	.tab-label {
+		font-size: 0.9375rem;
+		font-weight: 600;
+		line-height: 1.3;
+	}
+	.tab-line {
+		font-size: 0.8125rem;
+		line-height: 1.4;
+		color: var(--ink-muted);
+	}
+	/* The panels share one cell, so the tallest one sets the height. */
+	.panels {
+		display: grid;
+	}
+	.panel {
+		grid-area: 1 / 1;
+		display: grid;
+		grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+		align-items: start;
+		gap: 32px clamp(32px, 5vw, 72px);
+		padding: clamp(24px, 4vw, 48px) clamp(20px, 3vw, 40px);
+	}
+	.panel[hidden] {
+		display: grid;
+		visibility: hidden;
+	}
+	.copy {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		color: var(--ink-body);
+		text-wrap: pretty;
+	}
+	.copy code {
+		white-space: normal;
+		padding: 0.12em 0.4em;
+		border-radius: var(--radius-chip);
+		background: var(--card);
+		color: var(--ink);
+		font-size: 0.82em;
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+	.demo {
+		min-width: 0;
+	}
+	.panel:not([hidden]) .demo {
+		animation: arrive 480ms var(--ease-out);
+	}
+	@keyframes arrive {
+		from {
+			opacity: 0;
+			translate: 0 8px;
+		}
+	}
+	@media (max-width: 900px) {
+		.tabs {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.tab-line {
+			display: none;
+		}
+		.panel {
+			grid-template-columns: minmax(0, 1fr);
+			padding: 24px 10px 10px;
+		}
+		.panel[hidden] {
+			display: none;
+		}
+	}
+</style>
+
+<script>
+	import { mountTabs } from "../../scripts/tabs";
+	for (const root of document.querySelectorAll<HTMLElement>("[data-evidence]")) mountTabs(root);
+</script>

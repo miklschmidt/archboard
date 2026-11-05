@@ -1,0 +1,162 @@
+---
+// The left column of the mock shell: the repository, the tabs of the model and its root modules.
+// The rows are the example shop's real root modules.
+import Icon from "../Icon.astro";
+import KindChip from "../KindChip.astro";
+import type { Kind } from "../../lib/icons";
+
+const modules: { name: string; kind: Kind; parts?: number }[] = [
+	{ name: "Storefront", kind: "ui" },
+	{ name: "Checkout API", kind: "service", parts: 3 },
+	{ name: "Inventory service", kind: "service", parts: 4 },
+	{ name: "Basket cache", kind: "cache" },
+	{ name: "Orders DB", kind: "datastore" },
+	{ name: "Payment provider", kind: "external" },
+	{ name: "Email provider", kind: "external" },
+	{ name: "Warehouse system", kind: "external" },
+];
+const tabs = ["Modules", "Flows", "Walkthroughs", "History", "Measures"];
+---
+
+<aside class="navigator" aria-hidden="true">
+	<div class="find">
+		<Icon name="search" size={14} />
+		<span>Find a module</span>
+		<kbd>/</kbd>
+	</div>
+	<div class="repo">
+		<span class="repo-name">web-shop</span>
+		<span class="repo-branch"><Icon name="branch" size={12} /> main</span>
+	</div>
+	<div class="tabs">
+		{tabs.map((tab, index) => <span class:list={["tab", { "is-on": index === 0 }]}>{tab}</span>)}
+	</div>
+	<ul class="rows">
+		{
+			modules.map((module, index) => (
+				<li class:list={["row", { "is-on": index === 1 }]}>
+					<KindChip kind={module.kind} size={18} />
+					<span class="row-name">{module.name}</span>
+					{module.parts && <span class="row-parts">{module.parts}</span>}
+				</li>
+			))
+		}
+	</ul>
+</aside>
+
+<style>
+	.navigator {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		background: var(--chrome);
+		box-shadow: inset -1px 0 0 var(--rule);
+		padding: 12px 10px 0;
+		gap: 10px;
+	}
+	.find {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		height: 30px;
+		padding: 0 10px;
+		border-radius: 4px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+		color: var(--ink-faint);
+		font-size: 12.5px;
+	}
+	.find kbd {
+		margin-left: auto;
+		font-size: 10.5px;
+		padding: 1px 5px;
+		border-radius: 2px;
+		background: var(--card);
+		box-shadow: var(--shadow-raised);
+		color: var(--ink-muted);
+	}
+	.repo {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		padding: 2px 4px 0;
+	}
+	.repo-name {
+		font-size: 13.5px;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.repo-branch {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--ink-muted);
+	}
+	.tabs {
+		display: flex;
+		gap: 2px;
+		padding: 3px;
+		border-radius: 5px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	.tab {
+		flex: 1 1 auto;
+		padding: 0 3px;
+		text-align: center;
+		font-size: 10.5px;
+		font-weight: 500;
+		line-height: 24px;
+		border-radius: 3px;
+		color: var(--ink-muted);
+	}
+	.tab.is-on {
+		background: var(--raised);
+		color: var(--ink);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 -2px 0 var(--gold-mark);
+	}
+	.rows {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+	}
+	.row {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		height: 30px;
+		padding: 0 8px;
+		border-radius: 3px;
+		font-size: 12.5px;
+		color: var(--ink-body);
+	}
+	.row.is-on {
+		background: var(--raised);
+		color: var(--ink);
+		box-shadow:
+			var(--shadow-raised),
+			inset 2px 0 0 var(--gold-mark);
+	}
+	.row-name {
+		flex: 1;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.row-parts {
+		font-family: var(--font-mono);
+		font-size: 10.5px;
+		color: var(--ink-muted);
+		padding: 0 5px;
+		border-radius: 2px;
+		background: var(--slab);
+		box-shadow: 0 1px 0 oklch(0.215 0.006 75);
+	}
+</style>

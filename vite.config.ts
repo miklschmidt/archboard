@@ -262,7 +262,17 @@ export default defineConfig({
 				command: "vp fmt --config vite.config.ts --check",
 				cache: {
 					...analysisCache,
-					input: [...testCache.input, ".prettierignore", ".vscode/**", ".impeccable/**/*.json"],
+					input: [
+						...testCache.input,
+						".prettierignore",
+						".vscode/**",
+						".impeccable/**/*.json",
+						// The marketing site is its own project, but the format check reads its sources.
+						"site/**",
+						"!site/node_modules/**",
+						"!site/dist/**",
+						"!site/.astro/**",
+					],
 				},
 			},
 			"lint:tests": {
@@ -436,6 +446,7 @@ export default defineConfig({
 	fmt: {
 		ignorePatterns: [
 			".archboard/vault/**",
+			"site/model/**",
 			"examples/**/*.semantic.json",
 			"examples/web-shop/**/*.json",
 			"examples/web-shop/.archboard/config.yaml",

@@ -1,0 +1,173 @@
+---
+import Icon from "./Icon.astro";
+import DockLines from "./window/DockLines.astro";
+import ProductWindow from "./window/ProductWindow.astro";
+import { links } from "../lib/links";
+---
+
+<section class="hero" id="top" aria-labelledby="hero-title">
+	<div class="stage">
+		<canvas class="table" data-table aria-hidden="true"></canvas>
+		<div class="container hero-copy" data-words>
+			<h1 id="hero-title" class="display h1">Understand the code <br />your agents write.</h1>
+			<div class="hero-row">
+				<p class="lead">
+					Plan the next change with your agent on a map of the system, before it writes a line. Then
+					follow any feature into the code, and see every place where the map and the code disagree.
+				</p>
+				<div class="hero-actions">
+					<a class="btn btn-gold" href="#quick-start">Get started <Icon name="arrowRight" /></a>
+					<a class="btn btn-quiet" href={links.repository}><Icon name="github" /> View on GitHub</a>
+				</div>
+			</div>
+			<ul class="facts" aria-label="What it runs with">
+				<li>For Claude Code and Codex</li>
+				<li>Linux and macOS</li>
+				<li>Runs locally from a clone</li>
+				<li>Source-available</li>
+			</ul>
+		</div>
+		<div class="room"></div>
+	</div>
+	<div class="container hero-window" data-hero-playback data-loop>
+		<ProductWindow />
+		<div class="dock-mirror" aria-hidden="true">
+			<DockLines />
+		</div>
+		<p class="caption window-caption">
+			A mock of the Archboard window around a real drawing of the example shop. Nobody placed a box:
+			the renderer drew every card and line. The commands are the real CLI.
+		</p>
+	</div>
+</section>
+
+<style>
+	.hero {
+		position: relative;
+		isolation: isolate;
+	}
+	/* The first screen holds the words and the table in the room below them. A short screen
+	   keeps the room the table needs, so the table runs on below the fold; the window follows. */
+	.stage {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		min-height: calc(100svh - 64px);
+		padding-top: clamp(48px, 7vw, 96px);
+	}
+	.room {
+		flex: 1 0 clamp(280px, 40vw + 120px, 400px);
+	}
+	/* The table lies under the bar as well, from the top of the page to the foot of the stage. */
+	.table {
+		position: absolute;
+		top: -64px;
+		left: 0;
+		width: 100%;
+		height: calc(100% + 64px);
+		z-index: -1;
+		mask-image: linear-gradient(180deg, black 90%, transparent 100%);
+	}
+	.hero-copy {
+		display: flex;
+		flex-direction: column;
+		gap: clamp(24px, 3vw, 36px);
+	}
+	.h1 {
+		font-size: clamp(3.4rem, 10.5vw, 6rem);
+		font-weight: 800;
+		max-width: 20ch;
+		text-wrap: balance;
+	}
+	.hero-row {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 28px;
+	}
+	.hero-row .lead {
+		max-width: 30em;
+	}
+	.hero-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12px;
+	}
+	.facts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px 28px;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		font-size: 0.9375rem;
+		color: var(--ink-muted);
+	}
+	.facts li {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.facts li::before {
+		content: "";
+		width: 6px;
+		height: 6px;
+		border-radius: 1px;
+		background: var(--gold-mark);
+		box-shadow: 0 0 10px oklch(0.86 0.125 86 / 0.6);
+	}
+	.hero-window {
+		margin-top: clamp(40px, 5vw, 72px);
+	}
+	.dock-mirror {
+		display: none;
+	}
+	.window-caption {
+		margin-top: 20px;
+		max-width: 52em;
+	}
+	@media (max-width: 760px) {
+		.h1 br {
+			display: none;
+		}
+		.dock-mirror {
+			display: block;
+			margin-top: 16px;
+			padding: 16px;
+			border-radius: var(--radius-panel);
+			background: var(--plane);
+			box-shadow:
+				var(--shadow-float),
+				inset 0 0 0 1px var(--rule);
+		}
+		.dock-mirror :global(.dock-lines) {
+			font-size: 14px;
+		}
+		.dock-mirror :global(.line.is-command),
+		.dock-mirror :global(.line.is-reply) {
+			font-size: 12.5px;
+		}
+	}
+</style>
+
+<script>
+	import { lightTable } from "../scripts/hero/table";
+	const canvas = document.querySelector<HTMLCanvasElement>("[data-table]");
+	if (canvas) {
+		// The painter and its painting load once the page is idle, and the picture arrives on the
+		// table when they are ready.
+		const idle = new Promise<void>((done) => {
+			if ("requestIdleCallback" in window) requestIdleCallback(() => done(), { timeout: 900 });
+			else setTimeout(done, 200);
+		});
+		const words = document.querySelector<HTMLElement>("[data-words]");
+		lightTable(
+			canvas,
+			(parts) =>
+				idle
+					.then(() => import("../scripts/hero/picture"))
+					.then(({ paintPicture }) => paintPicture(parts())),
+			words,
+		);
+	}
+</script>

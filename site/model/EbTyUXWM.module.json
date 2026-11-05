@@ -1,0 +1,34 @@
+{
+  "order": 10,
+  "name": "Claude Code",
+  "kind": "agent",
+  "responsibility": "Reads your code and states what the system is",
+  "schemaVersion": 1,
+  "id": "q9TUBeZT#EbTyUXWM",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "states meaning",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "q9TUBeZT#dLvlA446",
+      "to": "q9TUBeZT#jOiYJByJ"
+    },
+    {
+      "order": 30,
+      "kind": "data",
+      "label": "writes",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "q9TUBeZT#Srnr3SvD",
+      "to": "q9TUBeZT#1G8NR5HF"
+    }
+  ]
+}

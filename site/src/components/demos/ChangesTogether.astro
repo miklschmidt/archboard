@@ -1,0 +1,137 @@
+---
+// Modules of Archboard's own model that change in the same commits, from `archboard model
+// locality` over a year of this repository's history. Unjoined pairs have no authored
+// relationship between them.
+import Icon from "../Icon.astro";
+
+const pairs = [
+	{ a: "workbench", b: "codex-realtime-voice", shared: 293, degree: 80, unjoined: false },
+	{ a: "Report", b: "Comparison", shared: 8, degree: 76, unjoined: false },
+	{ a: "Fetch semantic reads", b: "Semantic queries", shared: 8, degree: 61, unjoined: true },
+	{ a: "code-binding", b: "code-opener", shared: 16, degree: 55, unjoined: false },
+	{ a: "Walkthrough recording", b: "Talk contract", shared: 5, degree: 52, unjoined: true },
+	{ a: "Voice agent backend", b: "Host wiring", shared: 35, degree: 43, unjoined: true },
+];
+---
+
+<div class="together table">
+	<div class="head">
+		<p class="title"><Icon name="commit" size={16} /> Changes together</p>
+		<p class="note mono">2320 commits, 66 coupled pairs</p>
+	</div>
+	<ol class="pairs">
+		{
+			pairs.map((pair) => (
+				<li class:list={["pair", { unjoined: pair.unjoined }]} style={`--d: ${pair.degree / 100}`}>
+					<span class="names">
+						<span class="ink">{pair.a}</span>
+						<span class="link" aria-hidden="true" />
+						<span class="ink">{pair.b}</span>
+					</span>
+					<span class="stats">
+						{pair.unjoined && <span class="chip unjoined-chip">Unjoined</span>}
+						<span class="mono">{pair.shared} shared</span>
+						<span class="degree mono">{pair.degree}%</span>
+					</span>
+					<span class="meter" aria-hidden="true" />
+				</li>
+			))
+		}
+	</ol>
+</div>
+
+<style>
+	.together {
+		padding: 6px;
+		background: var(--chrome);
+	}
+	.head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 12px 14px 14px;
+	}
+	.title {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		font-weight: 600;
+		font-size: 0.9375rem;
+		color: var(--ink);
+	}
+	.note {
+		font-size: 0.75rem;
+		color: var(--ink-muted);
+	}
+	.pairs {
+		list-style: none;
+		margin: 0;
+		padding: 6px;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		border-radius: 6px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	.pair {
+		position: relative;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 6px 16px;
+		padding: 11px 14px 14px;
+		border-radius: 4px;
+		background: var(--plane);
+		font-size: 0.875rem;
+		overflow: hidden;
+	}
+	.names {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		flex-wrap: wrap;
+	}
+	.link {
+		width: 22px;
+		height: 0;
+		border-top: 2px solid var(--diagram-edge, var(--ink-faint));
+	}
+	.unjoined .link {
+		border-top: 2px dashed var(--changed);
+	}
+	.stats {
+		display: inline-flex;
+		align-items: center;
+		gap: 12px;
+		color: var(--ink-muted);
+	}
+	.stats .mono {
+		font-size: 0.75rem;
+	}
+	.degree {
+		color: var(--ink);
+		min-width: 3.5ch;
+		text-align: right;
+	}
+	.unjoined-chip {
+		height: 20px;
+		color: var(--changed-text);
+		background: color-mix(in oklch, var(--changed) 14%, transparent);
+		box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--changed) 40%, transparent);
+	}
+	.meter {
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		height: 2px;
+		width: calc(var(--d) * 100%);
+		background: linear-gradient(90deg, transparent, var(--gold-mark));
+		opacity: 0.8;
+	}
+	.unjoined .meter {
+		background: linear-gradient(90deg, transparent, var(--changed));
+	}
+</style>

@@ -1,0 +1,52 @@
+---
+// A chapter of the page: a title in tall capitals, a lead, and what demonstrates it.
+interface Props {
+	id: string;
+	title: string;
+	class?: string;
+}
+
+const { id, title, class: className } = Astro.props;
+const headingId = `${id}-title`;
+---
+
+<section class:list={["section", className]} id={id} aria-labelledby={headingId}>
+	<div class="container">
+		<header class="section-head" data-reveal>
+			<h2 id={headingId} class="display h2" set:html={title} />
+			<div class="section-lead"><slot name="lead" /></div>
+		</header>
+		<slot />
+	</div>
+</section>
+
+<style>
+	.section {
+		position: relative;
+		padding-top: var(--section-space);
+	}
+	.section-head {
+		display: grid;
+		grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+		align-items: end;
+		gap: 24px 64px;
+		margin-bottom: clamp(48px, 6vw, 80px);
+	}
+	.section-head :global(.h2) {
+		max-width: 14ch;
+	}
+	.section-lead :global(p) {
+		font-size: clamp(1.0625rem, 1.4vw, 1.1875rem);
+		line-height: 1.6;
+		color: var(--ink-body);
+		text-wrap: pretty;
+	}
+	.section-lead :global(p + p) {
+		margin-top: 0.8em;
+	}
+	@media (max-width: 900px) {
+		.section-head {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>

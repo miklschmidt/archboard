@@ -1,0 +1,209 @@
+---
+// Where Archboard fits, job by job, planning first: what people use for each job today, from each
+// vendor's public pages as of November 2026, and what Archboard does for the same job. On a phone
+// each row becomes a block.
+const rows: { job: string; others: string; archboard: string }[] = [
+	{
+		job: "Planning a change before your agent writes it",
+		others: "Plan mode in your agent, or a design doc. The plan is prose, and nothing holds the code to it.",
+		archboard: "Your agent drafts the change as a proposal on the map of what exists, or two options side by side. You choose before any code exists, and the footprint shows whether the branch stayed inside the plan.",
+	},
+	{
+		job: "Reviewing a change",
+		others: "Read the diff, or an agent's summary of the pull request.",
+		archboard: "Review the plan, not only the diff. The proposal draws the change against current architecture, and adopting it records the reason and keeps the old architecture as an exact checkpoint.",
+	},
+	{
+		job: "Checking the map against the code",
+		others: "Read the code yourself, or ask an agent to look again.",
+		archboard: "The code check finds broken bindings, relationships drawn backwards and calls the model leaves out, and says which it resolved and which it matched only by name.",
+	},
+	{
+		job: "A first look at an unfamiliar repository",
+		others: "Ask your agent, or open DeepWiki or GitDiagram, and start over next session.",
+		archboard: "Your agent writes the map into the repository once, and every later session starts from it.",
+	},
+	{
+		job: "Finding your way in the editor",
+		others: "Windsurf Codemaps, or a code graph such as GitNexus, maps calls and files where you work.",
+		archboard: "The model holds responsibilities: services, stores and the routes between them, each bound to its file or symbol.",
+	},
+	{
+		job: "Diagrams for docs and pull requests",
+		others: "Mermaid or D2 in Markdown, redrawn by hand when the system moves.",
+		archboard: "Every drawing comes from the one model, and tracked embeds never go stale: one command redraws every drawing a change touched.",
+	},
+	{
+		job: "A shared architecture practice",
+		others: "IcePanel, Structurizr, LikeC4 or CodeViz, in a tool of their own.",
+		archboard: "The model is files in your repository, written by your agent through the CLI, with proposals, reasons and checkpoints. It runs locally.",
+	},
+];
+---
+
+<div class="compare table" data-reveal>
+	<div class="scroll">
+		<table>
+			<caption class="sr-only">Where Archboard fits, job by job, next to what people use today</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="row-head">The job</th>
+					<th scope="col">What people use today</th>
+					<th scope="col" class="ours">With Archboard</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					rows.map((row) => (
+						<tr>
+							<th scope="row" class="row-head">{row.job}</th>
+							<td data-label="What people use today">{row.others}</td>
+							<td class="ours" data-label="With Archboard">{row.archboard}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</div>
+	<p class="caption foot">
+		Other tools as their public pages describe them in November 2026.
+	</p>
+</div>
+
+<style>
+	.compare {
+		padding: 6px;
+		background: var(--chrome);
+	}
+	.scroll {
+		overflow-x: auto;
+		border-radius: 6px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	table {
+		width: 100%;
+		min-width: 760px;
+		table-layout: fixed;
+		border-collapse: separate;
+		border-spacing: 0;
+		font-size: 0.875rem;
+		line-height: 1.45;
+	}
+	th,
+	td {
+		padding: 14px 16px;
+		text-align: left;
+		vertical-align: top;
+	}
+	thead th {
+		position: sticky;
+		top: 0;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--ink-muted);
+		background: var(--well);
+		box-shadow: inset 0 -1px 0 var(--rule);
+		white-space: nowrap;
+	}
+	thead th.ours {
+		width: 42%;
+		color: var(--ink);
+	}
+	tbody tr + tr > * {
+		box-shadow: inset 0 1px 0 oklch(1 0.01 85 / 0.05);
+	}
+	.row-head {
+		position: sticky;
+		left: 0;
+		z-index: 1;
+		width: 22%;
+		background: var(--well);
+		font-weight: 500;
+		color: var(--ink);
+	}
+	td {
+		color: var(--ink-body);
+	}
+	.ours {
+		background: color-mix(in oklch, var(--gold-mark) 6%, var(--plane));
+	}
+	thead .ours {
+		background: color-mix(in oklch, var(--gold-mark) 9%, var(--plane));
+		box-shadow:
+			inset 0 -1px 0 var(--rule),
+			inset 0 2px 0 var(--gold-mark);
+	}
+	td.ours {
+		color: var(--ink);
+	}
+	.foot {
+		padding: 14px 10px 6px;
+		max-width: 60em;
+	}
+	@media (max-width: 760px) {
+		.scroll {
+			overflow: visible;
+			background: none;
+			box-shadow: none;
+		}
+		table,
+		tbody,
+		tr,
+		th,
+		td {
+			display: block;
+		}
+		table {
+			min-width: 0;
+		}
+		thead {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+		}
+		tbody {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+		}
+		tr {
+			padding: 14px 14px 10px;
+			border-radius: 6px;
+			background: var(--well);
+			box-shadow: var(--shadow-well);
+		}
+		tbody tr + tr > * {
+			box-shadow: none;
+		}
+		.row-head {
+			position: static;
+			width: auto;
+			min-width: 0;
+			padding: 0 0 8px;
+			background: none;
+			font-weight: 600;
+		}
+		td {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr);
+			gap: 2px;
+			padding: 6px 0;
+		}
+		td::before {
+			content: attr(data-label);
+			font-size: 0.8125rem;
+			color: var(--ink-muted);
+		}
+		td.ours {
+			margin: 2px -8px;
+			padding: 6px 8px;
+			border-radius: 4px;
+		}
+		td.ours::before {
+			color: var(--gold-mark);
+		}
+	}
+</style>

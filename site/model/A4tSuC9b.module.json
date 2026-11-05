@@ -1,0 +1,23 @@
+{
+  "order": 62,
+  "name": "Painter",
+  "kind": "engine",
+  "responsibility": "Draws each picture on the GPU",
+  "schemaVersion": 1,
+  "id": "q9TUBeZT#A4tSuC9b",
+  "parent": "q9TUBeZT#CXLlEMBM",
+  "outgoing": [
+    {
+      "order": 140,
+      "kind": "render",
+      "label": "draws",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "q9TUBeZT#VPPvCpbW",
+      "to": "q9TUBeZT#WTZjpPZH"
+    }
+  ]
+}

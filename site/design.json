@@ -1,0 +1,630 @@
+{
+	"schemaVersion": 2,
+	"generatedAt": "2026-11-04T16:58:07Z",
+	"title": "Design System: Archboard site",
+	"extensions": {
+		"colorMeta": {
+			"ground": {
+				"role": "neutral",
+				"displayName": "Night Floor",
+				"canonical": "oklch(0.135 0.005 75)",
+				"tonalRamp": [
+					"oklch(0.135 0.005 75)",
+					"oklch(0.165 0.005 75)",
+					"oklch(0.2 0.006 75)",
+					"oklch(0.235 0.007 75)",
+					"oklch(0.255 0.008 78)",
+					"oklch(0.31 0.007 75)",
+					"oklch(0.5 0.008 75)",
+					"oklch(0.7 0.008 80)"
+				]
+			},
+			"plane": {
+				"role": "neutral",
+				"displayName": "Plane",
+				"canonical": "oklch(0.2 0.006 75)",
+				"tonalRamp": [
+					"oklch(0.2 0.006 75)",
+					"oklch(0.32 0.006 75)",
+					"oklch(0.44 0.006 75)",
+					"oklch(0.56 0.006 75)",
+					"oklch(0.68 0.006 75)",
+					"oklch(0.8 0.006 75)",
+					"oklch(0.88 0.006 75)",
+					"oklch(0.95 0.006 75)"
+				]
+			},
+			"raised": {
+				"role": "neutral",
+				"displayName": "Raised Face",
+				"canonical": "oklch(0.255 0.008 78)",
+				"tonalRamp": [
+					"oklch(0.2 0.008 78)",
+					"oklch(0.32 0.008 78)",
+					"oklch(0.44 0.008 78)",
+					"oklch(0.56 0.008 78)",
+					"oklch(0.68 0.008 78)",
+					"oklch(0.8 0.008 78)",
+					"oklch(0.88 0.008 78)",
+					"oklch(0.95 0.008 78)"
+				]
+			},
+			"ink": {
+				"role": "neutral",
+				"displayName": "Ink",
+				"canonical": "oklch(0.955 0.006 90)",
+				"tonalRamp": [
+					"oklch(0.2 0.006 90)",
+					"oklch(0.32 0.006 90)",
+					"oklch(0.44 0.006 90)",
+					"oklch(0.56 0.006 90)",
+					"oklch(0.68 0.006 90)",
+					"oklch(0.8 0.006 90)",
+					"oklch(0.88 0.006 90)",
+					"oklch(0.95 0.006 90)"
+				]
+			},
+			"ink-body": {
+				"role": "neutral",
+				"displayName": "Body Ink",
+				"canonical": "oklch(0.86 0.008 85)",
+				"tonalRamp": [
+					"oklch(0.2 0.008 85)",
+					"oklch(0.32 0.008 85)",
+					"oklch(0.44 0.008 85)",
+					"oklch(0.56 0.008 85)",
+					"oklch(0.68 0.008 85)",
+					"oklch(0.8 0.008 85)",
+					"oklch(0.88 0.008 85)",
+					"oklch(0.95 0.008 85)"
+				]
+			},
+			"ink-muted": {
+				"role": "neutral",
+				"displayName": "Muted Ink",
+				"canonical": "oklch(0.78 0.008 85)",
+				"tonalRamp": [
+					"oklch(0.2 0.008 85)",
+					"oklch(0.32 0.008 85)",
+					"oklch(0.44 0.008 85)",
+					"oklch(0.56 0.008 85)",
+					"oklch(0.68 0.008 85)",
+					"oklch(0.8 0.008 85)",
+					"oklch(0.88 0.008 85)",
+					"oklch(0.95 0.008 85)"
+				]
+			},
+			"ink-faint": {
+				"role": "neutral",
+				"displayName": "Faint Ink",
+				"canonical": "oklch(0.62 0.01 80)",
+				"tonalRamp": [
+					"oklch(0.2 0.01 80)",
+					"oklch(0.32 0.01 80)",
+					"oklch(0.44 0.01 80)",
+					"oklch(0.56 0.01 80)",
+					"oklch(0.68 0.01 80)",
+					"oklch(0.8 0.01 80)",
+					"oklch(0.88 0.01 80)",
+					"oklch(0.95 0.01 80)"
+				]
+			},
+			"gold": {
+				"role": "primary",
+				"displayName": "Drafting Gold",
+				"canonical": "oklch(0.831 0.134 84.5)",
+				"tonalRamp": [
+					"oklch(0.3 0.06 80)",
+					"oklch(0.58 0.11 74)",
+					"oklch(0.72 0.13 75)",
+					"oklch(0.8 0.142 81)",
+					"oklch(0.831 0.134 84.5)",
+					"oklch(0.86 0.125 86)",
+					"oklch(0.89 0.105 90)",
+					"oklch(0.95 0.06 92)"
+				]
+			},
+			"gold-mark": {
+				"role": "primary",
+				"displayName": "Lamp Gold",
+				"canonical": "oklch(0.86 0.125 86)",
+				"tonalRamp": [
+					"oklch(0.2 0.125 86)",
+					"oklch(0.32 0.125 86)",
+					"oklch(0.44 0.125 86)",
+					"oklch(0.56 0.125 86)",
+					"oklch(0.68 0.125 86)",
+					"oklch(0.8 0.125 86)",
+					"oklch(0.88 0.125 86)",
+					"oklch(0.95 0.125 86)"
+				]
+			},
+			"live": {
+				"role": "secondary",
+				"displayName": "Live Lime",
+				"canonical": "oklch(0.849 0.207 128.8)",
+				"tonalRamp": [
+					"oklch(0.2 0.207 128.8)",
+					"oklch(0.32 0.207 128.8)",
+					"oklch(0.44 0.207 128.8)",
+					"oklch(0.56 0.207 128.8)",
+					"oklch(0.68 0.207 128.8)",
+					"oklch(0.8 0.207 128.8)",
+					"oklch(0.88 0.207 128.8)",
+					"oklch(0.95 0.207 128.8)"
+				]
+			},
+			"added": {
+				"role": "secondary",
+				"displayName": "Added Green",
+				"canonical": "oklch(0.792 0.209 151.711)",
+				"tonalRamp": [
+					"oklch(0.2 0.209 151.711)",
+					"oklch(0.32 0.209 151.711)",
+					"oklch(0.44 0.209 151.711)",
+					"oklch(0.56 0.209 151.711)",
+					"oklch(0.68 0.209 151.711)",
+					"oklch(0.8 0.209 151.711)",
+					"oklch(0.88 0.209 151.711)",
+					"oklch(0.95 0.209 151.711)"
+				]
+			},
+			"changed": {
+				"role": "secondary",
+				"displayName": "Changed Orange",
+				"canonical": "oklch(0.77 0.17 52)",
+				"tonalRamp": [
+					"oklch(0.2 0.17 52)",
+					"oklch(0.32 0.17 52)",
+					"oklch(0.44 0.17 52)",
+					"oklch(0.56 0.17 52)",
+					"oklch(0.68 0.17 52)",
+					"oklch(0.8 0.17 52)",
+					"oklch(0.88 0.17 52)",
+					"oklch(0.95 0.17 52)"
+				]
+			},
+			"removed": {
+				"role": "secondary",
+				"displayName": "Removed Red",
+				"canonical": "oklch(0.76 0.16 22)",
+				"tonalRamp": [
+					"oklch(0.2 0.16 22)",
+					"oklch(0.32 0.16 22)",
+					"oklch(0.44 0.16 22)",
+					"oklch(0.56 0.16 22)",
+					"oklch(0.68 0.16 22)",
+					"oklch(0.8 0.16 22)",
+					"oklch(0.88 0.16 22)",
+					"oklch(0.95 0.16 22)"
+				]
+			},
+			"sky": {
+				"role": "tertiary",
+				"displayName": "Sky",
+				"canonical": "oklch(0.7535 0.139 232.66)",
+				"tonalRamp": [
+					"oklch(0.2 0.139 232.66)",
+					"oklch(0.32 0.139 232.66)",
+					"oklch(0.44 0.139 232.66)",
+					"oklch(0.56 0.139 232.66)",
+					"oklch(0.68 0.139 232.66)",
+					"oklch(0.8 0.139 232.66)",
+					"oklch(0.88 0.139 232.66)",
+					"oklch(0.95 0.139 232.66)"
+				]
+			},
+			"violet": {
+				"role": "tertiary",
+				"displayName": "Violet",
+				"canonical": "oklch(0.709 0.159 293.5)",
+				"tonalRamp": [
+					"oklch(0.2 0.159 293.5)",
+					"oklch(0.32 0.159 293.5)",
+					"oklch(0.44 0.159 293.5)",
+					"oklch(0.56 0.159 293.5)",
+					"oklch(0.68 0.159 293.5)",
+					"oklch(0.8 0.159 293.5)",
+					"oklch(0.88 0.159 293.5)",
+					"oklch(0.95 0.159 293.5)"
+				]
+			}
+		},
+		"typographyMeta": {
+			"display": {
+				"displayName": "Display",
+				"purpose": "The hero line only, in display capitals."
+			},
+			"headline": {
+				"displayName": "Headline",
+				"purpose": "Each section head, in display capitals, two or three lines."
+			},
+			"claim": {
+				"displayName": "Claim",
+				"purpose": "A capability's name, in display capitals, between the section head and the prose."
+			},
+			"wordmark": {
+				"displayName": "Wordmark",
+				"purpose": "The brand name beside the mark."
+			},
+			"title": {
+				"displayName": "Title",
+				"purpose": "A step head in the quick start, in Onest."
+			},
+			"lead": {
+				"displayName": "Lead",
+				"purpose": "The line under a head that says what the region does."
+			},
+			"body": {
+				"displayName": "Body",
+				"purpose": "Prose, capped near 36em."
+			},
+			"small": {
+				"displayName": "Small",
+				"purpose": "Notes inside a demonstration."
+			},
+			"caption": {
+				"displayName": "Caption",
+				"purpose": "The note under a demonstration, in muted ink."
+			},
+			"label": {
+				"displayName": "Label",
+				"purpose": "Button text."
+			},
+			"chip-label": {
+				"displayName": "Chip label",
+				"purpose": "The words in a chip."
+			},
+			"mono": {
+				"displayName": "Mono",
+				"purpose": "Commands, paths, counts and code."
+			}
+		},
+		"shadows": [
+			{
+				"name": "raised",
+				"value": "inset 0 1px 0 oklch(1 0.01 85 / 0.09), 0 1px 0 oklch(0.06 0.004 75 / 0.7), 0 2px 6px -1px oklch(0.06 0.006 75 / 0.5)",
+				"purpose": "A control's face and a selected tab."
+			},
+			{
+				"name": "float",
+				"value": "inset 0 1px 0 oklch(1 0.01 85 / 0.09), 0 1px 1px oklch(0.06 0.004 75 / 0.6), 0 12px 24px -8px oklch(0.06 0.006 75 / 0.6), 0 32px 64px -24px oklch(0.06 0.006 75 / 0.7)",
+				"purpose": "A step card, an open FAQ item."
+			},
+			{
+				"name": "table",
+				"value": "inset 0 1px 0 oklch(1 0.01 85 / 0.09), 0 2px 0 oklch(0.06 0.004 75 / 0.6), 0 24px 48px -16px oklch(0.06 0.006 75 / 0.75), 0 64px 120px -48px oklch(0.04 0.006 75 / 0.9)",
+				"purpose": "The plane every demonstration lies on."
+			},
+			{
+				"name": "well",
+				"value": "inset 0 2px 4px oklch(0.04 0.004 75 / 0.6), inset 0 -1px 0 oklch(1 0.01 85 / 0.09)",
+				"purpose": "A recessed trough for tabs, rails and tables, and a pressed quiet button."
+			},
+			{
+				"name": "hairline-ring",
+				"value": "inset 0 0 0 1px oklch(1 0.01 85 / 0.09)",
+				"purpose": "The edge of every plane, in place of a border."
+			},
+			{
+				"name": "gold-button",
+				"value": "inset 0 1px 0 oklch(1 0.02 90 / 0.55), inset 0 0 0 1px oklch(0.58 0.11 74), 0 1px 0 oklch(0.06 0.004 75 / 0.8), 0 6px 16px -6px oklch(0.55 0.12 75 / 0.55)",
+				"purpose": "The primary button at rest."
+			},
+			{
+				"name": "gold-button-hover",
+				"value": "inset 0 1px 0 oklch(1 0.02 90 / 0.6), inset 0 0 0 1px oklch(0.58 0.11 74), 0 2px 0 oklch(0.06 0.004 75 / 0.8), 0 12px 28px -8px oklch(0.6 0.13 78 / 0.6)",
+				"purpose": "The primary button lifted 1px on hover."
+			},
+			{
+				"name": "gold-button-active",
+				"value": "inset 0 2px 3px oklch(0.45 0.1 70 / 0.6), inset 0 0 0 1px oklch(0.58 0.11 74)",
+				"purpose": "The primary button sunk 1px on press."
+			},
+			{
+				"name": "mock-window",
+				"value": "inset 0 1px 0 oklch(1 0.01 85 / 0.12), inset 0 0 0 1px oklch(1 0.01 85 / 0.15), 0 2px 0 oklch(0.06 0.004 75 / 0.6), 0 40px 80px -24px oklch(0.03 0.004 75 / 0.85), 0 100px 160px -40px oklch(0.03 0.004 75 / 0.9)",
+				"purpose": "The hero window, which stands higher than any table."
+			},
+			{
+				"name": "nav-stuck",
+				"value": "inset 0 -1px 0 oklch(1 0.01 85 / 0.09), 0 10px 24px -12px oklch(0.04 0.006 75 / 0.8)",
+				"purpose": "The nav bar after the page scrolls 8px."
+			},
+			{
+				"name": "marker-glow",
+				"value": "0 0 10px oklch(0.86 0.125 86 / 0.6)",
+				"purpose": "A small gold square or dot that glows."
+			}
+		],
+		"motion": [
+			{
+				"name": "ease-out",
+				"value": "cubic-bezier(0.16, 1, 0.3, 1)",
+				"purpose": "Default curve for state changes, lands and reveals."
+			},
+			{
+				"name": "ease-in-out",
+				"value": "cubic-bezier(0.65, 0, 0.35, 1)",
+				"purpose": "Curve for sweeps, clip reveals and pulses that go both ways."
+			},
+			{
+				"name": "control",
+				"value": "160ms",
+				"purpose": "Buttons, tabs and links change state in 160ms."
+			},
+			{
+				"name": "surface",
+				"value": "200ms to 240ms",
+				"purpose": "FAQ items, the stuck nav and tab fills settle in this time."
+			},
+			{
+				"name": "scene",
+				"value": "420ms to 520ms",
+				"purpose": "A panel arrives, a view switches or a card lands."
+			},
+			{
+				"name": "reveal",
+				"value": "800ms to 1000ms",
+				"purpose": "A block rises from transparent and 32px low, once, when its top clears the bottom 15% of the view."
+			},
+			{
+				"name": "sweep",
+				"value": "900ms",
+				"purpose": "The proposal switch's light beam and clip reveal."
+			},
+			{
+				"name": "canvas-fade",
+				"value": "1600ms",
+				"purpose": "A shader canvas fades in after its first frame."
+			},
+			{
+				"name": "type-step",
+				"value": "14ms per character",
+				"purpose": "The hero agent line types out."
+			},
+			{
+				"name": "entrance",
+				"value": "PICTURE_MS.entry, 760ms",
+				"purpose": "The product's painter brings the hero window's shop in as the app brings in a model."
+			},
+			{
+				"name": "autoplay",
+				"value": "4200ms",
+				"purpose": "The proposal switch alternates while it is on screen and untouched."
+			},
+			{
+				"name": "reduced",
+				"value": "0.01ms, one iteration",
+				"purpose": "Under prefers-reduced-motion: reduce every CSS animation and transition collapses to this."
+			}
+		],
+		"breakpoints": [
+			{
+				"name": "pipeline-and-quick-start-stack",
+				"value": "1000px"
+			},
+			{
+				"name": "features-and-player-stack",
+				"value": "960px"
+			},
+			{
+				"name": "section-heads-and-tab-bars-stack",
+				"value": "900px"
+			},
+			{
+				"name": "nav-links-hide",
+				"value": "860px"
+			},
+			{
+				"name": "hero-window-canvas-only",
+				"value": "760px"
+			},
+			{
+				"name": "take-back-stacks",
+				"value": "720px"
+			},
+			{
+				"name": "github-label-hides",
+				"value": "420px"
+			},
+			{
+				"name": "container-content",
+				"value": "1240px"
+			}
+		]
+	},
+	"components": [
+		{
+			"name": "Gold Button",
+			"kind": "button",
+			"refersTo": "button-gold",
+			"description": "The one primary action of a region, as a physical piece of gold.",
+			"html": "<button class=\"ds-btn-gold\" type=\"button\">Get started <svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z\"/></svg></button>",
+			"css": ".ds-btn-gold { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 44px; padding: 0 20px; border: 0; border-radius: var(--radius-control); font: 600 0.9375rem/1 var(--font-body); letter-spacing: -0.005em; color: var(--gold-ink); background: linear-gradient(180deg, var(--gold-top), var(--gold-bottom)); box-shadow: inset 0 1px 0 oklch(1 0.02 90 / 0.55), inset 0 0 0 1px var(--gold-edge), 0 1px 0 oklch(0.06 0.004 75 / 0.8), 0 6px 16px -6px oklch(0.55 0.12 75 / 0.55); cursor: pointer; transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out); } .ds-btn-gold:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 oklch(1 0.02 90 / 0.6), inset 0 0 0 1px var(--gold-edge), 0 2px 0 oklch(0.06 0.004 75 / 0.8), 0 12px 28px -8px oklch(0.6 0.13 78 / 0.6); } .ds-btn-gold:active { transform: translateY(1px); box-shadow: inset 0 2px 3px oklch(0.45 0.1 70 / 0.6), inset 0 0 0 1px var(--gold-edge); } .ds-btn-gold:focus-visible { outline: 2px solid var(--gold-mark); outline-offset: 3px; }"
+		},
+		{
+			"name": "Quiet Button",
+			"kind": "button",
+			"refersTo": "button-quiet",
+			"description": "A raised plane that sits beside a gold button as the second action.",
+			"html": "<button class=\"ds-btn-quiet\" type=\"button\">View on GitHub</button>",
+			"css": ".ds-btn-quiet { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 20px; border: 0; border-radius: var(--radius-control); font: 600 0.9375rem/1 var(--font-body); letter-spacing: -0.005em; color: var(--ink); background: var(--raised); box-shadow: inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.06 0.004 75 / 0.7), 0 2px 6px -1px oklch(0.06 0.006 75 / 0.5), inset 0 0 0 1px var(--rule); cursor: pointer; transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out); } .ds-btn-quiet:hover { background: var(--slab); transform: translateY(-1px); } .ds-btn-quiet:active { transform: translateY(1px); box-shadow: inset 0 2px 4px oklch(0.04 0.004 75 / 0.6), inset 0 -1px 0 var(--highlight); } .ds-btn-quiet:focus-visible { outline: 2px solid var(--gold-mark); outline-offset: 3px; }"
+		},
+		{
+			"name": "Segmented Tabs",
+			"kind": "custom",
+			"refersTo": "tab-selected",
+			"description": "A well trough of choices. The selected choice rises to a raised face with a 2px gold underline.",
+			"html": "<div class=\"ds-tabs\" role=\"group\"><button class=\"ds-tab\" type=\"button\" aria-pressed=\"false\">Today</button><button class=\"ds-tab\" type=\"button\" aria-pressed=\"true\">Queued fulfilment</button></div>",
+			"css": ".ds-tabs { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--radius-panel); background: var(--well); box-shadow: inset 0 2px 4px oklch(0.04 0.004 75 / 0.6), inset 0 -1px 0 var(--highlight); } .ds-tab { height: 32px; padding: 0 14px; border: 0; border-radius: var(--radius-control); background: transparent; font: 600 0.875rem/1 var(--font-body); color: var(--ink-muted); cursor: pointer; transition: color 160ms var(--ease-out), background-color 160ms var(--ease-out); } .ds-tab:hover { color: var(--ink); } .ds-tab[aria-pressed='true'] { background: var(--raised); color: var(--ink); box-shadow: inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.06 0.004 75 / 0.7), 0 2px 6px -1px oklch(0.06 0.006 75 / 0.5), inset 0 -2px 0 var(--gold-mark); } .ds-tab:focus-visible { outline: 2px solid var(--gold-mark); outline-offset: 3px; }"
+		},
+		{
+			"name": "Lit Table",
+			"kind": "card",
+			"refersTo": "table",
+			"description": "The plane a demonstration lies on, in a chrome tray with a plane stage inside.",
+			"html": "<div class=\"ds-table\"><div class=\"ds-stage\"><p class=\"ds-stage-note\">A real renderer drawing lies here.</p></div></div>",
+			"css": ".ds-table { padding: 6px; border-radius: var(--radius-table); background: var(--chrome); box-shadow: inset 0 1px 0 var(--highlight), 0 2px 0 oklch(0.06 0.004 75 / 0.6), 0 24px 48px -16px oklch(0.06 0.006 75 / 0.75), 0 64px 120px -48px oklch(0.04 0.006 75 / 0.9), inset 0 0 0 1px var(--rule); } .ds-stage { display: grid; place-items: center; min-height: 160px; border-radius: var(--radius-panel); background: var(--plane); box-shadow: inset 0 0 0 1px var(--rule); } .ds-stage-note { margin: 0; font: 400 0.875rem/1.5 var(--font-body); color: var(--ink-muted); }"
+		},
+		{
+			"name": "Stage Card",
+			"kind": "card",
+			"refersTo": "stage-card",
+			"description": "A step card on a plane with a titled head, a code block and a note.",
+			"html": "<article class=\"ds-card\"><p class=\"ds-card-title\">Your agent states it</p><pre class=\"ds-card-code\"><span class=\"ds-ps\">$</span> archboard model edit --input change.json</pre><p class=\"ds-card-note\">No x, no y, no width. Git reviews it like code.</p></article>",
+			"css": ".ds-card { display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: var(--radius-table); background: var(--plane); box-shadow: inset 0 1px 0 var(--highlight), 0 1px 1px oklch(0.06 0.004 75 / 0.6), 0 12px 24px -8px oklch(0.06 0.006 75 / 0.6), 0 32px 64px -24px oklch(0.06 0.006 75 / 0.7), inset 0 0 0 1px var(--rule); } .ds-card-title { margin: 0; font: 600 1rem/1.4 var(--font-body); color: var(--ink); } .ds-card-code { margin: 0; padding: 14px 16px; border-radius: var(--radius-panel); background: oklch(0.155 0.005 75); box-shadow: inset 0 0 0 1px var(--rule); font: 400 0.78rem/1.7 var(--font-mono); color: var(--ink); overflow-x: auto; } .ds-ps { color: var(--gold-mark); } .ds-card-note { margin: 0; font: 400 0.875rem/1.5 var(--font-body); color: var(--ink-muted); }"
+		},
+		{
+			"name": "Status Chips",
+			"kind": "chip",
+			"refersTo": "chip-changed",
+			"description": "A solid orange chip, a tinted chip and a quiet mono chip. Orange means changed.",
+			"html": "<span class=\"ds-chip ds-chip-solid\">Missing relationship</span> <span class=\"ds-chip ds-chip-tint\">Unjoined</span> <span class=\"ds-chip ds-chip-quiet\">Exact checkpoints</span>",
+			"css": ".ds-chip { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: var(--radius-chip); font: 600 0.75rem/1 var(--font-body); white-space: nowrap; } .ds-chip-solid { color: oklch(0.2 0.03 50); background: var(--changed); } .ds-chip-tint { color: var(--changed); background: color-mix(in oklch, var(--changed) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--changed) 40%, transparent); } .ds-chip-quiet { color: var(--ink-muted); background: var(--well); font-family: var(--font-mono); font-weight: 400; }"
+		},
+		{
+			"name": "Kind Chip",
+			"kind": "chip",
+			"refersTo": "chip",
+			"description": "The chip the renderer draws on a card: a tint of the kind colour with the kind's icon. Shown here for a service.",
+			"html": "<span class=\"ds-kind\" title=\"Service\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M5 11H19V5H5V11ZM21 4V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3H20C20.5523 3 21 3.44772 21 4ZM19 13H5V19H19V13ZM7 15H10V17H7V15ZM7 7H10V9H7V7Z\"/></svg></span>",
+			"css": ".ds-kind { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; color: var(--blue); background: color-mix(in srgb, var(--blue) 20%, var(--slab)); box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.12), 0 1px 0 color-mix(in srgb, var(--blue) 20%, oklch(0.215 0.006 75)); }"
+		},
+		{
+			"name": "Code Block",
+			"kind": "custom",
+			"refersTo": "code-block",
+			"description": "Commands in mono on the code bed. A gold prompt marks a command, and replies sit in muted ink.",
+			"html": "<pre class=\"ds-term-body\"><span class=\"ds-t-cmd\"><span class=\"ds-ps\">$</span> archboard model claim --input claim.json</span>\n<span class=\"ds-t-out\">Claimed Shop for codex: mapping the shop</span>\n<span class=\"ds-t-ok\">8 modules and 8 relationships</span></pre>",
+			"css": ".ds-term-body { margin: 0; padding: 16px 18px 18px; border-radius: 6px; background: oklch(0.155 0.005 75); box-shadow: inset 0 0 0 1px var(--rule); font: 400 0.8125rem/1.7 var(--font-mono); color: var(--ink-body); overflow-x: auto; } .ds-t-cmd { color: var(--ink); } .ds-ps { color: var(--gold-mark); } .ds-t-out { color: var(--ink-muted); } .ds-t-ok { color: var(--added); }"
+		},
+		{
+			"name": "FAQ Item",
+			"kind": "custom",
+			"refersTo": "faq-item",
+			"description": "A closed plane with a gold plus. Open, it rises to the card tone and the plus turns into a minus.",
+			"html": "<details class=\"ds-faq\" open><summary><span>Can I move a box?</span><span class=\"ds-sign\" aria-hidden=\"true\"></span></summary><p>No, and that is the point. Fix the meaning and the renderer redraws it.</p></details>",
+			"css": ".ds-faq { border-radius: var(--radius-panel); background: var(--plane); box-shadow: inset 0 0 0 1px var(--rule); transition: background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); } .ds-faq[open] { background: var(--card); box-shadow: inset 0 1px 0 var(--highlight), 0 1px 1px oklch(0.06 0.004 75 / 0.6), 0 12px 24px -8px oklch(0.06 0.006 75 / 0.6), 0 32px 64px -24px oklch(0.06 0.006 75 / 0.7), inset 0 0 0 1px var(--rule); } .ds-faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; font: 600 1.0625rem/1.4 var(--font-body); color: var(--ink); cursor: pointer; list-style: none; } .ds-faq summary::-webkit-details-marker { display: none; } .ds-faq summary:focus-visible { outline: 2px solid var(--gold-mark); outline-offset: 3px; } .ds-sign { position: relative; flex: none; width: 14px; height: 14px; } .ds-sign::before, .ds-sign::after { content: ''; position: absolute; left: 0; top: 6px; width: 14px; height: 2px; border-radius: 1px; background: var(--gold-mark); transition: rotate 220ms var(--ease-out); } .ds-sign::after { rotate: 90deg; } .ds-faq[open] .ds-sign::after { rotate: 0deg; } .ds-faq p { margin: 0; padding: 0 20px 20px; max-width: 40em; font: 400 1.0625rem/1.6 var(--font-body); color: var(--ink-body); }"
+		},
+		{
+			"name": "Section Head",
+			"kind": "custom",
+			"refersTo": "headline",
+			"description": "Display capitals on the left and a lead on the right, aligned at the bottom. No label sits above the heading.",
+			"html": "<header class=\"ds-head\"><h2 class=\"ds-h2\">Read a system you did not write.</h2><p class=\"ds-lead\">Archboard joins the model to the code and to its Git history. See where the design costs the most before anyone changes it.</p></header>",
+			"css": ".ds-head { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: end; gap: 24px 64px; } .ds-h2 { margin: 0; max-width: 14ch; font-family: var(--font-display); font-weight: 780; font-size: clamp(2.6rem, 6.4vw, 4.75rem); line-height: 0.92; letter-spacing: 0.012em; text-transform: uppercase; color: var(--ink); text-wrap: balance; } .ds-lead { margin: 0; font: 400 clamp(1.0625rem, 1.4vw, 1.1875rem)/1.6 var(--font-body); color: var(--ink-body); text-wrap: pretty; }"
+		}
+	],
+	"narrative": {
+		"northStar": "The Lit Drafting Table at Night",
+		"overview": "The site is one long page in a dark room. Warm graphite planes stack under a light from above. Each plane has a lit top edge, a thin contact line and a soft warm shadow beneath it. Real drawings from the Archboard renderer lie on these planes and bring every colour the page has. The page leads with the reader's problem, understanding the code their agents write, puts planning before the first line of code, and proves that nobody places a box, so the renderer's drawings carry the proof and the chrome stays quiet.\n\nOne gold does the choosing. It marks the brand, the one action of a region, and what is selected. The type is tall condensed capitals for what a region is about, plain sans for every other word, and mono for commands, paths and counts. The values come from the renderer's dark theme in `packages/renderer/assets/theme.css`, and the type scale belongs to the site. The product's shell is a different surface with a light theme and keeps its own record at the repository root.\n\nThe build carries out the direction contract as written. The hero is left-aligned over a WebGL table that carries a model made for the site, how Archboard works, painted once by the product's painter. Each line is a light-blue laser that floats above its real route. Light runs out along the beams from the agents. When the light reaches a card, the card rises as a tile. The camera settles onto a diagonal that keeps the whole system in view. A mock Archboard window in perspective holds the real example shop, which the product's painter brings in with the app's own entrance while real CLI commands type out. Each later section uses a different demonstration form: a sortable table, tabs, a switch, two panes, a timeline, a player, a zoom, a claim. The owner rejects three things. The first is the category default: a centered hero over a flat screenshot, then a grid of same-size icon cards. The others are a light theme and any label above a heading.",
+		"keyCharacteristics": [
+			"Dark only. `color-scheme: dark` is set in the stylesheet and in a meta tag.",
+			"Planes, not lines. Depth comes from stacked tones, a lit top edge and a shadow, and edges are inset rings, not borders.",
+			"One gold in a few finishes. Every other colour in the page is state, kind or the renderer's own.",
+			"Display capitals for section heads and feature claims. Sans for prose. Mono for data.",
+			"Left-aligned composition. Only the closing call is centered.",
+			"Light moves along lines: a lamp pool, traffic on the table and along the drawing's lines, and sparks that draw lines. Nothing moves for decoration alone.",
+			"Every drawing is real renderer output."
+		],
+		"rules": [
+			{
+				"name": "The One Gold Rule",
+				"body": "Gold marks the brand, the one primary action of a region, and what is chosen. No second accent hue exists. Do not use gold for decoration beyond the small square markers, prompts and glows that the build already uses.",
+				"section": "colors"
+			},
+			{
+				"name": "The Brights Mean Something Rule",
+				"body": "Green, orange, red and lime appear only where they mean added, changed, removed and live. The ten kind brights appear on kind chips, inside drawings and in the three small data marks above. The comparison table marks Archboard with a gold tint, never with green.",
+				"section": "colors"
+			},
+			{
+				"name": "The Quiet Ink Rule",
+				"body": "Faint ink is below the Lc 60 floor for secondary text. Use it for decoration, wait states, line numbers and rings. Never set a sentence or an answer in it.",
+				"section": "colors"
+			},
+			{
+				"name": "The Dark Only Rule",
+				"body": "The site has one theme. Do not add a light scheme or a theme switch. The browser chrome colour in the head (`#090806`) is a hand-set hex a little under the floor.",
+				"section": "colors"
+			},
+			{
+				"name": "The Tall Capitals Rule",
+				"body": "Display capitals name what a region is about: the hero line, section heads (h2) and feature claims (h3). Three narrow exceptions exist. The wordmark is display capitals. The language belt sets the languages the code check reads as display words. A module's name inside a demonstration of the product keeps the product's display title (the mock inspector and the interface comparison). Everything else is Onest: buttons, tabs, labels, table heads, captions.",
+				"section": "typography"
+			},
+			{
+				"name": "The Head Leads Rule",
+				"body": "A heading starts its region. No label, kicker, eyebrow or tag sits above a heading. The owner bans them. A line of words beside a belt, such as \"The code check reads\", labels the belt and sits level with it, not over a heading.",
+				"section": "typography"
+			},
+			{
+				"name": "The Mono Is Data Rule",
+				"body": "Mono sets commands, paths, counts and code. It never sets a heading or a label for a control.",
+				"section": "typography"
+			},
+			{
+				"name": "The Lit Table Rule",
+				"body": "Every plane carries all three of a lit top edge, a contact line and a soft shadow, or it carries none. A flat plane gets its edge from the hairline ring alone. The only zero-blur offset shadows are the 1px to 2px contact lines under a plane. Do not add a larger hard offset shadow.",
+				"section": "elevation"
+			},
+			{
+				"name": "The Tray And Trough Rule",
+				"body": "A demonstration sits in a tray with a recessed trough or a plane inside. Selection raises a piece out of a trough and marks it with a 2px gold underline set inside its face.",
+				"section": "elevation"
+			},
+			{
+				"name": "The Untouched Picture Rule",
+				"body": "The renderer draws a picture, and the page lays no gold, shadow or filter over it. The page can dim or light parts through the renderer's own classes, move whole parts, and ring the one card that invites a click.",
+				"section": "elevation"
+			},
+			{
+				"name": "The Real Output Rule",
+				"body": "Every diagram is real renderer output, drawn in the dark theme from the example shop or from Archboard's own model. Never draw, trace, edit or imitate one by hand. Never use a screenshot of a mock or a generated image. A drawing that looks wrong is a renderer bug. Fix the renderer and draw it again.",
+				"section": "components"
+			},
+			{
+				"name": "The Spark Order Rule",
+				"body": "A picture builds in one order: the cards land, a spark draws each line, then the traffic runs. Lines never appear all at once. This repeats the product's own Spark Rule. With reduced motion, everything is there at once.",
+				"section": "components"
+			},
+			{
+				"name": "The Pause Rule",
+				"body": "Motion carries meaning, and it stops once nobody can see it. Every loop runs only while its element is on screen and the tab is visible. The fields, the orb, the narration and the proposal switch's autoplay do this through one helper, `whileVisible`. A CSS loop sits inside an element marked `data-loop`, and `pauseLoopsOffscreen` pauses its animations while that element is off screen. Moving content offers a way to stop it: the language belt has a Show all control that stops it and wraps every language, and with reduced motion it shows the wrapped list from the start. Under `prefers-reduced-motion: reduce`, a shader draws one still frame. Scroll-driven tilt and parallax turn off. Autoplay and narration do not start. A global rule cuts every CSS animation and transition to 0.01ms and one iteration. A new loop follows both.",
+				"section": "components"
+			},
+			{
+				"name": "The Rise Rule",
+				"body": "Content is visible without script. With script, a revealed block waits transparent and 32px low until its top clears the bottom 15% of the view. Then it fades in over 800ms and rises over 1000ms with the ease-out curve, once. Siblings stagger by 100ms to 120ms. If the page script never runs, an inline fallback shows every block after 3 seconds.",
+				"section": "components"
+			}
+		],
+		"dos": [
+			"Do keep the page dark only. Set every new plane from the Night Floor to Slab ladder.",
+			"Do spend gold on the brand, the one primary action of a region, and what is chosen.",
+			"Do set section heads and feature claims in the display face in capitals, and every other word in Onest.",
+			"Do open every region with its heading. Put the lead beside or under it.",
+			"Do set commands, paths and counts in Maple Mono.",
+			"Do build each plane with a lit top edge, a contact line and a soft warm shadow, and edge it with an inset hairline ring.",
+			"Do show every diagram as renderer output, and name what it shows in the alt text.",
+			"Do keep green, orange and red for added, changed, removed and live.",
+			"Do run every new loop only while visible, and give it a still state for reduced motion.",
+			"Do give each demonstration its own form, and keep the composition left-aligned.",
+			"Do label mock interface data as an example.",
+			"Do make bold claims that a command backs, and name the command. Put planning first wherever the page compares jobs, state the platform, license and model-provider limits before the install step, and put the renderer's implementation under the outcome it explains."
+		],
+		"donts": [
+			"Do not add a light theme, a theme switch or a second accent hue.",
+			"Do not put a label, kicker, eyebrow or tag above a heading.",
+			"Do not set body text, buttons, tabs, table heads or captions in display capitals.",
+			"Do not draw, trace or imitate a diagram by hand, and do not use a screenshot or a generated image in place of renderer output.",
+			"Do not use hard offset shadows larger than a 2px contact line, side stripes on cards, panels or list items, emoji or glyph icons.",
+			"Do not set a sentence or an answer in Faint Ink.",
+			"Do not use state colours or kind brights as decoration.",
+			"Do not lay gold, shadow or blur over a renderer drawing.",
+			"Do not build a grid of same-size icon cards, or a centered hero over a flat screenshot.",
+			"Do not edit or reuse the product's root `DESIGN.md`. It records the light application shell, which is a different surface."
+		]
+	}
+}

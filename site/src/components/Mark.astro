@@ -1,0 +1,36 @@
+---
+// The brand mark: a gold peak with a second stroke inside it and a swoosh over its shoulder,
+// drawn as the shell draws it (apps/web/src/ui/components/shell/Brand.tsx).
+interface Props {
+	size?: number;
+	id?: string;
+}
+
+const { size = 22, id = "mark" } = Astro.props;
+const gradient = `${id}-gold`;
+---
+
+<svg
+	width={size}
+	height={Math.round((size * 56) / 60)}
+	viewBox="0 0 60 56"
+	aria-hidden="true"
+	class="mark"
+>
+	<defs>
+		<linearGradient id={gradient} x1="0" y1="0" x2="0.3" y2="1">
+			<stop offset="0" stop-color="var(--mark-hi)"></stop>
+			<stop offset="1" stop-color="var(--mark-lo)"></stop>
+		</linearGradient>
+	</defs>
+	<g fill={`url(#${gradient})`}>
+		<path d="M28,3 L56,53 L47,53 L28,19 L9,53 L0,53 Z"></path>
+		<path d="M20,53 L28,38 L32,44.5 L26,53 Z"></path>
+	</g>
+	<path
+		d="M37,7 Q54,19 49,37"
+		fill="none"
+		stroke={`url(#${gradient})`}
+		stroke-width="3.4"
+		stroke-linecap="round"></path>
+</svg>

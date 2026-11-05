@@ -1,0 +1,9 @@
+{
+  "order": 60,
+  "name": "Browser",
+  "kind": "ui",
+  "responsibility": "Where you explore, focus and compare",
+  "schemaVersion": 1,
+  "id": "q9TUBeZT#CXLlEMBM",
+  "outgoing": []
+}
