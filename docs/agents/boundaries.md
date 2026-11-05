@@ -402,7 +402,7 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
   with their dotfiles. A test finds them through `FIXTURES` of the `checkout.ts` beside them.
 
 The eleventh is `renderer` (`@archboard/renderer`). It draws projected architecture as a picture. It adopts the `api/` role for
-`shared/`, `runtime/` and `ui/`. It imports `model`, `timing` and `process`.
+`shared/`, `runtime/` and `ui/`. It imports `model`, `timing`, `process` and `workspace`.
 The files of `shared/api/` and `ui/api/` are safe for the browser, with no Node import.
 The files of `runtime/api/` are Node-bound and run only in Bun.
 
