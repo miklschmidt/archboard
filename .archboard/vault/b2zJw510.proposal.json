@@ -1,0 +1,245 @@
+{
+  "id": "b2zJw510",
+  "name": "One Installation module decides checkout or release and names every location",
+  "summary": "A new Installation module in workspace decides once whether the process runs a checkout or a release and names its frontend, core, grammars, skills, bin, Codex scope and server command, so consumers stop finding the checkout themselves and Restart streams its build.",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-579.01 - One-installation-module-decides-checkout-or-release-and-names-every-location.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0075-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
+    }
+  ],
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-05T15:18:13.634Z",
+  "predecessor": "oyXXnyCV",
+  "predecessorRevision": "c674c7627c291c429f1877b7a7901f59df43edac4be5769074ff4864f4c4b6f9",
+  "baseline": "938a49d7a5db70c28739dc5081ff4bb8cea1bc69",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#sysbuidI",
+      "kind": "relationship",
+      "value": {
+        "order": 20000,
+        "kind": "dependency",
+        "label": "refuse a non-installation, read the version",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/bin.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#sysbuidI",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#sysbuidI",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#peyArgPx"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#nL6QcoSv",
+      "kind": "relationship",
+      "value": {
+        "order": 70000,
+        "kind": "dependency",
+        "label": "the skills to link or copy, and the root",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/operations/install-skill/install-skill.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#nL6QcoSv",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#nL6QcoSv",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#XgeEM0Pb"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#McS0Zjui",
+      "kind": "relationship",
+      "value": {
+        "order": 34000,
+        "kind": "dependency",
+        "label": "the server command, and where Codex must be installed",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#McS0Zjui",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#McS0Zjui",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#eMSAZPvG"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#jkGOgVtG",
+      "kind": "module",
+      "value": {
+        "order": 35000,
+        "name": "Installation",
+        "kind": "module",
+        "responsibility": "Decides once whether the process runs a checkout or a release, and names where its frontend, core, grammars, skills, bin, Codex scope and server command are",
+        "description": "A release is a compiled executable with archboard-release.json beside it, in its directory or in the parent of the bin directory that holds it. Otherwise the nearest archboard checkout above the module is the installation, and with neither the process refuses with INSTALLATION_NOT_FOUND. A marker that cannot be read refuses with RELEASE_MARKER_INVALID. It answers the root, the version, the locations of the frontend, the renderer core, the grammars, the skills and the bin directory, the directory whose node_modules must hold the pinned Codex package, the command that starts the server, and where the hash of the core sources comes from: the checkout's sources, or the hash the release recorded. It is the only module that finds the checkout, and lint refuses an import of SOURCE_CHECKOUT (ADR 0075).",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workspace/src/runtime/services/installation.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#jkGOgVtG",
+        "documents": [
+          {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "docs/adr/0075-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
+          },
+          {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "backlog/tasks/task-579.01 - One-installation-module-decides-checkout-or-release-and-names-every-location.md"
+          }
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#jkGOgVtG",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#NG7OXLv9",
+      "field": "responsibility",
+      "value": "The port of a checkout's server: 3000 for the main checkout, a hash of the path for a worktree; hands a command to the bin/archboard of the checkout it stands in"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#NG7OXLv9",
+      "field": "description",
+      "value": "The main checkout has a .git directory; a linked worktree has a .git file and takes 10000 + sha256(root path) mod 10000. The default server URL, the --url default and the server's own port all come from here. Which checkout this process runs comes from Installation. The hand-off follows the working directory, not -C, and does not happen when the environment sets ARCHBOARD_URL: the URL already names the server, and every Codex thread sets it, so a workhorse in another archboard checkout runs the server's own source (ADR 0050). It waits for the other checkout's command, passes SIGINT, SIGTERM and SIGHUP on to it and answers with its exit status, and it refuses a checkout with no node_modules, naming the bun install to run there."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#YuGCj6Ok",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "dependency",
+        "label": "the checkout root, and the test for an archboard checkout",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workspace/src/runtime/services/source-checkout.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#YuGCj6Ok",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#YuGCj6Ok",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#NG7OXLv9"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#k8u4Kad9",
+      "kind": "relationship",
+      "value": {
+        "order": 84000,
+        "kind": "dependency",
+        "label": "its skill, the bin directory and the Codex scope",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/services/owner/production.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#k8u4Kad9",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#k8u4Kad9",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#yyFS6UVO"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#nvbnGOtV",
+      "field": "description",
+      "value": "It refuses a server that it could not start again before it stops it, and a refused stop leaves the bundle unbuilt. The build streams its output to stderr while it runs, so a slow core build is visible, and stdout keeps only the answer. A failed build refuses with FRONTEND_BUILD_FAILED, says that its output is above and that the server is stopped. The answer names the entry script of the new bundle, as /health reports it."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#i7r1YcDJ",
+      "field": "label",
+      "value": "the root of the installation to build"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#i7r1YcDJ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+        "symbol": "installation"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#i7r1YcDJ",
+      "field": "to",
+      "value": "vKEsyHFk#jkGOgVtG"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#WxUHKpD6",
+      "field": "label",
+      "value": "the running root, to refuse another's server"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#WxUHKpD6",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "installation"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#WxUHKpD6",
+      "field": "to",
+      "value": "vKEsyHFk#jkGOgVtG"
+    }
+  ]
+}
