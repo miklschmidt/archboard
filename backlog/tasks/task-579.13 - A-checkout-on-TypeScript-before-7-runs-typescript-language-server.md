@@ -1,11 +1,11 @@
 ---
 id: TASK-579.13
 title: A checkout on TypeScript before 7 runs typescript-language-server
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-05T15:40:00Z'
-updated_date: '2026-11-05T16:02:00Z'
+updated_date: '2026-11-05T16:03:00Z'
 labels: []
 dependencies: []
 references:
@@ -27,12 +27,12 @@ TypeScript before 7 has no `tsc --lsp`. After TASK-579.12 such a checkout gets A
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Without a configured server, a checkout whose own TypeScript before 7 holds lib/tsserver.js runs typescript-language-server from its node_modules, else from the PATH of the Archboard server, with tsserver.path set to that TypeScript
-- [ ] #2 Every TypeScript server gets the files it is asked about opened and is told not to answer from a syntax server, so typescript-language-server names the same declarations as tsc --lsp
-- [ ] #3 The JSON answer and the text output name the program of each started server and, for a TypeScript the check chose, its version and whether it is the checkout's or Archboard's
-- [ ] #4 A missing TypeScript server names the checkout's TypeScript version and how to get a server
-- [ ] #5 A test runs a real typescript-language-server against a TypeScript 5.x fixture
-- [ ] #6 ADR 0046 amendment, INSTALL.md and skills/archboard/references/setup.md describe the order
+- [x] #1 Without a configured server, a checkout whose own TypeScript before 7 holds lib/tsserver.js runs typescript-language-server from its node_modules, else from the PATH of the Archboard server, with tsserver.path set to that TypeScript
+- [x] #2 Every TypeScript server gets the files it is asked about opened and is told not to answer from a syntax server, so typescript-language-server names the same declarations as tsc --lsp
+- [x] #3 The JSON answer and the text output name the program of each started server and, for a TypeScript the check chose, its version and whether it is the checkout's or Archboard's
+- [x] #4 A missing TypeScript server names the checkout's TypeScript version and how to get a server
+- [x] #5 A test runs a real typescript-language-server against a TypeScript 5.x fixture
+- [x] #6 ADR 0046 amendment, INSTALL.md and skills/archboard/references/setup.md describe the order
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -56,3 +56,9 @@ Review of f9265dc20..28d564381: fixed the native TypeScript initialization contr
 
 Final review validation passed after all fixes: 21 focused language-server tests, including real TypeScript 5 and 7 servers; 14 isolated CLI tests; lint:policy with zero warnings and errors; type-check for source and browser; git diff --check. A temporary forced-failure probe confirmed that the real-server test awaits session closure after an assertion fails. Standards: one lifecycle finding fixed, no hard rule violations. Spec: two findings fixed. No remaining findings in the reviewed range. The known base failures were outside this focused validation. Task status and acceptance criteria remain unchanged for the owning agent.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Without a configured server, a checkout whose own TypeScript before 7 holds lib/tsserver.js runs typescript-language-server (checkout node_modules/.bin, else the Archboard server PATH) with tsserver.path set to that file and automatic type acquisition off. Every TypeScript server has its files opened and gets tsserver.useSyntaxServer never. Language-server timings and the CLI line name the program and the chosen TypeScript version and owner; a missing server names the checkout TypeScript version. Proof: typescript-language-server.test.ts runs real typescript-language-server 6.0.3 on TypeScript 5.9.3 and gets the same declarations as tsc --lsp; removing either protocol fix fails it. ADR 0046 amended; INSTALL.md and setup.md updated. Gate: all lanes pass except two base-branch failures (interface-width, voice-package). Reviewed by gpt-6.1-sol (fixes 8ec558edb, b38c7a110, 0f755801e). Follow-up: the vault Language servers module description needs an owner proposal.
+<!-- SECTION:FINAL_SUMMARY:END -->
