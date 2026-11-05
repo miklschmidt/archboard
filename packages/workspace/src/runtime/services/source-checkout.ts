@@ -246,7 +246,6 @@ async function runInstead(target: string, argv: readonly string[]): Promise<numb
 }
 
 export {
-	BROWSER_HOST,
 	browserUrl,
 	checkoutPort,
 	DEFAULT_ARCHBOARD_URL,

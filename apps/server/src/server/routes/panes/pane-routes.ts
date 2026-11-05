@@ -10,9 +10,10 @@ import {
 } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { frontendState } from "@archboard/server-lifecycle/server-host";
+import { browserUrl } from "@archboard/workspace/source-checkout";
 import { PANE_MS } from "@archboard/timing";
 import {
-	browserServerUrl,
+	serverUrl,
 	bodyOf,
 	messageOf,
 	requireVault,
@@ -53,7 +54,7 @@ function noBrowserBody(what: string): Record<string, unknown> {
 		code: "BROWSER_REQUIRED",
 		error:
 			`${what} needs a canvas open in a browser. A pane exists only while a tab is rendering it, ` +
-			`so there is nothing on screen to split or close. Open ${browserServerUrl()} and retry.`,
+			`so there is nothing on screen to split or close. Open ${browserUrl(serverUrl())} and retry.`,
 	};
 }
 

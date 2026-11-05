@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { browserUrl } from "@archboard/workspace/source-checkout";
 import { checkBrowserCsrf } from "#server/middleware/browser-csrf.ts";
 
 const accepted = (overrides: Record<string, string | undefined> = {}) => ({
@@ -101,10 +102,13 @@ describe("browser CSRF guard", () => {
 			secFetchSite: "same-origin",
 		});
 
+		// The name the CLI shows and opens for a release server is the one this guard accepts.
+		const opened = new URL(browserUrl("http://127.0.0.1:27242", "release")).hostname;
+
 		test.each(["request", "mutation", "settings-read"] as const)(
-			"%s traffic from archboard.localhost is the page's own",
+			"%s traffic from where a person opens the server is the page's own",
 			(kind) => {
-				expect(checkBrowserCsrf(kind, release("archboard.localhost"))).toEqual({ ok: true });
+				expect(checkBrowserCsrf(kind, release(opened))).toEqual({ ok: true });
 			},
 		);
 
