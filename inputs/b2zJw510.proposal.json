@@ -1362,25 +1362,25 @@
     },
     {
       "type": "add",
-      "subject": "vKEsyHFk#ONY1k265",
+      "subject": "vKEsyHFk#juDvK8ME",
       "kind": "relationship",
       "value": {
         "order": 1000,
         "kind": "call",
-        "label": "the projection of the generated schemas",
+        "label": "the schemas to write beside the manual",
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
           "path": "packages/skills/src/runtime/operations/distribution/prepare.ts",
           "symbol": "generatedSchemas"
         },
-        "id": "vKEsyHFk#ONY1k265",
-        "to": "vKEsyHFk/vKEsyHFk#PxnjFfV3"
+        "id": "vKEsyHFk#juDvK8ME",
+        "to": "vKEsyHFk#QJChMuh1"
       }
     },
     {
       "type": "place",
-      "subject": "vKEsyHFk#ONY1k265",
+      "subject": "vKEsyHFk#juDvK8ME",
       "placement": {
         "holder": "vKEsyHFk#hbSxZ5Wm"
       }
@@ -1433,6 +1433,31 @@
       "subject": "vKEsyHFk#v8og2YeF",
       "placement": {
         "holder": "vKEsyHFk#jwSjR0cS"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#QJChMuh1",
+      "kind": "module",
+      "value": {
+        "order": 91000,
+        "name": "Skill schemas",
+        "kind": "function",
+        "responsibility": "Derives the JSON Schemas that the consumer skill ships from the schemas of the canonical runtime",
+        "description": "One schema for each of the model manifest, a module, a flow collection, and the initialization, edit, import and migration requests, and the shared vocabulary. They come from the runtime's own schemas, so the skill's schemas cannot drift from what the runtime accepts.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/skills/src/runtime/projections/schemas.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#QJChMuh1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#QJChMuh1",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#LDqRcaY1"
       }
     },
     {
@@ -1550,6 +1575,7 @@
   ],
   "retiredIds": [
     "vKEsyHFk/vKEsyHFk#mm4DLsd2",
-    "vKEsyHFk#8EhrdPUE"
+    "vKEsyHFk#8EhrdPUE",
+    "vKEsyHFk#ONY1k265"
   ]
 }
