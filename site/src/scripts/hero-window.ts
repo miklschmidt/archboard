@@ -143,7 +143,10 @@ export function mountHeroWindow(): void {
 		painted.painter.setCamera(x * ratio, y * ratio, unit * ratio, 0, performance.now());
 		wake();
 	};
-	new ResizeObserver(fit).observe(stage);
+	new ResizeObserver(() => {
+		fit();
+		lean();
+	}).observe(stage);
 	fit();
 
 	// The window starts once its foot is in view, where the agent's lines arrive: it stands
