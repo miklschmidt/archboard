@@ -41,7 +41,7 @@ function threadPage(
 	data: readonly SessionThread[],
 	nextCursor: string | null = null,
 ): SessionThreadPageResult {
-	return { data, nextCursor, backwardsCursor: null } as SessionThreadPageResult;
+	return { data, nextCursor, backwardsCursor: null, readStates: null } as SessionThreadPageResult;
 }
 
 function loadedPage(

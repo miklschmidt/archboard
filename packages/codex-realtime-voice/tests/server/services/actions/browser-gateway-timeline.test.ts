@@ -108,7 +108,12 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		account: {
 			kind: "codex_account_response",
 			response: {
-				account: { type: "chatgpt", email: "fixture@example.test", planType: "plus" },
+				account: {
+					type: "chatgpt",
+					email: "fixture@example.test",
+					planType: "plus",
+					workspaceName: null,
+				},
 				requiresOpenaiAuth: true,
 				workspaceRouting: null,
 			},

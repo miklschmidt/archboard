@@ -16,7 +16,13 @@ const ContentItemSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("input_text"), text: z.string() }),
 	InputImageSchema,
 	looseObject({ type: z.literal("input_audio"), audio_url: z.string() }),
-	looseObject({ type: z.literal("output_text"), text: z.string() }),
+	looseObject({
+		type: z.literal("output_text"),
+		text: z.string(),
+		/** Output annotations and log probabilities are open generated JSON arrays. */
+		annotations: z.array(JsonValueSchema).optional(),
+		logprobs: z.array(JsonValueSchema).optional(),
+	}),
 ]);
 
 const AgentMessageInputContentSchema = z.discriminatedUnion("type", [
@@ -65,7 +71,16 @@ const OpenToolSearchValueSchema = JsonValueSchema;
 
 const ResponseItemSchema = z.discriminatedUnion("type", [
 	looseObject({
+		type: z.literal("additional_tools"),
+		id: z.string().optional(),
+		role: z.string(),
+		/** Additional tool definitions are open generated JSON. */
+		tools: z.array(JsonValueSchema),
+	}),
+	looseObject({
 		type: z.literal("message"),
+		encrypted_content: z.string().optional(),
+		status: z.string().optional(),
 		id: z.string().optional(),
 		/** Responses API message roles are provider-defined strings. */
 		role: z.string(),
@@ -94,6 +109,7 @@ const ResponseItemSchema = z.discriminatedUnion("type", [
 	}),
 	looseObject({
 		type: z.literal("local_shell_call"),
+		encrypted_content: z.string().optional(),
 		/** Legacy id is optional; Responses API uses call_id. */
 		id: z.string().optional(),
 		call_id: z.string().nullable(),
@@ -104,6 +120,8 @@ const ResponseItemSchema = z.discriminatedUnion("type", [
 	}),
 	looseObject({
 		type: z.literal("function_call"),
+		encrypted_content: z.string().optional(),
+		status: z.string().optional(),
 		id: z.string().optional(),
 		name: z.string(),
 		namespace: z.string().optional(),
@@ -115,6 +133,7 @@ const ResponseItemSchema = z.discriminatedUnion("type", [
 	}),
 	looseObject({
 		type: z.literal("tool_search_call"),
+		encrypted_content: z.string().optional(),
 		id: z.string().optional(),
 		call_id: z.string().nullable(),
 		status: z.string().optional(),
@@ -135,6 +154,7 @@ const ResponseItemSchema = z.discriminatedUnion("type", [
 	}),
 	looseObject({
 		type: z.literal("custom_tool_call"),
+		encrypted_content: z.string().optional(),
 		id: z.string().optional(),
 		status: z.string().optional(),
 		call_id: z.string(),
@@ -166,6 +186,7 @@ const ResponseItemSchema = z.discriminatedUnion("type", [
 	}),
 	looseObject({
 		type: z.literal("web_search_call"),
+		encrypted_content: z.string().optional(),
 		id: z.string().optional(),
 		status: z.string().optional(),
 		action: WebSearchActionSchema.optional(),
@@ -174,6 +195,7 @@ const ResponseItemSchema = z.discriminatedUnion("type", [
 	}),
 	looseObject({
 		type: z.literal("image_generation_call"),
+		encrypted_content: z.string().optional(),
 		id: z.string().optional(),
 		status: z.string(),
 		revised_prompt: z.string().optional(),

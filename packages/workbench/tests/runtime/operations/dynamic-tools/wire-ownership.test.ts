@@ -15,6 +15,7 @@ describe("codex dynamic ordinary wire ownership", () => {
 			data: [],
 			nextCursor: null,
 			backwardsCursor: null,
+			readStates: null,
 		});
 		fixture.session.loadedListPages.set(null, { data: [], nextCursor: null });
 		const tools = createCodexDynamicTools(fixture.options);

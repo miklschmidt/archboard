@@ -31,6 +31,7 @@ function configureReadFixture(
 		data: [otherTarget.linkClassification!.thread!],
 		nextCursor: null,
 		backwardsCursor: null,
+		readStates: null,
 	});
 	fixture.session.loadedListPages.set(null, { data: [otherTarget.threadId], nextCursor: null });
 	fixture.session.turnsPages.set(null, {

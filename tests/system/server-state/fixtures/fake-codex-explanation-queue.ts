@@ -33,6 +33,7 @@ export function explanationQueue(
 			id: `explain-${submission["id"]}`,
 			items: [prompt],
 			itemsView: "full",
+			rootTurnId: null,
 			status: "inProgress",
 			error: null,
 			startedAt: unixSeconds(),

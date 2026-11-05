@@ -415,7 +415,7 @@ The next write receives `CLAIM_REVOKED`, and the architecture keeps every accept
 
 ### Controlled text workbench (TASK-143.03.13)
 
-Starts the production server composition with the exact Codex 0.160.0 protocol
+Starts the production server composition with the exact Codex 0.166.0 protocol
 fake, then drives the real browser transport and rendered shell. One short
 create, send, and decline flow proves the pane workbench is operable, both
 ordinary and dynamic approval effects are visible, and the mounted model

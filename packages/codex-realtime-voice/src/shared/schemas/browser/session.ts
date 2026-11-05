@@ -123,7 +123,7 @@ function createBrowserSessionSchemas(identity: IdentitySchemas) {
 		"amazonBedrock",
 		"amazonBedrockAccessKeys",
 	]);
-	const CodexAccountTypeSchema = z.enum(["apiKey", "chatgpt", "amazonBedrock"]);
+	const CodexAccountTypeSchema = z.enum(["apiKey", "chatgpt", "amazonBedrock", "gcp"]);
 	const BrowserAccountSchema = z.union([
 		z
 			.object({ kind: z.literal("account"), state: z.literal("unknown"), reason: boundedText(512) })

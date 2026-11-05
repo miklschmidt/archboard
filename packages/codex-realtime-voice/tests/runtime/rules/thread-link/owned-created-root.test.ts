@@ -49,7 +49,7 @@ describe("owned roots with incomplete history metadata", () => {
 					session: {
 						threadListPage: async () => threadPage([{ ...row, canAcceptDirectInput: null }]),
 						threadLoadedListPage: async () => loadedPage([row.id]),
-						threadRead: async () => ({ thread: row }),
+						threadRead: async () => ({ thread: row, readState: null }),
 					},
 				},
 				fixture.target,
@@ -70,7 +70,10 @@ describe("owned roots with incomplete history metadata", () => {
 						session: {
 							threadListPage: async () => threadPage([{ ...row, canAcceptDirectInput: null }]),
 							threadLoadedListPage: async () => loadedPage([row.id]),
-							threadRead: async () => ({ thread: { ...row, canAcceptDirectInput } }),
+							threadRead: async () => ({
+								thread: { ...row, canAcceptDirectInput },
+								readState: null,
+							}),
 						},
 					},
 					fixture.target,
@@ -92,7 +95,7 @@ describe("owned roots with incomplete history metadata", () => {
 				threadLoadedListPage: async () => loadedPage([row.id]),
 				threadRead: async (params: { threadId: string; includeTurns?: boolean | undefined }) => {
 					reads.push(params);
-					return { thread: row };
+					return { thread: row, readState: null };
 				},
 			};
 			const result = await classifyCodexThreadLink(
@@ -128,7 +131,7 @@ describe("owned roots with incomplete history metadata", () => {
 						session: {
 							threadListPage: async () => threadPage([]),
 							threadLoadedListPage: async () => loadedPage([row.id]),
-							threadRead: async () => ({ thread: changed }),
+							threadRead: async () => ({ thread: changed, readState: null }),
 						},
 					},
 					fixture.target,
@@ -174,7 +177,7 @@ describe("owned roots with incomplete history metadata", () => {
 							threadRead: async () => {
 								if (change === "epoch") current = null;
 								if (change === "proof") proofCurrent = false;
-								return { thread: row };
+								return { thread: row, readState: null };
 							},
 						},
 					},
@@ -217,7 +220,7 @@ describe("owned roots with incomplete history metadata", () => {
 									loadedPage(mode === "duplicate" ? [row.id, row.id] : [row.id]),
 								threadRead: async () => {
 									reads += 1;
-									return { thread: row };
+									return { thread: row, readState: null };
 								},
 							},
 						},

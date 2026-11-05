@@ -56,6 +56,7 @@ function event(authorities: IdentityAuthorities, threadId: ThreadId): TransportS
 					id: "notification-turn",
 					items: [],
 					itemsView: "full",
+					rootTurnId: null,
 					status: "completed",
 					error: null,
 					startedAt: 1,

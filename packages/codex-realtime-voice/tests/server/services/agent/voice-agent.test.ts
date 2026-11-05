@@ -29,7 +29,7 @@ async function withLinkedDirectory(
 		const executablePath = join(root, "codex");
 		writeFileSync(
 			executablePath,
-			'#!/bin/sh\n[ "$1" = --version ] && echo "codex-cli 0.160.0" && exit 0\nexit 1\n',
+			'#!/bin/sh\n[ "$1" = --version ] && echo "codex-cli 0.166.0" && exit 0\nexit 1\n',
 		);
 		chmodSync(executablePath, 0o755);
 		await check(root, executablePath);

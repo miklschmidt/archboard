@@ -67,8 +67,9 @@ function errorMessage(error: unknown): string {
  * ended. Codex unloads a thread with no subscriber only while it is not active, so the unsubscribe
  * never cuts a turn short. It must still wait for two things. A running turn sends its tool calls
  * and approvals only to subscribers, so an unsubscribe during a turn would leave that turn waiting
- * forever. And Codex starts the turn for the end of a voice session's transcript before it sends
- * `thread/realtime/closed`, while the realtime stop is answered before that. So a thread is
+ * forever. And Codex saves the end of a voice session's transcript to the thread's history before
+ * it sends `thread/realtime/closed`, while the realtime stop is answered before that (Codex
+ * 0.166.0, `realtime_conversation/transcript_tail.rs`: it starts no turn). So a thread is
  * unsubscribed only once its voice session, if it had one, has closed and its status is not
  * active. A workhorse thread carries no voice session, so it waits only for its turn.
  * @param options - The session and the identity authority.

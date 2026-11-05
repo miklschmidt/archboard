@@ -105,6 +105,7 @@ export function turn(
 		startedAt: 1,
 		completedAt: 2,
 		durationMs: 1,
+		rootTurnId: null,
 	} as SessionTurn;
 }
 

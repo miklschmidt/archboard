@@ -42,7 +42,7 @@ async function readyFixture(): Promise<SessionFixture> {
 	const fixture = createSessionFixture();
 	await fixture.session.initialize();
 	fixture.transport.enqueueResponse("account/read", {
-		account: { type: "chatgpt", email: null, planType: "pro" },
+		account: { type: "chatgpt", email: null, planType: "pro", workspaceName: null },
 		requiresOpenaiAuth: true,
 		workspaceRouting: null,
 	});
@@ -80,6 +80,8 @@ const richSubAgentItem = {
 	kind: "started",
 	agentThreadId: "thread-child",
 	agentPath: "/root/worker",
+	model: null,
+	reasoningEffort: null,
 } satisfies Extract<RawThreadItem, { readonly type: "subAgentActivity" }>;
 const richItems = [richAgentItem, richCollabItem, richSubAgentItem] satisfies RawThreadItem[];
 
@@ -92,6 +94,7 @@ const richTurn = {
 	startedAt: 1,
 	completedAt: 2,
 	durationMs: 1,
+	rootTurnId: null,
 } satisfies RawTurn;
 
 const richThread = {
@@ -234,6 +237,7 @@ describe("Codex session response identities", () => {
 				data: [richThread, richThread],
 				nextCursor: "thread-next",
 				backwardsCursor: "thread-back",
+				readStates: null,
 			} satisfies ResponsePayloads["thread/list"]);
 			const threads = await fixture.session.threadListPage({});
 			expect(threads.nextCursor).toBe("thread-next");
@@ -255,6 +259,7 @@ describe("Codex session response identities", () => {
 
 			fixture.transport.enqueueResponse("thread/read", {
 				thread: richThread,
+				readState: null,
 			} satisfies ResponsePayloads["thread/read"]);
 			const read = await fixture.session.threadRead({ threadId });
 			expectRichThread(fixture, read.thread);
@@ -376,6 +381,7 @@ describe("Codex session response identities", () => {
 				],
 				nextCursor: null,
 				backwardsCursor: null,
+				readStates: null,
 			});
 			const error = await rejected(fixture.session.threadListPage({}));
 			expect(error).toMatchObject({ code: "invalid_identity" });
@@ -403,6 +409,7 @@ describe("Codex session response identities", () => {
 				data: [{ ...threadFixture, id: "stale-result-thread", turns: [] }],
 				nextCursor: null,
 				backwardsCursor: null,
+				readStates: null,
 			} satisfies ResponsePayloads["thread/list"]);
 			expect(await rejected(stale.session.threadListPage({}))).toMatchObject({
 				code: "invalid_identity",

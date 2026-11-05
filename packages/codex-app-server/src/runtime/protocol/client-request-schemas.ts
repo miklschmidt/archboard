@@ -356,6 +356,7 @@ const ThreadRealtimeStartParamsSchema = z.strictObject({
 	realtimeEndInstructions: z.string().nullable().optional(),
 	prompt: z.string().nullable().optional(),
 	realtimeSessionId: z.string().nullable().optional(),
+	voiceSessionId: z.string().nullable().optional(),
 	transport: ThreadRealtimeStartTransportSchema.nullable().optional(),
 	version: RealtimeConversationVersionSchema.nullable().optional(),
 	voice: RealtimeVoiceSchema.nullable().optional(),

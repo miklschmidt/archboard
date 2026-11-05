@@ -264,6 +264,7 @@ export const modelFixture = {
 export const requirementsFixture = (
 	sqliteHome: string | null,
 ): ResponsePayloads["configRequirements/read"] => ({
+	supportsIndependentSpeedModes: null,
 	requirements: {
 		modelProvider: null,
 		modelProviders: null,
@@ -298,6 +299,7 @@ export const requirementsFixture = (
 		allowLoginShell: null,
 		feedback: null,
 		application: null,
+		otel: null,
 	},
 });
 
@@ -317,6 +319,7 @@ export const turnFixture = {
 	startedAt: 1,
 	completedAt: 2,
 	durationMs: 1,
+	rootTurnId: null,
 } satisfies ResponsePayloads["turn/start"]["turn"];
 
 export const threadFixture = {

@@ -149,7 +149,7 @@ describe("Codex session response workflows", () => {
 		try {
 			await initializeTransportSession(fixture);
 			await roundTrip(fixture, "account/read", () => fixture.session.accountRead(), {
-				account: { type: "chatgpt", email: null, planType: "pro" },
+				account: { type: "chatgpt", email: null, planType: "pro", workspaceName: null },
 				requiresOpenaiAuth: true,
 				workspaceRouting: null,
 			});
@@ -172,6 +172,7 @@ describe("Codex session response workflows", () => {
 					data: [{ ...threadFixture, id: "listed-thread", turns: [] }],
 					nextCursor: "listed-next",
 					backwardsCursor: null,
+					readStates: null,
 				},
 			);
 			const listedThread = listed.data[0];
@@ -182,7 +183,7 @@ describe("Codex session response workflows", () => {
 				fixture,
 				"thread/read",
 				() => fixture.session.threadRead({ threadId: listedThread.id }),
-				{ thread: { ...threadFixture, id: "listed-thread", turns: [] } },
+				{ thread: { ...threadFixture, id: "listed-thread", turns: [] }, readState: null },
 			);
 			expect(read.thread.id).toBe(listedThread.id);
 			const readRequest = fixture.frames().find((frame) => frame["method"] === "thread/read");

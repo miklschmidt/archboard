@@ -52,6 +52,7 @@ function terminalTurn(
 				id: turnId,
 				items: [],
 				itemsView: "full",
+				rootTurnId: null,
 				status,
 				error: null,
 				startedAt: 1,

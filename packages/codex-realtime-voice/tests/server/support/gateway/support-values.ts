@@ -73,7 +73,12 @@ function readinessFor(state: BrowserReadiness["state"], loginId: LoginId): Brows
 const readyAccount = (): BrowserOwnerProjection["account"] => ({
 	kind: "codex_account_response",
 	response: {
-		account: { type: "chatgpt", email: "gateway@example.test", planType: "plus" },
+		account: {
+			type: "chatgpt",
+			email: "gateway@example.test",
+			planType: "plus",
+			workspaceName: null,
+		},
 		requiresOpenaiAuth: true,
 		workspaceRouting: null,
 	},

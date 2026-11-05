@@ -195,7 +195,7 @@ describe.serial("composed Codex process lifecycle", () => {
 			});
 			const managed = requirements.result?.requirements;
 			expect(managed?.["sqliteHome"]).toBe(sqliteHome);
-			expect(Object.keys(managed ?? {})).toHaveLength(33);
+			expect(Object.keys(managed ?? {})).toHaveLength(34);
 			expect(
 				Object.entries(managed ?? {}).every(
 					([key, value]) => key === "sqliteHome" || value === null,

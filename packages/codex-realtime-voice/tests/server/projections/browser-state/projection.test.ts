@@ -226,7 +226,12 @@ function projectionInput(
 		account: {
 			kind: "codex_account_response",
 			response: {
-				account: { type: "chatgpt", email: "private@example.test", planType: "plus" },
+				account: {
+					type: "chatgpt",
+					email: "private@example.test",
+					planType: "plus",
+					workspaceName: null,
+				},
 				requiresOpenaiAuth: true,
 				workspaceRouting: null,
 			},
