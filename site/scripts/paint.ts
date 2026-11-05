@@ -9,8 +9,9 @@
 // what the hero needs to know of the picture: where each card, tray and label lies, and the route
 // of every line, from its source to its target.
 //
-// The model's viewport shows the whole of `.archboard/vault`, Archboard's own model, as the app
-// draws it.
+// The model's figure shows the top reading of `.archboard/vault`, Archboard's own model, as the app
+// draws it with its dependency relationships filtered out, and the SVG of the same reading stands
+// in where no painter draws.
 //
 // Run from the repository root, inside `nix develop`, after `bun run build:core`:
 //   bun site/scripts/paint.ts
@@ -383,20 +384,19 @@ async function hero() {
 }
 
 /**
- * Archboard's own model, as the app draws it with its dependency relationships filtered out, and
- * where its cards stand. Each package that a part imports from would otherwise draw one more line,
- * and the calls, data and events between the parts are what the section shows.
- * @returns The painting and its cards.
+ * Archboard's own model, as the app draws it with its dependency relationships filtered out. Each
+ * package that a part imports from would otherwise draw one more line, and the calls, data and
+ * events between the parts are what the section shows.
+ * @returns The painting, the SVG of the same reading and its size.
  */
 async function own() {
-	const { reading, request } = await read(".archboard/vault", false, ["dependency"]);
+	const { request } = await read(".archboard/vault", false, ["dependency"]);
 	const drawn = await renderArchitecture(request);
-	const cards = Object.entries(drawn.atlas.nodes).map(([id, box]) => ({
-		id,
-		box: [box.x, box.y, box.width, box.height],
-		lines: reading.content.edges.filter((edge) => edge.from === id || edge.to === id).length,
-	}));
-	return { painting: drawn.painting, plan: { width: drawn.width, height: drawn.height, cards } };
+	return {
+		painting: drawn.painting,
+		svg: drawn.svg,
+		plan: { width: drawn.width, height: drawn.height },
+	};
 }
 
 /**
@@ -420,6 +420,7 @@ mkdirSync(OUT, { recursive: true });
 writeFileSync(join(OUT, "hero.painting.json"), table.painting);
 writeFileSync(join(OUT, "hero.json"), `${JSON.stringify(table.plan)}\n`);
 writeFileSync(join(OUT, "own.painting.json"), model.painting);
+writeFileSync(join(OUT, "own.svg"), model.svg);
 writeFileSync(join(OUT, "own.json"), `${JSON.stringify(model.plan)}\n`);
 writeFileSync(join(OUT, "shop.painting.json"), example.painting);
 writeFileSync(join(OUT, "shop.json"), `${JSON.stringify(example.plan)}\n`);

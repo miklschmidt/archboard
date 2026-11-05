@@ -1,12 +1,10 @@
 ---
 // Archboard's own architecture, from this repository's vault, painted live by the product's
 // painter. The whole picture fits the screen: the figure takes the page's width where the screen
-// is wide enough, and no more than the screen's height. Where the painter cannot start, the
-// README's drawing of the same vault stands in.
+// is wide enough, and no more than the screen's height. Without script, and wherever no painter
+// draws, the renderer's SVG of the same reading stands.
 import own from "../../paintings/own.json";
-import { drawings } from "../../lib/diagrams";
-
-const fallback = drawings.architecture;
+import ownSvg from "../../paintings/own.svg?url";
 ---
 
 <figure class="own table" style={`--aspect: ${String(own.width / own.height)}`}>
@@ -16,16 +14,8 @@ const fallback = drawings.architecture;
 		role="img"
 		aria-label="Archboard's own architecture: its programs, the browser, Agent CLI and server, around the architecture inputs, with each workspace package that holds parts. External systems include Codex, Claude CLI, headless Chromium, ffmpeg and the Git remotes."
 	>
+		<img src={ownSvg} width={own.width} height={own.height} alt="" loading="lazy" decoding="async" />
 		<canvas class="paint" aria-hidden="true"></canvas>
-		<template data-fallback>
-			<img
-				src={fallback.url}
-				width={fallback.width}
-				height={fallback.height}
-				alt=""
-				decoding="async"
-			/>
-		</template>
 	</div>
 	<figcaption class="caption">
 		Archboard's own model, from <code>.archboard/vault</code> in its repository, painted live by the
@@ -60,9 +50,13 @@ const fallback = drawings.architecture;
 		width: 100%;
 		height: 100%;
 	}
-	.picture img {
-		object-fit: contain;
-		user-select: none;
+	/* While a painter draws, the SVG waits unloaded behind it. */
+	.paint,
+	.picture[data-painting] img {
+		display: none;
+	}
+	.picture[data-painting] .paint {
+		display: block;
 	}
 	.caption {
 		padding: 12px 10px 6px;
@@ -77,16 +71,13 @@ const fallback = drawings.architecture;
 	import { paintOwnModel } from "../../scripts/own-model";
 
 	for (const picture of document.querySelectorAll<HTMLElement>("[data-own-model]")) {
+		picture.setAttribute("data-painting", "");
 		// The painter starts as the reader nears the drawing, so it is ready when the drawing is in view.
 		const near = new IntersectionObserver(
 			(entries) => {
 				if (!entries.some((entry) => entry.isIntersecting)) return;
 				near.disconnect();
-				void paintOwnModel(picture).then((painted) => {
-					if (painted) return;
-					const fallback = picture.querySelector<HTMLTemplateElement>("[data-fallback]");
-					picture.querySelector("canvas")?.replaceWith(fallback?.content.cloneNode(true) ?? "");
-				});
+				void paintOwnModel(picture);
 			},
 			{ rootMargin: "800px 0px" },
 		);

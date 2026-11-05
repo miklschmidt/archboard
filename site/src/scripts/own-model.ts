@@ -1,9 +1,11 @@
-// Archboard's own architecture, painted live by the product's painter (ADR 0071). The whole picture
-// fits its frame. Once the frame's foot is in view, the painter brings the picture in with the
-// app's own entrance: the cards come out of the middle in a wave, a spark draws each line, each
-// label arrives as its spark reaches it, and a line's traffic starts once it is drawn (DESIGN.md,
-// the Spark Order Rule). The picture is large, so it moves only where the GPU paints it. On the
-// CPU, and with reduced motion, it stands whole.
+// Archboard's own architecture, painted live by the product's painter in the app's order: WebGPU,
+// then WebGL2, then the CPU (ADR 0071, ADR 0074). The whole picture fits its frame. Once the
+// frame's foot is in view, the painter brings the picture in with the app's own entrance: the
+// cards come out of the middle in a wave, a spark draws each line, and each label arrives as its
+// spark reaches it (DESIGN.md, the Spark Order Rule). The picture is large. A frame of its entrance
+// costs about one refresh on WebGL2 and more on the CPU, so it comes in on either GPU and stands
+// whole on the CPU. Its traffic keeps a frame running while it is in view, so traffic runs only on
+// WebGPU, where such a frame costs the page little. With reduced motion, the picture stands whole.
 
 import { PICTURE_MS } from "@archboard/timing";
 import { startPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
@@ -13,13 +15,13 @@ import { PHASES } from "./painter-phases";
 import { whileVisible } from "./reveal";
 
 /**
- * Paint the model in its frame.
- * @param picture The frame, which holds the canvas.
- * @returns Whether the painter started.
+ * Paint the model in its frame. Where no painter draws, or a GPU stops at work, the frame shows
+ * the SVG of the same reading instead.
+ * @param picture The frame, which holds the canvas and the SVG.
  */
-export async function paintOwnModel(picture: HTMLElement): Promise<boolean> {
+export async function paintOwnModel(picture: HTMLElement): Promise<void> {
 	const first = picture.querySelector("canvas");
-	if (!first) return false;
+	if (!first) return;
 	const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 	try {
 		const [started, painting] = await Promise.all([
@@ -27,22 +29,30 @@ export async function paintOwnModel(picture: HTMLElement): Promise<boolean> {
 			fetch(paintingUrl).then((answer) => answer.text()),
 		]);
 		const { painter, canvas } = started;
-		const moves = () => started.kind === "gpu" && !motion.matches;
+		const enters = () => started.kind !== "cpu" && !motion.matches;
+		const flows = () => started.kind === "gpu" && !motion.matches;
 		painter.setPhases(PHASES);
 		painter.setLongestStep(PICTURE_MS.longestStep);
 		painter.setFarLine(0, 0);
-		painter.setTrafficShown(moves());
+		painter.setTrafficShown(flows());
 
 		// Frames run while the painter says the next moment looks different, and while the picture
 		// is on screen: the painter's clock waits for the frames that show it.
 		let visible = false;
+		let stopped = false;
 		let frame = 0;
 		const loop = (now: number) => {
-			frame = visible && painter.frame(now) ? requestAnimationFrame(loop) : 0;
+			frame = visible && !stopped && painter.frame(now) ? requestAnimationFrame(loop) : 0;
 		};
 		const wake = () => {
-			if (visible && frame === 0) frame = requestAnimationFrame(loop);
+			if (visible && !stopped && frame === 0) frame = requestAnimationFrame(loop);
 		};
+		// A GPU that stops draws nothing more, and it may not say why.
+		started.whenGpuStops?.((reason) => {
+			console.warn("The model's painter stopped.", reason);
+			stopped = true;
+			picture.removeAttribute("data-painting");
+		});
 
 		// The canvas covers the frame in device pixels, and the camera fits the whole drawing into it.
 		const fit = () => {
@@ -67,10 +77,10 @@ export async function paintOwnModel(picture: HTMLElement): Promise<boolean> {
 		let shown = false;
 		const check = () => {
 			const box = picture.getBoundingClientRect();
-			if (shown || (moves() && box.bottom > window.innerHeight)) return;
+			if (shown || (enters() && box.bottom > window.innerHeight)) return;
 			shown = true;
 			window.removeEventListener("scroll", check);
-			if (moves()) painter.enter(painting, "null", PICTURE_MS.entry, 0, 0, performance.now());
+			if (enters()) painter.enter(painting, "null", PICTURE_MS.entry, 0, 0, performance.now());
 			else painter.show(painting);
 			wake();
 		};
@@ -82,9 +92,9 @@ export async function paintOwnModel(picture: HTMLElement): Promise<boolean> {
 		}).observe(picture);
 		window.addEventListener("scroll", check, { passive: true });
 		motion.addEventListener("change", () => {
-			painter.setTrafficShown(moves());
+			painter.setTrafficShown(flows());
 			// A picture on its way in stands whole once motion is reduced.
-			if (shown && !moves()) painter.show(painting);
+			if (shown && motion.matches) painter.show(painting);
 			check();
 			wake();
 		});
@@ -97,9 +107,8 @@ export async function paintOwnModel(picture: HTMLElement): Promise<boolean> {
 			}
 		});
 		check();
-		return true;
 	} catch (cause) {
 		console.warn("The model's painter did not start.", cause);
-		return false;
+		picture.removeAttribute("data-painting");
 	}
 }
