@@ -2,7 +2,11 @@ import { spawn, type ChildProcess } from "child_process";
 import { Readable } from "node:stream";
 import { logger } from "@archboard/diagnostics/logger";
 import { installation } from "@archboard/workspace/installation";
-import { ARCHBOARD_URL, ARCHBOARD_NO_AUTOSTART } from "#runtime/services/config.ts";
+import {
+	ARCHBOARD_BROWSER_URL,
+	ARCHBOARD_URL,
+	ARCHBOARD_NO_AUTOSTART,
+} from "#runtime/services/config.ts";
 import {
 	foreignServiceError,
 	markServerIdentityVerified,
@@ -369,9 +373,9 @@ async function awaitServerReadiness(spawned: SpawnedServer, timeoutMs: number): 
 			spawned.protocol.destroy();
 			spawned.child.unref();
 			process.stderr.write(
-				`Archboard server running at ${ARCHBOARD_URL}. Open it in a browser only for live canvas work and capture.\n`,
+				`Archboard server running at ${ARCHBOARD_BROWSER_URL}. Open it in a browser only for live canvas work and capture.\n`,
 			);
-			return { url: ARCHBOARD_URL, spawned: true };
+			return { url: ARCHBOARD_BROWSER_URL, spawned: true };
 		}
 		const failure = startFailureOf(spawned, deferred);
 		if (failure !== null) {
@@ -422,7 +426,7 @@ async function reachOrStartServer(options: EnsureOptions): Promise<Reached> {
 			throw foreignServiceError();
 		}
 		markServerIdentityVerified();
-		return { url: ARCHBOARD_URL, spawned: false };
+		return { url: ARCHBOARD_BROWSER_URL, spawned: false };
 	}
 
 	refuseUnlessAutoStartAllowed(options.force === true);

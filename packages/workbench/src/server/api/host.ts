@@ -1,5 +1,6 @@
 // What the host of this server reads: the vault and the body that a request names, and where the server listens and how it names itself in a URL. Bun only.
 export {
+	browserServerUrl,
 	findExistingLoopbackListener,
 	formatHostForUrl,
 	HOST,

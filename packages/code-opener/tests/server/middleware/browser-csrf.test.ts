@@ -93,4 +93,26 @@ describe("browser CSRF guard", () => {
 			code: "CROSS_ORIGIN_REFUSED",
 		});
 	});
+
+	describe("the browser address of a release server", () => {
+		const release = (hostname: string) => ({
+			host: `${hostname}:27242`,
+			origin: `http://${hostname}:27242`,
+			secFetchSite: "same-origin",
+		});
+
+		test.each(["request", "mutation", "settings-read"] as const)(
+			"%s traffic from archboard.localhost is the page's own",
+			(kind) => {
+				expect(checkBrowserCsrf(kind, release("archboard.localhost"))).toEqual({ ok: true });
+			},
+		);
+
+		test("another .localhost name is refused", () => {
+			expect(checkBrowserCsrf("request", release("evil.localhost"))).toMatchObject({
+				ok: false,
+				code: "CROSS_ORIGIN_REFUSED",
+			});
+		});
+	});
 });

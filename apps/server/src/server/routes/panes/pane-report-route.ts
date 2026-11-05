@@ -7,7 +7,7 @@ import type { Request, Response } from "express";
 
 import { parsePaneKey } from "@archboard/model/legacy-address";
 import { buildPanesReport } from "@archboard/server-lifecycle/panes";
-import { serverUrl, statedVault } from "@archboard/workbench/host";
+import { browserServerUrl, statedVault } from "@archboard/workbench/host";
 import { paneKeyOf, panes, semanticPaneContextFor } from "@archboard/workbench/panes";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
@@ -88,7 +88,7 @@ function getPanesRoute(req: Request, res: Response): void {
 		 * @returns The reading, or null when the pane has reported none.
 		 */
 		architecture: (clientId) => semanticPaneContextFor(clientId)?.architecture ?? null,
-		serverUrl: serverUrl(),
+		serverUrl: browserServerUrl(),
 	});
 	res.json({
 		success: true,

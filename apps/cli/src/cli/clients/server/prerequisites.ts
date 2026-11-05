@@ -1,5 +1,5 @@
 import { connectedBrowsers, ensureServerRunning } from "@archboard/server-lifecycle/server";
-import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
+import { ARCHBOARD_BROWSER_URL } from "@archboard/server-lifecycle/config";
 import type { RuntimePrerequisite } from "#cli/protocol/contract/contract.ts";
 
 /**
@@ -20,7 +20,7 @@ export async function requirePrerequisite(
 	}
 	if ((await connectedBrowsers()) === 0) {
 		const error = new Error(
-			`${description} requires the canvas to be open in a browser. Open ${ARCHBOARD_URL} and retry.`,
+			`${description} requires the canvas to be open in a browser. Open ${ARCHBOARD_BROWSER_URL} and retry.`,
 		);
 		(error as Error & { code?: string }).code = "BROWSER_REQUIRED";
 		throw error;

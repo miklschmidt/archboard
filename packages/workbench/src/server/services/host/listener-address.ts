@@ -1,11 +1,11 @@
 import net from "net";
 import { logger } from "@archboard/diagnostics/logger";
 import { installation } from "@archboard/workspace/installation";
-import { checkoutPort } from "@archboard/workspace/source-checkout";
+import { browserUrl, installationPort } from "@archboard/workspace/source-checkout";
 
 // The CLI names the port when it starts a server. Started by hand, a server
-// takes its checkout's own port, as the CLI of that checkout expects (ADR 0049).
-const PORT = parseInt(process.env["PORT"] || String(checkoutPort(installation().root)), 10);
+// takes its installation's own port, as the CLI of that installation expects (ADR 0049, 0075).
+const PORT = parseInt(process.env["PORT"] || String(installationPort(installation())), 10);
 const HOST = process.env["HOST"] || "127.0.0.1";
 const LOOPBACK_GUARD_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0", "::"]);
 const LOOPBACK_ADDRESSES = ["127.0.0.1", "::1"];
@@ -25,6 +25,15 @@ function formatHostForUrl(host: string): string {
  */
 function serverUrl(): string {
 	return `http://${formatHostForUrl(HOST)}:${PORT}`;
+}
+
+/**
+ * The address a person opens this server at. A release server is opened at `archboard.localhost`
+ * (ADR 0075), while `serverUrl` stays the address a process connects to.
+ * @returns The base URL for a browser.
+ */
+function browserServerUrl(): string {
+	return browserUrl(serverUrl());
 }
 
 /**
@@ -101,6 +110,7 @@ function logHttpServerError(error: NodeJS.ErrnoException): void {
 }
 
 export {
+	browserServerUrl,
 	serverUrl,
 	findExistingLoopbackListener,
 	formatHostForUrl,

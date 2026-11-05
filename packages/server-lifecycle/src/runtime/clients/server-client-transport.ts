@@ -1,6 +1,6 @@
 // One request to the Archboard server, and the identity gate in front of it.
 
-import { ARCHBOARD_URL } from "#runtime/services/config.ts";
+import { ARCHBOARD_BROWSER_URL, ARCHBOARD_URL } from "#runtime/services/config.ts";
 import { bothRelease, otherVersionWarning } from "#runtime/rules/release-version.ts";
 import { withVault, withWriteClaims } from "#runtime/state/server-client-session.ts";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
@@ -123,7 +123,7 @@ function warnOfOtherVersion(health: Record<string, unknown>): void {
 	const warning = otherVersionWarning(
 		{ mode: stringAt(health, "mode"), version: stringAt(health, "version") },
 		installation(),
-		ARCHBOARD_URL,
+		ARCHBOARD_BROWSER_URL,
 	);
 	if (warning !== null && !versionWarned) {
 		versionWarned = true;

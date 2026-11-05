@@ -1,9 +1,11 @@
 ---
 id: TASK-579.04
 title: A release server listens on 27242 and the browser opens archboard.localhost
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-05T14:58:00Z'
+updated_date: '2026-11-05T15:30:00Z'
 labels: []
 dependencies:
   - TASK-579.01
@@ -29,3 +31,9 @@ A release has no git checkout, so the port rule falls back to 3000, where the ma
 - [ ] #2 Every address shown to a person or opened in a browser is `http://archboard.localhost:27242`; the CLI itself connects to 127.0.0.1
 - [ ] #3 A page served at archboard.localhost works: panes, sockets, the core and the painter load
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Release default port 27242 in source-checkout.ts (installationPort), used by the CLI default URL and the server listener. 2. browserUrl maps a release loopback server at 27242 to archboard.localhost for everything shown or opened by a person; the CLI connects to 127.0.0.1. 3. The browser origin guard accepts the Host archboard.localhost. 4. Verify in a headless browser at archboard.localhost against a worktree server.
+<!-- SECTION:PLAN:END -->
