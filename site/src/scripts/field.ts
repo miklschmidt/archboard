@@ -188,7 +188,7 @@ export function lightField(canvas: HTMLCanvasElement, preset: FieldPreset): void
 			// The lamp follows its target with a short, frame-rate-independent lag.
 			const ease =
 				lamp && !still ? 1 - Math.exp(-((frame.time - (previous ?? frame.time)) * 7)) : 1;
-			previous = frame.time;
+			previous = still ? undefined : frame.time;
 			lamp = lamp ?? target;
 			lamp = { x: lamp.x + (target.x - lamp.x) * ease, y: lamp.y + (target.y - lamp.y) * ease };
 			gl.uniform2f(at("uRes"), frame.width, frame.height);
