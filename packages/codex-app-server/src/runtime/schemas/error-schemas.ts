@@ -8,6 +8,7 @@ const MisalignmentErrorDetailsSchema = looseObject({
 	errorType: z.string().nullable(),
 	detailedExplanation: z.string().nullable(),
 	steer: MisalignmentSteerSchema.nullable(),
+	reviewTarget: z.string().nullable().optional(),
 });
 
 export { MisalignmentErrorDetailsSchema };

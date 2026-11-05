@@ -7,7 +7,7 @@ The package runs one private Codex app-server process, which is the process that
 ## Requirements
 
 - Bun 1.4.4 or newer.
-- The `@openai/codex` package at exactly version 0.160.0. The package refuses every other version.
+- The `@openai/codex` package at exactly version 0.166.0. The package refuses every other version.
 - Node.js on `PATH`, because `@openai/codex` starts Codex with a Node.js script. A server that you start with `bun run <script>` needs no Node.js: `bun run` puts its own `node` on `PATH`.
 - Linux or macOS.
 - A Codex account that supports realtime voice. The person signs in from the page.
@@ -18,7 +18,7 @@ The package runs one private Codex app-server process, which is the process that
 ## Install
 
 ```bash
-bun add @archboard/codex-realtime-voice @openai/codex@0.160.0 react react-dom
+bun add @archboard/codex-realtime-voice @openai/codex@0.166.0 react react-dom
 bun add -d @types/bun @types/react @types/react-dom
 ```
 
@@ -382,7 +382,7 @@ agent.attach(server, { path: "/voice", origin: "http://127.0.0.1:4100" });
 
 ### `resolveCodexExecutable(options)`
 
-`resolveCodexExecutable` finds the Codex executable and proves it before anything runs it. It must be an absolute path to a regular, executable file that reports exactly `codex-cli 0.160.0`. It never looks on `PATH`. It returns the absolute path, and throws a `CodexExecutableError` with a `code` when the proof fails.
+`resolveCodexExecutable` finds the Codex executable and proves it before anything runs it. It must be an absolute path to a regular, executable file that reports exactly `codex-cli 0.166.0`. It never looks on `PATH`. It returns the absolute path, and throws a `CodexExecutableError` with a `code` when the proof fails.
 
 | Field            | Default                               | What it does                                                                                                                                       |
 | ---------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -546,16 +546,16 @@ In the browser, `@archboard/codex-realtime-voice/controllers` holds the parts un
 
 ### Codex reports another version
 
-`resolveCodexExecutable` throws `CodexExecutableError` with code `wrong_version` and the message "The configured Codex executable reported an unexpected version; expected codex-cli 0.160.0." The executable it found is not Codex 0.160.0.
+`resolveCodexExecutable` throws `CodexExecutableError` with code `wrong_version` and the message "The configured Codex executable reported an unexpected version; expected codex-cli 0.166.0." The executable it found is not Codex 0.166.0.
 
-1. Run `bun add @openai/codex@0.160.0` in your project.
-2. If you pass `executablePath`, make sure that it names a Codex 0.160.0 executable.
+1. Run `bun add @openai/codex@0.166.0` in your project.
+2. If you pass `executablePath`, make sure that it names a Codex 0.166.0 executable.
 
 ### The Codex executable is not found
 
 `resolveCodexExecutable` throws `CodexExecutableError`. Code `missing` means that `@openai/codex` is not installed where the package can find it, or that `executablePath` names no file. Code `not_absolute` means that `executablePath` is a relative path or a bare name: the package never looks on `PATH`. Code `version_unavailable` means that the executable did not run. With the installed package, the usual cause is that no `node` is on `PATH`.
 
-1. Run `bun add @openai/codex@0.160.0` in the project that runs the server. Package managers that skip peer dependencies leave it out.
+1. Run `bun add @openai/codex@0.166.0` in the project that runs the server. Package managers that skip peer dependencies leave it out.
 2. If you pass `executablePath`, give an absolute path.
 3. For `version_unavailable`, start the server with `bun run <script>`, or install Node.js.
 

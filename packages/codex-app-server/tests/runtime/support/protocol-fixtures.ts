@@ -21,6 +21,7 @@ const turnFixture = {
 	startedAt: 1,
 	completedAt: 2,
 	durationMs: 1,
+	rootTurnId: null,
 };
 
 const threadFixture = {
@@ -140,9 +141,9 @@ const responseFixtures: Record<ResponseMethod, unknown> = {
 		platformOs: "linux",
 	},
 	"config/read": { config: configFixture, origins: {}, layers: null },
-	"configRequirements/read": { requirements: null },
+	"configRequirements/read": { supportsIndependentSpeedModes: null, requirements: null },
 	"account/read": {
-		account: { type: "chatgpt", email: null, planType: "pro" },
+		account: { type: "chatgpt", email: null, planType: "pro", workspaceName: null },
 		requiresOpenaiAuth: true,
 		workspaceRouting: null,
 	},
@@ -156,9 +157,14 @@ const responseFixtures: Record<ResponseMethod, unknown> = {
 	"model/list": { data: [modelFixture], nextCursor: null },
 	"thread/start": threadStartResponseFixture,
 	"thread/fork": threadStartResponseFixture,
-	"thread/list": { data: [threadFixture], nextCursor: null, backwardsCursor: null },
+	"thread/list": {
+		data: [threadFixture],
+		nextCursor: null,
+		backwardsCursor: null,
+		readStates: null,
+	},
 	"thread/loaded/list": { data: ["thread-1"], nextCursor: null },
-	"thread/read": { thread: threadFixture },
+	"thread/read": { thread: threadFixture, readState: null },
 	"thread/turns/list": { data: [turnFixture], nextCursor: null, backwardsCursor: null },
 	"thread/items/list": {
 		data: [{ turnId: "turn-1", item: threadItemFixture, startedAtMs: null, completedAtMs: null }],

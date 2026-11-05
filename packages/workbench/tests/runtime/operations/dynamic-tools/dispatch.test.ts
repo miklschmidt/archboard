@@ -340,6 +340,7 @@ describe("codex dynamic dispatcher", () => {
 			data: [otherTarget.linkClassification!.thread!],
 			nextCursor: "server-next",
 			backwardsCursor: null,
+			readStates: null,
 		});
 		fixture.session.loadedListPages.set(null, { data: [otherTarget.threadId], nextCursor: null });
 		const response = await createCodexDynamicTools(fixture.options).dispatch(
@@ -378,6 +379,7 @@ describe("codex dynamic dispatcher", () => {
 			data: [otherTarget.linkClassification!.thread!],
 			nextCursor: null,
 			backwardsCursor: null,
+			readStates: null,
 		});
 		fixture.session.loadedListPages.set(null, { data: [otherTarget.threadId], nextCursor: null });
 		const returnedTurn = turn(authorities, "read-turn");
@@ -453,6 +455,7 @@ describe("codex dynamic dispatcher", () => {
 			data: [otherTarget.linkClassification!.thread!],
 			nextCursor: null,
 			backwardsCursor: null,
+			readStates: null,
 		});
 		noOutputs.session.loadedListPages.set(null, { data: [otherTarget.threadId], nextCursor: null });
 		noOutputs.session.turnsPages.set(null, {

@@ -420,5 +420,6 @@ export function turn(
 		startedAt: 1,
 		completedAt: status === "inProgress" ? null : 2,
 		durationMs: status === "inProgress" ? null : 1,
+		rootTurnId: null,
 	};
 }

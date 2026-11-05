@@ -26,9 +26,15 @@ describe("Codex app-server no-parameter requests", () => {
 				id: expect.any(String),
 				method: "configRequirements/read",
 			});
-			sendJson(child, { id: requirementsFrame["id"], result: { requirements: null } });
+			sendJson(child, {
+				id: requirementsFrame["id"],
+				result: { supportsIndependentSpeedModes: null, requirements: null },
+			});
 			const requirementsResponse = await requirementsPromise;
-			expect(requirementsResponse.result).toEqual({ requirements: null });
+			expect(requirementsResponse.result).toEqual({
+				supportsIndependentSpeedModes: null,
+				requirements: null,
+			});
 
 			const logoutPromise = transport.request("account/logout", undefined);
 			const logoutFrame = frameAt(child, 1);

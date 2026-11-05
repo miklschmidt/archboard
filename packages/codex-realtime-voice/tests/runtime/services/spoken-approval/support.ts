@@ -251,6 +251,7 @@ function makeHarness(options: HarnessOptions = {}): GateHarness {
 		startedAt: 2,
 		completedAt: null,
 		durationMs: null,
+		rootTurnId: null,
 	};
 	const startParams: SessionParams<"turn/start">[] = [];
 	let resolveTurn: (() => void) | null = null;
@@ -429,6 +430,7 @@ function turnEvent(
 				startedAt: 2,
 				completedAt: method === "turn/completed" ? 3 : null,
 				durationMs: method === "turn/completed" ? 1 : null,
+				rootTurnId: null,
 			},
 		},
 	});

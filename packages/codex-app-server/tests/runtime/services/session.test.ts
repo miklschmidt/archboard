@@ -32,7 +32,7 @@ async function readyFixture(): Promise<SessionFixture> {
 	const fixture = createSessionFixture();
 	await fixture.session.initialize();
 	fixture.transport.enqueueResponse("account/read", {
-		account: { type: "chatgpt", email: null, planType: "pro" },
+		account: { type: "chatgpt", email: null, planType: "pro", workspaceName: null },
 		requiresOpenaiAuth: true,
 		workspaceRouting: null,
 	});
@@ -88,7 +88,7 @@ describe("typed Codex session", () => {
 				experimentalApi: true,
 				requestAttestation: false,
 				mcpServerOpenaiFormElicitation: true,
-				optOutNotificationMethods: [],
+				optOutNotificationMethods: ["thread/readState/changed"],
 				extensions: {},
 			},
 		});
@@ -124,7 +124,7 @@ describe("typed Codex session", () => {
 		await fixture.session.accountLogin({ type: "apiKey", apiKey: "secret" });
 		expect(fixture.lifecycle.accountReady()).toBe(0);
 		fixture.transport.enqueueResponse("account/read", {
-			account: { type: "chatgpt", email: null, planType: "pro" },
+			account: { type: "chatgpt", email: null, planType: "pro", workspaceName: null },
 			requiresOpenaiAuth: true,
 			workspaceRouting: null,
 		});

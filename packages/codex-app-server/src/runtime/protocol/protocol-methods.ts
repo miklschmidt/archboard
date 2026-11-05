@@ -36,7 +36,9 @@ const SERVER_REQUEST_METHODS = CODEX_SERVER_REQUEST_METHODS;
  * The union also holds `account/gatewayOAuth/changed`, `modelProvider/authRecoveryStarted`,
  * `modelProvider/authRecoveryCompleted` and `thread/attachment/updated`, which Codex sends only
  * for gateways, thread attachments, or Bedrock AWS-profile auth, none of which the client sets up
- * or calls.
+ * or calls. It holds `thread/prediction/updated`, which belongs to the thread predictions the client
+ * never requests, and `thread/readState/changed`, which the client opts out of at
+ * initialize.
  */
 const SERVER_NOTIFICATION_METHODS = [
 	"error",

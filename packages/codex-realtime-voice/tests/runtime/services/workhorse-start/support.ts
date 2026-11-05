@@ -153,7 +153,7 @@ function makeFixture(linkOutcome?: ThreadLinkBindingSnapshot): WorkhorseFixture 
 	const threadId = authorities.identity.decoder.adoptThreadId("workhorse-1");
 	const thread = threadFixture(threadId);
 	const response = startResponse(thread);
-	const session = new FakeSession(response, { thread });
+	const session = new FakeSession(response, { thread, readState: null });
 	const link = new FakeThreadLink(
 		linkOutcome ??
 			executableBinding(
@@ -267,6 +267,7 @@ function turnFixture(authorities: IdentityAuthorities): SessionTurn {
 		startedAt: 1,
 		completedAt: 2,
 		durationMs: 1,
+		rootTurnId: null,
 	};
 }
 

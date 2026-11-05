@@ -49,7 +49,7 @@ async function readyFixture(): Promise<SessionFixture> {
 	const fixture = createSessionFixture();
 	await fixture.session.initialize();
 	fixture.transport.enqueueResponse("account/read", {
-		account: { type: "chatgpt", email: null, planType: "pro" },
+		account: { type: "chatgpt", email: null, planType: "pro", workspaceName: null },
 		requiresOpenaiAuth: true,
 		workspaceRouting: null,
 	});
@@ -124,6 +124,7 @@ describe("Codex session logout readiness", () => {
 				data: [threadFixture],
 				nextCursor: null,
 				backwardsCursor: null,
+				readStates: null,
 			});
 			const page = await fixture.session.threadListPage({});
 			expect(page.data).toHaveLength(1);

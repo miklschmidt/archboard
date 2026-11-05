@@ -13,12 +13,7 @@ function generatedCases(...names: readonly string[]): NotificationUnionChallenge
  * equality.
  */
 export const SERVER_NOTIFICATION_UNION_CHALLENGES = {
-	error: generatedCases(
-		"error.codexErrorInfo",
-		"error.codexErrorInfo.activeTurnNotSteerable.turnKind",
-		"error.misalignment",
-		"error.misalignment.steer",
-	),
+	error: generatedCases("error.misalignment", "error.misalignment.steer"),
 	"thread/started": generatedCases(
 		"thread.gitInfo",
 		"thread.historyMode",
@@ -29,8 +24,6 @@ export const SERVER_NOTIFICATION_UNION_CHALLENGES = {
 		"thread.status.active.activeFlags",
 		"thread.status.type",
 		"thread.turns.error",
-		"thread.turns.error.codexErrorInfo",
-		"thread.turns.error.codexErrorInfo.activeTurnNotSteerable.turnKind",
 		"thread.turns.error.misalignment",
 		"thread.turns.error.misalignment.steer",
 		"thread.turns.items.agentMessage.delivery",
@@ -92,8 +85,6 @@ export const SERVER_NOTIFICATION_UNION_CHALLENGES = {
 	"thread/tokenUsage/updated": [],
 	"turn/started": generatedCases(
 		"turn.error",
-		"turn.error.codexErrorInfo",
-		"turn.error.codexErrorInfo.activeTurnNotSteerable.turnKind",
 		"turn.error.misalignment",
 		"turn.error.misalignment.steer",
 		"turn.items.agentMessage.delivery",
@@ -137,8 +128,6 @@ export const SERVER_NOTIFICATION_UNION_CHALLENGES = {
 	),
 	"turn/completed": generatedCases(
 		"turn.error",
-		"turn.error.codexErrorInfo",
-		"turn.error.codexErrorInfo.activeTurnNotSteerable.turnKind",
 		"turn.error.misalignment",
 		"turn.error.misalignment.steer",
 		"turn.items.agentMessage.delivery",

@@ -37,6 +37,7 @@ function notification(threadId: string): TransportServerNotification["notificati
 				id: "notification-turn",
 				items: [],
 				itemsView: "full",
+				rootTurnId: null,
 				status: "completed",
 				error: null,
 				startedAt: 1,

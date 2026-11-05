@@ -30,14 +30,14 @@ const makeTargetActive = (): void => {
 	const target = threads.get("thread-3");
 	if (target === undefined) return;
 	target.status = { type: "active", activeFlags: [] };
-	target.turns = [{ id: "controlled-target-turn", items: [], itemsView: "full", status: "inProgress", error: null, startedAt: Date.now(), completedAt: null, durationMs: null }];
+	target.turns = [{ id: "controlled-target-turn", items: [], itemsView: "full", rootTurnId: null, status: "inProgress", error: null, startedAt: Date.now(), completedAt: null, durationMs: null }];
 };
 
 const completeTarget = (): void => {
 	const target = threads.get("thread-3");
 	if (target === undefined) return;
 	target.status = { type: "idle" };
-	target.turns = [{ id: "controlled-target-turn", items: [], itemsView: "full", status: "completed", error: null, startedAt: Date.now(), completedAt: Date.now(), durationMs: 1 }];
+	target.turns = [{ id: "controlled-target-turn", items: [], itemsView: "full", rootTurnId: null, status: "completed", error: null, startedAt: Date.now(), completedAt: Date.now(), durationMs: 1 }];
 };
 
 const emitTerminalBatch = (cause: TerminalCause): void => {
@@ -65,7 +65,7 @@ const terminalizeBatch = (cause: TerminalCause): void => {
 			[waitId, "wait_threads", { threadIds: ["thread-3"], timeoutMs: 120000 }],
 		] as const) notify("item/completed", { threadId: workhorseThreadId, turnId: "turn-1", item: controlledDynamicItem(id, tool, argumentsValue, "completed"), completedAtMs: Date.now() });
 	} else {
-		notify("turn/completed", { threadId: workhorseThreadId, turn: { id: "turn-1", items: [controlledDynamicItem(mutationId, "create_thread", { prompt: "Do not execute the caller_turn_interrupted effect." }, "failed"), controlledDynamicItem(waitId, "wait_threads", { threadIds: ["thread-3"], timeoutMs: 120000 }, "failed")], itemsView: "full", status: "interrupted", error: null, startedAt: Date.now(), completedAt: Date.now(), durationMs: 1 } });
+		notify("turn/completed", { threadId: workhorseThreadId, turn: { id: "turn-1", items: [controlledDynamicItem(mutationId, "create_thread", { prompt: "Do not execute the caller_turn_interrupted effect." }, "failed"), controlledDynamicItem(waitId, "wait_threads", { threadIds: ["thread-3"], timeoutMs: 120000 }, "failed")], itemsView: "full", rootTurnId: null, status: "interrupted", error: null, startedAt: Date.now(), completedAt: Date.now(), durationMs: 1 } });
 	}
 	record({ kind: "terminal_notification", cause });
 };
@@ -77,7 +77,7 @@ const emitTerminalMismatch = (cause: TerminalCause, mismatch: TerminalMismatch):
 	if (mismatch === "wrong_call") {
 		notify("item/completed", { threadId: workhorseThreadId, turnId: "turn-1", item: controlledDynamicItem(cause + "-wrong-call", "create_thread", { prompt: "Wrong call must do nothing." }, "completed"), completedAtMs: Date.now() });
 	} else {
-		notify("turn/completed", { threadId: workhorseThreadId, turn: { id: "wrong-turn", items: [], itemsView: "full", status: "interrupted", error: null, startedAt: Date.now(), completedAt: Date.now(), durationMs: 1 } });
+		notify("turn/completed", { threadId: workhorseThreadId, turn: { id: "wrong-turn", items: [], itemsView: "full", rootTurnId: null, status: "interrupted", error: null, startedAt: Date.now(), completedAt: Date.now(), durationMs: 1 } });
 	}
 	record({ kind: "terminal_mismatch", cause, mismatch });
 };
@@ -112,7 +112,7 @@ const emitOwnershipBatch = (phase: string): void => {
 	const coordinator = threads.get("thread-1");
 	if (coordinator !== undefined) {
 		coordinator.status = { type: "active", activeFlags: [] };
-		coordinator.turns = [{ id: phase + "-coordinator-turn", items: [{ ...controlledDynamicItem(coordinatorId, "inspect_workhorse", {}), namespace: "archboard_workhorse" }], itemsView: "full", status: "inProgress", error: null, startedAt: Date.now(), completedAt: null, durationMs: null }];
+		coordinator.turns = [{ id: phase + "-coordinator-turn", items: [{ ...controlledDynamicItem(coordinatorId, "inspect_workhorse", {}), namespace: "archboard_workhorse" }], itemsView: "full", rootTurnId: null, status: "inProgress", error: null, startedAt: Date.now(), completedAt: null, durationMs: null }];
 		request(coordinatorId, "item/tool/call", { threadId: "thread-1", turnId: phase + "-coordinator-turn", callId: coordinatorId, namespace: "archboard_workhorse", tool: "inspect_workhorse", arguments: {} });
 	}
 };
@@ -120,7 +120,7 @@ const emitOwnershipBatch = (phase: string): void => {
 const releaseHeldAccountRead = (): void => {
 	for (const frame of heldAccountReads.splice(0)) {
 		record({ kind: "held_client_rpc", state: "released", method: "account/read", id: String(frame.id) });
-		respond(frame as never, { account: { type: "chatgpt", email: null, planType: "pro" }, requiresOpenaiAuth: true, workspaceRouting: null });
+		respond(frame as never, { account: { type: "chatgpt", email: null, planType: "pro", workspaceName: null }, requiresOpenaiAuth: true, workspaceRouting: null });
 	}
 };
 

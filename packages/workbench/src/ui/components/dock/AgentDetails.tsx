@@ -24,6 +24,7 @@ const ACCOUNT_WORDS: Readonly<Record<string, string>> = {
 	chatgpt: "ChatGPT",
 	apiKey: "OpenAI API key",
 	amazonBedrock: "Amazon Bedrock",
+	gcp: "Google Cloud Vertex AI",
 };
 
 /**

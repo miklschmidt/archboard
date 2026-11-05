@@ -93,6 +93,7 @@ const rawImageGenerationWithoutOptional = {
 	revisedPrompt: null,
 	result: "/tmp/generated.png",
 	failure: null,
+	generationId: null,
 } satisfies RawImageGenerationItem;
 const imageGenerationWithoutOptional = {
 	...rawImageGenerationWithoutOptional,
@@ -140,6 +141,7 @@ acceptSessionImageGeneration({
 	status: "completed",
 	revisedPrompt: null,
 	failure: null,
+	generationId: null,
 });
 
 declare function acceptExactRequestIdentities<

@@ -48,6 +48,7 @@ const ConfigReadResponseSchema = looseObject({
 });
 
 const ConfigRequirementsReadResponseSchema = looseObject({
+	supportsIndependentSpeedModes: z.boolean().nullable(),
 	requirements: ConfigRequirementsSchema.nullable(),
 });
 

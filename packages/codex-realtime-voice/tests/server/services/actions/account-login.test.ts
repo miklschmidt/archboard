@@ -12,7 +12,12 @@ import {
 import { processFacts } from "#tests/server/support/generation/process-fixture.ts";
 
 const accountResponse = {
-	account: { type: "chatgpt", email: "fixture@example.test", planType: "plus" },
+	account: {
+		type: "chatgpt",
+		email: "fixture@example.test",
+		planType: "plus",
+		workspaceName: null,
+	},
 	requiresOpenaiAuth: true,
 	workspaceRouting: null,
 } as const;

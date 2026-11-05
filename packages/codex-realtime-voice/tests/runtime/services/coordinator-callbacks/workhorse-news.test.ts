@@ -64,6 +64,7 @@ function turnCompleted(
 				id: `turn-${status}`,
 				items: [],
 				itemsView: "notLoaded",
+				rootTurnId: null,
 				status,
 				error: status === "failed" ? { message: "The model stopped answering." } : null,
 				startedAt: null,

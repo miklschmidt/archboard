@@ -88,14 +88,28 @@ function issuePaths(issue: unknown, prefix: IssuePath = []): IssuePath[] {
 }
 
 interface UnionBranchScore {
+	readonly rejectsType: boolean;
 	readonly depth: number;
 	readonly inputKeyMatches: number;
 	readonly index: number;
 }
 
 /**
- * Scores how closely one union branch matched the input: deeper failures and more shared
- * top-level keys mean the branch is the one the payload was trying to be.
+ * Whether a branch refuses the input's own `type` value, so it is a different variant.
+ * @param branch - The branch's issue list.
+ * @returns Whether an issue of the branch sits on the top-level `type` key.
+ */
+function rejectsType(branch: readonly unknown[]): boolean {
+	return branch.some((issue) => {
+		const path = issuePath(issue);
+		return path.length === 1 && path[0] === "type";
+	});
+}
+
+/**
+ * Scores how closely one union branch matched the input: a branch that accepts the input's
+ * `type`, deeper failures and more shared top-level keys mean the branch is the one the payload
+ * was trying to be.
  * @param branch - The branch's issue list.
  * @param unionValue - The value the union was applied to.
  * @param index - The branch position, used as the final tie-breaker.
@@ -116,16 +130,20 @@ function branchScore(
 				0,
 			)
 		: 0;
-	return { depth, inputKeyMatches, index };
+	return { rejectsType: rejectsType(branch), depth, inputKeyMatches, index };
 }
 
 /**
- * Orders two branch scores: depth first, then input-key matches, then the later branch.
+ * Orders two branch scores: a branch that accepts the input's `type` first, then depth, then
+ * input-key matches, then the later branch.
  * @param candidate - The score being considered.
  * @param current - The best score so far.
  * @returns Whether the candidate should replace the current best.
  */
 function isBetterBranch(candidate: UnionBranchScore, current: UnionBranchScore): boolean {
+	if (candidate.rejectsType !== current.rejectsType) {
+		return !candidate.rejectsType;
+	}
 	if (candidate.depth !== current.depth) {
 		return candidate.depth > current.depth;
 	}

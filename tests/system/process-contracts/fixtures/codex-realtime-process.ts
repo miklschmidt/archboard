@@ -122,9 +122,9 @@ const configResponse=()=>({config:{model:null,review_model:null,model_context_wi
 function handle(frame){record({kind:"frame",frame});
 if(frame.method==="initialize"){response(frame,{userAgent:"Codex Desktop/${CODEX_PROTOCOL_VERSION}",codexHome:process.env.CODEX_HOME,platformFamily:"unix",platformOs:"linux"});return;}
 if(frame.method==="initialized")return;
-if(frame.method==="configRequirements/read"){response(frame,{requirements:null});return;}
+if(frame.method==="configRequirements/read"){response(frame,{supportsIndependentSpeedModes:null,requirements:null});return;}
 if(frame.method==="config/read"){response(frame,configResponse());return;}
-if(frame.method==="account/read"){response(frame,{account:{type:"chatgpt",email:null,planType:"pro"},requiresOpenaiAuth:true,workspaceRouting:null});return;}
+if(frame.method==="account/read"){response(frame,{account:{type:"chatgpt",email:null,planType:"pro",workspaceName:null},requiresOpenaiAuth:true,workspaceRouting:null});return;}
 const current=control();record({kind:"request",method:frame.method,params:frame.params});
 if(frame.method==="thread/realtime/start"){realtimeSessionId=frame.params.realtimeSessionId;response(frame,{});const emitEvents=values=>{let delay=0;for(const event of values){delay+=event.delayMs??0;setTimeout(()=>notification(event.method,replace(event.params,realtimeSessionId,frame.params.threadId)),delay);}};const emitStart=()=>{const latest=control();emitEvents(latest.startEvents??${JSON.stringify(DEFAULTS.startEvents)});emitEvents(latest.afterStartEvents??[]);};if(current.startDelayMs)setTimeout(emitStart,current.startDelayMs);else emitStart();return;}
 if(frame.method==="thread/timeline/list"){const pages=current.pages??[];const page=pages[pageIndex++]??{data:[],nextCursor:null,activeRealtimeSessionAtPageStart:null};response(frame,replace(page,realtimeSessionId,frame.params.threadId));return;}

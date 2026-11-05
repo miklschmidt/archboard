@@ -47,6 +47,7 @@ const BROWSER_ACCOUNT_TYPE_BY_CODEX_TYPE = {
 	apiKey: "apiKey",
 	chatgpt: "chatgpt",
 	amazonBedrock: "amazonBedrock",
+	gcp: "gcp",
 } as const satisfies Record<CodexAccountType, string>;
 
 /**

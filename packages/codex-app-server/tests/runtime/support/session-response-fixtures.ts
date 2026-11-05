@@ -28,7 +28,7 @@ export function responseFor(method: ResponseMethod, fixture: SessionFixture): un
 	}
 	if (method === "account/read") {
 		return {
-			account: { type: "chatgpt", email: null, planType: "pro" },
+			account: { type: "chatgpt", email: null, planType: "pro", workspaceName: null },
 			requiresOpenaiAuth: true,
 			workspaceRouting: null,
 		};
@@ -61,7 +61,7 @@ export function responseFor(method: ResponseMethod, fixture: SessionFixture): un
 		};
 	}
 	if (method === "thread/read") {
-		return { thread: threadFixture };
+		return { thread: threadFixture, readState: null };
 	}
 	if (method === "turn/start" || method === "thread/queue/start") {
 		return { turn: turnFixture };
@@ -85,7 +85,12 @@ export function responseFor(method: ResponseMethod, fixture: SessionFixture): un
 		return { status: "unsubscribed" };
 	}
 	if (method === "thread/list") {
-		return { data: [threadFixture], nextCursor: "thread-next", backwardsCursor: "thread-back" };
+		return {
+			data: [threadFixture],
+			nextCursor: "thread-next",
+			backwardsCursor: "thread-back",
+			readStates: null,
+		};
 	}
 	if (method === "thread/loaded/list") {
 		return { data: ["thread-1"], nextCursor: "loaded-next" };

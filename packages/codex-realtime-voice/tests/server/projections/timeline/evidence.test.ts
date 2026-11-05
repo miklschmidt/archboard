@@ -283,6 +283,7 @@ test("plan and token usage reports republish the timeline without re-reading his
 				id: "live-turn",
 				items: [],
 				itemsView: "full",
+				rootTurnId: null,
 				status: "completed",
 				error: null,
 				startedAt: 1,

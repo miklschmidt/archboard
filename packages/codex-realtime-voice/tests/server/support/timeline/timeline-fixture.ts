@@ -99,6 +99,7 @@ function turnFixture(
 		startedAt: 1,
 		completedAt: 2,
 		durationMs: 1,
+		rootTurnId: null,
 		...overrides,
 	} satisfies SessionTurn;
 }

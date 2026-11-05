@@ -258,7 +258,10 @@ class FakeSession implements CoordinatorSessionPort {
 
 	async threadRead(params: SessionParams<"thread/read">): Promise<SessionResponse<"thread/read">> {
 		this.onRead?.();
-		return { thread: { ...this.started.thread, id: params.threadId, status: this.readStatus } };
+		return {
+			thread: { ...this.started.thread, id: params.threadId, status: this.readStatus },
+			readState: null,
+		};
 	}
 
 	async threadUnsubscribe(

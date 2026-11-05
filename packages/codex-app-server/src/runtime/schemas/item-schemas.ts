@@ -117,7 +117,19 @@ const CollabAgentStateSchema = looseObject({
 	message: z.string().nullable(),
 });
 
-const ThreadItemSchema = z.discriminatedUnion("type", [
+const ImageGenerationItemShape = looseObject({
+	type: z.literal("imageGeneration"),
+	id: z.string(),
+	status: z.string(),
+	revisedPrompt: z.string().nullable(),
+	transparentBackground: z.boolean().optional(),
+	failure: ImageGenerationFailureSchema.nullable(),
+	savedPath: z.string().optional(),
+	inputImages: z.array(looseObject({ path: z.string(), sha256: z.string() })).optional(),
+	generationId: z.string().nullable(),
+});
+
+const ThreadItemPayloadSchema = z.discriminatedUnion("type", [
 	looseObject({
 		type: z.literal("userMessage"),
 		id: z.string(),
@@ -230,6 +242,8 @@ const ThreadItemSchema = z.discriminatedUnion("type", [
 		kind: z.enum(["started", "interacted", "interrupted", "completed"]),
 		agentThreadId: z.string(),
 		agentPath: z.string(),
+		model: z.string().nullable(),
+		reasoningEffort: ReasoningEffortSchema.nullable(),
 	}),
 	looseObject({
 		type: z.literal("webSearch"),
@@ -241,19 +255,20 @@ const ThreadItemSchema = z.discriminatedUnion("type", [
 	}),
 	looseObject({ type: z.literal("imageView"), id: z.string(), path: z.string() }),
 	looseObject({ type: z.literal("sleep"), id: z.string(), durationMs: FiniteNumberSchema }),
-	looseObject({
-		type: z.literal("imageGeneration"),
-		id: z.string(),
-		status: z.string(),
-		revisedPrompt: z.string().nullable(),
-		result: z.string(),
-		transparentBackground: z.boolean().optional(),
-		failure: ImageGenerationFailureSchema.nullable(),
-		savedPath: z.string().optional(),
-	}),
 	looseObject({ type: z.literal("enteredReviewMode"), id: z.string(), review: z.string() }),
 	looseObject({ type: z.literal("exitedReviewMode"), id: z.string(), review: z.string() }),
 	looseObject({ type: z.literal("contextCompaction"), id: z.string() }),
+]);
+
+// Since Codex 0.166.0 a generated image is its inline data or an attachment-store file
+// (`GeneratedImageRef`, flattened and untagged). A discriminated union holds one member per
+// `type`, so the two image shapes sit beside it. Codex reads a file first, so an item with both,
+// which rollouts written during its migration hold, is read as the file. The payload union comes
+// last, so a malformed item that ties with an image shape reports its own issues.
+const ThreadItemSchema = z.union([
+	ImageGenerationItemShape.extend({ fileId: z.string() }),
+	ImageGenerationItemShape.extend({ result: z.string() }),
+	ThreadItemPayloadSchema,
 ]);
 
 const ThreadItemEntrySchema = looseObject({
