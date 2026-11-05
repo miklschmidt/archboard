@@ -16,6 +16,22 @@ async function pickModelChoice(
 		"the installed navigation control",
 		WAIT,
 	);
+	// A reading that still loads replaces the toolbar's choices and closes an open menu, so the
+	// page must be idle in two readings in a row before the menu opens.
+	let idle = false;
+	await pollUntil(
+		async () => {
+			const now = await browser.eval<boolean>(
+				`document.querySelector('[aria-busy="true"]') === null`,
+			);
+			const settled = now && idle;
+			idle = now;
+			return settled;
+		},
+		Boolean,
+		"the idle page",
+		WAIT,
+	);
 	await browser.run(["click", trigger]);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector(${JSON.stringify(option)}) !== null`),
