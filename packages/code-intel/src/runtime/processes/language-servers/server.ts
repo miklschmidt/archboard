@@ -68,6 +68,8 @@ interface ServerStart {
 	readonly argv: readonly [string, ...string[]];
 	/** The project's root, where it starts. */
 	readonly root: string;
+	/** The `initializationOptions` of its `initialize` request. */
+	readonly initializationOptions?: Readonly<Record<string, unknown>> | undefined;
 	/** What it is told when it asks for its configuration, by section. */
 	readonly settings?: Readonly<Record<string, unknown>> | undefined;
 	readonly signal: AbortSignal;
@@ -124,11 +126,11 @@ function exitReason(code: number, signal: string | null): string {
 /**
  * The `initialize` request: the project as the one workspace, a client that
  * asks for definitions and outlines and nothing else.
- * @param root The project.
- * @param language Its language.
+ * @param start The server: its project, its language and its options.
  * @returns Its params.
  */
-function initializeParams(root: string, language: Language): object {
+function initializeParams(start: ServerStart): object {
+	const { root, language, initializationOptions } = start;
 	const uri = pathToFileURL(root).href;
 	const { indexProgress } = LANGUAGES[language];
 	return {
@@ -142,6 +144,7 @@ function initializeParams(root: string, language: Language): object {
 			textDocument: { documentSymbol: { hierarchicalDocumentSymbolSupport: true } },
 			...(indexProgress === undefined ? {} : { window: { workDoneProgress: true } }),
 		},
+		...(initializationOptions === undefined ? {} : { initializationOptions }),
 	};
 }
 
@@ -300,7 +303,7 @@ async function startServer(start: ServerStart): Promise<Server> {
 	const bounds = { signal: start.signal };
 	try {
 		await clock.measure(async () => {
-			await connection.request("initialize", initializeParams(start.root, start.language), bounds);
+			await connection.request("initialize", initializeParams(start), bounds);
 			connection.notify("initialized", {});
 			await settle(connection, start.language, bounds);
 		});
