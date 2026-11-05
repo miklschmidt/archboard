@@ -1,11 +1,11 @@
 ---
 id: TASK-579.01
 title: One installation module decides checkout or release and names every location
-status: In Progress
+status: Done
 assignee:
   - '@implementer'
 created_date: '2026-11-05T14:58:00Z'
-updated_date: '2026-11-05T15:14:00Z'
+updated_date: '2026-11-05T15:19:00Z'
 labels: []
 dependencies: []
 references:
@@ -48,3 +48,9 @@ Decisions: installation() is lazy and memoized (resolveInstallation is the testa
 
 Integration gate: after b769329e1 fixed the build-core lint error, `nix develop --command bash -c "bun run build:core && bun run check"` exited 0 (21/21 tasks successful).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added `@archboard/workspace/installation` (packages/workspace/src/runtime/services/installation.ts). `installation()` decides once: release when `archboard-release.json` lies beside the running executable or in the parent of its `bin/`, else the archboard checkout above the module, else `INSTALLATION_NOT_FOUND`; a damaged marker refuses with `RELEASE_MARKER_INVALID`. It reports mode, root, version, frontend/core/grammars/skills/bin directories, Codex scope, server command and core hash source. `SOURCE_CHECKOUT` is gone; every consumer reads the module, and oxlint `no-restricted-imports` refuses the name. Verified: `bun run check` exit 0 inside nix develop after b769329e1. Model: draft proposal b2zJw510 adds the Installation module and re-points the two stale anchors; it awaits owner adoption. Follow-ups owned by siblings: the release server argument (579.07), Codex scope (579.05), core hash from the marker (579.02).
+<!-- SECTION:FINAL_SUMMARY:END -->
