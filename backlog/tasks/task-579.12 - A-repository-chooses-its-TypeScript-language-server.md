@@ -1,7 +1,7 @@
 ---
 id: TASK-579.12
 title: A repository chooses its TypeScript language server
-status: In Progress
+status: Done
 assignee:
   - '@implementer'
 created_date: '2026-11-05T15:15:00Z'
@@ -26,9 +26,9 @@ The code check runs the native `tsc --lsp --stdio` of TypeScript 7, from the che
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `archboard repo language-server typescript <command> [--arg ...]` configures the TypeScript server of a checkout, and `--remove` removes it
-- [ ] #2 A configured TypeScript server wins; otherwise the checkout TypeScript 7 or later is used; otherwise the code check reports the server as missing with a remedy that names the command
-- [ ] #3 A release looks for no TypeScript of its own, and a checkout keeps the fallback to Archboard's own TypeScript
+- [x] #1 `archboard repo language-server typescript <command> [--arg ...]` configures the TypeScript server of a checkout, and `--remove` removes it
+- [x] #2 A configured TypeScript server wins; otherwise the checkout TypeScript 7 or later is used; otherwise the code check reports the server as missing with a remedy that names the command
+- [x] #3 A release looks for no TypeScript of its own, and a checkout keeps the fallback to Archboard's own TypeScript
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -42,3 +42,9 @@ The code check runs the native `tsc --lsp --stdio` of TypeScript 7, from the che
 <!-- SECTION:NOTES:BEGIN -->
 Decision: the worktree started on main; fast-forwarded to fix/core-build-feedback to get the installation module. Decision: TypeScript joins CONFIGURABLE_LANGUAGES (one list) rather than a separate case; defaultTypescriptServer takes the fallback flag so release behaviour is testable without the installation singleton. Generated CLI contract artifacts did not change.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+typescript joined CONFIGURABLE_LANGUAGES, so `archboard repo language-server typescript <command> [--arg ...]` configures it and `--remove` removes it. server-command.ts resolves a configured server first, then the checkout TypeScript 7+ `tsc --lsp --stdio`, then Archboard's own TypeScript in checkout mode only, else missing with the configure remedy. ADR 0046 amended; INSTALL.md and skills/archboard/references/setup.md updated. Verified after merge: server-command.test.ts 4 pass, apps/cli language-server.test.ts 12 pass; the implementer ran test:modules (4906 pass), test:system (234 pass), test:repository, types, lint and format in its worktree.
+<!-- SECTION:FINAL_SUMMARY:END -->
