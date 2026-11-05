@@ -4,7 +4,7 @@ title: bun run release builds the launchers and the three platform packages
 status: To Do
 assignee: []
 created_date: '2026-11-05T14:59:00Z'
-updated_date: '2026-11-05T15:03:00Z'
+updated_date: '2026-11-05T15:15:00Z'
 labels: []
 dependencies:
   - TASK-579.02
@@ -12,6 +12,7 @@ dependencies:
   - TASK-579.04
   - TASK-579.06
   - TASK-579.07
+  - TASK-579.12
 references:
   - vite.config.ts
   - scripts/build-core.ts

@@ -89,9 +89,10 @@ voice package, `@archboard/codex-realtime-voice`, keeps its own version line.
 - `LICENSE` with the version written in, and `THIRD_PARTY_NOTICES.md` for every
   bundled dependency and font.
 
-The TypeScript fallback language server is not shipped. If the repository or
-the `PATH` has no TypeScript server, the code check reports it as missing, as
-it does today.
+A release ships no TypeScript language server. The code check uses the native
+`tsc --lsp --stdio` of the checkout's own TypeScript 7 or later. A repository
+can configure another server with `archboard repo language-server typescript`.
+Without either, the code check reports the server as missing.
 
 ### What a release does differently
 
@@ -118,12 +119,32 @@ it does today.
 
 ### Publication
 
-A tag `v<version>` on `main` starts a GitHub Actions workflow. It builds the
-executables for each platform on Linux. It installs the packed tarballs on
-Linux and macOS without Rust, Bun or Node.js, and runs a short smoke test.
-Then it publishes every package with npm trusted publishing and provenance. A
-prerelease goes to the dist-tag `next`. The version comes from the root
-`package.json`.
+The commit messages decide each version. The repository already uses
+Conventional Commits, and each pull request lands as one commit with a
+conventional title. release-please (a release tool from Google) reads the
+commits on `main` since the last release. It keeps one release pull request
+open. That pull request bumps the version in the root `package.json` and adds
+the new section of `CHANGELOG.md`. Before 1.0, a `feat` commit bumps the minor
+version and a `fix` commit bumps the patch version. A breaking change bumps
+the minor version.
+
+A merge of the release pull request is the release. release-please tags the
+merge commit `v<version>` and makes a GitHub release with the same notes. The
+same workflow run then builds the executables for each platform on Linux. It
+installs the packed tarballs on Linux and macOS without Rust, Bun or Node.js,
+and runs a short smoke test. Then it publishes every package. A tag that the
+workflow token makes starts no other workflow, so publication runs in that
+same workflow and not on a tag trigger.
+
+Every package is published through npm trusted publishing. npm trusts the
+release workflow of this repository through OpenID Connect (OIDC), so the
+repository stores no npm token, and each package gets provenance. Each package
+on npm names the trusted workflow and refuses publication by token. If npm
+trusts a workflow only for a package that already exists, the owner publishes
+a placeholder of each name once by hand.
+
+The MIT voice package is a second release-please component with its own
+version, changelog and tag `codex-realtime-voice-v<version>`.
 
 The Change Date of the Business Source License counts from the first
 publication of each version. The release build writes that version into the
