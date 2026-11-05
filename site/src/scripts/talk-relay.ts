@@ -154,11 +154,6 @@ export function mountTalkRelay(root: HTMLElement): void {
 	/** Hold the conversation: the line under way starts again when it resumes. */
 	const pause = () => {
 		controller?.abort();
-		const line = lines[next];
-		if (line) {
-			finish(line);
-			line.classList.add("is-pending");
-		}
 		work(undefined);
 		setMode("listening");
 	};
