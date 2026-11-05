@@ -1,11 +1,11 @@
 ---
 id: TASK-579.07
 title: The compiled executable runs the CLI and the server from outside any checkout
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-05T14:59:00Z'
-updated_date: '2026-11-05T16:28:00Z'
+updated_date: '2026-11-05T16:33:00Z'
 labels: []
 dependencies:
   - TASK-579.01
@@ -29,9 +29,9 @@ ordinal: 1028000
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 One executable runs the CLI, and with an internal first argument it runs the server
-- [ ] #2 Every file read by path loads from the installation module or from the executable, and no native Node addon loads at runtime
-- [ ] #3 From a directory outside any checkout, the executable with its assets runs `start`, `model read`, a render, `code check` and `stop`
+- [x] #1 One executable runs the CLI, and with an internal first argument it runs the server
+- [x] #2 Every file read by path loads from the installation module or from the executable, and no native Node addon loads at runtime
+- [x] #3 From a directory outside any checkout, the executable with its assets runs `start`, `model read`, a render, `code check` and `stop`
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -85,3 +85,9 @@ Gate, inside nix develop:
 - Both failures exist on f297dd2d2 before this work. voice-package.test.ts:100 finds Archboard words that TASK-579.05 put in codex-app-server. The interface width test finds workspace at 42 (TASK-579.01) and skills at 4 (TASK-579.06).
 - This work adds no exported name to workspace or renderer, and removes one from server-lifecycle.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+In a release, apps/cli/src/bin.ts runs the server when started with installation().serverCommand ([exe, --internal-server]) by importing installation().serverModule; apps/server/src/server.ts starts unconditionally. Grammar and tree-sitter wasm, queries, voice and workbench texts are embedded module imports; theme colours are generated at core build time (generated/core/theme-colors.ts), so lightningcss runs only at build time; the release core/ holds the glue bundled with its panic guard. scripts/release/compile.ts compiles a target and lays out bin/, frontend/, core/, skills/ and archboard-release.json, and refuses a bundle that would load a native addon. Executable 145 MB (linux-x64). Proof: tests/system/process-contracts/release-executable.test.ts passes on fix/core-build-feedback, and a manual run with PATH=/run/current-system/sw/bin ran --version, start (http://archboard.localhost:27242, /health mode release), install-skill, model read/claim/edit, render to SVG, check code and stop. Full `bun run check` exit 0 after merge. The voice package API readWorkbenchInstructionDocument now takes text (breaking for the MIT package).
+<!-- SECTION:FINAL_SUMMARY:END -->
