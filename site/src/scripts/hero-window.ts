@@ -38,7 +38,10 @@ async function paintShop(canvas: HTMLCanvasElement): Promise<Shop | null> {
 	try {
 		const [{ painter }, painting] = await Promise.all([
 			startCpuPainter(canvas, true),
-			fetch(paintingUrl).then((answer) => answer.text()),
+			fetch(paintingUrl).then((answer) => {
+				if (!answer.ok) throw new Error(`The painting did not load (HTTP ${answer.status}).`);
+				return answer.text();
+			}),
 		]);
 		painter.setPhases(PHASES);
 		painter.setLongestStep(PICTURE_MS.longestStep);

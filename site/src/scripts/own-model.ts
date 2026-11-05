@@ -26,7 +26,10 @@ export async function paintOwnModel(picture: HTMLElement): Promise<void> {
 	try {
 		const [started, painting] = await Promise.all([
 			startPainter(first, true),
-			fetch(paintingUrl).then((answer) => answer.text()),
+			fetch(paintingUrl).then((answer) => {
+				if (!answer.ok) throw new Error(`The painting did not load (HTTP ${answer.status}).`);
+				return answer.text();
+			}),
 		]);
 		const { painter, canvas } = started;
 		const enters = () => started.kind !== "cpu" && !motion.matches;
