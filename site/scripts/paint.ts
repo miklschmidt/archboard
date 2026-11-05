@@ -393,13 +393,31 @@ async function own() {
 	return { painting: drawn.painting, plan: { width: drawn.width, height: drawn.height, cards } };
 }
 
-const [table, model] = await Promise.all([hero(), own()]);
+/**
+ * The example shop, as the README draws it, for the window under the hero. The window's own ground
+ * shows through the picture.
+ * @returns The painting and its size.
+ */
+async function shop() {
+	const { request } = await read("examples/web-shop", false);
+	const drawn = await renderArchitecture(request);
+	const painting = JSON.parse(drawn.painting) as { scene: { background: unknown } };
+	painting.scene.background = { colour: "transparent" };
+	return {
+		painting: JSON.stringify(painting),
+		plan: { width: drawn.width, height: drawn.height },
+	};
+}
+
+const [table, model, example] = await Promise.all([hero(), own(), shop()]);
 mkdirSync(OUT, { recursive: true });
 writeFileSync(join(OUT, "hero.painting.json"), table.painting);
 writeFileSync(join(OUT, "hero.json"), `${JSON.stringify(table.plan)}\n`);
 writeFileSync(join(OUT, "own.painting.json"), model.painting);
 writeFileSync(join(OUT, "own.json"), `${JSON.stringify(model.plan)}\n`);
+writeFileSync(join(OUT, "shop.painting.json"), example.painting);
+writeFileSync(join(OUT, "shop.json"), `${JSON.stringify(example.plan)}\n`);
 console.log(
-	`wrote src/paintings: hero (${String(table.plan.width)} × ${String(table.plan.height)}), own (${String(model.plan.width)} × ${String(model.plan.height)})`,
+	`wrote src/paintings: hero (${String(table.plan.width)} × ${String(table.plan.height)}), own (${String(model.plan.width)} × ${String(model.plan.height)}), shop (${String(example.plan.width)} × ${String(example.plan.height)})`,
 );
 process.exit(0);

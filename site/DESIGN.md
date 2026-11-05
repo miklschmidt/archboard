@@ -433,7 +433,7 @@ When the pointer rests on a card for 120ms, its tile lifts 0.1 units, its lasers
 
 ### Signature: the hero window
 
-A mock Archboard shell at 1280 by 760 holds the real web-shop drawing. It scales to its column. While part of it is below the fold, it leans back by up to 12 degrees in a 2400px perspective. It is straight once all of it is in view, so a tall screen shows it straight from the start. When it enters view the agent's lines type at 14ms a character. Cards wait as outlines at 16% opacity, then land 150ms apart. A spark draws each line in 760ms, 170ms apart, and its label lands as the spark does. Traffic fades in over 900ms. A Replay button appears 2.2s after the last line. A caption below the window says that it is a mock around a real drawing.
+A mock Archboard shell at 1280 by 760 holds the example shop, which the product's painter draws on the CPU. It scales to its column. While part of it is below the fold, it leans back by up to 12 degrees in a 2400px perspective. It is straight once all of it is in view, so a tall screen shows it straight from the start. The agent starts 350ms after the window's foot comes into view, and its lines type at 14ms a character while the picture waits empty. When the agent's edit lands, the painter brings the shop in with the app's own entrance: the cards come out of the middle in a wave, a spark draws each line, each label arrives as its spark reaches it, and the traffic of a line starts once the line is drawn. A Replay button appears 2.2s after the last line. With reduced motion, without script, or where the painter does not start, the renderer's SVG of the same picture stands whole. A caption below the window says that it is a mock around a real drawing.
 
 ### Signature: the walkthrough player
 

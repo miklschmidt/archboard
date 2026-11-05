@@ -9,7 +9,8 @@ type-checks it with `astro check`.
 
 ## Work on the site
 
-The hero and the section about Archboard's own model use the product's painter. The painter and
+The hero, the window under it and the section about Archboard's own model use the product's
+painter. The painter and
 its paintings must come from one build of the renderer core. Make both from the repository root,
 inside `nix develop`:
 
@@ -19,8 +20,9 @@ bun run build:core
 bun site/scripts/paint.ts
 ```
 
-Run `bun site/scripts/paint.ts` again after a change to the renderer core, to `site/model` or to
-`.archboard/vault`. The paintings go to `src/paintings/`, which Git ignores.
+Run `bun site/scripts/paint.ts` again after a change to the renderer core, to `site/model`, to
+`examples/web-shop` or to `.archboard/vault`. The paintings go to `src/paintings/`, which Git
+ignores.
 
 Then run these commands in this folder:
 
@@ -58,6 +60,10 @@ Every diagram on the page is real output of the Archboard renderer, in the dark 
   floats above the line's real route, with the line's label on a plate. The light that draws the
   lasers reaches each card by the quickest route from the agents, so the entry has no hand-placed
   timing.
+- The window under the hero paints `examples/web-shop` live, as the README draws it. When the
+  agent's edit lands, the painter brings the picture in with the app's own entrance. The README's
+  SVG of the same picture stands in without script, with reduced motion, or where the painter does
+  not start.
 - The section about Archboard's own model paints the whole of `.archboard/vault` live.
 - The fonts come from `packages/renderer/assets/fonts/`, the same files the renderer uses.
 - The voice orb is the product's own code, imported from `packages/workbench/src/ui/clients/orb/`
@@ -121,9 +127,9 @@ stop, the script keeps those files and prints a command to retry the stop.
 ## Deploy
 
 `.github/workflows/site.yml` builds the site on each pull request that changes the site, the
-README drawings, the social card, the fonts, the voice orb's code, the renderer core or
-Archboard's own model. It builds the core and paints the hero inside `nix develop` first. A push
-to `main` with such a change deploys it.
+README drawings, the social card, the fonts, the voice orb's code, the renderer core, the example
+shop or Archboard's own model. It builds the core and paints the site's pictures inside
+`nix develop` first. A push to `main` with such a change deploys it.
 You can also start the workflow by hand from the Actions tab.
 
 GitHub Pages must use GitHub Actions as its source. To set it, open the repository settings,

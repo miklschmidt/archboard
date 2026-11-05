@@ -9,8 +9,8 @@ export interface DockLine {
 	kind: LineKind;
 	text: string;
 	at: number;
-	/** What the picture does when this line has been typed. */
-	cue?: "claim" | "cards" | "lines" | "release" | "show";
+	/** What the window does when this line has been typed. */
+	cue?: "claim" | "draw" | "release";
 }
 
 export const heroScript: DockLine[] = [
@@ -25,13 +25,12 @@ export const heroScript: DockLine[] = [
 		kind: "command",
 		text: 'archboard model edit --input map.json --doing "mapping the shop"',
 		at: 1300,
-		cue: "cards",
 	},
 	{
 		kind: "reply",
 		text: "8 modules and 8 relationships, at one new revision",
-		at: 3200,
-		cue: "lines",
+		at: 2600,
+		cue: "draw",
 	},
 	{
 		kind: "command",
@@ -39,5 +38,5 @@ export const heroScript: DockLine[] = [
 		at: 4900,
 		cue: "release",
 	},
-	{ kind: "command", text: "archboard browser show Shop", at: 5600, cue: "show" },
+	{ kind: "command", text: "archboard browser show Shop", at: 5600 },
 ];

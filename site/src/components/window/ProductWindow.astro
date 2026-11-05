@@ -1,15 +1,17 @@
 ---
-// A mock of the Archboard shell around a real drawing of the example shop. The window is laid
-// out at 1280 by 760 and scaled to its column, so it keeps the shell's proportions at any width.
-// On a phone it shows only the canvas, so the drawing stays large enough to read.
+// A mock of the Archboard shell around the example shop, which the product's painter draws. The
+// window is laid out at 1280 by 760 and scaled to its column, so it keeps the shell's proportions
+// at any width. On a phone it shows only the canvas, so the drawing stays large enough to read.
+// The renderer's SVG of the same picture stands under the painter's canvas, for a page without
+// script, with reduced motion, or where the painter does not start.
 import DockLines from "./DockLines.astro";
 import Inspector from "./Inspector.astro";
 import Navigator from "./Navigator.astro";
 import Icon from "../Icon.astro";
 import Mark from "../Mark.astro";
-import { drawings, inline } from "../../lib/diagrams";
+import { drawings } from "../../lib/diagrams";
 
-const picture = inline(drawings.webShop.raw, "hero");
+const shop = drawings.webShop;
 ---
 
 <div class="window-stage" data-window-stage>
@@ -36,9 +38,10 @@ const picture = inline(drawings.webShop.raw, "hero");
 				</div>
 			</div>
 			<div class="picture" data-picture>
-				<figure class="drawing" role="img" aria-label={`The example shop, drawn by Archboard: ${drawings.webShop.label}`}>
-					<Fragment set:html={picture} />
+				<figure class="drawing" role="img" aria-label={`The example shop, drawn by Archboard: ${shop.label}`}>
+					<img src={shop.url} width={shop.width} height={shop.height} alt="" decoding="async" />
 				</figure>
+				<canvas class="paint" aria-hidden="true"></canvas>
 				<button class="replay" type="button" data-replay hidden>
 					<Icon name="back" size={15} /> Replay
 				</button>
@@ -222,13 +225,24 @@ const picture = inline(drawings.webShop.raw, "hero");
 	.drawing {
 		width: 100%;
 	}
-	.drawing :global(svg) {
+	.drawing img {
+		display: block;
 		width: 100%;
 		height: auto;
-		overflow: visible;
 	}
-	.drawing :global([data-semantic-kind]) {
-		cursor: default;
+	/* While the painter draws the picture, its canvas covers the SVG. */
+	.paint {
+		display: none;
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+	.picture[data-painting] .paint {
+		display: block;
+	}
+	.picture[data-painting] .drawing img {
+		visibility: hidden;
 	}
 	.dock :global(.dock-lines) {
 		flex: 1;

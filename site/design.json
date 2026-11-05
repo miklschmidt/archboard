@@ -384,9 +384,9 @@
 				"purpose": "The hero agent line types out."
 			},
 			{
-				"name": "spark",
-				"value": "760ms, 170ms apart",
-				"purpose": "A spark draws each line of the hero drawing."
+				"name": "entrance",
+				"value": "PICTURE_MS.entry, 760ms",
+				"purpose": "The product's painter brings the hero window's shop in as the app brings in a model."
 			},
 			{
 				"name": "autoplay",

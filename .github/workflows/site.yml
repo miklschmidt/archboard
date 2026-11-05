@@ -2,7 +2,7 @@ name: Site
 
 # The marketing site in site/ builds on every pull request that changes it or the repository
 # files it imports or draws from (the README drawings, the social card, the fonts, the voice
-# orb's code, and the renderer core, its painter and the architecture model that paint the hero),
+# orb's code, and the renderer core, its painter and the architecture models that it paints),
 # and deploys to GitHub Pages from main.
 on:
   workflow_dispatch:
@@ -13,6 +13,7 @@ on:
       - docs/readme/**
       - docs/assets/**
       - .archboard/vault/**
+      - examples/web-shop/**
       - crates/**
       - Cargo.toml
       - Cargo.lock
@@ -37,6 +38,7 @@ on:
       - docs/readme/**
       - docs/assets/**
       - .archboard/vault/**
+      - examples/web-shop/**
       - crates/**
       - Cargo.toml
       - Cargo.lock
