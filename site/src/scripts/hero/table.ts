@@ -461,6 +461,7 @@ export function lightTable(
 	});
 	host.addEventListener("pointerleave", () => {
 		pointer = undefined;
+		if (motion.matches) redraw?.();
 	});
 
 	const lift = new Float32Array(plan.cards.length);
