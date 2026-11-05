@@ -81,35 +81,38 @@ test.skipIf(Bun.which("node") === null)(
 		);
 		const session = openLanguageServers({ servers, signal: new AbortController().signal });
 		const question = { root: at.root, file: "src/write.ts" };
-		const asked = await Promise.all(
-			[
-				[5, "newVocabularyProblem"],
-				[3, "ledger.post"],
-				[4, "memory.remember"],
-				[6, "drawn.kind"],
-				[6, "ledger.total"],
-			].map(async ([line, symbol]) => {
-				const answer = await session.definition({
-					...question,
-					line: Number(line),
-					symbol: String(symbol),
-				});
-				const [location] = answer.status === "answered" ? answer.locations : [];
-				const declares =
-					location === undefined ? undefined : await session.declaration(at.root, location);
-				return [location?.path.slice(at.root.length), location?.line, declares];
-			}),
-		);
-		// The same answers as tsc --lsp of TypeScript 7 (typescript-server.test.ts): each lands
-		// on its declaration in vocabulary.ts, not on the import that names it.
-		expect(asked).toEqual([
-			["/src/vocabulary.ts", 1, "code"],
-			["/src/vocabulary.ts", 5, "code"],
-			["/src/vocabulary.ts", 8, "type"],
-			["/src/vocabulary.ts", 9, "unknown"],
-			["/src/vocabulary.ts", 6, "data"],
-		]);
-		await session.close();
+		try {
+			const asked = await Promise.all(
+				[
+					[5, "newVocabularyProblem"],
+					[3, "ledger.post"],
+					[4, "memory.remember"],
+					[6, "drawn.kind"],
+					[6, "ledger.total"],
+				].map(async ([line, symbol]) => {
+					const answer = await session.definition({
+						...question,
+						line: Number(line),
+						symbol: String(symbol),
+					});
+					const [location] = answer.status === "answered" ? answer.locations : [];
+					const declares =
+						location === undefined ? undefined : await session.declaration(at.root, location);
+					return [location?.path.slice(at.root.length), location?.line, declares];
+				}),
+			);
+			// The same answers as tsc --lsp of TypeScript 7 (typescript-server.test.ts): each lands
+			// on its declaration in vocabulary.ts, not on the import that names it.
+			expect(asked).toEqual([
+				["/src/vocabulary.ts", 1, "code"],
+				["/src/vocabulary.ts", 5, "code"],
+				["/src/vocabulary.ts", 8, "type"],
+				["/src/vocabulary.ts", 9, "unknown"],
+				["/src/vocabulary.ts", 6, "data"],
+			]);
+		} finally {
+			await session.close();
+		}
 		expect(session.unavailable()).toEqual([]);
 		expect(session.timings()).toMatchObject([
 			{
