@@ -98,9 +98,9 @@ bin/archboard -C "$work/holder" model read
 ```
 
 Change it with `model claim` and `model edit`, as the [archboard skill](../skills/archboard/SKILL.md)
-describes. The holder's vault has no history yet, so run `model archive-init` before the first
-change. Then copy the vault's files back into `site/model`, run `bin/archboard stop`, and paint
-the hero again.
+describes. The holder uses its Git repository for signed history. `model archive-init` applies only
+to vaults outside Git repositories. Copy the vault's files back into `site/model`.
+Run `bin/archboard stop`, then paint the hero again.
 
 ## Draw the diagrams again
 
