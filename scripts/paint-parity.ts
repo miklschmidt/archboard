@@ -1,13 +1,14 @@
-// Hold the painters to the SVG (ADR 0071). Every drawing of a corpus is put in
-// one real browser three ways: as its SVG, on Vello on the GPU and on Vello on
-// the CPU, near and far, and the rasters are compared with a tolerance a reader
-// cannot see. It says which readings differ most and keeps the worst places.
+// Hold the painters to the SVG (ADR 0071, ADR 0074). Every drawing of a corpus
+// is put in one real browser as its SVG and on each painter: Vello on WebGPU,
+// Vello GPU on WebGL2 and Vello on the CPU, near and far. The rasters are
+// compared with a tolerance a reader cannot see. It says which readings differ
+// most and keeps the worst places.
 //
 // Make a corpus with paintings, then run from the repository root in `nix develop`,
 // after `bun run build:core`:
 //   bun scripts/render-corpus.ts render <corpus> --engines blocks --svg
-//   bun scripts/paint-parity.ts <corpus> <out> [--painters gpu,cpu] [--views near,far,traffic]
-//     [--only substring] [--browser google-chrome] [--worst 12]
+//   bun scripts/paint-parity.ts <corpus> <out> [--painters gpu,webgl,cpu] [--views near,far,traffic]
+//     [--only substring] [--browser google-chrome] [--worst 12] [--every 7]
 //
 // The browser runs with a window, because a GPU adapter is what the run is about.
 // A painter's raster is read from its canvas in the frame it drew, because a
@@ -66,8 +67,8 @@ type Result = z.infer<typeof Compared> & {
 /** The page: a canvas each painter draws on, and a place for the SVG. */
 const PAGE = `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/theme.css">
 <style>html,body{margin:0;overflow:hidden;background:var(--background)}
-#gpu,#cpu,#svg{position:fixed;left:0;top:0;display:none}
-#svg{transform-origin:0 0}</style></head><body><canvas id="gpu"></canvas><canvas id="cpu"></canvas>
+#gpu,#cpu,#webgl,#svg{position:fixed;left:0;top:0;display:none}
+#svg{transform-origin:0 0}</style></head><body><canvas id="gpu"></canvas><canvas id="cpu"></canvas><canvas id="webgl"></canvas>
 <div id="svg"></div><script type="module" src="/page.js"></script></body></html>`;
 
 /** What the page runs. */
@@ -77,12 +78,19 @@ await init({ module_or_path: "/painter.wasm" });
 const started = await Painter.warm(() => {}).then(() => true, () => false);
 const gpu = started ? Painter.gpu(document.getElementById("gpu"), true) : null;
 const cpu = Painter.cpu(document.getElementById("cpu"), true);
-const painters = { gpu, cpu };
+const webgl = (() => {
+	try {
+		return Painter.webgl(document.getElementById("webgl"), true);
+	} catch {
+		return null;
+	}
+})();
+const painters = { gpu, cpu, webgl };
 const svg = document.getElementById("svg");
 const shown = (element) => {
 	for (const one of [...document.querySelectorAll("canvas"), svg]) one.style.display = one === element ? "block" : "none";
 };
-window.hasGpu = gpu !== null;
+window.availablePainters = Object.keys(painters).filter((kind) => painters[kind] !== null);
 window.keepPainter = async (kind, file) => {
 	const painter = painters[kind];
 	const canvas = document.getElementById(kind);
@@ -93,7 +101,11 @@ window.keepPainter = async (kind, file) => {
 	shown(canvas);
 	painter.resize(width, height);
 	painter.setTheme(theme === "dark");
-	painter.show(painting);
+	try {
+		painter.show(painting);
+	} catch (error) {
+		return String(error);
+	}
 	painter.setCamera(0, 0, scale, 0, 0);
 	painter.setFarLine(far ? Number.POSITIVE_INFINITY : 0, 0);
 	painter.setTrafficShown(traffic);
@@ -102,6 +114,7 @@ window.keepPainter = async (kind, file) => {
 	const copy = new OffscreenCanvas(width, height);
 	copy.getContext("2d").drawImage(canvas, 0, 0);
 	await fetch(file, { method: "PUT", body: await copy.convertToBlob({ type: "image/png" }) });
+	return null;
 };
 window.showSvg = async () => {
 	const { markup, theme, scale, far, traffic } = window.reading;
@@ -379,11 +392,21 @@ async function compareReading(
 	await page.evaluate("window.showSvg()");
 	await capture(page, size, join(out, `${stem}.svg.png`));
 	const results: Result[] = [];
+	const unread: string[] = [];
 	for (const painter of view.painters) {
-		// oxlint-disable-next-line no-await-in-loop -- one page shows one painter at a time
-		await page.evaluate(
-			`window.keepPainter(${JSON.stringify(painter)}, ${JSON.stringify(`/${stem}.${painter}.png`)})`,
-		);
+		const refusal = z
+			.string()
+			.nullable()
+			.parse(
+				// oxlint-disable-next-line no-await-in-loop -- one page shows one painter at a time
+				await page.evaluate(
+					`window.keepPainter(${JSON.stringify(painter)}, ${JSON.stringify(`/${stem}.${painter}.png`)})`,
+				),
+			);
+		if (refusal !== null) {
+			unread.push(`${painter}: ${refusal}`);
+			continue;
+		}
 		const compared = Compared.parse(
 			// oxlint-disable-next-line no-await-in-loop -- one page shows one painter at a time
 			await page.evaluate(
@@ -397,7 +420,20 @@ async function compareReading(
 			rmSync(join(out, `${stem}.${painter}.diff.png`));
 		}
 	}
+	reportUnread(stem, unread, view.painters.length);
 	return results;
+}
+
+/**
+ * Skip a painting only when every requested painter rejects it (TASK-576).
+ * @param stem The reading and view.
+ * @param unread The painters that rejected the painting, with their reasons.
+ * @param requested How many painters the run requested.
+ */
+function reportUnread(stem: string, unread: readonly string[], requested: number): void {
+	if (unread.length === 0) return;
+	if (unread.length < requested) throw new Error(`${stem} failed to read on ${unread.join("; ")}`);
+	console.log(`Skipped ${stem}: ${unread.join("; ").slice(0, 160)}`);
 }
 
 /** What a run was told to compare. */
@@ -409,6 +445,8 @@ interface Run {
 	readonly only: string;
 	readonly browser: string;
 	readonly worst: number;
+	/** Compare only every so many readings, for a sample of the corpus. */
+	readonly every: number;
 }
 
 /**
@@ -419,11 +457,12 @@ function runOfArguments(): Run {
 	const { values, positionals } = parseArgs({
 		allowPositionals: true,
 		options: {
-			painters: { type: "string", default: "gpu,cpu" },
+			painters: { type: "string", default: "gpu,webgl,cpu" },
 			views: { type: "string", default: "near,far" },
 			only: { type: "string", default: "" },
 			browser: { type: "string", default: "google-chrome" },
 			worst: { type: "string", default: "12" },
+			every: { type: "string", default: "1" },
 		},
 	});
 	const [corpus, out] = positionals;
@@ -433,11 +472,18 @@ function runOfArguments(): Run {
 	return {
 		corpus,
 		out,
-		painters: values.painters.split(","),
-		views: values.views.split(","),
+		painters: z
+			.array(z.enum(["gpu", "webgl", "cpu"]))
+			.min(1)
+			.parse(values.painters.split(",")),
+		views: z
+			.array(z.enum(["near", "far", "traffic"]))
+			.min(1)
+			.parse(values.views.split(",")),
 		only: values.only,
 		browser: values.browser,
 		worst: Number(values.worst),
+		every: z.coerce.number().int().positive().parse(values.every),
 	};
 }
 
@@ -450,6 +496,7 @@ function readingsOf(run: Run): readonly Reading[] {
 	const drawn = Corpus.parse(JSON.parse(readFileSync(join(run.corpus, "corpus.json"), "utf8")));
 	return Object.entries(drawn)
 		.filter(([key, { width, height }]) => key.includes(run.only) && Math.max(width, height) <= MOST)
+		.filter((_, index) => index % run.every === 0)
 		.map(([name, { width, height }]) => {
 			const key = name.replaceAll(/[^\w-]+/gu, "_");
 			const file = join(run.corpus, "svg", `${key}.svg`);
@@ -472,8 +519,12 @@ function readingsOf(run: Run): readonly Reading[] {
 async function pageReady(page: Page, run: Run): Promise<void> {
 	// oxlint-disable-next-line no-await-in-loop -- the page says it is ready only once
 	while ((await page.evaluate("window.ready === true")) !== true) await Bun.sleep(100);
-	if ((await page.evaluate("window.hasGpu")) !== true && run.painters.includes("gpu")) {
-		throw new Error("This browser gave no GPU painter. Name another with --browser.");
+	const available = z.array(z.string()).parse(await page.evaluate("window.availablePainters"));
+	const missing = run.painters.filter((kind) => !available.includes(kind));
+	if (missing.length > 0) {
+		throw new Error(
+			`This browser gave no ${missing.join(", ")} painter. Name another with --browser.`,
+		);
 	}
 }
 
@@ -502,6 +553,9 @@ function report(run: Run, results: readonly Result[]): void {
  */
 async function main(): Promise<void> {
 	const run = runOfArguments();
+	const readings = readingsOf(run);
+	if (readings.length === 0)
+		throw new Error("No readings match this run. Check --only and --every.");
 	mkdirSync(run.out, { recursive: true });
 	const server = servePage(run.out);
 	const page = await openPage(run.browser, `http://127.0.0.1:${server.port}/`);
@@ -510,7 +564,7 @@ async function main(): Promise<void> {
 	const journal = join(run.out, "parity.jsonl");
 	try {
 		await pageReady(page, run);
-		for (const reading of readingsOf(run)) {
+		for (const reading of readings) {
 			for (const name of run.views) {
 				const view = { name, painters: run.painters };
 				// oxlint-disable-next-line no-await-in-loop -- one page shows one reading at a time
@@ -523,6 +577,8 @@ async function main(): Promise<void> {
 		await page.close();
 		await server.stop(true);
 	}
+	if (results.length === 0)
+		throw new Error("No reading drew on every painter. Read the skips above.");
 	report(run, results);
 }
 

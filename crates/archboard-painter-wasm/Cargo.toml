@@ -1,6 +1,6 @@
 [package]
 name = "archboard-painter-wasm"
-description = "The painter as WebAssembly, for the browser: Vello on WebGPU, and Vello on the CPU otherwise"
+description = "The painter as WebAssembly, for the browser: Vello on WebGPU, Vello GPU on WebGL2, and Vello on the CPU otherwise"
 version = "0.0.0"
 edition.workspace = true
 license.workspace = true
@@ -24,12 +24,20 @@ peniko = "0.6"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 vello = { version = "0.11", default-features = false, features = ["wgpu"] }
+# Vello GPU (sparse strips) on WebGL2, for a browser with no usable WebGPU (ADR 0074).
+vello_gpu = { version = "0.3", default-features = false, features = ["std", "webgl"] }
 wasm-bindgen = "0.2.129"
 wasm-bindgen-futures = "0.4.79"
 web-sys = { version = "0.3.106", features = [
 	"CanvasRenderingContext2d",
+	"Document",
+	"Element",
 	"HtmlCanvasElement",
 	"ImageData",
 	"OffscreenCanvas",
+	"Performance",
+	"WebGl2RenderingContext",
+	"WebglLoseContext",
+	"Window",
 ] }
 wgpu = { version = "30", default-features = false, features = ["webgpu", "wgsl"] }

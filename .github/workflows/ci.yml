@@ -19,7 +19,8 @@ jobs:
   suite:
     name: Complete validation gate
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Four cold Cargo builds compile vello_gpu's shader toolchain (ADR 0074).
+    timeout-minutes: 45
 
     steps:
       - name: Checkout code

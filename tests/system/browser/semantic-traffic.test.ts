@@ -6,7 +6,8 @@
 // painter that goes on asking for frames with nothing to draw.
 
 import { expect, test } from "bun:test";
-import { cpSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -47,24 +48,28 @@ const IN_THE_PAGE = `document.querySelectorAll(
 	'${SEMANTIC_SURFACE} .ab-pulse, ${SEMANTIC_SURFACE} animateTransform, ${SEMANTIC_SURFACE} [data-traffic-motion]',
 ).length`;
 
-/** One number for what the canvas shows now. */
-const PRINT = `(() => {
-	const canvas = document.querySelector('${CANVAS}');
-	const { data } = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
-	let print = 0;
-	for (let index = 0; index < data.length; index += 1) print = (Math.imul(print, 31) + data[index]) | 0;
-	return print;
-})()`;
+/**
+ * What the canvas shows now, as the page composes it: every painter, a WebGL2 canvas too, whose
+ * frame no script can read once the page shows it.
+ * @param browser The page.
+ * @param file Where the picture of the canvas goes.
+ * @returns A hash of the picture.
+ */
+async function shown(browser: AgentBrowserSession, file: string): Promise<string> {
+	await browser.run(["screenshot", CANVAS, file]);
+	return createHash("sha256").update(readFileSync(file)).digest("hex");
+}
 
 /**
  * Whether the canvas changes over a moment.
  * @param browser The page.
+ * @param root Where the pictures of the canvas go.
  * @returns True when it showed something else after it.
  */
-async function moves(browser: AgentBrowserSession): Promise<boolean> {
-	const first = await browser.eval<number>(PRINT);
+async function moves(browser: AgentBrowserSession, root: string): Promise<boolean> {
+	const first = await shown(browser, join(root, "first.png"));
 	await Bun.sleep(TRAFFIC_GLANCE_MS);
-	return (await browser.eval<number>(PRINT)) !== first;
+	return (await shown(browser, join(root, "next.png"))) !== first;
 }
 
 /**
@@ -141,7 +146,7 @@ test("the canvas draws a picture's traffic, the page runs none, and a reader who
 		await openAtRest(browser, `${server.base}/${address}`);
 		await pollUntil(() => browser.eval<string | null>(PAINTER), Boolean, "the painter", WAIT);
 		expect(await browser.eval<number>(IN_THE_PAGE), `${address} runs traffic`).toBe(0);
-		expect(await moves(browser), `${address} draws no traffic`).toBe(true);
+		expect(await moves(browser, ownerRoot), `${address} draws no traffic`).toBe(true);
 	}
 
 	// The existing picture answers reduced motion without another layout or read.
@@ -151,7 +156,7 @@ test("the canvas draws a picture's traffic, the page runs none, and a reader who
 	const restore = await emulateMedia(browser, "light", "reduced-motion");
 	try {
 		await pollUntil(
-			() => moves(browser),
+			() => moves(browser, ownerRoot),
 			(moving) => !moving,
 			"traffic hidden",
 			WAIT,
@@ -164,5 +169,10 @@ test("the canvas draws a picture's traffic, the page runs none, and a reader who
 	} finally {
 		await restore();
 	}
-	await pollUntil(() => moves(browser), Boolean, "traffic back without another picture", WAIT);
+	await pollUntil(
+		() => moves(browser, ownerRoot),
+		Boolean,
+		"traffic back without another picture",
+		WAIT,
+	);
 });

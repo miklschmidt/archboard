@@ -9,14 +9,16 @@ import { PICTURE_MS } from "@archboard/timing";
 const taken: string[] = [];
 
 /** How a painter's start ends. */
-type Outcome = "cpu" | "gpu" | "failed";
+type Outcome = "cpu" | "webgl" | "gpu" | "failed";
 
 /** Startup and failure are controlled at the painter boundary. */
 const starting: {
 	settle?: (outcome: Outcome) => void;
 	failCall?: string;
 	retry?: boolean | undefined;
+	failed?: string | undefined;
 	stoppedBeforeListening?: boolean;
+	replaceCanvas?: boolean;
 } = {};
 const painter = new Proxy(
 	{},
@@ -46,6 +48,7 @@ await mock.module("@archboard/renderer/browser", () => ({
 	 * @param canvas The canvas.
 	 * @param _dark The theme.
 	 * @param failure The GPU failure, if any.
+	 * @param failure.painter The painter that failed.
 	 * @param failure.reason What went wrong.
 	 * @param failure.retry Whether the GPU gets another try.
 	 * @returns The started painter.
@@ -53,10 +56,11 @@ await mock.module("@archboard/renderer/browser", () => ({
 	startPainter: (
 		canvas: HTMLCanvasElement,
 		_dark: boolean,
-		failure?: { reason: string; retry: boolean },
+		failure?: { painter: string; reason: string; retry: boolean },
 	) =>
 		new Promise((resolve, reject) => {
 			starting.retry = failure?.retry;
+			starting.failed = failure?.painter;
 			/**
 			 * Finish startup with the chosen outcome.
 			 * @param outcome How startup ends.
@@ -67,7 +71,7 @@ await mock.module("@archboard/renderer/browser", () => ({
 					return;
 				}
 				let next = canvas;
-				if (failure !== undefined) {
+				if (failure !== undefined || starting.replaceCanvas) {
 					next = document.createElement("canvas");
 					canvas.replaceWith(next);
 				}
@@ -86,7 +90,7 @@ await mock.module("@archboard/renderer/browser", () => ({
 							delete starting.stoppedBeforeListening;
 							listener("device stopped before subscription");
 						}
-						return () => undefined;
+						return () => taken.push("stopWatchingGpu");
 					},
 				});
 			};
@@ -108,6 +112,7 @@ beforeEach(() => {
 	delete starting.failCall;
 	delete starting.settle;
 	delete starting.stoppedBeforeListening;
+	delete starting.replaceCanvas;
 	clock = createSteppedClock(0);
 	leave.push(driveFramesFrom(clock));
 });
@@ -239,6 +244,23 @@ test("a stopped GPU gets one more try, and a second failure soon after ends the 
 	expect(starting.retry).toBe(false);
 });
 
+test("a WebGL2 painter that fails at work gives way to the CPU painter", async () => {
+	const { surface, host } = await surfaceWithAPicture();
+	await start("webgl");
+	expect(surface.getAttribute("data-painter")).toBe("webgl");
+	const original = host.firstChild;
+	starting.failCall = "frame";
+	stageOf(surface)?.setFarLine(1, 0);
+	clock.runFrame();
+	expect(surface.querySelector("use")).not.toBeNull();
+	await flushStartup();
+	expect(starting.failed).toBe("webgl");
+	expect(starting.retry).toBe(false);
+	await start("cpu");
+	expect(host.firstChild).not.toBe(original);
+	expect(surface.getAttribute("data-painter")).toBe("cpu");
+});
+
 test("a GPU that stops before subscription restarts after startup releases its guard", async () => {
 	const { surface } = await surfaceWithAPicture();
 	starting.stoppedBeforeListening = true;
@@ -246,6 +268,17 @@ test("a GPU that stops before subscription restarts after startup releases its g
 	expect(taken.filter((call) => call === "free")).toHaveLength(1);
 	expect(stageOf(surface)?.starting).toBe(true);
 	expect(starting.retry).toBe(true);
+	await start("cpu");
+	expect(surface.getAttribute("data-painter")).toBe("cpu");
+});
+
+test("a WebGL2 loss during subscription releases its listener before CPU replacement", async () => {
+	const { surface } = await surfaceWithAPicture();
+	starting.stoppedBeforeListening = true;
+	await start("webgl");
+	expect(taken.filter((call) => call === "free")).toHaveLength(1);
+	expect(taken.filter((call) => call === "stopWatchingGpu")).toHaveLength(1);
+	expect(starting.failed).toBe("webgl");
 	await start("cpu");
 	expect(surface.getAttribute("data-painter")).toBe("cpu");
 });
@@ -285,6 +318,17 @@ test("a painter that finishes startup after disposal is freed", async () => {
 	leave.pop()?.();
 	await start("cpu");
 	expect(taken).toEqual(["free"]);
+	expect(surface.hasAttribute("data-painter")).toBe(false);
+});
+
+test("disposal removes a replacement canvas before the stage accepts its painter", async () => {
+	const { surface, host } = await surfaceWithAPicture();
+	starting.replaceCanvas = true;
+	starting.settle?.("webgl");
+	leave.pop()?.();
+	await flushStartup();
+	expect(taken).toEqual(["free"]);
+	expect(host.childNodes.length).toBe(0);
 	expect(surface.hasAttribute("data-painter")).toBe(false);
 });
 
