@@ -114,7 +114,7 @@ const float CORE = 0.0024;
 const float GLOW = 0.016;
 // How bright the smoke about a beam burns, and how much of what lies behind it hides.
 const float HAZE = 1.0;
-const float VEIL = 0.6;
+const float VEIL = 0.5;
 // How far ahead of a front of a beam's light, where it runs, its core lights, in the picture's units.
 const float SHARP = 2.5;
 // About how high the beams float, in table units: the light they shed falls off from there.
@@ -301,19 +301,21 @@ vec4 trayFloor(int i, vec2 sdx, vec2 sdy) {
 
 // How much smoke a beam lifts at a point of the straight stretch it lies on, from where the stretch
 // starts along the line and how long it is: most at the middle of a long stretch, none at a bend
-// or an end, and more on some stretches than on others.
+// or an end, and more on some stretches than on others. A screen shows faint light brighter than
+// its share, so the smoke gathers slowly from a bend, or it would seem to start at once.
 float lengthwise(int i, float s, vec2 stretch) {
 	float u = clamp((s - stretch.x) / max(stretch.y, 1e-3), 0.0, 1.0);
 	float some = 0.6 + 0.4 * cellHash(vec2(float(i) * 31.0, stretch.x));
-	return pow(4.0 * u * (1.0 - u), 1.2) * stretch.y / (stretch.y + 120.0) * some;
+	return pow(4.0 * u * (1.0 - u), 1.8) * stretch.y / (stretch.y + 120.0) * some;
 }
 
 // The light of a line's beam where a ray passes it, from \`pass\`: how far off its axis, how far along
 // the line, how far along the ray, and how far above the axis, square to it. A beam is a laser: a
 // white-hot core, a glow of its colour close about it, and smoke that its heat lifts, which billows
 // up off it and drifts the way its light runs, by \`smoke\` as much as the stretch of the line lifts.
-// The smoke is densest at the axis and thins out softly to nothing at the beam's reach. Far from
-// the axis only its thickest wisps show, so it ends in a ragged edge, not a round one. It hides some
+// The smoke is densest at the axis and thins away from it as a bell, which is all but gone well
+// before the beam's reach, so its faint outer smoke shows no edge. Far from the axis only its
+// thickest wisps show, and they fade out as the bell does, so it ends ragged, not round. It hides some
 // of what lies behind it, which comes out as the fourth part. Each beam flickers on its own, and it
 // flares where it strikes its target, which shows its way in a still picture. A dotted line's beam
 // is a string of beads of the same light, which drift the same way. No light is drawn finer than a
@@ -346,10 +348,10 @@ vec4 beamGlow(int i, vec4 pass, float smoke, float packet, float burn, float hal
 	float glow = pow(rg / max(r, aa), 0.9) * exp(-r / rg) * (1.0 - smoothstep(0.6, 1.0, x));
 	float haze = 0.0;
 	float thin = 1.0 - min(x * x, 1.0);
-	float body = exp(-x * 1.2) * thin * thin * smoke * smoky;
+	float body = exp(-x * x * 4.0) * thin * thin * smoke * smoky;
 	if (body > 0.002) {
 		vec2 q = vec2(s / 30.0 - uTime * 0.5, pass.w / unit / 16.0 - uTime * 0.4 + phase);
-		float wisp = smoothstep(0.3 + 0.3 * x, 0.85, smokeAt(q, uTime * 0.5));
+		float wisp = smoothstep(0.25 + 0.25 * x, 0.9, smokeAt(q, uTime * 0.5));
 		float rise = smoothstep(-0.45, 0.35, pass.w / reach);
 		float puff = 0.5 + 0.7 * noise(vec2(s / 110.0 - uTime * 0.35, phase + 2.0));
 		haze = body * (0.12 + 0.88 * wisp) * rise * puff;
