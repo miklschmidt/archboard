@@ -211,9 +211,7 @@ function toolLines(): readonly string[] {
 		toolLine("chromium", chromiumPath),
 		toolLine("ffmpeg", () => ffmpegCommand().join(" ")),
 		toolLine("pyftsubset", () => pyftsubsetCommand().join(" ")),
-		toolLine("codex", () =>
-			resolveCodexExecutable({ installedIn: installation().codexInstalledIn }),
-		),
+		toolLine("codex", () => resolveCodexExecutable(installation().codexLocation)),
 	];
 }
 

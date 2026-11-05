@@ -65,8 +65,11 @@ interface Installation {
 	readonly skillsDirectory: string;
 	/** The directory of the `archboard` executable, which a Codex child gets first on its PATH. */
 	readonly binDirectory: string;
-	/** The directory whose `node_modules` must hold the pinned Codex package. */
-	readonly codexInstalledIn: string;
+	/**
+	 * Where the pinned Codex lies, in the terms of `resolveCodexExecutable`: under the checkout's
+	 * `node_modules`, or in the platform package of a release.
+	 */
+	readonly codexLocation: { readonly installedIn: string } | { readonly releasedIn: string };
 	/** The executable and arguments that start the server. */
 	readonly serverCommand: readonly [string, ...string[]];
 	readonly coreHash: CoreHashSource;
@@ -166,7 +169,7 @@ function releaseAt(root: string, executable: string): Installation {
 		grammarsDirectory: path.join(root, "grammars"),
 		skillsDirectory: path.join(root, "skills"),
 		binDirectory: path.dirname(fs.realpathSync(executable)),
-		codexInstalledIn: root,
+		codexLocation: { releasedIn: root },
 		serverCommand: [executable, RELEASE_SERVER_ARGUMENT],
 		coreHash: { kind: "marker", hash: parsed.data.coreSourceHash },
 	};
@@ -221,7 +224,7 @@ function checkoutAt(root: string, executable: string): Installation {
 		),
 		skillsDirectory: path.join(root, "skills"),
 		binDirectory: path.join(root, "bin"),
-		codexInstalledIn: root,
+		codexLocation: { installedIn: root },
 		serverCommand: [executable, path.join(root, "apps", "server", "src", "server.ts")],
 		coreHash: { kind: "sources", root },
 	};

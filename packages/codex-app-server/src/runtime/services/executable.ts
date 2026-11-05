@@ -44,6 +44,12 @@ interface CodexExecutableOptions {
 	 * install or the install of another project. It does not apply to `executablePath`.
 	 */
 	readonly installedIn?: string;
+	/**
+	 * The directory of an Archboard release (ADR 0075): its platform package. The Codex binary
+	 * lies in the `@openai/codex-<os>-<cpu>` package that npm installed beside it or above it,
+	 * and it starts without Node.js. It does not apply to `executablePath`.
+	 */
+	readonly releasedIn?: string;
 }
 
 /** The seam that runs the bounded `--version` proof, injected by tests. */
@@ -190,6 +196,84 @@ function requireCheckoutLocal(resolved: string, checkout: string): string {
 	return absolute;
 }
 
+/** The native target of each platform that a release ships (ADR 0075). */
+const RELEASE_TARGETS: Readonly<
+	Record<string, { readonly triple: string; readonly suffix: string }>
+> = {
+	"linux-x64": { triple: "x86_64-unknown-linux-musl", suffix: "linux-x64" },
+	"linux-arm64": { triple: "aarch64-unknown-linux-musl", suffix: "linux-arm64" },
+	"darwin-arm64": { triple: "aarch64-apple-darwin", suffix: "darwin-arm64" },
+};
+
+/**
+ * Find the native Codex binary of a release, the way Node.js resolves a dependency of the
+ * release's platform package: in its own `node_modules` (a nested layout), else in the
+ * `node_modules` of each directory above it (a hoisted layout, as `bun add -g` makes).
+ * @param releasedIn - The real path of the release's platform package.
+ * @returns The absolute path of the binary.
+ */
+function releasedCodex(releasedIn: string): string {
+	const target = RELEASE_TARGETS[`${process.platform}-${process.arch}`];
+	if (target === undefined) {
+		throw new CodexExecutableError({
+			code: "missing",
+			executablePath: releasedIn,
+			message: `An Archboard release has no Codex for ${process.platform} on ${process.arch}.`,
+		});
+	}
+	const packageName = path.join("@openai", `codex-${target.suffix}`);
+	for (let directory = releasedIn; ; directory = path.dirname(directory)) {
+		const candidate = path.join(directory, "node_modules", packageName);
+		if (path.basename(directory) !== "node_modules" && fs.existsSync(candidate)) {
+			const packageRoot = fs.realpathSync(candidate);
+			return path.join(packageRoot, "vendor", target.triple, "bin", "codex");
+		}
+		if (path.dirname(directory) === directory) break;
+	}
+	throw new CodexExecutableError({
+		code: "missing",
+		executablePath: path.join(releasedIn, "node_modules", packageName),
+		message: `The Codex ${CODEX_PROTOCOL_VERSION} package ${path.basename(packageName)} is not installed beside the release at ${releasedIn}. Reinstall Archboard, then retry.`,
+	});
+}
+
+/**
+ * The root of the platform package that holds a native Codex binary.
+ * @param executablePath - A proven executable.
+ * @returns The package root, or null when the executable is not `<package>/vendor/<triple>/bin/codex`
+ * of an `@openai/codex-*` package.
+ */
+function nativePackageRoot(executablePath: string): string | null {
+	const binDirectory = path.dirname(executablePath);
+	const packageRoot = path.dirname(path.dirname(path.dirname(binDirectory)));
+	const isNative =
+		path.basename(executablePath) === "codex" &&
+		path.basename(binDirectory) === "bin" &&
+		path.basename(path.dirname(packageRoot)) === "@openai" &&
+		path.basename(packageRoot).startsWith("codex-");
+	return isNative ? packageRoot : null;
+}
+
+/**
+ * The environment that `bin/codex.js` gives the native binary it starts: the root of the package
+ * that holds the binary, and the one `CODEX_MANAGED_BY_*` variable of the package manager that
+ * installed it. A release starts the binary itself, so it must set them. The wrapper sets them
+ * for itself.
+ * @param executablePath - The proven executable.
+ * @returns The variables, or none when the executable is not the binary of a platform package.
+ */
+function nativeCodexEnvironment(executablePath: string): Readonly<Record<string, string>> {
+	const packageRoot = nativePackageRoot(executablePath);
+	if (packageRoot === null) return {};
+	const segments = packageRoot.split(path.sep);
+	const manager = segments.includes(".bun")
+		? "CODEX_MANAGED_BY_BUN"
+		: segments.includes(".pnpm")
+			? "CODEX_MANAGED_BY_PNPM"
+			: "CODEX_MANAGED_BY_NPM";
+	return { CODEX_MANAGED_PACKAGE_ROOT: packageRoot, [manager]: "1" };
+}
+
 /**
  * Prove the path names an existing, regular, executable file before anything
  * is run from it.
@@ -291,7 +375,11 @@ function verifyCodexExecutable(
  * executable, or reports another version.
  */
 function resolveCodexExecutable(options: CodexExecutableOptions = {}): string {
-	const candidate = options.executablePath ?? installedCodexExecutable(options.installedIn);
+	const candidate =
+		options.executablePath ??
+		(options.releasedIn === undefined
+			? installedCodexExecutable(options.installedIn)
+			: releasedCodex(options.releasedIn));
 	return verifyCodexExecutable(candidate).executablePath;
 }
 
@@ -300,6 +388,7 @@ export {
 	type VerifiedCodexExecutable,
 	CodexExecutableError,
 	requireCheckoutLocal,
+	nativeCodexEnvironment,
 	resolveCodexExecutable,
 	verifyCodexExecutable,
 };

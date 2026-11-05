@@ -126,7 +126,7 @@ function refuseUnstartableServer(): void {
 		throw unreachableError("refusing to auto-start a non-loopback server URL");
 	}
 	try {
-		resolveCodexExecutable({ installedIn: installation().codexInstalledIn });
+		resolveCodexExecutable(installation().codexLocation);
 	} catch (cause) {
 		throw startupRefusal(
 			cause instanceof Error
