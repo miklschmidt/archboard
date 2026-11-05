@@ -168,7 +168,12 @@ function nativeServer(own: CheckoutTypescript): LanguageServer | undefined {
 	const program = insideCheckout(checkout, nativeTsc(typescript.directory));
 	if (program === undefined) return undefined;
 	const from = { version: typescript.version, from: "checkout" } as const;
-	return { status: "command", argv: [program, "--lsp", "--stdio"], typescript: from };
+	return {
+		status: "command",
+		argv: [program, "--lsp", "--stdio"],
+		initializationOptions: TYPESCRIPT_OPTIONS,
+		typescript: from,
+	};
 }
 
 /**
@@ -220,7 +225,12 @@ function archboardServer(): LanguageServer | undefined {
 		const program = nativeTsc(typescript.directory);
 		if (program === undefined) return undefined;
 		const from = { version: typescript.version, from: "archboard" } as const;
-		return { status: "command", argv: [program, "--lsp", "--stdio"], typescript: from };
+		return {
+			status: "command",
+			argv: [program, "--lsp", "--stdio"],
+			initializationOptions: TYPESCRIPT_OPTIONS,
+			typescript: from,
+		};
 	} catch {
 		return undefined;
 	}

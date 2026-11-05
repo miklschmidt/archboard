@@ -140,6 +140,7 @@ test("TypeScript runs the native tsc of the checkout's own TypeScript 7 or later
 		expect(languageServerOf("typescript", own.root, {})).toEqual({
 			status: "command",
 			argv: [own.program, "--lsp", "--stdio"],
+			initializationOptions: { tsserver: { useSyntaxServer: "never" } },
 			typescript: { version: "7.1.0", from: "checkout" },
 		});
 		const archboards = typescriptProgram(checkoutWith(undefined, false).root);
@@ -180,6 +181,7 @@ test("a release, which ships no TypeScript, runs the checkout's TypeScript 7 or 
 		expect(defaultTypescriptServer(own.root, false)).toEqual({
 			status: "command",
 			argv: [own.program, "--lsp", "--stdio"],
+			initializationOptions: { tsserver: { useSyntaxServer: "never" } },
 			typescript: { version: "7.1.0", from: "checkout" },
 		});
 		for (const other of [
@@ -223,6 +225,9 @@ test("a checkout's TypeScript before 7 with no typescript-language-server falls 
 		expect(defaultTypescriptServer(own.root, false).status).toBe("missing");
 		const fallback = defaultTypescriptServer(own.root, true);
 		expect(fallback.status === "command" && fallback.typescript?.from).toBe("archboard");
+		expect(fallback.status === "command" && fallback.initializationOptions).toEqual({
+			tsserver: { useSyntaxServer: "never" },
+		});
 	});
 });
 
