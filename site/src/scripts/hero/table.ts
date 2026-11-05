@@ -472,7 +472,7 @@ export function lightTable(
 	let under: { card: number; since: number } | undefined;
 	let focused = -1;
 	let previous: number | undefined;
-	let rest: { aspect: number; camera: Camera; words: number[] } | undefined;
+	let rest: { width: number; height: number; camera: Camera; words: number[] } | undefined;
 	/**
 	 * Where the words stand on the canvas.
 	 * @returns Their left, bottom, right and top, 0..1 from the canvas's bottom left.
@@ -548,12 +548,17 @@ export function lightTable(
 				x: look.x + (target.x - look.x) * follow(RATES.look),
 				y: look.y + (target.y - look.y) * follow(RATES.look),
 			};
-			if (!rest || rest.aspect !== aspect) {
+			if (!rest || rest.width !== frame.width || rest.height !== frame.height) {
 				if (rest) {
 					window.clearTimeout(settling);
 					settling = window.setTimeout(repaint, SETTLE);
 				}
-				rest = { aspect, camera: fit(aspect, roomOf(canvas, words)), words: wordsOf() };
+				rest = {
+					width: frame.width,
+					height: frame.height,
+					camera: fit(aspect, roomOf(canvas, words)),
+					words: wordsOf(),
+				};
 			}
 			const away = 1 - arrived;
 			const camera: Camera = {
