@@ -252,6 +252,13 @@ export default defineConfig({
 					output: ["dist/codex-realtime-voice/**"],
 				},
 			},
+			// The npm packages of a release (ADR 0075), from the frontend and the core of this
+			// checkout. It compiles for every platform, so it is never cached.
+			"release-packages": {
+				dependsOn: ["contracts", "frontend"],
+				command: "bun scripts/release/build.ts",
+				cache: false,
+			},
 			types: {
 				dependsOn: ["contracts", "core"],
 				command:
