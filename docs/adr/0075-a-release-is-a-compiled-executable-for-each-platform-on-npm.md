@@ -144,7 +144,9 @@ trusts a workflow only for a package that already exists, the owner publishes
 a placeholder of each name once by hand.
 
 The MIT voice package is a second release-please component with its own
-version, changelog and tag `codex-realtime-voice-v<version>`.
+version, changelog, release pull request and tag
+`codex-realtime-voice-v<version>`. A commit that changes only the voice
+package does not bump the Archboard version.
 
 The Change Date of the Business Source License counts from the first
 publication of each version. The release build writes that version into the
