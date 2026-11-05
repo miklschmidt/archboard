@@ -351,34 +351,34 @@ Archboard's SVG renderer began as a fork of the PR Lens renderer (MIT, Coldtea A
 
 ## Quick start
 
-You need Linux or macOS, Git, Bun 1.4.4 or newer, and Node.js 22.23.4, 24.22.1 or 26.12.1 or later for the build tools. Nix with flakes supplies the Rust tools that build the renderer, but not Node.js. [INSTALL.md](INSTALL.md) gives the way with rustup, for a machine without Nix. Chromium or Google Chrome draws PNGs and the frames of a video, and `ffmpeg` (or Nix, which fetches it) encodes the video.
+You need Linux on x64 or arm64, or macOS on Apple silicon, with Git and npm. Chromium or Google Chrome draws PNGs and the frames of a video, and `ffmpeg` (or Nix, which fetches it) encodes the video. To build Archboard from a clone instead, read [INSTALL.md](INSTALL.md).
 
 The agent, the voice, narration and recordings also need a Codex sign-in. You sign in from the agent dock with ChatGPT or an API key.
 
-Try the example vault from this README. A vault stores the authored architecture files. The first build takes the longest:
+Install Archboard, then try the example vault from this README. A vault stores the authored architecture files:
 
 ```bash
-git clone https://github.com/miklschmidt/archboard.git && cd archboard
-nix develop --command bash -c 'bun install && bun run build'
-mkdir -p ~/archboard-example/.archboard && cp -r examples/web-shop ~/archboard-example/.archboard/vault
+npm install --global archboard
+mkdir -p ~/archboard-example/.archboard/vault
+curl -fsSL https://codeload.github.com/miklschmidt/archboard/tar.gz/main \
+  | tar -xz -C ~/archboard-example/.archboard/vault --strip-components=3 archboard-main/examples/web-shop
 git -C ~/archboard-example init
 git -C ~/archboard-example remote add origin https://example.invalid/web-shop.git
-./bin/archboard -C ~/archboard-example model import \
+archboard -C ~/archboard-example model import \
   --input ~/archboard-example/.archboard/vault/history.import.json
-./bin/archboard start
+archboard start
 ```
 
-The copy is the vault of `~/archboard-example`. Use your configured Git identity and signer for this example. The import restores its architecture history and registers the repository. The synthetic origin identifies local references and is never fetched. Open <http://127.0.0.1:3000/?modelA=Shop> to explore the modules, proposals, history, and walkthroughs. The example has no source code, so the code check and the Git measures need your own repository.
+The copy is the vault of `~/archboard-example`. Use your configured Git identity and signer for this example. The import restores its architecture history and registers the repository. The synthetic origin identifies local references and is never fetched. Open <http://archboard.localhost:27242/?modelA=Shop> to explore the modules, proposals, history, and walkthroughs. The example has no source code, so the code check and the Git measures need your own repository.
 
-**Use it on your own code**. Put the CLI on your `PATH` and set up the repository you want mapped:
+**Use it on your own code**. Set up the repository you want mapped:
 
 ```bash
-mkdir -p ~/.local/bin && ln -s "$PWD/bin/archboard" ~/.local/bin/archboard   # ~/.local/bin must be on your PATH
 cd ~/code/your-project
 archboard install-skill --agent claude-code     # omit --agent for Codex
 ```
 
-The installer links the consumer skills from `~/.claude/skills` for Claude Code or `~/.agents/skills` for Codex to this checkout, so a `git pull` updates them. It initializes an empty canonical model in a new vault. Existing architecture requires explicit migration. Commit authored inputs with your code. Commands find the vault from the working directory or `-C <dir>`. Then ask your agent:
+The installer links the consumer skills from `~/.claude/skills` for Claude Code or `~/.agents/skills` for Codex to the installed package, so an upgrade updates them. It initializes an empty canonical model in a new vault. Existing architecture requires explicit migration. Commit authored inputs with your code. Commands find the vault from the working directory or `-C <dir>`. Then ask your agent:
 
 ```text
 Describe this repository with canonical modules, their responsibilities, and their relationships.
@@ -460,7 +460,7 @@ The Archboard server binds to `127.0.0.1` and has no authentication, so keep it 
 <details><summary><b>Is it stable?</b></summary>
 <br>
 
-Archboard is young and moves fast. Its interfaces change often, and it is not published to npm: run it from a clone. It targets desktop browsers on Linux and macOS.
+Archboard is young and moves fast. Its interfaces change often. Install it from npm, or run it from a clone to change it. It targets desktop browsers on Linux and macOS.
 </details>
 
 ## License

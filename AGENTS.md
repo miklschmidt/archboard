@@ -1,7 +1,7 @@
 # archboard: agent-authored architecture models
 
 Archboard serves software and cloud architects who work with coding agents.
-It runs locally from a clone under the Business Source License 1.1.
+It runs locally, from a clone or from an npm release (ADR 0075), under the Business Source License 1.1.
 Agents author architectural meaning, and the renderer draws it.
 Repair incorrect geometry in the renderer so that every reading benefits.
 

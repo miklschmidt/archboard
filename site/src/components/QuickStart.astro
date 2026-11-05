@@ -3,18 +3,18 @@
 import Icon from "./Icon.astro";
 import { links } from "../lib/links";
 
-const tryIt = `git clone https://github.com/miklschmidt/archboard.git && cd archboard
-nix develop --command bash -c 'bun install && bun run build'
-mkdir -p ~/archboard-example/.archboard && \\
-  cp -r examples/web-shop ~/archboard-example/.archboard/vault
+const tryIt = `npm install --global archboard
+mkdir -p ~/archboard-example/.archboard/vault
+curl -fsSL https://codeload.github.com/miklschmidt/archboard/tar.gz/main | \\
+  tar -xz -C ~/archboard-example/.archboard/vault \\
+  --strip-components=3 archboard-main/examples/web-shop
 git -C ~/archboard-example init
 git -C ~/archboard-example remote add origin https://example.invalid/web-shop.git
-./bin/archboard -C ~/archboard-example model import \\
+archboard -C ~/archboard-example model import \\
   --input ~/archboard-example/.archboard/vault/history.import.json
-./bin/archboard start`;
+archboard start`;
 
-const ownCode = `mkdir -p ~/.local/bin && ln -s "$PWD/bin/archboard" ~/.local/bin/archboard
-cd ~/code/your-project
+const ownCode = `cd ~/code/your-project
 archboard install-skill --agent claude-code     # omit --agent for Codex`;
 
 const prompts = [
@@ -39,13 +39,12 @@ const prompts = [
 				</button>
 			</div>
 			<p class="body small">
-				You need Linux or macOS, Git, Bun 1.4.4 or newer, and Node.js 22.23.4, 24.22.1 or 26.12.1 or
-				later for the build tools. Nix with flakes supplies the Rust tools that build the renderer, but
-				not Node.js. The first build takes the longest.
+				You need Linux on x64 or arm64, or macOS on Apple silicon, with Git and npm. To build from a
+				clone instead, read <a href={links.install}>INSTALL.md</a>.
 			</p>
 			<pre class="block" tabindex="0"><code>{tryIt}</code></pre>
 			<p class="body small">
-				Then open <code>http://127.0.0.1:3000/?modelA=Shop</code> to explore the modules, proposals,
+				Then open <code>http://archboard.localhost:27242/?modelA=Shop</code> to explore the modules, proposals,
 				history and walkthroughs.
 			</p>
 		</div>
@@ -57,7 +56,7 @@ const prompts = [
 				</button>
 			</div>
 			<p class="body small">
-				Put the CLI on your path and install the skill in the repository you want mapped. Then ask
+				Install the skill in the repository you want mapped. Then ask
 				your agent to describe it.
 			</p>
 			<pre class="block" tabindex="0"><code>{ownCode}</code></pre>

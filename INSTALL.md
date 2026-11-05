@@ -12,7 +12,20 @@ archboard itself, read [TESTING.md](TESTING.md).
 
 ## What you need
 
-You need these things:
+You install archboard in one of two ways. The npm release needs no build
+tools. A clone builds archboard from its source, so that you can change it.
+
+The release needs these things:
+
+- Linux on x64 or arm64, or macOS on Apple silicon. Under Windows, use WSL 2.
+- Git, and npm or Bun to install the package.
+- A desktop browser, to read architecture. The browser layout is for desktop
+  screens only.
+- Chromium or Google Chrome, only to draw PNG files and to record videos.
+- `ffmpeg` with libx264 and aac, or Nix, only to record videos. If there is no
+  `ffmpeg`, the recorder runs `nixpkgs#ffmpeg-headless` through Nix.
+
+A clone needs these things:
 
 - Linux or macOS, Bash, Git, and Bun 1.4.4 or newer. Bun must be on the `PATH` of
   every process that runs archboard.
@@ -27,7 +40,27 @@ You need these things:
 
 ## 1. Install archboard on the machine
 
-Clone the repository once:
+### Install the release
+
+Install the package once:
+
+```bash
+npm install --global archboard
+```
+
+With Bun, run `bun add --global @archboard/cli` instead. Both names install the
+same program. The package manager installs only the package of your platform,
+with the Codex binary that archboard is pinned to. The install puts `archboard`
+on your `PATH`, so skip section 2. Then set up a repository as section 3 says.
+
+A release server listens on <http://archboard.localhost:27242>. Chrome and
+Firefox send every `*.localhost` name to this machine without any setup. The
+CLI connects to `127.0.0.1:27242` itself.
+
+### Install from a clone
+
+Use a clone to change archboard, or on a platform that has no release. Clone the
+repository once:
 
 ```bash
 git clone https://github.com/miklschmidt/archboard.git ~/Projects/archboard
@@ -98,7 +131,8 @@ start without those links.
 
 ## 2. Put the CLI on your PATH
 
-The entry point is `bin/archboard` in the checkout. Give it the name `archboard` on
+A release install does this step for you. In a clone, the entry point is
+`bin/archboard` in the checkout. Give it the name `archboard` on
 your `PATH`, because the skill uses that name:
 
 ```bash
@@ -123,12 +157,14 @@ Use `--agent claude-code` for Claude Code. Without it, the installer sets up
 Codex. The installer does these things:
 
 1. It links two skills from a skills directory to the `skills/` directory of
-   this checkout: `archboard`, which writes and reads canonical models, and
+   the installation, a release package or a checkout: `archboard`, which writes
+   and reads canonical models, and
    `archboard-pr`, which gives a pull request an architecture explainer. The
    default directory is `~/.agents/skills`, which Codex reads. With
    `--agent claude-code` it is `~/.claude/skills`. Each link replaces an earlier
    copy or a link to another place, and the installer names what it replaced.
-   A `git pull` and `bun install` update the linked skills.
+   An upgrade of a release, or a `git pull` and `bun install` in a clone,
+   updates the linked skills.
    If `--dir` names a directory inside the repository, the installer copies the
    skills there instead, because the repository carries them to other machines.
    If a target in that directory is a symlink, the installer stops and changes
@@ -224,7 +260,8 @@ do not want this, set `ARCHBOARD_NO_AUTOSTART=1`. `archboard start` starts the
 server in both cases. The server uses the environment of the command that
 started it.
 
-The server listens on <http://127.0.0.1:3000>. To use another address, set
+The server of a clone listens on <http://127.0.0.1:3000>. A release server
+listens on <http://archboard.localhost:27242>. To use another address, set
 `ARCHBOARD_URL`, or give `--url` to one command. A command starts a server only
 for a loopback address, that is, an address that only this machine can reach.
 The old variable `EXPRESS_SERVER_URL` is refused with a message, as
@@ -619,7 +656,12 @@ gh 2.99 or newer.
 
 ## Update and remove
 
-To update archboard, run `git pull` in the checkout. Make sure that `bun --version`
+To update a release, run the install command again, for example
+`npm install --global archboard`. Then run `archboard restart`, so that the
+server runs the new version. Until then, every command warns that the server
+runs another version. A release restart builds nothing.
+
+To update a clone, run `git pull` in the checkout. Make sure that `bun --version`
 and `node --version` still satisfy [What you need](#what-you-need), because nothing
 refuses an older one. Then run `bun install` and
 `archboard restart` with the Rust tools on your `PATH`, because the restart builds
@@ -647,7 +689,8 @@ There is no uninstall command. To remove archboard, delete these things:
 
 - The skill directories, for example `~/.agents/skills/archboard` and
   `~/.agents/skills/archboard-pr`.
-- The `archboard` link on your `PATH`.
+- The `archboard` link on your `PATH`, or the package of a release, for example
+  with `npm uninstall --global archboard`.
 - The state directory. It holds the Codex sign-in, `repos.json` (with the
   configured language servers of each checkout), the opener configuration, the
   server process files, the log and the kept talks of recordings.

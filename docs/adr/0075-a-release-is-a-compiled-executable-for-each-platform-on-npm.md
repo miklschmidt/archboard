@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 ---
 
 # A release is a compiled executable for each platform on npm
