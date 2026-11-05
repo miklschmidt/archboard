@@ -4,6 +4,8 @@ description: >-
   Keep Archboard's canonical architecture model and consumer guidance aligned
   with product changes. Use when planning, implementing, or closing work in
   this repository.
+metadata:
+  internal: true
 ---
 
 # Work on Archboard
