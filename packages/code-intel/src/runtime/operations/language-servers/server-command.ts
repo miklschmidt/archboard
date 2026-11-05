@@ -9,19 +9,22 @@
 // language with no configured server has no server, and the pass says so once
 // for the checkout.
 //
-// TypeScript needs no configuration. Its server is the native `tsc --lsp`
-// that TypeScript 7 ships in its `typescript` package, found in the checkout's
-// own `node_modules/typescript` when that package is version 7 or later and
-// holds the native program for this machine, and otherwise in Archboard's
-// own. A TypeScript before 7 has no `--lsp`, so the check falls back to
-// Archboard's. The rule reads the checkout's root only, so a monorepo whose
-// packages install different versions uses the version installed at its root.
+// TypeScript has a default. A configured server wins. Otherwise the server is
+// the native `tsc --lsp` that TypeScript 7 ships in its `typescript` package,
+// found in the checkout's own `node_modules/typescript` when that package is
+// version 7 or later and holds the native program for this machine. Otherwise
+// a checkout (not a release, which ships no TypeScript, ADR 0075) falls back
+// to Archboard's own. A TypeScript before 7 has no `--lsp`; a repository that
+// uses one configures typescript-language-server or another server. The rule
+// reads the checkout's root only, so a monorepo whose packages install
+// different versions uses the version installed at its root.
 
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import type { Language } from "#runtime/operations/language-servers/languages.ts";
 import type { LanguageServersSchema } from "@archboard/workspace/checkouts";
+import { installation } from "@archboard/workspace/installation";
 
 /** The server one language uses in a checkout, or why it has none. */
 type LanguageServer =
@@ -112,16 +115,20 @@ function archboardTsc(): string | undefined {
 }
 
 /**
- * The TypeScript server of a checkout.
+ * The default TypeScript server of a checkout: its own TypeScript 7 or later,
+ * and Archboard's own TypeScript after it where Archboard has one.
  * @param root The checkout, absolute.
+ * @param fallback Whether Archboard has a TypeScript of its own: a checkout of
+ * Archboard does, and a release does not.
  * @returns The server.
  */
-function typescriptServer(root: string): LanguageServer {
-	const program = checkoutTsc(root) ?? archboardTsc();
+function defaultTypescriptServer(root: string, fallback: boolean): LanguageServer {
+	const program = checkoutTsc(root) ?? (fallback ? archboardTsc() : undefined);
 	if (program === undefined) {
+		const machine = `${process.platform}-${process.arch}`;
 		return {
 			status: "missing",
-			detail: `neither the checkout's nor Archboard's typescript package has a native tsc for ${process.platform}-${process.arch}`,
+			detail: `the checkout installs no typescript package of version 7 or later with a native tsc for ${machine}${fallback ? ", and neither does Archboard's" : ""}`,
 		};
 	}
 	return { status: "command", argv: [program, "--lsp", "--stdio"] };
@@ -139,10 +146,11 @@ function languageServerOf(
 	root: string,
 	configured: z.infer<typeof LanguageServersSchema>,
 ): LanguageServer {
-	if (language === "typescript") return typescriptServer(root);
 	const server = configured[language];
 	if (server === undefined) {
-		return { status: "missing", detail: "no server is configured" };
+		return language === "typescript"
+			? defaultTypescriptServer(root, installation().mode === "checkout")
+			: { status: "missing", detail: "no server is configured" };
 	}
 	const program = Bun.which(server.command);
 	if (program === null) {
@@ -156,4 +164,4 @@ function languageServerOf(
 	return { status: "command", argv: [program, ...server.args] };
 }
 
-export { type LanguageServer, languageServerOf };
+export { type LanguageServer, defaultTypescriptServer, languageServerOf };

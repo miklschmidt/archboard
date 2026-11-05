@@ -116,6 +116,26 @@ test("repo language-server sets the server of a language for the working directo
 	expect(Object.keys((await listed()) as object)).toEqual(["python"]);
 });
 
+test("repo language-server configures the TypeScript server of a checkout and --remove removes it", async () => {
+	await run(scratch, ["repo", "forget", checkout]);
+	await run(checkout, ["repo", "add", "."]);
+	const set = await run(checkout, [
+		"repo",
+		"language-server",
+		"typescript",
+		"typescript-language-server",
+		"--arg=--stdio",
+	]);
+	expect(set.exited).toBe(0);
+	expect(await listed()).toEqual({
+		typescript: { command: "typescript-language-server", args: ["--stdio"] },
+	});
+	expect((await run(checkout, ["repo", "language-server", "typescript", "--remove"])).exited).toBe(
+		0,
+	);
+	expect(await listed()).toBeUndefined();
+});
+
 test("repo forget removes the servers with the checkout", async () => {
 	await run(scratch, ["repo", "forget", checkout]);
 	await run(checkout, ["repo", "add", "."]);
@@ -129,7 +149,7 @@ test.each([
 	["a relative command", ["repo", "language-server", "c", "./bin/clangd"], "registered"],
 	[
 		"a language that has no configurable server",
-		["repo", "language-server", "typescript", "tsc"],
+		["repo", "language-server", "cobol", "cobol-lsp"],
 		"registered",
 	],
 ])(

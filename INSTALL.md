@@ -418,14 +418,14 @@ A configured server runs the code of that repository. Configure one only for a r
 
 ### TypeScript
 
-TypeScript needs no configuration. If all of these are true, the check runs `tsc --lsp --stdio` from the `typescript` package that the checkout installs:
+TypeScript has a default server. A server that you configure wins (see [the other languages](#the-other-languages)). Without one, if all of these are true, the check runs `tsc --lsp --stdio` from the `typescript` package that the checkout installs:
 
 - The package is in `node_modules/typescript` at the root of the checkout.
 - The package is version 7 or later. TypeScript 7 is the first version that has a language server.
 - The package has the native program for your machine, `@typescript/typescript-<platform>-<arch>`, beside it or inside it.
 - The package and the program are inside the checkout once their links resolve.
 
-Otherwise the check runs the `tsc` of the `typescript` package that archboard installs. This is so for an older TypeScript, for no TypeScript, for no native program, and for a link that leads out of the checkout. The check does not look in the parent directories of the checkout. If the `typescript` package of archboard has no native program for your machine either, the check says `language-server-missing` for TypeScript.
+Otherwise, when you run archboard from a clone, the check runs the `tsc` of the `typescript` package that archboard installs. This is so for an older TypeScript, for no TypeScript, for no native program, and for a link that leads out of the checkout. The check does not look in the parent directories of the checkout. An archboard release ships no TypeScript. If no `tsc` is found, the check says `language-server-missing` for TypeScript, and the answer names the command that configures a server. A repository that installs TypeScript before version 7 can configure `typescript-language-server` with `archboard repo language-server typescript typescript-language-server --arg=--stdio`.
 
 In a monorepo, the check reads the root only. A package that installs another version than the root uses the version at the root. `tsc --lsp` loads no plugin that `tsconfig.json` names. This was measured with TypeScript 7.0.2.
 
@@ -441,7 +441,7 @@ Python, C, C++, Objective-C, C#, Swift, Rust and Go have no default server. To c
 archboard repo language-server <language> <command> [--arg=<argument>]...
 ```
 
-The language is `python`, `csharp`, `swift`, `c`, `rust` or `go`. The language `c` covers C, C++ and Objective-C. The command is a program on the `PATH` of the Archboard server, or the absolute path of a program. Write an argument that starts with `-` as `--arg=<argument>`.
+The language is `typescript`, `python`, `csharp`, `swift`, `c`, `rust` or `go`. The language `c` covers C, C++ and Objective-C. The command is a program on the `PATH` of the Archboard server, or the absolute path of a program. Write an argument that starts with `-` as `--arg=<argument>`.
 
 `--repo <identity>` names another repository, and the command then configures its chosen checkout. Without it, the command configures the known checkout that holds the working directory. `--remove` removes the server of the language. `archboard repo list` shows the configured servers of each checkout. `archboard repo forget` removes them with the checkout.
 

@@ -189,7 +189,9 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   fetches, with no plan JSON named for its root module (TASK-367.17). Its
  *   `detail` names the module call.
  * - `language-server-missing`: a language that has no server in a checkout.
- *   Python, C, C++, Objective-C, C#, Swift, Rust and Go have no default server: an agent
+ *   TypeScript has a default server, and a configured one wins; a release has no
+ *   TypeScript of its own, so a checkout without a native `tsc` of version 7 or later
+ *   says this too. Python, C, C++, Objective-C, C#, Swift, Rust and Go have no default server: an agent
  *   that works in the repository configures one for its checkout (`archboard
  *   repo language-server`), so the check runs no code of a checkout that
  *   nobody agreed to run. Also a configured command that is not installed.
@@ -351,7 +353,7 @@ const CheckTimingSchema = z.discriminatedUnion("check", [
 		.object({
 			check: z.literal("language-server"),
 			elapsedMs: z.number().nonnegative(),
-			language: z.enum(["typescript", ...CONFIGURABLE_LANGUAGES]),
+			language: z.enum(CONFIGURABLE_LANGUAGES),
 			repo: z.string().optional(),
 			project: z.string(),
 		})

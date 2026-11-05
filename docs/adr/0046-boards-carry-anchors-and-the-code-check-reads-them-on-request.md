@@ -259,6 +259,15 @@ The decision has these parts:
   says `language-server-failed` once. Nobody measured whether the index shards
   that clangd writes before the check kills it let a later pass finish.
 
+Amended by TASK-579.12 (2026-11-05): TypeScript is a language a checkout can
+configure (`archboard repo language-server typescript <command>`), and a
+configured server wins. Without one, the rule above holds in order: the
+checkout's own native `tsc` of TypeScript 7 or later, then, only in a checkout
+of Archboard, Archboard's own. A release ships no TypeScript (ADR 0075), so it
+looks for none, and the check says `language-server-missing` with the command
+that configures a server. A repository on TypeScript before 7 configures
+`typescript-language-server`.
+
 Amended by TASK-436.01 (2026-10-07): SourceKit-LSP owns its background indexing,
 including building a Swift package on its first run. The check sends no
 `backgroundIndexing` initialization option and requires no prebuilt index. A
