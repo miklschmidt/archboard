@@ -58,9 +58,8 @@ binary. No other module reads `SOURCE_CHECKOUT`.
    packages as optional dependencies at its own exact version. A package that
    only depends on the launcher does not put `archboard` on the `PATH`, so the
    unscoped name carries the launcher itself.
-2. `@archboard/cli-linux-x64`, `@archboard/cli-linux-arm64`,
-   `@archboard/cli-darwin-arm64` and `@archboard/cli-darwin-x64` each hold one
-   executable and its assets. The `os` and `cpu` fields of each one let the
+2. `@archboard/cli-linux-x64`, `@archboard/cli-linux-arm64` and
+   `@archboard/cli-darwin-arm64` each hold one executable and its assets. The `os` and `cpu` fields of each one let the
    package manager install only the matching one.
 3. Each platform package depends on the Codex binary of its platform at the
    exact pinned version, under the alias that `@openai/codex` uses itself, for
@@ -68,8 +67,10 @@ binary. No other module reads `SOURCE_CHECKOUT`.
    Archboard starts that native binary directly. It sets the two variables that
    `bin/codex.js` sets. The exact `--version` proof stays.
 
-A release needs no Bun, Node.js, Rust, Nix or clone. Windows is not supported,
-because the product supports only Linux and macOS.
+A release needs no Bun, Node.js, Rust, Nix or clone. Intel Macs and Windows
+have no package. Under WSL 2, npm installs the Linux package. WSL 2 forwards
+the loopback port to Windows, and a Windows browser resolves `*.localhost`
+itself, so a release can work there. Nobody tested it.
 
 The workspace packages stay private. The executable carries them. The MIT
 voice package, `@archboard/codex-realtime-voice`, keeps its own version line.
@@ -135,7 +136,7 @@ shipped `LICENSE`.
   version, so a stale copy has a name.
 - An install downloads one Codex platform package of about 427 MB. That is
   several times larger than everything that Archboard ships.
-- The release build needs a build matrix of four platforms, and every file that
+- The release build needs a build matrix of three platforms, and every file that
   the program reads by path must load from the installation module or from the
   executable.
 - A checkout keeps its port, its hand-off, its source-hash refusal and its
