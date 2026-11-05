@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-04T15:39:00Z'
-updated_date: '2026-11-05T00:45:00Z'
+updated_date: '2026-11-05T02:11:00Z'
 labels: []
 dependencies: []
 ordinal: 1019000
@@ -111,4 +111,13 @@ Evidence:
 - Pacing at 4K with a 16x load: 3 of 4 runs settle at 2038 to 2093 px wide with no missed frames. One fails a trial during the entry, recovers, and settles at 2346 px wide with about one frame in ten missed. With an 8x load: one step to 3047 px, no missed frames. With no load: 3840x2160 throughout.
 - Cold compile about 165 ms. astro check: 0 errors, 0 warnings, 0 hints. Format check on the changed files: clean.
 Open: the delegated code review and the full gate still run before a pull request.
+
+Hero smoke and tiles (2026-11-05, owner direction: smoke that varies along straight lines and is strongest in the middle, weaker and softer; cards that start lower; no glow through cards; no gray splotches; brighter wells):
+- 5768fabd3: the smoke gathers at the middle of each straight stretch of a line and is gone at its bends and ends. Each run carries the extent of its stretch in a third texel. The smoke thins softly from the axis and ends in ragged wisps. A packet's head is sharp in the core and swells into the smoke ahead of it, where it used to cut across it. A tile waits below its floor and rises through it. The floor drops the print of a card or a tray out to the blur of its edge, so no outline shows before it appears; that outline was what showed through the ground. The top of a tile hides a beam that runs below it. The hero's painting keeps no shadows, tray walls take the tone of their floor, and the wells are brighter. The grid walk starts half a reach below the beams.
+Evidence:
+- 4K stills with and without the shorter walk are identical pixel for pixel.
+- GPU time under a 3x load at 2880x1620 on the RTX 4090: 7.3 ms a frame, 4.6 ms without beams. The smoke costs about 0.1 ms of it.
+- Frames of the entry on a clock slowed ten times show no outline of a card or a tray before it appears.
+- astro check: 0 errors, 0 warnings, 0 hints. Format check on the changed files: clean.
+Open: the own-model section, then the delegated code review and the full gate before a pull request.
 <!-- SECTION:NOTES:END -->
