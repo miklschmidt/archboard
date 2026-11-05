@@ -523,12 +523,15 @@ export function lightTable(
 		uniforms: (gl, at, frame) => {
 			const still = motion.matches;
 			const now = performance.now();
-			const step = previous === undefined ? 0 : Math.min(0.1, (now - previous) / 1000);
-			previous = now;
+			const step = previous === undefined ? 0 : Math.min(0.1, Math.max(0, frame.time - previous));
+			previous = still ? undefined : frame.time;
 			const aspect = frame.width / frame.height;
 
-			// The clock of the entry starts when the picture is on the table.
-			const t = still ? Infinity : ready === undefined ? -1 : (now - ready) / 1000;
+			// Start on the frame after the upload, on the host's visible clock. Reduced motion
+			// completes the entry, including when the reader later turns motion back on.
+			if (still) ready = -Infinity;
+			else if (levels) ready ??= frame.time;
+			const t = ready === undefined ? -1 : frame.time - ready;
 			const moving = Number.isFinite(t) ? Math.max(0, t - ARRIVAL.from) * ARRIVAL.rate : Infinity;
 			const arrived = Number.isFinite(moving) ? 1 - (1 + moving) * Math.exp(-moving) : 1;
 			const box = host.getBoundingClientRect();
@@ -629,8 +632,6 @@ export function lightTable(
 			if (levels && !textures.level0) {
 				textures.level0 = levels[0] ? picture(gl, 0, levels[0].image) : null;
 				textures.level1 = levels[1] ? picture(gl, 1, levels[1].image) : null;
-				// The entry starts on the frame after the upload, so its first moment is not the slow one.
-				ready ??= performance.now() + 50;
 			}
 			const bind = (unit: number, texture: WebGLTexture | null, name: string) => {
 				gl.activeTexture(gl.TEXTURE0 + unit);
