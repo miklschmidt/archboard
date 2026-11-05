@@ -1,9 +1,11 @@
 ---
 id: TASK-579.05
 title: A release starts the Codex binary of its platform package directly
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@implementer'
 created_date: '2026-11-05T14:58:00Z'
+updated_date: '2026-11-05T15:26:00Z'
 labels: []
 dependencies:
   - TASK-579.01
@@ -29,3 +31,9 @@ Today Codex must lie under the checkout `node_modules`, and its launcher `bin/co
 - [ ] #2 It sets `CODEX_MANAGED_PACKAGE_ROOT` and the `CODEX_MANAGED_BY_*` variable as `bin/codex.js` does
 - [ ] #3 A Codex of another version is still refused by the exact `--version` proof
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. executable.ts: add releasedIn option; find @openai/codex-<os>-<cpu> beside or above the release platform package (nested and hoisted), start vendor/<triple>/bin/codex directly, keep the exact --version proof. 2. nativeCodexEnvironment: process owner sets CODEX_MANAGED_PACKAGE_ROOT and one CODEX_MANAGED_BY_* for a native binary. 3. Installation.codexInstalledIn becomes codexLocation ({installedIn}|{releasedIn}); call sites pass it. 4. Tests: nested, hoisted, missing, wrong version, spawn environment.
+<!-- SECTION:PLAN:END -->

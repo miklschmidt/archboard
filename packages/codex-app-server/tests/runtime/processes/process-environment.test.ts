@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { spawn } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 
 import {
@@ -107,6 +108,41 @@ describe("Codex process environment", () => {
 				home: path.join(root, "storage", "codex-home"),
 				sqlite: path.join(root, "storage", "sqlite-home"),
 			});
+		} finally {
+			try {
+				if (owner) await owner.stop();
+			} finally {
+				removeRoot(root);
+			}
+		}
+	});
+
+	test("gives the native binary of a platform package the managed variables of bin/codex.js", async () => {
+		const root = temporaryRoot();
+		let owner: ReturnType<typeof createCodexProcessForTesting> | undefined;
+		try {
+			const packageRoot = path.join(root, "node_modules", "@openai", "codex-test");
+			const bin = path.join(packageRoot, "vendor", "triple", "bin");
+			fs.mkdirSync(bin, { recursive: true });
+			const executable = path.join(bin, "codex");
+			fs.renameSync(fixture(root, `process.stdin.resume();`), executable);
+			let environment: Record<string, string | undefined> = {};
+			const processOwner = createCodexProcessForTesting({
+				...processOptions(root, executable),
+				dependencies: {
+					spawn(command, args, options) {
+						environment = { ...options.env };
+						return spawn(command, args, options);
+					},
+				},
+			});
+			owner = processOwner;
+			processOwner.onChild((child) => child.lifecycle.markAppServerReady());
+			await processOwner.start();
+			expect(environment["CODEX_MANAGED_PACKAGE_ROOT"]).toBe(packageRoot);
+			expect(
+				Object.keys(environment).filter((key) => key.startsWith("CODEX_MANAGED_BY_")),
+			).toHaveLength(1);
 		} finally {
 			try {
 				if (owner) await owner.stop();

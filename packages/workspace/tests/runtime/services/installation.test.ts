@@ -82,7 +82,7 @@ test("a checkout names the places the source and its build keep their parts", ()
 		frontendDirectory: join(root, "dist", "frontend"),
 		skillsDirectory: join(root, "skills"),
 		binDirectory: join(root, "bin"),
-		codexInstalledIn: root,
+		codexLocation: { installedIn: root },
 		serverCommand: ["/usr/bin/bun", join(root, "apps", "server", "src", "server.ts")],
 		coreHash: { kind: "sources", root },
 	});

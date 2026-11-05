@@ -70,7 +70,7 @@ export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer):
 	// Prove the mandatory runtime before creating any workbench storage. The
 	// process owner proves it again at each spawn so a later replacement cannot
 	// inherit a stale verification.
-	const executablePath = resolveCodexExecutable({ installedIn: installation().codexInstalledIn });
+	const executablePath = resolveCodexExecutable(installation().codexLocation);
 	const storage = createWorkbenchStorage();
 
 	return {

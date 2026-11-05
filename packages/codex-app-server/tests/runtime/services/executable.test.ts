@@ -8,6 +8,7 @@ import path from "node:path";
 import {
 	CODEX_EXECUTABLE_PROOF_MAX_BYTES,
 	CodexExecutableError,
+	nativeCodexEnvironment,
 	requireCheckoutLocal,
 	resolveCodexExecutable,
 	verifyCodexExecutable,
@@ -189,5 +190,107 @@ describe("Codex executable ownership", () => {
 		} finally {
 			fs.rmSync(root, { recursive: true, force: true });
 		}
+	});
+
+	describe("in a release", () => {
+		const PACKAGE = `codex-${process.platform}-${process.arch}`;
+		const TRIPLES = [
+			"x86_64-unknown-linux-musl",
+			"aarch64-unknown-linux-musl",
+			"aarch64-apple-darwin",
+		];
+
+		/** The platform package of a release at `root`, and the Codex package that a layout puts above or in it. */
+		function codexPackage(nodeModules: string, version: string): string {
+			const packageRoot = path.join(nodeModules, "@openai", PACKAGE);
+			for (const triple of TRIPLES) {
+				const bin = path.join(packageRoot, "vendor", triple, "bin");
+				fs.mkdirSync(bin, { recursive: true });
+				fixture(bin, version, "codex");
+			}
+			return fs.realpathSync(packageRoot);
+		}
+
+		function releasePackage(nodeModules: string): string {
+			const root = path.join(nodeModules, "@archboard", "cli-test");
+			fs.mkdirSync(root, { recursive: true });
+			return fs.realpathSync(root);
+		}
+
+		function foundIn(layout: (base: string) => { root: string; codexModules: string }): void {
+			const base = fs.realpathSync(temporaryRoot());
+			try {
+				const { root, codexModules } = layout(base);
+				const packageRoot = codexPackage(codexModules, CODEX_PROTOCOL_BINARY_VERSION);
+				const executable = resolveCodexExecutable({ releasedIn: root });
+				expect(executable.startsWith(packageRoot + path.sep)).toBe(true);
+				expect(nativeCodexEnvironment(executable)).toMatchObject({
+					CODEX_MANAGED_PACKAGE_ROOT: packageRoot,
+				});
+			} finally {
+				fs.rmSync(base, { recursive: true, force: true });
+			}
+		}
+
+		test("finds the binary of a platform package nested in the release", () => {
+			foundIn((base) => {
+				const root = releasePackage(path.join(base, "node_modules"));
+				return { root, codexModules: path.join(root, "node_modules") };
+			});
+		});
+
+		test("finds the binary of a platform package hoisted beside the release", () => {
+			foundIn((base) => {
+				const modules = path.join(base, "global", "node_modules");
+				return { root: releasePackage(modules), codexModules: modules };
+			});
+		});
+
+		test("refuses a binary of another version and a missing package", () => {
+			const base = fs.realpathSync(temporaryRoot());
+			try {
+				const modules = path.join(base, "node_modules");
+				const root = releasePackage(modules);
+				const failure = (): unknown => {
+					try {
+						resolveCodexExecutable({ releasedIn: root });
+					} catch (cause) {
+						return cause;
+					}
+					return undefined;
+				};
+				expect((failure() as CodexExecutableError).code).toBe("missing");
+				codexPackage(modules, "codex-cli 0.0.1");
+				expect((failure() as CodexExecutableError).code).toBe("wrong_version");
+			} finally {
+				fs.rmSync(base, { recursive: true, force: true });
+			}
+		});
+	});
+
+	test("sets the managed environment for a native binary only, naming the package manager", () => {
+		const native = (...head: string[]): string =>
+			path.join(
+				path.sep,
+				...head,
+				"node_modules",
+				"@openai",
+				"codex-linux-x64",
+				"vendor",
+				"t",
+				"bin",
+				"codex",
+			);
+		const managed = (executable: string): string[] =>
+			Object.keys(nativeCodexEnvironment(executable)).filter((key) =>
+				key.startsWith("CODEX_MANAGED_BY_"),
+			);
+		expect(managed(native("home", ".bun", "install", "global"))).toEqual(["CODEX_MANAGED_BY_BUN"]);
+		expect(managed(native("project"))).toEqual(["CODEX_MANAGED_BY_NPM"]);
+		expect(
+			nativeCodexEnvironment(
+				path.join(path.sep, "project", "node_modules", "@openai", "codex", "bin", "codex.js"),
+			),
+		).toEqual({});
 	});
 });

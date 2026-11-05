@@ -144,7 +144,7 @@ async function prove(need: Need): Promise<void> {
 	if (need === "chromium") chromiumPath();
 	if (need === "ffmpeg") await requireEncoders(ENCODERS);
 	if (need === "pyftsubset") pyftsubsetCommand();
-	if (need === "codex") resolveCodexExecutable({ installedIn: installation().codexInstalledIn });
+	if (need === "codex") resolveCodexExecutable(installation().codexLocation);
 }
 
 /**
