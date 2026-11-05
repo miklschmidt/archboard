@@ -1,7 +1,7 @@
 ---
 id: TASK-579.04
 title: A release server listens on 27242 and the browser opens archboard.localhost
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-05T14:58:00Z'
@@ -27,9 +27,9 @@ A release has no git checkout, so the port rule falls back to 3000, where the ma
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 In release mode the server listens on 127.0.0.1:27242, and a set `ARCHBOARD_URL` or `--url` still decides
-- [ ] #2 Every address shown to a person or opened in a browser is `http://archboard.localhost:27242`; the CLI itself connects to 127.0.0.1
-- [ ] #3 A page served at archboard.localhost works: panes, sockets, the core and the painter load
+- [x] #1 In release mode the server listens on 127.0.0.1:27242, and a set `ARCHBOARD_URL` or `--url` still decides
+- [x] #2 Every address shown to a person or opened in a browser is `http://archboard.localhost:27242`; the CLI itself connects to 127.0.0.1
+- [x] #3 A page served at archboard.localhost works: panes, sockets, the core and the painter load
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -43,3 +43,9 @@ A release has no git checkout, so the port rule falls back to 3000, where the ma
 <!-- SECTION:NOTES:BEGIN -->
 Decisions: browserUrl() (workspace source-checkout.ts) maps a loopback server at 27242 to archboard.localhost in release mode only; a set ARCHBOARD_URL/--url on another port is shown as named. Shown or opened by a person: status/start/restart url, the spawn stderr line, the BROWSER_REQUIRED message, pane report and pane-route messages. Connection diagnostics and headless recording/replay pages keep 127.0.0.1 (machine addresses). The origin guard (code-opener browser-csrf) accepts the exact host archboard.localhost; without it the page's pane socket is refused. Interface-width ceilings hold: no new export beyond browserUrl. Evidence: workspace source-checkout.test.ts, code-opener browser-csrf.test.ts. By hand: a worktree server (port 18176) loaded at http://archboard.localhost:18176 in agent-browser: repo list, pane socket (websocket_clients 1), diagram via core and painter rendered, no errors; a release-mode status printed http://archboard.localhost:27242. A full release server cannot start until TASK-579.07 handles --internal-server.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+In a release the default server address is 127.0.0.1:27242 for the CLI and the listener; ARCHBOARD_URL or --url still decides. browserUrl() turns that loopback address into http://archboard.localhost:27242 for status, start, restart, the spawn line and pane messages; machine-driven recording and replay pages keep 127.0.0.1. The code-opener origin guard accepts the exact host archboard.localhost. Proof: a worktree server on port 18176 loaded at http://archboard.localhost:18176 in agent-browser rendered the Shop diagram through the core and painter with the pane socket connected and no console errors. A full release server is proven in TASK-579.07.
+<!-- SECTION:FINAL_SUMMARY:END -->

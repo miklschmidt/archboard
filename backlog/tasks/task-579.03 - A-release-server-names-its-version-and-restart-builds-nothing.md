@@ -1,7 +1,7 @@
 ---
 id: TASK-579.03
 title: A release server names its version, and restart builds nothing
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-05T14:58:00Z'
@@ -28,9 +28,9 @@ A release never changes on disk except by an install, and npm normalizes file ti
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `/health` reports the version and the mode
-- [ ] #2 When the running server version differs from the installed one, `archboard status` and other commands warn on stderr and name `archboard restart`; commands still work
-- [ ] #3 In release mode `archboard restart` stops and starts the server and runs no build
+- [x] #1 `/health` reports the version and the mode
+- [x] #2 When the running server version differs from the installed one, `archboard status` and other commands warn on stderr and name `archboard restart`; commands still work
+- [x] #3 In release mode `archboard restart` stops and starts the server and runs no build
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -44,3 +44,9 @@ A release never changes on disk except by an install, and npm normalizes file ti
 <!-- SECTION:NOTES:BEGIN -->
 Decisions: the warning lives in the CLI transport identity probe (server-client-transport.ts) so every command, including status, warns once on stderr; release vs release skips the OtherSourceError location check and compares versions (an upgraded release can move). restart silences the warning for itself. Release restart: bundleToServe('release') reads the bundle and spawns no build. status also reports version and mode. Evidence: packages/server-lifecycle/tests/runtime/rules/release-version.test.ts, tests/runtime/operations/restart.test.ts, tests/system/server-state/staleness-source.test.ts (/health version+mode). By hand: a copy of bun beside an archboard-release.json acted as a release; against a stand-in /health of version 0.0.1 'archboard status' printed the warning naming archboard restart on stderr and exited 0.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+/health and `archboard status` report version and mode. In a release, a command that meets a release server of another version warns once on stderr and names `archboard restart` (rule in server-lifecycle rules/release-version.ts, check in server-client-transport.ts); two releases compare by version, so an upgrade in a new path warns instead of refusing as another source. A release restart builds nothing. Checkout mode keeps the source-time check. Verified after merge: server-lifecycle tests 30 pass (restart.test.ts spies Bun.spawn for a release; release-version.test.ts), workspace tests 50 pass; the implementer ran test:system 234 pass and test:repository 163 pass.
+<!-- SECTION:FINAL_SUMMARY:END -->
