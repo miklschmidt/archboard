@@ -1,0 +1,142 @@
+---
+status: proposed
+---
+
+# A release is a compiled executable for each platform on npm
+
+The owner decided this on 2026-11-05. This record reverses the clause of
+[PRODUCT.md](../../PRODUCT.md) that says Archboard runs from a clone and is not
+published on npm. It adds a second way to run Archboard to
+[ADR 0014](0014-no-build-step-bun-runs-the-source.md),
+[ADR 0021](0021-backend-source-changes-require-a-restart.md),
+[ADR 0049](0049-one-server-serves-every-vault-and-every-call-names-its-vault.md)
+and [ADR 0059](0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md).
+A checkout keeps every rule of those records.
+
+## Context
+
+To use Archboard today, a person clones the repository and installs Bun,
+Node.js and the Rust tools. Then the person runs `bun install` and
+`bun run build`, and links `bin/archboard` onto the `PATH`. The Rust tools build the renderer core to
+WebAssembly. Most architects who use a coding agent do not have them.
+
+Every command finds its program through `SOURCE_CHECKOUT`. That is the nearest
+directory above the running file whose `package.json` is named `archboard` and
+which holds `bin/archboard`. The renderer core is refused unless its recorded
+hash matches the sources of that checkout. `archboard restart` rebuilds the
+frontend in that checkout. The pinned Codex must lie under the checkout's
+`node_modules`.
+
+On 2026-11-05, `bun build --compile apps/cli/src/bin.ts` bundled 588 modules
+into one 113 MB executable in less than a second. The executable then stopped
+at `SOURCE_CHECKOUT`, because it runs from `/$bunfs/root`.
+
+Codex publishes the native binary of each platform to npm as a version of
+`@openai/codex` with a platform suffix, for example `0.160.0-linux-x64`. Its
+own launcher, `bin/codex.js`, needs Node.js only to find that binary and start
+it.
+
+## Decision
+
+### Two ways to run
+
+A checkout runs its source with Bun, as ADR 0014 decides. A release runs one
+compiled executable. Nothing else changes for a checkout.
+
+The program decides the mode once, in one installation module. If the file
+`archboard-release.json` lies beside the running executable, the mode is
+release. Otherwise the checkout rule of today applies. If neither applies, the
+command refuses. The module also gives the root, the version, and the
+locations of the frontend, the core, the grammars, the skills and the Codex
+binary. No other module reads `SOURCE_CHECKOUT`.
+
+### The packages
+
+1. `@archboard/cli` and `archboard` are one launcher, published under two
+   names. Each one has the bin `archboard`, a POSIX shell script that starts
+   the executable of the platform package. Each one lists the platform
+   packages as optional dependencies at its own exact version. A package that
+   only depends on the launcher does not put `archboard` on the `PATH`, so the
+   unscoped name carries the launcher itself.
+2. `@archboard/cli-linux-x64`, `@archboard/cli-linux-arm64`,
+   `@archboard/cli-darwin-arm64` and `@archboard/cli-darwin-x64` each hold one
+   executable and its assets. The `os` and `cpu` fields of each one let the
+   package manager install only the matching one.
+3. Each platform package depends on the Codex binary of its platform at the
+   exact pinned version, under the alias that `@openai/codex` uses itself, for
+   example `"@openai/codex-linux-x64": "npm:@openai/codex@0.160.0-linux-x64"`.
+   Archboard starts that native binary directly. It sets the two variables that
+   `bin/codex.js` sets. The exact `--version` proof stays.
+
+A release needs no Bun, Node.js, Rust, Nix or clone. Windows is not supported,
+because the product supports only Linux and macOS.
+
+The workspace packages stay private. The executable carries them. The MIT
+voice package, `@archboard/codex-realtime-voice`, keeps its own version line.
+
+### What a platform package holds
+
+- `bin/archboard`, the executable. It runs the CLI. With an internal first
+  argument, it runs the server, so that a release never starts TypeScript.
+- `frontend/`, the browser bundle that `vp build` makes.
+- `core/`, the renderer glue and WebAssembly that the server loads.
+- `grammars/`, the tree-sitter WebAssembly files and their queries.
+- `skills/archboard` and `skills/archboard-pr`, with their generated
+  references.
+- `archboard-release.json`, which records the version, the commit, the core
+  source hash and the Codex version.
+- `LICENSE` with the version written in, and `THIRD_PARTY_NOTICES.md` for every
+  bundled dependency and font.
+
+The TypeScript fallback language server is not shipped. If the repository or
+the `PATH` has no TypeScript server, the code check reports it as missing, as
+it does today.
+
+### What a release does differently
+
+- The core must match the hash in `archboard-release.json`. A mismatch is
+  refused with `CORE_BUILD_STALE`, and the remedy is to reinstall.
+- `archboard restart` stops the server and starts it again. It builds nothing,
+  because a release never changes on disk except by an install.
+- A server that runs another version than the installed executable gets a
+  warning that names `archboard restart`, as a stale source does in a checkout.
+  `/health` reports the version and the mode.
+- The server listens on `127.0.0.1:27242`. The browser address is
+  `http://archboard.localhost:27242`, because Chrome and Firefox resolve every
+  `*.localhost` name to the loopback address themselves. The CLI connects to
+  `127.0.0.1`, because the system resolver does not resolve `*.localhost` on
+  every Linux. Port 27242 spells ARCHB on a phone keypad. It is outside the
+  range 10000 to 19999 of the worktree servers, and it is not port 3000 of the
+  main checkout. So a release and a checkout run side by side.
+- Inside an archboard checkout, a release command hands off to that
+  checkout's `bin/archboard`, as ADR 0049 decides.
+- `archboard install-skill` links the skills of the installation. It never
+  writes into the installation, because a global install can be read-only.
+- The browser loads `ui/clients/core.ts` and the painter as before. The build
+  of the bundle fixes the hash that the browser checks.
+
+### Publication
+
+A tag `v<version>` on `main` starts a GitHub Actions workflow. It builds the
+executables for each platform on Linux. It installs the packed tarballs on
+Linux and macOS without Rust, Bun or Node.js, and runs a short smoke test.
+Then it publishes every package with npm trusted publishing and provenance. A
+prerelease goes to the dist-tag `next`. The version comes from the root
+`package.json`.
+
+The Change Date of the Business Source License counts from the first
+publication of each version. The release build writes that version into the
+shipped `LICENSE`.
+
+## Consequences
+
+- ADR 0014 named a build as the cost of running outside Bun's source. A release
+  is that build. It is one immutable copy for each version, and it says its
+  version, so a stale copy has a name.
+- An install downloads one Codex platform package of about 427 MB. That is
+  several times larger than everything that Archboard ships.
+- The release build needs a build matrix of four platforms, and every file that
+  the program reads by path must load from the installation module or from the
+  executable.
+- A checkout keeps its port, its hand-off, its source-hash refusal and its
+  rebuild on restart.
