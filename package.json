@@ -47,7 +47,8 @@
 		"readme:assets": "bun scripts/readme-assets/make.ts",
 		"readme:check": "bun scripts/readme-assets/check.ts",
 		"example:workbench:build": "vp run workbench-example",
-		"pack:voice": "vp run voice-package"
+		"pack:voice": "vp run voice-package",
+		"release": "vp run release-packages"
 	},
 	"dependencies": {
 		"@assistant-ui/react": "0.15.17",

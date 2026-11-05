@@ -12,8 +12,8 @@
 //
 //   bun scripts/release/compile.ts --target bun-linux-x64 --out <directory>
 //
-// The directory is replaced. The release build (TASK-579.08) adds the package manifest, the
-// licence and the notices, and installs the Codex platform package beside it.
+// The directory is replaced. The release build (scripts/release/build.ts) adds the package
+// manifest, the licence and the notices.
 
 import {
 	cpSync,
@@ -28,6 +28,7 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import { CHECKOUT, CORE_BUILD_DIRECTORY, loadCore } from "@archboard/renderer/core";
+import { prepareSkillArtifacts } from "@archboard/skills/distribution";
 
 /** The platforms a release is built for. */
 const TARGETS = ["bun-linux-x64", "bun-linux-arm64", "bun-darwin-arm64"] as const;
@@ -46,6 +47,8 @@ const ENTRIES = [
 
 /** The skills a release ships, under `skills/`. */
 const SKILLS = ["archboard", "archboard-pr"];
+/** The skill whose generated references a checkout derives, and a release derives again. */
+const PREPARED_SKILL = "archboard";
 
 /** The glue of the core and its WebAssembly. */
 const CORE_GLUE = "archboard_renderer_wasm.js";
@@ -56,6 +59,8 @@ interface CompiledRelease {
 	readonly directory: string;
 	readonly executable: string;
 	readonly marker: ReturnType<typeof releaseMarker>;
+	/** The npm package directories the executable bundles code from, relative to the checkout. */
+	readonly bundledPackages: readonly string[];
 }
 
 /**
@@ -125,12 +130,26 @@ function nativeInputs(inputs: readonly string[]): string[] {
 }
 
 /**
+ * The npm package directories that bundled inputs come from: the innermost `node_modules/<name>`
+ * of each input, so a nested copy is its own package.
+ * @param inputs The bundle's inputs, relative to the checkout.
+ * @returns The package directories, relative to the checkout, sorted.
+ */
+function packagesOf(inputs: readonly string[]): string[] {
+	const directories = inputs.flatMap(
+		(input) => /^(.*node_modules\/(?:@[^/]+\/)?[^/]+)\//.exec(input)?.[1] ?? [],
+	);
+	return [...new Set(directories)].toSorted();
+}
+
+/**
  * Compile the executable, and refuse a bundle that would load a native addon at run time.
  * @param target The Bun target.
  * @param outfile Where the executable goes.
+ * @returns The npm package directories the executable bundles code from.
  * @throws {Error} When the build fails or bundles a native addon.
  */
-async function compileExecutable(target: Target, outfile: string): Promise<void> {
+async function compileExecutable(target: Target, outfile: string): Promise<string[]> {
 	const built = await Bun.build({
 		entrypoints: ENTRIES.map((entry) => path.join(CHECKOUT, entry)),
 		root: CHECKOUT,
@@ -147,13 +166,15 @@ async function compileExecutable(target: Target, outfile: string): Promise<void>
 	if (!built.success) {
 		refuse(`The executable did not compile:\n${built.logs.map(String).join("\n")}`);
 	}
-	const addons = nativeInputs(Object.keys(built.metafile?.inputs ?? {}));
+	const inputs = Object.keys(built.metafile?.inputs ?? {});
+	const addons = nativeInputs(inputs);
 	if (addons.length > 0) {
 		refuse(
 			`The executable bundles code that loads a native addon, which a release never loads: ` +
 				`${addons.join(", ")}. Compute what it gives at build time, as the theme colours are.`,
 		);
 	}
+	return packagesOf(inputs);
 }
 
 /**
@@ -190,7 +211,7 @@ async function compileRelease(target: Target, directory: string): Promise<Compil
 	const marker = releaseMarker();
 	rmSync(directory, { recursive: true, force: true });
 	const executable = path.join(directory, "bin", "archboard");
-	await compileExecutable(target, executable);
+	const bundledPackages = await compileExecutable(target, executable);
 	cpSync(frontend, path.join(directory, "frontend"), { recursive: true });
 	await layOutCore(path.join(directory, "core"));
 	for (const skill of SKILLS) {
@@ -199,11 +220,17 @@ async function compileRelease(target: Target, directory: string): Promise<Compil
 			dereference: true,
 		});
 	}
+	// The checkout's copy links its manual to the checkout. A release has none, so its copy links to
+	// the repository at the tag of its version.
+	prepareSkillArtifacts(path.join(directory, "skills", PREPARED_SKILL), {
+		root: CHECKOUT,
+		release: { version: marker.version, commit: marker.commit },
+	});
 	writeFileSync(
 		path.join(directory, "archboard-release.json"),
 		`${JSON.stringify(marker, null, "\t")}\n`,
 	);
-	return { directory, executable, marker };
+	return { directory, executable, marker, bundledPackages };
 }
 
 if (import.meta.main) {
