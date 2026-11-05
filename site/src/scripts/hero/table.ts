@@ -782,6 +782,15 @@ export function lightTable(
 		if (stale && painted.length > 0) paintFor(() => needs);
 	}
 	paintFor(() => pictureParts(canvas, words));
+	// The words can reflow while the canvas keeps its size, as when their fonts arrive. The table
+	// then fits the room they leave again, and paints again if that room needs more.
+	if (words)
+		new ResizeObserver(() => {
+			rest = undefined;
+			window.clearTimeout(settling);
+			settling = window.setTimeout(repaint, SETTLE);
+			redraw?.();
+		}).observe(words);
 	if (redraw) {
 		host.addEventListener("pointermove", () => {
 			if (motion.matches) redraw();
