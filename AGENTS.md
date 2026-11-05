@@ -19,6 +19,7 @@ Where things are written down:
 - Measured investigations: [docs/design/](docs/design/). The visual authority of the UI is
   [docs/design/operator-canvas-shell.md](docs/design/operator-canvas-shell.md) with its reference image.
 - Changing tests or CI: [docs/agents/test-suite.md](docs/agents/test-suite.md)
+- Building and publishing a release on npm: [docs/agents/releasing.md](docs/agents/releasing.md)
 - Refreshing the README's diagrams, clips, banner and videos:
   [docs/agents/readme-assets.md](docs/agents/readme-assets.md)
 - Maintaining the architecture model and consumer skill: the [archboard-dev skill](skills/archboard-dev/SKILL.md).
