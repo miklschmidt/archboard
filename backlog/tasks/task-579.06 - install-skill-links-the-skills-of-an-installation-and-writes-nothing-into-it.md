@@ -1,11 +1,11 @@
 ---
 id: TASK-579.06
 title: install-skill links the skills of an installation and writes nothing into it
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-05T14:58:00Z'
-updated_date: '2026-11-05T15:29:00Z'
+updated_date: '2026-11-05T15:33:00Z'
 labels: []
 dependencies:
   - TASK-579.01
@@ -27,9 +27,9 @@ Today `install-skill` generates skill references inside the checkout `skills/` a
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 In release mode `install-skill` links or copies the prebuilt skills and writes only into the skills root and the target repository
-- [ ] #2 The shipped skill references carry the release commit and link to GitHub at the version tag
-- [ ] #3 The Codex coordinator skill link uses the installation skills directory
+- [x] #1 In release mode `install-skill` links or copies the prebuilt skills and writes only into the skills root and the target repository
+- [x] #2 The shipped skill references carry the release commit and link to GitHub at the version tag
+- [x] #3 The Codex coordinator skill link uses the installation skills directory
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -43,3 +43,9 @@ Today `install-skill` generates skill references inside the checkout `skills/` a
 <!-- SECTION:NOTES:BEGIN -->
 Install-skill takes the Installation explicitly. In release mode it links the prebuilt skills from installation().skillsDirectory (or copies them for a --dir inside the repository, made owner-writable so a read-only install yields a replaceable copy) and never runs prepareSkillArtifacts, so nothing is written into the installation. prepareSkillArtifacts gained linkBase; releaseLinkBase(version) gives https://github.com/miklschmidt/archboard/blob/v<version> for the release build (TASK-579.08) to pass with revision=<release commit>. The coordinator skill link already used installation().skillsDirectory (TASK-579.01); production-initialization.test.ts covers it. Worktree was created from main; fast-forwarded to fix/core-build-feedback to get 579.01.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+In a release, install-skill links installation().skillsDirectory (or copies it, owner-writable, for a --dir inside the repository) and never prepares artifacts in the installation. prepareSkillArtifacts takes a linkBase, and releaseLinkBase(version) gives https://github.com/miklschmidt/archboard/blob/v<version> for TASK-579.08. The coordinator skill link already used installation().skillsDirectory since TASK-579.01. Verified after merge: apps/cli install-skill tests 6 pass (read-only release fixture) and packages/skills distribution tests 2 pass.
+<!-- SECTION:FINAL_SUMMARY:END -->
