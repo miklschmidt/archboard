@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-04T15:39:00Z'
-updated_date: '2026-11-05T03:42:00Z'
+updated_date: '2026-11-05T10:57:00Z'
 labels: []
 dependencies: []
 ordinal: 1019000
@@ -153,4 +153,16 @@ Evidence (production build of 2e0912f7c, headless Chrome with ANGLE on Vulkan):
 - A lost and restored WebGL context draws the table again. No browser on this machine offers KHR_parallel_shader_compile, so the A5 line itself rests on the WebGL specification.
 - At 390x844 the table, the hero window and the own figure work, with no horizontal overflow.
 - astro check: 0 errors, 0 warnings, 0 hints. Format check on the changed files: clean.
+
+Live site, beams, Go and the voice (2026-11-05). Owner direction: find why the live beams are white, and add Go to the languages. Show that the Codex voice is realtime and a full agent:
+- Deploy: PR #43 merged as 454088b41. The Site run on main built the site and deployed it to GitHub Pages. The live page and every asset that it names answer 200 at https://miklschmidt.github.io/archboard/.
+- 320803564: the beams burned white on the live site. The production minifier writes --sky as oklch(75.35% .139 232.66), and the table's parser read only plain numbers, so it fell back to a grey. The table now reads the token's computed colour, which the browser writes as oklch(0.7535 0.139 232.66).
+- 8c9e29ba6: the language belt lists Go after Rust, as the README does.
+- bdceb58ee: a section, Talk to your architecture, sits between Understand and Plan, and the nav links to it. Its relay plays a conversation about the example shop. The voice hands the question to the coordinator, and the coordinator reads the architecture and hands the work to the workhorse. The workhorse reads the code, drafts Queued fulfilment and compares it. The relay runs on visible time, pauses and resumes with Talk, and stands whole with reduced motion.
+- a963d7a4f: DESIGN.md records the relay, and its sentences over 25 words are split.
+Evidence (production build, headless Chrome with ANGLE on Vulkan):
+- Before: the live hero draws every beam white. After: the hero of the same build draws the beams sky blue. The page reads the computed token oklch(0.7535 0.139 232.66) beside the minified oklch(75.35% .139 232.66).
+- The relay waits hidden until it is on screen and shows all 20 lines by 38 s. No thread panel stays raised while the voice speaks. With reduced motion, all 20 lines stand at once and the button is hidden. On an iPhone 14 viewport, it plays to the end with no horizontal overflow. No page errors or warnings.
+- astro check: 0 errors, 0 warnings, 0 hints. bun run fmt changed nothing outside these files.
+- bun run check inside nix develop: 21 of 21 tasks, exit 0, on a963d7a4f.
 <!-- SECTION:NOTES:END -->
