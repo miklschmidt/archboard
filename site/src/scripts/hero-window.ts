@@ -7,10 +7,11 @@
 // hold the page. Without script, with reduced motion, or where the painter does not start, the
 // renderer's SVG of the same picture stands whole.
 
-import { PICTURE_ENTRY_PHASES, PICTURE_MS, PICTURE_TRANSITION_PHASES } from "@archboard/timing";
+import { PICTURE_MS } from "@archboard/timing";
 import { startCpuPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
 import shop from "../paintings/shop.json";
 import paintingUrl from "../paintings/shop.painting.json?url";
+import { PHASES } from "./painter-phases";
 import { animate, whileVisible } from "./reveal";
 
 /** How far the window leans back while it enters the viewport, in degrees. */
@@ -21,15 +22,6 @@ const BEAT = 350;
 
 /** How long after the agent's last line the Replay button appears, in milliseconds. */
 const REPLAY_AFTER = 2200;
-
-/** At which points of a move each of its parts happens, as the app tells its painter. */
-const PHASES = JSON.stringify({
-	transition: PICTURE_TRANSITION_PHASES,
-	entry: PICTURE_ENTRY_PHASES,
-	enter: PICTURE_MS.entry,
-	exit: PICTURE_MS.exit,
-	shutter: PICTURE_MS.shutter,
-});
 
 /** The painter of the window's picture, with the shop's painting. */
 interface Shop {

@@ -1,32 +1,25 @@
-// Archboard's own architecture, painted live by the product's painter (ADR 0071) in a viewport the
-// reader scrolls. The viewport scrolls a sheet the size of the drawing, the canvas stays in view
-// inside it, and each scroll moves the painter's camera, so a drag, a wheel, a touch and the arrow
-// keys all move the drawing the way they move a page.
+// Archboard's own architecture, painted live by the product's painter (ADR 0071). The whole picture
+// fits its frame. Once the frame's foot is in view, the painter brings the picture in with the
+// app's own entrance: the cards come out of the middle in a wave, a spark draws each line, each
+// label arrives as its spark reaches it, and a line's traffic starts once it is drawn (DESIGN.md,
+// the Spark Order Rule). The picture is large, so it moves only where the GPU paints it. On the
+// CPU, and with reduced motion, it stands whole.
 
+import { PICTURE_MS } from "@archboard/timing";
 import { startPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
 import own from "../paintings/own.json";
 import paintingUrl from "../paintings/own.painting.json?url";
+import { PHASES } from "./painter-phases";
 import { whileVisible } from "./reveal";
 
 /**
- * The middle of the card with the most lines: where the viewport opens.
- * @returns The point, in the picture's units.
- */
-function hub(): { x: number; y: number } {
-	const card = own.cards.reduce((most, next) => (next.lines > most.lines ? next : most));
-	const [x = 0, y = 0, width = 0, height = 0] = card.box;
-	return { x: x + width / 2, y: y + height / 2 };
-}
-
-/**
- * Paint the model in its viewport.
- * @param viewport The scrolling viewport, which holds the sheet and its canvas.
+ * Paint the model in its frame.
+ * @param picture The frame, which holds the canvas.
  * @returns Whether the painter started.
  */
-export async function paintOwnModel(viewport: HTMLElement): Promise<boolean> {
-	const sheet = viewport.querySelector<HTMLElement>("[data-sheet]");
-	const first = sheet?.querySelector("canvas");
-	if (!sheet || !first) return false;
+export async function paintOwnModel(picture: HTMLElement): Promise<boolean> {
+	const first = picture.querySelector("canvas");
+	if (!first) return false;
 	const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 	try {
 		const [started, painting] = await Promise.all([
@@ -34,49 +27,68 @@ export async function paintOwnModel(viewport: HTMLElement): Promise<boolean> {
 			fetch(paintingUrl).then((answer) => answer.text()),
 		]);
 		const { painter, canvas } = started;
+		const moves = () => started.kind === "gpu" && !motion.matches;
+		painter.setPhases(PHASES);
+		painter.setLongestStep(PICTURE_MS.longestStep);
 		painter.setFarLine(0, 0);
-		painter.setTrafficShown(started.kind === "gpu" && !motion.matches);
-		painter.show(painting);
+		painter.setTrafficShown(moves());
 
+		// Frames run while the painter says the next moment looks different, and while the picture
+		// is on screen: the painter's clock waits for the frames that show it.
 		let visible = false;
 		let frame = 0;
-		// Frames run while the painter says the next moment looks different: its traffic, or a
-		// camera that just moved.
 		const loop = (now: number) => {
 			frame = visible && painter.frame(now) ? requestAnimationFrame(loop) : 0;
 		};
 		const wake = () => {
 			if (visible && frame === 0) frame = requestAnimationFrame(loop);
 		};
-		const place = () => {
-			const ratio = window.devicePixelRatio || 1;
-			const scale = (sheet.clientWidth / own.width) * ratio;
-			const [x, y] = [viewport.scrollLeft * ratio, viewport.scrollTop * ratio];
-			painter.setCamera(-x, -y, scale, 0, performance.now());
-			wake();
-		};
+
+		// The canvas covers the frame in device pixels, and the camera fits the whole drawing into it.
 		const fit = () => {
 			const ratio = window.devicePixelRatio || 1;
-			canvas.style.width = `${String(viewport.clientWidth)}px`;
-			canvas.style.height = `${String(viewport.clientHeight)}px`;
-			canvas.width = Math.round(viewport.clientWidth * ratio);
-			canvas.height = Math.round(viewport.clientHeight * ratio);
-			painter.resize(canvas.width, canvas.height);
-			place();
+			const across = Math.max(1, Math.round(picture.clientWidth * ratio));
+			const down = Math.max(1, Math.round(picture.clientHeight * ratio));
+			// A canvas that takes a size, even its own, loses its picture until the next frame.
+			if (canvas.width !== across || canvas.height !== down) {
+				canvas.width = across;
+				canvas.height = down;
+				painter.resize(across, down);
+			}
+			const scale = Math.min(across / own.width, down / own.height);
+			const x = (across - own.width * scale) / 2;
+			const y = (down - own.height * scale) / 2;
+			painter.setCamera(x, y, scale, 0, performance.now());
+			wake();
 		};
+
+		// The picture comes in once, when the frame's foot is in view. Where it does not move, it
+		// stands whole at once.
+		let shown = false;
+		const check = () => {
+			const box = picture.getBoundingClientRect();
+			if (shown || (moves() && box.bottom > window.innerHeight)) return;
+			shown = true;
+			window.removeEventListener("scroll", check);
+			if (moves()) painter.enter(painting, "null", PICTURE_MS.entry, 0, 0, performance.now());
+			else painter.show(painting);
+			wake();
+		};
+
 		fit();
-		const { x, y } = hub();
-		const scale = sheet.clientWidth / own.width;
-		viewport.scrollLeft = x * scale - viewport.clientWidth / 2;
-		viewport.scrollTop = y * scale - viewport.clientHeight / 2;
-		place();
-		viewport.addEventListener("scroll", place, { passive: true });
-		new ResizeObserver(fit).observe(viewport);
+		new ResizeObserver(() => {
+			fit();
+			check();
+		}).observe(picture);
+		window.addEventListener("scroll", check, { passive: true });
 		motion.addEventListener("change", () => {
-			painter.setTrafficShown(started.kind === "gpu" && !motion.matches);
+			painter.setTrafficShown(moves());
+			// A picture on its way in stands whole once motion is reduced.
+			if (shown && !moves()) painter.show(painting);
+			check();
 			wake();
 		});
-		whileVisible(viewport, (onScreen) => {
+		whileVisible(picture, (onScreen) => {
 			visible = onScreen;
 			if (onScreen) wake();
 			else {
@@ -84,7 +96,7 @@ export async function paintOwnModel(viewport: HTMLElement): Promise<boolean> {
 				frame = 0;
 			}
 		});
-		viewport.classList.add("is-painted");
+		check();
 		return true;
 	} catch (cause) {
 		console.warn("The model's painter did not start.", cause);

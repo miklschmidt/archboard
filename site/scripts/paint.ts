@@ -51,14 +51,15 @@ type Rect = { x: number; y: number; width: number; height: number };
  * Read a model and draw its reading with every container open.
  * @param vault The vault.
  * @param open Whether to open every module that has parts.
+ * @param hideKinds The kinds of relationship the reading leaves out, as the app's filter does.
  * @returns The model, its reading and the renderer's request for it.
  */
-async function read(vault: string, open: boolean) {
+async function read(vault: string, open: boolean, hideKinds: string[] = []) {
 	const model = await readArchitectureModel(vault, undefined, undefined, {});
 	if (!model.success) throw new Error(`The vault ${vault} did not read: ${JSON.stringify(model)}`);
 	const parents = new Set(model.modules.map((module) => module.parent));
 	const expand = open ? model.modules.filter(({ id }) => parents.has(id)).map(({ id }) => id) : [];
-	const reading = projectModel(model, null, null, { expand }, undefined);
+	const reading = projectModel(model, null, null, { expand, hideKinds }, undefined);
 	const request = {
 		content: reading.content,
 		variant: reading.complete,
@@ -382,11 +383,13 @@ async function hero() {
 }
 
 /**
- * Archboard's own model, as the app draws it, and where its cards stand.
+ * Archboard's own model, as the app draws it with its dependency relationships filtered out, and
+ * where its cards stand. Each package that a part imports from would otherwise draw one more line,
+ * and the calls, data and events between the parts are what the section shows.
  * @returns The painting and its cards.
  */
 async function own() {
-	const { reading, request } = await read(".archboard/vault", false);
+	const { reading, request } = await read(".archboard/vault", false, ["dependency"]);
 	const drawn = await renderArchitecture(request);
 	const cards = Object.entries(drawn.atlas.nodes).map(([id, box]) => ({
 		id,
