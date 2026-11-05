@@ -247,12 +247,6 @@ function footprint(box: readonly number[]): number[] {
 	return [a.x, a.z, b.x, b.z];
 }
 
-/** A texture made on one context, made again after the context is lost. */
-interface Held {
-	readonly gl: WebGL2RenderingContext;
-	readonly texture: WebGLTexture;
-}
-
 /**
  * Make a texture of floats that the shader reads texel by texel.
  * @param gl The context.
@@ -266,7 +260,7 @@ function floats(
 	unit: number,
 	data: Float32Array,
 	rows: number,
-): Held | null {
+): WebGLTexture | null {
 	const texture = gl.createTexture();
 	if (!texture) return null;
 	gl.activeTexture(gl.TEXTURE0 + unit);
@@ -275,7 +269,7 @@ function floats(
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, ROUTE_TEXELS, rows, 0, gl.RGBA, gl.FLOAT, data);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-	return { gl, texture };
+	return texture;
 }
 
 /**
@@ -286,7 +280,11 @@ function floats(
  * @param image The image.
  * @returns The texture.
  */
-function picture(gl: WebGL2RenderingContext, unit: number, image: ImageBitmap): Held | null {
+function picture(
+	gl: WebGL2RenderingContext,
+	unit: number,
+	image: ImageBitmap,
+): WebGLTexture | null {
 	const texture = gl.createTexture();
 	if (!texture) return null;
 	const { width, height } = image;
@@ -312,7 +310,7 @@ function picture(gl: WebGL2RenderingContext, unit: number, image: ImageBitmap): 
 		const most = gl.getParameter(anisotropic.MAX_TEXTURE_MAX_ANISOTROPY_EXT) as number;
 		gl.texParameterf(gl.TEXTURE_2D, anisotropic.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(16, most));
 	}
-	return { gl, texture };
+	return texture;
 }
 
 /**
@@ -487,12 +485,18 @@ export function lightTable(
 		];
 	};
 
-	const textures: Record<"level0" | "level1" | "runs" | "grid", Held | null> = {
+	// The textures of the picture's images and of the routes. A lost context takes its textures
+	// with it, so the table makes them again once the context is back. Asking the context whether
+	// a texture lives would make each frame wait for the GPU.
+	const textures: Record<"level0" | "level1" | "runs" | "grid", WebGLTexture | null> = {
 		level0: null,
 		level1: null,
 		runs: null,
 		grid: null,
 	};
+	canvas.addEventListener("webglcontextlost", () => {
+		textures.level0 = textures.level1 = textures.runs = textures.grid = null;
+	});
 	const cardBoxes = plan.cards.slice(0, LIMITS.cards).flatMap((card) => footprint(card.box));
 	const trayBoxes = plan.trays.slice(0, LIMITS.trays).flatMap((tray) => footprint(tray.box));
 	const trayRegions = plan.trays.slice(0, LIMITS.trays).flatMap((tray) => edges(tray.region));
@@ -608,28 +612,25 @@ export function lightTable(
 			gl.uniform3f(at("uPointer"), ground?.x ?? 0, ground?.z ?? 0, ground ? lamp * 0.6 : 0);
 
 			// The picture's images, once painted, and the routes, once for each context.
-			const fresh = (held: Held | null) =>
-				held !== null && held.gl === gl && gl.isTexture(held.texture);
-			if (!fresh(textures.runs)) textures.runs = floats(gl, 2, routes.runs, routes.runRows);
-			if (!fresh(textures.grid)) textures.grid = floats(gl, 3, routes.grid, routes.gridRows);
+			textures.runs ??= floats(gl, 2, routes.runs, routes.runRows);
+			textures.grid ??= floats(gl, 3, routes.grid, routes.gridRows);
 			if (arriving) {
-				for (const held of [textures.level0, textures.level1])
-					if (held?.gl === gl) gl.deleteTexture(held.texture);
+				for (const texture of [textures.level0, textures.level1]) gl.deleteTexture(texture);
 				for (const level of levels ?? []) level.image.close();
 				levels = arriving;
 				arriving = null;
 				textures.level0 = null;
 				textures.level1 = null;
 			}
-			if (levels && !fresh(textures.level0)) {
+			if (levels && !textures.level0) {
 				textures.level0 = levels[0] ? picture(gl, 0, levels[0].image) : null;
 				textures.level1 = levels[1] ? picture(gl, 1, levels[1].image) : null;
 				// The entry starts on the frame after the upload, so its first moment is not the slow one.
 				ready ??= performance.now() + 50;
 			}
-			const bind = (unit: number, held: Held | null, name: string) => {
+			const bind = (unit: number, texture: WebGLTexture | null, name: string) => {
 				gl.activeTexture(gl.TEXTURE0 + unit);
-				gl.bindTexture(gl.TEXTURE_2D, held?.texture ?? null);
+				gl.bindTexture(gl.TEXTURE_2D, texture);
 				gl.uniform1i(at(name), unit);
 			};
 			bind(0, textures.level0, "uLevel0");
