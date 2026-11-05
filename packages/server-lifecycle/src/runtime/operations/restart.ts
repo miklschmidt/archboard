@@ -23,26 +23,22 @@ interface RestartResult extends EnsureResult {
 
 /**
  * Build the frontend of the checkout whose source this process runs. The
- * build's own output is kept for a failure: a build that worked says nothing
- * that the entry script of its bundle does not.
+ * build prints its progress to stderr as it runs, so that a slow core build
+ * is visible, and stdout keeps only the answer of the command.
  * @returns The entry script of the new bundle.
- * @throws {Error} `FRONTEND_BUILD_FAILED`, with the build's output, when the build fails.
+ * @throws {Error} `FRONTEND_BUILD_FAILED` when the build fails. Its errors are already on stderr.
  */
 async function buildFrontend(): Promise<string | null> {
 	const build = Bun.spawn([process.execPath, "run", "build"], {
 		cwd: SOURCE_CHECKOUT,
 		stdin: "ignore",
-		stdout: "pipe",
-		stderr: "pipe",
+		stdout: 2,
+		stderr: "inherit",
 	});
-	const [stdout, stderr, exit] = await Promise.all([
-		new Response(build.stdout).text(),
-		new Response(build.stderr).text(),
-		build.exited,
-	]);
+	const exit = await build.exited;
 	if (exit !== 0) {
 		throw codedError(
-			`\`bun run build\` failed in ${SOURCE_CHECKOUT} (exit ${String(exit)}):\n${stdout}${stderr}\n` +
+			`\`bun run build\` failed in ${SOURCE_CHECKOUT} (exit ${String(exit)}). Its output is above.\n` +
 				"The Archboard server is stopped. Fix the build, then run `archboard restart` again.",
 			"FRONTEND_BUILD_FAILED",
 		);

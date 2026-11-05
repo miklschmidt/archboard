@@ -85,7 +85,8 @@ checkout, and generates the contract for it. The Archboard server does not start
 that Codex passes its checks. A Codex on your `PATH` is not used.
 
 `bun run build` builds the renderer core to WebAssembly and the browser
-application into `dist/frontend`. Without it, the page tells you to run the
+application into `dist/frontend`. If cargo or `wasm-bindgen` does not run and `nix` is on
+the `PATH`, the core build runs inside `nix develop` by itself. Without it, the page tells you to run the
 build. A build needs the Rust tools only when the core's sources changed. The
 server and the CLI run from the TypeScript in `apps/` and `packages/`. If the
 renderer core was built from other sources than the checkout holds, they refuse

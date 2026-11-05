@@ -8,6 +8,8 @@
 //
 // Run from the repository root, with the tools that INSTALL.md names:
 //   bun run build:core
+// When cargo or wasm-bindgen does not run and `nix` is on PATH, the build runs
+// itself again inside the `nix develop` shell of this checkout.
 
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -141,10 +143,45 @@ function guardCoreGlue(): void {
 	);
 }
 
+/** Set on the build that runs inside `nix develop`, so that it never enters the shell again. */
+const IN_SHELL = "ARCHBOARD_CORE_BUILD_IN_NIX";
+
+/**
+ * Whether a tool starts and answers `--version`. A rustup proxy without a
+ * chosen toolchain is on PATH and still fails.
+ * @param tool The tool to start.
+ * @returns Whether it ran.
+ */
+function runs(tool: string): boolean {
+	if (Bun.which(tool) === null) return false;
+	return Bun.spawnSync([tool, "--version"], { cwd: CHECKOUT, stdout: "ignore", stderr: "ignore" })
+		.success;
+}
+
+/**
+ * Run this build again inside the `nix develop` shell of the checkout, when the
+ * tools on PATH cannot build and Nix can give them. This process then exits
+ * with the status of that build.
+ */
+function buildInNixShellWhenToolsAreMissing(): void {
+	if (process.env[IN_SHELL] !== undefined || Bun.which("nix") === null) return;
+	if (runs("cargo") && runs("wasm-bindgen")) return;
+	console.error(
+		"cargo or wasm-bindgen does not run here, so the core builds inside `nix develop`.",
+	);
+	const ran = Bun.spawnSync(["nix", "develop", CHECKOUT, "--command", "bun", import.meta.path], {
+		cwd: CHECKOUT,
+		env: { ...process.env, [IN_SHELL]: "1" },
+		stdio: ["inherit", "inherit", "inherit"],
+	});
+	process.exit(ran.exitCode ?? 1);
+}
+
 const hash = coreSourceHash();
 if (currentBuild(hash)) {
 	console.log(`The renderer core is built from these sources (${hash}).`);
 } else {
+	buildInNixShellWhenToolsAreMissing();
 	run(
 		[
 			"cargo",
