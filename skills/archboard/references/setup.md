@@ -12,13 +12,14 @@ Configure a server only for a repository that you work in. A configured server
 runs code of the repository, as an editor does. So never configure one for a
 repository that you only read. When you configure a server, tell the user.
 
-TypeScript needs no configuration. For every other language, the check starts no
+TypeScript has a default server. For every other language, the check starts no
 server until you configure one.
 
 ## Which TypeScript runs
 
-If all of these are true, the check runs `tsc --lsp --stdio` from the
-`typescript` package that the checkout installs:
+A server that you configure with `archboard repo language-server typescript
+<command>` wins. Without one, if all of these are true, the check runs
+`tsc --lsp --stdio` from the `typescript` package that the checkout installs:
 
 - The package is `node_modules/typescript` at the root of the checkout.
 - The package declares version 7 or later. TypeScript 7 is the first version that
@@ -27,11 +28,16 @@ If all of these are true, the check runs `tsc --lsp --stdio` from the
   it: `@typescript/typescript-<platform>-<arch>`.
 - The package and the program are inside the checkout once their links resolve.
 
-Otherwise the check runs the `tsc` of the `typescript` package that archboard
-installs. This happens for an older TypeScript, for no TypeScript, for no native
-program, and for a link that leads out of the checkout. In a monorepo, the check
-reads the root only. A package that installs another version than the root
-uses the version at the root.
+Otherwise, when Archboard runs from a clone, the check runs the `tsc` of the
+`typescript` package that archboard installs. This happens for an older
+TypeScript, for no TypeScript, for no native program, and for a link that leads
+out of the checkout. An Archboard release ships no TypeScript, so there the check
+says `language-server-missing` for TypeScript. Do the same when a repository
+installs TypeScript before version 7, because that version has no `--lsp`:
+configure a server that you install, such as `typescript-language-server --stdio`
+(`archboard repo language-server typescript typescript-language-server
+--arg=--stdio`). In a monorepo, the check reads the root only. A package that
+installs another version than the root uses the version at the root.
 
 ## What a configured server runs
 
@@ -88,7 +94,7 @@ of your shell.
    changes what every model on this machine reads.
 5. In the repository, run `archboard repo language-server <language> <command>`.
    Write one `--arg=<argument>` for each argument. The language is `python`,
-   `csharp`, `swift`, `c`, `rust` or `go`. The language `c` covers C, C++ and Objective-C.
+   `csharp`, `swift`, `c`, `rust`, `go` or `typescript`. The language `c` covers C, C++ and Objective-C.
 6. Run `archboard check code`. Read the answer for the language, as the next
    section says.
 7. If you use clangd and the `.gitignore` of the repository does not list `.cache/`,
@@ -105,6 +111,7 @@ archboard repo language-server csharp csharp-ls
 archboard repo language-server swift sourcekit-lsp
 archboard repo language-server rust rust-analyzer
 archboard repo language-server go gopls
+archboard repo language-server typescript typescript-language-server --arg=--stdio
 ```
 
 For basedpyright, use `basedpyright-langserver` in place of

@@ -76,14 +76,8 @@ interface LanguageRow {
 	) => Promise<Project>;
 }
 
-/**
- * Every language a server can resolve, by its key: TypeScript, whose server
- * needs no configuration, and each language an agent configures one for.
- */
-const LANGUAGE_KEYS = ["typescript", ...CONFIGURABLE_LANGUAGES] as const;
-
 /** A language a server can resolve. */
-type Language = (typeof LANGUAGE_KEYS)[number];
+type Language = (typeof CONFIGURABLE_LANGUAGES)[number];
 
 /** What each language needs. */
 const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
@@ -171,7 +165,7 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
  */
 function languageOf(file: string): { language: Language; languageId: string } | undefined {
 	const extension = path.extname(file);
-	for (const language of LANGUAGE_KEYS) {
+	for (const language of CONFIGURABLE_LANGUAGES) {
 		const languageId = LANGUAGES[language].languageIds[extension];
 		if (languageId !== undefined) return { language, languageId };
 	}

@@ -1,7 +1,8 @@
 // Which command starts the server of a language in a checkout (TASK-433):
 // a language with no configured server has none, a configured one runs
-// exactly its command and arguments, and TypeScript runs the native `tsc` of the checkout's
-// own TypeScript 7 or later, else Archboard's.
+// exactly its command and arguments, and TypeScript runs a configured server, else the
+// native `tsc` of the checkout's own TypeScript 7 or later, else Archboard's where
+// Archboard has a TypeScript (a checkout, not a release).
 
 import { afterEach, expect, test } from "bun:test";
 import {
@@ -15,7 +16,10 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { languageServerOf } from "#runtime/operations/language-servers/server-command.ts";
+import {
+	defaultTypescriptServer,
+	languageServerOf,
+} from "#runtime/operations/language-servers/server-command.ts";
 
 const directories: string[] = [];
 
@@ -103,6 +107,33 @@ test("TypeScript runs the native tsc of the checkout's own TypeScript 7 or later
 		const chosen = typescriptProgram(other.root);
 		expect(chosen).toBe(archboards);
 		expect(chosen.startsWith(other.root)).toBe(false);
+	}
+});
+
+test("a configured TypeScript server wins over the checkout's own TypeScript 7", () => {
+	const own = checkoutWith("7.1.0");
+	expect(
+		languageServerOf("typescript", own.root, { typescript: { command: "bun", args: ["--stdio"] } }),
+	).toEqual({ status: "command", argv: [Bun.which("bun") ?? "", "--stdio"] });
+	expect(
+		languageServerOf("typescript", own.root, {
+			typescript: { command: "archboard-no-such-server", args: [] },
+		}),
+	).toMatchObject({ status: "missing" });
+});
+
+test("a release, which ships no TypeScript, runs the checkout's TypeScript 7 or reports the server missing", () => {
+	const own = checkoutWith("7.1.0");
+	expect(defaultTypescriptServer(own.root, false)).toEqual({
+		status: "command",
+		argv: [own.program, "--lsp", "--stdio"],
+	});
+	for (const other of [
+		checkoutWith("6.0.3"),
+		checkoutWith(undefined),
+		checkoutWith("7.1.0", false),
+	]) {
+		expect(defaultTypescriptServer(other.root, false).status).toBe("missing");
 	}
 });
 
