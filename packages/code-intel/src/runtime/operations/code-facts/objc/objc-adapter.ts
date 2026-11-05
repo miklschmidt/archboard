@@ -39,6 +39,7 @@ import type {
 	ReadText,
 } from "#runtime/operations/code-facts/facts.ts";
 import { type Grammar, treeSitter } from "#runtime/services/code-facts/grammars.ts";
+import { GRAMMARS } from "#runtime/services/code-facts/grammar-files.ts";
 import type { CheckoutFiles } from "#runtime/operations/code-facts/modules/module-resolution.ts";
 import {
 	type ObjcRole,
@@ -134,9 +135,8 @@ function objcFacts(role: ObjcRole): (tree: Tree, grammar: Grammar) => ParsedFact
 	};
 }
 
-const OBJC = "tree-sitter-objc/tree-sitter-objc.wasm";
-const SOURCE = treeSitter(OBJC, "objc.scm", objcFacts("source"));
-const HEADER = treeSitter(OBJC, "objc.scm", objcFacts("header"));
+const SOURCE = treeSitter(GRAMMARS.objc, objcFacts("source"));
+const HEADER = treeSitter(GRAMMARS.objc, objcFacts("header"));
 
 /**
  * Whether a header's text is Objective-C: a line outside its block comments

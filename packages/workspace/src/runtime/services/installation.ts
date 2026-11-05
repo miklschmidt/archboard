@@ -2,7 +2,7 @@
 //
 // Archboard runs in one of two ways. A checkout runs its source with Bun
 // (ADR 0014). A release runs one compiled executable, with the frontend, the
-// core, the grammars and the skills in files beside it. This module decides
+// core and the skills in files beside it. This module decides
 // the mode once, and every other module asks it for a location instead of
 // looking for the root on its own.
 //
@@ -14,7 +14,7 @@
 
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import { z } from "zod";
 import { codedError } from "@archboard/diagnostics/thrown-error";
 
@@ -24,9 +24,12 @@ const RELEASE_MARKER = "archboard-release.json";
 /** The CLI's entry point, relative to a checkout root. */
 const CHECKOUT_BIN = path.join("bin", "archboard");
 
+/** The server's entry, relative to a checkout root. */
+const SERVER_ENTRY = path.join("apps", "server", "src", "server.ts");
+
 /**
- * The argument with which a release executable runs the server in place of the
- * CLI (ADR 0075). The executable itself handles it (TASK-579.07).
+ * The first argument with which a release executable runs the server in place
+ * of the CLI (ADR 0075): `apps/cli/src/bin.ts` then imports the server's entry.
  */
 const RELEASE_SERVER_ARGUMENT = "--internal-server";
 
@@ -37,6 +40,9 @@ const releaseMarker = z.object({
 	coreSourceHash: z.string(),
 	codexVersion: z.string(),
 });
+
+/** What a release build records about itself, as `scripts/release/compile.ts` writes it. */
+type ReleaseMarker = z.infer<typeof releaseMarker>;
 
 /** Where the hash of the core sources that the running core must match comes from. */
 type CoreHashSource =
@@ -56,11 +62,6 @@ interface Installation {
 	readonly frontendDirectory: string;
 	/** The renderer core's build: the glue and the WebAssembly. */
 	readonly coreDirectory: string;
-	/**
-	 * The grammar queries of the code check. A release holds the grammar WebAssembly files in it
-	 * too. A checkout loads those from `node_modules`.
-	 */
-	readonly grammarsDirectory: string;
 	/** The directory that holds the `archboard` and `archboard-pr` skills. */
 	readonly skillsDirectory: string;
 	/** The directory of the `archboard` executable, which a Codex child gets first on its PATH. */
@@ -166,7 +167,6 @@ function releaseAt(root: string, executable: string): Installation {
 		version: parsed.data.version,
 		frontendDirectory: path.join(root, "frontend"),
 		coreDirectory: path.join(root, "core"),
-		grammarsDirectory: path.join(root, "grammars"),
 		skillsDirectory: path.join(root, "skills"),
 		binDirectory: path.dirname(fs.realpathSync(executable)),
 		codexLocation: { releasedIn: root },
@@ -213,19 +213,10 @@ function checkoutAt(root: string, executable: string): Installation {
 			"generated",
 			"core",
 		),
-		grammarsDirectory: path.join(
-			root,
-			"packages",
-			"code-intel",
-			"src",
-			"runtime",
-			"services",
-			"code-facts",
-		),
 		skillsDirectory: path.join(root, "skills"),
 		binDirectory: path.join(root, "bin"),
 		codexLocation: { installedIn: root },
-		serverCommand: [executable, path.join(root, "apps", "server", "src", "server.ts")],
+		serverCommand: [executable, path.join(root, SERVER_ENTRY)],
 		coreHash: { kind: "sources", root },
 	};
 }
@@ -269,12 +260,49 @@ function installation(): Installation {
 	return decided;
 }
 
+/**
+ * The URL of a module of the program that starts on its own, as the server or a
+ * worker does. A checkout runs the file at that path below its root. The
+ * executable of a release embeds the module at the same path below the root of
+ * its embedded file system, the directory of `Bun.main`, because
+ * `scripts/release/compile.ts` compiles every such entry with the repository as
+ * its root.
+ * @param checkoutPath The module's path relative to a checkout root.
+ * @param from The installation; the one this process runs by default.
+ * @returns The module's URL, to import or to start a worker from.
+ */
+function programModule(
+	checkoutPath: string,
+	from: Pick<Installation, "mode" | "root"> = installation(),
+): string {
+	const root = from.mode === "release" ? path.dirname(Bun.main) : from.root;
+	return pathToFileURL(path.join(root, checkoutPath)).href;
+}
+
+/**
+ * The server's entry when this process is a release executable started as its
+ * server, which is how a release runs its `serverCommand`.
+ * @param argv The arguments after the executable.
+ * @param from The installation; the one this process runs by default.
+ * @returns The URL of the server's entry to import, or null for a CLI command.
+ */
+function releaseServerModule(
+	argv: readonly string[],
+	from: Pick<Installation, "mode" | "root"> = installation(),
+): string | null {
+	return from.mode === "release" && argv[0] === RELEASE_SERVER_ARGUMENT
+		? programModule(SERVER_ENTRY, from)
+		: null;
+}
+
 export {
 	CHECKOUT_BIN,
 	installation,
 	isArchboardCheckout,
+	programModule,
 	RELEASE_MARKER,
 	RELEASE_SERVER_ARGUMENT,
+	releaseServerModule,
 	resolveInstallation,
 };
-export type { CoreHashSource, Installation };
+export type { CoreHashSource, Installation, ReleaseMarker };

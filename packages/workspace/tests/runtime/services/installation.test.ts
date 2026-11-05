@@ -87,7 +87,6 @@ test("a checkout names the places the source and its build keep their parts", ()
 		coreHash: { kind: "sources", root },
 	});
 	expect(found.coreDirectory.startsWith(join(root, "packages", "renderer"))).toBe(true);
-	expect(found.grammarsDirectory.startsWith(join(root, "packages", "code-intel"))).toBe(true);
 });
 
 test("a release is found by its marker beside the executable, and its parts lie in its root", () => {
@@ -102,7 +101,6 @@ test("a release is found by its marker beside the executable, and its parts lie 
 		version: "1.2.3",
 		frontendDirectory: join(root, "frontend"),
 		coreDirectory: join(root, "core"),
-		grammarsDirectory: join(root, "grammars"),
 		skillsDirectory: join(root, "skills"),
 		binDirectory: join(root, "bin"),
 		coreHash: { kind: "marker", hash: MARKER.coreSourceHash },

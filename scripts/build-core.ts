@@ -2,7 +2,8 @@
 // wasm-bindgen into the renderer package, recording the hash of the sources
 // the build was made from, and beside it the TypeScript types of the core's
 // contract, generated from its Rust types, and the marks a pane draws beside a
-// picture, generated from its painter. A complete build that records the hash of the
+// picture, generated from its painter, and the theme colours a Bun host draws
+// a standalone picture in. A complete build that records the hash of the
 // sources in this checkout is kept, so a run without a change needs no Rust
 // tools.
 //
@@ -16,10 +17,13 @@ import { join } from "node:path";
 import {
 	CHECKOUT,
 	CORE_BUILD_DIRECTORY,
+	CORE_THEME_COLORS,
 	CoreBuildError,
 	coreSourceHash,
 	loadCore,
 } from "@archboard/renderer/core";
+import { THEME_STYLESHEET } from "@archboard/renderer/assets";
+import { readThemeColors } from "@archboard/renderer/theme";
 
 /** The crate that wasm-bindgen exports, and the file cargo builds from it. */
 const CRATE = "archboard-renderer-wasm";
@@ -218,3 +222,10 @@ if (currentBuild(hash)) {
 	guardCoreGlue();
 	console.log(`Built the renderer core from these sources (${hash}).`);
 }
+// The theme colours of `theme.css`, one of the core's sources, beside the build, so that no host
+// loads the native addon of Lightning CSS to read them (ADR 0075). They need no Rust tools, so
+// every run writes them.
+writeFileSync(
+	join(CORE_BUILD_DIRECTORY, CORE_THEME_COLORS),
+	`${JSON.stringify(readThemeColors(readFileSync(THEME_STYLESHEET, "utf8")), null, "\t")}\n`,
+);

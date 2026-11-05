@@ -7,7 +7,9 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { z } from "zod";
 import { installation } from "@archboard/workspace/installation";
+import type { ThemeColors } from "#shared/protocol/generated/core/types.ts";
 import { CORE_BUILD_COMMAND, coreSourceHash } from "#runtime/store/core-sources.ts";
 
 /** The core's exports, as wasm-bindgen wrote them. */
@@ -41,6 +43,16 @@ type CoreInstallation = Pick<
 /** The glue and the WebAssembly of a build, by name in the core directory. */
 const CORE_GLUE = "archboard_renderer_wasm.js";
 const CORE_WASM = "archboard_renderer_wasm_bg.wasm";
+/**
+ * The colours of both themes, which `bun run build:core` reads from `theme.css`, one of the core's
+ * sources, so that no host loads the native addon of Lightning CSS to read them (ADR 0075).
+ */
+const CORE_THEME_COLORS = "theme-colors.json";
+
+const ThemeColorsSchema = z.object({
+	light: z.record(z.string(), z.string()),
+	dark: z.record(z.string(), z.string()),
+}) satisfies z.ZodType<ThemeColors>;
 
 /**
  * What makes a good build: a checkout builds the core, a release installs again.
@@ -111,6 +123,24 @@ function compiledCore(): WebAssembly.Module {
 }
 
 /**
+ * The theme colours the core's build holds beside it.
+ * @param from The installation that holds the core; the one this process runs by default.
+ * @returns The light and the dark colours.
+ * @throws {CoreBuildError} When the build has no readable colours.
+ */
+function coreThemeColors(from: CoreInstallation = installation()): ThemeColors {
+	const file = join(from.coreDirectory, CORE_THEME_COLORS);
+	try {
+		return ThemeColorsSchema.parse(JSON.parse(readFileSync(file, "utf8")));
+	} catch {
+		throw new CoreBuildError(
+			"CORE_BUILD_MISSING",
+			`The theme colours of the renderer core are missing from ${file}. ${remedy(from)}`,
+		);
+	}
+}
+
+/**
  * Instantiate on this thread the core another thread compiled and checked
  * ({@link compiledCore}).
  * @param module The compiled core.
@@ -171,8 +201,10 @@ function loadBuild(
 }
 
 export {
+	CORE_THEME_COLORS,
 	CoreBuildError,
 	compiledCore,
+	coreThemeColors,
 	instantiateCore,
 	loadCore,
 	type Core,
