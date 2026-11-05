@@ -1,11 +1,11 @@
 ---
 id: TASK-579.08
 title: bun run release builds the launchers and the three platform packages
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-05T14:59:00Z'
-updated_date: '2026-11-05T16:55:00Z'
+updated_date: '2026-11-05T17:06:00Z'
 labels: []
 dependencies:
   - TASK-579.02
@@ -34,9 +34,9 @@ The packages of ADR 0075 must come from one reproducible command that CI and a m
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `bun run release` writes `@archboard/cli` and `archboard` launchers and `@archboard/cli-{linux-x64,linux-arm64,darwin-arm64}` into `dist/release`
-- [ ] #2 Each platform package holds the executable, frontend, core, grammars, skills, `archboard-release.json`, a LICENSE that names the version, and third-party notices for every bundled dependency and font
-- [ ] #3 No package has an install script, and the build fails when a packed package exceeds its size budget
+- [x] #1 `bun run release` writes `@archboard/cli` and `archboard` launchers and `@archboard/cli-{linux-x64,linux-arm64,darwin-arm64}` into `dist/release`
+- [x] #2 Each platform package holds the executable, frontend, core, grammars, skills, `archboard-release.json`, a LICENSE that names the version, and third-party notices for every bundled dependency and font
+- [x] #3 No package has an install script, and the build fails when a packed package exceeds its size budget
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -62,3 +62,9 @@ Decisions:
 - Budgets (bun pm pack, gzip 9) measured 2026-11-05: linux-x64 62.9 MiB, linux-arm64 62.6 MiB, darwin-arm64 52.7 MiB, launchers 3.3 KB. Budgets 66, 66, 56 MiB and 4 KiB. A temporary 1000-byte budget for archboard made the build exit 1 naming the package.
 - scripts/release/smoke.ts imports nothing from the checkout, so a CI runner with Bun and npm and no dev shell runs it. The registry stub runs on the script's event loop, so commands run with Bun.spawn, not spawnSync (spawnSync deadlocked the install).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+`bun run release` (Vite+ task release-packages, scripts/release/build.ts) writes the archboard and @archboard/cli launchers and the three platform packages into dist/release, as directories and packed tarballs. A platform package holds the compiled executable, frontend, core, skills with release links, archboard-release.json, a LICENSE naming the version, and THIRD_PARTY_NOTICES for Bun, Codex, the fonts, the Rust crates and the npm packages; it depends on npm:@openai/codex@<pin>-<os>-<cpu>. No package has scripts or binding.gyp, and each packed size has a budget. Verified on fix/core-build-feedback after merging main (Codex 0.166.0): `bun run release` exit 0; linux-x64 package depends on npm:@openai/codex@0.166.0-linux-x64; scripts/release/smoke.ts passed with `bun add -g @archboard/cli` (hoisted) and `npm install --global archboard` (nested), each running --version, start, status and stop on a PATH without bun, node or cargo. Sizes: linux-x64 62.9 MiB, linux-arm64 62.6 MiB, darwin-arm64 52.7 MiB, launchers 3.4 KB.
+<!-- SECTION:FINAL_SUMMARY:END -->
