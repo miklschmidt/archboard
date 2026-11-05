@@ -1,9 +1,11 @@
 ---
 id: TASK-579.03
 title: A release server names its version, and restart builds nothing
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-05T14:58:00Z'
+updated_date: '2026-11-05T15:45:00Z'
 labels: []
 dependencies:
   - TASK-579.01
@@ -30,3 +32,15 @@ A release never changes on disk except by an install, and npm normalizes file ti
 - [ ] #2 When the running server version differs from the installed one, `archboard status` and other commands warn on stderr and name `archboard restart`; commands still work
 - [ ] #3 In release mode `archboard restart` stops and starts the server and runs no build
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. /health reports version and mode from installation(). 2. The CLI transport warns once on stderr when a release server runs another version, names archboard restart, and does not refuse (release vs release is compared by version, not location). 3. restart in release mode builds nothing. 4. status shows version and mode. Tests: release-version rule, restart no-build, /health system assertion.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Decisions: the warning lives in the CLI transport identity probe (server-client-transport.ts) so every command, including status, warns once on stderr; release vs release skips the OtherSourceError location check and compares versions (an upgraded release can move). restart silences the warning for itself. Release restart: bundleToServe('release') reads the bundle and spawns no build. status also reports version and mode. Evidence: packages/server-lifecycle/tests/runtime/rules/release-version.test.ts, tests/runtime/operations/restart.test.ts, tests/system/server-state/staleness-source.test.ts (/health version+mode). By hand: a copy of bun beside an archboard-release.json acted as a release; against a stand-in /health of version 0.0.1 'archboard status' printed the warning naming archboard restart on stderr and exited 0.
+<!-- SECTION:NOTES:END -->

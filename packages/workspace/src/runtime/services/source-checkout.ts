@@ -21,7 +21,12 @@ import { spawn, type ChildProcess } from "child_process";
 import { createHash } from "crypto";
 import fs from "fs";
 import path from "path";
-import { CHECKOUT_BIN, installation, isArchboardCheckout } from "#runtime/services/installation.ts";
+import {
+	CHECKOUT_BIN,
+	installation,
+	isArchboardCheckout,
+	type Installation,
+} from "#runtime/services/installation.ts";
 
 /** The port of the main checkout, which the owner's daily server keeps. */
 const MAIN_CHECKOUT_PORT = 3000;
@@ -54,8 +59,55 @@ function checkoutPort(root: string): number {
 	return linked ? worktreePort(root) : MAIN_CHECKOUT_PORT;
 }
 
-/** The server this checkout's commands reach when no `ARCHBOARD_URL` or `--url` names one. */
-const DEFAULT_ARCHBOARD_URL = `http://127.0.0.1:${String(checkoutPort(installation().root))}`;
+/**
+ * The port of a release server (ADR 0075). It spells ARCHB on a phone keypad. It is outside the
+ * worktree range and is not the main checkout's port, so a release and a checkout run side by side.
+ */
+const RELEASE_PORT = 27242;
+
+/**
+ * The name a browser opens a release server at. Chrome and Firefox resolve every `*.localhost`
+ * name to the loopback address themselves (RFC 6761), but the system resolver does not on every
+ * Linux, so the CLI connects to `127.0.0.1` and only a person's browser uses this name.
+ */
+const BROWSER_HOST = "archboard.localhost";
+
+const LOOPBACK_URL_HOSTS: ReadonlySet<string> = new Set(["127.0.0.1", "localhost", "[::1]"]);
+
+/**
+ * The port the server of an installation listens on when nothing names another.
+ * @param running The installation: a release takes `RELEASE_PORT`, a checkout its own port.
+ * @returns The port.
+ */
+function installationPort(running: Pick<Installation, "mode" | "root">): number {
+	return running.mode === "release" ? RELEASE_PORT : checkoutPort(running.root);
+}
+
+/** The server this installation's commands reach when no `ARCHBOARD_URL` or `--url` names one. */
+const DEFAULT_ARCHBOARD_URL = `http://127.0.0.1:${String(installationPort(installation()))}`;
+
+/**
+ * The address a person or a browser uses for a server URL. A release server at a loopback
+ * address is opened at `archboard.localhost`; every other URL is its own address.
+ * @param url The URL the CLI connects to.
+ * @param mode Whether this process runs a release or a checkout.
+ * @returns The URL to show or to open.
+ */
+function browserUrl(url: string, mode: Installation["mode"] = installation().mode): string {
+	if (mode !== "release") {
+		return url;
+	}
+	try {
+		const parsed = new URL(url);
+		if (parsed.port !== String(RELEASE_PORT) || !LOOPBACK_URL_HOSTS.has(parsed.hostname)) {
+			return url;
+		}
+		parsed.hostname = BROWSER_HOST;
+		return parsed.origin;
+	} catch {
+		return url;
+	}
+}
 
 /**
  * The root of the checkout a directory stands in: the nearest directory at or
@@ -193,4 +245,13 @@ async function runInstead(target: string, argv: readonly string[]): Promise<numb
 	return ended.code ?? 1;
 }
 
-export { checkoutPort, DEFAULT_ARCHBOARD_URL, handOff, handOffTarget, worktreePort };
+export {
+	browserUrl,
+	checkoutPort,
+	DEFAULT_ARCHBOARD_URL,
+	handOff,
+	handOffTarget,
+	installationPort,
+	RELEASE_PORT,
+	worktreePort,
+};

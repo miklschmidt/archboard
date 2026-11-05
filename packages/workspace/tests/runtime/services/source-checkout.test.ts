@@ -7,7 +7,14 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { checkoutPort, handOffTarget, worktreePort } from "#runtime/services/source-checkout.ts";
+import {
+	browserUrl,
+	checkoutPort,
+	handOffTarget,
+	installationPort,
+	RELEASE_PORT,
+	worktreePort,
+} from "#runtime/services/source-checkout.ts";
 
 let scratch = "";
 
@@ -53,6 +60,23 @@ test("the main checkout keeps 3000 and a linked worktree takes a stable port in 
 	// change to it moves every worktree's server.
 	expect(worktreePort("/home/ada/archboard/.worktrees/feature")).toBe(19275);
 	expect(worktreePort("/home/ada/archboard/.worktrees/other")).toBe(16646);
+});
+
+test("a release server takes port 27242 wherever it is installed, and a checkout keeps its own", () => {
+	expect(installationPort({ mode: "release", root: checkout("release-root") })).toBe(RELEASE_PORT);
+	expect(installationPort({ mode: "checkout", root: checkout("daily") })).toBe(3000);
+});
+
+test("a person opens a release server at archboard.localhost, and a checkout server where it listens", () => {
+	expect(browserUrl("http://127.0.0.1:27242", "release")).toBe("http://archboard.localhost:27242");
+	expect(browserUrl("http://localhost:27242", "release")).toBe("http://archboard.localhost:27242");
+	expect(browserUrl("http://127.0.0.1:3000", "checkout")).toBe("http://127.0.0.1:3000");
+	expect(browserUrl("http://127.0.0.1:27242", "checkout")).toBe("http://127.0.0.1:27242");
+});
+
+test("a server that ARCHBOARD_URL or --url names elsewhere is shown as named", () => {
+	expect(browserUrl("http://127.0.0.1:4000", "release")).toBe("http://127.0.0.1:4000");
+	expect(browserUrl("http://example.test:27242", "release")).toBe("http://example.test:27242");
 });
 
 test("a command in another archboard checkout runs that checkout's bin/archboard", () => {

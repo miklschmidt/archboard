@@ -3,7 +3,8 @@
 // browser tab loads the vite build in `dist/frontend` (ADR 0014), so a restart
 // that picks up an edit must build that bundle between the stop and the start.
 // The build is package.json's `build`, so the one place that says how
-// to build stays there.
+// to build stays there. A release builds nothing: it stops the server and starts it
+// again, which is how a server runs the version that an install put on disk (ADR 0075).
 
 import { installation } from "@archboard/workspace/installation";
 import { frontendBuild } from "#runtime/services/staleness.ts";
@@ -13,6 +14,7 @@ import {
 	refuseUnstartableServer,
 } from "#runtime/operations/spawn.ts";
 import { type StopResult, stopServer } from "#runtime/operations/stop.ts";
+import { silenceVersionWarning } from "#runtime/clients/server-client-transport.ts";
 import { codedError } from "@archboard/diagnostics/thrown-error";
 
 interface RestartResult extends EnsureResult {
@@ -55,11 +57,25 @@ async function buildFrontend(): Promise<string | null> {
  * `FRONTEND_BUILD_FAILED` when the build fails after the stop.
  */
 async function restartServer(): Promise<RestartResult> {
+	silenceVersionWarning();
 	refuseUnstartableServer();
 	const stop = await stopServer();
-	const built = await buildFrontend();
+	const built = await bundleToServe(installation().mode);
 	const started = await ensureServerRunning({ force: true });
 	return { ...started, stop, frontendBuild: built };
 }
 
-export { restartServer };
+/**
+ * The frontend bundle the started server serves. A checkout builds it from its source. A release
+ * never changes on disk except by an install (ADR 0075), so it builds nothing.
+ * @param mode Whether this process runs a release or a checkout.
+ * @returns The entry script of the bundle.
+ * @throws {Error} `FRONTEND_BUILD_FAILED` when a checkout's build fails.
+ */
+async function bundleToServe(
+	mode: ReturnType<typeof installation>["mode"],
+): Promise<string | null> {
+	return mode === "release" ? frontendBuild() : await buildFrontend();
+}
+
+export { bundleToServe, restartServer };
