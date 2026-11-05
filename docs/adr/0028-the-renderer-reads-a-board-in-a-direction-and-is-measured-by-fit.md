@@ -112,8 +112,7 @@ violation of the list.
 - The renderer tests that pinned rows or compass faces are re-derived as
   direction-neutral reader invariants. So a change of direction is not a change
   of what the tests hold.
-- `docs/design/layout-rules.md` keeps the dated record of every layout change
-  and of what was measured and rejected. A layout task reports fit before and
-  after, not megapixels.
+- A layout task records what it measured and rejected in its Backlog task, and
+  it reports fit before and after, not megapixels.
 - The wide-board suite owns fit on the three fixtures and the vault's boards,
   with a small allowance over the recorded baseline.

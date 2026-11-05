@@ -233,6 +233,7 @@ describe("codex workhorse start transaction", () => {
 			fixture.link.outcome = new Error("bind failed");
 			fixture.session.readResult = {
 				thread: { ...fixture.thread, turns: [turnFixture(fixture.authorities)] },
+				readState: null,
 			};
 			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
@@ -258,7 +259,10 @@ describe("codex workhorse start transaction", () => {
 		const fixture = makeFixture();
 		try {
 			fixture.link.outcome = new Error("bind failed");
-			fixture.session.readResult = { thread: { ...fixture.thread, cwd: "/other/root" } };
+			fixture.session.readResult = {
+				thread: { ...fixture.thread, cwd: "/other/root" },
+				readState: null,
+			};
 			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("inspect_only");

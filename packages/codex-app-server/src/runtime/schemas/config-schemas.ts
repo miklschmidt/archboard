@@ -52,7 +52,7 @@ const ConfigLayerSchema = looseObject({
 	name: ConfigLayerSourceSchema,
 	version: z.string(),
 	config: JsonValueSchema,
-	// Codex 0.160.0 omits this nullable generated field when the layer is enabled.
+	// Codex 0.166.0 omits this nullable generated field when the layer is enabled.
 	disabledReason: z
 		.string()
 		.nullable()
@@ -230,6 +230,9 @@ const BrowserUseOriginPolicySchema = looseObject({
 	accessApprovalLifetime: z.enum(["turn", "thread"]).nullable(),
 });
 const BrowserUseRequirementsSchema = looseObject({
+	extension: looseObject({
+		requestHeaders: z.array(looseObject({ name: z.string(), value: z.string() })).nullable(),
+	}).nullable(),
 	allowWebmcp: z.boolean().nullable(),
 	allowHistoryAccess: z.boolean().nullable(),
 	disableAutoReview: z.boolean().nullable(),
@@ -268,6 +271,8 @@ const ConfiguredHookMatcherGroupSchema = looseObject({
 	hooks: z.array(ConfiguredHookHandlerSchema),
 });
 const ManagedHooksRequirementsSchema = looseObject({
+	PreModelRequest: z.array(ConfiguredHookMatcherGroupSchema),
+	PostModelRequest: z.array(ConfiguredHookMatcherGroupSchema),
 	managedDir: z.string().nullable(),
 	windowsManagedDir: z.string().nullable(),
 	PreToolUse: z.array(ConfiguredHookMatcherGroupSchema),
@@ -293,6 +298,7 @@ const NetworkRequirementsSchema = looseObject({
 	dangerouslyAllowAllUnixSockets: z.boolean().nullable(),
 	/** Domain names are generated map keys supplied by managed requirements. */
 	domains: z.record(z.string(), NetworkPermissionSchema).nullable(),
+	reviewDomains: z.array(z.string()).nullable(),
 	managedAllowedDomainsOnly: z.boolean().nullable(),
 	allowedDomains: z.array(z.string()).nullable(),
 	deniedDomains: z.array(z.string()).nullable(),
@@ -320,6 +326,50 @@ const ApplicationRequirementsSchema = looseObject({
 		/** Domain names are generated map keys supplied by managed requirements. */
 		domains: z.record(z.string(), NetworkPermissionSchema),
 	}).nullable(),
+	storage: looseObject({
+		defaultProjectParent: z.string().nullable(),
+		projectlessWorkspaceRoot: z.string().nullable(),
+	}).nullable(),
+});
+
+const OtelTlsConfigSchema = looseObject({
+	"ca-certificate": z.string().nullable(),
+	"client-certificate": z.string().nullable(),
+	"client-private-key": z.string().nullable(),
+});
+/** Exporter header names are generated map keys; Codex redacts their values. */
+const OtelHeadersSchema = z.record(z.string(), z.string());
+const OtelExporterSchema = z.union([
+	z.enum(["none", "statsig"]),
+	looseObject({
+		"otlp-http": looseObject({
+			endpoint: z.string(),
+			headers: OtelHeadersSchema,
+			protocol: z.enum(["binary", "json"]),
+			tls: OtelTlsConfigSchema.nullable(),
+		}),
+	}),
+	looseObject({
+		"otlp-grpc": looseObject({
+			endpoint: z.string(),
+			headers: OtelHeadersSchema,
+			tls: OtelTlsConfigSchema.nullable(),
+		}),
+	}),
+]);
+const OtelRequirementsSchema = looseObject({
+	tool_result: looseObject({ max_bytes: FiniteNumberSchema }).nullable(),
+	log_user_prompt: z.boolean().nullable(),
+	log_agent_responses: z.boolean().nullable(),
+	log_guardian_assessments: z.boolean().nullable(),
+	environment: z.string().nullable(),
+	exporter: OtelExporterSchema.nullable(),
+	trace_exporter: OtelExporterSchema.nullable(),
+	metrics_exporter: OtelExporterSchema.nullable(),
+	/** Span attribute names are generated map keys supplied by managed requirements. */
+	span_attributes: z.record(z.string(), z.string()).nullable(),
+	/** Tracestate vendor and member names are generated map keys. */
+	tracestate: z.record(z.string(), z.record(z.string(), z.string())).nullable(),
 });
 
 const ConfigRequirementsSchema = looseObject({
@@ -359,6 +409,7 @@ const ConfigRequirementsSchema = looseObject({
 	allowLoginShell: z.boolean().nullable(),
 	feedback: FeedbackRequirementsSchema.nullable(),
 	application: ApplicationRequirementsSchema.nullable(),
+	otel: OtelRequirementsSchema.nullable(),
 });
 
 const ModelServiceTierSchema = looseObject({

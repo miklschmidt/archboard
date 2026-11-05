@@ -28,6 +28,7 @@ function turnCompleted(
 					id: "notified-turn",
 					items: [],
 					itemsView: "full",
+					rootTurnId: null,
 					status: "completed",
 					error: null,
 					startedAt: 1,

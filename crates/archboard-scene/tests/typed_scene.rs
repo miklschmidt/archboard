@@ -1,5 +1,5 @@
 //! A native frontend reads a corpus picture's scene as typed values (ADR 0059,
-//! docs/design/typed-scene.md): where each card stands, what each line is
+//! TASK-520.10): where each card stands, what each line is
 //! stroked with and which words each card says, with no SVG, path data or CSS
 //! to parse. The picture is the dogfood vault's "Codex session", as the renderer
 //! hands it to the core (`tests/fixtures/codex-session.paint.json`).

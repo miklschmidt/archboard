@@ -8,6 +8,7 @@ import {
 import {
 	FiniteNumberSchema,
 	IntegerSchema,
+	JsonValueSchema,
 	NonNegativeIntegerSchema,
 	looseObject,
 } from "#runtime/schemas/scalars.ts";
@@ -31,6 +32,8 @@ const PlanTypeSchema = z.enum([
 	"edu",
 	"edu_plus",
 	"edu_pro",
+	"sci",
+	"sci_plus",
 	"unknown",
 ]);
 
@@ -51,7 +54,7 @@ const AuthModeSchema = z.enum([
 const ReasoningEffortSchema = z.string();
 const ReasoningSummarySchema = z.enum(["auto", "concise", "detailed", "none"]);
 const PersonalitySchema = z.enum(["none", "friendly", "pragmatic"]);
-const MessagePhaseSchema = z.enum(["commentary", "final_answer"]);
+const MessagePhaseSchema = z.enum(["commentary", "partial_answer", "final_answer"]);
 const MultiAgentModeSchema = z.union([
 	z.enum(["explicitRequestOnly", "proactive"]),
 	looseObject({ custom: z.string() }),
@@ -154,6 +157,8 @@ const CodexErrorInfoSchema = z.union([
 		"rateLimitExceeded",
 		"flexUnavailable",
 		"serverOverloaded",
+		"modelNotFound",
+		"policyCapacityUnavailable",
 		"cyberPolicy",
 		"misalignmentPolicyViolation",
 		"tooManyDenials",
@@ -175,6 +180,10 @@ const CodexErrorInfoSchema = z.union([
 		responseTooManyFailedAttempts: looseObject({ httpStatusCode: IntegerSchema.nullable() }),
 	}),
 	looseObject({ activeTurnNotSteerable: looseObject({ turnKind: NonSteerableTurnKindSchema }) }),
+	// Since Codex 0.166.0 the generated `Other` variant reads any string or object, so a newer
+	// server's code decodes too. Codex itself still writes only "other".
+	z.string(),
+	z.record(z.string(), JsonValueSchema),
 ]);
 
 const TurnErrorSchema = looseObject({
@@ -199,22 +208,38 @@ const RealtimeVoiceSchema = z.enum([
 	"alloy",
 	"arbor",
 	"ash",
+	"aube",
 	"ballad",
 	"breeze",
+	"bubbie",
 	"cedar",
 	"coral",
 	"cove",
 	"echo",
 	"ember",
+	"haetsal",
+	"hanul",
+	"himari",
 	"juniper",
+	"leher",
 	"maple",
 	"marin",
+	"miko",
+	"neer",
+	"porto",
+	"rindo",
+	"rio",
+	"rivage",
 	"sage",
+	"selva",
 	"shimmer",
 	"sol",
+	"sonna",
 	"spruce",
+	"tinta",
 	"vale",
 	"verse",
+	"viola",
 ]);
 
 const ThreadRealtimeBemItemPresentationSchema = z.discriminatedUnion("type", [
@@ -387,8 +412,10 @@ const AccountSchema = z.discriminatedUnion("type", [
 		type: z.literal("chatgpt"),
 		email: z.string().nullable(),
 		planType: PlanTypeSchema,
+		workspaceName: z.string().nullable(),
 	}),
 	looseObject({ type: z.literal("amazonBedrock"), usesCodexManagedCredentials: z.boolean() }),
+	looseObject({ type: z.literal("gcp") }),
 ]);
 
 export {

@@ -25,6 +25,7 @@ const TurnSchema = z.lazy(() =>
 		startedAt: FiniteNumberSchema.nullable(),
 		completedAt: FiniteNumberSchema.nullable(),
 		durationMs: FiniteNumberSchema.nullable(),
+		rootTurnId: z.string().nullable(),
 	}),
 );
 
@@ -123,10 +124,23 @@ const ThreadTurnPageSchema = looseObject({
 	backwardsCursor: z.string().nullable(),
 });
 
+// Since Codex 0.166.0 an experimental client receives each user thread's read receipt.
+const ThreadReadStateSchema = looseObject({
+	firstUnread: z
+		.discriminatedUnion("type", [
+			looseObject({ type: z.literal("threadStart") }),
+			looseObject({ type: z.literal("turn"), turnId: z.string() }),
+		])
+		.nullable(),
+	revision: z.string(),
+});
+
 const ThreadPageSchema = looseObject({
 	data: z.array(ThreadSchema),
 	nextCursor: z.string().nullable(),
 	backwardsCursor: z.string().nullable(),
+	/** Thread ids are generated map keys; an absent key means that row has no receipt. */
+	readStates: z.record(z.string(), ThreadReadStateSchema).nullable(),
 });
 
 const LoadedThreadPageSchema = looseObject({
@@ -134,7 +148,10 @@ const LoadedThreadPageSchema = looseObject({
 	nextCursor: z.string().nullable(),
 });
 
-const ThreadReadSchema = looseObject({ thread: ThreadSchema });
+const ThreadReadSchema = looseObject({
+	thread: ThreadSchema,
+	readState: ThreadReadStateSchema.nullable(),
+});
 const TurnStartSchema = looseObject({ turn: TurnSchema });
 const QueueStartSchema = looseObject({ turn: TurnSchema });
 

@@ -119,7 +119,7 @@ function writeConfigAtomically(
 /**
  * What every thread in the home runs under unless the config already says otherwise:
  * Codex's auto-review mode, where the sandbox is the workspace and whatever it refuses goes to a
- * reviewer subagent that approves or denies it instead of asking the user (Codex 0.160.0
+ * reviewer subagent that approves or denies it instead of asking the user (Codex 0.166.0
  * `approvals_reviewer`, paired as its TUI pairs it with on-request approvals and the
  * workspace-write profile), and network access, because the host commands an agent runs, such as
  * a command-line client of the host's server, reach it over localhost. A setting somebody already made is theirs and

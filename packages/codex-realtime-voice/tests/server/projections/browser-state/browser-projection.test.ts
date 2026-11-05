@@ -62,7 +62,12 @@ test("the real gateway delivers the pending ChatGPT authorization URL to the bro
 const signedInAccount = {
 	kind: "codex_account_response",
 	response: {
-		account: { type: "chatgpt", email: "readiness@example.test", planType: "plus" },
+		account: {
+			type: "chatgpt",
+			email: "readiness@example.test",
+			planType: "plus",
+			workspaceName: null,
+		},
 		requiresOpenaiAuth: true,
 		workspaceRouting: null,
 	},

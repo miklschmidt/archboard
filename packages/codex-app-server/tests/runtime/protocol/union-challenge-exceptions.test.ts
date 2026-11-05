@@ -26,13 +26,7 @@ const EXPECTED_FUNCTION_CALL_OUTPUT_COLLAPSES = [
 	"rawResponseItem/completed:item.function_call_output.output.type",
 ] as const;
 
-const DIRECT_REGULAR_UNION_CHALLENGES = [
-	["error", "error.codexErrorInfo.activeTurnNotSteerable.turnKind"],
-	["thread/started", "thread.source.subAgent"],
-	["thread/started", "thread.turns.error.codexErrorInfo.activeTurnNotSteerable.turnKind"],
-	["turn/started", "turn.error.codexErrorInfo.activeTurnNotSteerable.turnKind"],
-	["turn/completed", "turn.error.codexErrorInfo.activeTurnNotSteerable.turnKind"],
-] as const;
+const DIRECT_REGULAR_UNION_CHALLENGES = [["thread/started", "thread.source.subAgent"]] as const;
 
 function issuePath(issue: unknown): string[] {
 	if (typeof issue !== "object" || issue === null || !("path" in issue)) {
@@ -60,7 +54,7 @@ describe("protocol union diagnostics", () => {
 		expect(actual).toEqual([...EXPECTED_FUNCTION_CALL_OUTPUT_COLLAPSES].toSorted());
 	});
 
-	test("normalizes the five regular union targets directly", () => {
+	test("normalizes the regular union targets directly", () => {
 		const observed = DIRECT_REGULAR_UNION_CHALLENGES.map(([method, name]) => {
 			const challenge = SERVER_NOTIFICATION_UNION_CHALLENGES[method].find(
 				(candidate) => candidate.name === name,

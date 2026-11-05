@@ -233,7 +233,7 @@ const managedRequirementKeys = [
 	"allowedWebSearchModes", "allowManagedHooksOnly", "allowBrowserAndComputerUse", "allowAppshots",
 	"allowRemoteControl", "computerUse", "browserUse", "inAppBrowser", "featureRequirements", "hooks",
 	"enforceResidency", "network", "autoReview", "models", "logDir", "modelCatalogJson",
-	"checkForUpdateOnStartup", "allowLoginShell", "feedback", "application",
+	"checkForUpdateOnStartup", "allowLoginShell", "feedback", "application", "otel",
 ] as const;
 const managedRequirements = (sqliteHome: string) => ({
 	...Object.fromEntries(managedRequirementKeys.map((key) => [key, null])),
@@ -251,8 +251,8 @@ const configResponse = () => ({`,
 			'codexHome: storageMode === "redirected" ? process.env["CODEX_SQLITE_HOME"] : process.env["CODEX_HOME"],',
 		)
 		.replace(
-			"respond(frame as never, { requirements: null });",
-			'respond(frame as never, { requirements: storageMode === "requirements-match" ? managedRequirements(String(process.env.CODEX_SQLITE_HOME)) : storageMode === "requirements-conflict" ? managedRequirements(String(process.env.CODEX_SQLITE_HOME) + "/../conflicting-sqlite") : null });',
+			"respond(frame as never, { supportsIndependentSpeedModes: null, requirements: null });",
+			'respond(frame as never, { supportsIndependentSpeedModes: null, requirements: storageMode === "requirements-match" ? managedRequirements(String(process.env.CODEX_SQLITE_HOME)) : storageMode === "requirements-conflict" ? managedRequirements(String(process.env.CODEX_SQLITE_HOME) + "/../conflicting-sqlite") : null });',
 		)
 		.replace(
 			"const storageMode = process.env.ARCHBOARD_TEST_STORAGE_MODE;",
@@ -302,7 +302,7 @@ const emitShutdownBatch = (): void => {
 	const waitTarget = threads.get("thread-3");
 	if (waitTarget !== undefined) {
 		waitTarget.status = { type: "active", activeFlags: [] };
-		waitTarget.turns = [{ id: "shutdown-target-turn", items: [], itemsView: "full", status: "inProgress", error: null, startedAt: Date.now(), completedAt: null, durationMs: null }];
+		waitTarget.turns = [{ id: "shutdown-target-turn", items: [], itemsView: "full", rootTurnId: null, status: "inProgress", error: null, startedAt: Date.now(), completedAt: null, durationMs: null }];
 	}
 	registerDynamicCall("shutdown-dynamic", "create_thread", { prompt: "This authority must end at shutdown." });
 	registerDynamicCall("shutdown-wait", "wait_threads", { threadIds: ["thread-3"], timeoutMs: 120000 });
@@ -345,7 +345,7 @@ const emitCoordinatorCall = (): void => {
 	const coordinator = threads.get("thread-1");
 	if (coordinator === undefined) return;
 	coordinator.status = { type: "active", activeFlags: [] };
-	coordinator.turns = [{ id: "coordinator-call-turn", items: [{ type: "dynamicToolCall", id: "coordinator-inspect", namespace: "archboard_workhorse", tool: "inspect_workhorse", arguments: {}, status: "inProgress", contentItems: null, success: null, durationMs: null }], itemsView: "full", status: "inProgress", error: null, startedAt: Date.now(), completedAt: null, durationMs: null }];
+	coordinator.turns = [{ id: "coordinator-call-turn", items: [{ type: "dynamicToolCall", id: "coordinator-inspect", namespace: "archboard_workhorse", tool: "inspect_workhorse", arguments: {}, status: "inProgress", contentItems: null, success: null, durationMs: null }], itemsView: "full", rootTurnId: null, status: "inProgress", error: null, startedAt: Date.now(), completedAt: null, durationMs: null }];
 	request("coordinator-inspect", "item/tool/call", { threadId: "thread-1", turnId: "coordinator-call-turn", callId: "coordinator-inspect", namespace: "archboard_workhorse", tool: "inspect_workhorse", arguments: {} });
 };
 

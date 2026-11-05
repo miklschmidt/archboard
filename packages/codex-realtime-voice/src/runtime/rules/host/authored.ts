@@ -63,10 +63,11 @@ const VOICE_HANDOFF_INSTRUCTIONS = readWorkbenchInstructionDocument(
  *
  * The session runs in Codex's `bemTags` handoff mode, where a message's first characters choose
  * its channel: `[FINAL]` is appended to the voice session as speakable, which the voice model
- * reacts to, and `[COMMENTARY]` as quiet context, which it never reacts to (Codex 0.160.0,
- * `realtime_conversation/bem.rs`, `v3_output_writer`). A message with no header is buffered until
- * it is complete and then treated as final, so an untagged preamble is read out as if it were the
- * answer, and the answer itself cannot stream. Telling the coordinator the rule is what makes the
+ * reacts to, and `[COMMENTARY]` as quiet context, which it never reacts to (Codex 0.160.0 to
+ * 0.166.0, `realtime_conversation/bem.rs`, `v3_output_writer`). A message with no header is
+ * buffered until it is complete and then treated as final, so an untagged preamble is read out as
+ * if it were the answer, and the answer itself cannot stream. Since 0.166.0 a message that the
+ * model itself marks as a partial answer skips the header and is spoken as it is. Telling the coordinator the rule is what makes the
  * mode work.
  */
 const CHANNEL_RULE = VOICE_CHANNEL_INSTRUCTIONS.slice(0, -1);

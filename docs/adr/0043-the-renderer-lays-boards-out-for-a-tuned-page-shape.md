@@ -64,8 +64,8 @@ boards out again, and ADR 0039 says how it is judged.
   its Voice region and reads worse: 16 crossings instead of 14, more bends and
   17% more line, with labels nearer their lines. The whole board crosses 116
   times instead of 95, with fewer bends, 9% less line and a better fit.
-- The fits recorded in `docs/design/layout-rules.md` before 2026-10-05 are
-  against the 1272 by 899 pane.
+- The fits that layout tasks recorded before 2026-10-05 are against the 1272
+  by 899 pane.
 - A reader's real pane is taller than the reference pane: 1271 by 992 beside a
   docked sidebar. The camera fits a drawing into the real pane, so a drawing
   never shows smaller on screen than its recorded fit.

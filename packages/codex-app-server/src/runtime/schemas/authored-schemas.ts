@@ -7,11 +7,13 @@ import type {
 import { boundedText, JsonValueSchema } from "#runtime/schemas/scalars.ts";
 import { codexOutputSchema } from "#runtime/schemas/vendor-schema.ts";
 
+// Since Codex 0.166.0 every finished turn of a user thread publishes its read receipt as
+// `thread/readState/changed`. Archboard keeps no read state, so it never asks for that event.
 const INITIALIZE_CAPABILITIES = Object.freeze({
 	experimentalApi: true,
 	requestAttestation: false,
 	mcpServerOpenaiFormElicitation: true,
-	optOutNotificationMethods: Object.freeze([]),
+	optOutNotificationMethods: Object.freeze(["thread/readState/changed"] as const),
 	extensions: Object.freeze({}),
 } as const);
 
@@ -21,7 +23,7 @@ const InitializeCapabilitiesSchema = codexOutputSchema<CodexInitializeCapabiliti
 			experimentalApi: z.literal(true),
 			requestAttestation: z.literal(false),
 			mcpServerOpenaiFormElicitation: z.literal(true),
-			optOutNotificationMethods: z.tuple([]),
+			optOutNotificationMethods: z.tuple([z.literal("thread/readState/changed")]),
 			extensions: z.object({}).strict(),
 		})
 		.strict(),

@@ -8,7 +8,7 @@ Amended on 2026-10-31 (TASK-559.09, TASK-559.21). The default stands, and three 
 
 - "Explicit Track requests keep their previous drawings byte for byte" held only for this change.
   The renderer paints every engine's picture, so the tab, door, card and font work of TASK-559 changed Track's drawings too.
-- "Blocks keeps legacy placement": Blocks now tries a dense placement first, and the legacy placer takes the rest ([the layout note](../design/blocks-planned-layout.md)).
+- "Blocks keeps legacy placement": Blocks now tries a dense placement first, and the legacy placer takes the rest (TASK-559.09).
 - "the canvas setting" is now a switch in the right panel of the reader, which offers Blocks and Tracks.
   The browser remembers the choice, and `track` stays the value of `--layout`.
 

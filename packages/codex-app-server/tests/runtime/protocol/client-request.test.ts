@@ -90,7 +90,7 @@ describe("Codex generated client request params", () => {
 			experimentalApi: true as const,
 			requestAttestation: false as const,
 			mcpServerOpenaiFormElicitation: true as const,
-			optOutNotificationMethods: [] as [],
+			optOutNotificationMethods: ["thread/readState/changed"] as ["thread/readState/changed"],
 			extensions: {},
 		};
 		expect(authoredSchemas.InitializeCapabilitiesSchema.parse(authoredCapabilities)).toEqual(

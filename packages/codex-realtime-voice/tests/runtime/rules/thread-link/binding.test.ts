@@ -195,7 +195,7 @@ describe("codex thread-link bindings", () => {
 					threadRead: unavailableThreadRead,
 					threadListPage: async () => {
 						listPass += 1;
-						return { data: [row], nextCursor: null, backwardsCursor: null };
+						return { data: [row], nextCursor: null, backwardsCursor: null, readStates: null };
 					},
 					threadLoadedListPage: async () => ({
 						data: listPass === 1 ? [row.id] : [],
@@ -237,7 +237,7 @@ describe("codex thread-link bindings", () => {
 								expected: fixture.store.snapshot().cas,
 							});
 						}
-						return { data: [row], nextCursor: null, backwardsCursor: null };
+						return { data: [row], nextCursor: null, backwardsCursor: null, readStates: null };
 					},
 					threadLoadedListPage: async () => ({ data: [row.id], nextCursor: null }),
 				},

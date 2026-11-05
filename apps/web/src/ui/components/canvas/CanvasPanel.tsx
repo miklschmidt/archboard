@@ -1,8 +1,7 @@
 // The sidebar's model tab: what the model on screen is, how to read it, and
 // the key to what is drawn.
 //
-// The order is the order a reader asks in (TASK-383,
-// docs/design/pane-sidebar-hierarchy.md), one region per question:
+// The order is the order a reader asks in (TASK-383), one region per question:
 //
 // 1. What is this, and what does it change? The variant's own summary of its
 //    scope, and for a variant read against another the key to its marks with how

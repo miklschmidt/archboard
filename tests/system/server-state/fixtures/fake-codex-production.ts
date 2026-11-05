@@ -27,6 +27,8 @@ const initialControl = JSON.parse(readFileSync(controlPath, "utf8")) as {
 	explanationQueue?: boolean;
 };
 let signedIn = initialControl.signedOut !== true;
+const chatgptAccount = { type: "chatgpt", email: null, planType: "pro", workspaceName: null };
+const accountRead = { requiresOpenaiAuth: true, workspaceRouting: null };
 let pendingLogin = false;
 const record = (value: unknown): void => appendFileSync(logPath, `${JSON.stringify(value)}\n`);
 const send = (value: unknown): void => void process.stdout.write(`${JSON.stringify(value)}\n`);
@@ -54,7 +56,7 @@ const request = (id: string, method: string, params: unknown): void => {
 };
 if (process.argv[2] === "--version") {
 	record({ kind: "version_probe", args: process.argv.slice(2) });
-	process.stdout.write("codex-cli 0.160.0\n");
+	process.stdout.write("codex-cli 0.166.0\n");
 	process.exit(0);
 }
 if (
@@ -126,7 +128,7 @@ const buildThread = (
 		status: { type: "idle" },
 		path: null,
 		cwd: String(params["cwd"]),
-		cliVersion: "0.160.0",
+		cliVersion: "0.166.0",
 		source: "vscode",
 		canAcceptDirectInput: true,
 		threadSource: params["threadSource"],
@@ -237,7 +239,7 @@ const handle = (frame: WireFrame): void => {
 				return;
 			}
 			respond(frame as never, {
-				userAgent: "Codex Desktop/0.160.0",
+				userAgent: "Codex Desktop/0.166.0",
 				codexHome: process.env["CODEX_HOME"],
 				platformFamily: "unix",
 				platformOs: "linux",
@@ -247,17 +249,13 @@ const handle = (frame: WireFrame): void => {
 		case "initialized":
 			return;
 		case "configRequirements/read":
-			respond(frame as never, { requirements: null });
+			respond(frame as never, { supportsIndependentSpeedModes: null, requirements: null });
 			return;
 		case "config/read":
 			respond(frame as never, configResponse());
 			return;
 		case "account/read":
-			respond(frame as never, {
-				account: signedIn ? { type: "chatgpt", email: null, planType: "pro" } : null,
-				requiresOpenaiAuth: true,
-				workspaceRouting: null,
-			});
+			respond(frame as never, { ...accountRead, account: signedIn ? chatgptAccount : null });
 			return;
 		case "account/login/start":
 			pendingLogin = true;
@@ -294,6 +292,7 @@ const handle = (frame: WireFrame): void => {
 				data: [...threads.values()].filter((thread) => thread.turns.length > 0),
 				nextCursor: null,
 				backwardsCursor: null,
+				readStates: null,
 			});
 			return;
 		case "thread/loaded/list":
@@ -304,7 +303,7 @@ const handle = (frame: WireFrame): void => {
 				reject(frame as never, "list_turns is not supported yet");
 				return;
 			}
-			respond(frame as never, { thread: threads.get(String(params["threadId"])) });
+			respond(frame as never, { thread: threads.get(String(params["threadId"])), readState: null });
 			return;
 		case "thread/queue/add":
 		case "thread/queue/start":
@@ -355,6 +354,7 @@ const handle = (frame: WireFrame): void => {
 				items:
 					isWorkhorse && initialControl.ordinaryOnly !== true ? [prompt, dynamicItem] : [prompt],
 				itemsView: "full",
+				rootTurnId: null,
 				status: isWorkhorse ? "inProgress" : "completed",
 				error: null,
 				startedAt: unixSeconds(),

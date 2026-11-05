@@ -14,6 +14,7 @@ test("releases ordinary wire joins across more than transport retention capacity
 		data: [],
 		nextCursor: null,
 		backwardsCursor: null,
+		readStates: null,
 	});
 	fixture.session.loadedListPages.set(null, { data: [], nextCursor: null });
 	const tools = createCodexDynamicTools(fixture.options);

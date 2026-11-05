@@ -305,10 +305,9 @@ direction and the fit measure are in
 [ADR 0028](0028-the-renderer-reads-a-board-in-a-direction-and-is-measured-by-fit.md).
 
 The product decisions above were accepted through Q34 of the TASK-169 interview.
-The accepted implementation design is in
-[semantic-boards-implementation.md](../design/semantic-boards-implementation.md),
-with the spec in TASK-170 and delivery tickets TASK-171 through TASK-181. The
-user explicitly pre-approved the implementation approach and breakdown. The user
+The accepted implementation design is the spec in TASK-170, with
+delivery tickets TASK-171 through TASK-181. The user explicitly pre-approved the
+implementation approach and breakdown. The user
 also authorized autonomous implementation using Claude Opus 5 through herdr.
 
 ## Historical corrections (TASK-509)

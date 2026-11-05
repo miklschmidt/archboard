@@ -91,7 +91,15 @@ function threadItemBranch(type: string): JsonRecord | undefined {
 				agentsStates: {},
 			};
 		case "subAgentActivity":
-			return { type, id: "item-1", kind: "started", agentThreadId: "thread-1", agentPath: "1" };
+			return {
+				type,
+				id: "item-1",
+				kind: "started",
+				agentThreadId: "thread-1",
+				agentPath: "1",
+				model: null,
+				reasoningEffort: null,
+			};
 		case "webSearch":
 			return { type, id: "item-1", query: "fixture", action: null, results: null };
 		case "imageGeneration":
@@ -101,6 +109,7 @@ function threadItemBranch(type: string): JsonRecord | undefined {
 				status: "completed",
 				revisedPrompt: null,
 				result: "fixture",
+				generationId: null,
 				failure: { type: "usageLimitExceeded", limitId: "fixture", resetsAt: null },
 			};
 	}

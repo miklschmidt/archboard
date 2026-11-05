@@ -19,6 +19,8 @@ import {
 const HookRunSummarySchema = looseObject({
 	id: z.string(),
 	eventName: z.enum([
+		"preModelRequest",
+		"postModelRequest",
 		"preToolUse",
 		"permissionRequest",
 		"postToolUse",

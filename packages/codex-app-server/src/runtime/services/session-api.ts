@@ -11,7 +11,7 @@ import type { IdentityAuthority } from "#shared/rules/workbench-identity.ts";
 import type { SessionResponsePayloads } from "#runtime/schemas/session-responses.ts";
 
 /**
- * Codex 0.160.0 reports this origin for our fixed app-server initialization.
+ * Codex 0.166.0 reports this origin for our fixed app-server initialization.
  * The child environment excludes ambient originator overrides. Ownership is
  * still proved by the current child epoch and committed operation, not this label.
  */
