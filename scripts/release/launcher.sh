@@ -14,7 +14,7 @@ while [ -L "$self" ]; do
 	*) self=$(dirname "$self")/$link ;;
 	esac
 done
-package=$(CDPATH= cd -P "$(dirname "$self")/.." && pwd)
+package=$(CDPATH='' cd -P "$(dirname "$self")/.." && pwd)
 
 case $(uname -s)-$(uname -m) in
 Linux-x86_64 | Linux-amd64) platform=linux-x64 ;;
