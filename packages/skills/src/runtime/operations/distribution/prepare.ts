@@ -18,12 +18,20 @@ const GENERATED_DIRECTORY = path.join("references", "generated");
 /** The installation manual's name inside the generated directory. */
 const INSTALL_DOCUMENT = "INSTALL.md";
 
+/** The repository a release links to, at the tag of its version (ADR 0075). */
+const RELEASE_REPOSITORY = "https://github.com/miklschmidt/archboard";
+
 /** What one preparation is given. */
 interface PreparationSource {
 	/** The archboard checkout root, where the canonical INSTALL.md lives. */
 	readonly root: string;
 	/** What to record as the source revision; the checkout's HEAD when absent. */
 	readonly revision?: string | undefined;
+	/**
+	 * Where the links of INSTALL.md to its neighbours point, as a URL prefix. A release names its
+	 * tag here, since a release has no checkout; the checkout's own path when absent.
+	 */
+	readonly linkBase?: string | undefined;
 }
 
 /** What one preparation wrote. */
@@ -32,6 +40,15 @@ interface PreparedSkill {
 	readonly directory: string;
 	/** Every file written, relative to the skill root, in the order written. */
 	readonly files: readonly string[];
+}
+
+/**
+ * The link base of a release: the repository's files at the tag of its version.
+ * @param version The release version, without the leading "v".
+ * @returns The URL prefix to pass as `linkBase`.
+ */
+function releaseLinkBase(version: string): string {
+	return `${RELEASE_REPOSITORY}/blob/v${version}`;
 }
 
 /**
@@ -61,20 +78,26 @@ function checkoutRevision(root: string): string {
 /**
  * The installation manual as the installed skill carries it: the canonical
  * text under a header that says where it came from, with the links that
- * pointed at the checkout's neighbours resolved to the checkout, since the
- * copy no longer sits beside them.
- * @param root The checkout root.
+ * pointed at the checkout's neighbours resolved to the checkout, or to the
+ * link base of a release, since the copy no longer sits beside them.
+ * @param source The checkout and where its links point.
  * @param revision The revision being recorded.
  * @returns The document text.
  */
-function installedInstallDocument(root: string, revision: string): string {
+function installedInstallDocument(source: PreparationSource, revision: string): string {
+	const { root, linkBase } = source;
 	const canonical = fs.readFileSync(path.join(root, INSTALL_DOCUMENT), "utf8");
 	const resolved = canonical.replaceAll(
 		/\]\((?!https?:|#|\/)([^)]+)\)/gu,
-		(_match, target: string) => `](<${path.join(root, target)}>)`,
+		(_match, target: string) =>
+			linkBase === undefined
+				? `](<${path.join(root, target)}>)`
+				: `](${linkBase}/${path.posix.normalize(target)})`,
 	);
+	const origin =
+		linkBase === undefined ? path.join(root, INSTALL_DOCUMENT) : `${linkBase}/${INSTALL_DOCUMENT}`;
 	return (
-		`<!-- Generated copy of ${path.join(root, INSTALL_DOCUMENT)} at revision ${revision}. ` +
+		`<!-- Generated copy of ${origin} at revision ${revision}. ` +
 		"Edit the canonical file in the archboard checkout; this copy is replaced on every install and sync. -->\n\n" +
 		resolved
 	);
@@ -113,7 +136,7 @@ function prepareSkillArtifacts(skill: string, source: PreparationSource): Prepar
 	for (const schema of generatedSchemas()) {
 		generated.set(schema.file, `${JSON.stringify(schema.schema, null, "\t")}\n`);
 	}
-	generated.set(INSTALL_DOCUMENT, installedInstallDocument(source.root, revision));
+	generated.set(INSTALL_DOCUMENT, installedInstallDocument(source, revision));
 	fs.mkdirSync(directory, { recursive: true });
 	for (const stale of fs.readdirSync(directory)) {
 		if (!generated.has(stale)) fs.rmSync(path.join(directory, stale), { recursive: true });
@@ -125,4 +148,4 @@ function prepareSkillArtifacts(skill: string, source: PreparationSource): Prepar
 	};
 }
 
-export { prepareSkillArtifacts };
+export { prepareSkillArtifacts, releaseLinkBase };
