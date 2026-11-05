@@ -1,0 +1,65 @@
+name: Release
+
+# The Conventional Commits on main decide each version (ADR 0075, Publication). release-please
+# reads them since the last release and keeps one release pull request open for each component:
+# the root `archboard` package and the MIT voice package. A merge of a release pull request is the
+# release: release-please tags the merge commit and makes the GitHub release with the same notes.
+#
+# release-please makes its commits through the GitHub API, so GitHub signs them. A tag that the
+# workflow token makes starts no other workflow, so the publication runs as a later job of this
+# same run, gated on the release that release-please just made.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    name: Keep the release pull request and tag releases
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      # The root component `archboard`, whose tag is `v<version>`.
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+      sha: ${{ steps.release.outputs.sha }}
+      # The voice package, whose tag is `codex-realtime-voice-v<version>`.
+      voice_release_created: ${{ steps.release.outputs['packages/codex-realtime-voice--release_created'] }}
+      voice_tag_name: ${{ steps.release.outputs['packages/codex-realtime-voice--tag_name'] }}
+      voice_version: ${{ steps.release.outputs['packages/codex-realtime-voice--version'] }}
+      # Every released path, as a JSON array.
+      paths_released: ${{ steps.release.outputs.paths_released }}
+
+    steps:
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@v5
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # PLACEHOLDER: TASK-579.09 replaces this job with the build of the executables, the smoke test
+  # and the publication to npm. It runs only when this run merged the root release pull request,
+  # so it has the tag `needs.release-please.outputs.tag_name` to build from.
+  publish:
+    name: Publish the release (placeholder)
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Name the release
+        env:
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: echo "TASK-579.09 publishes $TAG here."

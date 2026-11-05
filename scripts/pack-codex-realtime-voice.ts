@@ -8,7 +8,6 @@ import path from "node:path";
 import { build } from "vite-plus/pack";
 import { z } from "zod";
 
-const PUBLISHED_VERSION = "0.1.0";
 /** What the bundle may import at run time: its dependencies, its peers and Bun's own modules. */
 const DEPENDENCIES = ["zod", "ws"] as const;
 // The browser hooks import React.
@@ -24,6 +23,8 @@ const Paths = z.record(z.string(), z.string());
 const workspace = z
 	.object({
 		name: z.string(),
+		// release-please bumps this version (release-please-config.json), and the package ships at it.
+		version: z.string().regex(/^\d+\.\d+\.\d+$/),
 		description: z.string(),
 		license: z.string(),
 		imports: z.object({ "#*": z.string() }),
@@ -147,7 +148,7 @@ const readme = path.join(source, "README.md");
 const files = ["dist", "src", "LICENSE", ...(existsSync(readme) ? ["README.md"] : [])];
 const manifest = {
 	name: workspace.name,
-	version: PUBLISHED_VERSION,
+	version: workspace.version,
 	description: workspace.description,
 	license: workspace.license,
 	author: "Mikkel Schmidt",
@@ -178,4 +179,4 @@ await Promise.all(
 		.filter((name) => name !== "dist" && name !== "src")
 		.map((file) => copyFile(path.join(source, file), path.join(output, file))),
 );
-console.log(`Packed ${workspace.name}@${PUBLISHED_VERSION} in ${output}.`);
+console.log(`Packed ${workspace.name}@${workspace.version} in ${output}.`);

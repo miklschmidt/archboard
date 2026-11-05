@@ -1,0 +1,23 @@
+{
+	"$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+	"bootstrap-sha": "558d97cab3754ede4b399cb36c3c5377ac7f5d90",
+	"bump-minor-pre-major": true,
+	"separate-pull-requests": true,
+	"packages": {
+		".": {
+			"component": "archboard",
+			"release-type": "node",
+			"package-name": "archboard",
+			"include-component-in-tag": false,
+			"changelog-path": "CHANGELOG.md",
+			"exclude-paths": ["packages/codex-realtime-voice"]
+		},
+		"packages/codex-realtime-voice": {
+			"component": "codex-realtime-voice",
+			"release-type": "node",
+			"package-name": "@archboard/codex-realtime-voice",
+			"include-component-in-tag": true,
+			"changelog-path": "CHANGELOG.md"
+		}
+	}
+}
