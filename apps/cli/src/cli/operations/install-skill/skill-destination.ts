@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 
 /** The skill that authors models; its installed copy also carries the generated schemas and manual. */
@@ -24,7 +24,7 @@ interface SkillDestination {
  * @returns The absolute path of the bundled skill.
  */
 function findSkillSource(skill: BundledSkill): string {
-	const source = path.join(SOURCE_CHECKOUT, "skills", skill);
+	const source = path.join(installation().skillsDirectory, skill);
 	if (!fs.existsSync(path.join(source, "SKILL.md"))) {
 		throw new Error(`Bundled skill not found at ${source} (broken install?)`);
 	}

@@ -3,7 +3,7 @@
 import { ARCHBOARD_URL } from "#runtime/services/config.ts";
 import { withVault, withWriteClaims } from "#runtime/state/server-client-session.ts";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 
 /** Identity marker the Archboard server puts in /health (v1.1+). */
 const ARCHBOARD_SERVICE_NAME = "archboard-server";
@@ -48,7 +48,7 @@ class OtherSourceError extends Error {
 	constructor(serverCheckout: string) {
 		super(
 			`The Archboard server at ${ARCHBOARD_URL} runs the source of ${serverCheckout}, ` +
-				`and this command runs the source of ${SOURCE_CHECKOUT}. Run the command in ${serverCheckout}, ` +
+				`and this command runs the source of ${installation().root}. Run the command in ${serverCheckout}, ` +
 				"stop that server there with `archboard stop`, or name another server with --url.",
 		);
 	}
@@ -120,7 +120,7 @@ async function serverHealthOf(response: Response): Promise<Record<string, unknow
 function otherSourceOf(health: Record<string, unknown>): string | undefined {
 	const source = health["source"];
 	const checkout = isRecord(source) ? stringAt(source, "checkout") : undefined;
-	return checkout === SOURCE_CHECKOUT ? undefined : checkout;
+	return checkout === installation().root ? undefined : checkout;
 }
 
 /**

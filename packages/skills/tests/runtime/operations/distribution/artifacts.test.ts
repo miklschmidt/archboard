@@ -1,5 +1,5 @@
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import { expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -14,7 +14,7 @@ import { prepareSkillArtifacts } from "#runtime/operations/distribution/prepare.
 test("installed canonical input schemas accept and refuse the same expressible input as the runtime", () => {
 	const skill = mkdtempSync(join(tmpdir(), "archboard-schemas-"));
 	try {
-		const prepared = prepareSkillArtifacts(skill, { root: SOURCE_CHECKOUT, revision: "test" });
+		const prepared = prepareSkillArtifacts(skill, { root: installation().root, revision: "test" });
 		const ajv = new Ajv2020({ strict: false, validateFormats: false });
 		const cases = [
 			{

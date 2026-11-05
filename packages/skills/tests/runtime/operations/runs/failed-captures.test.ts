@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -9,7 +9,7 @@ import { executeRun, type RunJob } from "#runtime/operations/runs/author.ts";
 import { loadSuite } from "#runtime/schemas/suite.ts";
 import { type RunBundle } from "#runtime/operations/grading/blind.ts";
 
-const checkout = SOURCE_CHECKOUT;
+const checkout = installation().root;
 const loaded = loadSuite(path.join(checkout, "evals"));
 
 const CAPTURE_RECEIPT = {

@@ -14,7 +14,7 @@ import {
 } from "#runtime/services/executable.ts";
 import { CODEX_PROTOCOL_BINARY_VERSION } from "#runtime/protocol/protocol-version.ts";
 import { CODEX_SESSION_MS } from "@archboard/timing";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 
 function temporaryRoot(): string {
 	return mkdtempSync(path.join(tmpdir(), "archboard-codex-process-executable-"));
@@ -53,8 +53,10 @@ function oversizedFixture(root: string): string {
 
 describe("Codex executable ownership", () => {
 	test("resolves and verifies the installed pinned executable inside the given checkout", () => {
-		const executable = resolveCodexExecutable({ installedIn: SOURCE_CHECKOUT });
-		expect(executable.startsWith(path.join(SOURCE_CHECKOUT, "node_modules") + path.sep)).toBe(true);
+		const executable = resolveCodexExecutable({ installedIn: installation().root });
+		expect(executable.startsWith(path.join(installation().root, "node_modules") + path.sep)).toBe(
+			true,
+		);
 		expect(executable).toContain(
 			`${path.sep}node_modules${path.sep}@openai${path.sep}codex${path.sep}`,
 		);

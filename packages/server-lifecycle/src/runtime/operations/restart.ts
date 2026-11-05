@@ -5,7 +5,7 @@
 // The build is package.json's `build`, so the one place that says how
 // to build stays there.
 
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import { frontendBuild } from "#runtime/services/staleness.ts";
 import {
 	type EnsureResult,
@@ -30,7 +30,7 @@ interface RestartResult extends EnsureResult {
  */
 async function buildFrontend(): Promise<string | null> {
 	const build = Bun.spawn([process.execPath, "run", "build"], {
-		cwd: SOURCE_CHECKOUT,
+		cwd: installation().root,
 		stdin: "ignore",
 		stdout: 2,
 		stderr: "inherit",
@@ -38,7 +38,7 @@ async function buildFrontend(): Promise<string | null> {
 	const exit = await build.exited;
 	if (exit !== 0) {
 		throw codedError(
-			`\`bun run build\` failed in ${SOURCE_CHECKOUT} (exit ${String(exit)}). Its output is above.\n` +
+			`\`bun run build\` failed in ${installation().root} (exit ${String(exit)}). Its output is above.\n` +
 				"The Archboard server is stopped. Fix the build, then run `archboard restart` again.",
 			"FRONTEND_BUILD_FAILED",
 		);

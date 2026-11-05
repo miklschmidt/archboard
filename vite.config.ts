@@ -479,7 +479,7 @@ export default defineConfig({
 	root: join(repositoryRoot, "apps", "web"),
 	plugins: [react(), tailwindcss(), rendererBuild(), frontendInputs()],
 	build: {
-		// The server serves SOURCE_CHECKOUT/dist/frontend. It lies outside the root, so it is emptied on purpose.
+		// The server serves the frontend directory of the installation (dist/frontend of the checkout). It lies outside the root, so it is emptied on purpose.
 		outDir: join(repositoryRoot, "dist", "frontend"),
 		emptyOutDir: true,
 		rolldownOptions: {

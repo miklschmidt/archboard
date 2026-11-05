@@ -5,7 +5,7 @@
 // the authors read or the grader judges against. None of this runs a model.
 
 import { expect, test } from "bun:test";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -14,7 +14,7 @@ import { keepBatchSkill } from "#runtime/services/citations.ts";
 import { keptCandidate } from "#runtime/operations/runs/batch.ts";
 import { prepareRunDirectory, runEnvironment } from "#runtime/processes/isolation.ts";
 
-const checkout = SOURCE_CHECKOUT;
+const checkout = installation().root;
 
 test("a candidate run installs the batch's kept copy, not the checkout as it stands", async () => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-install-"));

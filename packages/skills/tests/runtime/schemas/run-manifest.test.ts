@@ -5,7 +5,7 @@
 // fewer classes than the one that wrote it. What is written is read back here.
 
 import { expect, test } from "bun:test";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -15,7 +15,7 @@ import { loadSuite, type Scenario } from "#runtime/schemas/suite.ts";
 import { readManifests, recordOf } from "#runtime/store/records.ts";
 import { writeRunManifest, type RunManifestFields } from "#runtime/schemas/run-manifest.ts";
 
-const checkout = SOURCE_CHECKOUT;
+const checkout = installation().root;
 const loaded = loadSuite(path.join(checkout, "evals"));
 
 /**

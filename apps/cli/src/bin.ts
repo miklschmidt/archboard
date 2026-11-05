@@ -10,6 +10,16 @@
 
 const argv = process.argv.slice(2);
 
+// A process that is neither a release nor in a checkout has no program to run (ADR 0075).
+const { installation } = await import("@archboard/workspace/installation");
+try {
+	installation();
+} catch (error) {
+	const { errorMessage } = await import("@archboard/diagnostics/thrown-error");
+	process.stderr.write(`Error: ${errorMessage(error)}\n`);
+	process.exit(1);
+}
+
 // Inside another archboard checkout, that checkout's source runs the command
 // (ADR 0049). Decided first, so that it gets the environment as it was given.
 const { handOff } = await import("@archboard/workspace/source-checkout");

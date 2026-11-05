@@ -2,13 +2,13 @@
 
 import fs from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import {
 	CLI_CONTRACT_ARTIFACT_NAMES,
 	renderCliContractArtifacts,
 } from "#cli/operations/contract-artifacts/render.ts";
 
-const root = SOURCE_CHECKOUT;
+const root = installation().root;
 const outputFlag = process.argv.indexOf("--output-dir");
 if (outputFlag >= 0 && !process.argv[outputFlag + 1]) {
 	console.error("generate-cli-contract: --output-dir requires a directory.");

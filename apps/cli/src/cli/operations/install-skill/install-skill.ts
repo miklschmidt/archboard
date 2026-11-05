@@ -17,7 +17,7 @@ import {
 } from "#cli/operations/install-skill/skill-destination.ts";
 import { checkoutRootOf, setUpRepository } from "#cli/operations/install-skill/repo-setup.ts";
 import { prepareSkillArtifacts } from "@archboard/skills/distribution";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 
 const INSTALL_TARGETS = ["agents", "claude"] as const;
 const INSTALL_AGENTS = ["codex", "claude-code"] as const;
@@ -135,7 +135,7 @@ interface PlannedSkill {
 function stageSkill(plan: PlannedSkill, staging: string): void {
 	fs.cpSync(plan.source, staging, { recursive: true });
 	if (plan.skill === CONSUMER_SKILL) {
-		prepareSkillArtifacts(staging, { root: SOURCE_CHECKOUT });
+		prepareSkillArtifacts(staging, { root: installation().root });
 	}
 }
 
@@ -235,7 +235,7 @@ function linkSkills(
 	root: string,
 	context: CommandContext,
 ): { skill: BundledSkill; target: string }[] {
-	prepareSkillArtifacts(findSkillSource(CONSUMER_SKILL), { root: SOURCE_CHECKOUT });
+	prepareSkillArtifacts(findSkillSource(CONSUMER_SKILL), { root: installation().root });
 	fs.mkdirSync(root, { recursive: true });
 	return BUNDLED_SKILLS.map((skill) => {
 		const target = path.join(root, skill);

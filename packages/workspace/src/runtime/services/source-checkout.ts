@@ -1,6 +1,6 @@
-// Which archboard checkout this process runs, which port its server listens
-// on, and when a command hands itself to the source of another checkout
-// (ADR 0049).
+// Which port the server of a checkout listens on, and when a command hands
+// itself to the source of another checkout (ADR 0049). Which installation this
+// process runs is decided by `installation.ts`.
 //
 // A server runs the source of the checkout that started it (ADR 0021). A
 // worktree of archboard that changes server source therefore needs a server of
@@ -21,7 +21,7 @@ import { spawn, type ChildProcess } from "child_process";
 import { createHash } from "crypto";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
+import { CHECKOUT_BIN, installation, isArchboardCheckout } from "#runtime/services/installation.ts";
 
 /** The port of the main checkout, which the owner's daily server keeps. */
 const MAIN_CHECKOUT_PORT = 3000;
@@ -29,17 +29,6 @@ const MAIN_CHECKOUT_PORT = 3000;
 /** The ports a linked worktree takes: 10000 to 19999, as worktrunk's `hash_port`. */
 const WORKTREE_PORT_BASE = 10000;
 const WORKTREE_PORT_COUNT = 10000;
-
-/** The CLI's entry point, relative to a checkout root. */
-const CHECKOUT_BIN = path.join("bin", "archboard");
-
-/**
- * The real path of the archboard checkout whose source this process runs: the
- * nearest directory above this file that is an archboard checkout. This file
- * lives in `packages/workspace/src/runtime/services/` of it, so no depth
- * decides, and the package's own directory is not taken for the checkout.
- */
-const SOURCE_CHECKOUT = sourceCheckoutAbove(path.dirname(fileURLToPath(import.meta.url)));
 
 /**
  * The port a linked worktree's server listens on: a hash of its root path into
@@ -66,7 +55,7 @@ function checkoutPort(root: string): number {
 }
 
 /** The server this checkout's commands reach when no `ARCHBOARD_URL` or `--url` names one. */
-const DEFAULT_ARCHBOARD_URL = `http://127.0.0.1:${String(checkoutPort(SOURCE_CHECKOUT))}`;
+const DEFAULT_ARCHBOARD_URL = `http://127.0.0.1:${String(checkoutPort(installation().root))}`;
 
 /**
  * The root of the checkout a directory stands in: the nearest directory at or
@@ -81,45 +70,6 @@ function checkoutRootOf(directory: string): string | null {
 		}
 		if (path.dirname(current) === current) {
 			return null;
-		}
-	}
-}
-
-/**
- * Whether a checkout is archboard: its package is named `archboard` and it has
- * the CLI's entry point.
- * @param root The checkout root.
- * @returns True for an archboard checkout.
- */
-function isArchboardCheckout(root: string): boolean {
-	try {
-		const manifest: unknown = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
-		return (
-			typeof manifest === "object" &&
-			manifest !== null &&
-			Reflect.get(manifest, "name") === "archboard" &&
-			fs.existsSync(path.join(root, CHECKOUT_BIN))
-		);
-	} catch {
-		return false;
-	}
-}
-
-/**
- * The real path of the nearest archboard checkout at or above a directory.
- * @param directory Where to start.
- * @returns The checkout's real path.
- * @throws {Error} When no archboard checkout is above the directory.
- */
-function sourceCheckoutAbove(directory: string): string {
-	for (let current = path.resolve(directory); ; current = path.dirname(current)) {
-		if (isArchboardCheckout(current)) {
-			return fs.realpathSync(current);
-		}
-		if (path.dirname(current) === current) {
-			throw new Error(
-				`${directory} is not inside an archboard checkout, so it runs no source of one`,
-			);
 		}
 	}
 }
@@ -182,7 +132,7 @@ async function handOff(argv: readonly string[]): Promise<number | null> {
 		// A working directory that was deleted stands in no checkout.
 		return null;
 	}
-	const target = handOffTarget(cwd, SOURCE_CHECKOUT, process.env["ARCHBOARD_URL"]);
+	const target = handOffTarget(cwd, installation().root, process.env["ARCHBOARD_URL"]);
 	if (target === null) {
 		return null;
 	}
@@ -243,11 +193,4 @@ async function runInstead(target: string, argv: readonly string[]): Promise<numb
 	return ended.code ?? 1;
 }
 
-export {
-	checkoutPort,
-	DEFAULT_ARCHBOARD_URL,
-	handOff,
-	handOffTarget,
-	SOURCE_CHECKOUT,
-	worktreePort,
-};
+export { checkoutPort, DEFAULT_ARCHBOARD_URL, handOff, handOffTarget, worktreePort };

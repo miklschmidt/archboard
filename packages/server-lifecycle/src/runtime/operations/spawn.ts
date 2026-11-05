@@ -1,8 +1,7 @@
 import { spawn, type ChildProcess } from "child_process";
 import { Readable } from "node:stream";
-import path from "path";
 import { logger } from "@archboard/diagnostics/logger";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import { ARCHBOARD_URL, ARCHBOARD_NO_AUTOSTART } from "#runtime/services/config.ts";
 import {
 	foreignServiceError,
@@ -127,7 +126,7 @@ function refuseUnstartableServer(): void {
 		throw unreachableError("refusing to auto-start a non-loopback server URL");
 	}
 	try {
-		resolveCodexExecutable({ installedIn: SOURCE_CHECKOUT });
+		resolveCodexExecutable({ installedIn: installation().codexInstalledIn });
 	} catch (cause) {
 		throw startupRefusal(
 			cause instanceof Error
@@ -175,11 +174,10 @@ interface SpawnedServer {
  * @returns The child, its pid and the observation handles the readiness wait uses.
  */
 function spawnServer(): SpawnedServer {
-	// The thin apps/server/src/server.ts process entrypoint of the checkout whose source runs;
-	// spawn args must be path strings. process.execPath is the bun that is
-	// running us, which is what can read a .ts entry point at all.
-	const serverEntry = path.join(SOURCE_CHECKOUT, "apps", "server", "src", "server.ts");
-	const child = spawn(process.execPath, [serverEntry], {
+	// The installation names the command: in a checkout the bun that is running us, which is what
+	// can read the .ts entry point of apps/server/src/server.ts; spawn args must be path strings.
+	const [command, ...args] = installation().serverCommand;
+	const child = spawn(command, args, {
 		detached: true,
 		stdio: ["ignore", "ignore", "ignore", "pipe"],
 		env: {

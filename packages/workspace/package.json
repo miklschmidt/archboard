@@ -14,6 +14,7 @@
 		"./languages": "./src/shared/api/languages.ts",
 		"./checkouts": "./src/runtime/api/checkouts.ts",
 		"./vault": "./src/runtime/api/vault.ts",
+		"./installation": "./src/runtime/api/installation.ts",
 		"./source-checkout": "./src/runtime/api/source-checkout.ts",
 		"./atomic-write": "./src/runtime/api/atomic-write.ts",
 		"./state-dir": "./src/runtime/api/state-dir.ts",

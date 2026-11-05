@@ -6,23 +6,22 @@ import path from "node:path";
 import { mkdirSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
 
 import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { PORT, serverUrl } from "#server/services/host/listener-address.ts";
 import type { ArchboardWorkbenchServer } from "#server/protocol/generation/archboard-host.ts";
 
 /**
  * Make the coordinators' directory, holding the archboard skill the server ships as
- * `.agents/skills/archboard`, a link to the skill in the server's own source. A link left by a
- * server of another checkout is pointed at this one's.
+ * `.agents/skills/archboard`, a link to the skill of the server's own installation. A link left by
+ * a server of another checkout is pointed at this one's.
  * @param directory The coordinators' directory.
- * @param sourceRoot The checkout whose source the server runs.
  */
-function prepareCoordinatorDirectory(directory: string, sourceRoot: string): void {
+function prepareCoordinatorDirectory(directory: string): void {
 	const skills = path.join(directory, ".agents", "skills");
 	mkdirSync(skills, { recursive: true, mode: 0o700 });
 	const link = path.join(skills, "archboard");
-	const skill = path.join(sourceRoot, "skills", "archboard");
+	const skill = path.join(installation().skillsDirectory, "archboard");
 	let current: string | null = null;
 	try {
 		current = readlinkSync(link);
@@ -46,15 +45,14 @@ function prepareCoordinatorDirectory(directory: string, sourceRoot: string): voi
  * the server's, under its port (TASK-313). The ledger is read, changed and
  * written by one process, and a second server's child would make this one's
  * stale. The directory the coordinators work in is the server's too.
- * @param sourceRoot The checkout whose source the server runs, whose skill the coordinators read.
  * @returns The private installation root and process owner directory.
  */
-function createWorkbenchStorage(sourceRoot: string): VoiceAgentOptions["storage"] {
+function createWorkbenchStorage(): VoiceAgentOptions["storage"] {
 	const root = path.join(stateDir(), "codex-workbench");
 	const ownerDirectory = path.join(root, "canvases", String(PORT));
 	mkdirSync(ownerDirectory, { recursive: true, mode: 0o700 });
 	const coordinatorDirectory = path.join(ownerDirectory, "coordinator");
-	prepareCoordinatorDirectory(coordinatorDirectory, sourceRoot);
+	prepareCoordinatorDirectory(coordinatorDirectory);
 	return {
 		directory: root,
 		ownerDirectory,
@@ -72,8 +70,8 @@ export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer):
 	// Prove the mandatory runtime before creating any workbench storage. The
 	// process owner proves it again at each spawn so a later replacement cannot
 	// inherit a stale verification.
-	const executablePath = resolveCodexExecutable({ installedIn: SOURCE_CHECKOUT });
-	const storage = createWorkbenchStorage(server.sourceRoot);
+	const executablePath = resolveCodexExecutable({ installedIn: installation().codexInstalledIn });
+	const storage = createWorkbenchStorage();
 
 	return {
 		storage,
@@ -99,7 +97,7 @@ export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer):
 		codex: {
 			executablePath,
 			hostEnvironment: { ARCHBOARD_URL: serverUrl(), ARCHBOARD_NO_AUTOSTART: "1" },
-			pathPrefixes: [path.join(server.sourceRoot, "bin")],
+			pathPrefixes: [installation().binDirectory],
 			onGroupOwned: server.onCodexProcessGroupOwned,
 		},
 	};

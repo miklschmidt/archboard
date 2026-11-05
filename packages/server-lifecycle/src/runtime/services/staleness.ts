@@ -20,7 +20,7 @@
 
 import fs from "fs";
 import path from "path";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 
 // When this server process loaded its module graph. A guarded restart moves it
 // forward; editing source in a running process does not.
@@ -30,7 +30,7 @@ const evaluatedAt = Date.now();
 // compare its timestamp with what is now on disk.
 const loaded = new Set<string>();
 
-const repoRoot = SOURCE_CHECKOUT;
+const repoRoot = installation().root;
 /** The folders that hold source: the workspace packages and the apps. */
 const sourceRoots = ["packages", "apps"].map((root) => path.join(repoRoot, root) + path.sep);
 
@@ -77,7 +77,7 @@ function sourceState(): SourceState {
 		}
 	}
 	return {
-		checkout: SOURCE_CHECKOUT,
+		checkout: repoRoot,
 		evaluatedAt: new Date(evaluatedAt).toISOString(),
 		newestFile: newestFile === null ? null : path.relative(repoRoot, newestFile),
 		newestAt: newestFile === null ? null : new Date(newestMs).toISOString(),

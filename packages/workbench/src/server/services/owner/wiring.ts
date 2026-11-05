@@ -33,7 +33,6 @@ import {
 } from "#server/projections/semantic-context/semantic-input.ts";
 import { waitForTargetsWith } from "#server/services/dynamic-tools/target-wait.ts";
 import { liveWorkhorseCheckouts } from "@archboard/codex-realtime-voice/server";
-import { checkoutRoot as sourceRoot } from "#server/services/host/module-paths.ts";
 import { narrationChangesOf } from "#server/projections/semantic-context/walkthrough-narration.ts";
 import { canvasOf } from "#server/projections/semantic-context/tab-canvas.ts";
 import {
@@ -343,7 +342,6 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 					},
 				}),
 		},
-		sourceRoot,
 		/**
 		 * Record which process group the Codex app-server runs in, for the startup protocol.
 		 * @param codexGroup The process group identity.

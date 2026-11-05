@@ -4,7 +4,7 @@
 // rather than graded. None of this runs a model.
 
 import { describe, expect, test } from "bun:test";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -19,7 +19,7 @@ import {
 } from "#runtime/services/citations.ts";
 import { loadSuite, ScenarioSchema, suiteProblems } from "#runtime/schemas/suite.ts";
 
-const checkout = SOURCE_CHECKOUT;
+const checkout = installation().root;
 const loaded = loadSuite(path.join(checkout, "evals"));
 
 /**
