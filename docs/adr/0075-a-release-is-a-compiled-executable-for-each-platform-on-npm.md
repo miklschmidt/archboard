@@ -47,8 +47,7 @@ The program decides the mode once, in one installation module. If the file
 `archboard-release.json` lies beside the running executable, the mode is
 release. Otherwise the checkout rule of today applies. If neither applies, the
 command refuses. The module also gives the root, the version, and the
-locations of the frontend, the core, the grammars, the skills and the Codex
-binary. No other module reads `SOURCE_CHECKOUT`.
+locations of the frontend, the core, the skills and the Codex binary. No other module reads `SOURCE_CHECKOUT`.
 
 ### The packages
 
@@ -79,9 +78,11 @@ voice package, `@archboard/codex-realtime-voice`, keeps its own version line.
 
 - `bin/archboard`, the executable. It runs the CLI. With an internal first
   argument, it runs the server, so that a release never starts TypeScript.
+  It embeds the tree-sitter grammars and their queries, the reviewed texts of
+  the workbench and the theme colours, so that no native addon loads at run
+  time.
 - `frontend/`, the browser bundle that `vp build` makes.
 - `core/`, the renderer glue and WebAssembly that the server loads.
-- `grammars/`, the tree-sitter WebAssembly files and their queries.
 - `skills/archboard` and `skills/archboard-pr`, with their generated
   references.
 - `archboard-release.json`, which records the version, the commit, the core

@@ -2,7 +2,7 @@
 //
 // Archboard runs in one of two ways. A checkout runs its source with Bun
 // (ADR 0014). A release runs one compiled executable, with the frontend, the
-// core, the grammars and the skills in files beside it. This module decides
+// core and the skills in files beside it. This module decides
 // the mode once, and every other module asks it for a location instead of
 // looking for the root on its own.
 //
@@ -14,7 +14,7 @@
 
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import { z } from "zod";
 import { codedError } from "@archboard/diagnostics/thrown-error";
 
@@ -24,9 +24,12 @@ const RELEASE_MARKER = "archboard-release.json";
 /** The CLI's entry point, relative to a checkout root. */
 const CHECKOUT_BIN = path.join("bin", "archboard");
 
+/** The server's entry, relative to a checkout root. */
+const SERVER_ENTRY = path.join("apps", "server", "src", "server.ts");
+
 /**
- * The argument with which a release executable runs the server in place of the
- * CLI (ADR 0075). The executable itself handles it (TASK-579.07).
+ * The first argument with which a release executable runs the server in place
+ * of the CLI (ADR 0075): `apps/cli/src/bin.ts` then imports the server's entry.
  */
 const RELEASE_SERVER_ARGUMENT = "--internal-server";
 
@@ -56,11 +59,6 @@ interface Installation {
 	readonly frontendDirectory: string;
 	/** The renderer core's build: the glue and the WebAssembly. */
 	readonly coreDirectory: string;
-	/**
-	 * The grammar queries of the code check. A release holds the grammar WebAssembly files in it
-	 * too. A checkout loads those from `node_modules`.
-	 */
-	readonly grammarsDirectory: string;
 	/** The directory that holds the `archboard` and `archboard-pr` skills. */
 	readonly skillsDirectory: string;
 	/** The directory of the `archboard` executable, which a Codex child gets first on its PATH. */
@@ -70,8 +68,20 @@ interface Installation {
 	 * `node_modules`, or in the platform package of a release.
 	 */
 	readonly codexLocation: { readonly installedIn: string } | { readonly releasedIn: string };
-	/** The executable and arguments that start the server. */
+	/**
+	 * The directory below which the program's own modules lie at their paths in a checkout: the
+	 * checkout root, or the root of the file system that a release executable embeds, the directory
+	 * of `Bun.main`. `scripts/release/compile.ts` compiles every module that starts on its own, the
+	 * server and the layout worker, with the repository as its root.
+	 */
+	readonly programRoot: string;
+	/**
+	 * The executable and arguments that start the server. A release starts its own executable
+	 * with `--internal-server`, which then imports `serverModule` and runs no command.
+	 */
 	readonly serverCommand: readonly [string, ...string[]];
+	/** The URL of the server's entry below `programRoot`. */
+	readonly serverModule: string;
 	readonly coreHash: CoreHashSource;
 }
 
@@ -160,17 +170,19 @@ function releaseAt(root: string, executable: string): Installation {
 			"RELEASE_MARKER_INVALID",
 		);
 	}
+	const programRoot = path.dirname(Bun.main);
 	return {
 		mode: "release",
 		root,
 		version: parsed.data.version,
 		frontendDirectory: path.join(root, "frontend"),
 		coreDirectory: path.join(root, "core"),
-		grammarsDirectory: path.join(root, "grammars"),
 		skillsDirectory: path.join(root, "skills"),
 		binDirectory: path.dirname(fs.realpathSync(executable)),
 		codexLocation: { releasedIn: root },
+		programRoot,
 		serverCommand: [executable, RELEASE_SERVER_ARGUMENT],
+		serverModule: pathToFileURL(path.join(programRoot, SERVER_ENTRY)).href,
 		coreHash: { kind: "marker", hash: parsed.data.coreSourceHash },
 	};
 }
@@ -213,19 +225,12 @@ function checkoutAt(root: string, executable: string): Installation {
 			"generated",
 			"core",
 		),
-		grammarsDirectory: path.join(
-			root,
-			"packages",
-			"code-intel",
-			"src",
-			"runtime",
-			"services",
-			"code-facts",
-		),
 		skillsDirectory: path.join(root, "skills"),
 		binDirectory: path.join(root, "bin"),
 		codexLocation: { installedIn: root },
-		serverCommand: [executable, path.join(root, "apps", "server", "src", "server.ts")],
+		programRoot: root,
+		serverCommand: [executable, path.join(root, SERVER_ENTRY)],
+		serverModule: pathToFileURL(path.join(root, SERVER_ENTRY)).href,
 		coreHash: { kind: "sources", root },
 	};
 }

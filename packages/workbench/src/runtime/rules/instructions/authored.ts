@@ -3,10 +3,19 @@ import {
 	readWorkbenchInstructionDocument,
 } from "@archboard/codex-realtime-voice/runtime";
 import type { VoiceAgentOptions } from "@archboard/codex-realtime-voice/server";
+// The executable of a release carries these documents, so they are embedded, not read by path.
+import workhorseDocument from "#runtime/rules/instructions/workhorse-developer-instructions.txt" with { type: "text" };
+import coordinatorDocument from "#runtime/rules/instructions/coordinator-developer-instructions.txt" with { type: "text" };
 type AuthoredInstructionName = keyof VoiceAgentOptions["instructions"];
 const DOMAIN_DOCUMENTS = Object.freeze({
-	workhorse: "4148e5d057abedea90f6a04582de9ff5c2e83236eb06ec96693eaaef08030907",
-	coordinator: "25f0f2e313c24342ca3eaaeb40f9e33e3f75de49f7238252d5bb9867c09f2b3e",
+	workhorse: {
+		text: workhorseDocument,
+		sha256: "4148e5d057abedea90f6a04582de9ff5c2e83236eb06ec96693eaaef08030907",
+	},
+	coordinator: {
+		text: coordinatorDocument,
+		sha256: "25f0f2e313c24342ca3eaaeb40f9e33e3f75de49f7238252d5bb9867c09f2b3e",
+	},
 });
 /**
  * Read the domain document with its independently reviewed byte digest.
@@ -15,9 +24,9 @@ const DOMAIN_DOCUMENTS = Object.freeze({
  */
 function domainInstructions(name: AuthoredInstructionName): string {
 	return readWorkbenchInstructionDocument(
-		new URL(import.meta.resolve(`#runtime/rules/instructions/${name}-developer-instructions.txt`)),
+		DOMAIN_DOCUMENTS[name].text,
 		`${name} Archboard instructions`,
-		DOMAIN_DOCUMENTS[name],
+		DOMAIN_DOCUMENTS[name].sha256,
 	);
 }
 const WORKHORSE_DOMAIN_INSTRUCTIONS = domainInstructions("workhorse");

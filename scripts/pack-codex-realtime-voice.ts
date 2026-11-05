@@ -1,7 +1,7 @@
 // Build @archboard/codex-realtime-voice into a directory that `npm publish` can publish: ESM
 // JavaScript and bundled declarations for every public entry, with the MIT workspace packages it
 // imports bundled in, and a manifest that declares only the third-party packages it imports.
-import { copyFile, cp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -27,7 +27,6 @@ const workspace = z
 		version: z.string().regex(/^\d+\.\d+\.\d+$/),
 		description: z.string(),
 		license: z.string(),
-		imports: z.object({ "#*": z.string() }),
 		exports: Paths,
 	})
 	.parse(JSON.parse(await readFile(path.join(source, "package.json"), "utf8")));
@@ -114,6 +113,9 @@ await build({
 	),
 	format: "esm",
 	platform: "node",
+	// The runtime imports its reviewed manifests and instruction texts `with { type: "text" }`, so
+	// the bundle inlines their exact text. The package imports no JSON as data.
+	loader: { ".json": "text", ".txt": "text" },
 	outDir: path.join(output, "dist"),
 	tsconfig: path.join(root, "tsconfig.voice-package.json"),
 	dts: {
@@ -138,14 +140,8 @@ const exports = Object.fromEntries(
 		},
 	]),
 );
-// The runtime reads its reviewed manifests and instruction texts beside its sources with
-// `import.meta.resolve("#...")`, so they keep their paths and the `#` import map of the package.
-const assets = (await readdir(path.join(source, "src"), { recursive: true, withFileTypes: true }))
-	.filter((entry) => entry.isFile() && !/\.tsx?$/.test(entry.name))
-	.map((entry) => path.relative(source, path.join(entry.parentPath, entry.name)));
-await Promise.all(assets.map((asset) => cp(path.join(source, asset), path.join(output, asset))));
 const readme = path.join(source, "README.md");
-const files = ["dist", "src", "LICENSE", ...(existsSync(readme) ? ["README.md"] : [])];
+const files = ["dist", "LICENSE", ...(existsSync(readme) ? ["README.md"] : [])];
 const manifest = {
 	name: workspace.name,
 	version: workspace.version,
@@ -158,7 +154,6 @@ const manifest = {
 		directory: "packages/codex-realtime-voice",
 	},
 	type: "module",
-	imports: { "#*": workspace.imports["#*"] },
 	exports,
 	files,
 	engines: { bun: repository.engines.bun },
@@ -176,7 +171,7 @@ const manifest = {
 await writeFile(path.join(output, "package.json"), `${JSON.stringify(manifest, null, "\t")}\n`);
 await Promise.all(
 	files
-		.filter((name) => name !== "dist" && name !== "src")
+		.filter((name) => name !== "dist")
 		.map((file) => copyFile(path.join(source, file), path.join(output, file))),
 );
 console.log(`Packed ${workspace.name}@${workspace.version} in ${output}.`);

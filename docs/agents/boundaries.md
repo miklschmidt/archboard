@@ -734,12 +734,16 @@ An app is a layer-8 workspace in `apps/<name>/` that holds what the packages lef
 runs `apps/cli/src/bin.ts`. The checkout hand-off needs the launcher's real path to equal its root
 path, so the launcher cannot be a symlink.
 
-`bin.ts` first imports the checkout hand-off, then the bootstrap that extracts `--url`.
+`bin.ts` first decides the installation. A release executable started with the arguments of its
+`serverCommand` imports the `serverModule` of `installation()` and runs no command (ADR 0075).
+Otherwise `bin.ts` imports the checkout hand-off, then the bootstrap that extracts `--url`.
 For commands other than help, it checks for retired environment variables before it imports the
 command table. Help returns before prerequisite checks or command execution. The command table
 still imports configuration and logging modules.
 
-Never import the server there: the CLI reaches it by spawning `apps/server/src/server.ts`. Nothing imports the app.
+Never import the server there: the CLI reaches it by spawning the `serverCommand` of `installation()`.
+The server process of a release is the one place that loads the server's entry by its URL, and it
+is a process of its own. Nothing imports the app.
 The root `generate:cli-contract` script, the system tests and the skill evaluation spawn it by
 path, and `archboard install-skill --print-source` is how a test learns which skills it ships.
 
@@ -762,8 +766,9 @@ path, and `archboard install-skill --print-source` is how a test learns which sk
 ### `apps/server`
 
 `apps/server` is the HTTP and socket host (TASK-500.24.03). Its entry is `src/server.ts`, which starts
-`startServer` when it is the process entry (`isMainModule`) and exports nothing. Nothing imports it: the
-launcher of `server-lifecycle` spawns the `serverCommand` of `installation()` (`apps/server/src/server.ts` of a checkout), and a
+`startServer` and exports nothing. Nothing imports it: the
+launcher of `server-lifecycle` spawns the `serverCommand` of `installation()` (`apps/server/src/server.ts` of a checkout,
+the executable with `--internal-server` in a release), and a
 system test spawns the same path, with `bun --preload` where it has to replace a module before the server loads.
 The host serves the browser build from the `frontendDirectory` of `installation()` (`dist/frontend` of a checkout; `store/frontend/`) and nothing else
 of `dist/`.

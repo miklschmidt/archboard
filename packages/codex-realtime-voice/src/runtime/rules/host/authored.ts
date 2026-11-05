@@ -1,5 +1,9 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+// The executable of a release carries these documents, so they are embedded, not read by path.
+import coordinatorDeveloperInstructions from "#runtime/rules/host/coordinator-developer-instructions.txt" with { type: "text" };
+import workhorseDeveloperInstructions from "#runtime/rules/host/workhorse-developer-instructions.txt" with { type: "text" };
+import voiceChannelInstructions from "#runtime/rules/host/voice-channel-instructions.txt" with { type: "text" };
+import voiceHandoffInstructions from "#runtime/rules/host/voice-handoff-instructions.txt" with { type: "text" };
 
 /**
  * Read exact authored UTF-8 bytes and refuse a changed document.
@@ -24,34 +28,33 @@ function assertWorkbenchInstructionBytes(
 		throw new TypeError(`${label} hash drifted. Expected SHA-256 ${expected}, received ${actual}.`);
 }
 /**
- * Read one tracked instruction document under its reviewed digest.
- * @param url The authored document URL.
+ * Accept one tracked instruction document only under its reviewed digest.
+ * @param text The document, as its module import embeds it.
  * @param label The document name for diagnostics.
  * @param expected The reviewed SHA-256 digest.
- * @returns The verified document bytes as text.
+ * @returns The verified document text.
  */
-function readWorkbenchInstructionDocument(url: URL, label: string, expected: string): string {
-	const bytes = readFileSync(url);
-	assertWorkbenchInstructionBytes(bytes, label, expected);
-	return bytes.toString("utf8");
+function readWorkbenchInstructionDocument(text: string, label: string, expected: string): string {
+	assertWorkbenchInstructionBytes(text, label, expected);
+	return text;
 }
 const COORDINATOR_ROLE_INSTRUCTIONS = readWorkbenchInstructionDocument(
-	new URL(import.meta.resolve("#runtime/rules/host/coordinator-developer-instructions.txt")),
+	coordinatorDeveloperInstructions,
 	"coordinator-developer-instructions.txt",
 	"d2b8bffc13daa3b7bd74df037268edd3c0b53b8bacf59553ca3f5c66b6e299ce",
 );
 const WORKHORSE_ROLE_INSTRUCTIONS = readWorkbenchInstructionDocument(
-	new URL(import.meta.resolve("#runtime/rules/host/workhorse-developer-instructions.txt")),
+	workhorseDeveloperInstructions,
 	"workhorse-developer-instructions.txt",
 	"8d80d44c56ee8236bd9336bad0a490bda1e11dba915adf2fa25568a018f848e1",
 );
 const VOICE_CHANNEL_INSTRUCTIONS = readWorkbenchInstructionDocument(
-	new URL(import.meta.resolve("#runtime/rules/host/voice-channel-instructions.txt")),
+	voiceChannelInstructions,
 	"voice-channel-instructions.txt",
 	"5b7af737fb315afb70191809bbf7e8c0a30d28276fc45b43811c396880348477",
 );
 const VOICE_HANDOFF_INSTRUCTIONS = readWorkbenchInstructionDocument(
-	new URL(import.meta.resolve("#runtime/rules/host/voice-handoff-instructions.txt")),
+	voiceHandoffInstructions,
 	"voice-handoff-instructions.txt",
 	"944c88046d162c08914d342931faa98f524f15cf9edd987c7c626f4d6d8aecf0",
 );

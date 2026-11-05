@@ -2,9 +2,9 @@
 // server's render route.
 //
 // The layout engine is a pool of Bun Workers, each handed the core this
-// thread compiled; the theme colours are read from the shared stylesheet on
-// disk; the core is this checkout's build of it, and it measures and draws
-// every word itself.
+// thread compiled; the theme colours are those that `bun run build:core` read
+// from the shared stylesheet; the core is the installation's build of it, and
+// it measures and draws every word itself.
 //
 // The pool runs no more workers than JavaScriptCore has fast WebAssembly
 // memories for. A process gets eight memories that grow in place. Every one
@@ -14,10 +14,11 @@
 // another in the Archboard server, so six are left for workers (TASK-548.05).
 // A worker that stops gives its memory back. A browser has no such limit.
 
-import { readFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
-import { readThemeColors } from "#runtime/store/theme/read.ts";
-import { THEME_STYLESHEET } from "#runtime/store/assets.ts";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+import { installation } from "@archboard/workspace/installation";
+import { THEME_COLORS } from "#shared/protocol/generated/core/theme-colors.ts";
 import { installRendererHost } from "#shared/rules/render/host.ts";
 import {
 	createEnginePool,
@@ -28,6 +29,9 @@ import { iconPaths } from "#runtime/operations/icon-paths.ts";
 import { compiledCore, loadCore, type Core } from "#runtime/services/core.ts";
 
 let installed = false;
+
+/** The layout worker's entry, by its path in a checkout. A release embeds it at that path. */
+const LAYOUT_WORKER = "packages/renderer/src/runtime/processes/layout-worker.ts";
 
 /** The fast WebAssembly memories left for layout workers: eight, less this thread's core and tree-sitter. */
 const FAST_MEMORY_WORKERS = 6;
@@ -64,7 +68,9 @@ function loadedCore(): Core {
  */
 function startEngineWorker(): EngineWorker {
 	const module = compiledCore();
-	const worker = new Worker(new URL("../processes/layout-worker.ts", import.meta.url).href);
+	const worker = new Worker(
+		pathToFileURL(path.join(installation().programRoot, LAYOUT_WORKER)).href,
+	);
 	if (!hasProcessLifetime(worker)) {
 		worker.terminate();
 		throw new Error("Architecture layout requires Bun's worker ref/unref lifecycle API");
@@ -97,7 +103,7 @@ function installBunHost(): void {
 	installRendererHost({
 		core: loadedCore,
 		solve: createEnginePool(startEngineWorker, bunWorkerCeiling(availableParallelism())),
-		themeColors: readThemeColors(readFileSync(THEME_STYLESHEET, "utf8")),
+		themeColors: THEME_COLORS,
 		iconPaths,
 	});
 	installed = true;
