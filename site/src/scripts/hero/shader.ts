@@ -807,7 +807,7 @@ void main() {
 	vec2 aspect = vec2(uRes.x / uRes.y, 1.0);
 	vec2 inside = max(max(uWords.xy - q, q - uWords.zw), 0.0) * aspect;
 	float words = smoothstep(0.0, 0.2, length(inside));
-	float border = smoothstep(1.0, 0.9, q.y) * smoothstep(0.0, 0.04, q.y) * smoothstep(0.0, 0.03, q.x) * smoothstep(1.0, 0.97, q.x);
+	float border = (1.0 - smoothstep(0.9, 1.0, q.y)) * smoothstep(0.0, 0.04, q.y) * smoothstep(0.0, 0.03, q.x) * (1.0 - smoothstep(0.97, 1.0, q.x));
 	float sceneGain = uExposure * mix(0.035, 1.0, words) * border;
 	float glowGain = mix(0.12, 1.0, words) * border;
 
