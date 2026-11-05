@@ -1,7 +1,10 @@
 {
   "id": "b2zJw510",
-  "name": "One Installation module decides checkout or release and names every location",
-  "summary": "A new Installation module in workspace decides once whether the process runs a checkout or a release and names its frontend, core, grammars, skills, bin, Codex scope and server command, so consumers stop finding the checkout themselves and Restart streams its build.",
+  "name": "A compiled npm release runs Archboard, and one Installation module tells it from a checkout",
+  "formerNames": [
+    "One Installation module decides checkout or release and names every location"
+  ],
+  "summary": "Archboard also runs as a compiled executable that npm installs and a release workflow publishes, so one Installation module decides checkout or release and names every location, and a release differs from a checkout only in how it starts its server, restarts, loads its core, finds Codex and TypeScript and addresses its server.",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -10,6 +13,10 @@
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "docs/adr/0075-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/agents/releasing.md"
     }
   ],
   "schemaVersion": 1,
@@ -19,6 +26,655 @@
   "predecessorRevision": "c674c7627c291c429f1877b7a7901f59df43edac4be5769074ff4864f4c4b6f9",
   "baseline": "938a49d7a5db70c28739dc5081ff4bb8cea1bc69",
   "changes": [
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/vKEsyHFk#mm4DLsd2"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk#8EhrdPUE"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#bJp4bo9u",
+      "kind": "module",
+      "value": {
+        "order": 1000,
+        "name": "Release build",
+        "kind": "module",
+        "responsibility": "Lays out the npm packages of one release in dist/release and packs them: two launchers and a platform package for each target",
+        "description": "bun run release, in a checkout whose frontend and core are built. Each platform package gets the executable that Executable compile made, a manifest that lists the Codex binary of its platform at the pinned version, the LICENSE with the version as the Licensed Work, and the third-party notices of every npm package, Rust crate and font that the executable and the bundle are built from. It refuses a Codex pin that the protocol is not built for, a package that would run code on install, and a package that packs above its size budget.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/build.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#bJp4bo9u"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#bJp4bo9u",
+      "placement": {
+        "holder": "vKEsyHFk#qCYThtb2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#7ZKlybp6",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "call",
+        "label": "compile each target",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/build.ts",
+          "symbol": "compileRelease"
+        },
+        "id": "vKEsyHFk#7ZKlybp6",
+        "to": "vKEsyHFk#5YtZOA1B"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#7ZKlybp6",
+      "placement": {
+        "holder": "vKEsyHFk#bJp4bo9u"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#lcs8Vvq7",
+      "kind": "relationship",
+      "value": {
+        "order": 2000,
+        "kind": "dependency",
+        "label": "the script it copies as each launcher's bin",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/build.ts",
+          "symbol": "LAUNCHER"
+        },
+        "id": "vKEsyHFk#lcs8Vvq7",
+        "to": "vKEsyHFk#i1IaKkeh"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#lcs8Vvq7",
+      "placement": {
+        "holder": "vKEsyHFk#bJp4bo9u"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#8P5sigf9",
+      "kind": "relationship",
+      "value": {
+        "order": 3000,
+        "kind": "dependency",
+        "label": "the Codex version that a package pins",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/build.ts",
+          "symbol": "CODEX_PROTOCOL_VERSION"
+        },
+        "id": "vKEsyHFk#8P5sigf9",
+        "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#8P5sigf9",
+      "placement": {
+        "holder": "vKEsyHFk#bJp4bo9u"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#5YtZOA1B",
+      "kind": "module",
+      "value": {
+        "order": 2000,
+        "name": "Executable compile",
+        "kind": "module",
+        "responsibility": "Compiles the CLI, the server and the layout worker into one executable for a target, and lays out the assets and the marker beside it",
+        "description": "The executable embeds the program at its paths in the repository, which is why the installation names a program root. The grammars of the code check, the reviewed texts of the workbench and the theme colours are embedded, so the package holds no file that the program finds beside its source. Beside the executable it copies the frontend bundle, the core with its glue bundled with the panic guard, and the archboard and archboard-pr skills, whose generated manual links to the repository at the tag of the version. It writes archboard-release.json with the version, the commit, the hash of the core sources and the Codex version. It refuses a bundle that would load a native addon at run time, a checkout with no frontend build, and a core built from other sources than the checkout's.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/compile.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#5YtZOA1B"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#5YtZOA1B",
+      "placement": {
+        "holder": "vKEsyHFk#qCYThtb2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#jG939T8T",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "data",
+        "label": "archboard-release.json, which Installation reads",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/compile.ts",
+          "symbol": "releaseMarker"
+        },
+        "id": "vKEsyHFk#jG939T8T",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#jG939T8T",
+      "placement": {
+        "holder": "vKEsyHFk#5YtZOA1B"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#7kPhBjGp",
+      "kind": "relationship",
+      "value": {
+        "order": 2000,
+        "kind": "call",
+        "label": "the hash of the core sources it records",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/compile.ts",
+          "symbol": "loadCore"
+        },
+        "id": "vKEsyHFk#7kPhBjGp",
+        "to": "vKEsyHFk#R3iKnGSg"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#7kPhBjGp",
+      "placement": {
+        "holder": "vKEsyHFk#5YtZOA1B"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#G3rY3nva",
+      "kind": "relationship",
+      "value": {
+        "order": 3000,
+        "kind": "call",
+        "label": "prepare the shipped skill's references",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/compile.ts",
+          "symbol": "prepareSkillArtifacts"
+        },
+        "id": "vKEsyHFk#G3rY3nva",
+        "to": "vKEsyHFk#hbSxZ5Wm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#G3rY3nva",
+      "placement": {
+        "holder": "vKEsyHFk#5YtZOA1B"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#VvZ7AV8X",
+      "kind": "relationship",
+      "value": {
+        "order": 4000,
+        "kind": "dependency",
+        "label": "compiled as the executable's entry",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/compile.ts",
+          "symbol": "ENTRIES"
+        },
+        "id": "vKEsyHFk#VvZ7AV8X",
+        "to": "vKEsyHFk/XppR9owz#peyArgPx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#VvZ7AV8X",
+      "placement": {
+        "holder": "vKEsyHFk#5YtZOA1B"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#jaq8ePpn",
+      "kind": "relationship",
+      "value": {
+        "order": 5000,
+        "kind": "dependency",
+        "label": "compiled in, and imported when started as server",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/compile.ts",
+          "symbol": "ENTRIES"
+        },
+        "id": "vKEsyHFk#jaq8ePpn",
+        "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#jaq8ePpn",
+      "placement": {
+        "holder": "vKEsyHFk#5YtZOA1B"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#i1IaKkeh",
+      "kind": "module",
+      "value": {
+        "order": 3000,
+        "name": "Platform launcher",
+        "kind": "module",
+        "responsibility": "The bin archboard of the launcher packages: finds the platform package installed beside it and starts its executable with every argument",
+        "description": "A POSIX shell script. It follows the link that the package manager made to the package, names the platform from uname, and looks for @archboard/cli-<platform> in the node_modules of the package and then of each directory above it, which covers the nested layout of npm and the hoisted layout of bun add -g. It starts the executable in its own place, so the exit status is the executable's. It refuses a platform that has no release, and a missing platform package with the advice not to omit optional dependencies.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/launcher.sh"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#i1IaKkeh"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#i1IaKkeh",
+      "placement": {
+        "holder": "vKEsyHFk#qCYThtb2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Aeel2pCB",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "call",
+        "label": "start the platform package's executable",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/launcher.sh",
+          "symbol": "executable"
+        },
+        "id": "vKEsyHFk#Aeel2pCB",
+        "to": "vKEsyHFk/XppR9owz#peyArgPx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Aeel2pCB",
+      "placement": {
+        "holder": "vKEsyHFk#i1IaKkeh"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#JYwluxry",
+      "kind": "module",
+      "value": {
+        "order": 4000,
+        "name": "Release smoke test",
+        "kind": "test",
+        "responsibility": "Installs the packed packages from a local registry, as a user does, and runs the installed archboard on a PATH with no Bun, Node.js or Rust",
+        "description": "A local registry serves the tarballs of bun run release and passes every other request, such as the Codex platform package, to registry.npmjs.org. npm or Bun installs archboard or @archboard/cli from it. The installed archboard must report the packed version, start a server, report a release server of that version, and stop it, with a scratch state directory and a free loopback port. The script imports nothing from the checkout.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/smoke.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#JYwluxry"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#JYwluxry",
+      "placement": {
+        "holder": "vKEsyHFk#qCYThtb2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#UM6yPsFN",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "call",
+        "label": "run the installed archboard",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/smoke.ts",
+          "symbol": "smoke"
+        },
+        "id": "vKEsyHFk#UM6yPsFN",
+        "to": "vKEsyHFk#i1IaKkeh"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#UM6yPsFN",
+      "placement": {
+        "holder": "vKEsyHFk#JYwluxry"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#9diqPrFw",
+      "field": "description",
+      "value": "The host names the storage. Archboard names one Archboard-only CODEX_HOME and SQLite home under the state directory, which serve every server on the machine, so one sign-in serves them all; each server keeps its own owner lock and epoch ledger under its port. Its config.toml gets the auto-review defaults it lacks (approvals_reviewer auto_review, workspace-write sandbox with network access) and keeps whatever Codex or a person set; a config naming another SQLite home, or not TOML, is refused. The child runs in the coordinator's directory under the server's state directory, which is no checkout and holds no vault, only a link to the server's archboard skill: the coordinator thread works there, so a command it runs without -C is refused, while each workhorse thread works in its own checkout. The child's environment is a short allow-list plus what the host adds. Archboard adds the server's own URL, with auto-start off, and the server's bin directory first on PATH: a thread's archboard is the server's own source in whichever checkout the thread works in, and it never starts another server. On shutdown, stdin closes first. The owner waits within a short EOF grace, then reaps every remaining group within the composed deadline. A release's native Codex binary gets the variables that Codex's own launcher would set."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#6K6VhXuJ",
+      "kind": "relationship",
+      "value": {
+        "order": 44000,
+        "kind": "call",
+        "label": "the variables a native binary needs",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-app-server/src/runtime/processes/process-spawn.ts",
+          "symbol": "nativeCodexEnvironment"
+        },
+        "id": "vKEsyHFk#6K6VhXuJ",
+        "to": "vKEsyHFk#06cbjPhn"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#6K6VhXuJ",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#9diqPrFw"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#cFLg42bz",
+      "kind": "module",
+      "value": {
+        "order": 5000,
+        "name": "Release workflow",
+        "kind": "job",
+        "responsibility": "On a push to main, keeps the release pull requests and, when one merges, builds, smoke tests and publishes the release to npm",
+        "description": "release-please reads the Conventional Commits since the last release and keeps one release pull request open for each of two components: the archboard release and the MIT voice package. A merge is the release: release-please tags the merge commit and makes the GitHub release. The same run then builds the packages on Linux with bun run release, which cross-compiles the macOS executable, smoke tests them on Linux and macOS with npm and with Bun, and publishes the platform packages and then the launchers through npm trusted publishing with provenance, so the repository stores no npm token. A version that is on npm already is skipped. The voice package has its own build and publish jobs and its own tag.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": ".github/workflows/release.yml"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#cFLg42bz"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#cFLg42bz",
+      "placement": {
+        "holder": "vKEsyHFk#qCYThtb2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#1zhYGLrA",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "call",
+        "label": "bun run release",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": ".github/workflows/release.yml",
+          "symbol": "build"
+        },
+        "id": "vKEsyHFk#1zhYGLrA",
+        "to": "vKEsyHFk#bJp4bo9u"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#1zhYGLrA",
+      "placement": {
+        "holder": "vKEsyHFk#cFLg42bz"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#yIngFxqh",
+      "kind": "relationship",
+      "value": {
+        "order": 2000,
+        "kind": "call",
+        "label": "install and run on Linux and macOS",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": ".github/workflows/release.yml",
+          "symbol": "smoke"
+        },
+        "id": "vKEsyHFk#yIngFxqh",
+        "to": "vKEsyHFk#JYwluxry"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#yIngFxqh",
+      "placement": {
+        "holder": "vKEsyHFk#cFLg42bz"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P",
+      "field": "description",
+      "value": "The reviewed documents are imported as text, so the executable of a release embeds them and nothing reads them by path; the digest check still refuses a changed document."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#3ld7pYE2",
+      "field": "responsibility",
+      "value": "Serves the page, the health answer (service, pid, version, mode, the checkout whose source it runs and whether that is the source on disk) and the sync status"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#3ld7pYE2",
+      "field": "description",
+      "value": "The CLI signals a process for stop only when it both identifies as archboard-server and reports its own pid. A CLI refuses a server whose health names another checkout's source than its own, and names both checkouts. The page is the installation's frontend directory. A command of another release version compares the version and the mode that the answer names."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#V1mFCPbD",
+      "kind": "relationship",
+      "value": {
+        "order": 121000,
+        "kind": "call",
+        "label": "whether source and bundle are current",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/routes/service/service-routes.ts",
+          "symbol": "sourceState"
+        },
+        "id": "vKEsyHFk#V1mFCPbD",
+        "to": "vKEsyHFk#Qvb7od2E"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#V1mFCPbD",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#rKVgmKDk",
+      "kind": "relationship",
+      "value": {
+        "order": 122000,
+        "kind": "dependency",
+        "label": "the version and the mode that health names",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/routes/service/service-routes.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#rKVgmKDk",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#rKVgmKDk",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#e80MeBAr",
+      "kind": "relationship",
+      "value": {
+        "order": 90000,
+        "kind": "call",
+        "label": "re-derive the installed skill's generated files",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/skills/src/runtime/operations/runs/install.ts",
+          "symbol": "prepareSkillArtifacts"
+        },
+        "id": "vKEsyHFk#e80MeBAr",
+        "to": "vKEsyHFk#hbSxZ5Wm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#e80MeBAr",
+      "placement": {
+        "holder": "vKEsyHFk/IbGtfJE2#IFhUy8C6"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x",
+      "field": "description",
+      "value": "The reviewed manifest is imported as text, so the executable of a release embeds it and nothing reads them by path; the digest check still refuses a changed manifest."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#h7Ugi08Z",
+      "kind": "relationship",
+      "value": {
+        "order": 90000,
+        "kind": "call",
+        "label": "whether the tab's bundle is current",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+          "symbol": "frontendState"
+        },
+        "id": "vKEsyHFk#h7Ugi08Z",
+        "to": "vKEsyHFk#Qvb7od2E"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#h7Ugi08Z",
+      "placement": {
+        "holder": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#IlSqIeFu",
+      "kind": "relationship",
+      "value": {
+        "order": 91000,
+        "kind": "call",
+        "label": "the address a browser opens",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+          "symbol": "browserUrl"
+        },
+        "id": "vKEsyHFk#IlSqIeFu",
+        "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#IlSqIeFu",
+      "placement": {
+        "holder": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+      "field": "description",
+      "value": "The reviewed documents are imported as text, so the executable of a release embeds them and nothing reads them by path; the digest check still refuses a changed document."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+      "field": "responsibility",
+      "value": "Authors named models: one short-lived process per command, run by the source of the checkout it stands in or by the installed release, writing no model itself"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+      "field": "description",
+      "value": "Every model operation reaches the Archboard server over HTTP and names the vault the command found, from -C or the checkout it runs in. The first command in a checkout or untracked vault that this machine does not know registers it. Three commands draw for themselves in a headless browser here: rasterize photographs the SVG the server made; record keeps a narrated talk from the server's own page, then draws it frame by frame and has ffmpeg encode the video; replay draws a kept talk again. repo add, repo use, repo forget and repo language-server write this machine's list of checkouts itself. With --clipboard, rasterize publishes PNG and self-contained HTML to the local desktop through a native clipboard helper. A release is one compiled executable that runs this CLI. Started with its internal first argument it runs the server instead (ADR 0075)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
+      "field": "description",
+      "value": "One tool owner publishes its reviewed manifest and answers the corresponding requests. It validates the message, reports unavailable listeners, and queues news for the live coordinator. The reviewed manifest template is imported as text, so the executable of a release embeds it and nothing reads them by path; the digest check still refuses a changed template."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#peyArgPx",
+      "field": "responsibility",
+      "value": "Refuses a process that is no installation; a release started as its server runs the server's entry; else hands the command to the checkout it stands in, or runs the table"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#peyArgPx",
+      "field": "description",
+      "value": "TASK-472.09. EXPRESS_SERVER_URL and a set ARCHBOARD_VAULT are refused with exit 2, unless the call asks for help, so a variable that is no longer read never addresses another vault or server than the person means. It asks Installation first, which refuses a process that is neither a release nor in a checkout. A release executable started with its internal first argument imports the server's entry and runs no command, which is how a release starts its server."
+    },
     {
       "type": "add",
       "subject": "vKEsyHFk#sysbuidI",
@@ -43,6 +699,105 @@
       "placement": {
         "holder": "vKEsyHFk/XppR9owz#peyArgPx"
       }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#z1jJAAfy",
+      "kind": "relationship",
+      "value": {
+        "order": 69000,
+        "kind": "call",
+        "label": "a release imports the server's entry",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/bin.ts",
+          "symbol": "serverModule"
+        },
+        "id": "vKEsyHFk#z1jJAAfy",
+        "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#z1jJAAfy",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#peyArgPx"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#iIJ5MRhi",
+      "field": "description",
+      "value": "Health and sync status ask the shared request transport, which handles server identity and errors. The claim, pane and model routes have clients of their own. The health answer names the version and the mode, checkout or release, of the installation the server runs."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#RjaKX25k",
+      "field": "description",
+      "value": "A browser opens a release server at archboard.localhost, which counts as loopback with localhost and 127.0.0.1 (ADR 0075)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+      "field": "description",
+      "value": "The checker reads current architecture, one selected state, or independent drafts. It reports bindings, anchors, declared relationships, interfaces, and document references with canonical identities. Git locality and branch footprint use separate requested history operations. The timings of its language servers name the program that ran and the TypeScript that it read."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ADDpyLwh",
+      "kind": "relationship",
+      "value": {
+        "order": 123000,
+        "kind": "call",
+        "label": "which server each language starts",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
+          "symbol": "languageServerOf"
+        },
+        "id": "vKEsyHFk#ADDpyLwh",
+        "to": "vKEsyHFk#jwSjR0cS"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ADDpyLwh",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#jfAgnJUp",
+      "kind": "relationship",
+      "value": {
+        "order": 86000,
+        "kind": "call",
+        "label": "the address a browser opens",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+          "symbol": "browserUrl"
+        },
+        "id": "vKEsyHFk#jfAgnJUp",
+        "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#jfAgnJUp",
+      "placement": {
+        "holder": "vKEsyHFk/Oi6SBIAM#Am1mLDP5"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#XgeEM0Pb",
+      "field": "description",
+      "value": "TASK-471.03. A command finds the vault from the repository it runs in (ADR 0049), so nothing about it is written down. --repo, else the working directory, names a directory, and the vault is made at the root of the git checkout that holds it, where a command run anywhere in the checkout finds it. The receipt's setup names the repository, its vault, whether the vault was made, whether git ignores it and the documents an earlier block was removed from. --vault, --doc and --yes are gone, and --no-setup, once --no-doc, leaves the repository alone. It links the skills of the installation, whether a checkout's or a release's, and writes nothing into the installation, which a global install may make read-only; a release's skills arrive prepared. A copy into the repository's own skills root is a normal directory that the owner can write."
     },
     {
       "type": "add",
@@ -71,6 +826,111 @@
     },
     {
       "type": "add",
+      "subject": "vKEsyHFk#6dB5iWqx",
+      "kind": "relationship",
+      "value": {
+        "order": 71000,
+        "kind": "call",
+        "label": "prepare a checkout's skill",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/operations/install-skill/install-skill.ts",
+          "symbol": "prepareSkillArtifacts"
+        },
+        "id": "vKEsyHFk#6dB5iWqx",
+        "to": "vKEsyHFk#hbSxZ5Wm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#6dB5iWqx",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#XgeEM0Pb"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#2KmUovkl",
+      "field": "responsibility",
+      "value": "status: whether the Archboard server answers, who it is, its version and mode, and what it reports"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#tdKalihR",
+      "field": "responsibility",
+      "value": "Which installation runs, where a vault, a checkout and the state directory are, and the atomic write"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#R3iKnGSg",
+      "kind": "module",
+      "value": {
+        "order": 30000,
+        "name": "Core loader",
+        "kind": "module",
+        "responsibility": "Loads the renderer core of the installation on this thread and refuses a build made from other sources than the installation expects",
+        "description": "The core is a build, and Bun does not read it as source. A checkout expects the hash of its own Rust sources, which it computes. A release ships no sources and expects the hash that its marker recorded. A missing core, one that cannot be loaded and one made from other sources are refused with CORE_BUILD_MISSING, CORE_BUILD_INVALID and CORE_BUILD_STALE; the remedy is bun run build:core in a checkout, and reinstalling a release. The module this thread compiled is what each layout worker is handed.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/runtime/services/core.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#R3iKnGSg"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#R3iKnGSg",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Kop6mE77",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "dependency",
+        "label": "the core directory, and the hash it must record",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/runtime/services/core.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#Kop6mE77",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Kop6mE77",
+      "placement": {
+        "holder": "vKEsyHFk#R3iKnGSg"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#624ETIsk",
+      "field": "description",
+      "value": "One instruction owner loads the two role documents, composes their policy, and exposes their text and digests. Callers use the same integrity checks for both roles. The reviewed documents are imported as text, so the executable of a release embeds them and nothing reads them by path; the digest check still refuses a changed document."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#1aoB46lM",
+      "field": "description",
+      "value": "TASK-367.13 to TASK-367.16, TASK-433 and ADR 0046. One pass starts the server of each language once per project on its first question: the checkout, for Swift the package that holds the file, for C, C++ and Objective-C the directory of its compile_commands.json. It speaks JSON-RPC over the child's stdio, asks textDocument/definition at the last name of a use on its line, and textDocument/documentSymbol once per file to tell code that runs from a member of a type. A language's row in languages.ts says what its server needs beyond that: pyright is told the checkout's .venv or venv; csharp-ls the solution nearest the root; sourcekit-lsp starts normally, builds and prepares its Swift package through background indexing, is asked workspace/synchronize with index true once and has each file opened; clangd has each file opened, finds its compile_commands.json where it would, keeps its own index where an editor's clangd does, and is asked once that index has ended. The command comes from Language server choice. Every language but TypeScript runs only what the agent in that repository set on the checkout's registration (repo language-server), with the environment of the Archboard server and nothing added; if none is configured, the pass says so once for the checkout and the language, naming the command that configures one. TypeScript runs what the choice names: the native tsc --lsp of the checkout's TypeScript 7 or later, typescript-language-server for an earlier TypeScript, and in a checkout of Archboard its own tsc otherwise. Every server has stopped before the pass returns: shutdown and exit, then a kill of its process group, or a kill at once when the pass is cancelled. A server that fails is said once for its checkout, and so is a project it cannot answer about, for which no server starts: a C file with no compile_commands.json."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#eMSAZPvG",
+      "field": "description",
+      "value": "The command that it spawns comes from the installation: a checkout's Bun with apps/server/src/server.ts, or a release's own executable with its internal server argument. It refuses to start where the installation's Codex is not installed, and reports the address a browser opens."
+    },
+    {
+      "type": "add",
       "subject": "vKEsyHFk#McS0Zjui",
       "kind": "relationship",
       "value": {
@@ -95,6 +955,105 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#XKjn4icZ",
+      "field": "description",
+      "value": "When no canvas is open, it names the address that a browser opens: archboard.localhost for a release."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#puQprtS8",
+      "kind": "relationship",
+      "value": {
+        "order": 57000,
+        "kind": "call",
+        "label": "the address a browser opens",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/clients/server/prerequisites.ts",
+          "symbol": "browserUrl"
+        },
+        "id": "vKEsyHFk#puQprtS8",
+        "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#puQprtS8",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#XKjn4icZ"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#eMXdmcWP",
+      "field": "description",
+      "value": "The theme colours are generated by bun run build:core from the shared stylesheet and imported, so no host reads the stylesheet or loads Lightning CSS at run time. The layout worker starts from the installation's program root, where a release embeds it at its path in the repository."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ltRYE1Xu",
+      "kind": "relationship",
+      "value": {
+        "order": 28000,
+        "kind": "call",
+        "label": "load the core, and hand its module to each worker",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/runtime/services/bun-host.ts",
+          "symbol": "compiledCore"
+        },
+        "id": "vKEsyHFk#ltRYE1Xu",
+        "to": "vKEsyHFk#R3iKnGSg"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ltRYE1Xu",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#eMXdmcWP"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#KAjdHgvd",
+      "kind": "relationship",
+      "value": {
+        "order": 29000,
+        "kind": "dependency",
+        "label": "the program root, where the layout worker lies",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/runtime/services/bun-host.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#KAjdHgvd",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#KAjdHgvd",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#eMXdmcWP"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#doujM3ih",
+      "field": "responsibility",
+      "value": "Starts, finds, restarts and stops the server of a checkout or a release, and the request transport and pane rules its callers share"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#m4GMTKLW",
+      "field": "description",
+      "value": "Nothing imports this file. A checkout starts it with Bun, and the executable of a release imports it when the CLI's entry is started with the internal server argument, so it starts the server on every run and checks nothing about being the entry (ADR 0075)."
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#jkGOgVtG",
       "kind": "module",
@@ -102,8 +1061,8 @@
         "order": 35000,
         "name": "Installation",
         "kind": "module",
-        "responsibility": "Decides once whether the process runs a checkout or a release, and names where its frontend, core, grammars, skills, bin, Codex scope and server command are",
-        "description": "A release is a compiled executable with archboard-release.json beside it, in its directory or in the parent of the bin directory that holds it. Otherwise the nearest archboard checkout above the module is the installation, and with neither the process refuses with INSTALLATION_NOT_FOUND. A marker that cannot be read refuses with RELEASE_MARKER_INVALID. It answers the root, the version, the locations of the frontend, the renderer core, the grammars, the skills and the bin directory, the directory whose node_modules must hold the pinned Codex package, the command that starts the server, and where the hash of the core sources comes from: the checkout's sources, or the hash the release recorded. It is the only module that finds the checkout, and lint refuses an import of SOURCE_CHECKOUT (ADR 0075).",
+        "responsibility": "Decides once whether the process runs a checkout or a release, and names where its frontend, core, skills, bin, Codex, program and server command are",
+        "description": "A release is a compiled executable with archboard-release.json beside it, in its directory or in the parent of the bin directory that holds it. The marker records the version, the commit, the hash of the core sources and the pinned Codex version. Otherwise the nearest archboard checkout above the module is the installation, and with neither the process refuses with INSTALLATION_NOT_FOUND. A marker that cannot be read refuses with RELEASE_MARKER_INVALID. It answers the root, the version, the locations of the frontend, the renderer core, the skills and the bin directory, where the pinned Codex lies (under the checkout's node_modules, or in the platform package of a release), the program root below which the server and the layout worker lie at their paths in the repository, the server's entry, the command that starts the server, and where the hash of the core sources comes from: the checkout's sources, or the hash the release recorded. A release starts its own executable with --internal-server as its server command. The grammars and the reviewed texts are embedded in the executable and have no location. It is the only module that finds the checkout, and lint refuses an import of SOURCE_CHECKOUT (ADR 0075).",
         "binding": {
           "repo": "github.com/miklschmidt/archboard",
           "path": "packages/workspace/src/runtime/services/installation.ts"
@@ -131,15 +1090,21 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#cZ1UH0xU",
+      "field": "description",
+      "value": "Application guards every HTTP route; Code opener keeps the stricter settings and mutation policy through the same public guard. A browser opens a release server at archboard.localhost, which counts as loopback with localhost and 127.0.0.1 (ADR 0075)."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/XppR9owz#NG7OXLv9",
       "field": "responsibility",
-      "value": "The port of a checkout's server: 3000 for the main checkout, a hash of the path for a worktree; hands a command to the bin/archboard of the checkout it stands in"
+      "value": "The port of a server (27242 for a release, 3000 for the main checkout, a hash of the path for a worktree), the address a browser opens, and the hand-off to another checkout"
     },
     {
       "type": "assign",
       "subject": "vKEsyHFk/XppR9owz#NG7OXLv9",
       "field": "description",
-      "value": "The main checkout has a .git directory; a linked worktree has a .git file and takes 10000 + sha256(root path) mod 10000. The default server URL, the --url default and the server's own port all come from here. Which checkout this process runs comes from Installation. The hand-off follows the working directory, not -C, and does not happen when the environment sets ARCHBOARD_URL: the URL already names the server, and every Codex thread sets it, so a workhorse in another archboard checkout runs the server's own source (ADR 0050). It waits for the other checkout's command, passes SIGINT, SIGTERM and SIGHUP on to it and answers with its exit status, and it refuses a checkout with no node_modules, naming the bun install to run there."
+      "value": "The main checkout has a .git directory; a linked worktree has a .git file and takes 10000 + sha256(root path) mod 10000. The default server URL, the --url default and the server's own port all come from here. Which checkout this process runs comes from Installation. The hand-off follows the working directory, not -C, and does not happen when the environment sets ARCHBOARD_URL: the URL already names the server, and every Codex thread sets it, so a workhorse in another archboard checkout runs the server's own source (ADR 0050). It waits for the other checkout's command, passes SIGINT, SIGTERM and SIGHUP on to it and answers with its exit status, and it refuses a checkout with no node_modules, naming the bun install to run there. A release listens on 27242, which spells ARCHB on a phone keypad and lies outside the worktree range, so a release and a checkout run side by side. The CLI connects to 127.0.0.1, and a person's browser opens archboard.localhost, which Chrome and Firefox resolve to the loopback address themselves. The addresses that the CLI and the server show a person go through browserUrl."
     },
     {
       "type": "add",
@@ -192,10 +1157,66 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#gfv8Z7lV",
+      "kind": "relationship",
+      "value": {
+        "order": 101000,
+        "kind": "call",
+        "label": "the pinned Codex of the installation",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/services/owner/production.ts",
+          "symbol": "resolveCodexExecutable"
+        },
+        "id": "vKEsyHFk#gfv8Z7lV",
+        "to": "vKEsyHFk#06cbjPhn"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#gfv8Z7lV",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#yyFS6UVO"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#dV4tO28l",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "dependency",
+        "label": "the files of each grammar",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/operations/code-facts/adapters.ts",
+          "symbol": "GRAMMARS"
+        },
+        "id": "vKEsyHFk#dV4tO28l",
+        "to": "vKEsyHFk#fJx3pc1V"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#dV4tO28l",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#nvbnGOtV",
+      "field": "responsibility",
+      "value": "Stops the server and starts it again; a checkout builds its frontend between the two, a release builds nothing"
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/XppR9owz#nvbnGOtV",
       "field": "description",
-      "value": "It refuses a server that it could not start again before it stops it, and a refused stop leaves the bundle unbuilt. The build streams its output to stderr while it runs, so a slow core build is visible, and stdout keeps only the answer. A failed build refuses with FRONTEND_BUILD_FAILED, says that its output is above and that the server is stopped. The answer names the entry script of the new bundle, as /health reports it."
+      "value": "It refuses a server that it could not start again before it stops it, and a refused stop leaves the bundle unbuilt. A checkout then builds the frontend, streams the build's output to stderr as it runs so that a slow core build is visible, and keeps stdout for the answer; a failed build refuses with FRONTEND_BUILD_FAILED, says that its output is above and that the server is stopped. A release builds nothing, because it changes on disk only by an install (ADR 0075), so restart is how a server runs the installed version. It silences the version warning for itself, because restart is the remedy that the warning names. The answer names the entry script of the bundle, as /health reports it."
     },
     {
       "type": "assign",
@@ -220,6 +1241,68 @@
       "value": "vKEsyHFk#jkGOgVtG"
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#k1szeOCr",
+      "kind": "relationship",
+      "value": {
+        "order": 75000,
+        "kind": "call",
+        "label": "silence the warning about the server it replaces",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+          "symbol": "silenceVersionWarning"
+        },
+        "id": "vKEsyHFk#k1szeOCr",
+        "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#k1szeOCr",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#nvbnGOtV"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#CSuiCEDZ",
+      "kind": "relationship",
+      "value": {
+        "order": 76000,
+        "kind": "call",
+        "label": "the bundle a release serves, which it does not build",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+          "symbol": "frontendBuild"
+        },
+        "id": "vKEsyHFk#CSuiCEDZ",
+        "to": "vKEsyHFk#Qvb7od2E"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#CSuiCEDZ",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#nvbnGOtV"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#yHgIapK7",
+      "field": "responsibility",
+      "value": "Sends JSON requests, rejects a server from another checkout, warns of a server of another release version, and reports transport errors"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#yHgIapK7",
+      "field": "description",
+      "value": "A checkout's commands refuse a server that runs another checkout's source and name both checkouts. Two releases differ by version and not by location, so a server of another release version still answers the command, and the command warns once on stderr in words that name archboard restart."
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/XppR9owz#WxUHKpD6",
       "field": "label",
@@ -240,6 +1323,394 @@
       "subject": "vKEsyHFk/XppR9owz#WxUHKpD6",
       "field": "to",
       "value": "vKEsyHFk#jkGOgVtG"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#wftK5Cqu",
+      "kind": "relationship",
+      "value": {
+        "order": 77000,
+        "kind": "call",
+        "label": "the warning for a server of another version",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+          "symbol": "otherVersionWarning"
+        },
+        "id": "vKEsyHFk#wftK5Cqu",
+        "to": "vKEsyHFk#cg8hqSad"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#wftK5Cqu",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#yHgIapK7"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#qCYThtb2",
+      "kind": "module",
+      "value": {
+        "order": 62000,
+        "name": "Release",
+        "kind": "package",
+        "responsibility": "Builds the npm packages of one release from a checkout, proves them by installing them, and publishes them",
+        "description": "A release is one compiled executable for each of linux-x64, linux-arm64 and darwin-arm64, in platform packages, with a shell launcher in the packages archboard and @archboard/cli (ADR 0075). Every package takes the version of the root package.json, which release-please sets from the Conventional Commits on main, and has no install script. An Intel Mac and Windows have no package. The workspace packages stay private, because the executable carries them.",
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#qCYThtb2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#qCYThtb2",
+      "placement": {
+        "holder": "vKEsyHFk"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Qvb7od2E",
+      "kind": "module",
+      "value": {
+        "order": 90000,
+        "name": "Staleness",
+        "kind": "function",
+        "responsibility": "Says whether the running server loaded the source and serves the frontend bundle that are on disk now",
+        "description": "A checkout's server runs TypeScript that it loaded once, so it compares the time of every source file it loaded with the time of loading, and compares the entry script of the bundle a tab fetched with the bundle on disk. It reads the root and the frontend directory from the installation. /health reports both answers, and status says when either is stale.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/server-lifecycle/src/runtime/services/staleness.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#Qvb7od2E"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Qvb7od2E",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ljnaxs1a",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "dependency",
+        "label": "the root to compare, and the frontend directory",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/server-lifecycle/src/runtime/services/staleness.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#ljnaxs1a",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ljnaxs1a",
+      "placement": {
+        "holder": "vKEsyHFk#Qvb7od2E"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ae2JQdfa",
+      "kind": "module",
+      "value": {
+        "order": 90000,
+        "name": "CLI version",
+        "kind": "function",
+        "responsibility": "The version the CLI reports: the installation's, from the package.json of a checkout or the marker of a release",
+        "description": "--version and the header of the help read it, so the reported version cannot drift from what is published.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/store/package-version/package-version.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#ae2JQdfa"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ae2JQdfa",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#R40DMrdU",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "dependency",
+        "label": "the version",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/store/package-version/package-version.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#R40DMrdU",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#R40DMrdU",
+      "placement": {
+        "holder": "vKEsyHFk#ae2JQdfa"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#hbSxZ5Wm",
+      "kind": "module",
+      "value": {
+        "order": 90000,
+        "name": "Skill distribution",
+        "kind": "function",
+        "responsibility": "Prepares the consumer skill's generated schemas and install manual, for a checkout or for a release",
+        "description": "A checkout's tracked skill holds only what is authored, so install-skill prepares the generated references in place or in a copy. A release's skills are prepared by its build: the manual's links to neighbouring files name the repository at the tag of the version, the recorded revision is the release's commit, and nothing writes into them afterwards.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/skills/src/runtime/operations/distribution"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#hbSxZ5Wm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#hbSxZ5Wm",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#LDqRcaY1"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#juDvK8ME",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "call",
+        "label": "the schemas to write beside the manual",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/skills/src/runtime/operations/distribution/prepare.ts",
+          "symbol": "generatedSchemas"
+        },
+        "id": "vKEsyHFk#juDvK8ME",
+        "to": "vKEsyHFk#QJChMuh1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#juDvK8ME",
+      "placement": {
+        "holder": "vKEsyHFk#hbSxZ5Wm"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#jwSjR0cS",
+      "kind": "module",
+      "value": {
+        "order": 90000,
+        "name": "Language server choice",
+        "kind": "function",
+        "responsibility": "Chooses the command that starts the language server of a language in a checkout: the configured one, else for TypeScript the checkout's own",
+        "description": "A configured server wins and runs as an editor's would. TypeScript has a default that reads the checkout's own node_modules/typescript at its root. Version 7 or later runs its native tsc --lsp --stdio. An earlier version, which has no --lsp, runs typescript-language-server from the checkout's node_modules/.bin or the server's PATH, told to use the checkout's lib/tsserver.js. Without either, a checkout of Archboard falls back to Archboard's own native tsc, and a release, which ships no TypeScript, reports the server as missing and says why. The TypeScript that the choice read is reported with the check's timings.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/operations/language-servers/server-command.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#jwSjR0cS"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#jwSjR0cS",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#v8og2YeF",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "dependency",
+        "label": "whether Archboard has a TypeScript of its own",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/operations/language-servers/server-command.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#v8og2YeF",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#v8og2YeF",
+      "placement": {
+        "holder": "vKEsyHFk#jwSjR0cS"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#QJChMuh1",
+      "kind": "module",
+      "value": {
+        "order": 91000,
+        "name": "Skill schemas",
+        "kind": "function",
+        "responsibility": "Derives the JSON Schemas that the consumer skill ships from the schemas of the canonical runtime",
+        "description": "One schema for each of the model manifest, a module, a flow collection, and the initialization, edit, import and migration requests, and the shared vocabulary. They come from the runtime's own schemas, so the skill's schemas cannot drift from what the runtime accepts.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/skills/src/runtime/projections/schemas.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#QJChMuh1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#QJChMuh1",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#LDqRcaY1"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#cg8hqSad",
+      "kind": "module",
+      "value": {
+        "order": 91000,
+        "name": "Release version",
+        "kind": "function",
+        "responsibility": "Says when the server runs another release version than the installed one",
+        "description": "Two releases are compared by version and not by location, because an upgrade in place leaves the old release at no location. A difference is a warning that names archboard restart and refuses nothing, since the server still answers every command. When either side runs a checkout there is no warning, because a checkout has its own staleness check.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/server-lifecycle/src/runtime/rules/release-version.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#cg8hqSad"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#cg8hqSad",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#fJx3pc1V",
+      "kind": "module",
+      "value": {
+        "order": 91000,
+        "name": "Embedded grammars",
+        "kind": "config",
+        "responsibility": "Names the .wasm file and the query text of every grammar that code facts parse with, as module imports that a release embeds",
+        "description": "A checkout reads the grammars from node_modules and the queries beside this file. The executable of a release embeds the same imports, so a release holds no grammar file and the installation names no grammar location. Which grammar and query read which file is the adapter table's.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/services/code-facts/grammar-files.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#fJx3pc1V"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#fJx3pc1V",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#pvJiDwvm",
+      "kind": "relationship",
+      "value": {
+        "order": 981200,
+        "kind": "dependency",
+        "label": "the skill it links for the coordinator",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/services/owner/production.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#pvJiDwvm",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#pvJiDwvm",
+      "placement": {
+        "holder": "vKEsyHFk#OY4JPr8G"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#06cbjPhn",
+      "field": "responsibility",
+      "value": "Finds the pinned Codex executable that a host may run: under the checkout's node_modules, or in the platform package of a release"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#06cbjPhn",
+      "field": "description",
+      "value": "A release starts the native Codex binary of its platform package directly. It finds the package as Node.js finds a dependency: in the node_modules of the release's package, else in that of each directory above it, which suits the nested layout of npm and the hoisted layout of bun add -g. Every executable still passes the bounded --version proof against the pinned version. A native binary also gets the two variables that Codex's own bin/codex.js sets: the root of its package and the package manager that installed it."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#3n5vwEpm",
+      "kind": "relationship",
+      "value": {
+        "order": 53000,
+        "kind": "dependency",
+        "label": "the root to write the artifacts into",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/operations/contract-artifacts/generate.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#3n5vwEpm",
+        "to": "vKEsyHFk#jkGOgVtG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#3n5vwEpm",
+      "placement": {
+        "holder": "vKEsyHFk#glQyCXTG"
+      }
     }
+  ],
+  "retiredIds": [
+    "vKEsyHFk/vKEsyHFk#mm4DLsd2",
+    "vKEsyHFk#8EhrdPUE",
+    "vKEsyHFk#ONY1k265"
   ]
 }
