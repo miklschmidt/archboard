@@ -6,7 +6,7 @@
 // to build stays there. A release builds nothing: it stops the server and starts it
 // again, which is how a server runs the version that an install put on disk (ADR 0075).
 
-import { installation, type Installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/workspace/installation";
 import { frontendBuild } from "#runtime/services/staleness.ts";
 import {
 	type EnsureResult,
@@ -72,7 +72,9 @@ async function restartServer(): Promise<RestartResult> {
  * @returns The entry script of the bundle.
  * @throws {Error} `FRONTEND_BUILD_FAILED` when a checkout's build fails.
  */
-async function bundleToServe(mode: Installation["mode"]): Promise<string | null> {
+async function bundleToServe(
+	mode: ReturnType<typeof installation>["mode"],
+): Promise<string | null> {
 	return mode === "release" ? frontendBuild() : await buildFrontend();
 }
 
