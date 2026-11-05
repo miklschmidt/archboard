@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-04T15:39:00Z'
-updated_date: '2026-11-05T02:45:00Z'
+updated_date: '2026-11-05T03:13:00Z'
 labels: []
 dependencies: []
 ordinal: 1019000
@@ -137,4 +137,8 @@ Evidence:
 Open:
 - The painter's carry dims three cards of the shop (Storefront, Checkout API and Inventory service) from luminance 48 to 25 at about 96 to 192 ms. They recover by 384 ms. It happens even when the painter carries into an identical picture. Measured on the CPU painter in the hero window, which now uses one enter instead. Not filed yet.
 - The delegated code review and the full gate still run before a pull request.
+
+Smoke falloff (2026-11-05, owner direction: tune the smoke down a bit, because its falloff is still harsh):
+- 3f2b7fa77: the smoke's cross-section is a bell, exp(-4x^2)(1-x^2)^2, in place of exp(-1.2x)(1-x^2)^2. A screen shows faint light brighter than its share, so the old profile looked almost whole out to the beam's reach and then ended at a contour. The wisp threshold is wider, the smoke gathers more slowly from a bend (power 1.8 for 1.2), and the veil is 0.5 for 0.6.
+Evidence: reduced-motion 4K stills of the same frame before and after. The outer wisps above the long Panes to paintings beam fade into the table with no contour, and the smoke is lighter. Format check on the changed files: clean.
 <!-- SECTION:NOTES:END -->
