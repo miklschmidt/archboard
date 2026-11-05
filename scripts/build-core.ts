@@ -174,7 +174,7 @@ function buildInNixShellWhenToolsAreMissing(): void {
 		env: { ...process.env, [IN_SHELL]: "1" },
 		stdio: ["inherit", "inherit", "inherit"],
 	});
-	process.exit(ran.exitCode ?? 1);
+	process.exit(ran.exitCode);
 }
 
 const hash = coreSourceHash();
