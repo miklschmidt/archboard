@@ -150,7 +150,10 @@ function isBuiltAsset(entry: string | null): entry is string {
  */
 function frontendBuild(): string | null {
 	try {
-		const html = fs.readFileSync(path.join(repoRoot, "dist", "frontend", "index.html"), "utf-8");
+		const html = fs.readFileSync(
+			path.join(installation().frontendDirectory, "index.html"),
+			"utf-8",
+		);
 		const match = /<script[^>]*type="module"[^>]*src="([^"]+)"/.exec(html);
 		return match?.[1] ?? null;
 	} catch {

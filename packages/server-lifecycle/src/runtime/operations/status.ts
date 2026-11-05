@@ -25,6 +25,9 @@ type ServerStatus =
 			readonly browserClients: number | undefined;
 			/** Which checkout's source the server runs, and whether it is the source on disk now. */
 			readonly source: HealthStatus["source"];
+			/** The version of the installation the server runs, and whether that is a release or a checkout. */
+			readonly version: HealthStatus["version"];
+			readonly mode: HealthStatus["mode"];
 			/** The synchronization state, empty when it could not be read. */
 			readonly sync: Record<string, unknown>;
 	  };
@@ -70,6 +73,8 @@ async function serverStatus(): Promise<ServerStatus> {
 		pid: health.pid ?? readPidFile(serverPort()) ?? undefined,
 		browserClients: health.websocket_clients,
 		source: health.source,
+		version: health.version,
+		mode: health.mode,
 		sync: await bestEffortSyncStatus(),
 	};
 }
