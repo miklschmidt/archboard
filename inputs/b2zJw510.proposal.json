@@ -553,6 +553,56 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#e80MeBAr",
+      "kind": "relationship",
+      "value": {
+        "order": 90000,
+        "kind": "call",
+        "label": "re-derive the installed skill's generated files",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/skills/src/runtime/operations/runs/install.ts",
+          "symbol": "prepareSkillArtifacts"
+        },
+        "id": "vKEsyHFk#e80MeBAr",
+        "to": "vKEsyHFk#hbSxZ5Wm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#e80MeBAr",
+      "placement": {
+        "holder": "vKEsyHFk/IbGtfJE2#IFhUy8C6"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#h7Ugi08Z",
+      "kind": "relationship",
+      "value": {
+        "order": 90000,
+        "kind": "call",
+        "label": "whether the tab's bundle is current",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+          "symbol": "frontendState"
+        },
+        "id": "vKEsyHFk#h7Ugi08Z",
+        "to": "vKEsyHFk#Qvb7od2E"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#h7Ugi08Z",
+      "placement": {
+        "holder": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
       "field": "responsibility",
@@ -1308,6 +1358,31 @@
       "subject": "vKEsyHFk#hbSxZ5Wm",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#LDqRcaY1"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ONY1k265",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "call",
+        "label": "the projection of the generated schemas",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/skills/src/runtime/operations/distribution/prepare.ts",
+          "symbol": "generatedSchemas"
+        },
+        "id": "vKEsyHFk#ONY1k265",
+        "to": "vKEsyHFk/vKEsyHFk#PxnjFfV3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ONY1k265",
+      "placement": {
+        "holder": "vKEsyHFk#hbSxZ5Wm"
       }
     },
     {
