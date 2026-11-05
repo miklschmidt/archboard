@@ -4,12 +4,13 @@
 //
 // A row names the files of the language by extension and the `languageId` the
 // protocol gives each. It also says what its server needs beyond the protocol:
-// options it must start with whatever command runs it, files opened before it
+// files opened before it
 // answers about them, a request or an index that it is waited for until it has
 // loaded what it reads, and the project it starts in for a file, with why it
 // cannot answer there yet and what it is told when it asks for its
 // configuration, such as the Python environment or the .NET solution to read.
-// Which command runs the server is no part of a row (server-command.ts).
+// Which command runs the server, and the options it starts with, are no part of
+// a row (server-command.ts).
 
 import path from "node:path";
 import { cargoWorkspaceOf } from "#runtime/operations/language-servers/cargo-workspace.ts";
@@ -81,6 +82,9 @@ type Language = (typeof CONFIGURABLE_LANGUAGES)[number];
 
 /** What each language needs. */
 const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
+	// `tsc --lsp` of TypeScript 7 answers about a file it has not opened, but
+	// typescript-language-server, for TypeScript before 7, answers about such a
+	// file with nothing (measured with 5.1.3 and 6.0.3, TASK-579.13).
 	typescript: {
 		languageIds: {
 			".ts": "typescript",
@@ -88,6 +92,7 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
 			".cts": "typescript",
 			".tsx": "typescriptreact",
 		},
+		opensFiles: true,
 	},
 	// Measured with pyright 1.1.412: it answers about a file it has not opened
 	// only once it has listed the project's files, and before that answers

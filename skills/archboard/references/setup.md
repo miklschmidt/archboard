@@ -18,26 +18,30 @@ server until you configure one.
 ## Which TypeScript runs
 
 A server that you configure with `archboard repo language-server typescript
-<command>` wins. Without one, if all of these are true, the check runs
-`tsc --lsp --stdio` from the `typescript` package that the checkout installs:
+<command>` wins. Without one, the check reads `node_modules/typescript` at the
+root of the checkout. The package must be inside the checkout once its links
+resolve. Then the check uses the first of these that applies:
 
-- The package is `node_modules/typescript` at the root of the checkout.
-- The package declares version 7 or later. TypeScript 7 is the first version that
-  has `tsc --lsp`.
-- The native program for the machine is installed, beside the package or inside
-  it: `@typescript/typescript-<platform>-<arch>`.
-- The package and the program are inside the checkout once their links resolve.
+1. Version 7 or later, with the native program for the machine beside the
+   package or inside it (`@typescript/typescript-<platform>-<arch>`): the check
+   runs `tsc --lsp --stdio`.
+2. A TypeScript before version 7, which has no `--lsp`: the check runs
+   `typescript-language-server --stdio` from `node_modules/.bin` of the
+   checkout, else from the `PATH` of the Archboard server. The server runs the
+   `tsserver` of the checkout's TypeScript.
+3. When Archboard runs from a clone: the `tsc` of the `typescript` package that
+   archboard installs. An Archboard release ships no TypeScript.
 
-Otherwise, when Archboard runs from a clone, the check runs the `tsc` of the
-`typescript` package that archboard installs. This happens for an older
-TypeScript, for no TypeScript, for no native program, and for a link that leads
-out of the checkout. An Archboard release ships no TypeScript, so there the check
-says `language-server-missing` for TypeScript. Do the same when a repository
-installs TypeScript before version 7, because that version has no `--lsp`:
-configure a server that you install, such as `typescript-language-server --stdio`
-(`archboard repo language-server typescript typescript-language-server
---arg=--stdio`). In a monorepo, the check reads the root only. A package that
-installs another version than the root uses the version at the root.
+If none applies, the check says `language-server-missing` for TypeScript. For a
+TypeScript before version 7, tell the user to install
+`typescript-language-server` in the repository or on the machine. Do not install
+it yourself unless the user asks. In a monorepo, the check reads the root only. A
+package that installs another version than the root uses the version at the root.
+
+Each `time: language server typescript` line names the program that answered.
+For a server that the check chose, it also names the TypeScript version and
+whose it is. If the check and the compiler of the repository disagree, read that
+line first.
 
 ## What a configured server runs
 

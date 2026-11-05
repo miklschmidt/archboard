@@ -418,16 +418,17 @@ A configured server runs the code of that repository. Configure one only for a r
 
 ### TypeScript
 
-TypeScript has a default server. A server that you configure wins (see [the other languages](#the-other-languages)). Without one, if all of these are true, the check runs `tsc --lsp --stdio` from the `typescript` package that the checkout installs:
+TypeScript has a default server. A server that you configure wins (see [the other languages](#the-other-languages)). Without one, the check reads the `typescript` package in `node_modules/typescript` at the root of the checkout. The package must be inside the checkout once its links resolve. Then the check uses the first of these that applies:
 
-- The package is in `node_modules/typescript` at the root of the checkout.
-- The package is version 7 or later. TypeScript 7 is the first version that has a language server.
-- The package has the native program for your machine, `@typescript/typescript-<platform>-<arch>`, beside it or inside it.
-- The package and the program are inside the checkout once their links resolve.
+1. If the package is version 7 or later and has the native program for your machine, `@typescript/typescript-<platform>-<arch>`, beside it or inside it, the check runs `tsc --lsp --stdio`. TypeScript 7 is the first version that has a language server.
+2. If the package is a TypeScript before version 7, which has no `--lsp`, the check runs `typescript-language-server --stdio`. It is the language server that wraps the `tsserver` of TypeScript. The check looks for it in `node_modules/.bin` of the checkout first, and then on the `PATH` of the Archboard server. It tells the server to run the `lib/tsserver.js` of the checkout's TypeScript. To get one, run `npm install --save-dev typescript-language-server` in the repository, or `npm install --global typescript-language-server`.
+3. When you run archboard from a clone, the check runs the `tsc` of the `typescript` package that archboard installs. An archboard release ships no TypeScript, so it skips this step.
 
-Otherwise, when you run archboard from a clone, the check runs the `tsc` of the `typescript` package that archboard installs. This is so for an older TypeScript, for no TypeScript, for no native program, and for a link that leads out of the checkout. The check does not look in the parent directories of the checkout. An archboard release ships no TypeScript. If no `tsc` is found, the check says `language-server-missing` for TypeScript, and the answer names the command that configures a server. A repository that installs TypeScript before version 7 can configure `typescript-language-server` with `archboard repo language-server typescript typescript-language-server --arg=--stdio`.
+If none applies, the check says `language-server-missing` for TypeScript. The detail names the checkout's TypeScript version and the command that configures a server. The check does not look in the parent directories of the checkout. In a monorepo, the check reads the root only. A package that installs another version than the root uses the version at the root.
 
-In a monorepo, the check reads the root only. A package that installs another version than the root uses the version at the root. `tsc --lsp` loads no plugin that `tsconfig.json` names. This was measured with TypeScript 7.0.2.
+The check names the server that it used. Each `time: language server typescript` line, and each `language-server` entry of `timings` in the JSON answer, gives the program (`program`). For a server that the check chose, it also gives the TypeScript version and whether that TypeScript is the checkout's or archboard's (`typescript`). Use it when the check and the compiler of the repository disagree.
+
+The default server runs code of the checkout, because the checkout installed that TypeScript for its own editor. `tsc --lsp` loads no plugin that `tsconfig.json` names. This was measured with TypeScript 7.0.2. The `tsserver` of an older TypeScript loads each plugin that `tsconfig.json` names from the checkout's `node_modules`, as it does in an editor. This was measured with TypeScript 5.9.3 and typescript-language-server 6.0.3. The check turns off automatic type acquisition, so `tsserver` does not run npm to download type packages.
 
 ### The other languages
 

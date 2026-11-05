@@ -47,6 +47,8 @@ const codeCheck: CodeCheckAnswer = {
 			language: "typescript",
 			project: ".",
 			repo: "github.com/test/orders",
+			program: "tsc",
+			typescript: { version: "7.0.2", from: "checkout" },
 			elapsedMs: 42.5,
 		},
 		{ check: "history", elapsedMs: 8.5 },

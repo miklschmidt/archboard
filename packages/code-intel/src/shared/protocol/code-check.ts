@@ -341,6 +341,16 @@ const ModelBehindSchema = z.union([
 		.strict(),
 ]);
 
+/**
+ * The TypeScript a TypeScript server the check chose reads, and whose it is:
+ * the checkout's own, or Archboard's own in a checkout of Archboard
+ * (TASK-579.13). A configured server's TypeScript is the server's choice and
+ * is not named.
+ */
+const ServerTypescriptSchema = z
+	.object({ version: z.string(), from: z.enum(["checkout", "archboard"]) })
+	.strict();
+
 /** Elapsed wall time for each part of a requested check (TASK-436.02). */
 const CheckTimingSchema = z.discriminatedUnion("check", [
 	z
@@ -356,10 +366,14 @@ const CheckTimingSchema = z.discriminatedUnion("check", [
 			language: z.enum(CONFIGURABLE_LANGUAGES),
 			repo: z.string().optional(),
 			project: z.string(),
+			/** The file name of the program that ran, such as `typescript-language-server`. */
+			program: z.string(),
+			typescript: ServerTypescriptSchema.optional(),
 		})
 		.strict(),
 ]);
 type CheckTiming = z.infer<typeof CheckTimingSchema>;
+type ServerTypescript = z.infer<typeof ServerTypescriptSchema>;
 
 /**
  * The whole answer of one code check. The route answers it beside
@@ -428,4 +442,5 @@ export {
 	type CodeFinding,
 	RememberedFindingsSchema,
 	type RememberedFindings,
+	type ServerTypescript,
 };

@@ -100,6 +100,18 @@ const planRefusal = {
 };
 
 /**
+ * Which server a language server timing is of: its program, and the
+ * TypeScript the check chose for it.
+ * @param timing The timing.
+ * @returns Its text.
+ */
+function serverName(timing: Extract<CheckTiming, { check: "language-server" }>): string {
+	const { typescript } = timing;
+	const whose = typescript?.from === "archboard" ? "Archboard's" : "the checkout's";
+	return `${timing.program}${typescript === undefined ? "" : ` with ${whose} TypeScript ${typescript.version}`}`;
+}
+
+/**
  * One elapsed time, before the findings and the JSON answer.
  * @param timing The check and its elapsed wall time.
  * @returns Its text line.
@@ -107,7 +119,7 @@ const planRefusal = {
 function timingLine(timing: CheckTiming): string {
 	const name =
 		timing.check === "language-server"
-			? `language server ${timing.language}${timing.repo === undefined ? "" : ` (${timing.repo}, ${timing.project})`}`
+			? `language server ${timing.language}${timing.repo === undefined ? "" : ` (${timing.repo}, ${timing.project})`}, ${serverName(timing)}`
 			: timing.check === "code-facts"
 				? "code facts"
 				: timing.check === "history"
