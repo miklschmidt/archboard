@@ -41,21 +41,30 @@ export async function paintOwnModel(picture: HTMLElement): Promise<void> {
 		let visible = false;
 		let stopped = false;
 		let frame = 0;
+		const fallback = (cause: unknown) => {
+			if (stopped) return;
+			console.warn("The model's painter stopped.", cause);
+			stopped = true;
+			cancelAnimationFrame(frame);
+			frame = 0;
+			picture.removeAttribute("data-painting");
+		};
 		const loop = (now: number) => {
-			frame = visible && !stopped && painter.frame(now) ? requestAnimationFrame(loop) : 0;
+			try {
+				frame = visible && !stopped && painter.frame(now) ? requestAnimationFrame(loop) : 0;
+			} catch (cause) {
+				fallback(cause);
+			}
 		};
 		const wake = () => {
 			if (visible && !stopped && frame === 0) frame = requestAnimationFrame(loop);
 		};
 		// A GPU that stops draws nothing more, and it may not say why.
-		started.whenGpuStops?.((reason) => {
-			console.warn("The model's painter stopped.", reason);
-			stopped = true;
-			picture.removeAttribute("data-painting");
-		});
+		started.whenGpuStops?.(fallback);
 
 		// The canvas covers the frame in device pixels, and the camera fits the whole drawing into it.
 		const fit = () => {
+			if (stopped) return;
 			const ratio = window.devicePixelRatio || 1;
 			const across = Math.max(1, Math.round(picture.clientWidth * ratio));
 			const down = Math.max(1, Math.round(picture.clientHeight * ratio));
@@ -76,6 +85,7 @@ export async function paintOwnModel(picture: HTMLElement): Promise<void> {
 		// stands whole at once.
 		let shown = false;
 		const check = () => {
+			if (stopped) return;
 			const box = picture.getBoundingClientRect();
 			if (shown || (enters() && box.bottom > window.innerHeight)) return;
 			shown = true;
@@ -92,6 +102,7 @@ export async function paintOwnModel(picture: HTMLElement): Promise<void> {
 		}).observe(picture);
 		window.addEventListener("scroll", check, { passive: true });
 		motion.addEventListener("change", () => {
+			if (stopped) return;
 			painter.setTrafficShown(flows());
 			// A picture on its way in stands whole once motion is reduced.
 			if (shown && motion.matches) painter.show(painting);
