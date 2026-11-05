@@ -41,9 +41,10 @@ export function mountTalkRelay(root: HTMLElement): void {
 
 	let mode: OrbMode = "listening";
 	let word: SpokenWord | null = null;
+	let speechTime = 0;
 	const wakeOrb = mountVoiceOrb(orb, {
 		mode: () => mode,
-		level: () => wordLevel(word, performance.now()),
+		level: () => wordLevel(word, speechTime),
 	});
 	const setMode = (next: OrbMode) => {
 		mode = next;
@@ -92,10 +93,11 @@ export function mountTalkRelay(root: HTMLElement): void {
 			root,
 			total,
 			(progress) => {
-				while (said < spans.length && (starts[said] ?? Infinity) <= progress * total) {
+				speechTime = progress * total;
+				while (said < spans.length && (starts[said] ?? Infinity) <= speechTime) {
 					const span = spans[said];
 					span?.classList.add("is-said");
-					if (voice && span) word = sayWord(span.textContent ?? "", performance.now()).word;
+					if (voice && span) word = sayWord(span.textContent ?? "", starts[said] ?? 0).word;
 					said += 1;
 				}
 			},
