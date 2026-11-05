@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { resolveInstallation, type Installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/workspace/installation";
 import { installSkills } from "#cli/operations/install-skill/install-skill.ts";
 import { resolveExplicitDir } from "#cli/operations/install-skill/skill-destination.ts";
 
@@ -25,7 +25,7 @@ const diagnostics: string[] = [];
 const context = { diagnostic: (message: string) => diagnostics.push(message) };
 
 let workspace: string;
-let release: Installation;
+let release: ReturnType<typeof installation>;
 
 /**
  * Every path below a directory with its mode, so that a write into it shows.
@@ -71,10 +71,14 @@ beforeEach(() => {
 		mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
 		writeFileSync(path.join(root, file), contents);
 	}
-	release = resolveInstallation({
-		executable: path.join(root, "bin", "archboard"),
-		moduleDirectory: workspace,
-	});
+	// The parts of a release that installing its skills reads, laid over this checkout's own.
+	release = {
+		...installation(),
+		mode: "release",
+		root,
+		skillsDirectory: path.join(root, "skills"),
+		binDirectory: path.join(root, "bin"),
+	};
 	for (const entry of readdirSync(root, { recursive: true, withFileTypes: true })) {
 		const file = path.join(entry.parentPath, entry.name);
 		chmodSync(file, entry.isDirectory() ? 0o555 : 0o444);

@@ -3,7 +3,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import type { Installation } from "@archboard/workspace/installation";
+import type { installation } from "@archboard/workspace/installation";
+
+/** The installation whose skills are installed. */
+type Installation = ReturnType<typeof installation>;
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 
 /** The skill that authors models; its installed copy also carries the generated schemas and manual. */

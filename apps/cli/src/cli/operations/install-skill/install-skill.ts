@@ -17,7 +17,10 @@ import {
 } from "#cli/operations/install-skill/skill-destination.ts";
 import { checkoutRootOf, setUpRepository } from "#cli/operations/install-skill/repo-setup.ts";
 import { prepareSkillArtifacts } from "@archboard/skills/distribution";
-import { installation, type Installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/workspace/installation";
+
+/** The installation whose skills are installed. */
+type Installation = ReturnType<typeof installation>;
 
 const INSTALL_TARGETS = ["agents", "claude"] as const;
 const INSTALL_AGENTS = ["codex", "claude-code"] as const;

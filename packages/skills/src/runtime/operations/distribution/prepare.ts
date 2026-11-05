@@ -28,10 +28,11 @@ interface PreparationSource {
 	/** What to record as the source revision; the checkout's HEAD when absent. */
 	readonly revision?: string | undefined;
 	/**
-	 * Where the links of INSTALL.md to its neighbours point, as a URL prefix. A release names its
-	 * tag here, since a release has no checkout; the checkout's own path when absent.
+	 * The release these files ship in (ADR 0075). A release has no checkout, so the links of
+	 * INSTALL.md to its neighbours point at the repository's files at the tag of its version, and
+	 * the recorded revision is its commit. Absent for a checkout, whose links name its own paths.
 	 */
-	readonly linkBase?: string | undefined;
+	readonly release?: { readonly version: string; readonly commit: string } | undefined;
 }
 
 /** What one preparation wrote. */
@@ -40,15 +41,6 @@ interface PreparedSkill {
 	readonly directory: string;
 	/** Every file written, relative to the skill root, in the order written. */
 	readonly files: readonly string[];
-}
-
-/**
- * The link base of a release: the repository's files at the tag of its version.
- * @param version The release version, without the leading "v".
- * @returns The URL prefix to pass as `linkBase`.
- */
-function releaseLinkBase(version: string): string {
-	return `${RELEASE_REPOSITORY}/blob/v${version}`;
 }
 
 /**
@@ -85,7 +77,9 @@ function checkoutRevision(root: string): string {
  * @returns The document text.
  */
 function installedInstallDocument(source: PreparationSource, revision: string): string {
-	const { root, linkBase } = source;
+	const { root, release } = source;
+	const linkBase =
+		release === undefined ? undefined : `${RELEASE_REPOSITORY}/blob/v${release.version}`;
 	const canonical = fs.readFileSync(path.join(root, INSTALL_DOCUMENT), "utf8");
 	const resolved = canonical.replaceAll(
 		/\]\((?!https?:|#|\/)([^)]+)\)/gu,
@@ -101,6 +95,15 @@ function installedInstallDocument(source: PreparationSource, revision: string): 
 		"Edit the canonical file in the archboard checkout; this copy is replaced on every install and sync. -->\n\n" +
 		resolved
 	);
+}
+
+/**
+ * The revision a preparation records: the release's commit, the given revision, or the checkout's.
+ * @param source What the preparation is given.
+ * @returns The revision.
+ */
+function recordedRevision(source: PreparationSource): string {
+	return source.release?.commit ?? source.revision ?? checkoutRevision(source.root);
 }
 
 /**
@@ -131,7 +134,7 @@ function writeIfChanged(file: string, contents: string): void {
  */
 function prepareSkillArtifacts(skill: string, source: PreparationSource): PreparedSkill {
 	const directory = path.join(skill, GENERATED_DIRECTORY);
-	const revision = source.revision ?? checkoutRevision(source.root);
+	const revision = recordedRevision(source);
 	const generated = new Map<string, string>();
 	for (const schema of generatedSchemas()) {
 		generated.set(schema.file, `${JSON.stringify(schema.schema, null, "\t")}\n`);
@@ -148,4 +151,4 @@ function prepareSkillArtifacts(skill: string, source: PreparationSource): Prepar
 	};
 }
 
-export { prepareSkillArtifacts, releaseLinkBase };
+export { prepareSkillArtifacts };
