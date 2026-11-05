@@ -1,5 +1,5 @@
 // A reviewed document is imported `with { type: "text" }`, so that Bun embeds it in a compiled
-// executable and the package build inlines it, and nothing reads it by path (ADR 0075).
+// executable and the package build inlines it, and nothing reads it by path.
 // TypeScript types a JSON module as its parsed value whatever its attributes, so a caller hands
 // the import here, which proves at run time that it is the text.
 

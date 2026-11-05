@@ -384,11 +384,11 @@ agent.attach(server, { path: "/voice", origin: "http://127.0.0.1:4100" });
 
 `resolveCodexExecutable` finds the Codex executable and proves it before anything runs it. It must be an absolute path to a regular, executable file that reports exactly `codex-cli 0.160.0`. It never looks on `PATH`. It returns the absolute path, and throws a `CodexExecutableError` with a `code` when the proof fails.
 
-| Field            | Default                               | What it does                                                                                                                                               |
-| ---------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `executablePath` | The installed `@openai/codex` package | An absolute path to prove in place of the installed package.                                                                                               |
-| `installedIn`    | None                                  | Refuses an installed `@openai/codex` that is not in `<installedIn>/node_modules`, such as a global install. It does not apply to `executablePath`.         |
-| `releasedIn`     | None                                  | For an Archboard release: the platform package whose `@openai/codex-<os>-<cpu>` dependency holds the native binary. It does not apply to `executablePath`. |
+| Field            | Default                               | What it does                                                                                                                                                    |
+| ---------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `executablePath` | The installed `@openai/codex` package | An absolute path to prove in place of the installed package.                                                                                                    |
+| `installedIn`    | None                                  | Refuses an installed `@openai/codex` that is not in `<installedIn>/node_modules`, such as a global install. It does not apply to `executablePath`.              |
+| `releasedIn`     | None                                  | For a host's compiled release: the platform package whose `@openai/codex-<os>-<cpu>` dependency holds the native binary. It does not apply to `executablePath`. |
 
 ### `createVoiceClient(options)`
 

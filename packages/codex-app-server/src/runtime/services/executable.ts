@@ -45,7 +45,7 @@ interface CodexExecutableOptions {
 	 */
 	readonly installedIn?: string;
 	/**
-	 * The directory of an Archboard release (ADR 0075): its platform package. The Codex binary
+	 * The directory of a host's compiled release: its platform package. The Codex binary
 	 * lies in the `@openai/codex-<os>-<cpu>` package that npm installed beside it or above it,
 	 * and it starts without Node.js. It does not apply to `executablePath`.
 	 */
@@ -196,7 +196,7 @@ function requireCheckoutLocal(resolved: string, checkout: string): string {
 	return absolute;
 }
 
-/** The native target of each platform that a release ships (ADR 0075). */
+/** The native target of each platform that a compiled release supports. */
 const RELEASE_TARGETS: Readonly<
 	Record<string, { readonly triple: string; readonly suffix: string }>
 > = {
@@ -218,7 +218,7 @@ function releasedCodex(releasedIn: string): string {
 		throw new CodexExecutableError({
 			code: "missing",
 			executablePath: releasedIn,
-			message: `An Archboard release has no Codex for ${process.platform} on ${process.arch}.`,
+			message: `A compiled release has no Codex for ${process.platform} on ${process.arch}.`,
 		});
 	}
 	const packageName = path.join("@openai", `codex-${target.suffix}`);
@@ -233,7 +233,7 @@ function releasedCodex(releasedIn: string): string {
 	throw new CodexExecutableError({
 		code: "missing",
 		executablePath: path.join(releasedIn, "node_modules", packageName),
-		message: `The Codex ${CODEX_PROTOCOL_VERSION} package ${path.basename(packageName)} is not installed beside the release at ${releasedIn}. Reinstall Archboard, then retry.`,
+		message: `The Codex ${CODEX_PROTOCOL_VERSION} package ${path.basename(packageName)} is not installed beside the release at ${releasedIn}. Reinstall the release, then retry.`,
 	});
 }
 
