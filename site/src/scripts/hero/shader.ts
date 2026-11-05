@@ -29,10 +29,10 @@ precision highp sampler2D;
 #define CELL ${CELL.toFixed(1)}
 #define SHINE ${SHINE.toFixed(1)}
 #define RAMP ${RAMP.toFixed(1)}
-// How many lines a ray takes the light of at most, and how many cells of the grid it crosses at
-// most. A walk across eight cells meets four lines of the picture at most.
-#define NEAR 4
-#define CROSSED 16
+// How many lines a ray takes the light of at most, the nearest it meets, and how many cells of the
+// grid it crosses at most.
+#define NEAR 6
+#define CROSSED 24
 
 uniform vec2 uRes;
 // Seconds of traffic.
@@ -112,8 +112,15 @@ const float BEVEL = 0.008;
 // How wide a beam's white-hot core is, and how far its glow spreads, in table units.
 const float CORE = 0.0024;
 const float GLOW = 0.016;
+// How bright the smoke about a beam burns, and how much of what lies behind it hides.
+const float HAZE = 1.0;
+const float VEIL = 0.6;
+// How far ahead of a front of a beam's light, where it runs, its core lights, in the picture's units.
+const float SHARP = 2.5;
 // About how high the beams float, in table units: the light they shed falls off from there.
 const float FLOAT = 0.04;
+// How far the light a beam sheds on what lies below it reaches, in the picture's units.
+const float SHED = 12.0;
 // How much of a beam's light the table and the trays' floors give back.
 const float POOL = 0.07;
 
@@ -135,6 +142,25 @@ float noise(vec2 p) {
 		mix(cellHash(i + vec2(0.0, 1.0)), cellHash(i + vec2(1.0, 1.0)), w.x),
 		w.y
 	);
+}
+
+// Smooth noise in three octaves, from 0 to 1.
+float fbm(vec2 p) {
+	float v = 0.0;
+	float a = 0.5;
+	for (int o = 0; o < 3; o++) {
+		v += a * noise(p);
+		p = p * 2.03 + vec2(17.3, 9.1);
+		a *= 0.5;
+	}
+	return v / 0.875;
+}
+
+// The smoke a beam's heat lifts, from 0 to 1: noise folded through noise, so that it curls, carried
+// up and along as time runs.
+float smokeAt(vec2 q, float time) {
+	vec2 fold = vec2(fbm(q + vec2(0.0, -0.7 * time)), fbm(q * 1.3 + vec2(5.2, 1.3 - 0.5 * time)));
+	return fbm(q + 1.7 * fold + vec2(-0.35 * time, -0.8 * time));
 }
 
 vec3 toSrgb(vec3 c) {
@@ -226,10 +252,11 @@ vec4 inkAt(vec2 s, vec2 dx, vec2 dy) {
 	return ink;
 }
 
-// How far a part of a line, a distance along it, is drawn.
-float drawn(int i, float s) {
+// How far a part of a line, a distance along it, is drawn, as light that reaches \`lead\` past the
+// ends of the drawn part.
+float drawn(int i, float s, float lead) {
 	vec4 r = uLineReveal[i];
-	return smoothstep(r.x - 3.0, r.x + 1.0, s) * (1.0 - smoothstep(r.y - 1.0, r.y + 3.0, s));
+	return smoothstep(r.x - lead, r.x + 1.0, s) * (1.0 - smoothstep(r.y - 1.0, r.y + lead, s));
 }
 
 // How high a line's beam floats a distance along it: it leaves its source's tile at the tile's
@@ -244,71 +271,118 @@ float beamHeight(int i, float s) {
 
 // How bright a line's beam burns a distance along it: the light that draws it during the entry,
 // a steady burn once it is drawn, and the packets of its traffic, of which how much is there comes
-// out as well. A card under the pointer brightens its own beams and dims the rest.
-float beamEnergy(int i, float s, out float packet) {
+// out as well. Where the light runs, its front reaches \`lead\` ahead of it: sharp at the core, and
+// wider farther from it, as the light there comes from more of the beam, so that a packet swells
+// into the smoke instead of cutting through it. A card under the pointer brightens its own beams
+// and dims the rest.
+float beamEnergy(int i, float s, float lead, out float packet) {
 	vec4 colour = uLineColor[i];
 	vec4 reveal = uLineReveal[i];
 	vec4 life = uLineLife[i];
 	float way = sign(reveal.w);
 	float behind = (reveal.z - s) * way;
-	float spark = abs(reveal.w) * (behind >= 0.0 ? exp(-behind / 70.0) * 0.55 + exp(-behind / 10.0) * 1.6 : exp(behind / 2.5) * 1.6);
+	float spark = abs(reveal.w) * (behind >= 0.0 ? exp(-behind / 70.0) * 0.55 + exp(-behind / 10.0) * 1.6 : exp(behind / lead) * 1.6);
 	packet = 0.0;
 	if (colour.w > 0.0 && life.z > 0.0) {
+		// How far behind its packet's head the point lies; ahead of the head, it is less than none.
 		float k = mod(uTime * colour.w - s + float(i) * 97.0, life.w);
-		packet = life.z * exp(-k / 38.0) * (1.0 - smoothstep(life.w - 6.0, life.w, k));
+		float d = k > life.w - 100.0 ? k - life.w : k;
+		packet = life.z * exp(-max(d, 0.0) / 38.0) * exp(min(d, 0.0) / lead);
 	}
 	float focus = mix(1.0, mix(0.3, 1.5, life.y), uFocus);
-	return spark + drawn(i, s) * (0.6 + packet * 1.5) * focus;
+	return spark + drawn(i, s, lead) * (0.6 + packet * 1.5) * focus;
 }
 
-// The light of a line's beam where a ray passes it: \`off\` from its axis, \`s\` along the line and \`t\`
-// along the ray. A beam is a laser: a white-hot core, and a glow of its colour that falls off as one
-// over the distance, then fades away, so it ends in no edge. Its energy runs along it toward its
-// target, and it flares where it strikes its target, which shows its way in a still picture. A
-// dotted line's beam is a string of beads of the same light, which drift the same way. No light is
-// drawn finer than a pixel, so a far beam keeps its light instead of flickering.
-vec3 beamGlow(int i, float off, float s, float t, float packet, float cone) {
+// The floor of a tray as the painter drew it, from a corner of its frame that no card covers.
+vec4 trayFloor(int i, vec2 sdx, vec2 sdy) {
+	vec4 r = uTrayRegion[i];
+	return inkAt(vec2(r.z - 14.0, r.w - 14.0) / uPicture, sdx * 2.0, sdy * 2.0);
+}
+
+// How much smoke a beam lifts at a point of the straight stretch it lies on, from where the stretch
+// starts along the line and how long it is: most at the middle of a long stretch, none at a bend
+// or an end, and more on some stretches than on others.
+float lengthwise(int i, float s, vec2 stretch) {
+	float u = clamp((s - stretch.x) / max(stretch.y, 1e-3), 0.0, 1.0);
+	float some = 0.6 + 0.4 * cellHash(vec2(float(i) * 31.0, stretch.x));
+	return pow(4.0 * u * (1.0 - u), 1.2) * stretch.y / (stretch.y + 120.0) * some;
+}
+
+// The light of a line's beam where a ray passes it, from \`pass\`: how far off its axis, how far along
+// the line, how far along the ray, and how far above the axis, square to it. A beam is a laser: a
+// white-hot core, a glow of its colour close about it, and smoke that its heat lifts, which billows
+// up off it and drifts the way its light runs, by \`smoke\` as much as the stretch of the line lifts.
+// The smoke is densest at the axis and thins out softly to nothing at the beam's reach. Far from
+// the axis only its thickest wisps show, so it ends in a ragged edge, not a round one. It hides some
+// of what lies behind it, which comes out as the fourth part. Each beam flickers on its own, and it
+// flares where it strikes its target, which shows its way in a still picture. A dotted line's beam
+// is a string of beads of the same light, which drift the same way. No light is drawn finer than a
+// pixel, so a far beam keeps its light instead of flickering.
+vec4 beamGlow(int i, vec4 pass, float smoke, float packet, float burn, float halo, float cone) {
+	float off = pass.x;
+	float s = pass.y;
 	vec3 colour = uLineColor[i].rgb;
 	float thick = uLineBeam[i].w;
 	float unit = uSheet.z / uPicture.x;
+	float reach = SHINE * unit;
 	float phase = float(i) * 7.3;
 	float r = off;
 	float size = thick;
+	float smoky = 1.0;
 	float strike = exp(-(uLineLife[i].x - s) / 4.0) * 1.6 + exp(-s / 4.0) * 0.4;
 	if (thick <= 0.0) {
 		float k = s - uTime * 6.0;
 		float along = (k - 12.0 * floor(k / 12.0 + 0.5)) * unit;
 		r = length(vec2(off, along));
 		size = 0.5;
+		smoky = 0.35;
 		strike = 0.0;
 	}
 	float rc = CORE * size * (1.0 + 0.5 * packet);
-	float aa = max(rc, t * cone * 0.8);
+	float aa = max(rc, pass.z * cone * 0.8);
 	float core = rc / aa * exp(-r * r / (aa * aa));
 	float rg = GLOW * size;
-	float glow = pow(rg / max(r, aa), 0.9) * exp(-0.55 * r / rg) * (1.0 - smoothstep(0.5, 1.0, off / (SHINE * unit)));
+	float x = off / reach;
+	float glow = pow(rg / max(r, aa), 0.9) * exp(-r / rg) * (1.0 - smoothstep(0.6, 1.0, x));
+	float haze = 0.0;
+	float thin = 1.0 - min(x * x, 1.0);
+	float body = exp(-x * 1.2) * thin * thin * smoke * smoky;
+	if (body > 0.002) {
+		vec2 q = vec2(s / 30.0 - uTime * 0.5, pass.w / unit / 16.0 - uTime * 0.4 + phase);
+		float wisp = smoothstep(0.3 + 0.3 * x, 0.85, smokeAt(q, uTime * 0.5));
+		float rise = smoothstep(-0.45, 0.35, pass.w / reach);
+		float puff = 0.5 + 0.7 * noise(vec2(s / 110.0 - uTime * 0.35, phase + 2.0));
+		haze = body * (0.12 + 0.88 * wisp) * rise * puff;
+	}
 	float flow = 0.8 + 0.4 * noise(vec2(s * 0.045 - uTime * 2.6, phase));
-	float flicker = 1.0 - 0.1 * noise(vec2(uTime * 1.8, phase + 4.0));
+	float flicker = 0.8 + 0.2 * noise(vec2(uTime * 7.0, phase + 4.0));
 	vec3 hot = mix(colour, vec3(1.0), 0.8);
-	return (hot * core * 3.0 + colour * glow * 0.5 * flow) * (1.0 + strike) * flicker;
+	vec3 light = hot * core * 3.0 * burn + colour * (glow * 0.5 * flow + haze * HAZE) * halo;
+	return vec4(light * (1.0 + strike) * flicker, haze * VEIL * flicker * min(halo, 1.0));
 }
 
-// The beams near a ray. The glow it sees of them comes out as \`seen\`, and what they shed on the
-// point it meets, p, which faces n, at tHit along it, as \`shed\`. A beam glows around its core
-// wherever the ray meets the table, which lies below every beam, but a tile or a label in front of
-// it hides it, as \`solid\` says the ray met one. A label's plate covers its own beam by \`cover\`.
-void beams(vec3 ro, vec3 rd, float tHit, vec3 p, vec3 n, float cone, bool solid, int covered, float cover, out vec3 seen, out vec3 shed) {
+// The beams near a ray. The light it sees of them comes out as \`seen\`, how much of what lies behind
+// it their smoke hides as \`veil\`, and what they shed on the point it meets, p, which faces n, at
+// tHit along it, as \`shed\`. A beam glows around its core wherever the ray meets the table, which
+// lies below every beam, but a tile or a label in front of it hides it, as \`solid\` says the ray met
+// one, and so does the top of one that stands above it. A label's plate covers its own beam by
+// \`cover\`.
+void beams(vec3 ro, vec3 rd, float tHit, vec3 p, vec3 n, float cone, bool solid, int covered, float cover, out vec3 seen, out float veil, out vec3 shed) {
 	seen = vec3(0.0);
+	veil = 0.0;
 	shed = vec3(0.0);
 	// For each line near: the point of its beam nearest the ray's line (how far off, how far along
-	// the line and along the ray), and the point of its route nearest p (how far, how far along the
-	// line, and where on the table).
+	// the line and along the ray, and how far above the beam), and the point of its route nearest p
+	// (how far, how far along the line, and where on the table). When more lines are near than it
+	// holds, the nearest stay.
 	int lines[NEAR];
-	vec3 passing[NEAR];
+	int passed[NEAR];
+	vec4 passing[NEAR];
 	vec4 nearest[NEAR];
 	for (int k = 0; k < NEAR; k++) {
 		lines[k] = -1;
-		passing[k] = vec3(1e9);
+		passed[k] = 0;
+		passing[k] = vec4(1e9);
 		nearest[k] = vec4(1e9);
 	}
 	// The ray's way across the grid, through the heights the beams' light fills, or to the tile or
@@ -336,19 +410,10 @@ void beams(vec3 ro, vec3 rd, float tHit, vec3 p, vec3 n, float cone, bool solid,
 						done = true;
 						break;
 					}
-					int run = int(id + 0.5) * 2;
+					int run = int(id + 0.5) * 3;
 					vec4 ra = texelFetch(uRuns, ivec2(run % TEXELS, run / TEXELS), 0);
 					vec4 rb = texelFetch(uRuns, ivec2((run + 1) % TEXELS, (run + 1) / TEXELS), 0);
 					int line = int(rb.z + 0.5);
-					int slot = -1;
-					for (int m = 0; m < NEAR; m++) {
-						if (lines[m] == line || lines[m] < 0) {
-							slot = m;
-							break;
-						}
-					}
-					if (slot < 0) continue;
-					lines[slot] = line;
 					vec2 a2 = toTable(ra.xy);
 					vec2 b2 = toTable(ra.zw);
 					vec3 from = vec3(a2.x, beamHeight(line, rb.x), a2.y);
@@ -364,14 +429,36 @@ void beams(vec3 ro, vec3 rd, float tHit, vec3 p, vec3 n, float cone, bool solid,
 					float along = clamp(wu + cu * t, 0.0, span);
 					t = max(cu * along - wr, 0.0);
 					along = clamp(wu + cu * t, 0.0, span);
-					float off = length(ro + rd * t - from - u * along);
-					if (off < passing[slot].x) passing[slot] = vec3(off, rb.x + rb.y * along / span, t);
+					vec3 d = ro + rd * t - from - u * along;
+					float off = length(d);
+					// The line's slot: its own, a free one, or that of the farthest line, if this is nearer.
+					int slot = -1;
+					int far = 0;
+					for (int m = 0; m < NEAR; m++) {
+						if (lines[m] == line || lines[m] < 0) {
+							slot = m;
+							break;
+						}
+						if (passing[m].x > passing[far].x) far = m;
+					}
+					if (slot < 0) {
+						if (off >= passing[far].x) continue;
+						slot = far;
+						passing[slot] = vec4(1e9);
+						nearest[slot] = vec4(1e9);
+					}
+					lines[slot] = line;
+					if (off < passing[slot].x) {
+						vec3 up = vec3(0.0, 1.0, 0.0) - u * u.y;
+						passing[slot] = vec4(off, rb.x + rb.y * along / span, t, dot(d, up) / max(length(up), 1e-4));
+						passed[slot] = run;
+					}
 					// The run's point nearest p, across the table.
 					vec2 e2 = b2 - a2;
 					float f = clamp(dot(p.xz - a2, e2) / max(dot(e2, e2), 1e-12), 0.0, 1.0);
 					vec2 point = a2 + e2 * f;
-					float d = length(p.xz - point);
-					if (d < nearest[slot].x) nearest[slot] = vec4(d, rb.x + rb.y * f, point);
+					float dp = length(p.xz - point);
+					if (dp < nearest[slot].x) nearest[slot] = vec4(dp, rb.x + rb.y * f, point);
 				}
 			}
 		}
@@ -385,25 +472,42 @@ void beams(vec3 ro, vec3 rd, float tHit, vec3 p, vec3 n, float cone, bool solid,
 		}
 	}
 	float unit = uSheet.z / uPicture.x;
+	// The top of a tile or a label's plate hides a beam that runs below it.
+	float top = solid ? smoothstep(0.85, 0.95, n.y) : 0.0;
 	for (int k = 0; k < NEAR; k++) {
 		int i = lines[k];
 		if (i < 0) break;
-		vec3 pass = passing[k];
-		float packet;
-		float hidden = solid ? smoothstep(-0.004, 0.004, pass.z - tHit) : 0.0;
-		float energy = beamEnergy(i, pass.y, packet) * (1.0 - hidden) * (i == covered ? 1.0 - cover : 1.0);
-		if (energy > 0.0) seen += beamGlow(i, pass.x, pass.y, pass.z, packet, cone) * energy;
+		vec4 pass = passing[k];
+		float hidden = 0.0;
+		if (solid) {
+			float under = 1.0 - smoothstep(-0.003, 0.003, beamHeight(i, pass.y) - p.y);
+			hidden = max(smoothstep(-0.004, 0.004, pass.z - tHit), top * under);
+		}
+		// The core burns with the light where it runs, and the glow and the smoke about it with the
+		// light of the beam around, which reaches farther ahead the farther from the axis they lie.
+		float keep = (1.0 - hidden) * (i == covered ? 1.0 - cover : 1.0);
+		float packet, swell;
+		float burn = beamEnergy(i, pass.y, SHARP, packet) * keep;
+		float halo = beamEnergy(i, pass.y, SHARP + 1.5 * pass.x / unit, swell) * keep;
+		if (halo > 0.0) {
+			int run = passed[k] + 2;
+			vec2 stretch = texelFetch(uRuns, ivec2(run % TEXELS, run / TEXELS), 0).xy;
+			vec4 light = beamGlow(i, pass, lengthwise(i, pass.y, stretch), packet, burn, halo, cone);
+			seen += light.rgb;
+			veil += light.a;
+		}
 		// The light it sheds on p, from where its route passes nearest, at its height there.
 		vec4 near = nearest[k];
 		vec3 toward = vec3(near.z - p.x, beamHeight(i, near.y) - p.y, near.w - p.z);
 		float apart = max(length(toward), 1e-5);
 		float facing = max(dot(n, toward) / apart, 0.0);
 		float glowing;
-		float burn = beamEnergy(i, near.y, glowing);
-		float reach = 1.0 - smoothstep(SHINE * 0.5, SHINE, near.x / unit);
+		float there = beamEnergy(i, near.y, SHARP + 1.5 * near.x / unit, glowing);
+		float reach = 1.0 - smoothstep(SHED * 0.5, SHED, near.x / unit);
 		float strength = uLineBeam[i].w > 0.0 ? 1.0 : 0.3;
-		shed += uLineColor[i].rgb * burn * facing * FLOAT / max(apart, FLOAT * 0.35) * reach * strength;
+		shed += uLineColor[i].rgb * there * facing * FLOAT / max(apart, FLOAT * 0.35) * reach * strength;
 	}
+	veil = min(veil, 0.6);
 }
 
 // How lit a part is, as the pointer's card dims the rest.
@@ -484,6 +588,7 @@ void trace(vec2 frag, vec2 sdx, vec2 sdy, float pixel, out vec3 scene, out vec3 
 	// The tile the ray meets first. Each tile's box is grown by a few pixels, so a ray that passes
 	// close by a tile without meeting it marks the tile's outline as well.
 	int tileHit = -1;
+	float ground = p.y;
 	float margin = 3.0 * uFar * cone;
 	vec3 inv = 1.0 / rd;
 	for (int i = 0; i < CARDS; i++) {
@@ -527,8 +632,9 @@ void trace(vec2 frag, vec2 sdx, vec2 sdy, float pixel, out vec3 scene, out vec3 
 		n = tileNormal(p, uCardBox[tileHit], h);
 		kind = n.y > 0.9 ? 3 : 4;
 		index = tileHit;
-		// On its rounded top edge, on a side seen edge on, or at its foot, the tile's outline is near.
-		if ((n.y > 0.02 && n.y < 0.995) || abs(dot(n, rd)) < 0.3 || p.y - h.x < 1.5 * tHit * cone) edge = 0.0;
+		// On its rounded top edge, on a side seen edge on, or where it meets what it rises through, the
+		// tile's outline is near.
+		if ((n.y > 0.02 && n.y < 0.995) || abs(dot(n, rd)) < 0.3 || p.y - max(h.x, ground) < 1.5 * tHit * cone) edge = 0.0;
 	}
 
 	// A label floats on its beam: a plate at the beam's height where the label sits.
@@ -564,9 +670,10 @@ void trace(vec2 frag, vec2 sdx, vec2 sdy, float pixel, out vec3 scene, out vec3 
 
 	// The beams the ray passes, and the light they shed where it ends. A label covers its own beam.
 	vec3 seen, shed;
+	float veil;
 	int covered = kind == 5 ? int(uLabelPose[index].x + 0.5) : -1;
 	float cover = kind == 5 ? uLabelPose[index].y : 0.0;
-	beams(ro, rd, tHit, p, n, cone, kind >= 3, covered, cover, seen, shed);
+	beams(ro, rd, tHit, p, n, cone, kind >= 3, covered, cover, seen, veil, shed);
 
 	// Shade on the table and the trays' floors: the tiles' soft shadows away from the key light,
 	// and the dark of a tray's wall on the floor below it.
@@ -594,46 +701,52 @@ void trace(vec2 frag, vec2 sdx, vec2 sdy, float pixel, out vec3 scene, out vec3 
 		if (kind == 1) {
 			vec2 away = key.xz / key.y * (-p.y);
 			float wall = footprint(p.xz + away, uTrayBox[index], uTrayCorner);
-			shade = max(shade, smoothstep(-0.02, 0.01, wall) * 0.7);
+			shade = max(shade, smoothstep(-0.02, 0.01, wall) * 0.45);
 		}
 	}
 
 	if (kind <= 1) {
 		// The table, or a tray's floor: the picture printed on it, in its light, and the light of
-		// the beams above it.
+		// the beams above it. What the painter drew of a tray, a card or a label blurs past its edge
+		// by about a pixel of the picture, and the ink reads it across what a pixel of the screen
+		// covers, so each of them takes its print off the floor that much farther out.
 		vec4 ink = inkAt(at, dx, dy);
-		float shown = 1.0;
+		float open = 1.0;
+		vec4 under = vec4(0.0);
+		float reads = fw * soft;
 		for (int i = 0; i < TRAYS; i++) {
 			if (i >= uTrayCount) break;
-			vec4 r = uTrayRegion[i];
+			vec4 r = uTrayRegion[i] + vec4(-1.0, -1.0, 1.0, 1.0) * (0.5 + 1.5 * reads);
 			if (px.x >= r.x && px.y >= r.y && px.x <= r.z && px.y <= r.w) {
-				shown = uTrayPose[i].y;
+				open = uTrayPose[i].y;
+				if (kind == 1) under = trayFloor(i, sdx, sdy);
 				break;
 			}
 		}
-		// A card shows only on its tile, and a label only on its plate.
+		// A card shows only on its tile, and a label only on its plate. Below either lies the floor
+		// it stands on.
+		float bare = 1.0;
+		float unit = uSheet.z / uPicture.x;
 		for (int i = 0; i < CARDS; i++) {
 			if (i >= uCardCount) break;
-			shown *= clamp((footprint(p.xz, uCardBox[i], uCorner) - 0.0015) / pixel + 0.5, 0.0, 1.0);
+			bare *= clamp((footprint(p.xz, uCardBox[i], uCorner) - 0.5 * unit) / (reads * unit) - 0.5, 0.0, 1.0);
 		}
 		for (int i = 0; i < LABELS; i++) {
 			if (i >= uLabelCount) break;
-			shown *= clamp((footprint(px, uLabelBox[i], 4.0) - 2.5) / fw + 0.5, 0.0, 1.0);
+			bare *= clamp((footprint(px, uLabelBox[i], 4.0) - 2.5) / fw + 0.5, 0.0, 1.0);
 		}
-		ink *= shown;
+		ink = mix(under, ink, bare) * open;
 		vec3 base = GROUND * (0.85 + light * 4.2 + lamp * 2.2);
 		float bright = (0.74 + light * 0.4 + lamp * 0.25) * lit(0.0);
 		vec3 surface = base * (1.0 - ink.a) + ink.rgb * bright;
-		if (kind == 1) surface *= 0.86;
+
 		scene = surface * (1.0 - shade);
 		glow = shed * POOL * (1.0 - shade * 0.5) + vec3(0.78, 0.86, 1.0) * flash * 0.05;
 	} else if (kind == 2) {
-		// A tray's wall: the tray's lip, lit from the side that faces the key light.
-		vec4 r = uTrayRegion[index];
-		vec2 lip = (vec2(clamp(px.x, r.x + 4.0, r.z - 4.0), r.y + (r.w - r.y) * 0.6)) / uPicture;
-		vec3 tone = inkAt(lip, sdx * 8.0, sdy * 8.0).rgb * 0.85 + GROUND;
+		// A tray's wall: the tone of its floor, lit from the side that faces the key light.
+		vec3 tone = trayFloor(index, sdx, sdy).rgb * 0.85 + GROUND;
 		float facing = max(dot(n, key), 0.0) * 0.8 + max(dot(n, fill), 0.0) * 0.35 + 0.28;
-		scene = tone * facing * (0.6 + light * 0.6) * uTrayPose[index].y;
+		scene = tone * facing * (0.8 + light * 0.7) * uTrayPose[index].y;
 		glow = shed * POOL * 0.25;
 	} else if (kind == 5) {
 		// A label: its plate as the painter drew it, floating on its beam, its rim lit by the beam.
@@ -644,7 +757,7 @@ void trace(vec2 frag, vec2 sdx, vec2 sdy, float pixel, out vec3 scene, out vec3 
 		float bright = (0.8 + light * 0.4 + lamp * 0.25) * lit(uLineLife[line].y);
 		scene = mix(behind, behind * (1.0 - chip.a) + chip.rgb * bright, pose.y);
 		float burning;
-		glow = uLineColor[line].rgb * exp(plate / 1.6) * 0.35 * pose.y * beamEnergy(line, pose.z, burning);
+		glow = uLineColor[line].rgb * exp(plate / 1.6) * 0.35 * pose.y * beamEnergy(line, pose.z, 24.0, burning);
 	} else {
 		// A tile: its top is the card as the painter drew it, its sides the card's own tone.
 		vec4 c = uCardBox[index];
@@ -667,7 +780,9 @@ void trace(vec2 frag, vec2 sdx, vec2 sdy, float pixel, out vec3 scene, out vec3 
 		glow = shed * (body * 4.0 + 0.05) * (1.0 - top * 0.7);
 		glow += vec3(0.85, 0.9, 1.0) * pose.w * 0.06 * (1.0 - top * 0.6);
 	}
-	glow += seen;
+	// The smoke in front of what the ray meets hides some of it, and its own light lies over it.
+	scene *= 1.0 - veil;
+	glow = glow * (1.0 - veil) + seen;
 
 	// The far table falls into the room's dark.
 	float fog = exp(-max(tHit - uFar * 1.05, 0.0) * 0.3);

@@ -4,9 +4,10 @@
 //
 // The hero draws the site's own model, `site/model`: how an agent, Archboard and its reader work
 // together. Its painting has no ground and draws its cards flat, because the hero lays it on a
-// table and stands each card up itself. It paints no lines either: the hero draws each line as a
-// beam of light above the table. Beside it goes what the hero needs to know of the picture: where
-// each card, tray and label lies, and the route of every line, from its source to its target.
+// table and stands each card up itself. It paints no lines or shadows either: the hero draws each
+// line as a beam of light above the table, and its tiles cast their own shadows. Beside it goes
+// what the hero needs to know of the picture: where each card, tray and label lies, and the route
+// of every line, from its source to its target.
 //
 // The model's viewport shows the whole of `.archboard/vault`, Archboard's own model, as the app
 // draws it.
@@ -273,10 +274,12 @@ async function hero() {
 	const painting = JSON.parse(drawn.painting) as { scene: { background: unknown; body: Item[] } };
 	painting.scene.background = { colour: "transparent" };
 	const found = groups(painting.scene.body);
-	// The hero draws each line as a beam, so the picture keeps no line, junction or traffic of its own.
+	// The hero draws each line as a beam, and the tiles that stand on its table cast their own
+	// shadows, so the picture keeps no line, junction, traffic or shadow of its own.
 	painting.scene.body = painting.scene.body.filter(
 		(item) =>
-			item.item !== "group" || !["line", "junctions", "traffic"].includes(roleOf(item) ?? ""),
+			item.item !== "group" ||
+			!["line", "junctions", "traffic", "shadow"].includes(roleOf(item) ?? ""),
 	);
 	const of = (role: string) => found.filter((group) => roleOf(group) === role);
 

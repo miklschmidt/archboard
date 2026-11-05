@@ -14,8 +14,12 @@ import { FRAGMENT, LIMITS } from "./shader";
 const WIDTH = 10;
 const SHEET = { left: -WIDTH / 2, near: -(WIDTH * plan.height) / plan.width / 2, width: WIDTH };
 
-/** How thick a card's tile stands, how high the pointer lifts it, and how deep a tray sinks. */
-const TILE = { thickness: 0.055, lifted: 0.1, tray: 0.03 };
+/**
+ * How thick a card's tile stands, how high the pointer lifts it, and how deep a tray sinks. Before
+ * it rises, a tile waits below what it stands on, its top this far under it, so that none of it
+ * shows until it comes up.
+ */
+const TILE = { thickness: 0.055, lifted: 0.1, tray: 0.03, waits: 0.012 };
 
 /**
  * Each kind of line's beam: how high it floats, in table units, and how thick it is. A main line
@@ -660,24 +664,30 @@ export function lightTable(
 			const cards = plan.cards.slice(0, LIMITS.cards);
 			gl.uniform1i(at("uCardCount"), cards.length);
 			gl.uniform4fv(at("uCardBox"), cardBoxes);
-			const poses = cards.map((card, index) => {
+			// What each tile stands on: the table or its tray's floor, or the air the pointer lifts it to.
+			const floors = cards.map(
+				(card, index) =>
+					(card.tray >= 0 ? -(trays[card.tray]?.[0] ?? 0) : 0) + (lift[index] ?? 0) * TILE.lifted,
+			);
+			const poses = cards.map((_, index) => {
 				const since = t - (score.cards[index] ?? 0);
 				const rise = live ? easeOut(since / ENTRY.rise) : 0;
-				const base =
-					(card.tray >= 0 ? -(trays[card.tray]?.[0] ?? 0) : 0) + (lift[index] ?? 0) * TILE.lifted;
+				const floor = floors[index] ?? 0;
+				const foot = floor - (TILE.thickness + TILE.waits) * (1 - rise);
 				const face = live ? smooth(0, ENTRY.rise * 0.65, since) : 0;
 				const flash = live && since > 0 && Number.isFinite(since) ? Math.exp(-since * 4.5) : 0;
-				return [base, base + TILE.thickness * rise, face, flash];
+				return rise > 0 ? [foot, foot + TILE.thickness, face, flash] : [floor, floor, face, flash];
 			});
 			gl.uniform4fv(at("uCardPose"), poses.flat());
 			gl.uniform1fv(at("uCardLit"), cardLit.slice(0, LIMITS.cards));
 			gl.uniform1f(at("uCorner"), Math.max(...plan.cards.map((card) => card.radius)) * scale);
 
 			const lines = plan.lines.slice(0, LIMITS.lines);
-			// A beam meets each of its tiles part of the way up the tile's side, as the tile stands now.
+			// A beam meets each of its tiles part of the way up the tile's side, as the tile stands now,
+			// and never below what the tile stands on.
 			const plug = (card: number) => {
-				const [base = 0, top = 0] = poses[card] ?? [];
-				return base + (top - base) * BEAM.plug;
+				const [foot = 0, top = 0] = poses[card] ?? [];
+				return Math.max(floors[card] ?? 0, foot + (top - foot) * BEAM.plug);
 			};
 			const beams = lines.map((line) => {
 				const kind =
@@ -685,11 +695,12 @@ export function lightTable(
 				return [plug(line.from), plug(line.to), kind.height, kind.thick];
 			});
 			gl.uniform4fv(at("uLineBeam"), beams.flat());
-			// How low and how high the beams' light reaches: a ray meets it only between.
+			// How low and how high the beams' light reaches: a ray meets it only between. Their smoke
+			// rises, so below a beam its light is gone by half its reach.
 			const heights = beams.flatMap(([from = 0, to = 0, height = 0]) => [from, to, height]);
 			gl.uniform2f(
 				at("uBeamSpan"),
-				Math.min(...heights) - SHINE * scale,
+				Math.min(...heights) - SHINE * scale * 0.5,
 				Math.max(...heights) + SHINE * scale,
 			);
 			gl.uniform4fv(at("uLineColor"), still ? colours.still : colours.moving);

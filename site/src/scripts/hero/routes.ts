@@ -13,8 +13,8 @@ export const ROUTE_TEXELS = 1024;
 /** How wide a cell of the grid is, in the picture's units. */
 export const CELL = 16;
 
-/** How far a beam's light reaches from its axis, in the picture's units. */
-export const SHINE = 12;
+/** How far a beam's light reaches from its axis, in the picture's units: its smoke is gone by then. */
+export const SHINE = 24;
 
 /** How far a beam takes to rise from its tile to its own height at each end, in the picture's units. */
 export const RAMP = 32;
@@ -22,9 +22,18 @@ export const RAMP = 32;
 /** How far a straight run may pass from the points of a bend it stands for, in the picture's units. */
 const STRAY = 0.25;
 
+/** A point of the picture, in its units. */
+interface Point {
+	x: number;
+	y: number;
+}
+
 /** The routes, ready to load into two float textures. */
 export interface Routes {
-	/** Two texels a run: its ends, then where it starts along its line, its length and the line. */
+	/**
+	 * Three texels a run: its ends; where it starts along its line, its length and the line; and
+	 * where the straight stretch it lies on starts along the line, and how long that is.
+	 */
 	readonly runs: Float32Array;
 	readonly runRows: number;
 	/** `stride` texels a cell, each run's number or -1 after the last. */
@@ -48,12 +57,29 @@ export function buildRoutes(plan: Plan): Routes {
 		const cuts = [0.25, 0.5, 0.75, 1].flatMap((part) => [RAMP * part, line.length - RAMP * part]);
 		let along = 0;
 		for (const piece of line.route) {
-			const points: { x: number; y: number }[] = [];
+			const points: Point[] = [];
 			for (let at = 0; at + 1 < piece.length; at += 2)
 				points.push({ x: piece[at] ?? 0, y: piece[at + 1] ?? 0 });
+			// A straight stretch is a row of legs that keep one heading: a bend ends it.
+			const legs: {
+				a: Point;
+				b: Point;
+				span: number;
+				stretch: { from: number; length: number };
+			}[] = [];
+			let stretch = { from: along, length: 0 };
+			let heading = { x: 0, y: 0 };
 			for (const [a, b] of pairs(straighten(points))) {
 				const span = Math.hypot(b.x - a.x, b.y - a.y);
 				if (span < 1e-3) continue;
+				const way = { x: (b.x - a.x) / span, y: (b.y - a.y) / span };
+				if (way.x * heading.x + way.y * heading.y < 0.9998)
+					stretch = { from: stretch.from + stretch.length, length: 0 };
+				stretch.length += span;
+				heading = way;
+				legs.push({ a, b, span, stretch });
+			}
+			for (const { a, b, span, stretch } of legs) {
 				const within = cuts.filter((cut) => cut > along + 0.5 && cut < along + span - 0.5);
 				const marks = [0, ...within.map((cut) => (cut - along) / span).sort((x, y) => x - y), 1];
 				for (const [from, to] of pairs(marks)) {
@@ -65,6 +91,10 @@ export function buildRoutes(plan: Plan): Routes {
 						along + span * from,
 						span * (to - from),
 						index,
+						0,
+						stretch.from,
+						stretch.length,
+						0,
 						0,
 					]);
 				}
@@ -96,10 +126,10 @@ export function buildRoutes(plan: Plan): Routes {
 			}
 		}
 	});
-	const runTexels = runs.length * 2;
+	const runTexels = runs.length * 3;
 	const runRows = Math.max(1, Math.ceil(runTexels / ROUTE_TEXELS));
 	const runData = new Float32Array(runRows * ROUTE_TEXELS * 4);
-	runs.forEach((run, index) => runData.set(run, index * 8));
+	runs.forEach((run, index) => runData.set(run, index * 12));
 
 	const stride = Math.max(1, Math.ceil(Math.max(...cells.map((list) => list.length)) / 4));
 	const gridRows = Math.max(1, Math.ceil((cells.length * stride) / ROUTE_TEXELS));
@@ -122,7 +152,7 @@ function pairs<T>(items: readonly T[]): [T, T][] {
  * @param points The points.
  * @returns The points kept.
  */
-function straighten(points: readonly { x: number; y: number }[]): { x: number; y: number }[] {
+function straighten(points: readonly Point[]): Point[] {
 	const first = points[0];
 	if (!first || points.length < 3) return [...points];
 	const kept = [first];
@@ -150,13 +180,7 @@ function straighten(points: readonly { x: number; y: number }[]): { x: number; y
  * @param by Its end, down.
  * @returns The distance.
  */
-function distance(
-	point: { x: number; y: number },
-	ax: number,
-	ay: number,
-	bx: number,
-	by: number,
-): number {
+function distance(point: Point, ax: number, ay: number, bx: number, by: number): number {
 	const [dx, dy] = [bx - ax, by - ay];
 	const span = dx * dx + dy * dy;
 	const t =
