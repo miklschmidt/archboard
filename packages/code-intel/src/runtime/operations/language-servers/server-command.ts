@@ -245,9 +245,14 @@ function noCheckoutServer(own: CheckoutTypescript | undefined): string {
 	const machine = `${process.platform}-${process.arch}`;
 	if (own === undefined) return "the checkout installs no typescript package";
 	const { version } = own.typescript;
-	return isNative(own.typescript)
-		? `the checkout's TypeScript ${version} has no native tsc for ${machine}`
-		: `the checkout's TypeScript ${version} has no tsc --lsp, and ${TYPESCRIPT_LANGUAGE_SERVER} is neither in the checkout's node_modules nor on the PATH of the Archboard server; install it in either`;
+	if (isNative(own.typescript))
+		return `the checkout's TypeScript ${version} has no native tsc for ${machine}`;
+	if (
+		insideCheckout(own.checkout, path.join(own.typescript.directory, "lib", "tsserver.js")) ===
+		undefined
+	)
+		return `the checkout's TypeScript ${version} has no lib/tsserver.js inside the checkout; reinstall typescript in the checkout`;
+	return `the checkout's TypeScript ${version} has no tsc --lsp, and ${TYPESCRIPT_LANGUAGE_SERVER} is neither in the checkout's node_modules nor on the PATH of the Archboard server; install it in either`;
 }
 
 /**
