@@ -39,9 +39,6 @@ const CORE_BUILD_DIRECTORY = fileURLToPath(
 	new URL("../../shared/protocol/generated/core/", import.meta.url),
 );
 
-/** The WebAssembly file of the build. */
-const CORE_WASM = join(CORE_BUILD_DIRECTORY, "archboard_renderer_wasm_bg.wasm");
-
 /** The command that builds the core, as a refusal names it. */
 const CORE_BUILD_COMMAND = "bun run build:core";
 
@@ -71,4 +68,4 @@ function coreSourceHash(checkout: string = CHECKOUT): string {
 	return digest.digest("hex").slice(0, 16);
 }
 
-export { CHECKOUT, CORE_BUILD_COMMAND, CORE_BUILD_DIRECTORY, CORE_WASM, coreSourceHash };
+export { CHECKOUT, CORE_BUILD_COMMAND, CORE_BUILD_DIRECTORY, coreSourceHash };

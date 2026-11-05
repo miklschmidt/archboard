@@ -1,14 +1,14 @@
 // The renderer core under Bun (ADR 0059). Bun runs TypeScript from source, but
 // the core is a build, so the loader refuses a build of other sources than the
-// checkout holds (ADR 0014): a stale copy would answer for code nobody sees.
+// installation expects (ADR 0014): a stale copy would answer for code nobody sees.
+// A checkout expects the hash of its own Rust sources. A release ships no
+// sources, so it expects the hash that its build recorded in its marker
+// (ADR 0075), and its remedy is to install again.
 
 import { readFileSync } from "node:fs";
-import {
-	CHECKOUT,
-	CORE_BUILD_COMMAND,
-	CORE_WASM,
-	coreSourceHash,
-} from "#runtime/store/core-sources.ts";
+import { join } from "node:path";
+import { installation } from "@archboard/workspace/installation";
+import { CORE_BUILD_COMMAND, coreSourceHash } from "#runtime/store/core-sources.ts";
 
 /** The core's exports, as wasm-bindgen wrote them. */
 type Core = typeof import("#shared/protocol/generated/core/archboard_renderer_wasm.js");
@@ -32,32 +32,71 @@ class CoreBuildError extends Error {
 	}
 }
 
-/** What makes a good build, and where the tools for it are named. */
-const CORE_BUILD_STEP = `Run \`${CORE_BUILD_COMMAND}\` in ${CHECKOUT}, with the tools that its INSTALL.md names.`;
+/** The installation that holds the core: its mode, its core directory and the hash it expects. */
+type CoreInstallation = Pick<
+	ReturnType<typeof installation>,
+	"mode" | "root" | "coreDirectory" | "coreHash"
+>;
 
-/** The build this thread compiled, which it hands each layout worker it starts. */
-let compiled: WebAssembly.Module | undefined;
+/** The glue and the WebAssembly of a build, by name in the core directory. */
+const CORE_GLUE = "archboard_renderer_wasm.js";
+const CORE_WASM = "archboard_renderer_wasm_bg.wasm";
 
 /**
- * The glue wasm-bindgen wrote. Bun loads a module synchronously on require,
- * so a picture is painted in the same turn it is laid out in.
+ * What makes a good build: a checkout builds the core, a release installs again.
+ * @param from The installation that holds the core.
+ * @returns The sentence that says what to do.
+ */
+function remedy(from: CoreInstallation): string {
+	return from.mode === "release"
+		? `Reinstall Archboard (${from.root}) to get a matching core, then run the command again.`
+		: `Run \`${CORE_BUILD_COMMAND}\` in ${from.root}, with the tools that its INSTALL.md names.`;
+}
+
+/**
+ * Who names the hash a core must record, as a refusal says it.
+ * @param from The installation that holds the core.
+ * @returns The phrase.
+ */
+function holder(from: CoreInstallation): string {
+	return from.mode === "release" ? "this release recorded" : `${from.root} holds`;
+}
+
+/**
+ * The source hash the core of an installation must record. Only a checkout reads Rust sources.
+ * @param from The installation that holds the core.
+ * @returns The hash.
+ */
+function expectedHash(from: CoreInstallation): string {
+	return from.coreHash.kind === "marker" ? from.coreHash.hash : coreSourceHash(from.coreHash.root);
+}
+
+/** The build this thread compiled, and the directory it came from; a layout worker gets it. */
+let compiled: { readonly directory: string; readonly module: WebAssembly.Module } | undefined;
+
+/**
+ * The glue wasm-bindgen wrote, in the core directory of an installation. Bun
+ * loads a module synchronously on require, so a picture is painted in the same
+ * turn it is laid out in.
+ * @param directory The core directory.
  * @returns The glue.
  */
-function glue(): Core {
+function glue(directory: string): Core {
 	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the glue wasm-bindgen wrote, typed by its own declarations
-	return require("#shared/protocol/generated/core/archboard_renderer_wasm.js") as Core;
+	return require(join(directory, CORE_GLUE)) as Core;
 }
 
 /**
  * Load the core's build on this thread, at once, and check it against the
  * sources it must be made from. The glue keeps the instance it made first, so
  * a second load on the same thread checks the hash again and instantiates nothing.
- * @param expected The source hash the build must record; the checkout's own by default.
+ * @param expected The source hash the build must record; the installation's own by default.
+ * @param from The installation that holds the core; the one this process runs by default.
  * @returns The core.
  * @throws {CoreBuildError} When the build is missing, unreadable, or made from other sources.
  */
-function loadCore(expected: string = coreSourceHash()): Core {
-	return loadBuild(expected).core;
+function loadCore(expected?: string, from: CoreInstallation = installation()): Core {
+	return loadBuild(expected ?? expectedHash(from), from).core;
 }
 
 /**
@@ -67,7 +106,8 @@ function loadCore(expected: string = coreSourceHash()): Core {
  * @throws {CoreBuildError} When the build is missing, unreadable, or made from other sources.
  */
 function compiledCore(): WebAssembly.Module {
-	return loadBuild(coreSourceHash()).module;
+	const from = installation();
+	return loadBuild(expectedHash(from), from).module;
 }
 
 /**
@@ -77,7 +117,7 @@ function compiledCore(): WebAssembly.Module {
  * @returns The core.
  */
 function instantiateCore(module: WebAssembly.Module): Core {
-	const core = glue();
+	const core = glue(installation().coreDirectory);
 	core.initSync({ module });
 	return core;
 }
@@ -85,41 +125,56 @@ function instantiateCore(module: WebAssembly.Module): Core {
 /**
  * Load the build on this thread, compiling it the first time, and check it.
  * @param expected The source hash the build must record.
+ * @param from The installation that holds the core.
  * @returns The core and the module it was instantiated from.
  * @throws {CoreBuildError} When the build is missing, unreadable, or made from other sources.
  */
-function loadBuild(expected: string): { core: Core; module: WebAssembly.Module } {
+function loadBuild(
+	expected: string,
+	from: CoreInstallation,
+): { core: Core; module: WebAssembly.Module } {
+	const directory = from.coreDirectory;
 	let core: Core;
 	let bytes: Buffer;
 	try {
-		// A missing build is refused with what to run, not thrown at import.
-		core = glue();
-		bytes = readFileSync(CORE_WASM);
+		// A missing build is refused with what to do, not thrown at import.
+		core = glue(directory);
+		bytes = readFileSync(join(directory, CORE_WASM));
 	} catch {
 		throw new CoreBuildError(
 			"CORE_BUILD_MISSING",
-			`The renderer core is not built. ${CORE_BUILD_STEP}`,
+			`The renderer core is missing from ${directory}. ${remedy(from)}`,
 		);
 	}
 	let module: WebAssembly.Module;
 	try {
-		module = compiled ?? new WebAssembly.Module(new Uint8Array(bytes));
+		module =
+			compiled?.directory === directory
+				? compiled.module
+				: new WebAssembly.Module(new Uint8Array(bytes));
 		core.initSync({ module });
-		compiled = module;
+		compiled = { directory, module };
 	} catch {
 		throw new CoreBuildError(
 			"CORE_BUILD_INVALID",
-			`The renderer core build cannot be loaded. ${CORE_BUILD_STEP}`,
+			`The renderer core in ${directory} cannot be loaded. ${remedy(from)}`,
 		);
 	}
 	const built = core.sourceHash();
 	if (built !== expected) {
 		throw new CoreBuildError(
 			"CORE_BUILD_STALE",
-			`The renderer core was built from other sources (${built}) than ${CHECKOUT} holds (${expected}). ${CORE_BUILD_STEP}`,
+			`The renderer core in ${directory} was built from other sources (${built}) than ${holder(from)} (${expected}). ${remedy(from)}`,
 		);
 	}
 	return { core, module };
 }
 
-export { CoreBuildError, compiledCore, instantiateCore, loadCore, type Core };
+export {
+	CoreBuildError,
+	compiledCore,
+	instantiateCore,
+	loadCore,
+	type Core,
+	type CoreInstallation,
+};
