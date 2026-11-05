@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-05T14:54:00Z'
-updated_date: '2026-11-05T15:12:00Z'
+updated_date: '2026-11-05T15:34:00Z'
 labels:
   - codex
   - tooling
@@ -74,4 +74,6 @@ Ignored (not used by Archboard):
 Found but outside the bump: ImageGenerationItem.transparentBackground has serde(default) without skip_serializing_if, so Codex writes null when it is unset, while the generated type says optional boolean. This was the same at 0.160.0. The schema keeps the generated type.
 
 Re-read claims: every comment that cites Codex 0.160.0 behavior was re-read at 0.166.0 and now names 0.166.0 or the range 0.160.0 to 0.166.0. The voice package README pins 0.166.0. docs/design/codex-workbench-authored-contracts.md keeps 0.160.0 as its dated reviewed input.
+
+Live trial, 2026-11-05: this worktree's own server on port 16038 (not 3000), started with ARCHBOARD_REPOS set to a scratch registry and the default state directory for the Codex sign-in, on a scratch copy of examples/web-shop at <scratchpad>/trial/.archboard/vault, imported with -C. The server's Codex child is node_modules/@openai/codex-linux-x64 and reports codex-cli 0.166.0. One message sent from the browser ('In one sentence, what does the Checkout API module do?') was answered ('The Checkout API handles orders by reserving stock, charging the shopper's card, and sending a receipt before returning a response.'). The epoch manifest of the run records the coordinator thread/start and the workhorse create_thread as committed and delivered. The server was stopped after the trial. Gate: bun run check passed every lane up to the serial browser lane. In that lane, canonical-model-corrections failed once and codex-text-workbench timed out once under the full lane. Both passed in three focused runs (run-browser-lane.ts --focus), and the full lane rerun failed only codex-text-workbench.
 <!-- SECTION:NOTES:END -->
