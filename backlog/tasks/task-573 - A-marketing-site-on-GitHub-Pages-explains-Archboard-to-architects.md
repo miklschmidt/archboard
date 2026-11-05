@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-04T15:39:00Z'
-updated_date: '2026-11-05T03:13:00Z'
+updated_date: '2026-11-05T03:42:00Z'
 labels: []
 dependencies: []
 ordinal: 1019000
@@ -141,4 +141,16 @@ Open:
 Smoke falloff (2026-11-05, owner direction: tune the smoke down a bit, because its falloff is still harsh):
 - 3f2b7fa77: the smoke's cross-section is a bell, exp(-4x^2)(1-x^2)^2, in place of exp(-1.2x)(1-x^2)^2. A screen shows faint light brighter than its share, so the old profile looked almost whole out to the beam's reach and then ended at a contour. The wisp threshold is wider, the smoke gathers more slowly from a bend (power 1.8 for 1.2), and the veil is 0.5 for 0.6.
 Evidence: reduced-motion 4K stills of the same frame before and after. The outer wisps above the long Panes to paintings beam fade into the table with no contour, and the smoke is lighter. Format check on the changed files: clean.
+
+Code review before the pull request (2026-11-05, owner direction: full send):
+- sol-loop on gpt-6.1-sol at xhigh through T3 Code, on the changes since the last review (56dcedba7). Round 1 ran one reviewer for each scope and boundary: the hero table, the painting pipeline and renderer, the page and live figures, and the boundaries between them. Round 2 checked the fixes and approved them with no new findings.
+- Taken: B1 (104dfe5c9) site/README.md no longer asks for model archive-init in a Git holder, which refuses it. C1 (49c07b428) a painter frame error hands the own figure back to its SVG. C2 (6db1639bd) a painting that does not load (an HTTP error, as after a redeploy) keeps the SVG of the own figure and of the hero window. A1 (fb1d23b89) the hero's edge fades use defined smoothstep ranges. A2 (0b003dd6d) the table's entrance runs on visible time, and reduced motion settles it for good. A3 (33867cc3f) the closing field's lamp stays on the canvas when motion returns. A4 (c36f5dbb7) a resize that keeps the aspect, as a change of pixel ratio, refits the camera and paints finer. A5 (85ff9dcf6) a restored WebGL context enables parallel shader compile again. A6 (f521ad09e) the pointer leaving clears a still table's highlight. AC2 (b495b3779, rewritten) words that reflow refit the table. AC4 (2e0912f7c) a stage resize can start the hero window.
+- Discarded as duplicates: BC1 (of C1), AB1 and AC1 (of A2), AC3 (covered by A2 and A3).
+Evidence (production build of 2e0912f7c, headless Chrome with ANGLE on Vulkan):
+- With the painting files answering 404, the own figure and the hero window end on their SVGs, shown and loaded, with no page error. With the painting files, both paint, and the hero window plays all its lines and paints the shop.
+- A forced draw failure on the own figure's canvas after its painter started returns the figure to its SVG, with no page error.
+- The hero hidden for 5 s during its entrance comes back mid-entrance and completes after. Reduced motion turned on and off keeps the table complete and the closing field's lamp in place.
+- A lost and restored WebGL context draws the table again. No browser on this machine offers KHR_parallel_shader_compile, so the A5 line itself rests on the WebGL specification.
+- At 390x844 the table, the hero window and the own figure work, with no horizontal overflow.
+- astro check: 0 errors, 0 warnings, 0 hints. Format check on the changed files: clean.
 <!-- SECTION:NOTES:END -->
