@@ -66,7 +66,7 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 		powerPreference: "low-power",
 	});
 	if (!gl) return null;
-	const parallel = gl.getExtension("KHR_parallel_shader_compile");
+	let parallel = gl.getExtension("KHR_parallel_shader_compile");
 	let resources: { program: WebGLProgram; buffer: WebGLBuffer } | undefined;
 	let linking: { program: WebGLProgram; shaders: WebGLShader[] } | undefined;
 	const locations = new Map<string, WebGLUniformLocation | null>();
@@ -243,6 +243,7 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 		locations.clear();
 	});
 	canvas.addEventListener("webglcontextrestored", () => {
+		parallel = gl.getExtension("KHR_parallel_shader_compile");
 		initialize();
 		update();
 	});
