@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06T19:06:00Z'
-updated_date: '2026-11-06T20:02:00Z'
+updated_date: '2026-11-06T20:16:00Z'
 labels: []
 dependencies: []
 documentation:
@@ -61,6 +61,8 @@ AC #5 left unchecked: git mv, rewrites, claim growth and release ran for real in
 
 AC #5 proven by the first real move (TASK-582.03.02 B1, commit 2d131626b): apply of the codex-app-server manifest ran git mv on 46 files and rewrote 52 (# aliases in src and tests, the capacity lane path in vite.config.ts). The vault step on the real vault wrote 86 statements (12 edit-module set.binding, 19 edit-relationship set.anchor, 55 edit-step set.anchor) through archboard model edit: attempt 1 answered CLAIM_REQUIRED, the claim grew, attempt 2 (operation move-source-6f7f716e4061-1793994758915-2) answered success, applied: true; model claims was empty afterwards. archboard check then held 81 warnings, only CONTAINER_UNBOUND and CONTAINER_PARTS_OUTSIDE, and bun run check passed 21/21.
 The first apply stopped after the moves because archboard restart refuses -C; f05718f21 drops -C (the restart runs in the checkout) and makes apply format the files it rewrote, because a rewritten import can change how a line wraps (the format check failed on 7 files of B1 without it). rebind then finished the vault step from the moved checkout, as designed.
+
+Second codemod fix after B3 (341d3c461): a template-literal # specifier's static folder now follows a folder that moves as one (the role instructions of the workbench broke server start), and a relative import in a file outside a workspace follows its target (site/src/scripts/voice-orb.ts).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
