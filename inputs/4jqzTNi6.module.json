@@ -5,7 +5,7 @@
   "responsibility": "Renders every reading with each engine, theme and comparison, and compares two runs by hash, size and time",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "scripts/layout-investigation/render-corpus.ts"
+    "path": "scripts/render-corpus.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#4jqzTNi6",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "scripts/layout-investigation/render-corpus.ts",
+        "path": "scripts/render-corpus.ts",
         "symbol": "renderArchitecture"
       },
       "id": "vKEsyHFk#aJzBoBHj",

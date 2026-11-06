@@ -5,7 +5,7 @@
   "responsibility": "Compares complete canonical readings across the available layout engines",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "scripts/layout-investigation/engine-gallery.ts"
+    "path": "scripts/engine-gallery.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#7xQLokcW",
