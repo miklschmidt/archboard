@@ -9,5 +9,32 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#MCVEWRGl",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "the vault's policy",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/design/wide-board-layout-fixtures/timing.ts",
+        "symbol": "readVaultConfiguration"
+      },
+      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe",
+      "id": "vKEsyHFk#vo1cE4kF"
+    },
+    {
+      "order": 200,
+      "kind": "call",
+      "label": "time each render",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/design/wide-board-layout-fixtures/timing.ts",
+        "symbol": "renderArchitecture"
+      },
+      "to": "vKEsyHFk#jAl99x56",
+      "id": "vKEsyHFk#kOmlZURV"
+    }
+  ]
 }

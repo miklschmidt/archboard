@@ -22,6 +22,19 @@
       },
       "id": "vKEsyHFk#aJzBoBHj",
       "to": "vKEsyHFk#jAl99x56"
+    },
+    {
+      "order": 200,
+      "kind": "call",
+      "label": "the model of each reading in the corpus",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/render-corpus.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "to": "vKEsyHFk#ZGONZKxj",
+      "id": "vKEsyHFk#ZzfH0MsX"
     }
   ]
 }
