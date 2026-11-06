@@ -6,7 +6,7 @@
   "description": "The existing installer initializes new vaults through the shared canonical initializer. Existing vaults receive an explicit migration route without automatic rewriting.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/install-skill/repo-setup.ts",
+    "path": "apps/cli/src/cli/commands/install-skill/operations/repo-setup.ts",
     "symbol": "setUpRepository"
   },
   "schemaVersion": 1,

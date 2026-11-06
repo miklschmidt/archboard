@@ -6,7 +6,7 @@
   "description": "Canonical models are the one live authoring format. Model commands own discovery, recursive readings, proposals, history, code inspection, and walkthroughs. Legacy commands retire.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/read.ts"
+    "path": "apps/cli/src/cli/commands/model/operations/read.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#66xX05dW",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/read.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/read.ts",
         "symbol": "readArchitectureModelOnServer"
       },
       "id": "vKEsyHFk/XppR9owz#TeLAhdej",

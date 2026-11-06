@@ -597,7 +597,7 @@ Those types have one definition in `shared/protocol` and import no runtime code.
 The runtime pane entry no longer exports these message types.
 Moving the existing exports adds no public names or interface allowance.
 Each lifecycle job remains one operation, so callers never assemble process readiness or shutdown steps.
-CLI route clients remain in `apps/cli/src/cli/clients/server/`.
+CLI route clients remain in `apps/cli/src/cli/server-access/clients/`.
 
 - `./server` is what a command does to the server of its checkout. `ensureServerRunning` reaches the server at the
   URL, or starts one when it may and waits for its readiness, and answers its URL, whether it started it and its pid
@@ -782,15 +782,17 @@ The root `generate:cli-contract` script, the system tests and the skill evaluati
 path, and `archboard install-skill --print-source` is how a test learns which skills it ships.
 
 - `src/cli/` owns command contracts, dispatch, discovery, server clients, and file receipts.
-  `protocol/contract/` declares invocation, answer, and refusal contracts.
-  `rules/` projects those contracts into Commander parsing and help.
-  `rules/model/` puts the shared interface derivations into the answers and words of `model inspect` and `model compare`.
-  `clients/server/` calls the public canonical HTTP routes through the gated server client.
-  `operations/model/` owns model commands, including claims, edits, inspection, migration, history, and rendering.
-  Pane, repository, server, vault, and skill installation commands retain their existing operation owners.
-  `operations/invocation/` resolves the command table, session, and explicit vault.
-  `operations/execution/` presents one operation result.
-  `operations/contract-artifacts/` generates the command proof from the shipped contracts.
+  `routing/` resolves the command table, the bootstrap, the session, and the explicit vault, and
+  dispatches one command. `routing/rules/` holds dispatch, the registry and help.
+  `contract/protocol/` declares invocation, answer, and refusal contracts.
+  `contract/rules/` projects those contracts into Commander parsing and help.
+  `contract/operations/` runs one contract and presents its result.
+  `commands/<command>/` holds each command family: `model`, `vault`, `pane`, `repo`,
+  `install-skill`, `server-control` and `contract-artifacts`.
+  `commands/model/` owns model commands, including claims, edits, inspection, migration, history, and rendering.
+  `commands/model/rules/` puts the shared interface derivations into the answers and words of `model inspect` and `model compare`.
+  `commands/contract-artifacts/` generates the command proof from the shipped contracts.
+  `server-access/clients/` calls the public canonical HTTP routes through the gated server client.
   No legacy board or top-level claim/release command remains live.
 - `command-owner` paths in the command table and the `generatedFrom` field of the proof are
   repository paths of these files. Moving a command file means editing `run.ts`.

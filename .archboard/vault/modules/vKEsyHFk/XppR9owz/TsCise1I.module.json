@@ -6,7 +6,7 @@
   "description": "Translates the shared canonical model requests without interpreting patches or history. model edit --input accepts an explicit historical correction with a prior checkpoint, reason and immutable source revisions. model read, compare and proposals expose corrected logical readings and exact original checkpoints.\n\nNarrative authoring and playback use the existing model edit and read schemas, including separate source and target revisions.\n\nPreview reads translate explicit legacyAddress and bookmark selectors. Converted walkthroughs reuse the existing playback contract. The runtime resolves identity, original coverage, and unavailable references.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/clients/server/architecture-model.ts"
+    "path": "apps/cli/src/cli/server-access/clients/architecture-model.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#TsCise1I",
@@ -56,7 +56,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/clients/server/architecture-model.ts",
+        "path": "apps/cli/src/cli/server-access/clients/architecture-model.ts",
         "symbol": "requestJson"
       },
       "id": "vKEsyHFk/XppR9owz#ZglcNYUQ",
@@ -95,11 +95,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/clients/server/architecture-model.ts",
+        "path": "apps/cli/src/cli/server-access/clients/architecture-model.ts",
         "symbol": "isRecord"
       },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#hbm71jgF"
+      "id": "vKEsyHFk#hbm71jgF",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     }
   ]
 }

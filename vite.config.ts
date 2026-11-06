@@ -412,7 +412,7 @@ export default defineConfig({
 					"packages/code-binding/tests/runtime/operations/resolution.test.ts",
 					"packages/workbench/tests/server/workbench-host/services/production-initialization.test.ts",
 					"packages/workbench/tests/server/actions/services/dynamic-approval-sessions.test.ts",
-					"apps/cli/tests/cli/operations/vault/language-server-configuration.test.ts",
+					"apps/cli/tests/cli/commands/vault/operations/language-server-configuration.test.ts",
 					"tests/system/models/model-proposals.test.ts",
 					"tests/system/models/model-corrections.test.ts",
 					"tests/system/process-contracts/codex-workbench-storage.test.ts",

@@ -6,7 +6,7 @@
   "description": "Passes explicit migration origin, scoped original state, and retained checkpoint selectors through shared architecture operations. Original retention uses configured signing and exact retry without installing a model.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/checkpoints.ts"
+    "path": "apps/cli/src/cli/commands/model/operations/checkpoints.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#XfxA8lUl",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/checkpoints.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/checkpoints.ts",
         "symbol": "retainArchitectureCheckpointOnServer"
       },
       "id": "vKEsyHFk/XppR9owz#0PBRM9B2",

@@ -6,7 +6,7 @@
   "description": "Exports structural and behavioral canonical readings through the shared projection and existing renderer. The existing render recipe records exact selectors and revision for reproducible embeds.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/render.ts"
+    "path": "apps/cli/src/cli/commands/model/operations/render.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#255ksC3D",
@@ -40,7 +40,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/render.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/render.ts",
         "symbol": "modelRenderContract"
       },
       "id": "vKEsyHFk/XppR9owz#OanwxJtd",

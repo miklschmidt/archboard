@@ -5,7 +5,7 @@
   "responsibility": "Renders the generated reference of every command contract from the command table",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/contract-artifacts"
+    "path": "apps/cli/src/cli/commands/contract-artifacts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#glQyCXTG",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/contract-artifacts/render.ts",
+        "path": "apps/cli/src/cli/commands/contract-artifacts/operations/render.ts",
         "symbol": "cliContractRegistry"
       },
       "id": "vKEsyHFk/XppR9owz#kggkjerM",

@@ -5,11 +5,11 @@
   "responsibility": "status: whether the Archboard server answers, who it is, and what it reports",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/server/status.ts"
+    "path": "apps/cli/src/cli/commands/server-control/operations/status.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#2KmUovkl",
-  "parent": "vKEsyHFk/XppR9owz#o5zkAtUT",
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -33,19 +33,6 @@
   ],
   "outgoing": [
     {
-      "order": 59000,
-      "kind": "call",
-      "label": "what answers at its address",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/server/status.ts",
-        "symbol": "serverStatus"
-      },
-      "id": "vKEsyHFk/XppR9owz#iDjPNIJS",
-      "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
-    },
-    {
       "order": 12000,
       "kind": "http",
       "label": "health: is this the server of this checkout",
@@ -57,6 +44,19 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#4GkwbIhi",
       "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
+    },
+    {
+      "order": 59000,
+      "kind": "call",
+      "label": "what answers at its address",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/server-control/operations/status.ts",
+        "symbol": "serverStatus"
+      },
+      "id": "vKEsyHFk/XppR9owz#iDjPNIJS",
+      "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
     }
   ]
 }

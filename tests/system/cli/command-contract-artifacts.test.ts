@@ -12,7 +12,7 @@ import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 
 const proofSchema = z.object({
 	schemaVersion: z.literal(7),
-	generatedFrom: z.literal("apps/cli/src/cli/operations/invocation/run.ts"),
+	generatedFrom: z.literal("apps/cli/src/cli/routing/operations/run.ts"),
 	routes: z.array(
 		z
 			.object({
@@ -47,10 +47,10 @@ describe("command contract artifact generation", () => {
 			expect(first.status, artifactFailure(first)).toBe(0);
 			expect(second.status, artifactFailure(second)).toBe(0);
 			expect(first.stderr, artifactFailure(first)).toContain(
-				"bun apps/cli/src/cli/operations/contract-artifacts/generate.ts",
+				"bun apps/cli/src/cli/commands/contract-artifacts/operations/generate.ts",
 			);
 			expect(second.stderr, artifactFailure(second)).toContain(
-				"bun apps/cli/src/cli/operations/contract-artifacts/generate.ts",
+				"bun apps/cli/src/cli/commands/contract-artifacts/operations/generate.ts",
 			);
 			expect(fixture.files(fixture.first)).toEqual(artifactNames.toSorted());
 			expect(fixture.files(fixture.second)).toEqual(artifactNames.toSorted());

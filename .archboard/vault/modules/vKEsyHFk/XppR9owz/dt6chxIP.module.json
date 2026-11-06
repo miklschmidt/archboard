@@ -5,7 +5,7 @@
   "responsibility": "The pane routes: the panes on screen, one more pane, closing one, and pointing one at a model as an agent",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/clients/server/panes.ts"
+    "path": "apps/cli/src/cli/server-access/clients/panes.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#dt6chxIP",
@@ -78,7 +78,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/clients/server/panes.ts",
+        "path": "apps/cli/src/cli/server-access/clients/panes.ts",
         "symbol": "statedInvocation"
       },
       "id": "vKEsyHFk/XppR9owz#IybnFJlJ",
@@ -91,7 +91,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/clients/server/panes.ts",
+        "path": "apps/cli/src/cli/server-access/clients/panes.ts",
         "symbol": "requestJson"
       },
       "id": "vKEsyHFk/XppR9owz#4qdyTWGi",

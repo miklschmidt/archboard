@@ -502,9 +502,9 @@ The slice adds no browser behavior.
   proofs are derived views. The gate renders and validates them in memory, then
   invokes `bun run generate:cli-contract -- --output-dir <temporary-directory>`
   twice from absent output directories and compares exact bytes. The script
-  is `apps/cli/src/cli/operations/contract-artifacts/generate.ts`, which the
+  is `apps/cli/src/cli/commands/contract-artifacts/operations/generate.ts`, which the
   root script runs by path, and
-  `apps/cli/tests/cli/operations/contract-artifacts/render.test.ts` holds
+  `apps/cli/tests/cli/commands/contract-artifacts/operations/render.test.ts` holds
   the rendered routes to the live registry. The system case removes
   the temporary outputs and proves the checkout status is unchanged. For a
   local readable copy, `bun run generate:cli-contract` writes the three views
@@ -513,7 +513,7 @@ The slice adds no browser behavior.
 - The CLI owners in `test:system` resolve `bin.archboard` from `package.json` and drive
   that executable from outside the checkout. They cover vault lookup, checkout hand-off,
   repository selection, skill installation, canonical operations, and resource cleanup.
-  `apps/cli/tests/cli/rules/routing/help.test.ts` discovers command topics from
+  `apps/cli/tests/cli/routing/rules/help.test.ts` discovers command topics from
   `cliContractRegistry()` and tests their help through the real parser.
 - Normal lock owners prove reachable one-server exclusion. The opt-in topology
   owner proves a claim in one Archboard server process excludes writes through
