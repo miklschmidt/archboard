@@ -2,8 +2,8 @@
   "order": 27002,
   "name": "Command contract",
   "kind": "module",
-  "responsibility": "Runs one bound command contract: parse, prerequisites, handler, presentation; callers reach it only through its root files",
-  "description": "protocol/contract defines a command and operations/execution runs one: runCommand in runner.ts is the one call routing makes, and it passes straight on to executeCommand in execution.ts. The bootstrap that bin.ts runs first and the status contract are drawn here too.",
+  "responsibility": "Runs one bound command contract: parse, prerequisites, handler, presentation",
+  "description": "contract/protocol defines a command and contract/operations runs one: runCommand in runner.ts is the one call routing makes, and it passes straight on to executeCommand in execution.ts. contract/rules turns a contract into Commander parsing and the usage that help prints.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/contract"
