@@ -10,7 +10,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@archboard/ui-kit/components";
 import { tabSessionId } from "#ui/panes/tab-session/clients/tab-session.ts";
-import { ModelExplanationContext } from "#ui/state/architecture-model/explanations.ts";
+import { ModelExplanationContext } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
 import type { UserMarks } from "#ui/panes/pane-session/state/user-marks.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import {
@@ -19,8 +19,8 @@ import {
 	explanationRequest,
 	type ExplanationInvocation,
 	type ExplanationRequest,
-} from "#ui/clients/architecture-model/explanations.ts";
-import { ModelExplanationResult } from "#ui/components/architecture-model/ModelExplanationResult.tsx";
+} from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
+import { ModelExplanationResult } from "#ui/architecture-drawing/model-reader/reading/components/ModelExplanationResult.tsx";
 
 interface HostProps {
 	vault: string;

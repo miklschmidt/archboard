@@ -5,11 +5,11 @@
   "responsibility": "Draws the open module's picture and lays the walkthrough beat, the selection and the code warnings over it",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx"
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelDiagram.tsx"
   },
-  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
   "schemaVersion": 1,
   "id": "vKEsyHFk#lfwJNBMY",
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
   "outgoing": [
     {
       "order": 80000,
@@ -18,11 +18,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelDiagram.tsx",
         "symbol": "markCodeWarnings"
       },
-      "to": "vKEsyHFk/gbyqW4H3#n7ZlRkbA",
-      "id": "vKEsyHFk#SZnO6aFz"
+      "id": "vKEsyHFk#SZnO6aFz",
+      "to": "vKEsyHFk/gbyqW4H3#n7ZlRkbA"
     }
   ]
 }

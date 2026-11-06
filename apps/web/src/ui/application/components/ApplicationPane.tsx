@@ -1,5 +1,5 @@
 import { usePublishedNarration } from "#ui/application/hooks/use-published-narration.ts";
-import { useModelArrival } from "#ui/hooks/architecture-model/use-model-arrival.ts";
+import { useModelArrival } from "#ui/architecture-drawing/model-reader/hooks/use-model-arrival.ts";
 import {
 	useCallback,
 	useEffect,
@@ -14,7 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { RecordedModelStage } from "#ui/walkthroughs/recording/components/RecordedModelStage.tsx";
 import type { Model } from "@archboard/model/content";
 import { ModelExplanationHost } from "#ui/application/components/ModelExplanationHost.tsx";
-import { explanationKey } from "#ui/clients/architecture-model/explanations.ts";
+import { explanationKey } from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
 import { tabSessionId } from "#ui/panes/tab-session/clients/tab-session.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { useVaultPolicyRefresh } from "#ui/vault-diagnostics/hooks/use-vault-check.ts";
@@ -31,7 +31,7 @@ import {
 	createPaneWorkbenchSocketOwner,
 	type PaneWorkbenchSocketOwner,
 } from "#ui/panes/pane-session/clients/workbench-socket.ts";
-import { ArchitectureModelStage } from "#ui/components/architecture-model/ArchitectureModelStage.tsx";
+import { ArchitectureModelStage } from "#ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx";
 import { type WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
 import {
 	createBrowserWorkbenchTransport,

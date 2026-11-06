@@ -1,5 +1,5 @@
 import { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
-import { comparisonIntent } from "#ui/rules/architecture-model/comparison-intent.ts";
+import { comparisonIntent } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import type { ModelAddress } from "#ui/panes/reading-routing/rules/address.ts";
 
 /**

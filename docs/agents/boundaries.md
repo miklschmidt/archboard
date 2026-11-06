@@ -840,22 +840,22 @@ behavior has an index: a caller imports the file that defines a name.
   `src/ui/theme/`, because a stylesheet is no role; the plugin judges TypeScript only. Its `@source` paths are
   relative to it. `vite.config.ts` stays at the repository root and names the root, the output and the dev server's
   `fs.allow`, which lets the dev server serve `packages/` and `node_modules` outside the root.
-- `src/ui/` is the `ui` area. Until its move (TASK-582.03.03), each behavior is a folder under each
-  role it needs. The move puts each behavior first, with its role folders inside it.
+- `src/ui/` is the `ui` area. Each behavior is a folder, and its role folders sit inside it.
   `application` owns the root, the pane records and lists, the agent surfaces and the workspace port.
-  `shell` owns the frame, navigator and rows. `pane-session` owns one pane's socket, status, reading and registration.
-  `reading-routing` owns the workspace address, and `model-catalog` discovers canonical repository models.
-  Canonical model components own module navigation, reading controls, claims, and selected-state presentation.
-  The existing canvas, walkthrough-recording, and walkthrough-replay owners retain local rendering and playback.
-  `rules/` holds pure behavior, `state/` holds state that outlives a render, and `clients/` owns external effects.
-  `components/` and `hooks/` hold React code. `renderer-build/clients/` holds the declaration of the
-  `virtual:archboard-renderer` module that `vite.config.ts` serves, a `.d.ts` that sits in a role folder because the
-  files directly in `src/` are for entries.
+  `shell` owns the frame, navigator and rows. `panes/` holds the jobs of one pane: `pane-session` owns its socket,
+  status, reading and registration, `reading-routing` owns the workspace address, `model-catalog` discovers canonical
+  repository models, and `tab-session` holds the tab's identity. `walkthroughs/` holds `recording` and `replay`.
+  `vault-diagnostics` and `variant-lifecycle` own the vault repair surface and the variant timeline.
+  `renderer-build/clients/` holds the declaration of the `virtual:archboard-renderer` module that `vite.config.ts`
+  serves, a `.d.ts` that sits in a role folder because the files directly in `src/` are for entries.
+- `architecture-drawing/` draws canonical readings. `model-reader/` explores module scopes and their connections:
+  `access/` reads content and claims and applies live updates, `reading/` holds the reading's components, controls
+  and selected-state presentation, and `reading/module-navigation/` opens selected code and foreign subjects.
 - The canvas has no index either. It is `architecture-drawing/canvas/`: `presentation/` holds the diagram's
   components, `pane-vault/` the vault a pane reads, and `picture/` the picture's clients, with `supply/`, `reads/`,
   `camera/` and `transitions/` for the jobs inside it. The frame-clock rule of `.oxlintrc.jsonc` holds every file
   below `canvas/`.
-- The tests are in `tests/ui/<role>/<behavior>/`, in the folders of the code they cover. `tests/ui/support/<behavior>/`
+- The tests are in `tests/ui/<behavior>/<role>/`, in the folders of the code they cover. `tests/ui/support/<behavior>/`
   holds the harnesses and fixtures that tests share. `tests/contracts/` holds the one test that holds the recorder's page
   address to the address bar's reading of it: it imports a Bun-side package export, which no `ui` test may.
 

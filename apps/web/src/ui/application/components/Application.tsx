@@ -77,7 +77,7 @@ import { StartShell } from "#ui/application/components/StartShell.tsx";
 import { Shell } from "#ui/shell/components/Shell.tsx";
 import { searchOfRepository } from "#ui/panes/reading-routing/rules/search.ts";
 import type { OpenStart } from "#ui/panes/reading-routing/rules/start.ts";
-import { ModelDraftContext } from "#ui/state/architecture-model/draft.ts";
+import { ModelDraftContext } from "#ui/architecture-drawing/model-reader/state/draft.ts";
 import { useRouter } from "@tanstack/react-router";
 import {
 	type SettingsSurface,

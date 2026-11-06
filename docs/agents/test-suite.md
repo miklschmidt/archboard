@@ -855,11 +855,11 @@ Retained camera and presentation-box UI owners keep their existing behavior asse
 The walkthrough header owner also proves that sidebar controls remain held during playback and restore afterward.
 The agent-navigation owner proves that a completed remote presentation cannot reopen after an uncached state read.
 
-`apps/web/tests/ui/clients/architecture-model/history-on-selection.test.tsx` replaces the old locality query owner.
+`apps/web/tests/ui/architecture-drawing/model-reader/access/clients/history-on-selection.test.tsx` replaces the old locality query owner.
 It exercises canonical HTTP reads and owns one read for every later pick, a read that outlives the pick that started it, and isolation between vaults.
 The legacy locality endpoint adapter, query key, and retained-replay placeholder retire.
 
-`apps/web/tests/ui/components/architecture-model/model-history.test.tsx` replaces the legacy history component fixture.
+`apps/web/tests/ui/architecture-drawing/model-reader/reading/components/model-history.test.tsx` replaces the legacy history component fixture.
 It mounts the actual canonical consumer and retains commit expansion, coupled-subject callbacks, evidence distinctions, and explicit retry.
 A new architecture revision hides the prior revision's evidence while the request runs.
 The old blanket refusal for historical variants retires because canonical history supports explicit states and checkpoints.

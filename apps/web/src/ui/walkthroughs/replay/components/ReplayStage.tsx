@@ -18,7 +18,7 @@ import { useCallback, useMemo, useSyncExternalStore, type JSX } from "react";
 import type { Talk } from "@archboard/walkthrough/talk";
 import { Tooltip } from "@archboard/ui-kit/components";
 import { PaneVaultContext } from "#ui/architecture-drawing/canvas/pane-vault/state/pane-vault.ts";
-import { ModelWalkthrough } from "#ui/components/architecture-model/ModelWalkthrough.tsx";
+import { ModelWalkthrough } from "#ui/architecture-drawing/model-reader/reading/components/ModelWalkthrough.tsx";
 import { readingOf } from "#ui/application/rules/pane-reading.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { CanvasStage } from "#ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx";

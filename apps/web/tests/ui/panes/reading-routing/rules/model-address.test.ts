@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
+import { AFTER } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import { modelReading } from "#ui/panes/reading-routing/rules/model-address.ts";
 
 const ADDRESS = { id: "Shop", scope: null, checkpoint: null };

@@ -11,13 +11,13 @@ import { IconButton, shownRepository, Tooltip } from "@archboard/ui-kit/componen
 import { MODEL_CACHE_MS } from "@archboard/timing";
 import { RiFileCopyLine } from "@remixicon/react";
 import { SettingsHosts } from "#ui/application/components/SettingsHosts.tsx";
-import { ModelState } from "#ui/components/architecture-model/ModelState.tsx";
+import { ModelState } from "#ui/architecture-drawing/model-reader/reading/components/ModelState.tsx";
 import { Shell } from "#ui/shell/components/Shell.tsx";
 import { createStartActions } from "#ui/application/clients/start-actions.ts";
 import { repositoriesQuery } from "#ui/panes/model-catalog/clients/queries.ts";
 import { useNotices } from "#ui/application/hooks/use-notices.ts";
 import { useTheme } from "#ui/application/hooks/use-theme.ts";
-import { useSlowWait } from "#ui/hooks/architecture-model/use-slow-wait.ts";
+import { useSlowWait } from "#ui/architecture-drawing/model-reader/hooks/use-slow-wait.ts";
 import type { ModelCatalog } from "#ui/panes/model-catalog/hooks/use-model-catalog.ts";
 import { initialPaneList } from "#ui/application/rules/pane-list.ts";
 import { assembleShellView } from "#ui/application/rules/shell-view.ts";

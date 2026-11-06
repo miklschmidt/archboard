@@ -1,12 +1,12 @@
 import { useCallback, useContext, useMemo } from "react";
-import { ModelExplanationContext } from "#ui/state/architecture-model/explanations.ts";
+import { ModelExplanationContext } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { validateWorkspaceSearch } from "#ui/panes/reading-routing/rules/search.ts";
 import type { ModelAddress } from "#ui/panes/reading-routing/rules/address.ts";
 import type { Model } from "@archboard/model/content";
 import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messages.ts";
-import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
-import type { FlowGrammar } from "#ui/rules/architecture-model/flow-fit.ts";
+import { AFTER } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
+import type { FlowGrammar } from "#ui/architecture-drawing/model-reader/rules/flow-fit.ts";
 
 type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
 

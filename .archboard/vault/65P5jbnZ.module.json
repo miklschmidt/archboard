@@ -5,25 +5,12 @@
   "responsibility": "Prepares a projected reading for the local renderer and the picture cache",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/architecture-model/drawing.ts"
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/drawing.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#65P5jbnZ",
   "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
   "outgoing": [
-    {
-      "order": 76000,
-      "kind": "call",
-      "label": "prepareContentHere",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/architecture-model/drawing.ts",
-        "symbol": "prepareContentHere"
-      },
-      "id": "vKEsyHFk/yejBBUFY#uykc1ukm",
-      "to": "vKEsyHFk/UOXNWLhR#F90402mH"
-    },
     {
       "order": 70017,
       "kind": "call",
@@ -31,11 +18,24 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/architecture-model/drawing.ts",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/drawing.ts",
         "symbol": "browserPictureStorage"
       },
       "id": "vKEsyHFk#f0RC9khM",
       "to": "vKEsyHFk/UOXNWLhR#AaCxSfhT"
+    },
+    {
+      "order": 76000,
+      "kind": "call",
+      "label": "prepareContentHere",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/drawing.ts",
+        "symbol": "prepareContentHere"
+      },
+      "id": "vKEsyHFk/yejBBUFY#uykc1ukm",
+      "to": "vKEsyHFk/UOXNWLhR#F90402mH"
     }
   ]
 }

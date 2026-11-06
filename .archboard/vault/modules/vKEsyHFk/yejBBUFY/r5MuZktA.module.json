@@ -6,7 +6,7 @@
   "description": "Preview playback uses the same capture, including exact original state and checkpoint. A bookmark does not replace the narrative definition or its captured target.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/architecture-model/ModelWalkthroughReader.tsx"
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelWalkthroughReader.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#r5MuZktA",
@@ -33,7 +33,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ModelWalkthroughReader.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelWalkthroughReader.tsx",
         "symbol": "modelWalkthroughQuery"
       },
       "id": "vKEsyHFk/yejBBUFY#tEO0oHDD",
@@ -46,7 +46,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ModelWalkthroughReader.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelWalkthroughReader.tsx",
         "symbol": "ModelWalkthrough"
       },
       "id": "vKEsyHFk/yejBBUFY#GgQoJfiQ",

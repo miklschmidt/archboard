@@ -7,12 +7,12 @@ import {
 	type UseQueryResult,
 } from "@tanstack/react-query";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import { architectureFeed } from "#ui/clients/architecture-model/events.ts";
+import { architectureFeed } from "#ui/architecture-drawing/model-reader/access/clients/events.ts";
 import {
 	architectureModelKeys,
 	architectureSummaryQuery,
 	type ModelSummary,
-} from "#ui/clients/architecture-model/queries.ts";
+} from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import { modelCatalogKeys, repositoriesQuery } from "#ui/panes/model-catalog/clients/queries.ts";
 
 /** One repository and its current architecture authority. */
