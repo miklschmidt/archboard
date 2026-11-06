@@ -4,4 +4,8 @@
 # server. That PATH can predate the flake, or find another rust-analyzer first.
 # nix develop gives the flake's rust-analyzer, cargo and RUST_SRC_PATH for any
 # PATH. scripts/configure-language-servers.ts configures it on `bun install`.
-exec nix develop "$(dirname "$(realpath "$0")")/.." --command rust-analyzer "$@"
+# Its Cargo runs build into their own directory, so they never wait on the lock
+# that the Rust stages of `bun run check` hold.
+root="$(dirname "$(realpath "$0")")/.."
+export CARGO_TARGET_DIR="$root/target/rust-analyzer"
+exec nix develop "$root" --command rust-analyzer "$@"
