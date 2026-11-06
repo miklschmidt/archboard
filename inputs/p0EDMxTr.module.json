@@ -5,7 +5,7 @@
   "responsibility": "Mounts a reader for the current or a retained reading, and holds its surface, its tree and its shared controls",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx"
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#p0EDMxTr",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
         "symbol": "CanonicalModelReader"
       },
       "id": "vKEsyHFk/yejBBUFY#R8xiiNXP",
@@ -31,7 +31,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ModelCodeFindings.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx",
         "symbol": "WarningCount"
       },
       "id": "vKEsyHFk#5Fd9qq2B",
@@ -44,7 +44,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
         "symbol": "ArchitectureModelStage"
       },
       "id": "vKEsyHFk/yejBBUFY#uZDbu609",
@@ -57,7 +57,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
         "symbol": "useArchitectureFeed"
       },
       "id": "vKEsyHFk/yejBBUFY#m551U9Gl",
@@ -70,24 +70,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/architecture-model/use-model-reading.ts",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/hooks/use-model-reading.ts",
         "symbol": "projectModel"
       },
       "id": "vKEsyHFk/yejBBUFY#scByKwmU",
       "to": "vKEsyHFk/yejBBUFY#IgYndyJd"
-    },
-    {
-      "order": 997000,
-      "kind": "call",
-      "label": "the shared tree list",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ModelTree.tsx",
-        "symbol": "Tree"
-      },
-      "id": "vKEsyHFk#3ooGgy80",
-      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
     },
     {
       "order": 980280,
@@ -96,11 +83,24 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
         "symbol": "ModelWalkthroughReader"
       },
-      "to": "vKEsyHFk/yejBBUFY#r5MuZktA",
-      "id": "vKEsyHFk#7lMq2csR"
+      "id": "vKEsyHFk#7lMq2csR",
+      "to": "vKEsyHFk/yejBBUFY#r5MuZktA"
+    },
+    {
+      "order": 997000,
+      "kind": "call",
+      "label": "the shared tree list",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelTree.tsx",
+        "symbol": "Tree"
+      },
+      "id": "vKEsyHFk#3ooGgy80",
+      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
     }
   ]
 }

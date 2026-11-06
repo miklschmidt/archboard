@@ -6,7 +6,7 @@
   "description": "One history read of a revision answers for every part at once, and a selection shares it. A row selects its module on the picture. An unread part states why, and no count joins a score.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/architecture-model/ModelMeasures.tsx"
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelMeasures.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#tQ2B3iEF",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ModelMeasures.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelMeasures.tsx",
         "symbol": "modelHistoryQuery"
       },
       "id": "vKEsyHFk#w8kCmXJj",

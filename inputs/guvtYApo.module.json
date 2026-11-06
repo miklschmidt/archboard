@@ -5,38 +5,12 @@
   "responsibility": "The query options of a model, its history, its walkthroughs and its explanations, and the requests behind them",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/architecture-model"
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#guvtYApo",
   "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
   "outgoing": [
-    {
-      "order": 67000,
-      "kind": "call",
-      "label": "Fetch the canonical model",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/architecture-model/queries.ts",
-        "symbol": "readModel"
-      },
-      "id": "vKEsyHFk/yejBBUFY#TuSq1VHw",
-      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
-    },
-    {
-      "order": 105000,
-      "kind": "http",
-      "label": "Read the canonical model",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/architecture-model/queries.ts",
-        "symbol": "readModel"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#NcnDdoyZ",
-      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
-    },
     {
       "order": 2000,
       "kind": "http",
@@ -53,6 +27,32 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#iF6W48DS",
       "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
+    },
+    {
+      "order": 67000,
+      "kind": "call",
+      "label": "Fetch the canonical model",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/queries.ts",
+        "symbol": "readModel"
+      },
+      "id": "vKEsyHFk/yejBBUFY#TuSq1VHw",
+      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    },
+    {
+      "order": 105000,
+      "kind": "http",
+      "label": "Read the canonical model",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/queries.ts",
+        "symbol": "readModel"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#NcnDdoyZ",
+      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
     }
   ]
 }

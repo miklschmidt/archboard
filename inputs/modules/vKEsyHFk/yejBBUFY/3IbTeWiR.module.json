@@ -6,7 +6,7 @@
   "description": "Keeps the beat position for one captured narrative. Reuses the existing presentation controls, renderer, camera, and arrival reporting. Missing subjects stop the affected beat with recovery. Recording and replay supply their captured payload through this same boundary. No authored geometry or per-beat architecture snapshots exist.\n\nExplicit visibility narrows converted beats through the same projection used by bookmarks. Complete model content remains available for interface facts. A missing original view stops its beat instead of inheriting another reading.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/architecture-model/ModelWalkthrough.tsx"
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelWalkthrough.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#3IbTeWiR",
