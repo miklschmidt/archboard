@@ -6,7 +6,7 @@
   "description": "Stores compact changes against exact retained predecessors. Consistent decoding keeps predecessor fingerprints stable across live and retained inputs. Changed predecessors require explicit reconciliation or replacement decisions.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/canonical/proposals/operations"
+    "path": "packages/model/src/runtime/canonical/proposals"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#KJy5yYuq",
