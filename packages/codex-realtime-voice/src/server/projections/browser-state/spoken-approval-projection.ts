@@ -1,10 +1,10 @@
 import type { BrowserSchemas } from "#shared/browser/schemas/snapshot.ts";
 import type { BrowserSpokenApproval } from "#shared/browser/schemas/snapshot.ts";
-import type { ApprovalOwnerView } from "#runtime/services/approvals/contract.ts";
+import type { ApprovalOwnerView } from "#runtime/approvals/services/contract.ts";
 import type {
 	SpokenApprovalFallbackReason,
 	SpokenApprovalSnapshot,
-} from "#runtime/protocol/spoken-approval/contract.ts";
+} from "#runtime/voice/coordinator/tools-and-work/spoken-approval/protocol/contract.ts";
 import type {
 	CodexCoordinatorProjectionInput,
 	CodexVoiceProjectionInput,

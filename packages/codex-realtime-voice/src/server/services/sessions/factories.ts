@@ -6,17 +6,17 @@
 // built before it, in dependency order. A component that fails to build unwinds the ones built
 // before it, so a half-built session or workhorse leaves nothing running.
 
-import { createCodexCoordinatorCallbacks } from "#runtime/services/coordinator-callbacks/callbacks.ts";
-import { createCodexCoordinatorTools } from "#runtime/services/coordinator-tools/dispatcher.ts";
-import { type CoordinatorToolDispatcher } from "#runtime/protocol/coordinator-tools/contract.ts";
-import { createCodexCoordinator } from "#runtime/services/coordinator/coordinator.ts";
-import { createCodexSpokenApprovalGate } from "#runtime/services/spoken-approval/gate.ts";
-import { createCodexRealtimeAdapter } from "#runtime/services/realtime/adapter.ts";
-import { createCodexThreadContextController } from "#runtime/services/thread-context/controller.ts";
+import { createCodexCoordinatorCallbacks } from "#runtime/voice/coordinator-callbacks/services/callbacks.ts";
+import { createCodexCoordinatorTools } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/services/dispatcher.ts";
+import { type CoordinatorToolDispatcher } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
+import { createCodexCoordinator } from "#runtime/voice/coordinator/services/coordinator.ts";
+import { createCodexSpokenApprovalGate } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/services/gate.ts";
+import { createCodexRealtimeAdapter } from "#runtime/voice/realtime/services/adapter.ts";
+import { createCodexThreadContextController } from "#runtime/workhorses/thread-context/services/controller.ts";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
-import { createCodexWorkhorseOperations } from "#runtime/services/workhorse-operations/operations.ts";
-import { createCodexWorkhorseStart } from "#runtime/services/workhorse-start/start.ts";
-import { createCodexWorkhorseQueue } from "#runtime/services/workhorse-queue/queue.ts";
+import { createCodexWorkhorseOperations } from "#runtime/workhorses/workhorse-operations/services/operations.ts";
+import { createCodexWorkhorseStart } from "#runtime/workhorses/workhorse-start/services/start.ts";
+import { createCodexWorkhorseQueue } from "#runtime/workhorses/workhorse-queue/services/queue.ts";
 import type { CodexWorkbenchSharedComponents } from "#server/services/generation/lifecycle.ts";
 import type {
 	CodexWorkbenchSessionBindings,

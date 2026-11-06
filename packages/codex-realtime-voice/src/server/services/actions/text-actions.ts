@@ -7,11 +7,11 @@ import type { OperationId, ThreadId } from "@archboard/codex-app-server/identity
 import {
 	createWorkbenchTurnStartParams,
 	createWorkbenchTurnSteerParams,
-} from "#runtime/rules/host/bodies.ts";
+} from "#runtime/host/turn-input/rules/bodies.ts";
 import type {
 	WorkbenchExecutionContext,
 	WorkbenchContextCodec,
-} from "#runtime/protocol/host/context.ts";
+} from "#runtime/host/protocol/context.ts";
 import type { CodexWorkbenchComponents } from "#server/services/generation/workbench.ts";
 
 /**

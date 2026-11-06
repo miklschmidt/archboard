@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-queue"
+    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-queue/services"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
@@ -28,7 +28,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-queue/queue.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-queue/services/queue.ts",
         "symbol": "queueAdd"
       },
       "id": "vKEsyHFk/9ncuT5DP#b9HU99hH",
@@ -41,7 +41,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-queue/mutation-inputs.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-queue/services/mutation-inputs.ts",
         "symbol": "createTextUserInput"
       },
       "id": "vKEsyHFk/SJ2JMVyz#XkZUEZcj",

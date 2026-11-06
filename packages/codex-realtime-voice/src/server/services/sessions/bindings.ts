@@ -1,4 +1,4 @@
-import { createVoiceToolset, type VoiceToolset } from "#runtime/rules/host/toolset.ts";
+import { createVoiceToolset, type VoiceToolset } from "#runtime/host/toolset/rules/toolset.ts";
 // What each owner of one tab session, and of each of its workhorses, is configured with: where it
 // works, what it is bound to, read at the moment it asks, and the context its operations run
 // under.
@@ -6,7 +6,7 @@ import { createVoiceToolset, type VoiceToolset } from "#runtime/rules/host/tools
 import {
 	createCoordinatorCallbackContextPort,
 	createCoordinatorCallbackRealtimePort,
-} from "#runtime/services/coordinator-callbacks/realtime.ts";
+} from "#runtime/voice/coordinator-callbacks/services/realtime.ts";
 import type { CodexWorkbenchSharedComponents } from "#server/services/generation/lifecycle.ts";
 import type {
 	CodexWorkbenchSessionBindings,
@@ -18,7 +18,7 @@ import {
 	currentRealtimeGeneration,
 	requireCreated,
 } from "#server/services/generation/owners.ts";
-import { createOutcomeReportPort } from "#server/services/voice/outcome-report.ts";
+import { createOutcomeReportPort } from "#runtime/voice/coordinator/outcome-report/services/outcome-report.ts";
 import {
 	readyCoordinatorThread,
 	readyThreadPair,

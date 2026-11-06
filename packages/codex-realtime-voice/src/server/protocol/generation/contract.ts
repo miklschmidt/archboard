@@ -1,23 +1,23 @@
-import type { VoiceToolset } from "#runtime/rules/host/toolset.ts";
-import type { CodexApprovalBrokerOptions } from "#runtime/services/approvals/contract.ts";
-import type { CoordinatorCallbackOptions } from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import type { CodexCoordinatorToolsOptions } from "#runtime/protocol/coordinator-tools/contract.ts";
-import type { CodexCoordinatorOptions } from "#runtime/protocol/coordinator/contract.ts";
-import type { CodexSpokenApprovalGateOptions } from "#runtime/protocol/spoken-approval/contract.ts";
-import type { CodexEpochStoreOptions } from "#runtime/store/epoch/contract.ts";
+import type { VoiceToolset } from "#runtime/host/toolset/rules/toolset.ts";
+import type { CodexApprovalBrokerOptions } from "#runtime/approvals/services/contract.ts";
+import type { CoordinatorCallbackOptions } from "#runtime/voice/coordinator-callbacks/protocol/contract.ts";
+import type { CodexCoordinatorToolsOptions } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
+import type { CodexCoordinatorOptions } from "#runtime/voice/coordinator/protocol/contract.ts";
+import type { CodexSpokenApprovalGateOptions } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/protocol/contract.ts";
+import type { CodexEpochStoreOptions } from "#runtime/epoch/store/contract.ts";
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
 import type { CodexSessionOptions } from "@archboard/codex-app-server/session";
-import type { CodexRealtimeAdapterOptions } from "#runtime/services/realtime/contract.ts";
+import type { CodexRealtimeAdapterOptions } from "#runtime/voice/realtime/services/contract.ts";
 import type { CodexWorkbenchDomain } from "#server/protocol/generation/domain.ts";
-import type { CodexThreadContextControllerOptions } from "#runtime/services/thread-context/contract.ts";
-import type { CodexThreadLinkOptions } from "#runtime/rules/thread-link/thread-link.ts";
+import type { CodexThreadContextControllerOptions } from "#runtime/workhorses/thread-context/services/contract.ts";
+import type { CodexThreadLinkOptions } from "#runtime/workhorses/thread-link/rules/thread-link.ts";
 import type {
 	CodexTransportOptions,
 	DynamicServerRequest,
 } from "@archboard/codex-app-server/transport";
-import type { WorkhorseOperationOptions } from "#runtime/protocol/workhorse-operations/contract.ts";
-import type { CodexWorkhorseStartOptions } from "#runtime/protocol/workhorse-start/contract.ts";
-import type { WorkhorseQueueOptions } from "#runtime/services/workhorse-queue/contract.ts";
+import type { WorkhorseOperationOptions } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
+import type { CodexWorkhorseStartOptions } from "#runtime/workhorses/workhorse-start/protocol/contract.ts";
+import type { WorkhorseQueueOptions } from "#runtime/workhorses/workhorse-queue/services/contract.ts";
 import type { IdentityLedger, OperationId } from "@archboard/codex-app-server/identity";
 import type { CodexWorkbenchGatewayOptions } from "#server/protocol/gateway/contract.ts";
 import type {

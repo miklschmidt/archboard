@@ -3,7 +3,7 @@ import type {
 	SessionThreadTurnPageResult,
 } from "@archboard/codex-app-server/session";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
+import type { ThreadLinkSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import type {
 	ThreadId,
 	TrustedIdentityDecoder,

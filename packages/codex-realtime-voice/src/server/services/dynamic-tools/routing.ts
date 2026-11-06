@@ -1,4 +1,4 @@
-import type { CodexApprovalBroker } from "#runtime/services/approvals/contract.ts";
+import type { CodexApprovalBroker } from "#runtime/approvals/services/contract.ts";
 import type { CodexWorkbenchDomain } from "#server/protocol/generation/domain.ts";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type {

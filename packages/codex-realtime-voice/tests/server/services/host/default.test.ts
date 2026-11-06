@@ -9,9 +9,9 @@ import {
 	type DefaultWorkbenchHostInput,
 } from "#server/services/host/default.ts";
 import type { CodexWorkbenchDomainScope } from "#server/protocol/generation/domain.ts";
-import type { WorkbenchContextSource } from "#runtime/protocol/host/context-source.ts";
+import type { WorkbenchContextSource } from "#runtime/host/protocol/context-source.ts";
 import type { WorkbenchOperationAuthority } from "#server/protocol/generation/host.ts";
-import type { ThreadLinkBindingSnapshot } from "#runtime/rules/thread-link/contract.ts";
+import type { ThreadLinkBindingSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import { parseTabSessionId, workhorseLinkKey } from "#server/rules/tab-session/tab-session.ts";
 import { TEST_INSTRUCTIONS } from "#tests/runtime/support/host.ts";
 

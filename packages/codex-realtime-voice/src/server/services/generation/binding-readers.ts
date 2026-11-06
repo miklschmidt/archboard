@@ -8,7 +8,7 @@
 // workhorse a new thread — so the pair that counts as one session has to be asked for, never
 // sampled.
 
-import type { CoordinatorCallbackLinkCorrelation } from "#runtime/protocol/coordinator-callbacks/contract.ts";
+import type { CoordinatorCallbackLinkCorrelation } from "#runtime/voice/coordinator-callbacks/protocol/contract.ts";
 import { allNamed } from "#server/services/generation/owners.ts";
 import type { CodexWorkbenchComponents } from "#server/services/generation/workbench.ts";
 import type {

@@ -6,13 +6,13 @@
 
 import { z } from "zod";
 import { CODEX_REALTIME_MS } from "@archboard/timing";
-import { EXECUTION_CONTEXT_KEYS } from "#runtime/rules/host/context.ts";
+import { EXECUTION_CONTEXT_KEYS } from "#runtime/host/turn-input/rules/context.ts";
 import { BROWSER_VOICE_CONTEXT_TOPIC_MAX_UTF8_BYTES } from "#shared/browser/schemas/vocabulary.ts";
 import type {
 	AnnouncedContext,
 	ContextAnnouncementSource,
-} from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import type { WorkhorseContextEvent } from "#runtime/services/thread-context/contract.ts";
+} from "#runtime/voice/coordinator-callbacks/protocol/contract.ts";
+import type { WorkhorseContextEvent } from "#runtime/workhorses/thread-context/services/contract.ts";
 import type { CodexWorkbenchDomainScope } from "#server/protocol/generation/domain.ts";
 import type {
 	ContextChange,

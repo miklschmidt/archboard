@@ -1,6 +1,6 @@
-import { createCodexApprovalBroker } from "#runtime/services/approvals/broker.ts";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
-import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
+import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
+import type { ThreadLinkSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import type { IdentityAuthorities, ThreadId } from "@archboard/codex-app-server/identity";
 import { createCodexWorkbenchGateway } from "#server/services/gateway/gateway.ts";
 import {

@@ -1,11 +1,11 @@
 import type { Server } from "node:http";
-import { createWorkbenchThreadProfile } from "#runtime/rules/host/instructions.ts";
-import type { WorkbenchDynamicTools } from "#runtime/protocol/host/instructions.ts";
-import type { VoiceAgentIdentity } from "#runtime/protocol/host/identity.ts";
+import { createWorkbenchThreadProfile } from "#runtime/host/rules/instructions.ts";
+import type { WorkbenchDynamicTools } from "#runtime/host/protocol/instructions.ts";
+import type { VoiceAgentIdentity } from "#runtime/host/protocol/identity.ts";
 import type {
 	WorkbenchContextSource,
 	WorkbenchVoicePolicy,
-} from "#runtime/protocol/host/context-source.ts";
+} from "#runtime/host/protocol/context-source.ts";
 import type { BrowserLeaseLedger } from "#server/protocol/gateway/contract.ts";
 import type { ContextChange, ContextReceipt } from "#server/protocol/announce/contract.ts";
 import {

@@ -6,7 +6,7 @@
   "description": "createVoiceToolset fills the workhorse and voice templates of the tool contract and the coordinator's tell_coordinator namespace with the host's names, and the product name for the callback's description. toolRoleOf answers which role a call came through by its namespace and manifest digest, so nothing past the Codex boundary compares a literal name. Archboard names them archboard_workhorse, archboard_voice and archboard_coordinator; a host that names none gets voice_workhorse, voice_channel and voice_coordinator.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/rules/host/toolset.ts"
+    "path": "packages/codex-realtime-voice/src/runtime/host/toolset"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#7Mxz4kA6",
@@ -19,43 +19,30 @@
   ],
   "outgoing": [
     {
-      "order": 30000,
-      "kind": "call",
-      "label": "fill each role's template with the host's name",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/host/toolset.ts",
-        "symbol": "renderCoordinatorNamespace"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#VFlVLSkl",
-      "to": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P"
-    },
-    {
-      "order": 48000,
-      "kind": "call",
-      "label": "the tell_coordinator namespace, with the product name",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/host/toolset.ts",
-        "symbol": "renderCoordinatorCallbackNamespace"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#rHTIxHOa",
-      "to": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
-    },
-    {
       "order": 17000,
       "kind": "call",
       "label": "the coordinator namespace, named by the host",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/host/toolset.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/host/toolset/rules/toolset.ts",
         "symbol": "renderCoordinatorCallbackNamespace"
       },
       "id": "vKEsyHFk/SJ2JMVyz#uLGJACZb",
       "to": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
+      "order": 30000,
+      "kind": "call",
+      "label": "fill each role's template with the host's name",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/host/toolset/rules/toolset.ts",
+        "symbol": "renderCoordinatorNamespace"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#VFlVLSkl",
+      "to": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P"
     }
   ]
 }

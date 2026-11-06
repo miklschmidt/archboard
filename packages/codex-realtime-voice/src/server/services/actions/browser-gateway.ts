@@ -16,7 +16,7 @@ import { CODEX_SESSION_MS } from "@archboard/timing";
 import type {
 	WorkbenchExecutionContext,
 	WorkbenchContextCodec,
-} from "#runtime/protocol/host/context.ts";
+} from "#runtime/host/protocol/context.ts";
 import type { CodexWorkbenchSharedComponents } from "#server/services/generation/lifecycle.ts";
 import type {
 	CodexWorkbenchSessions,

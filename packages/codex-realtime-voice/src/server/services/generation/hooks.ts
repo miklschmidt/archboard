@@ -1,6 +1,6 @@
 import { domainScope } from "#server/services/generation/domain.ts";
 import type { CodexWorkbenchStorage } from "#server/protocol/generation/host.ts";
-import type { CodexApprovalBroker } from "#runtime/services/approvals/contract.ts";
+import type { CodexApprovalBroker } from "#runtime/approvals/services/contract.ts";
 import { CodexTransportRemoteError } from "@archboard/codex-app-server/transport";
 import type {
 	CodexWorkbenchComponents,

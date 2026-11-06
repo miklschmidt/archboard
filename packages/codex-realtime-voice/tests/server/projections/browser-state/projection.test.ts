@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 
-import { createCodexApprovalBroker } from "#runtime/services/approvals/broker.ts";
-import { type ApprovalOwnerView } from "#runtime/services/approvals/contract.ts";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
+import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
+import { type ApprovalOwnerView } from "#runtime/approvals/services/contract.ts";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
 import type {
 	HumanApprovalMethod,
 	TransportServerRequest,

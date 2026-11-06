@@ -1,4 +1,4 @@
-import { toolRoleOf, type VoiceToolset } from "#runtime/rules/host/toolset.ts";
+import { toolRoleOf, type VoiceToolset } from "#runtime/host/toolset/rules/toolset.ts";
 // Which checkout a workhorse works in.
 //
 // A workhorse works in a checkout: a directory the host admits. A chat names its checkout through

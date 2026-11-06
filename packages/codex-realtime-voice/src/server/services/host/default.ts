@@ -2,20 +2,20 @@ import { realpathSync, statSync } from "node:fs";
 import { basename } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { CODEX_REALTIME_MS } from "@archboard/timing";
-import { cloneAndFreeze } from "#runtime/rules/host/immutability.ts";
-import { captureExecutionContext } from "#runtime/rules/host/context.ts";
-import { canonicalJson } from "#runtime/rules/host/canonical-json.ts";
-import { sameBinding } from "#runtime/services/thread-context/link-equality.ts";
+import { cloneAndFreeze } from "#runtime/host/rules/immutability.ts";
+import { captureExecutionContext } from "#runtime/host/turn-input/rules/context.ts";
+import { canonicalJson } from "#runtime/host/turn-input/rules/canonical-json.ts";
+import { sameBinding } from "#runtime/workhorses/thread-context/services/link-equality.ts";
 import { workhorseLink } from "#server/services/generation/binding-readers.ts";
-import type { WorkbenchInstructions } from "#runtime/protocol/host/instructions.ts";
+import type { WorkbenchInstructions } from "#runtime/host/protocol/instructions.ts";
 import type {
 	WorkbenchContextCodec,
 	WorkbenchExecutionContext,
-} from "#runtime/protocol/host/context.ts";
+} from "#runtime/host/protocol/context.ts";
 import type {
 	WorkbenchContextSource,
 	WorkbenchVoicePolicy,
-} from "#runtime/protocol/host/context-source.ts";
+} from "#runtime/host/protocol/context-source.ts";
 import type {
 	CodexWorkbenchHostPolicy,
 	WorkbenchOperationAuthority,

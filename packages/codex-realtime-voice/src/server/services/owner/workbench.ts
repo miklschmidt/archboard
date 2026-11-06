@@ -10,7 +10,7 @@ import {
 import { createTabSessions, type TabSessions } from "#server/services/sessions/browser-tabs.ts";
 import { createWorkbenchBrowserConnections } from "#server/services/browser-socket/connections.ts";
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
-import { captureWorkbenchInstructions } from "#runtime/rules/host/instructions.ts";
+import { captureWorkbenchInstructions } from "#runtime/host/rules/instructions.ts";
 import {
 	CODEX_WORKBENCH_OWNER,
 	installProductionCodexWorkbench,

@@ -1,19 +1,19 @@
 // What the tab sessions of one Codex child generation are, and what building one is handed
 // The store that keeps them is `services/sessions/sessions.ts`.
 
-import type { CoordinatorCallbacks } from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import type { CoordinatorToolDispatcher } from "#runtime/protocol/coordinator-tools/contract.ts";
-import type { CodexCoordinator } from "#runtime/protocol/coordinator/contract.ts";
-import type { CodexSpokenApprovalGate } from "#runtime/protocol/spoken-approval/contract.ts";
-import type { CodexRealtimeAdapter } from "#runtime/services/realtime/contract.ts";
+import type { CoordinatorCallbacks } from "#runtime/voice/coordinator-callbacks/protocol/contract.ts";
+import type { CoordinatorToolDispatcher } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
+import type { CodexCoordinator } from "#runtime/voice/coordinator/protocol/contract.ts";
+import type { CodexSpokenApprovalGate } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/protocol/contract.ts";
+import type { CodexRealtimeAdapter } from "#runtime/voice/realtime/services/contract.ts";
 import type { CodexSession } from "@archboard/codex-app-server/session";
-import type { ThreadUnload } from "#runtime/operations/thread-unload/unload.ts";
+import type { ThreadUnload } from "#runtime/thread-unload/operations/unload.ts";
 import type {
 	CodexTransport,
 	TransportServerNotification,
 	DynamicServerRequest,
 } from "@archboard/codex-app-server/transport";
-import type { WorkhorseOperationEventListener } from "#runtime/protocol/workhorse-operations/contract.ts";
+import type { WorkhorseOperationEventListener } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
 import type {
 	ChildEpoch,
 	ChildId,

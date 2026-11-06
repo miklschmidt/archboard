@@ -22,7 +22,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "#shared/protocol/realtime-contract.ts";
-import type { CoordinatorRetirement } from "#runtime/protocol/coordinator/contract.ts";
+import type { CoordinatorRetirement } from "#runtime/voice/coordinator/protocol/contract.ts";
 import type { CodexWorkbenchComponents } from "#server/services/generation/workbench.ts";
 import type {
 	CodexWorkbenchSessionComponents,

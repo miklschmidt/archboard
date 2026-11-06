@@ -2,8 +2,8 @@
 // audience made of it. The operation is `VoiceAgent.announce`; `services/announce/announce.ts`
 // delivers it.
 
-import type { CoordinatorCallbackDeliveryReason } from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import type { CodexThreadContextDeliveryReason } from "#runtime/services/thread-context/contract.ts";
+import type { CoordinatorCallbackDeliveryReason } from "#runtime/voice/coordinator-callbacks/protocol/contract.ts";
+import type { CodexThreadContextDeliveryReason } from "#runtime/workhorses/thread-context/services/contract.ts";
 import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
 
 /** Who can be told a context change: a checkout's workhorse, the coordinator, or the live voice. */

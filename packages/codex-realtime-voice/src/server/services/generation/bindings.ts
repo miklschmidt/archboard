@@ -1,6 +1,6 @@
-import { createVoiceToolset } from "#runtime/rules/host/toolset.ts";
+import { createVoiceToolset } from "#runtime/host/toolset/rules/toolset.ts";
 import type { CodexWorkbenchStorage } from "#server/protocol/generation/host.ts";
-import type { ApprovalSnapshot } from "#runtime/services/approvals/contract.ts";
+import type { ApprovalSnapshot } from "#runtime/approvals/services/contract.ts";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
 import type {
 	CodexWorkbenchComponents,

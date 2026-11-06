@@ -10,7 +10,7 @@ import type {
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
-} from "#runtime/rules/thread-link/contract.ts";
+} from "#runtime/workhorses/thread-link/rules/contract.ts";
 
 const CLOCK_START = 1_787_682_840_000;
 

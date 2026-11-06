@@ -5,7 +5,7 @@
   "responsibility": "The gate that lets an approval be answered out loud, and the reasons it falls back to an answer on the page",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/services/spoken-approval"
+    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/spoken-approval/services"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
@@ -24,7 +24,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/spoken-approval/resolver-turn.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/spoken-approval/services/resolver-turn.ts",
         "symbol": "resolve"
       },
       "id": "vKEsyHFk/qKGcB6vZ#0yGbIQl9",
@@ -37,7 +37,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/spoken-approval/resolver-turn.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/spoken-approval/services/resolver-turn.ts",
         "symbol": "ResolveSpokenApprovalInputSchema"
       },
       "id": "vKEsyHFk/qKGcB6vZ#JGOJBUyI",
@@ -50,7 +50,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/spoken-approval/classifier-turn.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/spoken-approval/services/classifier-turn.ts",
         "symbol": "createWorkbenchTurnStartParams"
       },
       "id": "vKEsyHFk/qKGcB6vZ#ZSSbttgn",

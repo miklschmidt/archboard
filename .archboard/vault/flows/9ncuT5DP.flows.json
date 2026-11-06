@@ -341,7 +341,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                     "symbol": "createCodexThreadContextDelivery"
                   }
                 }
@@ -358,7 +358,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                     "symbol": "preflightReason"
                   }
                 },
@@ -370,7 +370,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                     "symbol": "readInitialBinding"
                   }
                 },
@@ -382,7 +382,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                     "symbol": "readInitialBinding"
                   }
                 },
@@ -394,7 +394,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                     "symbol": "buildPayload"
                   }
                 },
@@ -414,7 +414,7 @@
                           "kind": "self",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                             "symbol": "refused"
                           }
                         }
@@ -431,7 +431,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                             "symbol": "classifyTarget"
                           }
                         },
@@ -443,7 +443,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/classifier.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-link/rules/classifier.ts",
                             "symbol": "threadRead"
                           }
                         },
@@ -455,7 +455,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/classifier.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-link/rules/classifier.ts",
                             "symbol": "threadRead"
                           }
                         },
@@ -467,7 +467,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/durable-evidence.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-link/rules/durable-evidence.ts",
                             "symbol": "assertCurrent"
                           }
                         },
@@ -479,7 +479,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                             "symbol": "classifyTarget"
                           }
                         },
@@ -491,7 +491,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery-guards.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery-guards.ts",
                             "symbol": "currentBinding"
                           }
                         },
@@ -503,7 +503,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery-guards.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery-guards.ts",
                             "symbol": "currentBinding"
                           }
                         },
@@ -515,7 +515,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery-guards.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery-guards.ts",
                             "symbol": "assertCurrent"
                           }
                         },
@@ -527,7 +527,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery-guards.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery-guards.ts",
                             "symbol": "epochAuthorityReason"
                           }
                         },
@@ -539,7 +539,7 @@
                           "kind": "self",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery-guards.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery-guards.ts",
                             "symbol": "finalFreshnessReason"
                           }
                         },
@@ -559,7 +559,7 @@
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                                     "symbol": "refused"
                                   }
                                 }
@@ -576,7 +576,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                                     "symbol": "attemptInjection"
                                   }
                                 },
@@ -612,7 +612,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                                     "symbol": "attemptInjection"
                                   }
                                 },
@@ -632,7 +632,7 @@
                                           "kind": "self",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                                             "symbol": "settleAfterAttempt"
                                           }
                                         }
@@ -649,7 +649,7 @@
                                           "kind": "self",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                                             "symbol": "attemptInjection"
                                           }
                                         }
@@ -666,7 +666,7 @@
                                           "kind": "self",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
                                             "symbol": "settleAfterAttempt"
                                           }
                                         }
@@ -869,7 +869,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
                             "symbol": "stageStartTransaction"
                           }
                         },
@@ -881,7 +881,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
                             "symbol": "startWorkhorseThread"
                           }
                         },
@@ -893,7 +893,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
                             "symbol": "startWorkhorseThread"
                           }
                         },
@@ -913,7 +913,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
                                     "symbol": "refuseStartFailure"
                                   }
                                 },
@@ -925,7 +925,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
                                     "symbol": "execute"
                                   }
                                 }
@@ -942,7 +942,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
                                     "symbol": "refuseStartFailure"
                                   }
                                 },
@@ -954,7 +954,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
                                     "symbol": "execute"
                                   }
                                 }
@@ -971,7 +971,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
                                     "symbol": "commitStart"
                                   }
                                 },
@@ -983,7 +983,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
                                     "symbol": "bindWorkhorse"
                                   }
                                 },
@@ -995,7 +995,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
                                     "symbol": "bindWorkhorse"
                                   }
                                 },
@@ -1007,7 +1007,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
                                     "symbol": "execute"
                                   }
                                 },
@@ -1071,7 +1071,7 @@
           "note": "the tab session starts the named checkout's workhorse first when it has none",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
+            "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/tool-execution.ts",
             "symbol": "delegate"
           }
         },
@@ -1083,7 +1083,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+            "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/turns.ts",
             "symbol": "runDelegate"
           }
         },
@@ -1095,7 +1095,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+            "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/turns.ts",
             "symbol": "runDelegate"
           }
         },
@@ -1115,7 +1115,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/events.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/services/events.ts",
                     "symbol": "stageOperation"
                   }
                 },
@@ -1127,7 +1127,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/turns.ts",
                     "symbol": "addQueuedDelegate"
                   }
                 },
@@ -1139,7 +1139,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/turns.ts",
                     "symbol": "addQueuedDelegate"
                   }
                 },
@@ -1151,7 +1151,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/turns.ts",
                     "symbol": "add"
                   }
                 },
@@ -1163,7 +1163,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-queue/queue.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-queue/services/queue.ts",
                     "symbol": "queueAdd"
                   }
                 },
@@ -1175,7 +1175,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-queue/queue.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-queue/services/queue.ts",
                     "symbol": "queueAdd"
                   }
                 },
@@ -1187,7 +1187,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/turns.ts",
                     "symbol": "addQueuedDelegate"
                   }
                 }
@@ -1204,7 +1204,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/events.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/services/events.ts",
                     "symbol": "stageOperation"
                   }
                 },
@@ -1216,7 +1216,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/direct-delegate.ts",
                     "symbol": "assertIdleForDelegate"
                   }
                 },
@@ -1228,7 +1228,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/direct-delegate.ts",
                     "symbol": "assertIdleForDelegate"
                   }
                 },
@@ -1240,7 +1240,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/direct-delegate.ts",
                     "symbol": "deliverTurnStart"
                   }
                 },
@@ -1252,7 +1252,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/direct-delegate.ts",
                     "symbol": "deliverTurnStart"
                   }
                 }
@@ -1276,7 +1276,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/durable-settlement.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/durable-settlement.ts",
                     "symbol": "recordSettlement"
                   }
                 }
@@ -1293,7 +1293,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/durable-settlement.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/durable-settlement.ts",
                     "symbol": "recordSettlement"
                   }
                 }
@@ -1310,7 +1310,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/durable-settlement.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/durable-settlement.ts",
                     "symbol": "settleDurable"
                   }
                 }
@@ -1326,7 +1326,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+            "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/turns.ts",
             "symbol": "createDelegate"
           }
         }
@@ -1363,7 +1363,7 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+            "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
             "symbol": "clearForDelivery"
           }
         },
@@ -1375,7 +1375,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+            "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
             "symbol": "classifyForDelivery"
           }
         },
@@ -1387,7 +1387,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+            "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
             "symbol": "classifyForDelivery"
           }
         },
@@ -1407,7 +1407,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
                     "symbol": "refuseBeforeAttempt"
                   }
                 }
@@ -1432,7 +1432,7 @@
                           "kind": "self",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                            "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
                             "symbol": "recordOnly"
                           }
                         }
@@ -1457,7 +1457,7 @@
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
                                     "symbol": "deliverThroughCoordinatorTurn"
                                   }
                                 }
@@ -1474,7 +1474,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
                                     "symbol": "deliverThroughCoordinatorTurn"
                                   }
                                 },
@@ -1486,7 +1486,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
                                     "symbol": "deliverThroughCoordinatorTurn"
                                   }
                                 },
@@ -1498,7 +1498,7 @@
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
                                     "symbol": "turnDelivery"
                                   }
                                 }
@@ -1610,7 +1610,7 @@
               "kind": "sync",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
                 "symbol": "classifyForDelivery"
               }
             },
@@ -1622,7 +1622,7 @@
               "kind": "return",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
                 "symbol": "classifyForDelivery"
               }
             },
@@ -1642,7 +1642,7 @@
                       "kind": "self",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
                         "symbol": "refuseBeforeAttempt"
                       }
                     }
@@ -1667,7 +1667,7 @@
                               "kind": "self",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
                                 "symbol": "recordOnly"
                               }
                             }
@@ -1692,7 +1692,7 @@
                                       "kind": "sync",
                                       "anchor": {
                                         "repo": "github.com/miklschmidt/archboard",
-                                        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/realtime.ts",
                                         "symbol": "createCoordinatorCallbackContextPort"
                                       }
                                     },
@@ -1704,7 +1704,7 @@
                                       "kind": "return",
                                       "anchor": {
                                         "repo": "github.com/miklschmidt/archboard",
-                                        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/realtime.ts",
                                         "symbol": "createCoordinatorCallbackContextPort"
                                       }
                                     },
@@ -1716,7 +1716,7 @@
                                       "kind": "self",
                                       "anchor": {
                                         "repo": "github.com/miklschmidt/archboard",
-                                        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
                                         "symbol": "deliverToCoordinator"
                                       }
                                     }
@@ -1741,7 +1741,7 @@
                                               "kind": "sync",
                                               "anchor": {
                                                 "repo": "github.com/miklschmidt/archboard",
-                                                "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                                "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/realtime.ts",
                                                 "symbol": "realtimeAppendSpeech"
                                               }
                                             }
@@ -1758,7 +1758,7 @@
                                               "kind": "sync",
                                               "anchor": {
                                                 "repo": "github.com/miklschmidt/archboard",
-                                                "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                                "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/realtime.ts",
                                                 "symbol": "realtimeAppendText"
                                               }
                                             }
@@ -1774,7 +1774,7 @@
                                       "kind": "return",
                                       "anchor": {
                                         "repo": "github.com/miklschmidt/archboard",
-                                        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/realtime.ts",
                                         "symbol": "createCoordinatorCallbackRealtimePort"
                                       }
                                     },
@@ -1786,7 +1786,7 @@
                                       "kind": "self",
                                       "anchor": {
                                         "repo": "github.com/miklschmidt/archboard",
-                                        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
                                         "symbol": "deliverThroughVoice"
                                       }
                                     }
@@ -1979,7 +1979,7 @@
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "packages/codex-realtime-voice/src/runtime/operations/thread-unload/unload.ts",
+                                "path": "packages/codex-realtime-voice/src/runtime/thread-unload/operations/unload.ts",
                                 "symbol": "threadRead"
                               }
                             },
@@ -1991,7 +1991,7 @@
                               "kind": "return",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "packages/codex-realtime-voice/src/runtime/operations/thread-unload/unload.ts",
+                                "path": "packages/codex-realtime-voice/src/runtime/thread-unload/operations/unload.ts",
                                 "symbol": "threadRead"
                               }
                             },
@@ -2011,7 +2011,7 @@
                                       "kind": "self",
                                       "anchor": {
                                         "repo": "github.com/miklschmidt/archboard",
-                                        "path": "packages/codex-realtime-voice/src/runtime/operations/thread-unload/unload.ts",
+                                        "path": "packages/codex-realtime-voice/src/runtime/thread-unload/operations/unload.ts",
                                         "symbol": "settle"
                                       }
                                     }
@@ -2028,7 +2028,7 @@
                                       "kind": "sync",
                                       "anchor": {
                                         "repo": "github.com/miklschmidt/archboard",
-                                        "path": "packages/codex-realtime-voice/src/runtime/operations/thread-unload/unload.ts",
+                                        "path": "packages/codex-realtime-voice/src/runtime/thread-unload/operations/unload.ts",
                                         "symbol": "threadUnsubscribe"
                                       }
                                     },
@@ -2040,7 +2040,7 @@
                                       "kind": "return",
                                       "anchor": {
                                         "repo": "github.com/miklschmidt/archboard",
-                                        "path": "packages/codex-realtime-voice/src/runtime/operations/thread-unload/unload.ts",
+                                        "path": "packages/codex-realtime-voice/src/runtime/thread-unload/operations/unload.ts",
                                         "symbol": "threadUnsubscribe"
                                       }
                                     }

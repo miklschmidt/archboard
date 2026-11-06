@@ -7,7 +7,7 @@ import type {
 } from "#shared/browser/schemas/snapshot.ts";
 import type { BrowserDynamicApprovalResponse } from "#shared/dynamic-approval/schemas/approval.ts";
 import type { BrowserCommandId, JsonRpcRequestId } from "@archboard/codex-app-server/identity";
-import { parseApprovalResponse } from "#runtime/services/approvals/response.ts";
+import { parseApprovalResponse } from "#runtime/approvals/services/response.ts";
 import { SupportedLoginAccountParamsSchema } from "@archboard/codex-app-server/session";
 import type { BrowserLeaseManager } from "#server/services/lease/lease.ts";
 import {

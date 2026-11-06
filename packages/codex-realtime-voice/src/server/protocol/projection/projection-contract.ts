@@ -24,16 +24,16 @@ import type {
 	ApprovalState,
 	DeepReadonly,
 	ItemApprovalIdentity,
-} from "#runtime/services/approvals/contract.ts";
+} from "#runtime/approvals/services/contract.ts";
 import type {
 	SessionQueuedSubmission,
 	SessionResponsePayloads,
 	SessionThreadItem,
 	SessionTurn,
 } from "@archboard/codex-app-server/session";
-import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
+import type { ThreadLinkSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import type { RealtimeTranscriptRecord } from "#shared/protocol/realtime-contract.ts";
-import type { SpokenApprovalSnapshot } from "#runtime/protocol/spoken-approval/contract.ts";
+import type { SpokenApprovalSnapshot } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/protocol/contract.ts";
 
 /** The schemas that project and parse the browser state. */
 type BrowserProjectionModel = Pick<

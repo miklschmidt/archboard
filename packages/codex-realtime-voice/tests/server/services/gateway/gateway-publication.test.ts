@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import type { ApprovalOwnerView } from "#runtime/services/approvals/contract.ts";
+import type { ApprovalOwnerView } from "#runtime/approvals/services/contract.ts";
 import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
 import {
 	createGatewayHarness,

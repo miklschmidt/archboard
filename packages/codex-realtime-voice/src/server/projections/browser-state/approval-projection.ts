@@ -1,7 +1,7 @@
 import { BROWSER_PERMISSION_FILE_ACCESS } from "#shared/browser/schemas/vocabulary.ts";
 import { JsonValueSchema } from "#shared/browser/schemas/scalars.ts";
 import { type BrowserApproval } from "#shared/browser/schemas/snapshot.ts";
-import type { ApprovalOwnerView } from "#runtime/services/approvals/contract.ts";
+import type { ApprovalOwnerView } from "#runtime/approvals/services/contract.ts";
 
 type OwnerApprovalRequest = ApprovalOwnerView["request"];
 type OwnerCommandRequest = Extract<OwnerApprovalRequest, { readonly family: "command_execution" }>;

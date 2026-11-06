@@ -8,7 +8,7 @@ import {
 	type TurnId,
 	type BrowserCommandId,
 } from "@archboard/codex-app-server/identity";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type { BrowserOwnerProjection } from "#server/protocol/projection/projection-contract.ts";
 import type { BrowserReadiness } from "#shared/browser/schemas/snapshot.ts";
@@ -29,8 +29,8 @@ import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
-} from "#runtime/rules/thread-link/contract.ts";
-import type { ApprovalOwnerView } from "#runtime/services/approvals/contract.ts";
+} from "#runtime/workhorses/thread-link/rules/contract.ts";
+import type { ApprovalOwnerView } from "#runtime/approvals/services/contract.ts";
 import { commandApprovalOwnerFixture } from "#tests/server/support/gateway/approval-owner-fixture.ts";
 import {
 	CLOCK_START,

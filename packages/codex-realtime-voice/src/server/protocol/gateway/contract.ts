@@ -17,9 +17,9 @@ import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
-} from "#runtime/rules/thread-link/contract.ts";
+} from "#runtime/workhorses/thread-link/rules/contract.ts";
 import type { AnswerSdp } from "#shared/protocol/realtime-contract.ts";
-import type { ApprovalOwnerView, ApprovalResponse } from "#runtime/services/approvals/contract.ts";
+import type { ApprovalOwnerView, ApprovalResponse } from "#runtime/approvals/services/contract.ts";
 import type { SupportedLoginAccountParams } from "@archboard/codex-app-server/session";
 import type {
 	BrowserGatewayAccountReadResult,

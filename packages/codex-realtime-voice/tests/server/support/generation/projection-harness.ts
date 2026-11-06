@@ -4,7 +4,7 @@ import {
 	testContextFixture,
 } from "#tests/runtime/support/host.ts";
 import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
-import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
+import type { ThreadLinkSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { parseTabSessionId, workhorseLinkKey } from "#server/rules/tab-session/tab-session.ts";
 import {

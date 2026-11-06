@@ -21,12 +21,12 @@
 // or a server shutdown drops every session without unsubscribing anything, because the child is
 // gone.
 
-import { answerUnownedTellCoordinator } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
-import { COORDINATOR_TOOLS_OWNER } from "#runtime/protocol/coordinator-tools/contract.ts";
-import { refusedResponse } from "#runtime/rules/coordinator-tools/response.ts";
-import { createCodexThreadUnload } from "#runtime/operations/thread-unload/unload.ts";
+import { answerUnownedTellCoordinator } from "#runtime/voice/coordinator-callbacks/services/tell-coordinator.ts";
+import { COORDINATOR_TOOLS_OWNER } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
+import { refusedResponse } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/rules/response.ts";
+import { createCodexThreadUnload } from "#runtime/thread-unload/operations/unload.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import type { WorkhorseOperationEventListener } from "#runtime/protocol/workhorse-operations/contract.ts";
+import type { WorkhorseOperationEventListener } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
 import type { IdentityAuthority, ThreadId } from "@archboard/codex-app-server/identity";
 import { workhorseLinkKey, type TabSessionId } from "#server/rules/tab-session/tab-session.ts";
 import { endTabSession, settleEach, stopVoice } from "#server/services/sessions/end.ts";

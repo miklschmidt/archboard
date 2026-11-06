@@ -1,7 +1,7 @@
 import type {
 	ApprovalOwnerView,
 	CodexApprovalBroker,
-} from "#runtime/services/approvals/contract.ts";
+} from "#runtime/approvals/services/contract.ts";
 import {
 	parseTabSessionId,
 	parseWorkhorseLinkKey,

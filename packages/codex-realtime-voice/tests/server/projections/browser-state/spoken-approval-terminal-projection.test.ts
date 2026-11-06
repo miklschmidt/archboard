@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
-import { createCodexApprovalBroker } from "#runtime/services/approvals/broker.ts";
-import { type SpokenApprovalSnapshot } from "#runtime/protocol/spoken-approval/contract.ts";
+import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
+import { type SpokenApprovalSnapshot } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/protocol/contract.ts";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import { parseRealtimeItemId, parseRealtimeSessionId } from "#shared/protocol/realtime-contract.ts";

@@ -10,10 +10,10 @@
 
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { CodexSession } from "@archboard/codex-app-server/session";
-import type { CodexThreadContextController } from "#runtime/services/thread-context/contract.ts";
-import type { CodexWorkhorseOperations } from "#runtime/protocol/workhorse-operations/contract.ts";
-import type { CodexWorkhorseStart } from "#runtime/protocol/workhorse-start/contract.ts";
-import type { CodexWorkhorseQueue } from "#runtime/services/workhorse-queue/contract.ts";
+import type { CodexThreadContextController } from "#runtime/workhorses/thread-context/services/contract.ts";
+import type { CodexWorkhorseOperations } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
+import type { CodexWorkhorseStart } from "#runtime/workhorses/workhorse-start/protocol/contract.ts";
+import type { CodexWorkhorseQueue } from "#runtime/workhorses/workhorse-queue/services/contract.ts";
 import type {
 	OperationId,
 	ThreadId,

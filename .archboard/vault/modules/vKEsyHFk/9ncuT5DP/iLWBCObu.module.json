@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/protocol/workhorse-operations/contract.ts"
+    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/protocol/contract.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#iLWBCObu",

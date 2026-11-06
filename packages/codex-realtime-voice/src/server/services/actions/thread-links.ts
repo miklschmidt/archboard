@@ -7,12 +7,12 @@ import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkCasToken,
-} from "#runtime/rules/thread-link/contract.ts";
-import type { CodexWorkhorseStart } from "#runtime/protocol/workhorse-start/contract.ts";
+} from "#runtime/workhorses/thread-link/rules/contract.ts";
+import type { CodexWorkhorseStart } from "#runtime/workhorses/workhorse-start/protocol/contract.ts";
 import type {
 	CodexThreadContextBindingToken,
 	CodexThreadContextController,
-} from "#runtime/services/thread-context/contract.ts";
+} from "#runtime/workhorses/thread-context/services/contract.ts";
 import type { CodexWorkbenchComponents } from "#server/services/generation/workbench.ts";
 import type {
 	CodexWorkbenchSessionComponents,

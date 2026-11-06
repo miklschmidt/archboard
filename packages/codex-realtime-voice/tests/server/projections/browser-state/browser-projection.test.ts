@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 
-import { type CoordinatorCallbackDelivery } from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
-import type { CodexRealtimeGeneration } from "#runtime/services/realtime/contract.ts";
+import { type CoordinatorCallbackDelivery } from "#runtime/voice/coordinator-callbacks/protocol/contract.ts";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
+import type { CodexRealtimeGeneration } from "#runtime/voice/realtime/services/contract.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import { type BrowserReadiness } from "#shared/browser/schemas/snapshot.ts";
 import {

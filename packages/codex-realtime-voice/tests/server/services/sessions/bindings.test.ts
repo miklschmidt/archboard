@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { createSessionBindings } from "#server/services/sessions/bindings.ts";
-import { DEFAULT_VOICE_AGENT_IDENTITY } from "#runtime/protocol/host/identity.ts";
+import { DEFAULT_VOICE_AGENT_IDENTITY } from "#runtime/host/protocol/identity.ts";
 
 /**
  * The bindings of a tab session whose scope stops what it is told to.

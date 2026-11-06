@@ -9,9 +9,9 @@ import type {
 	ChildEpoch,
 	IdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
-import type { CodexEpochStore } from "#runtime/store/epoch/contract.ts";
-import type { CodexThreadLinkPort } from "#runtime/rules/thread-link/contract.ts";
-import type { CodexApprovalBroker } from "#runtime/services/approvals/contract.ts";
+import type { CodexEpochStore } from "#runtime/epoch/store/contract.ts";
+import type { CodexThreadLinkPort } from "#runtime/workhorses/thread-link/rules/contract.ts";
+import type { CodexApprovalBroker } from "#runtime/approvals/services/contract.ts";
 import type { WorkbenchDomainApprovals } from "#server/protocol/projection/domain-approvals.ts";
 import type { CodexWorkbenchSessions } from "#server/services/sessions/sessions.ts";
 import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";

@@ -7,7 +7,7 @@
 
 import { expect, test } from "bun:test";
 
-import { createCodexApprovalBroker } from "#runtime/services/approvals/broker.ts";
+import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
 import { visibleApprovalViews } from "#server/services/actions/ordinary-approvals.ts";

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { createCodexApprovalBroker } from "#runtime/services/approvals/broker.ts";
+import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
 import {
 	createIdentityAuthorities,
 	createIdentityAuthority,

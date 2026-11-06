@@ -5,9 +5,9 @@
 // unloads it. Its coordinator's tools and its voice adapter stay until then, so a turn still
 // running is answered rather than left waiting.
 
-import type { CodexRealtimeAdapter } from "#runtime/services/realtime/contract.ts";
-import type { CodexThreadLinkPort } from "#runtime/rules/thread-link/contract.ts";
-import type { ThreadUnload } from "#runtime/operations/thread-unload/unload.ts";
+import type { CodexRealtimeAdapter } from "#runtime/voice/realtime/services/contract.ts";
+import type { CodexThreadLinkPort } from "#runtime/workhorses/thread-link/rules/contract.ts";
+import type { ThreadUnload } from "#runtime/thread-unload/operations/unload.ts";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
 import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
 import { appendFailure } from "#server/rules/generation/failures.ts";

@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 
-import { createCodexRealtimeAdapter } from "#runtime/services/realtime/adapter.ts";
-import { type CodexRealtimeAdapter } from "#runtime/services/realtime/contract.ts";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
+import { createCodexRealtimeAdapter } from "#runtime/voice/realtime/services/adapter.ts";
+import { type CodexRealtimeAdapter } from "#runtime/voice/realtime/services/contract.ts";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";

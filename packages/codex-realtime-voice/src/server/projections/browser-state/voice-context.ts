@@ -1,8 +1,8 @@
 import type {
 	CoordinatorCallbackDelivery,
 	CoordinatorCallbacks,
-} from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import type { CodexRealtimeGeneration } from "#runtime/services/realtime/contract.ts";
+} from "#runtime/voice/coordinator-callbacks/protocol/contract.ts";
+import type { CodexRealtimeGeneration } from "#runtime/voice/realtime/services/contract.ts";
 import type { BrowserVoiceContext } from "#shared/browser/schemas/snapshot.ts";
 import {
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,

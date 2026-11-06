@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { CodexSession } from "@archboard/codex-app-server/session";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { BROWSER_TIMELINE_LIMITS } from "#shared/browser/schemas/vocabulary.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";

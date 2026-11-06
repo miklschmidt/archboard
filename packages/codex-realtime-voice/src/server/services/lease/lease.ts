@@ -6,7 +6,7 @@ import type {
 	BrowserCommandId,
 } from "@archboard/codex-app-server/identity";
 import type { BrowserCommandLease } from "#shared/browser/schemas/snapshot.ts";
-import type { ThreadLinkBindingSnapshot } from "#runtime/rules/thread-link/contract.ts";
+import type { ThreadLinkBindingSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import type {
 	BrowserConnectionId,
 	BrowserConnectionInstance,

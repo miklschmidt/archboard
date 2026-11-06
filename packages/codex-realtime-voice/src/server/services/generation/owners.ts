@@ -1,6 +1,6 @@
-import type { CodexRealtimeGeneration } from "#runtime/services/realtime/contract.ts";
+import type { CodexRealtimeGeneration } from "#runtime/voice/realtime/services/contract.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import type { WorkhorseOperationBinding } from "#runtime/protocol/workhorse-operations/contract.ts";
+import type { WorkhorseOperationBinding } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationInput,

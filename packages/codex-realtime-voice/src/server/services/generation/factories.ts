@@ -1,10 +1,10 @@
-import { createCodexApprovalBroker } from "#runtime/services/approvals/broker.ts";
-import { TELL_COORDINATOR_OWNER } from "#runtime/services/coordinator-callbacks/tell-coordinator.ts";
-import { coordinatorDynamicDispatchers } from "#runtime/protocol/coordinator-tools/contract.ts";
-import type { VoiceToolset } from "#runtime/rules/host/toolset.ts";
-import { createCodexEpochStore } from "#runtime/store/epoch/epoch.ts";
+import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
+import { TELL_COORDINATOR_OWNER } from "#runtime/voice/coordinator-callbacks/services/tell-coordinator.ts";
+import { coordinatorDynamicDispatchers } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
+import type { VoiceToolset } from "#runtime/host/toolset/rules/toolset.ts";
+import { createCodexEpochStore } from "#runtime/epoch/store/epoch.ts";
 import { createCodexSession } from "@archboard/codex-app-server/session";
-import { createCodexThreadLink } from "#runtime/rules/thread-link/thread-link.ts";
+import { createCodexThreadLink } from "#runtime/workhorses/thread-link/rules/thread-link.ts";
 import { createCodexTransport, type CodexTransport } from "@archboard/codex-app-server/transport";
 import {
 	createIdentityAuthorities,

@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ApprovalOwnerView } from "#runtime/services/approvals/contract.ts";
+import type { ApprovalOwnerView } from "#runtime/approvals/services/contract.ts";
 import type {
 	SpokenApprovalFallbackReason,
 	SpokenApprovalSnapshot,
-} from "#runtime/protocol/spoken-approval/contract.ts";
+} from "#runtime/voice/coordinator/tools-and-work/spoken-approval/protocol/contract.ts";
 import { BROWSER_SPOKEN_APPROVAL_REASONS } from "#shared/browser/schemas/spoken-approval.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import { parseRealtimeItemId, parseRealtimeSessionId } from "#shared/protocol/realtime-contract.ts";

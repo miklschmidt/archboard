@@ -362,7 +362,7 @@
 							"responsibility": "The caller that opens a thread on this session under an epoch transaction",
 							"binding": {
 								"repo": "github.com/miklschmidt/archboard",
-								"path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start"
+								"path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services"
 							},
 							"drillDown": { "board": "Codex workhorse", "variant": { "kind": "current" } }
 						},
@@ -843,7 +843,7 @@
 						"traffic": { "speed": 40, "volume": 0.5 },
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+							"path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
 							"symbol": "threadStart"
 						}
 					},
@@ -1859,7 +1859,7 @@
 							"traffic": { "speed": 40, "volume": 0.5 },
 							"anchor": {
 								"repo": "github.com/miklschmidt/archboard",
-								"path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+								"path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
 								"symbol": "threadStart"
 							}
 						},

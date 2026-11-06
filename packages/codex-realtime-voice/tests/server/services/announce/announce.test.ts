@@ -3,8 +3,8 @@ import { createIdentityAuthorities } from "@archboard/codex-app-server/identity"
 import { announceContextChange } from "#server/services/announce/announce.ts";
 import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
 import type { ContextChange } from "#server/protocol/announce/contract.ts";
-import type { ContextAnnouncementSource } from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import type { WorkhorseContextEvent } from "#runtime/services/thread-context/contract.ts";
+import type { ContextAnnouncementSource } from "#runtime/voice/coordinator-callbacks/protocol/contract.ts";
+import type { WorkhorseContextEvent } from "#runtime/workhorses/thread-context/services/contract.ts";
 import type { CodexWorkbenchDomainScope } from "#server/protocol/generation/domain.ts";
 
 // Who `announce` tells, and the receipts it gives. What each audience does with a change it is

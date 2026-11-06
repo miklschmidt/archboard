@@ -1,12 +1,12 @@
-import type { CodexApprovalBroker } from "#runtime/services/approvals/contract.ts";
+import type { CodexApprovalBroker } from "#runtime/approvals/services/contract.ts";
 import type { CodexWorkbenchDomain } from "#server/protocol/generation/domain.ts";
-import type { CodexEpochStore } from "#runtime/store/epoch/contract.ts";
+import type { CodexEpochStore } from "#runtime/epoch/store/contract.ts";
 import {
 	CODEX_SESSION_CONTROL,
 	type CodexSession,
 	type ControlledCodexSession,
 } from "@archboard/codex-app-server/session";
-import type { CodexThreadLinkPort } from "#runtime/rules/thread-link/contract.ts";
+import type { CodexThreadLinkPort } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import type { CodexTransport } from "@archboard/codex-app-server/transport";
 import type {
 	ChildEpoch,

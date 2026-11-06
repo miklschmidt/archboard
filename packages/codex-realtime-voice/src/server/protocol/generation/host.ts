@@ -4,12 +4,12 @@ import type {
 	WorkbenchContextCodec,
 	WorkbenchExecutionContext,
 	WorkbenchOperation,
-} from "#runtime/protocol/host/context.ts";
-import type { WorkbenchInstructions } from "#runtime/protocol/host/instructions.ts";
+} from "#runtime/host/protocol/context.ts";
+import type { WorkbenchInstructions } from "#runtime/host/protocol/instructions.ts";
 import type {
 	WorkbenchContextSource,
 	WorkbenchVoicePolicy,
-} from "#runtime/protocol/host/context-source.ts";
+} from "#runtime/host/protocol/context-source.ts";
 import type {
 	CodexWorkbenchDomainScope,
 	CodexWorkbenchDomainTools,

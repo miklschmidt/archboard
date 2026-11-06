@@ -2,8 +2,8 @@ import { expect, test } from "bun:test";
 import { createServer } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 
-import { createCodexApprovalBroker } from "#runtime/services/approvals/broker.ts";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
+import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
 import type {
 	ReverseResponse,
 	TransportServerRequest,

@@ -5,8 +5,8 @@ import {
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_WITHHELD_MAX_UTF8_BYTES,
 } from "#shared/browser/schemas/vocabulary.ts";
-import type { CoordinatorCallbackDelivery } from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import type { CodexRealtimeGeneration } from "#runtime/services/realtime/contract.ts";
+import type { CoordinatorCallbackDelivery } from "#runtime/voice/coordinator-callbacks/protocol/contract.ts";
+import type { CodexRealtimeGeneration } from "#runtime/voice/realtime/services/contract.ts";
 
 // A host's words reach the page as they were told. Words longer than the wire holds, or holding a
 // NUL the wire refuses, must not stop the page from being shown its state.

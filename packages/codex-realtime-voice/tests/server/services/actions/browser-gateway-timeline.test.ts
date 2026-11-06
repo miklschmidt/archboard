@@ -1,7 +1,7 @@
 import { TEST_CONTEXT_CODEC, testContextFixture } from "#tests/runtime/support/host.ts";
 import { expect, test } from "bun:test";
 
-import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
+import type { ThreadLinkSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
