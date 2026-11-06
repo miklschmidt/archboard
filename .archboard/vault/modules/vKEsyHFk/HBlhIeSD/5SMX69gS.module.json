@@ -34,22 +34,9 @@
   ],
   "outgoing": [
     {
-      "order": 27000,
-      "kind": "dependency",
-      "label": "read the inspected canonical state",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-check/operations/states.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#fVxcoo6Q",
-      "to": "vKEsyHFk#ZGONZKxj"
-    },
-    {
       "order": 43000,
       "kind": "call",
-      "label": "read selected canonical states",
+      "label": "read the selected canonical states and their predecessor",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -140,7 +127,7 @@
     {
       "order": 87000,
       "kind": "call",
-      "label": "reads each draft at its own ref",
+      "label": "read each draft's bound parts at its own ref",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -148,19 +135,6 @@
         "symbol": "nodesAtOwnRef"
       },
       "id": "vKEsyHFk/HBlhIeSD#m1F0u7X1",
-      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
-    },
-    {
-      "order": 122000,
-      "kind": "call",
-      "label": "each draft at its own ref; how far each model is behind",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-check/operations/ref-code.ts",
-        "symbol": "nodesAtOwnRef"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#eW22MD6a",
       "to": "vKEsyHFk/HBlhIeSD#radK8osF"
     }
   ]

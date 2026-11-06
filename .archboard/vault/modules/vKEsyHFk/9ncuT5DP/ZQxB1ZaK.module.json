@@ -24,7 +24,7 @@
     {
       "order": 4000,
       "kind": "call",
-      "label": "start the realtime leg",
+      "label": "the realtime leg: thread/realtime/start, append and stop",
       "emphasis": "hero",
       "traffic": {
         "speed": 40,
@@ -76,19 +76,6 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#AkgtBxFY",
       "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD"
-    },
-    {
-      "order": 17000,
-      "kind": "rpc",
-      "label": "thread/realtime/start, append, stop",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/voice/realtime/services/negotiation.ts",
-        "symbol": "realtimeStart"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#TFjDY5zE",
-      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     }
   ]
 }

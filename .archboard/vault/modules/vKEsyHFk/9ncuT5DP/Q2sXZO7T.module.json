@@ -19,8 +19,8 @@
   "outgoing": [
     {
       "order": 78000,
-      "kind": "dependency",
-      "label": "forward pane presence and shown conversation operations",
+      "kind": "call",
+      "label": "forward pane presence and shown-conversation operations",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -28,19 +28,6 @@
         "symbol": "installWorkbenchTabSessions"
       },
       "id": "vKEsyHFk/Oi6SBIAM#HO533F7P",
-      "to": "vKEsyHFk/9ncuT5DP#hCKEBd5f"
-    },
-    {
-      "order": 84000,
-      "kind": "dependency",
-      "label": "use the core tab-presence and shown-conversation contract",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/panes/services/tab-sessions.ts",
-        "symbol": "installWorkbenchTabSessions"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#2NPuX9QA",
       "to": "vKEsyHFk/9ncuT5DP#hCKEBd5f"
     }
   ]

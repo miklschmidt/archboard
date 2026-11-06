@@ -62,7 +62,7 @@
     {
       "order": 46000,
       "kind": "call",
-      "label": "the repositories and their vaults",
+      "label": "list the repositories and their vaults",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -110,19 +110,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#rnMTaURu",
       "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
-    },
-    {
-      "order": 60000,
-      "kind": "call",
-      "label": "list the repositories",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
-        "symbol": "listRepositories"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#HbR02k8Z",
-      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
     },
     {
       "order": 61000,

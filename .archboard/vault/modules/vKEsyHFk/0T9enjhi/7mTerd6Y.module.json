@@ -217,7 +217,7 @@
     {
       "order": 259000,
       "kind": "call",
-      "label": "Hold the existing lease and journal",
+      "label": "write the cutover journal under the held lease",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -239,19 +239,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#rl3PMdWJ",
       "to": "vKEsyHFk#P9dwhB8m"
-    },
-    {
-      "order": 261000,
-      "kind": "call",
-      "label": "Inspect the existing recovery journal",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
-        "symbol": "applyMigration"
-      },
-      "id": "vKEsyHFk/0T9enjhi#PAre101X",
-      "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
     },
     {
       "order": 262000,

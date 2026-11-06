@@ -28,8 +28,7 @@
     {
       "order": 19000,
       "kind": "call",
-      "label": "launch, a 1920x1080 window, stop",
-      "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+      "label": "start a private headless Chromium to record or render",
       "emphasis": "normal",
       "traffic": {
         "speed": 40,
@@ -55,19 +54,6 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#5cL4zDLx",
       "to": "vKEsyHFk/SMjRfwN3#QNRrx3i3"
-    },
-    {
-      "order": 34000,
-      "kind": "dependency",
-      "label": "headless Chromium",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/recorder/services/recording-tools.ts",
-        "symbol": "launchHeadlessChromium"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#zSvgwAHH",
-      "to": "vKEsyHFk/SMjRfwN3#6uHnaygd"
     }
   ]
 }

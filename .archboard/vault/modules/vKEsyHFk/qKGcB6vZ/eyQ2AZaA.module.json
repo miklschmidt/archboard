@@ -45,19 +45,6 @@
     },
     {
       "order": 22000,
-      "kind": "rpc",
-      "label": "a context change: realtime/appendText for the voice",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/realtime.ts",
-        "symbol": "realtimeAppendText"
-      },
-      "id": "vKEsyHFk/SJ2JMVyz#4DGyP7RO",
-      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
-    },
-    {
-      "order": 22000,
       "kind": "call",
       "label": "report the news",
       "description": "The server composition imports createOutcomeReportPort from its own lib/ implementation and passes the returned report port to callback delivery. The callback module invokes that injected port; it never imports the private server file.",
@@ -69,19 +56,6 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#VdOucvLo",
       "to": "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ"
-    },
-    {
-      "order": 24000,
-      "kind": "rpc",
-      "label": "news as a turn/start; a context change injected or appended",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/realtime.ts",
-        "symbol": "realtimeAppendText"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#biUWQZMB",
-      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
       "order": 33000,

@@ -29,21 +29,8 @@
         "symbol": "enqueue"
       },
       "id": "vKEsyHFk/9ncuT5DP#Tqxin6z5",
-      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
-    },
-    {
-      "order": 25000,
-      "kind": "call",
-      "label": "the coordinator's and the voice's parts of a change",
-      "description": "The voice agent's announce gives each audience a change names its own callback on the tab's queue, while voice is live.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts",
-        "symbol": "enqueue"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#wyliCZzQ",
-      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
+      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+      "description": "Each audience of a change gets its own callback on the tab's one queue, while voice is live."
     },
     {
       "order": 26000,
