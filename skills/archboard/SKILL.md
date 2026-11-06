@@ -125,6 +125,10 @@ A task ID in a name means nothing to the reader. Put it in the task plan.
 Give every proposal a `summary`: one sentence that states the change and why it matters.
 If two proposals change similar parts, write names that tell them apart.
 Rename a proposal through `proposal.set`. Its former names stay on the state.
+A person knows a proposal by its name, not by its state ID.
+In every reply, question, PR body and task note, call each proposal and state by its name.
+For example, write "Painting owns the paint directory" or "the current state".
+Keep the state ID for commands and requests. If the reader must type it, give it in a code span after the name.
 
 ## Choose a reading
 

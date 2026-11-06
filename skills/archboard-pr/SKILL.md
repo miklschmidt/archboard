@@ -112,6 +112,7 @@ Done: artifacts name their exact reading, and their inspection and history avail
 ## Write and post
 
 Keep the visible body brief and use the repository's domain terms.
+Name each proposal and state in the visible body by its name, as the consumer skill says. The state comment carries the IDs.
 Lead Summary with the concrete problem and resulting behavior.
 Show pictures with descriptive alt text.
 Put a narrated video and collapsed transcript below its picture when one exists.
