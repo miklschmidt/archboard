@@ -90,7 +90,10 @@ of your shell.
 3. For Swift, use Swift 6.1 or later. sourcekit-lsp builds a package itself on
    the first run to prepare its background index. The check waits until the
    index is ready before it asks for definitions.
-4. If the repository is not registered, run `archboard repo add <dir>`. If it
+4. If the repository has no vault, make it with `archboard model init` first, as
+   [the skill](../SKILL.md#discover-the-model) says. That command also registers
+   the checkout. If the repository
+   is not registered, run `archboard repo add <dir>`. If it
    is registered at another directory, `repo add` makes this directory a second
    known checkout, and the check reads only the chosen one, or the one that
    holds the vault for its own repository, so the servers of step 5 take effect
@@ -152,4 +155,4 @@ If the answer says `language-server-failed`, the server did not start or stopped
 the command in the repository to read its output.
 
 In every case, the uses stay candidates. The installation guide has the details
-for each server: [generated/INSTALL.md](generated/INSTALL.md).
+for each server: [INSTALL.md](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md).

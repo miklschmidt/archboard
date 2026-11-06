@@ -1,18 +1,18 @@
 # Canonical schemas
 
-The installed skill derives its schemas from the runtime that supplies the CLI.
-Every installation regenerates them under `generated/`.
-Do not edit those files.
+The installed archboard CLI prints the JSON Schema of each model file and request.
+It renders them from its own validation, so they match the program that reads and writes the vault.
+`archboard model schema` lists the names. `archboard model schema <name>` prints one schema.
+Neither needs a server or a vault. Do not copy the schemas into the repository.
 
-- `model-manifest.schema.json` describes the model identity and current state.
-- `module.schema.json` describes one canonical module and its outgoing relationships.
-- `flows.schema.json` describes one independent flow collection.
-- `model-initialize.schema.json` describes the request for an empty planning model.
-- `model-edit.schema.json` describes one complete authoring intent.
-- `model-import.schema.json` describes explicit portable installation.
-- `model-migrate.schema.json` describes explicit legacy cutover.
-- `vault-config.schema.json` describes shared kinds, relationship evidence, and groups.
-- `INSTALL.md` records installation from the active source checkout.
+- `model-manifest` describes the model identity and current state.
+- `module` describes one canonical module and its outgoing relationships.
+- `flows` describes one independent flow collection.
+- `model-initialize` describes the request for an empty planning model.
+- `model-edit` describes one complete authoring intent.
+- `model-import` describes explicit portable installation.
+- `model-migrate` describes explicit legacy cutover.
+- `vault-config` describes shared kinds, relationship evidence, and groups.
 
 Read the [canonical model reference](canonical-models.md) for operation examples.
 A valid JSON shape does not establish valid architecture.

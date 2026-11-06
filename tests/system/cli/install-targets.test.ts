@@ -12,10 +12,7 @@ import {
 import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import path from "node:path";
-import { Ajv2020 } from "ajv/dist/2020.js";
-import { z } from "zod";
 import { listArchitectureCheckpoints } from "@archboard/model/store-read";
-import { anchorsOf } from "@archboard/skills/citations";
 import { createInstallFixture, installFailure, shippedSkills } from "./support/install-fixture.ts";
 import { checkoutRoot } from "./support/package-cli.ts";
 
@@ -223,6 +220,54 @@ describe("install targets", () => {
 		expect(() => fixture.assertSkillBytes(fixture.skillRoot), secondDiagnostic).not.toThrow();
 	});
 
+	test("model init in a checkout without a vault makes the vault that install-skill makes, and registers the checkout", async () => {
+		using fixture = createInstallFixture();
+		const installed = fixture.repo("installed");
+		fixture.git(installed, "init", "--quiet");
+		fixture.install(installed);
+		const repo = fixture.repo("initialized");
+		fixture.git(repo, "init", "--quiet");
+		const inside = join(repo, "src");
+		mkdirSync(inside);
+		const made = fixture.archboard(inside, [
+			"model",
+			"init",
+			"--name",
+			"initialized",
+			"--operation-id",
+			"initialize",
+			"--writer",
+			"agent",
+			"--doing",
+			"Initialize architecture",
+		]);
+		const diagnostic = installFailure(made);
+		expect(made.status, diagnostic).toBe(0);
+		expect(JSON.parse(made.stdout), diagnostic).toMatchObject({ success: true });
+		const vault = join(repo, ".archboard", "vault");
+		const madeFiles = filesBelow(vault);
+		const installedFiles = filesBelow(join(installed, ".archboard", "vault"));
+		expect([...madeFiles.keys()].toSorted(), diagnostic).toEqual(
+			[...installedFiles.keys()].toSorted(),
+		);
+		const config = join(".archboard", "config.yaml");
+		expect(madeFiles.get(config), diagnostic).toEqual(installedFiles.get(config));
+		expect(JSON.parse(readFileSync(join(vault, "model.json"), "utf8"))).toMatchObject({
+			schemaVersion: 1,
+			name: "initialized",
+			current: null,
+		});
+		const retained = await listArchitectureCheckpoints(vault);
+		if (!retained.success) throw new Error(JSON.stringify(retained));
+		expect(retained.checkpoints).toHaveLength(1);
+		fixture.git(repo, "verify-commit", retained.checkpoints[0]!.id);
+		const listed = fixture.archboard(fixture.root, ["repo", "list"]);
+		const roots = (JSON.parse(listed.stdout) as { repos: { root: string }[] }).repos.map(
+			({ root }) => root,
+		);
+		expect(roots, installFailure(listed)).toContain(realpathSync(repo));
+	});
+
 	test("retries canonical setup after the configured signer fails", async () => {
 		using fixture = createInstallFixture();
 		const repo = fixture.repo("signing-retry");
@@ -302,53 +347,5 @@ describe("install targets", () => {
 		expect(noSetup.setup, noSetupDiagnostic).toBeUndefined();
 		expect(readdirSync(untouched), noSetupDiagnostic).toEqual([]);
 		expect(existsSync(join(noSetupRoot, "archboard", "SKILL.md")), noSetupDiagnostic).toBe(true);
-	});
-});
-
-describe("what an install carries beyond the authored skill", () => {
-	test("an install outside the checkout ships schemas an agent can validate against, and a manual whose links resolve", () => {
-		using fixture = createInstallFixture();
-		const repo = fixture.repo("portable");
-		const custom = join(fixture.root, "portable-root");
-		const result = fixture.install(repo, ["--dir", custom, "--no-setup"]);
-		const diagnostic = installFailure(result.spawn);
-		const skill = join(custom, "archboard");
-		const generated = join(skill, "references", "generated");
-		expect(() => fixture.assertSkillBytes(custom), diagnostic).not.toThrow();
-		// The evaluation inputs are the repository's, never the installed skill's (TASK-212).
-		expect(existsSync(join(skill, "evals")), diagnostic).toBe(false);
-
-		// Module tests own schema semantics. This system boundary proves the files
-		// that actually landed outside the checkout are complete JSON Schemas a
-		// consumer can compile.
-		const DateTimeSchema = z.iso.datetime();
-		const ajv = new Ajv2020({
-			strict: false,
-			formats: {
-				"date-time": (value: string) => DateTimeSchema.safeParse(value).success,
-			},
-		});
-		for (const file of readdirSync(generated).filter((name) => name.endsWith(".json"))) {
-			expect(() =>
-				ajv.compile(JSON.parse(readFileSync(join(generated, file), "utf8"))),
-			).not.toThrow();
-		}
-
-		// Every link the shipped guidance and manual make resolves from where they sit.
-		const guidance = readFileSync(join(skill, "references", "schemas.md"), "utf8");
-		for (const [, target] of guidance.matchAll(/\]\(([^)#]+)\)/gu)) {
-			expect(existsSync(join(skill, "references", target!)), `${target} from schemas.md`).toBe(
-				true,
-			);
-		}
-		const manual = readFileSync(join(generated, "INSTALL.md"), "utf8");
-		expect(manual.startsWith("<!-- Generated copy of"), diagnostic).toBe(true);
-		for (const [, target] of manual.matchAll(/\]\(<([^>]+)>\)/gu)) {
-			if (/^https?:/u.test(target!)) continue;
-			const [file, anchor] = target!.split("#");
-			expect(existsSync(file!), `${target} from the shipped INSTALL.md`).toBe(true);
-			if (anchor !== undefined)
-				expect(anchorsOf(readFileSync(file!, "utf8")).has(anchor), target).toBe(true);
-		}
 	});
 });

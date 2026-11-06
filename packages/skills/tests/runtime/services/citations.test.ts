@@ -57,9 +57,6 @@ describe("a citation", () => {
 			expect(citationProblem(root, "references/read.md#edit-an-existing-document")).not.toBeNull();
 			expect(citationProblem(root, "../outside.md#x")).not.toBeNull();
 			expect(citationProblem(root, "references/edit.md")).not.toBeNull();
-			fs.mkdirSync(path.join(root, "references", "generated"));
-			fs.writeFileSync(path.join(root, "references", "generated", "INSTALL.md"), "# Install\n");
-			expect(citationProblem(root, "references/generated/INSTALL.md#install")).not.toBeNull();
 		} finally {
 			fs.rmSync(root, { recursive: true, force: true });
 		}
@@ -129,16 +126,13 @@ describe("the suite", () => {
 	});
 });
 
-test("a batch keeps the skill it ran once, without the derived generated files", () => {
+test("a batch keeps the skill it ran once", () => {
 	const skill = skillWith("# Edit an existing document\n");
 	const batch = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-kept-skill-"));
 	try {
-		fs.mkdirSync(path.join(skill, "references", "generated"));
-		fs.writeFileSync(path.join(skill, "references", "generated", "schema.json"), "{}");
 		keepBatchSkill(skill, batch);
 		const kept = path.join(batch, "skill");
 		expect(citationProblem(kept, "references/edit.md#edit-an-existing-document")).toBeNull();
-		expect(fs.existsSync(path.join(kept, "references", "generated"))).toBe(false);
 		// A resumed batch keeps its first copy, whatever the checkout holds by then.
 		fs.writeFileSync(path.join(skill, "references", "edit.md"), "# Renamed\n");
 		keepBatchSkill(skill, batch);

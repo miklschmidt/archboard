@@ -3,6 +3,7 @@ import { modelInspectContract } from "#cli/operations/model/inspect.ts";
 import { modelRasterizeContract } from "#cli/operations/model/rasterize.ts";
 import { modelReplayContract } from "#cli/operations/model/replay.ts";
 import { modelInitContract } from "#cli/operations/model/initialize.ts";
+import { modelSchemaContract } from "#cli/operations/model/schema.ts";
 import { modelExportContract, modelImportContract } from "#cli/operations/model/portable.ts";
 import { modelRecordContract } from "#cli/operations/model/record.ts";
 import { modelExplainContract } from "#cli/operations/model/explain.ts";
@@ -82,6 +83,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 			),
 			replay: child(contract(modelReplayContract, "apps/cli/src/cli/operations/model/replay.ts")),
 			config: child(contract(semanticConfigContract, "apps/cli/src/cli/operations/vault/vault.ts")),
+			schema: child(contract(modelSchemaContract, "apps/cli/src/cli/operations/model/schema.ts")),
 			init: child(contract(modelInitContract, "apps/cli/src/cli/operations/model/initialize.ts")),
 			"archive-init": child(
 				contract(modelArchiveInitContract, "apps/cli/src/cli/operations/model/archive.ts"),

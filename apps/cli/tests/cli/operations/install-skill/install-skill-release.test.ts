@@ -20,7 +20,7 @@ import { resolveExplicitDir } from "#cli/operations/install-skill/skill-destinat
 // installing its skills must read from it and write only into the skills root. The fixture
 // is a release as the build lays it out, made read-only.
 
-const PREBUILT = "prebuilt by the release build\n";
+const SHIPPED = "as the release ships it\n";
 const diagnostics: string[] = [];
 const context = { diagnostic: (message: string) => diagnostics.push(message) };
 
@@ -65,7 +65,7 @@ beforeEach(() => {
 		}),
 		"bin/archboard": "",
 		"skills/archboard/SKILL.md": "consumer skill\n",
-		"skills/archboard/references/generated/INSTALL.md": PREBUILT,
+		"skills/archboard/references/setup.md": SHIPPED,
 		"skills/archboard-pr/SKILL.md": "pr skill\n",
 	})) {
 		mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
@@ -121,18 +121,18 @@ describe("install-skill in a release", () => {
 		expect(snapshot(release.root)).toEqual(before);
 	});
 
-	test("a skills root inside the repository gets a prebuilt copy that a later install replaces", () => {
+	test("a skills root inside the repository gets a copy of the release that a later install replaces", () => {
 		const repo = path.join(workspace, "repo");
 		const skills = path.join(repo, ".agents", "skills");
 		mkdirSync(repo);
 
 		expect(install(skills, repo).install).toBe("copy");
-		const copied = path.join(skills, "archboard", "references", "generated", "INSTALL.md");
+		const copied = path.join(skills, "archboard", "references", "setup.md");
 		expect(lstatSync(path.join(skills, "archboard")).isSymbolicLink()).toBe(false);
-		expect(readFileSync(copied, "utf8")).toBe(PREBUILT);
+		expect(readFileSync(copied, "utf8")).toBe(SHIPPED);
 		expect(lstatSync(copied).mode & 0o200).not.toBe(0);
 
 		expect(() => install(skills, repo)).not.toThrow();
-		expect(readFileSync(copied, "utf8")).toBe(PREBUILT);
+		expect(readFileSync(copied, "utf8")).toBe(SHIPPED);
 	});
 });

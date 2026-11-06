@@ -34,8 +34,19 @@ Read source before describing implemented architecture.
 Follow bound files, imports, callers, and the external contracts that establish each relationship.
 A name, code binding, or similar responsibility never establishes shared identity.
 
-If an empty vault has no manifest, initialize it through `model init`.
-The existing `install-skill` setup initializes new vaults through that same operation.
+If the Git checkout has no `.archboard/vault`, a command refuses with `VAULT_NOT_FOUND`.
+If the refusal names another vault that holds the models of this repository, pass that vault with `-C`.
+Otherwise make the vault with `model init` in the checkout before any other operation:
+
+```bash
+archboard model init --name <name> --operation-id initialize-<name> --writer agent --doing 'Initialize architecture'
+```
+
+Use the name of the repository directory as the model name, unless the user names the model.
+The command makes `<root>/.archboard/vault` with the default vocabulary and an empty planning model.
+It registers the checkout, so that a browser lists it. It needs no server.
+Tell the user that you made the vault, and where.
+If an empty vault has no manifest, initialize it through the same `model init`.
 An untracked vault needs explicit `model archive-init` before signed history and authoring operations.
 Keep configured Git signing enabled.
 
@@ -165,9 +176,9 @@ Never claim frontend acceptance, adoption, publication, or migration without the
 
 ## References
 
-[The installation guide](references/generated/INSTALL.md) covers installing, building and updating archboard, with or without Nix.
+[The installation guide](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md) covers installing, building and updating archboard, with or without Nix.
 [Setup](references/setup.md) covers the language servers of the code check.
-[Schema references](references/schemas.md) point to generated runtime contracts.
+[Schema references](references/schemas.md) tell how to print the JSON Schemas of the installed CLI.
 [Canonical models](references/canonical-models.md) describe authoring and history operations.
 [The design lens](references/design-lens.md) says what interface, locality, and footprint facts mean.
 [Canonical walkthroughs](references/canonical-walkthroughs.md) describe captured narratives and recordings.

@@ -1143,7 +1143,8 @@ Configure and publish destination history explicitly when collaboration requires
 ## Initialize and consume one live model
 
 An empty vault starts with `archboard model init --name <name> --operation-id <id> --writer <writer> --doing <intent>`.
-The existing `install-skill` setup calls that same initialization operation for new vaults.
+In a Git checkout without a vault, the same command first makes `<root>/.archboard/vault` and registers the checkout.
+`install-skill` makes a new vault through that same operation.
 The result has a generated stable model identity, no current state, and no fixed levels.
 Retry the exact operation identity after an interrupted response.
 A different intent requires another operation identity.

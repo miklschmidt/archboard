@@ -9,11 +9,8 @@ import type { installation } from "@archboard/workspace/installation";
 type Installation = ReturnType<typeof installation>;
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 
-/** The skill that authors models; its installed copy also carries the generated schemas and manual. */
-const CONSUMER_SKILL = "archboard";
-
 /** Every skill an install ships, each into its own directory of the skills root. */
-const BUNDLED_SKILLS = [CONSUMER_SKILL, "archboard-pr"] as const;
+const BUNDLED_SKILLS = ["archboard", "archboard-pr"] as const;
 type BundledSkill = (typeof BUNDLED_SKILLS)[number];
 
 interface SkillDestination {
@@ -121,7 +118,6 @@ function countFiles(dir: string): number {
 }
 
 export {
-	CONSUMER_SKILL,
 	BUNDLED_SKILLS,
 	type BundledSkill,
 	type SkillDestination,

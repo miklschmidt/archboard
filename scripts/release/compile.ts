@@ -28,7 +28,6 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import { CHECKOUT, CORE_BUILD_DIRECTORY, loadCore } from "@archboard/renderer/core";
-import { prepareSkillArtifacts } from "@archboard/skills/distribution";
 
 /** The platforms a release is built for. */
 const TARGETS = ["bun-linux-x64", "bun-linux-arm64", "bun-darwin-arm64"] as const;
@@ -47,8 +46,6 @@ const ENTRIES = [
 
 /** The skills a release ships, under `skills/`. */
 const SKILLS = ["archboard", "archboard-pr"];
-/** The skill whose generated references a checkout derives, and a release derives again. */
-const PREPARED_SKILL = "archboard";
 
 /** The glue of the core and its WebAssembly. */
 const CORE_GLUE = "archboard_renderer_wasm.js";
@@ -220,12 +217,6 @@ async function compileRelease(target: Target, directory: string): Promise<Compil
 			dereference: true,
 		});
 	}
-	// The checkout's copy links its manual to the checkout. A release has none, so its copy links to
-	// the repository at the tag of its version.
-	prepareSkillArtifacts(path.join(directory, "skills", PREPARED_SKILL), {
-		root: CHECKOUT,
-		release: { version: marker.version, commit: marker.commit },
-	});
 	writeFileSync(
 		path.join(directory, "archboard-release.json"),
 		`${JSON.stringify(marker, null, "\t")}\n`,

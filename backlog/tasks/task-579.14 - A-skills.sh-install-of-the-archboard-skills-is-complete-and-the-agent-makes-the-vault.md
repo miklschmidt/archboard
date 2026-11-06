@@ -3,9 +3,11 @@ id: TASK-579.14
 title: >-
   A skills.sh install of the archboard skills is complete, and the agent makes
   the vault
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-06T03:10:00Z'
+updated_date: '2026-11-06T03:32:00Z'
 labels: []
 dependencies: []
 references:
@@ -34,3 +36,19 @@ The owner decided on 2026-11-06 that the README, the site and INSTALL.md install
 - [ ] #4 The archboard skill tells the agent to run `archboard model init` when the repository has no vault, and to read schemas through the CLI
 - [ ] #5 README, site QuickStart and FAQ, and INSTALL.md show `npx skills add miklschmidt/archboard -g` for the skills; INSTALL.md keeps install-skill for a clone or offline use
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Add archboard model schema [name] in apps/cli/src/cli/operations/model/schema.ts. It reads no shared option, so it needs no vault and no server. It lists the 8 names or prints one JSON Schema from the Zod authorities that generatedSchemas() used. model config --schema renders through the same table.
+
+2. Delete the generated-references machinery: scripts/generate-skill-artifacts.ts, the generate:skill-artifacts script and its postinstall step, the .gitignore block, the ./distribution export of packages/skills (prepare.ts, projections/schemas.ts), the citations and leakage exclusions, the eval install preparation and the release compile step. Lower the skills interface ceiling to 2.
+
+3. One operation makes vaults: makeVault in apps/cli/src/cli/operations/model/initialize.ts. model init gets runsWithoutVault and calls it in a checkout without a vault, with no server. setUpRepository of install-skill calls it too.
+
+4. Skill text: SKILL.md tells the agent to run model init when the checkout has no vault. references/schemas.md points at model schema. INSTALL.md links go to GitHub main. skill-links.test.ts checks links against tracked files only.
+
+5. Docs: README, site QuickStart and FAQ, INSTALL.md section 3, ADR 0075, boundaries.md, TESTING.md.
+
+6. Verify: targeted tests, a git archive copy with a link check and the schema command, skills add --list, model init and model read on a scratch server, then the bun run check lanes.
+<!-- SECTION:PLAN:END -->

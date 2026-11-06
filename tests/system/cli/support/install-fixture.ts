@@ -1,4 +1,3 @@
-import { prepareSkillArtifacts } from "@archboard/skills/distribution";
 import { spawnSync } from "node:child_process";
 import {
 	existsSync,
@@ -49,6 +48,8 @@ interface InstallFixture {
 	git(repo: string, ...args: string[]): string;
 	repo(name: string, files?: Readonly<Record<string, string>>): string;
 	run(repo: string, args?: readonly string[], options?: { home?: boolean }): InstallSpawn;
+	/** Runs another archboard command in a directory, with the environment of the installs. */
+	archboard(cwd: string, args: readonly string[]): InstallSpawn;
 	install(repo: string, args?: readonly string[], options?: { home?: boolean }): InstalledResult;
 	assertSkillBytes(skillsRoot: string): void;
 	dispose(): void;
@@ -71,10 +72,6 @@ const shippedSkills = ["archboard", "archboard-pr"] as const;
 
 function createInstallFixture(): InstallFixture {
 	const root = mkdtempSync(join(tmpdir(), "archboard-install-"));
-	const generatedSkillFiles = prepareSkillArtifacts(join(root, "expected-skill"), {
-		root: checkoutRoot,
-		revision: "fixture",
-	}).files;
 	const home = join(root, "home");
 	const state = join(root, "state");
 	const log = join(root, "logs", "archboard.log");
@@ -126,33 +123,35 @@ function createInstallFixture(): InstallFixture {
 		}
 		return path;
 	};
+	const archboard = (cwd: string, args: readonly string[]): InstallSpawn => {
+		const command = [packageBin, ...args];
+		const result = spawnSync(command[0]!, command.slice(1), {
+			cwd,
+			encoding: "utf8",
+			env: environment,
+		});
+		return {
+			command,
+			cwd,
+			status: result.status,
+			signal: result.signal,
+			stdout: result.stdout,
+			stderr: result.stderr,
+		};
+	};
 	const run = (
 		repository: string,
 		args: readonly string[] = [],
 		options: { home?: boolean } = {},
 	): InstallSpawn => {
 		const namesDestination = args.some((arg) => ["--dir", "--target", "--agent"].includes(arg));
-		const command = [
-			packageBin,
+		return archboard(root, [
 			"install-skill",
 			...(options.home || namesDestination ? [] : ["--dir", skillRoot]),
 			"--repo",
 			repository,
 			...args,
-		];
-		const result = spawnSync(command[0]!, command.slice(1), {
-			cwd: root,
-			encoding: "utf8",
-			env: environment,
-		});
-		return {
-			command,
-			cwd: root,
-			status: result.status,
-			signal: result.signal,
-			stdout: result.stdout,
-			stderr: result.stderr,
-		};
+		]);
 	};
 	const dispose = () => rmSync(root, { recursive: true, force: true });
 	return {
@@ -165,6 +164,7 @@ function createInstallFixture(): InstallFixture {
 		git,
 		repo,
 		run,
+		archboard,
 		install(repository, args = [], options = {}) {
 			const result = run(repository, args, options);
 			if (result.status !== 0) {
@@ -189,8 +189,7 @@ function createInstallFixture(): InstallFixture {
 				const source = join(checkoutRoot, "skills", skill);
 				const authored = readdirSync(source, { recursive: true, withFileTypes: true })
 					.filter((entry) => entry.isFile())
-					.map((entry) => relative(source, join(entry.parentPath, entry.name)))
-					.filter((file) => !file.startsWith(join("references", "generated")));
+					.map((entry) => relative(source, join(entry.parentPath, entry.name)));
 				if (!authored.includes("SKILL.md")) {
 					throw new Error(`The checkout's ${skill} skill has no SKILL.md`);
 				}
@@ -202,11 +201,6 @@ function createInstallFixture(): InstallFixture {
 					if (!readFileSync(installed).equals(readFileSync(join(source, file)))) {
 						throw new Error(`Installed skill bytes differ: ${skill}/${file}`);
 					}
-				}
-			}
-			for (const file of generatedSkillFiles) {
-				if (!existsSync(join(skillsRoot, "archboard", file))) {
-					throw new Error(`Missing generated skill file ${file}`);
 				}
 			}
 		},

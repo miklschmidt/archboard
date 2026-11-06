@@ -29,12 +29,6 @@ packages/renderer/src/shared/protocol/generated/
 # The site's paintings belong to the painter of the same build: `bun site/scripts/paint.ts` makes them.
 site/src/paintings/
 
-# The consumer skill's generated JSON Schemas and portable INSTALL.md copy.
-# `bun install` and every install of the skill regenerate them from the Zod
-# authorities (`bun run generate:skill-artifacts`); the authored skill is
-# skills/archboard.
-skills/archboard/references/generated/
-
 # Environment files
 .env
 

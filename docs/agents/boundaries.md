@@ -522,15 +522,15 @@ files of `runtime/api/` run only in Bun.
   `runtime/clients/` the page client, `runtime/operations/` the browser flags of the render and `runtime/services/` and
   `runtime/processes/` the encoder. The end-to-end owners stay in `tests/system/server-state/walkthrough-*.test.ts`.
 
-The fourteenth is `skills` (`@archboard/skills`). It ships the archboard skill and evaluates it. It adopts the `api/`
-role for `runtime/` and exposes 3 subpaths with 3 names. It imports `model`, `timing`, `renderer`, `process` and
-`walkthrough`. Every file is Node-bound and runs only in Bun. The 3 files of `runtime/api/` are the
+The fourteenth is `skills` (`@archboard/skills`). It evaluates the archboard skill. It adopts the `api/`
+role for `runtime/` and exposes 2 subpaths with 2 names. It imports `model`, `timing`, `renderer`, `process` and
+`walkthrough`. Every file is Node-bound and runs only in Bun. The 2 files of `runtime/api/` are the
 interface.
 
-- `./distribution` is `prepareSkillArtifacts`. It prepares the copy of the skill that the checkout, the installer and
-  `generate:skill-artifacts` ship: the JSON Schemas that Zod renders for canonical manifests, modules, flows, operations, and vault policy (`runtime/projections/schemas.ts`), and the installation-local manual
-  (`runtime/operations/distribution/prepare.ts`). The CLI's `install-skill` keeps which skills it ships and how it
-  links or copies them.
+- The skill ships as its tracked files and nothing else, so a copy that the skills CLI makes from GitHub is complete.
+  The skill reads its JSON Schemas from the installed CLI with `archboard model schema`
+  (`apps/cli/src/cli/operations/model/schema.ts`), which renders them from the Zod authorities of `model`. The CLI's
+  `install-skill` keeps which skills it ships and how it links or copies them.
 - `./evaluation` is `runEvaluationCommand`, the whole command line of `bun run eval:skill`
   (`runtime/operations/evaluation/command.ts`): `check`, `run`, `grade`, `pin` and `report`. `scripts/evaluate-skill.ts`
   passes it the arguments and the checkout. The evaluation is human-run and never part of the gate: real Codex authors
@@ -751,7 +751,8 @@ path, and `archboard install-skill --print-source` is how a test learns which sk
   `rules/` projects those contracts into Commander parsing and help.
   `rules/model/` puts the shared interface derivations into the answers and words of `model inspect` and `model compare`.
   `clients/server/` calls the public canonical HTTP routes through the gated server client.
-  `operations/model/` owns model commands, including claims, edits, inspection, migration, history, and rendering.
+  `operations/model/` owns model commands, including claims, edits, inspection, migration, history, rendering, and schemas.
+  `operations/model/initialize.ts` makes every new vault: `model init` in a checkout without a vault and `install-skill` call its `makeVault`.
   Pane, repository, server, vault, and skill installation commands retain their existing operation owners.
   `operations/invocation/` resolves the command table, session, and explicit vault.
   `operations/execution/` presents one operation result.

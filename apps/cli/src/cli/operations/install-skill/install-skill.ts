@@ -4,7 +4,6 @@ import { z } from "zod";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import type { CommandContext } from "#cli/protocol/contract/contract.ts";
 import {
-	CONSUMER_SKILL,
 	BUNDLED_SKILLS,
 	type BundledSkill,
 	type SkillDestination,
@@ -16,7 +15,6 @@ import {
 	resolveTarget,
 } from "#cli/operations/install-skill/skill-destination.ts";
 import { checkoutRootOf, setUpRepository } from "#cli/operations/install-skill/repo-setup.ts";
-import { prepareSkillArtifacts } from "@archboard/skills/distribution";
 import { installation } from "@archboard/workspace/installation";
 
 /** The installation whose skills are installed. */
@@ -125,19 +123,6 @@ function existingCopy(target: string): boolean {
 type Diagnostics = Pick<CommandContext, "diagnostic">;
 
 /**
- * Prepares the consumer skill in place when the installation is a checkout, whose tracked skill
- * holds only what is authored. A release ships the skill prepared by its build and is never
- * written into: a global install can be read-only (ADR 0075).
- * @param skill - The consumer skill directory, in the installation or a copy of it.
- * @param installed - The installation the skill belongs to.
- */
-function prepareConsumerSkill(skill: string, installed: Installation): void {
-	if (installed.mode === "checkout") {
-		prepareSkillArtifacts(skill, { root: installed.root });
-	}
-}
-
-/**
  * Lets the owner write below a copied directory. The installation may be read-only, as a Nix
  * store or a root-owned global install is, and a copy of it must stay a normal directory that
  * a later install can replace.
@@ -164,18 +149,13 @@ interface PlannedSkill {
 }
 
 /**
- * Copies one skill into its staging directory, prepared the way an install carries it: the
- * model skill also gets its generated schemas and portable install manual.
+ * Copies one skill into its staging directory, where its owner can write.
  * @param plan - The skill to stage.
  * @param staging - The empty staging directory beside its target.
- * @param installed - The installation the skill comes from.
  */
-function stageSkill(plan: PlannedSkill, staging: string, installed: Installation): void {
+function stageSkill(plan: PlannedSkill, staging: string): void {
 	fs.cpSync(plan.source, staging, { recursive: true });
 	makeOwnerWritable(staging);
-	if (plan.skill === CONSUMER_SKILL) {
-		prepareConsumerSkill(staging, installed);
-	}
 }
 
 /**
@@ -197,7 +177,7 @@ function swapIn(plan: PlannedSkill, staging: string, context: Diagnostics): void
  * swapping them in. Replace, never overlay: stale files from older skill versions (e.g. the
  * pre-1.1 scripts/*.cjs helpers) must not survive an upgrade.
  *
- * Every skill is staged and prepared before anything is swapped, so a symlink in the way or
+ * Every skill is staged before anything is swapped, so a symlink in the way or
  * a staging that fails leaves every previous install exactly as it was.
  * @param root - The skills root.
  * @param installed - The installation the skills come from.
@@ -224,7 +204,7 @@ function copySkills(
 		for (const plan of planned) {
 			const staging = fs.mkdtempSync(path.join(root, `.${plan.skill}-staging-`));
 			staged.push({ plan, staging });
-			stageSkill(plan, staging, installed);
+			stageSkill(plan, staging);
 		}
 		for (const { plan, staging } of staged) {
 			swapIn(plan, staging, context);
@@ -271,9 +251,7 @@ function linkSkill(source: string, target: string, context: Diagnostics): void {
 
 /**
  * Links every bundled skill in the root to its directory in the installation, so an update of
- * a checkout keeps its skills current with no further step. A checkout's consumer skill has its
- * generated files prepared where the link finds them; a release's skills arrive prepared and
- * stay untouched.
+ * a checkout keeps its skills current with no further step. The installation stays untouched.
  * @param root - The skills root.
  * @param installed - The installation the skills come from.
  * @param context - The command context that receives the diagnostics.
@@ -284,7 +262,6 @@ function linkSkills(
 	installed: Installation,
 	context: Diagnostics,
 ): { skill: BundledSkill; target: string }[] {
-	prepareConsumerSkill(findSkillSource(CONSUMER_SKILL, installed), installed);
 	fs.mkdirSync(root, { recursive: true });
 	return BUNDLED_SKILLS.map((skill) => {
 		const target = path.join(root, skill);

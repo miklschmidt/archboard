@@ -68,11 +68,9 @@ test("a package naming the evaluated framework, a graded document, a quoted symb
 	]);
 });
 
-test("ordinary words, identifiers that merely contain a term, and names the product's generated contract defines are not leaks", () => {
+test("ordinary words and identifiers that merely contain a term are not leaks", () => {
 	const clean = skillPackage("clean", {
-		"SKILL.md":
-			"A Shell calls the CLI. The icon is RiFlaskLine.\nUse `Dispatch exchange` from the schema.\n",
-		"references/generated/schema.json": '{ "description": "Dispatch exchange" }',
+		"SKILL.md": "A Shell calls the CLI. The icon is RiFlaskLine.\n",
 	});
 	expect(leakageProblems(SCENARIOS, FIXTURES, new Map([["baseline", clean]]))).toEqual([]);
 });
