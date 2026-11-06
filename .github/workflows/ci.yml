@@ -6,9 +6,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # The release workflow runs this gate on the commit it releases (ADR 0075).
+  workflow_call:
 
+# A called workflow gets the caller's context, so the workflow name keeps the gate of a release
+# run apart from the CI run of the same push, which would otherwise cancel it.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:

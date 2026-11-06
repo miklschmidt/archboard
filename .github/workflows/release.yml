@@ -43,6 +43,14 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+  # The complete gate of CI, on the commit that release-please tagged. It runs beside the build,
+  # and the publish job waits for both.
+  gate:
+    name: Gate
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: ./.github/workflows/ci.yml
+
   # The packages of the root release, built from its tag on Linux. Bun cross-compiles the macOS
   # executable (docs/agents/releasing.md).
   build:
@@ -139,7 +147,7 @@ jobs:
   # run can be run again.
   publish:
     name: Publish the packages to npm
-    needs: [release-please, smoke]
+    needs: [release-please, gate, smoke]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: npm

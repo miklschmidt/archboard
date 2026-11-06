@@ -72,7 +72,8 @@ needs npm on your PATH.
 
 A merge of a release pull request is the release (ADR 0075). In that run of
 `.github/workflows/release.yml`, release-please tags the merge commit. Then
-these jobs run, each after the one before:
+the job `gate` runs the complete CI gate of `.github/workflows/ci.yml` on that
+commit. Beside it, these jobs run, each after the one before:
 
 1. `build` checks out the tag on Linux, inside the Nix dev shell, and runs
    `bun run release`. Bun cross-compiles the macOS executable. The job keeps
@@ -80,8 +81,9 @@ these jobs run, each after the one before:
 2. `smoke` runs `scripts/release/smoke.ts` on `ubuntu-latest` and on
    `macos-latest`, which is Apple silicon, once with npm and once with
    `bun add -g`.
-3. `publish` runs in the GitHub environment `npm`. The job waits until the
-   required reviewer of that environment approves it in the run. Then it
+3. `publish` starts only after `gate` and `smoke` pass. It runs in the GitHub
+   environment `npm`, and it waits until the required reviewer of that
+   environment approves it in the run. Then it
    publishes the three platform packages, the two launchers and the voice
    package, with `npm publish --provenance --access public`. npm trusts the
    job through trusted publishing: GitHub gives the job an OpenID Connect (OIDC) token,
