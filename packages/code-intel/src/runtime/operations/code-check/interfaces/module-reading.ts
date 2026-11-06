@@ -34,7 +34,11 @@ import {
 } from "#runtime/operations/code-facts/modules/module-exposure.ts";
 import { runsDefinition } from "#runtime/operations/code-facts/runs.ts";
 import { type FactsPass } from "#runtime/services/code-facts/reader.ts";
-import { type Reference, type SyntaxFacts } from "#runtime/operations/code-facts/facts.ts";
+import {
+	type Import,
+	type Reference,
+	type SyntaxFacts,
+} from "#runtime/operations/code-facts/facts.ts";
 
 /** A module call's argument, `module.queue.var.name`: the value it gives the variable `name`. */
 const ARGUMENT = /^(module\.[^.]+)\.var\.([^.]+)$/u;
@@ -299,21 +303,68 @@ async function privateTestImports(
 }
 
 /**
+ * Whether a Rust import reaches a name that the module exposes. A Rust import names a
+ * path, never a file, so `crate::paint::design::LINE` reaches the exposed
+ * `design.LINE` through the root file's `pub mod design`, wherever `LINE` is
+ * defined, and a glob reaches what a module it names exposes.
+ * @param found The import.
+ * @param exposure What the module exposes.
+ * @returns True when it does.
+ */
+function reachesExposed(found: Pick<Import, "specifier">, exposure: ModuleExposure): boolean {
+	const path = found.specifier.split("::");
+	const glob = path.at(-1) === "*";
+	const dotted = (glob ? path.slice(0, -1) : path).join(".");
+	return exposure.exposed.some(({ name }) =>
+		endsWithName(dotted, glob ? name.split(".").slice(0, -1).join(".") : name),
+	);
+}
+
+/**
+ * Whether a dotted path ends with a dotted name, at a dot.
+ * @param dotted The path.
+ * @param name The name; an empty name ends nothing.
+ * @returns True when it does.
+ */
+function endsWithName(dotted: string, name: string): boolean {
+	return name !== "" && (dotted === name || dotted.endsWith(`.${name}`));
+}
+
+/**
+ * Whether a test's import reaches a file of the module that its interface does not offer.
+ * @param found The import, resolved to a file.
+ * @param exposure The module's entry files and names.
+ * @param rust Whether the test is Rust, whose imports name paths and not files.
+ * @returns True when it does.
+ */
+function reachesPrivateFile(
+	found: Import & { readonly resolved: string },
+	exposure: ModuleExposure,
+	rust: boolean,
+): boolean {
+	return (
+		within(exposure.directory, found.resolved) &&
+		!exposure.rootFiles.includes(found.resolved) &&
+		!(rust && reachesExposed(found, exposure))
+	);
+}
+
+/**
  * Private imports in one external test, one per resolved file.
  * @param read The test's facts.
  * @param exposure The module's entry files.
  * @returns The imports.
  */
 function privateImportsOf(read: SyntaxFacts, exposure: ModuleExposure): TestImport[] {
+	const rust = read.adapter === "rust";
 	const imports = [
 		...(isTestPath(read.path) ? read.imports : []),
 		...(read.testImports ?? []),
 	].flatMap((found): TestImport[] => {
 		const { resolved } = found;
 		if (resolved === undefined || resolved.endsWith("/")) return [];
-		const privateFile =
-			within(exposure.directory, resolved) && !exposure.rootFiles.includes(resolved);
-		return privateFile ? [{ file: read.path, found: { ...found, resolved } }] : [];
+		const file = { ...found, resolved };
+		return reachesPrivateFile(file, exposure, rust) ? [{ file: read.path, found: file }] : [];
 	});
 	const unique = new Map<string, TestImport>();
 	for (const each of imports) {

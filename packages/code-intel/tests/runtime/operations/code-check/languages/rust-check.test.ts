@@ -107,6 +107,9 @@ beforeAll(async () => {
 		"crates/shop/tests/inner.rs": `#![cfg(test)]\n${PRIVATE_TEST}`,
 		"crates/shop/tests/plain.rs": PRIVATE_TEST,
 		"crates/shop/tests/public.rs": "use ledger::record;\nfn test_record() { record(5); }\n",
+		// A public module's names, by name and by glob, reach the library's interface.
+		"crates/shop/tests/through_module.rs":
+			"use ledger::money::ZERO;\nuse ledger::money::*;\nfn test_zero() { let _ = (ZERO, CURRENCY); }\n",
 	});
 	git(scratch, shop, "add", "-A");
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the code");
