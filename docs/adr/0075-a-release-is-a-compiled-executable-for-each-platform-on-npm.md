@@ -72,7 +72,8 @@ the loopback port to Windows, and a Windows browser resolves `*.localhost`
 itself, so a release can work there. Nobody tested it.
 
 The workspace packages stay private. The executable carries them. The MIT
-voice package, `@archboard/codex-realtime-voice`, keeps its own version line.
+voice package, `@archboard/codex-realtime-voice`, has the version of Archboard
+(see Publication).
 
 ### What a platform package holds
 
@@ -139,15 +140,20 @@ same workflow and not on a tag trigger.
 
 Every package is published through npm trusted publishing. npm trusts the
 release workflow of this repository through OpenID Connect (OIDC), so the
-repository stores no npm token, and each package gets provenance. Each package
-on npm names the trusted workflow and refuses publication by token. If npm
+repository stores no npm token, and each package gets provenance. npm trusts
+only the publish job, which runs in the GitHub environment `npm`. That
+environment holds the job until the owner approves it. So release-please tags
+a merged release pull request at once, but the release reaches npm only after
+that approval. Each package on npm names the trusted workflow and refuses
+publication by token. If npm
 trusts a workflow only for a package that already exists, the owner publishes
 a placeholder of each name once by hand.
 
-The MIT voice package is a second release-please component with its own
-version, changelog, release pull request and tag
-`codex-realtime-voice-v<version>`. A commit that changes only the voice
-package does not bump the Archboard version.
+The MIT voice package has no version line of its own. The Archboard
+executable carries the voice package, and the voice package bundles other
+workspace packages, so a change to any of them can change both. One release
+pull request therefore releases both at one version, and release-please writes
+that version into the voice package's `package.json` too.
 
 The Change Date of the Business Source License counts from the first
 publication of each version. The release build writes that version into the

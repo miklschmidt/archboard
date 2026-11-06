@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-05T14:59:00Z'
-updated_date: '2026-11-05T17:06:00Z'
+updated_date: '2026-11-06T02:56:00Z'
 labels: []
 dependencies:
   - TASK-579.08
@@ -31,16 +31,16 @@ Publishing by hand from a laptop gives no provenance and no proof that the tarba
 - [ ] #1 In the workflow run where release-please creates a release, the packages are built, the packed tarballs install on Linux and macOS without Rust, Bun or Node.js, and a smoke test passes
 - [ ] #2 Only after the smoke test, every package is published through npm trusted publishing (GitHub OIDC, `id-token: write`) with provenance; a prerelease goes to the dist-tag `next`
 - [ ] #3 Each package on npm trusts only the release workflow and environment of this repository and disallows publication by token, and the repository stores no npm token
-- [x] #4 The owner steps on npmjs.com (organization, placeholder first versions if npm needs them, trusted publisher per package) are written down in the order they must be done
+- [ ] #4 The owner has the steps on npmjs.com and GitHub (organization, placeholder first versions if npm needs them, trusted publisher per package, the environment and its reviewer) in the order they must be done, outside the repository
+- [ ] #5 The publish job waits in the GitHub environment `npm` until its required reviewer approves the run
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Replace the placeholder job of .github/workflows/release.yml: build (ubuntu, Nix dev shell, bun run release, upload the tarballs) when release-please created the root release; smoke on ubuntu-latest and macos-latest (scripts/release/smoke.ts with npm and with bun add -g, PATH without Rust, Bun or Node.js); publish in the npm environment with id-token: write, npm 11.6.2, npm publish --provenance --access public, platform packages before launchers, prereleases to next, versions on npm already skipped.
-2. build-voice and publish-voice jobs when release-please created the voice release.
-3. docs/agents/releasing.md: how publication runs, and the owner's npmjs.com and GitHub steps in order.
-4. Validate with actionlint (with shellcheck).
+1. Replace the placeholder job of .github/workflows/release.yml: build (ubuntu, Nix dev shell, bun run release and bun run pack:voice, upload the tarballs) when release-please created the release; smoke on ubuntu-latest and macos-latest (scripts/release/smoke.ts with npm and with bun add -g, PATH without Rust, Bun or Node.js); publish in the npm environment with id-token: write, npm 11.6.2, npm publish --provenance --access public, platform packages, then launchers, then the voice package, prereleases to next, versions on npm already skipped.
+2. docs/agents/releasing.md: how publication runs. The owner setup steps stay outside the repository.
+3. Validate with actionlint (with shellcheck).
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -53,4 +53,6 @@ npm: actions/setup-node v5 with Node 24, then npm 11.6.2 installed globally, bec
 The smoke job uses setup-vp only for Bun, which runs the registry stub and the script, and for npm. The archboard commands run on the PATH that smoke.ts builds from the install bin and the system directories, and smoke.ts refuses that PATH when it holds bun, node, npm, npx, cargo or rustc. The owner steps in docs/agents/releasing.md name a sixth package, @archboard/codex-realtime-voice, because the workflow publishes it too, and the GitHub environment npm. actionlint with shellcheck passes on release.yml; on the whole repository it reports one older SC2016 info at ci.yml line 72, an intended single-quoted bash -c, which this task leaves alone.
 
 Locally proven: actionlint clean; the publish loop ran against the built tarballs with a fake npm; the smoke script passes on linux-x64 with npm and bun. Unproven until a real release run on main: the darwin-arm64 executable on Apple silicon, the macOS smoke job, npm trusted publishing with provenance, and the release-please outputs feeding the jobs.
+
+Revised 2026-11-06 at the owner's request: the owner setup steps left docs/agents/releasing.md and were handed to the owner outside the repository. The voice package now publishes in the one publish job at the Archboard version (TASK-579.11), so build-voice and publish-voice are gone and one approval covers the release. The publish job runs in the environment npm, which the owner gives a required reviewer.
 <!-- SECTION:NOTES:END -->

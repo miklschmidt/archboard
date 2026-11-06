@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-05T15:15:00Z'
-updated_date: '2026-11-05T15:51:00Z'
+updated_date: '2026-11-06T02:56:00Z'
 labels: []
 dependencies: []
 references:
@@ -30,15 +30,15 @@ The owner wants no hand-picked versions: the version bump, `CHANGELOG.md` and th
 - [x] #1 release-please keeps one release PR open on `main` that bumps the root `package.json` version and adds the new `CHANGELOG.md` section from the commits since the last release
 - [x] #2 Before 1.0, `feat` bumps the minor version, `fix` the patch version, and a breaking change the minor version
 - [ ] #3 Merging the release PR tags the merge commit `v<version>` and creates a GitHub release with the same notes, and the publish of TASK-579.09 runs in that same workflow run
-- [x] #4 The voice package is its own component with its own version, changelog and `codex-realtime-voice-v<version>` tag, and its version leaves the constant in scripts/pack-codex-realtime-voice.ts
+- [x] #4 The voice package has the Archboard version: every commit counts for the one release PR, which also writes the version into packages/codex-realtime-voice/package.json, and the version leaves the constant in scripts/pack-codex-realtime-voice.ts
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. release-please-config.json + .release-please-manifest.json with components '.' (archboard, node, tag v<version>, root excludes the voice path) and packages/codex-realtime-voice (own changelog, tag codex-realtime-voice-v<version>), separate release PRs.
-2. Voice version lives in packages/codex-realtime-voice/package.json (release-please node bumps it); pack script reads it.
-3. .github/workflows/release.yml: release-please-action v5 on push to main, outputs, placeholder job gated on the root release for TASK-579.09.
+1. release-please-config.json + .release-please-manifest.json with one component, the root (node, tag v<version>), and an extra-files entry that writes the version into packages/codex-realtime-voice/package.json.
+2. The pack script reads the voice version from packages/codex-realtime-voice/package.json.
+3. .github/workflows/release.yml: release-please-action v5 on push to main, outputs, the publish of TASK-579.09 gated on the release.
 4. actionlint, format:check, lint:all, test:repository.
 5. Dry-run release-please against miklschmidt/archboard and record the proposal.
 <!-- SECTION:PLAN:END -->
@@ -51,4 +51,6 @@ Decisions: (1) Only bump-minor-pre-major is set. bump-patch-for-minor-pre-major 
 Dry-run: the release-please CLI refuses (ConfigurationError: Missing required manifest versions) because it reads the config from the remote main, where it is not yet. A library dry run (Manifest.buildPullRequests, config files read locally, commits from GitHub, nothing written) with bootstrap-sha 6cae688bb proposed two PRs: 'chore(main): release 0.2.0' (root; Features and Bug Fixes from the squash titles #19..#44, refactor hidden, tag v0.2.0, compare v0.1.0...v0.2.0) and 'chore(main): release codex-realtime-voice 0.2.0' (only #19, #26 feat, #31 fix; compare codex-realtime-voice-v0.1.0...v0.2.0). With the committed bootstrap-sha (current main) it proposes nothing, as no commit follows. Needs a re-run against the remote once the config is on main. Checks: actionlint release.yml clean; format:check, lint:all, tsc pass; test:repository has 1 failure, interface width ceilings for skills (4>3) and workspace (42>40), from the merged fix/core-build-feedback branch and not from this change.
 
 Verified on fix/core-build-feedback: release-please-config.json has root (node, tag v<version>, CHANGELOG.md, exclude-paths packages/codex-realtime-voice) and voice (tag codex-realtime-voice-v<version>) components, separate PRs, bump-minor-pre-major. A library dry run of Manifest.buildPullRequests with the worktree config proposed root 0.2.0 and voice 0.2.0 with conventional changelogs and nothing written. AC #3 (merge tags the merge commit and the publish runs in the same run) stays open until a real run on main; the publish job is TASK-579.09.
+
+Revised 2026-11-06 at the owner's request: one component replaces the two. The Archboard executable carries the voice package, and the voice package bundles codex-app-server, process, timing and diagnostics, so the old exclude-paths dropped voice commits from the Archboard release, and the voice component missed changes to the packages it bundles (release-please 17.11.2 has no additional-paths). Root release-please reads every commit (manifest.js: path === ROOT_PROJECT_PATH ? commits). A library dry run of Manifest.buildPullRequests with the worktree config, from origin/main~15, proposed one PR "chore(main): release 0.2.0" whose updates include packages/codex-realtime-voice/package.json through the GenericJson updater.
 <!-- SECTION:NOTES:END -->
