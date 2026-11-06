@@ -34,7 +34,7 @@ function writeModule(name: string, fields: Record<string, unknown>): void {
 	);
 }
 
-test("the semantic check warns on a pass-through container and an unconnected root", async () => {
+test("the semantic check warns on a pass-through and unbound container and an unconnected root", async () => {
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
 	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
 	writeFileSync(
@@ -71,4 +71,6 @@ test("the semantic check warns on a pass-through container and an unconnected ro
 		["warning", "ROOT_UNCONNECTED", "Shop#Box"],
 		["warning", "ROOT_UNCONNECTED", "Shop#Alone"],
 	]);
+	const unbound = diagnostics.find(({ code }) => code === "CONTAINER_UNBOUND");
+	expect(unbound?.suggestedBinding).toEqual({ repo: "github.com/test/shop", path: "src" });
 });
