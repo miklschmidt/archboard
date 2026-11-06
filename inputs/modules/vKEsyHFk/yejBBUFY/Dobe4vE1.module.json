@@ -5,7 +5,7 @@
   "responsibility": "Draws the recording payload through the shared canonical presentation without live reads",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/walkthrough-recording/RecordedModelStage.tsx"
+    "path": "apps/web/src/ui/walkthroughs/recording/components/RecordedModelStage.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#Dobe4vE1",
@@ -32,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-recording/RecordedModelStage.tsx",
+        "path": "apps/web/src/ui/walkthroughs/recording/components/RecordedModelStage.tsx",
         "symbol": "ModelWalkthrough"
       },
       "id": "vKEsyHFk/yejBBUFY#swrDHbj6",

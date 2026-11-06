@@ -23,7 +23,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+            "path": "apps/web/src/ui/panes/pane-session/clients/pane-socket.ts",
             "symbol": "socketUrl"
           }
         },

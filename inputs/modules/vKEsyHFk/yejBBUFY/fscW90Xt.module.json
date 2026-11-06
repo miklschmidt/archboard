@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/state/walkthrough-recording"
+    "path": "apps/web/src/ui/walkthroughs/recording"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#fscW90Xt",
