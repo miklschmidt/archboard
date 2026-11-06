@@ -3,11 +3,11 @@ export {
 	CodexServerResponseSchema,
 	QueuedSubmissionSchema,
 	SupportedLoginAccountParamsSchema,
-} from "#runtime/schemas/session-contract.ts";
+} from "#runtime/session/schemas/session-contract.ts";
 export type {
 	SessionUserInput,
 	SupportedLoginAccountParams,
-} from "#runtime/schemas/session-contract.ts";
+} from "#runtime/session/schemas/session-contract.ts";
 export type {
 	SessionLoadedThreadPageResult,
 	SessionQueueAddResult,
@@ -27,12 +27,12 @@ export type {
 	SessionThreadTurnPageResult,
 	SessionTurn,
 	SessionTurnResult,
-} from "#runtime/schemas/session-responses.ts";
+} from "#runtime/session/schemas/session-responses.ts";
 export {
 	CODEX_SESSION_CONTROL,
 	CODEX_SESSION_THREAD_SOURCE,
 	CodexSessionMutationError,
-} from "#runtime/services/session-api.ts";
+} from "#runtime/session/services/session-api.ts";
 export type {
 	CodexSession,
 	CodexSessionOptions,
@@ -40,5 +40,5 @@ export type {
 	SessionLoginParams,
 	SessionNotificationHandler,
 	SessionParams,
-} from "#runtime/services/session-api.ts";
-export { createCodexSession } from "#runtime/services/session.ts";
+} from "#runtime/session/services/session-api.ts";
+export { createCodexSession } from "#runtime/session/services/session.ts";

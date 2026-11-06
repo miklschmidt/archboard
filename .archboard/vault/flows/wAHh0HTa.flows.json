@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#3x2lgrhZ",
       "name": "Start the session",
+      "summary": "Initializes the Codex child, reads its requirements and configuration, and proves that it uses exactly the storage prepared for it. Held notifications go out only after that proof.",
       "participants": [
         "vKEsyHFk/wAHh0HTa#xtHoCCnF",
         "vKEsyHFk/9ncuT5DP#jylkTBp7",
@@ -33,7 +34,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
             "symbol": "request"
           }
         },
@@ -45,7 +46,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
             "symbol": "request"
           }
         },
@@ -57,7 +58,7 @@
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
             "symbol": "sendNotification"
           }
         },
@@ -69,7 +70,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
             "symbol": "request"
           }
         },
@@ -81,7 +82,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
             "symbol": "request"
           }
         },
@@ -94,7 +95,7 @@
           "note": "asks for every config layer, in the coordinator's directory",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
             "symbol": "request"
           }
         },
@@ -106,7 +107,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
             "symbol": "request"
           }
         },
@@ -118,7 +119,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
             "symbol": "proveCodexStorage"
           }
         },
@@ -138,7 +139,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/store/storage-proof.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/store/storage-proof.ts",
                     "symbol": "proveCodexStorage"
                   }
                 },
@@ -150,7 +151,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                     "symbol": "publishNotifications"
                   }
                 },
@@ -162,7 +163,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                     "symbol": "initialize"
                   }
                 }
@@ -179,7 +180,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/store/storage-proof.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/store/storage-proof.ts",
                     "symbol": "proveCodexStorage"
                   }
                 },
@@ -192,7 +193,7 @@
                   "note": "a failed session is replaced, never retried",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                     "symbol": "markTerminalFailure"
                   }
                 },
@@ -204,7 +205,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                     "symbol": "initialize"
                   }
                 }
@@ -212,12 +213,12 @@
             }
           ]
         }
-      ],
-      "summary": "Initializes the Codex child, reads its requirements and configuration, and proves that it uses exactly the storage prepared for it. Held notifications go out only after that proof."
+      ]
     },
     {
       "id": "vKEsyHFk/wAHh0HTa#zSCvXJVY",
       "name": "Send one request",
+      "summary": "Takes a mutation such as thread/start through the session's gate, identity proof and wire decoder before one frame goes out. A failed send is not_delivered, and an untrusted answer is outcome_unknown.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#6Jjha6LN",
         "vKEsyHFk/wAHh0HTa#JBu1uGdl",
@@ -249,7 +250,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+            "path": "packages/codex-app-server/src/runtime/session/services/session-operations.ts",
             "symbol": "mutate"
           }
         },
@@ -269,7 +270,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                     "symbol": "mutationFailure"
                   }
                 },
@@ -281,7 +282,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session-failures.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session-failures.ts",
                     "symbol": "mutationFailure"
                   }
                 },
@@ -293,7 +294,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                     "symbol": "mutate"
                   }
                 },
@@ -305,7 +306,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session-operations.ts",
                     "symbol": "mutate"
                   }
                 }
@@ -322,7 +323,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                     "symbol": "serializeRequestParams"
                   }
                 },
@@ -334,7 +335,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session-request-identities.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session-request-identities.ts",
                     "symbol": "createRequestParamsSerializer"
                   }
                 },
@@ -346,7 +347,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                     "symbol": "decodeClientRequestParams"
                   }
                 },
@@ -358,7 +359,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                     "symbol": "decodeClientRequestParams"
                   }
                 },
@@ -378,7 +379,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                            "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                             "symbol": "requestDecoded"
                           }
                         },
@@ -390,7 +391,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+                            "path": "packages/codex-app-server/src/runtime/session/services/session-operations.ts",
                             "symbol": "mutate"
                           }
                         }
@@ -407,7 +408,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                            "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                             "symbol": "request"
                           }
                         },
@@ -427,7 +428,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                                     "symbol": "request"
                                   }
                                 },
@@ -439,7 +440,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                                     "symbol": "decodeResponse"
                                   }
                                 },
@@ -451,7 +452,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                                     "symbol": "decodeResponse"
                                   }
                                 },
@@ -463,7 +464,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                                     "symbol": "adoptSessionResponse"
                                   }
                                 },
@@ -475,7 +476,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/operations/response-identity-adoption.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/operations/response-identity-adoption.ts",
                                     "symbol": "adoptSessionResponse"
                                   }
                                 },
@@ -487,7 +488,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                                     "symbol": "mutate"
                                   }
                                 },
@@ -499,7 +500,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session-operations.ts",
                                     "symbol": "mutate"
                                   }
                                 }
@@ -517,7 +518,7 @@
                                   "note": "an answer that cannot be read or trusted is outcome_unknown, because the thread may exist; a failed send is not_delivered",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                                     "symbol": "mutationFailure"
                                   }
                                 },
@@ -529,7 +530,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session-failures.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session-failures.ts",
                                     "symbol": "mutationFailure"
                                   }
                                 },
@@ -541,7 +542,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                                     "symbol": "mutate"
                                   }
                                 },
@@ -553,7 +554,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session-operations.ts",
                                     "symbol": "mutate"
                                   }
                                 }
@@ -569,12 +570,12 @@
             }
           ]
         }
-      ],
-      "summary": "Takes a mutation such as thread/start through the session's gate, identity proof and wire decoder before one frame goes out. A failed send is not_delivered, and an untrusted answer is outcome_unknown."
+      ]
     },
     {
       "id": "vKEsyHFk/wAHh0HTa#fNGi0n1g",
       "name": "Answer a request the child makes",
+      "summary": "Answers the child's reverse requests: the time for a thread issued to the current child, and a policy refusal for token refresh or attestation. Another epoch's request gets an error.",
       "participants": [
         "vKEsyHFk/wAHh0HTa#ql0DevMk",
         "vKEsyHFk/wAHh0HTa#3FR6mev4"
@@ -588,7 +589,7 @@
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+            "path": "packages/codex-app-server/src/runtime/session/services/session-reverse-requests.ts",
             "symbol": "onServerRequest"
           }
         },
@@ -608,7 +609,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session-reverse-requests.ts",
                     "symbol": "onServerRequest"
                   }
                 }
@@ -625,7 +626,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session-reverse-requests.ts",
                     "symbol": "validateReverseRequest"
                   }
                 },
@@ -645,7 +646,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                            "path": "packages/codex-app-server/src/runtime/session/services/session-reverse-requests.ts",
                             "symbol": "respondInvalidReverseRequest"
                           }
                         }
@@ -671,7 +672,7 @@
                                   "note": "a thread not issued to this child gets the same error as a stale epoch",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session-reverse-requests.ts",
                                     "symbol": "validateCurrentThread"
                                   }
                                 },
@@ -683,7 +684,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session-reverse-requests.ts",
                                     "symbol": "respondCurrentTime"
                                   }
                                 }
@@ -700,7 +701,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session-reverse-requests.ts",
                                     "symbol": "respondUnsupportedTokenRefresh"
                                   }
                                 }
@@ -717,7 +718,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session-reverse-requests.ts",
                                     "symbol": "respondUnsupportedAttestation"
                                   }
                                 }
@@ -733,8 +734,7 @@
             }
           ]
         }
-      ],
-      "summary": "Answers the child's reverse requests: the time for a thread issued to the current child, and a policy refusal for token refresh or attestation. Another epoch's request gets an error."
+      ]
     }
   ]
 }

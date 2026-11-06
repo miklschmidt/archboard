@@ -5,7 +5,7 @@
   "responsibility": "Writes and reads newline-framed JSON over the stdio of the child, and tells each owner what arrived",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-app-server/src/runtime/clients"
+    "path": "packages/codex-app-server/src/runtime/transport/clients"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#Q2Jc26oO",
@@ -22,7 +22,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/clients/transport.ts",
+        "path": "packages/codex-app-server/src/runtime/transport/clients/transport.ts",
         "symbol": "createFrameWriter"
       },
       "id": "vKEsyHFk/9ncuT5DP#3vlSu8a3",
@@ -35,11 +35,11 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/clients/transport.ts",
+        "path": "packages/codex-app-server/src/runtime/transport/clients/transport.ts",
         "symbol": "createInboundRouter"
       },
-      "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
-      "id": "vKEsyHFk#gdsIiF8h"
+      "id": "vKEsyHFk#gdsIiF8h",
+      "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu"
     }
   ]
 }

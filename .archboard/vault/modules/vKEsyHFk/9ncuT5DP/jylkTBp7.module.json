@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-app-server/src/runtime/services/session.ts"
+    "path": "packages/codex-app-server/src/runtime/session"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#jylkTBp7",

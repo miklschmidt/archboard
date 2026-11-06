@@ -6,10 +6,16 @@ import {
 	createIdentityAuthority,
 	type IdentityAuthority,
 } from "#shared/rules/workbench-identity.ts";
-import { createCodexTransport } from "#runtime/clients/transport.ts";
-import { type CodexTransport, type CodexTransportChild } from "#runtime/clients/transport-types.ts";
-import { createCodexSession } from "#runtime/services/session.ts";
-import { type CodexSession, type CodexSessionStorage } from "#runtime/services/session-api.ts";
+import { createCodexTransport } from "#runtime/transport/clients/transport.ts";
+import {
+	type CodexTransport,
+	type CodexTransportChild,
+} from "#runtime/transport/clients/transport-types.ts";
+import { createCodexSession } from "#runtime/session/services/session.ts";
+import {
+	type CodexSession,
+	type CodexSessionStorage,
+} from "#runtime/session/services/session-api.ts";
 import { makeStorage } from "#tests/runtime/support/session-support.ts";
 
 class CapturingStdin extends Writable {

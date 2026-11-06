@@ -190,7 +190,7 @@ const benchmarkTests = ["packages/renderer/tests/runtime/operations/blocks/wide-
 
 const capacityTests = [
 	"packages/workbench/tests/runtime/operations/dynamic-tools/wire-capacity.test.ts",
-	"packages/codex-app-server/tests/runtime/clients/transport-write-capacity.test.ts",
+	"packages/codex-app-server/tests/runtime/transport/clients/transport-write-capacity.test.ts",
 	"packages/codex-app-server/tests/shared/constants/app-server-capacity.test.ts",
 ];
 
@@ -402,6 +402,7 @@ export default defineConfig({
 					"packages/process/tests",
 					"packages/codex-app-server/tests/runtime/processes",
 					"packages/codex-app-server/tests/runtime/store",
+					"packages/codex-app-server/tests/runtime/session/store",
 					"packages/codex-app-server/tests/runtime/services/diagnostics.test.ts",
 					"packages/codex-app-server/tests/runtime/services/executable.test.ts",
 					"packages/server-lifecycle/tests/runtime/store/pidfile.test.ts",

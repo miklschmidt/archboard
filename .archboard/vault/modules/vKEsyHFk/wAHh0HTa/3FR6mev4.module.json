@@ -6,7 +6,7 @@
   "description": "Routes current-time requests for owned threads and explicitly refuses unsupported token refresh and attestation requests.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts"
+    "path": "packages/codex-app-server/src/runtime/session/services/session-reverse-requests.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/wAHh0HTa#3FR6mev4",
@@ -25,7 +25,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+        "path": "packages/codex-app-server/src/runtime/session/services/session-reverse-requests.ts",
         "symbol": "respond"
       },
       "id": "vKEsyHFk/wAHh0HTa#bEmVBBGp",

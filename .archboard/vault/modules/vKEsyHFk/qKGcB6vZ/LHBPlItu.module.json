@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-app-server/src/runtime/operations/inbound-router.ts",
+    "path": "packages/codex-app-server/src/runtime/transport/operations/inbound-router.ts",
     "symbol": "createInboundRouter"
   },
   "schemaVersion": 1,
@@ -25,6 +25,20 @@
   ],
   "outgoing": [
     {
+      "order": 12000,
+      "kind": "event",
+      "label": "a request the child made of us",
+      "description": "createCodexSession registers reverseRequests.onServerRequest with the transport. The transport invokes this subscribed callback; it does not import the private reverse-requests file.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
+        "symbol": "onServerRequest"
+      },
+      "id": "vKEsyHFk/wAHh0HTa#blvoJ8p8",
+      "to": "vKEsyHFk/wAHh0HTa#3FR6mev4"
+    },
+    {
       "order": 19000,
       "kind": "event",
       "label": "a tool call from a thread",
@@ -36,6 +50,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#aoHKAkWD",
       "to": "vKEsyHFk#iPnxvJWp"
+    },
+    {
+      "order": 22000,
+      "kind": "dependency",
+      "label": "decode each inbound frame",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/transport/operations/inbound-router.ts",
+        "symbol": "decodeServerNotification"
+      },
+      "id": "vKEsyHFk/wAHh0HTa#OjFVoTcz",
+      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
     },
     {
       "order": 26000,
@@ -68,33 +95,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#xPCxyO70",
       "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
-    },
-    {
-      "order": 12000,
-      "kind": "event",
-      "label": "a request the child made of us",
-      "description": "createCodexSession registers reverseRequests.onServerRequest with the transport. The transport invokes this subscribed callback; it does not import the private reverse-requests file.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/session.ts",
-        "symbol": "onServerRequest"
-      },
-      "id": "vKEsyHFk/wAHh0HTa#blvoJ8p8",
-      "to": "vKEsyHFk/wAHh0HTa#3FR6mev4"
-    },
-    {
-      "order": 22000,
-      "kind": "dependency",
-      "label": "decode each inbound frame",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/operations/inbound-router.ts",
-        "symbol": "decodeServerNotification"
-      },
-      "id": "vKEsyHFk/wAHh0HTa#OjFVoTcz",
-      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
     }
   ]
 }

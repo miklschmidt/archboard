@@ -6,7 +6,7 @@
   "description": "Collects all raw identities in a decoded response, adopts them in one authority transaction, and overlays their trusted brands.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-app-server/src/runtime/operations/response-identity-adoption.ts"
+    "path": "packages/codex-app-server/src/runtime/session/operations/response-identity-adoption.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/wAHh0HTa#M3mPynLe",
@@ -25,7 +25,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/operations/response-identity-adoption.ts",
+        "path": "packages/codex-app-server/src/runtime/session/operations/response-identity-adoption.ts",
         "symbol": "SESSION_PROTOCOL_METHODS"
       },
       "id": "vKEsyHFk/wAHh0HTa#JOmIweJF",

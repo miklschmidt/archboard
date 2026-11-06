@@ -28,7 +28,7 @@ import {
 	ThreadSchema,
 	TurnStartSchema,
 } from "#runtime/schemas/thread-schemas.ts";
-import { QueuedSubmissionSchema } from "#runtime/schemas/session-contract.ts";
+import { QueuedSubmissionSchema } from "#runtime/session/schemas/session-contract.ts";
 import type { ResponseMethod } from "#runtime/protocol/protocol-methods.ts";
 import { FiniteNumberSchema, looseObject } from "#runtime/schemas/scalars.ts";
 import { codexIngressSchemas } from "#runtime/schemas/vendor-schema.ts";

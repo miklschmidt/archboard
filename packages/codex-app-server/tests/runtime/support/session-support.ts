@@ -8,22 +8,25 @@ import {
 	type IdentityAuthority,
 	type WireRequestCorrelation,
 } from "#shared/rules/workbench-identity.ts";
-import { createCodexSession } from "#runtime/services/session.ts";
-import { type CodexSession, type CodexSessionStorage } from "#runtime/services/session-api.ts";
+import { createCodexSession } from "#runtime/session/services/session.ts";
+import {
+	type CodexSession,
+	type CodexSessionStorage,
+} from "#runtime/session/services/session-api.ts";
 import type { ResponseMethod } from "#runtime/protocol/protocol-methods.ts";
 import type { ResponsePayloads } from "#runtime/protocol/protocol-decoder.ts";
 import type {
 	CodexTransport,
 	CodexTransportRequestOptions,
 	CodexTransportResponse,
-} from "#runtime/clients/transport-types.ts";
+} from "#runtime/transport/clients/transport-types.ts";
 import type {
 	DynamicDispatcherRegistration,
 	ResponseOwner,
 	ReverseResponse,
 	TransportServerNotification,
 	TransportServerRequest,
-} from "#runtime/clients/transport-types.ts";
+} from "#runtime/transport/clients/transport-types.ts";
 import type {
 	TransportExit,
 	TransportIssue,
@@ -32,7 +35,7 @@ import type {
 	TransportStderrChunk,
 	TransportStderrSnapshot,
 	Unsubscribe,
-} from "#runtime/clients/transport-types.ts";
+} from "#runtime/transport/clients/transport-types.ts";
 
 export interface RequestRecord {
 	readonly method: ResponseMethod;
