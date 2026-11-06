@@ -141,7 +141,7 @@
 			"parent": "ScjxtP0G",
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/code-intel/src/runtime/operations/history-lens"
+				"path": "packages/code-intel/src/runtime/history-lens"
 			}
 		},
 		{
@@ -154,7 +154,7 @@
 			"parent": "ScjxtP0G",
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/code-intel/src/runtime/operations/code-check"
+				"path": "packages/code-intel/src/runtime/code-check"
 			}
 		},
 		{
@@ -614,7 +614,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/code-intel/src/runtime/operations/history-lens/last-change.ts",
+				"path": "packages/code-intel/src/runtime/history-lens/operations/last-change.ts",
 				"symbol": "decodeSemanticBoardDocument"
 			}
 		},
@@ -698,7 +698,7 @@
 			"emphasis": "muted",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
+				"path": "packages/code-intel/src/runtime/code-check/operations/ref-code.ts",
 				"symbol": "nodesAtOwnRef"
 			}
 		}

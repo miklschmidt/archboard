@@ -8,13 +8,13 @@ import {
 import { HistoricalRevisionSchema } from "@archboard/model/contract";
 import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
 import { readVaultConfiguration } from "@archboard/model/vault-policy";
-import { commitOf } from "#runtime/clients/history-lens/source-history.ts";
+import { commitOf } from "#runtime/history-lens/clients/source-history.ts";
 import { messagesOf } from "@archboard/model/flow";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import { gitAnswer } from "#runtime/clients/history-lens/git.ts";
+import { gitAnswer } from "#runtime/history-lens/clients/git.ts";
 import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
-import { checkCode, type CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
+import { checkCode, type CodeCheckOutcome } from "#runtime/code-check/operations/check.ts";
+import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
 import type { z } from "zod";
 
 type HistoricalRevision = z.infer<typeof HistoricalRevisionSchema>;

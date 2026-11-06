@@ -422,14 +422,14 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
   code check opens the language servers through its own session. The package's tests reach the
   steps and the readings through `tests/runtime/support/code-check/pass.ts` and
   `tests/runtime/support/history-lens/lens.ts`.
-- `runtime/operations/` holds the reading and judging: `code-facts/` has the language-agnostic
-  facts, `modules/` for what a module exposes, and one folder for each language or format
-  (`typescript/`, `python/`, `c/`, `csharp/`, `objc/`, `swift/`, `rust/`, `nix/`, `kubernetes/`, `compose/`,
-  `terraform/`); `code-check/` has the pass, `claims/`, `evidence/` and `interfaces/`;
-  `history-lens/` and `language-servers/` hold the rest. `runtime/services/code-facts/` holds the
-  reader that caches facts by content, the grammars and the tree-sitter query files. `runtime/clients/`
-  runs Git for the lens and speaks JSON-RPC to a server. `runtime/processes/language-servers/` owns
-  the server child.
+- `runtime/code-facts/` holds the reading: `operations/` has the language-agnostic facts,
+  `modules/` what a module exposes, and one folder for each language or format (`typescript/`,
+  `python/`, `c/`, `csharp/`, `objc/`, `swift/`, `rust/`, `nix/`, `kubernetes/`, `compose/`,
+  `terraform/`), each with its `operations/`; `code-facts/services/` holds the reader that caches
+  facts by content, the grammars and the tree-sitter query files. `runtime/code-check/` holds the
+  judging: the pass in `operations/`, and `claims/`, `evidence/` and `interfaces/`.
+  `runtime/history-lens/` holds the lens, with the Git client in `clients/`, and
+  `runtime/language-servers/` speaks JSON-RPC to a server, with the server child in `processes/`.
 - The query files (`*.scm`) stay beside `grammars.ts`, which reads them with
   `new URL(..., import.meta.url)`. The wasm of each grammar is found with `import.meta.resolve`,
   and the TypeScript package with `Bun.resolveSync`, both from the root `node_modules`, which Bun

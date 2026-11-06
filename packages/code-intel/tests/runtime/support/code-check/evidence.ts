@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { LegacyBoardSchema, type LegacyBoard } from "@archboard/model/legacy-board";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { readVaultConfiguration } from "@archboard/model/vault-policy";
-import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
+import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
 /**
  * Load static evidence fixtures for the language engine.
  * @param vault The fixture directory.

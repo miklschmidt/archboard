@@ -1,4 +1,4 @@
 export {
 	readArchitectureLocality,
 	readArchitectureFootprint,
-} from "#runtime/operations/history-lens/canonical.ts";
+} from "#runtime/history-lens/operations/canonical.ts";

@@ -4,6 +4,6 @@ export {
 	readStatesToCheck,
 	readEveryDraftToCheck,
 } from "#tests/runtime/support/code-check/evidence.ts";
-export { checkCode } from "#runtime/operations/code-check/check.ts";
-export { readPlans } from "#runtime/operations/code-check/plans.ts";
+export { checkCode } from "#runtime/code-check/operations/check.ts";
+export { readPlans } from "#runtime/code-check/operations/plans.ts";
 export { checkCandidateCode, suggestHistoricalCommits } from "#tests/runtime/support/candidate.ts";

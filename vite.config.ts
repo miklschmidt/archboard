@@ -198,7 +198,7 @@ const capacityTests = [
 // whether rust-analyzer answers at all. They run after the parallel lanes, alone.
 const soloTests = [
 	"packages/renderer/tests/runtime/rasterizer/services/rasterizer.test.ts",
-	"packages/code-intel/tests/runtime/processes/language-servers/rust-server.test.ts",
+	"packages/code-intel/tests/runtime/language-servers/processes/rust-server.test.ts",
 ];
 
 // These prove the test harness, not the product, so the normal gate leaves them out.

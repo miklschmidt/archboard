@@ -86,10 +86,7 @@ const AREAS = new Set(["cli", "runtime", "server", "shared", "ui"]);
  * role first. The rule skips them. Each move commit removes the trees it empties, because the
  * test fails for a listed tree that breaks the rule no more, and the last move removes the list.
  */
-const ROLE_FIRST_TREES: readonly string[] = [
-	"packages/code-intel/src/runtime",
-	"packages/code-intel/tests/runtime",
-];
+const ROLE_FIRST_TREES: readonly string[] = [];
 
 /** A TypeScript file below an area: its tree, `<workspace>/<src|tests>/<area>`, and its folders. */
 interface AreaFile {
