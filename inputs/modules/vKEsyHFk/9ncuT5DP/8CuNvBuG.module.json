@@ -34,19 +34,6 @@
       "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
     },
     {
-      "order": 15000,
-      "kind": "call",
-      "label": "stage, commit or roll back",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/events.ts",
-        "symbol": "stageOperation"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#2ed6AqSF",
-      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
-    },
-    {
       "order": 12000,
       "kind": "event",
       "label": "operation events; only an unknown outcome is told",
@@ -59,6 +46,19 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#5QnOXTuc",
       "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
+    },
+    {
+      "order": 15000,
+      "kind": "call",
+      "label": "stage, commit or roll back",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/events.ts",
+        "symbol": "stageOperation"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#2ed6AqSF",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
     }
   ]
 }

@@ -4,12 +4,12 @@
   "kind": "external",
   "responsibility": "Ranks and orders the cards of a block",
   "description": "The vendored graphviz-pure, a pure-Rust port of Graphviz 16.1.0, runs in the core through crates/archboard-graphviz (ADR 0060). Its answer depends on its graph alone.",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/OjRLKb74#KdNM1Q56",
-  "outgoing": [],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/vendor/graphviz-pure"
   },
-  "parent": "vKEsyHFk/OjRLKb74#tppVDaSZ"
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#KdNM1Q56",
+  "parent": "vKEsyHFk/OjRLKb74#tppVDaSZ",
+  "outgoing": []
 }
