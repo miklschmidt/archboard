@@ -55,17 +55,30 @@
       "to": "vKEsyHFk#107AGlEf"
     },
     {
-      "order": 4000,
+      "order": 4100,
       "kind": "call",
-      "label": "the warning mark on a warned subject",
+      "label": "where each warning mark stands",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/marks.rs",
-        "symbol": "viewer_marks"
+        "path": "crates/archboard-paint/src/stage/mod.rs",
+        "symbol": "find_warnings"
       },
-      "id": "vKEsyHFk#9MKtlnoC",
-      "to": "vKEsyHFk#GqMdZbTF"
+      "to": "vKEsyHFk#HL9m7uSj",
+      "id": "vKEsyHFk#f9M5SCfi"
+    },
+    {
+      "order": 4200,
+      "kind": "call",
+      "label": "the outlines it keeps from frame to frame",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-paint/src/stage/mod.rs",
+        "symbol": "Stage"
+      },
+      "to": "vKEsyHFk#UuRNEE2Z",
+      "id": "vKEsyHFk#5png0N2k"
     }
   ]
 }

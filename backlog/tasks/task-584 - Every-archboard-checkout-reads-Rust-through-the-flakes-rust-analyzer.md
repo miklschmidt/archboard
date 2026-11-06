@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06T17:32:00Z'
-updated_date: '2026-11-06T17:39:00Z'
+updated_date: '2026-11-06T17:46:00Z'
 labels:
   - tooling
 dependencies: []
@@ -30,6 +30,8 @@ The code check skipped Rust in this repository: no checkout had a Rust server co
 
 <!-- SECTION:NOTES:BEGIN -->
 Evidence: in the main checkout, repo list shows rust -> scripts/rust-analyzer, and check code ran rust-analyzer in 5.8 s with no language-server-missing or language-server-failed skip, after the server restarted from a fresh dev shell. A fresh detached worktree (bun install --frozen-lockfile and bun run build inside nix develop) registered itself with its own scripts/rust-analyzer, and its check code ran Rust in 9.9 s with the same skips only (exposure-unknown, unbound, text-only). With nix off PATH, the script prints that Rust gets no server and exits 0. nix develop costs about 0.15 s per start.
+
+Follow-up found by the first Rust read: ANCHOR_MISMATCH on step "The widest line, unbroken" of Sizing a card, because natural_width is defined in crates/archboard-text, which no module bound. The model now has Text shaping (crates/archboard-text/src) under renderer; both shaping steps of Sizing a card end on it, and Measured text calls it. Binding it showed more unmodeled calls, each now a relationship: Glyph outlines (paint/src/outlines.rs, a part of Painter core) outlines glyphs through Text shaping; SVG document binds its whole crate and calls Text shaping, Legend entries and Viewer marks (bin/export-marks.rs); Viewer warnings (paint/src/warnings.rs) is a part of Painter core, and the warning-mark relationship moved to it from Painter stage, which now calls it and Glyph outlines. archboard check: 83 warnings, all containment.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
