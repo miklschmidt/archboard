@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { NewStepSchema } from "#shared/schemas/model-flows.ts";
-import { compareVariants, withRemoved } from "#shared/rules/compare/variants.ts";
+import { NewStepSchema } from "#shared/canonical-contracts/schemas/model-flows.ts";
+import { compareVariants, withRemoved } from "#shared/compare/rules/variants.ts";
 import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
-import { reconcileVariant } from "#shared/rules/reconcile/variant.ts";
+import { reconcileVariant } from "#shared/reconcile/rules/variant.ts";
 import { VariantContentSchema, type VariantContent } from "#shared/schemas/content.ts";
 import { type FlowStep } from "#shared/schemas/views.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";

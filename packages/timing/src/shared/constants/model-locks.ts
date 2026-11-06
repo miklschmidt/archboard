@@ -1,6 +1,6 @@
 // How long one writer holds a model, and how long a claim outlives one write.
 //
-// `packages/model/src/runtime/store/lock` reads both groups. It was built
+// `packages/model/src/runtime/lock/store` reads both groups. It was built
 // against them rather than around them: a number that governs the lock and
 // lives next to the lock is a number the next person tunes without seeing what
 // it pulls against. The lock of the checkout registry (`repo-registry.ts`)

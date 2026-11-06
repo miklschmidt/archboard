@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/operations/model-edit/claims.ts"
+    "path": "packages/model/src/runtime/canonical/edit/operations/claims.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#ov7pPg21",
@@ -43,7 +43,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/claims.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/claims.ts",
         "symbol": "readCurrentModel"
       },
       "id": "vKEsyHFk/0T9enjhi#MWwtJ07I",
@@ -56,7 +56,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/claims.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/claims.ts",
         "symbol": "withModelLock"
       },
       "id": "vKEsyHFk/0T9enjhi#Unx9ZNwy",
@@ -69,7 +69,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/claims.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/claims.ts",
         "symbol": "notifyArchitecture"
       },
       "id": "vKEsyHFk/0T9enjhi#pwwBQjxG",
@@ -82,7 +82,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/claims.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/claims.ts",
         "symbol": "archiveFailure"
       },
       "id": "vKEsyHFk/0T9enjhi#L9qSRNoR",
@@ -95,7 +95,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/claims.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/claims.ts",
         "symbol": "ArchiveError"
       },
       "id": "vKEsyHFk/0T9enjhi#VTZKWgse",
@@ -108,7 +108,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/claims.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/claims.ts",
         "symbol": "ArchitectureClaimRequestSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#FNRbx70t",
@@ -120,7 +120,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/claims.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/claims.ts",
         "symbol": "ArchiveError"
       },
       "id": "vKEsyHFk/0T9enjhi#TVVWknIf",

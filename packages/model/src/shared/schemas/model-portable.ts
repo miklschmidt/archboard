@@ -4,7 +4,7 @@ import {
 	ModelRevisionSchema,
 	GitObjectIdSchema,
 	ArchitectureModelFailureSchema,
-} from "#shared/schemas/model.ts";
+} from "#shared/canonical-contracts/schemas/model.ts";
 
 const PortablePathSchema = z
 	.string()

@@ -6,7 +6,7 @@
 // (ADR 0052). A door's line ends on the part that owns it, and wears its words
 // beside that part.
 
-import type { ChangeKind } from "#shared/rules/compare/variants.ts";
+import type { ChangeKind } from "#shared/compare/rules/variants.ts";
 import { containersOf, overviewLines, type OverviewLine } from "#shared/rules/scope.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
 

@@ -305,8 +305,10 @@ The shared interface separates these responsibilities:
   `./ids` remains the only allocator of short IDs.
   Namespaces preserve imported identity provenance.
 
-Private `shared/schemas/` owns persisted shapes and operation contracts.
-Private `shared/rules/` owns identity, coherence, comparison, projection, and reconciliation.
+Private `shared/canonical-contracts/schemas/` owns the canonical model, flow and operation contracts.
+Private `shared/schemas/` owns the other persisted shapes.
+Private `shared/rules/` owns identity, scope, and projection.
+Coherence, comparison, inspection, legacy inventory, and reconciliation each own `shared/<behavior>/rules/`.
 Reuse those rules for materialized proposal content and retained readings.
 Binding, anchor, and document-reference schemas remain in `code-binding`.
 
@@ -322,8 +324,11 @@ The runtime interface owns these operations:
   `./lock` exposes shared lease inspection and process-memory cleanup.
   Canonical claims belong to the model operations, not a live lock API of legacy boards.
 
-Private `runtime/store/` owns current inputs, archive objects, installation journals, fingerprints, and short leases.
-Private `runtime/operations/` owns coherent reads and complete durable operations.
+Private `runtime/canonical/` owns coherent reads and complete durable operations.
+Its behaviors are `read`, `edit`, `proposals`, `history`, `archive` (archive objects), and `installation` (installation journals and news).
+Private `runtime/legacy-boards/` decodes and inventories legacy boards for explicit migration.
+Private `runtime/lock/` owns short leases, and `runtime/check/` the model check.
+Private `runtime/store/` owns current inputs, fingerprints, configuration, and legacy addresses.
 Current files contain one model manifest, module definitions, flow collections, active compact proposals, and walkthrough instructions.
 Completed states and exact originals remain in the existing independent Git archive.
 No current file embeds a legacy board family or historical snapshot array.

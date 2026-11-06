@@ -4,7 +4,7 @@ import {
 	currentVariant,
 	type LegacyBoard,
 } from "#shared/schemas/legacy-board.ts";
-import { parseLegacyBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
+import { parseLegacyBoard } from "#shared/coherence/rules/parse-legacy-board.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
 
 type Lifecycle = LegacyBoard["variants"][number]["lifecycle"];

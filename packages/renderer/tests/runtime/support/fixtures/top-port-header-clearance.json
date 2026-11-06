@@ -129,7 +129,7 @@
 			"groups": ["writes"],
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/model/src/runtime/store/lock"
+				"path": "packages/model/src/runtime/lock/store"
 			}
 		},
 		{

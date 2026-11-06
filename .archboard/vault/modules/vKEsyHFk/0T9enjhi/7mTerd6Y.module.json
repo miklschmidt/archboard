@@ -6,7 +6,7 @@
   "description": "Installs an explicitly approved mapping through the existing signed archive, journal, and recovery owner. Canonical decoding normalizes proposal baselines before fingerprinting. Original bytes, addresses, and independent drafts remain available.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/operations/legacy-inventory"
+    "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#7mTerd6Y",
@@ -43,7 +43,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/install-candidate.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/install-candidate.ts",
         "symbol": "tree"
       },
       "id": "vKEsyHFk#N8bivOLt",
@@ -55,7 +55,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/inputs.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/inputs.ts",
         "symbol": "decodeLegacyBoard"
       },
       "id": "vKEsyHFk/0T9enjhi#PvjdCCub",
@@ -67,7 +67,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/save-plan.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/save-plan.ts",
         "symbol": "writeFileAtomic"
       },
       "id": "vKEsyHFk/0T9enjhi#yTYxw24a",
@@ -79,7 +79,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/inputs.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/inputs.ts",
         "symbol": "VaultConfigurationSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#m8cmnXnS",
@@ -91,7 +91,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/save-plan.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/save-plan.ts",
         "symbol": "LegacyMappingWriteSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#AlSqD5eq",
@@ -104,7 +104,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/addresses.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
         "symbol": "selectBookmark"
       },
       "id": "vKEsyHFk#054drdG7",
@@ -117,7 +117,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/compose.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/compose.ts",
         "symbol": "decodeModel"
       },
       "id": "vKEsyHFk/0T9enjhi#mIgQpKmS",
@@ -130,7 +130,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/preview.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
         "symbol": "GitObjectIdSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#E7pOpTZi",
@@ -143,7 +143,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/preview.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
         "symbol": "exactReading"
       },
       "id": "vKEsyHFk/0T9enjhi#9xNbt1EA",
@@ -156,7 +156,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/retain.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/retain.ts",
         "symbol": "archiveCommit"
       },
       "id": "vKEsyHFk/0T9enjhi#zIB2QVeH",
@@ -169,7 +169,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/preview.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
         "symbol": "ArchiveError"
       },
       "id": "vKEsyHFk/0T9enjhi#88iNMHt6",
@@ -182,7 +182,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/drafts.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/drafts.ts",
         "symbol": "compactChanges"
       },
       "id": "vKEsyHFk/0T9enjhi#xGduus4r",
@@ -195,7 +195,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/preview.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
         "symbol": "walkthroughOf"
       },
       "id": "vKEsyHFk/0T9enjhi#DZAdVgog",
@@ -208,7 +208,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/apply.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
         "symbol": "applyMigration"
       },
       "id": "vKEsyHFk/0T9enjhi#WTjwnArK",
@@ -221,7 +221,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/apply.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
         "symbol": "applyMigration"
       },
       "id": "vKEsyHFk/0T9enjhi#tnCVPY3T",
@@ -234,7 +234,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/apply.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
         "symbol": "migrateArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#rl3PMdWJ",
@@ -247,7 +247,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/apply.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
         "symbol": "applyMigration"
       },
       "id": "vKEsyHFk/0T9enjhi#PAre101X",
@@ -260,7 +260,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/prepare-cutover.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/prepare-cutover.ts",
         "symbol": "prepareCutover"
       },
       "id": "vKEsyHFk/0T9enjhi#FngTyF3H",
@@ -273,7 +273,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/addresses.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
         "symbol": "parsePaneKey"
       },
       "id": "vKEsyHFk#X4APDE6a",
@@ -286,11 +286,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/legacy-inventory/addresses.ts",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
         "symbol": "addressedVariant"
       },
-      "to": "vKEsyHFk#vZUWUgyb",
-      "id": "vKEsyHFk#ewLuX29P"
+      "id": "vKEsyHFk#ewLuX29P",
+      "to": "vKEsyHFk#vZUWUgyb"
     }
   ]
 }

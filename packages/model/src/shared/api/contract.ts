@@ -1,11 +1,11 @@
-export { ArchitectureArchiveInitializationSchema } from "#shared/schemas/model.ts";
-export { ArchitectureModelReadSchema } from "#shared/schemas/model.ts";
+export { ArchitectureArchiveInitializationSchema } from "#shared/canonical-contracts/schemas/model.ts";
+export { ArchitectureModelReadSchema } from "#shared/canonical-contracts/schemas/model.ts";
 export {
 	ArchitecturePublicationDestinationSchema,
 	ArchitecturePublicationRequestSchema,
 	ArchitecturePublicationSchema,
-} from "#shared/schemas/model.ts";
-export type { ArchitectureModelRead } from "#shared/schemas/model.ts";
+} from "#shared/canonical-contracts/schemas/model.ts";
+export type { ArchitectureModelRead } from "#shared/canonical-contracts/schemas/model.ts";
 export {
 	ArchitectureCheckpointRequestSchema,
 	ArchitectureCheckpointRetainSchema,
@@ -13,8 +13,8 @@ export {
 	ArchitectureCheckpointRowsSchema,
 	ModuleNavigationReadSchema,
 	ArchitectureRetainedModuleSchema,
-} from "#shared/schemas/model.ts";
-export type { ArchitectureCheckpointRequest } from "#shared/schemas/model.ts";
+} from "#shared/canonical-contracts/schemas/model.ts";
+export type { ArchitectureCheckpointRequest } from "#shared/canonical-contracts/schemas/model.ts";
 export {
 	ArchitectureModuleEditSchema,
 	ArchitectureRenderRequestSchema,
@@ -28,7 +28,7 @@ export {
 	ArchitectureClaimTakeBackSchema,
 	ArchitectureFeedFrameSchema,
 	ArchitectureFeedRequestSchema,
-} from "#shared/schemas/model-operations.ts";
+} from "#shared/canonical-contracts/schemas/model-operations.ts";
 export type {
 	ArchitectureModuleEdit,
 	ArchitectureModuleEditResult,
@@ -37,7 +37,7 @@ export type {
 	ArchitectureClaimResult,
 	ArchitectureEvent,
 	ArchitectureFeedFrame,
-} from "#shared/schemas/model-operations.ts";
+} from "#shared/canonical-contracts/schemas/model-operations.ts";
 
 export {
 	ArchitectureImportRequestSchema,
@@ -48,6 +48,6 @@ export { ArchitectureMigrationRequestSchema } from "#shared/schemas/migration-in
 
 export { ArchitectureInitializationRequestSchema } from "#shared/schemas/model-portable.ts";
 
-export type { ArchitectureCheckpointRetain } from "#shared/schemas/model.ts";
+export type { ArchitectureCheckpointRetain } from "#shared/canonical-contracts/schemas/model.ts";
 
 export { HistoricalRevisionSchema } from "#shared/schemas/historical-correction.ts";

@@ -1,7 +1,7 @@
 // The design lens through the real CLI and server: `model inspect` states what
 // the model claims about one module or one group, and `model compare` states
 // interface changes first and the measures of each state side by side. The
-// derivation's own rules are owned in `packages/model/tests/shared/rules`.
+// derivation's own rules are owned in `packages/model/tests/shared/{inspect,compare}/rules`.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, rmSync } from "node:fs";
