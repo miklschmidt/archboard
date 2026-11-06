@@ -34,6 +34,8 @@ import {
 } from "#runtime/operations/code-facts/modules/module-exposure.ts";
 import { runsDefinition } from "#runtime/operations/code-facts/runs.ts";
 import { type FactsPass } from "#runtime/services/code-facts/reader.ts";
+import type { Crates } from "#runtime/operations/code-facts/rust/rust-crates.ts";
+import { cratesIn } from "#runtime/operations/code-facts/rust/rust-exposure.ts";
 import {
 	type Import,
 	type Reference,
@@ -297,7 +299,8 @@ async function privateTestImports(
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time yields between parses; the pass caches each file
 		const read = await facts.read(checkout, file);
 		if (read === undefined || read.adapter === "text") continue;
-		imports.push(...privateImportsOf(read, exposure));
+		const crates = read.adapter === "rust" ? cratesIn(facts, checkout) : undefined;
+		imports.push(...privateImportsOf(read, exposure, crates));
 	}
 	return imports;
 }
@@ -309,15 +312,27 @@ async function privateTestImports(
  * defined, and a glob reaches what a module it names exposes.
  * @param found The import.
  * @param exposure What the module exposes.
+ * @param crates The checkout's Rust module paths, for a Rust test.
+ * @param from The importing file.
  * @returns True when it does.
  */
-function reachesExposed(found: Pick<Import, "specifier">, exposure: ModuleExposure): boolean {
+function reachesExposed(
+	found: Pick<Import, "specifier">,
+	exposure: ModuleExposure,
+	crates: Crates | undefined,
+	from: string,
+): boolean {
+	if (crates === undefined) return false;
 	const path = found.specifier.split("::");
 	const glob = path.at(-1) === "*";
-	const dotted = (glob ? path.slice(0, -1) : path).join(".");
-	return exposure.exposed.some(({ name }) =>
-		endsWithName(dotted, glob ? name.split(".").slice(0, -1).join(".") : name),
-	);
+	const names = glob ? path.slice(0, -1) : path;
+	return exposure.exposed.some(({ name }) => {
+		const exposed = glob ? name.split(".").slice(0, -1) : name.split(".");
+		if (!endsWithName(names.join("."), exposed.join("."))) return false;
+		const prefix = names.slice(0, names.length - exposed.length);
+		const root = crates.resolvePath(from, prefix.length === 0 ? ["self"] : prefix);
+		return root?.item.length === 0 && exposure.rootFiles.includes(root.file);
+	});
 }
 
 /**
@@ -331,40 +346,28 @@ function endsWithName(dotted: string, name: string): boolean {
 }
 
 /**
- * Whether a test's import reaches a file of the module that its interface does not offer.
- * @param found The import, resolved to a file.
- * @param exposure The module's entry files and names.
- * @param rust Whether the test is Rust, whose imports name paths and not files.
- * @returns True when it does.
- */
-function reachesPrivateFile(
-	found: Import & { readonly resolved: string },
-	exposure: ModuleExposure,
-	rust: boolean,
-): boolean {
-	return (
-		within(exposure.directory, found.resolved) &&
-		!exposure.rootFiles.includes(found.resolved) &&
-		!(rust && reachesExposed(found, exposure))
-	);
-}
-
-/**
  * Private imports in one external test, one per resolved file.
  * @param read The test's facts.
  * @param exposure The module's entry files.
+ * @param crates The Rust module paths, when the test is Rust.
  * @returns The imports.
  */
-function privateImportsOf(read: SyntaxFacts, exposure: ModuleExposure): TestImport[] {
-	const rust = read.adapter === "rust";
+function privateImportsOf(
+	read: SyntaxFacts,
+	exposure: ModuleExposure,
+	crates: Crates | undefined,
+): TestImport[] {
 	const imports = [
 		...(isTestPath(read.path) ? read.imports : []),
 		...(read.testImports ?? []),
 	].flatMap((found): TestImport[] => {
 		const { resolved } = found;
 		if (resolved === undefined || resolved.endsWith("/")) return [];
-		const file = { ...found, resolved };
-		return reachesPrivateFile(file, exposure, rust) ? [{ file: read.path, found: file }] : [];
+		const privateFile =
+			within(exposure.directory, resolved) &&
+			!exposure.rootFiles.includes(resolved) &&
+			!reachesExposed(found, exposure, crates, read.path);
+		return privateFile ? [{ file: read.path, found: { ...found, resolved } }] : [];
 	});
 	const unique = new Map<string, TestImport>();
 	for (const each of imports) {

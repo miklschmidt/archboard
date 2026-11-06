@@ -110,6 +110,12 @@ beforeAll(async () => {
 		// A public module's names, by name and by glob, reach the library's interface.
 		"crates/shop/tests/through_module.rs":
 			"use ledger::money::ZERO;\nuse ledger::money::*;\nfn test_zero() { let _ = (ZERO, CURRENCY); }\n",
+		// A public re-export does not open the private path to the same definition.
+		"crates/shop/tests/private_reexport.rs": "use ledger::entry::Entry;\n",
+		// A private module can share the suffix of a public module.
+		[ENTRY]: `${readFileSync(join(shop, ENTRY), "utf8")}\npub(crate) mod money;\n`,
+		"crates/ledger/src/entry/money.rs": "pub const ZERO: i64 = 0;\n",
+		"crates/shop/tests/private_glob.rs": "use ledger::entry::money::*;\n",
 	});
 	git(scratch, shop, "add", "-A");
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the code");
@@ -168,7 +174,7 @@ test("anchors, binding symbols and the relationships between parts bound to Rust
 			"RELATIONSHIP_UNDRAWN pLed information",
 			"RELATIONSHIP_UNDRAWN pMoney information",
 			// Each external Rust test import retains the private-interface diagnostic.
-			...Array.from({ length: 4 }, () => "TEST_IMPORT_UNEXPOSED pLed warning"),
+			...Array.from({ length: 6 }, () => "TEST_IMPORT_UNEXPOSED pLed warning"),
 		].toSorted(),
 	);
 	expect(outcome.skipped.map((each) => each.reason)).not.toContain("text-only");
@@ -190,6 +196,8 @@ test("test-only Rust imports retain private-interface warnings without becoming 
 			["crates/shop/src/checkout/private_test.rs", "post"],
 			["crates/shop/tests/inner.rs", "post"],
 			["crates/shop/tests/plain.rs", "post"],
+			["crates/shop/tests/private_reexport.rs", "Entry"],
+			["crates/shop/tests/private_glob.rs", "*"],
 		].toSorted(),
 	);
 });
