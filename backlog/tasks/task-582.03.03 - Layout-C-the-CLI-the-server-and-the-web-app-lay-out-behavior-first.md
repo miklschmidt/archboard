@@ -1,11 +1,11 @@
 ---
 id: TASK-582.03.03
 title: 'Layout C: the CLI, the server and the web app lay out behavior first'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06T19:06:00Z'
-updated_date: '2026-11-06T23:17:00Z'
+updated_date: '2026-11-06T23:19:00Z'
 labels: []
 dependencies:
   - TASK-582.03.02
@@ -25,7 +25,7 @@ apps/cli, apps/server and apps/web hold the remaining 33 containment warnings. P
 <!-- AC:BEGIN -->
 - [x] #1 archboard check on this repository reports no containment warning
 - [x] #2 The duplicate modules that describe the same server code are merged as the code shows, with their flow steps retargeted
-- [ ] #3 Each step is its own commit that leaves bun run check green
+- [x] #3 Each step is its own commit that leaves bun run check green
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -56,4 +56,12 @@ C3b canvas (e981ff42a). Model correction first: Subject code marks n7ZlRkbA join
 C3c model reader (b42c6b500). 197 moves into architecture-drawing/model-reader, with access/, reading/ and reading/module-navigation/. The model needed no correction first. Manifest binding: the reading components -> model-reader/reading. One claimed intent binds Architecture drawing POloYnX3 -> ui/architecture-drawing, Canonical model reader TLCeNkdh -> model-reader, Model access AIp6YN1P -> model-reader/access and Module navigation 0IYZeQvF -> reading/module-navigation. Module navigation was bound to its ModuleNavigation.tsx file, and its parts sat outside that file. The shared test fixture folder support/architecture-model becomes support/model-reader, because no behavior has the old name now. Hand edits: five file paths in frontend.md, and the boundaries.md web section, which now describes the behavior-first tree. The codemod rewrote test-suite.md. The ratchet drops apps/web/src/ui and apps/web/tests/ui. The empty role-first folders are removed. Evidence: archboard check 0 warnings; no binding key shared; git grep for the old web prefixes outside the exclusions finds only synthetic fixture paths in app-boundaries.test.ts, model-projection.test.ts and crates/archboard-scene/src/measure/cards.rs, which name no real file; types pass; embeds current; bun run check exit 0, 21/21.
 
 Vendored crates (4aac79284). The code check sees the crates under crates/vendor once a module binds them. Each crate is its own external root, bound to its crate directory. The graphviz-pure sub-crates are separate crates that sit beside crates/vendor/graphviz-pure, not inside it, so no part of the Graphviz module can hold them. Modules: graphviz-pure-core FLnwES7I, graphviz-pure-geom 1Af2oLOM, graphviz-pure-layout kEeWzBGr, graphviz-pure-parser hBkjiO4k, graphviz-pure-render 7yGUY6ta and vello_encoding uoYBS8oN. Relationships come from the manifests and the use statements. Graphviz -> core (decoded.rs#GraphvizError), layout (decoded.rs#LayoutOptions), parser (plugins.rs#parse_dot_all), render (lib.rs#OutputFormat) and geom (Cargo.toml#graphviz-pure-geom; the manifest names it and no source file calls it). geom -> core (shapes.rs#NodeData). layout -> core (sfdpgen/sfdpinit.rs#Graph) and geom (fdpgen/clusteredges.rs#proutespline). parser -> core (lib.rs#Graph). render -> core (agwrite.rs#AttrMap), geom (emit/shapes.rs#ShapeKind) and parser (agwrite.rs#canon_str_with). archboard-graphviz -> parser (dot.rs#Statements) and render (lib.rs#set_y_invert): it calls them through graphviz-pure's re-exports, and the check resolves each call to the crate that defines it. archboard-painter-wasm -> vello_encoding has no anchor. The registry crate vello is its direct user through [patch.crates-io] in the root Cargo.toml, and no checkout code names vello_encoding, so the check reports it as RELATIONSHIP_UNSUPPORTED information. The first anchors on the pub use lines of lib.rs (FdpParms, Statements) gave ANCHOR_SYMBOL_MISSING, so a second intent anchors them on code that uses each name. Evidence: archboard check exit 0, 0 warnings; no binding key shared; embeds current; bun run check exit 0, 21/21.
+
+Parent verification at 3db67d4a6: archboard check exits 0 with no warning and no error; no binding key is shared. #3 holds: each step is its own commits, and every commit that changes code or the vault passed bun run check 21/21. C3 is three commits because the vault writer refuses a git status over 64 KiB. A scan found 24 pairs of relationships with the same source, target and anchor, mostly left by earlier merges; layer D removes them.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The CLI, the server and the web app lay out behavior first, in six code commits that each passed the gate. The server duplicates are merged as the code shows (Code evidence into the code-intel modules, Live panes into Pane connections), and the vendored graphviz-pure sub-crates and vello_encoding are modeled as roots. archboard check reports no warning. Follow-ups for layer D: 24 duplicate relationships, the unbound Walkthrough pages leaf.
+<!-- SECTION:FINAL_SUMMARY:END -->
