@@ -25,6 +25,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#8VT4p2DT",
       "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
+    },
+    {
+      "order": 80000,
+      "kind": "dependency",
+      "label": "mark the warnings on the drawn picture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-code-marks.ts",
+        "symbol": "markCodeWarnings"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#n7ZlRkbA",
+      "id": "vKEsyHFk#4msTmvFC"
     }
   ]
 }
