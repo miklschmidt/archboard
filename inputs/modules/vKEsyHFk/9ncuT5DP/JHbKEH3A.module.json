@@ -6,7 +6,7 @@
   "description": "A coordinator that cannot start refuses the message or Talk with its reason, and no workhorse starts. New conversation replaces the workhorse of the shown checkout only and keeps the tab's coordinator, which speaks for every workhorse of the tab. The old workhorse thread is given up and Codex unloads it once no turn runs on it. A delegation to a checkout whose workhorse has no thread that can run turns starts that thread the same way, but leaves the coordinator alone: it is running the turn that gives the work.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts"
+    "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
@@ -25,7 +25,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
         "symbol": "ensure"
       },
       "id": "vKEsyHFk/9ncuT5DP#NxCpSlMJ",
@@ -38,7 +38,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
         "symbol": "start"
       },
       "id": "vKEsyHFk/9ncuT5DP#nRRQSBu7",
@@ -51,7 +51,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
         "symbol": "compareAndSwap"
       },
       "id": "vKEsyHFk/9ncuT5DP#ukZDYnKd",
@@ -64,7 +64,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
         "symbol": "claimThread"
       },
       "id": "vKEsyHFk/9ncuT5DP#ZGfdJlmG",
@@ -77,7 +77,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
         "symbol": "assertBrowserLinkStands"
       },
       "id": "vKEsyHFk/9ncuT5DP#dOVhNk7R",

@@ -76,7 +76,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/dynamic-tools/routing.ts",
+        "path": "packages/codex-realtime-voice/src/server/dynamic-tools/services/routing.ts",
         "symbol": "routeCoordinatorTool"
       },
       "id": "vKEsyHFk/qKGcB6vZ#xzGv4R2g",
@@ -90,7 +90,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
         "symbol": "onNotification"
       },
       "id": "vKEsyHFk/9ncuT5DP#xPCxyO70",

@@ -5,7 +5,7 @@
   "responsibility": "Holds each browser connection: its lease, its snapshots, its chats and its disconnect",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/services/gateway"
+    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections/services"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#sZUpSKaS",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-connections.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections/services/gateway-connections.ts",
         "symbol": "readWorkhorseBinding"
       },
       "id": "vKEsyHFk/9ncuT5DP#3C7aLx0q",
@@ -32,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/generation/gateway-binding.ts",
+        "path": "packages/codex-realtime-voice/src/server/generation/services/gateway-binding.ts",
         "symbol": "shownCheckoutOf"
       },
       "id": "vKEsyHFk/9ncuT5DP#fVScKEoP",
@@ -45,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/browser-state/projections/owner-projection.ts",
         "symbol": "readWorkhorseList"
       },
       "id": "vKEsyHFk/9ncuT5DP#kUptUGCI",
@@ -58,7 +58,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/browser-state/projections/owner-projection.ts",
         "symbol": "coordinatorTurnsShownIn"
       },
       "id": "vKEsyHFk/9ncuT5DP#vScn8k62",
@@ -71,7 +71,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-connections.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections/services/gateway-connections.ts",
         "symbol": "onBrowserDisconnect"
       },
       "id": "vKEsyHFk/9ncuT5DP#IubzjsMw",

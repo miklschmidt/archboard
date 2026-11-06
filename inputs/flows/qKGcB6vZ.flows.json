@@ -22,7 +22,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/voice/realtime-actions.ts",
+            "path": "packages/codex-realtime-voice/src/server/voice/services/realtime-actions.ts",
             "symbol": "createOffer"
           }
         },
@@ -127,7 +127,7 @@
                           "kind": "async",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts",
+                            "path": "packages/codex-realtime-voice/src/server/chat-conversations/browser-state/projections/owner-projection.ts",
                             "symbol": "transcript"
                           }
                         }
@@ -509,7 +509,7 @@
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/dynamic-tools/routing.ts",
+            "path": "packages/codex-realtime-voice/src/server/dynamic-tools/services/routing.ts",
             "symbol": "routeCoordinatorTool"
           }
         },
@@ -521,7 +521,7 @@
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+            "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
             "symbol": "onServerRequest"
           }
         },
@@ -979,7 +979,7 @@
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+            "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
             "symbol": "onNotification"
           }
         },
@@ -1135,7 +1135,7 @@
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "packages/codex-realtime-voice/src/server/services/sessions/bindings.ts",
+                                "path": "packages/codex-realtime-voice/src/server/sessions/services/bindings.ts",
                                 "symbol": "createOutcomeReportPort"
                               }
                             },
@@ -1321,7 +1321,7 @@
               "note": "with no voice session its receipt says voice_inactive, and nothing is queued",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+                "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts",
                 "symbol": "enqueue"
               }
             },
@@ -1516,7 +1516,7 @@
               "kind": "return",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+                "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts",
                 "symbol": "tellThroughCallbacks"
               }
             }
@@ -1552,7 +1552,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+                    "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
                     "symbol": "answerUnownedTellCoordinator"
                   }
                 },
@@ -1581,7 +1581,7 @@
                   "kind": "async",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+                    "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
                     "symbol": "onServerRequest"
                   }
                 },

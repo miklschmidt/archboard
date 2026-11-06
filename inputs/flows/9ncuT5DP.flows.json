@@ -24,7 +24,7 @@
           "note": "the pane sends it over its socket with the command lease it holds",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-execution.ts",
+            "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections/services/gateway-execution.ts",
             "symbol": "createCommandExecutor"
           }
         },
@@ -36,7 +36,7 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/operations/command/command-admission.ts",
+            "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/operations/command-admission.ts",
             "symbol": "createCommandAdmission"
           }
         },
@@ -56,7 +56,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-execution.ts",
+                    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections/services/gateway-execution.ts",
                     "symbol": "createCommandExecutor"
                   }
                 }
@@ -73,7 +73,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/server/services/actions/text-actions.ts",
+                    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/text-actions.ts",
                     "symbol": "threadRead"
                   }
                 },
@@ -133,7 +133,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/server/services/actions/text-actions.ts",
+                    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/text-actions.ts",
                     "symbol": "threadRead"
                   }
                 },
@@ -153,7 +153,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/server/services/actions/text-actions.ts",
+                            "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/text-actions.ts",
                             "symbol": "createServerCanonicalTextActions"
                           }
                         }
@@ -170,7 +170,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/server/services/actions/text-actions.ts",
+                            "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/text-actions.ts",
                             "symbol": "turnStart"
                           }
                         },
@@ -230,7 +230,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/server/services/actions/text-actions.ts",
+                            "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/text-actions.ts",
                             "symbol": "turnStart"
                           }
                         },
@@ -242,7 +242,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-execution.ts",
+                            "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections/services/gateway-execution.ts",
                             "symbol": "createCommandExecutor"
                           }
                         }
@@ -309,7 +309,7 @@
           "note": "the agent's announce is its workbench's",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+            "path": "packages/codex-realtime-voice/src/server/owner/services/workbench.ts",
             "symbol": "announceContextChange"
           }
         },
@@ -321,7 +321,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+            "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts",
             "symbol": "deliver"
           }
         },
@@ -694,7 +694,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+            "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts",
             "symbol": "tellWorkhorse"
           }
         },
@@ -706,7 +706,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+            "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts",
             "symbol": "announceContextChange"
           }
         },
@@ -747,7 +747,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/operations/command/command-dispatch.ts",
+            "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/operations/command-dispatch.ts",
             "symbol": "create"
           }
         },
@@ -759,7 +759,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+            "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
             "symbol": "assertBrowserLinkStands"
           }
         },
@@ -771,7 +771,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+            "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
             "symbol": "assertBrowserLinkStands"
           }
         },
@@ -791,7 +791,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                    "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
                     "symbol": "assertBrowserLinkStands"
                   }
                 }
@@ -808,7 +808,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                    "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
                     "symbol": "readyCoordinator"
                   }
                 },
@@ -820,7 +820,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                    "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
                     "symbol": "readyCoordinator"
                   }
                 },
@@ -840,7 +840,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                            "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
                             "symbol": "readyCoordinator"
                           }
                         }
@@ -857,7 +857,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                            "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
                             "symbol": "startWorkhorseThread"
                           }
                         },
@@ -1019,7 +1019,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                                    "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
                                     "symbol": "replaceThreadContextBinding"
                                   }
                                 },
@@ -1031,7 +1031,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                                    "path": "packages/codex-realtime-voice/src/server/chat-conversations/conversation-start/services/thread-links.ts",
                                     "symbol": "createServerThreadLinkActions"
                                   }
                                 }
@@ -1351,7 +1351,7 @@
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+            "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
             "symbol": "onServerRequest"
           }
         },
@@ -1580,7 +1580,7 @@
           "note": "the agent's announce is its workbench's",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+            "path": "packages/codex-realtime-voice/src/server/owner/services/workbench.ts",
             "symbol": "announceContextChange"
           }
         },
@@ -1598,7 +1598,7 @@
               "note": "with no voice session its receipt says voice_inactive, and nothing is queued",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+                "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts",
                 "symbol": "enqueue"
               }
             },
@@ -1810,7 +1810,7 @@
               "kind": "return",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+                "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts",
                 "symbol": "tellThroughCallbacks"
               }
             }
@@ -1824,7 +1824,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+            "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts",
             "symbol": "announceContextChange"
           }
         }
@@ -1877,7 +1877,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/server/services/sessions/browser-tabs.ts",
+                    "path": "packages/codex-realtime-voice/src/server/sessions/services/browser-tabs.ts",
                     "symbol": "createTabSessions"
                   }
                 },
@@ -1909,7 +1909,7 @@
                           "kind": "self",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/server/services/sessions/browser-tabs.ts",
+                            "path": "packages/codex-realtime-voice/src/server/sessions/services/browser-tabs.ts",
                             "symbol": "createTabSessions"
                           }
                         }
@@ -1926,7 +1926,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+                            "path": "packages/codex-realtime-voice/src/server/owner/services/workbench.ts",
                             "symbol": "endSession"
                           }
                         },
@@ -1938,7 +1938,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+                            "path": "packages/codex-realtime-voice/src/server/owner/services/workbench.ts",
                             "symbol": "end"
                           }
                         },
@@ -1950,7 +1950,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+                            "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
                             "symbol": "endApprovals"
                           }
                         },
@@ -1967,7 +1967,7 @@
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+                                "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
                                 "symbol": "unload"
                               }
                             },
@@ -2056,7 +2056,7 @@
                               "kind": "return",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+                                "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
                                 "symbol": "unload"
                               }
                             }

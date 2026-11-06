@@ -6,7 +6,7 @@
   "description": "The host narrative adapter can prepare synchronously or asynchronously. A cancelled or replaced start cannot create an offer after preparation. The existing voice owner keeps lifecycle, cleanup, and command authority.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/services/voice"
+    "path": "packages/codex-realtime-voice/src/server/voice"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#yt8fa9w3",
@@ -25,7 +25,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/voice/realtime-actions.ts",
+        "path": "packages/codex-realtime-voice/src/server/voice/services/realtime-actions.ts",
         "symbol": "prepareNarrative"
       },
       "id": "vKEsyHFk/9ncuT5DP#a5ULzncp",
@@ -38,7 +38,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/voice/realtime-actions.ts",
+        "path": "packages/codex-realtime-voice/src/server/voice/services/realtime-actions.ts",
         "symbol": "createOffer"
       },
       "id": "vKEsyHFk/9ncuT5DP#4taYdz5M",

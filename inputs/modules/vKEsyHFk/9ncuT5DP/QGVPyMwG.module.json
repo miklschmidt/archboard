@@ -52,7 +52,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/generation/bindings.ts",
+        "path": "packages/codex-realtime-voice/src/server/generation/services/bindings.ts",
         "symbol": "forThread"
       },
       "id": "vKEsyHFk/9ncuT5DP#YrKMY0LM",

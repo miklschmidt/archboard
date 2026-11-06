@@ -5,7 +5,7 @@
   "responsibility": "Routes each admitted command to its account, thread, text, queue, approval or voice action",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/operations/command/command-dispatch.ts"
+    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/operations/command-dispatch.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#dEfJJFtS",
@@ -18,27 +18,13 @@
   ],
   "outgoing": [
     {
-      "order": 42000,
-      "kind": "call",
-      "label": "create, on the tab's first message or Talk",
-      "description": "The server passes a BrowserThreadLinkActions port to Browser gateway. command-dispatch invokes its create method; the implementation remains inside the Archboard server private thread-link composition.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/operations/command/command-dispatch.ts",
-        "symbol": "create"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#b9yFBXHz",
-      "to": "vKEsyHFk/9ncuT5DP#JHbKEH3A"
-    },
-    {
       "order": 14000,
       "kind": "call",
       "label": "edit the queue of the shown checkout's workhorse",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/actions/browser-gateway.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/browser-gateway.ts",
         "symbol": "add"
       },
       "id": "vKEsyHFk/SJ2JMVyz#FWJMAVKj",
@@ -51,7 +37,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/actions/browser-gateway.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/browser-gateway.ts",
         "symbol": "workhorse"
       },
       "id": "vKEsyHFk/SJ2JMVyz#mK9SfZDk",
@@ -65,11 +51,25 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/actions/browser-gateway.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/browser-gateway.ts",
         "symbol": "require"
       },
       "id": "vKEsyHFk/9ncuT5DP#89ivSTaM",
       "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    },
+    {
+      "order": 42000,
+      "kind": "call",
+      "label": "create, on the tab's first message or Talk",
+      "description": "The server passes a BrowserThreadLinkActions port to Browser gateway. command-dispatch invokes its create method; the implementation remains inside the Archboard server private thread-link composition.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/operations/command-dispatch.ts",
+        "symbol": "create"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#b9yFBXHz",
+      "to": "vKEsyHFk/9ncuT5DP#JHbKEH3A"
     }
   ]
 }

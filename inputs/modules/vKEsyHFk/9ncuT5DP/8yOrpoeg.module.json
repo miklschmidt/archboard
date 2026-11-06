@@ -6,7 +6,7 @@
   "description": "VoiceAgent.announce is its entry. It refuses a malformed change before anybody is told, and reads every identity itself: each told workhorse's link, child and threads, and the coordinator paired with it. A workhorse hears the change through its own context delivery, and a tab with no workhorse in a named checkout answers no_workhorse. The coordinator and the voice hear it through the tab's one callback queue, and only while voice is live: with none, the receipt says voice_inactive. The audiences are told at the same time, in no fixed order.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts"
+    "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#8yOrpoeg",
@@ -25,7 +25,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts",
         "symbol": "enqueue"
       },
       "id": "vKEsyHFk/9ncuT5DP#Tqxin6z5",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts",
         "symbol": "enqueue"
       },
       "id": "vKEsyHFk/qKGcB6vZ#wyliCZzQ",
@@ -52,7 +52,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts",
         "symbol": "deliver"
       },
       "id": "vKEsyHFk/9ncuT5DP#7LxiPZOi",
@@ -65,7 +65,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/announce/services/announce.ts",
         "symbol": "EXECUTION_CONTEXT_KEYS"
       },
       "id": "vKEsyHFk/qKGcB6vZ#j3Td3x8x",

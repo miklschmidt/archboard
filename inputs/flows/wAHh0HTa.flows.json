@@ -22,7 +22,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/services/generation/hooks.ts",
+            "path": "packages/codex-realtime-voice/src/server/generation/services/hooks.ts",
             "symbol": "initialize"
           }
         },
