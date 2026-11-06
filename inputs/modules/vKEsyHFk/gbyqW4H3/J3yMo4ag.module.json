@@ -10,7 +10,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-  "parent": "vKEsyHFk/gbyqW4H3#ld6jjHND",
+  "parent": "vKEsyHFk#9gGvxWHp",
   "outgoing": [
     {
       "order": 100,
@@ -22,8 +22,8 @@
         "path": "crates/archboard-scene/src/measure/mod.rs",
         "symbol": "paragraph"
       },
-      "to": "vKEsyHFk#C4dZpr3U",
-      "id": "vKEsyHFk#ODr5oszF"
+      "id": "vKEsyHFk#ODr5oszF",
+      "to": "vKEsyHFk#C4dZpr3U"
     }
   ]
 }

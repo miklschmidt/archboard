@@ -1,0 +1,53 @@
+{
+  "order": 41000,
+  "name": "archboard-renderer-wasm",
+  "kind": "package",
+  "responsibility": "The renderer core as the WebAssembly that Bun and the browser load: a render in, the picture and its key out, and the one solve that a layout engine runs",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-renderer-wasm"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#6sGFjsRQ",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "one render, its picture and its key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-renderer-wasm/src/render.rs",
+        "symbol": "Renderer"
+      },
+      "to": "vKEsyHFk/OjRLKb74#nmyK8UOO",
+      "id": "vKEsyHFk#80dwcLyq"
+    },
+    {
+      "order": 200,
+      "kind": "call",
+      "label": "one solve of a measured graph",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-renderer-wasm/src/layout.rs",
+        "symbol": "lay_out_picture"
+      },
+      "to": "vKEsyHFk/OjRLKb74#mHYMkWdE",
+      "id": "vKEsyHFk#3LA3rFOo"
+    },
+    {
+      "order": 300,
+      "kind": "call",
+      "label": "the Graphviz of each solve",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-renderer-wasm/src/layout.rs",
+        "symbol": "InCore"
+      },
+      "to": "vKEsyHFk#dg6URhSn",
+      "id": "vKEsyHFk#bSDPUhGh"
+    }
+  ]
+}

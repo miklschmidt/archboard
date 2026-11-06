@@ -1,10 +1,17 @@
 {
   "order": 21001,
-  "name": "Engine and graph",
+  "name": "Layout workers",
   "kind": "module",
-  "responsibility": "States the model as one graph of containment, sizes and relationship kinds, and lays it out through the engine a render names, inside a layout worker",
+  "responsibility": "Runs each solve that the core asks for on the layout engine, spread over a few workers",
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#e10t6gst",
-  "parent": "vKEsyHFk/gbyqW4H3#ld6jjHND",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "outgoing": [],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/engine"
+  },
+  "formerNames": [
+    "Engine and graph"
+  ]
 }
