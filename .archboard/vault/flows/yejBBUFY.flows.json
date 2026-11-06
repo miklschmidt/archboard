@@ -854,8 +854,10 @@
       "participants": [
         "vKEsyHFk/vKEsyHFk#cPOdAA3f",
         "vKEsyHFk/yejBBUFY#aixSjfNe",
+        "vKEsyHFk/yejBBUFY#3WdEEXWG",
         "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
-        "vKEsyHFk/yejBBUFY#dtYjWvlf"
+        "vKEsyHFk/yejBBUFY#dtYjWvlf",
+        "vKEsyHFk/UOXNWLhR#aYC7if1N"
       ],
       "steps": [
         {
@@ -896,8 +898,8 @@
         },
         {
           "id": "vKEsyHFk/yejBBUFY#OkRUa8KX",
-          "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
-          "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+          "from": "vKEsyHFk/yejBBUFY#3WdEEXWG",
+          "to": "vKEsyHFk/UOXNWLhR#aYC7if1N",
           "label": "mount the recording's stage on the talk's model",
           "kind": "sync",
           "anchor": {

@@ -851,8 +851,10 @@ behavior has an index: a caller imports the file that defines a name.
   `components/` and `hooks/` hold React code. `renderer-build/clients/` holds the declaration of the
   `virtual:archboard-renderer` module that `vite.config.ts` serves, a `.d.ts` that sits in a role folder because the
   files directly in `src/` are for entries.
-- The canvas has no index either. Its parts are in `rules/` (`camera/`, `walkthrough/`, `drilling/`, `reading/`,
-  `picture/`), `state/`, and `clients/` (`reads/`, `picture/`, `subjects/`).
+- The canvas has no index either. It is `architecture-drawing/canvas/`: `presentation/` holds the diagram's
+  components, `pane-vault/` the vault a pane reads, and `picture/` the picture's clients, with `supply/`, `reads/`,
+  `camera/` and `transitions/` for the jobs inside it. The frame-clock rule of `.oxlintrc.jsonc` holds every file
+  below `canvas/`.
 - The tests are in `tests/ui/<role>/<behavior>/`, in the folders of the code they cover. `tests/ui/support/<behavior>/`
   holds the harnesses and fixtures that tests share. `tests/contracts/` holds the one test that holds the recorder's page
   address to the address bar's reading of it: it imports a Bun-side package export, which no `ui` test may.

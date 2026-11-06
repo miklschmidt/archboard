@@ -1,5 +1,8 @@
 import { useMemo } from "react";
-import { useWalkthrough, type DrivenPlace } from "#ui/hooks/canvas/use-walkthrough.ts";
+import {
+	useWalkthrough,
+	type DrivenPlace,
+} from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-walkthrough.ts";
 import type { Model } from "@archboard/model/content";
 
 type Playback = NonNullable<Model["playback"]>;

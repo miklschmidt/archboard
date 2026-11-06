@@ -14,7 +14,7 @@
 
 import { RECORDING_MS } from "@archboard/timing";
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import type { SemanticPaneReading } from "#ui/rules/canvas/reading/address.ts";
+import type { SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 
 /**
  * One line of the voice session's transcript, as far as pacing reads it: who said it, whether

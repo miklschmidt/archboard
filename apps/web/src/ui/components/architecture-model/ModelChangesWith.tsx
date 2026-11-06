@@ -6,7 +6,10 @@ import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import { usePeekRow } from "#ui/hooks/architecture-model/use-peek-row.ts";
-import { partLocality, type Partner } from "#ui/rules/canvas/reading/part-locality.ts";
+import {
+	partLocality,
+	type Partner,
+} from "#ui/architecture-drawing/canvas/picture/rules/part-locality.ts";
 
 /** Inputs for the modules that change with one. */
 interface ModelChangesWithProps {

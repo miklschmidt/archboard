@@ -6,7 +6,7 @@
 // writing it and that the model has moved (ADR 0023). The picture itself is a
 // separate read, made by the viewer through the query cache.
 
-import { paneAddressOf } from "#ui/rules/canvas/reading/address.ts";
+import { paneAddressOf } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import { createPaneArrival } from "#ui/panes/pane-session/rules/pane-arrival.ts";
 import { createPaneReportDeadline } from "#ui/panes/pane-session/state/pane-deadline.ts";
 import {

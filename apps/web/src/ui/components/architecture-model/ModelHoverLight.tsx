@@ -1,7 +1,10 @@
 import type { JSX } from "react";
 import { ModelSwitch } from "#ui/components/architecture-model/ModelSwitch.tsx";
-import { HOVER_LIGHTS, chooseHoverLight } from "#ui/clients/canvas/subjects/hover-light.ts";
-import { useHoverLight } from "#ui/hooks/canvas/use-hover-light.ts";
+import {
+	HOVER_LIGHTS,
+	chooseHoverLight,
+} from "#ui/architecture-drawing/canvas/picture/clients/hover-light.ts";
+import { useHoverLight } from "#ui/architecture-drawing/canvas/picture/hooks/use-hover-light.ts";
 
 /**
  * Choose whether a part the pointer rests on dims the rest of the picture.

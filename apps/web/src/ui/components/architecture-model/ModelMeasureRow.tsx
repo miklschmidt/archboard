@@ -7,7 +7,7 @@ import {
 	type MeasureKey,
 	type MeasureRow,
 } from "#ui/rules/architecture-model/module-measures.ts";
-import type { KindLook } from "#ui/rules/canvas/reading/kind-look.ts";
+import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import type { LocalityAnswer } from "@archboard/code-intel/history";
 
 /** Why the lens did not read a module, as a row and the foot of the list say it. */

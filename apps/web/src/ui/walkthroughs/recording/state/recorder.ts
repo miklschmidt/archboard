@@ -14,9 +14,9 @@ import { RECORDING_MS } from "@archboard/timing";
 import type { publishRecordingPage, recordingAskedOf } from "@archboard/walkthrough/recording";
 import { TALK_SAMPLE_RATE } from "@archboard/walkthrough/talk";
 import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/controllers";
-import { sameModelName } from "#ui/rules/canvas/reading/address.ts";
+import { sameModelName } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
-import { type CanvasStageProps } from "#ui/components/canvas/CanvasStage.tsx";
+import { type CanvasStageProps } from "#ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx";
 
 import {
 	pace,

@@ -28,7 +28,7 @@ import {
 	type MeasureRow,
 	type MeasureView,
 } from "#ui/rules/architecture-model/module-measures.ts";
-import { kindLookOf } from "#ui/rules/canvas/reading/kind-look.ts";
+import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
 /** Inputs for the list. */
 interface ModelMeasuresProps {

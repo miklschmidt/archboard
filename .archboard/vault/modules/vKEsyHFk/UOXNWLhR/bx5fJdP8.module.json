@@ -5,7 +5,7 @@
   "responsibility": "Tells the readers of a legacy board that it changed, so they read it again. The server no longer sends this news.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/state/canvas/model-changes.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/state/model-changes.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#bx5fJdP8",

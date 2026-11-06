@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
-import type { HeldCamera } from "#ui/hooks/canvas/use-auto-fit.ts";
-import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { HeldCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts";
+import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import type { AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 
 /**

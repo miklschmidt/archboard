@@ -12,7 +12,7 @@
 // dropped: it must never start later, with nobody asking. It holds no React
 // state, so the order can be read, and tested, on its own.
 
-import type { WalkthroughNarration } from "#ui/rules/canvas/walkthrough/narration.ts";
+import type { WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
 
 /** Where the shell is, as far as a narration needs to know. */
 interface ShellState {

@@ -1,8 +1,11 @@
 import { useCallback, useMemo, type JSX } from "react";
 import { modelContent, type Model } from "@archboard/model/content";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
-import { SemanticGroupList } from "#ui/components/canvas/SemanticGroupList.tsx";
-import { groupChoices, groupSelection } from "#ui/rules/canvas/reading/groups.ts";
+import { SemanticGroupList } from "#ui/architecture-drawing/canvas/presentation/components/SemanticGroupList.tsx";
+import {
+	groupChoices,
+	groupSelection,
+} from "#ui/architecture-drawing/canvas/picture/rules/groups.ts";
 
 /**
  * Group choices select authored members independently of the visible scope.

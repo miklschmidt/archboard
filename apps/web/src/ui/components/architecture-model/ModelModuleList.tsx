@@ -4,13 +4,16 @@ import type { ChangeKind } from "@archboard/model/comparison";
 import { cn } from "@archboard/ui-kit/components";
 import { KindChip, ModelAboutTable } from "#ui/components/architecture-model/ModelAboutTable.tsx";
 import { ModelCodePath } from "#ui/components/architecture-model/ModelHeading.tsx";
-import { SemanticGroupChip } from "#ui/components/canvas/SemanticGroupChip.tsx";
-import { StandingSample } from "#ui/components/canvas/SemanticTypeSamples.tsx";
+import { SemanticGroupChip } from "#ui/architecture-drawing/canvas/presentation/components/SemanticGroupChip.tsx";
+import { StandingSample } from "#ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import type { ModulePlace } from "#ui/rules/architecture-model/module-places.ts";
-import { groupLabel, type GroupNames } from "#ui/rules/canvas/reading/groups.ts";
-import type { KindLook } from "#ui/rules/canvas/reading/kind-look.ts";
+import {
+	groupLabel,
+	type GroupNames,
+} from "#ui/architecture-drawing/canvas/picture/rules/groups.ts";
+import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
 type Projection = ReturnType<typeof projectModel>;
 type Module = Projection["children"][number];

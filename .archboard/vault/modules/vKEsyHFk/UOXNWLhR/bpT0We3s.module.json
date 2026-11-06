@@ -5,7 +5,7 @@
   "responsibility": "The vault of each repository this machine lists, which the browser client provides to the viewer",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/state/canvas/repository-places.ts",
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/state/repository-places.ts",
     "symbol": "RepositoryPlacesContext"
   },
   "schemaVersion": 1,

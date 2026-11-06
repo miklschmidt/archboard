@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type JSX } from "react";
 import type { ModelCodeReading } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
-import { WarningCount } from "#ui/components/canvas/CodeWarnings.tsx";
-import { CodeBlock } from "#ui/components/canvas/SemanticInspectorCode.tsx";
+import { WarningCount } from "#ui/architecture-drawing/canvas/presentation/components/CodeWarnings.tsx";
+import { CodeBlock } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorCode.tsx";
 
 /**
  * Keep the existing warning control available for canonical readings.

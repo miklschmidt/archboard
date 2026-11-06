@@ -10,15 +10,15 @@ import {
 import {
 	SemanticPresentation,
 	type SemanticPresentationProps,
-} from "#ui/components/canvas/SemanticPresentation.tsx";
+} from "#ui/architecture-drawing/canvas/presentation/components/SemanticPresentation.tsx";
 import { projectModel, type Model } from "@archboard/model/content";
 import { useAcceptedScene } from "#ui/hooks/architecture-model/use-accepted-scene.ts";
-import { usePictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import { usePictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import { drawableGrammar } from "#ui/rules/architecture-model/scene.ts";
 import { projectFlow } from "#ui/rules/architecture-model/flow-reading.ts";
 import { useModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
-import type { DrivenPlace } from "#ui/hooks/canvas/use-walkthrough.ts";
+import type { DrivenPlace } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-walkthrough.ts";
 import { useWalkthroughBeat } from "#ui/hooks/architecture-model/use-walkthrough-beat.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 

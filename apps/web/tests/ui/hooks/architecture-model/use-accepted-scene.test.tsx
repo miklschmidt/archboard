@@ -56,7 +56,8 @@ const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query
 const { act, cleanup, renderHook, waitFor } = await import("@testing-library/react");
 const { useAcceptedScene } = await import("#ui/hooks/architecture-model/use-accepted-scene.ts");
 const { modelDrawingQuery } = await import("#ui/clients/architecture-model/drawing.ts");
-const { chooseLayoutEngine } = await import("#ui/clients/canvas/reads/layout-engine.ts");
+const { chooseLayoutEngine } =
+	await import("#ui/architecture-drawing/canvas/picture/clients/layout-engine.ts");
 const { EMPTY_DRAWING } = await import("#ui/rules/architecture-model/scene.ts");
 
 const NOTHING: ReadonlySet<string> = new Set();

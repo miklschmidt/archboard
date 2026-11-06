@@ -14,7 +14,7 @@ import {
 	type PaneChrome,
 	type PaneColumn,
 	PaneChromeContext,
-} from "#ui/components/canvas/PaneChrome.tsx";
+} from "#ui/architecture-drawing/canvas/presentation/components/PaneChrome.tsx";
 import { PaneControls, PaneLetter } from "#ui/shell/components/PaneControls.tsx";
 import { useKept } from "#ui/shell/hooks/use-kept.ts";
 import type {

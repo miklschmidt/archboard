@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/canvas/reads/picture-source.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#38hwLCO1",
@@ -21,7 +21,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/picture-source.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts",
         "symbol": "takePicturesFrom"
       },
       "id": "vKEsyHFk/UOXNWLhR#1BAA71RA",
@@ -34,7 +34,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/picture-source.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts",
         "symbol": "ReadingError"
       },
       "id": "vKEsyHFk#A87QndqZ",

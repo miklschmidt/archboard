@@ -2,8 +2,8 @@ import { useCallback, useMemo, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Model } from "@archboard/model/content";
 import { Button } from "@archboard/ui-kit/components";
-import { PartHistory } from "#ui/components/canvas/PartHistory.tsx";
-import { kindLookOf } from "#ui/rules/canvas/reading/kind-look.ts";
+import { PartHistory } from "#ui/architecture-drawing/canvas/presentation/components/PartHistory.tsx";
+import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import { modelHistoryQuery } from "#ui/clients/architecture-model/history.ts";
 
 interface HistoryProps {

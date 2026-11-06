@@ -1,8 +1,8 @@
 import { useMemo, type JSX } from "react";
 import type { Model, VariantContent } from "@archboard/model/content";
-import { ContainerInterface } from "#ui/components/canvas/ContainerInterface.tsx";
+import { ContainerInterface } from "#ui/architecture-drawing/canvas/presentation/components/ContainerInterface.tsx";
 import type { ModuleInterface } from "#ui/rules/architecture-model/selected-subject.ts";
-import { kindLookOf } from "#ui/rules/canvas/reading/kind-look.ts";
+import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
 interface ModelInterfaceProps {
 	model: Model;

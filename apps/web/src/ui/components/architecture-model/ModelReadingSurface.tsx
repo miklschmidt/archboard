@@ -30,7 +30,7 @@ import {
 	ModelComparisonNotice,
 	ModelStateStanding,
 } from "#ui/components/architecture-model/ModelStateDetails.tsx";
-import { PeekProvider } from "#ui/components/canvas/Peek.tsx";
+import { PeekProvider } from "#ui/architecture-drawing/canvas/presentation/components/Peek.tsx";
 import { useAboutPlace } from "#ui/hooks/architecture-model/use-about-place.ts";
 import { useHistoryOnSelection } from "#ui/hooks/architecture-model/use-history-on-selection.ts";
 import { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";

@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, type JSX } from "react";
 import { RiArrowLeftSLine, RiArrowRightSLine } from "@remixicon/react";
 
 import { Button } from "@archboard/ui-kit/components";
-import { StandingSample } from "#ui/components/canvas/SemanticTypeSamples.tsx";
+import { StandingSample } from "#ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx";
 import { Tree } from "#ui/shell/components/Tree.tsx";
 import type { ChangeWalk } from "#ui/hooks/architecture-model/use-change-walk.ts";
 import type { Change, ChangeList } from "#ui/rules/architecture-model/change-list.ts";

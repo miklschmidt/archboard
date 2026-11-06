@@ -1,6 +1,6 @@
 import { interfaceMeasures } from "@archboard/model/container-interface";
 import type { ModuleInterface } from "#ui/rules/architecture-model/selected-subject.ts";
-import type { Wiring } from "#ui/rules/canvas/reading/connections.ts";
+import type { Wiring } from "#ui/architecture-drawing/canvas/picture/rules/connections.ts";
 
 type Interface = Extract<ModuleInterface, { readonly holdsParts: true }>;
 type Parents = ReadonlyMap<string, string | undefined>;

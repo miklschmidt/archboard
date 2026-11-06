@@ -1,7 +1,7 @@
 import { ModelStateHistory } from "#ui/components/architecture-model/ModelStateHistory.tsx";
 import { useMemo, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
-import { Standing } from "#ui/components/canvas/SemanticInspectorStanding.tsx";
+import { Standing } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorStanding.tsx";
 import type { useModelComparison } from "#ui/hooks/architecture-model/use-model-comparison.ts";
 import type { Model } from "@archboard/model/content";
 import { proposalStanding } from "#ui/rules/architecture-model/standing.ts";

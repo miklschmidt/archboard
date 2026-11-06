@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Model, projectModel } from "@archboard/model/content";
 import type { Size } from "@archboard/renderer/shell-geometry";
 import { modelDrawingQuery } from "#ui/clients/architecture-model/drawing.ts";
-import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import { fittingReading, type FlowGrammar } from "#ui/rules/architecture-model/flow-fit.ts";
 import { projectFlow } from "#ui/rules/architecture-model/flow-reading.ts";
 

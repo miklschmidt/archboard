@@ -4,10 +4,13 @@ import type { Model, projectModel } from "@archboard/model/content";
 import { cn } from "@archboard/ui-kit/components";
 import { ModelAboutTable } from "#ui/components/architecture-model/ModelAboutTable.tsx";
 import { lineEnds, moduleName } from "#ui/components/architecture-model/ModelConnections.tsx";
-import { KindIcon, RelationshipChip } from "#ui/components/canvas/KindMarks.tsx";
+import {
+	KindIcon,
+	RelationshipChip,
+} from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
-import type { KindLook } from "#ui/rules/canvas/reading/kind-look.ts";
+import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
 type Connection = ReturnType<typeof projectModel>["connections"][number];
 

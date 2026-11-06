@@ -15,9 +15,12 @@ import {
 	RelationshipSample,
 	TrafficSample,
 	TypeSample,
-} from "#ui/components/canvas/SemanticTypeSamples.tsx";
-import { iconQuery } from "#ui/clients/canvas/reads/queries.ts";
-import type { AppliedAppearance, PictureLegend } from "#ui/clients/canvas/reads/drawings.ts";
+} from "#ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx";
+import { iconQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
+import type {
+	AppliedAppearance,
+	PictureLegend,
+} from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import {
 	groupRows,
@@ -29,7 +32,7 @@ import {
 	type LegendMark,
 	type LegendRow,
 } from "#ui/rules/architecture-model/legend-rows.ts";
-import { paletteTag } from "#ui/rules/canvas/reading/palette.ts";
+import { paletteTag } from "#ui/architecture-drawing/canvas/picture/rules/palette.ts";
 
 /** How wide every line's sample is, and the box of every mark, so that the names start on one line. */
 const SAMPLE_WIDTH = 22;

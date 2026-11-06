@@ -8,7 +8,7 @@ import {
 	browserPictureStorage,
 	cachedModelDrawing,
 	modelDrawingKey,
-} from "#ui/clients/canvas/reads/picture-cache.ts";
+} from "#ui/architecture-drawing/canvas/picture/supply/clients/picture-cache.ts";
 
 type ModelDrawing = Awaited<ReturnType<typeof cachedModelDrawing>>;
 

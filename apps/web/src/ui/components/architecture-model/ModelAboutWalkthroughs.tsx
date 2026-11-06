@@ -18,11 +18,11 @@ import { useCallback, useContext, useMemo, useState, type CSSProperties, type JS
 
 import { Button, cn, IconButton } from "@archboard/ui-kit/components";
 import type { Model } from "@archboard/model/content";
-import { KindIcon } from "#ui/components/canvas/KindMarks.tsx";
+import { KindIcon } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
-import type { KindLook } from "#ui/rules/canvas/reading/kind-look.ts";
+import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import { ModelWalkthroughContext } from "#ui/state/architecture-model/presentation.ts";
 
 type Walkthrough = Model["walkthroughs"][number];

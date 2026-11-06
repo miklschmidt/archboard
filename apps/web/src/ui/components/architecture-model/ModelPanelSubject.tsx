@@ -23,7 +23,7 @@ import {
 	ModuleOpenCode,
 	ModuleOpenReferences,
 } from "#ui/components/architecture-model/ModuleNavigation.tsx";
-import { TraceToggle } from "#ui/components/canvas/TraceToggle.tsx";
+import { TraceToggle } from "#ui/architecture-drawing/canvas/presentation/components/TraceToggle.tsx";
 import type { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import { usePeekRow } from "#ui/hooks/architecture-model/use-peek-row.ts";
@@ -38,7 +38,7 @@ import {
 	type Connection,
 	type SelectedSubject,
 } from "#ui/rules/architecture-model/selected-subject.ts";
-import type { Way } from "#ui/rules/canvas/reading/reach.ts";
+import type { Way } from "#ui/architecture-drawing/canvas/picture/camera/rules/reach.ts";
 
 /** Inputs for what the panel says of a selection. */
 interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {

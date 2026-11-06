@@ -6,9 +6,9 @@ import type {
 	Departure,
 	DepartureSide,
 	DepartureWay,
-} from "#ui/clients/canvas/picture/picture-departure.ts";
-import type { MovingPicture } from "#ui/clients/canvas/picture/picture-transition.ts";
-import type { SemanticBox } from "#ui/clients/canvas/reads/drawings.ts";
+} from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
+import type { MovingPicture } from "#ui/architecture-drawing/canvas/picture/clients/picture-transition.ts";
+import type { SemanticBox } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { moduleOrder } from "#ui/rules/architecture-model/module-tree.ts";
 
 type Projection = ReturnType<typeof projectModel>;

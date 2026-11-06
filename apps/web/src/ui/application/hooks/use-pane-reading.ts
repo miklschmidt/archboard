@@ -14,7 +14,10 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { paneAddressOf, sameModelName } from "#ui/rules/canvas/reading/address.ts";
+import {
+	paneAddressOf,
+	sameModelName,
+} from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 

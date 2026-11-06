@@ -3,7 +3,7 @@ import type { Model } from "@archboard/model/content";
 import type { Destination } from "#ui/components/architecture-model/ModelColumn.tsx";
 import type { useFlowReadings } from "#ui/hooks/architecture-model/use-flow-readings.ts";
 import type { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
-import { usePaneChrome } from "#ui/hooks/canvas/use-pane-chrome.ts";
+import { usePaneChrome } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts";
 import type { FindHit } from "#ui/rules/architecture-model/search.ts";
 import { ModelWalkthroughContext } from "#ui/state/architecture-model/presentation.ts";
 

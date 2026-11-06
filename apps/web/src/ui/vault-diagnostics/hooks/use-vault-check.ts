@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
-import { policyChanged } from "#ui/clients/canvas/reads/read-refresh.ts";
-import { vaultCheckQuery } from "#ui/clients/canvas/reads/queries.ts";
+import { policyChanged } from "#ui/architecture-drawing/canvas/picture/reads/clients/read-refresh.ts";
+import { vaultCheckQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
 import type { VaultCheckSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 

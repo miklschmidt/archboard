@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { everyStep } from "@archboard/model/flow";
 import type { DiagramBox } from "@archboard/model/render-reply";
 import type { projectModel } from "@archboard/model/content";
-import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import type { AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 
 /**

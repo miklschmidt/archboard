@@ -11,8 +11,10 @@ const { waitFor } = await import("@testing-library/react");
 const { architectureFeed } = await import("#ui/clients/architecture-model/events.ts");
 const { architectureCheckpointsQuery, architectureModelQuery } =
 	await import("#ui/clients/architecture-model/queries.ts");
-const { vaultCheckQuery } = await import("#ui/clients/canvas/reads/queries.ts");
-const { readRetainedFrom } = await import("#ui/clients/canvas/reads/retained-reads.ts");
+const { vaultCheckQuery } =
+	await import("#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts");
+const { readRetainedFrom } =
+	await import("#ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts");
 
 const VAULT = "/work/shop/.archboard/vault";
 const OLD = "a".repeat(64);

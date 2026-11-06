@@ -4,9 +4,12 @@ import { z } from "zod";
 import { VaultCheckSchema } from "@archboard/model/policy";
 import { RememberedFindingsSchema } from "@archboard/code-intel/code-check";
 import { SemanticRenderReplySchema } from "@archboard/model/render-reply";
-import { readRetainedFrom } from "#ui/clients/canvas/reads/retained-reads.ts";
-import { takePicturesFrom } from "#ui/clients/canvas/reads/picture-source.ts";
-import { ReadingError, type SemanticRenderRequest } from "#ui/clients/canvas/reads/drawings.ts";
+import { readRetainedFrom } from "#ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts";
+import { takePicturesFrom } from "#ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts";
+import {
+	ReadingError,
+	type SemanticRenderRequest,
+} from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { withFixtureOrders } from "#tests/ui/support/canvas/fixture-orders.ts";
 
 /** What the fake server answers a request with. */

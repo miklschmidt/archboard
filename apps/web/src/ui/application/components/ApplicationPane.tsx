@@ -32,7 +32,7 @@ import {
 	type PaneWorkbenchSocketOwner,
 } from "#ui/panes/pane-session/clients/workbench-socket.ts";
 import { ArchitectureModelStage } from "#ui/components/architecture-model/ArchitectureModelStage.tsx";
-import { type WalkthroughNarration } from "#ui/rules/canvas/walkthrough/narration.ts";
+import { type WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
 import {
 	createBrowserWorkbenchTransport,
 	type BrowserWorkbenchTransport,

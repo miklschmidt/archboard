@@ -4,7 +4,7 @@ import {
 	paneAddressOf,
 	paneKeyFor,
 	type SemanticPaneReading,
-} from "#ui/rules/canvas/reading/address.ts";
+} from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 
 /**
  * What this pane is reading, as the server records it.

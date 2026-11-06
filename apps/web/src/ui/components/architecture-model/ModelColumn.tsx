@@ -2,7 +2,7 @@ import type { JSX, ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { Badge, Tabs } from "@archboard/ui-kit/components";
-import { usePaneChrome } from "#ui/hooks/canvas/use-pane-chrome.ts";
+import { usePaneChrome } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts";
 
 /** What the left column lists. */
 type Destination = "modules" | "flows" | "walkthroughs" | "history" | "measures" | "changes";

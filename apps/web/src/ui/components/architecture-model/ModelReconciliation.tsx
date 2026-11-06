@@ -3,7 +3,7 @@ import { Button } from "@archboard/ui-kit/components";
 import type { Model } from "@archboard/model/content";
 import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
 import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
-import { ReconciliationIssues } from "#ui/components/canvas/SemanticInspectorStanding.tsx";
+import { ReconciliationIssues } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorStanding.tsx";
 
 interface ModelReconciliationProps {
 	model: Model;

@@ -6,7 +6,7 @@ import {
 	architectureModelKeys,
 	type ModelSummary,
 } from "#ui/clients/architecture-model/queries.ts";
-import { readKeys } from "#ui/clients/canvas/reads/read-keys.ts";
+import { readKeys } from "#ui/architecture-drawing/canvas/picture/reads/clients/read-keys.ts";
 
 type CurrentReading = Extract<ArchitectureModelRead, { success: true }>;
 type ModelEvent = Exclude<ArchitectureEvent, { type: "architecture_claims" }>;

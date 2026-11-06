@@ -12,7 +12,7 @@ import {
 	PanePresentRequestSchema,
 	ArchitecturePaneReadingSchema,
 } from "@archboard/model/pane-context";
-import { paneAddressOf } from "#ui/rules/canvas/reading/address.ts";
+import { paneAddressOf } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import type {
 	AgentActivityEntry,
 	LegacyIdentity,

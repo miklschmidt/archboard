@@ -6,10 +6,13 @@
 // than a quiet trip to the server.
 
 import { parseLegacyBoard } from "@archboard/model/legacy-board";
-import { ReadingError, type RetainedListing } from "#ui/clients/canvas/reads/drawings.ts";
+import {
+	ReadingError,
+	type RetainedListing,
+} from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { Talk } from "@archboard/walkthrough/talk";
-import { sameModelName } from "#ui/rules/canvas/reading/address.ts";
-import { type RetainedReads } from "#ui/clients/canvas/reads/retained-reads.ts";
+import { sameModelName } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
+import { type RetainedReads } from "#ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts";
 
 /**
  * Model reads answered from a talk.

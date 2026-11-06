@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { WalkthroughNarration } from "#ui/rules/canvas/walkthrough/narration.ts";
+import type { WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
 
 /**
  * Start narration after the server accepts the exact reading that it consumes.

@@ -4,7 +4,7 @@
 
 import { mock } from "bun:test";
 
-import * as picture from "#ui/clients/canvas/picture/picture-stage.ts";
+import * as picture from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts";
 
 /** One thing a stage was told. */
 interface StageCall {
@@ -44,10 +44,13 @@ function recordingStage(): object {
 	return recording;
 }
 
-void mock.module("#ui/clients/canvas/picture/picture-stage.ts", () => ({
-	...picture,
-	stageOf: recordingStage,
-}));
+void mock.module(
+	"#ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
+	() => ({
+		...picture,
+		stageOf: recordingStage,
+	}),
+);
 
 /**
  * What one call was given, each time it was made.

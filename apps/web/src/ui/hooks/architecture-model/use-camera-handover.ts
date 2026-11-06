@@ -1,6 +1,6 @@
 import { useContext, useLayoutEffect, useRef } from "react";
 import { PRESENTATION_MS } from "@archboard/timing";
-import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import {
 	ModelPaneContext,
 	type CameraHandover,

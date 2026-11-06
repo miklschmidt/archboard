@@ -62,7 +62,10 @@ import { useOpeningAddress } from "#ui/panes/reading-routing/hooks/use-opening-a
 import { useLastReading, useStart } from "#ui/panes/reading-routing/hooks/use-start.ts";
 import { type WorkspaceAddressing } from "#ui/panes/reading-routing/hooks/use-workspace-address.ts";
 import { Tooltip } from "@archboard/ui-kit/components";
-import { paneAddressOf, paneKeyFor } from "#ui/rules/canvas/reading/address.ts";
+import {
+	paneAddressOf,
+	paneKeyFor,
+} from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import { RecordingStage } from "#ui/walkthroughs/recording/components/RecordingStage.tsx";
 import { OrbStageProvider, VoiceSurfaceProvider } from "@archboard/workbench/voice";
 import { AnswerFilesContext } from "@archboard/workbench/agent";

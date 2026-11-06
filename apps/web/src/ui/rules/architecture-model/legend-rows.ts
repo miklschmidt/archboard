@@ -5,9 +5,12 @@
 
 import { LINE_MARKS } from "@archboard/renderer/picture";
 import type { Model, projectModel } from "@archboard/model/content";
-import type { AppliedAppearance, PictureLegend } from "#ui/clients/canvas/reads/drawings.ts";
+import type {
+	AppliedAppearance,
+	PictureLegend,
+} from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { openModules } from "#ui/rules/architecture-model/expansion.ts";
-import { kindLookOf } from "#ui/rules/canvas/reading/kind-look.ts";
+import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
 type Projection = ReturnType<typeof projectModel>;
 type Connection = Projection["connections"][number];

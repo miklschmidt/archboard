@@ -31,11 +31,14 @@ import {
 	driveFramesFrom,
 	type SteppedClock,
 } from "@archboard/ui-kit/frame-clock";
-import { chooseLayoutEngine } from "#ui/clients/canvas/reads/layout-engine.ts";
-import { pictureSource, takePicturesFrom } from "#ui/clients/canvas/reads/picture-source.ts";
-import { readRetainedFrom } from "#ui/clients/canvas/reads/retained-reads.ts";
-import { stageOf } from "#ui/clients/canvas/picture/picture-stage.ts";
-import { sameModelName } from "#ui/rules/canvas/reading/address.ts";
+import { chooseLayoutEngine } from "#ui/architecture-drawing/canvas/picture/clients/layout-engine.ts";
+import {
+	pictureSource,
+	takePicturesFrom,
+} from "#ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts";
+import { readRetainedFrom } from "#ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts";
+import { stageOf } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts";
+import { sameModelName } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { ReplayStage } from "#ui/walkthroughs/replay/components/ReplayStage.tsx";
 import { FrameReadiness } from "#ui/walkthroughs/replay/clients/frame-readiness.ts";

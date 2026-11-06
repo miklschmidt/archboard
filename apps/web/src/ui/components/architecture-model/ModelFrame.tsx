@@ -5,12 +5,12 @@ import type { JSX, ReactNode } from "react";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
 import { RiRefreshLine } from "@remixicon/react";
 import { Button } from "@archboard/ui-kit/components";
-import { usePaneChrome } from "#ui/hooks/canvas/use-pane-chrome.ts";
+import { usePaneChrome } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts";
 import {
 	PaneHeaderRow,
 	PaneHeaderStart,
 	PaneHeaderEnd,
-} from "#ui/components/canvas/PaneHeaderFrame.tsx";
+} from "#ui/architecture-drawing/canvas/presentation/components/PaneHeaderFrame.tsx";
 
 interface ModelErrorProps {
 	/** Lay the error over a kept picture, which it never moves. */

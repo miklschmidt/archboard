@@ -1,7 +1,11 @@
-import { useAutoFit } from "#ui/hooks/canvas/use-auto-fit.ts";
-import { beatFocus, beatLight, subjectMarks } from "#ui/rules/canvas/walkthrough/narrative.ts";
-import { moveCameraByKey } from "#ui/clients/canvas/picture/camera-keys.ts";
-import { useLighting } from "#ui/hooks/canvas/use-lighting.ts";
+import { useAutoFit } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts";
+import {
+	beatFocus,
+	beatLight,
+	subjectMarks,
+} from "#ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts";
+import { moveCameraByKey } from "#ui/architecture-drawing/canvas/picture/clients/camera-keys.ts";
+import { useLighting } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-lighting.ts";
 import {
 	useCallback,
 	useEffect,
@@ -14,36 +18,48 @@ import {
 } from "react";
 import type { DiagramBox } from "@archboard/model/render-reply";
 import type { projectModel } from "@archboard/model/content";
-import { CameraSurface } from "#ui/components/canvas/CameraSurface.tsx";
-import { LeavingPart } from "#ui/components/canvas/LeavingPart.tsx";
-import { useCameraWith, type PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
-import { seenFromFar, type FitTarget } from "#ui/rules/canvas/camera/camera.ts";
+import { CameraSurface } from "#ui/architecture-drawing/canvas/presentation/components/CameraSurface.tsx";
+import { LeavingPart } from "#ui/architecture-drawing/canvas/presentation/components/LeavingPart.tsx";
+import {
+	useCameraWith,
+	type PictureCamera,
+} from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
+import {
+	seenFromFar,
+	type FitTarget,
+} from "#ui/architecture-drawing/canvas/picture/camera/rules/camera.ts";
 import { ModelDoorTip } from "#ui/components/architecture-model/ModelDoorTip.tsx";
 import { ModelEmptyReading } from "#ui/components/architecture-model/ModelEmptyReading.tsx";
 import { ModelLineTip } from "#ui/components/architecture-model/ModelLineTip.tsx";
-import { useDiagramGestures } from "#ui/hooks/canvas/use-diagram-gestures.ts";
-import { useLeaving } from "#ui/hooks/canvas/use-leaving.ts";
-import { usePeeked } from "#ui/hooks/canvas/use-peek.ts";
-import type { Trace } from "#ui/components/canvas/Peek.tsx";
+import { useDiagramGestures } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-diagram-gestures.ts";
+import { useLeaving } from "#ui/architecture-drawing/canvas/picture/hooks/use-leaving.ts";
+import { usePeeked } from "#ui/architecture-drawing/canvas/picture/hooks/use-peek.ts";
+import type { Trace } from "#ui/architecture-drawing/canvas/presentation/components/Peek.tsx";
 import { pictureReach } from "#ui/rules/architecture-model/picture-reach.ts";
-import { usePictureTransition } from "#ui/hooks/canvas/use-picture-transition.ts";
-import { useReveal } from "#ui/hooks/canvas/use-reveal.ts";
-import { useStageLook } from "#ui/hooks/canvas/use-stage-look.ts";
-import { useStickyHeads } from "#ui/hooks/canvas/use-sticky-heads.ts";
-import { useSweep } from "#ui/hooks/canvas/use-sweep.ts";
-import { useViewerMarks } from "#ui/hooks/canvas/use-viewer-marks.ts";
-import { markCodeWarnings } from "#ui/clients/canvas/subjects/code-marks.ts";
-import { surfaceMarks } from "#ui/clients/canvas/subjects/subjects.ts";
-import { usePresentationArrival } from "#ui/hooks/canvas/use-presentation-arrival.ts";
+import { usePictureTransition } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts";
+import { useReveal } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-reveal.ts";
+import { useStageLook } from "#ui/architecture-drawing/canvas/picture/hooks/use-stage-look.ts";
+import { useStickyHeads } from "#ui/architecture-drawing/canvas/picture/hooks/use-sticky-heads.ts";
+import { useSweep } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-sweep.ts";
+import { useViewerMarks } from "#ui/architecture-drawing/canvas/picture/hooks/use-viewer-marks.ts";
+import { markCodeWarnings } from "#ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts";
+import { surfaceMarks } from "#ui/architecture-drawing/canvas/picture/camera/clients/subjects.ts";
+import { usePresentationArrival } from "#ui/architecture-drawing/canvas/picture/hooks/use-presentation-arrival.ts";
 import { useCameraHandover } from "#ui/hooks/architecture-model/use-camera-handover.ts";
-import { useSubjectTip } from "#ui/hooks/canvas/use-subject-tip.ts";
-import { SubjectTipBox, TipPlace } from "#ui/components/canvas/SemanticSubjectTip.tsx";
-import { subjectTip, type TipTarget } from "#ui/clients/canvas/subjects/subject-tips.ts";
+import { useSubjectTip } from "#ui/architecture-drawing/canvas/picture/hooks/use-subject-tip.ts";
+import {
+	SubjectTipBox,
+	TipPlace,
+} from "#ui/architecture-drawing/canvas/presentation/components/SemanticSubjectTip.tsx";
+import {
+	subjectTip,
+	type TipTarget,
+} from "#ui/architecture-drawing/canvas/picture/clients/subject-tips.ts";
 import { useAreaSelection } from "#ui/hooks/architecture-model/use-area-selection.ts";
 import { useCameraMemory } from "#ui/hooks/architecture-model/use-camera-memory.ts";
 import { useDoorPick } from "#ui/hooks/architecture-model/use-door-pick.ts";
-import type { Departure } from "#ui/clients/canvas/picture/picture-departure.ts";
-import { useGradientsWhileShown } from "#ui/hooks/canvas/use-gradients-while-shown.ts";
+import type { Departure } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
+import { useGradientsWhileShown } from "#ui/architecture-drawing/canvas/picture/hooks/use-gradients-while-shown.ts";
 import { sceneFit, type AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 import { isDoor } from "#ui/rules/architecture-model/selected-subject.ts";
 

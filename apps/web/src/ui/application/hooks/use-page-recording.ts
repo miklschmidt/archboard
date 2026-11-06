@@ -11,7 +11,7 @@ import type { PaneList } from "#ui/application/rules/pane-list.ts";
 import type { BrowserWorkbenchMediaOwnerOptions } from "#ui/application/state/pane-handles.ts";
 import type { Workbench } from "#ui/application/hooks/use-workbench.ts";
 import type { WorkspaceAddress } from "#ui/panes/reading-routing/rules/address.ts";
-import { paneAddressOf } from "#ui/rules/canvas/reading/address.ts";
+import { paneAddressOf } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import { openWalkthroughRecorder } from "#ui/walkthroughs/recording/clients/open-recorder.ts";
 import { useWalkthroughRecording } from "#ui/walkthroughs/recording/hooks/use-walkthrough-recording.ts";
 import { type WalkthroughRecorder } from "#ui/walkthroughs/recording/state/recorder.ts";

@@ -1,6 +1,10 @@
 import type { projectModel } from "@archboard/model/content";
 import { openModules } from "#ui/rules/architecture-model/expansion.ts";
-import { reachOf, type Reach, type Way } from "#ui/rules/canvas/reading/reach.ts";
+import {
+	reachOf,
+	type Reach,
+	type Way,
+} from "#ui/architecture-drawing/canvas/picture/camera/rules/reach.ts";
 
 type Projection = ReturnType<typeof projectModel>;
 

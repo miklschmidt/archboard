@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { EXPLORING_MS } from "@archboard/timing";
 import type { ModelFlow } from "@archboard/model/content";
-import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import type { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { cardBeside } from "#ui/rules/architecture-model/expansion.ts";

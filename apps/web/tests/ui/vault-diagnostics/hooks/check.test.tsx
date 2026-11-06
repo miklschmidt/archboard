@@ -4,7 +4,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { act, createElement, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 
-import { readKeys } from "#ui/clients/canvas/reads/read-keys.ts";
+import { readKeys } from "#ui/architecture-drawing/canvas/picture/reads/clients/read-keys.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import {
 	useVaultCheck,

@@ -61,7 +61,7 @@ import {
 	type SelectedSubject,
 } from "#ui/rules/architecture-model/selected-subject.ts";
 import type { TimelineEntry } from "#ui/rules/architecture-model/state-timeline.ts";
-import type { KindLook } from "#ui/rules/canvas/reading/kind-look.ts";
+import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
 type Module = Model["modules"][number];
 type Relationship = Connection["joins"][number];
