@@ -12,8 +12,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { SAMPLES_PER_FRAME } from "#shared/protocol/talk.ts";
-import { openVideoEncoder } from "#runtime/processes/video-encoder.ts";
-import { type FfmpegCommand } from "#runtime/services/ffmpeg.ts";
+import { openVideoEncoder } from "#runtime/video-encoding/processes/video-encoder.ts";
+import { type FfmpegCommand } from "#runtime/video-encoding/services/ffmpeg.ts";
 
 let root: string;
 let counter = 0;

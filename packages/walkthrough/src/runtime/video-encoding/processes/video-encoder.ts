@@ -10,7 +10,7 @@ import { RECORDER_MS } from "@archboard/timing";
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";
 import { SAMPLES_PER_FRAME, TALK_FRAME_RATE, TALK_SAMPLE_RATE } from "#shared/protocol/talk.ts";
 
-import { tailOf, type FfmpegCommand } from "#runtime/services/ffmpeg.ts";
+import { tailOf, type FfmpegCommand } from "#runtime/video-encoding/services/ffmpeg.ts";
 
 /** Why ffmpeg did not make the file. */
 class VideoEncodingError extends Error {

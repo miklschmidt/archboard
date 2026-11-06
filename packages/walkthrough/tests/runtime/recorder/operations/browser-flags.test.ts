@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { renderFlags } from "#runtime/operations/render-talk.ts";
+import { renderFlags } from "#runtime/recorder/operations/render-talk.ts";
 
 // The render draws every frame of a recorded talk in software, so a frame depends on nothing but
 // the talk, and captures nothing of the tab or the machine: no GPU, no tab capture, no

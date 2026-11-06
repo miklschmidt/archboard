@@ -41,12 +41,15 @@ import {
 	type HeadlessChromium,
 	type HeadlessWindow,
 } from "@archboard/renderer/headless-chromium";
-import { openVideoEncoder, type VideoEncoder } from "#runtime/processes/video-encoder.ts";
-import { type FfmpegCommand } from "#runtime/services/ffmpeg.ts";
-import { WalkthroughRecordingError } from "#runtime/operations/recording-errors.ts";
-import { FrameOrder } from "#runtime/operations/frame-order.ts";
-import { voiceSamples } from "#runtime/store/talk-files.ts";
-import { resolveEncoder, startBrowser } from "#runtime/services/recording-tools.ts";
+import {
+	openVideoEncoder,
+	type VideoEncoder,
+} from "#runtime/video-encoding/processes/video-encoder.ts";
+import { type FfmpegCommand } from "#runtime/video-encoding/services/ffmpeg.ts";
+import { WalkthroughRecordingError } from "#runtime/recorder/operations/recording-errors.ts";
+import { FrameOrder } from "#runtime/recorder/operations/frame-order.ts";
+import { voiceSamples } from "#runtime/recorder/store/talk-files.ts";
+import { resolveEncoder, startBrowser } from "#runtime/recorder/services/recording-tools.ts";
 
 /** What to render, and where. */
 interface RenderTalkRequest {

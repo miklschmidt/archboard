@@ -5,7 +5,7 @@
   "responsibility": "Pipes the frames and the voice into one ffmpeg process",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/walkthrough/src/runtime/processes/video-encoder.ts",
+    "path": "packages/walkthrough/src/runtime/video-encoding/processes/video-encoder.ts",
     "symbol": "openVideoEncoder"
   },
   "schemaVersion": 1,
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/processes/video-encoder.ts",
+        "path": "packages/walkthrough/src/runtime/video-encoding/processes/video-encoder.ts",
         "symbol": "spawn"
       },
       "id": "vKEsyHFk/vKEsyHFk#FCRYdY4h",
@@ -36,7 +36,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/processes/video-encoder.ts",
+        "path": "packages/walkthrough/src/runtime/video-encoding/processes/video-encoder.ts",
         "symbol": "Bun.spawn"
       },
       "id": "vKEsyHFk/SMjRfwN3#KIRE5kGi",

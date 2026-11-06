@@ -6,7 +6,7 @@
   "description": "One frame is 1/30 s of talk, exactly 1600 samples of the voice, so frame n and sample 1600n are the same moment. Chromium draws in software (--disable-gpu) and without partial raster, so two renders of a talk are identical, and without the frame-rate limit, so a screenshot does not wait for the display. A screenshot costs several times what drawing a frame does, so the talk is drawn by up to six pages at once, a quarter of the machine's threads and one for every 300 frames: page k captures seconds k, k + n and so on, and draws the frames between without capturing them, since a frame depends on the ones before it. A frame is the same whichever page draws it. Before the first frame each page proves it counts the talk's frames and its window is 1920x1080. A frame is taken as JPEG at quality 92, since the picture is encoded again as 4:2:0 anyway. Handed no ffmpeg, as semantic replay hands none, it finds and proves one first. The file moves into place only once the browsers have stopped and ffmpeg has exited. A render that fails on any page stops the others, keeps the talk and names the replay command that renders it again.\n\nChromium also disables threaded animation so the stepped replay clock owns compositor animation timing. Canonical frame readiness requires its exact drawn revision and requested beat. The clock advances motion without waiting for a future arrival.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/walkthrough/src/runtime/operations/render-talk.ts"
+    "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#EWBbxckL",
@@ -20,7 +20,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
         "symbol": "HeadlessChromium.openWindow"
       },
       "id": "vKEsyHFk/SMjRfwN3#gbjuMdZa",
@@ -38,7 +38,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
         "symbol": "DevTools.call"
       },
       "id": "vKEsyHFk/SMjRfwN3#8rmq24D9",
@@ -51,7 +51,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
         "symbol": "openVideoEncoder"
       },
       "id": "vKEsyHFk/SMjRfwN3#eq4BIHlx",
@@ -64,7 +64,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
         "symbol": "startBrowser"
       },
       "id": "vKEsyHFk/SMjRfwN3#sXypEOAH",
@@ -77,7 +77,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
         "symbol": "FrameOrder"
       },
       "id": "vKEsyHFk/SMjRfwN3#g7m7u2iu",
@@ -90,7 +90,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
         "symbol": "voiceSamples"
       },
       "id": "vKEsyHFk/SMjRfwN3#uJ0o2UWM",

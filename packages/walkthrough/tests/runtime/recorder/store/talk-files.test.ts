@@ -27,7 +27,7 @@ import {
 	stateTalkPlace,
 	writeTalk,
 	type TalkPlace,
-} from "#runtime/store/talk-files.ts";
+} from "#runtime/recorder/store/talk-files.ts";
 
 import { fixtureTalk, fixtureVoice, VOICE_SAMPLES } from "#tests/runtime/support/talk-fixture.ts";
 

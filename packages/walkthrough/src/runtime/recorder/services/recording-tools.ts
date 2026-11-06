@@ -15,8 +15,12 @@ import {
 	launchHeadlessChromium,
 	type HeadlessChromium,
 } from "@archboard/renderer/headless-chromium";
-import { findFfmpeg, probeFfmpeg, type FfmpegCommand } from "#runtime/services/ffmpeg.ts";
-import { WalkthroughRecordingError } from "#runtime/operations/recording-errors.ts";
+import {
+	findFfmpeg,
+	probeFfmpeg,
+	type FfmpegCommand,
+} from "#runtime/video-encoding/services/ffmpeg.ts";
+import { WalkthroughRecordingError } from "#runtime/recorder/operations/recording-errors.ts";
 
 /**
  * The container a video file's name asks for, by its extension in any case.

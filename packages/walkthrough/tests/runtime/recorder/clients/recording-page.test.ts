@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { RECORDER_MS } from "@archboard/timing";
 import type { RecordingState } from "#shared/protocol/recording-page.ts";
-import { drive, type RecordingPageHandle } from "#runtime/clients/recording-page.ts";
+import { drive, type RecordingPageHandle } from "#runtime/recorder/clients/recording-page.ts";
 
 // An interrupt stops a recording at whatever call it lands in. A page call is
 // where the recorder spends most of its time, and an interrupt that lands in

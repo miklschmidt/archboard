@@ -49,17 +49,17 @@ import {
 	type HeadlessWindow,
 } from "@archboard/renderer/headless-chromium";
 
-import { WalkthroughRecordingError } from "#runtime/operations/recording-errors.ts";
-import { resolveEncoder, startBrowser } from "#runtime/services/recording-tools.ts";
+import { WalkthroughRecordingError } from "#runtime/recorder/operations/recording-errors.ts";
+import { resolveEncoder, startBrowser } from "#runtime/recorder/services/recording-tools.ts";
 import {
 	RecordingPageError,
 	drive,
 	messageOf,
 	type RecordingPageHandle,
-} from "#runtime/clients/recording-page.ts";
-import { renderTalk } from "#runtime/operations/render-talk.ts";
-import { writeSilence } from "#runtime/store/silence.ts";
-import { voiceSamples, writeTalk, type TalkPlace } from "#runtime/store/talk-files.ts";
+} from "#runtime/recorder/clients/recording-page.ts";
+import { renderTalk } from "#runtime/recorder/operations/render-talk.ts";
+import { writeSilence } from "#runtime/recorder/store/silence.ts";
+import { voiceSamples, writeTalk, type TalkPlace } from "#runtime/recorder/store/talk-files.ts";
 import type { VaultCheckSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 

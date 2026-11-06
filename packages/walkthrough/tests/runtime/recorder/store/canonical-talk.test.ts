@@ -1,4 +1,4 @@
-import { drive, type RecordingPageHandle } from "#runtime/clients/recording-page.ts";
+import { drive, type RecordingPageHandle } from "#runtime/recorder/clients/recording-page.ts";
 import { afterEach, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -7,7 +7,7 @@ import { readArchitectureModel } from "@archboard/model/store-read";
 import { editArchitectureModule, claimArchitectureSubjects } from "@archboard/model/store-write";
 import { TalkSchema, talkFrom } from "#shared/protocol/talk.ts";
 import { recordingPageUrl } from "@archboard/walkthrough/recorder";
-import { readTalk, writeTalk, askedTalkPlace } from "#runtime/store/talk-files.ts";
+import { readTalk, writeTalk, askedTalkPlace } from "#runtime/recorder/store/talk-files.ts";
 import { fixtureTalk, fixtureVoice } from "#tests/runtime/support/talk-fixture.ts";
 
 const homes: string[] = [];

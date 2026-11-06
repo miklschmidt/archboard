@@ -5,7 +5,7 @@
   "responsibility": "Resolves recording executables and starts the recording browser",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/walkthrough/src/runtime/services/recording-tools.ts"
+    "path": "packages/walkthrough/src/runtime/recorder/services/recording-tools.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#L1cYIenF",
@@ -19,7 +19,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/services/recording-tools.ts",
         "symbol": "discoveredChromiumPath"
       },
       "id": "vKEsyHFk/SMjRfwN3#a0oemoX5",
@@ -37,7 +37,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/services/recording-tools.ts",
         "symbol": "launchHeadlessChromium"
       },
       "id": "vKEsyHFk/SMjRfwN3#BN01aJai",
@@ -50,7 +50,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/services/recording-tools.ts",
         "symbol": "probeFfmpeg"
       },
       "id": "vKEsyHFk/SMjRfwN3#5cL4zDLx",
@@ -63,7 +63,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/services/recording-tools.ts",
         "symbol": "launchHeadlessChromium"
       },
       "id": "vKEsyHFk/vKEsyHFk#zSvgwAHH",

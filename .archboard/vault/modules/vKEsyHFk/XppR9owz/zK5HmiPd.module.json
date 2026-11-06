@@ -46,7 +46,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "writeTalk"
       },
       "id": "vKEsyHFk/vKEsyHFk#OPwTCiKt",

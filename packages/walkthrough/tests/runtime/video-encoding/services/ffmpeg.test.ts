@@ -10,7 +10,11 @@ import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { findFfmpeg, probeFfmpeg, type FfmpegCommand } from "#runtime/services/ffmpeg.ts";
+import {
+	findFfmpeg,
+	probeFfmpeg,
+	type FfmpegCommand,
+} from "#runtime/video-encoding/services/ffmpeg.ts";
 
 const signal = new AbortController().signal;
 let root: string;

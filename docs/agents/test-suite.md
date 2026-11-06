@@ -252,11 +252,11 @@ The same owner also replays an original legacy board recording from its captured
 That owner requires `RENDER_FAILED`, preserves the talk, and leaves no output or partial file.
 These module owners cover the supporting contracts:
 
-- `packages/walkthrough/tests/runtime/services` and `processes`: finding and running ffmpeg.
+- `packages/walkthrough/tests/runtime/video-encoding/services` and `processes`: finding and running ffmpeg.
 - `packages/walkthrough/tests/shared/protocol`: the talk's contract.
 - `apps/web/tests/ui/rules/walkthrough-replay`: the frame that shows each event.
 - `packages/ui-kit/tests/ui/state/frame-clock`: the stepped clock.
-- `packages/walkthrough/tests/runtime/store` and `operations`: the talk on disk and the browsers'
+- `packages/walkthrough/tests/runtime/recorder/store` and `operations`: the talk on disk and the browsers'
   flags.
 
 The system owners above need a Chromium-family executable
@@ -598,7 +598,7 @@ It covers beat identity, claims, stale tokens, exact retry, retained inputs, pin
 The proposal owner covers independent compact narrative and beat subjects.
 
 `tests/system/models/model-walkthroughs.test.ts` owns CLI and HTTP routing, schema agreement, retained selection, and refused output preservation.
-`packages/walkthrough/tests/runtime/store/canonical-talk.test.ts` owns the controlled page load, exact payload storage, and revision refusal through existing recording contracts.
+`packages/walkthrough/tests/runtime/recorder/store/canonical-talk.test.ts` owns the controlled page load, exact payload storage, and revision refusal through existing recording contracts.
 
 `tests/system/server-state/canonical-walkthrough-replay.test.ts` owns offline canonical replay through the existing Chromium and encoder interface.
 It removes the source repository and compares every frame across one-page and two-page rendering.
