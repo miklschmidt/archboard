@@ -18,7 +18,7 @@
 				"packages/renderer/assets/theme.css",
 				"packages/timing/src",
 				"packages/renderer/assets/fonts/*.ttf",
-				"apps/web/src/ui/components/shell/Brand.tsx",
+				"apps/web/src/ui/shell/components/Brand.tsx",
 				"scripts/readme-assets/banner.ts",
 				"scripts/readme-assets/lockup.ts",
 				"scripts/readme-assets/browser.ts",

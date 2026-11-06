@@ -69,7 +69,7 @@ function nothing(): void {
 }
 
 await mock.module("@tanstack/react-router", () => ({ useRouter: routerDouble }));
-await mock.module("#ui/hooks/architecture-model/use-model-location.ts", () => ({
+await mock.module("#ui/panes/reading-routing/hooks/use-model-location.ts", () => ({
 	useModelLocation: locationDouble,
 }));
 const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");

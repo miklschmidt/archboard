@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, type JSX } from "react";
 
-import { Tree } from "#ui/components/shell/Tree.tsx";
+import { Tree } from "#ui/shell/components/Tree.tsx";
 import { useRevealedRow } from "#ui/hooks/architecture-model/use-revealed-row.ts";
 import {
 	treeRows,

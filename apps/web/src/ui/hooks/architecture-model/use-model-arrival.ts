@@ -1,9 +1,9 @@
-import { ModelArrivalContext } from "#ui/state/reading-routing/model-arrival.ts";
+import { ModelArrivalContext } from "#ui/panes/reading-routing/state/model-arrival.ts";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { z } from "zod";
 import type { PanePresentRequestSchema } from "@archboard/model/pane-context";
-import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
-import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
+import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messages.ts";
+import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 
 /**
  * Apply an external reading before starting its requested captured presentation.

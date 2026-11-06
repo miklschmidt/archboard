@@ -5,7 +5,7 @@
   "responsibility": "Defines the outcomes of requests to open a model",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/rules/reading-routing/contracts.ts"
+    "path": "apps/web/src/ui/panes/reading-routing/rules/contracts.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#2QnHyWTR",

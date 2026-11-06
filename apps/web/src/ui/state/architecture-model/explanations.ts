@@ -1,6 +1,6 @@
 import { createContext } from "react";
-import type { UserMarks } from "#ui/state/pane-session/user-marks.ts";
-import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
+import type { UserMarks } from "#ui/panes/pane-session/state/user-marks.ts";
+import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import type { ExplanationInvocation } from "#ui/clients/architecture-model/explanations.ts";
 
 const ModelExplanationContext = createContext<{

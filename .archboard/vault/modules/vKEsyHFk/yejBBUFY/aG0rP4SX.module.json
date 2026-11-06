@@ -10,7 +10,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/pane-session/tab-session.ts"
+    "path": "apps/web/src/ui/panes/tab-session/clients/tab-session.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#aG0rP4SX",

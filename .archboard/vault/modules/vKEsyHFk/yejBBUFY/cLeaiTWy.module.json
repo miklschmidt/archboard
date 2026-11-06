@@ -9,12 +9,12 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/application/shown-conversation.ts",
+    "path": "apps/web/src/ui/application/clients/shown-conversation.ts",
     "symbol": "conversationActivation"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#cLeaiTWy",
-  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -37,7 +37,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/application/shown-conversation.ts",
+        "path": "apps/web/src/ui/application/clients/shown-conversation.ts",
         "symbol": "showConversation"
       },
       "id": "vKEsyHFk/yejBBUFY#zd3E41io",

@@ -20,7 +20,7 @@ import { useModelSelection } from "#ui/hooks/architecture-model/use-model-select
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
 import type { DrivenPlace } from "#ui/hooks/canvas/use-walkthrough.ts";
 import { useWalkthroughBeat } from "#ui/hooks/architecture-model/use-walkthrough-beat.ts";
-import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
+import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 
 const ModelDiagram = lazy(async () => {
 	const module = await import("#ui/components/architecture-model/ModelDiagram.tsx");

@@ -7,7 +7,7 @@ import { SHOP, shopReading } from "#tests/ui/support/architecture-model/scene.ts
 import { ModelExplanationContext } from "#ui/state/architecture-model/explanations.ts";
 import type { ExplanationInvocation } from "#ui/clients/architecture-model/explanations.ts";
 import { comparedWith } from "#ui/rules/architecture-model/comparison-choices.ts";
-import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
+import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });

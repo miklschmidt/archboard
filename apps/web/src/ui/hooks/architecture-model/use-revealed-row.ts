@@ -1,5 +1,5 @@
 import { useEffect, type RefObject } from "react";
-import { ROW_HEIGHT } from "#ui/rules/shell/tree-grid.ts";
+import { ROW_HEIGHT } from "#ui/shell/rules/tree-grid.ts";
 
 /**
  * Keep a row in view when it changes, unless the person is using the list: a row moving under

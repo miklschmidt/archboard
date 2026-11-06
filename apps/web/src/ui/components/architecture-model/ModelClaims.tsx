@@ -7,7 +7,7 @@ import {
 	architectureClaimsQuery,
 	architectureModelKeys,
 } from "#ui/clients/architecture-model/queries.ts";
-import { clockTime } from "#ui/rules/shell/time.ts";
+import { clockTime } from "#ui/shell/rules/time.ts";
 
 interface ModelClaimsProps {
 	vault: string;

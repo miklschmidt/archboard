@@ -9,7 +9,7 @@ import {
 } from "react";
 
 import { Command, Dialog, IconButton, usesCommandKey } from "@archboard/ui-kit/components";
-import { useFindShortcut } from "#ui/hooks/shell/use-find-shortcut.ts";
+import { useFindShortcut } from "#ui/shell/hooks/use-find-shortcut.ts";
 import { findInModel, type FindHit, type FindKind } from "#ui/rules/architecture-model/search.ts";
 
 /** What a hit is called, for a hit that is not a module. */

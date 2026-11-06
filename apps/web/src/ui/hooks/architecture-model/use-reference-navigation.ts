@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Model } from "@archboard/model/content";
 import type { useModelNavigation } from "#ui/hooks/architecture-model/use-model-navigation.ts";
-import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
+import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import { ArchitectureReadError } from "#ui/clients/architecture-model/queries.ts";
 
 type Reference = NonNullable<Model["resolvedReferences"]>[number];

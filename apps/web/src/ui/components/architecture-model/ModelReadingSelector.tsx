@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState, type JSX } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { CheckpointRows } from "#ui/clients/architecture-model/queries.ts";
 import type { Model } from "@archboard/model/content";
-import { Tree } from "#ui/components/shell/Tree.tsx";
+import { Tree } from "#ui/shell/components/Tree.tsx";
 import { sharedNameTouches } from "#ui/rules/architecture-model/draft-touches.ts";
 import { checkpointTime } from "#ui/rules/architecture-model/history-time.ts";
 import {
@@ -16,7 +16,7 @@ import {
 } from "#ui/rules/architecture-model/record-rows.ts";
 import { proposalStanding } from "#ui/rules/architecture-model/standing.ts";
 import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
-import { NAME_GAP } from "#ui/rules/shell/tree-grid.ts";
+import { NAME_GAP } from "#ui/shell/rules/tree-grid.ts";
 
 interface ModelReadingSelectorProps {
 	checkpoint: string | null;

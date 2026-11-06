@@ -1,0 +1,239 @@
+// Where agents are working, whether or not anybody has the model open
+// (ADR 0022): one entry per model an agent claims or has just written, with
+// what it last said it was doing and how long ago. Gathered at the foot of the
+// navigator so the tree above never grows or reorders because of activity.
+// Entries keep the order they arrived in; the block is absent when nothing is
+// live. Its lamps sit in the tree's marker column and its words start where
+// the names of the top rows start.
+
+import { useCallback, useState, type JSX, type MouseEvent } from "react";
+
+import { SHELL_CLOCK_MS } from "@archboard/timing";
+import { ActivityLamp } from "#ui/shell/components/ActivityLamp.tsx";
+import { PaneChips } from "#ui/shell/components/PaneChips.tsx";
+import { RepositoryName } from "@archboard/ui-kit/components";
+import { shortAge, useClock } from "@archboard/ui-kit/time";
+import {
+	FACTS_GAP,
+	FACTS_INSET,
+	MARKER_WIDTH,
+	markerX,
+	NAME_GAP,
+	nameX,
+	ROW_GUTTER,
+} from "#ui/shell/rules/tree-grid.ts";
+import type { AgentActivityEntry } from "#ui/panes/pane-session/rules/session-types.ts";
+
+/** The heading starts where the names do. */
+const HEADING_STYLE = { paddingLeft: nameX(0) } as const;
+
+/** The list keeps the tree's gutter. */
+const LIST_STYLE = { paddingInline: ROW_GUTTER } as const;
+
+/** An entry's lamp in the marker column and its facts on the tree's right edge. */
+const ENTRY_STYLE = {
+	paddingLeft: markerX(0) - ROW_GUTTER,
+	paddingRight: FACTS_INSET - ROW_GUTTER,
+} as const;
+
+/** The lamp's column, as wide as the tree's marker column. */
+const LAMP_STYLE = { width: MARKER_WIDTH } as const;
+
+/** The name keeps the tree's gap from the marker column. */
+const NAME_GAP_STYLE = { marginLeft: NAME_GAP } as const;
+
+/** The facts keep the tree's gap from the name. */
+const FACTS_STYLE = { marginLeft: FACTS_GAP } as const;
+
+/** The doing line starts where the name does. */
+const DOING_STYLE = { paddingLeft: nameX(0) - markerX(0) } as const;
+
+/** One entry as the block draws it. */
+interface WorkingEntry {
+	readonly activity: AgentActivityEntry;
+	/** The model's name as the vault lists it, or its key while unlisted. */
+	readonly name: string;
+	/** The repository the model is in (ADR 0050). */
+	readonly repository: string;
+	/** Whether the entry names its repository: the navigator lists more than one. */
+	readonly named: boolean;
+	/** The letters of the panes showing it, when there are two. */
+	readonly onScreen: readonly string[];
+}
+
+/** Inputs for the block. */
+interface WorkingNowProps {
+	readonly entries: readonly WorkingEntry[];
+	/** Open a model of a repository, in the active pane or beside it. */
+	readonly onOpen: (model: string, beside: boolean, repository: string) => void;
+}
+
+/**
+ * The key an entry is kept by: two repositories can each have a model of one name.
+ * @param entry The entry.
+ * @returns The key.
+ */
+function entryKey(entry: WorkingEntry): string {
+	return `${entry.repository}|${entry.activity.model}`;
+}
+
+/**
+ * The models in the order they first appeared, so a new entry never moves the others.
+ * @param entries The entries now.
+ * @returns The entries in arrival order.
+ */
+function useArrivalOrder(entries: readonly WorkingEntry[]): WorkingEntry[] {
+	const [order, setOrder] = useState<readonly string[]>([]);
+	const keys = entries.map(entryKey);
+	const kept = order.filter((key) => keys.includes(key));
+	const next = [...kept, ...keys.filter((key) => !kept.includes(key))];
+	if (next.length !== order.length || next.some((key, index) => key !== order[index])) {
+		setOrder(next);
+	}
+	return next.flatMap((key) => entries.filter((entry) => entryKey(entry) === key));
+}
+
+/**
+ * Where agents are working.
+ * @param props The entries and the open handler.
+ * @returns The block, or nothing while no agent works anywhere.
+ */
+function WorkingNow(props: WorkingNowProps): JSX.Element | null {
+	const ordered = useArrivalOrder(props.entries);
+	const now = useClock(SHELL_CLOCK_MS.ageTick, ordered.length > 0);
+	if (ordered.length === 0) return null;
+	return (
+		<section
+			aria-label="Working now"
+			data-slot="working-now"
+			className="border-border flex max-h-[45%] shrink-0 flex-col border-t"
+		>
+			<h2
+				style={HEADING_STYLE}
+				className="text-body text-muted-foreground flex h-8 shrink-0 items-center gap-1.5 font-medium"
+			>
+				Working now
+				<span className="font-mono">{ordered.length}</span>
+			</h2>
+			<ul style={LIST_STYLE} className="flex min-h-0 flex-col overflow-y-auto pb-2">
+				{ordered.map((entry) => (
+					<WorkingItem key={entryKey(entry)} entry={entry} now={now} onOpen={props.onOpen} />
+				))}
+			</ul>
+		</section>
+	);
+}
+
+/** Inputs for one entry. */
+interface WorkingItemProps {
+	readonly entry: WorkingEntry;
+	readonly now: number;
+	readonly onOpen: (model: string, beside: boolean, repository: string) => void;
+}
+
+/**
+ * One model an agent works on: its lamp, its name, how long ago the agent
+ * spoke, and what it said.
+ * @param props The entry, the clock and the open handler.
+ * @returns The entry.
+ */
+function WorkingItem(props: WorkingItemProps): JSX.Element {
+	const { entry, now, onOpen } = props;
+	const { claims, model } = entry.activity;
+	const { repository } = entry;
+	const at = activityTime(entry.activity);
+	const handleClick = useCallback(
+		(event: MouseEvent<HTMLButtonElement>) => onOpen(model, event.altKey, repository),
+		[onOpen, model, repository],
+	);
+	return (
+		<li>
+			<button
+				type="button"
+				onClick={handleClick}
+				style={ENTRY_STYLE}
+				className="hover:bg-sidebar-accent rounded-control flex w-full min-w-0 flex-col gap-0.5 py-1.5 text-left"
+			>
+				<span className="flex w-full min-w-0 items-center">
+					<span style={LAMP_STYLE} className="flex shrink-0 justify-center">
+						<ActivityLamp state={claims.length === 0 ? "wrote" : "claimed"} />
+					</span>
+					<span style={NAME_GAP_STYLE} className="text-control min-w-0 flex-1 truncate">
+						<span className="font-medium">{entry.name}</span>
+						{entry.named ? (
+							<span className="text-muted-foreground">
+								<span className="sr-only">, in</span> <RepositoryName identity={repository} />
+							</span>
+						) : null}
+					</span>
+					<span style={FACTS_STYLE} className="flex shrink-0 items-center gap-1.5">
+						<PaneChips letters={entry.onScreen} />
+						<Age at={at} now={now} />
+					</span>
+				</span>
+				<ActivityDetails activity={entry.activity} />
+			</button>
+		</li>
+	);
+}
+
+/**
+ * Prefer the last durable operation time, then the first active claim's start.
+ * @param activity The current model snapshot.
+ * @returns The observed time, or absence when no activity is known.
+ */
+function activityTime(activity: AgentActivityEntry): string | null {
+	return activity.doing?.at ?? activity.claims[0]?.since ?? null;
+}
+
+/**
+ * Show each concurrent claim without implying exclusive model ownership. A writer is an
+ * identity such as a thread's, which says nothing to a reader, so only its words show.
+ * @param props The model's observed claims and durable operation.
+ * @param props.activity The exact server snapshot.
+ * @returns The last doing line and each current claim's own reason.
+ */
+function ActivityDetails({ activity }: { activity: AgentActivityEntry }): JSX.Element {
+	return (
+		<>
+			{activity.doing !== null && (
+				<span
+					data-slot="activity-doing"
+					style={DOING_STYLE}
+					className="text-body text-muted-foreground truncate"
+				>
+					{activity.doing.doing}
+				</span>
+			)}
+			{activity.claims.map((claim) => (
+				<span
+					key={claim.id}
+					data-claim-id={claim.id}
+					style={DOING_STYLE}
+					title={claim.reason}
+					className="text-body text-muted-foreground truncate"
+				>
+					{claim.reason}
+				</span>
+			))}
+		</>
+	);
+}
+
+/**
+ * How long ago the agent spoke.
+ * @param props The stamp and the clock.
+ * @param props.at When, or null.
+ * @param props.now The clock.
+ * @returns The age, or nothing.
+ */
+function Age(props: { readonly at: string | null; readonly now: number }): JSX.Element | null {
+	if (props.at === null) return null;
+	return (
+		<time dateTime={props.at} className="text-technical text-muted-foreground shrink-0 font-mono">
+			{shortAge(props.at, props.now)}
+		</time>
+	);
+}
+
+export { WorkingNow, type WorkingEntry };

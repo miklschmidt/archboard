@@ -7,15 +7,15 @@
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import { cn } from "@archboard/ui-kit/components";
-import { TimelineLane, type LaneGeometry } from "#ui/components/variant-lifecycle/TimelineLane.tsx";
-import { VariantMark } from "#ui/components/variant-lifecycle/VariantMark.tsx";
-import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
+import { TimelineLane, type LaneGeometry } from "#ui/variant-lifecycle/components/TimelineLane.tsx";
+import { VariantMark } from "#ui/variant-lifecycle/components/VariantMark.tsx";
+import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import {
 	standingWords,
 	type StateTimeline,
 	type TimelineEntry,
 } from "#ui/rules/architecture-model/state-timeline.ts";
-import { timelineLanes, type Lane } from "#ui/rules/variant-lifecycle/timeline.ts";
+import { timelineLanes, type Lane } from "#ui/variant-lifecycle/rules/timeline.ts";
 
 /** Inputs for the timeline. */
 interface ModelStateTimelineProps {

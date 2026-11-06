@@ -5,7 +5,7 @@ import {
 	architectureModelKeys,
 	architectureModelQuery,
 } from "#ui/clients/architecture-model/queries.ts";
-import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
+import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import { ModelHeader, ModelError } from "#ui/components/architecture-model/ModelFrame.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
 import { ModelPreviewOriginals } from "#ui/components/architecture-model/ModelPreviewOriginals.tsx";

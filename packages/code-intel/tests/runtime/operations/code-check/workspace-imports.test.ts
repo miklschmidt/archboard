@@ -13,8 +13,8 @@ const scratch = mkdtempSync(join(tmpdir(), "archboard-workspace-imports-"));
 const checkout = join(scratch, "checkout");
 const vault = join(scratch, "vault");
 const REPO = "github.com/test/workspaces";
-const CORE = "apps/web/src/ui/state/pane-session/pane-core.ts";
-const SENDER = "apps/web/src/ui/clients/pane-session/pane-report-sender.ts";
+const CORE = "apps/web/src/ui/panes/pane-session/state/pane-core.ts";
+const SENDER = "apps/web/src/ui/panes/pane-session/clients/pane-report-sender.ts";
 const OPEN = "packages/code-opener/src/ui/clients/code-target/open.ts";
 let outcome: CodeCheckOutcome;
 let order = 0;
@@ -52,7 +52,7 @@ beforeAll(async () => {
 			exports: { "./code-target": "./src/ui/api/code-target.ts" },
 		}),
 		[CORE]: [
-			'import { createPaneReportSender } from "#ui/clients/pane-session/pane-report-sender.ts";',
+			'import { createPaneReportSender } from "#ui/panes/pane-session/clients/pane-report-sender.ts";',
 			'import { activateCodeTarget } from "@archboard/code-opener/code-target";',
 			"export function createPaneCore() {",
 			"  createPaneReportSender();",
@@ -77,7 +77,7 @@ beforeAll(async () => {
 			content: {
 				nodes: [
 					part("Core", CORE),
-					part("Reports", "apps/web/src/ui/clients/pane-session"),
+					part("Reports", "apps/web/src/ui/panes/pane-session/clients"),
 					part("Sender", SENDER, "Reports"),
 					part("Opener", "packages/code-opener"),
 					part("Open", OPEN, "Opener"),

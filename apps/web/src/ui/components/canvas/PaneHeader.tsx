@@ -35,7 +35,7 @@ import { usePaneVault } from "#ui/hooks/canvas/use-pane-vault.ts";
 import { SidebarToggle } from "#ui/components/canvas/SidebarToggle.tsx";
 import type { Sidebar } from "#ui/hooks/canvas/use-sidebar.ts";
 import type { OfferedVariant } from "#ui/rules/canvas/reading/document.ts";
-import { VariantMark } from "#ui/components/variant-lifecycle/VariantMark.tsx";
+import { VariantMark } from "#ui/variant-lifecycle/components/VariantMark.tsx";
 
 /** A model above the one on screen, as the navigator places it or as the reader came down from it. */
 interface CrumbPlace {

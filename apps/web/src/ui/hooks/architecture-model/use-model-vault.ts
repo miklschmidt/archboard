@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import { repositoriesQuery } from "#ui/clients/model-catalog/queries.ts";
+import { repositoriesQuery } from "#ui/panes/model-catalog/clients/queries.ts";
 
 /**
  * A portable repository address resolves through the application's existing registry query.

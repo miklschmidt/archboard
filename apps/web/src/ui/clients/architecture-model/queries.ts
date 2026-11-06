@@ -1,4 +1,4 @@
-import type { ModelAddress } from "#ui/rules/reading-routing/address.ts";
+import type { ModelAddress } from "#ui/panes/reading-routing/rules/address.ts";
 import { queryOptions, skipToken } from "@tanstack/react-query";
 import type { z } from "zod";
 import {

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
-import { Tree } from "#ui/components/shell/Tree.tsx";
+import { Tree } from "#ui/shell/components/Tree.tsx";
 
 /** One thing a list offers. */
 interface Choice {

@@ -254,7 +254,7 @@ These module owners cover the supporting contracts:
 
 - `packages/walkthrough/tests/runtime/video-encoding/services` and `processes`: finding and running ffmpeg.
 - `packages/walkthrough/tests/shared/protocol`: the talk's contract.
-- `apps/web/tests/ui/rules/walkthrough-replay`: the frame that shows each event.
+- `apps/web/tests/ui/walkthroughs/replay/state`: the frame that shows each event.
 - `packages/ui-kit/tests/ui/state/frame-clock`: the stepped clock.
 - `packages/walkthrough/tests/runtime/recorder/store` and `operations`: the talk on disk and the browsers'
   flags.
@@ -781,7 +781,7 @@ The model package interface narrows to 184 exports, and its ceiling drops to 184
 
 The repository navigator lists one canonical model per repository.
 It no longer contains folders, legacy boards, variant rows, or a second architecture hierarchy.
-`apps/web/tests/ui/components/shell/navigator-repositories.test.tsx` retains repository identity, activity, the checkout list, failure recovery, and filter behavior.
+`apps/web/tests/ui/shell/components/navigator-repositories.test.tsx` retains repository identity, activity, the checkout list, failure recovery, and filter behavior.
 `canonical-model-agent-navigation.test.ts` owns keyboard opens, adjacent panes, active repository selection, and pane letters through the browser.
 The old `navigator-tree.test.tsx` retires with the legacy hierarchy and variant expansion.
 Its private React-prop inspection also retires because it tests implementation details.

@@ -3,7 +3,7 @@ import { RiArrowLeftSLine, RiArrowRightSLine } from "@remixicon/react";
 
 import { Button } from "@archboard/ui-kit/components";
 import { StandingSample } from "#ui/components/canvas/SemanticTypeSamples.tsx";
-import { Tree } from "#ui/components/shell/Tree.tsx";
+import { Tree } from "#ui/shell/components/Tree.tsx";
 import type { ChangeWalk } from "#ui/hooks/architecture-model/use-change-walk.ts";
 import type { Change, ChangeList } from "#ui/rules/architecture-model/change-list.ts";
 import {
@@ -11,7 +11,7 @@ import {
 	type InterfaceFact,
 	type InterfaceRow,
 } from "#ui/rules/architecture-model/interface-changes.ts";
-import { NAME_GAP, ROW_HEIGHT } from "#ui/rules/shell/tree-grid.ts";
+import { NAME_GAP, ROW_HEIGHT } from "#ui/shell/rules/tree-grid.ts";
 
 /** One row of a flat tree, and what it stands for. */
 interface FlatRow<Item> {

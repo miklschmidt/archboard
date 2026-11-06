@@ -44,7 +44,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
         "symbol": "WalkthroughRecorder"
       },
       "id": "vKEsyHFk/SMjRfwN3#IOU51tal",
@@ -62,7 +62,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
         "symbol": "WalkthroughReplay"
       },
       "id": "vKEsyHFk/SMjRfwN3#nthMhjL4",

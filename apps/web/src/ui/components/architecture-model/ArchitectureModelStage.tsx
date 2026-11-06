@@ -44,7 +44,7 @@ import { CheckpointEvidence } from "#ui/components/architecture-model/Checkpoint
 import { ModelPublication } from "#ui/components/architecture-model/ModelPublication.tsx";
 import { ModelClaims, ModelClaimsFailure } from "#ui/components/architecture-model/ModelClaims.tsx";
 
-import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
+import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import { useModelVault } from "#ui/hooks/architecture-model/use-model-vault.ts";
 
 import { useArchitectureFeed } from "#ui/hooks/architecture-model/use-architecture-feed.ts";

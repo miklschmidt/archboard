@@ -23,7 +23,7 @@ import type { SemanticAtlas } from "#ui/clients/canvas/reads/drawings.ts";
 import type { Gesture } from "#ui/components/canvas/CameraSurface.tsx";
 import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { useTouchPinch } from "#ui/hooks/canvas/use-touch-pinch.ts";
-import { typingIn } from "#ui/hooks/shell/use-find-shortcut.ts";
+import { typingIn } from "#ui/shell/hooks/use-find-shortcut.ts";
 import {
 	capturePointer,
 	hasTravelled,

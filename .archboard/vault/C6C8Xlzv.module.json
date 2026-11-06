@@ -5,25 +5,12 @@
   "responsibility": "Runs one recording of a walkthrough: voice, steps, capture and talk",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts"
+    "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#C6C8Xlzv",
   "parent": "vKEsyHFk/yejBBUFY#fscW90Xt",
   "outgoing": [
-    {
-      "order": 30000,
-      "kind": "call",
-      "label": "the voice's stream; each step, line and version shown",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
-        "symbol": "TalkCapture"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#MqDfCTuA",
-      "to": "vKEsyHFk/yejBBUFY#uG3OntgL"
-    },
     {
       "order": 26000,
       "kind": "event",
@@ -32,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
         "symbol": "WalkthroughRecorder.start"
       },
       "id": "vKEsyHFk/SMjRfwN3#4SigiIMB",
@@ -45,11 +32,24 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
         "symbol": "talk"
       },
       "id": "vKEsyHFk/yejBBUFY#UEuRPGRJ",
       "to": "vKEsyHFk/yejBBUFY#zs2QxCu7"
+    },
+    {
+      "order": 30000,
+      "kind": "call",
+      "label": "the voice's stream; each step, line and version shown",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
+        "symbol": "TalkCapture"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#MqDfCTuA",
+      "to": "vKEsyHFk/yejBBUFY#uG3OntgL"
     },
     {
       "order": 31000,
@@ -58,7 +58,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
         "symbol": "recordedStep"
       },
       "id": "vKEsyHFk/yejBBUFY#Gxh1Pbx3",
@@ -71,7 +71,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
         "symbol": "subscribe"
       },
       "id": "vKEsyHFk/yejBBUFY#pNlMVRMt",

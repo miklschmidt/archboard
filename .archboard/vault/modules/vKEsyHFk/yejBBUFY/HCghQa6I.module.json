@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/reading-routing"
+    "path": "apps/web/src/ui/panes/reading-routing"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#HCghQa6I",

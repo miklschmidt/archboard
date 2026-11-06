@@ -5,7 +5,7 @@
   "responsibility": "Reads voice readiness, status and output level for the recorder",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts"
+    "path": "apps/web/src/ui/walkthroughs/recording/rules/voice-sources.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#bnZdIxyK",
@@ -32,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts",
+        "path": "apps/web/src/ui/walkthroughs/recording/rules/voice-sources.ts",
         "symbol": "level"
       },
       "id": "vKEsyHFk/yejBBUFY#5y8UuVhP",

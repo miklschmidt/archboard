@@ -6,7 +6,7 @@
   "description": "Canonical talk frames use the same pinned narrative renderer and readiness reporting.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx"
+    "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#3WdEEXWG",
@@ -33,7 +33,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
         "symbol": "CanvasStage"
       },
       "id": "vKEsyHFk/UOXNWLhR#Ntxc6nJp",
@@ -46,7 +46,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
         "symbol": "VoiceBox"
       },
       "id": "vKEsyHFk/yejBBUFY#FYKw5y8U",
@@ -59,7 +59,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
         "symbol": "RecordingStage"
       },
       "id": "vKEsyHFk/yejBBUFY#3cky5MpR",
@@ -72,7 +72,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
         "symbol": "OrbHost"
       },
       "id": "vKEsyHFk/yejBBUFY#gIVISpC9",
@@ -85,7 +85,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
         "symbol": "PaneVaultContext"
       },
       "id": "vKEsyHFk/yejBBUFY#tLxlPuMO",
@@ -98,7 +98,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
         "symbol": "ModelWalkthrough"
       },
       "id": "vKEsyHFk/yejBBUFY#3BpWAgaf",

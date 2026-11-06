@@ -1334,7 +1334,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+            "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
             "symbol": "readRetainedFrom"
           }
         },
@@ -1346,7 +1346,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+            "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
             "symbol": "driveFramesFrom"
           }
         },
@@ -1358,7 +1358,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+            "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
             "symbol": "CanvasStage"
           }
         },
@@ -1375,7 +1375,7 @@
               "kind": "sync",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
                 "symbol": "draw"
               }
             },
@@ -1387,7 +1387,7 @@
               "kind": "self",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
                 "symbol": "playTo"
               }
             },
@@ -1404,7 +1404,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+                    "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
                     "symbol": "onReading"
                   }
                 }
@@ -1418,7 +1418,7 @@
               "kind": "sync",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
                 "symbol": "paintersStarting"
               }
             },
@@ -1430,7 +1430,7 @@
               "kind": "sync",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
                 "symbol": "draw"
               }
             },
@@ -1450,7 +1450,7 @@
                       "kind": "self",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
                         "symbol": "violationsOf"
                       }
                     }
@@ -1467,7 +1467,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
                         "symbol": "draw"
                       }
                     }

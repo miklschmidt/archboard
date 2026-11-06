@@ -5,7 +5,7 @@
   "responsibility": "Captures voice samples and talk events on one audio clock",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/walkthrough-recording/talk-capture.ts"
+    "path": "apps/web/src/ui/walkthroughs/recording/clients/talk-capture.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#uG3OntgL",

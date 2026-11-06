@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/walkthrough-replay"
+    "path": "apps/web/src/ui/walkthroughs/replay/clients"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#Kek84WN9",
@@ -23,7 +23,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
         "symbol": "readRetainedFrom"
       },
       "id": "vKEsyHFk/UOXNWLhR#r0RVKR0o",
@@ -36,7 +36,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
         "symbol": "driveFramesFrom"
       },
       "id": "vKEsyHFk/UOXNWLhR#qu6pVEXF",
@@ -49,7 +49,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
         "symbol": "readRetainedFrom"
       },
       "id": "vKEsyHFk/yejBBUFY#TGkTEPYM",
@@ -62,7 +62,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
         "symbol": "createModelQueryClient"
       },
       "id": "vKEsyHFk/yejBBUFY#q9tk8Tjs",
@@ -75,7 +75,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
         "symbol": "drawAgainst"
       },
       "id": "vKEsyHFk/UOXNWLhR#VIqC762A",
@@ -88,7 +88,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
         "symbol": "stageOf"
       },
       "id": "vKEsyHFk#9m54YaTh",

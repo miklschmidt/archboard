@@ -848,7 +848,7 @@ behavior has an index: a caller imports the file that defines a name.
   Canonical model components own module navigation, reading controls, claims, and selected-state presentation.
   The existing canvas, walkthrough-recording, and walkthrough-replay owners retain local rendering and playback.
   `rules/` holds pure behavior, `state/` holds state that outlives a render, and `clients/` owns external effects.
-  `components/` and `hooks/` hold React code. `clients/renderer-build/` holds the declaration of the
+  `components/` and `hooks/` hold React code. `renderer-build/clients/` holds the declaration of the
   `virtual:archboard-renderer` module that `vite.config.ts` serves, a `.d.ts` that sits in a role folder because the
   files directly in `src/` are for entries.
 - The canvas has no index either. Its parts are in `rules/` (`camera/`, `walkthrough/`, `drilling/`, `reading/`,

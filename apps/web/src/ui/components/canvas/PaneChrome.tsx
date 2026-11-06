@@ -7,7 +7,7 @@
 
 import { createContext, type ReactNode } from "react";
 
-import type { PaneOpening } from "#ui/rules/shell/contracts.ts";
+import type { PaneOpening } from "#ui/shell/rules/contracts.ts";
 
 /** The places in the left column that the focused pane fills. */
 interface PaneColumn {

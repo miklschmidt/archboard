@@ -7,7 +7,7 @@ import {
 } from "#ui/clients/architecture-model/queries.ts";
 import { ModelColumn, type Destination } from "#ui/components/architecture-model/ModelColumn.tsx";
 import { ModelReadingSelector } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
-import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
+import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 
 /** Inputs for the History destination. */
 type ModelRecordsProps = Omit<
