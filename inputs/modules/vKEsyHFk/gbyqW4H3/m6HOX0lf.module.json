@@ -3,10 +3,6 @@
   "name": "Painting",
   "kind": "module",
   "responsibility": "Paints a settled drawing into a scene: architecture and sequence marks, the surfaces and ports of cards, the theme's colours and the atlas of where every subject landed",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint"
-  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
   "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
