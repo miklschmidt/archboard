@@ -3,6 +3,37 @@
 What each check proves, and the constraints on running them. Read this when
 changing tests or CI, or when a browser check fails.
 
+## Test policy
+
+**Test observable behavior and contracts.** A test is there to catch incorrect
+behavior, not only a change to how repository files are worded or organized.
+
+**Test behavior and contracts, not human-readable wording.** For CLI help,
+diagnostics and UI copy, test routing, exit status, side effects, structure
+and formatting. Do not lock that copy down with text matching, prose snapshots
+or full-output equality.
+
+When a test covers generic CLI behavior, discover commands and options from
+authoritative runtime metadata. Adding or renaming a flag, or editing a
+description, must not require updating help-test expectations.
+
+Assert exact values only where they are the behavior under test, such as
+machine-readable results or protocol fields. Before you add an assertion,
+name the behavioral regression that it catches. If it only detects a wording
+change or duplicates upstream library coverage, omit it.
+
+Give each non-obvious regression one cheapest credible owner:
+
+- types and lint for structural rules
+- focused unit or integration owners for hidden behaviour
+- rendered or browser owners for visible workflows
+- process or system owners, only for a bug that needs that boundary
+
+If normal use makes the failure of an owner obvious, another owner catches it,
+or it mostly simulates upstream tools, remove that owner.
+
+## The gate and its lanes
+
 `bun run test` runs the stages of `test:first` at the same time: both TypeScript projects,
 both browser builds, `test:core` and `test:repository`. It then runs `test:modules`,
 `test:system`, `test:solo` and `test:serial-browser`, one lane after the other, because each
