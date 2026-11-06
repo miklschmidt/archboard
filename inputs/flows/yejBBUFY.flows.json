@@ -854,7 +854,7 @@
       "participants": [
         "vKEsyHFk/vKEsyHFk#cPOdAA3f",
         "vKEsyHFk/yejBBUFY#aixSjfNe",
-        "vKEsyHFk/yejBBUFY#rouptSyK",
+        "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
         "vKEsyHFk/yejBBUFY#dtYjWvlf"
       ],
       "steps": [
@@ -885,7 +885,7 @@
         {
           "id": "vKEsyHFk/yejBBUFY#OxJKtMIe",
           "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
-          "to": "vKEsyHFk/yejBBUFY#rouptSyK",
+          "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
           "label": "install the stepped clock",
           "kind": "sync",
           "anchor": {
@@ -957,7 +957,7 @@
             {
               "id": "vKEsyHFk/yejBBUFY#IE58RDy7",
               "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
-              "to": "vKEsyHFk/yejBBUFY#rouptSyK",
+              "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
               "label": "move the clock to the frame's time",
               "kind": "sync",
               "anchor": {
@@ -1001,7 +1001,7 @@
                     {
                       "id": "vKEsyHFk/yejBBUFY#RCy7lhz4",
                       "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
-                      "to": "vKEsyHFk/yejBBUFY#rouptSyK",
+                      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
                       "label": "run the due timers, sync animations, paint",
                       "kind": "sync",
                       "anchor": {
