@@ -40,10 +40,6 @@ interface, so they may re-export hooks. An app has no `api/`, because nothing
 imports an app. The same naming rules hold, and the tests in `tests/ui/` are
 held to the UI lint policy.
 
-The `ui` areas still put the role first (`ui/<role>/<behavior>/`) until each one
-moves (TASK-582.03). Until the last move, lint accepts the role folder first or
-last, and refuses a path with two role folders.
-
 All these folders are private. A package exposes only its `exports`, and nothing
 imports an app. `apps/web/src/ui/theme/` holds the one stylesheet; it is no role,
 and the placement rule judges TypeScript only.

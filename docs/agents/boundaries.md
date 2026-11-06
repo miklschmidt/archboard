@@ -54,11 +54,9 @@ The path form is `src/<area>/<behavior>[/<behavior>…]/<role>/<file>`.
 
 `tests/system/repository-policy/workspace-layout.test.ts` holds the rule for every tracked TypeScript
 file below an area: exactly one role folder, the last folder, and no folder named after an area.
-Many trees still put the role first, and they move one commit at a time (TASK-582.03).
-Its ratchet, `ROLE_FIRST_TREES`, lists the trees that still break the rule. The test skips them, and
-it fails when a listed tree breaks it no more, so each move commit removes its trees from the list.
-Until the last move, the lint rules accept both layouts. `scripts/move-source.ts` moves the files of a
-reviewed manifest. It rewrites the imports and repository paths and rebinds the vault in the same run.
+The lint rules that read a role folder accept only this layout. `scripts/move-source.ts` moves the
+files of a reviewed manifest. It rewrites the imports and repository paths and rebinds the vault in
+the same run.
 For frontend concern placement, naming, and React ownership, read [frontend.md](frontend.md).
 
 The entries are `apps/cli/src/bin.ts`, `apps/server/src/server.ts`, `apps/web/src/main.tsx`,

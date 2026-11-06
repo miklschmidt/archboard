@@ -81,17 +81,9 @@ const ROLES = new Set([
 
 const AREAS = new Set(["cli", "runtime", "server", "shared", "ui"]);
 
-/**
- * The ratchet of the move to behavior first (TASK-582.03): the trees whose files still put the
- * role first. The rule skips them. Each move commit removes the trees it empties, because the
- * test fails for a listed tree that breaks the rule no more, and the last move removes the list.
- */
-const ROLE_FIRST_TREES: readonly string[] = [];
-
-/** A TypeScript file below an area: its tree, `<workspace>/<src|tests>/<area>`, and its folders. */
+/** A TypeScript file below an area: whether it is a test, and its folders. */
 interface AreaFile {
 	path: string;
-	tree: string;
 	tests: boolean;
 	/** The folders between the area and the file. */
 	folders: string[];
@@ -103,10 +95,10 @@ interface AreaFile {
  * @returns The file, or undefined for a path that is not TypeScript below an area.
  */
 function areaFile(file: string): AreaFile | undefined {
-	const [, tree, folder, area, rest] =
-		/^((?:packages|apps)\/[^/]+\/(src|tests)\/([^/]+))\/(.+\.tsx?)$/.exec(file) ?? [];
-	if (tree === undefined || rest === undefined || !AREAS.has(area ?? "")) return undefined;
-	return { path: file, tree, tests: folder === "tests", folders: rest.split("/").slice(0, -1) };
+	const [, folder, area, rest] =
+		/^(?:packages|apps)\/[^/]+\/(src|tests)\/([^/]+)\/(.+\.tsx?)$/.exec(file) ?? [];
+	if (rest === undefined || !AREAS.has(area ?? "")) return undefined;
+	return { path: file, tests: folder === "tests", folders: rest.split("/").slice(0, -1) };
 }
 
 /**
@@ -131,20 +123,10 @@ describe("the behavior-first layout inside each area", () => {
 		.filter((file) => file !== undefined);
 
 	test("every file below an area sits in one role folder, the last folder of its path", () => {
-		const ratchet = new Set(ROLE_FIRST_TREES);
-		const problems = files
-			.filter((file) => !ratchet.has(file.tree))
-			.flatMap((file) => {
-				const problem = layoutProblem(file);
-				return problem === undefined ? [] : [`${file.path}: ${problem}`];
-			});
+		const problems = files.flatMap((file) => {
+			const problem = layoutProblem(file);
+			return problem === undefined ? [] : [`${file.path}: ${problem}`];
+		});
 		expect(problems).toEqual([]);
-	});
-
-	test("every tree of the ratchet still holds a file that puts the role first", () => {
-		const moved = ROLE_FIRST_TREES.filter(
-			(tree) => !files.some((file) => file.tree === tree && layoutProblem(file) !== undefined),
-		);
-		expect(moved).toEqual([]);
 	});
 });

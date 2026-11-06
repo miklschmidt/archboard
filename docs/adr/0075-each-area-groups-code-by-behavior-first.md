@@ -64,11 +64,10 @@ The area still says where code runs, and the behavior folder holds one job.
 
 ## Consequences
 
-Hundreds of files move, over many commits, and each commit keeps `bun run check` green.
-So the lint rules accept both layouts until the last move, and then accept only the new one.
-`tests/system/repository-policy/workspace-layout.test.ts` holds the new rule.
-A ratchet in it lists the trees that still put roles first.
-Each move commit removes its trees from that list, and the last one removes the list.
+Hundreds of files moved, over many commits, and each commit kept `bun run check` green.
+While the move ran, the lint rules accepted both layouts, and a ratchet in the layout test listed the trees that still put roles first.
+Each move commit removed its trees from that list, and the last one removed the list (TASK-582.03.04).
+Now `tests/system/repository-policy/workspace-layout.test.ts` holds the rule for every file below an area, and the lint rules accept only the new layout.
 
 `scripts/move-source.ts` moves the files of a reviewed manifest.
 It rewrites the imports and the repository paths, and it updates the bindings and anchors of the vault in the same commit.
