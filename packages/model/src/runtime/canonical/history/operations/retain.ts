@@ -1,5 +1,5 @@
 import { modelBoundaryFailure } from "#runtime/canonical/installation/store/model-state.ts";
-import { walkthroughDependencies } from "#runtime/canonical/history/operations/walkthrough-targets.ts";
+import { walkthroughDependencies } from "#runtime/canonical/history/retained-reading/operations/walkthrough-targets.ts";
 import { createHash } from "node:crypto";
 import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
 import {
@@ -25,8 +25,11 @@ import {
 	settledValues,
 	type ArchiveContext,
 } from "#runtime/canonical/archive/store/model-archive.ts";
-import { readArchitectureCheckpoint } from "#runtime/canonical/history/operations/read.ts";
-import { historyResult, checkpointMetadata } from "#runtime/canonical/history/operations/result.ts";
+import { readArchitectureCheckpoint } from "#runtime/canonical/history/retained-reading/operations/read.ts";
+import {
+	historyResult,
+	checkpointMetadata,
+} from "#runtime/canonical/history/retained-reading/operations/result.ts";
 import { checkpointPublication } from "#runtime/canonical/history/store/model-publication.ts";
 import { captureReferencePins } from "#runtime/canonical/history/operations/reference-pins.ts";
 

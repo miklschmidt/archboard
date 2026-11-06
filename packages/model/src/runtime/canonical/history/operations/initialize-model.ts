@@ -19,7 +19,7 @@ import {
 	modelBoundaryFailure,
 	operationRef,
 } from "#runtime/canonical/installation/store/model-state.ts";
-import { historyResult } from "#runtime/canonical/history/operations/result.ts";
+import { historyResult } from "#runtime/canonical/history/retained-reading/operations/result.ts";
 import { installArchitectureModel } from "#runtime/canonical/history/operations/portable.ts";
 type Request = z.infer<typeof ArchitectureInitializationRequestSchema>;
 type Bundle = z.infer<typeof ArchitecturePortableBundleSchema>;

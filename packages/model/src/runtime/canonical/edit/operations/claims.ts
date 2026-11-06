@@ -18,7 +18,10 @@ import {
 	type ArchitectureModuleEdit,
 } from "#shared/canonical-contracts/schemas/model-operations.ts";
 import { readCurrentModel } from "#runtime/canonical/read/operations/model-read.ts";
-import { archiveFailure, historyResult } from "#runtime/canonical/history/operations/result.ts";
+import {
+	archiveFailure,
+	historyResult,
+} from "#runtime/canonical/history/retained-reading/operations/result.ts";
 import { archiveContext, ArchiveError } from "#runtime/canonical/archive/store/model-archive.ts";
 import {
 	JournalSchema,
@@ -179,7 +182,8 @@ async function knownClaimScopes(vault: string, model: ArchitectureModel, subject
 	includeClaimScopes(known, readCurrentModel(vault));
 	if (subjects.every((subject) => known.has(subject))) return known;
 	if (model.proposals.length === 0) return known;
-	const { exactReading } = await import("#runtime/canonical/history/operations/read.ts");
+	const { exactReading } =
+		await import("#runtime/canonical/history/retained-reading/operations/read.ts");
 	const context = await archiveContext(vault);
 	const baselines = await Promise.all(
 		model.proposals.map((proposal) =>

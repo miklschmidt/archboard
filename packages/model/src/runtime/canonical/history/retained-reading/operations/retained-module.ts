@@ -1,7 +1,7 @@
 import type { ArchitectureRetainedModule } from "#shared/canonical-contracts/schemas/model.ts";
 import { decodeModel } from "#runtime/canonical/read/operations/model-read.ts";
-import { historyResult } from "#runtime/canonical/history/operations/result.ts";
-import { modelRecords } from "#runtime/canonical/history/operations/states.ts";
+import { historyResult } from "#runtime/canonical/history/retained-reading/operations/result.ts";
+import { modelRecords } from "#runtime/canonical/history/retained-reading/operations/states.ts";
 import { readingArchive } from "#runtime/canonical/proposals/operations/read.ts";
 import {
 	readCheckpointInputs,

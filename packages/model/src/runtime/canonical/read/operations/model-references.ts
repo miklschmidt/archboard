@@ -10,7 +10,7 @@ import type {
 	ArchitectureModelRead,
 } from "#shared/canonical-contracts/schemas/model.ts";
 import { readArchitectureModel } from "#runtime/canonical/read/operations/model-read.ts";
-import { readCheckpointModel } from "#runtime/canonical/history/operations/read.ts";
+import { readCheckpointModel } from "#runtime/canonical/history/retained-reading/operations/read.ts";
 import {
 	selectReferenceSubject,
 	referenceSubjectName,

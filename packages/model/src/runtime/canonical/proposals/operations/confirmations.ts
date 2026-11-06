@@ -5,7 +5,7 @@ import {
 	archiveContext,
 	type ArchiveContext,
 } from "#runtime/canonical/archive/store/model-archive.ts";
-import { exactReading } from "#runtime/canonical/history/operations/read.ts";
+import { exactReading } from "#runtime/canonical/history/retained-reading/operations/read.ts";
 import { requireModel } from "#runtime/canonical/proposals/operations/read.ts";
 
 type Confirmations = NonNullable<

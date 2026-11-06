@@ -13,13 +13,13 @@ import {
 	selectModule,
 	selectFlow,
 } from "#runtime/canonical/read/operations/model-read.ts";
-import { exactReading } from "#runtime/canonical/history/operations/read.ts";
+import { exactReading } from "#runtime/canonical/history/retained-reading/operations/read.ts";
 import {
 	archiveContext,
 	ArchiveError,
 	type ArchiveContext,
 } from "#runtime/canonical/archive/store/model-archive.ts";
-import { historyResult } from "#runtime/canonical/history/operations/result.ts";
+import { historyResult } from "#runtime/canonical/history/retained-reading/operations/result.ts";
 import { modelRevision } from "#runtime/store/model-files.ts";
 import {
 	applyCompactChanges,
@@ -32,7 +32,10 @@ import {
 	defaultComparisonReference,
 	type ComparisonReference,
 } from "#shared/compare/rules/default-reference.ts";
-import { retainedStates, stateCatalogue } from "#runtime/canonical/history/operations/states.ts";
+import {
+	retainedStates,
+	stateCatalogue,
+} from "#runtime/canonical/history/retained-reading/operations/states.ts";
 
 type Proposal = z.infer<typeof import("#shared/schemas/model-proposals.ts").ProposalSchema> & {
 	file?: string;

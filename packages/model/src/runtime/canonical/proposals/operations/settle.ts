@@ -1,4 +1,4 @@
-import { walkthroughDependencies } from "#runtime/canonical/history/operations/walkthrough-targets.ts";
+import { walkthroughDependencies } from "#runtime/canonical/history/retained-reading/operations/walkthrough-targets.ts";
 import { orderOf } from "#shared/reconcile/rules/told-order.ts";
 import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/canonical-contracts/schemas/model-operations.ts";

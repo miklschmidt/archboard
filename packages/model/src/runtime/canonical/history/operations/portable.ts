@@ -29,7 +29,10 @@ import {
 	withPortableArchive,
 	importPortableObjects,
 } from "#runtime/store/model-portable.ts";
-import { historyResult, editResult } from "#runtime/canonical/history/operations/result.ts";
+import {
+	historyResult,
+	editResult,
+} from "#runtime/canonical/history/retained-reading/operations/result.ts";
 import {
 	withModelLock,
 	writeState,

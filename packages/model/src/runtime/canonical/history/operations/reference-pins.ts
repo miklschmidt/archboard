@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 import {
 	readCheckpointModel,
 	listArchitectureCheckpoints,
-} from "#runtime/canonical/history/operations/read.ts";
+} from "#runtime/canonical/history/retained-reading/operations/read.ts";
 import {
 	resolveModelReferences,
 	readReferenceState,

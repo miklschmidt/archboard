@@ -22,7 +22,7 @@ import {
 } from "#runtime/canonical/proposals/operations/candidate.ts";
 import { requireModel } from "#runtime/canonical/proposals/operations/read.ts";
 import { archiveContext } from "#runtime/canonical/archive/store/model-archive.ts";
-import { retainedStates } from "#runtime/canonical/history/operations/states.ts";
+import { retainedStates } from "#runtime/canonical/history/retained-reading/operations/states.ts";
 import { comparisonOf } from "#runtime/canonical/proposals/operations/compare.ts";
 import { sameSemanticValue } from "#shared/rules/semantic-value.ts";
 

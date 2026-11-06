@@ -10,7 +10,7 @@ import {
 	archiveRecords,
 	ArchiveError,
 } from "#runtime/canonical/archive/store/model-archive.ts";
-import { editResult } from "#runtime/canonical/history/operations/result.ts";
+import { editResult } from "#runtime/canonical/history/retained-reading/operations/result.ts";
 import type { Completion } from "#runtime/canonical/installation/news/store/model-news.ts";
 
 /**

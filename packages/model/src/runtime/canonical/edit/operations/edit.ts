@@ -8,7 +8,10 @@ import {
 	type ArchitectureModuleEditResult,
 	type ArchitectureRecoveryResult,
 } from "#shared/canonical-contracts/schemas/model-operations.ts";
-import { historyResult, editResult } from "#runtime/canonical/history/operations/result.ts";
+import {
+	historyResult,
+	editResult,
+} from "#runtime/canonical/history/retained-reading/operations/result.ts";
 import { prepareEdit } from "#runtime/canonical/edit/operations/prepare.ts";
 import {
 	archiveContext,

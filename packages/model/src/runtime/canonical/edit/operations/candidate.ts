@@ -1,4 +1,4 @@
-import { walkthroughDependencies } from "#runtime/canonical/history/operations/walkthrough-targets.ts";
+import { walkthroughDependencies } from "#runtime/canonical/history/retained-reading/operations/walkthrough-targets.ts";
 import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/canonical-contracts/schemas/model-operations.ts";
@@ -11,7 +11,7 @@ import {
 } from "#runtime/canonical/edit/operations/claims.ts";
 import { readModelFiles, modelRevision } from "#runtime/store/model-files.ts";
 import { ArchiveError, archiveContext } from "#runtime/canonical/archive/store/model-archive.ts";
-import { retainedReservations } from "#runtime/canonical/history/operations/states.ts";
+import { retainedReservations } from "#runtime/canonical/history/retained-reading/operations/states.ts";
 import { applyStructure, allocatesIdentity } from "#runtime/canonical/edit/operations/structure.ts";
 
 /**

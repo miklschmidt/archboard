@@ -6,7 +6,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { writeFileAtomic, unlinkDurably } from "@archboard/workspace/atomic-write";
 import { git } from "@archboard/process/git";
-import { editResult } from "#runtime/canonical/history/operations/result.ts";
+import { editResult } from "#runtime/canonical/history/retained-reading/operations/result.ts";
 import { readModelFiles } from "#runtime/store/model-files.ts";
 import {
 	ArchiveError,

@@ -5,7 +5,7 @@ import {
 	privateArchiveLocation,
 } from "#runtime/canonical/archive/store/model-archive-location.ts";
 import { withModelLock } from "#runtime/canonical/installation/store/model-state.ts";
-import { historyResult } from "#runtime/canonical/history/operations/result.ts";
+import { historyResult } from "#runtime/canonical/history/retained-reading/operations/result.ts";
 
 /**
  * Explicitly initialize private history without creating or changing a source repository.

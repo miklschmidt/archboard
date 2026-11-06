@@ -24,8 +24,11 @@ import {
 	requireCompleteArchive,
 	publicationEvidence,
 } from "#runtime/canonical/history/store/model-publication.ts";
-import { archiveFailure, historyResult } from "#runtime/canonical/history/operations/result.ts";
-import { readArchitectureCheckpoint } from "#runtime/canonical/history/operations/read.ts";
+import {
+	archiveFailure,
+	historyResult,
+} from "#runtime/canonical/history/retained-reading/operations/result.ts";
+import { readArchitectureCheckpoint } from "#runtime/canonical/history/retained-reading/operations/read.ts";
 
 type Publication = z.infer<typeof ArchitecturePublicationSchema>;
 

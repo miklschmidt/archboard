@@ -13,7 +13,7 @@ import {
 import { isDeepStrictEqual } from "node:util";
 import { decodeModel, discoveryFailure } from "#runtime/canonical/read/operations/model-read.ts";
 import { proposalBaseline, decodeProposal } from "#runtime/canonical/proposals/operations/read.ts";
-import { walkthroughDependencies } from "#runtime/canonical/history/operations/walkthrough-targets.ts";
+import { walkthroughDependencies } from "#runtime/canonical/history/retained-reading/operations/walkthrough-targets.ts";
 type Record = ReturnType<typeof CheckpointRecordSchema.parse>;
 type Proposal = ArchitectureModel["proposals"][number];
 type Selection = Record["selection"];

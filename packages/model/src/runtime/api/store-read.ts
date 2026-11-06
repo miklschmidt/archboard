@@ -8,9 +8,9 @@ export {
 	readArchitectureCheckpoint,
 	listArchitectureCheckpoints,
 	listArchitectureCheckpointRows,
-} from "#runtime/canonical/history/operations/read.ts";
+} from "#runtime/canonical/history/retained-reading/operations/read.ts";
 export { readModuleNavigation } from "#runtime/canonical/read/operations/module-navigation.ts";
-export { readRetainedModule } from "#runtime/canonical/history/operations/retained-module.ts";
+export { readRetainedModule } from "#runtime/canonical/history/retained-reading/operations/retained-module.ts";
 export { readLegacyInventory } from "#runtime/legacy-boards/reading/inventory/operations/inventory.ts";
 export { readArchitectureClaims } from "#runtime/canonical/edit/operations/claims.ts";
 export { watchArchitectureModel } from "#runtime/canonical/read/operations/model-watch.ts";

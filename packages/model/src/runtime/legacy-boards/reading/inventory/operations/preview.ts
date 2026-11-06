@@ -28,13 +28,13 @@ import {
 	selectModule,
 	selectFlow,
 } from "#runtime/canonical/read/operations/model-read.ts";
-import { historyResult } from "#runtime/canonical/history/operations/result.ts";
+import { historyResult } from "#runtime/canonical/history/retained-reading/operations/result.ts";
 import {
 	archiveContext,
 	readRecord,
 	ArchiveError,
 } from "#runtime/canonical/archive/store/model-archive.ts";
-import { exactReading } from "#runtime/canonical/history/operations/read.ts";
+import { exactReading } from "#runtime/canonical/history/retained-reading/operations/read.ts";
 /**
  * Open captured migration originals through the existing archive reader.
  * @param vault The explicitly addressed vault.

@@ -1,4 +1,4 @@
-import { walkthroughDependencies } from "#runtime/canonical/history/operations/walkthrough-targets.ts";
+import { walkthroughDependencies } from "#runtime/canonical/history/retained-reading/operations/walkthrough-targets.ts";
 import { proposalConfirmations } from "#runtime/canonical/proposals/operations/confirmations.ts";
 import type { z } from "zod";
 import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
@@ -14,7 +14,7 @@ import {
 } from "#runtime/canonical/edit/operations/candidate.ts";
 import { requireSubjectClaim } from "#runtime/canonical/edit/operations/claims.ts";
 import { decodeModel } from "#runtime/canonical/read/operations/model-read.ts";
-import { exactReading } from "#runtime/canonical/history/operations/read.ts";
+import { exactReading } from "#runtime/canonical/history/retained-reading/operations/read.ts";
 import {
 	materializedInputs,
 	predecessorRevision,

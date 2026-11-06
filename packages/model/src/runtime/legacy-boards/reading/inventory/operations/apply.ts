@@ -17,7 +17,10 @@ import {
 } from "#runtime/canonical/installation/store/model-state.ts";
 import { activeJournal } from "#runtime/canonical/installation/store/model-install.ts";
 import { resumeEdit } from "#runtime/canonical/edit/operations/edit.ts";
-import { historyResult, editResult } from "#runtime/canonical/history/operations/result.ts";
+import {
+	historyResult,
+	editResult,
+} from "#runtime/canonical/history/retained-reading/operations/result.ts";
 import {
 	notifyArchitecture,
 	type Completion,

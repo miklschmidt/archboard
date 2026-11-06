@@ -8,7 +8,7 @@ import { modelCodeTarget } from "#runtime/canonical/read/operations/model-code.t
 import { failure } from "#runtime/canonical/read/operations/model-read.ts";
 import type { z } from "zod";
 import type { StateSelectionSchema } from "#shared/schemas/model-proposals.ts";
-import { readCheckpointModel } from "#runtime/canonical/history/operations/read.ts";
+import { readCheckpointModel } from "#runtime/canonical/history/retained-reading/operations/read.ts";
 import {
 	resolveModelReferences,
 	referenceState,

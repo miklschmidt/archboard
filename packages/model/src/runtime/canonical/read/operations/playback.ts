@@ -8,7 +8,7 @@ import type {
 import { readCurrentModel, failure } from "#runtime/canonical/read/operations/model-read.ts";
 import { readSelectedState } from "#runtime/canonical/proposals/operations/read.ts";
 import { readingDiagnostics } from "#runtime/canonical/read/operations/reading-readiness.ts";
-import { historyResult } from "#runtime/canonical/history/operations/result.ts";
+import { historyResult } from "#runtime/canonical/history/retained-reading/operations/result.ts";
 
 type Selection = z.infer<typeof StateSelectionSchema>;
 type Walk = ArchitectureModel["walkthroughs"][number];

@@ -25,7 +25,7 @@ import {
 	archiveFailure,
 	historyResult,
 	checkpointMetadata,
-} from "#runtime/canonical/history/operations/result.ts";
+} from "#runtime/canonical/history/retained-reading/operations/result.ts";
 import {
 	checkpointPublication,
 	retainedRoots,
