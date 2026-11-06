@@ -50,6 +50,8 @@ jobs:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
     uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.release-please.outputs.sha }}
 
   # The packages of the root release, built from its tag on Linux. Bun cross-compiles the macOS
   # executable (docs/agents/releasing.md).
