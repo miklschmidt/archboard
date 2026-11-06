@@ -62,11 +62,15 @@ An engine-independent contract uses the default unless it already tests both eng
 Changing the default must preserve the assertions of each Track regression.
 
 `bun run check` is the complete normal gate locally and on GitHub Actions.
-It runs lint, formatting, both TypeScript projects, and the normal test chain.
+It runs lint, formatting, both TypeScript projects, the architecture check, and the normal test chain.
 `check:first` holds every stage that waits on no shared timing, and `vp` runs them at once.
 The first failure ends the run with a nonzero status, stops the other stages, and leaves its
 output in the log with the stage name on each line.
 The three Rust stages take turns on the lock of Cargo's build directory.
+`check:model` runs `archboard check` on this checkout's vault: the semantics, the code check against the bound source, and the embeds.
+Any warning or error fails it.
+It starts a server from this checkout's source on a free port and stops it after the check, because a running server checks with the source that it read at its start.
+The code check's rust-analyzer builds in `target/rust-analyzer`, so it never waits on that lock.
 `lint:all` includes `lint:core`, clippy over the crates and their tests, and
 `lint:core-docs`, rustdoc over every doc comment of the crates, and
 `format:core` checks their formatting with `cargo fmt`.

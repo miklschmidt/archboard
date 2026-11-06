@@ -1,0 +1,46 @@
+#!/usr/bin/env bun
+// Run `archboard check` on this checkout's vault: the semantics, the code check
+// against the bound source, and the embeds. Any warning or error fails it. The
+// everyday server read its source when it started, so it can check with older
+// code. This stage starts a server from this checkout's source on a free port
+// and stops it after the check.
+//
+// Run: bun scripts/check-model.ts
+
+import { spawn, spawnSync } from "node:child_process";
+import { createServer } from "node:net";
+import { dirname, join } from "node:path";
+import { createInterface } from "node:readline";
+import { fileURLToPath } from "node:url";
+
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const archboard = join(root, "bin", "archboard");
+
+/**
+ * A loopback port that nothing listens on.
+ * @returns The port.
+ */
+async function freePort(): Promise<number> {
+	const server = createServer();
+	await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+	const address = server.address();
+	await new Promise<void>((resolve) => server.close(() => resolve()));
+	if (address === null || typeof address === "string") throw new Error("no loopback port");
+	return address.port;
+}
+
+const env = { ...process.env, ARCHBOARD_URL: `http://127.0.0.1:${String(await freePort())}` };
+// stdout carries the JSON result. stderr carries the lines a person reads.
+const check = spawn(archboard, ["check"], { cwd: root, env, stdio: ["ignore", "ignore", "pipe"] });
+const closed = new Promise<number>((resolve) => {
+	check.on("close", (code) => resolve(code ?? 1));
+});
+// An information block continues on indented evidence lines.
+let information = false;
+for await (const line of createInterface({ input: check.stderr })) {
+	information = line.startsWith("information:") || (information && line.startsWith(" "));
+	if (!information) console.error(line);
+}
+const status = await closed;
+spawnSync(archboard, ["stop"], { cwd: root, env, stdio: "ignore" });
+process.exit(status);
