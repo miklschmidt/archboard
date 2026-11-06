@@ -131,13 +131,25 @@
                   "id": "vKEsyHFk/gbyqW4H3#XFJazS8y",
                   "from": "vKEsyHFk/gbyqW4H3#0idmUHd2",
                   "to": "vKEsyHFk/gbyqW4H3#0idmUHd2",
-                  "label": "lay the blocks out in columns and letter the jumps",
+                  "label": "lay the blocks out in columns",
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "crates/archboard-flows/src/flowchart/frames.rs",
                     "symbol": "fitted"
                   }
+                },
+                {
+                  "from": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+                  "to": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+                  "label": "letter the jumps of each long line",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "crates/archboard-flows/src/flowchart/mod.rs",
+                    "symbol": "add_jumps"
+                  },
+                  "id": "vKEsyHFk#CnOZozIW"
                 },
                 {
                   "id": "vKEsyHFk/gbyqW4H3#A3mQ1UEN",
