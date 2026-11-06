@@ -12,19 +12,6 @@
   "parent": "vKEsyHFk/SMjRfwN3#IzgAi2R1",
   "outgoing": [
     {
-      "order": 5000,
-      "kind": "call",
-      "label": "spawn in its own group and temp root",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
-        "symbol": "Bun.spawn"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#wI4kxS9L",
-      "to": "vKEsyHFk/SMjRfwN3#R9St060W"
-    },
-    {
       "order": 7000,
       "kind": "call",
       "label": "photograph a model, record a talk, draw its frames",
