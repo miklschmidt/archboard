@@ -8,19 +8,19 @@
       "name": "One CLI invocation",
       "summary": "The path every command takes. Help, version and unknown names end here, and the rest settle their shared options, contract and vault. They then run under an abort signal that SIGINT or SIGTERM trips.",
       "participants": [
-        "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+        "vKEsyHFk/XppR9owz#iIVu1bGE",
         "vKEsyHFk/nAmiQ3Vc#qHOothyT",
         "vKEsyHFk/nAmiQ3Vc#ogSW3Rjt",
         "vKEsyHFk/nAmiQ3Vc#zs4XwBa9",
         "vKEsyHFk/nAmiQ3Vc#0R2ysy3p",
         "vKEsyHFk/nAmiQ3Vc#zUIObqwQ",
         "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
-        "vKEsyHFk/nAmiQ3Vc#MmMnif7e"
+        "vKEsyHFk/XppR9owz#gt1eCpcS"
       ],
       "steps": [
         {
           "id": "vKEsyHFk/nAmiQ3Vc#Cv6QCOLd",
-          "from": "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+          "from": "vKEsyHFk/XppR9owz#iIVu1bGE",
           "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
           "label": "argv",
           "kind": "sync",
@@ -214,7 +214,7 @@
                 {
                   "id": "vKEsyHFk/nAmiQ3Vc#gxDs1NAe",
                   "from": "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
-                  "to": "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+                  "to": "vKEsyHFk/XppR9owz#gt1eCpcS",
                   "label": "contract, arguments, signal and vault",
                   "kind": "sync",
                   "anchor": {
@@ -234,7 +234,7 @@
                         {
                           "id": "vKEsyHFk/nAmiQ3Vc#Hv3Xmm8Q",
                           "from": "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
-                          "to": "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+                          "to": "vKEsyHFk/XppR9owz#gt1eCpcS",
                           "label": "abort the run",
                           "kind": "async",
                           "anchor": {
@@ -245,7 +245,7 @@
                         },
                         {
                           "id": "vKEsyHFk/nAmiQ3Vc#xCs15r3T",
-                          "from": "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+                          "from": "vKEsyHFk/XppR9owz#gt1eCpcS",
                           "to": "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
                           "label": "stopped",
                           "kind": "return",
@@ -274,7 +274,7 @@
                       "steps": [
                         {
                           "id": "vKEsyHFk/nAmiQ3Vc#PsXfVudN",
-                          "from": "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+                          "from": "vKEsyHFk/XppR9owz#gt1eCpcS",
                           "to": "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
                           "label": "finished",
                           "kind": "return",
@@ -307,7 +307,7 @@
         {
           "id": "vKEsyHFk/nAmiQ3Vc#wfzcWxpO",
           "from": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
-          "to": "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+          "to": "vKEsyHFk/XppR9owz#iIVu1bGE",
           "label": "returns; the exit code is set",
           "kind": "return",
           "anchor": {

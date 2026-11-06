@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/nAmiQ3Vc#Ba2uml5A",
       "to": "vKEsyHFk/nAmiQ3Vc#45uNvMac"
+    },
+    {
+      "order": 53000,
+      "kind": "call",
+      "label": "shared options, usage errors",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/rules/routing/dispatch.ts",
+        "symbol": "CliUsageError"
+      },
+      "id": "vKEsyHFk/XppR9owz#pVNsw2ko",
+      "to": "vKEsyHFk#E66M4aNV"
     }
   ]
 }
