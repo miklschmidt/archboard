@@ -14,6 +14,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#VC7yvPZB",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "formerNames": [
+    "Refresh changed boards"
+  ],
   "outgoing": [
     {
       "order": 12000,
@@ -41,8 +44,5 @@
       "id": "vKEsyHFk/UOXNWLhR#rHkIhwXz",
       "to": "vKEsyHFk/UOXNWLhR#bx5fJdP8"
     }
-  ],
-  "formerNames": [
-    "Refresh changed boards"
   ]
 }
