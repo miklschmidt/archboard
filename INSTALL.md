@@ -7,7 +7,7 @@ Its manifest identifies the model and optional current state.
 Module, flow, active proposal, and walkthrough files hold the authored architecture.
 
 This document is also the installation reference for agents: the installed
-skill carries a copy of it. To set up the voice loop for development of
+skill links to it on GitHub. To set up the voice loop for development of
 archboard itself, read [TESTING.md](TESTING.md).
 
 ## What you need
@@ -146,7 +146,48 @@ has no such command.
 
 ## 3. Set up a repository
 
-Run the installer from the repository that you want to diagram:
+Install the skills with the [skills CLI](https://skills.sh):
+
+```bash
+npx skills add miklschmidt/archboard -g
+```
+
+The skills CLI copies two skills from this repository on GitHub: `archboard`,
+which writes and reads canonical models, and `archboard-pr`, which gives a pull
+request an architecture explainer. It asks which agents to install them for.
+With `-g`, it installs them for your user, so they work in every repository.
+`npx skills update -g` updates them. The skills read the JSON Schemas of the
+model files from the archboard CLI on your `PATH`, with `archboard model schema`.
+So the schemas always match the installed program.
+
+The first time an agent works in a Git checkout that has no `.archboard/vault`,
+the agent makes the vault with `archboard model init`. You can also run it
+yourself:
+
+```bash
+cd ~/Projects/payments-api
+archboard model init --name payments-api --operation-id initialize-payments-api \
+  --writer me --doing 'Initialize architecture'
+```
+
+The command does these things:
+
+1. It creates `.archboard/vault` at the root of the checkout.
+2. It writes `.archboard/config.yaml` into the vault, with the default vocabulary.
+3. It initializes an empty canonical planning model through the signed model
+   installer. The new model has no implemented current state.
+4. It registers the checkout, so that a browser lists it.
+
+It needs no server. Existing vaults keep their inputs. If a vault contains
+legacy boards, it needs explicit migration. Commit the vault with your code.
+Setup honors the configured Git identity and signer. If signing fails, repair
+that configuration before retrying. Keep signing enabled.
+
+### Install the skills from a clone or offline
+
+`archboard install-skill` installs the skills from the installation itself, a
+release package or a checkout, with no network. It also sets the repository up.
+Run it from the repository that you want to diagram:
 
 ```bash
 cd ~/Projects/payments-api
@@ -157,38 +198,31 @@ Use `--agent claude-code` for Claude Code. Without it, the installer sets up
 Codex. The installer does these things:
 
 1. It links two skills from a skills directory to the `skills/` directory of
-   the installation, a release package or a checkout: `archboard`, which writes
-   and reads canonical models, and
-   `archboard-pr`, which gives a pull request an architecture explainer. The
+   the installation: `archboard` and `archboard-pr`. The
    default directory is `~/.agents/skills`, which Codex reads. With
    `--agent claude-code` it is `~/.claude/skills`. Each link replaces an earlier
    copy or a link to another place, and the installer names what it replaced.
-   An upgrade of a release, or a `git pull` and `bun install` in a clone,
+   An upgrade of a release, or a `git pull` in a clone,
    updates the linked skills.
    If `--dir` names a directory inside the repository, the installer copies the
    skills there instead, because the repository carries them to other machines.
    If a target in that directory is a symlink, the installer stops and changes
    nothing.
-2. If the repository has no `.archboard/vault`, the installer creates that directory.
-   An empty vault receives a `.archboard/config.yaml` file with the default vocabulary.
-   It initializes a canonical planning model through the signed model installer.
-   The new model has no implemented current state.
-   Existing vaults keep their inputs and require explicit migration when they contain legacy boards.
+2. If the repository has no `.archboard/vault`, the installer makes the vault
+   as `archboard model init` does. The model name is the name of the repository
+   directory.
 3. It removes the block that earlier versions of the installer wrote into
    `CLAUDE.md` and `AGENTS.md` between `<!-- archboard:begin -->` and
    `<!-- archboard:end -->`. It says which files it changed and changes nothing
    else in them. Commit that change.
 
 The repository is the nearest parent directory that holds `.git`. The installer
-creates no `CLAUDE.md` or `AGENTS.md` and adds nothing to them, because a command
-finds the vault from the repository (see section 4), and the file would hold
-paths of your machine.
+creates no `CLAUDE.md` or `AGENTS.md` and adds nothing to them. A command finds
+the vault from the repository (see section 4), and such a file holds paths of
+your machine.
 
 The installer prints what it did, and a JSON receipt. If Git ignores the vault,
-the installer warns you. Commit the vault with your code.
-Setup honors the configured Git identity and signer.
-If signing fails, repair that configuration before retrying.
-Keep signing enabled.
+the installer warns you.
 
 These options change what the installer does:
 
@@ -243,7 +277,7 @@ layout, and refuses a call that names another directory.
 A vault in the repository keeps current architecture next to the code.
 A reviewer can read its changes in the same diff.
 To describe several repositories together, keep one model in a directory of its own,
-for example a repository for a meta project. Run `archboard install-skill`
+for example a repository for a meta project. Run `archboard model init`
 there, and then run commands there or give `-C <that directory>`. A binding
 names a repository by its identity, so a module in that vault can describe any
 repository (see "Code bindings").
@@ -288,7 +322,8 @@ an OpenAI API key. The sign-in is kept apart from your own `~/.codex`, in
 The server needs no vault to start, and one server serves every vault. The
 navigator in the browser lists each repository that this machine knows and that
 has a vault. A command that runs in a checkout makes its repository known. So
-does `archboard repo add`, and so does `archboard install-skill`. A page opens
+does `archboard repo add`, and so do `archboard model init` and
+`archboard install-skill`. A page opens
 what its address names, or else the last reading of this browser. A machine with
 one repository that holds a model opens it. Any other page shows a repository
 chooser. If this machine knows no repository with a vault, the page says so and
@@ -682,9 +717,12 @@ archboard restart
 
 `archboard restart` stops the Archboard server, builds the frontend and starts
 the server on the new source. If the build fails, the server stays stopped.
-`archboard status` reports a server that runs older source. The linked skills
-follow the checkout. If a repository holds a copy of the skills, run
-`archboard install-skill --dir <that directory>` again to update it.
+`archboard status` reports a server that runs older source.
+
+Run `npx skills update -g` to update skills that the skills CLI installed. Skills
+that `archboard install-skill` linked follow the installation. If a repository
+holds a copy of the skills, run `archboard install-skill --dir <that directory>`
+again to update it.
 
 There is no uninstall command. To remove archboard, delete these things:
 

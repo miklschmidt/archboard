@@ -84,8 +84,8 @@ voice package, `@archboard/codex-realtime-voice`, has the version of Archboard
   time.
 - `frontend/`, the browser bundle that `vp build` makes.
 - `core/`, the renderer glue and WebAssembly that the server loads.
-- `skills/archboard` and `skills/archboard-pr`, with their generated
-  references.
+- `skills/archboard` and `skills/archboard-pr`, as Git tracks them. The skills
+  read their JSON Schemas from the executable with `archboard model schema`.
 - `archboard-release.json`, which records the version, the commit, the core
   source hash and the Codex version.
 - `LICENSE` with the version written in, and `THIRD_PARTY_NOTICES.md` for every
@@ -114,8 +114,11 @@ Without either, the code check reports the server as missing.
   main checkout. So a release and a checkout run side by side.
 - Inside an archboard checkout, a release command hands off to that
   checkout's `bin/archboard`, as ADR 0049 decides.
-- `archboard install-skill` links the skills of the installation. It never
-  writes into the installation, because a global install can be read-only.
+- The skills CLI (`npx skills add miklschmidt/archboard -g`) installs the
+  skills from GitHub, and the agent makes a vault with `archboard model init`.
+  `archboard install-skill` stays for a clone or offline use. It links the
+  skills of the installation, and it never writes into the installation,
+  because a global install can be read-only.
 - The browser loads `ui/clients/core.ts` and the painter as before. The build
   of the bundle fixes the hash that the browser checks.
 

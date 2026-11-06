@@ -371,14 +371,13 @@ archboard start
 
 The copy is the vault of `~/archboard-example`. Use your configured Git identity and signer for this example. The import restores its architecture history and registers the repository. The synthetic origin identifies local references and is never fetched. Open <http://archboard.localhost:27242/?modelA=Shop> to explore the modules, proposals, history, and walkthroughs. The example has no source code, so the code check and the Git measures need your own repository.
 
-**Use it on your own code**. Set up the repository you want mapped:
+**Use it on your own code**. Install the skills for your agent:
 
 ```bash
-cd ~/code/your-project
-archboard install-skill --agent claude-code     # omit --agent for Codex
+npx skills add miklschmidt/archboard -g
 ```
 
-The installer links the consumer skills from `~/.claude/skills` for Claude Code or `~/.agents/skills` for Codex to the installed package, so an upgrade updates them. It initializes an empty canonical model in a new vault. Existing architecture requires explicit migration. Commit authored inputs with your code. Commands find the vault from the working directory or `-C <dir>`. Then ask your agent:
+The [skills CLI](https://skills.sh) asks which agents to install the skills for. The first time your agent works in a repository, it makes the vault there: an empty canonical model in `.archboard/vault`. Existing architecture requires explicit migration. Commit authored inputs with your code. Commands find the vault from the working directory or `-C <dir>`. Then ask your agent, in the repository you want mapped:
 
 ```text
 Describe this repository with canonical modules, their responsibilities, and their relationships.
@@ -422,7 +421,7 @@ No. Measures states how many entries a module has, what it hides, and what chang
 <details><summary><b>Which agents does it work with?</b></summary>
 <br>
 
-Any agent that can run a CLI can author the architecture model. `archboard install-skill` sets up Claude Code and Codex. The agent in the browser, the voice, narration and recordings run on Codex. Archboard runs Codex as its own private app-server with its own sign-in.
+Any agent that can run a CLI can author the architecture model. `npx skills add miklschmidt/archboard -g` installs the skills for Claude Code, Codex and the other agents that the skills CLI supports. The agent in the browser, the voice, narration and recordings run on Codex. Archboard runs Codex as its own private app-server with its own sign-in.
 </details>
 
 <details><summary><b>Why is a narration silent with my Bluetooth headset?</b></summary>

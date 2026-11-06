@@ -14,8 +14,7 @@ archboard -C ~/archboard-example model import \\
   --input ~/archboard-example/.archboard/vault/history.import.json
 archboard start`;
 
-const ownCode = `cd ~/code/your-project
-archboard install-skill --agent claude-code     # omit --agent for Codex`;
+const ownCode = `npx skills add miklschmidt/archboard -g`;
 
 const prompts = [
 	["Draw how a request travels from the API to the database.", "a flow across modules bound to source"],
@@ -56,8 +55,9 @@ const prompts = [
 				</button>
 			</div>
 			<p class="body small">
-				Install the skill in the repository you want mapped. Then ask
-				your agent to describe it.
+				Install the skills for your agent. The skills CLI asks which agents to install them for.
+				Then ask your agent to describe the repository you want mapped. The first time it works
+				in a repository, it makes the vault there.
 			</p>
 			<pre class="block" tabindex="0"><code>{ownCode}</code></pre>
 			<p class="body small">
