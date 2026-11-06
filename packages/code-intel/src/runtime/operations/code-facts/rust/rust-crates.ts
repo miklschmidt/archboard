@@ -72,6 +72,12 @@ interface Start {
 	readonly rest: readonly string[];
 }
 
+/** A module's declaration: the file that holds it and the module's names below that file's module. */
+interface Declaration {
+	readonly file: string;
+	readonly names: readonly string[];
+}
+
 /** The crates of one checkout, read once in a pass. */
 interface Crates {
 	/**
@@ -90,6 +96,11 @@ interface Crates {
 	 * @param dependency The dependency.
 	 */
 	dependencyPackage(from: RustPackage, dependency: CargoDependency): RustPackage | undefined;
+	/**
+	 * The declarations of a file's module and of every module above it.
+	 * @param place The file's place.
+	 */
+	declarationsOf(place: Place): readonly Declaration[];
 	/**
 	 * Where a path leads from a file, read from the file's module.
 	 * @param from The file.
@@ -396,6 +407,23 @@ function cratesOf(checkout: CheckoutFiles, read: ReadText): Crates {
 	};
 
 	/**
+	 * The declarations of a file's module and of every module above it. Each
+	 * module is declared in the file of its nearest module that has one, which
+	 * an inline `mod name { ... }` between them does not.
+	 * @param place The file's place.
+	 * @returns The declaring file of each module, and its names below that file's module.
+	 */
+	const declarationsOf = (place: Place): Declaration[] =>
+		place.module.flatMap((_, index) => {
+			const module = place.module.slice(0, index + 1);
+			for (let count = index; count >= 0; count -= 1) {
+				const file = moduleFile(place.root, module.slice(0, count));
+				if (file !== undefined) return [{ file, names: module.slice(count) }];
+			}
+			return [];
+		});
+
+	/**
 	 * Where a path starts that names no module of its own: a child module of
 	 * the file's module, else a crate the package depends on or its own library.
 	 * @param place The file's place.
@@ -454,6 +482,7 @@ function cratesOf(checkout: CheckoutFiles, read: ReadText): Crates {
 		packageOf,
 		placeOf,
 		dependencyPackage,
+		declarationsOf,
 		/**
 		 * Where a path leads from a file.
 		 * @param from The file.

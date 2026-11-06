@@ -155,9 +155,10 @@ async function resolved(
 	adapter: SyntaxFacts["adapter"],
 	resolver: ImportResolver,
 ): Promise<SyntaxFacts> {
-	const imports = parsed.imports.map((found) => resolver.resolve(file, found));
 	const moduleReading = await resolver.inModule?.(file, parsed);
-	const references = parsed.references.map(({ through, ...reference }, index) => {
+	const read = moduleReading?.test === true ? { ...parsed, imports: [], references: [] } : parsed;
+	const imports = read.imports.map((found) => resolver.resolve(file, found));
+	const references = read.references.map(({ through, ...reference }, index) => {
 		const target =
 			through === undefined
 				? moduleReading?.targets[index]

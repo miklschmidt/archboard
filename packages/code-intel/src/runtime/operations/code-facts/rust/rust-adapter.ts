@@ -29,7 +29,9 @@
 //
 // Each use keeps the imports visible in its scope and whether it names a
 // local binding. Calls and imports under `#[cfg(test)]` are not production
-// dependencies. Code that did not parse holds no facts; its names are kept.
+// dependencies, and the out-of-line modules declared there are kept as
+// `testModules`, for the files of those modules are test code too. Code that
+// did not parse holds no facts; its names are kept.
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
 import type { ParsedFacts } from "#runtime/operations/code-facts/facts.ts";
@@ -398,6 +400,24 @@ function testItems(skipped: readonly Node[]): Node[] {
 }
 
 /**
+ * The modules a file declares out of line under `#[cfg(test)]`.
+ * @param declarations The `use`, `mod name;` and `extern crate` declarations.
+ * @param tests The spans of the file's test items.
+ * @param unparsed The spans that did not parse.
+ * @returns Each module's names below the file's module, joined by `::`.
+ */
+function testModulesOf(declarations: readonly Node[], tests: Spans, unparsed: Spans): string[] {
+	return declarations
+		.filter(
+			(node) =>
+				node.type === "mod_item" &&
+				tests.holds(node.startIndex) &&
+				!unparsed.holds(node.startIndex),
+		)
+		.map((node) => [...nestingOf(node), node.childForFieldName("name")?.text ?? ""].join("::"));
+}
+
+/**
  * The code facts of one parsed Rust file.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
@@ -444,6 +464,7 @@ function rustFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 		definitions: definitionsOf(tree.rootNode),
 		...bindReferences(written, imports, binding),
 		unparsed: unparsedOf(captured.unparsed),
+		testModules: testModulesOf(captured.import, testSpans, unparsed),
 	};
 }
 

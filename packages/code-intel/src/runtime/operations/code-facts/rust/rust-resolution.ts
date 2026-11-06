@@ -311,6 +311,21 @@ function createRustResolver(
 	};
 
 	/**
+	 * Whether a file is test code: a module it or a module above it has,
+	 * declared out of line under `#[cfg(test)]`.
+	 * @param from The file.
+	 * @returns True when it is.
+	 */
+	const isTestModule = async (from: string): Promise<boolean> => {
+		const place = crates().placeOf(from);
+		const declarations = place === undefined ? [] : crates().declarationsOf(place);
+		const declared = declarations.map(async ({ file, names }) =>
+			((await parsed(file))?.testModules ?? []).includes(names.join("::")),
+		);
+		return (await Promise.all(declared)).some(Boolean);
+	};
+
+	/**
 	 * Where the uses of one Rust file lead that no import names.
 	 * @param from The file.
 	 * @param facts Its facts.
@@ -349,6 +364,8 @@ function createRustResolver(
 		 * @returns Its definitions and the target of each use.
 		 */
 		inModule: async (from, facts): Promise<ModuleReading> => {
+			if (await isTestModule(from))
+				return { definitions: facts.definitions, targets: [], test: true };
 			const targets =
 				path.posix.basename(from) === "Cargo.toml"
 					? facts.references.map((use) => dependencyTarget(from, use.symbol))

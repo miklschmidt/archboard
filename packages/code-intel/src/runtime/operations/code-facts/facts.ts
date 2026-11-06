@@ -177,6 +177,12 @@ interface ParsedFacts {
 	readonly references: readonly (Reference & { readonly through?: ReferenceThroughImport })[];
 	readonly imports: readonly Import[];
 	readonly unparsed: readonly Unparsed[];
+	/**
+	 * Rust: the modules this file declares out of line (`mod name;`) under
+	 * `#[cfg(test)]`, each as the path of its names below the file's module,
+	 * joined by `::`. The files of those modules are test code (rust-resolution.ts).
+	 */
+	readonly testModules?: readonly string[];
 }
 
 /**
@@ -237,6 +243,12 @@ interface ModuleReading {
 	readonly definitions: readonly Definition[];
 	/** For each of its references, by index, where it leads, if anywhere. */
 	readonly targets: readonly (Target | undefined)[];
+	/**
+	 * The file is compiled only by a test harness, as a Rust module that a
+	 * `#[cfg(test)] mod name;` declares is. Its definitions stay, and its
+	 * imports and uses are no production dependencies.
+	 */
+	readonly test?: true;
 }
 
 /** Resolves the imports of one checkout for one pass, as one adapter's language does. */
