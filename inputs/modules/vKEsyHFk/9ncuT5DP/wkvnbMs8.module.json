@@ -5,7 +5,7 @@
   "responsibility": "Owns the private Codex child and what outlives each generation of it: the process, the transport, the protocol session, the ledger of which generation owns a thread, and unloading idle threads",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/generation/services"
+    "path": "packages/codex-realtime-voice/src/server/generation"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#wkvnbMs8",

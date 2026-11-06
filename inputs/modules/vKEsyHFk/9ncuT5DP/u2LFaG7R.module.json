@@ -6,7 +6,7 @@
   "description": "The gateway asks which checkout the chat's tab shows on every read and command, because the person can activate another one at any time. It hears the change and presents every chat of the tab again, with the workhorse of the new checkout. A lease taken before a switch is refused as link_changed. A command runs on the workhorse its lease was claimed for, and once it has run only that workhorse's own link is asked whether it still stands, so a switch meanwhile does not make its outcome unknown. A workhorse's approval terminal is retired once the chats that show its checkout have shown it, and a coordinator's once every chat of the tab has.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections/services"
+    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#u2LFaG7R",

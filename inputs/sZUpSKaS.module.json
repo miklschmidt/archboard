@@ -5,7 +5,7 @@
   "responsibility": "Holds each browser connection: its lease, its snapshots, its chats and its disconnect",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections/services"
+    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#sZUpSKaS",
