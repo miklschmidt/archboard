@@ -63,7 +63,7 @@ Then it runs `archboard --version`, `start`, `status` and `stop`.
 The PATH of these commands holds the bin of the install and the system
 directories only. The script stops when that PATH holds Bun, Node.js, npm or
 Rust. The server listens on a free loopback port, and its state is in the
-scratch directory. So the script never touches a server on port 3000 or 27242.
+scratch directory. So the script never touches a server on port 3000 or 4242.
 
 The script needs the network for the Codex package. `--installer npm` also
 needs npm on your PATH.

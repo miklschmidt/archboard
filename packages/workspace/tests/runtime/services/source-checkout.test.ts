@@ -62,21 +62,21 @@ test("the main checkout keeps 3000 and a linked worktree takes a stable port in 
 	expect(worktreePort("/home/ada/archboard/.worktrees/other")).toBe(16646);
 });
 
-test("a release server takes port 27242 wherever it is installed, and a checkout keeps its own", () => {
+test("a release server takes port 4242 wherever it is installed, and a checkout keeps its own", () => {
 	expect(installationPort({ mode: "release", root: checkout("release-root") })).toBe(RELEASE_PORT);
 	expect(installationPort({ mode: "checkout", root: checkout("daily") })).toBe(3000);
 });
 
 test("a person opens a release server at archboard.localhost, and a checkout server where it listens", () => {
-	expect(browserUrl("http://127.0.0.1:27242", "release")).toBe("http://archboard.localhost:27242");
-	expect(browserUrl("http://localhost:27242", "release")).toBe("http://archboard.localhost:27242");
+	expect(browserUrl("http://127.0.0.1:4242", "release")).toBe("http://archboard.localhost:4242");
+	expect(browserUrl("http://localhost:4242", "release")).toBe("http://archboard.localhost:4242");
 	expect(browserUrl("http://127.0.0.1:3000", "checkout")).toBe("http://127.0.0.1:3000");
-	expect(browserUrl("http://127.0.0.1:27242", "checkout")).toBe("http://127.0.0.1:27242");
+	expect(browserUrl("http://127.0.0.1:4242", "checkout")).toBe("http://127.0.0.1:4242");
 });
 
 test("a server that ARCHBOARD_URL or --url names elsewhere is shown as named", () => {
 	expect(browserUrl("http://127.0.0.1:4000", "release")).toBe("http://127.0.0.1:4000");
-	expect(browserUrl("http://example.test:27242", "release")).toBe("http://example.test:27242");
+	expect(browserUrl("http://example.test:4242", "release")).toBe("http://example.test:4242");
 });
 
 test("a command in another archboard checkout runs that checkout's bin/archboard", () => {

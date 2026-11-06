@@ -97,13 +97,13 @@ describe("browser CSRF guard", () => {
 
 	describe("the browser address of a release server", () => {
 		const release = (hostname: string) => ({
-			host: `${hostname}:27242`,
-			origin: `http://${hostname}:27242`,
+			host: `${hostname}:4242`,
+			origin: `http://${hostname}:4242`,
 			secFetchSite: "same-origin",
 		});
 
 		// The name the CLI shows and opens for a release server is the one this guard accepts.
-		const opened = new URL(browserUrl("http://127.0.0.1:27242", "release")).hostname;
+		const opened = new URL(browserUrl("http://127.0.0.1:4242", "release")).hostname;
 
 		test.each(["request", "mutation", "settings-read"] as const)(
 			"%s traffic from where a person opens the server is the page's own",

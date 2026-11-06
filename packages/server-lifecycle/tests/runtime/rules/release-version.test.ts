@@ -4,7 +4,7 @@ import { expect, test } from "bun:test";
 import { bothRelease, otherVersionWarning } from "#runtime/rules/release-version.ts";
 
 const installed = { mode: "release", version: "0.5.0" } as const;
-const address = "http://archboard.localhost:27242";
+const address = "http://archboard.localhost:4242";
 
 test("a release server of another version gets a warning that names archboard restart", () => {
 	const warning = otherVersionWarning({ mode: "release", version: "0.4.0" }, installed, address);

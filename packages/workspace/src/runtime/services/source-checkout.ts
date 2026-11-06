@@ -60,10 +60,10 @@ function checkoutPort(root: string): number {
 }
 
 /**
- * The port of a release server (ADR 0075). It spells ARCHB on a phone keypad. It is outside the
+ * The port of a release server (ADR 0075), four digits that are easy to remember. It is outside the
  * worktree range and is not the main checkout's port, so a release and a checkout run side by side.
  */
-const RELEASE_PORT = 27242;
+const RELEASE_PORT = 4242;
 
 /**
  * The name a browser opens a release server at. Chrome and Firefox resolve every `*.localhost`

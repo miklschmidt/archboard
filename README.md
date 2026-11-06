@@ -369,7 +369,7 @@ archboard -C ~/archboard-example model import \
 archboard start
 ```
 
-The copy is the vault of `~/archboard-example`. Use your configured Git identity and signer for this example. The import restores its architecture history and registers the repository. The synthetic origin identifies local references and is never fetched. Open <http://archboard.localhost:27242/?modelA=Shop> to explore the modules, proposals, history, and walkthroughs. The example has no source code, so the code check and the Git measures need your own repository.
+The copy is the vault of `~/archboard-example`. Use your configured Git identity and signer for this example. The import restores its architecture history and registers the repository. The synthetic origin identifies local references and is never fetched. Open <http://archboard.localhost:4242/?modelA=Shop> to explore the modules, proposals, history, and walkthroughs. The example has no source code, so the code check and the Git measures need your own repository.
 
 **Use it on your own code**. Install the skills for your agent:
 

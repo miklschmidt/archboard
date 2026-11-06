@@ -53,9 +53,9 @@ same program. The package manager installs only the package of your platform,
 with the Codex binary that archboard is pinned to. The install puts `archboard`
 on your `PATH`, so skip section 2. Then set up a repository as section 3 says.
 
-A release server listens on <http://archboard.localhost:27242>. Chrome and
+A release server listens on <http://archboard.localhost:4242>. Chrome and
 Firefox send every `*.localhost` name to this machine without any setup. The
-CLI connects to `127.0.0.1:27242` itself.
+CLI connects to `127.0.0.1:4242` itself.
 
 ### Install from a clone
 
@@ -295,7 +295,7 @@ server in both cases. The server uses the environment of the command that
 started it.
 
 The server of a clone listens on <http://127.0.0.1:3000>. A release server
-listens on <http://archboard.localhost:27242>. To use another address, set
+listens on <http://archboard.localhost:4242>. To use another address, set
 `ARCHBOARD_URL`, or give `--url` to one command. A command starts a server only
 for a loopback address, that is, an address that only this machine can reach.
 The old variable `EXPRESS_SERVER_URL` is refused with a message, as

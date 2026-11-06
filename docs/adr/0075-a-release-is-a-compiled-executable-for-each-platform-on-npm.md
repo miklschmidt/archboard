@@ -105,13 +105,14 @@ Without either, the code check reports the server as missing.
 - A server that runs another version than the installed executable gets a
   warning that names `archboard restart`, as a stale source does in a checkout.
   `/health` reports the version and the mode.
-- The server listens on `127.0.0.1:27242`. The browser address is
-  `http://archboard.localhost:27242`, because Chrome and Firefox resolve every
+- The server listens on `127.0.0.1:4242`. The browser address is
+  `http://archboard.localhost:4242`, because Chrome and Firefox resolve every
   `*.localhost` name to the loopback address themselves. The CLI connects to
   `127.0.0.1`, because the system resolver does not resolve `*.localhost` on
-  every Linux. Port 27242 spells ARCHB on a phone keypad. It is outside the
-  range 10000 to 19999 of the worktree servers, and it is not port 3000 of the
-  main checkout. So a release and a checkout run side by side.
+  every Linux. Port 4242 is easy to remember, and no common development
+  server uses it. It is outside the range 10000 to 19999 of the worktree
+  servers, and it is not port 3000 of the main checkout. So a release and a
+  checkout run side by side.
 - Inside an archboard checkout, a release command hands off to that
   checkout's `bin/archboard`, as ADR 0049 decides.
 - The skills CLI (`npx skills add miklschmidt/archboard -g`) installs the
