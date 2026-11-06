@@ -85,7 +85,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                     "symbol": "requestDecoded"
                   }
                 },
@@ -97,7 +97,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/clients/transport.ts",
+                    "path": "packages/codex-app-server/src/runtime/transport/clients/transport.ts",
                     "symbol": "createFrameWriter"
                   }
                 },
@@ -109,7 +109,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/operations/request-settlement.ts",
+                    "path": "packages/codex-app-server/src/runtime/transport/operations/request-settlement.ts",
                     "symbol": "settleDelivered"
                   }
                 },
@@ -121,7 +121,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                     "symbol": "requestDecoded"
                   }
                 },
@@ -182,7 +182,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                            "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                             "symbol": "requestDecoded"
                           }
                         },
@@ -194,7 +194,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-app-server/src/runtime/clients/transport.ts",
+                            "path": "packages/codex-app-server/src/runtime/transport/clients/transport.ts",
                             "symbol": "createFrameWriter"
                           }
                         },
@@ -206,7 +206,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-app-server/src/runtime/operations/request-settlement.ts",
+                            "path": "packages/codex-app-server/src/runtime/transport/operations/request-settlement.ts",
                             "symbol": "settleDelivered"
                           }
                         },
@@ -218,7 +218,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                            "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                             "symbol": "requestDecoded"
                           }
                         },
@@ -588,7 +588,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                                     "symbol": "requestDecoded"
                                   }
                                 },
@@ -600,7 +600,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
                                     "symbol": "requestDecoded"
                                   }
                                 },

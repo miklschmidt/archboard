@@ -6,7 +6,7 @@
   "description": "Validates every identity-bearing request field against the current child authority and serializes only issued identities for the wire.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-app-server/src/runtime/services/session-request-identities.ts"
+    "path": "packages/codex-app-server/src/runtime/session/services/session-request-identities.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/wAHh0HTa#X6j6fViI",
@@ -25,7 +25,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/session-request-identities.ts",
+        "path": "packages/codex-app-server/src/runtime/session/services/session-request-identities.ts",
         "symbol": "SESSION_PROTOCOL_METHODS"
       },
       "id": "vKEsyHFk/wAHh0HTa#7wUmdcxh",
@@ -38,7 +38,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/session-request-identities.ts",
+        "path": "packages/codex-app-server/src/runtime/session/services/session-request-identities.ts",
         "symbol": "requestParams"
       },
       "id": "vKEsyHFk/wAHh0HTa#s0Qx9DbR",
@@ -51,7 +51,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/session-request-identities.ts",
+        "path": "packages/codex-app-server/src/runtime/session/services/session-request-identities.ts",
         "symbol": "isClientRequestMethodWithoutParams"
       },
       "id": "vKEsyHFk/wAHh0HTa#cGImVr7b",

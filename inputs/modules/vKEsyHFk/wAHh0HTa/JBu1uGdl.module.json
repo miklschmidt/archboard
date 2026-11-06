@@ -6,7 +6,7 @@
   "description": "Implements the reviewed login, thread, turn, queue, timeline, and realtime methods as reads or mutations of the request path, behind login-capable and thread-capable gates.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-app-server/src/runtime/services/session-operations.ts"
+    "path": "packages/codex-app-server/src/runtime/session/services/session-operations.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
@@ -29,7 +29,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+        "path": "packages/codex-app-server/src/runtime/session/services/session-operations.ts",
         "symbol": "mutate"
       },
       "id": "vKEsyHFk/wAHh0HTa#jhNZqAiD",
@@ -42,7 +42,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+        "path": "packages/codex-app-server/src/runtime/session/services/session-operations.ts",
         "symbol": "mutationOutcome"
       },
       "id": "vKEsyHFk/wAHh0HTa#wVgRmbf8",
@@ -55,7 +55,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+        "path": "packages/codex-app-server/src/runtime/session/services/session-operations.ts",
         "symbol": "LOGIN_POLICIES"
       },
       "id": "vKEsyHFk/wAHh0HTa#40GtFaKL",
