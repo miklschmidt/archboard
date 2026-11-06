@@ -5,7 +5,7 @@
   "responsibility": "Rewrites the pinned versions of the author and grader executables from what is on PATH, and says which change starts a new baseline",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/operations/runs/pin-versions.ts"
+    "path": "packages/skills/src/runtime/evaluation/batch/operations/pin-versions.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#yohDGrXU",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/pin-versions.ts",
+        "path": "packages/skills/src/runtime/evaluation/batch/operations/pin-versions.ts",
         "symbol": "GRADER_NAMES"
       },
       "id": "vKEsyHFk/IbGtfJE2#Vm6nSiIe",

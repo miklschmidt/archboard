@@ -6,7 +6,7 @@
   "description": "Each relative path in a script is read from the directory the script's earlier cd commands moved it to, starting in the checkout the author works in, so a relative or escaped path to a model file still counts as a direct write, and a checkout file is never taken for a model.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/rules/audit/guardrails.ts"
+    "path": "packages/skills/src/runtime/evaluation/run-checks/audit/rules/guardrails.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#7LcGoxWH",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/rules/audit/guardrails.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-checks/audit/rules/guardrails.ts",
         "symbol": "unwrapped"
       },
       "id": "vKEsyHFk/IbGtfJE2#ovGUX3xQ",

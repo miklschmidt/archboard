@@ -6,7 +6,7 @@
   "description": "A pass count is a tally and any change to it is real; a grader mean is held to the spread of the runs the two arms share, paired scenario for scenario (report-change.ts), and gets a word only where more than one scenario stands behind it. Author and grader usage are never added together.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/rules/reports/report.ts"
+    "path": "packages/skills/src/runtime/evaluation/reporting/rules/report.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#mwlOEUS8",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/rules/reports/report.ts",
+        "path": "packages/skills/src/runtime/evaluation/reporting/rules/report.ts",
         "symbol": "CATALOGUE_ROWS"
       },
       "id": "vKEsyHFk/IbGtfJE2#HVWgimVj",

@@ -6,7 +6,7 @@
   "description": "The run's vault sits in the checkout the author works in: a read of a model is not a read of the code, and a vault spelled relative to the checkout (.archboard/vault) still names the vault.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/rules/audit/classify.ts"
+    "path": "packages/skills/src/runtime/evaluation/run-checks/audit/rules/classify.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#TJmrdpKj",

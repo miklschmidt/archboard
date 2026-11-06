@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/operations/grading/grading-retry.ts"
+    "path": "packages/skills/src/runtime/evaluation/grading/operations/grading-retry.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#m7s6sgLI",
@@ -22,7 +22,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/grading/grading-retry.ts",
+        "path": "packages/skills/src/runtime/evaluation/grading/operations/grading-retry.ts",
         "symbol": "combinedDelivery"
       },
       "id": "vKEsyHFk#OFpAXpvp",

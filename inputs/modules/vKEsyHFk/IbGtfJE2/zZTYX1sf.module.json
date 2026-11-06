@@ -6,7 +6,7 @@
   "description": "Exposure is counted from the saved commands alone. No rule reads a run's vault, so an old batch that kept its vault at world/vault re-audits the same way.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/operations/runs/reaudit.ts"
+    "path": "packages/skills/src/runtime/evaluation/run-checks/operations/reaudit.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#zZTYX1sf",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/reaudit.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-checks/operations/reaudit.ts",
         "symbol": "classifyCommands"
       },
       "id": "vKEsyHFk/IbGtfJE2#x8jCskDI",

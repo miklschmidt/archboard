@@ -6,7 +6,7 @@
   "description": "It hashes the inputs, the harness and both skill packages into the batch and keeps a copy of the candidate skill, so a resume or a later grading pass cannot quietly change what was measured.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/operations/runs/batch.ts"
+    "path": "packages/skills/src/runtime/evaluation/batch/operations/batch.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
@@ -23,7 +23,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/batch.ts",
+        "path": "packages/skills/src/runtime/evaluation/batch/operations/batch.ts",
         "symbol": "executeRun"
       },
       "id": "vKEsyHFk/IbGtfJE2#GYwjzXJJ",
@@ -36,7 +36,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/batch.ts",
+        "path": "packages/skills/src/runtime/evaluation/batch/operations/batch.ts",
         "symbol": "keepBatchSkill"
       },
       "id": "vKEsyHFk/IbGtfJE2#e1NAqCVh",
@@ -49,7 +49,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/batch.ts",
+        "path": "packages/skills/src/runtime/evaluation/batch/operations/batch.ts",
         "symbol": "ensureFlaskCache"
       },
       "id": "vKEsyHFk/IbGtfJE2#coFF39nO",
@@ -62,7 +62,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/batch.ts",
+        "path": "packages/skills/src/runtime/evaluation/batch/operations/batch.ts",
         "symbol": "digestOf"
       },
       "id": "vKEsyHFk/IbGtfJE2#jjJXKT2q",
