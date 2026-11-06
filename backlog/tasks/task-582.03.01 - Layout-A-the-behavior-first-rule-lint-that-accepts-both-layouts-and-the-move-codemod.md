@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-06T19:06:00Z'
-updated_date: '2026-11-06T19:18:00Z'
+updated_date: '2026-11-06T19:25:00Z'
 labels: []
 dependencies: []
 documentation:
@@ -40,3 +40,14 @@ The layout moves hundreds of files across many commits, and every commit must ke
 4. Lint: one shared role-folder reader in source-layout.ts. ui-concern-placement takes the one role folder, first or last, refuses two (twoConcerns) or one in the middle; assistant-ui-imports accepts the old owner position and thread or assistant-runtime before the role; state-files-pure unchanged with new-form fixtures; frame-clock override gains architecture-drawing/canvas and workbench-client/subtitles globs; mapped-source-paths message names behavior folders. Rule tests prove both forms and the old refusals.
 5. scripts/move-source.ts: plan (default move plus prefix overrides, proposals for unbound files from importers, split-directory bindings proposed), apply [--dry-run] (git mv, alias, relative, URL and import.meta.dir rewrites, repository-path literals in the listed config and doc files, report of other references), then restart and one claimed model edit (set.binding, set.anchor on relationships and steps), extending the claim on CLAIM_REQUIRED, then release. Dry run over apps/web, no real move.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Ratchet: ROLE_FIRST_TREES lists the 36 trees that break the rule today, not every tree. A tree of only flat <area>/<role>/<file> files (codex-app-server, process, timing and others) already conforms, so listing it would fail the 'a listed tree still breaks the rule' check. Those trees are held to the rule now.
+Layout rule details settled from doc-003: tests/<area>/support/ is exempt; api must sit directly under the area (boundaries.md says it stays there).
+ui-concern-placement accepts the role folder first (role-first trees) or last (behavior first); a role folder in the middle is refused (misplacedConcern), two role folders are refused (twoConcerns). The role set is the full doc-003 list; UI_ROLES still limits which roles a ui file may use.
+assistant-ui-imports: the role-first form now requires the first folder to be a role (the old code took segment [1] of any path); no current file relies on the looser form.
+Config-paths test also holds the single-file entries of both .oxlintrc override lists to existing files, which keeps the vendored exemption list exact after moves.
+Found for layer B6: packages/renderer/tests/runtime/operations/routes/ is a behavior named 'routes', a role word, so its move needs a new folder name.
+<!-- SECTION:NOTES:END -->
