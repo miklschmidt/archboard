@@ -29,7 +29,7 @@
 		"build": "vp run frontend",
 		"build:core": "vp run core",
 		"dev": "vp run core && concurrently --kill-others --names server,web \"bun run server\" \"vp dev\"",
-		"postinstall": "bun run generate:codex-contract && bun run generate:skill-artifacts",
+		"postinstall": "bun run generate:codex-contract && bun run generate:skill-artifacts && bun scripts/configure-language-servers.ts",
 		"lint": "vp run lint:all",
 		"fix": "vp run fix:all",
 		"fmt": "vp fmt --config vite.config.ts && cargo fmt --all",
