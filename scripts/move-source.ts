@@ -13,7 +13,8 @@
 //
 // Apply checks everything before it changes anything. It runs `git mv`, rewrites `#` aliases,
 // relative paths, `exports` and repository paths (never in backlog/, docs/design/*.md,
-// docs/adr/ or the vault), restarts the server and writes one claimed `model edit` intent.
+// docs/adr/ or the vault), formats the rewritten files, restarts the server and writes one
+// claimed `model edit` intent.
 // A dry run prints what it would do and changes nothing. When the vault refuses after the files
 // moved, `rebind` writes the vault intent again from the moved checkout.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -417,6 +418,21 @@ function moveFiles(moves: readonly Move[], texts: ReadonlyMap<string, string>): 
 		if (result.exitCode !== 0) throw new Error(`git mv ${from} ${to}: ${result.stderr.toString()}`);
 	}
 	for (const [file, text] of texts) writeFileSync(join(root, file), text);
+	formatFiles([...texts.keys()]);
+}
+
+/**
+ * Format rewritten files the way the format check reads them, because a rewritten path can
+ * change how a line wraps.
+ * @param files The rewritten files' repository paths.
+ * @throws {Error} When the formatter fails.
+ */
+function formatFiles(files: readonly string[]): void {
+	if (files.length === 0) return;
+	const vp = join(root, "node_modules/.bin/vp");
+	const command = [vp, "fmt", "--config", "vite.config.ts", ...files];
+	const result = Bun.spawnSync(command, { cwd: root, stdout: "pipe", stderr: "pipe" });
+	if (result.exitCode !== 0) throw new Error(`vp fmt: ${result.stderr.toString()}`);
 }
 
 /**

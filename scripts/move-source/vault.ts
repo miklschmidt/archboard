@@ -276,7 +276,8 @@ function release(root: string, claim: string): void {
  * @throws {Error} When the restart fails.
  */
 function restartServer(root: string): void {
-	const result = Bun.spawnSync([join(root, "bin/archboard"), "restart", "-C", root], {
+	// `restart` takes no `-C`: the checkout's own bin and working directory name its server.
+	const result = Bun.spawnSync([join(root, "bin/archboard"), "restart"], {
 		cwd: root,
 		stdout: "inherit",
 		stderr: "inherit",
