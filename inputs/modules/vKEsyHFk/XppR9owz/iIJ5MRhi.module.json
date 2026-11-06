@@ -34,7 +34,7 @@
   ],
   "outgoing": [
     {
-      "order": 1009080,
+      "order": 1000,
       "kind": "call",
       "label": "ask the server about itself",
       "emphasis": "muted",

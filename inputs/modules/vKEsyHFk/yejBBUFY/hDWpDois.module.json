@@ -2,7 +2,7 @@
   "order": 11000,
   "name": "Browser renderer",
   "kind": "module",
-  "responsibility": "Installs the browser host, draws with the core it loads and its layout workers, and chooses the painter of a canvas",
+  "responsibility": "Installs the browser host and draws with the core it loads and its layout workers",
   "groups": [
     "drawing"
   ],

@@ -36,19 +36,6 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#bwa7JRYk",
       "to": "vKEsyHFk#Ut8M2UHc"
-    },
-    {
-      "order": 990100,
-      "kind": "call",
-      "label": "the warnings, for the painter to draw",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/subjects/code-marks.ts",
-        "symbol": "stageOf"
-      },
-      "id": "vKEsyHFk#KTwHgUQG",
-      "to": "vKEsyHFk#9FxduWoO"
     }
   ]
 }

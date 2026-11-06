@@ -25,19 +25,6 @@
       "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
     },
     {
-      "order": 8100,
-      "kind": "call",
-      "label": "open a file an agent's answer names",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/Application.tsx",
-        "symbol": "activateCodeTarget"
-      },
-      "id": "vKEsyHFk#6HrhFftD",
-      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
-    },
-    {
       "order": 11000,
       "kind": "render",
       "label": "dock, conversation, voice box, the presentation's voice key",

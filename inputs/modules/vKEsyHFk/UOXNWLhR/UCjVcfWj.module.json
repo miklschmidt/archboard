@@ -2,8 +2,8 @@
   "order": 36000,
   "name": "Place a picture in its card",
   "kind": "function",
-  "responsibility": "Finds the parts of the pane that a flight into a card happens on, and ends the flight on a press",
-  "description": "The stage draws the model inside the card and fades the two pictures across the flight; this finds the viewport, the surface and its slots.",
+  "responsibility": "Puts the model's picture inside its card on the surface, fades the two pictures across the flight, and lets a press end it",
+  "description": "A flight fades the shared chip along with both layers of words, and the child picture inherits the surface's held near or far reading.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/canvas/picture/picture-dive.ts"
@@ -14,5 +14,19 @@
   "formerNames": [
     "Place a board in its card"
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 67000,
+      "kind": "call",
+      "label": "the traffic of the model inside its card",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/canvas/picture/picture-dive.ts",
+        "symbol": "runTraffic"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#AEEOu1vG",
+      "to": "vKEsyHFk/UOXNWLhR#n5No6FUy"
+    }
+  ]
 }

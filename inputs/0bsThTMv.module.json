@@ -80,15 +80,15 @@
     {
       "order": 70000,
       "kind": "call",
-      "label": "the host of the canvases the picture is painted on",
+      "label": "the relationships that are lit",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CameraSurface.tsx",
-        "symbol": "attachStage"
+        "path": "apps/web/src/ui/hooks/canvas/use-viewer-marks.ts",
+        "symbol": "lightInk"
       },
       "id": "vKEsyHFk/UOXNWLhR#eKc3FaJx",
-      "to": "vKEsyHFk#9FxduWoO"
+      "to": "vKEsyHFk/UOXNWLhR#WT3s42AE"
     },
     {
       "order": 72000,
@@ -128,19 +128,6 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#ouBCto6M",
       "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
-    },
-    {
-      "order": 990100,
-      "kind": "call",
-      "label": "the lit subjects, to draw on",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
-        "symbol": "useSweep"
-      },
-      "id": "vKEsyHFk#LOCiLRdW",
-      "to": "vKEsyHFk/UOXNWLhR#UqVsXH0L"
     }
   ]
 }

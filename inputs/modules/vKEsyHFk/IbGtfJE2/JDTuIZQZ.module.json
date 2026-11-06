@@ -10,36 +10,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#JDTuIZQZ",
   "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
-  "outgoing": [
-    {
-      "order": 8000,
-      "kind": "call",
-      "label": "the CLI under test",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/processes/archboard.ts",
-        "symbol": "archboard"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#xKVVomRU",
-      "to": "vKEsyHFk/XppR9owz#peyArgPx"
-    },
-    {
-      "order": 24000,
-      "kind": "call",
-      "label": "one command, one answer",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/processes/archboard.ts",
-        "symbol": "archboard"
-      },
-      "id": "vKEsyHFk/IbGtfJE2#eclUOkMc",
-      "to": "vKEsyHFk/IbGtfJE2#fRFvnVRE"
-    }
-  ]
+  "outgoing": []
 }

@@ -13,6 +13,19 @@
   "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
   "outgoing": [
     {
+      "order": 50000,
+      "kind": "data",
+      "label": "the relationships that light",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/canvas/picture/picture-sweep.ts",
+        "symbol": "sweepLines"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#aTUikCKr",
+      "to": "vKEsyHFk/UOXNWLhR#UqVsXH0L"
+    },
+    {
       "order": 51000,
       "kind": "call",
       "label": "the pointer's rest and its grace",

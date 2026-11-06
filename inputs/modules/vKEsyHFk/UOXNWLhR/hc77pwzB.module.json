@@ -28,12 +28,12 @@
     {
       "order": 61000,
       "kind": "call",
-      "label": "the parts of the pane a flight happens on, and what ends it",
+      "label": "the model inside its card, and the fades",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
-        "symbol": "stageIn"
+        "symbol": "startDive"
       },
       "id": "vKEsyHFk/UOXNWLhR#1PbM9cTg",
       "to": "vKEsyHFk/UOXNWLhR#UCjVcfWj"
@@ -103,19 +103,6 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#115rtbFD",
       "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
-    },
-    {
-      "order": 990100,
-      "kind": "call",
-      "label": "the model inside the card, and the flight's fades",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
-        "symbol": "stageOf"
-      },
-      "id": "vKEsyHFk#fDFYdO1w",
-      "to": "vKEsyHFk#9FxduWoO"
     }
   ]
 }
