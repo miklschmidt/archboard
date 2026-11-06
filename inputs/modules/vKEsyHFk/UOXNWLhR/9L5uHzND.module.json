@@ -9,5 +9,9 @@
   "formerNames": [
     "Moves between pictures"
   ],
-  "outgoing": []
+  "outgoing": [],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions"
+  }
 }
