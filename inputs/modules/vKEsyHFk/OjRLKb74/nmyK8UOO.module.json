@@ -123,6 +123,19 @@
       },
       "id": "vKEsyHFk#fR8ub6zC",
       "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
+    },
+    {
+      "order": 61000,
+      "kind": "dependency",
+      "label": "the icon a card falls back to",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-render/src/appearance.rs",
+        "symbol": "node_appearances"
+      },
+      "id": "vKEsyHFk#gJg0IMG5",
+      "to": "vKEsyHFk#w44DwfpV"
     }
   ]
 }

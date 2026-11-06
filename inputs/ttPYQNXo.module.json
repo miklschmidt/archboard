@@ -53,6 +53,19 @@
       },
       "id": "vKEsyHFk#HIuM9juy",
       "to": "vKEsyHFk#107AGlEf"
+    },
+    {
+      "order": 4000,
+      "kind": "call",
+      "label": "the warning mark on a warned subject",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/marks.rs",
+        "symbol": "viewer_marks"
+      },
+      "id": "vKEsyHFk#9MKtlnoC",
+      "to": "vKEsyHFk#GqMdZbTF"
     }
   ]
 }

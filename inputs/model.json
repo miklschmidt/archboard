@@ -3,25 +3,21 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "jRNHx2a1",
-    "name": "A flowchart lays out from its flow and a flow opens in the reading that fits",
-    "summary": "The flowchart lays a flow out from its structure in one pass, breaks a long run into columns and ends every long line at a lettered jump, so a long flow fits a desktop pane without lines round its blocks, and a flow opens in the reading that its pane shows larger.",
+    "id": "s3dmAjji",
+    "name": "Painting owns the paint directory",
+    "summary": "Painting binds crates/archboard-scene/src/paint, so the code in it that no part binds belongs to Painting, and its design constants become a part that the layouts and the SVG painter call. SVG document is the archboard-svg crate, so it moves beside the other painters of the renderer.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0073-a-flowchart-lays-out-from-its-flow-and-a-flow-opens-in-the-reading-that-fits.md"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/design/flowchart-layout-research.md"
+        "path": "backlog/tasks/task-582.02 - Painting-owns-the-paint-directory-and-its-design-constants-are-a-part.md"
       }
     ],
-    "predecessor": "w4XB6eBv",
-    "baseline": "9194e44da5a324e84e6ffdba346147f03b566ed8",
-    "createdAt": "2026-11-06T11:22:18.419Z",
-    "adoptedAt": "2026-11-06T11:23:04.454Z",
-    "reason": "The flowchart layout from the flow and the reading that fits are merged on main in #34 (ADR 0073). This proposal carries vdbwhuzZ's changes onto current, because vdbwhuzZ follows a former current state.",
-    "previousCurrent": "w4XB6eBv"
+    "predecessor": "jRNHx2a1",
+    "baseline": "0406c4e5f73365eb5c786adff71043535433e472",
+    "createdAt": "2026-11-06T15:20:49.047Z",
+    "adoptedAt": "2026-11-06T17:19:49.187Z",
+    "reason": "Painting owns the paint directory describes code that main already holds: it corrects the model, and PR 49 carries it with the containment check. The owner asked for its adoption.",
+    "previousCurrent": "jRNHx2a1"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
