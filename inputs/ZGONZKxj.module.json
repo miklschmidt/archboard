@@ -5,7 +5,7 @@
   "responsibility": "Reads one coherent model of the addressed vault, its state, its proposals and its flows",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/operations/read/model-read.ts"
+    "path": "packages/model/src/runtime/canonical/read/operations/model-read.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#ZGONZKxj",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/read/model-read.ts",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-read.ts",
         "symbol": "readCurrentModel"
       },
       "id": "vKEsyHFk#25PfRoN2",
@@ -30,7 +30,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/read/model-read.ts",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-read.ts",
         "symbol": "ArchitectureManifestSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#41Ear2yX",
@@ -42,7 +42,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/read/model-read.ts",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-read.ts",
         "symbol": "VaultConfigurationSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#BADMPDPc",
@@ -55,7 +55,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/read/model-read.ts",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-read.ts",
         "symbol": "modelBoundaryFailure"
       },
       "id": "vKEsyHFk/0T9enjhi#qyBfoMqw",
@@ -68,7 +68,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/read/model-read.ts",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-read.ts",
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#IFI468Vn",
@@ -80,7 +80,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/read/model-read.ts",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-read.ts",
         "symbol": "readRequestedArchitecture"
       },
       "id": "vKEsyHFk/0T9enjhi#SF2mgNXu",

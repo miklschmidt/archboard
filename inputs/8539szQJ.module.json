@@ -5,7 +5,7 @@
   "responsibility": "The schema of a model read: manifest, modules, collections and proposals",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/shared/schemas/model.ts"
+    "path": "packages/model/src/shared/canonical-contracts/schemas/model.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#8539szQJ",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/shared/schemas/model.ts",
+        "path": "packages/model/src/shared/canonical-contracts/schemas/model.ts",
         "symbol": "CodeBindingSchema"
       },
       "id": "vKEsyHFk#PatiT3PG",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/shared/schemas/model.ts",
+        "path": "packages/model/src/shared/canonical-contracts/schemas/model.ts",
         "symbol": "ArchitectureModelSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#DbjpaJZI",

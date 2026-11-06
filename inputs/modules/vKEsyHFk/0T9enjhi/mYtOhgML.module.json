@@ -6,7 +6,7 @@
   "description": "Scans chosen checkouts and registered untracked vaults, then reads canonical model and proposal modules. LEGACY_AUTHORITY produces no match; discovery does not decode or rewrite legacy board files.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/store/bound-vaults.ts",
+    "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
     "symbol": "vaultsBoundTo"
   },
   "schemaVersion": 1,
@@ -41,7 +41,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/bound-vaults.ts",
+        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
         "symbol": "listRegistry"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
@@ -54,7 +54,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/bound-vaults.ts",
+        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
         "symbol": "isVaultLayout"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
@@ -67,7 +67,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/bound-vaults.ts",
+        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
         "symbol": "chosenCheckouts"
       },
       "id": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
@@ -80,7 +80,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/bound-vaults.ts",
+        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
