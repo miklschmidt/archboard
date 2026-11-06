@@ -1,5 +1,5 @@
 {
-  "order": 74000,
+  "order": 29012,
   "name": "Layout scorecards",
   "kind": "module",
   "responsibility": "Measures saved fixture geometry against the drawing scorecard",
@@ -9,7 +9,6 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#S6MFhkV7",
-  "parent": "vKEsyHFk#F0aENCVG",
   "outgoing": [
     {
       "order": 100,

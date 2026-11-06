@@ -1,5 +1,5 @@
 {
-  "order": 73000,
+  "order": 29011,
   "name": "Engine gallery",
   "kind": "module",
   "responsibility": "Compares complete canonical readings across the available layout engines",
@@ -9,6 +9,5 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#7xQLokcW",
-  "parent": "vKEsyHFk#F0aENCVG",
   "outgoing": []
 }

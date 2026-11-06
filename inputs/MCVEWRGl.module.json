@@ -1,5 +1,5 @@
 {
-  "order": 74001,
+  "order": 29013,
   "name": "Layout timing",
   "kind": "module",
   "responsibility": "Measures first layout and repeated drawing time for saved fixtures",
@@ -9,6 +9,5 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#MCVEWRGl",
-  "parent": "vKEsyHFk#F0aENCVG",
   "outgoing": []
 }
