@@ -14,6 +14,23 @@
   "outgoing": [
     {
       "order": 3000,
+      "kind": "rpc",
+      "label": "one JSON-RPC request per method",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/services/session.ts",
+        "symbol": "request"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#FZnS78FX",
+      "to": "vKEsyHFk#Q2Jc26oO"
+    },
+    {
+      "order": 3000,
       "kind": "call",
       "label": "serialize issued identities",
       "emphasis": "hero",
@@ -60,6 +77,23 @@
       "to": "vKEsyHFk/wAHh0HTa#8QpDaiD6"
     },
     {
+      "order": 14000,
+      "kind": "call",
+      "label": "decode parameters and answer",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/services/session.ts",
+        "symbol": "decodeResponse"
+      },
+      "id": "vKEsyHFk/wAHh0HTa#d2caVqCr",
+      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
+    },
+    {
       "order": 16000,
       "kind": "call",
       "label": "prove storage after config/read",
@@ -84,40 +118,6 @@
       },
       "id": "vKEsyHFk/wAHh0HTa#cDYih9Cs",
       "to": "vKEsyHFk/wAHh0HTa#3FR6mev4"
-    },
-    {
-      "order": 3000,
-      "kind": "rpc",
-      "label": "one JSON-RPC request per method",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/session.ts",
-        "symbol": "request"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#FZnS78FX",
-      "to": "vKEsyHFk#Q2Jc26oO"
-    },
-    {
-      "order": 14000,
-      "kind": "call",
-      "label": "decode parameters and answer",
-      "emphasis": "normal",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/session.ts",
-        "symbol": "decodeResponse"
-      },
-      "id": "vKEsyHFk/wAHh0HTa#d2caVqCr",
-      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
     }
   ]
 }
