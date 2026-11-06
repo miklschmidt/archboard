@@ -31,7 +31,7 @@
     {
       "order": 11000,
       "kind": "call",
-      "label": "resolve the canonical module code target",
+      "label": "resolve a module's canonical code binding and target",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -40,19 +40,6 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#oYfZ2qnC",
       "to": "vKEsyHFk#ZGONZKxj"
-    },
-    {
-      "order": 30000,
-      "kind": "dependency",
-      "label": "the line of a bound symbol",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-opener/src/server/routes/code-opener.ts",
-        "symbol": "symbolLine"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#3WdQR8x7",
-      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
     },
     {
       "order": 48000,
@@ -81,22 +68,9 @@
       "to": "vKEsyHFk#NVlMWCWO"
     },
     {
-      "order": 53000,
-      "kind": "dependency",
-      "label": "resolve a module code binding",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-opener/src/server/projections/model-target.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#q1ENQYcO",
-      "to": "vKEsyHFk#ZGONZKxj"
-    },
-    {
       "order": 70000,
       "kind": "call",
-      "label": "symbolLine: the line where a bound symbol is defined",
+      "label": "the line where a bound symbol is defined",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

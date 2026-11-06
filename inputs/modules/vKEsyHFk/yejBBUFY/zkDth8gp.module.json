@@ -29,7 +29,7 @@
     {
       "order": 2000,
       "kind": "call",
-      "label": "a session per pane, opened in a vault; show a model in one",
+      "label": "one session per pane, opened in a vault; show a model in it",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -37,19 +37,6 @@
         "symbol": "usePaneSession"
       },
       "id": "vKEsyHFk/yejBBUFY#x9gy2EYu",
-      "to": "vKEsyHFk/yejBBUFY#ScHf2pj3"
-    },
-    {
-      "order": 56000,
-      "kind": "call",
-      "label": "one session per pane, opened in the page's opening vault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/ApplicationPane.tsx",
-        "symbol": "usePaneSession"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#5zgh8igv",
       "to": "vKEsyHFk/yejBBUFY#ScHf2pj3"
     },
     {

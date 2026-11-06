@@ -14,7 +14,7 @@
     {
       "order": 1000,
       "kind": "call",
-      "label": "thread/start its body",
+      "label": "thread/start with the coordinator's body and settings",
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -36,19 +36,6 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#QEitA6l5",
       "to": "vKEsyHFk/qKGcB6vZ#En8mB6jo"
-    },
-    {
-      "order": 7000,
-      "kind": "rpc",
-      "label": "thread/start and settings for the coordinator",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/services/start.ts",
-        "symbol": "threadStart"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#XAd3chIR",
-      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
       "order": 27000,

@@ -29,7 +29,7 @@
     {
       "order": 8000,
       "kind": "call",
-      "label": "request activation",
+      "label": "code-target and opener requests, replies read strictly",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -37,19 +37,6 @@
         "symbol": "strictReply"
       },
       "id": "vKEsyHFk/yejBBUFY#ygbcyDVT",
-      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
-    },
-    {
-      "order": 31000,
-      "kind": "dependency",
-      "label": "opener requests",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-opener/src/ui/clients/code-target-requests.ts",
-        "symbol": "strictReply"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#FZXXXyDz",
       "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
     },
     {
