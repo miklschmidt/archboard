@@ -14,26 +14,15 @@ Use the CLI to read architecture, author changes, and produce diagrams.
 A vault is the directory that holds one model.
 A reading selects what you see without copying architecture.
 
-## Read before acting
-
-Read [canonical models](references/canonical-models.md) before your first architecture operation.
-It defines discovery, identities, writes, proposals, history, recovery, rendering, and browser commands.
-Run commands in the checkout that holds the vault, or pass `-C <directory>`.
-
-Run `archboard model read` to discover the model and its complete revision.
-Before describing implemented architecture, read the bound source, imports, callers, and external contracts.
-If the read returns `LEGACY_AUTHORITY`, follow [legacy migration](references/legacy-migration.md).
-Preserve the original files until the owner authorizes installation.
-
 ## Choose the work
 
-Before authoring modules, relationships, flows, or proposals, read [authoring](references/authoring.md).
-It explains source evidence, containment, flow summaries, and proposal names.
-Before judging a design or planning a refactor, read [the design lens](references/design-lens.md).
-Report its facts with source evidence and leave the judgment to the user.
+Before the first architecture operation, read [canonical models](references/canonical-models.md) for discovery, reads, writes, and history.
+For `LEGACY_AUTHORITY` or requested migration, follow [legacy migration](references/legacy-migration.md).
+Before describing implemented architecture or authoring changes, read [authoring](references/authoring.md) for evidence and modeling rules.
+Before preparing a request, read [schemas](references/schemas.md).
 
-Before authoring or recording a narrative, read [canonical walkthroughs](references/canonical-walkthroughs.md).
-Before preparing a write, read [schemas](references/schemas.md).
+For design decisions or refactors, read [the design lens](references/design-lens.md).
+For narrative authoring, playback, or recording, read [canonical walkthroughs](references/canonical-walkthroughs.md).
 For installation or updates, read [the installation guide](references/generated/INSTALL.md).
 For missing language servers or more precise source evidence, read [setup](references/setup.md).
 
@@ -42,8 +31,7 @@ For missing language servers or more precise source evidence, read [setup](refer
 Read the resulting architecture.
 Compare its stable subjects with the intended change.
 Make sure that the requested scope, flow, and every narrative beat remain available.
-Run affected semantic, code, and embed checks through `archboard check`.
-Retain exact history before sharing a checkpoint or recording a walkthrough.
+Run affected semantic, code, and embed inspection through `archboard check`.
 Report concrete changes, refusals, unavailable source, and recovery work.
 Claim frontend acceptance, adoption, publication, or migration only after its operation succeeds.
 

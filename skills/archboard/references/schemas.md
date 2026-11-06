@@ -1,25 +1,21 @@
 # Canonical schemas
 
-Read the request schema before preparing an operation.
-Installation regenerates the schemas under `generated/`.
-Do not edit those files.
+Before preparing a request, read its schema under `generated/`.
+Installation regenerates these files. Do not edit them.
+Use [canonical models](canonical-models.md) for operations and semantic rules beyond JSON structure.
 
-- `model-manifest.schema.json` describes the model identity and current state.
-- `module.schema.json` describes one canonical module and its outgoing relationships.
-- `flows.schema.json` describes one independent flow collection.
-- `model-initialize.schema.json` describes the request for an empty planning model.
-- `model-edit.schema.json` describes one complete authoring intent.
-- `model-import.schema.json` describes explicit portable installation.
-- `model-migrate.schema.json` describes explicit legacy cutover.
-- `vault-config.schema.json` describes shared kinds, relationship evidence, and groups.
-- `INSTALL.md` records installation from the active source checkout.
+| File                           | Use                                             |
+| ------------------------------ | ----------------------------------------------- |
+| `model-manifest.schema.json`   | Model identity and current state                |
+| `module.schema.json`           | A module and its outgoing relationships         |
+| `flows.schema.json`            | An independent flow collection                  |
+| `model-initialize.schema.json` | Empty planning model request                    |
+| `model-edit.schema.json`       | Complete authoring intent                       |
+| `model-import.schema.json`     | Portable installation request                   |
+| `model-migrate.schema.json`    | Legacy migration request                        |
+| `vault-config.schema.json`     | Shared kinds, relationship evidence, and groups |
+| `INSTALL.md`                   | Installation from the active source checkout    |
 
-Read the [canonical model reference](canonical-models.md) for operation examples.
-A valid JSON shape does not establish valid architecture.
-A write resolves names, protects identities, enforces claims, and compares the complete input revision.
-A successful write durably installs the complete intent.
-An incomplete transaction refuses ordinary reads until explicit recovery completes.
-
-Legacy levels remain decodable for explicit migration and exact retained history.
 Canonical modules use containment without fixed levels.
-New authoring never writes a legacy board family or a level.
+Legacy levels exist only for explicit migration and exact retained history.
+New authoring writes neither legacy board families nor levels.
