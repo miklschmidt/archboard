@@ -22,8 +22,8 @@
         "path": "apps/cli/src/cli/operations/model/inspect.ts",
         "symbol": "readArchitectureModelOnServer"
       },
-      "to": "vKEsyHFk/XppR9owz#TsCise1I",
-      "id": "vKEsyHFk#azJqVDzi"
+      "id": "vKEsyHFk#azJqVDzi",
+      "to": "vKEsyHFk/XppR9owz#TsCise1I"
     },
     {
       "order": 1003000,
@@ -35,8 +35,8 @@
         "path": "apps/cli/src/cli/rules/model/inspection.ts",
         "symbol": "inspectContainer"
       },
-      "to": "vKEsyHFk#DKzh4lMo",
-      "id": "vKEsyHFk#ImS2FjJd"
+      "id": "vKEsyHFk#ImS2FjJd",
+      "to": "vKEsyHFk#DKzh4lMo"
     }
   ]
 }
