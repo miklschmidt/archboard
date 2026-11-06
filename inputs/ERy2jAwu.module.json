@@ -58,7 +58,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+        "path": "packages/workbench/src/server/panes/services/shown-conversation.ts",
         "symbol": "showConversation"
       },
       "id": "vKEsyHFk/9ncuT5DP#99za8lFO",

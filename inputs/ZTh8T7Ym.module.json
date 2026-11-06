@@ -5,7 +5,7 @@
   "responsibility": "The voice box, the voice control and the Talk control",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/components/voice"
+    "path": "packages/workbench/src/ui/workbench-client/voice/components"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#ZTh8T7Ym",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/voice/VoiceControl.tsx",
+        "path": "packages/workbench/src/ui/workbench-client/voice/components/VoiceControl.tsx",
         "symbol": "OrbHost"
       },
       "id": "vKEsyHFk/yejBBUFY#MmIPovT7",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/voice/VoiceBox.tsx",
+        "path": "packages/workbench/src/ui/workbench-client/voice/components/VoiceBox.tsx",
         "symbol": "SubtitleWords"
       },
       "id": "vKEsyHFk/yejBBUFY#5fWy6ymA",
@@ -44,11 +44,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/voice/VoiceBox.tsx",
+        "path": "packages/workbench/src/ui/workbench-client/voice/components/VoiceBox.tsx",
         "symbol": "useVoiceBoxPresence"
       },
-      "to": "vKEsyHFk/yejBBUFY#sOSPdXJh",
-      "id": "vKEsyHFk#gu53WGgU"
+      "id": "vKEsyHFk#gu53WGgU",
+      "to": "vKEsyHFk/yejBBUFY#sOSPdXJh"
     }
   ]
 }

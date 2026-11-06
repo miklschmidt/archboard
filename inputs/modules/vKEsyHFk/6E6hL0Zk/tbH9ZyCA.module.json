@@ -57,7 +57,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/registry.ts",
+        "path": "packages/workbench/src/server/panes/services/registry.ts",
         "symbol": "sendToPane"
       },
       "id": "vKEsyHFk/6E6hL0Zk#VO9ngl7m",

@@ -6,7 +6,7 @@
   "description": "One action serves browser, typed requests, CLI, and voice. It retains only temporary invocation and result state. Exact retry reuses captured architecture. Existing queue deletion, turn interruption, and provider notifications establish cancellation and the one textual answer.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/services/explanations"
+    "path": "packages/workbench/src/server/explanations/services"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SJ2JMVyz#bxWDGUJk",
@@ -24,7 +24,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/explanations/start.ts",
+        "path": "packages/workbench/src/server/explanations/services/start.ts",
         "symbol": "enqueue"
       },
       "id": "vKEsyHFk/SJ2JMVyz#iBhsibnc",
@@ -36,7 +36,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/explanations/start.ts",
+        "path": "packages/workbench/src/server/explanations/services/start.ts",
         "symbol": "readyWorkhorse"
       },
       "id": "vKEsyHFk/SJ2JMVyz#QvQYycYS",
@@ -48,7 +48,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "path": "packages/workbench/src/server/explanations/services/actions.ts",
         "symbol": "interrupt"
       },
       "id": "vKEsyHFk/SJ2JMVyz#rCIdAV06",
@@ -61,7 +61,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "path": "packages/workbench/src/server/explanations/services/actions.ts",
         "symbol": "tabSessionOf"
       },
       "id": "vKEsyHFk#DxnUwbpm",
@@ -74,23 +74,11 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "path": "packages/workbench/src/server/explanations/services/actions.ts",
         "symbol": "panes"
       },
       "id": "vKEsyHFk#3YLhUCde",
       "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
-    },
-    {
-      "order": 126000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/explanations/actions.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
-      "to": "vKEsyHFk#ZGONZKxj"
     },
     {
       "order": 70057,
@@ -99,11 +87,23 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/explanations/dispatch.ts",
+        "path": "packages/workbench/src/server/explanations/services/dispatch.ts",
         "symbol": "logger"
       },
       "id": "vKEsyHFk#e00V8dhv",
       "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 126000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/explanations/services/actions.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
+      "to": "vKEsyHFk#ZGONZKxj"
     }
   ]
 }

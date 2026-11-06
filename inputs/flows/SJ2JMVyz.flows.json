@@ -1270,7 +1270,7 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
+            "path": "packages/workbench/src/runtime/dynamic-tools/settlements/services/wait.ts",
             "symbol": "waitForDynamicThreads"
           }
         },
@@ -1287,7 +1287,7 @@
               "kind": "self",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
+                "path": "packages/workbench/src/runtime/dynamic-tools/settlements/services/wait.ts",
                 "symbol": "resolveWaitTargets"
               }
             }
@@ -1301,7 +1301,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
+            "path": "packages/workbench/src/runtime/dynamic-tools/settlements/services/wait.ts",
             "symbol": "addEdgeSet"
           }
         },
@@ -1313,7 +1313,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
+            "path": "packages/workbench/src/runtime/dynamic-tools/settlements/services/wait.ts",
             "symbol": "addEdgeSet"
           }
         },
@@ -1334,7 +1334,7 @@
                   "note": "the thread waiting on something that waits on it is refused instead of hanging until a timeout",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
+                    "path": "packages/workbench/src/runtime/dynamic-tools/settlements/services/wait.ts",
                     "symbol": "claimWaitOwnership"
                   }
                 }
@@ -1351,7 +1351,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
+                    "path": "packages/workbench/src/runtime/dynamic-tools/settlements/services/wait.ts",
                     "symbol": "waitForTargets"
                   }
                 },
@@ -1364,7 +1364,7 @@
                   "note": "also on cancellation, interruption and disconnect",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
+                    "path": "packages/workbench/src/runtime/dynamic-tools/settlements/services/wait.ts",
                     "symbol": "releaseWaitOwner"
                   }
                 },
@@ -1376,7 +1376,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
+                    "path": "packages/workbench/src/runtime/dynamic-tools/settlements/services/wait.ts",
                     "symbol": "releaseWaitOwner"
                   }
                 }

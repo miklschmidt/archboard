@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/state/voice-session"
+    "path": "packages/workbench/src/ui/voice-session/state"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#0SRnYXnC",

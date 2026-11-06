@@ -283,7 +283,7 @@
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
             "symbol": "subscribeSettledChange"
           }
         },
@@ -296,7 +296,7 @@
           "note": "to its workhorse, withheld once the brief is stale",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
             "symbol": "announce"
           }
         },
@@ -718,7 +718,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
             "symbol": "onError"
           }
         }
@@ -1541,7 +1541,7 @@
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
             "symbol": "subscribePaneFocus"
           }
         },
@@ -1554,7 +1554,7 @@
           "note": "the voice hears a model on screen, as speech when it stops the narration; the coordinator hears only what an agent outside the session did",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
             "symbol": "heard"
           }
         },
@@ -1567,7 +1567,7 @@
           "note": "a focus or selection the user made carries a topic, so a later one replaces it while it waits",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
             "symbol": "announce"
           }
         },
@@ -1853,7 +1853,7 @@
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+            "path": "packages/workbench/src/server/panes/services/tab-sessions.ts",
             "symbol": "forgetTabSession"
           }
         },
@@ -1897,7 +1897,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+                            "path": "packages/workbench/src/server/panes/services/tab-sessions.ts",
                             "symbol": "noteTabSession"
                           }
                         },

@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/services/owner/production.ts",
+    "path": "packages/workbench/src/server/workbench-host/services/production.ts",
     "symbol": "createServerVoiceAgentOptions"
   },
   "schemaVersion": 1,
@@ -28,7 +28,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "createVoiceAgent"
       },
       "id": "vKEsyHFk/9ncuT5DP#34fI1JB6",
@@ -41,7 +41,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "createArchboardAnnouncements"
       },
       "id": "vKEsyHFk/9ncuT5DP#3494fDAK",
@@ -54,7 +54,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "liveWorkhorseCheckouts"
       },
       "id": "vKEsyHFk/9ncuT5DP#tef70baL",
@@ -67,7 +67,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/production.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/production.ts",
         "symbol": "installWorkbenchTabSessions"
       },
       "id": "vKEsyHFk/9ncuT5DP#UE6yrRV7",
@@ -80,7 +80,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "narrationChangesOf"
       },
       "id": "vKEsyHFk/9ncuT5DP#8iYy7AoA",

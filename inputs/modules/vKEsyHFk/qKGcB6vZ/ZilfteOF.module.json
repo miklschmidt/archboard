@@ -6,11 +6,14 @@
   "description": "Realtime voice reads it as the brief of each voice start, and keeps it on the coordinator's thread while voice is live: when the presenting vault or its models change, the whole catalogue is read again and replaces the one before.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/services/host/archboard-context-source.ts"
+    "path": "packages/workbench/src/server/host/services/archboard-context-source.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#ZilfteOF",
   "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "formerNames": [
+    "Board catalogue"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -25,14 +28,11 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/host/archboard-context-source.ts",
+        "path": "packages/workbench/src/server/host/services/archboard-context-source.ts",
         "symbol": "semanticChangeFeed"
       },
       "id": "vKEsyHFk#zeayswzH",
       "to": "vKEsyHFk/Oi6SBIAM#mStVd7fZ"
     }
-  ],
-  "formerNames": [
-    "Board catalogue"
   ]
 }

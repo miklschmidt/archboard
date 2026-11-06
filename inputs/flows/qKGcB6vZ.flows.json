@@ -71,7 +71,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workbench/src/server/services/host/archboard-context-source.ts",
+                    "path": "packages/workbench/src/server/host/services/archboard-context-source.ts",
                     "symbol": "createArchboardCoordinatorContextSource"
                   }
                 },
@@ -1277,7 +1277,7 @@
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
             "symbol": "subscribeSettledChange"
           }
         },
@@ -1290,7 +1290,7 @@
           "note": "the voice hears a model on screen, as speech when it stops the narration; the coordinator hears only what an agent outside the session did",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
             "symbol": "heard"
           }
         },
@@ -1303,7 +1303,7 @@
           "note": "through the voice agent, whose announce is its workbench's",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
             "symbol": "announce"
           }
         },

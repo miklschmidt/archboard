@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+    "path": "packages/workbench/src/server/panes/services/shown-conversation.ts",
     "symbol": "shownConversationRoute"
   },
   "schemaVersion": 1,
@@ -35,7 +35,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+        "path": "packages/workbench/src/server/panes/services/shown-conversation.ts",
         "symbol": "showConversation"
       },
       "id": "vKEsyHFk/Oi6SBIAM#iUsWhMaM",
@@ -48,7 +48,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+        "path": "packages/workbench/src/server/panes/services/shown-conversation.ts",
         "symbol": "panes"
       },
       "id": "vKEsyHFk/Oi6SBIAM#RxeyNuay",
@@ -61,7 +61,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+        "path": "packages/workbench/src/server/panes/services/shown-conversation.ts",
         "symbol": "liveWorkhorseCheckouts"
       },
       "id": "vKEsyHFk/Oi6SBIAM#aBvYXyej",
@@ -74,7 +74,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+        "path": "packages/workbench/src/server/panes/services/shown-conversation.ts",
         "symbol": "vaultOfRequest"
       },
       "id": "vKEsyHFk/Oi6SBIAM#5odPEFwu",

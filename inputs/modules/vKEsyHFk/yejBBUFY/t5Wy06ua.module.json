@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/components/orb"
+    "path": "packages/workbench/src/ui/workbench-client/orb/components"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#t5Wy06ua",
@@ -36,7 +36,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/orb/VoiceOrb.tsx",
+        "path": "packages/workbench/src/ui/workbench-client/orb/components/VoiceOrb.tsx",
         "symbol": "cn"
       },
       "id": "vKEsyHFk/vKEsyHFk#yRl53uvR",
