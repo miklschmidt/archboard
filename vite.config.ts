@@ -264,7 +264,6 @@ export default defineConfig({
 					...analysisCache,
 					input: [
 						...testCache.input,
-						".prettierignore",
 						".vscode/**",
 						".impeccable/**/*.json",
 						// The marketing site is its own project, but the format check reads its sources.

@@ -3,7 +3,7 @@
 // another document, no predecessor. Prints the first render, which lays the document
 // out, and the median of the renders after it, which reuse that layout, so a
 // layout change that spends time is seen beside the scorecard that measure.ts
-// prints. The numbers in docs/design/layout-rules.md come from here. A first
+// prints. Layout tasks record the numbers this script prints. A first
 // render early in a run can land on workers the engine has not warmed yet.
 //
 // Run from the repository root:

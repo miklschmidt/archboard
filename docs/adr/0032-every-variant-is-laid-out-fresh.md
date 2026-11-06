@@ -23,7 +23,7 @@ in a different direction. Large rearrangements can make the brief transition
 busier. The readability of the settled picture takes priority.
 
 This record supersedes the predecessor-direction rule of ADR 0028. It also
-supersedes the placement continuity decisions in `docs/design/layout-rules.md`
-sections 15–16. Section 28 of the same record contains the measured before/after
-evidence. The renderer keeps one layout path. It has no second set of proposal
+supersedes the placement continuity decisions of TASK-245.04 and TASK-245.05.
+TASK-276 records the measured before/after evidence. The renderer keeps one
+layout path. It has no second set of proposal
 placement rules and no threshold for abandoning them.

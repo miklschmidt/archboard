@@ -8,7 +8,7 @@ test("a comparison keeps an existing label on a straight run when a connection i
 	// Reduced from the Semantic renderer comparison: the added connection used
 	// to squeeze the existing horizontal label onto a vertical staircase. Which
 	// row a label shares with another is the engine's once a fanning card's skips
-	// are attached by the engine on a first render (docs/design/layout-rules.md);
+	// are attached by the engine on a first render (TASK-231);
 	// the run the label sits on is the reader's invariant.
 	const before = orderedFixture({
 		nodes: [

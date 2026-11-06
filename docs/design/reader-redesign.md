@@ -8,7 +8,7 @@ This record replaces the reader and navigation parts of
 The owner rejected the reader of PR #19. Transitions were gone, navigation was janky, the right sidebar
 overwhelmed the reader, the start was wrong, and drawings held large dead areas. Two seats, Astra and Opus,
 each studied the user journey, the drawing and the implementation. Each seat then attacked the other. Their
-papers are in [reader-council/](reader-council/). Their measurements came from this repository's model and
+measurements came from this repository's model and
 from Shop, on the renderer core before commit `4b970e501`. Measure again before a number becomes a gate.
 
 ## The rule of the screen

@@ -32,7 +32,7 @@ libavoid routes the trunks of Blocks, and it is the largest single cost of a
 render. Its unifying nudging prepass spends tens of seconds on dense boards
 (TASK-512). Its nudging solver signals an unsatisfiable constraint set with a
 C++ exception, and one slow solve threw 762,356 of them
-(`docs/design/layout-rules.md`). libavoid is licensed under LGPL-2.1-or-later.
+(TASK-342). libavoid is licensed under LGPL-2.1-or-later.
 Archboard loads it today as a separate WASM module.
 
 Text is measured by the canvas of the place that draws it: the canvas of the
@@ -41,8 +41,7 @@ differently, and a picture holds only where its fonts load.
 
 The layout engine moved to Rust once already. Every solve of the renderer tests ran
 through elkjs and through `@archboard/elk-rs`. Each difference was fixed
-against stored elkjs output, and then elk-rs replaced elkjs (`layout-rules.md`,
-section 23).
+against stored elkjs output, and then elk-rs replaced elkjs (TASK-247).
 
 ## Decision
 
@@ -74,8 +73,7 @@ The types of the scene are defined once, in Rust. The TypeScript types are
 generated from them. They hold what the picture means, not how SVG spells it:
 no element name, attribute, path data or CSS expression. A colour names the
 page's tokens and the operations that mix them, and every id is minted from
-what it names. [The typed scene](../design/typed-scene.md) describes the
-vocabulary and why it has that shape.
+what it names. The types of the scene hold the vocabulary (TASK-520.10).
 
 ### A painter turns a scene into what a frontend shows
 
@@ -207,7 +205,7 @@ each place measures with its own canvas.
 
 Every contributor needs the Rust toolchain, and a change to the core needs a
 build before the next command uses it. Tuning a layout rule now includes a
-Cargo build. `layout-rules.md` stays the record of what each rule is for.
+Cargo build.
 
 When TASK-520 closes, the TypeScript layout and painting rules, Pretext, canvas
 measurement in the renderer, and libavoid-js are gone from the repository.

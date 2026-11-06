@@ -18,16 +18,6 @@ docs/design/generated/cli-command-audit.md
 docs/design/generated/command-contract-proof.json
 docs/design/generated/command-contract-proof.md
 
-# Rendered semantic diagrams. The authored source is the model JSON under
-# docs/design/ and the builder that draws it; the pictures render on demand, at
-# any depth — the pipeline example draws one file per view per variant into its
-# own directory.
-docs/design/generated/**/*.svg
-docs/design/generated/*.svg
-# Bitmaps `semantic rasterize` draws from the same models are derived too.
-docs/design/generated/**/*.png
-docs/design/generated/*.png
-
 # Exact-version Codex app-server bindings are reproducible derived output.
 packages/codex-app-server/src/shared/protocol/generated/
 

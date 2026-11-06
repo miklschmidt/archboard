@@ -1,10 +1,9 @@
 // The sidebar's own small vocabulary, shared by both of its tabs: a region, a
 // section under its heading, and a list of choices.
 //
-// One place decides the column every tab is set in (TASK-383,
-// docs/design/pane-sidebar-hierarchy.md). Text starts 16 px in from either
-// edge, and a choice's fill reaches 8 px past that line so the words do not
-// move when it lights. A region answers one question and has a rule above it;
+// One place decides the column every tab is set in (TASK-383). Text starts
+// 16 px in from either edge, and a choice's fill reaches 8 px past that line
+// so the words do not move when it lights. A region answers one question and has a rule above it;
 // the sections of one region are set apart by space alone, so a rule always
 // means a new question. A heading is sentence case in the body size, never a
 // small uppercase label over something else.

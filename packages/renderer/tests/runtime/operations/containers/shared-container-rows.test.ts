@@ -150,7 +150,7 @@ for (const fixture of [
 			layout: "track",
 		});
 		expectIntact(drawing, content);
-		// The baseline sizes and route totals are measured in shared-container-rows.md.
+		// TASK-278 measured the baseline sizes and route totals.
 		// Improvement must exceed the corpus's two-percent size tolerance, not pin
 		// either engine's chosen coordinates or trade height for unusable width.
 		expect(fitIn(drawing)).toBeGreaterThan(fitIn(fixture) * 1.02);

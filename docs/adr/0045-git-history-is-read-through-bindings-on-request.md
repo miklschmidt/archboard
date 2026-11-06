@@ -13,7 +13,7 @@ This decision governs the separate source-history lens.
 
 TASK-369.01 tracks this decision, accepted on 2026-10-06 after an independent
 review. It serves TASK-369, its subtasks TASK-369.02
-to TASK-369.07, and Proposal 3 of `docs/design/design-checks.md`.
+to TASK-369.07, and Proposal 3 of the design checks.
 
 TASK-369.04 amended this ADR on 2026-10-06. A flow step joins two coupled
 parts, and a container counts as at an end inside it. The amendment after the
