@@ -220,7 +220,8 @@
         "vKEsyHFk/HBlhIeSD#FHvFFjFn",
         "vKEsyHFk/HBlhIeSD#nLp2hILd",
         "vKEsyHFk/HBlhIeSD#KLt72lWa",
-        "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+        "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+        "vKEsyHFk/Oi6SBIAM#BL7LFThw"
       ],
       "steps": [
         {
@@ -377,7 +378,7 @@
                             {
                               "id": "vKEsyHFk/HBlhIeSD#tglqRyhQ",
                               "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-                              "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+                              "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
                               "label": "move the pane out, with its model",
                               "kind": "sync",
                               "anchor": {
@@ -394,7 +395,7 @@
                             {
                               "id": "vKEsyHFk/HBlhIeSD#4CvAnVr8",
                               "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-                              "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+                              "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
                               "label": "tell the pane where it is again",
                               "kind": "sync",
                               "anchor": {
@@ -412,7 +413,7 @@
                 {
                   "id": "vKEsyHFk/HBlhIeSD#T6XUtqQp",
                   "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-                  "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+                  "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
                   "label": "repositories_changed to every tab",
                   "kind": "async",
                   "anchor": {

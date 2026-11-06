@@ -26,19 +26,6 @@
     },
     {
       "order": 17000,
-      "kind": "http",
-      "description": "what this pane is reading",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
-        "symbol": "postPaneRoute"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#VkGzebtq",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
-      "order": 17000,
       "kind": "call",
       "label": "report the pane, show a model, take back, pick a checkout",
       "emphasis": "normal",

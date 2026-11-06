@@ -138,32 +138,6 @@
       "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
-      "order": 63000,
-      "kind": "call",
-      "label": "move each pane out of an unchosen checkout, with its model",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
-        "symbol": "movePaneVault"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#pBu0Et3y",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
-      "order": 64000,
-      "kind": "event",
-      "label": "repositories_changed to every tab",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
-        "symbol": "broadcastEverywhere"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#e5ud8ccd",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
       "order": 83000,
       "kind": "call",
       "emphasis": "normal",

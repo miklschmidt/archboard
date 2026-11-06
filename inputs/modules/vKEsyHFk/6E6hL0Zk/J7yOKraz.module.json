@@ -63,19 +63,6 @@
       "to": "vKEsyHFk#OY4JPr8G"
     },
     {
-      "order": 47000,
-      "kind": "dependency",
-      "description": "starts the socket server",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
-        "symbol": "startWebSocketServer"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#7kWTFGGA",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
       "order": 70045,
       "kind": "call",
       "label": "start pane socket ownership",
@@ -124,8 +111,8 @@
         "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
         "symbol": "logger"
       },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#25xiZ6jI"
+      "id": "vKEsyHFk#25xiZ6jI",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     }
   ]
 }

@@ -116,6 +116,19 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#NuehJHbK",
       "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
+    },
+    {
+      "order": 61500,
+      "kind": "dependency",
+      "label": "mounts the show route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "symbol": "showPaneRoute"
+      },
+      "to": "vKEsyHFk#RZTsoQN5",
+      "id": "vKEsyHFk#wvK4SWe1"
     }
   ]
 }

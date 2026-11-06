@@ -67,19 +67,6 @@
       "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
     },
     {
-      "order": 4000,
-      "kind": "dependency",
-      "description": "mounts the pane routes",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
-        "symbol": "mountPaneRoutes"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#dHru8Ng6",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
       "order": 5000,
       "kind": "dependency",
       "label": "mounts opener",
