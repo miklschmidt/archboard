@@ -53,6 +53,7 @@ Independent proposals stay separate even when their names match.
 Read and compare each proposal through `model read`, `model proposals`, or `model compare`.
 Settle reported standing before adoption.
 Adopt or shelve only when the owner explicitly requests that outcome.
+A request to prepare the PR that implements a proposal requests its adoption on that PR's branch, so code and architecture merge together.
 A source merge never adopts architecture.
 
 Keep continuing subject identities unchanged.

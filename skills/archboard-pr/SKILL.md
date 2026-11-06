@@ -157,13 +157,25 @@ On update, replace the marked section and preserve author text outside it.
 Read the body back after posting.
 Make sure that each image uses an uploaded URL and each video URL occupies its own paragraph.
 
-## After the source merge
+## Adopt in the implementing PR
 
-A source merge does not adopt the proposal.
-Adopt only when the owner's instructions explicitly authorize implemented architecture.
+A PR that implements a proposal adopts that proposal on its own branch.
+Then the code and its architecture reach the default branch in one merge.
+A source merge never adopts by itself. A PR that merges without the adoption leaves a draft that describes code the default branch already holds.
+Most projects change the default branch only through PRs, so that draft then needs a PR of its own.
+The owner's request to prepare the implementing PR authorizes the adoption.
+
+After the code on the branch does what the proposal says, adopt the proposal. Do this before the PR is ready for review.
 Use the shared `model edit` adoption intent with a fresh complete revision and affected claims.
 Settle blocked ancestry before adoption.
-For superseded architecture, read the explicit comparison before any authorized forced adoption.
+Commit the adopted vault files with the implementation, and update the state comment.
+
+If the default branch adopted another proposal first, the proposal follows a former current state and the adoption refuses with `PROPOSAL_SUPERSEDED`.
+Do not force the adoption, because a forced adoption installs the proposal's complete state and undoes the other adoption.
+Create a new proposal on the current state with the same name, summary, documents and changes, and adopt it.
+Then shelve the original with a reason that names the copy.
+
+If a draft describes code that the default branch already holds, tell the owner. If the owner agrees, adopt it in the PR that you prepare.
 
 If the work stops, shelve only when the owner authorizes that disposition.
 Retain the reason and exact baseline through the existing archive.
