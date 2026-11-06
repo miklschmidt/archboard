@@ -10,5 +10,58 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#KdNM1Q56",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 91000,
+      "kind": "dependency",
+      "label": "its errors and diagnostics",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure/src/decoded.rs",
+        "symbol": "GraphvizError"
+      },
+      "to": "vKEsyHFk#FLnwES7I",
+      "id": "vKEsyHFk#2pseYTlP"
+    },
+    {
+      "order": 91001,
+      "kind": "dependency",
+      "label": "lay the graph out",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure/src/lib.rs",
+        "symbol": "FdpParms"
+      },
+      "to": "vKEsyHFk#kEeWzBGr",
+      "id": "vKEsyHFk#d7yWvhGj"
+    },
+    {
+      "order": 91002,
+      "kind": "dependency",
+      "label": "parse the DOT text",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure/src/lib.rs",
+        "symbol": "Statements"
+      },
+      "to": "vKEsyHFk#hBkjiO4k",
+      "id": "vKEsyHFk#iE5MSVo4"
+    },
+    {
+      "order": 91003,
+      "kind": "dependency",
+      "label": "write the laid-out graph",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure/src/lib.rs",
+        "symbol": "OutputFormat"
+      },
+      "to": "vKEsyHFk#7yGUY6ta",
+      "id": "vKEsyHFk#q7glsoJH"
+    }
+  ]
 }

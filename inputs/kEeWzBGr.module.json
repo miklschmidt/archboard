@@ -1,0 +1,41 @@
+{
+  "order": 90002,
+  "name": "graphviz-pure-layout",
+  "kind": "external",
+  "responsibility": "The Graphviz layout engines of graphviz-pure: dot, neato, fdp, sfdp, twopi, circo, osage, patchwork",
+  "description": "Vendored from graphviz-pure 0.2.1 (crates/vendor/README.md); a path dependency of the Graphviz crate, not a workspace member.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/vendor/graphviz-pure-layout"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#kEeWzBGr",
+  "outgoing": [
+    {
+      "order": 91005,
+      "kind": "dependency",
+      "label": "the graph it lays out",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure-layout/src/sfdpgen/sfdpinit.rs",
+        "symbol": "Graph"
+      },
+      "to": "vKEsyHFk#FLnwES7I",
+      "id": "vKEsyHFk#iIhqiAPk"
+    },
+    {
+      "order": 91006,
+      "kind": "dependency",
+      "label": "route the splines around the shapes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure-layout/src/fdpgen/clusteredges.rs",
+        "symbol": "proutespline"
+      },
+      "to": "vKEsyHFk#1Af2oLOM",
+      "id": "vKEsyHFk#HQ2GooJp"
+    }
+  ]
+}

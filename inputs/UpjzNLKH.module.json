@@ -42,6 +42,14 @@
       },
       "id": "vKEsyHFk#RaRMc6Gn",
       "to": "vKEsyHFk#ttPYQNXo"
+    },
+    {
+      "order": 91011,
+      "kind": "dependency",
+      "label": "the buffers its Vello renderer allocates for a frame",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#uoYBS8oN",
+      "id": "vKEsyHFk#2yn8ZgXE"
     }
   ]
 }

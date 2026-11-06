@@ -1,0 +1,54 @@
+{
+  "order": 90004,
+  "name": "graphviz-pure-render",
+  "kind": "external",
+  "responsibility": "The Graphviz output formats of graphviz-pure: svg, json, dot, xdot, canon and plain",
+  "description": "Vendored from graphviz-pure 0.2.1 (crates/vendor/README.md); a path dependency of the Graphviz crate, not a workspace member.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/vendor/graphviz-pure-render"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#7yGUY6ta",
+  "outgoing": [
+    {
+      "order": 91008,
+      "kind": "dependency",
+      "label": "the graph and its attributes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure-render/src/agwrite.rs",
+        "symbol": "AttrMap"
+      },
+      "to": "vKEsyHFk#FLnwES7I",
+      "id": "vKEsyHFk#LlnBacc1"
+    },
+    {
+      "order": 91009,
+      "kind": "dependency",
+      "label": "draw each node shape",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure-render/src/emit/shapes.rs",
+        "symbol": "ShapeKind"
+      },
+      "to": "vKEsyHFk#1Af2oLOM",
+      "id": "vKEsyHFk#7Gb0DeZa"
+    },
+    {
+      "order": 91010,
+      "kind": "dependency",
+      "label": "write canonical DOT strings",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure-render/src/agwrite.rs",
+        "symbol": "canon_str_with"
+      },
+      "to": "vKEsyHFk#hBkjiO4k",
+      "id": "vKEsyHFk#SHrlu0wj"
+    }
+  ]
+}
