@@ -3,28 +3,25 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "JTZvj2vi",
-    "name": "Vello paints the canvas and motion lives in the painter",
-    "formerNames": [
-      "Vello paints the board canvas and motion lives in the painter"
-    ],
-    "summary": "A page paints a picture on a canvas with Vello, on WebGPU or the CPU, and the painter's stage holds all picture motion in Rust, so the DOM motion modules go and the SVG stays as the semantic layer and the export.",
+    "id": "w4XB6eBv",
+    "name": "WebGL2 paints where WebGPU does not, and the strip painters keep their parts",
+    "summary": "A page with no real WebGPU adapter paints with Vello GPU on a hardware WebGL2 context before it falls back to the CPU, and both strip painters keep their settled parts, so a frame no longer rebuilds and cuts every path.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0071-vello-paints-the-canvas-and-motion-lives-in-the-painter.md"
+        "path": "docs/adr/0074-webgl2-paints-where-webgpu-does-not.md"
       },
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/design/vello-painter.md"
+        "path": "docs/design/painter-webgl-fallback.md"
       }
     ],
-    "predecessor": "oyXXnyCV",
-    "baseline": "8df200fc28fc77c5b4019b6f942244d52b8a65fd",
-    "createdAt": "2026-11-01T08:52:35.463Z",
-    "adoptedAt": "2026-11-06T11:05:57.200Z",
-    "reason": "The Vello painter and the painter-owned motion are merged on main (ADR 0071). archboard check code on this state finds its bindings and anchors in the source.",
-    "previousCurrent": "oyXXnyCV"
+    "predecessor": "JTZvj2vi",
+    "baseline": "992cb91f8e26f617e87b985102d6b085a671808a",
+    "createdAt": "2026-11-04T21:58:04.894Z",
+    "adoptedAt": "2026-11-06T11:06:19.481Z",
+    "reason": "The WebGL2 fallback and the strip painters' parts are merged on main in #42 (ADR 0074). archboard check code on this state finds its bindings and anchors in the source.",
+    "previousCurrent": "JTZvj2vi"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",

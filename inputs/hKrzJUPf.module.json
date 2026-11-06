@@ -2,8 +2,8 @@
   "order": 14000,
   "name": "Painter choice",
   "kind": "function",
-  "responsibility": "Chooses the painter of a canvas once, from what the browser says: Vello on WebGPU when it gives a real adapter and a device, Vello on the CPU otherwise",
-  "description": "A software adapter, or none, sends the canvas to the CPU painter, and the rule reads no frame back. If the GPU fails to start or in a frame, the CPU painter takes over on a fresh canvas, because a canvas that held a WebGPU context never takes a 2D one. The caller shows which painter draws, and why the GPU does not.",
+  "responsibility": "Chooses the painter of a canvas once, from what the browser says: Vello on WebGPU with a real adapter, Vello GPU on WebGL2 with a hardware context, Vello on the CPU otherwise",
+  "description": "A software WebGPU adapter, or none, sends the canvas to WebGL2. WebGL2 refuses a context with a major performance caveat and a renderer whose name says it draws in software, and the rule reads no frame back. A WebGPU painter that fails at work gets one more try, and a second failure soon after sends the canvas to WebGL2. A WebGL2 painter that fails or loses its context gives way to the CPU painter. Each new painter takes a fresh canvas, because a canvas that held a GPU context never takes a 2D one. The caller shows which painter draws, and why WebGPU and WebGL2 do not.",
   "groups": [
     "drawing"
   ],
@@ -18,7 +18,7 @@
     {
       "order": 1000,
       "kind": "call",
-      "label": "start the GPU or the CPU painter",
+      "label": "start the WebGPU, WebGL2 or CPU painter",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
