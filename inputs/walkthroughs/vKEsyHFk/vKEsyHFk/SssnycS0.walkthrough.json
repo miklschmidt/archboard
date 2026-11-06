@@ -11,6 +11,7 @@
   },
   "beats": [
     {
+      "id": "vKEsyHFk/vKEsyHFk#JnVoCQnm",
       "title": "Agents author, people read",
       "narrative": "An agent states meaning through the CLI. The Archboard server checks the write, takes the board's lease, commits the whole family to disk and only then answers. Nothing else writes a board.",
       "reading": {
@@ -178,10 +179,10 @@
           "groups": []
         },
         "grammar": "architecture"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#JnVoCQnm"
+      }
     },
     {
+      "id": "vKEsyHFk/vKEsyHFk#coggGU2D",
       "title": "The browser is a viewer",
       "narrative": "A pane holds board content only as a read-only cache of what the server said, and reads again when it is told a new version exists. What it owns is the camera, the view, the walkthrough position and what somebody picked out.",
       "reading": {
@@ -348,10 +349,10 @@
           "groups": []
         },
         "grammar": "architecture"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#coggGU2D"
+      }
     },
     {
+      "id": "vKEsyHFk/vKEsyHFk#JuKj0ZMA",
       "title": "Pictures are taken outside the server",
       "narrative": "rasterize paints the SVG the server drew in a headless browser the CLI starts. record opens the server's own page in one: the page plays the walkthrough, the Codex voice narrates it, and the CLI keeps the talk. A second browser then draws the talk frame by frame, and ffmpeg makes the video file. replay renders a kept talk again.",
       "reading": {
@@ -522,10 +523,10 @@
           "groups": []
         },
         "grammar": "architecture"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#JuKj0ZMA"
+      }
     },
     {
+      "id": "vKEsyHFk/vKEsyHFk#FlAhpGUe",
       "title": "Agent work has a lifetime of its own",
       "narrative": "The Archboard server owns a private Codex child in its own process group. Sign-in, config and threads live in one Codex home that every Archboard server on this machine shares. Each browser tab has its own conversation: a workhorse that does the work, and a coordinator that voice talks to. A reload keeps the conversation. A minute after a tab closes, its conversation ends, and Codex unloads its threads once no work runs on them. When the child exits, each tab starts a new conversation with its next message. The threads author boards through the CLI, like any agent.",
       "reading": {
@@ -694,10 +695,10 @@
           "groups": []
         },
         "grammar": "architecture"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#FlAhpGUe"
+      }
     },
     {
+      "id": "vKEsyHFk/vKEsyHFk#bnH63t0c",
       "title": "The skill is measured, not assumed",
       "narrative": "The guidance an agent in another repository reads is held to real runs: two versions of the package, the same CLI and fixtures, real authors, and a blinded grading session. A person starts it; the gate never does.",
       "reading": {
@@ -862,8 +863,7 @@
           "groups": []
         },
         "grammar": "architecture"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#bnH63t0c"
+      }
     }
   ]
 }
