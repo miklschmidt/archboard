@@ -1,7 +1,7 @@
 ---
 id: TASK-586
 title: The shipped skills are concise, plain and speak to their consumer
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-06T19:12:00Z'
@@ -19,8 +19,8 @@ Agents and readers need concise instructions without duplicate rules or internal
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 All shipped skill prose preserves consumer behavior in plain English
-- [ ] #2 Required validation runs and results are recorded
+- [x] #1 All shipped skill prose preserves consumer behavior in plain English
+- [x] #2 Required validation runs and results are recorded
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -45,4 +45,12 @@ Rewrote all 17 authored skill files. Shared recovery rules now live in canonical
 The consumer reference rewrite and preservation audit are complete. All original diagnostic codes and CLI flags remain. The source-evidence catalogue and both citation headings remain. The first two runs of the required gates passed: 163 repository tests, formatting, and 4908 module tests with one platform-specific skip. Final wording and paragraph refinements are under the same gates now. The completion report records every file count and duplicate-rule destination.
 
 PR guidance now points to consumer recipes for claims, checkpoints, comparison, reconciliation, lifecycle, and narration. Posting and artifact inspection keep their PR-specific steps. Final authored-file validation passed: artifact generation, test:repository (163 passed), format:check, and test:modules (4908 passed, one macOS-only skip, zero failures). Logs are /tmp/task586-generation.log, /tmp/task586-test-repository.log, /tmp/task586-format-check.log, and /tmp/task586-test-modules.log.
+
+AC1 evidence: read and rewrote all 17 authored files, compared every reference section with its retained rule location, preserved all diagnostic codes and CLI flags, and kept the catalogue and citation contracts. The final prose audit found no paragraph above six sentences. The three longest prose sentences contain 20, 20, and 19 words, with code excluded. The final simplification pass removed repeated consumer recipes from development and PR guidance. AC2 evidence: generation and all three requested gates passed after the final skill edits. No full gate, browser lane, evaluation run, or grade command ran. No architecture proposal was needed. The complete report is /tmp/task586-completion-report.md.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Rewrote all shipped skill prose for agents and readers. Centralized repeated rules and removed internal exposition while preserving consumer commands, fields, diagnostics, and guarantees. Corrected the footprint exit-status guidance from CLI help. Artifact generation, 163 repository tests, formatting, and 4908 module tests passed. One macOS-only test skipped. No product behavior changed. The completion report records file counts, rule destinations, source evidence, commits, and logs.
+<!-- SECTION:FINAL_SUMMARY:END -->
