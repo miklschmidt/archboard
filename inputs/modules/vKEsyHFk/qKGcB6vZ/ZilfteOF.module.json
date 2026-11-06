@@ -11,6 +11,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#ZilfteOF",
   "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "formerNames": [
+    "Board catalogue"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -31,8 +34,5 @@
       "id": "vKEsyHFk#zeayswzH",
       "to": "vKEsyHFk/Oi6SBIAM#mStVd7fZ"
     }
-  ],
-  "formerNames": [
-    "Board catalogue"
   ]
 }
