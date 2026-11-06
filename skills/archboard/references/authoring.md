@@ -84,27 +84,6 @@ In every reply, question, PR body and task note, call each proposal and state by
 For example, write "Painting owns the paint directory" or "the current state".
 Keep the state ID for commands and requests. If the reader must type it, give it in a code span after the name.
 
-## Source evidence catalogue
-
-Use each feature when the source or requested design establishes it.
-
-| Row            | Canonical evidence                                                |
-| -------------- | ----------------------------------------------------------------- |
-| `external`     | Mark a module outside the described ownership boundary.           |
-| `binding`      | Bind a module to the source that implements its responsibility.   |
-| `containment`  | State parent identities without a fixed level.                    |
-| `relationship` | Author each relationship on its source module.                    |
-| `traffic`      | State meaningful effective traffic properties.                    |
-| `emphasis`     | Mark the main exchange when it helps the reading.                 |
-| `repeat`       | Record repeated exchanges on authored steps.                      |
-| `note`         | Attach relevant evidence or constraints to a step.                |
-| `groups`       | Apply configured group identities.                                |
-| `flow`         | Author a complete, described exchange in a collection.            |
-| `view`         | Select a content-free reading or imported bookmark.               |
-| `walkthrough`  | Author ordered beats with exact reading targets.                  |
-| `drillDown`    | Follow an explicit model reference or recursive module scope.     |
-| `description`  | Explain responsibilities and significant architectural decisions. |
-
 ## Keep authoring safe
 
 Follow [canonical models](canonical-models.md) for discovery, claims, writes, identity allocation, and proposal operations.

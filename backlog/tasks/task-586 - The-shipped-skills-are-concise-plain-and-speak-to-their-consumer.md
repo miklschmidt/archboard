@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-06T19:12:00Z'
-updated_date: '2026-11-06T19:18:00Z'
+updated_date: '2026-11-06T19:19:00Z'
 labels: []
 dependencies: []
 ordinal: 1033000
@@ -35,4 +35,6 @@ Read all shipped guidance. Rewrite and consolidate consumer rules. Regenerate re
 No architecture proposal is needed: these edits change documentation placement and wording, not model behavior. Repository tests pass 163 cases and formatting passes. Full validation is still running. The complete reference rewrite and sentence audit remain unfinished.
 
 The full gate failed: check:model exited 1 with model findings, and lint:core exited 137. The initial system and solo runs overlapped setup and failed on missing core/frontend artifacts. Both lanes now run again after the build. No skill evaluations ran. This is a partial checkpoint, not completion.
+
+The catalogue must remain in SKILL.md: the suite loader requires it there. The citation test also relies on the Archboard heading. Both contracts are restored. After the build, system passed 234 tests and solo passed 15. Browser stopped on canonical-preview-navigation with a navigation timeout. The module lane passed 4907 tests with one citation failure before restoring the heading.
 <!-- SECTION:NOTES:END -->
