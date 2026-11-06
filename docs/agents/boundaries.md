@@ -809,20 +809,21 @@ The host serves the browser build from `SOURCE_CHECKOUT/dist/frontend` (`store/f
 of `dist/`.
 
 - `src/server/` owns HTTP composition and process lifetime.
-  `wiring/` mounts routes and shares their owners.
-  `lifecycle/` owns startup, mutation admission, and resource shutdown.
-  `routes/architecture/` adapts canonical reads, edits, claims, migration, history, publication, rendering, and explanations.
+  `http/` mounts the routes on one application and listener and tracks admitted mutation work
+  (`http/middleware/`). `wiring/server-owners.ts` holds the owners that the whole server shares.
+  `start-stop/` owns startup, mutation admission, machine-local checkout work and its cancellation, and resource shutdown.
+  `http/handlers/` holds the route families: `reads/` adapts canonical reads, health, migration, history,
+  publication, rendering, and explanations; `architecture-writes/` adapts edits, claims and portable models;
+  `code-checks/` and `repositories/` own the code check and repository routes.
   These adapters call the public runtime rather than private storage transitions.
-  `routes/panes/` owns reports, canonical navigation, and browser activation.
-  Repository, code inspection, and service routes retain their existing owners.
-  `sockets/panes/` accepts explicitly addressed pane sockets.
-  `services/checkout-work/` owns machine-local source work and cancellation.
+  `panes/connections/` accepts explicitly addressed pane sockets and owns pane reports, canonical navigation, and
+  browser activation. `panes/announcements/` keeps each vault's agent activity.
   The existing architecture change feed announces only coherent durable results.
   Retired legacy board routes perform no live reads or writes.
 - The app reads the pane and tab services, request context and listener address through the exports of
   `packages/workbench`. It mounts that package's pane context and voice trace routes, and the router of
   `packages/code-opener`.
-- The tests are in `tests/server/`, in the folders of the code they cover. `lifecycle/lifetime/` also holds the
+- The tests are in `tests/server/`, in the folders of the code they cover. `start-stop/lifecycle/` also holds the
   proof that a stop force-reaps a real process group. The system tests that start the whole server stay in
   `tests/system/`.
 

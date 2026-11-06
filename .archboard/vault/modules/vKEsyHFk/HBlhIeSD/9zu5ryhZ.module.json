@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts"
+    "path": "apps/server/src/server/http/handlers/architecture-writes/routes/model-edit-routes.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#9zu5ryhZ",
@@ -43,7 +43,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/model-edit-routes.ts",
         "symbol": "editArchitectureModule"
       },
       "id": "vKEsyHFk/HBlhIeSD#DDgCzWpy",
@@ -56,7 +56,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/model-edit-routes.ts",
         "symbol": "requireVault"
       },
       "id": "vKEsyHFk/HBlhIeSD#ncTGv1jp",
@@ -69,7 +69,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/model-edit-routes.ts",
         "symbol": "asyncEndpoint"
       },
       "id": "vKEsyHFk/HBlhIeSD#GtwK4egT",
@@ -82,7 +82,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/model-edit-routes.ts",
         "symbol": "claimArchitectureSubjects"
       },
       "id": "vKEsyHFk/0T9enjhi#gCSSYsMT",

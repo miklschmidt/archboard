@@ -6,7 +6,7 @@
   "description": "The existing workbench action owns capture delivery, temporary progress, exact retry, cancellation, and the shared text result. A route names the actual vault and tab session.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/routes/architecture/explanation-routes.ts"
+    "path": "apps/server/src/server/http/handlers/reads/routes/explanation-routes.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#QboPNrzG",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/explanation-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/explanation-routes.ts",
         "symbol": "explainArchitecture"
       },
       "id": "vKEsyHFk/HBlhIeSD#NKyQrZnS",
@@ -51,7 +51,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/explanation-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/explanation-routes.ts",
         "symbol": "requireVault"
       },
       "id": "vKEsyHFk/HBlhIeSD#qRuxyaeW",
@@ -64,11 +64,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/explanation-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/explanation-routes.ts",
         "symbol": "asyncEndpoint"
       },
-      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8",
-      "id": "vKEsyHFk#Cs9bKFjC"
+      "id": "vKEsyHFk#Cs9bKFjC",
+      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
     }
   ]
 }

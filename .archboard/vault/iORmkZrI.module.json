@@ -78,19 +78,6 @@
       "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     },
     {
-      "order": 45000,
-      "kind": "event",
-      "description": "one socket per page",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
-        "symbol": "acceptWebSocketConnection"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#ENymHNDK",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
       "order": 980210,
       "kind": "call",
       "label": "send the report",

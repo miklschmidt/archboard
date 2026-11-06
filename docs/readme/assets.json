@@ -292,7 +292,7 @@
 				"packages/workbench/src/server/explanations/services",
 				"packages/workbench/src/runtime/instructions/rules",
 				"apps/cli/src/cli/commands/model/operations/explain.ts",
-				"apps/server/src/server/routes/architecture/explanation-routes.ts",
+				"apps/server/src/server/http/handlers/reads/routes/explanation-routes.ts",
 				"apps/cli/src/cli/server-access/clients/architecture-model.ts"
 			],
 			"hash": "76c7a4925e376dc04025cc23c32d9efd641fd8461dcac1c81adbfd443017759a"

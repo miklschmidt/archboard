@@ -68,7 +68,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
         "symbol": "mountArchitectureModelRoutes"
       },
       "id": "vKEsyHFk/HBlhIeSD#RiRoDLVp",
@@ -82,7 +82,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/model-edit-routes.ts",
         "symbol": "mountArchitectureEditRoutes"
       },
       "id": "vKEsyHFk/HBlhIeSD#idpOv420",

@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/state/pane-vaults/pane-vaults.ts"
+    "path": "apps/server/src/server/panes/connections/state/pane-vaults.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
@@ -34,7 +34,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/state/pane-vaults/pane-vaults.ts",
+        "path": "apps/server/src/server/panes/connections/state/pane-vaults.ts",
         "symbol": "broadcastEverywhere"
       },
       "id": "vKEsyHFk/Oi6SBIAM#HZkTRFtf",

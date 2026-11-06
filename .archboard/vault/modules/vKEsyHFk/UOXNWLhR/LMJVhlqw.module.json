@@ -19,7 +19,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
         "symbol": "frontendRoute"
       },
       "id": "vKEsyHFk/HBlhIeSD#k5pgt4eX",

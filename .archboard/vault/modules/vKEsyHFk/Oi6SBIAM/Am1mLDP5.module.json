@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/routes/panes/pane-report-route.ts"
+    "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#Am1mLDP5",
@@ -34,7 +34,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
         "symbol": "panes"
       },
       "id": "vKEsyHFk/Oi6SBIAM#hiqkoWmI",
@@ -47,7 +47,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
         "symbol": "placeOfVault"
       },
       "id": "vKEsyHFk/Oi6SBIAM#8IdEaZWJ",
@@ -60,7 +60,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
         "symbol": "statedVault"
       },
       "id": "vKEsyHFk/Oi6SBIAM#ugb7cB3Q",
@@ -72,7 +72,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
         "symbol": "parsePaneKey"
       },
       "id": "vKEsyHFk/Oi6SBIAM#ZX8UUIpb",
@@ -84,7 +84,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
         "symbol": "tabSessionOf"
       },
       "id": "vKEsyHFk/Oi6SBIAM#qHLocIlw",
