@@ -3,25 +3,21 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "jRNHx2a1",
-    "name": "A flowchart lays out from its flow and a flow opens in the reading that fits",
-    "summary": "The flowchart lays a flow out from its structure in one pass, breaks a long run into columns and ends every long line at a lettered jump, so a long flow fits a desktop pane without lines round its blocks, and a flow opens in the reading that its pane shows larger.",
+    "id": "5fVvhgsV",
+    "name": "install-skill links global skills to the checkout",
+    "summary": "A global install links each skill to the checkout's skills directory, so a git pull keeps it current; a skills root inside the repository still gets a copy.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0073-a-flowchart-lays-out-from-its-flow-and-a-flow-opens-in-the-reading-that-fits.md"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/design/flowchart-layout-research.md"
+        "path": "backlog/tasks/task-471.02 - install-skill-links-global-skills-to-the-checkout-and-copies-repo-local-skills.md"
       }
     ],
-    "predecessor": "w4XB6eBv",
-    "baseline": "9194e44da5a324e84e6ffdba346147f03b566ed8",
-    "createdAt": "2026-11-06T11:22:18.419Z",
-    "adoptedAt": "2026-11-06T11:23:04.454Z",
-    "reason": "The flowchart layout from the flow and the reading that fits are merged on main in #34 (ADR 0073). This proposal carries vdbwhuzZ's changes onto current, because vdbwhuzZ follows a former current state.",
-    "previousCurrent": "w4XB6eBv"
+    "predecessor": "oDsh4l57",
+    "baseline": "8a0bbd5b28fa3aaf6d19bff69f19f7fb80c18fc3",
+    "createdAt": "2026-11-06T17:26:43.724Z",
+    "adoptedAt": "2026-11-06T17:27:02.679Z",
+    "reason": "install-skill links global skills to the checkout describes code that main holds since PR 30. Nobody adopted the first copy, so this copy carries it onto current. The owner asked for its adoption.",
+    "previousCurrent": "oDsh4l57"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",

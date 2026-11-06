@@ -37,6 +37,19 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#LJUm7E1m",
       "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
+    },
+    {
+      "order": 60000,
+      "kind": "dependency",
+      "label": "the kind a flow's node is drawn as",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/design.rs",
+        "symbol": "FLOW_KIND"
+      },
+      "id": "vKEsyHFk#PLVZZKxC",
+      "to": "vKEsyHFk#w44DwfpV"
     }
   ]
 }

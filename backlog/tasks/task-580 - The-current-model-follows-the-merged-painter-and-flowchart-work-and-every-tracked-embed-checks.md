@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-06T11:01:00Z'
-updated_date: '2026-11-06T16:01:00Z'
+updated_date: '2026-11-06T17:33:00Z'
 labels:
   - model
 dependencies: []
@@ -39,4 +39,6 @@ archboard check: 0 errors, 1 warning: RELATIONSHIP_UNDRAWN Painter core -> Page 
 Information findings left by decision: RELATIONSHIP_UNDRAWN (151) says a higher relationship stands for the call; EXPOSED_UNUSED (33) is a code cleanup.
 
 Review of PR 49 (CodeRabbit): criterion 1 now names the real outcome, vdbwhuzZ shelved and its changes adopted through jRNHx2a1. Four flow steps on current were corrected against the code: Draw a view letters the jumps in its own step (mod.rs add_jumps), the light reaches the stage through setLight and not attachStage, a replay waits for a starting painter inside each frame, and a picture brought in part by part enters the stage whether or not one leaves.
+
+Adopted on current, at the owner's request: "Painting owns the paint directory" (its code is on main and #49 carries it), and copies of "Answer links to local files open in the editor" (#33) and "install-skill links global skills to the checkout" (#30), whose code merged without adoption. Each copy keeps the name, summary and documents of its original and follows the current state. The originals, which followed an older current state, are shelved with reasons that name the copies. The install-skill copy keeps the clause that install-skill writes nothing into CLAUDE.md or AGENTS.md, which main added after the draft. No active proposal remains in the vault.
 <!-- SECTION:NOTES:END -->
