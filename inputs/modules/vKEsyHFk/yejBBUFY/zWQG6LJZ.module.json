@@ -6,7 +6,7 @@
   "description": "Reads repository identities and canonical model authority through the shared query cache. The navigator opens each model in the active pane. Legacy authority exposes migration guidance instead of fetching live legacy board listings or levels.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/panes/model-catalog/hooks/use-model-catalog.ts"
+    "path": "apps/web/src/ui/panes/model-catalog"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
