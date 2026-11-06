@@ -278,6 +278,19 @@
       },
       "id": "vKEsyHFk#X4APDE6a",
       "to": "vKEsyHFk#9VahN2IU"
+    },
+    {
+      "order": 981100,
+      "kind": "call",
+      "label": "open the variant that a legacy address names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/operations/legacy-inventory/addresses.ts",
+        "symbol": "addressedVariant"
+      },
+      "to": "vKEsyHFk#vZUWUgyb",
+      "id": "vKEsyHFk#ewLuX29P"
     }
   ]
 }
