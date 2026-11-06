@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-06T19:06:00Z'
-updated_date: '2026-11-06T19:25:00Z'
+updated_date: '2026-11-06T19:47:00Z'
 labels: []
 dependencies: []
 documentation:
@@ -24,10 +24,10 @@ The layout moves hundreds of files across many commits, and every commit must ke
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 ADR 0075 records the behavior-first layout and amends ADR 0055; docs/agents/boundaries.md and docs/agents/frontend.md state it
-- [ ] #2 workspace-layout.test.ts holds the new rule with a ratchet of trees still role-first, and fails if a listed tree has no role-first file left
-- [ ] #3 Each lint rule that reads a role folder accepts both layouts and keeps its guarantee, proven by rule tests in both forms
-- [ ] #4 A repository test fails when vite.config.ts names a test path that does not exist
+- [x] #1 ADR 0075 records the behavior-first layout and amends ADR 0055; docs/agents/boundaries.md and docs/agents/frontend.md state it
+- [x] #2 workspace-layout.test.ts holds the new rule with a ratchet of trees still role-first, and fails if a listed tree has no role-first file left
+- [x] #3 Each lint rule that reads a role folder accepts both layouts and keeps its guarantee, proven by rule tests in both forms
+- [x] #4 A repository test fails when vite.config.ts names a test path that does not exist
 - [ ] #5 scripts/move-source.ts moves a reviewed manifest with git mv, rewrites aliases, relative specifiers and repository-path literals, and updates bindings and anchors through archboard model edit; a dry run over apps/web changes nothing
 <!-- AC:END -->
 
@@ -50,4 +50,18 @@ ui-concern-placement accepts the role folder first (role-first trees) or last (b
 assistant-ui-imports: the role-first form now requires the first folder to be a role (the old code took segment [1] of any path); no current file relies on the looser form.
 Config-paths test also holds the single-file entries of both .oxlintrc override lists to existing files, which keeps the vendored exemption list exact after moves.
 Found for layer B6: packages/renderer/tests/runtime/operations/routes/ is a behavior named 'routes', a role word, so its move needs a new folder name.
+
+Codemod (scripts/move-source.ts with scripts/move-source/{layout,rewrite,vault}.ts): commands plan <path>... [--overrides file], apply <manifest> [--dry-run], rebind <manifest>. Overrides are new-layout prefixes to new prefixes (applied after the default move, mirrored from src/ to tests/). Manifest = {moves, bindings, proposals}; apply uses moves and bindings only. Reading and CLI answers are parsed with the model contract schemas.
+Decisions: (1) repository-path literals are rewritten in the listed config and doc files AND in every tracked code file outside the exclusions, because tests and the CLI command table name source by path (readme-lockup.test.ts, panes-addressing.ts); other text files only get a 'references to review' note. (2) A relative 'import ... from "../x"' form is not rewritten: lint refuses relative imports in workspaces, so in workspace files such text is fixture text (boundaries.test.ts), which a rewrite would corrupt. new URL(..., import.meta.url) and join(import.meta.dir, ...) are rewritten. (3) Bindings pinned to a commit keep their path. (4) A bound directory whose files part blocks apply until the manifest names it in bindings; plan proposes the deepest folder its files share. (5) rebind repeats the vault step from a moved checkout and is idempotent (already moved bindings produce no statement).
+Evidence: plan apps/web -> 567 moves, 1 binding proposed (apps/web/src/ui/clients/canvas -> apps/web/src/ui/canvas), 0 deeper places, 0 layout problems. apply --dry-run -> 463 files rewritten, 445 vault statements (107 edit-module, 199 edit-relationship, 139 edit-step), 0 blocking problems; git status and the vault revision digest dc527ed2... unchanged; no claims left.
+Scratch proof in a throwaway clone (scratchpad, stub CLI that checks each request against the real claim and edit schemas): real apply of the apps/web manifest -> 448 renames with edits + 119 pure renames + 16 rewritten files; claim 445, CLAIM_REQUIRED, release, claim 446, retry with a new operation id, release. In the moved clone: tsc both projects pass, lint:policy over apps/web passes, lint:tests passes, bun test apps/web 621 pass 0 fail, workspace-layout ratchet fails for exactly apps/web/src/ui and apps/web/tests/ui (the move commit removes them). Renderer B6 overrides: new URL paths re-relativized (core-panic probe, layout-worker), vite.config.ts lane and worker paths rewritten, all new URL/import.meta.dir paths resolve, tsc passes. Real server: claiming the 445 web subjects succeeded and was released; vault revision unchanged.
+
+Gate: nix develop -c bun run check passed, 21/21 tasks: test:repository 170 pass across 16 files, test:modules 4909 pass across 742 files, test:system 234 pass across 64 files, test:solo 15 pass across 2 files, test:serial-browser 49/49 owners, cargo test 33 suites ok, lint, format and both type checks clean. The first run failed one test (package-api.test.ts refused literal private workbench paths in the frame-clock fixtures), which 8abcb83a2 fixed.
+AC #5 left unchecked: git mv, rewrites, claim growth and release ran for real in a scratch clone, but the vault answers there came from a stub CLI that checks each request against the real schemas. On this checkout only a claim and release of the 445 web subjects ran. A successful model edit on a real vault needs a real move, which this layer must not run. The first move (B1) proves it.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Layer A of the behavior-first layout (doc-003 A1 and A2). ADR 0075 amends ADR 0055: areas stay first, code is grouped by behavior inside them, and the role folder is the last folder of a path. boundaries.md, frontend.md and test-suite.md state it. workspace-layout.test.ts holds the rule (one role folder, the last; no area-named folder; api directly under the area; tests/<area>/support exempt) with ROLE_FIRST_TREES, the 36 trees that still break it. config-paths.test.ts fails for any path a Vite+ task or a single-file Oxlint override names that does not exist. ui-concern-placement and assistant-ui-imports accept both layouts (new twoConcerns and misplacedConcern refusals). The frame clock gains the architecture-drawing/canvas and workbench-client/subtitles globs, and state-files-pure gets behavior-first fixtures. role-folder-lint.test.ts proves both forms and the old refusals. scripts/move-source.ts plans, applies (git mv, alias, URL and import.meta.dir, exports and repository-path rewrites, restart, one claimed model edit that grows its claim on CLAIM_REQUIRED) and rebinds. The apps/web dry run proposes 567 moves, 463 rewrites and 445 vault statements, and changes nothing. bun run check passes. Open: AC #5's real vault write is unproven until the first real move.
+<!-- SECTION:FINAL_SUMMARY:END -->
