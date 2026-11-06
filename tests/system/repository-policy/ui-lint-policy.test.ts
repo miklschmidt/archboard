@@ -296,6 +296,8 @@ describe("the lint configs split app tests the way they split package tests", ()
 describe("the frame clock rule follows the model canvas and the subtitles in both layouts", () => {
 	// A frame-clocked file reads the browser's clock directly, which a recording cannot step.
 	const CLOCK_READ = "export const stamp = [Date.now(), requestAnimationFrame];\n";
+	// Fixture paths in the workbench's ui area, which the override names; no file loads them.
+	const WORKBENCH_UI = "packages/workbench/src/ui";
 	const canvas = [
 		"apps/web/src/ui/api/canvas/stamp.ts",
 		"apps/web/src/ui/clients/canvas/stamp.ts",
@@ -310,19 +312,19 @@ describe("the frame clock rule follows the model canvas and the subtitles in bot
 		"apps/web/src/ui/architecture-drawing/canvas/picture/camera/rules/stamp.ts",
 		"apps/web/src/ui/architecture-drawing/canvas/pane-vault/state/stamp.ts",
 		// The subtitles of the workbench, role first and behavior first.
-		"packages/workbench/src/ui/components/subtitles/Stamp.tsx",
-		"packages/workbench/src/ui/hooks/subtitles/use-stamp.ts",
-		"packages/workbench/src/ui/rules/subtitles/stamp.ts",
-		"packages/workbench/src/ui/state/subtitles/stamp.ts",
-		"packages/workbench/src/ui/workbench-client/subtitles/components/Stamp.tsx",
-		"packages/workbench/src/ui/workbench-client/subtitles/state/stamp.ts",
+		`${WORKBENCH_UI}/components/subtitles/Stamp.tsx`,
+		`${WORKBENCH_UI}/hooks/subtitles/use-stamp.ts`,
+		`${WORKBENCH_UI}/rules/subtitles/stamp.ts`,
+		`${WORKBENCH_UI}/state/subtitles/stamp.ts`,
+		`${WORKBENCH_UI}/workbench-client/subtitles/components/Stamp.tsx`,
+		`${WORKBENCH_UI}/workbench-client/subtitles/state/stamp.ts`,
 	];
 	const tests = canvas.map((file) => file.replace("/src/", "/tests/"));
 	const sibling = [
 		"apps/web/src/ui/components/shell/Stamp.tsx",
 		"apps/web/src/ui/hooks/canvasx/use-stamp.ts",
 		"apps/web/src/ui/architecture-drawing/model-reader/reading/components/Stamp.tsx",
-		"packages/workbench/src/ui/workbench-client/dock/components/Stamp.tsx",
+		`${WORKBENCH_UI}/workbench-client/dock/components/Stamp.tsx`,
 	];
 	const files = Object.fromEntries(
 		[...canvas, ...tests, ...sibling].map((file) => [file, CLOCK_READ]),
