@@ -2,10 +2,13 @@
   "order": 29000,
   "name": "Legacy board reading",
   "kind": "module",
-  "responsibility": "Finds a model by its name or a former name, lists the models of a vault, reads and validates one from disk, and reads the vault configuration its vocabulary comes from",
+  "responsibility": "Decodes original legacy board bytes and inventories them for explicit migration preview and cutover",
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#ZqkmwupZ",
   "parent": "vKEsyHFk/0T9enjhi#EekL5c17",
+  "formerNames": [
+    "Board reading"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -27,8 +30,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
-  "formerNames": [
-    "Board reading"
-  ]
+  "outgoing": []
 }
