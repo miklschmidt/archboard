@@ -7,7 +7,7 @@ import {
 	TooltipProvider,
 	Tooltip as TooltipRoot,
 	TooltipTrigger,
-} from "#ui/components/shadcn/tooltip.tsx";
+} from "#ui/shadcn/components/tooltip.tsx";
 
 /** A tooltip, with its trigger, its content and the provider around tooltips as its parts. */
 const Tooltip = Object.assign(TooltipRoot, {

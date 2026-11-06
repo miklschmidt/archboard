@@ -12,11 +12,11 @@
 		"prefix": ""
 	},
 	"aliases": {
-		"components": "packages/ui-kit/src/ui/components/shadcn",
-		"ui": "packages/ui-kit/src/ui/components/shadcn",
-		"lib": "packages/ui-kit/src/ui/components/shadcn",
+		"components": "packages/ui-kit/src/ui/shadcn/components",
+		"ui": "packages/ui-kit/src/ui/shadcn/components",
+		"lib": "packages/ui-kit/src/ui/shadcn/components",
 		"utils": "packages/ui-kit/src/ui/rules/class-names",
-		"hooks": "packages/ui-kit/src/ui/components/shadcn"
+		"hooks": "packages/ui-kit/src/ui/shadcn/components"
 	},
 	"rtl": false,
 	"menuColor": "default",

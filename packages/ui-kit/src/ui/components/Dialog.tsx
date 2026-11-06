@@ -5,10 +5,10 @@
 // `Dialog.Cancel` for the footer's dismissing action, and `Dialog.Technical` sets an identifier,
 // path, version or time in the mono face.
 
-import { BusyText } from "#ui/components/dialog-parts/BusyText.tsx";
-import { DialogCancel } from "#ui/components/dialog-parts/DialogCancel.tsx";
-import { DialogErrorAlert } from "#ui/components/dialog-parts/DialogErrorAlert.tsx";
-import { Technical } from "#ui/components/dialog-parts/Technical.tsx";
+import { BusyText } from "#ui/dialog-parts/components/BusyText.tsx";
+import { DialogCancel } from "#ui/dialog-parts/components/DialogCancel.tsx";
+import { DialogErrorAlert } from "#ui/dialog-parts/components/DialogErrorAlert.tsx";
+import { Technical } from "#ui/dialog-parts/components/Technical.tsx";
 import {
 	DialogContent,
 	DialogDescription,
@@ -17,7 +17,7 @@ import {
 	Dialog as DialogRoot,
 	DialogTitle,
 	DialogTrigger,
-} from "#ui/components/shadcn/dialog.tsx";
+} from "#ui/shadcn/components/dialog.tsx";
 
 /** A dialog, with its layout parts and the parts every dialog surface shares. */
 const Dialog = Object.assign(DialogRoot, {

@@ -92,8 +92,6 @@ const ROLE_FIRST_TREES: readonly string[] = [
 	"apps/workbench-example/tests/ui",
 	"packages/code-intel/src/runtime",
 	"packages/code-intel/tests/runtime",
-	"packages/ui-kit/src/ui",
-	"packages/ui-kit/tests/ui",
 ];
 
 /** A TypeScript file below an area: its tree, `<workspace>/<src|tests>/<area>`, and its folders. */

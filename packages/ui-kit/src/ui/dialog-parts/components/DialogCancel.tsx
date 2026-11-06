@@ -3,8 +3,8 @@
 
 import type { ComponentProps, JSX } from "react";
 
-import { buttonVariants } from "#ui/components/shadcn/button.tsx";
-import { DialogClose } from "#ui/components/shadcn/dialog.tsx";
+import { buttonVariants } from "#ui/shadcn/components/button.tsx";
+import { DialogClose } from "#ui/shadcn/components/dialog.tsx";
 
 /** The dismissing action of a dialog footer, as the official button variants spell it: a 28px ghost button. */
 const CANCEL_BUTTON_CLASS = buttonVariants({ variant: "ghost", size: "sm" });

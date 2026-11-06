@@ -7,7 +7,7 @@ import {
 	InputGroup as InputGroupRoot,
 	InputGroupText,
 	InputGroupTextarea,
-} from "#ui/components/shadcn/input-group.tsx";
+} from "#ui/shadcn/components/input-group.tsx";
 
 /** A text input with its addons, as its parts. */
 const InputGroup = Object.assign(InputGroupRoot, {

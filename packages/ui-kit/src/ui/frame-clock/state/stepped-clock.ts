@@ -10,8 +10,8 @@
 // it cannot stand is a picture the renderer cannot reproduce, so the clock
 // records it as a violation instead of letting it pass.
 
-import { syncAnimation, type DrivenAnimation } from "#ui/state/frame-clock/animation-sync.ts";
-import type { FrameClock } from "#ui/state/frame-clock/clock.ts";
+import { syncAnimation, type DrivenAnimation } from "#ui/frame-clock/state/animation-sync.ts";
+import type { FrameClock } from "#ui/frame-clock/state/clock.ts";
 
 /** Something that moved outside the clock. */
 interface ClockViolation {

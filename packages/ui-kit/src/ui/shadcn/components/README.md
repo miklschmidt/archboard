@@ -17,7 +17,7 @@ These files are private. The package exposes them through the composites in
 (`Dialog.Content`, `Select.Item`), and its one `src/ui/api/components.ts` entry.
 A composite assembles these parts with the package's own dialog parts, so these
 files keep the registry's bytes. The aliases in `components.json` are plain
-repository paths, such as `packages/ui-kit/src/ui/components/shadcn`. The CLI resolves
+repository paths, such as `packages/ui-kit/src/ui/shadcn/components`. The CLI resolves
 them from the repository root, with no TypeScript path alias. `shadcn info`
 lists them under Resolved Paths. Rewrite the import lines it writes to `#`
 specifiers. Product behaviour never

@@ -349,12 +349,13 @@ Archive synchronization preserves ancestry without merging current models or sel
 The eighth is `ui-kit` (`@archboard/ui-kit`). It holds the presentation parts that more than one UI
 module draws with, in the `ui` area. It adopts the `api/` role for `ui/` and exposes 4 subpaths
 with 37 names (TASK-529.03; before, 10 subpaths with 85 names). Every export is safe for the
-browser. `ui/components/shadcn/` holds the official shadcn Base UI files with their `README.md`,
+browser. `ui/shadcn/components/` holds the official shadcn Base UI files with their `README.md`,
 private and kept at the registry's bytes. `ui/components/` holds the package's own components and
-one composite per family, which puts the family's parts on its root, and `dialog-parts/` holds the
-parts that every dialog surface shares. `ui/state/` holds the frame clock and the fullscreen
-presentation; `ui/rules/` and `ui/hooks/` hold the small helpers. The aliases in `components.json`
-name `packages/ui-kit/src/ui/components/shadcn`, so the shadcn CLI writes there. It resolves these
+one composite per family, which puts the family's parts on its root, and
+`ui/dialog-parts/components/` holds the parts that every dialog surface shares.
+`ui/frame-clock/state/` holds the frame clock and `ui/state/` the fullscreen presentation;
+`ui/rules/` and `ui/hooks/` hold the small helpers. The aliases in `components.json`
+name `packages/ui-kit/src/ui/shadcn/components`, so the shadcn CLI writes there. It resolves these
 paths from the repository root with no TypeScript path alias. Generated imports still need the
 package-local `#` rewrite, and a new part reaches callers through its family's composite.
 

@@ -8,7 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { createSteppedClock } from "#ui/state/frame-clock/stepped-clock.ts";
+import { createSteppedClock } from "#ui/frame-clock/state/stepped-clock.ts";
 
 /** A timeline the fakes run on, told apart by identity alone. */
 type FakeTimeline = object;

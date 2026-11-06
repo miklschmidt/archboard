@@ -1,9 +1,11 @@
 ---
 id: TASK-582.03.04
 title: 'Layout D: the remaining packages follow, and lint accepts only the new layout'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-06T19:07:00Z'
+updated_date: '2026-11-06T23:21:00Z'
 labels: []
 dependencies:
   - TASK-582.03.03

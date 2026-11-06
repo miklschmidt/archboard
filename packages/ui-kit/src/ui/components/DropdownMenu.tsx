@@ -13,7 +13,7 @@ import {
 	DropdownMenu as DropdownMenuRoot,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-} from "#ui/components/shadcn/dropdown-menu.tsx";
+} from "#ui/shadcn/components/dropdown-menu.tsx";
 
 /** A dropdown menu, with its trigger, its content and what the content holds as its parts. */
 const DropdownMenu = Object.assign(DropdownMenuRoot, {

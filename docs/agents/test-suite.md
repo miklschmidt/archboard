@@ -255,7 +255,7 @@ These module owners cover the supporting contracts:
 - `packages/walkthrough/tests/runtime/video-encoding/services` and `processes`: finding and running ffmpeg.
 - `packages/walkthrough/tests/shared/protocol`: the talk's contract.
 - `apps/web/tests/ui/walkthroughs/replay/state`: the frame that shows each event.
-- `packages/ui-kit/tests/ui/state/frame-clock`: the stepped clock.
+- `packages/ui-kit/tests/ui/frame-clock/state`: the stepped clock.
 - `packages/walkthrough/tests/runtime/recorder/store` and `operations`: the talk on disk and the browsers'
   flags.
 

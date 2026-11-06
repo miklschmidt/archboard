@@ -10,8 +10,8 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-} from "#ui/components/shadcn/dialog.tsx";
-import { InputGroup, InputGroupAddon } from "#ui/components/shadcn/input-group.tsx";
+} from "#ui/shadcn/components/dialog.tsx";
+import { InputGroup, InputGroupAddon } from "#ui/shadcn/components/input-group.tsx";
 import { RiCheckLine, RiSearchLine } from "@remixicon/react";
 
 function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
