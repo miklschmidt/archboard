@@ -3,21 +3,21 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "s3dmAjji",
-    "name": "Painting owns the paint directory",
-    "summary": "Painting binds crates/archboard-scene/src/paint, so the code in it that no part binds belongs to Painting, and its design constants become a part that the layouts and the SVG painter call. SVG document is the archboard-svg crate, so it moves beside the other painters of the renderer.",
+    "id": "oDsh4l57",
+    "name": "Answer links to local files open in the editor",
+    "summary": "A link in an agent's answer to a local file opens that file through the code opener, held to the checkouts the vault reads, instead of sending the browser to a page of the Archboard server.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "backlog/tasks/task-582.02 - Painting-owns-the-paint-directory-and-its-design-constants-are-a-part.md"
+        "path": "docs/adr/0018-code-targets-resolve-at-presentation-and-local-opening-is-a-server-capability.md"
       }
     ],
-    "predecessor": "jRNHx2a1",
-    "baseline": "0406c4e5f73365eb5c786adff71043535433e472",
-    "createdAt": "2026-11-06T15:20:49.047Z",
-    "adoptedAt": "2026-11-06T17:19:49.187Z",
-    "reason": "Painting owns the paint directory describes code that main already holds: it corrects the model, and PR 49 carries it with the containment check. The owner asked for its adoption.",
-    "previousCurrent": "jRNHx2a1"
+    "predecessor": "s3dmAjji",
+    "baseline": "d9524b3841a889f06adbb55a57de617d0044e1db",
+    "createdAt": "2026-11-06T17:22:12.262Z",
+    "adoptedAt": "2026-11-06T17:23:28.985Z",
+    "reason": "Answer links to local files open in the editor describes code that main holds since PR 33. Nobody adopted the first copy, so this copy carries it onto current. The owner asked for its adoption.",
+    "previousCurrent": "s3dmAjji"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
