@@ -6,7 +6,7 @@
   "description": "Callers outside the module import only src/cli/command-routing/index.ts. Every file under lib/ is private, so the parts the command catalogue reaches are the entry points that index re-exports (runCliWith, registryOf), and the rest are hidden parts.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/protocol/routing"
+    "path": "apps/cli/src/cli/routing"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",

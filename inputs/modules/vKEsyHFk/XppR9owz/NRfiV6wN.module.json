@@ -6,7 +6,7 @@
   "description": "The command reads the selected model state and local Git evidence through the existing history interface. It does not retain source history.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/history.ts",
+    "path": "apps/cli/src/cli/commands/model/operations/history.ts",
     "symbol": "modelLocalityContract"
   },
   "schemaVersion": 1,

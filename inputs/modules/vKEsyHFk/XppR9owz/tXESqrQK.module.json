@@ -5,7 +5,7 @@
   "responsibility": "Records an exact retained narrative through the existing local talk recorder.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/record.ts"
+    "path": "apps/cli/src/cli/commands/model/operations/record.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#tXESqrQK",
@@ -88,7 +88,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/record.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/record.ts",
         "symbol": "readArchitectureModelOnServer"
       },
       "id": "vKEsyHFk/XppR9owz#KLeoJwpA",
@@ -101,7 +101,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/record.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/record.ts",
         "symbol": "recordWalkthrough"
       },
       "id": "vKEsyHFk/XppR9owz#O0mnsHg3",
@@ -114,7 +114,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/record.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/record.ts",
         "symbol": "talkPlaceOf"
       },
       "id": "vKEsyHFk/XppR9owz#YvyympOn",

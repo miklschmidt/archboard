@@ -3,6 +3,11 @@
   "name": "Server access",
   "kind": "module",
   "responsibility": "The CLI's clients of the Archboard server: one file for each route family, each with its refusals, over the shared request path",
+  "description": "Each client calls requestJson from the server-lifecycle package, which owns the request transport and starting, stopping and restarting the server. requirePrerequisite makes sure that a command has the server and a browser pane that it needs.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/server-access"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#dHZeNcMs",
   "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
@@ -27,10 +32,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
-  "description": "Each client calls requestJson from the server-lifecycle package, which owns the request transport and starting, stopping and restarting the server. requirePrerequisite makes sure that a command has the server and a browser pane that it needs.",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/clients/server"
-  }
+  "outgoing": []
 }

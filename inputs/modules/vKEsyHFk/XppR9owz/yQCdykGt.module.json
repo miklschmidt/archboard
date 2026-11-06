@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/vault/vault.ts"
+    "path": "apps/cli/src/cli/commands/vault/operations/vault.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#yQCdykGt",
@@ -43,7 +43,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/vault/vault.ts",
+        "path": "apps/cli/src/cli/commands/vault/operations/vault.ts",
         "symbol": "checkSemanticVaultOnServer"
       },
       "id": "vKEsyHFk/XppR9owz#QmcmQeFK",
@@ -56,7 +56,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/vault/vault.ts",
+        "path": "apps/cli/src/cli/commands/vault/operations/vault.ts",
         "symbol": "requestJson"
       },
       "id": "vKEsyHFk/XppR9owz#QiGtsvq5",
@@ -69,7 +69,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/vault/vault.ts",
+        "path": "apps/cli/src/cli/commands/vault/operations/vault.ts",
         "symbol": "checkEmbeds"
       },
       "id": "vKEsyHFk/XppR9owz#g8rnkuaR",
@@ -82,7 +82,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/vault/vault.ts",
+        "path": "apps/cli/src/cli/commands/vault/operations/vault.ts",
         "symbol": "codeCheckOnServer"
       },
       "id": "vKEsyHFk#BnbTGVun",

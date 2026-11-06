@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/rasterize.ts"
+    "path": "apps/cli/src/cli/commands/model/operations/rasterize.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#69392DWF",
@@ -46,11 +46,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/rasterize.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/rasterize.ts",
         "symbol": "createSemanticRasterizer"
       },
-      "to": "vKEsyHFk/SMjRfwN3#KyQxypRC",
-      "id": "vKEsyHFk#inbTEHtR"
+      "id": "vKEsyHFk#inbTEHtR",
+      "to": "vKEsyHFk/SMjRfwN3#KyQxypRC"
     }
   ]
 }

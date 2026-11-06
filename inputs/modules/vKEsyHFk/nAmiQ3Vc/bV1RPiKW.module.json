@@ -5,7 +5,7 @@
   "responsibility": "Maps errors to exit codes",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts"
+    "path": "apps/cli/src/cli/routing/operations/exit-codes.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",

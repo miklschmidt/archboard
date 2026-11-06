@@ -5,7 +5,7 @@
   "responsibility": "Takes the server address out of argv into the environment before any module that reads it loads, and moves a leading -C behind the command name",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/bootstrap/bootstrap.ts"
+    "path": "apps/cli/src/cli/routing/operations/bootstrap.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#vAQwlVuz",

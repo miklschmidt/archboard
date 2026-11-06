@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/edit.ts"
+    "path": "apps/cli/src/cli/commands/model/operations/edit.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#4jS9CVi6",
@@ -43,7 +43,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/edit.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/edit.ts",
         "symbol": "editArchitectureModuleOnServer"
       },
       "id": "vKEsyHFk/XppR9owz#PmRXYBFT",
@@ -56,7 +56,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/edit.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/edit.ts",
         "symbol": "statedInvocation"
       },
       "id": "vKEsyHFk/XppR9owz#6JptLyJB",

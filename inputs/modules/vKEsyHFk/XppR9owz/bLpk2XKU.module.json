@@ -6,7 +6,7 @@
   "description": "Each command family keeps its contracts and handlers in a folder of src/cli/operations; invocation/run.ts holds the table that bin.ts runs, and Contract execution calls the handlers.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations"
+    "path": "apps/cli/src/cli/commands"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#bLpk2XKU",

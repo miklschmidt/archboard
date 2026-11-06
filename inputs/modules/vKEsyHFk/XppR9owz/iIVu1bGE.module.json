@@ -5,7 +5,7 @@
   "responsibility": "The one table of commands: what exists, what it takes and who owns it",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/invocation/run.ts"
+    "path": "apps/cli/src/cli/routing/operations/run.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#iIVu1bGE",
@@ -43,7 +43,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "runCliWith"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0",
@@ -56,7 +56,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "registryOf"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#Ml9zYVzq",
@@ -69,7 +69,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "statusContract"
       },
       "id": "vKEsyHFk/XppR9owz#l1mVF45a",
@@ -81,7 +81,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "modelInventoryContract"
       },
       "id": "vKEsyHFk/XppR9owz#T67XkF7L",
@@ -94,7 +94,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "modelEditContract"
       },
       "id": "vKEsyHFk/XppR9owz#4PgjyVVt",
@@ -106,7 +106,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "modelPublishContract"
       },
       "id": "vKEsyHFk/XppR9owz#cluonY9L",
@@ -118,7 +118,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "modelArchiveInitContract"
       },
       "id": "vKEsyHFk/XppR9owz#TLj1cMMq",
@@ -130,7 +130,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "COMMANDS"
       },
       "id": "vKEsyHFk/XppR9owz#yiZPCy4w",

@@ -6,7 +6,7 @@
   "description": "The module's public entry point. It passes the call straight on to executeCommand; the execution steps behind it are private (runner.ts).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/execution/runner.ts"
+    "path": "apps/cli/src/cli/contract/operations/runner.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#gt1eCpcS",
@@ -44,7 +44,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/runner.ts",
+        "path": "apps/cli/src/cli/contract/operations/runner.ts",
         "symbol": "executeCommand"
       },
       "id": "vKEsyHFk/XppR9owz#T7wRpA8y",

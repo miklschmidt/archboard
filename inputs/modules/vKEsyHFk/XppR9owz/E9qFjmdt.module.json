@@ -5,7 +5,7 @@
   "responsibility": "Route portable export and import through the shared architecture runtime.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/portable.ts"
+    "path": "apps/cli/src/cli/commands/model/operations/portable.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#E9qFjmdt",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/portable.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/portable.ts",
         "symbol": "exportArchitectureModelOnServer"
       },
       "id": "vKEsyHFk/XppR9owz#z6yIhc7O",
@@ -52,7 +52,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/portable.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/portable.ts",
         "symbol": "defineCommand"
       },
       "id": "vKEsyHFk/XppR9owz#WYi9Yxym",
