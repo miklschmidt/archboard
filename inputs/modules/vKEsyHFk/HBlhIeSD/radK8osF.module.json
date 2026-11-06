@@ -59,6 +59,19 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#kXzRYl25",
       "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
+    },
+    {
+      "order": 120000,
+      "kind": "call",
+      "label": "share one cached fact reader across a repository walk",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/history-lens/clients/source-history.ts",
+        "symbol": "createSourceFacts"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#mR7wPSei",
+      "id": "vKEsyHFk#ID37nw1v"
     }
   ]
 }
