@@ -14,6 +14,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
   "parent": "vKEsyHFk/6E6hL0Zk#cuOguqkZ",
+  "formerNames": [
+    "Board announcements"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -26,8 +29,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
-  "formerNames": [
-    "Board announcements"
-  ]
+  "outgoing": []
 }
