@@ -5,7 +5,7 @@
   "responsibility": "Parses each supported language or format, resolves references, finds definitions, and reads module exposure",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/code-intel/src/runtime/operations/code-facts"
+    "path": "packages/code-intel/src/runtime/code-facts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#3CaBjhIM",

@@ -6,7 +6,7 @@
   "description": "The checker reads current architecture, one selected state, or independent drafts. It reports bindings, anchors, declared relationships, interfaces, and document references with canonical identities. Git locality and branch footprint use separate requested history operations.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/code-intel/src/runtime/operations/code-check"
+    "path": "packages/code-intel/src/runtime/code-check"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#5SMX69gS",
@@ -40,7 +40,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/states.ts",
+        "path": "packages/code-intel/src/runtime/code-check/operations/states.ts",
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/vKEsyHFk#fVxcoo6Q",
@@ -53,7 +53,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/states.ts",
+        "path": "packages/code-intel/src/runtime/code-check/operations/states.ts",
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/HBlhIeSD#3hokVf0H",
@@ -66,7 +66,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/check.ts",
+        "path": "packages/code-intel/src/runtime/code-check/operations/check.ts",
         "symbol": "createCodeFacts"
       },
       "id": "vKEsyHFk/6E6hL0Zk#osnkOhpk",
@@ -79,7 +79,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/checkouts.ts",
+        "path": "packages/code-intel/src/runtime/code-check/operations/checkouts.ts",
         "symbol": "neverRead"
       },
       "id": "vKEsyHFk#inAwwoLx",
@@ -92,7 +92,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/checkouts.ts",
+        "path": "packages/code-intel/src/runtime/code-check/operations/checkouts.ts",
         "symbol": "errorMessage"
       },
       "id": "vKEsyHFk#o6iMuevP",
@@ -105,7 +105,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/check.ts",
+        "path": "packages/code-intel/src/runtime/code-check/operations/check.ts",
         "symbol": "createElapsedClock"
       },
       "id": "vKEsyHFk#zAB848k7",
@@ -118,7 +118,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
+        "path": "packages/code-intel/src/runtime/code-check/operations/resolution.ts",
         "symbol": "serverSkips"
       },
       "id": "vKEsyHFk#73DTR15V",
@@ -131,7 +131,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
+        "path": "packages/code-intel/src/runtime/code-check/operations/resolution.ts",
         "symbol": "openLanguageServers"
       },
       "id": "vKEsyHFk/6E6hL0Zk#uZdil5lI",
@@ -144,7 +144,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
+        "path": "packages/code-intel/src/runtime/code-check/operations/ref-code.ts",
         "symbol": "nodesAtOwnRef"
       },
       "id": "vKEsyHFk/HBlhIeSD#m1F0u7X1",
@@ -157,7 +157,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
+        "path": "packages/code-intel/src/runtime/code-check/operations/ref-code.ts",
         "symbol": "nodesAtOwnRef"
       },
       "id": "vKEsyHFk/6E6hL0Zk#eW22MD6a",
