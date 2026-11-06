@@ -3,52 +3,28 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "oyXXnyCV",
-    "name": "TASK-549.24 canonical module ownership",
-    "summary": "Integrate the seven reviewed implementation fragments into one canonical architecture, with recursive module ownership and retained original history.",
+    "id": "JTZvj2vi",
+    "name": "Vello paints the canvas and motion lives in the painter",
+    "formerNames": [
+      "Vello paints the board canvas and motion lives in the painter"
+    ],
+    "summary": "A page paints a picture on a canvas with Vello, on WebGPU or the CPU, and the painter's stage holds all picture motion in Rust, so the DOM motion modules go and the SVG stays as the semantic layer and the export.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/8PuyaYA8.proposal.json"
+        "path": "docs/adr/0071-vello-paints-the-canvas-and-motion-lives-in-the-painter.md"
       },
       {
         "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/aolPYfP5.proposal.json"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/KzJ2iXIq.proposal.json"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/NyesaQPQ.proposal.json"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/SGrr8NFb.proposal.json"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/VaQkKiQf.proposal.json"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/WNNe5xeB.proposal.json"
+        "path": "docs/design/vello-painter.md"
       }
     ],
-    "predecessor": "vKEsyHFk",
-    "baseline": "c74474411ecf69a357e88c786dd1e475114b1fba",
-    "createdAt": "2026-10-28T03:20:52.153Z",
-    "adoptedAt": "2026-10-28T12:01:59.058Z",
-    "reason": "TASK-549 implements one canonical module model, compact proposals, exact retained history, recursive readings, and complete flows. Source inspection and real browser acceptance confirm the consolidated ownership and shared projection. Original tours and eight unrelated proposals remain preserved.",
-    "previousCurrent": "vKEsyHFk"
+    "predecessor": "oyXXnyCV",
+    "baseline": "8df200fc28fc77c5b4019b6f942244d52b8a65fd",
+    "createdAt": "2026-11-01T08:52:35.463Z",
+    "adoptedAt": "2026-11-06T11:05:57.200Z",
+    "reason": "The Vello painter and the painter-owned motion are merged on main (ADR 0071). archboard check code on this state finds its bindings and anchors in the source.",
+    "previousCurrent": "oyXXnyCV"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
@@ -1541,6 +1517,47 @@
     "vKEsyHFk#scCzO9lh",
     "vKEsyHFk#jJXw6qRR",
     "vKEsyHFk#XdoufLnA",
-    "vKEsyHFk#hyjKNr7W"
+    "vKEsyHFk#hyjKNr7W",
+    "vKEsyHFk/UOXNWLhR#nmkLjKkz",
+    "vKEsyHFk/UOXNWLhR#aTUikCKr",
+    "vKEsyHFk/UOXNWLhR#AEEOu1vG",
+    "vKEsyHFk/UOXNWLhR#UAnbIRqG",
+    "vKEsyHFk/UOXNWLhR#OAY8mj0y",
+    "vKEsyHFk/UOXNWLhR#n5No6FUy",
+    "vKEsyHFk/UOXNWLhR#WT3s42AE",
+    "vKEsyHFk/UOXNWLhR#9VphxuuC",
+    "vKEsyHFk#tv4MSYd6",
+    "vKEsyHFk#NjziT92Y",
+    "vKEsyHFk#m5Ct61Wj",
+    "vKEsyHFk#Y4CPwsJC",
+    "vKEsyHFk#MT1O8WXn",
+    "vKEsyHFk#wN2XkLVD",
+    "vKEsyHFk#HqcAJhNA",
+    "vKEsyHFk#fU1obV1q",
+    "vKEsyHFk#ZwdlhWaG",
+    "vKEsyHFk#GfzrDnYW",
+    "vKEsyHFk#6rPPoEMd",
+    "vKEsyHFk#Zwk3OuRn",
+    "vKEsyHFk#gRc6GEfR",
+    "vKEsyHFk#0cSzgeYd",
+    "vKEsyHFk#A8IkfH4a",
+    "vKEsyHFk#JRcNAGp9",
+    "vKEsyHFk#WBbX6uPW",
+    "vKEsyHFk#jPdi4ndV",
+    "vKEsyHFk#JuK9kPUC",
+    "vKEsyHFk#2QaIm9u5",
+    "vKEsyHFk#PoaUWNrZ",
+    "vKEsyHFk#1Ki6QCRp",
+    "vKEsyHFk#N8ZJyIbU",
+    "vKEsyHFk#0oYDU8cV",
+    "vKEsyHFk#KMmwoBvr",
+    "vKEsyHFk#FT3wjIMa",
+    "vKEsyHFk#2PD9YeDq",
+    "vKEsyHFk#Np6QHSgA",
+    "vKEsyHFk#4S9sLbmq",
+    "vKEsyHFk#MzuJ4Y5F",
+    "vKEsyHFk#8I2z7YLx",
+    "vKEsyHFk#fmkuK9be",
+    "vKEsyHFk#CjQhZFoE"
   ]
 }

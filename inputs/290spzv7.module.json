@@ -1,0 +1,18 @@
+{
+  "order": 3000,
+  "name": "Canvas drawing",
+  "kind": "function",
+  "responsibility": "Walks a scene under its presentation and draws it on a Canvas, with the theme's palette, the glyph outlines and the CPU canvas on vello_cpu",
+  "description": "It does what the SVG's stylesheet did: the colours of a theme, the recede of a lit set, the far view and the order in which a selected part is raised. A glyph is drawn from the outlines of the core's own faces. Vello on the GPU implements the same Canvas trait in the browser crate.",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-paint/src/draw/mod.rs"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#290spzv7",
+  "parent": "vKEsyHFk#NFwqWgrm",
+  "outgoing": []
+}

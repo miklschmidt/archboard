@@ -16,8 +16,8 @@
   "lifecycle": "draft",
   "createdAt": "2026-11-04T21:58:04.894Z",
   "predecessor": "JTZvj2vi",
-  "predecessorRevision": "792c634b86ecfa00165b2a78bb3956b40b89190ff3be58ab5ba752a18f843621",
-  "baseline": "b3160c620623d0bfd428ccd2626c742a5688623b",
+  "predecessorRevision": "de898f5eca13b469a18c5568ebbd6c8f051f433dfd55fd65f3f3c475e44660b8",
+  "baseline": "992cb91f8e26f617e87b985102d6b085a671808a",
   "changes": [
     {
       "type": "assign",
