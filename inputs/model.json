@@ -3,21 +3,21 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "oDsh4l57",
-    "name": "Answer links to local files open in the editor",
-    "summary": "A link in an agent's answer to a local file opens that file through the code opener, held to the checkouts the vault reads, instead of sending the browser to a page of the Archboard server.",
+    "id": "5fVvhgsV",
+    "name": "install-skill links global skills to the checkout",
+    "summary": "A global install links each skill to the checkout's skills directory, so a git pull keeps it current; a skills root inside the repository still gets a copy.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0018-code-targets-resolve-at-presentation-and-local-opening-is-a-server-capability.md"
+        "path": "backlog/tasks/task-471.02 - install-skill-links-global-skills-to-the-checkout-and-copies-repo-local-skills.md"
       }
     ],
-    "predecessor": "s3dmAjji",
-    "baseline": "d9524b3841a889f06adbb55a57de617d0044e1db",
-    "createdAt": "2026-11-06T17:22:12.262Z",
-    "adoptedAt": "2026-11-06T17:23:28.985Z",
-    "reason": "Answer links to local files open in the editor describes code that main holds since PR 33. Nobody adopted the first copy, so this copy carries it onto current. The owner asked for its adoption.",
-    "previousCurrent": "s3dmAjji"
+    "predecessor": "oDsh4l57",
+    "baseline": "8a0bbd5b28fa3aaf6d19bff69f19f7fb80c18fc3",
+    "createdAt": "2026-11-06T17:26:43.724Z",
+    "adoptedAt": "2026-11-06T17:27:02.679Z",
+    "reason": "install-skill links global skills to the checkout describes code that main holds since PR 30. Nobody adopted the first copy, so this copy carries it onto current. The owner asked for its adoption.",
+    "previousCurrent": "oDsh4l57"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
