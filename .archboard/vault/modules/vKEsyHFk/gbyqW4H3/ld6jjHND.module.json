@@ -1,10 +1,16 @@
 {
-  "order": 29004,
-  "name": "Layout and measuring",
-  "kind": "module",
-  "responsibility": "Measures every word, settles cards, frames, routes and labels with the engine the render names, spreads the solves over workers and rounds routed lines into curves",
+  "order": 40300,
+  "name": "archboard-layout",
+  "kind": "package",
+  "responsibility": "Lays out an architecture picture: one solve of a measured graph by Track or Blocks, and the choice between the solves",
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#ld6jjHND",
-  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
-  "outgoing": []
+  "outgoing": [],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-layout"
+  },
+  "formerNames": [
+    "Layout and measuring"
+  ]
 }

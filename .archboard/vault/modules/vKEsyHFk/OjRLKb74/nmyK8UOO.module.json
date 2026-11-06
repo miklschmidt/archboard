@@ -1,20 +1,20 @@
 {
-  "order": 1000,
-  "name": "Core render",
-  "kind": "module",
+  "order": 40800,
+  "name": "archboard-render",
+  "kind": "package",
   "responsibility": "Selects the diagram grammar, then measures, lays out and paints one reading and writes its document",
   "description": "Renderer::render picks architecture, sequence or flowchart. An architecture has its flow steps turned into lines, its words measured and its layout solved. The last 64 layouts are remembered by model, engine and comparison, so a repeated render lays out nothing. The host runs the solves and holds the icons. Nothing here reads a clock, a random number or a file, so one host draws one request to the same bytes. Every variant is laid out fresh (ADR 0032).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-render/src"
+    "path": "crates/archboard-render"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#nmyK8UOO",
-  "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
   "formerNames": [
     "Render driver",
     "View dispatcher",
-    "Architecture rendering"
+    "Architecture rendering",
+    "Core render"
   ],
   "outgoing": [
     {
@@ -136,6 +136,14 @@
       },
       "id": "vKEsyHFk#gJg0IMG5",
       "to": "vKEsyHFk#w44DwfpV"
+    },
+    {
+      "order": 900,
+      "kind": "dependency",
+      "label": "Graphviz for the native test's solves",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#dg6URhSn",
+      "id": "vKEsyHFk#GdOLnrJz"
     }
   ]
 }

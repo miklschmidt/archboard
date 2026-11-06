@@ -21,15 +21,13 @@ mod door;
 mod drill_mark;
 mod edge_line;
 mod edge_tab;
-mod export;
 mod far_card;
 mod far_view;
 mod finish;
 mod flowchart_shapes;
 mod icons;
 mod junctions;
-mod legend_entries;
-mod legend_symbols;
+mod legend;
 mod marks;
 mod measured_cards;
 mod page;
@@ -52,7 +50,7 @@ mod traffic;
 mod tray;
 
 pub use junctions::junction_boxes;
-pub use legend_entries::{Applied, Drawn, PictureLegend, picture_legend};
+pub use legend::{Applied, Drawn, PictureLegend, picture_legend};
 pub use marks::{ViewerMarks, viewer_marks};
 
 /// What every part of one picture is painted with.
@@ -258,8 +256,8 @@ pub fn paint(request: &PaintRequest) -> Scene {
         ),
     };
     let framed = page::page_for(painting, palette, page.unbuilt);
-    let placed = export::placed_on(&framed.atlas);
-    let framed = export::framed_for_export(
+    let placed = legend::placed_on(&framed.atlas);
+    let framed = legend::framed_for_export(
         framed,
         page.frame.as_ref(),
         (page.standing.as_ref(), &placed),
@@ -279,7 +277,7 @@ pub fn paint(request: &PaintRequest) -> Scene {
     Scene {
         width: framed.width,
         height: framed.height,
-        title: export::exported_name(
+        title: legend::exported_name(
             &page::planned_title(&document.name, page.unbuilt),
             page.frame.as_ref(),
         ),

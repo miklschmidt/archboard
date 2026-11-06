@@ -16,8 +16,8 @@ use crate::js;
 use crate::measure;
 use crate::paint::build::{Items, grouped, lines, point, text};
 use crate::paint::design::{CARD_NOTE_FONT, CARD_TITLE_FONT, DIAGRAM_MARGIN};
-use crate::paint::legend_entries::{Entry, entries_of, mark_counts};
-use crate::paint::legend_symbols::{GLYPH, ROW, symbol_of};
+use crate::paint::legend::entries::{Entry, entries_of, mark_counts};
+use crate::paint::legend::symbols::{GLYPH, ROW, symbol_of};
 use crate::paint::page::{PaintedPage, moved_atlas};
 use crate::paint::palette::Palette;
 use crate::request::{ExportFrame, LegendLayout, Standing};
@@ -251,7 +251,7 @@ fn array_index(key: &str) -> Option<u32> {
 
 /// Every subject a painted drawing placed: what its atlas holds, nodes, then
 /// lines, then regions, each once, in the order a host reads its atlas's keys.
-pub(super) fn placed_on(atlas: &Atlas) -> Vec<String> {
+pub(in crate::paint) fn placed_on(atlas: &Atlas) -> Vec<String> {
     let mut placed: Vec<String> = Vec::new();
     let mut seen: HashSet<&str> = HashSet::new();
     for boxes in [&atlas.nodes, &atlas.edges, &atlas.regions] {
@@ -277,7 +277,7 @@ pub(super) fn placed_on(atlas: &Atlas) -> Vec<String> {
 
 /// A page as an export carries it: with its legend under it or beside it, or
 /// its legend alone, under its title when it has one.
-pub(super) fn framed_for_export(
+pub(in crate::paint) fn framed_for_export(
     page: PaintedPage,
     frame: Option<&ExportFrame>,
     (standing, placed): (Option<&BTreeMap<String, Standing>>, &[String]),
@@ -316,7 +316,7 @@ pub(super) fn framed_for_export(
 }
 
 /// The accessible name as the export draws it.
-pub(super) fn exported_name(name: &str, frame: Option<&ExportFrame>) -> String {
+pub(in crate::paint) fn exported_name(name: &str, frame: Option<&ExportFrame>) -> String {
     let titled = match frame.and_then(|frame| frame.title.as_deref()) {
         None => name.to_owned(),
         Some(title) => format!("{title}. {name}"),

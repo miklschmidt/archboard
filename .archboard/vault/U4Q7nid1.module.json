@@ -1,0 +1,41 @@
+{
+  "order": 100,
+  "name": "Scene",
+  "kind": "module",
+  "responsibility": "The typed scene: the ordered and positioned list of what a picture is made of, which every painter draws",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/scene"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#U4Q7nid1",
+  "parent": "vKEsyHFk#9gGvxWHp",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "a pulse's breadth, as JavaScript rounds it",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/scene/traffic.rs",
+        "symbol": "js_max"
+      },
+      "id": "vKEsyHFk#j0MFQ3h7",
+      "to": "vKEsyHFk#1UxryIji"
+    },
+    {
+      "order": 200,
+      "kind": "call",
+      "label": "the face a run is shaped in",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/scene/text.rs",
+        "symbol": "face"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+      "id": "vKEsyHFk#e3WuFSSK"
+    }
+  ]
+}

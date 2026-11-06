@@ -1,0 +1,13 @@
+{
+  "order": 40200,
+  "name": "archboard-scene",
+  "kind": "package",
+  "responsibility": "Holds the renderer core's drawing contract and its scene: measures every word, rounds routed lines and paints a settled drawing into the scene that every painter draws",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#9gGvxWHp",
+  "outgoing": []
+}

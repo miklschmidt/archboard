@@ -1,7 +1,7 @@
 use super::*;
 use crate::content::Flow;
 use crate::flowchart::graph::{flowchart_of, tests as graph};
-use archboard_scene::measure;
+use archboard_scene::measure::measure_label;
 
 /// Every node of a flowchart as a box of one size, and every line's words measured.
 fn measures(blocks: &[Block]) -> (HashMap<String, (f64, f64)>, HashMap<String, MeasuredLabel>) {
@@ -37,7 +37,7 @@ fn measures(blocks: &[Block]) -> (HashMap<String, (f64, f64)>, HashMap<String, M
     let words = words
         .into_iter()
         .map(|text| {
-            let measured = measure::measure_label(&text);
+            let measured = measure_label(&text);
             (text, measured)
         })
         .collect();

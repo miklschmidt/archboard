@@ -10,7 +10,7 @@ use crate::paint::design::RAILS;
 use crate::paint::design::{CHIP_THICKNESS, ICON_CHIP_SIZE};
 use crate::paint::edge_line::arrowhead;
 use crate::paint::icons::centred_on;
-use crate::paint::legend_entries::{Applied, Drawn, Entry, Keys};
+use crate::paint::legend::entries::{Applied, Drawn, Entry, Keys};
 use crate::paint::palette::Palette;
 use crate::paint::standing::standing_pin_at;
 use crate::paint::styles::{HEAD_LENGTH, RAIL_GAP, dash_array, drawn_ink, head_of, stroke_width};

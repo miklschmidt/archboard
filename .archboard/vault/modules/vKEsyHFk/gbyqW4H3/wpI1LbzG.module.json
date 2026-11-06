@@ -25,8 +25,8 @@
         "path": "packages/renderer/src/shared/rules/render/diagram.ts",
         "symbol": "render"
       },
-      "to": "vKEsyHFk/OjRLKb74#nmyK8UOO",
-      "id": "vKEsyHFk#7pBgojOh"
+      "id": "vKEsyHFk#7pBgojOh",
+      "to": "vKEsyHFk#6sGFjsRQ"
     },
     {
       "order": 60200,
@@ -38,8 +38,8 @@
         "path": "packages/renderer/src/shared/rules/render/diagram.ts",
         "symbol": "rendererHost"
       },
-      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY",
-      "id": "vKEsyHFk#b5O0WPQs"
+      "id": "vKEsyHFk#b5O0WPQs",
+      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
     }
   ]
 }

@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk#xTpg1eOM",
       "to": "vKEsyHFk#jAl99x56"
+    },
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "the vault's policy",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/design/wide-board-layout-fixtures/measure.ts",
+        "symbol": "readVaultConfiguration"
+      },
+      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe",
+      "id": "vKEsyHFk#NZXdvNpk"
     }
   ]
 }
