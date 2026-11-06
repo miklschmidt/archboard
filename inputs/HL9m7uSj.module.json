@@ -1,0 +1,29 @@
+{
+  "order": 6000,
+  "name": "Viewer warnings",
+  "kind": "function",
+  "responsibility": "Places the warning mark a viewer adds to each subject that the code check warns about",
+  "description": "The picture never holds the warning, because a picture is drawn from the picture alone. The mark stands where the picture puts it on a subject nobody has decided: the top-right corner of a part's body, the leading edge of a relationship's or a message's words, or the middle of the longest straight run of a line that has none. It goes into the subject's own group, so it recedes and ghosts with the subject.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-paint/src/warnings.rs"
+  },
+  "parent": "vKEsyHFk#NFwqWgrm",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#HL9m7uSj",
+  "outgoing": [
+    {
+      "order": 4000,
+      "kind": "call",
+      "label": "the warning mark on a warned subject",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-paint/src/warnings.rs",
+        "symbol": "find"
+      },
+      "id": "vKEsyHFk#9MKtlnoC",
+      "to": "vKEsyHFk#GqMdZbTF"
+    }
+  ]
+}
