@@ -432,8 +432,8 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/model/src/runtime/operations/write/write.ts",
-				"symbol": "withBoardLock"
+				"path": "packages/model/src/runtime/canonical/installation/store/model-state.ts",
+				"symbol": "holdModel"
 			}
 		},
 		{
