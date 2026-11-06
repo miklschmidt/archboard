@@ -73,8 +73,7 @@ The types of the scene are defined once, in Rust. The TypeScript types are
 generated from them. They hold what the picture means, not how SVG spells it:
 no element name, attribute, path data or CSS expression. A colour names the
 page's tokens and the operations that mix them, and every id is minted from
-what it names. The types in `crates/archboard-scene/src/scene/` hold the
-vocabulary (TASK-520.10).
+what it names. The types of the scene hold the vocabulary (TASK-520.10).
 
 ### A painter turns a scene into what a frontend shows
 
