@@ -12,8 +12,8 @@
   "lifecycle": "draft",
   "createdAt": "2026-11-03T04:44:18.456Z",
   "predecessor": "oyXXnyCV",
-  "predecessorRevision": "4d7b46ecb8527dc1a5140a997724170c5c2ce35fbaf82264b9e321c060d473e2",
-  "baseline": "5ec13ad73a72d4949e08a586632b8ef86e9e2325",
+  "predecessorRevision": "c674c7627c291c429f1877b7a7901f59df43edac4be5769074ff4864f4c4b6f9",
+  "baseline": "281c3a2b5984c4b895383dd219b6bcdfc81d9533",
   "changes": [
     {
       "type": "assign",
