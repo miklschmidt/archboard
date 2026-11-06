@@ -24,6 +24,19 @@
       },
       "id": "vKEsyHFk#wsEMWmNJ",
       "to": "vKEsyHFk/SMjRfwN3#ctgF3OPk"
+    },
+    {
+      "order": 300,
+      "kind": "call",
+      "label": "the recipe a PNG carries",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/recipe/operations/read-recipe.ts",
+        "symbol": "pngRecipeText"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#H2MUNwiC",
+      "id": "vKEsyHFk#Xn6zGm0D"
     }
   ]
 }
