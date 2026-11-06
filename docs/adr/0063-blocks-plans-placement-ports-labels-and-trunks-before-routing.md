@@ -55,5 +55,5 @@ It still increased mean area and route length.
 Iteration 3 rejected its readability trials because none passed all six references.
 The hybrid removes that planner-owned placement and keeps its useful routing and guard contracts.
 
-The [design](../design/blocks-planned-layout.md) records the work limits, historical trials, and acceptance gates.
+TASK-554 records the work limits, historical trials, and acceptance gates.
 The owner accepted this direction on 2026-10-30 and selected Blocks as the default in ADR 0064.

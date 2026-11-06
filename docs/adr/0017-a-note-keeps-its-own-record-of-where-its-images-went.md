@@ -15,8 +15,7 @@ format that the plugin accepts and migrates away from.
 This decision rests on the source of the Obsidian Excalidraw plugin at
 `https://github.com/zsviczian/obsidian-excalidraw-plugin`, commit
 `36a32940bac50fd60fb379b18a9f38668f941108`. Its pinned manifest reports version
-`2.26.4`. The [vendor provenance note](../design/vendor/README.md) records the
-reading copy and its source links.
+`2.26.4`.
 
 The decision relies on these source regions:
 

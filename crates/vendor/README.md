@@ -33,7 +33,7 @@ archboard changed six things:
    `qsort.c`, compiled natively, on the same inputs. Every comment that the
    change touches says `archboard:`.
 3. graphviz-pure lays a graph out faster, to the same answer byte for byte
-   (TASK-548.03, `docs/design/graphviz-pure-speed.md`). Each change keeps the order of every decision, every tie
+   (TASK-548.03). Each change keeps the order of every decision, every tie
    and every floating-point operation, and says `archboard:` where it is:
    - `src/dotgen/mincross.rs`: `reorder` stops at the first pass that exchanges
      nothing, and runs its passes on a one-array copy of the rank
@@ -56,8 +56,7 @@ archboard changed six things:
      `render_dot` does. `src/parser.rs` moves `startgraph` and the action of
      `attrstmt` into methods of their own for it.
 4. graphviz-pure lays out the graphs of the slowest first renders faster, to
-   the same answer byte for byte (TASK-548.07,
-   `docs/design/graphviz-pure-speed.md`). Each change leaves every decision,
+   the same answer byte for byte (TASK-548.07). Each change leaves every decision,
    tie and floating-point operation as it was, and says `archboard:` where it
    is:
    - `src/dotgen/mincross_rank.rs` (`RankCopy::sorted_by_segments`): `reorder`

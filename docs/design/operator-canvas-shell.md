@@ -152,8 +152,8 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
 
 - **Board**: what the board on screen is, and how to read it. The tab is
   ordered by the questions a reader asks, in the order they ask them.
-  [The study behind the order](pane-sidebar-hierarchy.md) derives it from the
-  use cases and from research on how people read diagrams. There are four
+  TASK-383 derived the order from the use cases and from research on how
+  people read diagrams. There are four
   regions, and a rule separates one region from the next:
   1. **What is this, and what does it change?** The summary of the variant on
      screen, with no heading: the board's own statement of its scope. On a
@@ -409,8 +409,7 @@ and gives the heading of the section the keyboard. The last section is tall
 enough that every section can come to the top. A page of one section has no
 outline.
 
-The sections come in the order a reader asks
-([the study of that order](pane-sidebar-hierarchy.md)). A section with nothing
+The sections come in the order a reader asks (TASK-383). A section with nothing
 to show is absent from the page and from the outline.
 
 1. The steps of a flow, in a flow reading. Each step is a row with its number,

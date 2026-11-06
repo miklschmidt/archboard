@@ -4,7 +4,6 @@ Domain terms live in `CONTEXT.md`. This file defines where Archboard source live
 folder can import which, and who owns a test. Oxlint enforces it (`bun run lint`).
 The decision is [ADR 0055](../adr/0055-packages-own-behavior-and-apps-compose-it.md).
 [ADR 0058](../adr/0058-an-interface-is-the-few-operations-its-callers-need.md) decides how wide a package interface may be.
-The app migration history is in `docs/design/apps-migration.md`.
 `tests/system/repository-policy/package-graph.test.ts` declares the package layers and refuses upward imports and cycles.
 
 ## Layout
@@ -706,9 +705,9 @@ Full-product and browser workflows stay in `tests/system/`.
 
 ## Apps
 
-An app is a layer-8 workspace in `apps/<name>/` that holds what the packages left (TASK-500.24,
-`docs/design/apps-migration.md`). It is private, has no `exports`, and `apps/*` is in the
-`workspaces` field. The lint plugin holds an app to the rules of a package, with these differences:
+An app is a layer-8 workspace in `apps/<name>/` that holds what the packages left (TASK-500.24).
+It is private, has no `exports`, and `apps/*` is in the `workspaces` field. The lint plugin
+holds an app to the rules of a package, with these differences:
 
 - **Nothing imports an app.** Only the app's own source and tests reach its files. A package, another
   app, a script and a test of another owner are refused, and so is the `@archboard-app/<name>`

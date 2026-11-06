@@ -120,8 +120,7 @@ regions.
 On both vaults, as measured, a region round one node adds its room. It does not
 turn which ports move to side walls or which joins part. Two heuristics keep
 those choices from turning where they were measured. Nothing guarantees this for
-another board
-([layout rules, section 44](../design/layout-rules.md#44-a-region-round-one-node-2026-09-27)).
+another board.
 
 A group's region is not drawn inside a region of the same group. A container
 placed with a group stands in the region of that group. So do the members of the

@@ -3,7 +3,7 @@
 //
 // It keys only what the picture draws, in the order the picture draws it, with
 // the picture's own symbols: a legend that lists what is not on the page is a
-// legend a reader has to search (TASK-383, docs/design/pane-sidebar-hierarchy.md).
+// legend a reader has to search (TASK-383).
 // It is the one explanation of appearance (ADR 0025), visible whenever the
 // sidebar is, and it comes after the ways of reading the model because a reader
 // needs it less with every model of the same vault.

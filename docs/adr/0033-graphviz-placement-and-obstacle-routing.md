@@ -48,8 +48,7 @@ machinery. ADR 0032 continues to govern proposals. Predecessor positions do not
 constrain placement, while subject identities and Standing preserve comparison
 meaning.
 
-[shared-container-rows.md](../design/shared-container-rows.md) records the
-experiment and the measured adoption results.
+TASK-278 records the experiment and the measured adoption results.
 
 Superseded (2026-09-27,
 [ADR 0040](0040-track-and-blocks-replace-the-graphviz-engine.md)): ADR 0040

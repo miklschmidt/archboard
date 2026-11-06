@@ -6,7 +6,7 @@ status: accepted
 
 Accepted on 2026-10-06 for TASK-368.01 after an independent review. It
 serves TASK-368 and its subtasks TASK-368.02 to TASK-368.11, and Proposal 2 of
-the [design checks](../design/design-checks.md).
+the design checks.
 
 ## Context
 

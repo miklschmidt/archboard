@@ -54,7 +54,7 @@ const SIDE_BY_SIDE = 24;
 /**
  * How long a corridor has to be before a reader has to count across it to tell
  * two routes apart. No two routes on any document the vault holds share more than
- * 382 units (docs/design/layout-rules.md section 25), so a corridor this long
+ * 382 units (TASK-256.12), so a corridor this long
  * is already longer than anything on a document a reader reads today.
  */
 const CORRIDOR_RUN = 400;
@@ -128,7 +128,7 @@ function routesThroughCards(drawing: RenderedDiagram, content: VariantContent): 
 /**
  * How many routes leave each card by each of its flanks: the left and right
  * faces when the page reads down, the top and bottom when it reads left to
- * right. A flank rule can put skips on either (layout-rules.md section 21).
+ * right. A flank rule can put skips on either (TASK-245.08).
  * @param drawing The rendered document.
  * @param content The document.
  * @returns The largest count over the cards and flanks: a fan of routes down one flank.

@@ -3,8 +3,8 @@
 // page area, how much of the page is card, route length, bends, crossings,
 // margin-lane ink, flank fan, how far a label sits from the line it names, the
 // corridors two routes share and the two
-// invariants. No single measure decides a comparison; the numbers in
-// docs/design/layout-rules.md come from here. A fixture is any
+// invariants. No single measure decides a comparison; layout tasks
+// record the numbers it prints. A fixture is any
 // `*.content.json` beside this file.
 //
 // Run from the repository root:
