@@ -11,6 +11,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#ntOE7caV",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "formerNames": [
+    "Resolve board meaning"
+  ],
   "outgoing": [
     {
       "order": 5000,
@@ -38,8 +41,5 @@
       "id": "vKEsyHFk/UOXNWLhR#55kjuelE",
       "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ"
     }
-  ],
-  "formerNames": [
-    "Resolve board meaning"
   ]
 }
