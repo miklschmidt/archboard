@@ -1,12 +1,10 @@
 ---
 name: archboard-pr
 description: >-
-  Explain a pull request with Summary, Evidence, and Merge Danger sections.
-  Use canonical model proposals for architecture changes, temporary canonical
-  models for incidental flows, and retained readings for renders and narrated
-  walkthroughs. Use when creating, updating, or explaining a pull request in
-  a repository with an .archboard/vault, including architecture kept in another
-  repository.
+  Write or update a PR body in a repository with an .archboard/vault, or one
+  whose architecture lives in another repository's vault. Load it together
+  with any other PR-body skill: it adds the proposal, the rendered architecture
+  pictures and the evidence that Summary, Evidence and Merge Danger need.
 ---
 
 # Explain a pull request
