@@ -6,7 +6,7 @@
   "description": "Uses the selected model, state, checkpoint, and revision to read code and reference availability through the existing query cache. The code action uses the existing opener and shell notices. Reference actions show authored destination names and require the returned address to match the selected link. Leaving the source cancels pending navigation. The pane router preserves the foreign repository, model, state, checkpoint, and subject. Relationships open their endpoint paths. Collections offer their member flows. Flow and step destinations open the complete containing flow. Missing source or architecture remains visible without ownership changes.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/module-navigation/components/ModuleNavigation.tsx"
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/module-navigation"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#0IYZeQvF",
