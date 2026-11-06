@@ -238,7 +238,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+            "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
             "symbol": "threadStart"
           }
         },

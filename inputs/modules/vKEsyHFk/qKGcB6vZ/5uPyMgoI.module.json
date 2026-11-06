@@ -5,7 +5,7 @@
   "responsibility": "Takes workhorse news, operation events and announced context changes in order, drops the tab's own changes, and delivers one at a time",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts"
+    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
@@ -24,7 +24,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
         "symbol": "observe"
       },
       "id": "vKEsyHFk/qKGcB6vZ#F1500O9D",
@@ -37,7 +37,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
         "symbol": "createTellCoordinator"
       },
       "id": "vKEsyHFk/qKGcB6vZ#z89BWp39",
@@ -50,7 +50,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
         "symbol": "deliverOne"
       },
       "id": "vKEsyHFk/qKGcB6vZ#LJ71MbJ0",
@@ -63,7 +63,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
         "symbol": "workhorseLinkOf"
       },
       "id": "vKEsyHFk/qKGcB6vZ#2gd6s71s",

@@ -5,7 +5,7 @@
   "responsibility": "Gives each callback one path: workhorse news to a coordinator turn, a context change to the coordinator's history or the voice model as the host worded it, the rest recorded only",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts"
+    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
@@ -24,7 +24,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/realtime.ts",
         "symbol": "realtimeAppendText"
       },
       "id": "vKEsyHFk/qKGcB6vZ#1joDYyhX",
@@ -37,7 +37,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
         "symbol": "classify"
       },
       "id": "vKEsyHFk/SJ2JMVyz#kJ4DsUAw",
@@ -50,7 +50,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/realtime.ts",
         "symbol": "realtimeAppendText"
       },
       "id": "vKEsyHFk/SJ2JMVyz#4DGyP7RO",
@@ -77,7 +77,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/realtime.ts",
         "symbol": "realtimeAppendText"
       },
       "id": "vKEsyHFk/9ncuT5DP#biUWQZMB",
@@ -90,7 +90,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
         "symbol": "workhorseNewsSentence"
       },
       "id": "vKEsyHFk/qKGcB6vZ#XJjA4qay",
@@ -103,7 +103,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
         "symbol": "canonicalJson"
       },
       "id": "vKEsyHFk/qKGcB6vZ#sQ7mZuI3",

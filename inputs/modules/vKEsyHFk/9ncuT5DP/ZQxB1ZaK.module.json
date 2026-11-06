@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/services/realtime"
+    "path": "packages/codex-realtime-voice/src/runtime/voice/realtime/services"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK",
@@ -32,7 +32,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/realtime/negotiation.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/realtime/services/negotiation.ts",
         "symbol": "realtimeStart"
       },
       "id": "vKEsyHFk/qKGcB6vZ#eRYh0zYO",
@@ -45,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/realtime/adapter.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/realtime/services/adapter.ts",
         "symbol": "coordinatorContext"
       },
       "id": "vKEsyHFk/qKGcB6vZ#jKgud5yQ",
@@ -71,7 +71,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/spoken-approval/gate.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/spoken-approval/services/gate.ts",
         "symbol": "onSemanticEvent"
       },
       "id": "vKEsyHFk/qKGcB6vZ#AkgtBxFY",
@@ -84,7 +84,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/realtime/negotiation.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/realtime/services/negotiation.ts",
         "symbol": "realtimeStart"
       },
       "id": "vKEsyHFk/9ncuT5DP#TFjDY5zE",

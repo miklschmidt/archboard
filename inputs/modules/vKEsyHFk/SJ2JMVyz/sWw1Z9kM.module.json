@@ -5,7 +5,7 @@
   "responsibility": "Define stable thread-link reasons and the ordering of execution-context refusals",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/rules/instructions/context-policy.ts"
+    "path": "packages/codex-realtime-voice/src/runtime/workhorses/instructions/rules/context-policy.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SJ2JMVyz#sWw1Z9kM",

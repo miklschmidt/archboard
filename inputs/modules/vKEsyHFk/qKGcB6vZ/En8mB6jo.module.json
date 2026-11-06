@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/rules/host/instructions.ts"
+    "path": "packages/codex-realtime-voice/src/runtime/host/rules/instructions.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#En8mB6jo",
@@ -27,7 +27,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/host/instructions.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/host/rules/instructions.ts",
         "symbol": "createVoiceToolset"
       },
       "id": "vKEsyHFk/qKGcB6vZ#gNPRCnlg",
@@ -40,11 +40,11 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/host/instructions.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/host/rules/instructions.ts",
         "symbol": "requiredNamespaces"
       },
-      "to": "vKEsyHFk#92V2PmcS",
-      "id": "vKEsyHFk#WmjfrsET"
+      "id": "vKEsyHFk#WmjfrsET",
+      "to": "vKEsyHFk#92V2PmcS"
     }
   ]
 }

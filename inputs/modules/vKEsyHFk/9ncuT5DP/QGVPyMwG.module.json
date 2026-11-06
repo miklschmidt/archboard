@@ -6,7 +6,7 @@
   "description": "An approval from a thread that no live tab session owns is cancelled when it arrives. A reload within the grace keeps a tab session's pending approvals, and the end of the session cancels them. A workhorse's approval is shown to the chats of its tab that show its checkout, and the coordinator's to every chat of its tab session.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/services/approvals"
+    "path": "packages/codex-realtime-voice/src/runtime/approvals/services"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#QGVPyMwG",
@@ -25,7 +25,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/approvals/broker.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/approvals/services/broker.ts",
         "symbol": "onChange"
       },
       "id": "vKEsyHFk/9ncuT5DP#YOaSBuBr",
@@ -38,7 +38,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/approvals/settlement.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/approvals/services/settlement.ts",
         "symbol": "respond"
       },
       "id": "vKEsyHFk/qKGcB6vZ#XuK4e69W",
@@ -65,7 +65,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/approvals/settlement.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/approvals/services/settlement.ts",
         "symbol": "respond"
       },
       "id": "vKEsyHFk/9ncuT5DP#5gcxxoqv",
@@ -78,7 +78,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/approvals/broker.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/approvals/services/broker.ts",
         "symbol": "CODEX_APPROVAL_MS"
       },
       "id": "vKEsyHFk/vKEsyHFk#aDY2uOmY",

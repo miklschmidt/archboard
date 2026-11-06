@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link"
+    "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-link/rules"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#byMaoUe0",
@@ -27,7 +27,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/binding.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-link/rules/binding.ts",
         "symbol": "assertCurrent"
       },
       "id": "vKEsyHFk/SJ2JMVyz#CT2H47EW",
@@ -40,7 +40,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/classifier.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-link/rules/classifier.ts",
         "symbol": "threadRead"
       },
       "id": "vKEsyHFk/SJ2JMVyz#xOvqFYUE",
@@ -53,7 +53,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/link-shape.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-link/rules/link-shape.ts",
         "symbol": "ADDITIONAL_CONTEXT_POLICY"
       },
       "id": "vKEsyHFk/SJ2JMVyz#qdsTcqWf",
@@ -66,7 +66,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/durable-evidence.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-link/rules/durable-evidence.ts",
         "symbol": "assertCurrent"
       },
       "id": "vKEsyHFk/9ncuT5DP#mAyzTmDD",

@@ -5,7 +5,7 @@
   "responsibility": "Opens the thread of one workhorse under a staged epoch and binds its link",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start"
+    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#RNy6w6oc",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
         "symbol": "classifyAndBind"
       },
       "id": "vKEsyHFk/SJ2JMVyz#5B5ZeO2k",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
         "symbol": "stageOperation"
       },
       "id": "vKEsyHFk/SJ2JMVyz#uiPv1wnk",
@@ -44,7 +44,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
         "symbol": "threadStart"
       },
       "id": "vKEsyHFk/SJ2JMVyz#W87z7uEB",
@@ -62,7 +62,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
         "symbol": "threadStart"
       },
       "id": "vKEsyHFk/wAHh0HTa#7dDHchT9",
@@ -75,7 +75,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
         "symbol": "captureThreadProfile"
       },
       "id": "vKEsyHFk/SJ2JMVyz#joxzVFXq",

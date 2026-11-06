@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/operations/thread-unload"
+    "path": "packages/codex-realtime-voice/src/runtime/thread-unload/operations"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
@@ -28,7 +28,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/operations/thread-unload/unload.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/thread-unload/operations/unload.ts",
         "symbol": "threadRead"
       },
       "id": "vKEsyHFk/qKGcB6vZ#XB5TwXA3",
@@ -41,7 +41,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/operations/thread-unload/unload.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/thread-unload/operations/unload.ts",
         "symbol": "threadUnsubscribe"
       },
       "id": "vKEsyHFk/9ncuT5DP#jcfXg6TV",

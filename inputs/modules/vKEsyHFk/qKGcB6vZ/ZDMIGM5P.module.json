@@ -5,7 +5,7 @@
   "responsibility": "The reviewed tool templates of each role and their digests: what the coordinator may ask for, the checkout each workhorse tool takes, and the stop of every workhorse that takes none",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/protocol/coordinator-tool-contract"
+    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/tool-contract/protocol"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P",

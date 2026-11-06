@@ -6,7 +6,7 @@
   "description": "A replay of one logical call is the same call only when it names the same checkout: the same arguments in another checkout are work for another workhorse. A delegation to a checkout whose workhorse has no thread that can run turns starts it first; the other three workhorse tools refuse a checkout with no ready workhorse, and say what a checkout is. stop_workhorses stops every running workhorse of the calling tab session and says what each one did.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools"
+    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
@@ -29,7 +29,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/tool-execution.ts",
         "symbol": "delegate"
       },
       "id": "vKEsyHFk/SJ2JMVyz#e1viO4QT",
@@ -42,7 +42,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-tools/validation.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/rules/validation.ts",
         "symbol": "parseCoordinatorToolInput"
       },
       "id": "vKEsyHFk/qKGcB6vZ#FRlXCCgx",
@@ -59,7 +59,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/tool-execution.ts",
         "symbol": "delegate"
       },
       "id": "vKEsyHFk/qKGcB6vZ#gxWbt0Mt",
@@ -72,7 +72,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/call-execution.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/call-execution.ts",
         "symbol": "resolve"
       },
       "id": "vKEsyHFk/qKGcB6vZ#jWYpMYjr",
@@ -85,7 +85,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/tool-execution.ts",
         "symbol": "delegate"
       },
       "id": "vKEsyHFk/9ncuT5DP#mhknqBOz",
@@ -98,7 +98,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/tool-execution.ts",
         "symbol": "stopWork"
       },
       "id": "vKEsyHFk/SJ2JMVyz#bK9QB2R5",
@@ -111,7 +111,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/tool-execution.ts",
         "symbol": "stopWork"
       },
       "id": "vKEsyHFk/qKGcB6vZ#au7MY0Yt",
@@ -124,7 +124,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/dispatcher.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/dispatcher.ts",
         "symbol": "respondOnce"
       },
       "id": "vKEsyHFk/qKGcB6vZ#8DGohqjh",
@@ -137,7 +137,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-tools/validation.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/rules/validation.ts",
         "symbol": "toolRoleOf"
       },
       "id": "vKEsyHFk/qKGcB6vZ#veSu4QHr",

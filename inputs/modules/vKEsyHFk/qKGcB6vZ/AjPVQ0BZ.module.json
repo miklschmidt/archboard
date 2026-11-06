@@ -6,7 +6,7 @@
   "description": "The prompt says what happened and what to do with it: say it under [FINAL] if the user is waiting on it, keep it to a [COMMENTARY] line otherwise, and start no new work because of it.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/services/voice/outcome-report.ts"
+    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/outcome-report/services/outcome-report.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ",
@@ -25,7 +25,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/voice/outcome-report.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/outcome-report/services/outcome-report.ts",
         "symbol": "turnStart"
       },
       "id": "vKEsyHFk/qKGcB6vZ#kdzh3hrY",
@@ -38,7 +38,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/voice/outcome-report.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/outcome-report/services/outcome-report.ts",
         "symbol": "unattended"
       },
       "id": "vKEsyHFk/qKGcB6vZ#tMugyhPT",
@@ -51,7 +51,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/voice/outcome-report.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/outcome-report/services/outcome-report.ts",
         "symbol": "createWorkbenchTurnStartParams"
       },
       "id": "vKEsyHFk/qKGcB6vZ#ovIBdlhV",
