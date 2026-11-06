@@ -9,5 +9,9 @@
   "formerNames": [
     "Key and export"
   ],
-  "outgoing": []
+  "outgoing": [],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/paint/legend"
+  }
 }
