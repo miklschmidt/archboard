@@ -16,7 +16,12 @@
       "label": "the CLI under test",
       "emphasis": "normal",
       "id": "vKEsyHFk/vKEsyHFk#xKVVomRU",
-      "to": "vKEsyHFk/XppR9owz#peyArgPx"
+      "to": "vKEsyHFk/XppR9owz#peyArgPx",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/processes/archboard.ts",
+        "symbol": "archboard"
+      }
     },
     {
       "order": 9000,
@@ -24,7 +29,12 @@
       "label": "one per run, on its own port",
       "emphasis": "muted",
       "id": "vKEsyHFk/vKEsyHFk#SoK3eMhj",
-      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/processes/server.ts",
+        "symbol": "startServer"
+      }
     },
     {
       "order": 24000,
@@ -36,7 +46,12 @@
         "volume": 0.5
       },
       "id": "vKEsyHFk/IbGtfJE2#eclUOkMc",
-      "to": "vKEsyHFk/IbGtfJE2#fRFvnVRE"
+      "to": "vKEsyHFk/IbGtfJE2#fRFvnVRE",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/processes/archboard.ts",
+        "symbol": "archboard"
+      }
     },
     {
       "order": 50000,
