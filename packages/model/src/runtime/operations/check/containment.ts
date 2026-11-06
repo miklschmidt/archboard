@@ -56,18 +56,17 @@ function sharedSegments(paths: readonly string[]): string[] {
 }
 
 /**
- * The deepest path that holds every binding, in one repository. Where that path is
- * a part's own whole binding, the part already owns it, so its folder holds the others.
+ * The deepest directory that holds every binding, in one repository. A binding
+ * below the shared path proves it is a directory; otherwise use its parent.
  * @param bindings The bindings, at least one.
  * @returns The path, empty for the repository root, or undefined for different repositories.
  */
 function sharedPath(bindings: readonly Binding[]): string | undefined {
 	if (new Set(bindings.map(({ repo }) => repo)).size !== 1) return undefined;
-	const shared = sharedSegments(bindings.map(pathOf));
-	const owned = bindings.some(
-		(binding) => binding.symbol === undefined && pathOf(binding) === shared.join("/"),
-	);
-	return (owned ? shared.slice(0, -1) : shared).join("/");
+	const paths = bindings.map(pathOf);
+	const shared = sharedSegments(paths);
+	const directory = paths.some((path) => path !== shared.join("/"));
+	return (directory ? shared : shared.slice(0, -1)).join("/");
 }
 
 /**

@@ -253,6 +253,28 @@ describe("container containment", () => {
 		).toEqual([{ code: "CONTAINER_UNBOUND", id: box, suggestedBinding: at("src/shop") }]);
 	});
 
+	test("keeps the shared directory when a nested container already binds it", () => {
+		const structure = shaped({}, ["src/shop", "src/shop/cart/b.ts"], "src/other.ts");
+		const modules = structure.modules.map((module) =>
+			module.id === second ? { ...module, parent: first } : module,
+		);
+		expect(containment({ ...structure, modules })).toEqual([
+			{ code: "CONTAINER_UNBOUND", id: box, suggestedBinding: at("src/shop") },
+		]);
+	});
+
+	test("suggests a directory when every part binds a symbol of the same file", () => {
+		const structure = shaped({}, ["src/shop.ts", "src/shop.ts"]);
+		const modules = structure.modules.map((module) =>
+			module.binding === undefined
+				? module
+				: { ...module, binding: { ...module.binding, symbol: module.id } },
+		);
+		expect(containment({ ...structure, modules })).toEqual([
+			{ code: "CONTAINER_UNBOUND", id: box, suggestedBinding: at("src") },
+		]);
+	});
+
 	test("names no directory when the one that holds the parts holds another module's code", () => {
 		expect(containment(shaped({}, ["src/shop/a.ts", "src/shop/b.ts"], "src/shop/c.ts"))).toEqual([
 			{ code: "CONTAINER_UNBOUND", id: box, suggestedBinding: undefined },
