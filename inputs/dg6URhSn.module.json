@@ -33,8 +33,34 @@
         "path": "crates/archboard-graphviz/src/graph.rs",
         "symbol": "number"
       },
-      "to": "vKEsyHFk#1UxryIji",
-      "id": "vKEsyHFk#fydOT1rP"
+      "id": "vKEsyHFk#fydOT1rP",
+      "to": "vKEsyHFk#1UxryIji"
+    },
+    {
+      "order": 91013,
+      "kind": "dependency",
+      "label": "write each graph statement by statement",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-graphviz/src/dot.rs",
+        "symbol": "Statements"
+      },
+      "to": "vKEsyHFk#hBkjiO4k",
+      "id": "vKEsyHFk#dontbmL6"
+    },
+    {
+      "order": 91014,
+      "kind": "dependency",
+      "label": "set the y axis of each run",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-graphviz/src/lib.rs",
+        "symbol": "set_y_invert"
+      },
+      "to": "vKEsyHFk#7yGUY6ta",
+      "id": "vKEsyHFk#jsgdn0M9"
     }
   ]
 }

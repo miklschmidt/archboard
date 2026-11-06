@@ -21,8 +21,8 @@
         "path": "crates/vendor/graphviz-pure/src/decoded.rs",
         "symbol": "GraphvizError"
       },
-      "to": "vKEsyHFk#FLnwES7I",
-      "id": "vKEsyHFk#2pseYTlP"
+      "id": "vKEsyHFk#2pseYTlP",
+      "to": "vKEsyHFk#FLnwES7I"
     },
     {
       "order": 91001,
@@ -31,11 +31,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/vendor/graphviz-pure/src/lib.rs",
-        "symbol": "FdpParms"
+        "path": "crates/vendor/graphviz-pure/src/decoded.rs",
+        "symbol": "LayoutOptions"
       },
-      "to": "vKEsyHFk#kEeWzBGr",
-      "id": "vKEsyHFk#d7yWvhGj"
+      "id": "vKEsyHFk#d7yWvhGj",
+      "to": "vKEsyHFk#kEeWzBGr"
     },
     {
       "order": 91002,
@@ -44,11 +44,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/vendor/graphviz-pure/src/lib.rs",
-        "symbol": "Statements"
+        "path": "crates/vendor/graphviz-pure/src/plugins.rs",
+        "symbol": "parse_dot_all"
       },
-      "to": "vKEsyHFk#hBkjiO4k",
-      "id": "vKEsyHFk#iE5MSVo4"
+      "id": "vKEsyHFk#iE5MSVo4",
+      "to": "vKEsyHFk#hBkjiO4k"
     },
     {
       "order": 91003,
@@ -60,8 +60,21 @@
         "path": "crates/vendor/graphviz-pure/src/lib.rs",
         "symbol": "OutputFormat"
       },
-      "to": "vKEsyHFk#7yGUY6ta",
-      "id": "vKEsyHFk#q7glsoJH"
+      "id": "vKEsyHFk#q7glsoJH",
+      "to": "vKEsyHFk#7yGUY6ta"
+    },
+    {
+      "order": 91012,
+      "kind": "dependency",
+      "label": "build with the shapes and path planning",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure/Cargo.toml",
+        "symbol": "graphviz-pure-geom"
+      },
+      "to": "vKEsyHFk#1Af2oLOM",
+      "id": "vKEsyHFk#5iytjWV7"
     }
   ]
 }
