@@ -9,7 +9,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#iIVu1bGE",
-  "parent": "vKEsyHFk/XppR9owz#OM6pX371",
+  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -32,6 +32,36 @@
     }
   ],
   "outgoing": [
+    {
+      "order": 7000,
+      "kind": "call",
+      "label": "argv",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "symbol": "runCliWith"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0",
+      "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT"
+    },
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "registryOf, for the contract audit",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "symbol": "registryOf"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#Ml9zYVzq",
+      "to": "vKEsyHFk/nAmiQ3Vc#45uNvMac"
+    },
     {
       "order": 48000,
       "kind": "call",
@@ -105,36 +135,6 @@
       },
       "id": "vKEsyHFk/XppR9owz#yiZPCy4w",
       "to": "vKEsyHFk/XppR9owz#twkUdQwl"
-    },
-    {
-      "order": 7000,
-      "kind": "call",
-      "label": "argv",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
-        "symbol": "runCliWith"
-      },
-      "id": "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0",
-      "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT"
-    },
-    {
-      "order": 9000,
-      "kind": "call",
-      "label": "registryOf, for the contract audit",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
-        "symbol": "registryOf"
-      },
-      "id": "vKEsyHFk/nAmiQ3Vc#Ml9zYVzq",
-      "to": "vKEsyHFk/nAmiQ3Vc#45uNvMac"
     }
   ]
 }
