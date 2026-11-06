@@ -139,6 +139,56 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#gJg0IMG5",
+      "kind": "relationship",
+      "value": {
+        "order": 61000,
+        "kind": "dependency",
+        "label": "the icon a card falls back to",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-render/src/appearance.rs",
+          "symbol": "node_appearances"
+        },
+        "id": "vKEsyHFk#gJg0IMG5",
+        "to": "vKEsyHFk#w44DwfpV"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#gJg0IMG5",
+      "placement": {
+        "holder": "vKEsyHFk/OjRLKb74#nmyK8UOO"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#N9jW1gq2",
+      "kind": "relationship",
+      "value": {
+        "order": 28000,
+        "kind": "dependency",
+        "label": "how far a message stops short of its lifeline",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-flows/src/sequence/messages.rs",
+          "symbol": "ends_for"
+        },
+        "id": "vKEsyHFk#N9jW1gq2",
+        "to": "vKEsyHFk#w44DwfpV"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#N9jW1gq2",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#wLF1X11D"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/gbyqW4H3#eECDrhMc",
       "placement": {
@@ -152,6 +202,31 @@
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "crates/archboard-scene/src/paint"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#PLVZZKxC",
+      "kind": "relationship",
+      "value": {
+        "order": 60000,
+        "kind": "dependency",
+        "label": "the kind a flow's node is drawn as",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/paint/design.rs",
+          "symbol": "FLOW_KIND"
+        },
+        "id": "vKEsyHFk#PLVZZKxC",
+        "to": "vKEsyHFk#w44DwfpV"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#PLVZZKxC",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#0idmUHd2"
       }
     }
   ]
