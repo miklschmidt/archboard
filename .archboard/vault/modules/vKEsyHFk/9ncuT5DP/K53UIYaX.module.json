@@ -6,7 +6,7 @@
   "description": "Reads canonical narration through the public architecture capture interface. It requires the observed narrative source and target revisions, including an older target that predates the narrative. The existing narrated-session owner keeps the immutable capture. Legacy board narration retains its existing path. Recording follows the browser position and starts no second voice engine.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/services/host/archboard-presentation.ts"
+    "path": "packages/workbench/src/server/workbench-host/narration/services/archboard-presentation.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#K53UIYaX",

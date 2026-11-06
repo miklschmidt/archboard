@@ -117,12 +117,6 @@ const ROLE_FIRST_TREES: readonly string[] = [
 	"packages/skills/tests/runtime",
 	"packages/ui-kit/src/ui",
 	"packages/ui-kit/tests/ui",
-	"packages/workbench/src/runtime",
-	"packages/workbench/src/server",
-	"packages/workbench/src/ui",
-	"packages/workbench/tests/runtime",
-	"packages/workbench/tests/server",
-	"packages/workbench/tests/ui",
 ];
 
 /** A TypeScript file below an area: its tree, `<workspace>/<src|tests>/<area>`, and its folders. */

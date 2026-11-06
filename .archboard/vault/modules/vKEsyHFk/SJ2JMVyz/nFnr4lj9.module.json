@@ -24,7 +24,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/services/host/archboard.ts",
+        "path": "packages/workbench/src/runtime/host/services/archboard.ts",
         "symbol": "ARCHBOARD_APP_DYNAMIC_TOOLS"
       },
       "id": "vKEsyHFk/SJ2JMVyz#zIWijDn9",

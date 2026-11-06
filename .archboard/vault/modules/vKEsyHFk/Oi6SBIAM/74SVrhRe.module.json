@@ -6,7 +6,7 @@
   "description": "Canonical and legacy panes use the same position contract and request acknowledgement. A missing beat never reports arrival. A recording advances its own beat and voice follows accepted positions.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/services/panes/presentation.ts"
+    "path": "packages/workbench/src/server/panes/services/presentation.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#74SVrhRe",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/rules/realtime/presentation-mode.ts",
+        "path": "packages/workbench/src/runtime/realtime/rules/presentation-mode.ts",
         "symbol": "languageName"
       },
       "id": "vKEsyHFk/vKEsyHFk#vBJQnNd2",
@@ -44,7 +44,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/presentation.ts",
+        "path": "packages/workbench/src/server/panes/services/presentation.ts",
         "symbol": "sendKeylessToPane"
       },
       "id": "vKEsyHFk/Oi6SBIAM#cIfMjqFT",

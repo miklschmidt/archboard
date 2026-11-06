@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/components"
+    "path": "packages/workbench/src/ui/workbench-client"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#0x47EMoO",

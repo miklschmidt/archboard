@@ -189,7 +189,7 @@ const browserTestCache = {
 const benchmarkTests = ["packages/renderer/tests/runtime/operations/blocks/wide-pictures.test.ts"];
 
 const capacityTests = [
-	"packages/workbench/tests/runtime/operations/dynamic-tools/wire-capacity.test.ts",
+	"packages/workbench/tests/runtime/dynamic-tools/operations/wire-capacity.test.ts",
 	"packages/codex-app-server/tests/runtime/transport/clients/transport-write-capacity.test.ts",
 	"packages/codex-app-server/tests/shared/constants/app-server-capacity.test.ts",
 ];
@@ -410,8 +410,8 @@ export default defineConfig({
 					"packages/model/tests/runtime/operations/read/model-read.test.ts",
 					"packages/model/tests/runtime/operations/model-edit/structure.test.ts",
 					"packages/code-binding/tests/runtime/operations/resolution.test.ts",
-					"packages/workbench/tests/server/services/owner/production-initialization.test.ts",
-					"packages/workbench/tests/server/services/actions/dynamic-approval-sessions.test.ts",
+					"packages/workbench/tests/server/workbench-host/services/production-initialization.test.ts",
+					"packages/workbench/tests/server/actions/services/dynamic-approval-sessions.test.ts",
 					"apps/cli/tests/cli/operations/vault/language-server-configuration.test.ts",
 					"tests/system/models/model-proposals.test.ts",
 					"tests/system/models/model-corrections.test.ts",

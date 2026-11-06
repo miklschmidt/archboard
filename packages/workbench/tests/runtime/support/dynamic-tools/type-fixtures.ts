@@ -1,11 +1,11 @@
-import type { DynamicAuthorityToken } from "#runtime/rules/dynamic-tools/authority/authority-token.ts";
+import type { DynamicAuthorityToken } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import type {
 	DynamicContextPort,
 	DynamicOperationIdPort,
 	DynamicThreadAuthorityPort,
 	DynamicToolApprovalPort,
 	DynamicToolLifecyclePort,
-} from "#runtime/protocol/dynamic-tools/contract.ts";
+} from "#runtime/dynamic-tools/protocol/contract.ts";
 
 type Equal<Left, Right> = [Left] extends [Right] ? ([Right] extends [Left] ? true : false) : false;
 type Assert<Value extends true> = Value;

@@ -9,8 +9,8 @@ import type {
 	DynamicMutationTerminalProof,
 	DynamicWaitEvent,
 	DynamicWaitOwner,
-} from "#runtime/protocol/dynamic-tools/lifecycle-contract.ts";
-import type { DynamicToolLifecyclePort } from "#runtime/protocol/dynamic-tools/contract.ts";
+} from "#runtime/dynamic-tools/protocol/lifecycle-contract.ts";
+import type { DynamicToolLifecyclePort } from "#runtime/dynamic-tools/protocol/contract.ts";
 
 export class FakeLifecycle implements DynamicToolLifecyclePort {
 	readonly assertions: string[] = [];

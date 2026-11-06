@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/services/panes/change-feed.ts"
+    "path": "packages/workbench/src/server/panes/services/change-feed.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#mStVd7fZ",

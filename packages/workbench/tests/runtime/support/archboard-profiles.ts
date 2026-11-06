@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createVoiceAgent, type VoiceAgent } from "@archboard/codex-realtime-voice/server";
-import { ARCHBOARD_AGENT } from "#runtime/services/host/archboard.ts";
+import { ARCHBOARD_AGENT } from "#runtime/host/services/archboard.ts";
 
 /**
  * Compose Archboard's thread profiles exactly as its voice agent does, without starting Codex.

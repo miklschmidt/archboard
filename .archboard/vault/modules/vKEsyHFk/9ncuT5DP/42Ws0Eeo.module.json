@@ -28,7 +28,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+        "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
         "symbol": "subscribeSettledChange"
       },
       "id": "vKEsyHFk/qKGcB6vZ#at9JRETZ",
@@ -41,7 +41,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+        "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
         "symbol": "subscribeSettledChange"
       },
       "id": "vKEsyHFk/9ncuT5DP#yql8mIiB",

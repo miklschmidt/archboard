@@ -16,9 +16,9 @@ import type {
 	RealtimeMediaSnapshot,
 	BrowserWorkbenchMediaState,
 	BrowserWorkbenchCapabilities,
-} from "#ui/state/surfaces/voice-parts.ts";
+} from "#ui/workbench-client/surfaces/state/voice-parts.ts";
 
-import type { VoiceRealtimePort, VoiceTransportPort } from "#ui/state/voice-session/contract.ts";
+import type { VoiceRealtimePort, VoiceTransportPort } from "#ui/voice-session/state/contract.ts";
 import { snapshot } from "#tests/ui/support/voice-session/workbench-fixture.ts";
 
 /**

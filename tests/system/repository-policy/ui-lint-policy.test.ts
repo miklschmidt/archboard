@@ -311,11 +311,7 @@ describe("the frame clock rule follows the model canvas and the subtitles in bot
 		"apps/web/src/ui/architecture-drawing/canvas/presentation/components/Stamp.tsx",
 		"apps/web/src/ui/architecture-drawing/canvas/picture/camera/rules/stamp.ts",
 		"apps/web/src/ui/architecture-drawing/canvas/pane-vault/state/stamp.ts",
-		// The subtitles of the workbench, role first and behavior first.
-		`${WORKBENCH_UI}/components/subtitles/Stamp.tsx`,
-		`${WORKBENCH_UI}/hooks/subtitles/use-stamp.ts`,
-		`${WORKBENCH_UI}/rules/subtitles/stamp.ts`,
-		`${WORKBENCH_UI}/state/subtitles/stamp.ts`,
+		// The subtitles of the workbench, which lays out behavior first.
 		`${WORKBENCH_UI}/workbench-client/subtitles/components/Stamp.tsx`,
 		`${WORKBENCH_UI}/workbench-client/subtitles/state/stamp.ts`,
 	];

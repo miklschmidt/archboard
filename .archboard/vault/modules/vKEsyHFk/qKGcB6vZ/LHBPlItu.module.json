@@ -45,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/services/dynamic-tools/quarantine/quarantine-dispatch.ts",
+        "path": "packages/workbench/src/runtime/dynamic-tools/settlements/quarantine/services/quarantine-dispatch.ts",
         "symbol": "ownsPendingReverseRequest"
       },
       "id": "vKEsyHFk/9ncuT5DP#aoHKAkWD",

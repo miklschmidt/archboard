@@ -102,7 +102,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/runtime/operations/dynamic-tools/dispatch/dispatch-mutations.ts",
+				"path": "packages/workbench/src/runtime/dynamic-tools/dispatch/operations/dispatch-mutations.ts",
 				"symbol": "DynamicServerRequest"
 			}
 		},
@@ -116,7 +116,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/server/services/owner/wiring.ts",
+				"path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
 				"symbol": "createVoiceAgent"
 			}
 		},

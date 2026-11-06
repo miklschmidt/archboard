@@ -1,7 +1,10 @@
 // What the voice surfaces' tests are given: a voice in a stage, and actions that do nothing or
 // say what was pressed.
 
-import type { AgentActions, AgentVoiceView } from "#ui/state/surfaces/contracts.ts";
+import type {
+	AgentActions,
+	AgentVoiceView,
+} from "#ui/workbench-client/surfaces/state/contracts.ts";
 
 /** Nothing happens: the test presses nothing. */
 function nothing(): void {

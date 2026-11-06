@@ -3,8 +3,8 @@ export {
 	forgetSemanticPaneContexts,
 	mountSemanticPaneContextRoutes,
 	semanticPaneContextFor,
-} from "#server/services/panes/context.ts";
-export { panePresentations } from "#server/services/panes/presentation.ts";
+} from "#server/panes/services/context.ts";
+export { panePresentations } from "#server/panes/services/presentation.ts";
 export {
 	acceptedSockets,
 	paneKeyForNewPane,
@@ -32,5 +32,5 @@ export {
 	sendToPane,
 	settleAfterLayout,
 	socketVaults,
-} from "#server/services/panes/registry.ts";
-export type { PendingPaneClose, PendingPaneOpen } from "#server/services/panes/registry.ts";
+} from "#server/panes/services/registry.ts";
+export type { PendingPaneClose, PendingPaneOpen } from "#server/panes/services/registry.ts";

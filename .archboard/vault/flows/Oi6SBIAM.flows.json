@@ -96,7 +96,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workbench/src/server/services/request/vault.ts",
+                    "path": "packages/workbench/src/server/request/services/vault.ts",
                     "symbol": "namedVault"
                   }
                 },

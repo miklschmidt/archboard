@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/hooks/voice/use-voice-box-presence.ts"
+    "path": "packages/workbench/src/ui/workbench-client/voice/hooks/use-voice-box-presence.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#sOSPdXJh",
@@ -36,7 +36,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/hooks/voice/use-voice-box-presence.ts",
+        "path": "packages/workbench/src/ui/workbench-client/voice/hooks/use-voice-box-presence.ts",
         "symbol": "frameClock"
       },
       "id": "vKEsyHFk/yejBBUFY#294aYIvD",

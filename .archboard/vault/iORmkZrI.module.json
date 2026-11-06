@@ -71,7 +71,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+        "path": "packages/workbench/src/server/panes/services/tab-sessions.ts",
         "symbol": "noteTabSession"
       },
       "id": "vKEsyHFk/9ncuT5DP#egDoJ9fH",
