@@ -7,10 +7,6 @@
   "groups": [
     "walkthrough"
   ],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/walkthrough-replay"
-  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#aixSjfNe",
   "parent": "vKEsyHFk/yejBBUFY#01sVgqBF",
