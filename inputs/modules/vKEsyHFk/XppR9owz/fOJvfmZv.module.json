@@ -46,19 +46,6 @@
       "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
     },
     {
-      "order": 72000,
-      "kind": "call",
-      "label": "restart on a new bundle",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/server/server.ts",
-        "symbol": "restartServer"
-      },
-      "id": "vKEsyHFk/XppR9owz#y3Bs3xSs",
-      "to": "vKEsyHFk/XppR9owz#nvbnGOtV"
-    },
-    {
       "order": 57000,
       "kind": "call",
       "label": "spawn it detached",
@@ -70,6 +57,19 @@
       },
       "id": "vKEsyHFk/XppR9owz#CfLy7gvx",
       "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+    },
+    {
+      "order": 72000,
+      "kind": "call",
+      "label": "restart on a new bundle",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/server/server.ts",
+        "symbol": "restartServer"
+      },
+      "id": "vKEsyHFk/XppR9owz#y3Bs3xSs",
+      "to": "vKEsyHFk/XppR9owz#nvbnGOtV"
     }
   ]
 }

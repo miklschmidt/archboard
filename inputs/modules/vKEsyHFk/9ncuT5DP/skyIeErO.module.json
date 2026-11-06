@@ -74,19 +74,6 @@
       "to": "vKEsyHFk#Q2Jc26oO"
     },
     {
-      "order": 1007000,
-      "kind": "call",
-      "label": "open the epoch store for this generation",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/generation/factories.ts",
-        "symbol": "createCodexEpochStore"
-      },
-      "id": "vKEsyHFk#Ao3t2Mgx",
-      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
-    },
-    {
       "order": 62000,
       "kind": "dependency",
       "label": "own Codex threads and negotiate realtime voice",
@@ -98,6 +85,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#8AmcrRb6",
       "to": "vKEsyHFk/9ncuT5DP#9diqPrFw"
+    },
+    {
+      "order": 1007000,
+      "kind": "call",
+      "label": "open the epoch store for this generation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/factories.ts",
+        "symbol": "createCodexEpochStore"
+      },
+      "id": "vKEsyHFk#Ao3t2Mgx",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
     }
   ]
 }
