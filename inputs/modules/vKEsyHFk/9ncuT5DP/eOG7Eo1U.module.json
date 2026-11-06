@@ -2,7 +2,7 @@
   "order": 50000,
   "name": "Public entries",
   "kind": "module",
-  "responsibility": "What a host imports: the voice agent from ./server and the voice client a page builds on",
+  "responsibility": "What a page imports to build on the voice: the voice client, and the React provider and hooks over it",
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#eOG7Eo1U",
   "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
