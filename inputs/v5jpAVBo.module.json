@@ -74,19 +74,6 @@
       },
       "id": "vKEsyHFk#Rutvvekt",
       "to": "vKEsyHFk/0T9enjhi#yEqHs86l"
-    },
-    {
-      "order": 980040,
-      "kind": "call",
-      "label": "install the first model",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/history/operations/initialize-model.ts",
-        "symbol": "installArchitectureModel"
-      },
-      "id": "vKEsyHFk#BbwtsMPQ",
-      "to": "vKEsyHFk/0T9enjhi#2gFwMLTT"
     }
   ]
 }
