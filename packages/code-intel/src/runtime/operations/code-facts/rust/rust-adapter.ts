@@ -29,8 +29,8 @@
 //
 // Each use keeps the imports visible in its scope and whether it names a
 // local binding. Calls and imports under `#[cfg(test)]` are not production
-// dependencies, and the out-of-line modules declared there are kept as
-// `testModules`, for the files of those modules are test code too. Code that
+// dependencies. Out-of-line module declarations record whether their files
+// are test code too, including declarations inside inline modules. Code that
 // did not parse holds no facts; its names are kept.
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
@@ -400,21 +400,28 @@ function testItems(skipped: readonly Node[]): Node[] {
 }
 
 /**
- * The modules a file declares out of line under `#[cfg(test)]`.
+ * The modules a file declares out of line and whether each is test-only.
  * @param declarations The `use`, `mod name;` and `extern crate` declarations.
  * @param tests The spans of the file's test items.
  * @param unparsed The spans that did not parse.
- * @returns Each module's names below the file's module, joined by `::`.
+ * @returns Module paths mapped to whether every declaration is test-only.
  */
-function testModulesOf(declarations: readonly Node[], tests: Spans, unparsed: Spans): string[] {
-	return declarations
-		.filter(
-			(node) =>
-				node.type === "mod_item" &&
-				tests.holds(node.startIndex) &&
-				!unparsed.holds(node.startIndex),
-		)
-		.map((node) => [...nestingOf(node), node.childForFieldName("name")?.text ?? ""].join("::"));
+function modulesOf(
+	declarations: readonly Node[],
+	tests: Spans,
+	unparsed: Spans,
+): Map<string, boolean> {
+	const modules = new Map<string, boolean>();
+	const parsed = declarations.filter(
+		(node) => node.type === "mod_item" && !unparsed.holds(node.startIndex),
+	);
+	for (const node of parsed) {
+		const name = node.childForFieldName("name")?.text;
+		if (name === undefined) continue;
+		const names = [...nestingOf(node), name].join("::");
+		modules.set(names, (modules.get(names) ?? true) && tests.holds(node.startIndex));
+	}
+	return modules;
 }
 
 /**
@@ -464,7 +471,7 @@ function rustFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 		definitions: definitionsOf(tree.rootNode),
 		...bindReferences(written, imports, binding),
 		unparsed: unparsedOf(captured.unparsed),
-		testModules: testModulesOf(captured.import, testSpans, unparsed),
+		rustModules: modulesOf(captured.import, testSpans, unparsed),
 	};
 }
 

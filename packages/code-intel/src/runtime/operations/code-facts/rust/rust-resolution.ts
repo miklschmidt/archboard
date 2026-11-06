@@ -159,6 +159,7 @@ function createRustResolver(
 	parsed: ReadParsed,
 ): ImportResolver {
 	let known: Crates | undefined;
+	const testModules = new Map<string, Promise<boolean>>();
 	/**
 	 * The checkout's crates, read once in the pass.
 	 * @returns Them.
@@ -311,18 +312,26 @@ function createRustResolver(
 	};
 
 	/**
-	 * Whether a file is test code: a module it or a module above it has,
-	 * declared out of line under `#[cfg(test)]`.
+	 * Whether every declaration includes a file only as test code.
+	 * Undeclared files and crate roots retain their production facts.
 	 * @param from The file.
 	 * @returns True when it is.
 	 */
 	const isTestModule = async (from: string): Promise<boolean> => {
+		const knownTest = testModules.get(from);
+		if (knownTest !== undefined) return knownTest;
 		const place = crates().placeOf(from);
 		const declarations = place === undefined ? [] : crates().declarationsOf(place);
-		const declared = declarations.map(async ({ file, names }) =>
-			((await parsed(file))?.testModules ?? []).includes(names.join("::")),
-		);
-		return (await Promise.all(declared)).some(Boolean);
+		const declared = declarations.map(async ({ file, names }) => {
+			const test = (await parsed(file))?.rustModules?.get(names.join("::"));
+			return test === undefined ? undefined : test || (await isTestModule(file));
+		});
+		const result = Promise.all(declared).then((classifications) => {
+			const actual = classifications.filter((test) => test !== undefined);
+			return actual.length > 0 && actual.every(Boolean);
+		});
+		testModules.set(from, result);
+		return result;
 	};
 
 	/**

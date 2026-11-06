@@ -178,11 +178,11 @@ interface ParsedFacts {
 	readonly imports: readonly Import[];
 	readonly unparsed: readonly Unparsed[];
 	/**
-	 * Rust: the modules this file declares out of line (`mod name;`) under
-	 * `#[cfg(test)]`, each as the path of its names below the file's module,
-	 * joined by `::`. The files of those modules are test code (rust-resolution.ts).
+	 * Rust: out-of-line module paths below this file's module, joined by `::`.
+	 * A true value means every declaration of that path is under `#[cfg(test)]`.
+	 * A false value preserves a production declaration of the same module.
 	 */
-	readonly testModules?: readonly string[];
+	readonly rustModules?: ReadonlyMap<string, boolean>;
 }
 
 /**

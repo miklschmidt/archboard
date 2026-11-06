@@ -72,7 +72,7 @@ interface Start {
 	readonly rest: readonly string[];
 }
 
-/** A module's declaration: the file that holds it and the module's names below that file's module. */
+/** A possible declaring file and the module's names below that file's module. */
 interface Declaration {
 	readonly file: string;
 	readonly names: readonly string[];
@@ -97,7 +97,7 @@ interface Crates {
 	 */
 	dependencyPackage(from: RustPackage, dependency: CargoDependency): RustPackage | undefined;
 	/**
-	 * The declarations of a file's module and of every module above it.
+	 * Possible declarations of a file's module, including inline module paths.
 	 * @param place The file's place.
 	 */
 	declarationsOf(place: Place): readonly Declaration[];
@@ -407,20 +407,21 @@ function cratesOf(checkout: CheckoutFiles, read: ReadText): Crates {
 	};
 
 	/**
-	 * The declarations of a file's module and of every module above it. Each
-	 * module is declared in the file of its nearest module that has one, which
-	 * an inline `mod name { ... }` between them does not.
+	 * Possible declarations of a file's module. Parsed declarations decide
+	 * which candidates actually include it. An unrelated ancestor file cannot
+	 * hide an inline module, and colocated crate roots can share a module.
 	 * @param place The file's place.
-	 * @returns The declaring file of each module, and its names below that file's module.
+	 * @returns Candidate files and the names each must declare.
 	 */
 	const declarationsOf = (place: Place): Declaration[] =>
-		place.module.flatMap((_, index) => {
-			const module = place.module.slice(0, index + 1);
-			for (let count = index; count >= 0; count -= 1) {
-				const file = moduleFile(place.root, module.slice(0, count));
-				if (file !== undefined) return [{ file, names: module.slice(count) }];
-			}
-			return [];
+		place.module.flatMap((_, count) => {
+			const files =
+				count === 0
+					? place.package.roots.filter((root) => directoryOf(root) === directoryOf(place.root))
+					: [moduleFile(place.root, place.module.slice(0, count))];
+			return files.flatMap((file) =>
+				file === undefined ? [] : [{ file, names: place.module.slice(count) }],
+			);
 		});
 
 	/**
