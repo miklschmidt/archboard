@@ -5,24 +5,10 @@
   "responsibility": "Builds authored turn input and encodes the execution context and canonical JSON that turns carry",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/host"
+    "path": "packages/codex-realtime-voice/src/runtime/host/turn-input"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#92V2PmcS",
   "parent": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
-  "outgoing": [
-    {
-      "order": 980170,
-      "kind": "call",
-      "label": "each tool's role",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/host/toolset/rules/tools.ts",
-        "symbol": "toolRoleOf"
-      },
-      "id": "vKEsyHFk#bN4uHZrb",
-      "to": "vKEsyHFk/qKGcB6vZ#7Mxz4kA6"
-    }
-  ]
+  "outgoing": []
 }
