@@ -216,10 +216,13 @@ function undrawnFinding(reading: RelationshipReading, to: ReadPart, pieces: Piec
 	const open = pieces.filter((piece) => !sidesJoined(reading, piece.from, piece.to));
 	const resolved = open.some((piece) => piece.resolution === "resolved");
 	const unsure = candidateSentence(reading, pieces);
+	const holdsParts = sideOf(reading, to.node.id).size > 1;
 	const next =
 		open.length === 0
 			? "A relationship between the two sides where they meet stands for it, so add one only if a reader needs to see this call."
-			: "Add the relationship between the parts that make and answer the call.";
+			: holdsParts
+				? `The call reaches code that ${nameOf(reading, to.node.id)} owns and none of its parts binds, and a relationship cannot end on a module with parts. Add a part bound to the code that the call reaches, then end the relationship on that part.`
+				: "Add the relationship between the parts that make and answer the call.";
 	return {
 		...siteOf(reading.read, `nodes.${to.node.id}`, subject),
 		severity: resolved ? "warning" : "information",
