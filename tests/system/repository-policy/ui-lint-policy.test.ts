@@ -293,7 +293,7 @@ describe("the lint configs split app tests the way they split package tests", ()
 	});
 });
 
-describe("the frame clock rule follows the model canvas into apps/web", () => {
+describe("the frame clock rule follows the model canvas and the subtitles in both layouts", () => {
 	// A frame-clocked file reads the browser's clock directly, which a recording cannot step.
 	const CLOCK_READ = "export const stamp = [Date.now(), requestAnimationFrame];\n";
 	const canvas = [
@@ -305,17 +305,30 @@ describe("the frame clock rule follows the model canvas into apps/web", () => {
 		"apps/web/src/ui/rules/canvas/stamp.ts",
 		"apps/web/src/ui/state/canvas/stamp.ts",
 		"apps/web/src/ui/workers/canvas/stamp.ts",
+		// Behavior first (ADR 0075), the canvas is one folder of the architecture drawing.
+		"apps/web/src/ui/architecture-drawing/canvas/presentation/components/Stamp.tsx",
+		"apps/web/src/ui/architecture-drawing/canvas/picture/camera/rules/stamp.ts",
+		"apps/web/src/ui/architecture-drawing/canvas/pane-vault/state/stamp.ts",
+		// The subtitles of the workbench, role first and behavior first.
+		"packages/workbench/src/ui/components/subtitles/Stamp.tsx",
+		"packages/workbench/src/ui/hooks/subtitles/use-stamp.ts",
+		"packages/workbench/src/ui/rules/subtitles/stamp.ts",
+		"packages/workbench/src/ui/state/subtitles/stamp.ts",
+		"packages/workbench/src/ui/workbench-client/subtitles/components/Stamp.tsx",
+		"packages/workbench/src/ui/workbench-client/subtitles/state/stamp.ts",
 	];
 	const tests = canvas.map((file) => file.replace("/src/", "/tests/"));
 	const sibling = [
 		"apps/web/src/ui/components/shell/Stamp.tsx",
 		"apps/web/src/ui/hooks/canvasx/use-stamp.ts",
+		"apps/web/src/ui/architecture-drawing/model-reader/reading/components/Stamp.tsx",
+		"packages/workbench/src/ui/workbench-client/dock/components/Stamp.tsx",
 	];
 	const files = Object.fromEntries(
 		[...canvas, ...tests, ...sibling].map((file) => [file, CLOCK_READ]),
 	);
 
-	test("restricts the clocks at a canvas path of apps/web and leaves its sibling behaviors alone", () => {
+	test("restricts the clocks at a canvas or subtitles path and leaves their sibling behaviors alone", () => {
 		// Catches the restriction vanishing when the canvas moves: the override named only
 		// the old paths. A sibling behavior stays free to read the clock, so it was not widened.
 		withProject({ ".oxlintrc.jsonc": repositoryConfig(".oxlintrc.jsonc") }, files, (root) => {

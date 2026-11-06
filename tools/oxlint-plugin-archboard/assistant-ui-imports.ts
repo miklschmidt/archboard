@@ -1,8 +1,10 @@
 // TASK-150.05: assistant-ui is owned by two behaviors of the workbench package's
 // ui area. The thread holds the official assistant-ui presentation and its
 // product composition; the runtime holds the provider and external-store
-// adapter over Archboard's own Codex-owned state. Each owns the folder of its
-// name below every role folder of the ui area and of its tests. Ownership is by
+// adapter over Archboard's own Codex-owned state. Each owns a behavior folder of
+// the ui area and of its tests: `thread` or `assistant-runtime` above its role
+// folders (ADR 0075). While the move runs (TASK-582.03), a role-first tree keeps
+// them as `thread` or `runtime` directly below a role folder. Ownership is by
 // behavior, not by member:
 // the safety rules below forbid the APIs that would introduce a second
 // transport, cloud, thread list, queue, tool or voice owner.
@@ -22,7 +24,7 @@ import {
 	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 } from "./rule-api.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
-import { getRepoRelativePath } from "./source-layout.ts";
+import { getRepoRelativePath, isRoleFolder } from "./source-layout.ts";
 
 const ASSISTANT_UI_PACKAGE = "@assistant-ui/react";
 const ASSISTANT_UI_AUXILIARY_PACKAGES = new Set(["assistant-cloud", "assistant-stream"]);
@@ -30,7 +32,10 @@ const ASSISTANT_UI_THREAD_OWNER = "thread";
 const ASSISTANT_UI_MARKDOWN_PACKAGE = "@assistant-ui/react-markdown";
 /** The ui area of the workbench package, in its source and in its tests. */
 const ASSISTANT_UI_AREAS = ["packages/workbench/src/ui", "packages/workbench/tests/ui"];
-const ASSISTANT_UI_OWNERS = new Set([ASSISTANT_UI_THREAD_OWNER, "runtime"]);
+/** The owners directly below the role folder that starts a role-first path. */
+const ROLE_FIRST_OWNERS = new Set([ASSISTANT_UI_THREAD_OWNER, "runtime"]);
+/** The owners among the behavior folders above the role folder of a behavior-first path. */
+const BEHAVIOR_OWNERS = new Set([ASSISTANT_UI_THREAD_OWNER, "assistant-runtime"]);
 const ASSISTANT_UI_FORBIDDEN_APIS = new Set([
 	"AssistantTransport",
 	"useAssistantTransportRuntime",
@@ -95,19 +100,23 @@ function firstArgumentExpression(node: VisitedNode<"CallExpression">): Expressio
 
 /**
  * The owning behavior of a file, when assistant-ui may be imported there: the
- * file sits in the `thread` or `runtime` folder of a role folder of the
- * workbench package's ui area (`components/thread/`, `hooks/runtime/`).
+ * file sits in the `thread` or `assistant-runtime` behavior of the workbench
+ * package's ui area above its role folder (`thread/components/`, the innermost
+ * owner), or, role first, in the `thread` or `runtime` folder directly below a
+ * role folder (`components/thread/`, `hooks/runtime/`).
  * @param relativePath The file's repository path.
  * @returns The owner, or undefined outside both owners.
  */
 function assistantUiOwner(relativePath: string): string | undefined {
-	for (const area of ASSISTANT_UI_AREAS) {
-		if (relativePath.startsWith(`${area}/`)) {
-			const owner = relativePath.slice(area.length + 1).split("/")[1];
-			return owner !== undefined && ASSISTANT_UI_OWNERS.has(owner) ? owner : undefined;
-		}
+	const area = ASSISTANT_UI_AREAS.find((root) => relativePath.startsWith(`${root}/`));
+	const rest = area === undefined ? "" : relativePath.slice(area.length + 1);
+	const folders = rest.split("/").slice(0, -1);
+	const role = folders.findIndex(isRoleFolder);
+	const [, roleFirst = ""] = folders;
+	if (role === 0 && ROLE_FIRST_OWNERS.has(roleFirst)) {
+		return roleFirst;
 	}
-	return undefined;
+	return folders.slice(0, Math.max(role, 0)).findLast((folder) => BEHAVIOR_OWNERS.has(folder));
 }
 
 /**
@@ -463,7 +472,7 @@ const assistantUiImports = createRule(
 		noDirectRadixImport:
 			"Do not import Radix directly from application source; use the repository's Base UI layer or an Archboard-owned semantic control.",
 		noAssistantUiOwner:
-			"Only the thread and runtime folders of packages/workbench/src/ui may import assistant-ui; move the import to its owning behavior and expose Archboard-owned behavior.",
+			"Only the thread and assistant-runtime behaviors of packages/workbench/src/ui may import assistant-ui (thread and runtime below a role folder until they move); move the import to its owning behavior and expose Archboard-owned behavior.",
 		noAssistantUiNamedImport:
 			"assistant-ui imports must be named imports from the package root; remove the side-effect, dynamic, or require form.",
 		noAssistantUiDefault:

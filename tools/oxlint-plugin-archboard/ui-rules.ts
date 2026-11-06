@@ -1,8 +1,10 @@
 // The frontend concern placement and naming rules of docs/agents/frontend.md,
-// for authored source under packages/<name>/src/ui and apps/<name>/src/ui. The ui
-// area keeps its code as role folders directly below ui/, with behavior folders
-// below a role. The web app's browser entry, main.tsx, sits above ui/ and counts
-// as browser code for the React import rule only.
+// for authored source under packages/<name>/src/ui and apps/<name>/src/ui. The
+// concern of a file is the one role folder of its path. Behavior first (ADR 0075),
+// it is the folder that holds the file. While the move runs (TASK-582.03), a
+// role-first tree keeps it as the first folder below ui/. The web app's browser
+// entry, main.tsx, sits above ui/ and counts as browser code for the React import
+// rule only.
 // Components are PascalCase, hooks are use-prefixed kebab-case, and everything
 // else is scoped kebab-case. React lives in components and hooks. A package or an
 // app has no ui root: a package's public interface is its `exports`, and nothing
@@ -19,6 +21,7 @@ import {
 import {
 	getRepoRelativePath,
 	isBrowserEntrypoint,
+	isRoleFolder,
 	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 } from "./source-layout.ts";
 
@@ -55,8 +58,10 @@ interface UiFile {
 
 /** Where one authored UI file sits: its concern and its name. */
 interface UiFilePlacement {
-	/** The role folder, or "" for a file directly in `ui/`. */
+	/** The one role folder of the path, or "" for a path with none or several. */
 	concern: string;
+	/** What is wrong with where the role folder sits, before its name is judged. */
+	misplacement: "twoConcerns" | "misplacedConcern" | undefined;
 	basename: string;
 }
 
@@ -87,15 +92,37 @@ function uiPlacementOf(relativePath: string): UiFilePlacement | undefined {
 /**
  * Where a UI file sits below the `ui/` folder of its package or app.
  * @param file The UI file.
- * @returns The first folder and the file name.
+ * @returns The role folder of its path, what is wrong with its place, and the file name.
  */
 function placementOf(file: UiFile): UiFilePlacement {
 	const segments = file.rest.split("/");
-	const [first = ""] = segments;
-	return {
-		concern: segments.length > 1 ? first : "",
-		basename: segments.at(-1) ?? "",
-	};
+	const folders = segments.slice(0, -1);
+	const basename = segments.at(-1) ?? "";
+	if (folders.filter(isRoleFolder).length > 1) {
+		return { concern: "", misplacement: "twoConcerns", basename };
+	}
+	const index = folders.findIndex(isRoleFolder);
+	const concern = folders[index] ?? "";
+	return { concern, misplacement: roleMisplacement(concern, index, folders.length), basename };
+}
+
+/**
+ * Whether the one role folder of a path sits where a layout puts it: the first folder below
+ * `ui/` in a role-first tree, or the folder that holds the file. `api` stays directly below `ui/`.
+ * @param concern The role folder, or "" when the path has none.
+ * @param index Its place among the folders of the path.
+ * @param depth How many folders the path has.
+ * @returns The misplacement, or undefined when the place is right or there is no role folder.
+ */
+function roleMisplacement(
+	concern: string,
+	index: number,
+	depth: number,
+): UiFilePlacement["misplacement"] {
+	if (index <= 0) {
+		return undefined;
+	}
+	return index === depth - 1 && concern !== "api" ? undefined : "misplacedConcern";
 }
 
 /**
@@ -132,6 +159,9 @@ function namingMessage(placement: UiFilePlacement): string | undefined {
  * @returns The message ids in report order.
  */
 function placementMessages(placement: UiFilePlacement): string[] {
+	if (placement.misplacement) {
+		return [placement.misplacement];
+	}
 	if (!UI_ROLES.has(placement.concern)) {
 		return ["unknownConcern"];
 	}
@@ -275,7 +305,11 @@ function declaredFunctionName(declaration: ExportedDeclaration): string[] {
 const uiConcernPlacement = createRule(
 	{
 		unknownConcern:
-			"The ui area of a package or an app keeps its code in api, clients, components, constants, hooks, rules, state or workers, never at its root. Name the concern the file belongs to.",
+			"The ui area of a package or an app keeps its code in a role folder: api, clients, components, constants, hooks, rules, state or workers, never at its root. Name the concern the file belongs to.",
+		twoConcerns:
+			"A path below ui/ has one role folder. Keep the behavior folders above it and the file directly in it.",
+		misplacedConcern:
+			"The role folder is the folder that holds the file, below its behavior folders, or the first folder below ui/ in a tree that still puts roles first. api stays directly below ui/.",
 		componentFileName: "Name a component file in PascalCase after the component it exports.",
 		hookFileName: "Name a hook file in kebab-case with a use- prefix.",
 		scopedFileName: "Name a non-React file in scoped kebab-case.",

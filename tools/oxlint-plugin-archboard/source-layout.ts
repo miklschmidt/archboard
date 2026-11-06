@@ -25,6 +25,34 @@ const LEGACY_ROOTS = /^(?:src|frontend)\//;
 /** The folders below `src/` of a package or an app. Each is an area with its own import directions. */
 const AREAS = new Set(["cli", "runtime", "server", "shared", "ui"]);
 
+/**
+ * The role folders of an area (docs/agents/boundaries.md, ADR 0075). A role folder is the last
+ * folder of a path. While the move to behavior first runs (TASK-582.03), a role-first tree still
+ * keeps it as the first folder below the area.
+ */
+const ROLE_FOLDERS = new Set([
+	"api",
+	"clients",
+	"components",
+	"constants",
+	"hooks",
+	"lifecycle",
+	"middleware",
+	"operations",
+	"processes",
+	"projections",
+	"protocol",
+	"routes",
+	"rules",
+	"schemas",
+	"services",
+	"sockets",
+	"state",
+	"store",
+	"wiring",
+	"workers",
+]);
+
 /** A bucket names no role. A workspace has no `lib/` folder either: name the role of the folder. */
 const GENERIC_BUCKET_SEGMENTS = new Set([
 	"compatibility",
@@ -300,6 +328,15 @@ function hasGenericBucket(relativePath: string): boolean {
 }
 
 /**
+ * Whether a folder name is a role.
+ * @param folder The folder's name.
+ * @returns Whether the folder is a role folder.
+ */
+function isRoleFolder(folder: string): boolean {
+	return ROLE_FOLDERS.has(folder);
+}
+
+/**
  * Whether a path is browser code that sits outside a `ui/` folder.
  * @param relativePath The file's repository path.
  * @returns Whether the path is the web app's browser entry.
@@ -320,6 +357,7 @@ export {
 	isFlatAppSource,
 	isLegacyRoot,
 	isProductSourcePath,
+	isRoleFolder,
 	isSourceFile,
 	isStateFile,
 	isTestFile,
