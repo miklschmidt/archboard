@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-06T19:12:00Z'
-updated_date: '2026-11-06T19:41:00Z'
+updated_date: '2026-11-06T19:42:00Z'
 labels: []
 dependencies: []
 ordinal: 1033000
@@ -43,4 +43,6 @@ Resumed in docs/concise-shipped-skills at c9ea84aab. Scope is consumer prose onl
 Rewrote all 17 authored skill files. Shared recovery rules now live in canonical-models.md; flow summaries and source-backed authoring live in authoring.md; PR references route to consumer recipes. Preserved the catalogue and citation headings. The old footprint text said that the command changes no exit status. CLI help establishes exit 2 for unavailable base/head refs; the revised text distinguishes informational findings from read failures. Artifact generation passed. Required gates are next.
 
 The consumer reference rewrite and preservation audit are complete. All original diagnostic codes and CLI flags remain. The source-evidence catalogue and both citation headings remain. The first two runs of the required gates passed: 163 repository tests, formatting, and 4908 module tests with one platform-specific skip. Final wording and paragraph refinements are under the same gates now. The completion report records every file count and duplicate-rule destination.
+
+PR guidance now points to consumer recipes for claims, checkpoints, comparison, reconciliation, lifecycle, and narration. Posting and artifact inspection keep their PR-specific steps. Final authored-file validation passed: artifact generation, test:repository (163 passed), format:check, and test:modules (4908 passed, one macOS-only skip, zero failures). Logs are /tmp/task586-generation.log, /tmp/task586-test-repository.log, /tmp/task586-format-check.log, and /tmp/task586-test-modules.log.
 <!-- SECTION:NOTES:END -->
