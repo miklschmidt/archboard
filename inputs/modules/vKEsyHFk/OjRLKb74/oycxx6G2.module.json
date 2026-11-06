@@ -29,6 +29,19 @@
       },
       "id": "vKEsyHFk/OjRLKb74#wCXK6KYw",
       "to": "vKEsyHFk/OjRLKb74#JwgvpLYJ"
+    },
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "a blocks solve, read back as its placement",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-layout/src/architecture/choosing.rs",
+        "symbol": "BLOCKS_PLACED"
+      },
+      "to": "vKEsyHFk/OjRLKb74#mHYMkWdE",
+      "id": "vKEsyHFk#uGzArvYN"
     }
   ]
 }

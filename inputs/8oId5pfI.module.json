@@ -35,8 +35,8 @@
         "path": "crates/archboard-scene/src/paint/mod.rs",
         "symbol": "architecture.paint_architecture"
       },
-      "to": "vKEsyHFk/gbyqW4H3#J7mPrUeP",
-      "id": "vKEsyHFk#xV0HwjdR"
+      "id": "vKEsyHFk#xV0HwjdR",
+      "to": "vKEsyHFk/gbyqW4H3#J7mPrUeP"
     },
     {
       "order": 980250,
@@ -48,8 +48,8 @@
         "path": "crates/archboard-scene/src/paint/mod.rs",
         "symbol": "paint_sequence"
       },
-      "to": "vKEsyHFk/gbyqW4H3#CtoOMxca",
-      "id": "vKEsyHFk#rN5226KV"
+      "id": "vKEsyHFk#rN5226KV",
+      "to": "vKEsyHFk/gbyqW4H3#CtoOMxca"
     },
     {
       "order": 980260,
@@ -61,8 +61,8 @@
         "path": "crates/archboard-scene/src/paint/mod.rs",
         "symbol": "Palette"
       },
-      "to": "vKEsyHFk/gbyqW4H3#u1OXg3Yy",
-      "id": "vKEsyHFk#0wPxGNoW"
+      "id": "vKEsyHFk#0wPxGNoW",
+      "to": "vKEsyHFk/gbyqW4H3#u1OXg3Yy"
     },
     {
       "order": 980270,
@@ -74,8 +74,21 @@
         "path": "crates/archboard-scene/src/paint/mod.rs",
         "symbol": "Standings"
       },
-      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE",
-      "id": "vKEsyHFk#ETQA4rnI"
+      "id": "vKEsyHFk#ETQA4rnI",
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+    },
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "the scene it paints",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/mod.rs",
+        "symbol": "Scene"
+      },
+      "to": "vKEsyHFk#U4Q7nid1",
+      "id": "vKEsyHFk#1ohCTBHb"
     }
   ]
 }

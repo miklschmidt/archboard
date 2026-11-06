@@ -136,6 +136,14 @@
       },
       "id": "vKEsyHFk#gJg0IMG5",
       "to": "vKEsyHFk#w44DwfpV"
+    },
+    {
+      "order": 900,
+      "kind": "dependency",
+      "label": "Graphviz for the native test's solves",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#dg6URhSn",
+      "id": "vKEsyHFk#GdOLnrJz"
     }
   ]
 }

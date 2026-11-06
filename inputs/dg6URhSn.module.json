@@ -20,8 +20,21 @@
         "path": "crates/archboard-graphviz/src/lib.rs",
         "symbol": "render_as"
       },
-      "to": "vKEsyHFk/OjRLKb74#KdNM1Q56",
-      "id": "vKEsyHFk#4gojuhlc"
+      "id": "vKEsyHFk#4gojuhlc",
+      "to": "vKEsyHFk/OjRLKb74#KdNM1Q56"
+    },
+    {
+      "order": 200,
+      "kind": "call",
+      "label": "spell each attribute number as JavaScript does",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-graphviz/src/graph.rs",
+        "symbol": "number"
+      },
+      "to": "vKEsyHFk#1UxryIji",
+      "id": "vKEsyHFk#fydOT1rP"
     }
   ]
 }
