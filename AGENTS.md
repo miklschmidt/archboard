@@ -27,38 +27,8 @@ Where things are written down:
 - Reading or updating this repo's architecture: [.archboard/README.md](.archboard/README.md). Use `archboard model read` in the tracked `.archboard/vault`.
   If it returns `LEGACY_AUTHORITY`, follow the consumer skill's explicit migration reference.
 - Work tracking: Backlog.md through the `backlog` CLI, never by editing `backlog/`
-
-## Environment facts you cannot derive
-
-- This box has node and bun but no npm or npx. Use `bun run <script>`, never
-  `npm run`. `bun install` intermittently fails to extract a tarball. If it
-  fails, run it again.
-- The renderer core is Rust, built to WebAssembly (ADR 0059). Run Rust and
-  build commands inside `nix develop`, which gives cargo, `wasm-bindgen` and
-  Bun. After a change to `crates/`, run `bun run build:core`:
-  a Bun process refuses a core built from other sources than its checkout
-  holds.
-- A running server read its source at start. Editing source changes the next
-  CLI command, not the running server: `archboard restart` stops it, builds
-  the frontend and starts it again.
-  Stop never waits for work: every accepted write is on disk before it is answered.
-- `archboard` on PATH links to one checkout's `bin/archboard`. Inside another
-  archboard checkout, such as a worktree, it runs that checkout's own
-  `bin/archboard` (ADR 0049). The server of the main checkout listens on
-  port 3000. The server of a linked worktree listens on a port in 10000 to
-  19999, a hash of the worktree's path, so each worktree has its own server.
-  `archboard status` gives the URL. A set `ARCHBOARD_URL` or `--url` still
-  decides. A command whose environment sets `ARCHBOARD_URL` runs where it is
-  and hands off to no checkout: the URL names its server already. The Codex
-  workbench sets it on every thread and puts the server's own `bin` first on
-  the thread's PATH, so a workhorse in an archboard worktree reaches the server
-  that started it. A command that finds a server of another checkout's source
-  on its port refuses and names both checkouts.
-- `bun run check` is the complete gate. Only shippable, repository-authored
-  Archboard skills live under `skills/`. Tracked symlinks expose them through
-  `.claude/skills/` and `.agents/skills/`. For other skills, use the exact path
-  in the skill catalog. Third-party skills are tracked under `.agents/skills/`
-  and `.claude/skills/`.
+- Skills: `skills/` holds only the shippable Archboard skills. Tracked symlinks in `.claude/skills/`
+  and `.agents/skills/` expose them, beside the third-party skills tracked there.
 
 ## Architecture invariants
 
