@@ -195,7 +195,6 @@ A preview can select a qualified original state and an exact migration checkpoin
 Comparison and explanation requests remain unavailable for previews.
 Module and flow selectors use the same canonical identities and unique names as ordinary reads.
 HTTP readers use `/api/architecture/model?vault=<vault>&preview=Shop` with the same result contract.
-The public runtime uses `readArchitectureModel(vault, module, flow, {preview: "Shop"})`.
 All requests continue to name their vault explicitly.
 Preview reads save no model, checkpoint, plan, timestamp, or current designation.
 Ordinary model reads still return `LEGACY_AUTHORITY`.
@@ -238,7 +237,7 @@ A settled draft selects its original parent through `content`.
 A draft with standing selects itself through `reconciliation-base`.
 That choice preserves the original conflict base instead of the changed parent.
 A parentless planning root uses `predecessor:null` and `baseline:{kind:"empty",state:null}`.
-The runtime refuses substituted predecessors and baselines.
+The operation refuses substituted predecessors and baselines.
 Each choice belongs to the plan's exact source digest.
 
 A history entry with `conversion` includes the explicit mapping, a baseline digest, and normalized canonical changes.
@@ -435,7 +434,7 @@ Signing failure changes no live input and requires repair of the configured sign
 Ordinary `model read` discovers authority.
 `LEGACY_AUTHORITY` refuses ordinary live use of an unmigrated vault.
 Use `model inventory`, `model plan`, `model read --preview`, and an owner-approved `model migrate` request.
-The runtime preserves original bytes until explicit installation.
+Original bytes stay unchanged until explicit installation.
 `RECOVERY_REQUIRED` and `MODEL_BUSY` block format selection during installation.
 A successful ordinary read identifies canonical authority.
 The existing architecture event feed announces the new model only after durable completion.

@@ -8,215 +8,41 @@ description: >-
   migration of existing architecture vaults.
 ---
 
-# Archboard
+# Use Archboard
 
-Agents author architectural meaning. Archboard draws it, and people read it.
-One vault holds one canonical model. A module keeps one identity across every reading.
-Modules form a containment forest without fixed levels.
-Each module owns its outgoing relationships. Flow collections hold independent exchanges across modules.
-A reading selects a scope, focus, filters, diagram grammar, and optional flow.
-It owns no architecture content.
+Use the CLI to read architecture, author changes, and produce diagrams.
+A vault is the directory that holds one model.
+A reading selects what you see without copying architecture.
 
-Read [canonical models](references/canonical-models.md) before the first architecture operation.
-Read [canonical walkthroughs](references/canonical-walkthroughs.md) before authoring or recording a narrative.
-If a vault returns `LEGACY_AUTHORITY`, read [legacy migration](references/legacy-migration.md).
-That refusal requires explicit identity choices and owner-authorized installation.
-Do not rewrite original files or resume the retired `board` commands.
+## Read before acting
 
-## Discover the model
-
+Read [canonical models](references/canonical-models.md) before your first architecture operation.
+It defines discovery, identities, writes, proposals, history, recovery, rendering, and browser commands.
 Run commands in the checkout that holds the vault, or pass `-C <directory>`.
-Every result names its addressed vault.
-The server stays local and serves only vaults that requests name explicitly.
-Run `archboard model read` to discover the model, roots, relationships, flows, proposals, and exact input revision.
-Use qualified identities when names are ambiguous.
-Read source before describing implemented architecture.
-Follow bound files, imports, callers, and the external contracts that establish each relationship.
-A name, code binding, or similar responsibility never establishes shared identity.
 
-If an empty vault has no manifest, initialize it through `model init`.
-The existing `install-skill` setup initializes new vaults through that same operation.
-An untracked vault needs explicit `model archive-init` before signed history and authoring operations.
-Keep configured Git signing enabled.
+Run `archboard model read` to discover the model and its complete revision.
+Before describing implemented architecture, read the bound source, imports, callers, and external contracts.
+If the read returns `LEGACY_AUTHORITY`, follow [legacy migration](references/legacy-migration.md).
+Preserve the original files until the owner authorizes installation.
 
-## Author one intent
+## Choose the work
 
-Read the complete current revision before preparing a write.
-Claim every affected existing subject, state, and structure scope through `model claim`.
-A claim records its writer and purpose. It leaves the short installation lease free between writes.
-Submit one complete intent through `model edit` with its claim, writer, operation identity, revision, and doing line.
-Use the existing operation identity only to retry that exact intent.
+Before authoring modules, relationships, flows, or proposals, read [authoring](references/authoring.md).
+It explains source evidence, containment, flow summaries, and proposal names.
+Before judging a design or planning a refactor, read [the design lens](references/design-lens.md).
+Report its facts with source evidence and leave the judgment to the user.
 
-Create proposals through the edit operation.
-A proposal stores stable identity changes against an immutable retained baseline.
-Independent proposals stay separate even when their names match.
-Read and compare each proposal through `model read`, `model proposals`, or `model compare`.
-Settle reported standing before adoption.
-Adopt or shelve only when the owner explicitly requests that outcome.
-A request to prepare the PR that implements a proposal requests its adoption on that PR's branch, so code and architecture merge together.
-If the vault lives in another repository, the adoption is a commit in that repository, so it cannot merge with the code. Tell the owner, and ask which PR merges first.
-A source merge never adopts architecture.
+Before authoring or recording a narrative, read [canonical walkthroughs](references/canonical-walkthroughs.md).
+Before preparing a write, read [schemas](references/schemas.md).
+For installation or updates, read [the installation guide](references/generated/INSTALL.md).
+For missing language servers or more precise source evidence, read [setup](references/setup.md).
 
-Keep continuing subject identities unchanged.
-Leave identity allocation to the public writer for new subjects.
-Use names and same-intent references only where the request schema permits them.
-Omitted fields preserve their values. Explicit clear lists remove optional values.
-Release the claim when the intent ends.
-If a claim is revoked, stop that intent and report the state that it left.
+## Complete the intent
 
-## Give each container a job
-
-Bind each module with parts to the one directory that holds the code of every part.
-That binding owns the code that no part binds, so the code check sees each call into it.
-`archboard check` warns with `CONTAINER_UNBOUND` on a module with bound parts and no binding, and with `CONTAINER_PARTS_OUTSIDE` on a part bound outside its module's binding.
-When one directory holds every part and no code of another module, the warning names it in `suggestedBinding`. Bind the module there.
-When no directory does, read the code before you change the model:
-
-- If a part does the job of another module, move it to that module.
-- If the parts do one job and the code spreads it over several folders, the code's layout breaks containment. Tell the user which folders split the job. Archboard cannot hold the job to its code until the code sits in one folder, so recommend a behavior-first layout. Keep the model true to the job, and bind the module after the code moves.
-
-A module whose parts bind no code still needs a job of its own: let a relationship or flow name it or join its parts.
-If it has neither, move its parts to its parent and remove it.
-A numbered layer or a tidy box is not a job. Use a configured group for a gathering that only labels its parts.
-Connect each root to another root, or move it into the module that uses it.
-A call inside a container starts at the part that makes it.
-A reading that opens a module draws no line between it and a part that it holds, because the nesting already shows it.
-End each relationship on the part that owns it, at the deepest level that the model states.
-A module with parts cannot point at anything. Its entry points can, and they need a card.
-`archboard check` fails on a relationship that ends on a module with parts, with `RELATIONSHIP_ON_CONTAINER`.
-The only exception joins a module to a part that it holds, and `CONTAINER_LINE_TO_OWN_PART` warns on that shape.
-To repair an end, read the code that its anchor names and move the end to the part that owns that code.
-Keep the relationship's identity, and do not copy the relationship to other parts.
-If no part owns the code, add a part for what the module does at that seam, and name it for that responsibility.
-Add a part only for a seam that a caller would name and that an architect wants to see as a card.
-Do not add a part for a file only to give a line an end. Each new part makes the code check ask for every call of its file, and those lines make an import map.
-If two parts do different jobs across a seam, state two relationships. A relationship between the two sides where they meet stands for the other calls across it, and `RELATIONSHIP_UNDRAWN` names those as information.
-`archboard check` warns on these shapes with `CONTAINER_PASS_THROUGH`, `ROOT_UNCONNECTED`, and `CONTAINER_LINE_TO_OWN_PART`.
-A shape is a signal, not proof, so read the source before you change the model.
-No write refuses them.
-
-## Fix the map from the code
-
-A proposal states the architecture that you want. The current state maps the code as it is.
-In the current state, the code is the source of truth. If the map is wrong, fix the map.
-A module, relationship or flow step in the current state that the code does not hold is a defect. Remove it, or correct it to what the code does.
-A part that only a proposal holds is a plan, not a defect, until that proposal is adopted.
-If two modules describe the same code, read that code. It answers whether they are one module, so do not ask the user.
-A matching binding or name only raises the question.
-If they are one module, keep the identity of the module that sits where the code sits.
-In one intent, move every relationship, flow step and walkthrough reference onto it, and remove the other module.
-Tell the user what you merged and which code proved it.
-
-## Read the design lens
-
-Before you judge a module, plan a refactor, or choose between proposals, read the facts that the model and Git hold.
-
-- `model inspect <module>` states one module's interface. `--group <id>` states one group's boundary.
-- `model compare --state <proposal>` states interface changes first, then the measures of each state. `--beside <state>` adds a competing proposal.
-- `model locality` states which bound modules change often and which change together.
-- `model footprint --base <ref> --state <proposal>` sets a branch's changes against what its proposal names.
-
-Read [the design lens](references/design-lens.md) for what each fact means.
-Each fact is a question that the source answers. Report it as a fact and leave the judgment to the user.
-
-## Say what each flow does
-
-Every flow has a `summary`: one or two plain sentences that say what the exchange does and why it matters.
-Read the code that the flow names, and do not repeat its name.
-A reader sees the summary beside the flow's collection, and a flow has no other account of itself.
-`add-flow` requires it, and no edit clears it.
-A write that changes a flow with no summary refuses with `FLOW_SUMMARY_REQUIRED`.
-Add an `edit-flow` change with `set.summary` to the same intent.
-`archboard check` reports each current flow with no summary as the error `FLOW_SUMMARY_MISSING`.
-A reader can still read that model, and a write that leaves the flow alone still succeeds.
-Retained readings keep their exact original content.
-
-## Say what each proposal changes
-
-A person chooses a proposal from its name and summary, beside the picture and in History.
-Name a proposal for what it changes, for example `Workbench Stop ends a workhorse's whole work tree`.
-A task ID in a name means nothing to the reader. Put it in the task plan.
-Give every proposal a `summary`: one sentence that states the change and why it matters.
-If two proposals change similar parts, write names that tell them apart.
-Rename a proposal through `proposal.set`. Its former names stay on the state.
-A person knows a proposal by its name, not by its state ID.
-In every reply, question, PR body and task note, call each proposal and state by its name.
-For example, write "Painting owns the paint directory" or "the current state".
-Keep the state ID for commands and requests. If the reader must type it, give it in a code span after the name.
-
-## Choose a reading
-
-Architecture answers which parts exist and how they depend on one another.
-A relationship states a continuing architectural dependency, rather than an ordered call.
-Sequence answers what happens, in order, during one authored exchange.
-Flowchart shows the decisions and loops within that same flow.
-Behavioral rendering requires an explicit flow and preserves its complete participants and steps.
-Do not invent execution order from structural relationships.
-
-Use `model read --code` for a selected module's exact local code target.
-Use `check code` for bindings, evidence anchors, relationships, and interfaces.
-A finding names the canonical model and state.
-A retained reading never substitutes present-day source for unavailable historical evidence.
-
-Use `model render` for standalone SVG and `model rasterize` for PNG.
-Both use the shared projection and existing local renderer.
-Their recipes preserve canonical selectors and the exact input revision.
-Use `check embeds` to compare tracked artifacts with their recipes.
-Use `--fix` only when the request authorizes artifact replacement.
-A diagram that misdraws correct saved meaning needs a renderer fix.
-Do not add geometry or alter meaning to repair its placement.
-
-## Work with a live pane
-
-Run `browser panes` before answering a question about the screen.
-Use its `panes[].architecture` capture and `tabSessionId` for `model explain`.
-Keep the captured model, revision, subjects, reading intent, state, checkpoint, and comparison base together.
-A later selection or navigation change never retargets an existing explanation.
-
-Use `browser show [model] --pane <spec>` with canonical selectors to navigate an existing pane.
-Use `--input <file>` for a complete reading object.
-A walkthrough selector and zero-based beat request use the existing captured player.
-An agent show preserves the browser's shown conversation.
-The browser's own activation selects its workhorse conversation.
-Local agents continue to execute in their addressed checkouts.
-
-## Finish the intent
-
-Read the resulting architecture and compare its stable subjects with the intended change.
+Read the resulting architecture.
+Compare its stable subjects with the intended change.
 Make sure that the requested scope, flow, and every narrative beat remain available.
-Run affected semantic, code, and embed owners through `archboard check`.
+Run affected semantic, code, and embed checks through `archboard check`.
 Retain exact history before sharing a checkpoint or recording a walkthrough.
 Report concrete changes, refusals, unavailable source, and recovery work.
-Never claim frontend acceptance, adoption, publication, or migration without the corresponding successful operation.
-
-## References
-
-[The installation guide](references/generated/INSTALL.md) covers installing, building and updating archboard, with or without Nix.
-[Setup](references/setup.md) covers the language servers of the code check.
-[Schema references](references/schemas.md) point to generated runtime contracts.
-[Canonical models](references/canonical-models.md) describe authoring and history operations.
-[The design lens](references/design-lens.md) says what interface, locality, and footprint facts mean.
-[Canonical walkthroughs](references/canonical-walkthroughs.md) describe captured narratives and recordings.
-[Legacy migration](references/legacy-migration.md) preserves original identities, states, and exact bytes through explicit cutover.
-
-## Source evidence catalogue
-
-Use each feature when the source or requested design establishes it.
-This catalogue also gives evaluations stable feature names across retained reports.
-
-| Row            | Canonical evidence                                                |
-| -------------- | ----------------------------------------------------------------- |
-| `external`     | Mark a module outside the described ownership boundary.           |
-| `binding`      | Bind a module to the source that implements its responsibility.   |
-| `containment`  | State parent identities without a fixed level.                    |
-| `relationship` | Author each relationship on its source module.                    |
-| `traffic`      | State meaningful effective traffic properties.                    |
-| `emphasis`     | Mark the main exchange when it helps the reading.                 |
-| `repeat`       | Record repeated exchanges on authored steps.                      |
-| `note`         | Attach relevant evidence or constraints to a step.                |
-| `groups`       | Apply configured group identities.                                |
-| `flow`         | Author a complete, described exchange in a collection.            |
-| `view`         | Select a content-free reading or imported bookmark.               |
-| `walkthrough`  | Author ordered beats with exact reading targets.                  |
-| `drillDown`    | Follow an explicit model reference or recursive module scope.     |
-| `description`  | Explain responsibilities and significant architectural decisions. |
+Claim frontend acceptance, adoption, publication, or migration only after its operation succeeds.

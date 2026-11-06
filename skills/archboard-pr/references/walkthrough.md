@@ -42,7 +42,7 @@ archboard model replay <artifact-directory>/talk --out <artifact-directory>/walk
 
 The checkpoint pins the complete narrative and architecture for the recording.
 The recorder refuses unavailable beats before voice starts.
-It uses the existing local voice, talk storage, and frame renderer.
+Recording uses local voice and rendering.
 The video and picture use Blocks by default.
 The talk keeps the layout, so `model replay` draws it again.
 Replay reads the retained talk without starting another voice session or consulting mutable model files.

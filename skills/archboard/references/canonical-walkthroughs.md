@@ -81,7 +81,7 @@ Retain the observed reading before recording or sharing it.
 Use the existing publication workflow when another checkout needs that history.
 Local retention alone establishes no remote availability.
 
-Recording uses the existing local voice, talk storage, and frame renderer.
+Recording uses local voice and rendering.
 Every beat must be available before voice starts.
 The recording artifact keeps one exact model and the narrative for offline replay.
 That artifact is separate from authored walkthrough and proposal inputs.
@@ -94,7 +94,7 @@ Voice narration reads the narrative source separately from its target.
 The pane reports `playback.source`, `expectedSourceRevision`, and `expectedRevision` before voice starts.
 Narration waits until the server accepts that report.
 The browser keeps Narrate unavailable while the picture draws.
-The server resolves that source through the public architecture reader and compares both revision guards.
+Narration starts only when both source and target revisions match.
 A narrative can name a target checkpoint that predates its definition.
 The server keeps the complete capture for later beats, even when authored files change.
 A changed or unavailable source or target refuses the start.

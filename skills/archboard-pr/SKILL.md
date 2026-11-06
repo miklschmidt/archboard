@@ -57,13 +57,8 @@ Keep independent proposals separate when their names match.
 If a proposal predates the code, follow [reconciliation](references/reconcile.md).
 Documentation of an already-implemented proposal needs no additional architectural proposal.
 
-Read the predecessor and keep its complete revision.
-Claim affected subjects, state, and structure scopes through `model claim`.
-Create or edit the draft through `model edit` using the consumer compact-proposal recipe.
-One proposal can span modules, outgoing relationships, independent flows, and walkthroughs.
-Preserve continuing IDs, source evidence, document references, and authored order.
-Use the draft's stable state ID for later edits.
-Release its claim when the authoring intent ends.
+Follow the consumer proposal recipe in the loaded `archboard` skill to create or edit the draft.
+Preserve source evidence, document references, and authored order.
 
 Compare against the actual review base:
 
@@ -85,25 +80,10 @@ Done: the proposal describes the implemented change, and comparison evidence acc
 ## Render and narrate
 
 Follow [renders](references/renders.md) for exact canonical selectors and visual inspection.
-Retain the selected architecture before recording or sharing a pinned reading.
-Use `model render` for SVG and `model rasterize` for PNG.
-Use captions and alt text that name the scope, selected state, and change.
-Exports draw the selected state's default comparison, including removed subjects and unresolved marks.
-The render command exposes no comparison-base flag.
-Use `model compare` to inspect that default base before describing the picture's changes.
-
 Record a [walkthrough](references/walkthrough.md) when the user requests it or when order across several parts needs explanation.
-Each beat states a complete reading and stable subjects.
-Recording requires an exact retained checkpoint and uses local voice and rendering.
-If a prerequisite is unavailable, report that limit and provide the completed picture and evidence.
-Use existing authorization for setup actions and user-owned sign-in.
-
-Before sharing checkpoint-dependent evidence, inspect publication status.
-Local retention alone does not establish availability to collaborators.
-Publish only to an owner-authorized remote and archive ref through the consumer history workflow.
-Use explicit fetch for missing history.
-Keep configured signing enabled.
-If publication is unavailable, name that limitation and provide standalone artifacts without claiming reproducible shared history.
+Follow the consumer history workflow in the loaded `archboard` skill before sharing checkpoint-dependent evidence.
+If setup or publication is unavailable, report the limit and provide the completed artifacts.
+Use existing authorization for setup and sign-in.
 
 Done: artifacts name their exact reading, and their inspection and history availability are recorded accurately.
 
@@ -161,13 +141,10 @@ Make sure that each image uses an uploaded URL and each video URL occupies its o
 
 A PR that implements a proposal adopts that proposal on its own branch.
 Then the code and its architecture reach the default branch in one merge.
-A source merge never adopts by itself. A PR that merges without the adoption leaves a draft that describes code the default branch already holds.
-Most projects change the default branch only through PRs, so that draft then needs a PR of its own.
 The owner's request to prepare the implementing PR authorizes the adoption.
 
-After the code on the branch does what the proposal says, adopt the proposal. Do this before the PR is ready for review.
-Use the shared `model edit` adoption intent with a fresh complete revision and affected claims.
-Settle blocked ancestry before adoption.
+After the branch implements the proposal, adopt it before review.
+Follow the consumer adoption recipe in the loaded `archboard` skill.
 Commit the adopted vault files with the implementation, and update the state comment.
 
 If the vault lives in another repository, the adoption is a commit in that repository, so it cannot merge with the code.

@@ -1,7 +1,7 @@
 # Canonical schemas
 
-The installed skill derives its schemas from the runtime that supplies the CLI.
-Every installation regenerates them under `generated/`.
+Read the request schema before preparing an operation.
+Installation regenerates the schemas under `generated/`.
 Do not edit those files.
 
 - `model-manifest.schema.json` describes the model identity and current state.
@@ -16,8 +16,8 @@ Do not edit those files.
 
 Read the [canonical model reference](canonical-models.md) for operation examples.
 A valid JSON shape does not establish valid architecture.
-The runtime also resolves names, protects stable identities, enforces claims, and compares the complete input revision.
-It installs one durable intent through the existing signed journal.
+A write resolves names, protects identities, enforces claims, and compares the complete input revision.
+A successful write durably installs the complete intent.
 An incomplete transaction refuses ordinary reads until explicit recovery completes.
 
 Legacy levels remain decodable for explicit migration and exact retained history.

@@ -138,7 +138,7 @@ The result returns `archive`, the local bare Git directory.
 Use `git -C <archive> config` to configure its author identity and signer.
 The archive also reads the owner's global Git configuration.
 Keep required signing enabled.
-The runtime never creates `.git` inside the vault or its enclosing directory.
+The operation creates no `.git` inside the vault or its enclosing directory.
 Initialization refuses source repositories and machine state inside a source repository.
 Repeated initialization returns the same archive without replacing its content.
 

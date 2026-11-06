@@ -9,7 +9,6 @@ description: >-
 # Work on Archboard
 
 The authored inputs in `.archboard/vault` describe this repository.
-A proposal is a draft architectural state across modules, flows, and walkthroughs.
 Use [the consumer skill](../archboard/SKILL.md) for commands and schemas.
 Use [the vault guide](../../.archboard/README.md) for repository context.
 Discover actual authority through `archboard model read` before authoring.
@@ -28,15 +27,8 @@ Record its stable state ID, predecessor, model, and vault in the task plan.
 One proposal can span several modules and flow collections.
 Matching names never combine independent proposals.
 
-If a model has no current architecture, create a planning-root proposal against its empty baseline.
-Keep unbuilt subjects proposed until explicit adoption.
-Claim the affected subjects, state, and structure scopes through the shared model writer.
+For planning roots, claims, and legacy refusals, follow the consumer skill.
 Release claims when the authoring intent ends.
-
-If `model read` returns `LEGACY_AUTHORITY`, follow [explicit migration](../archboard/references/legacy-migration.md).
-Preserve original bytes and independent drafts until the owner authorizes complete mappings and installation.
-Use retained originals for exact historical evidence.
-The retired `board` commands provide no live authoring route.
 
 ## Finish the change
 
@@ -58,11 +50,7 @@ A code merge, approval, or retained checkpoint never adopts architecture.
 Shelve an abandoned proposal with its reason through the same model edit operation.
 Commit the affected authored inputs with the work.
 
-Retain exact history before sharing a reading or recording a walkthrough.
-Publish the independent archive explicitly when collaborators need those checkpoints.
-A source push alone does not share it.
-Keep configured Git signing enabled.
-Use `model recover` in the original checkout when interrupted installation requires recovery.
+Before sharing evidence, follow the consumer history, publication, and recovery recipes.
 
 ## Maintain consumer guidance
 
@@ -75,7 +63,7 @@ Put repository-specific detail in worked examples.
 When a change alters evaluated behavior, update the affected scenarios and coverage under `evals/`.
 Keep evaluation inputs outside the distributed skill.
 Use [evaluation procedures](../../evals/README.md) for deterministic validation.
-Run model evaluations only when a person requests them.
+Leave model evaluations to the person who runs them.
 
 Measure workflow completion and total tokens, including discovery and recovery.
 Compare runs only under the same product contract.

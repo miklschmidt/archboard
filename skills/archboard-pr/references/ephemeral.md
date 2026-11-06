@@ -20,7 +20,7 @@ archboard model archive-init -C "$pr_evidence_root"
 
 Configure the returned private archive's Git identity and signer through the consumer private-history recipe.
 Keep required signing enabled.
-Initialize the canonical planning model through the shared installer:
+Initialize the planning model:
 
 ```bash
 archboard model init --name 'Review evidence' --operation-id initialize-review --writer agent --doing 'Initialize review evidence' -C "$pr_evidence_root"

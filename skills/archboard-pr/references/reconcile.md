@@ -25,7 +25,7 @@ A blocked descendant must wait for its ancestor's settlement.
 
 Preserve the retained baseline that established each conflict.
 Keep proposal-side disputed meaning until explicit settlement.
-The shared writer installs safe inherited changes and descendant standing together.
+Safe inherited changes and descendant standing take effect together.
 Use the returned complete revision for the next operation.
 A changed request needs a new operation identity.
 
