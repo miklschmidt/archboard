@@ -1,5 +1,5 @@
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
-import type { BrowserSchemas } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserDynamicApproval } from "#shared/dynamic-approval/schemas/approval.ts";
+import type { BrowserSchemas } from "#shared/browser/schemas/snapshot.ts";
 
 import type {
 	BrowserAccount,
@@ -13,7 +13,7 @@ import type {
 	BrowserSnapshot,
 	BrowserVoiceContext,
 	BrowserWorkhorses,
-} from "#shared/schemas/browser/snapshot.ts";
+} from "#shared/browser/schemas/snapshot.ts";
 import type { OperationId, ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 import type {
 	CodexResponseByMethod,

@@ -3,12 +3,12 @@ import type {
 	CoordinatorCallbacks,
 } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import type { CodexRealtimeGeneration } from "#runtime/services/realtime/contract.ts";
-import type { BrowserVoiceContext } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserVoiceContext } from "#shared/browser/schemas/snapshot.ts";
 import {
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_WITHHELD_MAX_UTF8_BYTES,
-} from "#shared/schemas/browser/vocabulary.ts";
+} from "#shared/browser/schemas/vocabulary.ts";
 
 /**
  * What the page is shown of a host's text: the text itself, cut at the wire's byte limit, and with

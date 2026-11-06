@@ -4,7 +4,7 @@ import {
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_WITHHELD_MAX_UTF8_BYTES,
-} from "#shared/schemas/browser/vocabulary.ts";
+} from "#shared/browser/schemas/vocabulary.ts";
 import type { CoordinatorCallbackDelivery } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import type { CodexRealtimeGeneration } from "#runtime/services/realtime/contract.ts";
 

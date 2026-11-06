@@ -7,7 +7,7 @@ import type {
 	CodexWorkbenchGateway,
 } from "#server/protocol/gateway/contract.ts";
 import type { BrowserGatewayMessage } from "#shared/protocol/gateway-envelope.ts";
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
 import type { BrowserGatewayAction } from "#shared/protocol/gateway-envelope.ts";
 

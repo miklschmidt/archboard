@@ -2,7 +2,7 @@
 // commands and media-ready publications and answers realtime commands the way
 // the gateway does.
 
-import type { BrowserCommandLease, BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserCommandLease, BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
@@ -20,7 +20,7 @@ import type {
 	BrowserWorkbenchSnapshotMessage,
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
-} from "#ui/state/transport/contract.ts";
+} from "#ui/transport/state/contract.ts";
 
 /**
  * Does nothing.

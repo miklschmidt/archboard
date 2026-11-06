@@ -5,7 +5,7 @@ import type {
 	BrowserContextDelivery,
 	BrowserSettings,
 	BrowserVoice,
-} from "#shared/schemas/browser/snapshot.ts";
+} from "#shared/browser/schemas/snapshot.ts";
 import type { ApprovalOwnerView } from "#runtime/services/approvals/contract.ts";
 import type {
 	BrowserProjectionModel,

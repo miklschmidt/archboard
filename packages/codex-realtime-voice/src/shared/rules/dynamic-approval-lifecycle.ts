@@ -1,4 +1,4 @@
-import type { DYNAMIC_APPROVAL_STATES } from "#shared/schemas/dynamic-approval/effects.ts";
+import type { DYNAMIC_APPROVAL_STATES } from "#shared/dynamic-approval/schemas/effects.ts";
 import type { z } from "zod";
 
 type DynamicApprovalStateName = (typeof DYNAMIC_APPROVAL_STATES)[number];

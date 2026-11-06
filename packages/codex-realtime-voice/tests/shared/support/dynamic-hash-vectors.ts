@@ -1,4 +1,4 @@
-import type { DynamicApprovalCanonicalInput } from "#shared/schemas/dynamic-approval/approval.ts";
+import type { DynamicApprovalCanonicalInput } from "#shared/dynamic-approval/schemas/approval.ts";
 
 export interface DynamicApprovalHashVector {
 	readonly name: string;

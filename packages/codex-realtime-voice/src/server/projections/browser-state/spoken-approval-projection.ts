@@ -1,5 +1,5 @@
-import type { BrowserSchemas } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserSpokenApproval } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSchemas } from "#shared/browser/schemas/snapshot.ts";
+import type { BrowserSpokenApproval } from "#shared/browser/schemas/snapshot.ts";
 import type { ApprovalOwnerView } from "#runtime/services/approvals/contract.ts";
 import type {
 	SpokenApprovalFallbackReason,

@@ -1,4 +1,4 @@
-import type { BrowserCommandLease, BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserCommandLease, BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 import type { BrowserCommandId, IdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	createBrowserLeaseManager,

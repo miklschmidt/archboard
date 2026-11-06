@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,

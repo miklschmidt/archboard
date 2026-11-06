@@ -1,5 +1,5 @@
-import type { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import type { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
+import type { BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 import {
 	CodexWorkbenchGatewayError,
 	type BrowserLeaseRecord,

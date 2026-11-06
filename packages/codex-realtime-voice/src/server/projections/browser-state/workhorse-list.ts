@@ -9,8 +9,8 @@
 // the tab shows it whatever conversation is shown.
 
 import type { ApprovalFamily, CodexApprovalBroker } from "#runtime/services/approvals/contract.ts";
-import { BROWSER_WORKHORSE_LIMIT } from "#shared/schemas/browser/session.ts";
-import { type BrowserWorkhorses } from "#shared/schemas/browser/snapshot.ts";
+import { BROWSER_WORKHORSE_LIMIT } from "#shared/browser/schemas/session.ts";
+import { type BrowserWorkhorses } from "#shared/browser/schemas/snapshot.ts";
 import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
 import type { CodexWorkbenchTabSession } from "#server/protocol/generation/session-contract.ts";
 import type { CodexWorkbenchWorkhorse } from "#server/services/sessions/workhorses.ts";

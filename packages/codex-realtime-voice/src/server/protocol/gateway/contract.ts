@@ -3,8 +3,8 @@ import type {
 	BrowserCommandLease,
 	BrowserSnapshot,
 	DeliveryOutcome,
-} from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserDynamicApprovalResponse } from "#shared/schemas/dynamic-approval/approval.ts";
+} from "#shared/browser/schemas/snapshot.ts";
+import type { BrowserDynamicApprovalResponse } from "#shared/dynamic-approval/schemas/approval.ts";
 import type {
 	BrowserCommandId,
 	ChildEpoch,

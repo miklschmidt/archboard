@@ -1,11 +1,11 @@
 // The gateway double behind the prepared-command tests: a subscribed transport over a fake
 // socket that hands out fresh leases and can hold a claim or a command.
 
-import { createBrowserWorkbenchTransport } from "#ui/clients/transport/transport.ts";
+import { createBrowserWorkbenchTransport } from "#ui/transport/clients/transport.ts";
 import {
 	type BrowserCommandDraft,
 	type BrowserWorkbenchTransport,
-} from "#ui/state/transport/contract.ts";
+} from "#ui/transport/state/contract.ts";
 import {
 	FakeSocket,
 	answerSnapshots,

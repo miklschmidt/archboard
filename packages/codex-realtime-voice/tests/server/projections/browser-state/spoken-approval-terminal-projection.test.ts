@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { createCodexApprovalBroker } from "#runtime/services/approvals/broker.ts";
 import { type SpokenApprovalSnapshot } from "#runtime/protocol/spoken-approval/contract.ts";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import { parseRealtimeItemId, parseRealtimeSessionId } from "#shared/protocol/realtime-contract.ts";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";

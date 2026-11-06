@@ -1,4 +1,4 @@
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type {
 	ChildEpoch,
 	ChildId,

@@ -44,7 +44,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/transport/socket-run.ts",
+        "path": "packages/codex-realtime-voice/src/ui/transport/clients/socket-run.ts",
         "symbol": "send"
       },
       "id": "vKEsyHFk/yejBBUFY#EAT8ges2",

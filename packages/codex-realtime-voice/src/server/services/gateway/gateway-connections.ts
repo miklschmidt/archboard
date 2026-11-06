@@ -1,9 +1,9 @@
-import type { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import type { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type {
 	BrowserCommandLease,
 	BrowserOperationOutcome,
 	BrowserSnapshot,
-} from "#shared/schemas/browser/snapshot.ts";
+} from "#shared/browser/schemas/snapshot.ts";
 import type { IdentityAuthorities, JsonRpcRequestId } from "@archboard/codex-app-server/identity";
 import {
 	CodexWorkbenchGatewayError,

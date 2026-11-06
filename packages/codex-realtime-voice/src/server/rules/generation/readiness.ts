@@ -1,5 +1,5 @@
 import type { CodexProcessSnapshot } from "@archboard/codex-app-server/process";
-import type { BrowserLogin, BrowserReadiness } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserLogin, BrowserReadiness } from "#shared/browser/schemas/snapshot.ts";
 import type { BrowserAccountProjectionInput } from "#server/protocol/projection/projection-contract.ts";
 
 const READINESS_REASON_MAX_BYTES = 512;

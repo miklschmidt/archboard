@@ -8,7 +8,7 @@ import type {
 	ReverseResponse,
 	TransportServerRequest,
 } from "@archboard/codex-app-server/transport";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { type BrowserOwnerProjection } from "#server/protocol/projection/projection-contract.ts";

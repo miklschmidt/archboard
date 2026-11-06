@@ -1,5 +1,5 @@
 import { BROWSER_SNAPSHOT_DELTA_KEYS } from "#shared/protocol/gateway-envelope.ts";
-import type { BrowserSnapshot, BrowserTimeline } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot, BrowserTimeline } from "#shared/browser/schemas/snapshot.ts";
 import type { BrowserSnapshotDelta } from "#server/protocol/gateway/contract.ts";
 
 export const BROWSER_SNAPSHOT_MAX_BYTES = 1_048_576;

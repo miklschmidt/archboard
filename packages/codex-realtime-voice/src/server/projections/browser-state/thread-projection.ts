@@ -2,7 +2,7 @@ import type {
 	BrowserThreadLink,
 	BrowserThreadLinkSourcePresentation,
 	BrowserTimeline,
-} from "#shared/schemas/browser/snapshot.ts";
+} from "#shared/browser/schemas/snapshot.ts";
 import type {
 	BrowserProjectionInput,
 	CodexTimelineItemProjectionInput,

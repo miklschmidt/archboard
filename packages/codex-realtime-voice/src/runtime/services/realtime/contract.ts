@@ -1,4 +1,4 @@
-import type { VoiceNarrative } from "#shared/schemas/browser/snapshot.ts";
+import type { VoiceNarrative } from "#shared/browser/schemas/snapshot.ts";
 import type {
 	AnswerSdp,
 	CreateOfferSdp,

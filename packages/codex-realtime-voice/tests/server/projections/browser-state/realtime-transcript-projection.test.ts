@@ -5,7 +5,7 @@ import { type CodexRealtimeAdapter } from "#runtime/services/realtime/contract.t
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
 import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { SessionParams } from "@archboard/codex-app-server/session";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,

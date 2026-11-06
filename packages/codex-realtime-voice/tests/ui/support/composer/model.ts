@@ -2,9 +2,9 @@
 // authority, so a snapshot the contract would refuse fails here instead of
 // proving something about a shape the server can never publish.
 
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
-import type { BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
+import type { BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
@@ -14,8 +14,8 @@ import {
 	type BrowserWorkbenchCommandResult,
 	type BrowserWorkbenchCommandTarget,
 	type BrowserWorkbenchState,
-} from "#ui/state/transport/contract.ts";
-import type { WorkbenchComposerTransport } from "#ui/state/composer/contract.ts";
+} from "#ui/transport/state/contract.ts";
+import type { WorkbenchComposerTransport } from "#ui/composer/state/contract.ts";
 
 const authorities = createIdentityAuthorities();
 const authority = authorities.identity;

@@ -50,7 +50,7 @@ shared component. Put both on a plain `className` string, or put the role on an 
 
 The composer sends with Enter. While a turn runs, Enter steers it and Ctrl or Cmd with Enter
 queues the message to run after it. Shift with Enter starts a new line. The logic is in
-`packages/codex-realtime-voice/src/ui/rules/composer`. The composer says which board the agent will read, from
+`packages/codex-realtime-voice/src/ui/composer/rules`. The composer says which board the agent will read, from
 `AgentView.context`.
 
 ## Approvals

@@ -1,5 +1,5 @@
 import type { BrowserOwnerProjection } from "#server/protocol/projection/projection-contract.ts";
-import type { BrowserReadiness } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserReadiness } from "#shared/browser/schemas/snapshot.ts";
 import type {
 	BrowserCommandId,
 	ChildEpoch,

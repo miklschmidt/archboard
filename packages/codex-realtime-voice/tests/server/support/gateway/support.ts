@@ -1,4 +1,4 @@
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
+import type { BrowserDynamicApproval } from "#shared/dynamic-approval/schemas/approval.ts";
 import {
 	createIdentityAuthorities,
 	type ChildEpoch,
@@ -9,9 +9,9 @@ import {
 	type BrowserCommandId,
 } from "@archboard/codex-app-server/identity";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type { BrowserOwnerProjection } from "#server/protocol/projection/projection-contract.ts";
-import type { BrowserReadiness } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserReadiness } from "#shared/browser/schemas/snapshot.ts";
 import type {
 	BrowserWorkbenchActions,
 	BrowserActionResult,

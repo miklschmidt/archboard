@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/ui/clients/transport"
+    "path": "packages/codex-realtime-voice/src/ui/transport/clients"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#941UBxya",

@@ -365,7 +365,7 @@ const REPLAY_PAGE_GLOBAL = "archboardReplay";
 /**
  * How many samples the shell's voice meter reads a level from: the window of a Web Audio analyser
  * left at its default size, which is what the meter the orb follows live is
- * (`packages/codex-realtime-voice/src/ui/clients/output-level`).
+ * (`packages/codex-realtime-voice/src/ui/output-level/clients`).
  */
 const LEVEL_WINDOW_SAMPLES = 2048;
 

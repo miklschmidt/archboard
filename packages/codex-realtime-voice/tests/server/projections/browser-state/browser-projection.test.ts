@@ -3,8 +3,8 @@ import { expect, test } from "bun:test";
 import { type CoordinatorCallbackDelivery } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
 import type { CodexRealtimeGeneration } from "#runtime/services/realtime/contract.ts";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
-import { type BrowserReadiness } from "#shared/schemas/browser/snapshot.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
+import { type BrowserReadiness } from "#shared/browser/schemas/snapshot.ts";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,

@@ -6,7 +6,7 @@ import {
 	type BrowserGatewayMessage,
 	type BrowserGatewaySnapshotMessage,
 } from "#shared/protocol/gateway-envelope.ts";
-import { type BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import { type BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 import {
 	type BrowserWorkbenchConnection,
 	type CodexWorkbenchGateway,

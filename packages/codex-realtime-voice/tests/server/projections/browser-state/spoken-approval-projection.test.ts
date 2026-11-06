@@ -5,8 +5,8 @@ import type {
 	SpokenApprovalFallbackReason,
 	SpokenApprovalSnapshot,
 } from "#runtime/protocol/spoken-approval/contract.ts";
-import { BROWSER_SPOKEN_APPROVAL_REASONS } from "#shared/schemas/browser/spoken-approval.ts";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { BROWSER_SPOKEN_APPROVAL_REASONS } from "#shared/browser/schemas/spoken-approval.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import { parseRealtimeItemId, parseRealtimeSessionId } from "#shared/protocol/realtime-contract.ts";
 import {
 	createIdentityAuthorities,

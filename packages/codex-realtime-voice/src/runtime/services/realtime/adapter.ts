@@ -1,4 +1,4 @@
-import type { VoiceNarrative } from "#shared/schemas/browser/snapshot.ts";
+import type { VoiceNarrative } from "#shared/browser/schemas/snapshot.ts";
 import { watchContextUpdates } from "#runtime/rules/realtime/context-updates.ts";
 import { INITIAL_REALTIME_STATE, transitionRealtimeState } from "#shared/rules/realtime-state.ts";
 import {

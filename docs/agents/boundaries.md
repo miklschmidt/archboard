@@ -683,15 +683,15 @@ An agent tool cannot change it.
 Context delivery retains ordering, freshness, authorship, and the distinction between quiet context and speech.
 Application context and agent speech grant no user authority.
 
-`ui/clients/transport/` owns one socket run, one lease, command targeting, and recovery after gaps in the event stream.
-`ui/clients/wire/` parses messages with the shared model.
-`ui/clients/media/` binds that transport to the WebRTC session and its audio elements.
-`ui/clients/realtime/` owns microphone capture, negotiation, playback, and cleanup.
-`ui/clients/output-level/` measures playback volume.
-`ui/clients/voice-client/` opens the socket with the chat id and the tab session id from `sessionStorage`, attaches the transport and media owner, and publishes one frozen state.
+`ui/transport/clients/` owns one socket run, one lease, command targeting, and recovery after gaps in the event stream.
+`ui/wire/clients/` parses messages with the shared model.
+`ui/media/clients/` binds that transport to the WebRTC session and its audio elements.
+`ui/realtime/clients/` owns microphone capture, negotiation, playback, and cleanup.
+`ui/output-level/clients/` measures playback volume.
+`ui/voice-client/clients/` opens the socket with the chat id and the tab session id from `sessionStorage`, attaches the transport and media owner, and publishes one frozen state.
 An uncertain delivery stays in that state as a failure, and nothing retries it.
 A host that owns its socket attaches the transport itself.
-`ui/state/` holds the thread-link, composer, queue, approval, and timeline controllers, with their rules in `ui/rules/`.
+`ui/thread-link/`, `ui/composer/`, `ui/queue/`, `ui/approvals/` and `ui/timeline/` hold their controllers in `state/` and their rules in `rules/`.
 
 Tests move with their behavior into `packages/codex-realtime-voice/tests/`.
 They retain the matching `shared/`, `runtime/`, `server/`, and `ui/` owners.

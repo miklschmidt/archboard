@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { boundedWireText } from "#shared/schemas/browser/scalars.ts";
+import { boundedWireText } from "#shared/browser/schemas/scalars.ts";
 
 const SPOKEN_APPROVAL_CLASSIFIER_SHA256 =
 	"b0c910734cc79a8600cc549d6fd59f0783f2abf8676e9a03fba1a0a734e8a573";

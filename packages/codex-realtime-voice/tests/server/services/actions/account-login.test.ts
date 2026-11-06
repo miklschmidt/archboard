@@ -4,7 +4,7 @@ import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { createCodexWorkbenchGateway } from "#server/services/gateway/gateway.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import {
 	projectionHarness,
 	type HarnessOverrides,

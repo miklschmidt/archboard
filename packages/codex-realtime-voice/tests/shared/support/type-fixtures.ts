@@ -1,8 +1,8 @@
-import type { BrowserDto } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserDto } from "#shared/browser/schemas/snapshot.ts";
 import type {
 	BrowserDynamicApprovalResponse,
 	DynamicApprovalState,
-} from "#shared/schemas/dynamic-approval/approval.ts";
+} from "#shared/dynamic-approval/schemas/approval.ts";
 
 type Assert<T extends true> = T;
 type Equal<A, B> = [A, B] extends [B, A] ? true : false;

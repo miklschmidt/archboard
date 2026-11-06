@@ -7,7 +7,7 @@
 import { z } from "zod";
 import { CODEX_REALTIME_MS } from "@archboard/timing";
 import { EXECUTION_CONTEXT_KEYS } from "#runtime/rules/host/context.ts";
-import { BROWSER_VOICE_CONTEXT_TOPIC_MAX_UTF8_BYTES } from "#shared/schemas/browser/vocabulary.ts";
+import { BROWSER_VOICE_CONTEXT_TOPIC_MAX_UTF8_BYTES } from "#shared/browser/schemas/vocabulary.ts";
 import type {
 	AnnouncedContext,
 	ContextAnnouncementSource,
