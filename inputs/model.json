@@ -3,25 +3,25 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "w4XB6eBv",
-    "name": "WebGL2 paints where WebGPU does not, and the strip painters keep their parts",
-    "summary": "A page with no real WebGPU adapter paints with Vello GPU on a hardware WebGL2 context before it falls back to the CPU, and both strip painters keep their settled parts, so a frame no longer rebuilds and cuts every path.",
+    "id": "jRNHx2a1",
+    "name": "A flowchart lays out from its flow and a flow opens in the reading that fits",
+    "summary": "The flowchart lays a flow out from its structure in one pass, breaks a long run into columns and ends every long line at a lettered jump, so a long flow fits a desktop pane without lines round its blocks, and a flow opens in the reading that its pane shows larger.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0074-webgl2-paints-where-webgpu-does-not.md"
+        "path": "docs/adr/0073-a-flowchart-lays-out-from-its-flow-and-a-flow-opens-in-the-reading-that-fits.md"
       },
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/design/painter-webgl-fallback.md"
+        "path": "docs/design/flowchart-layout-research.md"
       }
     ],
-    "predecessor": "JTZvj2vi",
-    "baseline": "992cb91f8e26f617e87b985102d6b085a671808a",
-    "createdAt": "2026-11-04T21:58:04.894Z",
-    "adoptedAt": "2026-11-06T11:06:19.481Z",
-    "reason": "The WebGL2 fallback and the strip painters' parts are merged on main in #42 (ADR 0074). archboard check code on this state finds its bindings and anchors in the source.",
-    "previousCurrent": "JTZvj2vi"
+    "predecessor": "w4XB6eBv",
+    "baseline": "9194e44da5a324e84e6ffdba346147f03b566ed8",
+    "createdAt": "2026-11-06T11:22:18.419Z",
+    "adoptedAt": "2026-11-06T11:23:04.454Z",
+    "reason": "The flowchart layout from the flow and the reading that fits are merged on main in #34 (ADR 0073). This proposal carries vdbwhuzZ's changes onto current, because vdbwhuzZ follows a former current state.",
+    "previousCurrent": "w4XB6eBv"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
@@ -1555,6 +1555,8 @@
     "vKEsyHFk#MzuJ4Y5F",
     "vKEsyHFk#8I2z7YLx",
     "vKEsyHFk#fmkuK9be",
-    "vKEsyHFk#CjQhZFoE"
+    "vKEsyHFk#CjQhZFoE",
+    "vKEsyHFk/gbyqW4H3#8WJV0Mer",
+    "vKEsyHFk/gbyqW4H3#NR1ARSyH"
   ]
 }
