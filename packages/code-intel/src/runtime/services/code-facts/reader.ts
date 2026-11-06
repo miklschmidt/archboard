@@ -35,6 +35,7 @@ import { type AdapterReading, readingsIn } from "#runtime/operations/code-facts/
 import type {
 	FileFacts,
 	ImportResolver,
+	ModuleReading,
 	ParsedFacts,
 	ParseFacts,
 	ResolvedImport,
@@ -141,6 +142,22 @@ function nameThere(symbol: string, local: string, imported: string): string {
 }
 
 /**
+ * Separate production dependencies from test imports after reading a module.
+ * @param parsed The file's cached facts.
+ * @param reading What its module says about the file.
+ * @returns The facts with test-only dependencies separated.
+ */
+function moduleFacts(parsed: ParsedFacts, reading: ModuleReading | undefined): ParsedFacts {
+	if (reading?.test !== true) return parsed;
+	return {
+		...parsed,
+		imports: [],
+		references: [],
+		testImports: [...(parsed.testImports ?? []), ...parsed.imports],
+	};
+}
+
+/**
  * Where each reference and import of a file leads, for this pass: through an
  * import, else where the file's module says.
  * @param parsed The cached facts.
@@ -155,9 +172,10 @@ async function resolved(
 	adapter: SyntaxFacts["adapter"],
 	resolver: ImportResolver,
 ): Promise<SyntaxFacts> {
-	const imports = parsed.imports.map((found) => resolver.resolve(file, found));
 	const moduleReading = await resolver.inModule?.(file, parsed);
-	const references = parsed.references.map(({ through, ...reference }, index) => {
+	const read = moduleFacts(parsed, moduleReading);
+	const imports = read.imports.map((found) => resolver.resolve(file, found));
+	const references = read.references.map(({ through, ...reference }, index) => {
 		const target =
 			through === undefined
 				? moduleReading?.targets[index]
@@ -170,6 +188,9 @@ async function resolved(
 		definitions: moduleReading?.definitions ?? parsed.definitions,
 		references,
 		imports,
+		...(read.testImports === undefined
+			? {}
+			: { testImports: read.testImports.map((found) => resolver.resolve(file, found)) }),
 		unparsed: parsed.unparsed,
 	};
 }

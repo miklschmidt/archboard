@@ -72,6 +72,12 @@ interface Start {
 	readonly rest: readonly string[];
 }
 
+/** A possible declaring file and the module's names below that file's module. */
+interface Declaration {
+	readonly file: string;
+	readonly names: readonly string[];
+}
+
 /** The crates of one checkout, read once in a pass. */
 interface Crates {
 	/**
@@ -90,6 +96,11 @@ interface Crates {
 	 * @param dependency The dependency.
 	 */
 	dependencyPackage(from: RustPackage, dependency: CargoDependency): RustPackage | undefined;
+	/**
+	 * Possible declarations of a file's module, including inline module paths.
+	 * @param place The file's place.
+	 */
+	declarationsOf(place: Place): readonly Declaration[];
 	/**
 	 * Where a path leads from a file, read from the file's module.
 	 * @param from The file.
@@ -396,6 +407,24 @@ function cratesOf(checkout: CheckoutFiles, read: ReadText): Crates {
 	};
 
 	/**
+	 * Possible declarations of a file's module. Parsed declarations decide
+	 * which candidates actually include it. An unrelated ancestor file cannot
+	 * hide an inline module, and colocated crate roots can share a module.
+	 * @param place The file's place.
+	 * @returns Candidate files and the names each must declare.
+	 */
+	const declarationsOf = (place: Place): Declaration[] =>
+		place.module.flatMap((_, count) => {
+			const files =
+				count === 0
+					? place.package.roots.filter((root) => directoryOf(root) === directoryOf(place.root))
+					: [moduleFile(place.root, place.module.slice(0, count))];
+			return files.flatMap((file) =>
+				file === undefined ? [] : [{ file, names: place.module.slice(count) }],
+			);
+		});
+
+	/**
 	 * Where a path starts that names no module of its own: a child module of
 	 * the file's module, else a crate the package depends on or its own library.
 	 * @param place The file's place.
@@ -454,6 +483,7 @@ function cratesOf(checkout: CheckoutFiles, read: ReadText): Crates {
 		packageOf,
 		placeOf,
 		dependencyPackage,
+		declarationsOf,
 		/**
 		 * Where a path leads from a file.
 		 * @param from The file.

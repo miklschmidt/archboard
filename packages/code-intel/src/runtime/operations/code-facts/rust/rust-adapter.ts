@@ -29,13 +29,19 @@
 //
 // Each use keeps the imports visible in its scope and whether it names a
 // local binding. Calls and imports under `#[cfg(test)]` are not production
-// dependencies. Code that did not parse holds no facts; its names are kept.
+// dependencies. Out-of-line module declarations record whether their files
+// are test code too, including declarations inside inline modules. Code that
+// did not parse holds no facts; its names are kept.
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
 import type { ParsedFacts } from "#runtime/operations/code-facts/facts.ts";
 import type { Grammar } from "#runtime/services/code-facts/grammars.ts";
 import { definitionsOf, typeName } from "#runtime/operations/code-facts/rust/rust-definitions.ts";
-import { fromFile, nestingOf } from "#runtime/operations/code-facts/rust/rust-imports.ts";
+import {
+	fromFile,
+	importsOf,
+	nestingOf,
+} from "#runtime/operations/code-facts/rust/rust-imports.ts";
 import {
 	bindReferences,
 	type WrittenUse,
@@ -398,6 +404,31 @@ function testItems(skipped: readonly Node[]): Node[] {
 }
 
 /**
+ * The modules a file declares out of line and whether each is test-only.
+ * @param declarations The `use`, `mod name;` and `extern crate` declarations.
+ * @param tests The spans of the file's test items.
+ * @param unparsed The spans that did not parse.
+ * @returns Module paths mapped to whether every declaration is test-only.
+ */
+function modulesOf(
+	declarations: readonly Node[],
+	tests: Spans,
+	unparsed: Spans,
+): Map<string, boolean> {
+	const modules = new Map<string, boolean>();
+	const parsed = declarations.filter(
+		(node) => node.type === "mod_item" && !unparsed.holds(node.startIndex),
+	);
+	for (const node of parsed) {
+		const name = node.childForFieldName("name")?.text;
+		if (name === undefined) continue;
+		const names = [...nestingOf(node), name].join("::");
+		modules.set(names, (modules.get(names) ?? true) && tests.holds(node.startIndex));
+	}
+	return modules;
+}
+
+/**
  * The code facts of one parsed Rust file.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
@@ -443,7 +474,11 @@ function rustFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	return {
 		definitions: definitionsOf(tree.rootNode),
 		...bindReferences(written, imports, binding),
+		testImports: captured.import
+			.filter((node) => !unparsed.holds(node.startIndex) && testSpans.holds(node.startIndex))
+			.flatMap(importsOf),
 		unparsed: unparsedOf(captured.unparsed),
+		rustModules: modulesOf(captured.import, testSpans, unparsed),
 	};
 }
 

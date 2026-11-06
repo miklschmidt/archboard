@@ -176,7 +176,15 @@ interface ParsedFacts {
 	readonly definitions: readonly Definition[];
 	readonly references: readonly (Reference & { readonly through?: ReferenceThroughImport })[];
 	readonly imports: readonly Import[];
+	/** Test-only imports retained for interface checks, never production dependencies. */
+	readonly testImports?: readonly Import[];
 	readonly unparsed: readonly Unparsed[];
+	/**
+	 * Rust: out-of-line module paths below this file's module, joined by `::`.
+	 * A true value means every declaration of that path is under `#[cfg(test)]`.
+	 * A false value preserves a production declaration of the same module.
+	 */
+	readonly rustModules?: ReadonlyMap<string, boolean>;
 }
 
 /**
@@ -237,6 +245,12 @@ interface ModuleReading {
 	readonly definitions: readonly Definition[];
 	/** For each of its references, by index, where it leads, if anywhere. */
 	readonly targets: readonly (Target | undefined)[];
+	/**
+	 * The file is compiled only by a test harness, as a Rust module that a
+	 * `#[cfg(test)] mod name;` declares is. Its definitions stay, and its
+	 * imports and uses are no production dependencies.
+	 */
+	readonly test?: true;
 }
 
 /** Resolves the imports of one checkout for one pass, as one adapter's language does. */
@@ -269,6 +283,8 @@ interface SyntaxFacts {
 	readonly references: readonly (Reference & { readonly target?: Target })[];
 	/** Each import, and the checkout file it resolves to where the adapter can resolve it. */
 	readonly imports: readonly ResolvedImport[];
+	/** Test-only imports retained for interface checks, never production dependencies. */
+	readonly testImports?: readonly ResolvedImport[];
 	readonly unparsed: readonly Unparsed[];
 }
 

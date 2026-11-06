@@ -277,6 +277,7 @@ async function readModule(
 
 /**
  * Imports by external tests that bypass a module's public entry files.
+ * An adapter can identify test imports inside an ordinary source path too.
  * @param facts The pass.
  * @param checkout The module's checkout.
  * @param exposure The module's public entry files and possible callers.
@@ -288,8 +289,8 @@ async function privateTestImports(
 	exposure: ModuleExposure,
 ): Promise<TestImport[]> {
 	const imports: TestImport[] = [];
-	for (const file of exposure.outside.filter(isTestPath)) {
-		// oxlint-disable-next-line no-await-in-loop -- one test at a time yields between parses; the pass caches each file
+	for (const file of exposure.outside) {
+		// oxlint-disable-next-line no-await-in-loop -- one file at a time yields between parses; the pass caches each file
 		const read = await facts.read(checkout, file);
 		if (read === undefined || read.adapter === "text") continue;
 		imports.push(...privateImportsOf(read, exposure));
@@ -304,7 +305,10 @@ async function privateTestImports(
  * @returns The imports.
  */
 function privateImportsOf(read: SyntaxFacts, exposure: ModuleExposure): TestImport[] {
-	const imports = read.imports.flatMap((found): TestImport[] => {
+	const imports = [
+		...(isTestPath(read.path) ? read.imports : []),
+		...(read.testImports ?? []),
+	].flatMap((found): TestImport[] => {
 		const { resolved } = found;
 		if (resolved === undefined || resolved.endsWith("/")) return [];
 		const privateFile =
