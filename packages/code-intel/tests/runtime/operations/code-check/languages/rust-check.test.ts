@@ -31,6 +31,7 @@ process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const SHOP = "github.com/test/shop";
 const CHECKOUT = "crates/shop/src/checkout.rs";
 const ENTRY = "crates/ledger/src/entry.rs";
+const PRIVATE_TEST = "use ledger::entry::post;\nfn test_post() { post(5); }\n";
 let outcome: CodeCheckOutcome;
 
 /**
@@ -97,6 +98,16 @@ beforeAll(async () => {
 			}),
 		),
 	);
+	write(shop, {
+		[CHECKOUT]: `${readFileSync(join(shop, CHECKOUT), "utf8")}
+#[cfg(test)] mod private_test;
+#[cfg(test)] mod inline_test { ${PRIVATE_TEST} }
+`,
+		"crates/shop/src/checkout/private_test.rs": PRIVATE_TEST,
+		"crates/shop/tests/inner.rs": `#![cfg(test)]\n${PRIVATE_TEST}`,
+		"crates/shop/tests/plain.rs": PRIVATE_TEST,
+		"crates/shop/tests/public.rs": "use ledger::record;\nfn test_record() { record(5); }\n",
+	});
 	git(scratch, shop, "add", "-A");
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the code");
 	register(scratch, { [SHOP]: shop });
@@ -153,12 +164,31 @@ test("anchors, binding symbols and the relationships between parts bound to Rust
 			// The cart's relationship to the entry stands for these two calls into the ledger.
 			"RELATIONSHIP_UNDRAWN pLed information",
 			"RELATIONSHIP_UNDRAWN pMoney information",
+			// Each external Rust test import retains the private-interface diagnostic.
+			...Array.from({ length: 4 }, () => "TEST_IMPORT_UNEXPOSED pLed warning"),
 		].toSorted(),
 	);
 	expect(outcome.skipped.map((each) => each.reason)).not.toContain("text-only");
 	// The library's interface is read; the binary `shop` has no library, so it exposes none.
 	const unknown = outcome.skipped.filter((each) => each.reason === "exposure-unknown");
 	expect(unknown.map((each) => each.subject?.id)).toEqual(["pShop"]);
+});
+
+test("test-only Rust imports retain private-interface warnings without becoming production dependencies", () => {
+	const imports = outcome.findings.filter((each) => each.code === "TEST_IMPORT_UNEXPOSED");
+	expect(
+		imports
+			.flatMap((each) => each.evidence ?? [])
+			.map((each) => [each.path, each.symbol])
+			.toSorted(),
+	).toEqual(
+		[
+			[CHECKOUT, "post"],
+			["crates/shop/src/checkout/private_test.rs", "post"],
+			["crates/shop/tests/inner.rs", "post"],
+			["crates/shop/tests/plain.rs", "post"],
+		].toSorted(),
+	);
 });
 
 test("a call reaches a module of another crate through a path from the crate's name, and a manifest's dependency reaches the crate", () => {

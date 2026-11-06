@@ -37,7 +37,11 @@ import type { Node, QueryCapture, Tree } from "web-tree-sitter";
 import type { ParsedFacts } from "#runtime/operations/code-facts/facts.ts";
 import type { Grammar } from "#runtime/services/code-facts/grammars.ts";
 import { definitionsOf, typeName } from "#runtime/operations/code-facts/rust/rust-definitions.ts";
-import { fromFile, nestingOf } from "#runtime/operations/code-facts/rust/rust-imports.ts";
+import {
+	fromFile,
+	importsOf,
+	nestingOf,
+} from "#runtime/operations/code-facts/rust/rust-imports.ts";
 import {
 	bindReferences,
 	type WrittenUse,
@@ -470,6 +474,9 @@ function rustFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	return {
 		definitions: definitionsOf(tree.rootNode),
 		...bindReferences(written, imports, binding),
+		testImports: captured.import
+			.filter((node) => !unparsed.holds(node.startIndex) && testSpans.holds(node.startIndex))
+			.flatMap(importsOf),
 		unparsed: unparsedOf(captured.unparsed),
 		rustModules: modulesOf(captured.import, testSpans, unparsed),
 	};

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-06T11:29:00Z'
-updated_date: '2026-11-06T11:56:00Z'
+updated_date: '2026-11-06T12:01:00Z'
 labels:
   - code-intel
   - bug
@@ -35,6 +35,8 @@ archboard check reports RELATIONSHIP_UNDRAWN 'The code of Painter core reaches P
 4. Run code-intel tests, types, lint; archboard check before/after.
 
 Review repair: record all out-of-line Rust module declarations, follow actual declarations across ancestor files and colocated crate roots, and keep imports when any declaration reaches production code. Cover shared files, inline modules, undeclared files, crate roots, and reuse of the parse cache in the focused code-intel owner.
+
+Review repair R2: retain test-only imports separately from production facts, including inline and inner cfg(test) imports. Let the private-interface check read those imports while ordinary dependency checks continue to ignore them. Extend the existing Rust code-check owner to cover that contract.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -45,4 +47,6 @@ Root cause: rust-adapter.ts testItems (line ~387) skips #[cfg(test)] items only 
 Review scope stays inside the existing code-intel facts adapter and resolver. Package ownership and public contracts stay accurate, so no architecture proposal or consumer guidance change is needed.
 
 Review fixes R1 and S1: the declaration walk now reads actual module declarations across inline paths and colocated crate roots. It preserves shared production modules, duplicate production declarations, and undeclared files. Module facts use a map instead of repeated linear searches, and each pass memoizes classification. The focused owner covers mod.rs and name.rs, inline declarations, two ancestors, crate roots, orphan files, parent edits, and shared parse reuse. Code-intel tests: 370 pass, 2 optional language-server skips, 0 fail. Types and focused source/test lint pass.
+
+Review fix R2: Test-only imports now stay in a separate facts collection. The private-interface check reads that collection across source paths. Production dependencies still exclude those imports and references. The existing Rust code-check owner covers declared test modules, inline tests, inner cfg(test) attributes, ordinary test files, and a public import. Three private-interface warnings were missing before the repair. All four expected warnings now appear. Final evidence: code-intel tests report 371 pass, 2 optional language-server skips, and 0 fail. Both TypeScript projects pass through bunx vp run types. Focused source lint, test lint, and formatting pass. No skill evaluations ran. The canonical model vKEsyHFk stays accurate. Fact analysis (vKEsyHFk/6E6hL0Zk#3CaBjhIM), Cached fact reader (vKEsyHFk/6E6hL0Zk#mR7wPSei), and Code check (vKEsyHFk/HBlhIeSD#5SMX69gS) keep their responsibilities. The model read, Fact analysis inspection, and locality read succeeded. No architecture proposal is needed. The final simplification pass keeps one declaration map and one normalization step for test-only facts.
 <!-- SECTION:NOTES:END -->

@@ -176,6 +176,8 @@ interface ParsedFacts {
 	readonly definitions: readonly Definition[];
 	readonly references: readonly (Reference & { readonly through?: ReferenceThroughImport })[];
 	readonly imports: readonly Import[];
+	/** Test-only imports retained for interface checks, never production dependencies. */
+	readonly testImports?: readonly Import[];
 	readonly unparsed: readonly Unparsed[];
 	/**
 	 * Rust: out-of-line module paths below this file's module, joined by `::`.
@@ -281,6 +283,8 @@ interface SyntaxFacts {
 	readonly references: readonly (Reference & { readonly target?: Target })[];
 	/** Each import, and the checkout file it resolves to where the adapter can resolve it. */
 	readonly imports: readonly ResolvedImport[];
+	/** Test-only imports retained for interface checks, never production dependencies. */
+	readonly testImports?: readonly ResolvedImport[];
 	readonly unparsed: readonly Unparsed[];
 }
 
