@@ -140,6 +140,7 @@
                   }
                 },
                 {
+                  "id": "vKEsyHFk#CnOZozIW",
                   "from": "vKEsyHFk/gbyqW4H3#0idmUHd2",
                   "to": "vKEsyHFk/gbyqW4H3#0idmUHd2",
                   "label": "letter the jumps of each long line",
@@ -148,8 +149,7 @@
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "crates/archboard-flows/src/flowchart/mod.rs",
                     "symbol": "add_jumps"
-                  },
-                  "id": "vKEsyHFk#CnOZozIW"
+                  }
                 },
                 {
                   "id": "vKEsyHFk/gbyqW4H3#A3mQ1UEN",

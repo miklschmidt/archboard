@@ -10,6 +10,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#gIakrnWa",
   "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
+  "formerNames": [
+    "Open or leave a board"
+  ],
   "outgoing": [
     {
       "order": 59000,
@@ -37,8 +40,5 @@
       "id": "vKEsyHFk/UOXNWLhR#Ob2qNlXS",
       "to": "vKEsyHFk/UOXNWLhR#3KtX2jdA"
     }
-  ],
-  "formerNames": [
-    "Open or leave a board"
   ]
 }

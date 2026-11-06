@@ -1566,15 +1566,15 @@
               "label": "brought in part by part",
               "steps": [
                 {
-                  "id": "vKEsyHFk#aLHwGZl1",
-                  "from": "vKEsyHFk#UpjzNLKH",
-                  "to": "vKEsyHFk#ttPYQNXo",
-                  "label": "work out the in-between from the time, and draw it",
+                  "id": "vKEsyHFk/UOXNWLhR#VmYHvt8k",
+                  "from": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+                  "to": "vKEsyHFk#9FxduWoO",
+                  "label": "tell the stage how it arrives, and where the reader went",
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "crates/archboard-painter-wasm/src/browser.rs",
-                    "symbol": "frame"
+                    "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
+                    "symbol": "stageOf"
                   }
                 },
                 {
@@ -1590,18 +1590,6 @@
                   }
                 },
                 {
-                  "id": "vKEsyHFk/UOXNWLhR#VmYHvt8k",
-                  "from": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
-                  "to": "vKEsyHFk#9FxduWoO",
-                  "label": "tell the stage how it arrives, and where the reader went",
-                  "kind": "sync",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
-                    "symbol": "stageOf"
-                  }
-                },
-                {
                   "id": "vKEsyHFk/UOXNWLhR#ZEEcXD7y",
                   "from": "vKEsyHFk#9FxduWoO",
                   "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
@@ -1611,6 +1599,18 @@
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
                     "symbol": "frameClock"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk#aLHwGZl1",
+                  "from": "vKEsyHFk#UpjzNLKH",
+                  "to": "vKEsyHFk#ttPYQNXo",
+                  "label": "work out the in-between from the time, and draw it",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "crates/archboard-painter-wasm/src/browser.rs",
+                    "symbol": "frame"
                   }
                 },
                 {
