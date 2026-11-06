@@ -18,6 +18,19 @@
   ],
   "outgoing": [
     {
+      "order": 100,
+      "kind": "dependency",
+      "label": "the painting that a page shows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painter-wasm/src/browser.rs",
+        "symbol": "Painting"
+      },
+      "id": "vKEsyHFk#AMEzH5bC",
+      "to": "vKEsyHFk#U4Q7nid1"
+    },
+    {
       "order": 1000,
       "kind": "call",
       "label": "one stage for the canvas",
@@ -29,19 +42,6 @@
       },
       "id": "vKEsyHFk#RaRMc6Gn",
       "to": "vKEsyHFk#ttPYQNXo"
-    },
-    {
-      "order": 100,
-      "kind": "data",
-      "label": "the painting that a page shows",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-painter-wasm/src/browser.rs",
-        "symbol": "Painting"
-      },
-      "to": "vKEsyHFk#U4Q7nid1",
-      "id": "vKEsyHFk#AMEzH5bC"
     }
   ]
 }
