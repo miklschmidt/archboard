@@ -5,7 +5,7 @@
   "responsibility": "browser show: shows a reading in a pane, choosing the checkout it shows and moving every pane to follow",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/routes/panes/pane-show-route.ts"
+    "path": "apps/server/src/server/panes/connections/routes/pane-show-route.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#RZTsoQN5",
@@ -19,11 +19,24 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-show-route.ts",
         "symbol": "sendToPane"
       },
       "id": "vKEsyHFk/6E6hL0Zk#VO9ngl7m",
       "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 62000,
+      "kind": "dependency",
+      "label": "move the pane into the vault it shows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-show-route.ts",
+        "symbol": "movePaneVault"
+      },
+      "id": "vKEsyHFk#HIkVOOeA",
+      "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J"
     },
     {
       "order": 65000,
@@ -32,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-show-route.ts",
         "symbol": "placeOfVault"
       },
       "id": "vKEsyHFk/HBlhIeSD#57KDyakx",
@@ -45,7 +58,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-show-route.ts",
         "symbol": "chooseKnownCheckout"
       },
       "id": "vKEsyHFk/HBlhIeSD#ALYb99sn",
@@ -58,24 +71,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-show-route.ts",
         "symbol": "followRegistry"
       },
       "id": "vKEsyHFk/HBlhIeSD#epRLrdt6",
       "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
-    },
-    {
-      "order": 62000,
-      "kind": "dependency",
-      "label": "move the pane into the vault it shows",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-show-route.ts",
-        "symbol": "movePaneVault"
-      },
-      "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
-      "id": "vKEsyHFk#HIkVOOeA"
     }
   ]
 }

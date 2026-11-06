@@ -6,7 +6,7 @@
   "description": "GET /api/repositories answers under the settings-read browser-origin guard; PUT /api/repositories/chosen {repository, root} answers under the mutation guard, as the opener settings do. Neither names a vault, because the list and the choice belong to the machine. A root that is not a known checkout of the repository is refused (CHECKOUT_UNKNOWN, 404): the page offers nothing else, and the route never registers one. The server watches the registry file from start to stop and follows every change it has not followed yet: the menu's choice, an agent's show or a finished move that chose, a repo command or the first command in a checkout, and another server's show. Then every pane in the vault of a checkout that is not chosen moves to the chosen one, keeping its model, every other pane hears the name its repository goes by now, and every tab hears repositories_changed.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/routes/repositories/repository-routes.ts"
+    "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
@@ -53,7 +53,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
         "symbol": "createBrowserOriginGuard"
       },
       "id": "vKEsyHFk/Oi6SBIAM#0L2qr5ja",
@@ -66,7 +66,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
         "symbol": "listRepositories"
       },
       "id": "vKEsyHFk/Oi6SBIAM#aXFI100m",
@@ -79,7 +79,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
         "symbol": "movePaneVault"
       },
       "id": "vKEsyHFk/Oi6SBIAM#YawQAO0P",
@@ -92,7 +92,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
         "symbol": "sendKeylessToPane"
       },
       "id": "vKEsyHFk/Oi6SBIAM#ic9G2qN4",
@@ -105,7 +105,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
         "symbol": "arrivedOnModel"
       },
       "id": "vKEsyHFk/Oi6SBIAM#rnMTaURu",
@@ -118,7 +118,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
         "symbol": "listRepositories"
       },
       "id": "vKEsyHFk/HBlhIeSD#HbR02k8Z",
@@ -131,7 +131,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
         "symbol": "chooseKnownCheckout"
       },
       "id": "vKEsyHFk/HBlhIeSD#yqfoZW5w",
@@ -143,7 +143,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
         "symbol": "parsePaneKey"
       },
       "id": "vKEsyHFk/Oi6SBIAM#wNDcc9zW",

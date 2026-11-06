@@ -5,7 +5,7 @@
   "responsibility": "Runs the code check on request as checkout work, apart from the polled check, through the one code check the server keeps",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/routes/code-check/code-check-route.ts"
+    "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
         "symbol": "createCodeCheck"
       },
       "id": "vKEsyHFk/HBlhIeSD#9g0Uli0a",
@@ -52,7 +52,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
         "symbol": "createCodeFindingsMemory"
       },
       "id": "vKEsyHFk/HBlhIeSD#T6lWsdFm",
@@ -65,7 +65,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
         "symbol": "requireVault"
       },
       "id": "vKEsyHFk/HBlhIeSD#hYCgIdBo",

@@ -5,7 +5,7 @@
   "responsibility": "Composes the middleware and mounts every route on the one application",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/wiring/application/application.ts"
+    "path": "apps/server/src/server/http/application/wiring/application.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#2naazvac",
@@ -34,7 +34,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
         "symbol": "mountPaneRoutes"
       },
       "id": "vKEsyHFk/Oi6SBIAM#PoXHqEaa",
@@ -47,7 +47,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
         "symbol": "mountArchitectureModelRoutes"
       },
       "id": "vKEsyHFk/6E6hL0Zk#C9PQBOwg",
@@ -60,7 +60,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
         "symbol": "createCodeOpenerRouter"
       },
       "id": "vKEsyHFk/6E6hL0Zk#ibCZHaRq",
@@ -73,7 +73,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
         "symbol": "app"
       },
       "id": "vKEsyHFk/Oi6SBIAM#wYcfvDau",
@@ -86,7 +86,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
         "symbol": "requireVault"
       },
       "id": "vKEsyHFk/Oi6SBIAM#wfZNifHF",
@@ -99,11 +99,24 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
         "symbol": "mountRepositoryRoutes"
       },
       "id": "vKEsyHFk/Oi6SBIAM#5x06MUNV",
       "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    },
+    {
+      "order": 62000,
+      "kind": "dependency",
+      "label": "admit each request before its route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
+        "symbol": "mountMutationAdmission"
+      },
+      "id": "vKEsyHFk#FD1BZf8Q",
+      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
     },
     {
       "order": 96000,
@@ -112,7 +125,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
         "symbol": "diagramIconPaths"
       },
       "id": "vKEsyHFk/6E6hL0Zk#uaSxFsAP",
@@ -125,7 +138,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
         "symbol": "createBrowserOriginGuard"
       },
       "id": "vKEsyHFk/6E6hL0Zk#4P3PNJ5d",
@@ -138,24 +151,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
         "symbol": "mountVoiceStartTraceRoute"
       },
       "id": "vKEsyHFk/6E6hL0Zk#7plLLcKh",
       "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
-    },
-    {
-      "order": 62000,
-      "kind": "dependency",
-      "label": "admit each request before its route",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
-        "symbol": "mountMutationAdmission"
-      },
-      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8",
-      "id": "vKEsyHFk#FD1BZf8Q"
     }
   ]
 }

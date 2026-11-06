@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
         "symbol": "mountPaneRoutes"
       },
       "id": "vKEsyHFk/Oi6SBIAM#CJ5JwtNl",
@@ -52,7 +52,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
         "symbol": "getPanesRoute"
       },
       "id": "vKEsyHFk/Oi6SBIAM#b3mWnCLw",

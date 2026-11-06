@@ -36,7 +36,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
         "symbol": "mountCodeCheckRoute"
       },
       "id": "vKEsyHFk/HBlhIeSD#poDLrJ2M",

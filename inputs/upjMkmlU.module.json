@@ -45,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
         "symbol": "mountRepositoryRoutes"
       },
       "id": "vKEsyHFk/Oi6SBIAM#j3HPQ3Ng",

@@ -6,7 +6,7 @@
   "description": "Each finished pass replaces the readings of the models it read, with the version it read and when it ran; a cancelled pass changes nothing. GET /api/vault/code-findings answers from it alone, so a pane never starts a pass (ADR 0046).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/state/code-findings/code-findings-memory.ts"
+    "path": "apps/server/src/server/http/handlers/code-checks/state/code-findings-memory.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#yYQ3AHkf",

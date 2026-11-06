@@ -44,7 +44,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
                     "symbol": "loopbackRefusal"
                   }
                 }
@@ -62,7 +62,7 @@
                   "note": "resources start in order, each after the one before; the first failure skips the rest",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
                     "symbol": "prepareCodexWorkbench"
                   }
                 },
@@ -74,7 +74,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
                     "symbol": "buildLifetime"
                   }
                 },
@@ -86,7 +86,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
                     "symbol": "startWebSocketServer"
                   }
                 },
@@ -106,7 +106,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                            "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
                             "symbol": "startServer"
                           }
                         }
@@ -128,7 +128,7 @@
                               "kind": "self",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                                "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
                                 "symbol": "buildLifetime"
                               }
                             }
@@ -142,7 +142,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                            "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
                             "symbol": "startServer"
                           }
                         }
@@ -176,7 +176,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/routes/service/service-routes.ts",
+            "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
             "symbol": "healthRoute"
           }
         },
@@ -188,7 +188,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/routes/service/service-routes.ts",
+            "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
             "symbol": "serverPhase"
           }
         },
@@ -200,7 +200,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/routes/service/service-routes.ts",
+            "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
             "symbol": "mutationAdmission.accepting"
           }
         },
@@ -212,7 +212,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/routes/service/service-routes.ts",
+            "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
             "symbol": "clients"
           }
         },
@@ -224,7 +224,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/routes/service/service-routes.ts",
+            "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
             "symbol": "healthRoute"
           }
         }
@@ -253,7 +253,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+            "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
             "symbol": "answerCodeCheck"
           }
         },
@@ -265,7 +265,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+            "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
             "symbol": "createCodeCheck"
           }
         },
@@ -340,7 +340,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+                    "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
                     "symbol": "answerCodeCheck"
                   }
                 }
@@ -369,7 +369,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+                    "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
                     "symbol": "answerCodeCheck"
                   }
                 }
@@ -461,7 +461,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+                            "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
                             "symbol": "remember"
                           }
                         }
@@ -481,7 +481,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+                    "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
                     "symbol": "answerCodeCheck"
                   }
                 }
@@ -757,7 +757,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
             "symbol": "startWebSocketServer"
           }
         },
@@ -769,7 +769,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
             "symbol": "checkBrowserCsrf"
           }
         },
@@ -789,7 +789,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                    "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                     "symbol": "startWebSocketServer"
                   }
                 }
@@ -806,7 +806,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                    "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                     "symbol": "namedVault"
                   }
                 },
@@ -826,7 +826,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                             "symbol": "vaultOfUpgrade"
                           }
                         }
@@ -843,7 +843,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                             "symbol": "sendStartingPlace"
                           }
                         },
@@ -855,7 +855,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                             "symbol": "acceptWebSocketConnection"
                           }
                         }
@@ -889,7 +889,7 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+            "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
             "symbol": "shutdown"
           }
         },
@@ -901,7 +901,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/lifecycle/lifetime/mutation-admission.ts",
+            "path": "apps/server/src/server/start-stop/lifecycle/mutation-admission.ts",
             "symbol": "createServerMutationAdmission"
           }
         },
@@ -921,7 +921,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/lifecycle/lifetime/mutation-admission.ts",
+                    "path": "apps/server/src/server/start-stop/lifecycle/mutation-admission.ts",
                     "symbol": "ServerApplicationBusyError"
                   }
                 },
@@ -933,7 +933,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
                     "symbol": "buildLifetime"
                   }
                 }
@@ -950,7 +950,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
                     "symbol": "closeWebSocketServer"
                   }
                 },
@@ -962,7 +962,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
                     "symbol": "buildLifetime"
                   }
                 },
@@ -982,7 +982,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                            "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
                             "symbol": "buildLifetime"
                           }
                         }
@@ -1002,7 +1002,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
                     "symbol": "stopCodexWorkbench"
                   }
                 }
