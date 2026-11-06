@@ -1304,12 +1304,12 @@
           "id": "vKEsyHFk/UOXNWLhR#1lZkK1Ce",
           "from": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
           "to": "vKEsyHFk#9FxduWoO",
-          "label": "the canvas host, and how the picture is lit and seen",
+          "label": "how the picture is lit",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/canvas/CameraSurface.tsx",
-            "symbol": "attachStage"
+            "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
+            "symbol": "setLight"
           }
         }
       ]
@@ -1411,6 +1411,18 @@
               ]
             },
             {
+              "id": "vKEsyHFk#JSspgJKP",
+              "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+              "to": "vKEsyHFk#9FxduWoO",
+              "label": "wait for the painter to start",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "symbol": "paintersStarting"
+              }
+            },
+            {
               "id": "vKEsyHFk/UOXNWLhR#XyXsOCuZ",
               "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
               "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
@@ -1464,18 +1476,6 @@
               ]
             }
           ]
-        },
-        {
-          "id": "vKEsyHFk#JSspgJKP",
-          "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
-          "to": "vKEsyHFk#9FxduWoO",
-          "label": "wait for the painter to start",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
-            "symbol": "paintersStarting"
-          }
         }
       ]
     },
@@ -1566,68 +1566,52 @@
               "label": "brought in part by part",
               "steps": [
                 {
-                  "id": "vKEsyHFk/UOXNWLhR#ivspkqxJ",
-                  "kind": "decision",
-                  "question": "Is there a picture on the surface to leave?",
-                  "alternatives": [
-                    {
-                      "label": "there is",
-                      "steps": [
-                        {
-                          "id": "vKEsyHFk/UOXNWLhR#VmYHvt8k",
-                          "from": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
-                          "to": "vKEsyHFk#9FxduWoO",
-                          "label": "tell the stage how it arrives, and where the reader went",
-                          "kind": "sync",
-                          "anchor": {
-                            "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
-                            "symbol": "stageOf"
-                          }
-                        },
-                        {
-                          "id": "vKEsyHFk/UOXNWLhR#GZTD3yyE",
-                          "from": "vKEsyHFk#9FxduWoO",
-                          "to": "vKEsyHFk#UpjzNLKH",
-                          "label": "hand the painter the arrival; it ghosts the leaving picture",
-                          "kind": "sync",
-                          "anchor": {
-                            "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
-                            "symbol": "enter"
-                          }
-                        },
-                        {
-                          "id": "vKEsyHFk/UOXNWLhR#ZEEcXD7y",
-                          "from": "vKEsyHFk#9FxduWoO",
-                          "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
-                          "label": "ask for a frame while something moves",
-                          "kind": "sync",
-                          "anchor": {
-                            "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
-                            "symbol": "frameClock"
-                          }
-                        },
-                        {
-                          "id": "vKEsyHFk#aLHwGZl1",
-                          "from": "vKEsyHFk#UpjzNLKH",
-                          "to": "vKEsyHFk#ttPYQNXo",
-                          "label": "work out the in-between from the time, and draw it",
-                          "kind": "sync",
-                          "anchor": {
-                            "repo": "github.com/miklschmidt/archboard",
-                            "path": "crates/archboard-painter-wasm/src/browser.rs",
-                            "symbol": "frame"
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "label": "there is none",
-                      "steps": []
-                    }
-                  ]
+                  "id": "vKEsyHFk/UOXNWLhR#VmYHvt8k",
+                  "from": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+                  "to": "vKEsyHFk#9FxduWoO",
+                  "label": "tell the stage how it arrives, and where the reader went",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
+                    "symbol": "stageOf"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#GZTD3yyE",
+                  "from": "vKEsyHFk#9FxduWoO",
+                  "to": "vKEsyHFk#UpjzNLKH",
+                  "label": "hand the painter the arrival, and any leaving picture",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
+                    "symbol": "enter"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#ZEEcXD7y",
+                  "from": "vKEsyHFk#9FxduWoO",
+                  "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+                  "label": "ask for a frame while something moves",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
+                    "symbol": "frameClock"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk#aLHwGZl1",
+                  "from": "vKEsyHFk#UpjzNLKH",
+                  "to": "vKEsyHFk#ttPYQNXo",
+                  "label": "work out the in-between from the time, and draw it",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "crates/archboard-painter-wasm/src/browser.rs",
+                    "symbol": "frame"
+                  }
                 },
                 {
                   "id": "vKEsyHFk/UOXNWLhR#UCkZ9KJ9",

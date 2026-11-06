@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-06T11:01:00Z'
-updated_date: '2026-11-06T11:28:00Z'
+updated_date: '2026-11-06T16:01:00Z'
 labels:
   - model
 dependencies: []
@@ -22,7 +22,7 @@ archboard check reported 38 warnings on main. The painter (JTZvj2vi, w4XB6eBv, #
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 JTZvj2vi, w4XB6eBv and vdbwhuzZ are adopted, and archboard check code on current reports no BINDING_PATH_MISSING, ANCHOR_PATH_MISSING or ANCHOR_SYMBOL_MISSING except those that b2zJw510 (PR #46) resolves
+- [x] #1 JTZvj2vi and w4XB6eBv are adopted, vdbwhuzZ's changes are adopted through jRNHx2a1 and vdbwhuzZ is shelved, and archboard check code on current reports no BINDING_PATH_MISSING, ANCHOR_PATH_MISSING or ANCHOR_SYMBOL_MISSING except those that b2zJw510 (PR #46) resolves
 - [x] #2 archboard check embeds reports no EMBED_OUTDATED and no EMBED_VAULT_FETCH_FAILED
 - [x] #3 The three Eval script relationships carry anchors, so check reports no RELATIONSHIP_UNSUPPORTED
 <!-- AC:END -->
@@ -37,4 +37,6 @@ Site diagrams: render-diagrams.sh drops the recipe, as the README kit does (scri
 README architecture SVGs redrawn with check embeds --fix and cut with readme:assets architecture. readme:check lists the same 16 stale assets before and after, none of them architecture.
 archboard check: 0 errors, 1 warning: RELATIONSHIP_UNDRAWN Painter core -> Page painter. A false positive: the only uses are test modules (between/interrupted.rs under #[cfg(test)] mod in between/mod.rs:30, and parts/tests.rs); the Rust adapter skips #[cfg(test)] items inside a file but not a file that a #[cfg(test)] mod declares. Fixed separately.
 Information findings left by decision: RELATIONSHIP_UNDRAWN (151) says a higher relationship stands for the call; EXPOSED_UNUSED (33) is a code cleanup.
+
+Review of PR 49 (CodeRabbit): criterion 1 now names the real outcome, vdbwhuzZ shelved and its changes adopted through jRNHx2a1. Four flow steps on current were corrected against the code: Draw a view letters the jumps in its own step (mod.rs add_jumps), the light reaches the stage through setLight and not attachStage, a replay waits for a starting painter inside each frame, and a picture brought in part by part enters the stage whether or not one leaves.
 <!-- SECTION:NOTES:END -->
