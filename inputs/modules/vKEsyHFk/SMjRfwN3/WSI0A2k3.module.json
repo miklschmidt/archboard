@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/services/ffmpeg.ts",
+        "path": "packages/walkthrough/src/runtime/video-encoding/services/ffmpeg.ts",
         "symbol": "NIX_ARGV"
       },
       "id": "vKEsyHFk/SMjRfwN3#MGrLK1Qz",
