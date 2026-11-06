@@ -282,10 +282,27 @@ describe("container containment", () => {
 	});
 
 	test("a part outside the container's directory makes its parts spread", () => {
-		const structure = shaped({ binding: at("src/shop") }, ["src/shop/a.ts", "lib/b.ts"]);
+		const structure = shaped(
+			{ binding: at("src/shop") },
+			["src/shop/a.ts", "lib/b.ts"],
+			"other/c.ts",
+		);
 		expect(containment(structure)).toEqual([
 			{ code: "CONTAINER_PARTS_OUTSIDE", id: box, suggestedBinding: undefined },
 		]);
+	});
+
+	test("suggests the repository root only when no outside module binds code in it", () => {
+		expect(containment(shaped({}, ["a.ts", "lib/b.ts"]))).toEqual([
+			{ code: "CONTAINER_UNBOUND", id: box, suggestedBinding: at("") },
+		]);
+		expect(containment(shaped({}, ["a.ts", "lib/b.ts"], "other/c.ts"))).toEqual([
+			{ code: "CONTAINER_UNBOUND", id: box, suggestedBinding: undefined },
+		]);
+	});
+
+	test.each(["", ".", "./"])("a container bound to repository root %j holds its parts", (path) => {
+		expect(containment(shaped({ binding: at(path) }, ["a.ts", "lib/b.ts"]))).toEqual([]);
 	});
 
 	test("a module around the container may own the directory", () => {

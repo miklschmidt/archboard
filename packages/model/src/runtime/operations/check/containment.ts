@@ -4,6 +4,7 @@
 // container's binding says that the model or the code layout splits one job. The
 // rule reads only the bindings that the model states, never the files.
 
+import { posix } from "node:path";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import type { VaultDiagnostic } from "#shared/schemas/semantic-policy.ts";
 import { nodeSubject } from "#runtime/operations/check/subject.ts";
@@ -24,7 +25,8 @@ const SPREAD_JUDGEMENT =
  * @returns The path.
  */
 function pathOf(binding: Binding): string {
-	return binding.path.replace(/\/+$/u, "");
+	const path = posix.normalize(binding.path).replace(/\/+$/u, "");
+	return path === "." ? "" : path;
 }
 
 /**
@@ -35,10 +37,8 @@ function pathOf(binding: Binding): string {
  */
 function holds(outer: Binding, inner: Binding): boolean {
 	const path = pathOf(outer);
-	return (
-		outer.repo === inner.repo &&
-		(path === "" || inner.path === path || inner.path.startsWith(`${path}/`))
-	);
+	const held = pathOf(inner);
+	return outer.repo === inner.repo && (path === "" || held === path || held.startsWith(`${path}/`));
 }
 
 /**
@@ -59,7 +59,7 @@ function sharedSegments(paths: readonly string[]): string[] {
  * The deepest path that holds every binding, in one repository. Where that path is
  * a part's own whole binding, the part already owns it, so its folder holds the others.
  * @param bindings The bindings, at least one.
- * @returns The path, or undefined when they are in different repositories or share no folder.
+ * @returns The path, empty for the repository root, or undefined for different repositories.
  */
 function sharedPath(bindings: readonly Binding[]): string | undefined {
 	if (new Set(bindings.map(({ repo }) => repo)).size !== 1) return undefined;
@@ -67,8 +67,7 @@ function sharedPath(bindings: readonly Binding[]): string | undefined {
 	const owned = bindings.some(
 		(binding) => binding.symbol === undefined && pathOf(binding) === shared.join("/"),
 	);
-	const path = (owned ? shared.slice(0, -1) : shared).join("/");
-	return path === "" ? undefined : path;
+	return (owned ? shared.slice(0, -1) : shared).join("/");
 }
 
 /**
@@ -173,10 +172,11 @@ interface Reading {
 function unboundWarning(reading: Reading): VaultDiagnostic {
 	const { name } = reading.container;
 	const { directory, parts } = reading;
+	const path = directory?.path || ".";
 	const message =
 		directory === undefined
 			? `${name} has no binding, and no one directory holds its parts without the code of another module. Its parts sit in ${foldersOf(parts)}. ${SPREAD_JUDGEMENT}`
-			: `${name} has no binding, so the code in ${directory.path} that no part binds belongs to no module, and the code check cannot see a call into it. ${directory.path} holds every part: bind ${name} to it with an edit-module change that sets binding.`;
+			: `${name} has no binding, so the code in ${path} that no part binds belongs to no module, and the code check cannot see a call into it. ${path} holds every part: bind ${name} to it with an edit-module change that sets binding.`;
 	return { ...siteOf(reading), code: "CONTAINER_UNBOUND", message };
 }
 
@@ -189,11 +189,12 @@ function unboundWarning(reading: Reading): VaultDiagnostic {
 function outsideWarning(reading: Reading, bound: Binding): VaultDiagnostic {
 	const { name } = reading.container;
 	const { directory, parts } = reading;
+	const path = directory?.path || ".";
 	const where = `${name} is bound to ${bound.path}, and these parts are bound outside it: ${namedParts(parts)}.`;
 	const message =
 		directory === undefined
 			? `${where} No one directory holds them all without the code of another module. ${SPREAD_JUDGEMENT}`
-			: `${where} ${directory.path} holds every part and no other module: if ${name} owns that directory, bind it there with an edit-module change that sets binding. If a part does the job of another module, move it to that module instead.`;
+			: `${where} ${path} holds every part and no other module: if ${name} owns that directory, bind it there with an edit-module change that sets binding. If a part does the job of another module, move it to that module instead.`;
 	return { ...siteOf(reading), code: "CONTAINER_PARTS_OUTSIDE", message };
 }
 
