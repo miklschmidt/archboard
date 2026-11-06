@@ -26,7 +26,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/workbench-example/src/server/wiring/application/application.ts",
+        "path": "apps/workbench-example/src/server/application/wiring/application.ts",
         "symbol": "resolveCodexExecutable"
       },
       "id": "vKEsyHFk#YwuotQri",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/workbench-example/src/server/wiring/application/application.ts",
+        "path": "apps/workbench-example/src/server/application/wiring/application.ts",
         "symbol": "createVoiceAgent"
       },
       "id": "vKEsyHFk/9ncuT5DP#mUABZOPx",
@@ -52,7 +52,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/workbench-example/src/ui/components/workbench/MountWorkbench.tsx",
+        "path": "apps/workbench-example/src/ui/workbench/components/MountWorkbench.tsx",
         "symbol": "createVoiceClient"
       },
       "id": "vKEsyHFk/9ncuT5DP#qbAR52W1",

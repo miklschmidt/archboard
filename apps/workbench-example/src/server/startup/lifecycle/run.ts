@@ -1,5 +1,5 @@
-import { exampleOptions } from "#server/rules/startup/options.ts";
-import { startExample } from "#server/wiring/application/application.ts";
+import { exampleOptions } from "#server/startup/rules/options.ts";
+import { startExample } from "#server/application/wiring/application.ts";
 
 /** Start the CLI host and release its private process on shutdown or fatal failure. */
 export async function runExample(): Promise<void> {

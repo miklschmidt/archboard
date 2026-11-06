@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 import { useVoiceClient, useVoiceState } from "@archboard/codex-realtime-voice/react";
-import { VoicePanel } from "#ui/components/workbench/VoicePanel.tsx";
-import { WorkhorsePanel } from "#ui/components/workbench/WorkhorsePanel.tsx";
-import { AccountConnection } from "#ui/components/workbench/AccountConnection.tsx";
+import { VoicePanel } from "#ui/workbench/components/VoicePanel.tsx";
+import { WorkhorsePanel } from "#ui/workbench/components/WorkhorsePanel.tsx";
+import { AccountConnection } from "#ui/workbench/components/AccountConnection.tsx";
 
 /**
  * Mount both roles over one voice client.

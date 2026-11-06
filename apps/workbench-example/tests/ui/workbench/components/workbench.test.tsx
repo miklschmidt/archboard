@@ -7,8 +7,8 @@ import {
 	type VoiceClientSnapshot,
 } from "@archboard/codex-realtime-voice/browser";
 import { VoiceClientProvider } from "@archboard/codex-realtime-voice/react";
-import { Workbench } from "#ui/components/workbench/Workbench.tsx";
-import { ApprovalCard } from "#ui/components/workbench/ApprovalCard.tsx";
+import { Workbench } from "#ui/workbench/components/Workbench.tsx";
+import { ApprovalCard } from "#ui/workbench/components/ApprovalCard.tsx";
 import { exampleSnapshot, commandApproval, settledApproval } from "#tests/ui/support/snapshot.ts";
 
 beforeAll(async () => {

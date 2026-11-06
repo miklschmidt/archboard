@@ -5,8 +5,8 @@ import type {
 	VoiceClientSnapshot,
 } from "@archboard/codex-realtime-voice/browser";
 import { useVoiceClient, useVoiceState } from "@archboard/codex-realtime-voice/react";
-import { Conversation } from "#ui/components/workbench/Conversation.tsx";
-import { ApprovalCard } from "#ui/components/workbench/ApprovalCard.tsx";
+import { Conversation } from "#ui/workbench/components/Conversation.tsx";
+import { ApprovalCard } from "#ui/workbench/components/ApprovalCard.tsx";
 
 /**
  * Keep composer state with the workhorse that receives it.

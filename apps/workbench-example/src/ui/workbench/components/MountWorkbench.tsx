@@ -1,8 +1,8 @@
 import { createRoot } from "react-dom/client";
 import { createVoiceClient, type VoiceClient } from "@archboard/codex-realtime-voice/browser";
 import { VoiceClientProvider } from "@archboard/codex-realtime-voice/react";
-import { followPageLifecycle } from "#ui/clients/workbench/page-client.ts";
-import { Workbench } from "#ui/components/workbench/Workbench.tsx";
+import { followPageLifecycle } from "#ui/workbench/clients/page-client.ts";
+import { Workbench } from "#ui/workbench/components/Workbench.tsx";
 import { ExampleConfigurationSchema, WORKBENCH_SOCKET_PATH } from "#shared/protocol/application.ts";
 
 /**

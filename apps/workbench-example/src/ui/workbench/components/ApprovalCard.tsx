@@ -3,7 +3,7 @@ import {
 	approvalChoices,
 	type ExampleApproval,
 	type ApprovalResponse,
-} from "#ui/rules/workbench/approval-responses.ts";
+} from "#ui/workbench/rules/approval-responses.ts";
 
 interface ApprovalCardProps {
 	readonly approval: ExampleApproval;

@@ -1,6 +1,6 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, expect, mock, test } from "bun:test";
-import { followPageLifecycle } from "#ui/clients/workbench/page-client.ts";
+import { followPageLifecycle } from "#ui/workbench/clients/page-client.ts";
 
 beforeAll(() => {
 	GlobalRegistrator.register();

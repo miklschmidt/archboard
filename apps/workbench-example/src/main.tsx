@@ -1,3 +1,3 @@
-import { mountWorkbench } from "#ui/components/workbench/MountWorkbench.tsx";
+import { mountWorkbench } from "#ui/workbench/components/MountWorkbench.tsx";
 
 mountWorkbench();
