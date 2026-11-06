@@ -2,7 +2,8 @@
   "order": 53000,
   "name": "Picture departure",
   "kind": "module",
-  "responsibility": "A picture leaving a pane for another model: it zooms into an opened card, draws away going back, else fades, and a late leaver finishes as a ghost",
+  "responsibility": "Says where the reader went from a picture, into a card, back out or across, so that the picture leaves the way that fits",
+  "description": "The way, the card's box in the leaving picture when the reader went into one, and the model drawn next. The stage sends the picture on its way out: it zooms into an opened card, draws away going back, else fades.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/canvas/picture/picture-departure.ts"
@@ -10,19 +11,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#oF5Ib5A4",
   "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
-  "outgoing": [
-    {
-      "order": 89000,
-      "kind": "call",
-      "description": "The code of \"Semantic viewer\" reaches node \"Picture traffic\".",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/picture/picture-departure.ts",
-        "symbol": "runTraffic"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#OAY8mj0y",
-      "to": "vKEsyHFk/UOXNWLhR#n5No6FUy"
-    }
-  ]
+  "outgoing": []
 }
