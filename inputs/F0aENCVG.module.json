@@ -6,7 +6,7 @@
   "description": "The canonical engine gallery reads current module scopes and flows. The two historical investigation scripts measure the saved scorecard and timing fixtures. Fixture data stays shared with renderer tests and is not private implementation.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "scripts/layout-investigation/measure.ts"
+    "path": "scripts/layout-investigation"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#F0aENCVG",

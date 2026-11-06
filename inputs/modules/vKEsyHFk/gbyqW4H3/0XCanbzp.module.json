@@ -6,7 +6,7 @@
   "description": "The existing renderArchitecture operation accepts an optional grammar. Its default remains architecture. Public callers derive request and result types from operations. The interface remains 60 exports with its unchanged ceiling.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts"
+    "path": "packages/renderer/src/runtime/bun-renderer"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#0XCanbzp",
