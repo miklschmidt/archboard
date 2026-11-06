@@ -40,6 +40,55 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#GqMdZbTF",
+      "kind": "module",
+      "value": {
+        "order": 600,
+        "name": "Viewer marks",
+        "kind": "module",
+        "responsibility": "The marks a viewer draws beside a picture by the painter's own rules: a line's weight, arrowhead and ink, a standing's pin and the warning on an undecided subject",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/paint/marks.rs"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#GqMdZbTF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#GqMdZbTF",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#9MKtlnoC",
+      "kind": "relationship",
+      "value": {
+        "order": 4000,
+        "kind": "call",
+        "label": "the warning mark on a warned subject",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/paint/marks.rs",
+          "symbol": "viewer_marks"
+        },
+        "id": "vKEsyHFk#9MKtlnoC",
+        "to": "vKEsyHFk#GqMdZbTF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#9MKtlnoC",
+      "placement": {
+        "holder": "vKEsyHFk#ttPYQNXo"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/gbyqW4H3#eECDrhMc",
       "placement": {
