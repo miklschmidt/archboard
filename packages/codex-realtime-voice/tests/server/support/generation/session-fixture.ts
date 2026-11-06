@@ -1,5 +1,5 @@
-import type { CodexWorkbenchSessionComponents } from "#server/protocol/generation/session-contract.ts";
-import type { CodexWorkbenchWorkhorseComponents } from "#server/services/sessions/workhorses.ts";
+import type { CodexWorkbenchSessionComponents } from "#server/generation/protocol/session-contract.ts";
+import type { CodexWorkbenchWorkhorseComponents } from "#server/sessions/services/workhorses.ts";
 
 function unavailable(owner: string): never {
 	throw new Error(`The tab session fixture does not implement ${owner}.`);

@@ -660,7 +660,7 @@ The server entry is one factory, `createVoiceAgent` from `./server`.
 The host supplies a storage directory, the Codex process inputs, the admitted checkouts, role instructions as text, an identity, and `onFatal`.
 The agent's `start()`, its two socket adapters and `shutdown()` own process startup, generations, sessions, browser sockets, shown conversations, and shutdown.
 `attach(server, { path, origin })` serves the browser sockets on one path of a `node:http` server, and `bunHandlers({ path, fetch, websocket })` returns the `fetch` and `websocket` of a `Bun.serve` server that serves them, so a host writes no upgrade handling.
-Both apply the one admission in `server/services/agent/admission.ts`.
+Both apply the one admission in `server/agent/services/admission.ts`.
 The identity sets the Codex service name and thread source, with the neutral default `codex-realtime-voice`.
 A host with a domain passes `extensions` (`VoiceAgentExtensions`): context sources, a context codec, domain tools, extra role tools, a voice narrative, and its own browser routing.
 A host that multiplexes its own socket uses `agent.browser` instead of either adapter.

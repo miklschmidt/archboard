@@ -10,7 +10,7 @@ import {
 } from "@archboard/codex-app-server/identity";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
-import type { BrowserOwnerProjection } from "#server/protocol/projection/projection-contract.ts";
+import type { BrowserOwnerProjection } from "#server/projection/protocol/projection-contract.ts";
 import type { BrowserReadiness } from "#shared/browser/schemas/snapshot.ts";
 import type {
 	BrowserWorkbenchActions,
@@ -22,10 +22,10 @@ import type {
 	CodexWorkbenchGateway,
 	BrowserConnectionInstance,
 	BrowserWorkbenchConnection,
-} from "#server/protocol/gateway/contract.ts";
-import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
-import { createCodexWorkbenchGateway } from "#server/services/gateway/gateway.ts";
-import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
+} from "#server/chat-conversations/gateway/protocol/contract.ts";
+import type { TabSessionId } from "#server/tab-session/rules/tab-session.ts";
+import { createCodexWorkbenchGateway } from "#server/chat-conversations/gateway/connections/services/gateway.ts";
+import { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,

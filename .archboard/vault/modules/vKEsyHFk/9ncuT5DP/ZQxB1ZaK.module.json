@@ -58,7 +58,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/browser-state/projections/owner-projection.ts",
         "symbol": "transcript"
       },
       "id": "vKEsyHFk/qKGcB6vZ#oyurpL2B",

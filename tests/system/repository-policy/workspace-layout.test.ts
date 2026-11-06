@@ -98,8 +98,6 @@ const ROLE_FIRST_TREES: readonly string[] = [
 	"apps/workbench-example/tests/ui",
 	"packages/code-intel/src/runtime",
 	"packages/code-intel/tests/runtime",
-	"packages/codex-realtime-voice/src/server",
-	"packages/codex-realtime-voice/tests/server",
 	"packages/ui-kit/src/ui",
 	"packages/ui-kit/tests/ui",
 ];

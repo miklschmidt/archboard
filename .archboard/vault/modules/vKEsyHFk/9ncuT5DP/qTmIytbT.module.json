@@ -6,7 +6,7 @@
   "description": "A turn that delivered, steered or queued work, or whose delivery may have reached the workhorse, shows in the conversation of each workhorse it reached. A delegation the workhorse refused as busy or with an invalid body gave it nothing, and moves the turn nowhere. A turn that gave work to none shows in the conversation shown while it ran. A turn with no record shows in whatever conversation is shown. The timeline keeps only the turns of the shown conversation before it spends its budget.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/services/sessions/delegations.ts"
+    "path": "packages/codex-realtime-voice/src/server/sessions/services/delegations.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#qTmIytbT",

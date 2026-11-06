@@ -510,7 +510,7 @@
 							"responsibility": "Takes the child's epoch, with the coordinator's own directory as its workspace root, then initializes the session and reads the account before a generation is ready",
 							"binding": {
 								"repo": "github.com/miklschmidt/archboard",
-								"path": "packages/codex-realtime-voice/src/server/services/generation/hooks.ts"
+								"path": "packages/codex-realtime-voice/src/server/generation/services/hooks.ts"
 							}
 						},
 						"width": 340,
@@ -632,7 +632,7 @@
 						"emphasis": "hero",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/codex-realtime-voice/src/server/services/generation/hooks.ts",
+							"path": "packages/codex-realtime-voice/src/server/generation/services/hooks.ts",
 							"symbol": "initialize"
 						}
 					},
@@ -1628,7 +1628,7 @@
 							"emphasis": "hero",
 							"anchor": {
 								"repo": "github.com/miklschmidt/archboard",
-								"path": "packages/codex-realtime-voice/src/server/services/generation/hooks.ts",
+								"path": "packages/codex-realtime-voice/src/server/generation/services/hooks.ts",
 								"symbol": "initialize"
 							}
 						},

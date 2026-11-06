@@ -10,7 +10,7 @@ import { createCoordinatorThreadStartParams } from "#runtime/voice/coordinator/s
 import { createWorkhorseThreadStartParams } from "#runtime/workhorses/workhorse-start/rules/model.ts";
 import { createRealtimeStartParams } from "#runtime/voice/realtime/rules/start-policy.ts";
 import { createWorkbenchTurnStartParams } from "#runtime/host/turn-input/rules/bodies.ts";
-import { createDefaultWorkbenchHost } from "#server/services/host/default.ts";
+import { createDefaultWorkbenchHost } from "#server/host/services/default.ts";
 import { createHarness } from "#tests/runtime/workhorses/thread-context/services/delivery-support.ts";
 
 // The package is public: a host that names nothing must not hand Codex, or store, the name of the

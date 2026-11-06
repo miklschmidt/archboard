@@ -1,4 +1,4 @@
-import type { BrowserOwnerProjection } from "#server/protocol/projection/projection-contract.ts";
+import type { BrowserOwnerProjection } from "#server/projection/protocol/projection-contract.ts";
 import type { BrowserReadiness } from "#shared/browser/schemas/snapshot.ts";
 import type {
 	BrowserCommandId,

@@ -1,0 +1,126 @@
+import { createCodexProcess } from "@archboard/codex-app-server/process";
+import { createCodexTransport } from "@archboard/codex-app-server/transport";
+import {
+	createIdentityAuthorities,
+	createIdentityLedger,
+} from "@archboard/codex-app-server/identity";
+import {
+	CODEX_WORKBENCH_OWNER,
+	installCodexWorkbenchOwnerLifecycle,
+	type CodexWorkbenchComponents,
+	type CodexWorkbenchGenerationFactory,
+	type CodexWorkbenchGenerationHooks,
+	type CodexWorkbenchGenerationInput,
+	type CodexWorkbenchOwner,
+	type CodexWorkbenchOwnerOptions,
+	type CodexWorkbenchSnapshot,
+} from "#server/owner/services/lifecycle.ts";
+import type {
+	InstallProductionCodexWorkbenchOptions,
+	ProductionCodexWorkbenchBindings,
+} from "#server/generation/protocol/contract.ts";
+import {
+	createProductionCodexWorkbenchFactories,
+	installDynamicRegistrations,
+} from "#server/generation/services/factories.ts";
+import { composeCodexWorkbenchGeneration } from "#server/generation/services/compose.ts";
+
+/**
+ * Build one generation of the production workbench: the components a running
+ * child owns, over whichever kernel the owner handed down.
+ * @param options What the production owner was installed with.
+ * @returns The factory the owner calls for each generation.
+ */
+function productionGenerationFactory(
+	options: InstallProductionCodexWorkbenchOptions,
+): CodexWorkbenchGenerationFactory {
+	return async (input) => {
+		const bindings = options.bindings(input);
+		const identityLedger =
+			input.kernel?.identityLedger ?? createIdentityLedger(bindings.recordPrefix);
+		return composeCodexWorkbenchGeneration({
+			factories: createProductionCodexWorkbenchFactories(
+				bindings,
+				input.kernel,
+				input.adoptedSession,
+				identityLedger,
+				input.initialIdentity,
+			),
+			identityLedger,
+			ownsTransport: input.kernel === null,
+			activate: false,
+			hooks: options.hooks(input),
+			assertActivationCurrent: input.assertActivationCurrent,
+		});
+	};
+}
+
+/**
+ * Build the kernel that outlives one child: the identity ledger and the
+ * transport, so a restarted child rejoins the same names it left.
+ * @param options What the production owner was installed with.
+ * @returns The factory the owner calls when it needs a kernel.
+ */
+function productionKernelFactory(
+	options: InstallProductionCodexWorkbenchOptions,
+): NonNullable<CodexWorkbenchOwnerOptions["createKernel"]> {
+	return (input) => {
+		const bindings = options.bindings(input);
+		const identityLedger = createIdentityLedger(bindings.recordPrefix);
+		const identity = createIdentityAuthorities(identityLedger);
+		const transport = createCodexTransport({
+			...bindings.transport({ identity }),
+			identity: identity.identity,
+		});
+		if (transport.inspect().state === "open") {
+			installDynamicRegistrations(transport, bindings.tools, bindings.dynamicRegistrations);
+		}
+		return Object.freeze({
+			kernel: Object.freeze({ identityLedger, transport }),
+			identity,
+		});
+	};
+}
+
+/**
+ * Install the mandatory production owner for one server application lifetime.
+ * @param options The child process, and the bindings and hooks each generation
+ * is built from.
+ * @returns The owner.
+ */
+function installProductionCodexWorkbench(
+	options: InstallProductionCodexWorkbenchOptions,
+): CodexWorkbenchOwner {
+	return installCodexWorkbenchOwner({
+		/**
+		 * Start the private app-server child this workbench runs over.
+		 * @returns The child.
+		 */
+		createProcess: () => createCodexProcess(options.process),
+		createKernel: productionKernelFactory(options),
+		createGeneration: productionGenerationFactory(options),
+	});
+}
+
+/**
+ * Install one workbench owner, production or a test's own, over the lifecycle
+ * every owner shares.
+ * @param options The process, kernel and generation this owner is built from.
+ * @returns The owner.
+ */
+function installCodexWorkbenchOwner(options: CodexWorkbenchOwnerOptions): CodexWorkbenchOwner {
+	return installCodexWorkbenchOwnerLifecycle(options);
+}
+
+export {
+	CODEX_WORKBENCH_OWNER,
+	type CodexWorkbenchComponents,
+	type CodexWorkbenchGenerationHooks,
+	type CodexWorkbenchGenerationInput,
+	type CodexWorkbenchOwner,
+	type CodexWorkbenchSnapshot,
+	type ProductionCodexWorkbenchBindings,
+	type InstallProductionCodexWorkbenchOptions,
+	installProductionCodexWorkbench,
+	installCodexWorkbenchOwner,
+};
