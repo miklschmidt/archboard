@@ -11,7 +11,7 @@
         "vKEsyHFk/vKEsyHFk#TBnOCNx2",
         "vKEsyHFk/vKEsyHFk#cPOdAA3f",
         "vKEsyHFk/vKEsyHFk#t7W7wJHv",
-        "vKEsyHFk/vKEsyHFk#VgzgNAGW",
+        "vKEsyHFk/SMjRfwN3#XtzfRQkG",
         "vKEsyHFk/vKEsyHFk#nugpFSIX"
       ],
       "steps": [
@@ -174,7 +174,7 @@
                 {
                   "id": "vKEsyHFk/vKEsyHFk#bauTjH5g",
                   "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
-                  "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW",
+                  "to": "vKEsyHFk/SMjRfwN3#XtzfRQkG",
                   "label": "Keep talk.json and voice.wav in one rename",
                   "kind": "sync",
                   "anchor": {

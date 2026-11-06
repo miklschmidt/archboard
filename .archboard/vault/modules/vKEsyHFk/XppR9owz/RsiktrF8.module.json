@@ -57,19 +57,6 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#VXPf7fBP",
       "to": "vKEsyHFk/SMjRfwN3#L1cYIenF"
-    },
-    {
-      "order": 117000,
-      "kind": "call",
-      "label": "reserve a fresh talk directory",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/rules/semantic/draw/recording-output.ts",
-        "symbol": "freshTalkPlace"
-      },
-      "id": "vKEsyHFk/XppR9owz#9Sv3VWDi",
-      "to": "vKEsyHFk/XppR9owz#XAJYaUnv"
     }
   ]
 }
