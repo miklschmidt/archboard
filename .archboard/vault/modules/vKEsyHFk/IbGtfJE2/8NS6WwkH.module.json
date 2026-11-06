@@ -5,7 +5,7 @@
   "responsibility": "A detached, verified checkout of one pinned Flask commit from a bare cache, or an empty repository for a planning scenario",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/processes/flask.ts"
+    "path": "packages/skills/src/runtime/evaluation/run-world/processes/flask.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#8NS6WwkH",

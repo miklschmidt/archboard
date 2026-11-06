@@ -6,7 +6,7 @@
   "description": "Started by a person, never by the gate: every author run and the grading session call a model.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime"
+    "path": "packages/skills/src/runtime/evaluation"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#PxnjFfV3",

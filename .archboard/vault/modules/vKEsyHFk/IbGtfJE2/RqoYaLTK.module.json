@@ -6,7 +6,7 @@
   "description": "The harness takes the pictures; an author never supplies one. A declared view the author never made is a failed capture, never a default picture.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/operations/runs/captures.ts"
+    "path": "packages/skills/src/runtime/evaluation/run-checks/operations/captures.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#RqoYaLTK",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/captures.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-checks/operations/captures.ts",
         "symbol": "archboard"
       },
       "id": "vKEsyHFk/IbGtfJE2#5TtCOktb",
@@ -32,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/captures.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-checks/operations/captures.ts",
         "symbol": "SemanticRasterReceiptSchema"
       },
       "id": "vKEsyHFk/vKEsyHFk#LYFH1rhE",

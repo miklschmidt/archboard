@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/store/records.ts"
+    "path": "packages/skills/src/runtime/evaluation/reporting/store/records.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#LcKROPw0",
@@ -22,7 +22,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/store/records.ts",
+        "path": "packages/skills/src/runtime/evaluation/reporting/store/records.ts",
         "symbol": "graderIdentity"
       },
       "id": "vKEsyHFk/IbGtfJE2#LzlhpsS7",
@@ -35,7 +35,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/store/records.ts",
+        "path": "packages/skills/src/runtime/evaluation/reporting/store/records.ts",
         "symbol": "buildReport"
       },
       "id": "vKEsyHFk/IbGtfJE2#dYaaUdXS",
@@ -48,7 +48,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/store/records.ts",
+        "path": "packages/skills/src/runtime/evaluation/reporting/store/records.ts",
         "symbol": "exposureAudit"
       },
       "id": "vKEsyHFk/IbGtfJE2#t7IxZjEX",
@@ -61,7 +61,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/store/records.ts",
+        "path": "packages/skills/src/runtime/evaluation/reporting/store/records.ts",
         "symbol": "citationProblem"
       },
       "id": "vKEsyHFk/IbGtfJE2#7Gbj2xDB",
@@ -74,7 +74,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/store/records.ts",
+        "path": "packages/skills/src/runtime/evaluation/reporting/store/records.ts",
         "symbol": "resumeSelection"
       },
       "id": "vKEsyHFk/IbGtfJE2#QqI9VPd1",
@@ -87,7 +87,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/store/records.ts",
+        "path": "packages/skills/src/runtime/evaluation/reporting/store/records.ts",
         "symbol": "suppliedCaptures"
       },
       "id": "vKEsyHFk#jkSstw4e",

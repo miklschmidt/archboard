@@ -14,7 +14,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/processes/isolation.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-world/processes/isolation.ts",
         "symbol": "writeCliWrapper"
       },
       "id": "vKEsyHFk/IbGtfJE2#NJCua3tZ",

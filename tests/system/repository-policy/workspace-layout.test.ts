@@ -113,8 +113,6 @@ const ROLE_FIRST_TREES: readonly string[] = [
 	"packages/renderer/src/shared",
 	"packages/renderer/tests/runtime",
 	"packages/renderer/tests/shared",
-	"packages/skills/src/runtime",
-	"packages/skills/tests/runtime",
 	"packages/ui-kit/src/ui",
 	"packages/ui-kit/tests/ui",
 ];
