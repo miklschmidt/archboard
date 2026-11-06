@@ -921,7 +921,7 @@ The two stop controls keep voice and workhorse lifetimes separate.
 `src/server.ts` and `src/main.tsx` are thin process and browser entries.
 `src/shared/protocol/application.ts` owns the configuration response and socket path.
 `src/server/` owns HTTP, socket registration, startup, and cleanup.
-`src/ui/` owns the page and action presentation. It holds no client of its own.
+`src/ui/` owns the page and action presentation. It uses the voice package's client and adds only the page lifecycle around it (`ui/workbench/clients/page-client.ts`).
 `scripts/build-workbench-example.ts` generates the three browser assets under ignored `dist/workbench-example`.
 The normal gate builds those assets before it runs product tests.
 
