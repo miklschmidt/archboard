@@ -11,6 +11,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#nMKLaMje",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "formerNames": [
+    "Board cache keys"
+  ],
   "outgoing": [
     {
       "order": 132000,
@@ -25,8 +28,5 @@
       "id": "vKEsyHFk/UOXNWLhR#N9rPOyGF",
       "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
     }
-  ],
-  "formerNames": [
-    "Board cache keys"
   ]
 }
