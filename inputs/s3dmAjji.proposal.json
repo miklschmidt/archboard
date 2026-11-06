@@ -65,6 +65,56 @@
     },
     {
       "type": "add",
+      "subject": "vKEsyHFk#6ZMHr90w",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "dependency",
+        "label": "the page's colours",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/paint/marks.rs",
+          "symbol": "viewer_marks"
+        },
+        "id": "vKEsyHFk#6ZMHr90w",
+        "to": "vKEsyHFk/gbyqW4H3#u1OXg3Yy"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#6ZMHr90w",
+      "placement": {
+        "holder": "vKEsyHFk#GqMdZbTF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Hb3narYc",
+      "kind": "relationship",
+      "value": {
+        "order": 2000,
+        "kind": "call",
+        "label": "a standing's pin and the warning glyph",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/paint/standing.rs",
+          "symbol": "standing_pin_at"
+        },
+        "id": "vKEsyHFk#Hb3narYc",
+        "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Hb3narYc",
+      "placement": {
+        "holder": "vKEsyHFk#GqMdZbTF"
+      }
+    },
+    {
+      "type": "add",
       "subject": "vKEsyHFk#9MKtlnoC",
       "kind": "relationship",
       "value": {
