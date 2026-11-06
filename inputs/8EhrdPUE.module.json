@@ -7,8 +7,8 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/services/entry.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
   "schemaVersion": 1,
   "id": "vKEsyHFk#8EhrdPUE",
+  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
   "outgoing": []
 }
