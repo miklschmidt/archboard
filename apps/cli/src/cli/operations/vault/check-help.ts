@@ -56,6 +56,8 @@ const CHECK_SEMANTICS_HELP = [
 	"",
 	"Warnings on current architecture, which refuse no write. A shape is a signal, so read the source before you act on one:",
 	"- CONTAINER_PASS_THROUGH: in a model that binds code, a module with parts and no binding, which no relationship or flow names, and whose parts no relationship or flow joins.",
+	"- CONTAINER_UNBOUND: in a model that binds code, a module with bound parts and no binding, so the code of its folder that no part binds belongs to no module. suggestedBinding names the one directory that holds every part and no other module's code, when one does.",
+	"- CONTAINER_PARTS_OUTSIDE: a bound module with a part bound outside its binding. suggestedBinding names the directory that holds them all, when one does. Without one, the parts are spread: move a part that does another module's job, or tell the user that the code layout splits one job over several folders.",
 	"- ROOT_UNCONNECTED: in a model with several roots, a root with no relationship to another root. A relationship of a part inside it counts.",
 	"- CONTAINER_LINE_TO_OWN_PART: a relationship between a module and a part that it holds, at any depth. The nesting already shows it, so a reading that opens the module draws no line for it, and the panel still lists it. Start or end it at the part that makes or answers the call.",
 	"",

@@ -1,16 +1,18 @@
-// What the semantics check says about one state of a canonical model. Three rules
+// What the semantics check says about one state of a canonical model. Four rules
 // read its shape: a container that gathers nothing, a root that nothing connects,
-// and a relationship between a module and a part that it holds. A shape is a
-// signal and never proves that a module has no job, so these are warnings and no
-// write reads them. No rule reads a name, a count or a folder. Two rules are
-// errors. A current flow with no summary breaks what every write of a flow now
-// keeps. A relationship that ends on a module with parts says that the frame acts,
-// and a module cannot point at anything, so it hides the part that does (ADR 0044).
-// A reader can still read both.
+// a relationship between a module and a part that it holds, and a container that
+// does not own one place in the code that holds its parts. A shape is a signal and
+// never proves that a module has no job, so these are warnings and no write reads
+// them. No rule reads a name, a count or a file on disk. Two rules are errors. A
+// current flow with no summary breaks what every write of a flow now keeps. A
+// relationship that ends on a module with parts says that the frame acts, and a
+// module cannot point at anything, so it hides the part that does (ADR 0044). A
+// reader can still read both.
 
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import { containersOf } from "#shared/rules/scope.ts";
 import type { VaultDiagnostic } from "#shared/schemas/semantic-policy.ts";
+import { containmentDiagnostics } from "#runtime/operations/check/containment.ts";
 import { edgeSubjects, nodeSubject } from "#runtime/operations/check/subject.ts";
 
 type ModelStructure = Pick<ArchitectureModel, "modules" | "relationships" | "collections">;
@@ -231,6 +233,7 @@ function structureDiagnostics(model: ModelStructure): VaultDiagnostic[] {
 	);
 	return [
 		...passThroughContainers(model, parents),
+		...containmentDiagnostics(model, parents),
 		...unconnectedRoots(model, parents),
 		...linesToOwnParts(model, parents),
 		...endsOnContainers(model, parents),

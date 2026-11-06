@@ -64,8 +64,16 @@ If a claim is revoked, stop that intent and report the state that it left.
 
 ## Give each container a job
 
-A module with parts needs code or a job of its own.
-Bind it to the code that it owns, or let a relationship or flow name it or join its parts.
+Bind each module with parts to the one directory that holds the code of every part.
+That binding owns the code that no part binds, so the code check sees each call into it.
+`archboard check` warns with `CONTAINER_UNBOUND` on a module with bound parts and no binding, and with `CONTAINER_PARTS_OUTSIDE` on a part bound outside its module's binding.
+When one directory holds every part and no code of another module, the warning names it in `suggestedBinding`. Bind the module there.
+When no directory does, read the code before you change the model:
+
+- If a part does the job of another module, move it to that module.
+- If the parts do one job and the code spreads it over several folders, the code's layout breaks containment. Tell the user which folders split the job. Archboard cannot hold the job to its code until the code sits in one folder, so recommend a behavior-first layout. Keep the model true to the job, and bind the module after the code moves.
+
+A module whose parts bind no code still needs a job of its own: let a relationship or flow name it or join its parts.
 If it has neither, move its parts to its parent and remove it.
 A numbered layer or a tidy box is not a job. Use a configured group for a gathering that only labels its parts.
 Connect each root to another root, or move it into the module that uses it.

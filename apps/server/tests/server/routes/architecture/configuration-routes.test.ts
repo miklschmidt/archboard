@@ -67,6 +67,7 @@ test("the semantic check warns on a pass-through container and an unconnected ro
 	const { diagnostics } = VaultCheckSchema.parse(await answer.json());
 	expect(diagnostics.map(({ severity, code, subject }) => [severity, code, subject?.id])).toEqual([
 		["warning", "CONTAINER_PASS_THROUGH", "Shop#Box"],
+		["warning", "CONTAINER_UNBOUND", "Shop#Box"],
 		["warning", "ROOT_UNCONNECTED", "Shop#Box"],
 		["warning", "ROOT_UNCONNECTED", "Shop#Alone"],
 	]);

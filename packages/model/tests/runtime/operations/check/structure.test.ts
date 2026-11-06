@@ -66,7 +66,10 @@ function warned(structure: Structure, code: string): (string | undefined)[] {
 
 describe("CONTAINER_PASS_THROUGH", () => {
 	test("names a container whose parts nothing joins, as a warning on its own file", () => {
-		expect(structureDiagnostics(model())).toMatchObject([
+		const diagnostics = structureDiagnostics(model()).filter(
+			({ code }) => code === "CONTAINER_PASS_THROUGH",
+		);
+		expect(diagnostics).toMatchObject([
 			{
 				severity: "warning",
 				code: "CONTAINER_PASS_THROUGH",
@@ -214,4 +217,104 @@ test("a current flow with no summary is an error that names the flow and its fil
 	expect(reports.filter(({ code }) => code === "FLOW_SUMMARY_MISSING")).toMatchObject([
 		{ severity: "error", file: described.file, subject: { kind: "flow", id: silent.id } },
 	]);
+});
+
+describe("container containment", () => {
+	const REPO = BINDING.repo;
+	const at = (path: string, symbol?: string) => ({
+		repo: REPO,
+		path,
+		...(symbol === undefined ? {} : { symbol }),
+	});
+	/** `box` holds `first` and `second`, bound where the case says, and `other` stands outside. */
+	function shaped(
+		container: Partial<Module>,
+		paths: readonly [string, string],
+		otherPath?: string,
+	): Structure {
+		return model({
+			modules: [
+				part(box, container),
+				part(first, { parent: box, binding: at(paths[0]) }),
+				part(second, { parent: box, binding: at(paths[1]) }),
+				part(other, otherPath === undefined ? {} : { binding: at(otherPath) }),
+			],
+		});
+	}
+	function containment(structure: Structure) {
+		return structureDiagnostics(structure)
+			.filter(({ code }) => code === "CONTAINER_UNBOUND" || code === "CONTAINER_PARTS_OUTSIDE")
+			.map(({ code, subject, suggestedBinding }) => ({ code, id: subject?.id, suggestedBinding }));
+	}
+
+	test("asks an unbound container to bind the directory that holds every part", () => {
+		expect(
+			containment(shaped({}, ["src/shop/a.ts", "src/shop/cart/b.ts"], "src/other.ts")),
+		).toEqual([{ code: "CONTAINER_UNBOUND", id: box, suggestedBinding: at("src/shop") }]);
+	});
+
+	test("names no directory when the one that holds the parts holds another module's code", () => {
+		expect(containment(shaped({}, ["src/shop/a.ts", "src/shop/b.ts"], "src/shop/c.ts"))).toEqual([
+			{ code: "CONTAINER_UNBOUND", id: box, suggestedBinding: undefined },
+		]);
+	});
+
+	test("names no directory when the parts are in different repositories", () => {
+		const structure = shaped({}, ["src/shop/a.ts", "src/shop/b.ts"]);
+		const modules = structure.modules.map((module) =>
+			module.id === second
+				? { ...module, binding: { repo: "github.com/test/other", path: "b.ts" } }
+				: module,
+		);
+		expect(containment({ ...structure, modules })).toEqual([
+			{ code: "CONTAINER_UNBOUND", id: box, suggestedBinding: undefined },
+		]);
+	});
+
+	test("names a bound container with a part outside its binding, and the directory that holds them", () => {
+		const structure = shaped({ binding: at("src/shop/api.ts", "api") }, [
+			"src/shop/a.ts",
+			"src/shop/b.ts",
+		]);
+		expect(containment(structure)).toEqual([
+			{ code: "CONTAINER_PARTS_OUTSIDE", id: box, suggestedBinding: at("src/shop") },
+		]);
+	});
+
+	test("a part outside the container's directory makes its parts spread", () => {
+		const structure = shaped({ binding: at("src/shop") }, ["src/shop/a.ts", "lib/b.ts"]);
+		expect(containment(structure)).toEqual([
+			{ code: "CONTAINER_PARTS_OUTSIDE", id: box, suggestedBinding: undefined },
+		]);
+	});
+
+	test("a module around the container may own the directory", () => {
+		const structure = shaped({ parent: other }, ["src/shop/a.ts", "src/shop/b.ts"], "src/shop");
+		expect(containment(structure)).toEqual([
+			{ code: "CONTAINER_UNBOUND", id: box, suggestedBinding: at("src/shop") },
+		]);
+	});
+
+	test.each<[string, Structure]>([
+		[
+			"a directory that holds every part",
+			shaped({ binding: at("src/shop/") }, ["src/shop/a.ts", "src/shop/b/c.ts"]),
+		],
+		[
+			"one file whose symbols its parts bind",
+			shaped({ binding: at("src/shop.ts", "shop") }, ["src/shop.ts", "src/shop.ts"]),
+		],
+		[
+			"no bound part",
+			model({
+				modules: [part(box), part(first, { parent: box }), part(other, { binding: BINDING })],
+			}),
+		],
+		[
+			"a model that binds no code",
+			model({ modules: [part(box), part(first, { parent: box }), part(other)] }),
+		],
+	])("stays quiet for %s", (_case, structure) => {
+		expect(containment(structure)).toEqual([]);
+	});
 });
