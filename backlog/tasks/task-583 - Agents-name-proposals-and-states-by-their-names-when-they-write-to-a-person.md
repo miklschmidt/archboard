@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-06T17:12:00Z'
-updated_date: '2026-11-06T17:34:00Z'
+updated_date: '2026-11-06T19:07:00Z'
 labels:
   - skills
 dependencies: []
@@ -37,4 +37,6 @@ The owner reads replies, PR bodies and task notes, and a state ID such as s3dmAj
 The owner saw no diagrams in PR bodies: the agent loaded the generic pr skill, whose trigger is writing a PR body, and archboard-pr's description never named a PR body or the pairing. The description now leads with writing or updating a PR body and says to load it together with any other PR-body skill.
 
 The archboard-pr skill now has the PR that implements a proposal adopt it on its own branch, so code and architecture merge together and no follow-up PR is needed. It says how to carry a proposal that the default branch superseded (a copy on current, then shelve the original) and to raise a draft whose code is already merged. The consumer skill says that a request to prepare the implementing PR requests that adoption. test:repository: 163 pass.
+
+The consumer skill gains "Fix the map from the code": a proposal states the wanted architecture, the current state maps the code as it is, so a module, relationship or flow step in current that the code does not hold is a defect to fix, while a part that only a proposal holds is a plan. Questions about duplicate identities are answered by reading the code, not by asking the owner; the merge keeps the identity that sits where the code sits.
 <!-- SECTION:NOTES:END -->

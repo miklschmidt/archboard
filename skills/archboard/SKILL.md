@@ -95,6 +95,18 @@ If two parts do different jobs across a seam, state two relationships. A relatio
 A shape is a signal, not proof, so read the source before you change the model.
 No write refuses them.
 
+## Fix the map from the code
+
+A proposal states the architecture that you want. The current state maps the code as it is.
+In the current state, the code is the source of truth. If the map is wrong, fix the map.
+A module, relationship or flow step in the current state that the code does not hold is a defect. Remove it, or correct it to what the code does.
+A part that only a proposal holds is a plan, not a defect, until that proposal is adopted.
+If two modules describe the same code, read that code. It answers whether they are one module, so do not ask the user.
+A matching binding or name only raises the question.
+If they are one module, keep the identity of the module that sits where the code sits.
+In one intent, move every relationship, flow step and walkthrough reference onto it, and remove the other module.
+Tell the user what you merged and which code proved it.
+
 ## Read the design lens
 
 Before you judge a module, plan a refactor, or choose between proposals, read the facts that the model and Git hold.

@@ -1,12 +1,16 @@
 ---
 id: TASK-582.03
 title: Lay out the source behavior first inside each area
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-06T15:14:00Z'
+updated_date: '2026-11-06T19:06:00Z'
 labels:
   - architecture
 dependencies: []
+documentation:
+  - backlog/docs/doc-003 - Behavior-first-layout-plan.md
 parent_task_id: TASK-582
 priority: medium
 ordinal: 1026000
@@ -25,3 +29,9 @@ docs/agents/boundaries.md puts role folders first (`ui/clients/pane-session`, `u
 - [ ] #3 Each container that the containment warning names is repaired: a model error by a model change, a layout split by moving the code
 - [ ] #4 archboard check on this repository reports no containment warning
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+The plan of record is backlog/docs/doc-003 (Behavior-first layout plan), with the owner decisions at its top. Four stacked layers, each its own subtask: A rules and codemod, B packages, C cli, server and web, D the remaining packages and the end of the ratchet. Every commit leaves bun run check green; the containment warnings fall 83 -> 0 by the end of C.
+<!-- SECTION:PLAN:END -->
