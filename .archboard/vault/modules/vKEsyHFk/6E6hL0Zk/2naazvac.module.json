@@ -106,19 +106,6 @@
       "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG"
     },
     {
-      "order": 39000,
-      "kind": "call",
-      "description": "Checks every browser request before admission and routing",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
-        "symbol": "createBrowserOriginGuard"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#E1Tpzwjx",
-      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
-    },
-    {
       "order": 42000,
       "kind": "call",
       "label": "requires a vault on the code opener's route",
@@ -168,7 +155,7 @@
         "symbol": "createBrowserOriginGuard"
       },
       "id": "vKEsyHFk/6E6hL0Zk#4P3PNJ5d",
-      "to": "vKEsyHFk/6E6hL0Zk#cZ1UH0xU"
+      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
     },
     {
       "order": 124000,

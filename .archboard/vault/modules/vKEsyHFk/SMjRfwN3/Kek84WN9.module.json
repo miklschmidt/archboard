@@ -16,19 +16,6 @@
   "parent": "vKEsyHFk/yejBBUFY#aixSjfNe",
   "outgoing": [
     {
-      "order": 33000,
-      "kind": "call",
-      "label": "install the stepped clock; step it a frame at a time",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
-        "symbol": "createSteppedClock"
-      },
-      "id": "vKEsyHFk/yejBBUFY#f2n9GAXv",
-      "to": "vKEsyHFk/yejBBUFY#rouptSyK"
-    },
-    {
       "order": 34000,
       "kind": "call",
       "label": "read models from the talk",

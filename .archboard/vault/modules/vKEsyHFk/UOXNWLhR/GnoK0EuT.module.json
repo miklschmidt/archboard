@@ -26,19 +26,6 @@
       "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
     },
     {
-      "order": 38000,
-      "kind": "call",
-      "label": "glides and picture transitions",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-camera-glide.ts",
-        "symbol": "frameClock"
-      },
-      "id": "vKEsyHFk/yejBBUFY#PGzV2I05",
-      "to": "vKEsyHFk/yejBBUFY#rouptSyK"
-    },
-    {
       "order": 96000,
       "kind": "call",
       "label": "the transform of each glide frame",

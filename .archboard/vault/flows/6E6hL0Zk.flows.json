@@ -744,7 +744,7 @@
       "participants": [
         "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
-        "vKEsyHFk/6E6hL0Zk#cZ1UH0xU",
+        "vKEsyHFk/Oi6SBIAM#RjaKX25k",
         "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
         "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
       ],
@@ -764,7 +764,7 @@
         {
           "id": "vKEsyHFk/6E6hL0Zk#BNhaqnpm",
           "from": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
-          "to": "vKEsyHFk/6E6hL0Zk#cZ1UH0xU",
+          "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k",
           "label": "check the page's origin",
           "kind": "sync",
           "anchor": {
