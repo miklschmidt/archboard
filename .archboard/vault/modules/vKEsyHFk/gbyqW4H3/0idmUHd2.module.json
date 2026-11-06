@@ -2,7 +2,8 @@
   "order": 32000,
   "name": "Flowchart",
   "kind": "function",
-  "responsibility": "Lays out one flow's logic: its steps as a graph on the track engine, decisions as diamonds with labelled lines, loops as hexagons",
+  "responsibility": "Lays out one flow's logic from its structure: steps on one axis, answers side by side, long lines and column breaks as lettered jumps",
+  "description": "A flow is a run of blocks: a box, a decision, a guard, a landing or a loop. The layout stacks a run on one axis, with steps that follow each other close and no line between them, and stands the answers of a decision side by side, the taller of two straight on down. A line that would run far round other blocks jumps: it stops at a jump out and goes on at the jump in of the same letter and ink. The short answer of a guard jumps to the landing where its long answer ends, a long loop jumps back to its hexagon and on from beside it, and a run that is taller than its column height breaks into even columns that jump from one to the next. The core keeps the column height at which the reference pane shows the picture largest, and letters the jumps in the order the picture holds them (ADR 0073). No layout engine takes part, so the lines cross nowhere.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-flows/src/flowchart"
@@ -25,26 +26,13 @@
       "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
     },
     {
-      "order": 57000,
-      "kind": "call",
-      "label": "the step graph, on the track engine",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-flows/src/flowchart/answer_order.rs",
-        "symbol": "draw"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#8WJV0Mer",
-      "to": "vKEsyHFk#iK24tmVF"
-    },
-    {
       "order": 58000,
       "kind": "call",
-      "label": "carry line ends onto the shapes",
+      "label": "round each line's corners",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-flows/src/flowchart/ports.rs",
+        "path": "crates/archboard-flows/src/flowchart/mod.rs",
         "symbol": "curve_through"
       },
       "id": "vKEsyHFk/gbyqW4H3#LJUm7E1m",

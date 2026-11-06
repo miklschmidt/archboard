@@ -40,10 +40,13 @@ git -C "$holder" remote add origin https://example.invalid/web-shop.git
 "$cli" -C "$holder" model import --input "$holder/.archboard/vault/history.import.json" >/dev/null
 
 # render <file> <reading options...>
+# A drawing leaves out its render recipe: the recipe names the disposable copy, which no
+# `archboard check embeds` can resolve later. Draw them again after a renderer change instead.
 render() {
 	local name=$1
 	shift
 	"$cli" -C "$holder" model render "$@" --theme dark --out "$out/$name.svg" >/dev/null
+	bun -e 'const f = Bun.argv[1]; const svg = await Bun.file(f).text(); await Bun.write(f, svg.replace(/<metadata><archboard:render-recipe[\s\S]*?<\/metadata>/, ""));' "$out/$name.svg"
 	echo "wrote src/diagrams/$name.svg"
 }
 

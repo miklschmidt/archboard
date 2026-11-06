@@ -3,52 +3,25 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "oyXXnyCV",
-    "name": "TASK-549.24 canonical module ownership",
-    "summary": "Integrate the seven reviewed implementation fragments into one canonical architecture, with recursive module ownership and retained original history.",
+    "id": "jRNHx2a1",
+    "name": "A flowchart lays out from its flow and a flow opens in the reading that fits",
+    "summary": "The flowchart lays a flow out from its structure in one pass, breaks a long run into columns and ends every long line at a lettered jump, so a long flow fits a desktop pane without lines round its blocks, and a flow opens in the reading that its pane shows larger.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/8PuyaYA8.proposal.json"
+        "path": "docs/adr/0073-a-flowchart-lays-out-from-its-flow-and-a-flow-opens-in-the-reading-that-fits.md"
       },
       {
         "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/aolPYfP5.proposal.json"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/KzJ2iXIq.proposal.json"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/NyesaQPQ.proposal.json"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/SGrr8NFb.proposal.json"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/VaQkKiQf.proposal.json"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
-        "path": ".archboard/vault/proposals/WNNe5xeB.proposal.json"
+        "path": "docs/design/flowchart-layout-research.md"
       }
     ],
-    "predecessor": "vKEsyHFk",
-    "baseline": "c74474411ecf69a357e88c786dd1e475114b1fba",
-    "createdAt": "2026-10-28T03:20:52.153Z",
-    "adoptedAt": "2026-10-28T12:01:59.058Z",
-    "reason": "TASK-549 implements one canonical module model, compact proposals, exact retained history, recursive readings, and complete flows. Source inspection and real browser acceptance confirm the consolidated ownership and shared projection. Original tours and eight unrelated proposals remain preserved.",
-    "previousCurrent": "vKEsyHFk"
+    "predecessor": "w4XB6eBv",
+    "baseline": "9194e44da5a324e84e6ffdba346147f03b566ed8",
+    "createdAt": "2026-11-06T11:22:18.419Z",
+    "adoptedAt": "2026-11-06T11:23:04.454Z",
+    "reason": "The flowchart layout from the flow and the reading that fits are merged on main in #34 (ADR 0073). This proposal carries vdbwhuzZ's changes onto current, because vdbwhuzZ follows a former current state.",
+    "previousCurrent": "w4XB6eBv"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
@@ -1541,6 +1514,49 @@
     "vKEsyHFk#scCzO9lh",
     "vKEsyHFk#jJXw6qRR",
     "vKEsyHFk#XdoufLnA",
-    "vKEsyHFk#hyjKNr7W"
+    "vKEsyHFk#hyjKNr7W",
+    "vKEsyHFk/UOXNWLhR#nmkLjKkz",
+    "vKEsyHFk/UOXNWLhR#aTUikCKr",
+    "vKEsyHFk/UOXNWLhR#AEEOu1vG",
+    "vKEsyHFk/UOXNWLhR#UAnbIRqG",
+    "vKEsyHFk/UOXNWLhR#OAY8mj0y",
+    "vKEsyHFk/UOXNWLhR#n5No6FUy",
+    "vKEsyHFk/UOXNWLhR#WT3s42AE",
+    "vKEsyHFk/UOXNWLhR#9VphxuuC",
+    "vKEsyHFk#tv4MSYd6",
+    "vKEsyHFk#NjziT92Y",
+    "vKEsyHFk#m5Ct61Wj",
+    "vKEsyHFk#Y4CPwsJC",
+    "vKEsyHFk#MT1O8WXn",
+    "vKEsyHFk#wN2XkLVD",
+    "vKEsyHFk#HqcAJhNA",
+    "vKEsyHFk#fU1obV1q",
+    "vKEsyHFk#ZwdlhWaG",
+    "vKEsyHFk#GfzrDnYW",
+    "vKEsyHFk#6rPPoEMd",
+    "vKEsyHFk#Zwk3OuRn",
+    "vKEsyHFk#gRc6GEfR",
+    "vKEsyHFk#0cSzgeYd",
+    "vKEsyHFk#A8IkfH4a",
+    "vKEsyHFk#JRcNAGp9",
+    "vKEsyHFk#WBbX6uPW",
+    "vKEsyHFk#jPdi4ndV",
+    "vKEsyHFk#JuK9kPUC",
+    "vKEsyHFk#2QaIm9u5",
+    "vKEsyHFk#PoaUWNrZ",
+    "vKEsyHFk#1Ki6QCRp",
+    "vKEsyHFk#N8ZJyIbU",
+    "vKEsyHFk#0oYDU8cV",
+    "vKEsyHFk#KMmwoBvr",
+    "vKEsyHFk#FT3wjIMa",
+    "vKEsyHFk#2PD9YeDq",
+    "vKEsyHFk#Np6QHSgA",
+    "vKEsyHFk#4S9sLbmq",
+    "vKEsyHFk#MzuJ4Y5F",
+    "vKEsyHFk#8I2z7YLx",
+    "vKEsyHFk#fmkuK9be",
+    "vKEsyHFk#CjQhZFoE",
+    "vKEsyHFk/gbyqW4H3#8WJV0Mer",
+    "vKEsyHFk/gbyqW4H3#NR1ARSyH"
   ]
 }

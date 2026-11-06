@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#VJXR3kbp",
       "to": "vKEsyHFk#R3jPedS8"
+    },
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "one per run, on its own port",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/processes/server.ts",
+        "symbol": "startServer"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#SoK3eMhj",
+      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
     }
   ]
 }

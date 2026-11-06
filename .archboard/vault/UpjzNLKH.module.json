@@ -1,0 +1,32 @@
+{
+  "order": 71000,
+  "name": "Browser painter",
+  "kind": "module",
+  "responsibility": "The Painter class that a page holds: one stage and the canvas its frames land on, painted by Vello on WebGPU, by Vello GPU on WebGL2 or by Vello on the CPU",
+  "description": "A page asks it to show, carry, enter, leave or dive a picture, to set the camera, the light and the marks, to pick under a point and to draw a frame for a time. This crate is a browser's: a native build of the workspace compiles it empty. It carries the hash of the sources it was built from, and the page refuses a build of other sources.",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-painter-wasm/src"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#UpjzNLKH",
+  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "one stage for the canvas",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painter-wasm/src/browser.rs",
+        "symbol": "Stage"
+      },
+      "id": "vKEsyHFk#RaRMc6Gn",
+      "to": "vKEsyHFk#ttPYQNXo"
+    }
+  ]
+}

@@ -3,7 +3,7 @@
   "name": "Recording entry",
   "kind": "module",
   "responsibility": "Records a legacy board or an exact retained canonical walkthrough through the existing page driver.",
-  "description": "Keeps the talk with the model, the vault check and, when record was given --against, the variant every picture of it is read against, so a replay draws the same comparison.",
+  "description": "Keeps the talk with the model, the vault check and, when record was given --against, the variant every picture of it is read against, so a replay draws the same comparison. It starts Chromium with --disable-gpu, so the page paints on the CPU painter.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts"

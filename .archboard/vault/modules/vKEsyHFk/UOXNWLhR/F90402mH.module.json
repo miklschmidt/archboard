@@ -78,6 +78,19 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#3EvpTPuC",
       "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
+    },
+    {
+      "order": 990100,
+      "kind": "call",
+      "label": "warm the painter while a picture is prepared",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "warmPainter"
+      },
+      "id": "vKEsyHFk#pRZRhE3w",
+      "to": "vKEsyHFk#hKrzJUPf"
     }
   ]
 }

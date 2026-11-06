@@ -2,7 +2,7 @@
   "order": 21000,
   "name": "Camera glide",
   "kind": "function",
-  "responsibility": "Glides the camera to its next place over a set time, writing the surface's transform a frame at a time",
+  "responsibility": "Glides the camera to its next place over a set time, writing the surface's transform and the stage's camera a frame at a time",
   "description": "The camera is committed to state once, at the end, and the surface carries data-camera-motion while it flies. A gesture stops it where it is. It reads the time and its frames from the frame clock, so a replay steps it to each frame's time.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
@@ -50,6 +50,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#zx1KnBNz",
       "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
+    },
+    {
+      "order": 990100,
+      "kind": "call",
+      "label": "the stage's camera, each frame of a glide",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/canvas/use-camera-glide.ts",
+        "symbol": "stageOf"
+      },
+      "id": "vKEsyHFk#OJfwSbjr",
+      "to": "vKEsyHFk#9FxduWoO"
     }
   ]
 }
