@@ -35,7 +35,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.ref || github.sha }}
+          ref: ${{ inputs.ref }}
 
       - name: Set up Vite+, Node.js, and Bun
         uses: voidzero-dev/setup-vp@v1.21.2
@@ -118,7 +118,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.ref || github.sha }}
+          ref: ${{ inputs.ref }}
 
       - name: Set up Vite+, Node.js, and Bun
         uses: voidzero-dev/setup-vp@v1.21.2
