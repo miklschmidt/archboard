@@ -9,11 +9,14 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/canvas/reads/retained-reads.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#qV7dcNI5",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "formerNames": [
+    "Board reads"
+  ],
   "outgoing": [
     {
       "order": 70009,
@@ -22,14 +25,11 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/retained-reads.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts",
         "symbol": "ReadingError"
       },
       "id": "vKEsyHFk#vOEGQ4ga",
       "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
     }
-  ],
-  "formerNames": [
-    "Board reads"
   ]
 }

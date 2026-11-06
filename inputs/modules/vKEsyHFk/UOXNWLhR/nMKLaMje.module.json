@@ -6,11 +6,14 @@
   "description": "Private to the reads folder: the queries subscribe under these keys and the refresh module decides which go stale. Nothing outside it names a key or decodes one, so the layout can change here alone.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/canvas/reads/read-keys.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/read-keys.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#nMKLaMje",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "formerNames": [
+    "Board cache keys"
+  ],
   "outgoing": [
     {
       "order": 132000,
@@ -19,14 +22,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/read-keys.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/read-keys.ts",
         "symbol": "comparisonKey"
       },
       "id": "vKEsyHFk/UOXNWLhR#N9rPOyGF",
       "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
     }
-  ],
-  "formerNames": [
-    "Board cache keys"
   ]
 }

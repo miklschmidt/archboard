@@ -6,7 +6,7 @@
   "description": "Onward follows what the part sends to, back follows what sends to it. A subject reached by more than one route is as near as its nearest. The count of parts reached labels the control that asks for the trace.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/rules/canvas/reading/reach.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/rules/reach.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#t49irDl0",

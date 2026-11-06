@@ -5,7 +5,7 @@
   "responsibility": "Lays out the picture, the sidebar and their states",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/canvas/SemanticStageView.tsx"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticStageView.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#IiRpIrVu",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/SemanticStagePresentation.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx",
         "symbol": "goTo"
       },
       "id": "vKEsyHFk/UOXNWLhR#8HTCy24H",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/SemanticStageView.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticStageView.tsx",
         "symbol": "PeekProvider"
       },
       "id": "vKEsyHFk/UOXNWLhR#r1SrbjWJ",
@@ -44,7 +44,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/SemanticStageView.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticStageView.tsx",
         "symbol": "SemanticDiagram"
       },
       "id": "vKEsyHFk#PAD9JqDy",

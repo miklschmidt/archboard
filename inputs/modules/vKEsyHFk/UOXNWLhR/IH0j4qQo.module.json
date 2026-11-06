@@ -5,7 +5,7 @@
   "responsibility": "Where a model sits inside its card, and the cameras at the two ends of the flight, so the end stands where the opened model stands",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/rules/canvas/camera/dive.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/dive.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#IH0j4qQo",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/rules/canvas/camera/dive.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/dive.ts",
         "symbol": "subjectBox"
       },
       "id": "vKEsyHFk/UOXNWLhR#SEYMj3ln",
@@ -31,7 +31,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/rules/canvas/camera/dive.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/dive.ts",
         "symbol": "cameraFor"
       },
       "id": "vKEsyHFk/UOXNWLhR#1ZI1Njp7",

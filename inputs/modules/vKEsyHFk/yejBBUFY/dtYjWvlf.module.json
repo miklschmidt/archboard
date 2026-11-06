@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/canvas"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#dtYjWvlf",

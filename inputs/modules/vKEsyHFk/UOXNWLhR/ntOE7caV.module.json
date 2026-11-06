@@ -6,11 +6,14 @@
   "description": "Parses the legacy board, resolves the shown variant, describes nodes, edges, flows, steps, bindings, containment, and proposal standing.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/rules/canvas/reading/document.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/rules/document.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#ntOE7caV",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "formerNames": [
+    "Resolve board meaning"
+  ],
   "outgoing": [
     {
       "order": 5000,
@@ -19,7 +22,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/SemanticInspector.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticInspector.tsx",
         "symbol": "subjectOf"
       },
       "id": "vKEsyHFk/UOXNWLhR#axWdg78p",
@@ -32,14 +35,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-lighting.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-lighting.ts",
         "symbol": "LightingInputs"
       },
       "id": "vKEsyHFk/UOXNWLhR#55kjuelE",
       "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ"
     }
-  ],
-  "formerNames": [
-    "Resolve board meaning"
   ]
 }

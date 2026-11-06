@@ -6,7 +6,7 @@
   "description": "The retained stage receives its original content through a captured provider. Ordinary panes mount the canonical model stage. Camera, selection, and presentation controls remain read-only.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#aYC7if1N",
@@ -22,7 +22,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
         "symbol": "SemanticStageView"
       },
       "id": "vKEsyHFk/UOXNWLhR#MFYABYzc",
@@ -35,7 +35,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
         "symbol": "semanticRenderQuery"
       },
       "id": "vKEsyHFk/UOXNWLhR#ACKA5I1k",
@@ -48,7 +48,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
         "symbol": "useAutoFit"
       },
       "id": "vKEsyHFk/UOXNWLhR#UubWA3xG",
@@ -61,7 +61,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
         "symbol": "usePictureCamera"
       },
       "id": "vKEsyHFk/UOXNWLhR#IPiFENAY",
@@ -74,7 +74,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
         "symbol": "useWalkthrough"
       },
       "id": "vKEsyHFk/UOXNWLhR#aZWI05I3",
@@ -87,7 +87,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-settled-focus.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/hooks/use-settled-focus.ts",
         "symbol": "beatFocus"
       },
       "id": "vKEsyHFk/UOXNWLhR#ReedyDWe",
@@ -100,7 +100,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
         "symbol": "useReported"
       },
       "id": "vKEsyHFk/UOXNWLhR#zhpc5qbc",
@@ -113,7 +113,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
         "symbol": "useModelChanges"
       },
       "id": "vKEsyHFk/UOXNWLhR#Kx7K0XLU",
@@ -126,7 +126,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
         "symbol": "useReveal"
       },
       "id": "vKEsyHFk/UOXNWLhR#cKc7k19t",
@@ -139,7 +139,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
         "symbol": "useDrillMoves"
       },
       "id": "vKEsyHFk/UOXNWLhR#rywgYYWx",
@@ -152,7 +152,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
         "symbol": "useDive"
       },
       "id": "vKEsyHFk/UOXNWLhR#teXwe1ys",
@@ -165,7 +165,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
         "symbol": "usePaneVault"
       },
       "id": "vKEsyHFk/UOXNWLhR#mhEYDOOE",
@@ -178,7 +178,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
         "symbol": "useDrillDown"
       },
       "id": "vKEsyHFk/UOXNWLhR#B0UbZ22U",
@@ -191,7 +191,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
         "symbol": "usePaneChrome"
       },
       "id": "vKEsyHFk/UOXNWLhR#XFDnxQCC",

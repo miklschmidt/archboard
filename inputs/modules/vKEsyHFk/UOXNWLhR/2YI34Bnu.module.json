@@ -6,12 +6,15 @@
   "description": "Asks the one drill-down reading where the card's link leads, once. A target that leads nowhere opens nothing: the inspector beside the picture reads the same target and says why.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/canvas/use-drill-open.ts",
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-open.ts",
     "symbol": "useDrillOpen"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#2YI34Bnu",
   "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
+  "formerNames": [
+    "Open a card's board"
+  ],
   "outgoing": [
     {
       "order": 104000,
@@ -20,7 +23,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-drill-open.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-open.ts",
         "symbol": "useDrillTargetReader"
       },
       "id": "vKEsyHFk/UOXNWLhR#HDMEL0tc",
@@ -33,14 +36,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-drill-open.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-open.ts",
         "symbol": "onOpenDown"
       },
       "id": "vKEsyHFk/UOXNWLhR#2CWfWIJr",
       "to": "vKEsyHFk/UOXNWLhR#gIakrnWa"
     }
-  ],
-  "formerNames": [
-    "Open a card's board"
   ]
 }

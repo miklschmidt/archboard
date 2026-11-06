@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#9FxduWoO",
@@ -22,7 +22,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
         "symbol": "startPainter"
       },
       "id": "vKEsyHFk#NWxlWRCj",
@@ -35,7 +35,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
         "symbol": "Painter"
       },
       "id": "vKEsyHFk#kIIEgwrt",
@@ -48,7 +48,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
         "symbol": "frameClock"
       },
       "id": "vKEsyHFk#uiCl86wq",

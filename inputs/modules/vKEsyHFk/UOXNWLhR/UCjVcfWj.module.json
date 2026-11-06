@@ -6,7 +6,7 @@
   "description": "The stage draws the model inside the card and fades the two pictures across the flight; this finds the viewport, the surface and its slots.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/canvas/picture/picture-dive.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-dive.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#UCjVcfWj",

@@ -6,7 +6,7 @@
   "description": "The camera is committed to state once, at the end, and the surface carries data-camera-motion while it flies. A gesture stops it where it is. It reads the time and its frames from the frame clock, so a replay steps it to each frame's time.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/canvas/use-camera-glide.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#GnoK0EuT",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-camera-glide.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts",
         "symbol": "frameClock"
       },
       "id": "vKEsyHFk/UOXNWLhR#l3AXCLw5",
@@ -32,7 +32,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-camera-glide.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts",
         "symbol": "cameraTransform"
       },
       "id": "vKEsyHFk/UOXNWLhR#zx1KnBNz",
@@ -45,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-camera-glide.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts",
         "symbol": "stageOf"
       },
       "id": "vKEsyHFk#OJfwSbjr",

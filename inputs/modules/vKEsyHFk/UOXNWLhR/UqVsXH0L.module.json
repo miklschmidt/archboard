@@ -6,7 +6,7 @@
   "description": "The painter draws a sweep as a copy of the line laid over the picture, heavier than the line, that settles to the line's weight and fades into it. What was lit before and still is stays as it is, and a person who asked for reduced motion gets no sweep.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/canvas/use-sweep.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-sweep.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#UqVsXH0L",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-sweep.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-sweep.ts",
         "symbol": "stageOf"
       },
       "id": "vKEsyHFk#oNKZu0fB",
