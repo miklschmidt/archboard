@@ -88,6 +88,19 @@
       },
       "id": "vKEsyHFk#sFuyzbsG",
       "to": "vKEsyHFk#mlSnLR16"
+    },
+    {
+      "order": 70000,
+      "kind": "dependency",
+      "label": "mount the application under the workspace route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "createReadingRoutingHost"
+      },
+      "to": "vKEsyHFk#4DTJtXk6",
+      "id": "vKEsyHFk#rNKtHZ06"
     }
   ]
 }
