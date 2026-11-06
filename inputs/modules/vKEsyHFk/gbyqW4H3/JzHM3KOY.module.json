@@ -6,7 +6,7 @@
   "description": "A solve waits until a worker is free and goes to the first that is. An optional AbortSignal cancels a solve that still waits. Active solves finish normally. A failed worker retries only work that still matters.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/engine/engine-pool.ts"
+    "path": "packages/renderer/src/shared/engine/rules/engine-pool.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#JzHM3KOY",

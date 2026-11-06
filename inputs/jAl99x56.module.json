@@ -5,7 +5,7 @@
   "responsibility": "Draws one architecture reading in a Bun process",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/operations/render.ts"
+    "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#jAl99x56",
@@ -22,7 +22,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/operations/render.ts",
+        "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts",
         "symbol": "drawLegacyBoard"
       },
       "id": "vKEsyHFk/gbyqW4H3#4RbEQ6uO",
@@ -35,7 +35,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/operations/render.ts",
+        "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts",
         "symbol": "renderArchitectureIn"
       },
       "id": "vKEsyHFk/gbyqW4H3#hlcSv0hV",
@@ -48,7 +48,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/operations/render.ts",
+        "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts",
         "symbol": "carryingRecipe"
       },
       "id": "vKEsyHFk/gbyqW4H3#PAOQHNdT",
@@ -61,7 +61,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/operations/render.ts",
+        "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts",
         "symbol": "installBunHost"
       },
       "id": "vKEsyHFk#OeBKmvkq",

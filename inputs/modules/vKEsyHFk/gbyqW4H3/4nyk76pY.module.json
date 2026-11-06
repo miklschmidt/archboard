@@ -6,7 +6,7 @@
   "description": "The host supplies the core, layout solves, theme colours and icon paths. A solve accepts an optional AbortSignal for queued work. An active solve still answers normally.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/render/host.ts"
+    "path": "packages/renderer/src/shared/render/rules/host.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#4nyk76pY",

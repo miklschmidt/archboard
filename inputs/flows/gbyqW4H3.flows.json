@@ -26,7 +26,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+            "path": "packages/renderer/src/shared/render/rules/diagram.ts",
             "symbol": "render"
           }
         },
