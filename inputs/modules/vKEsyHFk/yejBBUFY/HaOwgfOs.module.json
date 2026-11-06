@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/ui/clients/media/media-owner.ts",
+    "path": "packages/codex-realtime-voice/src/ui/media/clients/media-owner.ts",
     "symbol": "createBrowserWorkbenchMediaOwner"
   },
   "schemaVersion": 1,
@@ -36,7 +36,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/media/realtime.ts",
+        "path": "packages/codex-realtime-voice/src/ui/media/clients/realtime.ts",
         "symbol": "command"
       },
       "id": "vKEsyHFk/yejBBUFY#cwSIvbl4",

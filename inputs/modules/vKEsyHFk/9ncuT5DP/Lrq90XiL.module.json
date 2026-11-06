@@ -6,7 +6,7 @@
   "description": "createVoiceClient owns the socket, the tab session id, the transport and media owners and the state a page draws; an uncertain delivery stays visible as a failure. ./react reads it through VoiceClientProvider, useVoiceClient and useVoiceState. A host that owns its sockets, as Archboard does, builds on ./controllers instead.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/ui/clients/voice-client"
+    "path": "packages/codex-realtime-voice/src/ui/voice-client/clients"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#Lrq90XiL",
@@ -19,26 +19,13 @@
   ],
   "outgoing": [
     {
-      "order": 88000,
-      "kind": "event",
-      "label": "one socket on the host's path, naming its tab",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/voice-client/voice-client.ts",
-        "symbol": "socketUrl"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#zbMLgKmk",
-      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
-    },
-    {
       "order": 70034,
       "kind": "call",
       "label": "create browser media ownership",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/voice-client/voice-client.ts",
+        "path": "packages/codex-realtime-voice/src/ui/voice-client/clients/voice-client.ts",
         "symbol": "createBrowserWorkbenchMediaOwner"
       },
       "id": "vKEsyHFk#tCxB82K4",
@@ -51,11 +38,24 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/voice-client/voice-client.ts",
+        "path": "packages/codex-realtime-voice/src/ui/voice-client/clients/voice-client.ts",
         "symbol": "createBrowserWorkbenchTransport"
       },
       "id": "vKEsyHFk#RPZfWIL0",
       "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    },
+    {
+      "order": 88000,
+      "kind": "event",
+      "label": "one socket on the host's path, naming its tab",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/ui/voice-client/clients/voice-client.ts",
+        "symbol": "socketUrl"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#zbMLgKmk",
+      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
     }
   ]
 }
