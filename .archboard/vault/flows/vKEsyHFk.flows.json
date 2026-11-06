@@ -81,7 +81,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+                    "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts",
                     "symbol": "spawnChromium"
                   }
                 },

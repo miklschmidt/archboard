@@ -9,8 +9,8 @@ import {
 } from "@archboard/model/legacy-board";
 import type { DrawnPicture } from "@archboard/model/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
-import { renderLegacyBoard } from "#runtime/operations/render.ts";
-import { type LegacyRenderChoices } from "#shared/rules/render/legacy-board.ts";
+import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
+import { type LegacyRenderChoices } from "#shared/render/rules/legacy-board.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
 /** The built architecture. */

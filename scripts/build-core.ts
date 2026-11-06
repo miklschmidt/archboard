@@ -136,7 +136,7 @@ function guardCoreGlue(): void {
 	}
 	writeFileSync(
 		path,
-		'import { CoreGuard } from "#shared/rules/render/core-guard.ts";\nconst coreGuard = new CoreGuard();\n' +
+		'import { CoreGuard } from "#shared/render/rules/core-guard.ts";\nconst coreGuard = new CoreGuard();\n' +
 			glue,
 	);
 }

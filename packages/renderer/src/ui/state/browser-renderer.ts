@@ -1,7 +1,7 @@
 // The semantic renderer, running in this browser tab (TASK-247).
 //
 // The same renderer core the CLI and the Archboard server's render route run
-// (`shared/rules/render`), with this page as its host: the page fetches and
+// (`shared/render`), with this page as its host: the page fetches and
 // compiles the core it serves and draws every picture with it on its own
 // thread, and a pool of Web Workers, each handed that compiled core, runs the
 // layout's solves. The core shapes every word itself, so a word is the same
@@ -13,8 +13,8 @@
 
 import type { LegacyBoard } from "@archboard/model/legacy-board";
 import type { SemanticPolicy } from "@archboard/model/policy";
-import { renderSemanticView } from "#shared/rules/render/diagram.ts";
-import { scopedRequest } from "#shared/rules/render/drawing-key.ts";
+import { renderSemanticView } from "#shared/render/rules/diagram.ts";
+import { scopedRequest } from "#shared/render/rules/drawing-key.ts";
 import type {
 	SemanticViewRenderRequest,
 	RenderedDiagram,
@@ -23,8 +23,8 @@ import {
 	renderLegacyBoard,
 	type LegacyRenderChoices,
 	type LegacyRenderOutcome,
-} from "#shared/rules/render/legacy-board.ts";
-import { installRendererHost } from "#shared/rules/render/host.ts";
+} from "#shared/render/rules/legacy-board.ts";
+import { installRendererHost } from "#shared/render/rules/host.ts";
 import { loadBrowserCore, type BrowserCore } from "#ui/clients/core.ts";
 import { warmPainter } from "#ui/clients/painter.ts";
 import { loadDiagramIcons, loadedIconPaths } from "#ui/state/diagram-icons.ts";
@@ -32,7 +32,7 @@ import {
 	createEnginePool,
 	workerCeiling,
 	type EngineWorker,
-} from "#shared/rules/engine/engine-pool.ts";
+} from "#shared/engine/rules/engine-pool.ts";
 
 let started: Promise<void> | undefined;
 

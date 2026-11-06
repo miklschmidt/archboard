@@ -6,7 +6,7 @@
   "description": "The headless-chromium module. Its root exports launchHeadlessChromium, DevTools and discoveredChromiumPath; their implementing children are the entry points its callers reach.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/processes/headless-chromium"
+    "path": "packages/renderer/src/runtime/headless-chromium"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#IzgAi2R1",

@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/operations/rasterizer/receipt.ts"
+    "path": "packages/renderer/src/runtime/rasterizer/operations/receipt.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#EqEyDg2D",

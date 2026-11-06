@@ -5,7 +5,7 @@
   "responsibility": "Which Chromium to run, spawning it in its own group and temp root, and making that whole group go away",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts"
+    "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#ShT7QadJ",
@@ -18,7 +18,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+        "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts",
         "symbol": "spawnChromium"
       },
       "id": "vKEsyHFk/vKEsyHFk#chzSzpL4",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+        "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts",
         "symbol": "createCodexProcessGroupOperations"
       },
       "id": "vKEsyHFk/vKEsyHFk#NSENtfOa",
@@ -44,7 +44,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+        "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts",
         "symbol": "isJsonRecord"
       },
       "id": "vKEsyHFk/SMjRfwN3#YZuYCZhH",

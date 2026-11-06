@@ -16,11 +16,11 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { projectModel } from "@archboard/model/content";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { iconPaths } from "#runtime/operations/icon-paths.ts";
-import { loadCore } from "#runtime/services/core.ts";
+import { loadCore } from "#runtime/bun-renderer/services/core.ts";
 import { THEME_STYLESHEET } from "#runtime/store/assets.ts";
-import { readThemeColors } from "#runtime/store/theme/read.ts";
-import { renderArchitecture } from "#shared/rules/render/diagram.ts";
-import { installRendererHost } from "#shared/rules/render/host.ts";
+import { readThemeColors } from "#runtime/theme/store/read.ts";
+import { renderArchitecture } from "#shared/render/rules/diagram.ts";
+import { installRendererHost } from "#shared/render/rules/host.ts";
 
 /** The corpus drawing the fixture holds: the Nightly batch proposal of the example model. */
 const VAULT = "examples/web-shop";

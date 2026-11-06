@@ -1,9 +1,9 @@
 // A picture to a bitmap in a private headless Chromium, and the receipt of the capture.
-export { RASTER_MAX_SCALE, RASTER_MIN_SCALE } from "#runtime/operations/rasterizer/bounds.ts";
-export type { PageRegion } from "#runtime/operations/rasterizer/bounds.ts";
-export { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";
+export { RASTER_MAX_SCALE, RASTER_MIN_SCALE } from "#runtime/rasterizer/operations/bounds.ts";
+export type { PageRegion } from "#runtime/rasterizer/operations/bounds.ts";
+export { readPngDimensions } from "#runtime/rasterizer/operations/png.ts";
 export {
 	SemanticRasterReceiptSchema,
 	ArchitectureRasterReceiptSchema,
-} from "#runtime/operations/rasterizer/receipt.ts";
-export { createSemanticRasterizer } from "#runtime/services/rasterizer/rasterizer.ts";
+} from "#runtime/rasterizer/operations/receipt.ts";
+export { createSemanticRasterizer } from "#runtime/rasterizer/services/rasterizer.ts";

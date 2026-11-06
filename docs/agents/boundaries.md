@@ -442,26 +442,27 @@ The files of `shared/api/` and `ui/api/` are safe for the browser, with no Node 
 The files of `runtime/api/` are Node-bound and run only in Bun.
 
 - `shared/` holds the host code that the browser and Bun both run. It holds no rule of layout, painting or
-  measurement: the renderer core in `crates/` draws every picture (ADR 0059). `rules/` is the pure code: `render/` has
-  the entry points (`legacy-board.ts` resolves a legacy board's variant, view and comparison into what a render asks, and
+  measurement: the renderer core in `crates/` draws every picture (ADR 0059). `render/rules/` is the pure code of the
+  entry points (`legacy-board.ts` resolves a legacy board's variant, view and comparison into what a render asks, and
   `diagram.ts` hands that to the core with this host's durations and theme colours), the host contract, the words a
   pane's key says beside the kinds the core lists (`key-marks.ts`) and the marks a pane draws itself (`marks.ts`), and
-  `engine/` runs the layout's solves on a pool of workers. `constants/` holds `shell-geometry.ts`, and `protocol/`
+  `engine/rules/` runs the layout's solves on a pool of workers. `constants/` holds `shell-geometry.ts`, and `protocol/`
   holds what a render asks and answers. `protocol/generated/core/` is the core's ignored build: its WebAssembly, its
   glue, and the TypeScript types of its contract, generated from its Rust types.
   The core takes the reading, the vault's policy and the render's choices in one call, `render`
   (`crates/archboard-render`), and answers the document, its atlas, each subject's appearance and the picture's key.
-  It asks the host for two things through `RenderHost`: each solve of the layout, which `engine/` runs side by side on
+  It asks the host for two things through `RenderHost`: each solve of the layout, which `engine/rules/` runs side by side on
   as many workers as the place has and calls off when the core drops it, and the path data of the icons it draws. A
-  worker (`engine/layout-engine.ts`) instantiates the core its host's thread compiled and handed it, and runs one
+  worker (`engine/rules/layout-engine.ts`) instantiates the core its host's thread compiled and handed it, and runs one
   solve at a time with the core's `layOutPicture`, which lays out each graph it ranks with the core's own Graphviz
   (`crates/archboard-graphviz` over the vendored graphviz-pure, ADR 0060).
-- `runtime/` holds the Bun host. `services/bun-host.ts` installs the core, the theme colors, the icon paths and the
-  pool of layout workers. `processes/layout-worker.ts` is the worker thread, started with
-  `new URL("../processes/layout-worker.ts", import.meta.url)`. `operations/` has the render entry points, the
-  icon paths, the bounds, PNG and receipt of the rasterizer, and in `recipe/` the render recipe in a file. `services/rasterizer/` is the rasterizer,
-  `processes/headless-chromium/` and `clients/headless-chromium/` are the private Chromium and its DevTools client, and
-  `store/` reads the theme stylesheet and names where the assets are.
+- `runtime/` holds the Bun host. `bun-renderer/` draws with it: `services/bun-host.ts` installs the core, the theme
+  colors, the icon paths and the pool of layout workers, `services/core.ts` loads the core, `operations/render.ts` has
+  the render entry points, and `processes/layout-worker.ts` is the worker thread, started with
+  `new URL("../processes/layout-worker.ts", import.meta.url)`. `rasterizer/` is the rasterizer with its bounds, PNG and
+  receipt, `recipe/` the render recipe in a file, `headless-chromium/` the private Chromium and its DevTools client, and
+  `theme/` reads the theme stylesheet. `operations/icon-paths.ts` has the icon paths, and `store/` names where the assets
+  are.
 - `ui/` holds the browser host. `state/` keeps what the page loads once (the core, the icons, whether the renderer has
   started) and `workers/` holds the browser layout worker. `api/browser.ts` starts the renderer with
   `startBrowserRenderer()` and draws a legacy board with `drawLegacyBoardHere`. The worker is started inside the
@@ -490,9 +491,9 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
 - Tailwind scans the `ui` area of every package, and the renderer's `ui` area holds no class names. The glyph
   contract (`tests/system/browser/drawn-glyphs.test.ts`) holds the pictures of the page and of the Bun core to the
   glyph positions of the core in Chrome.
-- The tests are in `tests/`. `shared/rules/` tests the pure code. `runtime/operations/<behavior>/` holds the
-  whole-picture suites, with their fixtures in `runtime/support/fixtures/`. `runtime/services/rasterizer/`,
-  `runtime/processes/headless-chromium/` and `runtime/store/theme/` test the rest. A few tests read fixtures from
+- The tests are in `tests/`. `shared/engine/` and `shared/render/` test the pure code. `runtime/<behavior>/operations/`
+  holds the whole-picture suites, with their fixtures in `runtime/support/fixtures/`. `runtime/bun-renderer/`,
+  `runtime/rasterizer/`, `runtime/headless-chromium/` and `runtime/theme/` test the rest. A few tests read fixtures from
   `docs/design/` and the vault of this repository, by a relative path from the test file.
 
 The twelfth is `code-opener` (`@archboard/code-opener`). It opens the code a node binds in the person's editor. It

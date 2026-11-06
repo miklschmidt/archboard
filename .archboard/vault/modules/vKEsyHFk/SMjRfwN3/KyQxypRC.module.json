@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts"
+    "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#KyQxypRC",
@@ -22,7 +22,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
         "symbol": "boundsRefusal"
       },
       "id": "vKEsyHFk/SMjRfwN3#7gIxznvp",
@@ -39,7 +39,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
         "symbol": "RasterSession"
       },
       "id": "vKEsyHFk/SMjRfwN3#IiA7nIxT",
@@ -53,7 +53,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
         "symbol": "discoveredChromiumPath"
       },
       "id": "vKEsyHFk/SMjRfwN3#FDMYhJSq",

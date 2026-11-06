@@ -47,7 +47,7 @@ It retains the drawing assertions and first-layout speed limits.
 Unreadable canonical inputs or an absent current state stop the benchmark.
 It reads no other repository, historical state, or proposal selection.
 The normal gate also renders three fixed fixtures on both engines in
-`packages/renderer/tests/runtime/operations/blocks/drawing-integrity.test.ts`.
+`packages/renderer/tests/runtime/blocks/operations/drawing-integrity.test.ts`.
 They cover labeled dependencies, dense cross-links, and nested containers.
 Shared assertions detect missing parts, routes through cards, misplaced labels,
 hidden parent frames, and line clearance defects.
@@ -212,7 +212,7 @@ caller's value out. No CLI case reaches the change-feed settle, so its 1,200 ms
 default costs them nothing. When a test must outwait a product timer, write why
 beside its own literal in `timing.ts`.
 
-The opt-in benchmark corpus in `packages/renderer/tests/runtime/operations/blocks/wide-pictures.test.ts`
+The opt-in benchmark corpus in `packages/renderer/tests/runtime/blocks/operations/wide-pictures.test.ts`
 uses a 60-second case deadline when `CI=true`. Its default engine, Blocks, also gets
 60 seconds for a first render. GitHub Actions recorded first renders up to
 45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
@@ -235,10 +235,10 @@ through the CLI and HTTP interfaces.
 It runs `model render` and `model rasterize` against a real Archboard server without a browser client.
 It also reads their exact recipes through `check embeds`.
 `model-render-context.test.ts` beside it covers complete interface context, comparison, unresolved subjects, and exact recipe replay.
-The rasterizer's own owner, `packages/renderer/tests/runtime/services/rasterizer`, proves real pixels, native and
+The rasterizer's own owner, `packages/renderer/tests/runtime/rasterizer/services`, proves real pixels, native and
 scaled dimensions, full bounds past a display, bounds refusals,
 cancellation and a Chromium that is provably gone. The Chromium it runs on is
-`packages/renderer/src/runtime/processes/headless-chromium`, whose owner proves caller flags, an exact
+`packages/renderer/src/runtime/headless-chromium/processes`, whose owner proves caller flags, an exact
 window viewport, event delivery without retention, a page Blob streamed to a
 file, and provable teardown.
 
