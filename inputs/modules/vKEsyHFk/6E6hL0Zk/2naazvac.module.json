@@ -41,19 +41,6 @@
       "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
     },
     {
-      "order": 2000,
-      "kind": "dependency",
-      "label": "admits writes",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/middleware/mutation-work/mutation-work.ts",
-        "symbol": "admit"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#W2BXIpq7",
-      "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
-    },
-    {
       "order": 3000,
       "kind": "dependency",
       "label": "mount canonical model routes",
@@ -156,6 +143,19 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#7plLLcKh",
       "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
+    },
+    {
+      "order": 62000,
+      "kind": "dependency",
+      "label": "admit each request before its route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "mountMutationAdmission"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8",
+      "id": "vKEsyHFk#FD1BZf8Q"
     }
   ]
 }

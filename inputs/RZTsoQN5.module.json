@@ -7,9 +7,9 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/routes/panes/pane-show-route.ts"
   },
-  "parent": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
   "schemaVersion": 1,
   "id": "vKEsyHFk#RZTsoQN5",
+  "parent": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
   "outgoing": [
     {
       "order": 18000,
@@ -63,6 +63,19 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#epRLrdt6",
       "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    },
+    {
+      "order": 62000,
+      "kind": "dependency",
+      "label": "move the pane into the vault it shows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+        "symbol": "movePaneVault"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+      "id": "vKEsyHFk#HIkVOOeA"
     }
   ]
 }

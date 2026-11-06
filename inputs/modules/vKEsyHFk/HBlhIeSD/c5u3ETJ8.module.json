@@ -34,5 +34,19 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 2000,
+      "kind": "dependency",
+      "label": "admits writes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/middleware/mutation-work/mutation-work.ts",
+        "symbol": "admit"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#W2BXIpq7",
+      "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
+    }
+  ]
 }
