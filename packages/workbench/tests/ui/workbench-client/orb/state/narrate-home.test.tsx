@@ -3,11 +3,12 @@
 // What is guarded: a dark orb waits in the key while one is on the page, and a lit one never falls
 // back to it; the newest key is the home's, and the one before it is the home's again once it goes;
 // a press of Narrate launches the next orb that is lit out of the key, lit from the start of its
-// flight, to the box or, with subtitles off, the dock, and the launch is cut when motion is not wanted, spent with that lighting and lost with
-// its key, so voice started by Talk is lit where it is wanted; as voice ends in the box the orb
-// flies home to the key while it is lit, stays lit in the air if voice is off before it lands, and
-// fades in the key's seat; and while the page is fullscreen a launch
-// waits in its key for a home on screen and crosses inside the element presented.
+// flight, to the box or, with subtitles off, the dock; the launch is cut when motion is not wanted,
+// spent with that lighting and lost with its key, so voice started by Talk is lit where it is
+// wanted; as voice ends in the box the orb flies home to the key while it is lit, stays lit in the
+// air if voice is off before it lands, and fades in the key's seat; and while the page is
+// fullscreen a launch waits in its key for a home on screen and crosses inside the element
+// presented.
 
 import { expect, test } from "bun:test";
 
