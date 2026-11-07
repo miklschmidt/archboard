@@ -927,6 +927,9 @@ A finding quotes a symbol, a path and a line. It never quotes other text from a
 file. A file can hold a secret, and the Archboard server answers any request
 from this machine with no authentication.
 
+The amendment of 2026-11-07 makes one exception: the source excerpt of a
+remembered piece of evidence.
+
 ### Exit status
 
 The exit status follows `archboard check`. If the plain check has a diagnostic
@@ -1468,3 +1471,50 @@ its own line, so those calls have no relationship of their own. A warning for
 each one asks for an import map. Removing the finding hides what the model leaves
 out. Information keeps the fact and stays out of the exit status. The model holds
 153 such findings after the repair.
+
+## Amendment of 2026-11-07: the source excerpt of remembered evidence
+
+TASK-590.06 makes one exception to the rule that a finding quotes no other text
+of a file. The owner asked for it on 2026-11-07.
+
+The shell shows a code finding beside its source, with line numbers and the
+evidence line marked. A path and a line alone do not show a reader what the
+code does at that place. So `GET /api/code/source-lines` answers the source
+excerpt of one piece of evidence: the evidence line, with up to 3 lines before
+it and 3 lines after it. `CodeSourceLinesSchema` of
+`@archboard/code-intel/code-check` is its answer.
+
+A file can still hold a secret, and the server still has no authentication.
+So the route keeps these limits:
+
+- It answers only a place that a piece of evidence of the vault's remembered
+  findings names, by its repository, path and line. It never starts a pass.
+  So it reads only a file that a code pass of that vault read. After a
+  restart, the server reads no file until somebody runs the code check again.
+- It reads only a file inside a registered checkout that Git does not ignore.
+  It resolves the path through `packages/code-binding/src/runtime`, as the
+  code check and the code opener do. So the path stays inside its checkout
+  before and after symbolic links resolve. Git must list the file where its
+  links lead.
+- It never quotes a file whose values the check does not read: Terraform
+  state, variable files, the `.terraform` directory, an env file and a file
+  that holds a Kubernetes Secret. An env file is `.env`, `.env.<name>`,
+  `.envrc` or `<name>.env`. The check reads only the names in an env file and
+  in a Secret, so their values stay unquoted.
+- It reads no file larger than 1 MiB, and it cuts each line after 240
+  characters.
+- Only a page of the server's own origin reads it. The route uses the
+  `settings-read` kind of the browser origin guard (`createBrowserOriginGuard`
+  of `@archboard/code-opener/browser-origin`), as `GET /api/repositories`
+  does. The guard refuses a request without the browser headers that prove
+  that origin. It protects against a foreign page in a browser. It does not
+  authenticate a local process, which can read the file without the server.
+
+A place outside these limits gets the status 404, with the code
+`EVIDENCE_NOT_REMEMBERED`, `SOURCE_UNAVAILABLE` or `SOURCE_REFUSED`. The route
+reads the file as the checkout holds it now. An edit after the pass can make
+these lines differ from the code that the pass read. A pass that read a draft
+at another ref can do that too.
+
+The route quotes the other text near the evidence line, also a key that
+somebody wrote into the code. These limits do not prevent that.
