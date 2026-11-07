@@ -164,12 +164,13 @@ const WIDER_ROOMS: [f64; 7] = [144.0, 192.0, 288.0, 384.0, 480.0, 640.0, 800.0];
 /// The best dense drawing of a reading, if one passes every guard. A wider room
 /// runs only while no drawing lands readably, and past some lines only while none is drawn.
 pub(super) fn dense_drawing(graph: &crate::graph::Node) -> Option<crate::blocks::assembly::Placed> {
+    let grids = dense::Grids::of(graph)?;
     let mut best = None;
     let lines = relationships(graph);
     let rooms = dense_rooms(lines, dense::frames(graph));
     let refusals = dense_refusals(lines);
     for &room in rooms {
-        dense_room(graph, room, lines, refusals, &mut best);
+        dense_room(graph, &grids, room, lines, refusals, &mut best);
         if best
             .as_ref()
             .is_some_and(|one| !one.0.0 || lines > AMPLE_LINES)
@@ -181,7 +182,7 @@ pub(super) fn dense_drawing(graph: &crate::graph::Node) -> Option<crate::blocks:
         if best.is_some() {
             break;
         }
-        dense_room(graph, room, lines, refusals, &mut best);
+        dense_room(graph, &grids, room, lines, refusals, &mut best);
     }
     best.map(|(_, drawing)| drawing)
 }
@@ -199,13 +200,14 @@ fn rescues(rooms: &[f64], refusals: usize) -> impl Iterator<Item = (f64, usize)>
 /// Route a reading's placements at one room, as many as a reading of its size affords.
 fn dense_room(
     graph: &crate::graph::Node,
+    grids: &dense::Grids<'_>,
     room: f64,
     lines: usize,
     refusals: usize,
     best: &mut Option<(reading::Order, crate::blocks::assembly::Placed)>,
 ) {
     let most = dense_routes(lines);
-    let routed = dense::drawings(graph, room)
+    let routed = dense::drawings(grids, room)
         .into_iter()
         .take(most + refusals)
         .filter_map(|drawing| fixed::route(graph, drawing, &selection::ORDERS[..1]).ok());

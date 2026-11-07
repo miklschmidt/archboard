@@ -232,11 +232,11 @@ impl<'a> Block<'a> {
         }
     }
 
-    /// This frame's parts set out in some columns, in the frame's own coordinates.
-    fn set_out(&self, columns: usize, room: f64) -> Set {
+    /// This frame's parts settled on a grid of some columns.
+    fn settled(&self, columns: usize) -> Grid {
         let mut grid = Grid::new(columns.min(self.items.len()), self.items.len());
         grid.settle(&self.joins, &self.items);
-        self.set(&grid, room)
+        grid
     }
 
     /// Stand this frame and its parts on the page.
@@ -465,13 +465,36 @@ pub(super) fn frames(graph: &Node) -> usize {
     holders(graph).map_or(0, |held| held.len())
 }
 
+/// A reading whose frames have settled their parts on a grid of every width they take. A
+/// grid settles by its parts and lines alone, so every room between cells starts from it.
+pub(super) struct Grids<'a> {
+    reading: Reading<'a>,
+    /// Each frame's grid, for one column, then two, and so on.
+    by_columns: Vec<Vec<Grid>>,
+}
+
+impl<'a> Grids<'a> {
+    /// The grids of a reading that takes a dense placement.
+    pub(super) fn of(graph: &'a Node) -> Option<Self> {
+        let reading = Reading::of(graph)?;
+        let widest = reading.blocks.iter().map(|block| block.items.len()).max();
+        let most = MOST_COLUMNS.min(widest.unwrap_or(0));
+        let by_columns = (1..=most)
+            .map(|columns| {
+                let blocks = reading.blocks.iter();
+                blocks.map(|block| block.settled(columns)).collect()
+            })
+            .collect();
+        Some(Self {
+            reading,
+            by_columns,
+        })
+    }
+}
+
 /// Every dense placement of a reading, the most promising first.
-pub(super) fn drawings(graph: &Node, room: f64) -> Vec<Placed> {
-    let Some(reading) = Reading::of(graph) else {
-        return Vec::new();
-    };
-    let widest = reading.blocks.iter().map(|block| block.items.len()).max();
-    let most = MOST_COLUMNS.min(widest.unwrap_or(0));
+pub(super) fn drawings(grids: &Grids<'_>, room: f64) -> Vec<Placed> {
+    let reading = &grids.reading;
     let arrangements: &[bool] = if reading.blocks.len() > 1 {
         &[false, true]
     } else {
@@ -485,12 +508,11 @@ pub(super) fn drawings(graph: &Node, room: f64) -> Vec<Placed> {
         })
     });
     let ways: Vec<Way> = ways.collect();
-    let mut placed: Vec<(f64, Placed)> = (1..=most)
-        .flat_map(|columns| {
-            let sets: Vec<Set> = (reading.blocks.iter())
-                .map(|block| block.set_out(columns, room))
+    let mut placed: Vec<(f64, Placed)> = (grids.by_columns.iter())
+        .flat_map(|settled| {
+            let sets: Vec<Set> = (reading.blocks.iter().zip(settled))
+                .map(|(block, grid)| block.set(grid, room))
                 .collect();
-            let reading = &reading;
             ways.iter()
                 .map(move |&way| {
                     let drawing = reading.drawing(&sets, way);
