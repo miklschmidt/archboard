@@ -834,7 +834,7 @@ Ordinary readers keep their drawing surface while local layout runs and show pro
 Captured walkthroughs retain their existing picture-readiness contract.
 
 The canonical sidebar reuses the existing shell layout owner.
-`shell-layout.test.ts` retains the 12-cell render matrix, shared geometry, typography, focus, control sizes, pane layout, and activity assertions.
+`shell-layout.test.ts` retains the 12-cell render matrix, focus, target minimums, offline fonts, pane letters, and activity assertions.
 Its underline probe now inspects the actual sidebar tab row.
 Its control probe excludes hidden disclosure content through browser visibility.
 Canonical selection, navigation, comparison, and walkthrough owners cover the sidebar transition.
