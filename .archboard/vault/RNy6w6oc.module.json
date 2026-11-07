@@ -39,21 +39,8 @@
     },
     {
       "order": 9000,
-      "kind": "rpc",
-      "label": "thread/start with the authored body",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
-        "symbol": "threadStart"
-      },
-      "id": "vKEsyHFk/SJ2JMVyz#W87z7uEB",
-      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
-    },
-    {
-      "order": 9000,
       "kind": "call",
-      "label": "thread/start for a new workhorse",
+      "label": "thread/start with a new workhorse's authored body",
       "description": "The caller invokes threadStart on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.",
       "emphasis": "hero",
       "traffic": {

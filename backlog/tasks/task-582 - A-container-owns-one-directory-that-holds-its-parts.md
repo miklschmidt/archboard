@@ -1,11 +1,11 @@
 ---
 id: TASK-582
 title: A container owns one directory that holds its parts
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06T15:13:00Z'
-updated_date: '2026-11-06T15:14:00Z'
+updated_date: '2026-11-07T00:12:00Z'
 labels:
   - model
   - check
@@ -22,5 +22,11 @@ A module with parts that has no binding leaves the code of its own folder to no 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The work splits into the containment warning with its skill guidance, the Painting repair, and the behavior-first layout
+- [x] #1 The work splits into the containment warning with its skill guidance, the Painting repair, and the behavior-first layout
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The containment check, the Painting repair and the behavior-first layout are done (TASK-582.01 to .03).
+<!-- SECTION:FINAL_SUMMARY:END -->

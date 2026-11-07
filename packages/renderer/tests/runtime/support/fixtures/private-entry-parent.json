@@ -144,7 +144,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/workbench-example/src/server/wiring/application/application.ts",
+				"path": "apps/workbench-example/src/server/application/wiring/application.ts",
 				"symbol": "createVoiceAgent"
 			}
 		}

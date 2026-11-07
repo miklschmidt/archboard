@@ -27,8 +27,7 @@ const AREAS = new Set(["cli", "runtime", "server", "shared", "ui"]);
 
 /**
  * The role folders of an area (docs/agents/boundaries.md, ADR 0075). A role folder is the last
- * folder of a path. While the move to behavior first runs (TASK-582.03), a role-first tree still
- * keeps it as the first folder below the area.
+ * folder of a path.
  */
 const ROLE_FOLDERS = new Set([
 	"api",

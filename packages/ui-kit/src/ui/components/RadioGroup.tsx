@@ -4,7 +4,7 @@
 import {
 	RadioGroupItem,
 	RadioGroup as RadioGroupRoot,
-} from "#ui/components/shadcn/radio-group.tsx";
+} from "#ui/shadcn/components/radio-group.tsx";
 
 /** A choice of one, with its options as its parts. */
 const RadioGroup = Object.assign(RadioGroupRoot, { Item: RadioGroupItem });

@@ -4,7 +4,7 @@
 import {
 	ToggleGroupItem,
 	ToggleGroup as ToggleGroupRoot,
-} from "#ui/components/shadcn/toggle-group.tsx";
+} from "#ui/shadcn/components/toggle-group.tsx";
 
 /** A row of toggles, with its toggles as its parts. */
 const ToggleGroup = Object.assign(ToggleGroupRoot, { Item: ToggleGroupItem });

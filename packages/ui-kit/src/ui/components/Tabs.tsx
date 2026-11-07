@@ -6,7 +6,7 @@ import {
 	TabsList,
 	Tabs as TabsRoot,
 	TabsTrigger,
-} from "#ui/components/shadcn/tabs.tsx";
+} from "#ui/shadcn/components/tabs.tsx";
 
 /** Tabs, with their list, their triggers and their content as their parts. */
 const Tabs = Object.assign(TabsRoot, {

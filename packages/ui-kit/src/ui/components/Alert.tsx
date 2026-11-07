@@ -6,7 +6,7 @@ import {
 	AlertDescription,
 	AlertTitle,
 	Alert as AlertRoot,
-} from "#ui/components/shadcn/alert.tsx";
+} from "#ui/shadcn/components/alert.tsx";
 
 /** A callout that shows a state, with its title, description and action as its parts. */
 const Alert = Object.assign(AlertRoot, {

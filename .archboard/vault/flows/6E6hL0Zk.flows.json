@@ -282,7 +282,7 @@
               "kind": "sync",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/code-intel/src/runtime/operations/code-check/states.ts",
+                "path": "packages/code-intel/src/runtime/code-check/operations/states.ts",
                 "symbol": "readArchitectureModel"
               }
             },
@@ -294,7 +294,7 @@
               "kind": "return",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/code-intel/src/runtime/operations/code-check/states.ts",
+                "path": "packages/code-intel/src/runtime/code-check/operations/states.ts",
                 "symbol": "readArchitectureModel"
               }
             }
@@ -308,7 +308,7 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/code-intel/src/runtime/operations/code-check/states.ts",
+            "path": "packages/code-intel/src/runtime/code-check/operations/states.ts",
             "symbol": "readStatesToCheck"
           }
         },
@@ -328,7 +328,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                    "path": "packages/code-intel/src/runtime/code-check/operations/run.ts",
                     "symbol": "noSuchDraft"
                   }
                 },
@@ -357,7 +357,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                    "path": "packages/code-intel/src/runtime/code-check/operations/run.ts",
                     "symbol": "planRefused"
                   }
                 },
@@ -386,7 +386,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                    "path": "packages/code-intel/src/runtime/code-check/operations/run.ts",
                     "symbol": "checkCode"
                   }
                 },
@@ -398,7 +398,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/code-intel/src/runtime/operations/code-check/check.ts",
+                    "path": "packages/code-intel/src/runtime/code-check/operations/check.ts",
                     "symbol": "createCodeFacts"
                   }
                 },
@@ -410,7 +410,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
+                    "path": "packages/code-intel/src/runtime/code-check/operations/resolution.ts",
                     "symbol": "openLanguageServers"
                   }
                 },
@@ -427,7 +427,7 @@
                       "kind": "self",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/code-intel/src/runtime/operations/code-check/check.ts",
+                        "path": "packages/code-intel/src/runtime/code-check/operations/check.ts",
                         "symbol": "judgeStateRelationships"
                       }
                     }
@@ -441,7 +441,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                    "path": "packages/code-intel/src/runtime/code-check/operations/run.ts",
                     "symbol": "createCodeCheck"
                   }
                 },
@@ -662,7 +662,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "packages/code-intel/src/runtime/operations/code-facts/symbol-line.ts",
+                                    "path": "packages/code-intel/src/runtime/code-facts/operations/symbol-line.ts",
                                     "symbol": "symbolLine"
                                   }
                                 }

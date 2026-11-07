@@ -51,19 +51,6 @@
       "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
     },
     {
-      "order": 61000,
-      "kind": "dependency",
-      "label": "host Archboard on the voice agent",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
-        "symbol": "createVoiceAgent"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#hfMj0fMk",
-      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
-    },
-    {
       "order": 70001,
       "kind": "call",
       "label": "publish host changes",

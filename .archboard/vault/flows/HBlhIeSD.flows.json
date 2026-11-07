@@ -47,7 +47,7 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+            "path": "packages/code-intel/src/runtime/code-check/operations/run.ts",
             "symbol": "readStatesToCheck"
           }
         },
@@ -67,7 +67,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                    "path": "packages/code-intel/src/runtime/code-check/operations/run.ts",
                     "symbol": "noSuchDraft"
                   }
                 },
@@ -96,7 +96,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                    "path": "packages/code-intel/src/runtime/code-check/operations/run.ts",
                     "symbol": "readPlans"
                   }
                 },
@@ -116,7 +116,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                            "path": "packages/code-intel/src/runtime/code-check/operations/run.ts",
                             "symbol": "planRefused"
                           }
                         },
@@ -145,7 +145,7 @@
                           "kind": "self",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                            "path": "packages/code-intel/src/runtime/code-check/operations/run.ts",
                             "symbol": "checkCode"
                           }
                         },
@@ -157,7 +157,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                            "path": "packages/code-intel/src/runtime/code-check/operations/run.ts",
                             "symbol": "createCodeCheck"
                           }
                         },

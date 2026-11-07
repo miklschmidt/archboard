@@ -24,7 +24,7 @@
     {
       "order": 1000,
       "kind": "call",
-      "label": "start a generation",
+      "label": "start the app-server child its generations run over",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -72,19 +72,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
       "to": "vKEsyHFk#Q2Jc26oO"
-    },
-    {
-      "order": 62000,
-      "kind": "dependency",
-      "label": "own Codex threads and negotiate realtime voice",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/generation/services/workbench.ts",
-        "symbol": "createCodexProcess"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#8AmcrRb6",
-      "to": "vKEsyHFk/9ncuT5DP#9diqPrFw"
     },
     {
       "order": 1007000,

@@ -54,11 +54,9 @@ The path form is `src/<area>/<behavior>[/<behavior>…]/<role>/<file>`.
 
 `tests/system/repository-policy/workspace-layout.test.ts` holds the rule for every tracked TypeScript
 file below an area: exactly one role folder, the last folder, and no folder named after an area.
-Many trees still put the role first, and they move one commit at a time (TASK-582.03).
-Its ratchet, `ROLE_FIRST_TREES`, lists the trees that still break the rule. The test skips them, and
-it fails when a listed tree breaks it no more, so each move commit removes its trees from the list.
-Until the last move, the lint rules accept both layouts. `scripts/move-source.ts` moves the files of a
-reviewed manifest. It rewrites the imports and repository paths and rebinds the vault in the same run.
+The lint rules that read a role folder accept only this layout. `scripts/move-source.ts` moves the
+files of a reviewed manifest. It rewrites the imports and repository paths and rebinds the vault in
+the same run.
 For frontend concern placement, naming, and React ownership, read [frontend.md](frontend.md).
 
 The entries are `apps/cli/src/bin.ts`, `apps/server/src/server.ts`, `apps/web/src/main.tsx`,
@@ -349,12 +347,13 @@ Archive synchronization preserves ancestry without merging current models or sel
 The eighth is `ui-kit` (`@archboard/ui-kit`). It holds the presentation parts that more than one UI
 module draws with, in the `ui` area. It adopts the `api/` role for `ui/` and exposes 4 subpaths
 with 37 names (TASK-529.03; before, 10 subpaths with 85 names). Every export is safe for the
-browser. `ui/components/shadcn/` holds the official shadcn Base UI files with their `README.md`,
+browser. `ui/shadcn/components/` holds the official shadcn Base UI files with their `README.md`,
 private and kept at the registry's bytes. `ui/components/` holds the package's own components and
-one composite per family, which puts the family's parts on its root, and `dialog-parts/` holds the
-parts that every dialog surface shares. `ui/state/` holds the frame clock and the fullscreen
-presentation; `ui/rules/` and `ui/hooks/` hold the small helpers. The aliases in `components.json`
-name `packages/ui-kit/src/ui/components/shadcn`, so the shadcn CLI writes there. It resolves these
+one composite per family, which puts the family's parts on its root, and
+`ui/dialog-parts/components/` holds the parts that every dialog surface shares.
+`ui/frame-clock/state/` holds the frame clock and `ui/state/` the fullscreen presentation;
+`ui/rules/` and `ui/hooks/` hold the small helpers. The aliases in `components.json`
+name `packages/ui-kit/src/ui/shadcn/components`, so the shadcn CLI writes there. It resolves these
 paths from the repository root with no TypeScript path alias. Generated imports still need the
 package-local `#` rewrite, and a new part reaches callers through its family's composite.
 
@@ -421,14 +420,14 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
   code check opens the language servers through its own session. The package's tests reach the
   steps and the readings through `tests/runtime/support/code-check/pass.ts` and
   `tests/runtime/support/history-lens/lens.ts`.
-- `runtime/operations/` holds the reading and judging: `code-facts/` has the language-agnostic
-  facts, `modules/` for what a module exposes, and one folder for each language or format
-  (`typescript/`, `python/`, `c/`, `csharp/`, `objc/`, `swift/`, `rust/`, `nix/`, `kubernetes/`, `compose/`,
-  `terraform/`); `code-check/` has the pass, `claims/`, `evidence/` and `interfaces/`;
-  `history-lens/` and `language-servers/` hold the rest. `runtime/services/code-facts/` holds the
-  reader that caches facts by content, the grammars and the tree-sitter query files. `runtime/clients/`
-  runs Git for the lens and speaks JSON-RPC to a server. `runtime/processes/language-servers/` owns
-  the server child.
+- `runtime/code-facts/` holds the reading: `operations/` has the language-agnostic facts,
+  `modules/` what a module exposes, and one folder for each language or format (`typescript/`,
+  `python/`, `c/`, `csharp/`, `objc/`, `swift/`, `rust/`, `nix/`, `kubernetes/`, `compose/`,
+  `terraform/`), each with its `operations/`; `code-facts/services/` holds the reader that caches
+  facts by content, the grammars and the tree-sitter query files. `runtime/code-check/` holds the
+  judging: the pass in `operations/`, and `claims/`, `evidence/` and `interfaces/`.
+  `runtime/history-lens/` holds the lens, with the Git client in `clients/`, and
+  `runtime/language-servers/` speaks JSON-RPC to a server, with the server child in `processes/`.
 - The query files (`*.scm`) stay beside `grammars.ts`, which reads them with
   `new URL(..., import.meta.url)`. The wasm of each grammar is found with `import.meta.resolve`,
   and the TypeScript package with `Bun.resolveSync`, both from the root `node_modules`, which Bun
@@ -922,7 +921,7 @@ The two stop controls keep voice and workhorse lifetimes separate.
 `src/server.ts` and `src/main.tsx` are thin process and browser entries.
 `src/shared/protocol/application.ts` owns the configuration response and socket path.
 `src/server/` owns HTTP, socket registration, startup, and cleanup.
-`src/ui/` owns the page and action presentation. It holds no client of its own.
+`src/ui/` owns the page and action presentation. It uses the voice package's client and adds only the page lifecycle around it (`ui/workbench/clients/page-client.ts`).
 `scripts/build-workbench-example.ts` generates the three browser assets under ignored `dist/workbench-example`.
 The normal gate builds those assets before it runs product tests.
 

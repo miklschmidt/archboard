@@ -1,11 +1,11 @@
 ---
 id: TASK-582.03.02
 title: 'Layout B: the packages lay out behavior first'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06T19:06:00Z'
-updated_date: '2026-11-06T22:29:00Z'
+updated_date: '2026-11-07T00:12:00Z'
 labels: []
 dependencies:
   - TASK-582.03.01
@@ -25,7 +25,7 @@ The packages hold 50 of the 83 containment warnings: codex-app-server, walkthrou
 <!-- AC:BEGIN -->
 - [x] #1 archboard check reports no containment warning for any module of those packages or crates
 - [x] #2 Each Rust crate is a root module bound to its crate directory, with no container around the crates
-- [ ] #3 Each step is its own commit that leaves bun run check green and archboard check at the warning count the plan names
+- [x] #3 Each step is its own commit that leaves bun run check green and archboard check at the warning count the plan names
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -69,4 +69,12 @@ B7 codex-realtime-voice, option B (owner decision: cut the model along the runti
 Current-state defects (after B7). Shared binding keys: 18 pairs were left after the earlier fixes; 0 are left now (scratch shared.ts over model read). (1) 02f3123f9 CLI: run.ts keeps Command catalogue iIVu1bGE (Swj3xzmd removed; its calls to runCliWith and registryOf, which run.ts makes, move onto it). The invocation/ folder modules Command routing PQcK5dF2 and Command dispatch nSTHru5x repeated the parts of Command routing EMV2VjBX: their calls move to the part whose file makes them (isHelpInvocation -> runCliWith, session.ts; CliUsageError -> dispatchedCommand, dispatch.ts); the vaultsBoundTo copy and the runCommand copy (runInterruptibleCommand makes that call, session.ts:82) are removed; flow "Taking argv to one command" runs through runCliWith and Interruptible run. bin.ts keeps Entry point peyArgPx (CLI under test fRFvnVRE removed, its flow steps and relationships moved). execution.ts keeps Contract execution E2MAq7W7, runner.ts keeps runCommand gt1eCpcS; server-client-session.ts keeps Invocation context EUV7iaLt. Command contract binds operations/execution (the code that runs a contract); Contract definition keeps protocol/contract. Model comparison, Model locality, Model footprint bind read.ts#modelCompareContract, history.ts#modelLocalityContract, history.ts#modelFootprintContract. (2) 922ea908a: one Application lifetime (startServer needs no vault, server-startup.ts:365), one Browser origin guard, one Frame clock, one Vault checkouts. (3) cd10aef83 web: a relationship cannot end on a module with parts (RELATIONSHIP_ON_CONTAINER), so parts cannot merge into these containers; the part keeps the folder that holds its code and the container loses a binding no one path can hold in the role-first web layout: Pane connection (clients/pane-session), Replay page (clients/walkthrough-replay), Model queries (clients/architecture-model); Pane session, Walkthrough replay and Model access are unbound. Diagram legend bound SemanticLegend.tsx (its part's file) and gathered Subject code marks, which SemanticLegend.tsx does not import; it is removed and both parts join Diagram presentation components. Example host merged into its root Workbench example. (4) 66a90c39f Retained reading: read.ts, result.ts, states.ts, walkthrough-targets.ts and retained-module.ts move to canonical/history/retained-reading/operations (5 moves, 28 rewritten files); Retained reading binds canonical/history/retained-reading; "install the first model" (anchored in initialize-model.ts, which no module binds) is removed. (5) d5fee2855: top-port-header-clearance.json names canonical/installation/store/model-state.ts#holdModel for the lease call. ffmpeg externals: settled in 86b27e34b. Evidence: archboard check 32 warnings, all CONTAINER_UNBOUND or CONTAINER_PARTS_OUTSIDE, and none names a path under packages/ or crates/; embeds redrawn and current; types pass; lint:all pass; model tests 539 pass; bun run check exit 0, 21/21 tasks (repository 170, modules 4909, system 234, solo 15, browser lane green; cargo 450). Left: the fixture names 7 other paths that no tree holds (the semantic-boards routes and watcher, board-announcements, history-lens/last-change.ts), code removed before this task with no one-to-one successor; crates/vendor graphviz-pure-* sub-crates and vello_encoding are third-party and have no module.
 
 Parent verification at 6976b1f9a: archboard check shows 32 warnings, none naming a path under packages/ or crates/ (#1). Twelve root modules bind crate directories (the eleven crates/archboard-* plus Graphviz on crates/vendor/graphviz-pure), with no container around them (#2). No binding key (repository, path, symbol) is shared by two modules. #3 stays open: B6a, the voice model cut and the voice runtime commits ran types, lint and package tests but not the full gate on their own; a per-commit gate run follows before the PRs.
+
+Parent verification: the four commits that ran only partial checks each pass the full gate on their own (nix develop, bun install, bun run build, bun run check): 7869199c4 B5a, 71a1ccbd4 crate roots, 46bc5f8dc voice model cut, 3147a5d34 voice runtime, each 21/21.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The packages and the Rust crates lay out behavior first (B1 to B7), with the model following each move through the codemod. Each Rust crate is its own root bound to its crate directory, with no container around the crates; the voice model is cut along the runtime and server line. Every duplicate module pair and shared binding found on the way is settled from the code. Each commit passes the full gate.
+<!-- SECTION:FINAL_SUMMARY:END -->
