@@ -24,12 +24,10 @@ import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { CanvasStage } from "#ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx";
 import { type SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import {
-	OrbHost,
 	OrbStageProvider,
-	useOrbPlacement,
+	RecordedOrb,
 	type SubtitleSource,
 	VoiceBox,
-	useCircleState,
 	type VoiceBoxProps,
 	type AgentVoiceView,
 	type VoiceLevel,
@@ -102,25 +100,6 @@ function ReplayVoiceBox(props: {
 }
 
 /**
- * The page's one orb, which the dock's circle hosts in the shell: lit, in the voice box, and showing
- * what the circle would.
- * @param props The voice.
- * @param props.voice The voice.
- * @returns The orb, drawn into the stage's holder.
- */
-function ReplayOrb(props: { readonly voice: AgentVoiceView }): JSX.Element {
-	// Without motion for the stage: a recording cuts every move of the box, so the orb is never flown.
-	useOrbPlacement({ home: "box", shown: true, reducedMotion: true });
-	return (
-		<OrbHost
-			mode={useCircleState(props.voice)}
-			level={props.voice.level.read}
-			reducedMotion={false}
-		/>
-	);
-}
-
-/**
  * The recording's frame, with its pane where the talk stands.
  * @param props The talk, where it stands, the cache and the reading's listener.
  * @returns The frame.
@@ -172,7 +151,7 @@ function ReplayStage(props: ReplayStageProps): JSX.Element {
 							</PaneVaultContext>
 						</div>
 					</RecordingStage>
-					<ReplayOrb voice={voice} />
+					<RecordedOrb voice={voice} />
 				</OrbStageProvider>
 			</Tooltip.Provider>
 		</QueryClientProvider>
