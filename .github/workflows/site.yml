@@ -76,10 +76,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Node.js and Bun
-        uses: voidzero-dev/setup-vp@v1.21.2
+        uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
         with:
           version-file: package.json
           node-version: "26"
@@ -89,7 +89,7 @@ jobs:
       # The hero's painter and its painting come from one build of the renderer core (ADR 0059,
       # ADR 0071), and the flake's dev shell holds the Rust tools that build it.
       - name: Setup Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
 
       - name: Install the repository's dependencies
         working-directory: .
@@ -111,7 +111,7 @@ jobs:
 
       - name: Upload the Pages artifact
         if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v5.0.0
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site/dist
 
@@ -131,4 +131,4 @@ jobs:
     steps:
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v5.0.1
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

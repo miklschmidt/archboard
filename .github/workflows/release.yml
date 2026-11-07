@@ -38,7 +38,7 @@ jobs:
     steps:
       - name: Run release-please
         id: release
-        uses: googleapis/release-please-action@v5
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
@@ -66,19 +66,19 @@ jobs:
 
     steps:
       - name: Checkout the release tag
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
 
       - name: Setup Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
 
       # The six packed packages, the voice package among them, land in result/.
       - name: Build the packages
         run: nix build .#release -L
 
       - name: Keep the packed packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: release-packages
           path: result/*.tgz
@@ -99,21 +99,21 @@ jobs:
 
     steps:
       - name: Checkout the release tag
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
 
       # Bun runs the smoke script and its registry, and npm installs. Neither is on the PATH of
       # the installed `archboard`.
       - name: Set up Vite+, Node.js, and Bun
-        uses: voidzero-dev/setup-vp@v1.21.2
+        uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
         with:
           version-file: package.json
           node-version: "26"
           run-install: false
 
       - name: Fetch the packed packages
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: release-packages
           path: dist/release
@@ -142,13 +142,13 @@ jobs:
 
     steps:
       - name: Fetch the packed packages
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: release-packages
           path: dist/release
 
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: "24"
 

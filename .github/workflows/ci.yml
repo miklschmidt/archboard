@@ -33,12 +33,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
 
       - name: Set up Vite+, Node.js, and Bun
-        uses: voidzero-dev/setup-vp@v1.21.2
+        uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
         with:
           version-file: package.json
           node-version: "26"
@@ -48,7 +48,7 @@ jobs:
       # The flake's dev shell holds the Rust tools that build the renderer
       # core (ADR 0059), so install and the gate run inside it.
       - name: Setup Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
 
       - name: Install dependencies
         run: nix develop --command bun install --frozen-lockfile
@@ -58,7 +58,7 @@ jobs:
       # that the flake pins, so its version keys the cache.
       - name: Cache the Rust dependency builds
         id: rust-cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           cmd-format: nix develop --command {0}
 
@@ -71,7 +71,7 @@ jobs:
 
       - name: Cache the renderer core
         if: steps.rust-cache.outputs.cache-hit == 'true'
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: packages/renderer/src/shared/protocol/generated/core
           key: renderer-core-${{ runner.os }}-${{ steps.core-sources.outputs.hash }}
@@ -81,7 +81,7 @@ jobs:
       # or a restored core compiles nothing, and the action never saves over its key.
       - name: Restore validation task cache
         if: steps.rust-cache.outputs.cache-hit == 'true'
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: node_modules/.vite/task-cache
           key: vite-task-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -110,7 +110,7 @@ jobs:
 
       - name: Retain validation evidence
         if: always() && (steps.validation.outcome == 'success' || steps.validation.outcome == 'failure' || steps.validation.outcome == 'cancelled')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: validation-log
           path: ${{ runner.temp }}/archboard-check.log
@@ -118,7 +118,7 @@ jobs:
 
       - name: Save validation task cache
         if: success()
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: node_modules/.vite/task-cache
           key: vite-task-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -129,12 +129,12 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
 
       - name: Set up Vite+, Node.js, and Bun
-        uses: voidzero-dev/setup-vp@v1.21.2
+        uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
         with:
           version-file: package.json
           node-version: "26"
@@ -142,7 +142,7 @@ jobs:
           run-install: false
 
       - name: Setup Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
 
       - name: Install dependencies
         run: nix develop --command bun install --frozen-lockfile
@@ -152,7 +152,7 @@ jobs:
       # that the flake pins, so its version keys the cache.
       - name: Cache the Rust dependency builds
         id: rust-cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           cmd-format: nix develop --command {0}
 
@@ -165,7 +165,7 @@ jobs:
 
       - name: Cache the renderer core
         if: steps.rust-cache.outputs.cache-hit == 'true'
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: packages/renderer/src/shared/protocol/generated/core
           key: renderer-core-${{ runner.os }}-${{ steps.core-sources.outputs.hash }}
@@ -173,7 +173,7 @@ jobs:
       # The core task is never cached and runs even when test:macos replays, so on a
       # Rust cache miss, skipping the renderer core cache alone fills the Rust cache.
       - name: Restore validation task cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: node_modules/.vite/task-cache
           key: vite-task-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -185,7 +185,7 @@ jobs:
 
       - name: Save validation task cache
         if: success()
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: node_modules/.vite/task-cache
           key: vite-task-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
