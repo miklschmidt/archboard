@@ -828,13 +828,13 @@
 	transition-delay: 0ms;
 }
 
-/* The one voice orb: its holder is in a socket at rest, in the dock's plate or the
-   voice box, and in the air over the page while it flies. It fades in once the circle
-   has formed and out as it dims, as the canvas did before it had two homes. The holder
-   carries the plate the orb sits on (a ring, a disc and a seat of light, the same as the
-   dock's circle), so the plate flies with the orb and the shadow does not change as it
-   moves. In the dock the plate is the voice button's own, so the holder does not draw
-   it there. */
+/* The one voice orb: its holder is in a socket at rest, in the dock's plate, the
+   voice box or the Narrate key's gold circle, and in the air over the page while it
+   flies. It fades in once the circle has formed and out as it dims, as the canvas did
+   before it had more than one home. The holder carries the plate the orb sits on (a
+   ring, a disc and a seat of light, the same as the dock's circle), so the plate flies
+   with the orb and the shadow does not change as it moves. In the dock the plate is the
+   voice button's own, so the holder does not draw it there. */
 [data-slot="voice-orb-socket"] > [data-slot="voice-orb-holder"] {
 	position: absolute;
 	top: 50%;
@@ -868,6 +868,25 @@
 }
 [data-slot="voice-orb-holder"] > canvas {
 	position: relative;
+}
+/* An orb launched out of the Narrate key is lit from the start of its flight: its fade in has no
+   wait (orb-stage.ts, data-launched). */
+[data-slot="voice-orb-holder"][data-shown="true"][data-launched] {
+	transition-delay: 0ms;
+}
+
+/* The Narrate key's gold circle is the orb's third home (PresentationFoot.tsx). The orb waits in
+   it, dark, while voice is off, and the key draws its gold disc and microphone only while the orb
+   is in the socket. When the orb leaves, the disc goes in a blink as the orb fades in over it, and
+   the key keeps the room it had. When the orb lands there again, the disc is drawn at once under
+   the orb, and shows as the orb fades. The disc's other transitions are the gold finish's. */
+[data-slot="narrate-seat"] > [data-part="disc"] {
+	transition-property: translate, box-shadow, background-image, opacity;
+	transition-duration: 160ms, 160ms, 160ms, 0s;
+}
+[data-slot="narrate-seat"]:not(:has(> [data-occupied])) > [data-part="disc"] {
+	opacity: 0;
+	transition-duration: 160ms, 160ms, 160ms, var(--voice-seat-out-ms, 90ms);
 }
 
 /* The voice box: the subtitles' glass with the voice in it, over the picture. It rises
