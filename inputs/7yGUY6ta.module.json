@@ -21,8 +21,8 @@
         "path": "crates/vendor/graphviz-pure-render/src/agwrite.rs",
         "symbol": "AttrMap"
       },
-      "to": "vKEsyHFk#FLnwES7I",
-      "id": "vKEsyHFk#LlnBacc1"
+      "id": "vKEsyHFk#LlnBacc1",
+      "to": "vKEsyHFk#FLnwES7I"
     },
     {
       "order": 91009,
@@ -34,8 +34,8 @@
         "path": "crates/vendor/graphviz-pure-render/src/emit/shapes.rs",
         "symbol": "ShapeKind"
       },
-      "to": "vKEsyHFk#1Af2oLOM",
-      "id": "vKEsyHFk#7Gb0DeZa"
+      "id": "vKEsyHFk#7Gb0DeZa",
+      "to": "vKEsyHFk#1Af2oLOM"
     },
     {
       "order": 91010,
@@ -47,8 +47,8 @@
         "path": "crates/vendor/graphviz-pure-render/src/agwrite.rs",
         "symbol": "canon_str_with"
       },
-      "to": "vKEsyHFk#hBkjiO4k",
-      "id": "vKEsyHFk#SHrlu0wj"
+      "id": "vKEsyHFk#SHrlu0wj",
+      "to": "vKEsyHFk#hBkjiO4k"
     }
   ]
 }
