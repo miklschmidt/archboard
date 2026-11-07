@@ -8,6 +8,7 @@ import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import { cn } from "@archboard/ui-kit/components";
 import { TimelineLane, type LaneGeometry } from "#ui/variant-lifecycle/components/TimelineLane.tsx";
+import { TimelineNode } from "#ui/variant-lifecycle/components/TimelineNode.tsx";
 import { VariantMark } from "#ui/variant-lifecycle/components/VariantMark.tsx";
 import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import {
@@ -122,7 +123,14 @@ function StateRow(props: {
 	const markStyle = useMemo(() => ({ left: markX - 8, top: PAGE_LANE.middle - 8 }), [markX]);
 	const choose = useCallback((): void => onChoose(entry), [onChoose, entry]);
 	return (
-		<li className={cn("relative", drawn && "bg-sidebar-accent shadow-raised rounded-control")}>
+		<li
+			className={cn(
+				"relative",
+				// The state on screen rises as a card with a quiet gold ring, as the site's current state.
+				drawn &&
+					"bg-face rounded-panel shadow-[var(--elevation-raised),inset_0_0_0_1px_color-mix(in_oklch,var(--primary-mark)_35%,transparent)]",
+			)}
+		>
 			<button
 				type="button"
 				aria-pressed={drawn}
@@ -132,7 +140,7 @@ function StateRow(props: {
 				onClick={choose}
 				className={cn(
 					"rounded-control relative flex w-full min-w-0 py-3 pr-4 text-left",
-					!drawn && "hover:bg-sidebar-accent/50",
+					!drawn && "hover:bg-face/50",
 				)}
 				style={rowStyle}
 			>
@@ -141,7 +149,7 @@ function StateRow(props: {
 					className="absolute flex size-4 items-center justify-center"
 					style={markStyle}
 				>
-					<VariantMark lifecycle={state.lifecycle} />
+					<TimelineNode lifecycle={state.lifecycle} floor="bg-background" />
 				</span>
 				<StateWords entry={entry} drawn={drawn} />
 			</button>

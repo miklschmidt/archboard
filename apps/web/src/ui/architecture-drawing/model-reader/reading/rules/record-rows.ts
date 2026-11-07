@@ -39,7 +39,16 @@ interface RecordWords {
 	readonly lead: string;
 	readonly name: string | undefined;
 	readonly facts: string | undefined;
+	/** Where the state stands on the timeline, in a word. */
+	readonly kind: RecordKind;
+	/** When it came to stand there, as an ISO timestamp, when the record says. */
+	readonly when: string | undefined;
+	/** Why it was adopted or shelved, as the record says it. */
+	readonly reason: string | undefined;
 }
+
+/** Where a state stands on the timeline of the History tab: its lifecycle, or unknown. */
+type RecordKind = NonNullable<State>["lifecycle"] | "unknown";
 
 /** A state and what it folds. */
 interface RecordEntry {
@@ -126,6 +135,25 @@ function leadOf(place: EntryPlace): Pick<RecordWords, "lead" | "name"> {
 	return summary === undefined ? { lead: name, name: undefined } : { lead: summary, name };
 }
 
+/** The field that dates when a state came to stand where it does, for each lifecycle. */
+const WHEN = {
+	draft: "createdAt",
+	current: "adoptedAt",
+	historical: "adoptedAt",
+	shelved: "shelvedAt",
+} as const satisfies Record<NonNullable<State>["lifecycle"], keyof NonNullable<State>>;
+
+/**
+ * Where a state stands on the timeline, and the date that put it there. A state whose record lacks
+ * that date is dated by when it was made.
+ * @param state What the catalogue reports of the state.
+ * @returns Its kind and its date.
+ */
+function timelineOf(state: State): Pick<RecordWords, "kind" | "when"> {
+	if (state == null) return { kind: "unknown", when: undefined };
+	return { kind: state.lifecycle, when: state[WHEN[state.lifecycle]] ?? state.createdAt };
+}
+
 /**
  * The state of a row, when the catalogue reports where it stands. A checkpoint says less.
  * @param state What the row knows of its state.
@@ -153,7 +181,12 @@ function entryOf(place: EntryPlace, inputs: RecordInputs): RecordEntry {
 		open,
 		stateId,
 		checkpoint: opens ?? null,
-		words: { ...leadOf(place), facts: facts.length === 0 ? undefined : facts.join(" · ") },
+		words: {
+			...leadOf(place),
+			...timelineOf(standing),
+			reason: standing?.reason,
+			facts: facts.length === 0 ? undefined : facts.join(" · "),
+		},
 		saved: undefined,
 		standing,
 	};
@@ -302,6 +335,7 @@ export {
 	type Checkpoint,
 	type ListedState,
 	type RecordEntry,
+	type RecordKind,
 	type RecordRow,
 	type RecordWords,
 };

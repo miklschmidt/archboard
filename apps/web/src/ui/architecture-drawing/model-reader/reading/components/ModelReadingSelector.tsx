@@ -4,19 +4,25 @@ import type { CheckpointRows } from "#ui/architecture-drawing/model-reader/acces
 import type { Model } from "@archboard/model/content";
 import { Tree } from "#ui/shell/components/Tree.tsx";
 import { sharedNameTouches } from "#ui/architecture-drawing/model-reader/reading/rules/draft-touches.ts";
-import { checkpointTime } from "#ui/architecture-drawing/model-reader/rules/history-time.ts";
+import {
+	checkpointTime,
+	historyDay,
+} from "#ui/architecture-drawing/model-reader/rules/history-time.ts";
 import {
 	CURRENT,
 	recordRows,
 	recordSections,
 	type ListedState,
 	type RecordEntry,
+	type RecordKind,
 	type RecordRow,
 	type RecordWords as Words,
 } from "#ui/architecture-drawing/model-reader/reading/rules/record-rows.ts";
 import { proposalStanding } from "#ui/architecture-drawing/model-reader/rules/standing.ts";
 import { stateCatalogue } from "#ui/architecture-drawing/model-reader/reading/rules/state-catalogue.ts";
 import { NAME_GAP } from "#ui/shell/rules/tree-grid.ts";
+import { TimelineNode } from "#ui/variant-lifecycle/components/TimelineNode.tsx";
+import { cn } from "@archboard/ui-kit/components";
 
 interface ModelReadingSelectorProps {
 	checkpoint: string | null;
@@ -43,6 +49,15 @@ interface RecordActions {
 }
 
 const WORDS_STYLE = { marginLeft: NAME_GAP } as const;
+
+/** The word that says where a state stands on the timeline. */
+const KIND_WORD: Readonly<Record<RecordKind, string>> = {
+	draft: "Proposal",
+	current: "Current",
+	historical: "Earlier",
+	shelved: "Shelved",
+	unknown: "Unavailable",
+};
 const NO_CHECKPOINTS: readonly never[] = [];
 const NO_TOUCHES: ReadonlyMap<string, string> = new Map();
 
@@ -186,7 +201,8 @@ function recordData(row: RecordRow): Record<string, string> {
 }
 
 /**
- * One proposal or state: what it does, what it is called, and what it folds.
+ * One proposal or state, as an event on the timeline: a node on the rail, where it stands, its
+ * name and its date, then why it came to stand there, or what it does.
  * @param props The row, its words and what it does.
  * @param props.row The row.
  * @param props.words What it says.
@@ -212,18 +228,87 @@ function StateRow(props: {
 			onOpen={open}
 			onToggle={fold}
 		>
-			<span style={WORDS_STYLE} title={words.lead} className="flex min-w-0 flex-1 flex-col">
-				<span className="text-control line-clamp-2 font-normal">{words.lead}</span>
-				{words.name !== undefined && (
-					<span className="text-body text-muted-foreground truncate">{words.name}</span>
-				)}
-				{words.facts !== undefined && (
-					<span className="text-technical text-muted-foreground truncate font-mono">
-						{words.facts}
-					</span>
-				)}
+			<span
+				style={WORDS_STYLE}
+				title={words.lead}
+				data-slot="history-event"
+				data-kind={words.kind}
+				className="grid min-w-0 flex-1 grid-cols-[12px_minmax(0,1fr)] gap-x-2.5"
+			>
+				<span aria-hidden="true" className="relative flex justify-center">
+					<span data-slot="history-rail" />
+					<TimelineNode
+						lifecycle={words.kind === "unknown" ? undefined : words.kind}
+						floor="bg-tray-sink"
+						className="mt-1"
+					/>
+				</span>
+				<span className="flex min-w-0 flex-col gap-0.5 pb-1">
+					<EventHead words={words} />
+					<EventWords words={words} />
+				</span>
 			</span>
 		</Tree.Row>
+	);
+}
+
+/**
+ * The first line of an event: where the state stands, its name and the date that put it there.
+ * @param props The words of the row.
+ * @param props.words What it says.
+ * @returns The line.
+ */
+function EventHead({ words }: { readonly words: Words }): JSX.Element {
+	return (
+		<span className="flex min-w-0 items-baseline gap-2">
+			<span
+				className={cn(
+					"text-body shrink-0 font-semibold",
+					words.kind === "current" ? "text-primary-text" : "text-muted-foreground",
+				)}
+			>
+				{KIND_WORD[words.kind]}
+			</span>
+			<span className="text-control truncate font-semibold">{words.name ?? words.lead}</span>
+			{words.when !== undefined && (
+				<time
+					dateTime={words.when}
+					className="text-technical text-muted-foreground ml-auto shrink-0 pl-1 font-mono"
+				>
+					{historyDay(words.when)}
+				</time>
+			)}
+		</span>
+	);
+}
+
+/**
+ * What an event says under its head: why the state came to stand there, or else what it does, and
+ * the facts of the row.
+ * @param props The words of the row.
+ * @param props.words What it says.
+ * @returns The words.
+ */
+function EventWords({ words }: { readonly words: Words }): JSX.Element {
+	const told = words.kind === "draft" ? undefined : words.reason;
+	return (
+		<>
+			{words.name !== undefined && (
+				<span
+					className={cn(
+						"text-body line-clamp-2",
+						words.kind === "shelved" ? "text-muted-foreground" : "text-body-foreground",
+					)}
+				>
+					{told ?? words.lead}
+				</span>
+			)}
+			{words.facts !== undefined && (
+				<span className="text-technical text-muted-foreground truncate font-mono">
+					{words.facts}
+				</span>
+			)}
+		</>
 	);
 }
 

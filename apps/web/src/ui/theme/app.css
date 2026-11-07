@@ -1276,6 +1276,28 @@
 	transition-timing-function: ease-in;
 }
 
+/* The rail of the History timeline. Each state's row draws its own piece of it, so the pieces of
+   one section join into one line, which starts at the first node and ends at the last. The row the
+   reading is on rises as a card with a quiet gold ring, as the site's current state does. */
+[data-slot="history-rail"] {
+	position: absolute;
+	top: -4px;
+	bottom: -4px;
+	width: 2px;
+	background-color: var(--border);
+}
+[aria-hidden="true"] + [role="treeitem"] [data-slot="history-rail"] {
+	top: 10px;
+}
+[role="treeitem"]:last-child [data-slot="history-rail"] {
+	bottom: calc(100% - 10px);
+}
+[role="treeitem"][aria-selected="true"]:has([data-slot="history-event"]) {
+	box-shadow:
+		var(--elevation-raised),
+		inset 0 0 0 1px color-mix(in oklch, var(--primary-mark) 35%, transparent);
+}
+
 /* The sidebar's scroll areas are quiet: a thin bar in the theme's own tone, in
    place of the system's full-width one. */
 [data-slot="semantic-sidebar-panel"],
