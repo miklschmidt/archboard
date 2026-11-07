@@ -241,7 +241,7 @@ Each behavior keeps its existing public boundary and one state owner.
   Reconnect and repository changes refresh discovery through the existing catalogue owner.
 - Define freshness, cancellation, retry, and unavailable states for each resource.
   Preserve healthy exact checkpoints when mutable architecture changes.
-  Retained checkpoint rows load when a person opens the History dialog or compares with a saved reading, and completions keep them fresh after that.
+  If a person opens the History dialog or compares with a saved reading, the retained checkpoint rows load, and completions keep them fresh after that.
   A canonical drawing is kept under a digest of the exact render request, whose whole-model part holds only containment and relationship ends.
   An edit that the drawing does not read keeps its entry. The browser keeps a bounded number of drawings for one renderer build.
   A retained reading with a live comparison base refreshes its comparison metadata through the same reader.
@@ -256,7 +256,8 @@ Canonical recordings use their captured model and the same canonical walkthrough
 
 The left column draws its depth from the picture's tokens. `column-well` in `app.css` is the well of a list, and a row's tone is `bg-tray-sink`, so a stuck row hides what scrolls under it.
 A shelf or a foot of a list stands proud of the floor, so it sets its own z-index above the well's shadow.
-The column has no tabs. `ModelColumn` puts the keys of History and Measures over the well, and one list of sections in it. A section's head sticks at the top of the well and sets `--stuck-top`, and `stuckTop` in `ui/shell/rules/tree-grid.ts` puts what sticks in a tree under that head.
+The column has no tabs. `ModelColumn` puts the keys of History and Measures over the well, and one list of sections in it. A section's head sticks at the top of the well and sets `--stuck-top`. `stuckTop` in `ui/shell/rules/tree-grid.ts` puts what sticks in a tree under that head.
+Each section keeps its row on screen in view with `useRevealedRow`: the tree its lit module, Flows the flow on screen and Walkthroughs the one that plays. It leaves a list alone while the pointer or the focus is in it.
 `app.css` holds the site's physical vocabulary as utilities, so reach for them before you write a shadow.
 `quiet-key` is the raised key that stands beside a gold one, and `Button` takes it as its `outline` variant.
 `trough` and `chosen-face` build a switch or a row of tabs, as `ModelSwitch` does.
