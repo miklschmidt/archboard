@@ -59,6 +59,8 @@ const CHECK_SEMANTICS_HELP = [
 	"- CONTAINER_UNBOUND: in a model that binds code, a module with bound parts and no binding, so the code of its folder that no part binds belongs to no module. suggestedBinding names the one directory that holds every part and no other module's code, when one does.",
 	"- CONTAINER_PARTS_OUTSIDE: a bound module with a part bound outside its binding. suggestedBinding names the directory that holds them all, when one does. Without one, the parts are spread: move a part that does another module's job, or tell the user that the code layout splits one job over several folders.",
 	"- ROOT_UNCONNECTED: in a model with several roots, a root with no relationship to another root. A relationship of a part inside it counts.",
+	"- BINDING_SHARED: a module bound to the same repository, path and symbol as an earlier module. Read the code: if it does one job, keep the module that sits where the code sits and merge the other into it.",
+	"- RELATIONSHIP_REPEATED: a relationship with the same source, target and anchor as an earlier one. Keep the one whose kind and label say what the anchored code does, and remove the other.",
 	"- CONTAINER_LINE_TO_OWN_PART: a relationship between a module and a part that it holds, at any depth. The nesting already shows it, so a reading that opens the module draws no line for it, and the panel still lists it. Start or end it at the part that makes or answers the call.",
 	"",
 	"Errors on current architecture. A reader can still read it:",
