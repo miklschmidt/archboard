@@ -1,44 +1,30 @@
 # Choose review boundaries
 
-Keep the user's requested delivery structure.
-A request for one integration PR takes precedence over general splitting advice.
-The number of modules changed does not determine the number of PRs.
+Use this reference only under the parent skill's delivery authorization rules.
+Module count alone never determines PR count.
+For authorized branch operations, use the installed gh-stack skill.
 
-Consider splitting only when each layer provides a concrete independently reviewable result.
-Use the installed gh-stack skill when an authorized stack needs branch operations.
-Keep an existing PR intact unless the user authorizes restructuring it.
+Read the whole diff, intended behavior, and proposal comparison.
+Choose layers that ship independently with clear contracts and focused evidence.
+Keep coupled APIs, callers, and required data transitions together when separation creates an unusable state.
+Tests belong with their implementation. Documentation belongs with its behavior.
 
-## Establish a useful cut
+Name each layer's result and dependencies.
+If a layer exists only because a diagram shows another module, keep it in the integration PR.
+If no independent benefit remains, stop splitting.
 
-Read the whole diff, its intended behavior, and the canonical proposal comparison.
-Identify changes that can ship independently with clear contracts and focused evidence.
-Keep coupled API changes, their callers, and required data transitions together when separation creates an unusable intermediate state.
-A test and its implementation belong to the same delivery boundary.
-Documentation follows the behavior that it describes.
+Present the proposed PRs, their contents, order, and dependencies to the user.
+Wait for explicit confirmation of that split before creating or restructuring branches, moving commits, or opening separate PRs.
+Permission to explore a split does not authorize carrying it out.
 
-Name each proposed layer's resulting behavior and dependencies.
-If a layer exists only because a diagram contains another module, keep it in the integration PR.
-If no independent delivery benefit remains, stop splitting.
-
-## Preserve architecture meaning
-
-Each authorized layer can use a compact proposal against the actual state that its code assumes.
-Record model, stable state identity, exact predecessor, and comparison base.
+For each layer, record model, stable state ID, exact predecessor, and comparison base.
 A proposal can span modules and flows.
-Never derive proposal ancestry from branch names alone.
+Never derive proposal ancestry from branch names.
+For a partial implementation of a larger design, follow [reconciliation](reconcile.md).
+Retain exact comparison evidence per review boundary.
 
-Use dependent proposals only when the complete predecessor represents the architecture that the layer follows.
-Keep a larger unbuilt design separate from a partially implemented state when its unbuilt subjects cannot be inherited accurately.
-Scope and focus narrow pictures without deleting intended subjects.
-Retain exact comparison evidence for each review boundary.
-
-## Deliver the chosen structure
-
-Keep all work on the approved integration branch when the user requests one PR.
-Use commits as implementation checkpoints within that branch.
-Explain broad work through several coherent scopes or walkthrough beats in its single Summary.
-
-For an authorized stack, use the actual lower source branch as each PR's base.
-Make sure that each layer works with its dependencies and has focused evidence.
-Use the parent skill's three-section body for each PR.
-Adoption remains an owner-authorized architecture operation after implementation, independently of any source merge.
+For one integration PR, keep work on its branch and use commits as progress points.
+Explain broad work through several scopes or walkthrough beats in its Summary.
+For an authorized stack, use the actual lower branch as each PR's base.
+Make sure that every layer works with its dependencies and has focused evidence.
+Use the parent skill's body and adoption workflow for each PR.

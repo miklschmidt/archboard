@@ -1,94 +1,114 @@
 # Work with a canonical model
 
-Use this path when the addressed vault contains an authored `model.json` manifest.
-Existing `.semantic.json` legacy boards retain authority until explicit migration.
-The canonical reader refuses a mixed vault.
+The canonical model is the vault's authoritative architecture.
+Its manifest, `model.json`, identifies that model.
+Legacy `.semantic.json` files retain authority until [explicit migration](legacy-migration.md).
+Ordinary reads and writes return `LEGACY_AUTHORITY` for unmigrated vaults and refuse mixed formats.
 
-Run `archboard model read -C <directory>` to inspect root modules and relationships.
-The CLI discovers the vault from that checkout directory.
-The result names the addressed vault.
-Read `roots` in order, then find each identity in `modules`.
+## Read the model
 
-Run `archboard model read '<qualified-id>' -C <directory>` to select one module.
-A qualified identity uses `model[/original-board]#local-id`.
-The optional original legacy board records imported provenance.
-Each segment follows the existing one-to-eight-character ID authority.
-Current and former names work only when exactly one module matches.
-If a name is ambiguous, use one of the returned matching identities.
+Run `archboard model read` in the vault's checkout, or pass `-C <directory>` for discovery.
+Other relative paths still resolve from the working directory.
+Every server request must name its vault explicitly. The server stays local.
 
-The result includes the manifest, policy, modules, derived relationships, and input revision.
-Each module owns `outgoing` relationships.
-The derived `relationships` list adds each source as `from`.
-Find incoming relationships by their `to` identity.
-Module and relationship order comes from authored `order` values.
-Qualified IDs resolve equal positions deterministically.
+The result names the discovered vault.
+Read `roots` in order, then find their identities in `modules`.
+Select a module with `archboard model read '<qualified-id>' -C <directory>`.
 
-The reader preserves responsibilities, descriptions, groups, bindings, evidence anchors, traffic, and document references.
-It validates all discovered definitions before returning any part of the model.
-Failures return structured codes, source paths, affected identities, and recovery actions.
-An unsuccessful CLI read exits with status 2 and keeps its structured JSON result.
+A qualified identity is `model[/original-board]#local-id`.
+Each segment has one to eight characters.
+The optional original board records imported origin, not ownership.
+A unique current or former module name also selects a module.
+If a name is ambiguous, use a returned matching identity.
+Names and bindings never establish shared identity.
 
-When a pane opens an authored model vault, the browser lists its root modules.
-Select a module to read its responsibility, description, evidence, and connections.
-The browser keeps selection as presentation state and writes no architecture content.
-The current reading follows completed edits and stable external changes automatically.
-Opening the reading, returning to the tab, and reconnecting obtain fresh content.
-If updates fail, the last coherent current reading remains visible with an explicit stale notice.
-Invalid input shows its source and recovery instructions.
-Use Refresh to retry a failed read.
+The result includes the manifest, policy, modules, relationships, flows, proposals, and complete input revision.
+A module keeps its identity across readings.
+A relationship describes a continuing dependency, not execution order.
+Each module owns its `outgoing` relationships.
+The assembled `relationships` list adds the source as `from`.
+Find incoming relationships through `to`.
 
-Drag from empty diagram space to select several subjects.
-Use Ctrl/Cmd-click to toggle a subject, or focus its list button and press Ctrl/Cmd+Enter.
-Press Escape to clear selection.
-Hold Space while dragging, or drag with the middle mouse button, to pan.
+Authored `order` values determine order, with qualified IDs breaking ties.
+The reader preserves responsibilities, descriptions, groups, bindings, anchors, traffic, and document references.
+It reads every discovered definition before returning any part.
 
-Select Focus to show the selected subjects and their required containment paths.
-The reading preserves selected ancestors and descendants together.
-Select Clear focus to return to the underlying scope.
-Use Filter in the Legend to hide relationship kinds.
-These controls change the reading without changing architecture files.
-The right panel keeps hidden selections and offers Reveal selection.
-Missing subjects remain explicit until their architecture returns or the reader changes focus.
-Focus and filters survive reload and browser history navigation.
-Selection itself stays temporary and does not add history.
+A revision identifies the exact authored inputs.
+It covers recognized input paths and exact bytes, including policy.
+Renames and whitespace edits change the revision but preserve identity and meaning, respectively.
+Unrelated documentation does not change it.
+Keep the entire `revision`, including file fingerprints, for writes.
+Failures return codes, source paths, affected identities, and recovery actions as JSON, with CLI exit status 2.
 
-Use the diagram selector to choose Architecture, Sequence, or Flowchart.
-For Sequence or Flowchart, choose an authored flow from the Flow selector.
-A flow opens in the reading that its pane shows larger, and the selector switches it.
-The choices involve the selected subjects, focused subjects, or open module.
-The diagram includes every participant and step that the selected flow requires.
-The participant list keeps the order that the flow defines.
-Structural filters do not remove flow messages.
-Returning to Architecture restores the preceding scope, focus, and filters.
-If the selected flow is unavailable, choose another flow or restore its definition.
-A hidden selected step remains in the inspector with an action to open its exact flow.
-These actions preserve selection and change no architecture files.
+## Explore in the browser
 
-Open History to select a saved reading.
-A run of saved readings of one state folds into one row with a count and the latest time.
-Expand the row to list each saved reading with its retention time and agent intent.
-The selected reading shows when it was saved and its source evidence.
-Its tooltips hold the complete checkpoint identity and source commit.
-Run `model checkpoints` to copy an identity.
-Select Current to return to the working files.
+A model opens at its roots.
+Select a module for its responsibility, description, evidence, and connections.
+Open module shows its immediate parts and directly connected outside modules.
+The path above the picture returns to a parent or the repository.
+Back, Forward, and reload preserve each pane's scope and saved reading independently.
+
+Select a connection to read its underlying relationships, endpoints, identities, and distinct labels.
+Different directions and kinds stay separate.
+The open module shows entry points and callers from the complete model.
+A connection to a container never invents a child endpoint.
+
+Use these controls:
+
+- Drag from empty space to select several subjects.
+- Use Ctrl/Cmd-click or Ctrl/Cmd+Enter on a focused list button to toggle a subject.
+- Press Escape to clear selection.
+- Hold Space while dragging, or use the middle mouse button, to pan.
+- Select Focus to show selected subjects with their containment paths, including selected ancestors and descendants.
+- Select Clear focus to restore the underlying scope.
+- Use Filter in the Legend to hide relationship kinds.
+- Use Reveal selection in the right panel to reveal hidden selections.
+
+Focus and filters survive reload and history navigation.
+Selection is temporary and adds no history.
+Missing selections remain explicit until their subjects return or you change focus.
+A missing scope or checkpoint requires a different address or restored history.
+These controls write no architecture.
+
+Choose Architecture, Sequence, or Flowchart in the diagram selector.
+For behavioral diagrams, choose an authored flow in the Flow selector.
+Choices involve selected subjects, focused subjects, or the open module.
+The chosen flow opens in the pane's larger reading.
+It includes every required participant and step, in authored participant order.
+Structural filters cannot remove messages.
+
+Returning to Architecture restores the prior scope, focus, and filters.
+If a flow is unavailable, choose another or restore its definition.
+A hidden selected step keeps an inspector action that opens its exact flow without clearing selection.
+
+Current readings refresh after completed edits, stable external changes, opening, returning to a tab, and reconnecting.
+Failed updates leave the last coherent reading visible with a stale notice.
+Invalid input names its source and recovery action.
+Use Refresh after recovery.
+
+A renamed or moved module keeps its selection through its stable identity.
+Its details name its parent.
+A removed module leaves an explicit missing selection.
+Historical readings keep their original content.
+
+Open History to choose a saved reading.
+Consecutive readings of one state fold into a row with their count and latest time.
+Expand it for retention times and agent intents.
+
+The selected reading shows its save time and source evidence.
+Tooltips give the complete checkpoint and source commit.
+Use `model checkpoints` to copy an identity, or Current to return to working files.
 Each selection reads its own inputs again.
-
-Saved readings remain available when current model files are missing or invalid.
-Missing source evidence includes a recovery instruction and leaves retained architecture readable.
-Missing architecture shows its refusal and recovery instructions instead of current content.
-After you restore the archive, use Refresh to reopen the selected checkpoint.
-The browser never creates checkpoints or changes architecture inputs.
-
-The revision covers recognized input paths and exact bytes, including policy.
-A file rename changes the revision and preserves identity.
-A whitespace edit changes the revision and preserves meaning.
-An unrelated documentation file does not change the revision.
+The browser creates no checkpoints.
 
 ## Retain an exact local reading
 
-A checkpoint preserves one reading and its exact architecture inputs.
-Use a canonical vault inside a source Git repository, or explicitly initialize private history as described below.
-Run `model read` and keep its `revision.digest` before retention.
+A checkpoint preserves a reading and its exact architecture inputs.
+A baseline is the retained starting point for changes.
+Use a vault in a source Git repository, or [initialize private history](#initialize-private-history).
+`model retain` captures Current.
+For drafts or planning models without Current, use the completed proposal edit checkpoint.
+For Current retention, read the model and keep `revision.digest`.
 
 ```bash
 archboard model retain -C <directory> \
@@ -100,73 +120,81 @@ archboard model read -C <directory> --checkpoint <checkpoint.id>
 archboard model read 'Shop#Gateway' -C <directory> --checkpoint <checkpoint.id>
 ```
 
-The writer, doing line, operation identity, and expected revision are required.
-Use a new operation identity for a new retention intent.
-If a response is lost, repeat the same identity and request.
-The retry returns the same checkpoint, even after current files change.
-A reused identity with different input returns `OPERATION_REUSED`.
+Supply the writer, doing line, operation identity, and expected revision.
+For each required baseline, add `--dependency <checkpoint.id>` with its complete immutable identity.
+A missing dependency refuses retention before checkpoint creation.
+Retention keeps required baselines with the checkpoint.
 
-If the reading requires an earlier baseline, add `--dependency <checkpoint.id>`.
-Repeat the flag for several required checkpoints.
-Dependencies use complete immutable checkpoint identities.
-Retention refuses a missing dependency before creating its new checkpoint.
-Actual Git parents preserve dependencies, including after garbage collection.
+Retention preserves the source index, HEAD, checkout, and architecture files.
+It saves recognized architecture inputs and metadata, not source-code bytes.
 
-Retention honors configured Git identity and signing.
-It preserves the index, HEAD, checkout, and current architecture files.
-If signing fails, repair the configured identity, key, or signer before retrying.
-Keep signing enabled when the repository requires it.
-The operation retains only recognized architecture inputs and checkpoint metadata.
-It creates no source-code snapshot and publishes nothing.
+The result includes `checkpoint.id`, `model`, `state`, `revision`, `createdAt`, `request`, `sources`, and `publication` evidence.
+Linked worktrees share the archive but keep separate current architecture.
+Before sharing history, follow [publication](#publish-and-fetch-history).
 
-The result carries `checkpoint.id`, `model`, `state`, `revision`, `createdAt`, `request`, and `sources`.
-Its `publication` reports explicit archive publication evidence.
-Read [Publish and fetch history](#publish-and-fetch-history) before sharing a retained reading.
-A normal source-code push does not publish this archive.
-Linked worktrees share the archive through Git's common repository directory.
-Their current architecture remains separate.
+## Retry and recover operations
+
+Use a new operation identity for each new intent or changed request.
+If a response is lost, repeat the exact request and identity.
+A completed retry returns the same receipt, allocated identities, checkpoint, and lifecycle event, even after current files change.
+Reusing an identity with different input returns `OPERATION_REUSED`.
+
+For writes, `applied:true` means that installation completed durably.
+`cleanup:pending` still means applied. Repeat the exact request to finish cleanup.
+Completed retries work even with invalid current files or another write in progress.
+If another process finishes cleanup after completion, the original request still succeeds with `cleanup:"pending"`.
+A refusal reports `applied:false` before installation or `applied:"unknown"` when the outcome remains uncertain.
+
+During installation, leave the vault files and checkout unchanged.
+Invalid or changing inputs block new writes.
+Unrelated authored files keep their exact bytes.
+
+If a write returns `RECOVERY_REQUIRED`, run `archboard model recover -C <directory>` in the original checkout.
+Recovery resumes the original operation and checkpoint.
+If recovery finds foreign content, preserve it before restoring a logged image.
+If the branch or HEAD differs, restore the recorded context before retrying.
+Leave recovery files intact when recovery refuses.
+
+The failure's `recovery` names the operation, checkpoint, progress, fingerprints, branch, and HEAD.
+While current reads remain blocked, inspect the candidate with `model read --checkpoint <recovery.checkpoint>`.
+If application remains uncertain, recover or retry the original request.
 
 ## Initialize private history
 
-For a vault outside a source repository, explicitly initialize its private archive before retention or edits.
+For a vault outside a source repository, initialize its archive before retention or edits:
 
 ```bash
 archboard model archive-init -C <directory>
 ```
 
-The result returns `archive`, the local bare Git directory.
-Use `git -C <archive> config` to configure its author identity and signer.
-The archive also reads the owner's global Git configuration.
-Keep required signing enabled.
-The runtime never creates `.git` inside the vault or its enclosing directory.
-Initialization refuses source repositories and machine state inside a source repository.
-Repeated initialization returns the same archive without replacing its content.
+The result's `archive` names the local history directory.
 
-The existing retain, read, claim, edit, and recover commands use this archive automatically after initialization.
-Private checkpoint metadata contains no invented source association or generated machine directory.
-Current architecture and private recovery records remain specific to the addressed vault.
-The archive lives in Archboard's machine state, so keep it in your backups.
-Moving a vault does not move its private archive or recovery records.
-Preserve the original location for pending recovery.
-Portable transfer belongs to the explicit export and migration workflows.
+Initialization creates no `.git` in the vault or enclosing directory.
+It refuses source repositories and machine storage inside a source repository.
+Repeating it returns the same archive without replacing content.
 
-History remains local until the owner explicitly configures a publication destination.
-For publication, add the intended named remote in the returned archive with `git -C <archive> remote add`.
-Then use the publication workflow below with that remote and independent archive ref.
+Retain, read, claim, edit, and recover use the archive automatically.
+Private checkpoints invent no source association.
+Current architecture and recovery records stay specific to the vault.
+
+Include the archive in backups.
+Moving the vault does not move its archive or recovery records.
+For pending recovery, preserve the original location.
+For portable transfer, use [export](#export-and-restore-a-model) or [migration](legacy-migration.md).
+
+History stays local until explicit publication.
+For publication, add the intended named remote with `git -C <archive> remote add`.
 Initialization, remote creation, and destination configuration send no history.
 
-If a source repository appears around a vault with private history, archive operations refuse the ownership change.
-Restore the vault outside that source repository before recovery or further archive work.
-If private storage is damaged, preserve it and restore a complete archive from backup.
+If a source repository appears around private history, archive operations refuse the ownership change.
+Restore the vault outside that repository before further archive work or recovery.
+If storage is damaged, preserve it and restore a complete backup.
 Initialization never overwrites damaged storage.
 
 ## Publish and fetch history
 
-A source-code push does not establish archive publication.
-Configure an existing named Git remote and a complete independent archive branch ref.
-Configuration stays private beside shared Git objects.
-It applies to the portable vault address across linked worktrees.
-It changes no architecture inputs and sends no history.
+A source-code push or artifact upload does not publish the independent architecture archive.
+Configure an existing named remote and a complete independent archive branch ref:
 
 ```bash
 archboard model publication-configure -C <directory> \
@@ -176,37 +204,31 @@ archboard model publish <checkpoint.id> -C <directory> \
   --remote <remote-name> --ref refs/heads/archboard-history
 ```
 
-Use the configured destination on every publication and recovery request.
-If the remote URL changes, explicitly configure that destination again.
-`PUBLICATION_DESTINATION_CHANGED` refuses use of the former authorization and publication evidence.
-Local retention and exact reads remain available.
+Configuration stays private, applies across linked worktrees, and changes no architecture inputs.
+Use the configured destination for every publication and recovery request.
+If its remote URL changes, configure it again.
+`PUBLICATION_DESTINATION_CHANGED` rejects former authorization and publication evidence but leaves local retention and exact reads available.
 
-`saved-locally` means that the architecture exists locally without publication evidence for the selected destination.
-`publication-pending` means that a durable publication intent awaits a successful exchange.
-That intent includes the retained dependency closure.
-`published` means that an explicit push or fetch established remote availability for that checkpoint.
-`unavailable` means that the requested history cannot be opened or restored by that operation.
+Publication reports these states:
 
-Publication evidence persists across server restarts.
-It describes availability at the last successful explicit exchange.
-It does not promise that the remote still exists or keeps its retention policy.
-The result reports `retention.protected: false` and explains the enforceability limitation.
-The remote owner must deny ref rewrites and deletion through server policy and keep a backup.
-Generic Git transport cannot install or inspect those host controls.
+- `saved-locally`: Local architecture has no publication evidence for the selected destination.
+- `publication-pending`: A durable intent awaits a successful exchange, including every retained dependency.
+- `published`: An explicit push or fetch established availability for that checkpoint.
+- `unavailable`: The operation cannot open or restore the requested history.
 
-A stale push fetches complete named history and joins archive ancestry through a signed synchronization record.
-The record preserves both tips without merging model content.
+Evidence survives restarts and describes the last successful exchange, not future remote availability.
+`retention.protected:false` states that limit.
+For durable shared history, the remote owner must prohibit ref rewrites and deletion and keep a backup.
+
+If the remote has newer history, publication preserves both histories without merging model content.
 Publication preserves checkpoint identities and never force-pushes.
-Configured identity and signing apply to the join.
-If signing fails, repair the signer and retry the same explicit publication request.
 
-If the network fails, local architecture remains retained.
-Use `model publication` to read the saved status without contacting the remote.
+If the network fails, local history remains retained.
+Read saved status without network access through `model publication`.
 After access returns, repeat `model publish` with the same checkpoint and destination.
-An interrupted request remains pending until an explicit exchange proves publication.
+An interrupted exchange stays pending until explicit publication succeeds.
 
-To recover a missing reading, configure the owner's named archive destination first.
-Then fetch that complete archive explicitly.
+To restore missing history, configure the owner's destination, then fetch it:
 
 ```bash
 archboard model fetch <checkpoint.id> -C <directory> \
@@ -214,77 +236,61 @@ archboard model fetch <checkpoint.id> -C <directory> \
 archboard model read -C <directory> --checkpoint <checkpoint.id>
 ```
 
-The fetch retains a named local reference and restores the referenced ancestry.
-An existing shallow archive triggers a deeper fetch of that archive ref.
-Current files, the index, source HEAD, and stored source fetch mappings remain unchanged.
+Fetch restores complete ancestry, deepens shallow history, and retains a named local reference.
+It preserves current files, the index, source HEAD, and source fetch mappings.
 Fetched checkpoints appear in `model checkpoints`.
-Archive order never selects the checkout's current state.
+Archive order never selects current architecture or proposal ancestry.
 
-`ARCHIVE_NOT_PORTABLE` refuses publication of retained machine-local source repository paths.
-Immutable checkpoint metadata cannot be redacted during publication.
-Keep such checkpoints local and use portable source repository identities for future archives.
-Use [Export and restore a model](#export-and-restore-a-model) for a complete portable backup.
+`ARCHIVE_NOT_PORTABLE` rejects checkpoints that contain machine-local source repository paths.
+Publication cannot redact immutable metadata.
+Keep those checkpoints local and use portable repository identities for future history.
+Use [export](#export-and-restore-a-model) for a complete portable backup.
 
-The browser shows sharing status when the reader selects a retained checkpoint.
-The reader can set its destination, publish history, retry a failed exchange, or fetch missing history.
+A retained browser reading shows sharing status and actions to configure, publish, retry, or fetch.
 Configuration sends no history.
-Every network action uses the displayed checkpoint and destination.
-The reader keeps that checkpoint selected while recovery restores its content.
-The visible retention limitation states that a successful exchange does not establish remote protection.
+Each network action uses the displayed checkpoint and destination and keeps that checkpoint selected during recovery.
+The browser states the remote protection limit.
 
 ## Reopen and recover
 
-Exact reads require the complete `checkpoint.id`, rather than a branch name or abbreviated hash.
-Module selectors resolve against that retained reading alone.
-Its modules, relationships, manifest, policy, and revision come from retained objects.
-Changed, missing, or malformed current files never supply historical content.
-
-`model checkpoints` lists saved checkpoint metadata without reading current architecture.
-Synchronization records are omitted.
-Archive traversal order establishes neither current architecture nor proposal ancestry.
+Exact reads require a complete `checkpoint.id`, not a branch or abbreviated hash.
+Selectors resolve only against that retained reading.
+Current files never supply missing historical content.
+`model checkpoints` lists metadata without reading current architecture and omits synchronization records.
 Select the intended checkpoint explicitly.
 
-An exact read adds `checkpoint` and `sourceEvidence` to the common model result.
-Each source evidence entry carries its repository, commit, uncommitted status, and current availability.
-`available` means that the committed source revision remains local.
-`uncommitted` means that the recorded base exists but exact uncommitted code needs separate recovery.
-`unavailable` means that the recorded source revision is absent or no source commit existed.
-Evidence recovery instructions accompany the latter two states.
-Architecture remains readable when source evidence is unavailable.
+An exact read adds `checkpoint` and `sourceEvidence` to the model result.
+Each evidence entry names its repository, commit, uncommitted status, and availability:
 
-`ARCHITECTURE_UNAVAILABLE` means that architecture inputs or a required baseline are missing.
-Restore the archive from its owner or backup.
-If the owner publishes history, use `model fetch` with the configured remote, archive ref, and exact checkpoint.
-The fetch restores complete archive ancestry, including required baselines in shallow clones.
-Exact reads perform no automatic network operation.
-Never substitute current content for missing history.
+- `available`: The committed source revision is local.
+- `uncommitted`: The base exists, but exact uncommitted code needs separate recovery.
+- `unavailable`: The source revision is absent or no source commit existed.
+
+The latter two include recovery instructions.
+Architecture remains readable without source evidence, even when current model files are missing or invalid.
+`ARCHITECTURE_UNAVAILABLE` means that retained architecture or a required baseline is missing.
+Restore the archive from its owner or backup, using [fetch](#publish-and-fetch-history) when the owner publishes it.
+Exact reads never contact the network automatically.
+After restoration, Refresh reopens the browser checkpoint.
 
 `ARCHIVE_IN_USE` means that a worktree has `archboard-history` checked out.
 Switch that worktree to another branch before retrying retention.
-`ARCHIVE_UNREADABLE` identifies a damaged archive or an unrelated branch using the reserved name.
+`ARCHIVE_UNREADABLE` means damaged storage or an unrelated branch using the reserved name.
 Preserve that branch and resolve its ownership before retrying.
-An unsuccessful operation keeps its structured JSON and exits with status 2.
-
-An unmigrated vault refuses ordinary live reads and writes with `LEGACY_AUTHORITY`.
-For legacy inventory, identity choices, preview, and explicit cutover, use [legacy migration](legacy-migration.md).
-Compact proposals use the workflow below.
-Reconciliation, adoption, shelving, and historical correction use the shared model writer.
 
 ## Edit one module description
 
-Use `model edit` for one current module description with source-backed or initialized private history.
-Read the complete model before preparing the edit.
-Keep the entire `revision` object, including its file fingerprints.
+Read the complete model with source-backed or initialized private history.
+Use the manifest's model ID and current state ID as the explicit target.
 Use qualified subject IDs for claims and edits.
-The explicit target contains the manifest's model ID and current state ID.
+A claim reserves an authoring scope while leaving it readable.
 
-Write a claim request with `target`, `writer`, `reason`, and `subjects`.
+Write `claim.json` with `target`, `writer`, `reason`, and `subjects`.
 Run `archboard model claim --input claim.json -C <directory>`.
-Keep the returned `claim.id`.
-Use `model claims` to inspect the writer, purpose, scope, and start time.
-Claims leave the installation lease free between operations.
+Keep `claim.id`.
+Use `model claims` to inspect writer, purpose, scope, and start time.
 
-Write an edit request with these fields:
+Prepare the request from that read and claim:
 
 ```typescript
 {
@@ -298,63 +304,34 @@ Write an edit request with these fields:
 }
 ```
 
-Run the edit with its doing line:
+Run it with a doing line that describes the intent:
 
 ```bash
 archboard model edit --input edit.json -C <directory> \
   --doing "explaining gateway authentication"
 ```
 
-The result names the before and after revisions, affected subjects, and retained checkpoint.
-`applied: true` identifies durable completion.
-`reconciliation: false` means that the affected family has no unresolved decisions.
-A `cleanup: pending` result remains applied.
-Repeat the exact request to finish its remaining cleanup.
-If a response is lost, repeat the same request and operation identity.
-Use a new identity for a different intent.
-A completed retry remains available when current files are invalid or another operation holds the installation lease.
+Claim and edit accept JSON files or standard input.
+The result names before and after revisions, affected subjects, and the retained checkpoint.
+`reconciliation:false` means that the affected family has no unresolved decisions.
+Follow [retry and recovery](#retry-and-recover-operations) for failures or lost responses.
+A complete operation announces its full affected subject set once.
+Stable external corrections change current content without adoption metadata.
 
-Signing preparation precedes every current-file installation.
-If signing fails, repair the configured signer and retry the same request.
-Keep the repository's signing policy enabled.
-An operation with no completed installation changes no current inputs on that signing refusal.
+To release a claim, write `{"claim":"<claim.id>","writer":"architecture-agent"}` to `release.json`.
+Run `archboard model release --input release.json -C <directory>` when the intent ends.
 
-If `RECOVERY_REQUIRED` appears, run `archboard model recover -C <directory>`.
-The operation resumes its original journal and retained checkpoint.
-If recovery reports foreign content, preserve those bytes before restoring a logged image.
-If recovery reports another branch or HEAD, restore the recorded context before retrying.
-The failure's `recovery` object names its operation, checkpoint, progress, fingerprints, and original branch and HEAD.
-Use `model read --checkpoint <recovery.checkpoint>` to inspect the retained candidate while current reads remain blocked.
-An edit refusal states `applied: false` before installation or `applied: "unknown"` when the durable outcome remains uncertain.
-If application remains uncertain, recover the journal or retry the original request.
-If another process finishes cleanup after durable completion, the original request returns success with `cleanup: "pending"`.
-Keep external editors and Git checkout idle during installation.
-Archboard detects interference but cannot provide atomic visibility to arbitrary filesystem readers.
-
-A stable external correction changes observed current content without creating adoption metadata.
-Invalid or changing inputs block new writes.
-Keep any old browser scene explicitly stale until a coherent read succeeds.
-Each event-stream connection starts with a fresh current reading and claim list.
-A historical selection continues to use its exact checkpoint cache.
-
-To release the scope, write `{ "claim": "<claim.id>", "writer": "architecture-agent" }` to `release.json`.
-Run `archboard model release --input release.json -C <directory>`.
-The current reading shows each agent claim with its writer, purpose, subjects, and start time.
-A reader can select Take back control beside that claim.
-This action ends ownership without changing architecture content.
-Its former writer then receives `CLAIM_REVOKED` and must stop that intent.
-
-The claim and edit commands accept JSON files or standard input.
+The browser shows claims and offers Take back control.
+That action changes ownership, not architecture.
+If your next write returns `CLAIM_REVOKED`, stop the intent and report the state it left.
 
 ## Author module structure and relationships
 
-Use the existing `model edit` command for a structural batch.
-A batch holds every change for one intent.
-Keep its complete revision, explicit current target, operation identity, writer, doing line, and claim.
-Replace the description request's `subject` and `description` with `changes`.
-The earlier description request remains supported.
-
-Use these change forms:
+Use the same `model edit` request for one complete batch.
+Replace `subject` and `description` with `changes`.
+Keep the target, complete revision, operation identity, writer, doing line, and claim.
+The single-description form remains supported.
+These are separate examples, not one valid combined intent:
 
 ```json
 [
@@ -382,122 +359,73 @@ Use these change forms:
 ]
 ```
 
-These forms are separate examples, rather than one valid combined intent.
 State one edit per continuing subject.
-Use `set` for assigned fields and `clear` for optional fields to remove.
-Omitted fields remain unchanged, and null is invalid.
-A rename retains the old name as a former name.
-Use `set.parent` to reparent a module, or `clear:["parent"]` to make it a root.
-Use `edit-relationship.source` to transfer a relationship without replacing its identity.
-Keep its label, description, order, emphasis, traffic, and anchor unstated to preserve them.
-To replace a relationship, state `remove-relationship` and `add-relationship` in one batch.
-That explicit pair declares the replacement.
-The addition takes a new identity, and a comparison reports one removed and one added subject.
-Archboard never infers a replacement from matching ends or labels.
+`set` assigns fields, `clear` removes optional fields, and omission preserves them. Null is invalid.
+A rename preserves the former name.
+`set.parent` moves a module. `clear:["parent"]` makes it a root.
 
-New identities come from Archboard in the model namespace.
-Do not supply an ID, schema version, former names, or outgoing array for an addition.
-The result's subjects and the next model read expose the allocated identities.
-New module files use those identities, rather than names.
-Unique current or former module names remain accepted.
-References to a module added in the same batch use its unique name.
-Relationship edits and removals use qualified IDs.
+`edit-relationship.source` transfers a relationship without changing its identity.
+Omit label, description, order, emphasis, traffic, and anchor to preserve them.
 
-Claim every affected existing subject before the operation.
-A relationship change includes its identity and former and new source and target modules.
-A containment change includes the moved descendants and former and new ancestor paths.
-For additions and removals, also claim the model ID, such as `Shop`.
-This structure scope protects identity allocation and retirement.
-It leaves unrelated module scopes available.
-For example, a transfer claim can name `["Shop#Gateway","Shop#Worker","Shop#Dispatch"]`.
-Refusals identify affected scopes so that you can release a partial claim and obtain the complete scope.
+To replace a relationship, remove it and add another in the same batch.
+That pair allocates a new identity and compares as one removal and one addition.
+Matching endpoints or labels never imply replacement.
 
-Module removal also removes incident relationships unless the same batch explicitly repairs their endpoints.
-Reparent or remove every surviving child of a removed container in the same batch.
-Archboard never promotes an orphan automatically.
-Removed module and relationship IDs remain reserved in `model.json`.
-Existing proposal confirmation rules remain unchanged and apply when editing proposals.
-A batch without a proposal intent authors only the explicitly selected current state.
-The compact proposal workflow below uses the same batch for a selected draft.
+Archboard allocates new IDs in the model namespace and uses them for module filenames.
+Additions accept no supplied ID, schema version, former names, or outgoing array.
+Read allocated IDs from the result's subjects or the next model read.
+Refer to a module added in the batch through its unique name.
+Relationship edits and removals require qualified IDs.
 
-The operation retains one checkpoint and announces one complete affected subject set.
-A retry returns the same allocated identities and result.
-A transfer or removal that stops during installation uses the existing `model recover` command.
-The recovery path preserves foreign bytes and refuses changed checkout context.
-Unrelated authored files remain byte-identical.
+Claim all affected existing subjects:
 
-The browser refreshes current module names, root membership, and connections after the complete operation.
-The selected module keeps its identity through a rename or reparent.
-Its details identify its parent when it has one.
-Removing that module leaves an explicit missing selection until the reader chooses another subject.
-Exact historical readings keep their original names, containment, and relationships.
+- For a relationship change, include its identity and former and new source and target modules.
+- For containment, include moved descendants and former and new ancestor paths.
+- For additions and removals, include the model ID, such as `Shop`, to reserve structure changes.
 
-## Explore a module
+A transfer claim can name `["Shop#Gateway","Shop#Worker","Shop#Dispatch"]`.
+Unrelated scopes remain available.
+If a refusal names missing scopes, release the partial claim and obtain the complete scope.
 
-Select a module, then choose Open module.
-The reading shows its immediate children and directly connected outside modules.
-Use the path above the diagram to return to a parent or the repository.
-Browser Back and Forward restore earlier scopes and saved readings.
-The address preserves each pane independently across reload.
-
-Select a connection in the diagram or the Connections list.
-Its details list every underlying relationship, original endpoint, identity, and distinct label.
-Connections with different directions or kinds remain separate.
-The open module shows entry points and callers from the complete architecture.
-A connection to the module itself never names an invented child.
-
-A missing scope or checkpoint stays unavailable until the reader changes the address or restores the missing history.
-Navigation never copies modules, creates a second model, or changes architecture files.
+Removing a module removes incident relationships unless the batch repairs their endpoints.
+Reparent or remove every surviving child in the same batch. Archboard never promotes orphans.
+Retired module and relationship IDs remain reserved in `model.json`.
+Without a proposal intent, the batch changes only the selected current state.
+For a draft, use [proposal operations](#create-and-compare-compact-proposals), including their confirmations.
 
 ## Author independent flows
 
-A collection groups flows for authoring.
-Its filename gives no module ownership.
-Each flow and step keeps a qualified subject identity.
-The collection has a separate local identity.
-
-Read the complete model with `archboard model read`.
-Claim the model ID, participants, and every affected existing flow, step, and holder.
-Use the existing `model edit` request with `changes` for one complete intent.
-The Archboard source checkout contains `examples/canonical-model/independent-flow.changes.json`.
-That complete example uses the modules in the canonical model example.
-Supply the target, complete expectedRevision, operationId, writer, and claim from your current reading.
-Supply the doing line through `--doing`.
+A collection groups flows without assigning module ownership through its filename.
+Collections have local identities. Flows and steps have qualified identities.
+Claim the model, participants, and affected existing flows, steps, and holders before the batch.
+For a complete example, use `examples/canonical-model/independent-flow.changes.json` in the Archboard checkout with its example modules.
+Supply the common request fields from your own read and claim.
 
 `add-collection` takes a name.
-`add-flow` takes a collection identity or unique name and a flow with a `summary`, ordered participants and nested steps.
-The summary states what the exchange does and why it matters, in one or two sentences.
-Archboard allocates every new identity.
-Messages, decisions, loops, notes, repeat counts, summaries, and anchors keep their existing semantic fields.
-Returns remain messages and never create reverse structural relationships.
-Back each step with the source that sends it: read the code path first, and put the file and symbol in the step's `anchor`.
-Then read that source a second time for what the first pass skips.
-A self-call is one `self` step, with the module at both ends.
-A fixed count, such as a retry limit or a batch of known size, is `repeat` on the step. A note that states it does not replace `repeat`.
-A loop that depends on data is a `loop` step, and a branch is a `decision` step.
-Use qualified module IDs or unique current or former module names for participant and message references.
-A flow can reference a module that the same batch adds by its unique name.
-Only qualified identities persist.
+`add-flow` takes a collection identity or unique name, a `summary`, ordered participants, and nested steps.
+[Flow authoring](authoring.md#say-what-each-flow-does) owns summary and source-evidence requirements.
+Archboard allocates all new identities.
 
-`edit-flow` takes its qualified identity or unique current or former name.
-Its `set` assigns name, summary, or participants.
-Its optional `collection` transfers the continuing flow between collections.
-An intent that creates or changes a flow and leaves it with no summary refuses with `FLOW_SUMMARY_REQUIRED`.
-The diagnostic names each flow. Add `edit-flow` with `set.summary` for it to the same intent.
-A flow that an intent leaves alone keeps its bytes, and `archboard check` reports it as `FLOW_SUMMARY_MISSING`.
-`edit-collection` changes a collection name without changing its identity or file.
-Its former names still select the collection when they match exactly one collection.
-`remove-flow` and `remove-collection` remove their remaining subjects.
-A flow transferred out of a removed collection survives in its destination.
+Use qualified module IDs or unique current or former names for participants and message endpoints.
+A new module in the batch can use its unique name. Only qualified IDs persist.
+Messages, decisions, loops, notes, repeat counts, summaries, and anchors keep their semantic fields.
 
-`edit-step` takes a continuing step identity and uses `set` and `clear` for its fields.
-Use `add-step` with a new nested step and its placement.
-Use `remove-step` to remove a subtree.
-Use `move-step` to preserve a subtree and every identity across holders or flows.
-A placement names `holder` and an optional `before` sibling identity.
-A flow or loop is a holder.
-A decision holder also requires the exact `alternative` label.
-Without `before`, the step appends to the destination.
+`edit-flow` accepts a qualified ID or unique current or former name.
+Its `set` assigns name, summary, or participants. Its optional `collection` transfers the same flow.
+
+`edit-collection` renames a collection without changing its identity or file.
+A unique former name still selects it.
+`remove-flow` and `remove-collection` retire their remaining subjects.
+A flow transferred out of a removed collection survives.
+
+`edit-step` uses `set` and `clear` on a continuing step ID.
+`add-step` supplies a nested step and placement. `remove-step` removes a subtree.
+`move-step` preserves a subtree and its identities across holders or flows.
+
+A holder contains steps: a flow, loop, or decision alternative.
+Placement names `holder` and optional `before`, a sibling identity.
+A decision also requires its exact `alternative` label.
+Without `before`, the step appends:
 
 ```json
 {
@@ -511,47 +439,37 @@ Without `before`, the step appends to the destination.
 }
 ```
 
-To rename alternatives, assign the complete label array through `edit-step.set.alternatives`.
-Move every direct child of a renamed or removed alternative in the same batch.
-Missing holders, orphaned children, conflicting moves, containment cycles, and incompatible relative order refuse the complete operation.
-Archboard never promotes an orphaned step to a root.
-The destination flow must explicitly include every message endpoint in its participants.
+Rename alternatives through the complete `edit-step.set.alternatives` label array.
+Move every direct child of a renamed or removed alternative in that batch.
+Missing holders, orphans, conflicting moves, cycles, and incompatible order refuse the whole operation.
+Archboard never promotes orphaned steps.
+The destination flow must list every message endpoint as a participant.
 
-Module removal repairs participant lists and removes messages with removed endpoints in the same operation.
-It also removes the empty loops, decisions, and flows that those repairs leave behind.
-Explicit message repairs can preserve a message by assigning surviving endpoints.
-Claim both former and new participants, affected flows, steps, and holders.
-The refusal names any missing claim scope.
-Retired flow and step IDs stay reserved in the manifest.
-The existing signed transaction, exact retry, recovery, and publication contracts apply to these files.
-Unrelated files keep their exact bytes.
+Module removal repairs participant lists and removes messages with removed endpoints.
+It also removes loops, decisions, and flows left empty by those repairs.
+Explicit endpoint repairs can preserve messages.
+Claim former and new participants, affected flows, steps, and holders.
+Refusals name missing claim scopes.
+Retired flow and step IDs remain reserved in the manifest.
 
 ## Follow code and foreign references
 
-In the browser, select a module and use Open code beside its authored binding.
-The action follows the selected current state, draft, or exact saved reading.
-If source is unavailable, the architecture remains readable and the disabled action states the reason.
-Use Open architecture beside a module reference to follow its explicit model, state, and subject.
-The address preserves the repository and destination through reload and browser history.
-Unavailable targets keep their authored reference and recovery instructions.
-Saved readings follow captured foreign checkpoints even when current foreign files are unavailable.
-A relationship reference selects that exact relationship within an aggregate.
-A collection offers its authored flows, and flow or step references open their containing flow.
+A binding names implementing code independently of architecture ownership.
+Use `model read <module> --code` or Open code beside the browser binding.
+The vault uses its own checkout for its repository and the chosen checkout for other repositories.
+The result includes `codeTarget` and effective `codeBinding`.
+Unavailable code leaves architecture readable with a failure and recovery action.
+The browser disables the code action and states why.
 
-Canonical code activation names the model, subject, and optional selected state or exact checkpoint.
-A draft activation uses that draft's binding. A missing state refuses the action without opening current code.
+Code activation names the model, subject, and optional state or checkpoint.
+A draft uses its own binding. A missing state never opens current code.
+Historical code uses retained source associations and refuses changed files or a different revision.
+An uncommitted association stores no source bytes. Recover them separately.
 
-A module binding names source code, independently of its architecture owner.
-Use `model read <module> --code` to resolve that binding through the existing checkout selection.
-The vault uses its own checkout for its repository and the chosen checkout for each other repository.
-The result reports `codeTarget` and the effective `codeBinding`.
-Unavailable source includes a structured failure and recovery action without hiding readable architecture.
-
-An explicit reference names another model, its subject, and its state.
+A module reference names another model, state, and subject explicitly.
 The subject can be a module, relationship, collection, flow, or step.
-Author `references` through the existing `edit-module.set` field.
-Use `edit-module.clear:["references"]` to remove that list.
-Omission preserves the list.
+Assign `references` through `edit-module.set` or remove the list through `edit-module.clear:["references"]`.
+Omission preserves it:
 
 ```json
 {
@@ -570,13 +488,14 @@ Omission preserves the list.
 }
 ```
 
-`current` explicitly follows the foreign current designation.
-A stable state ID requires that exact state.
-An active draft reference names its stable `state` ID.
-For an exact retained state, include its complete `checkpoint` identity beside that ID.
-Draft navigation preserves the selected lifecycle and reports reference changes in proposal comparisons.
+`current` follows the foreign current designation.
+A stable state ID selects that exact state, including an active draft.
+For a retained state, include its complete `checkpoint` beside the stable state ID.
 A pinned reference cannot use `state:"current"`.
+
 References create no containment, relationship, claim, or ownership transfer.
+Canonical ownership transfer is unavailable.
+Proposal comparisons include reference changes.
 
 ```bash
 archboard model read 'Shop#Gateway' --references
@@ -585,34 +504,32 @@ archboard model read 'Shop#Gateway' --reference 0 --code
 archboard model read 'Shop#Gateway' --model Shop --code
 ```
 
-`--reference` selects a zero-based index in the module's authored list.
-`resolvedReferences` reports each target address or its unavailable diagnostics.
-Available entries include the authored subject, model, and state names from that exact reading.
-The browser uses those names for reference actions and keeps unavailable destinations visible.
-A successful follow returns the foreign reading and its `location` address.
-`selectedSubject` preserves the exact subject identity.
-A module also sets `selectedModule`.
-A flow or step also sets its containing `selectedFlow`.
-The address names the target vault, model, subject, state, and any exact checkpoint.
-Unavailable models never resolve against another model with a similar name.
-These commands change neither model.
+`--reference` selects a zero-based list index.
+`resolvedReferences` gives target addresses or unavailable diagnostics.
+Available entries include the exact subject, model, and state names.
 
-Before a local edit or retention, retain each referenced foreign reading through its own separate operation.
-Archboard requires an existing exact foreign checkpoint that matches the selected reading.
-The local checkpoint records those pins without writing a foreign vault or archive.
-Historical navigation uses those pins even when foreign current files change or disappear.
-Missing pins or checkpoint objects remain unavailable and never select foreign current content.
-Restore the foreign archive through its existing history recovery commands, then retry the exact reading.
+Following returns the foreign reading and `location`, including vault, model, subject, state, and any checkpoint.
+`selectedSubject` preserves the target ID.
+Modules also set `selectedModule`. Flows and steps also set `selectedFlow`.
+No command changes either model or substitutes a similarly named model.
 
-For historical code, Archboard uses retained source associations and refuses changed working files or another source revision.
-An uncommitted source association does not retain those source bytes.
-Recover that source separately before opening it.
+Open architecture follows that same address and preserves it through reload and browser history.
+A relationship selects its exact member of an aggregate.
+A collection offers its flows. Flows and steps open their containing flow.
+Unavailable destinations keep their authored reference and recovery instructions visible.
+
+Before local edits or retention, retain each referenced foreign reading through a separate operation in its own vault.
+An existing exact foreign checkpoint must match the selected reading.
+The local checkpoint records those pins without writing foreign files or history.
+Saved navigation follows the pins even when foreign current files change or disappear.
+If a pin or checkpoint is missing, restore the foreign archive and retry.
+Never substitute foreign current content.
 
 ## Render a selected flow
 
-Use `model read --flow <id>` to resolve an explicit flow selection.
-Use the qualified flow identity from that reading when names are ambiguous.
-A missing selection never invents an exchange from structural relationships.
+Resolve the selection through `model read --flow <id>`.
+If a name is ambiguous, use its qualified flow ID.
+Behavioral diagrams require an authored exchange and never infer execution from structural relationships.
 
 ```bash
 archboard model render --flow 'Shop#Checkout' --grammar sequence --out request.svg
@@ -620,20 +537,18 @@ archboard model render --flow 'Shop#Checkout' --grammar flowchart --out logic.sv
 archboard model render --flow 'Shop#Checkout' --grammar sequence --checkpoint <exact-checkpoint-id> --out retained.svg
 ```
 
-Each command writes a self-contained SVG and returns its reading revision, dimensions, and placed identities.
-The sequence draws ordered participants and messages.
-The flowchart draws control steps and their branches.
-Both readings use the existing renderer and include the complete selected flow.
-Structural scope and relationship filters cannot remove its participants or messages.
-These commands do not require a named view.
-The browser selects these grammars through its existing diagram and flow controls.
+Each command writes a self-contained SVG and reports revision, dimensions, and placed identities.
+Sequence draws ordered participants and messages. Flowchart draws control steps and branches.
+Both include the complete flow, regardless of structural scope or relationship filters.
+No named view is required.
+For other exports and embedded pictures, use [rendering](#initialize-and-consume-one-live-model).
 
 ## Create and compare compact proposals
 
-A proposal states unbuilt architecture across any modules and flows in the model.
-Its active `.proposal.json` file stores only identity changes against an immutable retained baseline.
-Current module and flow files remain unchanged.
-Use `model proposals` to read the catalogue, including each proposal's identity, name, predecessor, baseline, and lifecycle.
+A proposal describes unbuilt architecture across modules and flows.
+Its predecessor is the state that it starts from.
+An active `.proposal.json` stores identity changes against a retained baseline, without changing current module or flow files.
+Use `model proposals` for identity, name, predecessor, baseline, and lifecycle:
 
 ```bash
 archboard model proposals -C <directory>
@@ -642,27 +557,24 @@ archboard model compare --state '<proposal-name>' -C <directory>
 archboard model compare --state '<proposal-name>' --against '<other-state-or-checkpoint>' -C <directory>
 ```
 
-`model compare` states interface changes first, then the measures of each state.
-[The design lens](design-lens.md) says what each fact means.
+Use [authoring](authoring.md#say-what-each-proposal-changes) for names and summaries.
+Use [the design lens](design-lens.md) to interpret comparison facts.
+Keep independent proposals separate, even when names or task IDs match.
 
-State selectors resolve a stable identity before a unique current or former name.
-`current` explicitly requests the current designation.
-A planning model has no current designation until explicit adoption.
-Missing or ambiguous state selectors refuse rather than choose another reading.
-Exact checkpoint selectors use their complete immutable identities.
+State selectors resolve stable IDs before unique current or former names.
+`current` requests the explicit current designation.
+A planning model has none until adoption.
+Missing or ambiguous selectors refuse. Exact checkpoints require complete immutable IDs.
 
-Read `selectedState` for the selected state's identity, name, summary, documents, and lifecycle.
-A draft always reports lifecycle `draft`.
-`manifest.current` describes the retained designation, rather than the selected proposal's lifecycle.
-Never label a selected draft as implemented Current.
-The revision remains the complete addressed vault token, including all active proposal files.
-Keep that complete object for the next write.
+`selectedState` names the selected identity, name, summary, documents, and lifecycle.
+A draft reports `draft`. `manifest.current` describes the retained designation, not the selected draft.
+Never label a draft as implemented Current.
+The write revision includes the entire vault and all active proposals.
 
-Create a proposal through the existing `model edit` request.
-Its target state names the chosen predecessor's stable state ID.
-To choose a named predecessor, read that state first and use `selectedState.id`.
-Claim the model identity and every affected existing subject in that predecessor.
-Add the following fields to the common target, revision, operation, writer, and claim fields.
+Read the proposal's predecessor.
+Use `selectedState.id` as `target.state`.
+Claim the model and affected existing subjects in that predecessor.
+Add these fields to the common edit request:
 
 ```json
 {
@@ -682,123 +594,100 @@ Add the following fields to the common target, revision, operation, writer, and 
 }
 ```
 
-The source example `examples/canonical-model/compact-proposal.changes.json` spans modules and a new independent flow.
-Supply the common request fields from the selected predecessor and pass the doing line through `--doing`.
-A lost response uses the same exact request and operation identity.
-The receipt identifies the newly allocated draft through `target` and `selectedState`.
+For a broader example, use `examples/canonical-model/compact-proposal.changes.json` in the Archboard checkout.
+The receipt identifies the allocated draft through `target` and `selectedState`.
+For siblings, use the same predecessor. For a child, use the selected draft as predecessor.
 
-For a sibling, create another proposal against the same predecessor identity.
-For a child, select the named draft and use its identity as the new target state.
-For a planning root, start with an authored manifest whose `current` is null and no current modules or flows.
-Use target state null, claim the model identity, and add every unbuilt subject through the proposal batch.
-Archboard retains the empty baseline before installing the root proposal.
+For a planning root, start with `current:null`, no current modules or flows, and target state null.
+Claim the model and add all unbuilt subjects in the proposal batch.
+Archboard retains the empty baseline first.
 
-To edit a draft, select it and claim its state ID, model identity, and affected existing subjects.
-Release a former predecessor claim before claiming a different target.
-Use the draft's identity as `target.state` and add `proposal:{"type":"edit"}` to the existing module and flow batch.
-Use `proposal.set` for its name, summary, or documents.
-Use `proposal.clear:["summary","documents"]` for explicit metadata removal.
-A rename preserves the previous name.
+To edit a draft, claim its state ID, model, and affected existing subjects.
+Release a predecessor claim before claiming another target.
+Use the draft ID as `target.state` with `proposal:{"type":"edit"}`.
+`proposal.set` assigns name, summary, or documents.
+`proposal.clear:["summary","documents"]` explicitly removes metadata.
+
 A metadata-only edit uses `changes:[]`.
-An ordinary draft edit keeps its immutable baseline.
-A settled reconciliation retains the updated predecessor as its new baseline.
+Ordinary edits keep the immutable baseline. Settled reconciliation retains the updated predecessor as the new baseline.
 
-Creating or editing a proposal preserves the existing inheritance confirmations.
-`INHERITANCE_DROPPED` refuses removal of more than half of the modules still shared with its direct predecessor.
-Removing exactly half needs no confirmation.
-`PART_RECREATED` warns when a new identity repeats an absent ancestor module's name or exact repository, path, and symbol binding.
-The warning identifies possible duplicates. A confirmed new module keeps its separately allocated identity.
+Creation and edits enforce these confirmations:
 
-Inspect the affected subjects before confirming a deliberate redesign or a different part.
-For an authorized change, add the refusal code to `proposal.confirm`, such as `"confirm":["INHERITANCE_DROPPED"]`.
-Use a new operation identity for that changed request.
-The receipt's `confirmed` array names only the acts that occurred, and exact retries preserve it.
-Current-state edits and automatic reconciliation keep their existing separate behavior.
+- `INHERITANCE_DROPPED`: Removing more than half of the modules still shared with the direct predecessor requires confirmation.
+- Exactly half requires none.
+- `PART_RECREATED`: A new ID repeats an absent ancestor's name or exact repository, path, and symbol binding.
 
-Stored changes distinguish `add`, `remove`, `assign`, `clear`, and `place`.
-Agents continue to submit the normal module and flow operations.
-Archboard derives the compact representation and requires exact materialization before installation.
-Bindings and other composite fields remain atomic.
-A placement addresses its holder and following sibling by stable identity.
-A decision placement also names the exact alternative label.
-No active proposal stores unrelated module or flow snapshots.
+Inspect affected subjects before confirming an authorized redesign or distinct part.
+Add its code to `proposal.confirm`, for example `"confirm":["INHERITANCE_DROPPED"]`, and use a new operation identity.
+A confirmed new part keeps its separate identity.
+The receipt's `confirmed` lists only acts that occurred.
+These proposal confirmations do not change current edits or automatic reconciliation.
 
-A selected draft with a `predecessorCheckpoint` compares against that checkpoint by default, with `comparison.reason:"predecessor"`.
-Such a draft can hold a fragment of current, so a comparison with current reports the rest of the model as removed.
-A draft that follows Current through its predecessor chain compares against Current by default.
-Otherwise, a dependent draft compares against its retained predecessor, even when the model has Current.
-A draft with no predecessor compares against Current when one exists.
-Without Current, that planning root has no default comparison.
-Completed states compare against Current when one exists.
-Use `--against` for an explicit coherent named state or complete checkpoint.
-The result's `comparison.reason` identifies the chosen default or explicit base.
-`comparison.revision` identifies the exact architecture inputs used for that base.
-If you read base definitions separately, require their revision to match this value.
-Require their model, state, and exact checkpoint identities to match the comparison metadata too.
-A retained selected state can have a different revision from its live comparison base.
-Its subject entries identify additions, removals, changes, unchanged subjects, and changed semantic fields.
-Presentation order and emphasis retain the existing semantic comparison rules.
+Composite fields, including bindings, change as a whole.
 
-`PREDECESSOR_CHANGED` means that the proposal's starting state changed after baseline retention.
-Preserve the baseline and proposal changes.
-Ordinary reads and edits refuse until an explicit reconciliation follows that external edit.
-An exact retained proposal checkpoint remains readable against its own inputs.
-Neither a code merge nor an approval adopts a draft.
-Adoption and shelving remain separate explicit lifecycle actions.
+`model compare` and `model read --compare` use the same default base.
+Comparison defaults depend on ancestry:
 
-An explicit comparison against an empty planning baseline returns `comparison.against:null` and the baseline's exact `comparison.checkpoint`.
-Its subject changes still identify the planning additions.
-This absence names no implemented state and does not suppress the requested comparison.
+- A draft with `predecessorCheckpoint` compares with that checkpoint and reports `comparison.reason:"predecessor"`.
+- A draft that follows Current through its predecessor chain compares with Current.
+- Other dependent drafts compare with their retained predecessor, even when Current exists.
+- A draft without a predecessor, or a completed state, compares with Current when it exists.
+- A planning root without Current has no default comparison.
 
-History lists active proposals, current architecture, and earlier and shelved readings.
-Each row leads with its summary, then its name.
-Select a proposal to read its modules and flows without changing current architecture.
-The header states whether the selected reading is implemented, draft, historical, or shelved.
-The control beside the picture says what the picture is compared with, and it is the way out.
-It offers `No comparison`, `Current`, the proposal's base, and the other active proposals.
-To compare with an exact saved reading, select `Compare` on its row in History.
-The address preserves both selections through reload and browser history.
+A checkpoint-based draft can contain only a fragment of Current.
+Comparing that fragment with Current reports the rest as removed.
+Use `--against` to select a coherent named state or complete checkpoint explicitly.
+`comparison.reason` names the base choice. `comparison.revision` identifies its exact inputs.
 
-The diagram marks added, removed, and changed subjects.
-Select a subject to inspect its changed fields.
-Removed subjects use the exact comparison base definitions.
-If that base becomes unavailable, the browser explains the incomplete comparison and offers Refresh comparison.
-It never substitutes current definitions for another requested base.
+If you read base definitions separately, require matching revision, model, state, and checkpoint identities.
+A retained selection can have a different revision from its live comparison base.
+Subject entries report added, removed, changed, unchanged, and changed semantic fields, including semantic order and emphasis differences.
 
-Active draft readings follow accepted edits through the architecture change feed.
-Saved draft readings keep their original content and draft identity.
-If an external file edit changes a predecessor, the browser preserves the requested state and shows the refusal.
-Select an available saved reading to inspect the retained proposal.
+An explicit empty planning base returns `comparison.against:null` and its exact `comparison.checkpoint`, with planning additions still listed.
+
+If external edits change the predecessor, `PREDECESSOR_CHANGED` blocks ordinary reads and edits until [reconciliation](#reconcile-dependent-proposals).
+Preserve the baseline and proposal changes. Exact retained proposal readings remain available.
+
+History lists proposals, current, historical, and shelved readings with summary before name.
+The header identifies the selected lifecycle.
+The comparison control offers No comparison, Current, the proposal base, and other active proposals.
+For an exact saved base, choose Compare on its History row.
+Both selections survive reload and browser history.
+
+The diagram marks additions, removals, and changes. Select a subject for its changed fields.
+Removed subjects use exact base definitions.
+An unavailable base produces an incomplete comparison and Refresh comparison, never substitute current definitions.
+
+Active drafts refresh after accepted edits. Saved drafts stay exact.
+An external predecessor change preserves the requested selection and shows the refusal.
+Use a saved reading to inspect the retained proposal.
 
 ## Temporary explanations
 
-An explanation capture preserves the architecture reading that a local agent answers.
-Reading intent names the scope, focus, relationship filters, group visibility, grammar, and optional flow.
-`reading.groups` accepts exact visible group IDs, or `true` and `false` for all and no groups.
-The capture includes stable subjects, the complete revision, and the selected state or exact checkpoint.
-A proposal capture also preserves its actual comparison base and that base's separate revision.
-Later navigation cannot change the capture.
+An explanation capture fixes the reading that the agent answers.
+It keeps subjects, complete revision, state or checkpoint, and reading intent together.
+Reading intent includes scope, focus, relationship filters, group visibility, grammar, and optional flow.
+`reading.groups` accepts exact visible group IDs, or `true` and `false` for all and none.
+A compared capture also keeps its actual base and separate revision. Navigation cannot retarget it.
 
-For a compared reading, set `request.expectedComparisonRevision` to the observed `model.comparison.revision.digest`.
-Omit this field only when the observed model has no comparison.
-Keep it with the target revision and any narrative-source revision from that same reading.
-A changed, missing, or newly appeared comparison returns `MODEL_CHANGED` before the action starts.
+Before answering a screen question, run `browser panes`.
+Read the selected pane's `architecture` report and `tabSessionId`.
+If absent, ask the person to open the canonical reading before resolving a pointing request.
+Use the reported `architecture.vault`, even after foreign navigation.
+Keep `reading.referenceSubject` separate from temporary pointer selection.
+Do not infer architecture from `paneKey`.
 
-Use `browser panes` to read the canonical `architecture` report and `tabSessionId` for the selected pane.
-If the report is absent, ask the person to open the canonical reading before resolving a pointing request.
-Use its actual `architecture.vault`, including after navigation to another repository.
-Keep `reading.referenceSubject` separate from the temporary pointer selection.
-Do not infer canonical architecture from the pane's `paneKey` field.
+For a comparison, copy `model.comparison.revision.digest` into `request.expectedComparisonRevision`.
+Omit it only when the observed model has no comparison.
+Keep it with target and narrative-source revisions from that same reading.
+A changed, missing, or newly appeared comparison returns `MODEL_CHANGED` before invocation.
 
-Use `model explain` to request a new action from the existing local workhorse.
-Use `-C` with the directory that holds the reported vault.
-Keep the report's complete `selection` and revision guards together.
-If you read more context, use those selectors without replacing the captured guards.
-
-If the workhorse queue names `captureFile`, read its complete JSON before answering.
-The server owns the temporary file and its cleanup.
-If that model includes `explanation` metadata, answer its capture directly.
-That input already represents an accepted action and needs no new invocation.
+Use `model explain` to request a new action from the local workhorse.
+Pass `-C` for the directory that holds the reported vault.
+Keep its complete `selection` and guards when reading further context.
+If your queue names `captureFile`, read its complete JSON before answering.
+The server removes that temporary file.
+If it contains `explanation`, answer the accepted capture directly without another invocation.
 
 ```json
 {
@@ -826,13 +715,12 @@ That input already represents an accepted action and needs no new invocation.
 archboard model explain --input explanation.json -C <directory>
 ```
 
-Use `explain-relationship`, `trace-flow`, or `explain-proposal` for the other actions.
-A missing explicit flow lets `trace-flow` request investigation without authoring a flow.
-An explicit unavailable flow refuses rather than selecting another flow.
-A proposal explanation requires the selected draft and its comparison.
+Other actions are `explain-relationship`, `trace-flow`, and `explain-proposal`.
+Without an explicit flow, `trace-flow` can investigate without authoring one.
+An explicitly unavailable flow refuses.
+A proposal explanation requires the selected draft and comparison.
 State and checkpoint selectors are exclusive.
-
-Read progress with the same command and this input:
+Read progress through the same command:
 
 ```json
 {
@@ -843,66 +731,58 @@ Read progress with the same command and this input:
 ```
 
 The result reports captured, queued, running, completed, failed, cancelled, or unavailable.
-The browser and voice consume the same `action.text` answer.
-The toolbar, context menu, and keyboard invoke that same action.
-The visible answer names its original model, state, subjects, and revision after navigation.
-The coordinator speaks that answer without requesting a second explanation.
-Normal workhorse news tells the coordinator when the turn finishes.
-The existing pane socket announces answer changes to panes in the same tab.
-The browser refreshes its answer query after that notice and after reconnecting.
-No extra connection or polling loop owns explanation progress.
+Browser and voice use the same `action.text` answer.
+Toolbar, context menu, and keyboard request that same action.
+After navigation, the answer still names its original model, state, subjects, and revision.
 
-To discover the last invocation or retry in a tab, send `type:"latest"` with its `tabSessionId`.
-The result includes `action.vault`, which names the original captured vault.
-Use that vault for later reads, cancellation, and retries, even after navigation.
-If this action queues on your own workhorse, end your turn so that its queue can start it.
+The coordinator speaks it without requesting another explanation.
+The browser receives progress updates and refreshes after reconnecting.
+
+Send `type:"latest"` with `tabSessionId` for the last invocation or retry.
+Use returned `action.vault` for later reads, cancellation, and retry, even after navigation.
+If the action queues on your own workhorse, end your turn so it can start.
+
 If `action.retryable` is true, send `type:"retry"` with the original tab and action identity.
-Retry preserves the captured request and content after navigation or source changes.
-If delivery is uncertain, retry remains unavailable to prevent duplicate work.
-Send `type:"cancel"` to remove the captured queue item or request interruption of its exact turn.
-Read again until the provider reports the final outcome.
+Retry preserves captured content despite navigation or source changes.
+Uncertain delivery disables retry to prevent duplicate work.
+Send `type:"cancel"` to remove its queue item or interrupt its exact turn.
+Read until the provider reports the final outcome.
 
-An explanation writes no architecture and takes no subject claim.
-Answers remain temporary within the local agent generation and tab lifetime.
-An explicit request to save an answer uses the ordinary claimed edit with a fresh complete revision.
+Explanations write no architecture and take no claims.
+Answers last only within the local agent generation and tab lifetime.
+If the user requests saving one, use a claimed edit with a fresh complete revision.
 
 ## Reconcile dependent proposals
 
-A standing is a durable record of unresolved issues.
-Read `selectedState.standing` and each proposal catalogue entry before editing a family.
-An absent standing means that the state is settled.
-Each issue names its subject, kind, disputed field, both values, and repair action.
-A blocked descendant names its unsettled ancestor through `standing.blockedBy`.
-Its last coherent architecture remains readable.
-A child created from an unsettled proposal starts blocked.
+Standing records unresolved issues durably.
+Before editing a family, read `selectedState.standing` and each proposal entry.
+Absent standing means settled.
+Each issue names its subject, kind, field, both values, and repair action.
 
-Claim the affected descendant state IDs beside the existing subjects and model structure scope.
-Use the complete vault revision from the current read.
-Submit the predecessor edit through `model edit`.
-Archboard reconciles parents before children through the same durable installation.
+`standing.blockedBy` names an unsettled ancestor.
+A blocked descendant keeps its last coherent reading. A new child of an unsettled proposal starts blocked.
+
+Claim affected descendant state IDs, existing subjects, and model structure.
+Submit the predecessor edit with the complete vault revision.
+Archboard reconciles parents before children in one durable operation.
 Safe changes reach following proposals together.
-Disputed subjects keep the proposal side, and unsettled ancestors block their descendants.
-The baseline that established each conflict remains retained until settlement.
+Disputes keep the proposal side and block descendants.
+The conflict baseline stays retained until settlement.
 
-If external files change a predecessor, ordinary reads return `PREDECESSOR_CHANGED`.
-Read the current catalogue and claim the affected family.
-Target the changed predecessor and submit this intent through `model edit`:
+For `PREDECESSOR_CHANGED`, read the catalogue and claim the affected family.
+Target the changed predecessor with this `model edit` intent:
 
 ```json
 { "proposal": { "type": "reconcile" }, "changes": [] }
 ```
 
-Reconciliation changes following proposals without another predecessor edit.
-It preserves the existing current designation.
-A saved checkpoint remains an exact reading of its retained content and standing.
-The browser identifies unresolved and blocked proposals in the state picker and selected reading.
-Open the decision disclosure to read both values and the repair instructions.
-A blocked reading links to its live ancestor. A saved reading keeps its original standing until the reader leaves it.
-Agents settle decisions through the shared writer. The browser reflects the completed family result without authoring a settlement.
+This updates following proposals without another predecessor edit or current designation change.
+Saved checkpoints keep their original content and standing.
+The browser shows unresolved and blocked states, both disputed values, repair instructions, and links to blocking live ancestors.
+The browser authors no settlement.
 
-To settle a proposal, read its issues and claim its state and affected family subjects.
-Use its stable identity as `target.state`.
-Submit one choice for every issue in the same request:
+To settle, claim the proposal and affected family, then use its stable ID as `target.state`.
+Give every issue one choice in the same request:
 
 ```json
 {
@@ -914,49 +794,34 @@ Submit one choice for every issue in the same request:
 }
 ```
 
-`mine` explicitly accepts the proposal side.
-`theirs` takes the predecessor side.
-`edited` accepts the accompanying ordinary batch as a third answer.
-A resolution without `field` covers every issue of that subject.
-Give each issue exactly one choice.
-For order issues under one holder, use the same choice throughout.
-Use `edited` with an ordinary movement batch for a third order.
-Incomplete or overlapping choices refuse with `MODEL_INVALID` and install nothing.
-Ordinary edits preserve standing until an explicit settlement clears it.
-A blocked draft refuses edits and settlement with `PROPOSAL_BLOCKED`.
-Settle its named ancestor first.
+`mine` accepts the proposal, `theirs` accepts the predecessor, and `edited` accepts the accompanying ordinary batch.
+Without `field`, a resolution covers all issues for that subject.
+For order issues within one holder, use one choice throughout.
+For a third order, use `edited` with ordinary movement changes.
 
-A complete settlement reconciles following drafts in the same transaction.
-A continuing subject that the predecessor deleted keeps its original qualified identity.
-Archboard retains proof of that subject in the existing archive.
-This proof never permits a fresh allocation from retired identities.
-Agents author through operations and leave proof storage to Archboard.
+Incomplete or overlapping choices return `MODEL_INVALID` and install nothing.
+Ordinary edits preserve standing until settlement.
+`PROPOSAL_BLOCKED` refuses edits and settlement. Settle the named ancestor first.
 
-The receipt reports `applied:true` and `reconciliation` as a boolean.
-True means that affected family states still need settlement.
-`reconciliations` identifies those changed states and their standing when present.
-The selected proposal also exposes its standing through `selectedState`.
-Retry an identical request with the same operation ID after a lost response.
-If installation stops, use `model recover` in the original checkout.
-Recovery completes the same family and returns its retained receipt.
+Complete settlement reconciles following drafts in the same operation.
+A continuing subject deleted by the predecessor keeps its qualified ID through retained proof.
+That proof never permits fresh allocation of retired IDs. Leave proof storage to Archboard.
 
-## Dynamic walkthroughs
-
-For narrative authoring, pinned playback, or canonical recording, read [canonical walkthroughs](canonical-walkthroughs.md).
-That recipe uses the existing claimed writer and exact checkpoint workflow.
+`reconciliation:true` means that affected states still need settlement.
+`reconciliations` names changed states and their standing. `selectedState` also exposes its standing.
+Use [retry and recovery](#retry-and-recover-operations) for interrupted family operations.
 
 ## Complete a proposal
 
-Adoption states that a settled proposal is implemented.
-Shelving states that an agent stopped pursuing a proposal.
-Neither a source commit, a merge, nor an approval performs either action.
-Readers never author these actions through the browser.
+Adoption records implemented architecture. Shelving records a stopped proposal.
+Adopt or shelve only with owner authorization.
+A request to prepare the implementing PR authorizes adoption on its branch.
+If the vault lives in another repository, the adoption is a commit there and cannot merge with the code. Tell the owner, and ask which PR merges first.
+A source commit, merge, approval, or checkpoint performs neither action. The browser performs neither action.
 
-Read the target draft and keep its complete revision object.
-Claim its state ID, model identity, and affected existing subjects.
-For adoption, include changed subjects from both current architecture and the complete draft.
-Include affected descendant states and subjects in the same claim.
-Use the existing `model edit` command with the common request fields and the doing line.
+Read the draft and claim its state, model, affected subjects, and affected descendant states and subjects.
+For adoption, include changed subjects from both Current and the complete draft.
+Use the common `model edit` request and doing line with one lifecycle intent:
 
 ```json
 { "proposal": { "type": "adopt", "reason": "The queue is implemented." }, "changes": [] }
@@ -966,72 +831,59 @@ Use the existing `model edit` command with the common request fields and the doi
 { "proposal": { "type": "shelve", "reason": "The team chose direct dispatch." }, "changes": [] }
 ```
 
-Lifecycle intents accept no accompanying content edits.
-Adoption requires a coherent draft with settled ancestry.
-An agent can shelve an unresolved or blocked draft without settling its ancestor.
+Lifecycle intents accept no content edits.
+Adoption requires a coherent draft and settled ancestry.
+Shelving accepts unresolved or blocked drafts.
 `PROPOSAL_BLOCKED` requires settlement before adoption.
-`PROPOSAL_SUPERSEDED` means that the proposal follows a former current state.
-Normal adoption refuses that replacement.
+`PROPOSAL_SUPERSEDED` means that the draft follows a former current state. Normal adoption refuses it.
 
-If complete replacement is intended, read an explicit comparison against current.
+For an intended complete replacement, first compare explicitly with Current:
 
 ```bash
 archboard model compare --state '<draft-id>' --against current -C <directory>
 ```
 
-Copy the complete returned `comparison` into `proposal.comparison`, from a read with no `--beside`.
-Set `proposal.force` to true.
-Use that reading's complete revision in the common request.
-`COMPARISON_REQUIRED` means that the comparison is absent, incomplete, or stale.
-Archboard installs the complete resolved proposal, including removals.
-It never applies the proposal patch to another baseline.
+Copy the complete `comparison` from a read without `--beside` into `proposal.comparison`.
+Set `proposal.force:true` and use that reading's complete revision.
+`COMPARISON_REQUIRED` means absent, incomplete, or stale comparison evidence.
+Forced adoption installs the complete proposal, including removals, rather than applying changes to another baseline.
 
-Adoption preserves the proposal ID, name, former names, documents, and predecessor.
-It records the prior current state, reason, and adoption time.
-A planning model receives its first current designation without inventing a previous state.
-Shelving preserves the final compact patch, immutable baseline, ancestry, documents, reason, and shelving time.
+Adoption keeps the proposal ID, name, former names, documents, and predecessor.
+It records the previous current state, reason, and time.
+A planning model receives its first Current without an invented predecessor.
+Shelving keeps the final changes, baseline, ancestry, documents, reason, and time.
 Completed states refuse ordinary content edits.
-The existing transaction removes the active proposal file only after signed preparation.
-Recovery and exact retries retain one lifecycle event.
 
-An asynchronous current read without state or comparison selectors exposes `states` beside the active `proposals` catalogue.
-The CLI `model proposals` command requests this catalogue.
-`states` derives current, draft, historical, and shelved metadata from authored designations and retained lifecycle records.
-Completed entries include an exact `checkpoint`.
-Use a stable state ID or unique current or former name to reopen completed architecture.
-Use an exact checkpoint when retained logical identities are ambiguous.
-Exact checkpoints preserve their original reading after later adoption or shelving.
-Non-current readings keep the existing comparison defaults.
+`model proposals` returns `states` beside active `proposals`.
+A current read without state or comparison selectors also exposes this catalogue.
+It names current, draft, historical, and shelved states. Completed entries include an exact `checkpoint`.
 
-History lists current, draft, historical, and shelved states.
-Current follows the explicit designation, and a named historical state keeps its identity.
-Open Decision and history to inspect dates, predecessor, prior implementation, baseline, and document evidence.
-Use its state or baseline controls to open the referenced reading.
-If retained history is unavailable, restore it through [Publish and fetch history](#publish-and-fetch-history).
-Then use Refresh to reopen the selected reading.
+Reopen them by stable ID or unique current or former name.
+If retained state identities are ambiguous, use an exact checkpoint.
+Exact checkpoints keep their original lifecycle after later adoption or shelving.
 
-The receipt's `selectedState` identifies the completed lifecycle.
-Its checkpoint retains `lifecycle`, including the final proposal and the exact previous current reading.
+The receipt's `selectedState` names the completed lifecycle.
+Its checkpoint keeps `lifecycle`, the final proposal, and the exact previous Current.
 New drafts record `createdAt`.
-Completed metadata records `adoptedAt` or `shelvedAt`, plus `reason` and `previousCurrent`.
-Current files hold only their current designation and its own lineage.
-Completed history stays in the independent archive with actual Git ancestry for every required baseline.
-Archive append order never selects current architecture.
+Completed metadata records `adoptedAt` or `shelvedAt`, `reason`, and `previousCurrent`.
+
+Current files keep only Current and its lineage. Completed history stays in the archive with its baseline dependencies.
+
+In History, open Decision and history for dates, predecessor, prior implementation, baseline, and documents.
+Its state and baseline controls open those readings.
+For missing history, [fetch](#publish-and-fetch-history), then Refresh.
 
 ## Correct a recorded state
 
-Use an explicit correction for a factual error in a historical or shelved state.
-Create a new proposal for a new design.
-Ordinary edits to completed states still refuse.
+Use correction for factual errors in historical or shelved states, and a new proposal for a new design.
+Read the logical state and keep `checkpoint.id`.
+Read the current catalogue again for its complete `revision`.
+Claim the model, completed state, affected subjects, and following drafts affected by the correction.
 
-Read the logical state and save its returned `checkpoint.id`.
-Read the current catalogue again and save its complete `revision`.
-Claim the model, completed state, affected existing subjects, and following drafts that the correction changes.
-Inspect the source commits that support the corrected facts.
-Supply one available full Git commit ID for every repository referenced by the corrected reading.
-Uncommitted files cannot supply historical evidence.
+Inspect supporting source commits.
+Supply one available full Git commit ID per referenced repository. Uncommitted files cannot support historical corrections.
 
-Submit the existing `model edit` request with a `correction` intent and ordinary module or flow changes:
+Submit `model edit` with ordinary module or flow changes and a correction intent:
 
 ```json
 {
@@ -1055,56 +907,44 @@ Submit the existing `model edit` request with a `correction` intent and ordinary
 }
 ```
 
-Copy the complete revision from the reader, including its actual files.
-Replace the example state and claim with their stable IDs.
-Supply the doing line through `--doing`.
-POST `/api/architecture/module` accepts the same shared request with its explicit vault and doing line.
+Replace example state and claim values with stable IDs and copy the actual complete revision, including files.
+Pass the doing line through `--doing`.
+POST `/api/architecture/module` accepts the same request with explicit vault and doing line.
 
-The writer refuses current or draft targets, unavailable source evidence, empty factual changes, and a stale `correction.previous`.
-A correction changes no current designation, state name, ancestry, or adoption decision.
-Its retained checkpoint links the previous reading through actual Git ancestry.
-Current files contain no completed correction history.
+The writer refuses current or draft targets, unavailable source, empty factual changes, and stale `correction.previous`.
+Correction changes no current designation, state name, ancestry, or adoption decision.
+The new checkpoint retains its predecessor. Current files hold no completed correction history.
 
-Logical state reads expose the latest correction and `selectedState.corrections`.
-Each audit entry identifies its checkpoint, previous checkpoint, time, reason, and source revisions.
-An exact original checkpoint still returns its original facts.
-Comparison results include both audit trails under `comparison.corrections` beside the existing semantic differences.
-Divergent corrections require an exact checkpoint instead of selecting by archive order.
+Logical reads expose the latest correction and `selectedState.corrections`.
+Each audit entry names checkpoint, previous checkpoint, time, reason, and source revisions.
+Exact original checkpoints keep original facts.
+`comparison.corrections` includes both audit trails beside semantic differences.
+Divergent corrections require an exact checkpoint, never archive order.
 
-In the browser, open the lasting state identity to read its latest corrected facts.
-Open Decision and history to inspect correction reasons, dates, and source commits.
-The Previous and Corrected actions open exact architecture checkpoints.
-Comparisons show the selected audit and the comparison reading's audit in the same bounded history region.
-The open logical reading refreshes after a correction even when no current file changes.
-If retained history becomes unavailable, the browser preserves the requested checkpoint and offers Refresh after recovery.
+The browser's lasting state address opens its latest corrected facts and refreshes after correction, even without current-file changes.
+Decision and history shows reasons, dates, and source commits.
+Previous and Corrected open exact checkpoints. Comparisons show both audits together.
+If history disappears, the requested checkpoint remains selected with Refresh after recovery.
 
-Following local drafts reconcile through the existing family operation.
-Competing changes retain explicit standing and block descendants until settlement.
-Adopted successors and unrelated current architecture keep their content.
-Recovery and exact retries use the existing journal and return the same retained correction.
-Publication and fetch retain the complete correction dependency chain.
-Source history remains separate and can become unavailable.
+Following local drafts reconcile with standing for conflicts and blocked descendants.
+Adopted successors and unrelated Current keep their content.
+[Retry and recovery](#retry-and-recover-operations) return the same correction.
+Publication and fetch keep its complete dependency chain. Source history stays separate and can become unavailable.
 
 ## Export and restore a model
 
-A portable bundle contains authored inputs and their complete archive.
-It preserves model and subject identities, active proposals, decisions, corrections, standing conflicts, and walkthrough targets.
-Repository source files remain separate from retained source evidence.
-Foreign model references keep their exact pins and require their separately available models.
-
-With the source vault available, export its complete architecture:
+A portable bundle holds authored inputs and their complete archive.
+It preserves identities, proposals, decisions, corrections, standing, and walkthrough targets.
+Source files remain separate. Foreign references keep exact pins and need their separately available models.
+Export from the available vault:
 
 ```bash
 archboard model export --out architecture.json -C <source-directory>
 ```
 
-Create an empty `.archboard/vault` in the destination directory.
-If the destination is outside a source repository, initialize private history with `model archive-init`.
-Configure Git identity and signing in the returned archive directory before import.
-For a source checkout, its existing Git configuration governs import.
-
-Create a request with the exported envelope and the complete destination revision.
-An empty vault uses this revision:
+Create an empty `.archboard/vault` at the destination.
+Outside a source repository, initialize [private history](#initialize-private-history) before import.
+The empty destination revision is:
 
 ```json
 {
@@ -1113,91 +953,82 @@ An empty vault uses this revision:
 }
 ```
 
-The complete request contains `bundle`, `expectedRevision`, `operationId`, `writer`, and `doing`.
-Put the exported JSON object in `bundle`.
-Use a new operation identity for each new intent.
-Submit the request:
+Prepare `bundle`, `expectedRevision`, `operationId`, `writer`, and `doing`.
+Put the exported JSON object in `bundle` and the complete destination revision in `expectedRevision`.
+Submit it:
 
 ```bash
 archboard model import --input import-request.json -C <destination-directory>
 ```
 
-Import accepts empty inputs or byte-identical inputs whose archive needs restoration.
-It refuses replacement of different authored content.
-Malformed paths, changed fingerprints, corrupt objects, and missing dependencies refuse before imported content becomes visible.
-A planning-only model keeps no current designation, and its installation checkpoint records `state:null`.
-History labels that checkpoint as a planning model.
+Import accepts empty inputs or byte-identical inputs with history to restore.
+It refuses different authored content, malformed paths, changed fingerprints, corrupt objects, and missing dependencies before installation.
+A planning-only import keeps no Current and records `state:null`, labeled as a planning model in History.
+Use [retry and recovery](#retry-and-recover-operations) in the same destination after interruption.
 
-Import uses the normal installation journal, signing policy, atomic writer, and recovery operation.
-If interruption leaves an unfinished installation, run `model recover` in the same destination.
-Preserve foreign bytes and restore the recorded branch before recovery when its diagnostic requires them.
-An identical import retry returns the same receipt.
-Another request with that operation identity refuses.
-
-A complete bundle can restore deleted local history behind unchanged current inputs.
-Use the current reader's complete revision for that restoration request.
-Archive deletion remains possible, so keep the bundle as a backup.
-Import does not copy publication destinations, publication receipts, standing claims, or private recovery files.
-Configure and publish destination history explicitly when collaboration requires it.
+To restore deleted history behind unchanged inputs, use their current complete revision.
+Keep the bundle as a backup because local archives can be deleted.
+Import excludes publication destinations, receipts, claims, and private recovery files.
+Configure and publish destination history explicitly when needed.
 
 ## Initialize and consume one live model
 
-An empty vault starts with `archboard model init --name <name> --operation-id <id> --writer <writer> --doing <intent>`.
-The existing `install-skill` setup calls that same initialization operation for new vaults.
-The result has a generated stable model identity, no current state, and no fixed levels.
-Retry the exact operation identity after an interrupted response.
-A different intent requires another operation identity.
-An occupied vault refuses initialization.
-A legacy vault returns `LEGACY_AUTHORITY` without an automatic rewrite.
-Use the explicit inventory, preview, and migration route from [legacy migration](legacy-migration.md).
+Initialize an empty vault with `archboard model init --name <name> --operation-id <id> --writer <writer> --doing <intent>`.
+`install-skill` uses that same operation for new vaults.
+The model starts with an allocated stable ID, no Current, and no fixed levels.
+Occupied vaults refuse. Legacy vaults require [migration](legacy-migration.md).
 
-`model render --out picture.svg` draws the structural reading by default.
-Select a module with `--module`, an exact scope with `--scope`, or repeated identities with `--focus`.
-Use `--hide-kind` to hide relationship kinds.
-Every relationship of a reading has a drawn line.
-Use `--state` or `--checkpoint` for explicit architecture selection.
-Use `--flow` with `--grammar sequence` or `--grammar flowchart` for a complete behavioral exchange.
-Exports use the selected state's default comparison, including removed subjects from its exact reference.
-Unresolved subjects carry warning badges.
-A joined connection carries a warning when any relationship that it represents remains unresolved.
-Presentation filters keep the complete selected state's container interface meaning.
-If the comparison base changes during export, retry the reported `STALE_REVISION` refusal.
-`model rasterize --out picture.png` accepts the same reading selectors, plus `--scale` and `--region`.
-Both artifacts carry a canonical recipe with model identity, reading, revision, and picture digest.
-Track exported artifacts through Git when other files embed them.
-`check embeds` finds those recipes and `check embeds --fix` redraws changed local sources.
-It preserves legacy recipes until explicit migration and a new canonical export.
-It never chooses a replacement model by name.
+`model render --out picture.svg` draws structure by default.
+Choose `--module`, exact `--scope`, repeated `--focus`, or `--hide-kind` for the reading.
+Each relationship in that reading has a drawn line.
+Use `--state` or `--checkpoint` for the architecture selection.
+For behavior, follow [flow rendering](#render-a-selected-flow).
 
-`check code --state <state>` reads one canonical state through the existing inspection engine.
-`--every-draft` reads independent proposals by identity.
-The result's `models` list carries model identity, state identity, and complete revision.
-Findings carry `model` and `state` beside stable subject identities.
-`BINDING_PATH_MISSING` reports an absent bound path in the current or selected state, including bindings without symbols.
-Unavailable repositories and source revisions appear as skips instead of missing-path warnings.
-Remembered findings use that same revision and remain empty until a code pass completes.
-A code check of a proposal reads its comparison source separately.
-If that source changes during the check, the check refuses with `STALE_REVISION`, so a stale comparison cannot authorize code inspection.
-Read the selected state again and retry the check.
+Exports use the state's default comparison, with removed subjects from its exact base.
+Unresolved subjects have warning badges. Joined connections warn if any represented relationship remains unresolved.
+Filters preserve the complete state's container interface meaning.
+If the base changes during export, reread and retry `STALE_REVISION`.
+
+`model rasterize --out picture.png` accepts the same selectors, plus `--scale` and `--region`.
+Both artifacts carry a recipe with model identity, reading, revision, and picture digest.
+
+Track exported pictures in Git when other files embed them.
+`check embeds` discovers only Git-tracked SVG and PNG files with render recipes.
+`check embeds --fix` redraws changed local sources when artifact replacement is authorized.
+It preserves legacy recipes until explicit migration and canonical export, and never selects a replacement model by name.
+
+If saved meaning draws incorrectly, fix the renderer. Do not change architecture or add geometry to repair placement.
+
+`check code --state <state>` inspects one state. `--every-draft` inspects independent proposals by identity.
+The result's `models` lists model, state, and complete revision.
+Findings include `model`, `state`, and stable subject IDs.
+
+`BINDING_PATH_MISSING` reports absent paths, including bindings without symbols.
+Unavailable repositories and source revisions are skips, not missing-path warnings.
+Remembered findings use that revision and stay empty until a code pass completes.
+
+A proposal inspection reads its comparison source separately.
+If that source changes, `STALE_REVISION` refuses the inspection.
+Read the selected state again before retrying.
+For binding and interface findings, follow [authoring](authoring.md).
 
 ## Navigate a local agent pane
 
-`browser show [model] --pane <pane>` opens a canonical model in an existing pane.
-The optional model argument must match the addressed vault's model identity or exact name.
+`browser show [model] --pane <pane>` opens a model in an existing pane.
+The optional model must match the vault's identity or exact name.
 Use `--module`, `--scope`, `--focus`, `--hide-kind`, `--grammar`, and `--flow` for its reading.
-Use `--state`, `--checkpoint`, `--preview`, `--bookmark`, or `--legacy-address` for explicit selection.
-Use `--walkthrough <id> --beat <index>` to request an authored narrative at its zero-based beat.
-Pass `--input <file>` for the complete reading JSON.
+Use `--state`, `--checkpoint`, `--preview`, `--bookmark`, or `--legacy-address` for selection.
+`--walkthrough <id> --beat <index>` requests a narrative at a zero-based beat.
+`--input <file>` supplies complete reading JSON.
 
-The HTTP route is `POST /api/panes/show`, also available through `/api/browser/show`.
-Its request is `{vault,pane,agent,session,reading}`.
-`reading` follows the same canonical selectors and includes optional `model` and `beat`.
-The server resolves the reading before it changes a pane or chosen checkout.
-It sends `pane_model` with `{model,reading,revision,vault,repository}` through the existing pane router.
-It returns `{success,model,reading,revision,repository,checkout,paneId}` and the existing pane address fields.
+POST `/api/panes/show`, also `/api/browser/show`, accepts `{vault,pane,agent,session,reading}`.
+`reading` uses the same selectors, plus optional `model` and `beat`.
+The server resolves it before changing the pane or chosen checkout.
+The `pane_model` message carries `{model,reading,revision,vault,repository}`.
+The result carries `{success,model,reading,revision,repository,checkout,paneId}` and pane address fields.
 
-`browser panes` reports the exact canonical capture in `panes[].architecture` and the tab's `tabSessionId`.
-Use that capture for explanations and narrative guards.
-Agent navigation can choose the addressed checkout, but it cannot activate the tab's shown conversation.
-The browser's existing activation action focuses that checkout's workhorse.
-Rendering stays in the client, and agents execute locally.
+`browser panes` reports `panes[].architecture` and `tabSessionId` for explanation and narrative guards.
+Navigation can choose a checkout but cannot activate the tab's conversation.
+Browser activation focuses that checkout's workhorse.
+Rendering runs in the client. Agents run in their addressed local checkouts.
+For narratives, read [canonical walkthroughs](canonical-walkthroughs.md).

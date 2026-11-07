@@ -1,15 +1,9 @@
 # Author and record a canonical walkthrough
 
-Use this recipe for a vault whose `model.json` owns its architecture.
-A walkthrough is an ordered narrative with instructions for each reading.
-Its `.walkthrough.json` file contains no geometry or copied architecture.
-
-Read `archboard model read` before writing.
-Keep its complete revision and stable target state identity.
-Claim the model ID before adding a walkthrough.
-Use the normal `model edit` request with the following change.
-Supply its target, expectedRevision, operationId, writer, and claim from the current read and claim results.
-Pass the doing line through `--doing`.
+A walkthrough is an ordered narrative with complete reading instructions.
+Its `.walkthrough.json` contains no geometry or copied architecture.
+Use the [claimed edit recipe](canonical-models.md#edit-one-module-description) for the target, revision, operation identity, writer, claim, and doing line.
+Claim the model ID when adding a walkthrough:
 
 ```json
 {
@@ -32,35 +26,38 @@ Pass the doing line through `--doing`.
 }
 ```
 
-Archboard allocates the walkthrough and beat identities.
-A beat states its complete reading.
-Omitted selection, focus, and filters mean empty lists.
-Omitted scope means the model roots.
-No field inherits a previous beat's presentation state.
-`focus` contains module identities.
-`selection` contains stable subject identities.
-If a beat selects a relationship or a message, the picture lights that subject and its ends, and nothing more.
-If a beat selects only modules, the picture lights them and the lines between them, and it lights what they touch a step fainter.
-`filters.relationships` contains kinds to hide. Group regions are off by default, so `filters.groups` changes no picture.
-A sequence or flowchart beat also names an explicit qualified `flow` identity.
-Its behavioral reading includes the complete flow.
+Archboard allocates walkthrough and beat identities.
+Each beat states its complete reading. No presentation field inherits from another beat.
+Omitted selection, focus, and filters mean empty lists. Omitted scope means model roots.
+
+`focus` contains module IDs. `selection` contains stable subject IDs.
+For relationships or messages, selection lights only those subjects and their ends.
+Module-only selection lights those modules and connecting lines, with adjacent subjects one step fainter.
+
+`filters.relationships` lists hidden kinds.
+Group regions are off by default, so `filters.groups` changes no picture.
+A sequence or flowchart beat requires a qualified `flow` and includes that complete flow.
 
 The target accepts `state:"current"`, a stable proposal ID, or a unique proposal name.
-An exact historical target uses `checkpoint` with a complete retained Git object ID.
-The reader resolves that target once for every beat in the playback.
-An exact target becomes an archive dependency of the retained narrative.
-A missing exact dependency refuses a new signed write.
+For exact history, use `checkpoint` with a complete retained Git object ID.
+Playback resolves the target once for all beats.
+A retained narrative requires its exact target as an archive dependency.
+If that dependency is missing, the write refuses.
 
-To edit a walkthrough, claim its identity and every existing beat identity.
-Also claim the model ID when allocating or removing identities.
-Use `edit-walkthrough` with its stable `subject` and optional metadata `set` or `clear:["summary"]`.
-Its optional `beats` array states the complete intended order.
-Keep an existing beat's `id` when changing or moving it.
-Omit `id` only for a new beat.
-An omitted old beat retires its identity.
-`remove-walkthrough` removes the narrative and retires all its beats.
-A draft uses the normal proposal edit intent with the same narrative changes.
-Compact proposals store beat fields and placements independently.
+To edit, claim the walkthrough and all existing beats.
+Also claim the model when adding or removing identities.
+Use `edit-walkthrough` with stable `subject`, metadata `set`, or `clear:["summary"]`.
+
+An optional `beats` array gives the complete intended order.
+Keep `id` for continuing beats, including moves. Omit it only for new beats.
+Omitting an old beat retires it.
+
+`remove-walkthrough` retires the walkthrough and all beats.
+Drafts use the proposal edit intent. Their stored changes track beat fields and placements separately.
+
+## Read, record, and replay
+
+Use these commands after authoring the walkthrough:
 
 ```bash
 archboard model read --walkthrough 'Request tour' -C <directory>
@@ -69,73 +66,65 @@ archboard model record --walkthrough 'Request tour' --checkpoint <checkpoint.id>
 archboard model replay <talk-directory> --out tour-again.mp4
 ```
 
-The first command reads without retaining history or changing inputs.
-Its `playback` identifies the narrative, source revision, resolved revision, and each beat's availability.
-A missing subject stops its affected beat with a recovery explanation.
-A later model change requires an explicit restart to read the newer architecture.
-Playback keeps the original returned model until that restart.
+The first command changes no inputs and retains no history.
+Its `playback` gives narrative identity, source revision, resolved revision, and availability per beat.
+A missing subject stops that beat with recovery instructions.
+Keep the returned model for playback. Restart explicitly to use later architecture.
 
-An explicit checkpoint pins both the narrative definition and the complete model used for playback.
+A checkpoint pins both narrative and playback model.
 `--shared` requires an exact retained target.
-Retain the observed reading before recording or sharing it.
-Use the existing publication workflow when another checkout needs that history.
-Local retention alone establishes no remote availability.
+Before sharing or recording, use [history retention and publication](canonical-models.md#retain-an-exact-local-reading).
 
-Recording uses the existing local voice, talk storage, and frame renderer.
-Every beat must be available before voice starts.
-The recording artifact keeps one exact model and the narrative for offline replay.
-That artifact is separate from authored walkthrough and proposal inputs.
-The existing replay command needs its talk directory and voice file.
-It reads no mutable model and starts no live voice session.
-An original saved talk stays exact retained history.
-Replay draws what the talk kept, and it recreates no live writer.
+Recording uses local voice and rendering, and requires every beat to be available before voice starts.
+The recording artifact keeps one exact model and narrative for offline replay, separately from authored inputs.
+Replay needs its talk directory and voice file.
+It reads no mutable model, starts no live voice session, and recreates no writer.
+Saved talks stay exact history.
 
-Voice narration reads the narrative source separately from its target.
-The pane reports `playback.source`, `expectedSourceRevision`, and `expectedRevision` before voice starts.
-Narration waits until the server accepts that report.
-The browser keeps Narrate unavailable while the picture draws.
-The server resolves that source through the public architecture reader and compares both revision guards.
-A narrative can name a target checkpoint that predates its definition.
-The server keeps the complete capture for later beats, even when authored files change.
-A changed or unavailable source or target refuses the start.
-Reopen the walkthrough before starting narration again.
+Voice reads the narrative source separately from its target.
+Before starting, the pane reports `playback.source`, `expectedSourceRevision`, and `expectedRevision`.
+Narration waits for server acceptance and matching source and target revisions.
+Narrate stays unavailable while the picture draws.
 
-Live narration requests its first beat through the existing pane presentation port.
-Canonical requests name the pane and walkthrough without a pane key.
-The recording page drives its own steps and receives no first-beat request from the server.
-Both paths narrate only available beats after the pane reports arrival.
-Leaving the walkthrough ends its narration.
+A narrative can target a checkpoint older than its own definition.
+Accepted captures stay complete for later beats despite file changes.
+If source or target changes or becomes unavailable, reopen the walkthrough before retrying narration.
+
+Live narration requests the first beat by pane and walkthrough, without a pane key.
+Live narration and recording wait until an available beat reaches the pane.
+Leaving the walkthrough stops narration.
 
 ## Write each beat
 
-The voice explains a beat from its title, narrative and selection, beside the picture.
-Make one point in each beat.
-Let the title state that point ("Only the ledger sets items aside") and the narrative say what the picture cannot show.
-Name modules as the model names them, and give the one number that the source states, such as a limit, a count or a timeout.
-Select the two or three subjects that the beat is about.
+Make one point per beat.
+State it in the title, for example `Only the ledger sets items aside`.
+Use the narrative for what the picture cannot show.
+Use model names and source-backed numbers, such as a limit, count, or timeout.
+Select the two or three subjects that the beat explains.
+Voice uses the title, narrative, selection, and picture.
 
 ## A newcomer's walkthrough
 
-Use it when somebody new asks how one thing works.
-The tour starts with the big picture, narrows to one module and one exchange, and ends on what to read next.
+Use this sequence when a newcomer asks how something works:
 
-1. Write the answer as one sentence, "When you do this, this happens". Done: it names what the reader does and what they get.
-2. Choose the path of four to ten modules and the flow that runs along it. Give each module a plain `responsibility`. Leave out helpers, configuration, types and tests. Done: every module and relationship that the answer rests on is on the path.
-3. Open on the big picture. Omit `scope`, `visibility`, and `focus` so that the roots draw whole. Select the root module that holds the answer.
-4. Grow the path beat by beat. A beat's `visibility` repeats the previous beat's modules and relationships and adds one to three more, and its `selection` names the additions. The first of these beats shows two modules. Done: the last one draws the whole path.
-5. Show the one exchange in a sequence beat with its `flow`.
-6. Add a beat where the path goes wrong, if the reader will meet that failure: what fails and what they see.
-7. End on the answer sentence again, with one number that the source states and the module or flow to read next. Done: the last beat stands alone as the summary.
+1. Write a one-sentence answer: `When you do this, this happens`. Name the action and result.
+2. Choose four to ten modules and one flow that explain the answer. Give each module a plain `responsibility`. Exclude helpers, configuration, types, and tests. Include every module and relationship needed for the answer.
+3. Open with the whole roots: omit `scope`, `visibility`, and `focus`. Select the root containing the answer.
+4. Grow the path through `visibility`. Start with two modules, then preserve prior modules and relationships and add one to three per beat. Select the additions. End with the complete path.
+5. Show the exchange through a sequence beat with its `flow`.
+6. If the reader encounters a failure, add a beat that explains the failure and visible result.
+7. End with the answer, one source-backed number, and the next module or flow to read. Make that beat stand alone.
 
 ## A pull request's walkthrough
 
-Use it for reviewers who have not read the code.
-Put the change in a proposal, and target the walkthrough at it.
-Write three to six beats, each a few sentences, so that the talk runs one to three minutes.
+Use this sequence for reviewers unfamiliar with the code.
+Target the change's proposal.
+Write three to six beats of a few sentences each, for one to three minutes:
 
-1. Read the diff against the merge base and write one sentence on why the pull request exists. Done: it names the need, not the files.
-2. Run `archboard model footprint --base <merge-base> --state <proposal>`. Read the subject of a commit marked large before you give it a beat. Done: every changed module has a beat, or you can say why not.
-3. Open with the why sentence and no selection. Then give the change that matters most a beat, and each other change one of its own. Name what the pull request did in the title. Name a removed module in the narrative, because a beat cannot select it.
-4. End on the seam or invariant that deserves the closest look, and what to check there. Done: a reviewer can answer "what changed, and why" from the beats alone.
+1. Read the diff against the merge base. State why the PR exists in one sentence about the need.
+2. Run `archboard model footprint --base <merge-base> --state <proposal>`. Read each commit marked `large` before assigning it a beat. Give every changed module a beat, or explain its omission.
+3. Open with the reason and no selection. Give the main change a beat, then each other change its own. Titles state what changed. Name removed modules in prose because the selected state cannot select them.
+4. End on the boundary or invariant that needs closest inspection and what to inspect there. Make sure that the beats explain what changed and why without the code.
 
-Record from the retained checkpoint as above. The archboard-pr skill attaches the video and places it in the pull request.
+Record from the retained checkpoint.
+The archboard-pr skill owns video attachment and placement in the PR.

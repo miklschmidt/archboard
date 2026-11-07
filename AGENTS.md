@@ -25,6 +25,22 @@ Where things are written down:
 - Skills: `skills/` holds only the shippable Archboard skills. Tracked symlinks in `.claude/skills/`
   and `.agents/skills/` expose them, beside the third-party skills tracked there.
 
+## Track inputs and required artifacts
+
+Track authored inputs, including the canonical model in `.archboard/vault`.
+Keep cheaply reproducible output ignored unless it matches an exception below.
+Build output, caches, generated bindings, and `skills/archboard/references/generated/` stay ignored.
+
+Keep these exceptions tracked:
+
+- Archboard SVG and PNG files embedded in repository documents. Keep their render recipes. `archboard check embeds` discovers only Git-tracked files.
+- Published documentation assets that readers need from the checkout. These include README diagrams, thumbnails, the social card, and `docs/readme/assets.json`. Follow [the asset guide](docs/agents/readme-assets.md) for updates. Large clips and videos remain external attachments.
+- Exact historical fixtures, including `examples/web-shop/history.import.json`. They preserve readings and baselines that current inputs cannot reproduce. Follow [the fixture procedure](docs/agents/readme-assets.md#canonical-fixtures) when updating them.
+- Dependency lockfiles: `bun.lock`, `Cargo.lock`, and `flake.lock`. They preserve the selected dependency versions for later installs.
+
+Do not untrack these exceptions merely because a tool produced them.
+For a new exception, add its consumer, reason for tracking, and update procedure to this list.
+
 <!-- BACKLOG.MD GUIDELINES START -->
 <!-- backlog.md-instructions-version: 1.50.1 -->
 
