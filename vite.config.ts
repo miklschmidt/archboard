@@ -210,8 +210,8 @@ const harnessTests = [
 
 const topologyTests = ["tests/system/process-contracts/cross-process-model-claims.test.ts"];
 
-// Twelve is every stage of `check:first`, so no stage waits for a slot.
-const stageOptions = "--concurrency-limit 12 --log labeled";
+// Thirteen is every stage of `check:first`, so no stage waits for a slot.
+const stageOptions = "--concurrency-limit 13 --log labeled";
 // `vp` requires a command of a task that only gathers others.
 const stageGroup = { command: "true", cache: false };
 
@@ -310,6 +310,13 @@ export default defineConfig({
 				command: "cargo test --locked --workspace",
 				cache: coreCache,
 			},
+			// The architecture linter: `archboard check` on this checkout's vault, on a
+			// server of this checkout's source. Any warning fails it.
+			"check:model": {
+				dependsOn: ["contracts", "core"],
+				command: "bun scripts/check-model.ts",
+				cache: false,
+			},
 			"lint:all": {
 				dependsOn: ["lint:tests", "lint:policy", "lint:css", "lint:core", "lint:core-docs"],
 				...stageGroup,
@@ -335,7 +342,7 @@ export default defineConfig({
 				...stageGroup,
 			},
 			"check:first": {
-				dependsOn: ["lint:all", "format:check", "format:core", "test:first"],
+				dependsOn: ["lint:all", "format:check", "format:core", "check:model", "test:first"],
 				...stageGroup,
 			},
 			"test:all": {
