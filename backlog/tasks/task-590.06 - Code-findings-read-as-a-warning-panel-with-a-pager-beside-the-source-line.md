@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T12:47:00Z'
-updated_date: '2026-11-07T16:21:00Z'
+updated_date: '2026-11-07T16:28:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-590
@@ -22,7 +22,7 @@ The owner likes the site content selector and warnings display: large tabs with 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 The code findings show one finding at a time with a pager, a solid changed chip and the route
-- [ ] #2 The source excerpt shows line numbers and marks the line of the evidence
+- [x] #2 The source excerpt shows line numbers and marks the line of the evidence
 - [x] #3 A content selector of icon, label and gloss tabs chooses between the code evidence views
 <!-- AC:END -->
 
@@ -49,4 +49,6 @@ Server half (route of source lines), by the implementation agent of 2026-11-07: 
 - The source excerpt reads GET /api/code/source-lines through sourceLinesQuery, a TanStack query with a strict zod schema. It numbers the lines and marks the evidence line. A 404 or a failure says Source unavailable.
 - model-code-evidence.test.tsx proves the pager and the subjects it selects, the marked evidence line and the request address against a stubbed fetch, and the unavailable state for 404 and 500. The browser owner pages through two findings and checks the selected module.
 - Criterion 2 is left open for the coordinator: the route was not in this worktree, so no excerpt was read from a real server. The screenshots used a network route with seeded lines.
+
+2026-11-07, coordinator: the excerpt read the real route on the integrated branch. The web client now parses the answer with CodeSourceLinesSchema of @archboard/code-intel/code-check, because the strict local schema refused the route's success field. On a scratch server, a code pass of this repository remembered 195 findings; the Measures dialog's second finding showed lines 225 to 231 of crates/archboard-flows/src/sequence/layout.rs with line 228 marked, the same lines the file holds. The route refused package.json:1 with EVIDENCE_NOT_REMEMBERED. The same pass found a stale anchor (Replay stage -> Voice orb named OrbHost), fixed in the model.
 <!-- SECTION:NOTES:END -->
