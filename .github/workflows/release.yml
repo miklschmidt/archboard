@@ -53,8 +53,9 @@ jobs:
     with:
       ref: ${{ needs.release-please.outputs.sha }}
 
-  # The packages of the root release, built from its tag on Linux. Bun cross-compiles the macOS
-  # executable (docs/agents/releasing.md).
+  # The packages of the root release, built from its tag on Linux by the flake's `release` output,
+  # in the Nix sandbox without network. Bun cross-compiles the macOS executable
+  # (docs/agents/releasing.md).
   build:
     name: Build the packages
     needs: release-please
@@ -69,37 +70,18 @@ jobs:
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
 
-      - name: Set up Vite+, Node.js, and Bun
-        uses: voidzero-dev/setup-vp@v1.21.2
-        with:
-          version-file: package.json
-          node-version: "26"
-          cache: true
-          run-install: false
-
-      # The flake's dev shell holds the Rust tools that build the renderer core (ADR 0059).
       - name: Setup Nix
         uses: cachix/install-nix-action@v31
 
-      - name: Install dependencies
-        run: nix develop --command bun install --frozen-lockfile
-
+      # The six packed packages, the voice package among them, land in result/.
       - name: Build the packages
-        run: nix develop --command bun run release
-
-      # The Archboard executable carries the voice package, so both share one version.
-      - name: Build the voice package
-        run: nix develop --command bun run pack:voice
-
-      - name: Pack the voice package
-        working-directory: dist/codex-realtime-voice
-        run: bun pm pack --destination ../release --ignore-scripts
+        run: nix build .#release -L
 
       - name: Keep the packed packages
         uses: actions/upload-artifact@v4
         with:
           name: release-packages
-          path: dist/release/*.tgz
+          path: result/*.tgz
           if-no-files-found: error
 
   # Each runner installs the packed tarballs from a local registry, with Codex from npm, and runs
