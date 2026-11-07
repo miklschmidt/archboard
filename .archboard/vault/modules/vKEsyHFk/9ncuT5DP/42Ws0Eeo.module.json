@@ -22,26 +22,13 @@
   ],
   "outgoing": [
     {
-      "order": 50000,
-      "kind": "event",
-      "label": "each settled model change, focus and selection",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
-        "symbol": "subscribeSettledChange"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#at9JRETZ",
-      "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE"
-    },
-    {
       "order": 91000,
       "kind": "event",
       "label": "each settled model change, focus and selection it publishes",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+        "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
         "symbol": "subscribeSettledChange"
       },
       "id": "vKEsyHFk/9ncuT5DP#yql8mIiB",

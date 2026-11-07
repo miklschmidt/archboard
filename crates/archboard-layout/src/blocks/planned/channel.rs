@@ -214,7 +214,8 @@ impl<'a> Junction<'a> {
     fn clear(&self, points: &[Point], bounds: super::junctions::Envelope) -> bool {
         bounds.apart(self.bounds)
             || ((!self.shared
-                || super::junctions::sharing(points, &self.line.points, self.source, self.target))
+                || super::junctions::sharing(points, &self.line.points, self.source, self.target)
+                    && super::junctions::readable(points, &self.line.points, self.target))
                 && super::junctions::ordered(points, &self.line.points, self.shared))
     }
 }

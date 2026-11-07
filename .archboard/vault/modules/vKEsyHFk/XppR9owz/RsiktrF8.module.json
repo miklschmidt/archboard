@@ -5,7 +5,7 @@
   "responsibility": "Resolves the video container and output destination, and reserves a fresh talk directory before recording",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/rules/semantic/draw/recording-output.ts"
+    "path": "apps/cli/src/cli/commands/model/rules/recording-output.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#RsiktrF8",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/rules/semantic/draw/recording-output.ts",
+        "path": "apps/cli/src/cli/commands/model/rules/recording-output.ts",
         "symbol": "freshTalkPlace"
       },
       "id": "vKEsyHFk/SMjRfwN3#83qFfI7k",
@@ -52,24 +52,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/rules/semantic/draw/recording-output.ts",
+        "path": "apps/cli/src/cli/commands/model/rules/recording-output.ts",
         "symbol": "recordingContainerOf"
       },
       "id": "vKEsyHFk/SMjRfwN3#VXPf7fBP",
       "to": "vKEsyHFk/SMjRfwN3#L1cYIenF"
-    },
-    {
-      "order": 117000,
-      "kind": "call",
-      "label": "reserve a fresh talk directory",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/rules/semantic/draw/recording-output.ts",
-        "symbol": "freshTalkPlace"
-      },
-      "id": "vKEsyHFk/XppR9owz#9Sv3VWDi",
-      "to": "vKEsyHFk/XppR9owz#XAJYaUnv"
     }
   ]
 }

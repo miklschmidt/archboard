@@ -1,4 +1,4 @@
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
+import type { BrowserDynamicApproval } from "#shared/dynamic-approval/schemas/approval.ts";
 import {
 	createIdentityAuthorities,
 	type ChildEpoch,
@@ -8,10 +8,10 @@ import {
 	type TurnId,
 	type BrowserCommandId,
 } from "@archboard/codex-app-server/identity";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/state.ts";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
-import type { BrowserOwnerProjection } from "#server/protocol/projection/projection-contract.ts";
-import type { BrowserReadiness } from "#shared/schemas/browser/snapshot.ts";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
+import type { BrowserOwnerProjection } from "#server/projection/protocol/projection-contract.ts";
+import type { BrowserReadiness } from "#shared/browser/schemas/snapshot.ts";
 import type {
 	BrowserWorkbenchActions,
 	BrowserActionResult,
@@ -22,15 +22,15 @@ import type {
 	CodexWorkbenchGateway,
 	BrowserConnectionInstance,
 	BrowserWorkbenchConnection,
-} from "#server/protocol/gateway/contract.ts";
-import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
-import { createCodexWorkbenchGateway } from "#server/services/gateway/gateway.ts";
-import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
+} from "#server/chat-conversations/gateway/protocol/contract.ts";
+import type { TabSessionId } from "#server/tab-session/rules/tab-session.ts";
+import { createCodexWorkbenchGateway } from "#server/chat-conversations/gateway/connections/services/gateway.ts";
+import { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
-} from "#runtime/rules/thread-link/contract.ts";
-import type { ApprovalOwnerView } from "#runtime/services/approvals/contract.ts";
+} from "#runtime/workhorses/thread-link/rules/contract.ts";
+import type { ApprovalOwnerView } from "#runtime/approvals/services/contract.ts";
 import { commandApprovalOwnerFixture } from "#tests/server/support/gateway/approval-owner-fixture.ts";
 import {
 	CLOCK_START,

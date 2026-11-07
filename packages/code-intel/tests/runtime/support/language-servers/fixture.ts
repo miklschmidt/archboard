@@ -13,8 +13,8 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import type { Language } from "#runtime/operations/language-servers/languages.ts";
-import type { ServerOf } from "#runtime/services/language-servers/session.ts";
+import type { Language } from "#runtime/language-servers/operations/languages.ts";
+import type { ServerOf } from "#runtime/language-servers/services/session.ts";
 
 /** The stand-in server. */
 const FAKE_SERVER = join(import.meta.dir, "fake-language-server.ts");

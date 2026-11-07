@@ -13,7 +13,7 @@ interface HealthStatus {
 	status: string;
 	service?: string;
 	pid?: number;
-	/** The version of the installation the server runs. A server older than ADR 0075 names none. */
+	/** The version of the installation the server runs. A server older than ADR 0076 names none. */
 	version?: string;
 	/** Whether the server runs a checkout's source or a release. */
 	mode?: "checkout" | "release";

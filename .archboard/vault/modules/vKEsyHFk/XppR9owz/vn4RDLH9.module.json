@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/pane/pane.ts"
+    "path": "apps/cli/src/cli/commands/pane/operations/pane.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#vn4RDLH9",
@@ -43,7 +43,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/pane/pane.ts",
+        "path": "apps/cli/src/cli/commands/pane/operations/pane.ts",
         "symbol": "openPane"
       },
       "id": "vKEsyHFk/XppR9owz#b7q8WlCg",

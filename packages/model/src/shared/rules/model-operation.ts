@@ -1,4 +1,4 @@
-import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
+import type { ArchitectureModuleEdit } from "#shared/canonical-contracts/schemas/model-operations.ts";
 
 /**
  * Preserve legacy description records while newer operations retain their affected closure.

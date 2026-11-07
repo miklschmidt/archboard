@@ -3,7 +3,7 @@
 
 import { expect } from "bun:test";
 
-import { renderLegacyBoard } from "#runtime/operations/render.ts";
+import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 import type { DrawnPicture, LayoutEngineName } from "@archboard/model/render-reply";

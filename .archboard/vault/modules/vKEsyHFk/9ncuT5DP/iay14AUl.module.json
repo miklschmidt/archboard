@@ -6,7 +6,7 @@
   "description": "One record per tab session, opened when a chat socket of the tab connects and built by sessions/factories.ts. The coordinator, voice, spoken approval, coordinator tools and callbacks are the tab's; the workhorses are built on first use, one for each checkout. A notification goes to the session that owns its thread, or to every session when no session owns the thread yet, and a workhorse thread belongs to its workhorse. A tool call from a thread that no session owns is refused, so a running turn never waits on nobody. It notes the conversation shown when each coordinator turn starts and the work each workhorse's operations give. When a session ends, every link is cleared, its approvals are cancelled, its voice and context delivery stop, and its threads are unsubscribed once no turn runs on them.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts"
+    "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#iay14AUl",
@@ -29,7 +29,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
         "symbol": "onServerRequest"
       },
       "id": "vKEsyHFk/qKGcB6vZ#NfthRpE6",
@@ -43,7 +43,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
         "symbol": "onServerRequest"
       },
       "id": "vKEsyHFk/qKGcB6vZ#yjIBH8F4",
@@ -56,7 +56,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
         "symbol": "onServerRequest"
       },
       "id": "vKEsyHFk/9ncuT5DP#NztvEtjX",
@@ -70,7 +70,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
         "symbol": "unload"
       },
       "id": "vKEsyHFk/qKGcB6vZ#CPG4pMzU",
@@ -83,7 +83,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
         "symbol": "onNotification"
       },
       "id": "vKEsyHFk/9ncuT5DP#9kvKfu7U",
@@ -97,7 +97,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
         "symbol": "answerUnownedTellCoordinator"
       },
       "id": "vKEsyHFk/qKGcB6vZ#pXUOBmiu",
@@ -110,7 +110,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
         "symbol": "endApprovals"
       },
       "id": "vKEsyHFk/9ncuT5DP#ELaAYJKS",
@@ -123,7 +123,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
         "symbol": "noteCoordinatorTurnStart"
       },
       "id": "vKEsyHFk/qKGcB6vZ#etaTfLee",
@@ -136,7 +136,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
         "symbol": "freshWorkhorseState"
       },
       "id": "vKEsyHFk/9ncuT5DP#wMqJn1nW",
@@ -149,7 +149,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/bindings.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/bindings.ts",
         "symbol": "readyDelegatedWorkhorse"
       },
       "id": "vKEsyHFk/9ncuT5DP#Ikp3Fwwc",
@@ -162,7 +162,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
         "symbol": "shownConversationOf"
       },
       "id": "vKEsyHFk/9ncuT5DP#azMem83I",
@@ -175,7 +175,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
         "symbol": "sessionVoiceStartTrace"
       },
       "id": "vKEsyHFk/9ncuT5DP#fa4FSkpO",

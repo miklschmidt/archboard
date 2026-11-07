@@ -1,10 +1,10 @@
 import { join } from "node:path";
-import { createBrowserLeaseLedger } from "#server/services/lease/lease.ts";
-import { createProductionBindings } from "#server/services/generation/bindings.ts";
-import { createProductionHooks } from "#server/services/generation/hooks.ts";
-import { createGenerationOwnerStore } from "#server/services/generation/owners.ts";
-import type { CodexWorkbenchGenerationInput } from "#server/services/owner/owner-state.ts";
-import type { CodexWorkbenchHostPolicy } from "#server/protocol/generation/host.ts";
+import { createBrowserLeaseLedger } from "#server/lease/services/lease.ts";
+import { createProductionBindings } from "#server/generation/services/bindings.ts";
+import { createProductionHooks } from "#server/generation/services/hooks.ts";
+import { createGenerationOwnerStore } from "#server/generation/services/owners.ts";
+import type { CodexWorkbenchGenerationInput } from "#server/owner/services/owner-state.ts";
+import type { CodexWorkbenchHostPolicy } from "#server/generation/protocol/host.ts";
 import {
 	TEST_CONTEXT_CODEC,
 	TEST_INSTRUCTIONS,

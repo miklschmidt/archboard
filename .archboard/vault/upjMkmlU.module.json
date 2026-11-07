@@ -5,7 +5,7 @@
   "responsibility": "Gathers the registered repositories and each one's model summary for the page",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts",
+    "path": "apps/web/src/ui/panes/model-catalog/hooks/use-model-catalog.ts",
     "symbol": "useModelCatalog"
   },
   "schemaVersion": 1,
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts",
+        "path": "apps/web/src/ui/panes/model-catalog/hooks/use-model-catalog.ts",
         "symbol": "repositoriesQuery"
       },
       "id": "vKEsyHFk#i32p6taI",
@@ -32,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts",
+        "path": "apps/web/src/ui/panes/model-catalog/hooks/use-model-catalog.ts",
         "symbol": "architectureSummaryQuery"
       },
       "id": "vKEsyHFk#7EsWuSSD",
@@ -45,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
         "symbol": "mountRepositoryRoutes"
       },
       "id": "vKEsyHFk/Oi6SBIAM#j3HPQ3Ng",

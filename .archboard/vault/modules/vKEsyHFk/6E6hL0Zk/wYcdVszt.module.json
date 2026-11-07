@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/api"
+    "path": "packages/model/src/runtime"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#wYcdVszt",

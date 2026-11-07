@@ -1,0 +1,14 @@
+{
+  "order": 500,
+  "name": "Design constants",
+  "kind": "module",
+  "responsibility": "The sizes, faces and icons that the painter draws with, which the flow and picture layouts and the SVG painter read from here",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/paint/design.rs"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#w44DwfpV",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "outgoing": []
+}

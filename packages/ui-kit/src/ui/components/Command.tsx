@@ -7,7 +7,7 @@ import {
 	CommandItem,
 	CommandList,
 	Command as CommandRoot,
-} from "#ui/components/shadcn/command.tsx";
+} from "#ui/shadcn/components/command.tsx";
 
 /** A command palette, with its field, its list and its rows as its parts. */
 const Command = Object.assign(CommandRoot, {

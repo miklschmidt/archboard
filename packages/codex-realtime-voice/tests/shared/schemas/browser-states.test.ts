@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test";
 
-import { BROWSER_TIMELINE_LIMITS } from "#shared/schemas/browser/vocabulary.ts";
+import { BROWSER_TIMELINE_LIMITS } from "#shared/browser/schemas/vocabulary.ts";
 import { createFixtureIds } from "#tests/shared/support/browser-model.ts";
 
 test("browser DTOs cover reachable progress, partial, failure, and recovery states", () => {

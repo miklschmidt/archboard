@@ -2,8 +2,8 @@ import type { OperationId } from "@archboard/codex-app-server/identity";
 import type {
 	DynamicOperationIdPort,
 	DynamicOperationTerminalResult,
-} from "#runtime/protocol/dynamic-tools/contract.ts";
-import type { DynamicOperationTerminalDisposition } from "#runtime/rules/dynamic-tools/errors.ts";
+} from "#runtime/dynamic-tools/protocol/contract.ts";
+import type { DynamicOperationTerminalDisposition } from "#runtime/dynamic-tools/rules/errors.ts";
 import type { AuthorityIds } from "#tests/runtime/support/dynamic-tools/fixtures.ts";
 
 export class FakeOperationIds implements DynamicOperationIdPort {

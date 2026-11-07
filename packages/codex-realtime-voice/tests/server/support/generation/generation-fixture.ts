@@ -7,18 +7,18 @@ import {
 	createIdentityAuthorities,
 	createIdentityLedger,
 } from "@archboard/codex-app-server/identity";
-import { createCodexWorkbenchSessions } from "#server/services/sessions/sessions.ts";
-import { type CodexWorkbenchComponentFactories } from "#server/protocol/generation/contract.ts";
+import { createCodexWorkbenchSessions } from "#server/sessions/services/sessions.ts";
+import { type CodexWorkbenchComponentFactories } from "#server/generation/protocol/contract.ts";
 import {
 	type CodexWorkbenchComponents,
 	type CodexWorkbenchGenerationHooks,
-} from "#server/services/generation/lifecycle.ts";
+} from "#server/generation/services/lifecycle.ts";
 import {
 	type CodexWorkbenchSessionComponents,
 	type CodexWorkbenchTabSession,
 	type CodexWorkbenchTabSessionScope,
-} from "#server/protocol/generation/session-contract.ts";
-import { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
+} from "#server/generation/protocol/session-contract.ts";
+import { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
 
 import {
 	createSessionComponentsFixture,

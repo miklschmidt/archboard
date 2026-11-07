@@ -6,7 +6,7 @@
   "description": "The context projection reads current or retained architecture through the public runtime. It preserves the captured subjects, revision, and explicit recovery information for the local agent.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/projections/semantic-context/canonical-context.ts",
+    "path": "packages/workbench/src/server/semantic-context/projections/canonical-context.ts",
     "symbol": "canonicalContext"
   },
   "schemaVersion": 1,
@@ -41,7 +41,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/projections/semantic-context/canonical-context.ts",
+        "path": "packages/workbench/src/server/semantic-context/projections/canonical-context.ts",
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/6E6hL0Zk#BNTbGuis",

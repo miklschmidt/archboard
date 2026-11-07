@@ -1,4 +1,4 @@
-// Which Archboard this process is, and where its parts are (ADR 0075).
+// Which Archboard this process is, and where its parts are (ADR 0076).
 //
 // Archboard runs in one of two ways. A checkout runs its source with Bun
 // (ADR 0014). A release runs one compiled executable, with the frontend, the
@@ -29,7 +29,7 @@ const SERVER_ENTRY = path.join("apps", "server", "src", "server.ts");
 
 /**
  * The first argument with which a release executable runs the server in place
- * of the CLI (ADR 0075): `apps/cli/src/bin.ts` then imports the server's entry.
+ * of the CLI (ADR 0076): `apps/cli/src/bin.ts` then imports the server's entry.
  */
 const RELEASE_SERVER_ARGUMENT = "--internal-server";
 

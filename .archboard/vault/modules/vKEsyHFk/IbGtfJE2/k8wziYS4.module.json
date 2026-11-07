@@ -6,7 +6,7 @@
   "description": "`eval:skill check` loads every input through this. The loader refuses a cited passage, catalogue row or rubric section the skill does not hold (citations.ts) and a skill package that names what it is graded on (leakage.ts). The command then lays each fixture through the store's transitions (laying.ts, called from the evaluation command, command.ts) and refuses one that does not lay or that draws a relationship onto a part with children.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/schemas/suite.ts"
+    "path": "packages/skills/src/runtime/evaluation/batch/schemas/suite.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#k8wziYS4",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/schemas/suite.ts",
+        "path": "packages/skills/src/runtime/evaluation/batch/schemas/suite.ts",
         "symbol": "readJson"
       },
       "id": "vKEsyHFk/IbGtfJE2#ygYCKQLQ",
@@ -32,7 +32,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/schemas/suite.ts",
+        "path": "packages/skills/src/runtime/evaluation/batch/schemas/suite.ts",
         "symbol": "citationProblem"
       },
       "id": "vKEsyHFk/IbGtfJE2#pdkMb2Mv",

@@ -3,7 +3,7 @@ export {
 	CodexTransportOwnershipError,
 	CodexTransportRemoteError,
 	CodexTransportUsageError,
-} from "#runtime/clients/transport-errors.ts";
+} from "#runtime/transport/clients/transport-errors.ts";
 export type {
 	CodexTransport,
 	CodexTransportChild,
@@ -15,5 +15,5 @@ export type {
 	TransportServerNotification,
 	TransportServerRequest,
 	TransportServerRequestListener,
-} from "#runtime/clients/transport-types.ts";
-export { createCodexTransport } from "#runtime/clients/transport.ts";
+} from "#runtime/transport/clients/transport-types.ts";
+export { createCodexTransport } from "#runtime/transport/clients/transport.ts";

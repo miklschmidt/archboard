@@ -6,25 +6,12 @@
   "description": "The part is the one the pointer has rested on for a moment, else the one picked out. The part, what it holds, every relationship with an end in any of it, the parts at their other ends and the containers that hold them stay as drawn; the surface says how strongly (pick or pointer). It stands down while a presented step or a group says what the picture is about, while the picture leaves, and for a part with nothing drawn to light.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/canvas/use-lighting.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-lighting.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#uPniwNFZ",
   "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
   "outgoing": [
-    {
-      "order": 50000,
-      "kind": "data",
-      "label": "the relationships that light",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/picture/picture-sweep.ts",
-        "symbol": "sweepLines"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#aTUikCKr",
-      "to": "vKEsyHFk/UOXNWLhR#UqVsXH0L"
-    },
     {
       "order": 51000,
       "kind": "call",
@@ -32,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-resting-part.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-resting-part.ts",
         "symbol": "frameClock"
       },
       "id": "vKEsyHFk/UOXNWLhR#30W5BmLd",
@@ -45,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-lighting.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-lighting.ts",
         "symbol": "reachOf"
       },
       "id": "vKEsyHFk/UOXNWLhR#8CcPSJbf",

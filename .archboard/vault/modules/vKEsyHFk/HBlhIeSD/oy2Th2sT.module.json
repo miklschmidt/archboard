@@ -5,7 +5,7 @@
   "responsibility": "Route portable export and import through the shared architecture runtime.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/routes/architecture/portable-routes.ts"
+    "path": "apps/server/src/server/http/handlers/architecture-writes/routes/portable-routes.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#oy2Th2sT",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/portable-routes.ts",
+        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/portable-routes.ts",
         "symbol": "requireVault"
       },
       "id": "vKEsyHFk/HBlhIeSD#CugxYaZL",
@@ -52,7 +52,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/portable-routes.ts",
+        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/portable-routes.ts",
         "symbol": "asyncEndpoint"
       },
       "id": "vKEsyHFk#RC0KCg55",
@@ -65,7 +65,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/portable-routes.ts",
+        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/portable-routes.ts",
         "symbol": "exportArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#NdGIaM6r",

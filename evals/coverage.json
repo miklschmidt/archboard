@@ -10,7 +10,7 @@
 					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
 					"scenarios": ["S00", "S01"],
 					"evidence": "author-run",
-					"owner": "packages/model/tests/runtime/operations/model-edit/structure.test.ts"
+					"owner": "packages/model/tests/runtime/canonical/edit/operations/structure.test.ts"
 				}
 			]
 		},
@@ -23,7 +23,7 @@
 					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
 					"scenarios": ["S02", "S05"],
 					"evidence": "author-run",
-					"owner": "packages/model/tests/runtime/operations/proposals/lifecycle.test.ts"
+					"owner": "packages/model/tests/runtime/canonical/proposals/operations/lifecycle.test.ts"
 				}
 			]
 		},
@@ -62,7 +62,7 @@
 					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/model/tests/runtime/operations/legacy-preview/installation.test.ts"
+					"owner": "packages/model/tests/runtime/legacy-boards/reading/inventory/operations/installation.test.ts"
 				}
 			]
 		},
@@ -75,7 +75,7 @@
 					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/model/tests/runtime/operations/initialization/initialize.test.ts"
+					"owner": "packages/model/tests/runtime/canonical/history/operations/initialize.test.ts"
 				}
 			]
 		},
@@ -88,7 +88,7 @@
 					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/model/tests/runtime/operations/model-edit/references.test.ts"
+					"owner": "packages/model/tests/runtime/canonical/edit/operations/references.test.ts"
 				}
 			]
 		},
@@ -121,7 +121,7 @@
 					"expectedUse": "Uses Blocks by default. A recipe without an engine follows the current default. A talk keeps its recorded engine.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/architecture/architecture.test.ts owns default Blocks and explicit Track. packages/renderer/tests/runtime/operations/recipe/recipe-file.test.ts owns the omitted recipe engine. packages/walkthrough/tests/shared/protocol/talk.test.ts owns explicit and omitted talk engines. No model scenario chooses a layout engine."
+					"owner": "packages/renderer/tests/runtime/architecture/operations/architecture.test.ts owns default Blocks and explicit Track. packages/renderer/tests/runtime/recipe/operations/recipe-file.test.ts owns the omitted recipe engine. packages/walkthrough/tests/shared/protocol/talk.test.ts owns explicit and omitted talk engines. No model scenario chooses a layout engine."
 				}
 			]
 		},
@@ -134,7 +134,7 @@
 					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/model/tests/runtime/operations/proposals/reconcile.test.ts"
+					"owner": "packages/model/tests/runtime/canonical/proposals/operations/reconcile.test.ts"
 				}
 			]
 		},
@@ -147,7 +147,7 @@
 					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/model/tests/runtime/operations/proposals/corrections.test.ts"
+					"owner": "packages/model/tests/runtime/canonical/proposals/operations/corrections.test.ts"
 				}
 			]
 		},
@@ -160,7 +160,7 @@
 					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/model/tests/runtime/operations/history/concurrent-publication.test.ts"
+					"owner": "packages/model/tests/runtime/canonical/history/operations/concurrent-publication.test.ts"
 				}
 			]
 		},
@@ -186,7 +186,7 @@
 					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/model/tests/runtime/operations/legacy-preview/readings.test.ts"
+					"owner": "packages/model/tests/runtime/legacy-boards/reading/inventory/operations/readings.test.ts"
 				}
 			]
 		}

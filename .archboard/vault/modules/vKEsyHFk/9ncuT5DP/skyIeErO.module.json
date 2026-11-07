@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts"
+    "path": "packages/codex-realtime-voice/src/server/generation/services/workbench.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#skyIeErO",
@@ -24,11 +24,11 @@
     {
       "order": 1000,
       "kind": "call",
-      "label": "start a generation",
+      "label": "start the app-server child its generations run over",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts",
+        "path": "packages/codex-realtime-voice/src/server/generation/services/workbench.ts",
         "symbol": "createCodexProcess"
       },
       "id": "vKEsyHFk/9ncuT5DP#hwJPR59O",
@@ -41,7 +41,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/generation/factories.ts",
+        "path": "packages/codex-realtime-voice/src/server/generation/services/factories.ts",
         "symbol": "createCodexWorkbenchGateway"
       },
       "id": "vKEsyHFk/9ncuT5DP#nw9nYSMn",
@@ -54,7 +54,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/generation/factories.ts",
+        "path": "packages/codex-realtime-voice/src/server/generation/services/factories.ts",
         "symbol": "createCodexWorkbenchSessions"
       },
       "id": "vKEsyHFk/9ncuT5DP#PqSkt9px",
@@ -67,7 +67,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts",
+        "path": "packages/codex-realtime-voice/src/server/generation/services/workbench.ts",
         "symbol": "createCodexTransport"
       },
       "id": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
@@ -80,24 +80,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/generation/factories.ts",
+        "path": "packages/codex-realtime-voice/src/server/generation/services/factories.ts",
         "symbol": "createCodexEpochStore"
       },
       "id": "vKEsyHFk#Ao3t2Mgx",
       "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
-    },
-    {
-      "order": 62000,
-      "kind": "dependency",
-      "label": "own Codex threads and negotiate realtime voice",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts",
-        "symbol": "createCodexProcess"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#8AmcrRb6",
-      "to": "vKEsyHFk/9ncuT5DP#9diqPrFw"
     }
   ]
 }

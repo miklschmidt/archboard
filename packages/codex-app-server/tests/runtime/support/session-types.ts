@@ -7,7 +7,7 @@ import type {
 	ThreadId,
 	TurnId,
 } from "#shared/rules/workbench-identity.ts";
-import type { CodexSession, SessionParams } from "#runtime/services/session-api.ts";
+import type { CodexSession, SessionParams } from "#runtime/session/services/session-api.ts";
 import type {
 	ExactSessionRequestIdentityTuple,
 	SessionAgentMessageItem,
@@ -19,7 +19,7 @@ import type {
 	SessionThreadItem,
 	SessionThreadSpawnSource,
 	SessionTurn,
-} from "#runtime/schemas/session-responses.ts";
+} from "#runtime/session/schemas/session-responses.ts";
 
 declare const session: CodexSession;
 declare const threadId: ThreadId;

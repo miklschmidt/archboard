@@ -263,7 +263,7 @@ Amended by TASK-579.12 (2026-11-05): TypeScript is a language a checkout can
 configure (`archboard repo language-server typescript <command>`), and a
 configured server wins. Without one, the rule above holds in order: the
 checkout's own native `tsc` of TypeScript 7 or later, then, only in a checkout
-of Archboard, Archboard's own. A release ships no TypeScript (ADR 0075), so it
+of Archboard, Archboard's own. A release ships no TypeScript (ADR 0076), so it
 looks for none, and the check says `language-server-missing` with the command
 that configures a server. A repository on TypeScript before 7 configures
 `typescript-language-server`.

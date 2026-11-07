@@ -10,7 +10,7 @@
 
 const argv = process.argv.slice(2);
 
-// A process that is neither a release nor in a checkout has no program to run (ADR 0075).
+// A process that is neither a release nor in a checkout has no program to run (ADR 0076).
 const { installation } = await import("@archboard/workspace/installation");
 let installed: ReturnType<typeof installation>;
 try {
@@ -23,7 +23,7 @@ try {
 
 // A release is one executable, and its serverCommand starts it again with the
 // server's argument. Started so, it runs the server's entry, which it embeds,
-// and no command (ADR 0075).
+// and no command (ADR 0076).
 const [, ...serverArguments] = installed.serverCommand;
 if (installed.mode === "release" && argv.join("\0") === serverArguments.join("\0")) {
 	await import(installed.serverModule);
@@ -38,7 +38,7 @@ if (installed.mode === "release" && argv.join("\0") === serverArguments.join("\0
 
 	// Must run before importing anything that reads runtime configuration. A help
 	// request is answered from the command table alone, so it configures nothing.
-	const { applyCliBootstrap } = await import("#cli/operations/bootstrap/bootstrap.ts");
+	const { applyCliBootstrap } = await import("#cli/routing/operations/bootstrap.ts");
 	const bootstrap = applyCliBootstrap(argv);
 
 	if (!bootstrap.help) {
@@ -54,6 +54,6 @@ if (installed.mode === "release" && argv.join("\0") === serverArguments.join("\0
 		}
 	}
 
-	const { runCli } = await import("#cli/operations/invocation/run.ts");
+	const { runCli } = await import("#cli/routing/operations/run.ts");
 	await runCli(argv, bootstrap);
 }

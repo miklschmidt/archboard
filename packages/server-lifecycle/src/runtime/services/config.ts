@@ -8,7 +8,7 @@ dotenv.config({ quiet: true });
 // this checkout's own port unless a set ARCHBOARD_URL or --url names another.
 const ARCHBOARD_URL = process.env["ARCHBOARD_URL"] || DEFAULT_ARCHBOARD_URL;
 
-// The same server as a person or a browser addresses it (ADR 0075). The CLI connects to
+// The same server as a person or a browser addresses it (ADR 0076). The CLI connects to
 // ARCHBOARD_URL; whatever it shows or opens uses this.
 const ARCHBOARD_BROWSER_URL = browserUrl(ARCHBOARD_URL);
 

@@ -14,7 +14,7 @@ import {
 	Select as SelectRegistryRoot,
 	SelectTrigger,
 	SelectValue,
-} from "#ui/components/shadcn/select.tsx";
+} from "#ui/shadcn/components/select.tsx";
 import { cn } from "#ui/rules/class-names.ts";
 
 /**

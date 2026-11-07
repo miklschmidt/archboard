@@ -1,16 +1,57 @@
 {
-  "order": 10000,
-  "name": "SVG document",
-  "kind": "function",
+  "order": 40900,
+  "name": "archboard-svg",
+  "kind": "package",
   "responsibility": "Writes a scene as one standalone SVG document whose words are the glyphs that the core shaped",
   "description": "Writes the scene with its definitions, theme tokens and the near and far stylesheet. A document that stands alone carries the value of every token it names. The one shared chip moves and scales. Both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-svg/src/lib.rs",
-    "symbol": "document"
+    "path": "crates/archboard-svg"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#eECDrhMc",
-  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "the outline of each glyph it defines",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-svg/src/glyphs.rs",
+        "symbol": "write_definitions"
+      },
+      "id": "vKEsyHFk#NlBGf3Sj",
+      "to": "vKEsyHFk#C4dZpr3U"
+    },
+    {
+      "order": 200,
+      "kind": "call",
+      "label": "the samples of the picture's key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-svg/src/legend.rs",
+        "symbol": "appearances"
+      },
+      "id": "vKEsyHFk#baNgC045",
+      "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
+    },
+    {
+      "order": 300,
+      "kind": "call",
+      "label": "print the viewer's marks as constants for the pane",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-svg/src/bin/export-marks.rs",
+        "symbol": "main"
+      },
+      "id": "vKEsyHFk#d0AyIVw1",
+      "to": "vKEsyHFk#GqMdZbTF"
+    }
+  ],
+  "formerNames": [
+    "SVG document"
+  ]
 }

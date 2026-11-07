@@ -6,7 +6,7 @@
   "description": "Frames the supplied recording pane. ApplicationPane selects the captured canonical stage when the driver supplies a model.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/walkthrough-recording/RecordingStage.tsx"
+    "path": "apps/web/src/ui/walkthroughs/recording/components/RecordingStage.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#H17EYQ6u",

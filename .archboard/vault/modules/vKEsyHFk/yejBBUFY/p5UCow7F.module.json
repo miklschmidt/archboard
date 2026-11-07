@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/state/canvas/pane-vault.ts",
+    "path": "apps/web/src/ui/architecture-drawing/canvas/pane-vault/state/pane-vault.ts",
     "symbol": "PaneVaultContext"
   },
   "schemaVersion": 1,

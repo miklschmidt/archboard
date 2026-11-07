@@ -12,8 +12,8 @@ import type {
 	ShellPane,
 	ShellRepository,
 	ShellView,
-} from "#ui/rules/shell/contracts.ts";
-import type { AgentActivityEntry } from "#ui/rules/pane-session/session-types.ts";
+} from "#ui/shell/rules/contracts.ts";
+import type { AgentActivityEntry } from "#ui/panes/pane-session/rules/session-types.ts";
 
 // The page's globals come first: the menus decide whether there is a page to
 // draw their popups on when they are loaded.
@@ -22,7 +22,7 @@ Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, wri
 const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
 const { act, createElement } = await import("react");
 const { createRoot } = await import("react-dom/client");
-const { Shell } = await import("#ui/components/shell/Shell.tsx");
+const { Shell } = await import("#ui/shell/components/Shell.tsx");
 
 let root: Root;
 afterEach(() => {

@@ -1,12 +1,12 @@
 // The voice orb of the product's agent dock, drawn by the product's own runner, dynamics and
-// painter (packages/workbench/src/ui/clients/orb). It is a lens in a gold ring, and eleven ruled
+// painter (packages/workbench/src/ui/workbench-client/orb/clients). It is a lens in a gold ring, and eleven ruled
 // lines on the lens record the voice's level: a syllable swells in the middle of the front line
 // and rolls back through the sheet as it ages. In the product the level is the Codex voice's
 // measured output. Here the subtitles' words stand in for it. The orb runs only while it is on
 // screen, and with reduced motion it rests in its mode.
 
-import { runOrb } from "../../../packages/workbench/src/ui/clients/orb/orb-runner.ts";
-import type { OrbMode } from "../../../packages/workbench/src/ui/rules/orb/orb-dynamics.ts";
+import { runOrb } from "../../../packages/workbench/src/ui/workbench-client/orb/clients/orb-runner.ts";
+import type { OrbMode } from "../../../packages/workbench/src/ui/workbench-client/orb/rules/orb-dynamics.ts";
 import { prefersReducedMotion, whileVisible } from "./reveal";
 
 export type { OrbMode };

@@ -4,7 +4,7 @@
 // that picks up an edit must build that bundle between the stop and the start.
 // The build is package.json's `build`, so the one place that says how
 // to build stays there. A release builds nothing: it stops the server and starts it
-// again, which is how a server runs the version that an install put on disk (ADR 0075).
+// again, which is how a server runs the version that an install put on disk (ADR 0076).
 
 import { installation } from "@archboard/workspace/installation";
 import { frontendBuild } from "#runtime/services/staleness.ts";
@@ -67,7 +67,7 @@ async function restartServer(): Promise<RestartResult> {
 
 /**
  * The frontend bundle the started server serves. A checkout builds it from its source. A release
- * never changes on disk except by an install (ADR 0075), so it builds nothing.
+ * never changes on disk except by an install (ADR 0076), so it builds nothing.
  * @param mode Whether this process runs a release or a checkout.
  * @returns The entry script of the bundle.
  * @throws {Error} `FRONTEND_BUILD_FAILED` when a checkout's build fails.

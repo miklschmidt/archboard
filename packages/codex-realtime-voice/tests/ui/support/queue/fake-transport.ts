@@ -18,8 +18,8 @@ import type {
 	WorkbenchTransportCapabilities,
 	WorkbenchTransportErrorCode,
 	WorkbenchTransportState,
-} from "#ui/state/queue/transport-port.ts";
-import type { DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+} from "#ui/queue/state/transport-port.ts";
+import type { DeliveryOutcome } from "#shared/browser/schemas/snapshot.ts";
 
 /** The shape the transport's own error class carries, without that class. */
 class FakeTransportError extends Error {

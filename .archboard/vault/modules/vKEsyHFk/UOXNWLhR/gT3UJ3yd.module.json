@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/canvas/use-reported-reading.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-reported-reading.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#gT3UJ3yd",

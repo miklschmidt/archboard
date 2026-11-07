@@ -5,7 +5,7 @@
   "responsibility": "The pane routes: the panes on screen, one more pane, closing one, and pointing one at a model as an agent",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/clients/server/panes.ts"
+    "path": "apps/cli/src/cli/server-access/clients/panes.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#dt6chxIP",
@@ -39,24 +39,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
         "symbol": "mountPaneRoutes"
       },
       "id": "vKEsyHFk/Oi6SBIAM#CJ5JwtNl",
       "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
-    },
-    {
-      "order": 43000,
-      "kind": "http",
-      "description": "open, close and show panes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
-        "symbol": "mountPaneRoutes"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#DcOrPKY2",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
     },
     {
       "order": 62000,
@@ -65,7 +52,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-report-route.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
         "symbol": "getPanesRoute"
       },
       "id": "vKEsyHFk/Oi6SBIAM#b3mWnCLw",
@@ -78,11 +65,11 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/clients/server/panes.ts",
+        "path": "apps/cli/src/cli/server-access/clients/panes.ts",
         "symbol": "statedInvocation"
       },
       "id": "vKEsyHFk/XppR9owz#IybnFJlJ",
-      "to": "vKEsyHFk/XppR9owz#fF4A9uvU"
+      "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
     },
     {
       "order": 82000,
@@ -91,7 +78,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/clients/server/panes.ts",
+        "path": "apps/cli/src/cli/server-access/clients/panes.ts",
         "symbol": "requestJson"
       },
       "id": "vKEsyHFk/XppR9owz#4qdyTWGi",

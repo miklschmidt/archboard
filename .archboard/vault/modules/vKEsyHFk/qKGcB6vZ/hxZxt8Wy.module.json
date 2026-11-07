@@ -6,7 +6,7 @@
   "description": "Read from each workhorse thread's own turn/completed and thread/status/changed notifications: completed, failed, stopped or waiting, and a message from tell_coordinator. The sentence names the checkout of the workhorse, which is the one argument every workhorse tool takes, and carries no identity; the coordinator reads the rest through inspect_workhorse.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-callbacks/workhorse-news.ts"
+    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/rules/workhorse-news.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy",

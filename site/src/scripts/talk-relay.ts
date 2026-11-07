@@ -8,7 +8,7 @@ import { animate, prefersReducedMotion, whileVisible } from "./reveal";
 import { typeLine } from "./type-line";
 import { mountVoiceOrb, sayWord, wordLevel, type OrbMode, type SpokenWord } from "./voice-orb";
 
-/** The product's word for each stage of the voice (packages/workbench/src/ui/rules/dock/circle-state.ts). */
+/** The product's word for each stage of the voice (packages/workbench/src/ui/workbench-client/dock/rules/circle-state.ts). */
 const VOICE_WORDS: Partial<Record<OrbMode, string>> = {
 	starting: "Starting",
 	listening: "Listening",

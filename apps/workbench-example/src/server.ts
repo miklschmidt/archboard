@@ -1,4 +1,4 @@
-import { runExample } from "#server/lifecycle/startup/run.ts";
+import { runExample } from "#server/startup/lifecycle/run.ts";
 
 if (import.meta.main) {
 	void runExample().catch((error: unknown) => {

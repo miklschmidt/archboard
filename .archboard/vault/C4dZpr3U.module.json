@@ -1,0 +1,17 @@
+{
+  "order": 40100,
+  "name": "archboard-text",
+  "kind": "package",
+  "responsibility": "Shapes a run of words into glyphs in the bundled faces and breaks a paragraph to a width",
+  "description": "The archboard-text crate (ADR 0059). Every width that a layout reads and every glyph that a painter draws comes from here, so every place draws a picture to the same numbers and no picture needs a font loaded. A character that Onest or Maple Mono NL lacks comes from the Noto fallback faces, in the one order of Face::fallbacks, for measuring, breaking and drawing alike. Skrifa gives each glyph its outline.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-text"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#C4dZpr3U",
+  "outgoing": [],
+  "formerNames": [
+    "Text shaping"
+  ]
+}

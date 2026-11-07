@@ -15,7 +15,7 @@ import type {
 	RealtimeMediaStream,
 	RealtimeMediaTrack,
 	RealtimeTimer,
-} from "#ui/state/realtime/environment.ts";
+} from "#ui/realtime/state/environment.ts";
 import {
 	FakePeer,
 	FakeStream,
@@ -29,7 +29,7 @@ import {
 	type StopIdentityMode,
 	type StopMode,
 } from "#tests/ui/support/realtime/media-session-stop-fixtures.ts";
-import type { VoiceOutputPlayback } from "#ui/clients/output-level/meter.ts";
+import type { VoiceOutputPlayback } from "#ui/output-level/clients/meter.ts";
 
 type Stage = "getUserMedia" | "createOffer" | "setLocal" | "serverOffer" | "setRemote" | "resume";
 type BrowserPromiseMode = "resolved" | "rejected" | "pending";

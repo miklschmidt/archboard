@@ -1,9 +1,9 @@
 // The fake playback objects behind the media session tests: the output meter
 // over a playback stream, and the host's media element.
 
-import type { RealtimeMediaStream } from "#ui/state/realtime/environment.ts";
-import { rootMeanSquareLevel } from "#ui/clients/output-level/meter.ts";
-import type { VoiceOutputMeter, VoiceOutputPlayback } from "#ui/clients/output-level/meter.ts";
+import type { RealtimeMediaStream } from "#ui/realtime/state/environment.ts";
+import { rootMeanSquareLevel } from "#ui/output-level/clients/meter.ts";
+import type { VoiceOutputMeter, VoiceOutputPlayback } from "#ui/output-level/clients/meter.ts";
 
 /** What the playback fakes need from the browser that owns them. */
 interface FakePlaybackHost {

@@ -1,0 +1,125 @@
+// Assembling the shell's view from what the application holds: the pane list,
+// the pane records, the mounted panes, the listing and the notices. Pure, so
+// the assembly can be checked without a browser.
+
+import type { ReactNode } from "react";
+
+import type { AgentActivityByVault } from "#ui/application/hooks/use-agent-activity.ts";
+import { NO_AGENT_ACTIVITY } from "#ui/application/rules/agent-activity.ts";
+import type { PaneList } from "#ui/application/rules/pane-list.ts";
+import { recordFor, type PaneRecords } from "#ui/application/rules/pane-records.ts";
+import {
+	type ModelCatalog,
+	type RepositoryModel,
+} from "#ui/panes/model-catalog/hooks/use-model-catalog.ts";
+import type {
+	ShellNotice,
+	ShellPane,
+	ShellPresentation,
+	ShellRepository,
+	ShellView,
+	ThemeChoice,
+} from "#ui/shell/rules/contracts.ts";
+
+/** What the view is assembled from. */
+interface ShellViewInputs {
+	readonly theme: ThemeChoice;
+	readonly list: PaneList;
+	readonly records: PaneRecords;
+	/** The mounted pane per pane id. */
+	readonly panes: Readonly<Record<string, ReactNode>>;
+	readonly catalog: Pick<ModelCatalog, "repositories" | "error" | "loading">;
+	readonly presentation: ShellPresentation | null;
+	readonly notices: readonly ShellNotice[];
+	readonly agentActivity: AgentActivityByVault;
+	/** The page starts on the chooser. */
+	readonly choosing?: boolean;
+}
+
+/**
+ * One repository as the shell lists it.
+ * @param entry The repository and its models.
+ * @param activity What agents are doing, by vault.
+ * @returns The shell's repository.
+ */
+function shellRepository(entry: RepositoryModel, activity: AgentActivityByVault): ShellRepository {
+	const { vault } = entry.repository;
+	const current = vault === null ? undefined : activity[vault];
+	return {
+		repository: entry.repository,
+		model: entry.model,
+		migrationRequired: entry.migrationRequired,
+		error: entry.error,
+		loading: entry.loading,
+		activity: current ?? NO_AGENT_ACTIVITY,
+	};
+}
+
+/** The repositories last made for one catalog answer, and what they were made from. */
+interface MadeRepositories {
+	readonly activity: AgentActivityByVault;
+	readonly repositories: readonly ShellRepository[];
+}
+
+/**
+ * The repositories last made for each catalog answer. Pane news (a claim, what
+ * an agent says it is doing, a pane status) assembles the view again and
+ * changes none of them, so the navigator keeps the same list and makes no row
+ * again for it (TASK-385.04).
+ */
+const madeRepositories = new WeakMap<readonly RepositoryModel[], MadeRepositories>();
+
+/**
+ * Every repository as the shell lists it, the same list while nothing it is
+ * made from has changed.
+ * @param inputs The view's inputs.
+ * @returns The repositories.
+ */
+function shellRepositories(inputs: ShellViewInputs): readonly ShellRepository[] {
+	const { catalog, agentActivity: activity } = inputs;
+	const kept = madeRepositories.get(catalog.repositories);
+	if (kept?.activity === activity) {
+		return kept.repositories;
+	}
+	const repositories = catalog.repositories.map((entry) => shellRepository(entry, activity));
+	madeRepositories.set(catalog.repositories, { activity, repositories });
+	return repositories;
+}
+
+/**
+ * Each pane as the shell draws it.
+ * @param inputs The view's inputs.
+ * @returns The panes, in reading order.
+ */
+function shellPanes(inputs: ShellViewInputs): ShellPane[] {
+	return inputs.list.panes.map((entry) => {
+		const record = recordFor(inputs.records, entry.paneId);
+		return {
+			status: record.status,
+			stage: inputs.panes[entry.paneId] ?? null,
+		};
+	});
+}
+
+/**
+ * The shell's view.
+ * @param inputs What it is assembled from.
+ * @returns The view.
+ */
+function assembleShellView(inputs: ShellViewInputs): ShellView {
+	const active = recordFor(inputs.records, inputs.list.activePaneId);
+	return {
+		theme: inputs.theme,
+		repositories: shellRepositories(inputs),
+		modelsError: inputs.catalog.error,
+		modelsLoading: inputs.catalog.loading,
+		choosing: inputs.choosing === true,
+		selectedPaneKey: active.status.paneKey,
+		panes: shellPanes(inputs),
+		activePaneId: inputs.list.activePaneId,
+		presentation: inputs.presentation,
+		notices: inputs.notices,
+	};
+}
+
+export { assembleShellView };

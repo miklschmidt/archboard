@@ -8,25 +8,25 @@
       "name": "One CLI invocation",
       "summary": "The path every command takes. Help, version and unknown names end here, and the rest settle their shared options, contract and vault. They then run under an abort signal that SIGINT or SIGTERM trips.",
       "participants": [
-        "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+        "vKEsyHFk/XppR9owz#iIVu1bGE",
         "vKEsyHFk/nAmiQ3Vc#qHOothyT",
         "vKEsyHFk/nAmiQ3Vc#ogSW3Rjt",
         "vKEsyHFk/nAmiQ3Vc#zs4XwBa9",
         "vKEsyHFk/nAmiQ3Vc#0R2ysy3p",
         "vKEsyHFk/nAmiQ3Vc#zUIObqwQ",
         "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
-        "vKEsyHFk/nAmiQ3Vc#MmMnif7e"
+        "vKEsyHFk/XppR9owz#gt1eCpcS"
       ],
       "steps": [
         {
           "id": "vKEsyHFk/nAmiQ3Vc#Cv6QCOLd",
-          "from": "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+          "from": "vKEsyHFk/XppR9owz#iIVu1bGE",
           "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
           "label": "argv",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/cli/src/cli/operations/invocation/run.ts",
+            "path": "apps/cli/src/cli/routing/operations/run.ts",
             "symbol": "runCliWith"
           }
         },
@@ -46,7 +46,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                     "symbol": "helpText"
                   }
                 },
@@ -58,7 +58,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/help.ts",
+                    "path": "apps/cli/src/cli/routing/rules/help.ts",
                     "symbol": "helpText"
                   }
                 }
@@ -75,7 +75,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                     "symbol": "isVersionRequest"
                   }
                 }
@@ -92,7 +92,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                     "symbol": "reportUnknownCommand"
                   }
                 }
@@ -109,7 +109,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                     "symbol": "takeShared"
                   }
                 },
@@ -121,7 +121,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/global-flags.ts",
+                    "path": "apps/cli/src/cli/routing/rules/global-flags.ts",
                     "symbol": "takeGlobalFlag"
                   }
                 },
@@ -133,7 +133,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                     "symbol": "dispatchedCommand"
                   }
                 },
@@ -145,7 +145,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/dispatch.ts",
+                    "path": "apps/cli/src/cli/routing/rules/dispatch.ts",
                     "symbol": "dispatchedCommand"
                   }
                 },
@@ -158,7 +158,7 @@
                   "note": "throws CliUsageError; A failed invocation says what happens next",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                     "symbol": "assertSharedApplies"
                   }
                 },
@@ -170,7 +170,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                     "symbol": "applyShared"
                   }
                 },
@@ -183,7 +183,7 @@
                   "note": "only a command that reads -C finds one; Addressing a vault draws it",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                     "symbol": "addressVault"
                   }
                 },
@@ -195,7 +195,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
+                    "path": "apps/cli/src/cli/routing/operations/addressed-vault.ts",
                     "symbol": "addressVault"
                   }
                 },
@@ -207,19 +207,19 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                     "symbol": "runInterruptibleCommand"
                   }
                 },
                 {
                   "id": "vKEsyHFk/nAmiQ3Vc#gxDs1NAe",
                   "from": "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
-                  "to": "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+                  "to": "vKEsyHFk/XppR9owz#gt1eCpcS",
                   "label": "contract, arguments, signal and vault",
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                     "symbol": "runCommand"
                   }
                 },
@@ -234,24 +234,24 @@
                         {
                           "id": "vKEsyHFk/nAmiQ3Vc#Hv3Xmm8Q",
                           "from": "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
-                          "to": "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+                          "to": "vKEsyHFk/XppR9owz#gt1eCpcS",
                           "label": "abort the run",
                           "kind": "async",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                            "path": "apps/cli/src/cli/routing/operations/session.ts",
                             "symbol": "interrupt"
                           }
                         },
                         {
                           "id": "vKEsyHFk/nAmiQ3Vc#xCs15r3T",
-                          "from": "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+                          "from": "vKEsyHFk/XppR9owz#gt1eCpcS",
                           "to": "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
                           "label": "stopped",
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/cli/src/cli/operations/execution/runner.ts",
+                            "path": "apps/cli/src/cli/contract/operations/runner.ts",
                             "symbol": "runCommand"
                           }
                         },
@@ -263,7 +263,7 @@
                           "kind": "self",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                            "path": "apps/cli/src/cli/routing/operations/session.ts",
                             "symbol": "runInterruptibleCommand"
                           }
                         }
@@ -274,13 +274,13 @@
                       "steps": [
                         {
                           "id": "vKEsyHFk/nAmiQ3Vc#PsXfVudN",
-                          "from": "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+                          "from": "vKEsyHFk/XppR9owz#gt1eCpcS",
                           "to": "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
                           "label": "finished",
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/cli/src/cli/operations/execution/runner.ts",
+                            "path": "apps/cli/src/cli/contract/operations/runner.ts",
                             "symbol": "runCommand"
                           }
                         }
@@ -296,7 +296,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                     "symbol": "runInterruptibleCommand"
                   }
                 }
@@ -307,12 +307,12 @@
         {
           "id": "vKEsyHFk/nAmiQ3Vc#wfzcWxpO",
           "from": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
-          "to": "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+          "to": "vKEsyHFk/XppR9owz#iIVu1bGE",
           "label": "returns; the exit code is set",
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/cli/src/cli/operations/invocation/run.ts",
+            "path": "apps/cli/src/cli/routing/operations/run.ts",
             "symbol": "runCli"
           }
         }
@@ -351,7 +351,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                     "symbol": "addressVault"
                   }
                 },
@@ -363,7 +363,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
+                    "path": "apps/cli/src/cli/routing/operations/addressed-vault.ts",
                     "symbol": "findAndRegisterVault"
                   }
                 },
@@ -419,7 +419,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
+                            "path": "apps/cli/src/cli/routing/operations/addressed-vault.ts",
                             "symbol": "VaultNotFoundError"
                           }
                         },
@@ -443,7 +443,7 @@
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                                     "symbol": "addressedVault"
                                   }
                                 }
@@ -549,7 +549,7 @@
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
+                                    "path": "apps/cli/src/cli/routing/operations/addressed-vault.ts",
                                     "symbol": "registrationLine"
                                   }
                                 }
@@ -590,7 +590,7 @@
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
+                                    "path": "apps/cli/src/cli/routing/operations/addressed-vault.ts",
                                     "symbol": "foundAndRegistered"
                                   }
                                 }
@@ -606,7 +606,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
+                            "path": "apps/cli/src/cli/routing/operations/addressed-vault.ts",
                             "symbol": "stateInvocation"
                           }
                         },
@@ -618,7 +618,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
+                            "path": "apps/cli/src/cli/routing/operations/addressed-vault.ts",
                             "symbol": "addressVault"
                           }
                         }
@@ -650,7 +650,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+            "path": "apps/cli/src/cli/routing/operations/session.ts",
             "symbol": "dispatchedCommand"
           }
         },
@@ -670,7 +670,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/dispatch.ts",
+                    "path": "apps/cli/src/cli/routing/rules/dispatch.ts",
                     "symbol": "childOf"
                   }
                 },
@@ -682,7 +682,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/registry.ts",
+                    "path": "apps/cli/src/cli/routing/rules/registry.ts",
                     "symbol": "childOf"
                   }
                 },
@@ -694,7 +694,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/dispatch.ts",
+                    "path": "apps/cli/src/cli/routing/rules/dispatch.ts",
                     "symbol": "dispatchedCommand"
                   }
                 }
@@ -711,7 +711,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/dispatch.ts",
+                    "path": "apps/cli/src/cli/routing/rules/dispatch.ts",
                     "symbol": "childOf"
                   }
                 },
@@ -723,7 +723,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/registry.ts",
+                    "path": "apps/cli/src/cli/routing/rules/registry.ts",
                     "symbol": "childOf"
                   }
                 },
@@ -735,7 +735,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/dispatch.ts",
+                    "path": "apps/cli/src/cli/routing/rules/dispatch.ts",
                     "symbol": "dispatchedCommand"
                   }
                 }
@@ -752,7 +752,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/dispatch.ts",
+                    "path": "apps/cli/src/cli/routing/rules/dispatch.ts",
                     "symbol": "childOf"
                   }
                 },
@@ -764,7 +764,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/registry.ts",
+                    "path": "apps/cli/src/cli/routing/rules/registry.ts",
                     "symbol": "childOf"
                   }
                 },
@@ -776,7 +776,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/dispatch.ts",
+                    "path": "apps/cli/src/cli/routing/rules/dispatch.ts",
                     "symbol": "dispatchedCommand"
                   }
                 }
@@ -793,7 +793,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/dispatch.ts",
+                    "path": "apps/cli/src/cli/routing/rules/dispatch.ts",
                     "symbol": "bareSelection"
                   }
                 }
@@ -810,7 +810,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/rules/routing/dispatch.ts",
+                    "path": "apps/cli/src/cli/routing/rules/dispatch.ts",
                     "symbol": "dispatchedCommand"
                   }
                 }
@@ -838,7 +838,7 @@
           "note": "a removed model form, an unknown subcommand, a stated option the command does not read, no vault, or the command itself",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+            "path": "apps/cli/src/cli/routing/operations/session.ts",
             "symbol": "runCliWith"
           }
         },
@@ -850,7 +850,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+            "path": "apps/cli/src/cli/routing/operations/session.ts",
             "symbol": "reportFailure"
           }
         },
@@ -874,7 +874,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
+                    "path": "apps/cli/src/cli/routing/operations/exit-codes.ts",
                     "symbol": "errorMessage"
                   }
                 }
@@ -898,7 +898,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
+                    "path": "apps/cli/src/cli/routing/operations/exit-codes.ts",
                     "symbol": "reportFailure"
                   }
                 }
@@ -918,7 +918,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
+            "path": "apps/cli/src/cli/routing/operations/exit-codes.ts",
             "symbol": "reportFailure"
           }
         },
@@ -930,7 +930,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+            "path": "apps/cli/src/cli/routing/operations/session.ts",
             "symbol": "exitCodeFor"
           }
         },
@@ -950,7 +950,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
+                    "path": "apps/cli/src/cli/routing/operations/exit-codes.ts",
                     "symbol": "exitCodeFor"
                   }
                 }
@@ -967,7 +967,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
+                    "path": "apps/cli/src/cli/routing/operations/exit-codes.ts",
                     "symbol": "declaredExit"
                   }
                 }
@@ -984,7 +984,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
+                    "path": "apps/cli/src/cli/routing/operations/exit-codes.ts",
                     "symbol": "WELL_KNOWN_EXIT_CODES"
                   }
                 }
@@ -1001,7 +1001,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
+                    "path": "apps/cli/src/cli/routing/operations/exit-codes.ts",
                     "symbol": "WELL_KNOWN_EXIT_CODES"
                   }
                 }
@@ -1018,7 +1018,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
+                    "path": "apps/cli/src/cli/routing/operations/exit-codes.ts",
                     "symbol": "exitCodeFor"
                   }
                 }
@@ -1034,7 +1034,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
+            "path": "apps/cli/src/cli/routing/operations/exit-codes.ts",
             "symbol": "exitCodeFor"
           }
         }

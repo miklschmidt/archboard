@@ -8,8 +8,9 @@ that workflow and keep its state out of the application root.
 
 ## Placement
 
-The browser app lives in `apps/web/src/ui/<role>/<behavior>/`.
-Name each behavior folder for the behavior that it owns.
+The browser app lives in `apps/web/src/ui/<behavior>/<role>/`
+([ADR 0075](../adr/0075-each-area-groups-code-by-behavior-first.md)).
+Name each behavior folder for the behavior that it owns. A sub-behavior is a sub-folder.
 Feature-specific UI, state and commands belong to that module. A visual section
 with its own workflow is a feature owner, not only a shared component.
 Reusable domain behavior belongs in a named peer module, and generic UI belongs
@@ -30,12 +31,14 @@ Use role folders as needed:
 | `workers/`    | Browser workers                                                    |
 | `api/`        | A package's public interface (an app has none)                     |
 
-The `ui/` area of a package or an app has no module root. It keeps role folders
-directly below `ui/` (`api/`, `clients/`, `components/`, `constants/`, `hooks/`,
-`rules/`, `state/`, `workers/`) with behavior folders below a role. A package's
-`api/` files are its public interface, so they may re-export hooks; an app has
-no `api/`, because nothing imports an app. The same naming rules hold, and the
-tests in `tests/ui/` are held to the UI lint policy.
+The `ui/` area of a package or an app has no module root. Its code sits in
+behavior folders, and the role folder is the last folder of a path:
+`ui/<behavior>[/<behavior>…]/<role>/<file>`. Code of the whole area keeps
+`ui/<role>/<file>`. A role folder holds files only, and a path has exactly one.
+A package's `api/` stays directly below `ui/`. Its files are the public
+interface, so they may re-export hooks. An app has no `api/`, because nothing
+imports an app. The same naming rules hold, and the tests in `tests/ui/` are
+held to the UI lint policy.
 
 All these folders are private. A package exposes only its `exports`, and nothing
 imports an app. `apps/web/src/ui/theme/` holds the one stylesheet; it is no role,
@@ -274,8 +277,9 @@ scopes. Existing generated/vendor conventions keep only their documented
 exceptions. Backend and CLI structure is outside this adoption.
 
 `archboard/ui-concern-placement` enforces the half of these rules that a machine
-can check, over authored UI source in packages and apps. It checks the role
-folder names above and PascalCase component files. It checks `use-` prefixed kebab-case hook
+can check, over authored UI source in packages and apps. It reads the one role
+folder of a path, first below `ui/` or last, and checks the role folder names
+above and PascalCase component files. It checks `use-` prefixed kebab-case hook
 files and scoped kebab-case everywhere else. It also permits React markup and
 hook exports only in `components/` and `hooks/`; a package's `api/` files may re-export hooks.
 
@@ -344,15 +348,15 @@ A row opens its flow or walkthrough through the same choice as Find, so the left
 The left tabs list the whole model, and only the panel follows what a reader looks at.
 `ModelLegend` ends the panel, under the actions and outside the keyed subject, so a selection neither moves nor redraws it.
 It owns the marks, and `Filter` puts a visibility switch on each line type that a reader can hide.
-`rules/architecture-model/legend-rows.ts` derives its rows from the whole reading, in the policy's order, so that a hidden kind and what left the picture with it keep their rows.
+`model-reader/reading/rules/legend-rows.ts` derives its rows from the whole reading, in the policy's order, so that a hidden kind and what left the picture with it keep their rows.
 A group's tag takes `--tag` from `paletteTag`, and the `group-tag` utility in `app.css` holds its one recipe.
 A tag selects what the picture draws of its group through the ordinary selection, and it reads as on from that selection, with no state of its own.
 `ModelEngine` stands under the legend on a structural reading. `useAcceptedScene` reads the browser's engine and puts it on the request, so the scene key, the fit and the drawing key all name it.
 A switch is a destination like any other: the last picture stays until the other engine's drawing exists, and the selection holds.
 A flow request carries no engine, because the core lays out only architecture, so its stored drawing outlives a switch.
-`ModelHoverLight` stands under it. `clients/canvas/subjects/hover-light.ts` remembers in this browser whether a part the pointer rests on dims the rest of the picture, and `useLighting` reads it. A pick, a trace and a row of the sidebar light the picture either way, because each one asks a question that only the light answers.
+`ModelHoverLight` stands under it. `canvas/picture/clients/hover-light.ts` remembers in this browser whether a part the pointer rests on dims the rest of the picture, and `useLighting` reads it. A pick, a trace and a row of the sidebar light the picture either way, because each one asks a question that only the light answers.
 `useDoorPick` turns a click on a door into a move to its module, and `ModelDoorTip` lists the door's endpoints on hover. Ctrl, a removed door and a presented step keep the ordinary pick.
-A click on the control that a door or a frame's tab wears goes to `onToggle` instead. The one rule is `toggled` in `rules/architecture-model/expansion.ts`, and the pointer, the panel and the `E` key all reach it. A module expanded beside the scope keeps `sceneModel`, so the picture is carried, and `sceneFit` names it, so the camera lands whole.
+A click on the control that a door or a frame's tab wears goes to `onToggle` instead. The one rule is `toggled` in `model-reader/rules/expansion.ts`, and the pointer, the panel and the `E` key all reach it. A module expanded beside the scope keeps `sceneModel`, so the picture is carried, and `sceneFit` names it, so the camera lands whole.
 Only `useModelReading` and `useModelMoves` pass `controls: true` to `projectModel`, so an export and a presented step draw neither control. The core draws the control, and `app.css` adds only its hover.
 The selection survives About.
 ModelPane owns ordinary selection across asynchronous reads.
@@ -383,7 +387,7 @@ A retained reading stays through a lost server. A refusal of that same reading r
 A message about a wait appears after `PICTURE_MS.waitNotice` and names the destination.
 A scope in `retiredIds` says that the module was removed, and `/api/architecture/retained-module` finds the newest retained reading that holds it.
 That reading opens with no comparison. An address of a reader goes through `/api/panes/show` with a missing scope, because the pane states what is missing. An agent's show is refused.
-`rules/architecture-model/scene.ts` decides what carries, what leaves and which way, from the two readings, so every route to a reading moves the same way.
+`model-reader/rules/scene.ts` decides what carries, what leaves and which way, from the two readings, so every route to a reading moves the same way.
 A history entry keeps its camera, so Back and Forward return that camera. Up is a new visit, and it fits.
 
 A coherent model event resumes exact reads interrupted by an installation barrier.
@@ -397,7 +401,7 @@ The pane header slot takes the crumbs, the code path, the state chip, and `Diagr
 `useReader` gathers the reading, places, moves, and choices that the column, the header, and the surface read.
 `React.Activity` keeps the reading mounted while a walkthrough plays, so the column stays and the picture keeps its camera.
 A live `architecture_snapshot` has no `states`, so `History` and the timeline of About read `architectureRecordQuery`, which loads only when one of them opens.
-`ModelMeasures` is the `Measures` destination. It draws the accepted scene, and `rules/architecture-model/module-measures.ts` joins each module's interface, which needs no server, with what the one locality answer says of it.
+`ModelMeasures` is the `Measures` destination. It draws the accepted scene, and `model-reader/reading/rules/module-measures.ts` joins each module's interface, which needs no server, with what the one locality answer says of it.
 That rule also holds the one order of each measure, and each measure's name and what it counts.
 `ModelMeasureRow` draws a row's cells on one track of seven columns, so the heads and the rows line up.
 `ModelChoiceList` puts them in `Tree.Facts`, and `flat` gives a table's row no room for a disclosure.

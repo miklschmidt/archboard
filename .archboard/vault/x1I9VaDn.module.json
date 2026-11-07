@@ -5,7 +5,7 @@
   "responsibility": "What the dock does: send, Talk and narrate over the focused pane's transport",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/application/agent-actions.ts"
+    "path": "apps/web/src/ui/application/clients/agent-actions.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#x1I9VaDn",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/application/agent-actions.ts",
+        "path": "apps/web/src/ui/application/clients/agent-actions.ts",
         "symbol": "state"
       },
       "id": "vKEsyHFk/yejBBUFY#kZtsu0nq",

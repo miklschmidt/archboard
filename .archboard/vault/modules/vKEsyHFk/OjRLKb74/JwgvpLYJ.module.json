@@ -6,7 +6,7 @@
   "description": "serveLayoutEngine takes the core that its host compiled and answers each solve with the core's layOutPicture, which runs Graphviz in the core (ADR 0059, ADR 0060). The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab. Engine coordinates are never authored or persisted (ADR 0023).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/engine/layout-engine.ts"
+    "path": "packages/renderer/src/shared/engine/rules/layout-engine.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
@@ -23,11 +23,11 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/processes/layout-worker.ts",
+        "path": "packages/renderer/src/runtime/bun-renderer/processes/layout-worker.ts",
         "symbol": "layOutPicture"
       },
       "id": "vKEsyHFk/OjRLKb74#T4hTbGVM",
-      "to": "vKEsyHFk/OjRLKb74#mHYMkWdE"
+      "to": "vKEsyHFk#6sGFjsRQ"
     },
     {
       "order": 60300,
@@ -36,7 +36,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+        "path": "packages/renderer/src/shared/engine/rules/layout-engine.ts",
         "symbol": "engineAborted"
       },
       "id": "vKEsyHFk#kF19dfsx",

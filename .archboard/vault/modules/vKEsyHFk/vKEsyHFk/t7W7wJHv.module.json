@@ -19,18 +19,10 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "recordingPageUrl"
       },
       "id": "vKEsyHFk/vKEsyHFk#vKDw0TwV",
-      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
-    },
-    {
-      "order": 25000,
-      "kind": "http",
-      "label": "load the recording page, or the replay page",
-      "emphasis": "normal",
-      "id": "vKEsyHFk/SMjRfwN3#yWqRrF8i",
       "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
     }
   ]

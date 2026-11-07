@@ -7,18 +7,18 @@ export {
 	logHttpServerError,
 	PORT,
 	serverUrl,
-} from "#server/services/host/listener-address.ts";
+} from "#server/host/services/listener-address.ts";
 export {
 	bodyOf,
 	isRecord,
 	messageOf,
 	queryString,
-} from "#server/services/request/request-fields.ts";
+} from "#server/request/services/request-fields.ts";
 export {
 	namedVault,
 	requireVault,
 	statedVault,
 	VAULT_PARAMETER,
 	vaultOfRequest,
-} from "#server/services/request/vault.ts";
-export type { NamedVault } from "#server/services/request/vault.ts";
+} from "#server/request/services/vault.ts";
+export type { NamedVault } from "#server/request/services/vault.ts";

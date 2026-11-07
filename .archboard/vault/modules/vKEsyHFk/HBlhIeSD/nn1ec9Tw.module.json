@@ -6,7 +6,7 @@
   "description": "Adapts canonical discovery, initialization, exact readings, archive history, and the existing change feed. Unmigrated vaults receive explicit migration guidance.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/routes/architecture/model-routes.ts"
+    "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#lbpfmZQK",
@@ -52,7 +52,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
         "symbol": "retainArchitectureCheckpoint"
       },
       "id": "vKEsyHFk/0T9enjhi#iXs0a5bj",
@@ -64,7 +64,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
         "symbol": "vaultOfRequest"
       },
       "id": "vKEsyHFk/HBlhIeSD#2lwNLxzO",
@@ -77,7 +77,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
         "symbol": "ArchitectureCheckpointRequestSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#ZWlFN4et",
@@ -90,7 +90,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
         "symbol": "mountArchitectureEditRoutes"
       },
       "id": "vKEsyHFk/HBlhIeSD#x9A8Wn5u",
@@ -102,7 +102,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
         "symbol": "mountArchitecturePublicationRoutes"
       },
       "id": "vKEsyHFk/HBlhIeSD#PS8HhYLZ",
@@ -115,7 +115,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
         "symbol": "mountArchitectureModelRoutes"
       },
       "id": "vKEsyHFk/HBlhIeSD#Io53QUgK",
@@ -127,7 +127,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
         "symbol": "mountArchitectureModelRoutes"
       },
       "id": "vKEsyHFk/HBlhIeSD#WaYJBOUv",
@@ -140,7 +140,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
         "symbol": "mountArchitecturePortableRoutes"
       },
       "id": "vKEsyHFk/HBlhIeSD#7lIStdzH",
@@ -153,7 +153,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
         "symbol": "asyncEndpoint"
       },
       "id": "vKEsyHFk#DmpFz1lt",

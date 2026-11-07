@@ -1,4 +1,4 @@
-// The compiled executable of a release runs outside any checkout (ADR 0075): the platform package
+// The compiled executable of a release runs outside any checkout (ADR 0076): the platform package
 // that scripts/release/compile.ts lays out, with the Codex package of its platform beside it and
 // no Bun on PATH, starts its server, authors and renders a model, checks its code and stops.
 import { afterAll, expect, test } from "bun:test";

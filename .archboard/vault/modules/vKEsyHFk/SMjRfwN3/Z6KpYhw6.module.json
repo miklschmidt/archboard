@@ -5,7 +5,7 @@
   "responsibility": "Renders a model to a bounded image through one reusable browser session",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/services/rasterizer"
+    "path": "packages/renderer/src/runtime/rasterizer"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",

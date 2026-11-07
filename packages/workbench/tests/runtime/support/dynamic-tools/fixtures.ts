@@ -2,9 +2,9 @@ import type {
 	EpochExecutionProof,
 	EpochOperationRecord,
 	ThreadLinkClassification,
-} from "#runtime/protocol/voice/extension.ts";
+} from "#runtime/voice/protocol/extension.ts";
 import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
-import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
+import type { ArchboardContext } from "#runtime/instructions/rules/context.ts";
 import type {
 	SessionThread,
 	SessionThreadForkResult,
@@ -19,15 +19,15 @@ import type { IdentityAuthorities, ThreadId, TurnId } from "@archboard/codex-app
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
-} from "#runtime/protocol/thread-tools/manifest.ts";
-import { type ToolArguments } from "#runtime/protocol/thread-tools/arguments.ts";
+} from "#runtime/thread-tools/protocol/manifest.ts";
+import { type ToolArguments } from "#runtime/thread-tools/protocol/arguments.ts";
 import { contextFixture } from "#tests/runtime/support/dynamic-tools/context.ts";
-import type { DynamicAuthorityToken } from "#runtime/rules/dynamic-tools/authority/authority-token.ts";
+import type { DynamicAuthorityToken } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import type {
 	DynamicCallerAuthority,
 	DynamicTargetAuthority,
-} from "#runtime/protocol/dynamic-tools/contract.ts";
-import type { DynamicToolName } from "#runtime/rules/dynamic-tools/vocabulary.ts";
+} from "#runtime/dynamic-tools/protocol/contract.ts";
+import type { DynamicToolName } from "#runtime/dynamic-tools/rules/vocabulary.ts";
 
 export const CHECKOUT_ROOT = "/workspace/archboard";
 export const CALLER_WIRE_ID = "caller-thread";

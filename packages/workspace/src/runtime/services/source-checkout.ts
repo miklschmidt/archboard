@@ -60,7 +60,7 @@ function checkoutPort(root: string): number {
 }
 
 /**
- * The port of a release server (ADR 0075), four digits that are easy to remember. It is outside the
+ * The port of a release server (ADR 0076), four digits that are easy to remember. It is outside the
  * worktree range and is not the main checkout's port, so a release and a checkout run side by side.
  */
 const RELEASE_PORT = 4242;

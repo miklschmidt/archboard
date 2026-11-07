@@ -1,6 +1,6 @@
 name: Release
 
-# The Conventional Commits on main decide each version (ADR 0075, Publication). release-please
+# The Conventional Commits on main decide each version (ADR 0076, Publication). release-please
 # reads them since the last release and keeps one release pull request open. Every commit counts,
 # and the MIT voice package has the same version as Archboard, because the Archboard executable
 # carries it and the voice package bundles other workspace packages. A merge of the release pull

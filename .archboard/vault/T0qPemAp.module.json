@@ -5,7 +5,7 @@
   "responsibility": "Shows how many code warnings a reading holds and what each one says",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/canvas/CodeWarnings.tsx"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CodeWarnings.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#T0qPemAp",

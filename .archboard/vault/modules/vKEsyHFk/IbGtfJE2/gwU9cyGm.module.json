@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/clients/codex-grader.ts"
+    "path": "packages/skills/src/runtime/evaluation/grading/clients/codex-grader.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#gwU9cyGm",
@@ -21,7 +21,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/clients/codex-grader.ts",
+        "path": "packages/skills/src/runtime/evaluation/grading/clients/codex-grader.ts",
         "symbol": "codexGraderArgv"
       },
       "id": "vKEsyHFk/IbGtfJE2#xovfrY1j",
@@ -34,7 +34,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/clients/codex-grader.ts",
+        "path": "packages/skills/src/runtime/evaluation/grading/clients/codex-grader.ts",
         "symbol": "fillCodexHome"
       },
       "id": "vKEsyHFk/IbGtfJE2#NzNYGL6D",
@@ -47,7 +47,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/clients/codex-grader.ts",
+        "path": "packages/skills/src/runtime/evaluation/grading/clients/codex-grader.ts",
         "symbol": "unwrapped"
       },
       "id": "vKEsyHFk/IbGtfJE2#DElPMBfe",

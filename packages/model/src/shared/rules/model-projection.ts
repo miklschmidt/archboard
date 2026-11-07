@@ -1,8 +1,8 @@
 import type { z } from "zod";
-import type { ArchitectureRenderRequestSchema } from "#shared/schemas/model-operations.ts";
-import type { ArchitectureModelRead } from "#shared/schemas/model.ts";
-import { drawingOf } from "#shared/rules/compare/drawing.ts";
-import type { ChangeKind } from "#shared/rules/compare/variants.ts";
+import type { ArchitectureRenderRequestSchema } from "#shared/canonical-contracts/schemas/model-operations.ts";
+import type { ArchitectureModelRead } from "#shared/canonical-contracts/schemas/model.ts";
+import { drawingOf } from "#shared/compare/rules/drawing.ts";
+import type { ChangeKind } from "#shared/compare/rules/variants.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
 import type { DrawnEdge, OverviewLine } from "#shared/rules/scope.ts";
 import { codePathOf } from "#shared/rules/code-path.ts";
@@ -15,7 +15,7 @@ import {
 } from "#shared/rules/model-expansion.ts";
 import { containment, foldedScope } from "#shared/rules/module-fold.ts";
 import { drawnEnds, drawnLines, joinedLines } from "#shared/rules/model-lines.ts";
-import { inspectContainer } from "#shared/rules/inspect/container-interface.ts";
+import { inspectContainer } from "#shared/inspect/rules/container-interface.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type ModelFlow = Model["collections"][number]["flows"][number];

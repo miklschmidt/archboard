@@ -13,8 +13,9 @@
         "vKEsyHFk/XppR9owz#vAQwlVuz",
         "vKEsyHFk/XppR9owz#e5UQUj78",
         "vKEsyHFk/XppR9owz#iIVu1bGE",
-        "vKEsyHFk/XppR9owz#PQcK5dF2",
-        "vKEsyHFk/XppR9owz#gt1eCpcS"
+        "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+        "vKEsyHFk/XppR9owz#gt1eCpcS",
+        "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG"
       ],
       "steps": [
         {
@@ -98,7 +99,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/bootstrap/bootstrap.ts",
+                    "path": "apps/cli/src/cli/routing/operations/bootstrap.ts",
                     "symbol": "applyCliBootstrap"
                   }
                 },
@@ -110,7 +111,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/bootstrap/bootstrap.ts",
+                    "path": "apps/cli/src/cli/routing/operations/bootstrap.ts",
                     "symbol": "applyCliBootstrap"
                   }
                 },
@@ -178,12 +179,12 @@
                         {
                           "id": "vKEsyHFk/XppR9owz#zw5M31Xz",
                           "from": "vKEsyHFk/XppR9owz#iIVu1bGE",
-                          "to": "vKEsyHFk/XppR9owz#PQcK5dF2",
+                          "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
                           "label": "runCliWith(COMMANDS, argv)",
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/cli/src/cli/operations/invocation/run.ts",
+                            "path": "apps/cli/src/cli/routing/operations/run.ts",
                             "symbol": "runCliWith"
                           }
                         },
@@ -197,13 +198,13 @@
                               "steps": [
                                 {
                                   "id": "vKEsyHFk/XppR9owz#lb8nBdWg",
-                                  "from": "vKEsyHFk/XppR9owz#PQcK5dF2",
-                                  "to": "vKEsyHFk/XppR9owz#PQcK5dF2",
+                                  "from": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+                                  "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
                                   "label": "print help or the version, or refuse the unknown name",
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                                     "symbol": "commandToRun"
                                   }
                                 }
@@ -214,37 +215,37 @@
                               "steps": [
                                 {
                                   "id": "vKEsyHFk/XppR9owz#riGzuPxU",
-                                  "from": "vKEsyHFk/XppR9owz#PQcK5dF2",
-                                  "to": "vKEsyHFk/XppR9owz#PQcK5dF2",
+                                  "from": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+                                  "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
                                   "label": "refuse the removed model forms",
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                                     "symbol": "refuseRetiredForms"
                                   }
                                 },
                                 {
                                   "id": "vKEsyHFk/XppR9owz#bbgHGi5q",
-                                  "from": "vKEsyHFk/XppR9owz#PQcK5dF2",
-                                  "to": "vKEsyHFk/XppR9owz#PQcK5dF2",
+                                  "from": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+                                  "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
                                   "label": "take the shared options out of the arguments",
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                                     "symbol": "takeShared"
                                   }
                                 },
                                 {
                                   "id": "vKEsyHFk/XppR9owz#yWhXliYF",
-                                  "from": "vKEsyHFk/XppR9owz#PQcK5dF2",
-                                  "to": "vKEsyHFk/XppR9owz#PQcK5dF2",
+                                  "from": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+                                  "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
                                   "label": "select the contract the arguments address",
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                                     "symbol": "dispatchedTo"
                                   }
                                 },
@@ -258,13 +259,13 @@
                                       "steps": [
                                         {
                                           "id": "vKEsyHFk/XppR9owz#JrBadjsf",
-                                          "from": "vKEsyHFk/XppR9owz#PQcK5dF2",
-                                          "to": "vKEsyHFk/XppR9owz#PQcK5dF2",
+                                          "from": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+                                          "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
                                           "label": "refuse as a usage error naming the option and the command",
                                           "kind": "self",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                            "path": "apps/cli/src/cli/routing/operations/session.ts",
                                             "symbol": "assertSharedApplies"
                                           }
                                         }
@@ -275,37 +276,37 @@
                                       "steps": [
                                         {
                                           "id": "vKEsyHFk/XppR9owz#h0icdPzJ",
-                                          "from": "vKEsyHFk/XppR9owz#PQcK5dF2",
-                                          "to": "vKEsyHFk/XppR9owz#PQcK5dF2",
+                                          "from": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+                                          "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
                                           "label": "keep the stated model, doing and version for every request",
                                           "kind": "self",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                            "path": "apps/cli/src/cli/routing/operations/session.ts",
                                             "symbol": "applyShared"
                                           }
                                         },
                                         {
                                           "id": "vKEsyHFk/XppR9owz#P5bOP9Ma",
-                                          "from": "vKEsyHFk/XppR9owz#PQcK5dF2",
-                                          "to": "vKEsyHFk/XppR9owz#PQcK5dF2",
+                                          "from": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+                                          "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
                                           "label": "find the vault the command addresses",
                                           "kind": "self",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                            "path": "apps/cli/src/cli/routing/operations/session.ts",
                                             "symbol": "addressedVault"
                                           }
                                         },
                                         {
                                           "id": "vKEsyHFk/XppR9owz#Lc1Aasrw",
-                                          "from": "vKEsyHFk/XppR9owz#PQcK5dF2",
+                                          "from": "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
                                           "to": "vKEsyHFk/XppR9owz#gt1eCpcS",
                                           "label": "run the selected contract under an abort signal",
                                           "kind": "sync",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                            "path": "apps/cli/src/cli/routing/operations/session.ts",
                                             "symbol": "runCommand"
                                           }
                                         }
@@ -348,7 +349,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/cli/src/cli/clients/server/vault-check.ts",
+            "path": "apps/cli/src/cli/server-access/clients/vault-check.ts",
             "symbol": "requestJson"
           }
         },
@@ -459,7 +460,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/cli/src/cli/clients/server/vault-check.ts",
+                            "path": "apps/cli/src/cli/server-access/clients/vault-check.ts",
                             "symbol": "checkSemanticVaultOnServer"
                           }
                         }
@@ -493,7 +494,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/cli/src/cli/clients/server/prerequisites.ts",
+            "path": "apps/cli/src/cli/contract/clients/prerequisites.ts",
             "symbol": "ensureServerRunning"
           }
         },

@@ -5,7 +5,7 @@
   "responsibility": "Owns one CLI invocation: help first, then the shared flags, dispatch and the run",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/invocation/session.ts"
+    "path": "apps/cli/src/cli/routing/operations/session.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/session.ts",
+        "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "usageLine"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#mVCMJYpN",
@@ -35,7 +35,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/session.ts",
+        "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "takeDirectoryFlag"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#a4PkS2Do",
@@ -52,7 +52,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/session.ts",
+        "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "dispatchedCommand"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#GpvovZkt",
@@ -69,7 +69,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/session.ts",
+        "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "runInterruptibleCommand"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#Kbtdm1ew",
@@ -82,7 +82,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/session.ts",
+        "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "reportFailure"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#HZqRR3f0",
@@ -99,7 +99,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/session.ts",
+        "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "stateInvocation"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#wMSceuzp",
@@ -112,11 +112,24 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/session.ts",
+        "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "addressVault"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#0TkUEWO5",
       "to": "vKEsyHFk/nAmiQ3Vc#zUIObqwQ"
+    },
+    {
+      "order": 54000,
+      "kind": "call",
+      "label": "is it a help request",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/session.ts",
+        "symbol": "isHelpInvocation"
+      },
+      "id": "vKEsyHFk/XppR9owz#4aWZZKkA",
+      "to": "vKEsyHFk/XppR9owz#vAQwlVuz"
     }
   ]
 }

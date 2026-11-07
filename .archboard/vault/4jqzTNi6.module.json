@@ -1,5 +1,5 @@
 {
-  "order": 61000,
+  "order": 29010,
   "name": "Render corpus",
   "kind": "module",
   "responsibility": "Renders every reading with each engine, theme and comparison, and compares two runs by hash, size and time",
@@ -9,7 +9,6 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#4jqzTNi6",
-  "parent": "vKEsyHFk#F0aENCVG",
   "outgoing": [
     {
       "order": 61100,
@@ -23,6 +22,19 @@
       },
       "id": "vKEsyHFk#aJzBoBHj",
       "to": "vKEsyHFk#jAl99x56"
+    },
+    {
+      "order": 200,
+      "kind": "call",
+      "label": "the model of each reading in the corpus",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/render-corpus.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "to": "vKEsyHFk#ZGONZKxj",
+      "id": "vKEsyHFk#ZzfH0MsX"
     }
   ]
 }

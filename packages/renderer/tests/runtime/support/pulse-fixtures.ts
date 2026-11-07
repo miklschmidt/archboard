@@ -2,7 +2,7 @@
 // and the readers of the markup that say where a pulse is.
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { VariantContent } from "@archboard/model/content";
-import { renderSemanticView } from "#runtime/operations/render.ts";
+import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { pointsOf } from "#tests/runtime/support/drawn-traffic.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 

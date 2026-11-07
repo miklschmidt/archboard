@@ -6,7 +6,8 @@
   "description": "The command passes explicit local source refs and selected architecture to the existing history interface. Proposal comparisons use their identified baseline.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/history.ts"
+    "path": "apps/cli/src/cli/commands/model/operations/history.ts",
+    "symbol": "modelFootprintContract"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#MrE3v2T6",

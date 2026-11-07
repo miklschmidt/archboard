@@ -6,7 +6,7 @@
   "description": "The pane's letter while two panes share the centre, its own controls, what the shell says about the pane (an agent's claim), whether another pane shares the centre and whether this pane has focus. The shell decides what they are; the stage decides where its header puts them. A pane outside the shell, such as a recording page's, has none.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/canvas/use-pane-chrome.ts",
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts",
     "symbol": "usePaneChrome"
   },
   "schemaVersion": 1,

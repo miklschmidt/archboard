@@ -41,9 +41,9 @@ try {
 	const [{ ensureServerRunning }, { cliContractRegistry }, { defineCommand }, { runCommand }] =
 		await Promise.all([
 			import("@archboard/server-lifecycle/server"),
-			import("#cli/operations/invocation/run.ts"),
-			import("#cli/protocol/contract/contract.ts"),
-			import("#cli/operations/execution/runner.ts"),
+			import("#cli/routing/operations/run.ts"),
+			import("#cli/contract/protocol/contract.ts"),
+			import("#cli/contract/operations/runner.ts"),
 		]);
 	await ensureServerRunning();
 	const source = cliContractRegistry().find((entry) => entry.name === record.path)?.contract;

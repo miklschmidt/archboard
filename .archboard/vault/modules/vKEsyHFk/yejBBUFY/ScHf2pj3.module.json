@@ -5,7 +5,7 @@
   "responsibility": "Keeps a pane session mounted and publishes its React state",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/pane-session/use-pane-session.ts"
+    "path": "apps/web/src/ui/panes/pane-session/hooks/use-pane-session.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#ScHf2pj3",
@@ -32,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/state/pane-session/pane-core.ts",
+        "path": "apps/web/src/ui/panes/pane-session/state/pane-core.ts",
         "symbol": "activateCodeTarget"
       },
       "id": "vKEsyHFk/yejBBUFY#Cw08FQeQ",

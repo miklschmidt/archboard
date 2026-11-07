@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/tell-coordinator.ts"
+    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/tell-coordinator.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
@@ -32,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/tell-coordinator.ts",
         "symbol": "news"
       },
       "id": "vKEsyHFk/qKGcB6vZ#kK1YexMf",
@@ -45,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/tell-coordinator.ts",
         "symbol": "enqueue"
       },
       "id": "vKEsyHFk/qKGcB6vZ#35DJDouE",
@@ -58,7 +58,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/tell-coordinator.ts",
         "symbol": "respond"
       },
       "id": "vKEsyHFk/qKGcB6vZ#5EeoHuyh",

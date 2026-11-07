@@ -5,7 +5,7 @@
   "responsibility": "Delivers each gateway update to its connection subscribers without one failed listener blocking the others",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/operations/command/browser-command.ts"
+    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/operations/browser-command.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#8DmvR3O6",
@@ -25,7 +25,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-connections.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections/services/gateway-connections.ts",
         "symbol": "emit"
       },
       "id": "vKEsyHFk/9ncuT5DP#2wlebJ2T",

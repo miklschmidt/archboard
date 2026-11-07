@@ -4,17 +4,17 @@
 // forgets to pass its captured target is not silently retargeted onto
 // whatever the chat moved to.
 
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
 import type {
 	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
-} from "#shared/schemas/browser/snapshot.ts";
+} from "#shared/browser/schemas/snapshot.ts";
 import { createIdentityAuthorities, type ThreadId } from "@archboard/codex-app-server/identity";
 import {
 	THREAD_LINK_MODULE_COMMANDS,
 	type ThreadLinkChatCapture,
-} from "#ui/state/thread-link/contracts.ts";
+} from "#ui/thread-link/state/contracts.ts";
 import type {
 	ThreadLinkCommandDraft,
 	ThreadLinkTransportPort,
@@ -24,7 +24,7 @@ import type {
 	WorkbenchCommandTarget,
 	WorkbenchTransportCapabilities,
 	WorkbenchTransportErrorCode,
-} from "#ui/state/thread-link/transport-port.ts";
+} from "#ui/thread-link/state/transport-port.ts";
 
 const authorities = createIdentityAuthorities();
 const { decoder, issuer, validator } = authorities.identity;

@@ -18,7 +18,7 @@ type ListenOptions = { port?: number; host?: string; signal?: AbortSignal };
 const mode = process.env["ARCHBOARD_TEST_HTTP_FAILURE"];
 const pendingPath = process.env["ARCHBOARD_TEST_HTTP_PENDING_PATH"];
 const outcomePath = process.env["ARCHBOARD_TEST_HTTP_OUTCOME_PATH"];
-const httpFactoryModule = import.meta.resolve("#server/wiring/http/http-server.ts");
+const httpFactoryModule = import.meta.resolve("#server/http/listener/wiring/http-server.ts");
 let ownedServer: Server | undefined;
 let pending = false;
 

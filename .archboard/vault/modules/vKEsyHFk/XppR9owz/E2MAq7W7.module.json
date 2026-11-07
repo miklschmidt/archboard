@@ -6,7 +6,7 @@
   "description": "runner.ts is the seam callers import; the steps live here. A command that takes -C answers with the vault it used and how it was found, beside a JSON object answer.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/execution/execution.ts"
+    "path": "apps/cli/src/cli/contract/operations/execution.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#E2MAq7W7",
@@ -40,7 +40,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "path": "apps/cli/src/cli/contract/operations/execution.ts",
         "symbol": "handler"
       },
       "id": "vKEsyHFk/XppR9owz#34TPgaMW",
@@ -53,7 +53,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "path": "apps/cli/src/cli/contract/operations/execution.ts",
         "symbol": "handler"
       },
       "id": "vKEsyHFk/XppR9owz#BsJL3bGP",
@@ -66,7 +66,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "path": "apps/cli/src/cli/contract/operations/execution.ts",
         "symbol": "handler"
       },
       "id": "vKEsyHFk/XppR9owz#06f3KVxy",
@@ -79,7 +79,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "path": "apps/cli/src/cli/contract/operations/execution.ts",
         "symbol": "handler"
       },
       "id": "vKEsyHFk/XppR9owz#0b4tib6n",
@@ -92,7 +92,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "path": "apps/cli/src/cli/contract/operations/execution.ts",
         "symbol": "handler"
       },
       "id": "vKEsyHFk/XppR9owz#yUWUF6TZ",
@@ -105,7 +105,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "path": "apps/cli/src/cli/contract/operations/execution.ts",
         "symbol": "requirePrerequisite"
       },
       "id": "vKEsyHFk/XppR9owz#lkwXJ78e",
@@ -118,7 +118,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "path": "apps/cli/src/cli/contract/operations/execution.ts",
         "symbol": "handler"
       },
       "id": "vKEsyHFk/XppR9owz#OzD86zWV",
@@ -131,7 +131,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "path": "apps/cli/src/cli/contract/operations/execution.ts",
         "symbol": "handler"
       },
       "id": "vKEsyHFk/XppR9owz#Xrd124y5",
@@ -144,7 +144,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "path": "apps/cli/src/cli/contract/operations/execution.ts",
         "symbol": "handler"
       },
       "id": "vKEsyHFk/XppR9owz#LL4azQxP",
@@ -157,7 +157,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "path": "apps/cli/src/cli/contract/operations/execution.ts",
         "symbol": "handler"
       },
       "id": "vKEsyHFk/XppR9owz#dXmsg74n",
@@ -170,7 +170,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "path": "apps/cli/src/cli/contract/operations/execution.ts",
         "symbol": "handler"
       },
       "id": "vKEsyHFk/XppR9owz#h9ztm3mp",
@@ -183,7 +183,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "path": "apps/cli/src/cli/contract/operations/execution.ts",
         "symbol": "handler"
       },
       "id": "vKEsyHFk/XppR9owz#LmUmfrVG",
@@ -196,11 +196,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "path": "apps/cli/src/cli/contract/operations/execution.ts",
         "symbol": "handler"
       },
-      "to": "vKEsyHFk#rTNYNRVL",
-      "id": "vKEsyHFk#t0tSmqVd"
+      "id": "vKEsyHFk#t0tSmqVd",
+      "to": "vKEsyHFk#rTNYNRVL"
     }
   ]
 }

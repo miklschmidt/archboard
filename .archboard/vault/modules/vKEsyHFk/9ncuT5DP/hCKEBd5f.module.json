@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/services/sessions/browser-tabs.ts"
+    "path": "packages/codex-realtime-voice/src/server/sessions/services/browser-tabs.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#hCKEBd5f",
@@ -28,7 +28,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+        "path": "packages/codex-realtime-voice/src/server/owner/services/workbench.ts",
         "symbol": "end"
       },
       "id": "vKEsyHFk/9ncuT5DP#f4o4iE3G",
@@ -41,7 +41,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+        "path": "packages/codex-realtime-voice/src/server/owner/services/workbench.ts",
         "symbol": "endSession"
       },
       "id": "vKEsyHFk/9ncuT5DP#02ywpfgL",
@@ -54,7 +54,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/generation/gateway-binding.ts",
+        "path": "packages/codex-realtime-voice/src/server/generation/services/gateway-binding.ts",
         "symbol": "onShownChange"
       },
       "id": "vKEsyHFk/9ncuT5DP#EVC1aGxx",

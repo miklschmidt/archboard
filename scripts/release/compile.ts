@@ -1,4 +1,4 @@
-// Compile Archboard into the directory of one platform package (ADR 0075):
+// Compile Archboard into the directory of one platform package (ADR 0076):
 //
 //   bin/archboard           the executable: the CLI, and with its internal first argument the server
 //   frontend/               the browser bundle that `bun run build` made
@@ -41,7 +41,7 @@ type Target = (typeof TARGETS)[number];
 const ENTRIES = [
 	"apps/cli/src/bin.ts",
 	"apps/server/src/server.ts",
-	"packages/renderer/src/runtime/processes/layout-worker.ts",
+	"packages/renderer/src/runtime/bun-renderer/processes/layout-worker.ts",
 ];
 
 /** The skills a release ships, under `skills/`. */

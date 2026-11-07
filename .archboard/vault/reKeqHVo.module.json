@@ -5,7 +5,7 @@
   "responsibility": "Takes one complete intent, prepares it, installs it and answers its receipt",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/operations/model-edit/edit.ts",
+    "path": "packages/model/src/runtime/canonical/edit/operations/edit.ts",
     "symbol": "editArchitectureModule"
   },
   "schemaVersion": 1,
@@ -19,7 +19,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/edit.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/edit.ts",
         "symbol": "prepareEdit"
       },
       "id": "vKEsyHFk/0T9enjhi#miCieAcV",
@@ -32,7 +32,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/edit.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/edit.ts",
         "symbol": "installJournal"
       },
       "id": "vKEsyHFk/0T9enjhi#1CMGODuG",
@@ -45,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/edit.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/edit.ts",
         "symbol": "notifyArchitecture"
       },
       "id": "vKEsyHFk/0T9enjhi#lDmGxPX5",
@@ -58,7 +58,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/edit.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/edit.ts",
         "symbol": "ArchitectureModuleEditSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#9eRTT5wz",
@@ -71,7 +71,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/edit.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/edit.ts",
         "symbol": "editResult"
       },
       "id": "vKEsyHFk/0T9enjhi#Ei40PGJf",
@@ -84,7 +84,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/edit.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/edit.ts",
         "symbol": "ArchiveError"
       },
       "id": "vKEsyHFk/0T9enjhi#CT2AMZDt",
@@ -97,7 +97,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/edit.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/edit.ts",
         "symbol": "operationRef"
       },
       "id": "vKEsyHFk/0T9enjhi#5eI7is0k",

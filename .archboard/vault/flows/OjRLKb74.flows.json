@@ -206,7 +206,8 @@
       "summary": "Shapes a card's name and responsibility in their faces, clamps the width between 260 and 340, and breaks the lines there. Layout then works with exact sizes, so the words fit in every picture.",
       "participants": [
         "vKEsyHFk/OjRLKb74#nmyK8UOO",
-        "vKEsyHFk/gbyqW4H3#J3yMo4ag"
+        "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+        "vKEsyHFk#C4dZpr3U"
       ],
       "steps": [
         {
@@ -298,24 +299,24 @@
             {
               "id": "vKEsyHFk/OjRLKb74#25HE191y",
               "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-              "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+              "to": "vKEsyHFk#C4dZpr3U",
               "label": "Shape the words in their face",
-              "kind": "self",
+              "kind": "sync",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "crates/archboard-scene/src/measure/cards.rs",
+                "path": "crates/archboard-scene/src/measure/mod.rs",
                 "symbol": "paragraph"
               }
             },
             {
               "id": "vKEsyHFk/OjRLKb74#5BB225La",
               "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-              "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+              "to": "vKEsyHFk#C4dZpr3U",
               "label": "The widest line, unbroken",
-              "kind": "self",
+              "kind": "sync",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "crates/archboard-scene/src/measure/cards.rs",
+                "path": "crates/archboard-text/src/paragraph.rs",
                 "symbol": "natural_width"
               }
             }
@@ -452,7 +453,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/runtime/processes/layout-worker.ts",
+            "path": "packages/renderer/src/runtime/bun-renderer/processes/layout-worker.ts",
             "symbol": "layOutPicture"
           }
         },
@@ -500,7 +501,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+            "path": "packages/renderer/src/shared/engine/rules/layout-engine.ts",
             "symbol": "serveLayoutEngine"
           }
         },

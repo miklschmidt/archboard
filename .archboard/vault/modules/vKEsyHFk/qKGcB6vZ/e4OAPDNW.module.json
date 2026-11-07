@@ -5,7 +5,7 @@
   "responsibility": "Finds the workhorse a callback is about: the ready link whose thread the event names",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-callbacks/workhorse-links.ts"
+    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/rules/workhorse-links.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#e4OAPDNW",

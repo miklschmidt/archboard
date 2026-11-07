@@ -214,7 +214,7 @@ Codex. The installer does these things:
 3. It removes the block that earlier versions of the installer wrote into
    `CLAUDE.md` and `AGENTS.md` between `<!-- archboard:begin -->` and
    `<!-- archboard:end -->`. It says which files it changed and changes nothing
-   else in them. Commit that change.
+   else in them.
 
 The repository is the nearest parent directory that holds `.git`. The installer
 creates no `CLAUDE.md` or `AGENTS.md` and adds nothing to them. A command finds
@@ -223,6 +223,7 @@ your machine.
 
 The installer prints what it did, and a JSON receipt. If Git ignores the vault,
 the installer warns you.
+To share architecture with the source code, include the authored vault files in the repository.
 
 These options change what the installer does:
 
@@ -283,9 +284,8 @@ names a repository by its identity, so a module in that vault can describe any
 repository (see "Code bindings").
 
 Claims cover affected subjects, state, and structure scopes.
-A short vault lease protects installation rather than the whole authoring session.
 Use `model claim`, `model claims`, and `model release` through the consumer recipe.
-Keep private runtime records and reproducible outputs out of source control.
+Share authored inputs rather than machine-local runtime records.
 
 ## 5. Start the Archboard server and sign in to Codex
 
@@ -349,8 +349,7 @@ For an existing empty vault without a manifest, initialize it explicitly:
 archboard model init --name Payments --operation-id initialize-payments --writer agent --doing 'Initialize architecture'
 ```
 
-For an untracked vault, run `model archive-init` before signed authoring or retention.
-Configure the returned archive's Git identity and signer.
+For a vault outside a source repository, run `model archive-init` before authoring or retention.
 Follow [the consumer skill](skills/archboard/SKILL.md) for claims, proposal creation, comparison, and explicit adoption.
 Use `check code --state <proposal-id>` for source evidence.
 Use `check embeds` for tracked rendered artifacts.
@@ -373,7 +372,6 @@ Retired legacy board commands cannot edit an unmigrated vault.
 
 A checkpoint preserves exact architecture inputs and metadata in the independent Git archive.
 It changes neither source HEAD nor the source index.
-Configured signing applies before live installation.
 A checkpoint does not adopt architecture or retain source-code objects automatically.
 
 Use [canonical history](skills/archboard/references/canonical-models.md#retain-an-exact-local-reading) before sharing or recording a reading.
@@ -384,8 +382,8 @@ A normal source push does not publish the archive.
 Remote retention depends on the remote owner's policy and backups.
 
 Linked worktrees share archive objects and keep separate current architecture.
-An untracked vault uses an explicitly initialized private bare archive in machine state.
-Back up that archive before removing machine state or moving its vault.
+A vault outside a source repository uses explicitly initialized private history.
+Back up private history before removing machine state or moving its vault.
 Use `model export` and `model import` for complete portable transfer.
 Canonical models have no move or ownership-transfer operation between models.
 

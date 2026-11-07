@@ -9,7 +9,7 @@
 			"parent": "nU6dNHBE",
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/wiring/application/application.ts"
+				"path": "apps/server/src/server/http/application/wiring/application.ts"
 			}
 		},
 		{
@@ -21,7 +21,7 @@
 			"parent": "Wcng1nxx",
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/lifecycle/startup/server-startup.ts"
+				"path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts"
 			}
 		},
 		{
@@ -34,7 +34,7 @@
 			"groups": ["writes"],
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/lifecycle/lifetime/mutation-admission.ts"
+				"path": "apps/server/src/server/start-stop/lifecycle/mutation-admission.ts"
 			}
 		},
 		{
@@ -93,7 +93,7 @@
 			"groups": ["agent"],
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/server/services/owner"
+				"path": "packages/workbench/src/server/workbench-host/services"
 			},
 			"drillDown": {
 				"board": "Codex realtime voice",
@@ -129,7 +129,7 @@
 			"groups": ["writes"],
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/model/src/runtime/store/lock"
+				"path": "packages/model/src/runtime/lock/store"
 			}
 		},
 		{
@@ -141,7 +141,7 @@
 			"parent": "ScjxtP0G",
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/code-intel/src/runtime/operations/history-lens"
+				"path": "packages/code-intel/src/runtime/history-lens"
 			}
 		},
 		{
@@ -154,7 +154,7 @@
 			"parent": "ScjxtP0G",
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/code-intel/src/runtime/operations/code-check"
+				"path": "packages/code-intel/src/runtime/code-check"
 			}
 		},
 		{
@@ -196,7 +196,7 @@
 			"parent": "nU6dNHBE",
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/server/services/request/vault.ts"
+				"path": "packages/workbench/src/server/request/services/vault.ts"
 			}
 		},
 		{
@@ -258,7 +258,7 @@
 			"emphasis": "muted",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/wiring/application/application.ts",
+				"path": "apps/server/src/server/http/application/wiring/application.ts",
 				"symbol": "mountSemanticBoardRoutes"
 			}
 		},
@@ -272,7 +272,7 @@
 			"emphasis": "muted",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/wiring/application/application.ts",
+				"path": "apps/server/src/server/http/application/wiring/application.ts",
 				"symbol": "mountPaneRoutes"
 			}
 		},
@@ -286,7 +286,7 @@
 			"emphasis": "muted",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/wiring/application/application.ts",
+				"path": "apps/server/src/server/http/application/wiring/application.ts",
 				"symbol": "createCodeOpenerRouter"
 			}
 		},
@@ -314,7 +314,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+				"path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
 				"symbol": "handleBrowserMessage"
 			}
 		},
@@ -342,7 +342,7 @@
 			"emphasis": "muted",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+				"path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
 				"symbol": "prepareCodexWorkbench"
 			}
 		},
@@ -356,7 +356,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+				"path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
 				"symbol": "postPaneRoute"
 			}
 		},
@@ -371,7 +371,7 @@
 			"emphasis": "hero",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/server/services/panes/registry.ts",
+				"path": "packages/workbench/src/server/panes/services/registry.ts",
 				"symbol": "sendToVaultClients"
 			}
 		},
@@ -432,8 +432,8 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/model/src/runtime/operations/write/write.ts",
-				"symbol": "withBoardLock"
+				"path": "packages/model/src/runtime/canonical/installation/store/model-state.ts",
+				"symbol": "holdModel"
 			}
 		},
 		{
@@ -474,7 +474,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+				"path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
 				"symbol": "acceptWebSocketConnection"
 			}
 		},
@@ -488,7 +488,7 @@
 			"emphasis": "muted",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+				"path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
 				"symbol": "startWebSocketServer"
 			}
 		},
@@ -502,7 +502,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/server/services/owner/wiring.ts",
+				"path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
 				"symbol": "semanticChangeFeed"
 			}
 		},
@@ -516,7 +516,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/server/services/owner/wiring.ts",
+				"path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
 				"symbol": "tabSessionOf"
 			}
 		},
@@ -530,7 +530,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+				"path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
 				"symbol": "createCodeCheck"
 			}
 		},
@@ -544,7 +544,7 @@
 			"emphasis": "muted",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/routes/panes/pane-routes.ts",
+				"path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
 				"symbol": "publishPaneContext"
 			}
 		},
@@ -558,7 +558,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/server/services/panes/registry.ts",
+				"path": "packages/workbench/src/server/panes/services/registry.ts",
 				"symbol": "watchBoardLocks"
 			}
 		},
@@ -572,7 +572,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/wiring/application/application.ts",
+				"path": "apps/server/src/server/http/application/wiring/application.ts",
 				"symbol": "createBrowserOriginGuard"
 			}
 		},
@@ -600,7 +600,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+				"path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
 				"symbol": "checkBrowserCsrf"
 			}
 		},
@@ -614,7 +614,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/code-intel/src/runtime/operations/history-lens/last-change.ts",
+				"path": "packages/code-intel/src/runtime/history-lens/operations/last-change.ts",
 				"symbol": "decodeSemanticBoardDocument"
 			}
 		},
@@ -642,7 +642,7 @@
 			"emphasis": "muted",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/wiring/application/application.ts",
+				"path": "apps/server/src/server/http/application/wiring/application.ts",
 				"symbol": "watchSemanticBoardFiles"
 			}
 		},
@@ -670,7 +670,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/wiring/application/application.ts",
+				"path": "apps/server/src/server/http/application/wiring/application.ts",
 				"symbol": "requireVault"
 			}
 		},
@@ -684,7 +684,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "apps/server/src/server/routes/service/service-routes.ts",
+				"path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
 				"symbol": "mutationAdmission"
 			}
 		},
@@ -698,7 +698,7 @@
 			"emphasis": "muted",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
+				"path": "packages/code-intel/src/runtime/code-check/operations/ref-code.ts",
 				"symbol": "nodesAtOwnRef"
 			}
 		}

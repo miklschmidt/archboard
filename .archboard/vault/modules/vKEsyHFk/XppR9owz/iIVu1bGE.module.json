@@ -5,11 +5,11 @@
   "responsibility": "The one table of commands: what exists, what it takes and who owns it",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/invocation/run.ts"
+    "path": "apps/cli/src/cli/routing/operations/run.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#iIVu1bGE",
-  "parent": "vKEsyHFk/XppR9owz#OM6pX371",
+  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -33,7 +33,7 @@
   ],
   "outgoing": [
     {
-      "order": 2000,
+      "order": 7000,
       "kind": "call",
       "label": "argv",
       "emphasis": "hero",
@@ -43,11 +43,24 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "runCliWith"
       },
-      "id": "vKEsyHFk/XppR9owz#WUygSWX0",
-      "to": "vKEsyHFk/XppR9owz#PQcK5dF2"
+      "id": "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0",
+      "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT"
+    },
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "registryOf, for the contract audit",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
+        "symbol": "registryOf"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#Ml9zYVzq",
+      "to": "vKEsyHFk/nAmiQ3Vc#45uNvMac"
     },
     {
       "order": 48000,
@@ -56,7 +69,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "statusContract"
       },
       "id": "vKEsyHFk/XppR9owz#l1mVF45a",
@@ -68,7 +81,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "modelInventoryContract"
       },
       "id": "vKEsyHFk/XppR9owz#T67XkF7L",
@@ -81,7 +94,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "modelEditContract"
       },
       "id": "vKEsyHFk/XppR9owz#4PgjyVVt",
@@ -93,7 +106,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "modelPublishContract"
       },
       "id": "vKEsyHFk/XppR9owz#cluonY9L",
@@ -105,7 +118,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "modelArchiveInitContract"
       },
       "id": "vKEsyHFk/XppR9owz#TLj1cMMq",
@@ -117,7 +130,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
         "symbol": "COMMANDS"
       },
       "id": "vKEsyHFk/XppR9owz#yiZPCy4w",

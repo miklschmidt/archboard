@@ -9,8 +9,8 @@ import type {
 	RealtimePeer,
 	RealtimeReceiver,
 	RealtimeSender,
-} from "#ui/state/realtime/environment.ts";
-import type { VoiceOutputPlayback } from "#ui/clients/output-level/meter.ts";
+} from "#ui/realtime/state/environment.ts";
+import type { VoiceOutputPlayback } from "#ui/output-level/clients/meter.ts";
 
 /** What the fakes need from the browser that owns them. */
 interface FakeMediaHost {

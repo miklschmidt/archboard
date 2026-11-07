@@ -6,7 +6,7 @@
   "description": "renderSemanticView serializes the request and calls the core's render with what the host gives it. It turns an empty answer into a SemanticRenderError. Core render does the rest.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/render/diagram.ts"
+    "path": "packages/renderer/src/shared/render/rules/diagram.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
@@ -22,11 +22,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+        "path": "packages/renderer/src/shared/render/rules/diagram.ts",
         "symbol": "render"
       },
-      "to": "vKEsyHFk/OjRLKb74#nmyK8UOO",
-      "id": "vKEsyHFk#7pBgojOh"
+      "id": "vKEsyHFk#7pBgojOh",
+      "to": "vKEsyHFk#6sGFjsRQ"
     },
     {
       "order": 60200,
@@ -35,11 +35,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+        "path": "packages/renderer/src/shared/render/rules/diagram.ts",
         "symbol": "rendererHost"
       },
-      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY",
-      "id": "vKEsyHFk#b5O0WPQs"
+      "id": "vKEsyHFk#b5O0WPQs",
+      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
     }
   ]
 }

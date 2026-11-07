@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import type { CheckoutFiles } from "#runtime/operations/code-facts/modules/module-resolution.ts";
+import type { CheckoutFiles } from "#runtime/code-facts/modules/operations/module-resolution.ts";
 
 /** A written checkout, and how to change and remove it. */
 interface FixtureCheckout extends CheckoutFiles {

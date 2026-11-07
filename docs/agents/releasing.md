@@ -1,6 +1,6 @@
 # Releasing Archboard
 
-[ADR 0075](../adr/0075-a-release-is-a-compiled-executable-for-each-platform-on-npm.md)
+[ADR 0076](../adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md)
 decides what a release is. This document tells you how to build the packages
 of a release and how to prove that they install.
 
@@ -70,7 +70,7 @@ needs npm on your PATH.
 
 ## How a release reaches npm
 
-A merge of a release pull request is the release (ADR 0075). In that run of
+A merge of a release pull request is the release (ADR 0076). In that run of
 `.github/workflows/release.yml`, release-please tags the merge commit. Then
 the job `gate` runs the complete CI gate of `.github/workflows/ci.yml` on that
 commit. Beside it, these jobs run, each after the one before:

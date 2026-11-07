@@ -5,7 +5,7 @@
   "responsibility": "Builds the thread start request with its checkout, instructions, tool manifests and reviewed model",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/rules/workhorse-start/model.ts"
+    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/rules/model.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SJ2JMVyz#nFnr4lj9",
@@ -24,7 +24,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/services/host/archboard.ts",
+        "path": "packages/workbench/src/runtime/host/services/archboard.ts",
         "symbol": "ARCHBOARD_APP_DYNAMIC_TOOLS"
       },
       "id": "vKEsyHFk/SJ2JMVyz#zIWijDn9",
@@ -37,7 +37,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/workhorse-start/model.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/rules/model.ts",
         "symbol": "createWorkhorseThreadStartParams"
       },
       "id": "vKEsyHFk/SJ2JMVyz#jAdLjEha",

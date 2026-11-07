@@ -63,7 +63,7 @@ describe.serial("source staleness", () => {
 		};
 
 		const first = await health();
-		// Which installation the server runs, so that a command can tell a release of another version (ADR 0075).
+		// Which installation the server runs, so that a command can tell a release of another version (ADR 0076).
 		expect(first.mode).toBe("checkout");
 		expect(first.version).toBe(
 			JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")).version,

@@ -6,7 +6,7 @@
   "description": "The command answers over the existing model read, with no route of its own, for the current state, a named state or a checkpoint.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/inspect.ts"
+    "path": "apps/cli/src/cli/commands/model/operations/inspect.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#rTNYNRVL",
@@ -19,11 +19,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/inspect.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/inspect.ts",
         "symbol": "readArchitectureModelOnServer"
       },
-      "to": "vKEsyHFk/XppR9owz#TsCise1I",
-      "id": "vKEsyHFk#azJqVDzi"
+      "id": "vKEsyHFk#azJqVDzi",
+      "to": "vKEsyHFk/XppR9owz#TsCise1I"
     },
     {
       "order": 1003000,
@@ -32,11 +32,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/rules/model/inspection.ts",
+        "path": "apps/cli/src/cli/commands/model/rules/inspection.ts",
         "symbol": "inspectContainer"
       },
-      "to": "vKEsyHFk#DKzh4lMo",
-      "id": "vKEsyHFk#ImS2FjJd"
+      "id": "vKEsyHFk#ImS2FjJd",
+      "to": "vKEsyHFk#DKzh4lMo"
     }
   ]
 }

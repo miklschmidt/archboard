@@ -10,8 +10,11 @@ import {
 } from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
-import { evaluateOutcomes, type OutcomeCheck } from "#runtime/rules/outcomes/outcomes.ts";
-import { type Reading } from "#runtime/rules/outcomes/reading.ts";
+import {
+	evaluateOutcomes,
+	type OutcomeCheck,
+} from "#runtime/evaluation/run-checks/outcomes/rules/outcomes.ts";
+import { type Reading } from "#runtime/evaluation/run-checks/outcomes/rules/reading.ts";
 
 /** One variant as the fixture states it. */
 interface VariantSpec {

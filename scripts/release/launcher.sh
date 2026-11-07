@@ -1,5 +1,5 @@
 #!/bin/sh
-# The bin `archboard` of the launcher packages `archboard` and `@archboard/cli` (ADR 0075). It
+# The bin `archboard` of the launcher packages `archboard` and `@archboard/cli` (ADR 0076). It
 # starts the executable of the platform package that the package manager installed beside this
 # package, with every argument, and the executable's exit status is its own.
 set -eu

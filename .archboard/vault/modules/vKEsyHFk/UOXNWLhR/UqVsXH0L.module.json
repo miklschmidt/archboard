@@ -2,14 +2,28 @@
   "order": 30000,
   "name": "Draw on lit relationships",
   "kind": "function",
-  "responsibility": "Draws each relationship that lights on from its source to its target, once",
-  "description": "A sweep is a copy of the line laid over the picture for as long as it takes, animated on the document timeline, then settled into the line under it and taken away. The picture is not changed. A person who asked for reduced motion gets no sweep.",
+  "responsibility": "Asks the stage to draw each relationship that newly lights on from its source to its target, once",
+  "description": "The painter draws a sweep as a copy of the line laid over the picture, heavier than the line, that settles to the line's weight and fades into it. What was lit before and still is stays as it is, and a person who asked for reduced motion gets no sweep.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/canvas/picture/picture-sweep.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-sweep.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#UqVsXH0L",
   "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 990100,
+      "kind": "call",
+      "label": "the sweep of each newly lit relationship",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-sweep.ts",
+        "symbol": "stageOf"
+      },
+      "id": "vKEsyHFk#oNKZu0fB",
+      "to": "vKEsyHFk#9FxduWoO"
+    }
+  ]
 }

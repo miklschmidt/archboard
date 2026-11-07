@@ -3,6 +3,37 @@
 What each check proves, and the constraints on running them. Read this when
 changing tests or CI, or when a browser check fails.
 
+## Test policy
+
+**Test observable behavior and contracts.** A test is there to catch incorrect
+behavior, not only a change to how repository files are worded or organized.
+
+**Test behavior and contracts, not human-readable wording.** For CLI help,
+diagnostics and UI copy, test routing, exit status, side effects, structure
+and formatting. Do not lock that copy down with text matching, prose snapshots
+or full-output equality.
+
+When a test covers generic CLI behavior, discover commands and options from
+authoritative runtime metadata. Adding or renaming a flag, or editing a
+description, must not require updating help-test expectations.
+
+Assert exact values only where they are the behavior under test, such as
+machine-readable results or protocol fields. Before you add an assertion,
+name the behavioral regression that it catches. If it only detects a wording
+change or duplicates upstream library coverage, omit it.
+
+Give each non-obvious regression one cheapest credible owner:
+
+- types and lint for structural rules
+- focused unit or integration owners for hidden behaviour
+- rendered or browser owners for visible workflows
+- process or system owners, only for a bug that needs that boundary
+
+If normal use makes the failure of an owner obvious, another owner catches it,
+or it mostly simulates upstream tools, remove that owner.
+
+## The gate and its lanes
+
 `bun run test` runs the stages of `test:first` at the same time: both TypeScript projects,
 both browser builds, `test:core` and `test:repository`. It then runs `test:modules`,
 `test:system`, `test:solo` and `test:serial-browser`, one lane after the other, because each
@@ -29,9 +60,12 @@ The six normal native lanes are:
   (`tests/system/repository-policy/readme-assets.test.ts`), which starts no browser,
   the owner that holds the README banner's mark to the shell's
   (`tests/system/repository-policy/readme-lockup.test.ts`),
-  and the owner of the crates' shape rules that no lint sees: every crate
+  the owner of the crates' shape rules that no lint sees: every crate
   inherits the workspace lints, and no `.rs` file is over 600 lines
-  (`tests/system/repository-policy/rust-crates.test.ts`);
+  (`tests/system/repository-policy/rust-crates.test.ts`),
+  and the owner that holds every path a Vite+ task or an Oxlint override names to a file that
+  exists, so a moved test cannot leave a stale lane or ignore pattern behind
+  (`tests/system/repository-policy/config-paths.test.ts`);
 - `test:serial-browser`: every owner in the executable `BROWSER_TEST_PATHS`
   inventory through the strict adapter, one owner for every six cores.
 
@@ -44,7 +78,7 @@ It retains the drawing assertions and first-layout speed limits.
 Unreadable canonical inputs or an absent current state stop the benchmark.
 It reads no other repository, historical state, or proposal selection.
 The normal gate also renders three fixed fixtures on both engines in
-`packages/renderer/tests/runtime/operations/blocks/drawing-integrity.test.ts`.
+`packages/renderer/tests/runtime/blocks/operations/drawing-integrity.test.ts`.
 They cover labeled dependencies, dense cross-links, and nested containers.
 Shared assertions detect missing parts, routes through cards, misplaced labels,
 hidden parent frames, and line clearance defects.
@@ -59,11 +93,15 @@ An engine-independent contract uses the default unless it already tests both eng
 Changing the default must preserve the assertions of each Track regression.
 
 `bun run check` is the complete normal gate locally and on GitHub Actions.
-It runs lint, formatting, both TypeScript projects, and the normal test chain.
+It runs lint, formatting, both TypeScript projects, the architecture check, and the normal test chain.
 `check:first` holds every stage that waits on no shared timing, and `vp` runs them at once.
 The first failure ends the run with a nonzero status, stops the other stages, and leaves its
 output in the log with the stage name on each line.
 The three Rust stages take turns on the lock of Cargo's build directory.
+`check:model` runs `archboard check` on this checkout's vault: the semantics, the code check against the bound source, and the embeds.
+Any warning or error fails it.
+It starts a server from this checkout's source on a free port and stops it after the check, because a running server checks with the source that it read at its start.
+The code check's rust-analyzer builds in `target/rust-analyzer`, so it never waits on that lock.
 `lint:all` includes `lint:core`, clippy over the crates and their tests, and
 `lint:core-docs`, rustdoc over every doc comment of the crates, and
 `format:core` checks their formatting with `cargo fmt`.
@@ -209,7 +247,7 @@ caller's value out. No CLI case reaches the change-feed settle, so its 1,200 ms
 default costs them nothing. When a test must outwait a product timer, write why
 beside its own literal in `timing.ts`.
 
-The opt-in benchmark corpus in `packages/renderer/tests/runtime/operations/blocks/wide-pictures.test.ts`
+The opt-in benchmark corpus in `packages/renderer/tests/runtime/blocks/operations/wide-pictures.test.ts`
 uses a 60-second case deadline when `CI=true`. Its default engine, Blocks, also gets
 60 seconds for a first render. GitHub Actions recorded first renders up to
 45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
@@ -232,10 +270,10 @@ through the CLI and HTTP interfaces.
 It runs `model render` and `model rasterize` against a real Archboard server without a browser client.
 It also reads their exact recipes through `check embeds`.
 `model-render-context.test.ts` beside it covers complete interface context, comparison, unresolved subjects, and exact recipe replay.
-The rasterizer's own owner, `packages/renderer/tests/runtime/services/rasterizer`, proves real pixels, native and
+The rasterizer's own owner, `packages/renderer/tests/runtime/rasterizer/services`, proves real pixels, native and
 scaled dimensions, full bounds past a display, bounds refusals,
 cancellation and a Chromium that is provably gone. The Chromium it runs on is
-`packages/renderer/src/runtime/processes/headless-chromium`, whose owner proves caller flags, an exact
+`packages/renderer/src/runtime/headless-chromium/processes`, whose owner proves caller flags, an exact
 window viewport, event delivery without retention, a page Blob streamed to a
 file, and provable teardown.
 
@@ -249,11 +287,11 @@ The same owner also replays an original legacy board recording from its captured
 That owner requires `RENDER_FAILED`, preserves the talk, and leaves no output or partial file.
 These module owners cover the supporting contracts:
 
-- `packages/walkthrough/tests/runtime/services` and `processes`: finding and running ffmpeg.
+- `packages/walkthrough/tests/runtime/video-encoding/services` and `processes`: finding and running ffmpeg.
 - `packages/walkthrough/tests/shared/protocol`: the talk's contract.
-- `apps/web/tests/ui/rules/walkthrough-replay`: the frame that shows each event.
-- `packages/ui-kit/tests/ui/state/frame-clock`: the stepped clock.
-- `packages/walkthrough/tests/runtime/store` and `operations`: the talk on disk and the browsers'
+- `apps/web/tests/ui/walkthroughs/replay/state`: the frame that shows each event.
+- `packages/ui-kit/tests/ui/frame-clock/state`: the stepped clock.
+- `packages/walkthrough/tests/runtime/recorder/store` and `operations`: the talk on disk and the browsers'
   flags.
 
 The system owners above need a Chromium-family executable
@@ -476,10 +514,10 @@ their exhaustive state and failure matrices.
 
 ## Untracked canonical history
 
-`packages/model/tests/runtime/operations/history/private-archive.test.ts` owns private archive setup through the public architecture interface.
+`packages/model/tests/runtime/canonical/history/operations/private-archive.test.ts` owns private archive setup through the public architecture interface.
 It uses real files, signed Git checkpoints, and a disposable local remote.
 It proves source preservation, signed structural batches, local-only publication, portable metadata, exact reopening, damaged-storage refusal, and independent vault ownership.
-`packages/model/tests/runtime/operations/model-edit/private-recovery.test.ts` owns an interrupted private relationship transfer through that same interface.
+`packages/model/tests/runtime/canonical/edit/operations/private-recovery.test.ts` owns an interrupted private relationship transfer through that same interface.
 It reuses the existing crash process and proves complete affected subjects, foreign-content preservation, source-context refusal, recovery, retry, and retention after collection.
 It also publishes the retained candidate during interruption and preserves publication evidence through recovery.
 The existing source-backed owners keep the shared archive and transaction behavior matrices.
@@ -499,9 +537,9 @@ The slice adds no browser behavior.
   proofs are derived views. The gate renders and validates them in memory, then
   invokes `bun run generate:cli-contract -- --output-dir <temporary-directory>`
   twice from absent output directories and compares exact bytes. The script
-  is `apps/cli/src/cli/operations/contract-artifacts/generate.ts`, which the
+  is `apps/cli/src/cli/commands/contract-artifacts/operations/generate.ts`, which the
   root script runs by path, and
-  `apps/cli/tests/cli/operations/contract-artifacts/render.test.ts` holds
+  `apps/cli/tests/cli/commands/contract-artifacts/operations/render.test.ts` holds
   the rendered routes to the live registry. The system case removes
   the temporary outputs and proves the checkout status is unchanged. For a
   local readable copy, `bun run generate:cli-contract` writes the three views
@@ -510,7 +548,7 @@ The slice adds no browser behavior.
 - The CLI owners in `test:system` resolve `bin.archboard` from `package.json` and drive
   that executable from outside the checkout. They cover vault lookup, checkout hand-off,
   repository selection, skill installation, canonical operations, and resource cleanup.
-  `apps/cli/tests/cli/rules/routing/help.test.ts` discovers command topics from
+  `apps/cli/tests/cli/routing/rules/help.test.ts` discovers command topics from
   `cliContractRegistry()` and tests their help through the real parser.
 - Normal lock owners prove reachable one-server exclusion. The opt-in topology
   owner proves a claim in one Archboard server process excludes writes through
@@ -519,7 +557,7 @@ The slice adds no browser behavior.
 - The repository-session owners in `test:system` use RepositoryFixture-owned HOME, XDG state, log,
   registry, and vault paths, isolated from the caller's user configuration.
 
-The canonical independent-flow owner is `packages/model/tests/runtime/operations/model-edit/flows.test.ts`.
+The canonical independent-flow owner is `packages/model/tests/runtime/canonical/edit/operations/flows.test.ts`.
 It crosses the public architecture read/write interface with real files and Git.
 It owns collection identity, nested placements, alternative renames, complete claims, and same-operation reference repair.
 The flow-repair case in `structure-recovery.test.ts` owns interrupted module and flow installation together.
@@ -527,7 +565,7 @@ The flow-repair case in `structure-recovery.test.ts` owns interrupted module and
 Existing renderer owners retain sequence and flowchart drawing rules.
 No browser owner is added for this backend delivery.
 
-The canonical reference owner is `packages/model/tests/runtime/operations/model-edit/references.test.ts`.
+The canonical reference owner is `packages/model/tests/runtime/canonical/edit/operations/references.test.ts`.
 It uses the public architecture operations with real files, signed checkpoints, and disposable Git repositories.
 It covers foreign navigation, immutable foreign pins, unavailable checkpoints, separate ownership, and exact source refusal.
 `tests/system/models/model-references.test.ts` owns agreement between the CLI and HTTP adapters.
@@ -541,13 +579,13 @@ Both browser owners use real files and Git with the existing browser adapter and
 
 ## Compact canonical proposals
 
-`packages/model/tests/runtime/operations/proposals/` owns proposal behavior at the public architecture read/write interface.
+`packages/model/tests/runtime/canonical/proposals/operations/` owns proposal behavior at the public architecture read/write interface.
 Its real file and Git cases cover compact deltas, exact materialization, planning roots, siblings, metadata, placements, predecessor refusal, signing, recovery, and private archives.
 Existing history owners retain publication, shallow recovery, source isolation, and linked-worktree coverage.
 `tests/system/models/model-proposals.test.ts` owns normal CLI and HTTP routing, schema parity, lifecycle metadata, comparison selection, and refusal status.
 These adapters do not repeat the domain matrix.
 `tests/system/models/model-inspect.test.ts` owns `model inspect` and the interface sections of `model compare` through the real CLI and server.
-`packages/model/tests/shared/rules/compare/interfaces.test.ts` owns the rules of interface changes and side-by-side measures.
+`packages/model/tests/shared/compare/rules/interfaces.test.ts` owns the rules of interface changes and side-by-side measures.
 `canonical-model-proposals.test.ts` owns visible state selection, draft lifecycle, flow readings, claims, and live draft refresh.
 `canonical-model-comparison.test.ts` owns the comparison control, a way out of a saved comparison and through a reload, coherent removed definitions, changed fields, refusal, retained recovery, and the interface changes above a proposal's change list, whose rows select their module, also one that the state lacks.
 `interface-changes.test.ts` owns what those rows say.
@@ -559,9 +597,9 @@ No renderer algorithm test or model evaluation belongs to this slice.
 
 ## Canonical explanation actions
 
-`packages/model/tests/runtime/operations/model-edit/explanations.test.ts` owns capture through the public architecture reader with real files and Git.
+`packages/model/tests/runtime/canonical/edit/operations/explanations.test.ts` owns capture through the public architecture reader with real files and Git.
 It covers stale revisions, stable subjects, relationship intent, and missing-flow investigation.
-The existing retained-comparison case in `packages/model/tests/runtime/operations/proposals/proposals.test.ts` also owns explanation capture of exact checkpoints and independent comparison revisions.
+The existing retained-comparison case in `packages/model/tests/runtime/canonical/proposals/operations/proposals.test.ts` also owns explanation capture of exact checkpoints and independent comparison revisions.
 `tests/system/server-state/canonical-explanations.test.ts` owns normal CLI and HTTP actions through the controlled production provider.
 It covers concurrent invocation identity, canonical pane reports, tab action discovery, change notices, queue cancellation, exact turn interruption, captured retries, final text, empty answers, and unavailable sign-in.
 `tests/system/server-state/shown-conversation.test.ts` retains ownership of browser activation and tab checkout rules through the same HTTP contract.
@@ -571,7 +609,7 @@ No live model evaluation or extra renderer owner belongs to this slice.
 
 ## Canonical proposal reconciliation
 
-The public architecture operations own reconciliation tests under `packages/model/tests/runtime/operations/proposals/`.
+The public architecture operations own reconciliation tests under `packages/model/tests/runtime/canonical/proposals/operations/`.
 The cases use real temporary files and Git through the same reader and writer as CLI and HTTP.
 They reuse the canonical model and independent-flow fixtures beside the existing semantic reconciliation regressions.
 Coverage includes safe inheritance, standing baselines, blocked descendants, and complete settlement.
@@ -590,12 +628,12 @@ The shared model-edit fixture names the repository used by its authored code bin
 
 ## Canonical narrative playback
 
-`packages/model/tests/runtime/operations/model-edit/walkthroughs.test.ts` owns narrative authoring and target resolution through public architecture operations with real files and Git.
+`packages/model/tests/runtime/canonical/edit/operations/walkthroughs.test.ts` owns narrative authoring and target resolution through public architecture operations with real files and Git.
 It covers beat identity, claims, stale tokens, exact retry, retained inputs, pinned playback, restart reads, and per-beat missing subjects.
 The proposal owner covers independent compact narrative and beat subjects.
 
 `tests/system/models/model-walkthroughs.test.ts` owns CLI and HTTP routing, schema agreement, retained selection, and refused output preservation.
-`packages/walkthrough/tests/runtime/store/canonical-talk.test.ts` owns the controlled page load, exact payload storage, and revision refusal through existing recording contracts.
+`packages/walkthrough/tests/runtime/recorder/store/canonical-talk.test.ts` owns the controlled page load, exact payload storage, and revision refusal through existing recording contracts.
 
 `tests/system/server-state/canonical-walkthrough-replay.test.ts` owns offline canonical replay through the existing Chromium and encoder interface.
 It removes the source repository and compares every frame across one-page and two-page rendering.
@@ -605,7 +643,7 @@ No live voice model or model evaluation runs in these owners.
 
 ## Legacy current preview
 
-`packages/model/tests/runtime/operations/legacy-preview/preview.test.ts` owns composed migration behavior through the public architecture reader and writer.
+`packages/model/tests/runtime/legacy-boards/reading/inventory/operations/preview.test.ts` owns composed migration behavior through the public architecture reader and writer.
 Its real files and disposable Git repositories cover semantic preservation, explicit conflict choices, recursive flows, reference mapping, vocabulary, stale source, and incoherent containment.
 The original inventory owner retains its coverage of source capture and plan persistence.
 `tests/system/models/migration-planning.test.ts` owns CLI and HTTP agreement, explicit preview selection, and structured stale refusal.
@@ -631,7 +669,7 @@ It uses real temporary Git repositories and the public HTTP writer for agent dec
 
 ## Canonical historical corrections
 
-The public architecture operations own correction tests under `packages/model/tests/runtime/operations/proposals/`.
+The public architecture operations own correction tests under `packages/model/tests/runtime/canonical/proposals/operations/`.
 `corrections.test.ts` owns lasting identity, exact originals, comparison audit, unchanged current content, and adopted successor isolation.
 `correction-family.test.ts` owns repeated audit chains, retained baselines, conflicting following drafts, and blocked descendants.
 `correction-safety.test.ts` owns explicit targets, immutable evidence, empty-change refusal, stale correction checkpoints, and retry identity.
@@ -655,7 +693,7 @@ The unchanged-byte assertion includes old schema files and catches implicit upgr
 
 ## Legacy history preview and original retention
 
-The public architecture operations own `legacy-preview/history.test.ts`, `drafts.test.ts`, and `retention.test.ts` under `packages/model/tests/runtime/operations/`.
+The public architecture operations own `history.test.ts`, `drafts.test.ts`, and `retention.test.ts` under `packages/model/tests/runtime/legacy-boards/reading/inventory/operations/`.
 Real legacy files prove original legacy board coverage, independent same-name drafts, explicit predecessor and baseline choices, standing bases, and lifecycle evidence.
 The existing canonical subject engine owns compact changes.
 Original retention cases prove exact old-schema bytes, unresolved payloads, configured signing refusal, exact retries, source and plan guards, retained ancestry, and unchanged source HEAD and index.
@@ -680,7 +718,7 @@ The external media and Codex substitutes remain in the existing production voice
 
 ## Portable canonical models
 
-`packages/model/tests/runtime/operations/history/portable*.test.ts` owns portable architecture behavior.
+`packages/model/tests/runtime/canonical/history/operations/portable*.test.ts` owns portable architecture behavior.
 The public architecture operations use real temporary files and disposable Git repositories.
 Coverage includes exact identities, completed decisions, corrections, standing conflicts, narrative targets, private archives, and lost-history restoration.
 The same owner covers incomplete closure, destination refusal, signing, interruption, foreign bytes, and exact retry.
@@ -752,18 +790,18 @@ TASK-549.24 retires the live legacy writer and reader paths.
 Their tests retire with those product paths.
 The following continuing owners replace their responsibilities.
 
-| Retired product path                                                          | Continuing owner                                                                                                                                                                   |
-| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Legacy create, edit, branch, adopt, settle, rename, discard, move, and claims | `packages/model/tests/runtime/operations/model-edit`, `proposals`, and `legacy-preview` cover canonical authoring, claims, reconciliation, migration, and recovery.                |
-| Automatic legacy read upgrades                                                | `packages/model/tests/runtime/store/format/read-migration.test.ts` decodes exact original bytes without writes. Migration owners cover explicit cutover.                           |
-| Legacy CLI and HTTP authoring adapters                                        | `tests/system/models/model-flows.test.ts` covers canonical creation, flow edits, structural and behavioral exports, code checks, history commands, and retired-route refusal.      |
-| Legacy embed tracking and name-based repair                                   | Canonical render recipes use the existing renderer metadata owner. The model surface owner covers SVG, PNG, and Git-discovered embeds. Fetch and cache owners remain.              |
-| Legacy locality and footprint lookup adapters                                 | Canonical history commands use real module bindings and Git commits through the existing analysis. Pure language and history owners remain.                                        |
-| Legacy board context and outside-write announcements                          | The canonical change-feed owner and generic server owners cover durable attribution, captured selection, focus, shared conversations, and local workhorse routing.                 |
-| Legacy side-by-side variant commands                                          | Canonical proposal adapters cover independent state reads. The parent's browser owners cover simultaneous displayed readings.                                                      |
-| Legacy recording setup, start, and replay authoring fixtures                  | Canonical narration, recording, and retained-replay owners cover continuing behavior. Pure retained-talk decoding remains.                                                         |
-| Legacy board lock API and cross-process authoring routes                      | Canonical exclusion, news, and recovery owners exercise the shared lease and claims. Generic process cleanup uses a fixture inside the board module.                               |
-| Legacy fixed-level evaluation scenarios                                       | Eight canonical scenarios use eight authored fixtures and fourteen coverage parts. Deterministic validation uses public runtime reads. Earlier reports remain historical evidence. |
+| Retired product path                                                          | Continuing owner                                                                                                                                                                                  |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Legacy create, edit, branch, adopt, settle, rename, discard, move, and claims | `packages/model/tests/runtime/canonical/{edit,proposals}/operations` and `legacy-boards/reading/inventory/operations` cover canonical authoring, claims, reconciliation, migration, and recovery. |
+| Automatic legacy read upgrades                                                | `packages/model/tests/runtime/legacy-boards/reading/format/store/read-migration.test.ts` decodes exact original bytes without writes. Migration owners cover explicit cutover.                    |
+| Legacy CLI and HTTP authoring adapters                                        | `tests/system/models/model-flows.test.ts` covers canonical creation, flow edits, structural and behavioral exports, code checks, history commands, and retired-route refusal.                     |
+| Legacy embed tracking and name-based repair                                   | Canonical render recipes use the existing renderer metadata owner. The model surface owner covers SVG, PNG, and Git-discovered embeds. Fetch and cache owners remain.                             |
+| Legacy locality and footprint lookup adapters                                 | Canonical history commands use real module bindings and Git commits through the existing analysis. Pure language and history owners remain.                                                       |
+| Legacy board context and outside-write announcements                          | The canonical change-feed owner and generic server owners cover durable attribution, captured selection, focus, shared conversations, and local workhorse routing.                                |
+| Legacy side-by-side variant commands                                          | Canonical proposal adapters cover independent state reads. The parent's browser owners cover simultaneous displayed readings.                                                                     |
+| Legacy recording setup, start, and replay authoring fixtures                  | Canonical narration, recording, and retained-replay owners cover continuing behavior. Pure retained-talk decoding remains.                                                                        |
+| Legacy board lock API and cross-process authoring routes                      | Canonical exclusion, news, and recovery owners exercise the shared lease and claims. Generic process cleanup uses a fixture inside the board module.                                              |
+| Legacy fixed-level evaluation scenarios                                       | Eight canonical scenarios use eight authored fixtures and fourteen coverage parts. Deterministic validation uses public runtime reads. Earlier reports remain historical evidence.                |
 
 Generic source discovery, vault selection, origin guards, socket replacement, sign-in, conversation, approval, process cleanup, and opener owners remain.
 Their fixtures now seed canonical architecture or use canonical public operations.
@@ -778,7 +816,7 @@ The model package interface narrows to 184 exports, and its ceiling drops to 184
 
 The repository navigator lists one canonical model per repository.
 It no longer contains folders, legacy boards, variant rows, or a second architecture hierarchy.
-`apps/web/tests/ui/components/shell/navigator-repositories.test.tsx` retains repository identity, activity, the checkout list, failure recovery, and filter behavior.
+`apps/web/tests/ui/shell/components/navigator-repositories.test.tsx` retains repository identity, activity, the checkout list, failure recovery, and filter behavior.
 `canonical-model-agent-navigation.test.ts` owns keyboard opens, adjacent panes, active repository selection, and pane letters through the browser.
 The old `navigator-tree.test.tsx` retires with the legacy hierarchy and variant expansion.
 Its private React-prop inspection also retires because it tests implementation details.
@@ -852,11 +890,11 @@ Retained camera and presentation-box UI owners keep their existing behavior asse
 The walkthrough header owner also proves that sidebar controls remain held during playback and restore afterward.
 The agent-navigation owner proves that a completed remote presentation cannot reopen after an uncached state read.
 
-`apps/web/tests/ui/clients/architecture-model/history-on-selection.test.tsx` replaces the old locality query owner.
+`apps/web/tests/ui/architecture-drawing/model-reader/access/clients/history-on-selection.test.tsx` replaces the old locality query owner.
 It exercises canonical HTTP reads and owns one read for every later pick, a read that outlives the pick that started it, and isolation between vaults.
 The legacy locality endpoint adapter, query key, and retained-replay placeholder retire.
 
-`apps/web/tests/ui/components/architecture-model/model-history.test.tsx` replaces the legacy history component fixture.
+`apps/web/tests/ui/architecture-drawing/model-reader/reading/components/model-history.test.tsx` replaces the legacy history component fixture.
 It mounts the actual canonical consumer and retains commit expansion, coupled-subject callbacks, evidence distinctions, and explicit retry.
 A new architecture revision hides the prior revision's evidence while the request runs.
 The old blanket refusal for historical variants retires because canonical history supports explicit states and checkpoints.

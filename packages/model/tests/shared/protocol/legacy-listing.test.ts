@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { LegacyListingSchema, listedLegacyBoard } from "#shared/protocol/legacy-listing.ts";
 import { DrillDownSchema } from "#shared/schemas/content.ts";
-import { parseLegacyBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
+import { parseLegacyBoard } from "#shared/coherence/rules/parse-legacy-board.ts";
 import { type LegacyBoard } from "#shared/schemas/legacy-board.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
 

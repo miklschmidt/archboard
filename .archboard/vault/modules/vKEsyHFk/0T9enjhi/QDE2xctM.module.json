@@ -6,7 +6,7 @@
   "description": "Retains exact reference dependencies through Git ancestry. A proposal reference to current uses the captured current checkpoint. A checkpoint does not embed its own future identity.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/operations/history/reference-pins.ts"
+    "path": "packages/model/src/runtime/canonical/history/operations/reference-pins.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#QDE2xctM",
@@ -40,7 +40,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/reference-pins.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/reference-pins.ts",
         "symbol": "resolveModelReferences"
       },
       "id": "vKEsyHFk/0T9enjhi#pG0y6qDe",
@@ -53,7 +53,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/reference-pins.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/reference-pins.ts",
         "symbol": "listArchitectureCheckpoints"
       },
       "id": "vKEsyHFk#Wg3meI2l",

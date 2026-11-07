@@ -6,7 +6,7 @@
   "description": "Never part of the gate: every author run and the grading session call a model, and a person decides when that happens.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/operations/evaluation/command.ts"
+    "path": "packages/skills/src/runtime/evaluation/operations/command.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#JaLEafPa",
@@ -23,7 +23,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+        "path": "packages/skills/src/runtime/evaluation/operations/command.ts",
         "symbol": "loadSuite"
       },
       "id": "vKEsyHFk/IbGtfJE2#EZG5L7jf",
@@ -40,7 +40,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+        "path": "packages/skills/src/runtime/evaluation/operations/command.ts",
         "symbol": "runBatch"
       },
       "id": "vKEsyHFk/IbGtfJE2#gkJMDrW9",
@@ -53,7 +53,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+        "path": "packages/skills/src/runtime/evaluation/operations/command.ts",
         "symbol": "gradeBatch"
       },
       "id": "vKEsyHFk/IbGtfJE2#DJsFb8l6",
@@ -66,7 +66,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+        "path": "packages/skills/src/runtime/evaluation/operations/command.ts",
         "symbol": "writeReport"
       },
       "id": "vKEsyHFk/IbGtfJE2#hlCNYU50",
@@ -79,7 +79,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+        "path": "packages/skills/src/runtime/evaluation/operations/command.ts",
         "symbol": "pinVersions"
       },
       "id": "vKEsyHFk/IbGtfJE2#7KrvUnRu",

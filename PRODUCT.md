@@ -128,7 +128,7 @@ Every surface keeps these constraints:
   Any agent that runs a CLI can author architecture.
 - Git identity and configured signing remain in force for archive operations.
   Missing architecture or source evidence receives explicit recovery guidance.
-- Archboard runs from a clone or from a compiled npm release (ADR 0075).
+- Archboard runs from a clone or from a compiled npm release (ADR 0076).
   Hosted storage and account services remain deferred.
 
 ## Brand Commitments

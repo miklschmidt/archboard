@@ -6,7 +6,7 @@
   "description": "The desktop frame keeps the repository navigator, local agent controls, conversation, and canonical panes. Repository actions open current modules through the shared router. Unmigrated repositories show their migration state. Model ownership and level controls are retired.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/shell"
+    "path": "apps/web/src/ui/shell"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#c4LPnwh5",
@@ -33,7 +33,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/shell/PaneStages.tsx",
+        "path": "apps/web/src/ui/shell/components/PaneStages.tsx",
         "symbol": "PaneChromeContext"
       },
       "id": "vKEsyHFk/yejBBUFY#6JBVcBmw",

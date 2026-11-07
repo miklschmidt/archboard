@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/canvas/reads/local-pictures.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/local-pictures.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
@@ -22,7 +22,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/local-pictures.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/local-pictures.ts",
         "symbol": "retainedDocumentQuery"
       },
       "id": "vKEsyHFk/UOXNWLhR#rlrH32yx",
@@ -35,7 +35,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/local-pictures.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/local-pictures.ts",
         "symbol": "readCachedPicture"
       },
       "id": "vKEsyHFk/UOXNWLhR#R4zJCAXX",
@@ -48,7 +48,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/local-pictures.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/local-pictures.ts",
         "symbol": "DrawLegacyBoard"
       },
       "id": "vKEsyHFk/UOXNWLhR#9yW8SET1",
@@ -61,7 +61,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/local-pictures.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/local-pictures.ts",
         "symbol": "sameModelName"
       },
       "id": "vKEsyHFk#J52Bs9ep",
@@ -74,7 +74,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/local-pictures.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/local-pictures.ts",
         "symbol": "ReadingError"
       },
       "id": "vKEsyHFk/UOXNWLhR#2euPzA3Q",
@@ -87,7 +87,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/local-pictures.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/local-pictures.ts",
         "symbol": "onModelChange"
       },
       "id": "vKEsyHFk/UOXNWLhR#AVy3q4Ja",
@@ -100,7 +100,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/local-pictures.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/local-pictures.ts",
         "symbol": "modelGoneStale"
       },
       "id": "vKEsyHFk/UOXNWLhR#tpK411FR",
@@ -113,7 +113,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/local-pictures.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/local-pictures.ts",
         "symbol": "cachedReadings"
       },
       "id": "vKEsyHFk/UOXNWLhR#ld2PjHvA",

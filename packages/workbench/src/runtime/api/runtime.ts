@@ -1,4 +1,4 @@
 export {
 	parseDynamicToolCallResponse,
 	type ParsedDynamicToolCallResponse,
-} from "#runtime/protocol/thread-tools/results.ts";
+} from "#runtime/thread-tools/protocol/results.ts";

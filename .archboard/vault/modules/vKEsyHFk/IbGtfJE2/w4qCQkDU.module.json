@@ -6,7 +6,7 @@
   "description": "The author's stream is kept whole: its commands, its file changes, its usage and its failure are read from it afterwards, never reported by the author.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/operations/runs/author.ts"
+    "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/author.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "prepareRunDirectory"
       },
       "id": "vKEsyHFk/IbGtfJE2#r76TBNwY",
@@ -32,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/author.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "checkoutFlask"
       },
       "id": "vKEsyHFk/IbGtfJE2#ZexKQEJK",
@@ -45,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/author.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "startServer"
       },
       "id": "vKEsyHFk/IbGtfJE2#i1FABJCb",
@@ -58,7 +58,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/author.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "installSkill"
       },
       "id": "vKEsyHFk/IbGtfJE2#25DiejPQ",
@@ -75,7 +75,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/author.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "authorArgv"
       },
       "id": "vKEsyHFk/IbGtfJE2#9sL5gPEN",
@@ -88,7 +88,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/author.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "evaluateGuardrails"
       },
       "id": "vKEsyHFk/IbGtfJE2#VYAeNogH",
@@ -101,7 +101,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/author.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "evaluateOutcomes"
       },
       "id": "vKEsyHFk/IbGtfJE2#cm1J9TGU",
@@ -114,11 +114,24 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/author.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "captureDeclared"
       },
       "id": "vKEsyHFk/IbGtfJE2#b3s3lWZn",
       "to": "vKEsyHFk/IbGtfJE2#RqoYaLTK"
+    },
+    {
+      "order": 17000,
+      "kind": "data",
+      "label": "a fixture's talk, read back to replay",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/operations/replay.ts",
+        "symbol": "readTalk"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#RwZDQDsa",
+      "to": "vKEsyHFk/SMjRfwN3#XtzfRQkG"
     },
     {
       "order": 28000,
@@ -127,7 +140,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/author.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "layFixture"
       },
       "id": "vKEsyHFk/IbGtfJE2#UcQvakTJ",
@@ -140,24 +153,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/author.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "classifyCommands"
       },
       "id": "vKEsyHFk/IbGtfJE2#ZgOzpUec",
       "to": "vKEsyHFk/IbGtfJE2#TJmrdpKj"
-    },
-    {
-      "order": 17000,
-      "kind": "data",
-      "label": "a fixture's talk, read back to replay",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
-        "symbol": "readTalk"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#RwZDQDsa",
-      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
     },
     {
       "order": 35000,
@@ -166,11 +166,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
+        "path": "packages/skills/src/runtime/evaluation/operations/replay.ts",
         "symbol": "keepTalk"
       },
       "id": "vKEsyHFk/vKEsyHFk#U1k5hdA7",
-      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
+      "to": "vKEsyHFk/SMjRfwN3#XtzfRQkG"
     }
   ]
 }

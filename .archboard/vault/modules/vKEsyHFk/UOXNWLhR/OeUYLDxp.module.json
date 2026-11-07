@@ -6,11 +6,14 @@
   "description": "Callers report what happened: a model changed, models of a vault were written or let go, a listing may have moved, a vault's policy changed, the socket came back or a person asked for everything again. Reads in flight are cancelled first, so an answer decided before the event never lands as fresh, then a model's document is marked before its pictures, because a picture reads its model the moment it is asked for again. A reading asked by another spelling of the model, or by a name it had before a rename, is read again too.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/canvas/reads/read-refresh.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/read-refresh.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#OeUYLDxp",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "formerNames": [
+    "Board refresh"
+  ],
   "outgoing": [
     {
       "order": 70043,
@@ -19,7 +22,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/read-refresh.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/read-refresh.ts",
         "symbol": "sameModelName"
       },
       "id": "vKEsyHFk#GsciFned",
@@ -32,14 +35,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/read-refresh.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/read-refresh.ts",
         "symbol": "cachedReadings"
       },
       "id": "vKEsyHFk/UOXNWLhR#51taDpRp",
       "to": "vKEsyHFk/UOXNWLhR#nMKLaMje"
     }
-  ],
-  "formerNames": [
-    "Board refresh"
   ]
 }

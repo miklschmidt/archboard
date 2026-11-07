@@ -6,11 +6,11 @@
   "description": "A workhorse works in its checkout, a directory the host admitted, so it reads that repository's AGENTS.md, skills and Codex configuration. Its thread-link key is the tab session and the checkout together. It belongs to the checkout, so it stays linked until its tab session ends. noteActiveTurn keeps the turn running on a workhorse from turn/started on its current thread to the turn/completed of the thread the turn started on, which New conversation may have left meanwhile, and stopWorkhorses interrupts that turn for one checkout or for every workhorse of the tab. The coordinator's stop_workhorses tool stops every running workhorse of its tab session by voice.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts"
+    "path": "packages/codex-realtime-voice/src/server/sessions/services/workhorses.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
-  "parent": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+  "parent": "vKEsyHFk/9ncuT5DP#Akuz1a3J",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -25,7 +25,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/workhorses.ts",
         "symbol": "turnInterrupt"
       },
       "id": "vKEsyHFk/SJ2JMVyz#k5kBhD3O",
@@ -38,7 +38,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/workhorses.ts",
         "symbol": "CodexWorkhorseQueue"
       },
       "id": "vKEsyHFk/SJ2JMVyz#vEdJ2e3Z",
@@ -51,7 +51,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/workhorses.ts",
         "symbol": "CodexWorkhorseOperations"
       },
       "id": "vKEsyHFk/SJ2JMVyz#AscFDt7l",
@@ -64,7 +64,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/workhorses.ts",
         "symbol": "CodexWorkhorseStart"
       },
       "id": "vKEsyHFk/SJ2JMVyz#incCs60x",
@@ -77,7 +77,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/workhorses.ts",
         "symbol": "CodexThreadContextController"
       },
       "id": "vKEsyHFk/9ncuT5DP#bso90XCw",

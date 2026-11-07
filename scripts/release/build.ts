@@ -1,4 +1,4 @@
-// `bun run release`: the npm packages of one release (ADR 0075), laid out and packed in
+// `bun run release`: the npm packages of one release (ADR 0076), laid out and packed in
 // dist/release:
 //
 //   archboard/, archboard-cli/        the launchers `archboard` and `@archboard/cli`: one shell

@@ -8,18 +8,18 @@ import {
 	createIdentityAuthorities,
 	createIdentityLedger,
 } from "@archboard/codex-app-server/identity";
-import type { CodexWorkbenchGateway } from "#server/protocol/gateway/contract.ts";
+import type { CodexWorkbenchGateway } from "#server/chat-conversations/gateway/protocol/contract.ts";
 import type {
 	CodexWorkbenchGeneration,
 	CodexWorkbenchStopReason,
-} from "#server/services/generation/lifecycle.ts";
+} from "#server/generation/services/lifecycle.ts";
 import type {
 	CodexWorkbenchGenerationInput,
 	CodexWorkbenchKernelAcquisition,
 	CodexWorkbenchOwner,
 	CodexWorkbenchOwnerOptions,
-} from "#server/services/owner/owner-state.ts";
-import { installCodexWorkbenchOwner } from "#server/services/generation/workbench.ts";
+} from "#server/owner/services/owner-state.ts";
+import { installCodexWorkbenchOwner } from "#server/generation/services/workbench.ts";
 
 function fakeProcess(events: string[]): CodexProcess {
 	const child = { pid: 14314 } as CodexProcessChild;

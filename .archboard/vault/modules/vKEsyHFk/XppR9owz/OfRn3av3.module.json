@@ -6,7 +6,7 @@
   "description": "The remaining client calls the vault diagnostic route through the shared request transport. Canonical model reads, writes, and rendering use their dedicated client.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/clients/server/vault-check.ts",
+    "path": "apps/cli/src/cli/server-access/clients/vault-check.ts",
     "symbol": "checkSemanticVaultOnServer"
   },
   "schemaVersion": 1,
@@ -44,7 +44,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
         "symbol": "answerCodeCheck"
       },
       "id": "vKEsyHFk/HBlhIeSD#trvs8oQv",
@@ -61,7 +61,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/clients/server/vault-check.ts",
+        "path": "apps/cli/src/cli/server-access/clients/vault-check.ts",
         "symbol": "requestJson"
       },
       "id": "vKEsyHFk/XppR9owz#EBy8Rjwh",

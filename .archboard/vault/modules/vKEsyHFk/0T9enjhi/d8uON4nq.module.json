@@ -5,7 +5,7 @@
   "responsibility": "Preserves continuing beat identities and applies narrative edits inside the structural transaction.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/operations/model-edit/walkthroughs.ts"
+    "path": "packages/model/src/runtime/canonical/edit/operations/walkthroughs.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#d8uON4nq",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/model-edit/walkthroughs.ts",
+        "path": "packages/model/src/runtime/canonical/edit/operations/walkthroughs.ts",
         "symbol": "ArchiveError"
       },
       "id": "vKEsyHFk/0T9enjhi#4RcfNmFu",

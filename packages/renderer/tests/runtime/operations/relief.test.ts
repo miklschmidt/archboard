@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { renderArchitecture } from "#runtime/operations/render.ts";
+import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const content = orderedFixture({

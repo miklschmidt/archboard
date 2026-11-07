@@ -6,7 +6,7 @@
   "description": "Portable inspection validates every retained record, authored input, local dependency, and materialized proposal. It bounds reads and historical decoding without skipping older records. Import uses the shared signed installer and preserves exact retry, source HEAD, and the index.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/operations/history/portable.ts"
+    "path": "packages/model/src/runtime/canonical/history/operations/portable.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#2gFwMLTT",
@@ -40,7 +40,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/portable.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/portable.ts",
         "symbol": "tree"
       },
       "id": "vKEsyHFk#IAJ0ChHL",
@@ -66,7 +66,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/portable.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/portable.ts",
         "symbol": "installJournal"
       },
       "id": "vKEsyHFk/0T9enjhi#5PFwNTjm",
@@ -79,7 +79,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/portable.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/portable.ts",
         "symbol": "archiveCommit"
       },
       "id": "vKEsyHFk/0T9enjhi#S8zTZBw6",
@@ -92,7 +92,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/portable.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/portable.ts",
         "symbol": "writeState"
       },
       "id": "vKEsyHFk/0T9enjhi#1SXh5OFf",
@@ -105,7 +105,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/portable.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/portable.ts",
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#W1fBWglm",
@@ -118,7 +118,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/portable.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/portable.ts",
         "symbol": "historyResult"
       },
       "id": "vKEsyHFk/0T9enjhi#IyzXWhR8",
@@ -131,7 +131,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/portable.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/portable.ts",
         "symbol": "notifyArchitecture"
       },
       "id": "vKEsyHFk/0T9enjhi#J7A3jU0T",
@@ -144,7 +144,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/portable.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/portable.ts",
         "symbol": "ArchiveError"
       },
       "id": "vKEsyHFk/0T9enjhi#7r71xcNW",
@@ -157,7 +157,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/portable.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/portable.ts",
         "symbol": "subjectsOf"
       },
       "id": "vKEsyHFk/0T9enjhi#8KIXscUH",

@@ -5,7 +5,7 @@
   "responsibility": "Builds the voice agent for one server and joins it to the panes, the model news and the context sources",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/services/owner"
+    "path": "packages/workbench/src/server/workbench-host/services"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#OY4JPr8G",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "semanticChangeFeed"
       },
       "id": "vKEsyHFk/Oi6SBIAM#52NUP6Ut",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "shownCheckoutOf"
       },
       "id": "vKEsyHFk/Oi6SBIAM#AfSjx649",
@@ -44,50 +44,11 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "panes"
       },
       "id": "vKEsyHFk/Oi6SBIAM#HgatVqjT",
       "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
-    },
-    {
-      "order": 49000,
-      "kind": "data",
-      "description": "changes since its cursor",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "semanticChangeFeed"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#hjFA6kH4",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
-      "order": 51000,
-      "kind": "call",
-      "description": "a pane's tab, and the end of a tab gone for 60 s; the model the pane shows",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "tabSessionOf"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#fpTfPg1T",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
-      "order": 61000,
-      "kind": "dependency",
-      "label": "host Archboard on the voice agent",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "createVoiceAgent"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#hfMj0fMk",
-      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
     },
     {
       "order": 70001,
@@ -96,7 +57,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "createArchboardAnnouncements"
       },
       "id": "vKEsyHFk#RZlJRIaF",
@@ -109,7 +70,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "createArchboardCoordinatorContextSource"
       },
       "id": "vKEsyHFk#jKN6JFi4",
@@ -122,7 +83,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "createExplanationActions"
       },
       "id": "vKEsyHFk#pTZh5zI9",
@@ -135,7 +96,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "repositoryOfVault"
       },
       "id": "vKEsyHFk/Oi6SBIAM#ouRI3SQQ",
@@ -148,7 +109,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "semanticInputFor"
       },
       "id": "vKEsyHFk/Oi6SBIAM#IFPR1GJT",
@@ -161,7 +122,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "createVoiceAgent"
       },
       "id": "vKEsyHFk/6E6hL0Zk#xV2HMQ01",
@@ -174,7 +135,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "productionModule.createServerVoiceAgentOptions"
       },
       "id": "vKEsyHFk#ratt913y",
@@ -187,7 +148,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "narrationChangesOf"
       },
       "id": "vKEsyHFk#AvmihZrD",

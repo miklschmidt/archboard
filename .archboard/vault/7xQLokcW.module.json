@@ -1,5 +1,5 @@
 {
-  "order": 73000,
+  "order": 29011,
   "name": "Engine gallery",
   "kind": "module",
   "responsibility": "Compares complete canonical readings across the available layout engines",
@@ -9,6 +9,32 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#7xQLokcW",
-  "parent": "vKEsyHFk#F0aENCVG",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "the model or a named state",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/engine-gallery.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "to": "vKEsyHFk#ZGONZKxj",
+      "id": "vKEsyHFk#2yPtg2Dm"
+    },
+    {
+      "order": 200,
+      "kind": "call",
+      "label": "draw each reading with each engine",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/engine-gallery.ts",
+        "symbol": "renderArchitecture"
+      },
+      "to": "vKEsyHFk#jAl99x56",
+      "id": "vKEsyHFk#GJ8lMAjK"
+    }
+  ]
 }

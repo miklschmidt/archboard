@@ -9,7 +9,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#m4GMTKLW",
-  "parent": "vKEsyHFk/6E6hL0Zk#Wcng1nxx",
+  "parent": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -28,17 +28,17 @@
   ],
   "outgoing": [
     {
-      "order": 36000,
-      "kind": "call",
-      "label": "start the server",
+      "order": 20000,
+      "kind": "dependency",
+      "label": "whether this file is the process entry",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server.ts",
-        "symbol": "startServer"
+        "symbol": "isMainModule"
       },
-      "id": "vKEsyHFk/Oi6SBIAM#NoHUsyG6",
-      "to": "vKEsyHFk/Oi6SBIAM#hwACZ2zb"
+      "id": "vKEsyHFk/vKEsyHFk#mm4DLsd2",
+      "to": "vKEsyHFk#8EhrdPUE"
     },
     {
       "order": 92000,
@@ -52,19 +52,6 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#PKAaizYP",
       "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz"
-    },
-    {
-      "order": 20000,
-      "kind": "dependency",
-      "label": "whether this file is the process entry",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server.ts",
-        "symbol": "isMainModule"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#mm4DLsd2",
-      "to": "vKEsyHFk#8EhrdPUE"
     }
   ]
 }

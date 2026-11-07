@@ -1,0 +1,28 @@
+{
+  "order": 90003,
+  "name": "graphviz-pure-parser",
+  "kind": "external",
+  "responsibility": "The DOT and HTML-label lexer, parser and canonical writer of graphviz-pure",
+  "description": "Vendored from graphviz-pure 0.2.1 (crates/vendor/README.md); a path dependency of the Graphviz crate, not a workspace member.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/vendor/graphviz-pure-parser"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#hBkjiO4k",
+  "outgoing": [
+    {
+      "order": 91007,
+      "kind": "dependency",
+      "label": "build the graph it reads",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure-parser/src/lib.rs",
+        "symbol": "Graph"
+      },
+      "to": "vKEsyHFk#FLnwES7I",
+      "id": "vKEsyHFk#Q6d5hgEY"
+    }
+  ]
+}

@@ -26,9 +26,9 @@ on:
       - packages/model/**
       - packages/renderer/**
       - packages/workbench/package.json
-      - packages/workbench/src/ui/clients/orb/**
-      - packages/workbench/src/ui/rules/orb/**
-      - packages/workbench/src/ui/state/orb/**
+      - packages/workbench/src/ui/workbench-client/orb/clients/**
+      - packages/workbench/src/ui/workbench-client/orb/rules/**
+      - packages/workbench/src/ui/workbench-client/orb/state/**
       - packages/timing/**
       - .github/workflows/site.yml
   pull_request:
@@ -51,9 +51,9 @@ on:
       - packages/model/**
       - packages/renderer/**
       - packages/workbench/package.json
-      - packages/workbench/src/ui/clients/orb/**
-      - packages/workbench/src/ui/rules/orb/**
-      - packages/workbench/src/ui/state/orb/**
+      - packages/workbench/src/ui/workbench-client/orb/clients/**
+      - packages/workbench/src/ui/workbench-client/orb/rules/**
+      - packages/workbench/src/ui/workbench-client/orb/state/**
       - packages/timing/**
       - .github/workflows/site.yml
 

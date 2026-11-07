@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/ui/clients/transport"
+    "path": "packages/codex-realtime-voice/src/ui/transport/clients"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#941UBxya",
@@ -39,7 +39,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections/services/gateway.ts",
         "symbol": "connect"
       },
       "id": "vKEsyHFk/9ncuT5DP#Lo6Q7GDB",

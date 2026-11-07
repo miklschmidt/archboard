@@ -1,0 +1,83 @@
+// What the page has to say before and after the shot: that it is the SVG,
+// paused at its first frame, and that the bitmap it answered is exactly the
+// size the diagram asks for. The SVG draws its words in glyphs it defines
+// (ADR 0059), so there is no face to wait for.
+
+import { bitmapSizeOf, type RasterBounds } from "#runtime/rasterizer/operations/bounds.ts";
+import { isJsonRecord } from "#runtime/headless-chromium/clients/devtools.ts";
+import { readPngDimensions } from "#runtime/rasterizer/operations/png.ts";
+
+/** How the page sat before the shot was taken. */
+interface PageReadiness {
+	readonly width: number;
+	readonly height: number;
+}
+
+/** The bytes a shot answered, and their size. */
+interface CheckedBitmap {
+	readonly png: Uint8Array;
+	readonly width: number;
+	readonly height: number;
+}
+
+/**
+ * What the page runs before the shot: pause every SMIL animation at its first
+ * frame so the traffic marks sit where the renderer put them at time zero,
+ * and read the page size the SVG states.
+ */
+const READINESS_SCRIPT = `(async () => {
+	const root = document.documentElement;
+	if (!(root instanceof SVGSVGElement)) {
+		throw new Error("The loaded document is not an SVG.");
+	}
+	root.pauseAnimations();
+	root.setCurrentTime(0);
+	return { width: root.width.baseVal.value, height: root.height.baseVal.value };
+})()`;
+
+/**
+ * Whether a page answer is the readiness record.
+ * @param value The answer.
+ * @returns Whether it is.
+ */
+function isPageReadiness(value: unknown): value is PageReadiness {
+	return (
+		isJsonRecord(value) && typeof value["width"] === "number" && typeof value["height"] === "number"
+	);
+}
+
+/**
+ * The readiness the page reported.
+ * @param value What the page answered.
+ * @returns The readiness.
+ */
+function checkedReadiness(value: unknown): PageReadiness {
+	if (!isPageReadiness(value)) {
+		throw new Error("The page did not report its readiness.");
+	}
+	return value;
+}
+
+/**
+ * The PNG a screenshot answered, checked to be exactly the size the job asks for.
+ * @param shot The DevTools answer.
+ * @param bounds What was asked for.
+ * @returns The bytes and their size.
+ */
+function checkedBitmap(shot: unknown, bounds: RasterBounds): CheckedBitmap {
+	const data = isJsonRecord(shot) ? shot["data"] : undefined;
+	if (typeof data !== "string") {
+		throw new Error("Chromium answered the screenshot without image data.");
+	}
+	const png = Uint8Array.from(Buffer.from(data, "base64"));
+	const measured = readPngDimensions(png);
+	const size = bitmapSizeOf(bounds);
+	if (measured.width !== size.width || measured.height !== size.height) {
+		throw new Error(
+			`Chromium drew ${measured.width}×${measured.height}, not the ${size.width}×${size.height} the diagram asks for at scale ${bounds.scale}.`,
+		);
+	}
+	return { png, width: measured.width, height: measured.height };
+}
+
+export { READINESS_SCRIPT, checkedBitmap, checkedReadiness };

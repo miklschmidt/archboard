@@ -1,7 +1,7 @@
 // How one file uses each name at run time, for the tests of each adapter's
 // reading of a use as a value (runs.ts).
 
-import { createCodeFacts } from "#runtime/services/code-facts/reader.ts";
+import { createCodeFacts } from "#runtime/code-facts/services/reader.ts";
 import { fixtureCheckout } from "#tests/runtime/support/code-facts/checkout.ts";
 
 /**

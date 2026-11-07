@@ -5,7 +5,7 @@
   "responsibility": "Captures the workhorse link that a voice session follows",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/rules/voice-session/binding.ts"
+    "path": "packages/workbench/src/ui/voice-session/rules/binding.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#gYvouMDV",

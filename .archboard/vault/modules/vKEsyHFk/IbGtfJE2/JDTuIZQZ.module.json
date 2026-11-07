@@ -5,10 +5,24 @@
   "responsibility": "One call, one parsed answer: the seam every harness use of the CLI goes through",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/processes/archboard.ts"
+    "path": "packages/skills/src/runtime/evaluation/run-world/processes/archboard.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#JDTuIZQZ",
   "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 8000,
+      "kind": "call",
+      "label": "the CLI under test",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/run-world/processes/archboard.ts",
+        "symbol": "archboard"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#xKVVomRU",
+      "to": "vKEsyHFk/XppR9owz#peyArgPx"
+    }
+  ]
 }

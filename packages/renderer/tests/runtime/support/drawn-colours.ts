@@ -9,7 +9,7 @@
 import { APCAcontrast, sRGBtoY } from "apca-w3";
 
 import type { DiagramTheme } from "@archboard/model/render-reply";
-import { themeColor } from "#runtime/store/theme/source.ts";
+import { themeColor } from "#runtime/theme/store/source.ts";
 
 /** One colour: sRGB channels 0 to 255 and alpha 0 to 1. */
 interface Rgba {

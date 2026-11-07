@@ -7,7 +7,7 @@ import {
 	forgetLockAnnouncements,
 	onModelLockChanged,
 	onModelSweep,
-} from "#runtime/store/lock/lock.ts";
+} from "#runtime/lock/store/lock.ts";
 
 /**
  * Forget everything this process remembers about models, and stop the lock

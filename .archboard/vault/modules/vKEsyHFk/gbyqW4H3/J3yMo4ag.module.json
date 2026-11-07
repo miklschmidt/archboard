@@ -10,6 +10,33 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-  "parent": "vKEsyHFk/gbyqW4H3#ld6jjHND",
-  "outgoing": []
+  "parent": "vKEsyHFk#9gGvxWHp",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "shape words and break them to a width",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/measure/mod.rs",
+        "symbol": "paragraph"
+      },
+      "id": "vKEsyHFk#ODr5oszF",
+      "to": "vKEsyHFk#C4dZpr3U"
+    },
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "round and trim as JavaScript does",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/measure/mod.rs",
+        "symbol": "round"
+      },
+      "to": "vKEsyHFk#1UxryIji",
+      "id": "vKEsyHFk#VTOV1R1u"
+    }
+  ]
 }

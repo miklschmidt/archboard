@@ -1,4 +1,4 @@
-// The launcher of the `archboard` and `@archboard/cli` packages (ADR 0075) finds the platform
+// The launcher of the `archboard` and `@archboard/cli` packages (ADR 0076) finds the platform
 // package in the layouts that npm and `bun add -g` make, starts its executable with every argument
 // and passes its exit status through, and refuses when no platform package is installed.
 import { afterAll, expect, test } from "bun:test";

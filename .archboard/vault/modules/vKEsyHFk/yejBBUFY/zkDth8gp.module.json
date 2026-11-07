@@ -6,7 +6,7 @@
   "description": "Canonical reading metadata joins the existing pane publisher. The request uses the admitted pane vault, while architecture names the actual reading vault. Legacy and canonical readings use one report sequence.\n\nCanonical recording draws only its supplied payload. Live narration waits for the accepted capture report before voice starts. Matching pane requests drive the captured walkthrough. Reading changes or failed publication refuse a pending narration start.\n\nAlready-open panes observe the shared architecture feed before cutover. The public read result selects the active format. Durable migration changes the pane to canonical authority; recovery and busy states stay explicit. The browser performs no migration write.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/application/ApplicationPane.tsx"
+    "path": "apps/web/src/ui/application/components/ApplicationPane.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#zkDth8gp",
@@ -29,27 +29,14 @@
     {
       "order": 2000,
       "kind": "call",
-      "label": "a session per pane, opened in a vault; show a model in one",
+      "label": "one session per pane, opened in a vault; show a model in it",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "path": "apps/web/src/ui/application/components/ApplicationPane.tsx",
         "symbol": "usePaneSession"
       },
       "id": "vKEsyHFk/yejBBUFY#x9gy2EYu",
-      "to": "vKEsyHFk/yejBBUFY#ScHf2pj3"
-    },
-    {
-      "order": 56000,
-      "kind": "call",
-      "label": "one session per pane, opened in the page's opening vault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
-        "symbol": "usePaneSession"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#5zgh8igv",
       "to": "vKEsyHFk/yejBBUFY#ScHf2pj3"
     },
     {
@@ -59,7 +46,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "path": "apps/web/src/ui/application/components/ApplicationPane.tsx",
         "symbol": "ApplicationPane"
       },
       "id": "vKEsyHFk/yejBBUFY#iM6sDA82",
@@ -72,7 +59,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "path": "apps/web/src/ui/application/components/ApplicationPane.tsx",
         "symbol": "tabSessionId"
       },
       "id": "vKEsyHFk/yejBBUFY#VA9yIxx0",
@@ -85,7 +72,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "path": "apps/web/src/ui/application/components/ApplicationPane.tsx",
         "symbol": "explanationKey"
       },
       "id": "vKEsyHFk/yejBBUFY#ponUuQbD",
@@ -98,7 +85,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "path": "apps/web/src/ui/application/components/ApplicationPane.tsx",
         "symbol": "ModelExplanationHost"
       },
       "id": "vKEsyHFk/yejBBUFY#TWI66Wjf",
@@ -111,7 +98,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "path": "apps/web/src/ui/application/components/ApplicationPane.tsx",
         "symbol": "RecordedModelStage"
       },
       "id": "vKEsyHFk/yejBBUFY#gkl1U5a9",
@@ -124,7 +111,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "path": "apps/web/src/ui/application/components/ApplicationPane.tsx",
         "symbol": "useVaultPolicyRefresh"
       },
       "id": "vKEsyHFk/UOXNWLhR#g00kNnNx",

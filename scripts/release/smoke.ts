@@ -1,4 +1,4 @@
-// The smoke test of a release (ADR 0075): install the packed packages from a registry, as a user
+// The smoke test of a release (ADR 0076): install the packed packages from a registry, as a user
 // does, then run the installed `archboard` with a PATH that holds no Bun, Node.js or Rust:
 // `--version`, `start`, `status` and `stop`.
 //

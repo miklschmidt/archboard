@@ -9,8 +9,11 @@ import type { z } from "zod";
 import { git } from "@archboard/process/git";
 import { ArchitecturePortableBundleSchema } from "#shared/schemas/model-portable.ts";
 import { modelRevision } from "#runtime/store/model-files.ts";
-import { decodeModel, discoveryFailure } from "#runtime/operations/read/model-read.ts";
-import { ArchiveError, type ArchiveContext } from "#runtime/store/model-archive.ts";
+import { decodeModel, discoveryFailure } from "#runtime/canonical/read/operations/model-read.ts";
+import {
+	ArchiveError,
+	type ArchiveContext,
+} from "#runtime/canonical/archive/store/model-archive.ts";
 
 type Bundle = z.infer<typeof ArchitecturePortableBundleSchema>;
 /**

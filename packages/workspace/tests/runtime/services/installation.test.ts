@@ -1,4 +1,4 @@
-// How a process decides which Archboard it is (ADR 0075): a release when
+// How a process decides which Archboard it is (ADR 0076): a release when
 // `archboard-release.json` lies beside the executable, else the checkout above
 // the module, else a refusal. The tests build stand-ins in a temporary directory.
 

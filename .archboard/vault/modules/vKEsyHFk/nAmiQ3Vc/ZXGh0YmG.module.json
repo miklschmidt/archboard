@@ -5,7 +5,7 @@
   "responsibility": "Forwards SIGINT and SIGTERM as an abort, then re-raises the signal once cleanup ends",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+    "path": "apps/cli/src/cli/routing/operations/session.ts",
     "symbol": "runInterruptibleCommand"
   },
   "schemaVersion": 1,
@@ -23,11 +23,11 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/session.ts",
+        "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "runCommand"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#MFROOcqh",
-      "to": "vKEsyHFk/nAmiQ3Vc#MmMnif7e"
+      "to": "vKEsyHFk/XppR9owz#gt1eCpcS"
     }
   ]
 }

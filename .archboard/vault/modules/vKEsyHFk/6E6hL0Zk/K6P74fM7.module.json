@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/lifecycle/lifetime/mutation-admission.ts"
+    "path": "apps/server/src/server/start-stop/lifecycle/mutation-admission.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#K6P74fM7",

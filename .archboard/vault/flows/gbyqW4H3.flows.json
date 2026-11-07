@@ -26,7 +26,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+            "path": "packages/renderer/src/shared/render/rules/diagram.ts",
             "symbol": "render"
           }
         },
@@ -130,25 +130,25 @@
                 {
                   "id": "vKEsyHFk/gbyqW4H3#XFJazS8y",
                   "from": "vKEsyHFk/gbyqW4H3#0idmUHd2",
-                  "to": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
-                  "label": "the step graph, on the track engine",
-                  "kind": "sync",
+                  "to": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+                  "label": "lay the blocks out in columns",
+                  "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "crates/archboard-flows/src/flowchart/answer_order.rs",
-                    "symbol": "draw"
+                    "path": "crates/archboard-flows/src/flowchart/frames.rs",
+                    "symbol": "fitted"
                   }
                 },
                 {
-                  "id": "vKEsyHFk/gbyqW4H3#NR1ARSyH",
-                  "from": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+                  "id": "vKEsyHFk#CnOZozIW",
+                  "from": "vKEsyHFk/gbyqW4H3#0idmUHd2",
                   "to": "vKEsyHFk/gbyqW4H3#0idmUHd2",
-                  "label": "boxes, ports and routes",
-                  "kind": "return",
+                  "label": "letter the jumps of each long line",
+                  "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "crates/archboard-layout/src/architecture/mod.rs",
-                    "symbol": "draw"
+                    "path": "crates/archboard-flows/src/flowchart/mod.rs",
+                    "symbol": "add_jumps"
                   }
                 },
                 {
@@ -691,7 +691,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "crates/archboard-scene/src/paint/export.rs",
+                            "path": "crates/archboard-scene/src/paint/legend/export.rs",
                             "symbol": "mark_counts"
                           }
                         },
@@ -703,7 +703,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "crates/archboard-scene/src/paint/legend_entries.rs",
+                            "path": "crates/archboard-scene/src/paint/legend/entries.rs",
                             "symbol": "mark_counts"
                           }
                         }
@@ -723,7 +723,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "crates/archboard-scene/src/paint/export.rs",
+                    "path": "crates/archboard-scene/src/paint/legend/export.rs",
                     "symbol": "legend_of"
                   }
                 },
@@ -735,7 +735,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "crates/archboard-scene/src/paint/export.rs",
+                    "path": "crates/archboard-scene/src/paint/legend/export.rs",
                     "symbol": "entries_of"
                   }
                 },
@@ -747,7 +747,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "crates/archboard-scene/src/paint/legend_entries.rs",
+                    "path": "crates/archboard-scene/src/paint/legend/entries.rs",
                     "symbol": "entries_of"
                   }
                 },
@@ -759,7 +759,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "crates/archboard-scene/src/paint/export.rs",
+                    "path": "crates/archboard-scene/src/paint/legend/export.rs",
                     "symbol": "legend_of"
                   }
                 },
@@ -779,7 +779,7 @@
                           "kind": "self",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "crates/archboard-scene/src/paint/export.rs",
+                            "path": "crates/archboard-scene/src/paint/legend/export.rs",
                             "symbol": "legend_only"
                           }
                         }
@@ -796,7 +796,7 @@
                           "kind": "self",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "crates/archboard-scene/src/paint/export.rs",
+                            "path": "crates/archboard-scene/src/paint/legend/export.rs",
                             "symbol": "with_legend"
                           }
                         }
@@ -829,7 +829,7 @@
                   "note": "the drawing is never laid out again; the page grows to hold the title",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "crates/archboard-scene/src/paint/export.rs",
+                    "path": "crates/archboard-scene/src/paint/legend/export.rs",
                     "symbol": "under_title"
                   }
                 }
@@ -849,7 +849,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "crates/archboard-scene/src/paint/export.rs",
+            "path": "crates/archboard-scene/src/paint/legend/export.rs",
             "symbol": "framed_for_export"
           }
         }

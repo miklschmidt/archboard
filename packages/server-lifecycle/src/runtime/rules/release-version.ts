@@ -1,4 +1,4 @@
-// Does the server run the release that is installed now? (ADR 0075)
+// Does the server run the release that is installed now? (ADR 0076)
 //
 // A release never changes on disk except by an install, and npm normalizes file times, so the
 // module-time check of a checkout says nothing after an upgrade. The version is the identity of a

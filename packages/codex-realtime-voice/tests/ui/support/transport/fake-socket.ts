@@ -6,7 +6,7 @@ import {
 	BrowserWorkbenchTransportError,
 	type BrowserWorkbenchSocket,
 	type BrowserWorkbenchTransport,
-} from "#ui/state/transport/contract.ts";
+} from "#ui/transport/state/contract.ts";
 
 import { snapshotMessage, type WireRecord } from "#tests/ui/support/transport/fixtures.ts";
 

@@ -1,4 +1,4 @@
-// The third-party notices of a platform package (ADR 0075): every npm package that the executable
+// The third-party notices of a platform package (ADR 0076): every npm package that the executable
 // or the browser bundle is built from, every Rust crate that the renderer core is built from, the
 // fonts, the code adapted from PR Lens, and the Bun runtime that the executable is. Each entry
 // carries the license files of its package, and entries with the same texts share them.

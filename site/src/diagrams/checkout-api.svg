@@ -529,5 +529,5 @@
 <g class="ab-far" display="none"><g class="ab-words" style="--away:translate(27.09px,42.75px) scale(0.75)"><g transform="translate(124.37 179) scale(0.02)" style="fill:var(--diagram-text)" aria-hidden="true"><use href="#gs5-151" x="0"/><use href="#gs5-21" x="706"/><use href="#gs5-139" x="1310"/><use href="#gs5-138" x="1896"/><use href="#gs5-161" x="2458"/><use href="#gs5-143" x="2995"/><use href="#gs5-28" x="3596"/><use href="#gs5-237" x="4184"/><use href="#gs5-35" x="4866"/><use href="#gs5-11" x="5555"/><use href="#gs5-7" x="6204"/></g><text x="124.37" y="179" font-size="20" textLength="129.68" lengthAdjust="spacingAndGlyphs" style="fill:transparent">Checkout API</text></g></g>
 <g class="ab-near"></g>
 <g class="ab-far" display="none"></g></g>
-<metadata><archboard:render-recipe xmlns:archboard="https://github.com/miklschmidt/archboard/render-recipe">{"recipe":2,"model":{"id":"Shop","name":"Shop"},"vault":{"repo":"example.invalid/web-shop"},"reading":{"grammar":"architecture","scope":"Shop/MKhTEYqf#lwmpnaVU","theme":"dark"},"fingerprint":"sha256:c843c5261aa084a6a4479395cf5b6ccb2e3de435ac028edf048123184f6950b8","picture":"sha256:9be47926cfb877739e6ca0d4d3b4712e0b5f1691b529ca6777a48cb729684eb1"}</archboard:render-recipe></metadata>
+
 </svg>

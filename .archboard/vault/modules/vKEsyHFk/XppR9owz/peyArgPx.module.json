@@ -10,7 +10,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#peyArgPx",
-  "parent": "vKEsyHFk/XppR9owz#OM6pX371",
+  "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -68,6 +68,19 @@
       "to": "vKEsyHFk/XppR9owz#vAQwlVuz"
     },
     {
+      "order": 32000,
+      "kind": "http",
+      "label": "the run's reads and writes, each naming its vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "fetch"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#Tt8yC8yW",
+      "to": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
+    },
+    {
       "order": 62000,
       "kind": "call",
       "label": "hand off to the checkout it stands in",
@@ -92,19 +105,6 @@
       },
       "id": "vKEsyHFk/XppR9owz#4y3I6aju",
       "to": "vKEsyHFk/XppR9owz#e5UQUj78"
-    },
-    {
-      "order": 19000,
-      "kind": "dependency",
-      "label": "the package it hands off through",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/bin.ts",
-        "symbol": "handOff"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#wImHhbk7",
-      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
     }
   ]
 }

@@ -6,7 +6,7 @@
   "description": "Keeps this machine's checkout registry. repo add registers a checkout, with the worktrees git lists for it, or an untracked vault, and never changes which checkout of a repository is chosen. A checkout whose identity is an untracked vault's name keeps it, and the answer's renamed gives the vault's new name. repo use chooses one. repo forget removes one; list shows each, chosen or gone. None of them calls a server: every running server watches the registry file. language-server lives in repo-language-server.ts.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/repo/repo.ts"
+    "path": "apps/cli/src/cli/commands/repo/operations/repo.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#jAKtfzMA",
@@ -40,7 +40,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/repo/repo.ts",
+        "path": "apps/cli/src/cli/commands/repo/operations/repo.ts",
         "symbol": "declareDirectory"
       },
       "id": "vKEsyHFk/vKEsyHFk#J5WjwmUn",

@@ -3,7 +3,7 @@
   "name": "renderer",
   "kind": "package",
   "responsibility": "Draws a model as a picture, in the browser or under Bun",
-  "description": "The TypeScript hosts in this package load the renderer core, which crates/ builds to WebAssembly (ADR 0059). The core measures, lays out and paints. A host runs its layout solves and gives it icons and theme colours.",
+  "description": "The TypeScript hosts in this package load the renderer core, which crates/ builds to WebAssembly (ADR 0059). The core measures, lays out and paints. A host runs its layout solves and gives it icons and theme colours. A page paints a picture on a canvas with Vello, on WebGPU, on WebGL2 or on the CPU, from the same scene. The SVG stays the product of exports, PNGs and README assets, and stays in the page as the semantic layer. Recordings paint on the CPU.",
   "groups": [
     "drawing",
     "packages"

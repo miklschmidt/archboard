@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { compareVariants, standingOf, withRemoved } from "#shared/rules/compare/variants.ts";
-import { parseLegacyBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
+import { compareVariants, standingOf, withRemoved } from "#shared/compare/rules/variants.ts";
+import { parseLegacyBoard } from "#shared/coherence/rules/parse-legacy-board.ts";
 import { subjectsOf, VariantContentSchema, type VariantContent } from "#shared/schemas/content.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
 

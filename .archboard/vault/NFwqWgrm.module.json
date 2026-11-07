@@ -1,0 +1,20 @@
+{
+  "order": 41100,
+  "name": "archboard-paint",
+  "kind": "package",
+  "responsibility": "Draws a typed scene on a canvas and works out every move from one picture to the next, as plain Rust with no DOM and no GPU of its own",
+  "description": "One Canvas trait serves Vello on WebGPU, Vello GPU on WebGL2 and Vello on the CPU, so all three run the same walk over the scene (ADR 0071, ADR 0074). The WebGPU canvas keeps a settled part as an encoded scene. The keeper of the parts module keeps one for both strip canvases as its drawing calls with each stroke's outline, and a frame draws only the kept shapes it can see. The in-between of two scenes is a pure function of the scenes and a progress value, so Rust tests own it. A host tells the stage what changed and what time it is, and asks for frames.",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-paint"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#NFwqWgrm",
+  "outgoing": [],
+  "formerNames": [
+    "Painter core"
+  ]
+}

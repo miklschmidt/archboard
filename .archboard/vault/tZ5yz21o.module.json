@@ -5,7 +5,7 @@
   "responsibility": "Retains the exact inputs of one reading as a signed checkpoint",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/operations/history/retain.ts"
+    "path": "packages/model/src/runtime/canonical/history/operations/retain.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#tZ5yz21o",
@@ -18,7 +18,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/retain.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/retain.ts",
         "symbol": "tree"
       },
       "id": "vKEsyHFk#eLpodERU",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/retain.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/retain.ts",
         "symbol": "prepareCheckpoint"
       },
       "id": "vKEsyHFk#dhlSXT9F",
@@ -43,7 +43,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/retain.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/retain.ts",
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#4FIz4BRr",
@@ -55,7 +55,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/retain.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/retain.ts",
         "symbol": "archiveCommit"
       },
       "id": "vKEsyHFk/0T9enjhi#RavprwX4",
@@ -68,7 +68,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/initialize.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/initialize.ts",
         "symbol": "initializePrivateArchive"
       },
       "id": "vKEsyHFk/0T9enjhi#QsvpEo8K",
@@ -81,7 +81,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/initialize.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/initialize.ts",
         "symbol": "withModelLock"
       },
       "id": "vKEsyHFk/0T9enjhi#QxbSLLGA",
@@ -94,7 +94,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/retain.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/retain.ts",
         "symbol": "checkpointPublication"
       },
       "id": "vKEsyHFk#0HzNfqV6",
@@ -107,7 +107,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/retain.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/retain.ts",
         "symbol": "captureReferencePins"
       },
       "id": "vKEsyHFk#bWBjHjjK",
@@ -120,7 +120,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/retain.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/retain.ts",
         "symbol": "walkthroughDependencies"
       },
       "id": "vKEsyHFk#HnfPersG",

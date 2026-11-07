@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/services/rasterizer/page.ts"
+    "path": "packages/renderer/src/runtime/rasterizer/services/page.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#FXGZhgKo",
@@ -22,7 +22,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
+        "path": "packages/renderer/src/runtime/rasterizer/services/page.ts",
         "symbol": "readPngDimensions"
       },
       "id": "vKEsyHFk/SMjRfwN3#68lKuaPg",
@@ -35,7 +35,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
+        "path": "packages/renderer/src/runtime/rasterizer/services/page.ts",
         "symbol": "bitmapSizeOf"
       },
       "id": "vKEsyHFk/SMjRfwN3#noNd5J0o",
@@ -48,7 +48,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
+        "path": "packages/renderer/src/runtime/rasterizer/services/page.ts",
         "symbol": "isJsonRecord"
       },
       "id": "vKEsyHFk/SMjRfwN3#DDGmqL3f",

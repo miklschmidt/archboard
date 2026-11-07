@@ -1,6 +1,8 @@
 // The end state of the workspace migration (TASK-500): all source lives in packages/* and
 // apps/*, and the old roots and the @/ alias are gone. Each check catches a legacy path coming
 // back that lint cannot see, because lint only reads the folders it is given.
+// Inside each area, code is grouped by behavior first, and the role folder is the last folder of
+// a path (ADR 0075, docs/agents/boundaries.md).
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
@@ -51,4 +53,80 @@ describe("the workspace layout", () => {
 			expect(JSON.stringify(readJsonc(name))).not.toContain('"@/');
 		},
 	);
+});
+
+/** The role folders of an area. A role folder is the last folder of a path and holds files only. */
+const ROLES = new Set([
+	"api",
+	"clients",
+	"components",
+	"constants",
+	"hooks",
+	"lifecycle",
+	"middleware",
+	"operations",
+	"processes",
+	"projections",
+	"protocol",
+	"routes",
+	"rules",
+	"schemas",
+	"services",
+	"sockets",
+	"state",
+	"store",
+	"wiring",
+	"workers",
+]);
+
+const AREAS = new Set(["cli", "runtime", "server", "shared", "ui"]);
+
+/** A TypeScript file below an area: whether it is a test, and its folders. */
+interface AreaFile {
+	path: string;
+	tests: boolean;
+	/** The folders between the area and the file. */
+	folders: string[];
+}
+
+/**
+ * The area file a repository path names.
+ * @param file The repository path.
+ * @returns The file, or undefined for a path that is not TypeScript below an area.
+ */
+function areaFile(file: string): AreaFile | undefined {
+	const [, folder, area, rest] =
+		/^(?:packages|apps)\/[^/]+\/(src|tests)\/([^/]+)\/(.+\.tsx?)$/.exec(file) ?? [];
+	if (rest === undefined || !AREAS.has(area ?? "")) return undefined;
+	return { path: file, tests: folder === "tests", folders: rest.split("/").slice(0, -1) };
+}
+
+/**
+ * What breaks the behavior-first rule in where a file sits.
+ * @param file The area file.
+ * @returns The problem, or undefined when the file sits where the rule puts it.
+ */
+function layoutProblem(file: AreaFile): string | undefined {
+	const { folders } = file;
+	if (file.tests && folders[0] === "support") return undefined;
+	if (folders.some((folder) => AREAS.has(folder))) return "a folder below the area is an area name";
+	const roles = folders.filter((folder) => ROLES.has(folder));
+	if (roles.length !== 1) return `${roles.length} role folders`;
+	if (!ROLES.has(folders.at(-1) ?? "")) return "the role folder is not the last folder";
+	if (roles[0] === "api" && folders.length > 1) return "api sits below a behavior folder";
+	return undefined;
+}
+
+describe("the behavior-first layout inside each area", () => {
+	const files = gitFiles("packages", "apps")
+		.map(areaFile)
+		.filter((file) => file !== undefined);
+
+	test("every file below an area sits in one role folder, the last folder of its path", () => {
+		const problems = files.flatMap((file) => {
+			const problem = layoutProblem(file);
+			return problem === undefined ? [] : [`${file.path}: ${problem}`];
+		});
+		expect(problems).toEqual([]);
+	});
 });

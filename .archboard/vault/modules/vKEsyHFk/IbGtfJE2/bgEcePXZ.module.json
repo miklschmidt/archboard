@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/clients/claude-grader.ts"
+    "path": "packages/skills/src/runtime/evaluation/grading/clients/claude-grader.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#bgEcePXZ",
@@ -21,7 +21,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/clients/claude-grader.ts",
+        "path": "packages/skills/src/runtime/evaluation/grading/clients/claude-grader.ts",
         "symbol": "claudeGraderArgv"
       },
       "id": "vKEsyHFk/IbGtfJE2#2X7jYiVB",

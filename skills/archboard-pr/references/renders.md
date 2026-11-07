@@ -1,22 +1,12 @@
-# Render a canonical reading
+# Render review evidence
 
-Use the proposal's complete comparison to identify changed subjects before selecting a picture.
-A render shows the selected state against its default comparison base.
-It includes removed subjects and marks unresolved subjects.
-The shipped canonical render schema accepts no comparison base, named view, title, legend, or layout flag.
-Use `model compare` to identify that base and describe both states in the caption.
+Use the complete proposal comparison to choose subjects that explain the change with their direct context.
+Follow the consumer rendering recipe for selectors, comparison behavior, flows, and embedded artifacts.
+Render accepts no explicit comparison base, named view, title, legend, or layout flag.
+Use `model compare` to identify the default base and name both states in the caption.
 
-## Select and retain
-
-Choose a module scope or focused subjects that explain the change with their direct context.
-Use stable qualified module identities from `model read`.
-For behavior, choose an explicit flow and sequence or flowchart grammar.
-The complete flow preserves all participants and steps, independently of structural scope and filters.
-
-Use the exact checkpoint returned by the completed proposal edit when it captures the intended state.
-For current architecture, use `model retain` with the observed revision and a fresh retention intent.
-Read that checkpoint and make sure that its selected state matches the intended picture.
-A planning model without current architecture uses its proposal edit checkpoint rather than current-only retention.
+Choose the checkpoint through the consumer retention recipe for Current, drafts, and planning models.
+Read the checkpoint before rendering and make sure that it selects the intended state:
 
 ```bash
 archboard model read --checkpoint <checkpoint-id> -C <checkout>
@@ -24,27 +14,18 @@ archboard model render --checkpoint <checkpoint-id> --scope '<qualified-module-i
 archboard model rasterize --checkpoint <checkpoint-id> --scope '<qualified-module-id>' --out <artifact-directory>/look.png -C <checkout>
 ```
 
-Use `--checkpoint` without `--state` because the checkpoint selects its recorded architectural state.
-Use the same selectors for SVG and PNG.
-Draw with the default engine, Blocks.
-Keep artifacts in a temporary directory outside the checkout unless the repository intentionally tracks them.
-Git-tracked SVG and PNG files carry reproducible canonical render recipes.
-Use the consumer embed workflow when updating those artifacts.
+A checkpoint selects its recorded state, so omit `--state`.
+Use the same selectors for SVG and PNG, with the default Blocks engine.
+Keep artifacts outside the checkout unless the repository intentionally tracks them.
 
-## Inspect the picture
+Read the receipt's model, revision, checkpoint, dimensions, and placed IDs.
+Make sure that the caption matches its state and scope.
+Open the PNG at the reviewer's viewing size.
+If labels are unreadable, narrow the scope or use separate pictures without trimming the proposal.
 
-Read the receipt's model, revision, checkpoint, dimensions, and placed identities.
-Make sure that the caption names the actual state and scope.
-Open the PNG at the size that the reviewer will see.
-If labels are unreadable, narrow the scope or provide separate pictures for distinct concerns.
-Keep the full proposal intact.
+Use auto-theme SVG when the platform supports it, otherwise PNG.
+Give images alt text that explains their architectural point. Use prose for titles and captions.
 
-Use one SVG with `--theme auto` when the receiving platform supports it.
-Use PNG when its viewer cannot render SVG correctly.
-Give each image alt text that explains its architectural point.
-Use prose captions for titles and change descriptions.
-Do not add unsupported flags or alter architecture to improve placement.
-
-If Chromium is unavailable, keep the SVG and report that visual inspection remains incomplete.
-A successful SVG export alone provides no visual inspection evidence.
-Shared checkpoint reproducibility also requires explicit archive publication, independently of uploaded picture bytes.
+If Chromium is unavailable, keep the SVG and report incomplete visual inspection.
+An SVG export alone proves no visual inspection.
+For reproducible sharing beyond picture bytes, follow the parent skill's publication step.

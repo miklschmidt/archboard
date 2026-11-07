@@ -4,26 +4,26 @@ import {
 	testContextFixture,
 } from "#tests/runtime/support/host.ts";
 import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
-import type { ThreadLinkSnapshot } from "#runtime/rules/thread-link/contract.ts";
+import type { ThreadLinkSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import { parseTabSessionId, workhorseLinkKey } from "#server/rules/tab-session/tab-session.ts";
+import { parseTabSessionId, workhorseLinkKey } from "#server/tab-session/rules/tab-session.ts";
 import {
 	type BrowserActionContext,
 	type BrowserProjectionContext,
-} from "#server/protocol/gateway/contract.ts";
-import { createCodexWorkbenchSessions } from "#server/services/sessions/sessions.ts";
+} from "#server/chat-conversations/gateway/protocol/contract.ts";
+import { createCodexWorkbenchSessions } from "#server/sessions/services/sessions.ts";
 import {
 	type CodexWorkbenchSessionComponents,
 	type CodexWorkbenchTabSession,
-} from "#server/protocol/generation/session-contract.ts";
+} from "#server/generation/protocol/session-contract.ts";
 import {
 	type CodexWorkbenchWorkhorse,
 	type CodexWorkbenchWorkhorseComponents,
-} from "#server/services/sessions/workhorses.ts";
-import { createServerBrowserGatewayOptions } from "#server/services/actions/browser-gateway.ts";
-import { createServerBrowserProjectionBudget } from "#server/projections/timeline/budget.ts";
-import { type ServerBrowserBindingState } from "#server/projections/browser-state/binding-state.ts";
-import { type ServerTimelineOwner } from "#server/projections/timeline/timeline.ts";
+} from "#server/sessions/services/workhorses.ts";
+import { createServerBrowserGatewayOptions } from "#server/chat-conversations/gateway/services/browser-gateway.ts";
+import { createServerBrowserProjectionBudget } from "#server/timeline/projections/budget.ts";
+import { type ServerBrowserBindingState } from "#server/chat-conversations/browser-state/projections/binding-state.ts";
+import { type ServerTimelineOwner } from "#server/timeline/projections/timeline.ts";
 import { createCodexWorkbenchGenerationFixture } from "#tests/server/support/generation/generation-fixture.ts";
 import { processFacts } from "#tests/server/support/generation/process-fixture.ts";
 import { createWorkhorseComponentsFixture } from "#tests/server/support/generation/session-fixture.ts";

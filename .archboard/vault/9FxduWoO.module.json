@@ -1,0 +1,58 @@
+{
+  "order": 27000,
+  "name": "Picture stage",
+  "kind": "function",
+  "responsibility": "Owns the canvas of one surface and its painter, hands the painter what the page says, and asks the frame clock for frames only while something moves",
+  "description": "Until the painter's first frame the surface shows the SVG with its ink, and a painter that cannot start leaves it so: a correct picture. The SVG stays in the page under the canvas as the hidden semantic layer that search, copy, screen readers and the marks read, written by picture-transition.ts. picture-ink.ts keeps a first picture's ink back for a moment so that the painter brings the picture in. React gives the stage a host, and the stage makes each canvas inside it, so a painter that fails is released and a replacement gets a fresh canvas. picture-ink.ts then gives the SVG back the glyphs and definitions that a painted surface dropped, so complete ink shows while the replacement starts. The surface says which painter draws in data-painter, and why WebGPU and WebGL2 do not in data-painter-reason.",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#9FxduWoO",
+  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "start the painter of this canvas",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
+        "symbol": "startPainter"
+      },
+      "id": "vKEsyHFk#NWxlWRCj",
+      "to": "vKEsyHFk#hKrzJUPf"
+    },
+    {
+      "order": 2000,
+      "kind": "call",
+      "label": "the picture, how it arrives, how it is seen, and the time",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
+        "symbol": "Painter"
+      },
+      "id": "vKEsyHFk#kIIEgwrt",
+      "to": "vKEsyHFk#UpjzNLKH"
+    },
+    {
+      "order": 3000,
+      "kind": "call",
+      "label": "frames, only while something moves",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
+        "symbol": "frameClock"
+      },
+      "id": "vKEsyHFk#uiCl86wq",
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+    }
+  ]
+}

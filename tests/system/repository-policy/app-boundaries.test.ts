@@ -377,28 +377,29 @@ describe("the layout rules cover the source of an app", () => {
 	});
 
 	test("state files stay pure in every folder below state/, in an app and in a package", async () => {
-		// Catches a role or behavior folder under state/ that escapes the purity rule, which
-		// matched only the files directly in state/.
+		// Catches a state/ folder below behavior folders (ADR 0075) that escapes the purity rule,
+		// in an app and in a package, beside the state/ of the area as a whole.
 		const sideEffect = 'import fs from "node:fs";\nexport const read = fs.readFileSync;\n';
 		await withProject(
 			{
 				...world,
 				"apps/web/src/ui/state/scene.ts": sideEffect,
-				"apps/web/src/ui/state/canvas/scene.ts": sideEffect,
-				"apps/web/src/ui/state/canvas/deeper/layers.ts": sideEffect,
-				"packages/alpha/src/ui/state/canvas/scene.ts": sideEffect,
+				"packages/alpha/src/ui/canvas/state/scene.ts": sideEffect,
+				"apps/web/src/ui/canvas/state/scene.ts": sideEffect,
+				"apps/web/src/ui/canvas/picture/camera/state/scene.ts": sideEffect,
 				"apps/web/src/ui/rules/scene.ts": sideEffect,
+				"apps/web/src/ui/canvas/rules/scene.ts": sideEffect,
 			},
 			(root) =>
 				expectJudged(
 					root,
 					{
 						"apps/web/src/ui/state/scene.ts": "archboard(state-files-pure)",
-						"apps/web/src/ui/state/canvas/scene.ts": "archboard(state-files-pure)",
-						"apps/web/src/ui/state/canvas/deeper/layers.ts": "archboard(state-files-pure)",
-						"packages/alpha/src/ui/state/canvas/scene.ts": "archboard(state-files-pure)",
+						"packages/alpha/src/ui/canvas/state/scene.ts": "archboard(state-files-pure)",
+						"apps/web/src/ui/canvas/state/scene.ts": "archboard(state-files-pure)",
+						"apps/web/src/ui/canvas/picture/camera/state/scene.ts": "archboard(state-files-pure)",
 					},
-					["apps/web/src/ui/rules/scene.ts"],
+					["apps/web/src/ui/rules/scene.ts", "apps/web/src/ui/canvas/rules/scene.ts"],
 				),
 		);
 	});

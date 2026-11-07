@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/services/owner"
+    "path": "packages/workbench/src/server/workbench-host"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",

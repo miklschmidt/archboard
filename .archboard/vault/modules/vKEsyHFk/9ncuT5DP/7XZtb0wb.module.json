@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations"
+    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#7XZtb0wb",
@@ -27,7 +27,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/turns.ts",
         "symbol": "add"
       },
       "id": "vKEsyHFk/SJ2JMVyz#l3RkMYAH",
@@ -44,7 +44,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/direct-delegate.ts",
         "symbol": "turnStart"
       },
       "id": "vKEsyHFk/SJ2JMVyz#8xJt3Mud",
@@ -57,7 +57,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/direct-delegate.ts",
         "symbol": "createTextUserInput"
       },
       "id": "vKEsyHFk/SJ2JMVyz#iwsP4kmN",
@@ -70,7 +70,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/turns.ts",
         "symbol": "classify"
       },
       "id": "vKEsyHFk/SJ2JMVyz#FSTG1rQt",
@@ -83,7 +83,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/turns.ts",
         "symbol": "stage"
       },
       "id": "vKEsyHFk/SJ2JMVyz#iK5V95pN",

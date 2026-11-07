@@ -1,86 +1,113 @@
 # Read the design lens
 
-The design lens is the set of reads that state facts about a design.
-`model inspect` and `model compare` read the model. `model locality` and `model footprint` read Git through code bindings.
-Each fact is a question, and the source answers it.
-Report the facts and the parts behind them, and leave the judgment to the user.
+The design lens reports facts for a design decision.
+`model inspect` and `model compare` read architecture.
+`model locality` and `model footprint` read Git through code bindings.
+Support each fact with its subjects and source evidence. Leave the judgment to the user.
 
-| Question                                               | Read                                              |
-| ------------------------------------------------------ | ------------------------------------------------- |
-| What do callers of this module reach?                  | `model inspect <module>`                          |
-| Where does this group meet the rest of the model?      | `model inspect --group <id>`                      |
-| What does this proposal change for callers?            | `model compare --state <proposal>`                |
-| How do competing proposals measure side by side?       | `model compare --state <one> --beside <other>`    |
-| Which modules change often, and which change together? | `model locality`                                  |
-| Did a branch stay inside its proposal?                 | `model footprint --base <ref> --state <proposal>` |
+| Question                                       | Read                                              |
+| ---------------------------------------------- | ------------------------------------------------- |
+| What do callers reach?                         | `model inspect <module>`                          |
+| Where does a group meet the rest of the model? | `model inspect --group <id>`                      |
+| What does a proposal change for callers?       | `model compare --state <proposal>`                |
+| How do proposals compare?                      | `model compare --state <one> --beside <other>`    |
+| Which modules change often or together?        | `model locality`                                  |
+| Did the branch stay within its proposal?       | `model footprint --base <ref> --state <proposal>` |
 
-`model inspect` and `model compare` state their facts in words on standard error, then answer in JSON on standard output.
-Each read takes `--state`. `model inspect` also takes `--checkpoint`.
+Each read accepts `--state`. `model inspect` also accepts `--checkpoint`.
+Inspect and compare write prose to standard error and JSON to standard output.
 
 ## Interface
 
-`model inspect <module>` reads the whole state before any reading narrows it.
-The interface comes from relationships, so it says which parts callers reach.
-Every relationship kind counts, and flow steps do not.
-`check code` holds the interface to what the code exposes.
+An interface is the set of parts that callers reach.
+`model inspect <module>` reads the complete state before scope or filters narrow it.
+Every relationship kind counts. Flow steps do not.
+Use `check code` to compare the modeled interface with source.
 
-- `entryPoints`: the parts that a relationship from outside reaches, each with `reachedBy`. A caller depends on each one.
-- `hiddenParts`: the parts that nothing outside reaches. A change to one reaches no caller that the model draws.
-- `callers`: the modules where those relationships start, once each. An interface change costs each of them.
-- `outgoing`: relationships that leave the module. A long list asks what the module depends on to do its job.
-- `passThrough`: entry points with no parts that send one relationship, of the kind that they receive. Ask what each hides. If you remove it and connect its callers to the part it calls, does only a line go?
-- `onContainer`: relationships that end on the module itself. Each makes a caller and no entry point, because the model names no part. `archboard check` fails on such an end, so read the source and move it to the part that owns the code.
+The result reports:
 
-Say a state's facts in the model's terms:
+- `entryPoints`: Parts reached from outside, with `reachedBy` for each dependency.
+- `hiddenParts`: Parts that no modeled outside caller reaches.
+- `callers`: Distinct source modules that depend on the interface.
+- `outgoing`: Relationships that leave the module.
+- `passThrough`: Childless entry points that send one relationship of the kind they receive.
+- `onContainer`: Relationships ending on the container, with a caller but no named entry point.
 
-- If `holdsParts` is false, say that the module holds no parts. It has no interface.
-- If `callers` is empty, say that the model draws no caller. Every part is then hidden, because nothing outside reaches it.
-- Report each of the five `measures` on its own, with the parts behind it.
+For `passThrough`, ask what the part hides and whether removing it removes anything beyond a line.
+For `onContainer`, follow [endpoint repair](authoring.md#give-each-container-a-job).
+If `holdsParts:false`, state that the module has no parts or interface.
+If `callers` is empty, state that the model draws no caller and all parts are hidden.
+Report the five `measures` separately with their subjects.
 
-`model inspect --group <id>` lists the `members`, the `internal` relationships, the `boundary` relationships with their direction, and the `neighbors`.
-A relationship that reaches a part of a member reaches that member. One between two parts of a member crosses nothing.
-Boundary relationships ask how much the group depends on the rest of the model, and what depends on it.
+Group inspection lists `members`, `internal` relationships, directed `boundary` relationships, and `neighbors`.
+A relationship reaching a member's part reaches that member.
+A relationship between two parts of the same member crosses no group boundary.
+Use boundary facts to explain dependencies in both directions.
 
 ## Comparison
 
-An interface change costs every caller, and a change inside a module costs one module.
-So `comparison.interfaceChanges` comes first, and `comparison.subjects` follows.
-`model compare` selects its default base as `model read --compare` does. `--against` names another.
+An interface change affects callers. An internal change affects one module.
+The result therefore lists `comparison.interfaceChanges` before `comparison.subjects`.
+For base selection and revision rules, follow [proposal comparison](canonical-models.md#create-and-compare-compact-proposals).
 
-- `entryPointsAdded`, `entryPointsRemoved`: entry points that are not parts of the module in the other state.
-- `becameEntryPoints`, `becameHidden`: parts in both states that moved into or out of the interface.
-- `callersGained`, `callersLost`: modules that start or stop reaching the module.
-- `unchanged`: containers that the comparison read and found the same.
+Interface changes include:
 
-An interface change sets no comparison status. When a new caller reaches a part, the part stays unmarked.
+- `entryPointsAdded`, `entryPointsRemoved`: Entry points absent as parts in the other state.
+- `becameEntryPoints`, `becameHidden`: Continuing parts that enter or leave the interface.
+- `callersGained`, `callersLost`: Modules that start or stop reaching it.
+- `unchanged`: Containers with equal interfaces in both readings.
 
-`comparison.interfaceMeasures` puts the five counts of each state side by side.
-`states` lists the selected state, its base, then each `--beside`, and each row's `byState` follows that order.
-The words list containers whose counts differ. The JSON holds every container.
+An interface change alone sets no subject comparison status.
+A new caller can reach a part while that part stays unmarked.
 
-To design it twice, draft two proposals from one predecessor and compare them with `--beside`.
-Report each row and what each proposal asks of its callers. Let the user choose.
+`comparison.interfaceMeasures` compares five counts per state.
+`states` lists selected state, base, then each `--beside`. Each row's `byState` follows that order.
+Prose names containers with different counts. JSON includes every container.
+
+To compare alternatives, create sibling proposals and use `--beside`.
+Explain each row and the demands on callers, then let the user choose.
 
 ## Locality
 
-`model locality` reads the year before HEAD, or the period from `--since <date>`.
+Locality reports which bound modules change in nearby commits.
+`model locality` reads the year before HEAD, or starts at `--since <date>`.
+Its result includes:
 
-- `hotspots`: bound modules ranked by `count`, the commits that changed them. The count measures commits, and it says nothing about size or complexity.
-- `coupling`: pairs that change together, with `shared` commits and `degree`. With `unjoined` true, nothing in the model joins the pair. Ask whether the model misses a dependency, or whether two modules carry one decision.
-- `leftOut`: large commits that both readings leave out, because they make unrelated modules look coupled.
-- `skipped`: modules that the read left out, with the reason. Say that the read skipped a module, because commits can still change it.
-- `attribution` on a hotspot: the precision of the reading. Report a path-wide reading as path-wide.
+- `hotspots`: Modules ranked by commit `count`, not size or complexity.
+- `coupling`: Pairs that change together, with `shared` commits and `degree`.
+- `leftOut`: Large commits excluded from hotspots and coupling because they connect unrelated changes.
+- `skipped`: Unread modules and reasons, not proof that no commits changed them.
+- `attribution`: Precision for a hotspot. Describe path-wide evidence as path-wide.
+
+If `unjoined:true`, the model does not connect the pair.
+Investigate a missing dependency or one decision spread across two modules.
 
 ## Footprint
 
-`model footprint --base <ref>` reads the commits from the merge base to HEAD. `--head <ref>` names another end.
-Without `--state`, it answers with `changed`.
-With a proposal, it answers with three lists:
+A footprint compares branch changes with modeled subjects.
+`model footprint --base <ref>` reads from the merge base to HEAD.
+`--head <ref>` selects another end. Without `--state`, the result is `changed`.
+With a proposal, it reports:
 
-- `namedAndChanged`: the branch changed what the proposal names.
-- `changedNotNamed`: the branch changed a module that the proposal leaves out. Ask whether the branch left the plan, or the plan misses a module.
-- `namedNotChanged`: the proposal names a module that the branch left alone. Ask whether the work remains, or the module needs no code change.
+- `namedAndChanged`: Branch changes that the proposal names.
+- `changedNotNamed`: Changed modules absent from the proposal. Investigate work outside the plan or an incomplete proposal.
+- `namedNotChanged`: Proposed modules without code changes. Identify unfinished work or explain why no code change is needed.
 
-A footprint keeps large commits and marks each with `large`.
-`skipped` lists each module that it did not read.
-It is information, so it changes no exit status.
+Footprints retain large commits with `large` and list unread modules in `skipped`.
+Findings alone change no exit status.
+If a repository cannot read the requested base or head, the command names it and exits with status 2.
+Source refs stay local. The command retains no source history.
+
+## Integrate with improve-codebase-architecture
+
+Use Archboard alongside [improve-codebase-architecture](https://github.com/mattpocock/skills/tree/main/skills/engineering/improve-codebase-architecture).
+Keep that skill's exploration, candidate selection, and design discussion.
+During exploration, use [locality](#locality) to find active modules and [interface inspection](#interface) to examine their callers and dependencies.
+
+For candidate designs, use the [proposal workflow](canonical-models.md#create-and-compare-compact-proposals) to describe intended changes without changing Current.
+Use [comparison](#comparison) to explain each candidate's effect on callers.
+Use [canonical renders](canonical-models.md#initialize-and-consume-one-live-model) for the before-and-after architecture pictures in its HTML report.
+
+During implementation, keep the chosen proposal aligned with the code.
+Use [footprint](#footprint) to account for branch changes against that proposal.
+Follow [proposal completion](canonical-models.md#complete-a-proposal) for adoption or shelving under the owner's authorization.

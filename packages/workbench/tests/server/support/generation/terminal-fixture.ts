@@ -1,8 +1,8 @@
-import type { CodexWaitGraph } from "#runtime/protocol/voice/extension.ts";
-import type { DynamicWaitOwner } from "#runtime/protocol/dynamic-tools/lifecycle-contract.ts";
-import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/protocol/thread-tools/manifest.ts";
+import type { CodexWaitGraph } from "#runtime/voice/protocol/extension.ts";
+import type { DynamicWaitOwner } from "#runtime/dynamic-tools/protocol/lifecycle-contract.ts";
+import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/thread-tools/protocol/manifest.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { createServerDynamicLifecycleOwner } from "#server/services/generation/operation-lifecycle.ts";
+import { createServerDynamicLifecycleOwner } from "#server/generation/services/operation-lifecycle.ts";
 
 /** One current child plus one foreign child, with their wire spellings. */
 function identities() {

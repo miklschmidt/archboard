@@ -23,7 +23,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+            "path": "apps/web/src/ui/panes/pane-session/clients/pane-socket.ts",
             "symbol": "socketUrl"
           }
         },
@@ -35,7 +35,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
             "symbol": "checkBrowserCsrf"
           }
         },
@@ -47,7 +47,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
             "symbol": "checkBrowserCsrf"
           }
         },
@@ -67,7 +67,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                    "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                     "symbol": "startWebSocketServer"
                   }
                 }
@@ -84,7 +84,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                    "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                     "symbol": "vaultOfUpgrade"
                   }
                 },
@@ -96,7 +96,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workbench/src/server/services/request/vault.ts",
+                    "path": "packages/workbench/src/server/request/services/vault.ts",
                     "symbol": "namedVault"
                   }
                 },
@@ -116,7 +116,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                             "symbol": "startWebSocketServer"
                           }
                         }
@@ -133,7 +133,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                             "symbol": "acceptWebSocketConnection"
                           }
                         }
@@ -150,7 +150,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                             "symbol": "placeOfVault"
                           }
                         },
@@ -162,7 +162,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                             "symbol": "placeInstead"
                           }
                         },
@@ -182,7 +182,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                                    "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                                     "symbol": "startWebSocketServer"
                                   }
                                 }
@@ -199,7 +199,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                                    "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                                     "symbol": "placeInstead"
                                   }
                                 }
@@ -238,7 +238,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+            "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
             "symbol": "mountRepositoryRoutes"
           }
         },
@@ -258,7 +258,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                    "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
                     "symbol": "refuseUnknownCheckout"
                   }
                 }
@@ -275,7 +275,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                    "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
                     "symbol": "chooseCheckoutRoute"
                   }
                 },
@@ -300,7 +300,7 @@
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                                "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
                                 "symbol": "sendKeylessToPane"
                               }
                             }
@@ -317,7 +317,7 @@
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                                "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
                                 "symbol": "movePaneVault"
                               }
                             },
@@ -329,7 +329,7 @@
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                                "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
                                 "symbol": "sendToPane"
                               }
                             },
@@ -341,7 +341,7 @@
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                                "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
                                 "symbol": "arrivedOnModel"
                               }
                             }
@@ -359,7 +359,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                    "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
                     "symbol": "broadcastEverywhere"
                   }
                 },
@@ -371,7 +371,7 @@
                   "kind": "async",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/state/pane-vaults/pane-vaults.ts",
+                    "path": "apps/server/src/server/panes/connections/state/pane-vaults.ts",
                     "symbol": "broadcastEverywhere"
                   }
                 },
@@ -383,7 +383,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                    "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
                     "symbol": "chooseCheckoutRoute"
                   }
                 }

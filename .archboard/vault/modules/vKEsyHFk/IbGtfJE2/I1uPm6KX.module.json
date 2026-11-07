@@ -11,34 +11,6 @@
   "id": "vKEsyHFk/IbGtfJE2#I1uPm6KX",
   "outgoing": [
     {
-      "order": 8000,
-      "kind": "call",
-      "label": "the CLI under test",
-      "emphasis": "normal",
-      "id": "vKEsyHFk/vKEsyHFk#xKVVomRU",
-      "to": "vKEsyHFk/XppR9owz#peyArgPx"
-    },
-    {
-      "order": 9000,
-      "kind": "call",
-      "label": "one per run, on its own port",
-      "emphasis": "muted",
-      "id": "vKEsyHFk/vKEsyHFk#SoK3eMhj",
-      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
-    },
-    {
-      "order": 24000,
-      "kind": "call",
-      "label": "one command, one answer",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "id": "vKEsyHFk/IbGtfJE2#eclUOkMc",
-      "to": "vKEsyHFk/IbGtfJE2#fRFvnVRE"
-    },
-    {
       "order": 50000,
       "kind": "call",
       "label": "argv and the checkout",

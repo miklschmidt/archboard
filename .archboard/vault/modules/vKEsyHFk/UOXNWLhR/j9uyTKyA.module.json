@@ -5,7 +5,7 @@
   "responsibility": "Reads the vault check for its diagnostics panel",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/vault-diagnostics/use-vault-check.ts"
+    "path": "apps/web/src/ui/vault-diagnostics/hooks/use-vault-check.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#j9uyTKyA",
@@ -18,7 +18,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/vault-diagnostics/use-vault-check.ts",
+        "path": "apps/web/src/ui/vault-diagnostics/hooks/use-vault-check.ts",
         "symbol": "vaultCheckQuery"
       },
       "id": "vKEsyHFk/UOXNWLhR#YW2ffPdZ",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/vault-diagnostics/use-vault-check.ts",
+        "path": "apps/web/src/ui/vault-diagnostics/hooks/use-vault-check.ts",
         "symbol": "policyChanged"
       },
       "id": "vKEsyHFk/UOXNWLhR#WXHpoWFo",

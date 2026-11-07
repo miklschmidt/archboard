@@ -1,0 +1,64 @@
+import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
+import { labelsOverOwnLine } from "#tests/runtime/support/drawn-checks.ts";
+import { expect, test } from "bun:test";
+import { SemanticPolicySchema } from "@archboard/model/policy";
+import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
+import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
+import modelRasterizer from "#tests/runtime/support/fixtures/model-rasterizer.json";
+import legacyRouting from "#tests/runtime/support/fixtures/legacy-routing.json";
+import voiceCoordinator from "#tests/runtime/support/fixtures/voice-coordinator.json";
+
+/** The vocabulary of the fixtures, in the dogfood vault's order. */
+const policy = SemanticPolicySchema.parse({
+	levels: ["service"],
+	nodeKinds: {
+		module: { name: "Module", icon: "RiBox3Line" },
+		function: { name: "Function", icon: "RiCodeSSlashLine" },
+		external: { name: "External", icon: "RiExternalLinkLine" },
+		ui: { name: "User interface", icon: "RiLayoutLine" },
+		system: { name: "System", icon: "RiApps2Line" },
+		service: { name: "Service", icon: "RiServerLine" },
+	},
+	relationshipKinds: {
+		call: { name: "Call", dash: "solid", arrowhead: "filled" },
+		rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
+		http: { name: "HTTP", color: "sky", dash: "solid", arrowhead: "filled" },
+		event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
+		dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
+		data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
+		render: { name: "Render", color: "pink", dash: "solid", arrowhead: "filled" },
+	},
+	groups: {
+		writes: { name: "Board writes", color: "orange" },
+		drawing: { name: "Drawing", color: "violet" },
+		panes: { name: "Live panes", color: "teal" },
+		walkthrough: { name: "Walkthroughs", color: "cyan" },
+		voice: { name: "Voice", color: "yellow" },
+		workhorse: { name: "Workhorse", color: "sky" },
+		child: { name: "Codex child", color: "indigo" },
+		agent: { name: "Agent", color: "fuchsia" },
+		checks: { name: "Vault checks", color: "pink" },
+	},
+});
+
+test("a line's words stand clear of its own legs on a document of tight rows", async () => {
+	const content = orderedFixture(modelRasterizer);
+	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	expect(labelsOverOwnLine(drawing)).toEqual([]);
+});
+
+test("blocks read forward across a row or down the page", async () => {
+	const content = orderedFixture(voiceCoordinator);
+	const { atlas } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const [source, target] = [atlas.nodes["LHBPlItu"]!, atlas.nodes["5uPyMgoI"]!];
+	expect(target.y >= source.y + source.height || target.x >= source.x + source.width).toBe(true);
+});
+
+// Reduced from a document of a work vault, letters replaced: a chain of cards
+// above a wide pool its last line enters. Neither centring the chain nor
+// sliding it in line with the line may leave a step in that line.
+test("a chain reaches a wide container through its reserved channels", async () => {
+	const content = orderedFixture(legacyRouting);
+	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	expectDrawingIntact(drawing, content, "blocks");
+});

@@ -1,4 +1,4 @@
-// A release server of another version than the installed one is warned about, not refused (ADR 0075).
+// A release server of another version than the installed one is warned about, not refused (ADR 0076).
 
 import { expect, test } from "bun:test";
 import { bothRelease, otherVersionWarning } from "#runtime/rules/release-version.ts";

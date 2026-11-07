@@ -5,7 +5,7 @@
   "responsibility": "Shares repository requests and the tab query cache",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/model-catalog"
+    "path": "apps/web/src/ui/panes/model-catalog/clients"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#dneK7oM5",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/model-catalog/repositories.ts",
+        "path": "apps/web/src/ui/panes/model-catalog/clients/repositories.ts",
         "symbol": "requestJson"
       },
       "id": "vKEsyHFk/yejBBUFY#n41AFv0z",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/model-catalog/repositories.ts",
+        "path": "apps/web/src/ui/panes/model-catalog/clients/repositories.ts",
         "symbol": "fetchRepositories"
       },
       "id": "vKEsyHFk#sbRLNpob",

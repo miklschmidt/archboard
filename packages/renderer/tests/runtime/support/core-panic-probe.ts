@@ -1,4 +1,4 @@
-import { loadCore } from "#runtime/services/core.ts";
+import { loadCore } from "#runtime/bun-renderer/services/core.ts";
 
 // (module (func (export "trap") unreachable)). A real WASM trap, with no
 // extra Rust build or test-only panic entry in the shipped core.
