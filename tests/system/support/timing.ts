@@ -191,6 +191,13 @@ const TEST_BROWSER_POLL_MS = 50;
  */
 const TEST_BROWSER_CONDITION_TIMEOUT_MS = TEST_PATIENCE_FACTOR * 1500;
 
+/**
+ * How long a browser owner waits for a page to answer one step: a navigation
+ * choice, a reading that a pick opens, a former state. Ten seconds here took
+ * longer on hosted runners, so it is a patience and the factor applies.
+ */
+const TEST_BROWSER_STEP_WAIT = { timeoutMs: TEST_PATIENCE_FACTOR * 10_000 } as const;
+
 /** Polls fake-opener lifecycle evidence within its 2s operation bound. */
 const TEST_OPENER_LIFECYCLE = { pollMs: 20, timeoutMs: 2000 } as const;
 
@@ -221,6 +228,7 @@ export {
 	TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS,
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 	TEST_BROWSER_CONDITION_TIMEOUT_MS,
+	TEST_BROWSER_STEP_WAIT,
 	TEST_BROWSER_POLL_MS,
 	TEST_OPENER_LIFECYCLE,
 	TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS,
