@@ -47,7 +47,7 @@ Refresh an asset when `readme:check` lists it after your change. Then:
 | `architecture`, `sequence`, `web-shop`               | `model render` in light and dark, with drawn glyphs; `architecture` keeps its exact recipe      | no    |
 | `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to a WebP to attach    | no    |
 | `code-evidence`, `module-interfaces`, `git-history`  | the real shell and CLI results from a generated checkout, encoded to a WebP with an index still | no    |
-| `design-smells`                                      | the Measures tab over this checkout's own vault and Git history, encoded to a WebP with a still | no    |
+| `design-smells`                                      | the Measures dialog over this checkout's vault and Git history, encoded to a WebP with a still  | no    |
 | `ask`                                                | the shell filmed while a Codex agent answers Explain selection from the Right panel             | yes   |
 | `explainer`, `pr-walkthrough`, `newcomer`            | `model record` at an exact checkpoint, narrated by the Codex voice; the MP4 is attached         | yes   |
 | `banner`                                             | `model render` of a web-shop proposal, laid as vector beside the lockup in Chromium             | no    |
@@ -119,6 +119,7 @@ Its counts come from this repository's Git history and change with that history.
 The take reads a year of Git before the camera starts.
 The server takes about 15 seconds, and the browser keeps the answer.
 The take also selects the first module before filming because an empty selection shows the model's summary.
+A row of the Measures dialog closes the dialog, so each beat opens the dialog again from its key in the column.
 
 `BEATS` in `design-smells.ts` names each selected module.
 Ties in a sort do not decide which module demonstrates a smell.
