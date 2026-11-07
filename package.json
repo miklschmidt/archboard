@@ -29,7 +29,7 @@
 		"build": "vp run frontend",
 		"build:core": "vp run core",
 		"dev": "vp run core && concurrently --kill-others --names server,web \"bun run server\" \"vp dev\"",
-		"postinstall": "bun run generate:codex-contract && bun run generate:skill-artifacts && bun scripts/configure-language-servers.ts",
+		"postinstall": "bun run generate:codex-contract && bun scripts/configure-language-servers.ts",
 		"lint": "vp run lint:all",
 		"fix": "vp run fix:all",
 		"fmt": "vp fmt --config vite.config.ts && cargo fmt --all",
@@ -41,13 +41,13 @@
 		"generate:codex-contract": "bun scripts/generate-codex-app-server-contract.ts",
 		"ensure:codex-contract": "bun scripts/generate-codex-app-server-contract.ts --ensure",
 		"generate:cli-contract": "bun apps/cli/src/cli/commands/contract-artifacts/operations/generate.ts",
-		"generate:skill-artifacts": "bun scripts/generate-skill-artifacts.ts",
 		"shadcn": "shadcn",
 		"eval:skill": "bun scripts/evaluate-skill.ts",
 		"readme:assets": "bun scripts/readme-assets/make.ts",
 		"readme:check": "bun scripts/readme-assets/check.ts",
 		"example:workbench:build": "vp run workbench-example",
-		"pack:voice": "vp run voice-package"
+		"pack:voice": "vp run voice-package",
+		"release": "vp run release-packages"
 	},
 	"dependencies": {
 		"@assistant-ui/react": "0.15.17",
@@ -117,6 +117,8 @@
 		"happy-dom": "20.14.0",
 		"shadcn": "4.21.0",
 		"tailwindcss": "4.3.3",
+		"typescript-5": "npm:typescript@5.9.3",
+		"typescript-language-server": "6.0.3",
 		"vite": "npm:@voidzero-dev/vite-plus-core@1.4.0",
 		"vite-plus": "1.4.0"
 	},

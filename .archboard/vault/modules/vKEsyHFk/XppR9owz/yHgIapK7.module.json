@@ -2,7 +2,8 @@
   "order": 45000,
   "name": "Request transport",
   "kind": "module",
-  "responsibility": "Sends JSON requests, rejects a server from another checkout, and reports transport errors",
+  "responsibility": "Sends JSON requests, rejects a server from another checkout, warns of a server of another release version, and reports transport errors",
+  "description": "A checkout's commands refuse a server that runs another checkout's source and name both checkouts. Two releases differ by version and not by location, so a server of another release version still answers the command, and the command warns once on stderr in words that name archboard restart.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts"
@@ -35,15 +36,15 @@
     {
       "order": 63000,
       "kind": "dependency",
-      "label": "the running checkout, to refuse another's server",
+      "label": "the running root, to refuse another's server",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
-        "symbol": "SOURCE_CHECKOUT"
+        "symbol": "installation"
       },
       "id": "vKEsyHFk/XppR9owz#WxUHKpD6",
-      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+      "to": "vKEsyHFk#4FdKQJqK"
     },
     {
       "order": 70042,
@@ -70,6 +71,19 @@
       },
       "id": "vKEsyHFk#V2ti26xJ",
       "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 77000,
+      "kind": "call",
+      "label": "the warning for a server of another version",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "otherVersionWarning"
+      },
+      "id": "vKEsyHFk#bLHIqSzi",
+      "to": "vKEsyHFk#hcmla1Wa"
     }
   ]
 }

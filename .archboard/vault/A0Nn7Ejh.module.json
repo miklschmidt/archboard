@@ -1,0 +1,29 @@
+{
+  "order": 4000,
+  "name": "Release smoke test",
+  "kind": "test",
+  "responsibility": "Installs the packed packages from a local registry, as a user does, and runs the installed archboard on a PATH with no Bun, Node.js or Rust",
+  "description": "A local registry serves the tarballs of the release build and passes every other request, such as the Codex platform package, to registry.npmjs.org. npm or Bun installs archboard or @archboard/cli from it. The installed archboard must report the packed version, start a server, report a release server of that version, and stop it, with a scratch state directory and a free loopback port. The script imports nothing from the checkout.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "scripts/release/smoke.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#A0Nn7Ejh",
+  "parent": "vKEsyHFk#02jxKSM1",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "run the installed archboard",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/smoke.ts",
+        "symbol": "smoke"
+      },
+      "id": "vKEsyHFk#fSU3kDAR",
+      "to": "vKEsyHFk#xurdJU8F"
+    }
+  ]
+}

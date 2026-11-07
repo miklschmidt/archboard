@@ -4,7 +4,6 @@ import { z } from "zod";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
 import type { CommandContext } from "#cli/contract/protocol/contract.ts";
 import {
-	CONSUMER_SKILL,
 	BUNDLED_SKILLS,
 	type BundledSkill,
 	type SkillDestination,
@@ -19,8 +18,10 @@ import {
 	checkoutRootOf,
 	setUpRepository,
 } from "#cli/commands/install-skill/operations/repo-setup.ts";
-import { prepareSkillArtifacts } from "@archboard/skills/distribution";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
+
+/** The installation whose skills are installed. */
+type Installation = ReturnType<typeof installation>;
 
 const INSTALL_TARGETS = ["agents", "claude"] as const;
 const INSTALL_AGENTS = ["codex", "claude-code"] as const;
@@ -121,6 +122,27 @@ function existingCopy(target: string): boolean {
 	return lstat !== undefined;
 }
 
+/** What an install needs of the command: the lane for its diagnostics. */
+type Diagnostics = Pick<CommandContext, "diagnostic">;
+
+/**
+ * Lets the owner write below a copied directory. The installation may be read-only, as a Nix
+ * store or a root-owned global install is, and a copy of it must stay a normal directory that
+ * a later install can replace.
+ * @param directory - The copy.
+ */
+function makeOwnerWritable(directory: string): void {
+	fs.chmodSync(directory, fs.statSync(directory).mode | 0o200);
+	for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+		const child = path.join(directory, entry.name);
+		if (entry.isDirectory()) {
+			makeOwnerWritable(child);
+		} else {
+			fs.chmodSync(child, fs.statSync(child).mode | 0o200);
+		}
+	}
+}
+
 /** One bundled skill on its way into the skills root. */
 interface PlannedSkill {
 	skill: BundledSkill;
@@ -130,16 +152,13 @@ interface PlannedSkill {
 }
 
 /**
- * Copies one skill into its staging directory, prepared the way an install carries it: the
- * model skill also gets its generated schemas and portable install manual.
+ * Copies one skill into its staging directory, where its owner can write.
  * @param plan - The skill to stage.
  * @param staging - The empty staging directory beside its target.
  */
 function stageSkill(plan: PlannedSkill, staging: string): void {
 	fs.cpSync(plan.source, staging, { recursive: true });
-	if (plan.skill === CONSUMER_SKILL) {
-		prepareSkillArtifacts(staging, { root: SOURCE_CHECKOUT });
-	}
+	makeOwnerWritable(staging);
 }
 
 /**
@@ -148,7 +167,7 @@ function stageSkill(plan: PlannedSkill, staging: string): void {
  * @param staging - Its prepared staging directory.
  * @param context - The command context that receives the diagnostics.
  */
-function swapIn(plan: PlannedSkill, staging: string, context: CommandContext): void {
+function swapIn(plan: PlannedSkill, staging: string, context: Diagnostics): void {
 	if (plan.replaces) {
 		fs.rmSync(plan.target, { recursive: true, force: true });
 		context.diagnostic(`Replaced existing install at ${plan.target}`);
@@ -161,19 +180,26 @@ function swapIn(plan: PlannedSkill, staging: string, context: CommandContext): v
  * swapping them in. Replace, never overlay: stale files from older skill versions (e.g. the
  * pre-1.1 scripts/*.cjs helpers) must not survive an upgrade.
  *
- * Every skill is staged and prepared before anything is swapped, so a symlink in the way or
+ * Every skill is staged before anything is swapped, so a symlink in the way or
  * a staging that fails leaves every previous install exactly as it was.
  * @param root - The skills root.
+ * @param installed - The installation the skills come from.
  * @param context - The command context that receives the diagnostics.
  * @returns Each installed skill and its directory.
  */
 function copySkills(
 	root: string,
-	context: CommandContext,
+	installed: Installation,
+	context: Diagnostics,
 ): { skill: BundledSkill; target: string }[] {
 	const planned = BUNDLED_SKILLS.map((skill): PlannedSkill => {
 		const target = path.join(root, skill);
-		return { skill, source: findSkillSource(skill), target, replaces: existingCopy(target) };
+		return {
+			skill,
+			source: findSkillSource(skill, installed),
+			target,
+			replaces: existingCopy(target),
+		};
 	});
 	fs.mkdirSync(root, { recursive: true });
 	const staged: { plan: PlannedSkill; staging: string }[] = [];
@@ -207,13 +233,13 @@ function existingInstall(target: string): string | undefined {
 }
 
 /**
- * Points one skill directory of the root at its source in this checkout. A link that already
+ * Points one skill directory of the root at its source in the installation. A link that already
  * points there stays; a copy or a link to another place is replaced, and the diagnostic names it.
- * @param source - The skill directory in this checkout.
+ * @param source - The skill directory in the installation.
  * @param target - The skill directory in the skills root.
  * @param context - The command context that receives the diagnostics.
  */
-function linkSkill(source: string, target: string, context: CommandContext): void {
+function linkSkill(source: string, target: string, context: Diagnostics): void {
 	const was = existingInstall(target);
 	if (was === `a link to ${source}`) return;
 	const staging = path.join(path.dirname(target), `.${path.basename(target)}-link-${process.pid}`);
@@ -227,22 +253,22 @@ function linkSkill(source: string, target: string, context: CommandContext): voi
 }
 
 /**
- * Links every bundled skill in the root to its directory in this checkout, so a `git pull` and
- * `bun install` keep it current with no further step. The consumer skill's generated files are
- * prepared in the checkout, where the link finds them.
+ * Links every bundled skill in the root to its directory in the installation, so an update of
+ * a checkout keeps its skills current with no further step. The installation stays untouched.
  * @param root - The skills root.
+ * @param installed - The installation the skills come from.
  * @param context - The command context that receives the diagnostics.
  * @returns Each installed skill and its link.
  */
 function linkSkills(
 	root: string,
-	context: CommandContext,
+	installed: Installation,
+	context: Diagnostics,
 ): { skill: BundledSkill; target: string }[] {
-	prepareSkillArtifacts(findSkillSource(CONSUMER_SKILL), { root: SOURCE_CHECKOUT });
 	fs.mkdirSync(root, { recursive: true });
 	return BUNDLED_SKILLS.map((skill) => {
 		const target = path.join(root, skill);
-		linkSkill(findSkillSource(skill), target, context);
+		linkSkill(findSkillSource(skill, installed), target, context);
 		return { skill, target };
 	});
 }
@@ -271,26 +297,28 @@ function isInside(child: string, parent: string): boolean {
 /**
  * Installs the skills into the destination. A skills root inside the repository is committed
  * with it and read on other machines, so it gets a copy. Every other root is this machine's own,
- * so it links to this checkout.
+ * so it links to the installation.
  * @param request - The validated install request.
  * @param destination - Where the skills go.
+ * @param installed - The installation the skills come from.
  * @param context - The command context that receives the diagnostics.
  * @returns How the skills were installed, and each skill with its directory and file count.
  */
 function installSkills(
 	request: InstallSkillRequest,
 	destination: SkillDestination,
-	context: CommandContext,
+	installed: Installation,
+	context: Diagnostics,
 ): { install: "link" | "copy"; skills: { skill: BundledSkill; target: string; files: number }[] } {
 	const repo = checkoutRootOf(expandHome(request.repo ?? process.cwd()));
 	const install = request.dir !== undefined && isInside(destination.root, repo) ? "copy" : "link";
-	const installed =
+	const placed =
 		install === "copy"
-			? copySkills(destination.root, context)
-			: linkSkills(destination.root, context);
+			? copySkills(destination.root, installed, context)
+			: linkSkills(destination.root, installed, context);
 	return {
 		install,
-		skills: installed.map((entry) => ({ ...entry, files: countFiles(entry.target) })),
+		skills: placed.map((entry) => ({ ...entry, files: countFiles(entry.target) })),
 	};
 }
 
@@ -309,14 +337,14 @@ async function executeInstallSkill(
 		return {
 			success: true,
 			skills: BUNDLED_SKILLS.map((skill) => {
-				const source = findSkillSource(skill);
+				const source = findSkillSource(skill, installation());
 				return { skill, source, files: countFiles(source) };
 			}),
 		};
 	}
 	const request = context.parse(InstallSkillRequestSchema, input);
 	const destination = resolveDestination(request);
-	const { install, skills } = installSkills(request, destination, context);
+	const { install, skills } = installSkills(request, destination, installation(), context);
 	const setup = request.noSetup
 		? undefined
 		: await setUpRepository({
@@ -338,8 +366,8 @@ const installSkillContract = defineCommand({
 	shared: [],
 	summary: "Install the bundled agent skills and set this repository up",
 	description:
-		"Links the bundled skills from a skills root (~/.agents/skills by default) to this checkout, " +
-		"so that a git pull updates them. A --dir inside the repository gets a copy instead, because " +
+		"Links the bundled skills from a skills root (~/.agents/skills by default) to this installation, " +
+		"so that updating a checkout updates them. It writes nothing into the installation. A --dir inside the repository gets a copy instead, because " +
 		"the repository carries it to other machines. Then the installer makes the " +
 		"repository's vault, <repo>/.archboard/vault, when it has none, and registers the repository " +
 		"so that a browser lists it. A command run in the repository finds that vault without any " +
@@ -454,4 +482,4 @@ const installSkillContract = defineCommand({
 	},
 });
 
-export { installSkillContract };
+export { installSkillContract, installSkills };

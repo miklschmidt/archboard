@@ -1,5 +1,5 @@
 import { buildCodexChildEnvironment } from "#runtime/services/environment.ts";
-import { CodexExecutableError } from "#runtime/services/executable.ts";
+import { CodexExecutableError, nativeCodexEnvironment } from "#runtime/services/executable.ts";
 import { attachChildHandlers } from "#runtime/processes/process-child.ts";
 import {
 	CODEX_APP_SERVER_ARGUMENTS,
@@ -218,7 +218,10 @@ function storageStage(state: ProcessOwnerState): PreparedCodexStorage {
 				: { ambient: state.options.ambientEnvironment }),
 			codexHome: storage.codexHome,
 			sqliteHome: storage.sqliteHome,
-			hostEnvironment: state.options.hostEnvironment,
+			hostEnvironment: {
+				...nativeCodexEnvironment(state.executablePath),
+				...state.options.hostEnvironment,
+			},
 			pathPrefixes: state.options.pathPrefixes,
 		});
 		return storage;

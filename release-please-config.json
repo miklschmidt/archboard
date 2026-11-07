@@ -1,0 +1,20 @@
+{
+	"$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+	"bootstrap-sha": "558d97cab3754ede4b399cb36c3c5377ac7f5d90",
+	"bump-minor-pre-major": true,
+	"packages": {
+		".": {
+			"release-type": "node",
+			"package-name": "archboard",
+			"include-component-in-tag": false,
+			"changelog-path": "CHANGELOG.md",
+			"extra-files": [
+				{
+					"type": "json",
+					"path": "packages/codex-realtime-voice/package.json",
+					"jsonpath": "$.version"
+				}
+			]
+		}
+	}
+}

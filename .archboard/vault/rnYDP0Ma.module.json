@@ -1,0 +1,55 @@
+{
+  "order": 1000,
+  "name": "Release build",
+  "kind": "module",
+  "responsibility": "Lays out the npm packages of one release in dist/release and packs them: two launchers and a platform package for each target",
+  "description": "bun run release, in a checkout whose frontend and core are built, or in the source tree of the flake, where nix build .#release runs it offline. Each platform package gets the executable that Executable compile made, a manifest that lists the Codex binary of its platform at the pinned version, the LICENSE with the version as the Licensed Work, and the third-party notices of every npm package, Rust crate and font that the executable and the bundle are built from. It refuses a Codex pin that the protocol is not built for, a package that would run code on install, and a package that packs above its size budget.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "scripts/release/build.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#rnYDP0Ma",
+  "parent": "vKEsyHFk#02jxKSM1",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "compile each target",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/build.ts",
+        "symbol": "compileRelease"
+      },
+      "id": "vKEsyHFk#vQQRWMBS",
+      "to": "vKEsyHFk#5pa5C2WH"
+    },
+    {
+      "order": 2000,
+      "kind": "dependency",
+      "label": "the script it copies as each launcher's bin",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/build.ts",
+        "symbol": "LAUNCHER"
+      },
+      "id": "vKEsyHFk#wRmQbpT5",
+      "to": "vKEsyHFk#xurdJU8F"
+    },
+    {
+      "order": 3000,
+      "kind": "dependency",
+      "label": "the Codex version that a package pins",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/build.ts",
+        "symbol": "CODEX_PROTOCOL_VERSION"
+      },
+      "id": "vKEsyHFk#uOcot5Gw",
+      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
+    }
+  ]
+}

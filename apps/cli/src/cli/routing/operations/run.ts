@@ -6,6 +6,7 @@ import { modelInspectContract } from "#cli/commands/model/operations/inspect.ts"
 import { modelRasterizeContract } from "#cli/commands/model/operations/rasterize.ts";
 import { modelReplayContract } from "#cli/commands/model/operations/replay.ts";
 import { modelInitContract } from "#cli/commands/model/operations/initialize.ts";
+import { modelSchemaContract } from "#cli/commands/model/operations/schema.ts";
 import {
 	modelExportContract,
 	modelImportContract,
@@ -95,6 +96,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 			),
 			config: child(
 				contract(semanticConfigContract, "apps/cli/src/cli/commands/vault/operations/vault.ts"),
+			),
+			schema: child(
+				contract(modelSchemaContract, "apps/cli/src/cli/commands/model/operations/schema.ts"),
 			),
 			init: child(
 				contract(modelInitContract, "apps/cli/src/cli/commands/model/operations/initialize.ts"),

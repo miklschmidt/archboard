@@ -4,12 +4,13 @@
 //
 // A row names the files of the language by extension and the `languageId` the
 // protocol gives each. It also says what its server needs beyond the protocol:
-// options it must start with whatever command runs it, files opened before it
+// files opened before it
 // answers about them, a request or an index that it is waited for until it has
 // loaded what it reads, and the project it starts in for a file, with why it
 // cannot answer there yet and what it is told when it asks for its
 // configuration, such as the Python environment or the .NET solution to read.
-// Which command runs the server is no part of a row (server-command.ts).
+// Which command runs the server, and the options it starts with, are no part of
+// a row (server-command.ts).
 
 import path from "node:path";
 import { cargoWorkspaceOf } from "#runtime/language-servers/operations/cargo-workspace.ts";
@@ -76,17 +77,14 @@ interface LanguageRow {
 	) => Promise<Project>;
 }
 
-/**
- * Every language a server can resolve, by its key: TypeScript, whose server
- * needs no configuration, and each language an agent configures one for.
- */
-const LANGUAGE_KEYS = ["typescript", ...CONFIGURABLE_LANGUAGES] as const;
-
 /** A language a server can resolve. */
-type Language = (typeof LANGUAGE_KEYS)[number];
+type Language = (typeof CONFIGURABLE_LANGUAGES)[number];
 
 /** What each language needs. */
 const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
+	// `tsc --lsp` of TypeScript 7 answers about a file it has not opened, but
+	// typescript-language-server, for TypeScript before 7, answers about such a
+	// file with nothing (measured with 5.1.3 and 6.0.3, TASK-579.13).
 	typescript: {
 		languageIds: {
 			".ts": "typescript",
@@ -94,6 +92,7 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
 			".cts": "typescript",
 			".tsx": "typescriptreact",
 		},
+		opensFiles: true,
 	},
 	// Measured with pyright 1.1.412: it answers about a file it has not opened
 	// only once it has listed the project's files, and before that answers
@@ -171,7 +170,7 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
  */
 function languageOf(file: string): { language: Language; languageId: string } | undefined {
 	const extension = path.extname(file);
-	for (const language of LANGUAGE_KEYS) {
+	for (const language of CONFIGURABLE_LANGUAGES) {
 		const languageId = LANGUAGES[language].languageIds[extension];
 		if (languageId !== undefined) return { language, languageId };
 	}

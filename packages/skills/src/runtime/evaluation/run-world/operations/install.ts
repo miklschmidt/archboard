@@ -1,15 +1,14 @@
 // Installing the skill an author will read, and checking that it is really
 // there. `archboard install-skill` lays the skills root and leaves the
 // repository's vault as it is; the arm's own package is then put in place of
-// what it installed and prepared with the same generated files. The baseline's
-// package is the frozen one pins.json names; the candidate's is the copy the batch
-// kept when it started, never the checkout at the run's own time, so every
-// candidate run and the grader read one text however long the batch runs.
+// what it installed. The baseline's package is the frozen one pins.json names;
+// the candidate's is the copy the batch kept when it started, never the checkout
+// at the run's own time, so every candidate run and the grader read one text
+// however long the batch runs.
 
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { prepareSkillArtifacts } from "#runtime/distribution/operations/prepare.ts";
 import { archboardOk, type CliContext } from "#runtime/evaluation/run-world/processes/archboard.ts";
 import type { Arm } from "#runtime/evaluation/grading/operations/blind.ts";
 import type { RunPaths } from "#runtime/evaluation/run-world/processes/isolation.ts";
@@ -54,21 +53,13 @@ function digestOf(directory: string): string {
 }
 
 /**
- * Replaces the installed skill's authored files with an arm's package and
- * regenerates the derived files beside them.
+ * Replaces the installed skill with an arm's package.
  * @param installed The installed skill directory.
  * @param source The arm's package.
- * @param checkout The archboard checkout the generated files derive from.
- * @returns The generated artifact inventory.
  */
-function swapInPackage(
-	installed: string,
-	source: string,
-	checkout: string,
-): ReturnType<typeof prepareSkillArtifacts> {
+function swapInPackage(installed: string, source: string): void {
 	fs.rmSync(installed, { recursive: true, force: true });
 	fs.cpSync(source, installed, { recursive: true });
-	return prepareSkillArtifacts(installed, { root: checkout });
 }
 
 /**
@@ -94,11 +85,9 @@ async function installSkill(
 	for (const other of fs.readdirSync(skillsRoot).filter((name) => name !== "archboard")) {
 		fs.rmSync(path.join(skillsRoot, other), { recursive: true, force: true });
 	}
-	const prepared = swapInPackage(skillRoot, source, cli.checkout);
-	for (const required of ["SKILL.md", ...prepared.files]) {
-		if (!fs.existsSync(path.join(skillRoot, required)))
-			throw new Error(`installed skill lacks ${required}`);
-	}
+	swapInPackage(skillRoot, source);
+	if (!fs.existsSync(path.join(skillRoot, "SKILL.md")))
+		throw new Error("installed skill lacks SKILL.md");
 	return {
 		arm,
 		skillRoot,

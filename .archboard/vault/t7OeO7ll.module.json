@@ -1,0 +1,15 @@
+{
+  "order": 91000,
+  "name": "Model schema command",
+  "kind": "function",
+  "responsibility": "Prints the JSON Schemas that the consumer skill names, from the schemas of the canonical runtime, with no server and no vault",
+  "description": "archboard model schema lists the names, and archboard model schema <name> prints one: the model manifest, a module, a flow collection, the initialization, edit, import and migration requests, and the vault configuration. They come from the runtime's own schemas, so they match the installed program. The skill reads them here, so a copy of the skill from GitHub, as the skills CLI installs it, needs no generated file.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/commands/model/operations/schema.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#t7OeO7ll",
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "outgoing": []
+}

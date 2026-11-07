@@ -4,7 +4,7 @@
 // session closes.
 
 import { afterEach, describe, expect, test } from "bun:test";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { openLanguageServers } from "#runtime/language-servers/services/session.ts";
 import {
 	running,
@@ -179,7 +179,13 @@ describe("a pass's language servers", () => {
 			await session.close();
 			expect(session.unavailable()).toEqual([]);
 			expect(session.timings()).toEqual([
-				{ language: "typescript", root: at.root, project: ".", elapsedMs: expect.any(Number) },
+				{
+					language: "typescript",
+					root: at.root,
+					project: ".",
+					program: basename(process.execPath),
+					elapsedMs: expect.any(Number),
+				},
 			]);
 			expect(session.timings()[0]?.elapsedMs).toBeGreaterThan(100);
 		},

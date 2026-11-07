@@ -8,15 +8,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
-import {
-	initializeArchitectureModel,
-	initializeArchitectureArchive,
-} from "@archboard/model/store-write";
-import { repoRootOf } from "@archboard/workspace/checkouts";
 import { CliUsageError } from "#cli/contract/protocol/contract.ts";
 import type { CommandContext } from "#cli/contract/protocol/contract.ts";
 import { expandHome } from "#cli/commands/install-skill/operations/skill-destination.ts";
 import { findVaultOf } from "#cli/routing/operations/addressed-vault.ts";
+import { makeVault, refusalLines } from "#cli/commands/model/operations/initialize.ts";
 
 /** The agent documents an earlier version wrote its block into. */
 const AGENT_DOCUMENTS = ["CLAUDE.md", "AGENTS.md"] as const;
@@ -109,33 +105,32 @@ function removeOldBlocks(repo: string): string[] {
 }
 
 /**
- * Initialize a new vault through the existing archive and canonical installer.
- * @param repo The repository or untracked holder.
- * @param vault The new empty vault.
+ * Make the repository's vault when it has none or an empty one, or else find the vault and
+ * register what holds it.
+ * @param repo - The repository root.
+ * @param context - Where the line that names the vault goes.
+ * @throws {CliUsageError} When the vault cannot be made.
  */
-async function initializeNewVault(repo: string, vault: string): Promise<void> {
-	if ((await repoRootOf(repo)) === undefined) {
-		const archive = await initializeArchitectureArchive(vault);
-		if (!archive.success)
-			throw new CliUsageError(
-				archive.diagnostics
-					.map((item) => `${item.code}: ${item.message} ${item.recovery}`)
-					.join("\n"),
-			);
+async function makeOrFindVault(repo: string, context: CommandContext): Promise<void> {
+	const vault = path.join(repo, VAULT_DIRECTORY);
+	if (fs.existsSync(vault) && fs.readdirSync(vault).length > 0) {
+		await findVaultOf(repo, "--repo");
+		context.diagnostic(`Found the architecture of this repository in ${vault}`);
+		return;
 	}
-	const initialized = await initializeArchitectureModel(vault, {
-		name: path.basename(repo),
-		operationId: "repository-setup",
-		writer: "installer",
-		doing: "Initialize canonical architecture",
-	});
-	if (!initialized.success)
-		throw new CliUsageError(
-			initialized.diagnostics
-				.map((item) => `${item.code}: ${item.message} ${item.recovery}`)
-				.join("\n"),
-		);
+	const made = await makeVault(
+		repo,
+		{
+			name: path.basename(repo),
+			operationId: "repository-setup",
+			writer: "installer",
+			doing: "Initialize canonical architecture",
+		},
+		context,
+	);
+	if (!made.success) throw new CliUsageError(refusalLines(made).join("\n"));
 }
+
 /**
  * Set a repository up: make its vault when it has none, register what holds it so that a browser
  * lists it, and remove the block an earlier version wrote into its agent documents. A repository's
@@ -148,15 +143,10 @@ async function setUpRepository(options: SetupOptions): Promise<SetupResult> {
 	const repo = checkoutRootOf(options.repoSpec ? expandHome(options.repoSpec) : process.cwd());
 	const vault = path.join(repo, VAULT_DIRECTORY);
 	const vaultCreated = !fs.existsSync(vault);
-	fs.mkdirSync(vault, { recursive: true });
-	if (fs.readdirSync(vault).length === 0) await initializeNewVault(repo, vault);
-	await findVaultOf(repo, "--repo");
+	await makeOrFindVault(repo, context);
 	const removedBlocks = removeOldBlocks(repo);
 	const vaultIgnored = gitIgnores(repo, vault);
 
-	context.diagnostic(
-		`${vaultCreated ? "Made" : "Found"} the architecture of this repository in ${vault}`,
-	);
 	for (const file of removedBlocks) {
 		context.diagnostic(
 			`Removed the setup block an earlier version wrote into ${file}, and changed nothing else in it. Commit that change.`,

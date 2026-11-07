@@ -208,7 +208,7 @@ function notFoundMessage(
 		return (
 			`${start} is inside the git checkout ${root}, which has no ${VAULT_DIRECTORY} at its root. ` +
 			`Inside a checkout a command uses only the vault at the checkout root, and a vault above the checkout is never used. ` +
-			`Set the repository up with \`archboard install-skill\` in ${root}, or create ${path.join(root, VAULT_DIRECTORY)}, ` +
+			`Make its vault with \`archboard model init\` in ${root}, or create ${path.join(root, VAULT_DIRECTORY)}, ` +
 			`or name another directory with ${option} <dir>. Nothing was done.`
 		);
 	}

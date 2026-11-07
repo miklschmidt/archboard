@@ -74,6 +74,19 @@
       "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     },
     {
+      "order": 84000,
+      "kind": "dependency",
+      "label": "its skill, the bin directory and the Codex scope",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/workbench-host/services/production.ts",
+        "symbol": "installation"
+      },
+      "id": "vKEsyHFk#6umALxwj",
+      "to": "vKEsyHFk#4FdKQJqK"
+    },
+    {
       "order": 100000,
       "kind": "call",
       "label": "subscribe to arrived narration changes",
@@ -85,6 +98,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#8iYy7AoA",
       "to": "vKEsyHFk/9ncuT5DP#pZL0uxjI"
+    },
+    {
+      "order": 101000,
+      "kind": "call",
+      "label": "the pinned Codex of the installation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/workbench-host/services/production.ts",
+        "symbol": "resolveCodexExecutable"
+      },
+      "id": "vKEsyHFk#9MbNdh8e",
+      "to": "vKEsyHFk#06cbjPhn"
     }
   ]
 }

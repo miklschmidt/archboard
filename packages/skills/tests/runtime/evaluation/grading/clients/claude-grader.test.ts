@@ -2,7 +2,7 @@
 // the pinned posture, the stream parser reads what the harness reports, and
 // the read receipts count only pictures the stream shows were opened.
 import { expect, test } from "bun:test";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -20,7 +20,7 @@ import {
 import { graderPrompt } from "#runtime/evaluation/protocol/grader.ts";
 import { loadSuite } from "#runtime/evaluation/batch/schemas/suite.ts";
 
-const loaded = loadSuite(path.join(SOURCE_CHECKOUT, "evals"));
+const loaded = loadSuite(path.join(installation().root, "evals"));
 const workspace = "/batch/graders/workspace";
 
 /**

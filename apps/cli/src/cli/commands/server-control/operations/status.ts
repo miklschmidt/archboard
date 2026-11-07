@@ -27,6 +27,8 @@ const StatusRunningResultSchema = z.looseObject({
 	url: z.string(),
 	pid: z.number().int().optional(),
 	browserClients: z.number().int().nonnegative().optional(),
+	version: z.string().optional(),
+	mode: z.enum(["checkout", "release"]).optional(),
 	stale: StaleSourceSchema.optional(),
 });
 
@@ -86,6 +88,8 @@ function runningStatus(running: RunningServer) {
 			url: running.url,
 			pid: running.pid,
 			browserClients: running.browserClients,
+			version: running.version,
+			mode: running.mode,
 			...(stale ? { stale } : {}),
 		},
 		...(stale ? { diagnostics: [stale.says] } : {}),

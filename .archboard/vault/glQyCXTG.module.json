@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/XppR9owz#kggkjerM",
       "to": "vKEsyHFk/XppR9owz#iIVu1bGE"
+    },
+    {
+      "order": 53000,
+      "kind": "dependency",
+      "label": "the root to write the artifacts into",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/contract-artifacts/operations/generate.ts",
+        "symbol": "installation"
+      },
+      "id": "vKEsyHFk#GNKmFWDI",
+      "to": "vKEsyHFk#4FdKQJqK"
     }
   ]
 }

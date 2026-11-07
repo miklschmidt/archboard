@@ -3,6 +3,7 @@
   "name": "Prerequisites",
   "kind": "module",
   "responsibility": "Makes sure what a command needs is there: the server, started when it is not running, and an open canvas",
+  "description": "When no canvas is open, it names the address that a browser opens: archboard.localhost for a release.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/contract/clients/prerequisites.ts"
@@ -57,6 +58,19 @@
       },
       "id": "vKEsyHFk/XppR9owz#EywCr04W",
       "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
+    },
+    {
+      "order": 57000,
+      "kind": "call",
+      "label": "the address a browser opens",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/contract/clients/prerequisites.ts",
+        "symbol": "browserUrl"
+      },
+      "id": "vKEsyHFk#sYoTKyHa",
+      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
     }
   ]
 }

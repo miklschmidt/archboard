@@ -2,7 +2,8 @@
   "order": 960200,
   "name": "Codex executable",
   "kind": "function",
-  "responsibility": "Finds the pinned Codex executable that a host may run",
+  "responsibility": "Finds the pinned Codex executable that a host may run: under the checkout's node_modules, or in the platform package of a release",
+  "description": "A release starts the native Codex binary of its platform package directly. It finds the package as Node.js finds a dependency: in the node_modules of the release's package, else in that of each directory above it, which suits the nested layout of npm and the hoisted layout of bun add -g. Every executable still passes the bounded --version proof against the pinned version. A native binary also gets the two variables that Codex's own bin/codex.js sets: the root of its package and the package manager that installed it.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-app-server/src/runtime/services/executable.ts"

@@ -5,7 +5,7 @@
 // replaces the filed verdict, with a receipt of the bytes filed, only when it
 // mends the shortfall; the retry's usage counts; and it is never retried again.
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -32,7 +32,7 @@ import {
 	suppliedCaptures,
 } from "#runtime/evaluation/grading/store/grading-images.ts";
 
-const checkout = SOURCE_CHECKOUT;
+const checkout = installation().root;
 const loaded = loadSuite(path.join(checkout, "evals"));
 const SCENARIO = "S02";
 const DECLARED = (

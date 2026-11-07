@@ -6,7 +6,7 @@
 // the rule reaches a batch that was run and graded before it.
 
 import { expect, test } from "bun:test";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -17,7 +17,7 @@ import { readManifests, recordOf } from "#runtime/evaluation/reporting/store/rec
 import { writeRunManifest } from "#runtime/evaluation/schemas/run-manifest.ts";
 import type { ExposureRoots } from "#runtime/evaluation/protocol/events.ts";
 
-const checkout = SOURCE_CHECKOUT;
+const checkout = installation().root;
 const loaded = loadSuite(path.join(checkout, "evals"));
 
 /**

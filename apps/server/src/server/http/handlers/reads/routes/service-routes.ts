@@ -1,6 +1,7 @@
 import path from "path";
 import type { Express, NextFunction, Request, Response } from "express";
 import { logger } from "@archboard/diagnostics/logger";
+import { installation } from "@archboard/workspace/installation";
 import { frontendState, sourceState } from "@archboard/server-lifecycle/server-host";
 import { mutationAdmission } from "#server/wiring/server-owners.ts";
 import { serverPhase } from "#server/start-stop/lifecycle/server-startup.ts";
@@ -38,6 +39,10 @@ function healthRoute(_req: Request, res: Response): void {
 		// from a stale pidfile or an unrelated app squatting on the port.
 		service: "archboard-server",
 		pid: process.pid,
+		// Which installation this process runs. A command of another version of a release warns
+		// about the difference, because a release never changes on disk except by an install (ADR 0076).
+		version: installation().version,
+		mode: installation().mode,
 		application: {
 			phase: serverPhase(),
 			acceptingWrites: mutationAdmission.accepting(),

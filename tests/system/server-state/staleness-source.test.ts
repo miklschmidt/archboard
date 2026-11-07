@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, realpathSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -14,6 +14,8 @@ const executable = join(repoRoot, "bin/archboard");
 
 interface Health {
 	pid: number;
+	version: string;
+	mode: string;
 	source: {
 		checkout: string;
 		stale: boolean;
@@ -61,6 +63,11 @@ describe.serial("source staleness", () => {
 		};
 
 		const first = await health();
+		// Which installation the server runs, so that a command can tell a release of another version (ADR 0076).
+		expect(first.mode).toBe("checkout");
+		expect(first.version).toBe(
+			JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")).version,
+		);
 		// The checkout whose source the server runs, which a command of another
 		// checkout's source refuses (ADR 0049).
 		expect(first.source.checkout).toBe(realpathSync.native(repoRoot));

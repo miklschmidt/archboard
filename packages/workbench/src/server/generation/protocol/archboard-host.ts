@@ -32,12 +32,6 @@ export interface ArchboardWorkbenchServer {
 			readonly resolveCheckout: (named: string) => string | null;
 			readonly onFatal: (error: unknown) => void;
 		};
-	/**
-	 * The checkout whose source this server runs. The Codex child runs its `bin`, and the
-	 * coordinator reads its archboard skill. No thread works in it unless it is that thread's own
-	 * checkout (ADR 0050).
-	 */
-	readonly sourceRoot: string;
 	readonly onCodexProcessGroupOwned: (identity: CodexProcessGroupIdentity) => void;
 	/**
 	 * The checkout whose conversation a browser pane's tab shows, the shown conversation (ADR 0050):

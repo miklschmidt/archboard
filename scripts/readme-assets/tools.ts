@@ -15,7 +15,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import { discoveredChromiumPath } from "@archboard/renderer/headless-chromium";
 import { findFfmpeg } from "@archboard/walkthrough/ffmpeg";
 
@@ -211,7 +211,7 @@ function toolLines(): readonly string[] {
 		toolLine("chromium", chromiumPath),
 		toolLine("ffmpeg", () => ffmpegCommand().join(" ")),
 		toolLine("pyftsubset", () => pyftsubsetCommand().join(" ")),
-		toolLine("codex", () => resolveCodexExecutable({ installedIn: SOURCE_CHECKOUT })),
+		toolLine("codex", () => resolveCodexExecutable(installation().codexLocation)),
 	];
 }
 

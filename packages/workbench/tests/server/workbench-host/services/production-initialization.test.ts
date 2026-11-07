@@ -8,17 +8,17 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readlinkSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { checkoutPort, SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
+import { DEFAULT_ARCHBOARD_URL } from "@archboard/workspace/source-checkout";
 import { findVault } from "@archboard/workspace/vault";
 import { withProductionState } from "#tests/server/support/generation/production-state.ts";
 import { createServerVoiceAgentOptions } from "#server/workbench-host/services/production.ts";
 
-function installation() {
+function productionStorage() {
 	const root = mkdtempSync(join(tmpdir(), "archboard-production-storage-"));
 	return withProductionState(root, () => ({
 		root,
 		value: createServerVoiceAgentOptions({
-			sourceRoot: "/repo",
 			host: { resolveCheckout: (named: string) => named },
 		} as never),
 	}));
@@ -26,7 +26,7 @@ function installation() {
 
 describe("production Codex storage", () => {
 	test("the servers on a machine share one Codex home, and each port owns its own state", async () => {
-		const { root, value } = installation();
+		const { root, value } = productionStorage();
 		try {
 			const workbench =
 				process.platform === "darwin"
@@ -37,7 +37,7 @@ describe("production Codex storage", () => {
 			const owner = join(
 				workbench,
 				"canvases",
-				process.env["PORT"] || String(checkoutPort(SOURCE_CHECKOUT)),
+				process.env["PORT"] || new URL(DEFAULT_ARCHBOARD_URL).port,
 			);
 			expect({
 				rootDirectory: value.storage.directory,
@@ -49,7 +49,7 @@ describe("production Codex storage", () => {
 			const coordinator = join(owner, "coordinator");
 			expect(existsSync(coordinator)).toBe(true);
 			expect(readlinkSync(join(coordinator, ".agents", "skills", "archboard"))).toBe(
-				join("/repo", "skills", "archboard"),
+				join(installation().skillsDirectory, "archboard"),
 			);
 			expect(existsSync(join(coordinator, ".archboard"))).toBe(false);
 			// So a command the coordinator runs without -C finds no vault and is refused, rather than

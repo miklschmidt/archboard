@@ -1,0 +1,172 @@
+name: Release
+
+# The Conventional Commits on main decide each version (ADR 0076, Publication). release-please
+# reads them since the last release and keeps one release pull request open. Every commit counts,
+# and the MIT voice package has the same version as Archboard, because the Archboard executable
+# carries it and the voice package bundles other workspace packages. A merge of the release pull
+# request is the release: release-please tags the merge commit and makes the GitHub release with
+# the same notes.
+#
+# release-please makes its commits through the GitHub API, so GitHub signs them. A tag that the
+# workflow token makes starts no other workflow, so the publication runs as a later job of this
+# same run, gated on the release that release-please just made.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    name: Keep the release pull request and tag releases
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+      sha: ${{ steps.release.outputs.sha }}
+
+    steps:
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@v5
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # The complete gate of CI, on the commit that release-please tagged. It runs beside the build,
+  # and the publish job waits for both.
+  gate:
+    name: Gate
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.release-please.outputs.sha }}
+
+  # The packages of the root release, built from its tag on Linux by the flake's `release` output,
+  # in the Nix sandbox without network. Bun cross-compiles the macOS executable
+  # (docs/agents/releasing.md).
+  build:
+    name: Build the packages
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    # A cold Cargo build of the core, then three compiles.
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout the release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Setup Nix
+        uses: cachix/install-nix-action@v31
+
+      # The six packed packages, the voice package among them, land in result/.
+      - name: Build the packages
+        run: nix build .#release -L
+
+      - name: Keep the packed packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-packages
+          path: result/*.tgz
+          if-no-files-found: error
+
+  # Each runner installs the packed tarballs from a local registry, with Codex from npm, and runs
+  # the installed `archboard` on a PATH without Rust, Bun or Node.js.
+  smoke:
+    name: Smoke test on ${{ matrix.os }}
+    needs: [release-please, build]
+    strategy:
+      fail-fast: false
+      matrix:
+        # macos-latest runs on Apple silicon.
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout the release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      # Bun runs the smoke script and its registry, and npm installs. Neither is on the PATH of
+      # the installed `archboard`.
+      - name: Set up Vite+, Node.js, and Bun
+        uses: voidzero-dev/setup-vp@v1.21.2
+        with:
+          version-file: package.json
+          node-version: "26"
+          run-install: false
+
+      - name: Fetch the packed packages
+        uses: actions/download-artifact@v4
+        with:
+          name: release-packages
+          path: dist/release
+
+      - name: Install archboard with npm and run it
+        run: bun scripts/release/smoke.ts --installer npm --name archboard
+
+      - name: Install @archboard/cli with Bun and run it
+        run: bun scripts/release/smoke.ts --installer bun --name @archboard/cli
+
+  # The environment `npm` holds the job until its required reviewer approves the run. npm trusts
+  # only this job, through OIDC (trusted publishing), so the repository stores no npm token, and
+  # each package gets provenance. Platform packages go first, so a launcher never names a
+  # version that is not on npm. A package version that is on npm already is skipped, so a failed
+  # run can be run again.
+  publish:
+    name: Publish the packages to npm
+    needs: [release-please, gate, smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Fetch the packed packages
+        uses: actions/download-artifact@v4
+        with:
+          name: release-packages
+          path: dist/release
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+
+      # Trusted publishing needs npm 11.5.1 or later.
+      - name: Install npm
+        run: npm install --global npm@11.6.2
+
+      - name: Publish
+        env:
+          VERSION: ${{ needs.release-please.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag=latest
+          case "$VERSION" in *-*) tag=next ;; esac
+          for name in @archboard/cli-linux-x64 @archboard/cli-linux-arm64 @archboard/cli-darwin-arm64 @archboard/cli archboard @archboard/codex-realtime-voice; do
+            file="dist/release/$(printf '%s' "${name#@}" | tr / -)-$VERSION.tgz"
+            if npm view "$name@$VERSION" version > /dev/null 2>&1; then
+              echo "$name@$VERSION is on npm already."
+              continue
+            fi
+            npm publish "$file" --provenance --access public --tag "$tag"
+          done

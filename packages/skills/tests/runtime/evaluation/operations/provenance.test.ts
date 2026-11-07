@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -12,7 +12,7 @@ import {
 import { loadSuite } from "#runtime/evaluation/batch/schemas/suite.ts";
 import { resumeSelection } from "#runtime/evaluation/batch/operations/batch.ts";
 
-const loaded = loadSuite(path.join(SOURCE_CHECKOUT, "evals"));
+const loaded = loadSuite(path.join(installation().root, "evals"));
 
 describe("comparison provenance", () => {
 	test("changed prompts, fixtures and pins cannot reuse an earlier comparison", () => {

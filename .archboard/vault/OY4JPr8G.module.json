@@ -153,6 +153,19 @@
       },
       "id": "vKEsyHFk#AvmihZrD",
       "to": "vKEsyHFk/9ncuT5DP#pZL0uxjI"
+    },
+    {
+      "order": 981200,
+      "kind": "dependency",
+      "label": "the skill it links for the coordinator",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/workbench-host/services/production.ts",
+        "symbol": "installation"
+      },
+      "id": "vKEsyHFk#HSoDCdWT",
+      "to": "vKEsyHFk#4FdKQJqK"
     }
   ]
 }

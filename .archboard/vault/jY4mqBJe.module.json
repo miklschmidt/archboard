@@ -1,0 +1,29 @@
+{
+  "order": 30000,
+  "name": "Core loader",
+  "kind": "module",
+  "responsibility": "Loads the renderer core of the installation on this thread and refuses a build made from other sources than the installation expects",
+  "description": "The core is a build, and Bun does not read it as source. A checkout expects the hash of its own Rust sources, which it computes. A release ships no sources and expects the hash that its marker recorded. A missing core, one that cannot be loaded and one made from other sources are refused with CORE_BUILD_MISSING, CORE_BUILD_INVALID and CORE_BUILD_STALE; the remedy is bun run build:core in a checkout, and reinstalling a release. The module this thread compiled is what each layout worker is handed.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/runtime/bun-renderer/services/core.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#jY4mqBJe",
+  "parent": "vKEsyHFk/gbyqW4H3#0XCanbzp",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "the core directory, and the hash it must record",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/bun-renderer/services/core.ts",
+        "symbol": "installation"
+      },
+      "id": "vKEsyHFk#FHm5EAjC",
+      "to": "vKEsyHFk#4FdKQJqK"
+    }
+  ]
+}

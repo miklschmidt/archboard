@@ -48,6 +48,7 @@ import {
 } from "#runtime/language-servers/operations/outline.ts";
 import { positionOf } from "#runtime/language-servers/operations/position.ts";
 import type { LanguageServer } from "#runtime/language-servers/operations/server-command.ts";
+import type { CheckTiming } from "#shared/protocol/code-check.ts";
 import {
 	startServer,
 	type DefinitionLocation,
@@ -108,13 +109,13 @@ interface LanguageServerSession {
 	readonly timings: () => readonly ServerTiming[];
 }
 
-/** Active server work, with the checkout and project it served. */
-interface ServerTiming {
-	readonly language: Language;
+/** Active server work, with the checkout and project it served, and which server it was. */
+type ServerTiming = Omit<Extract<CheckTiming, { check: "language-server" }>, "check" | "repo"> & {
 	readonly root: string;
-	readonly project: string;
-	readonly elapsedMs: number;
-}
+};
+
+/** A command that starts a server. */
+type Command = Extract<LanguageServer, { status: "command" }>;
 
 /** The server of a language in a checkout, by its root. */
 type ServerOf = (language: Language, root: string) => LanguageServer;
@@ -132,7 +133,7 @@ interface Running {
 	readonly language: Language;
 	readonly root: string;
 	readonly key: string;
-	readonly argv: readonly [string, ...string[]];
+	readonly command: Command;
 	readonly server: Server;
 }
 
@@ -335,10 +336,10 @@ class Session {
 	async #serverOf(root: string, file: string): Promise<Running | undefined> {
 		const language = this.#open() ? languageOf(file)?.language : undefined;
 		if (language === undefined) return undefined;
-		const argv = this.#commandOf(language, root);
-		if (argv === undefined) return undefined;
+		const command = this.#commandOf(language, root);
+		if (command === undefined) return undefined;
 		const project = await this.#readyProject(language, root, file);
-		return project === undefined ? undefined : this.#running(language, root, project, argv);
+		return project === undefined ? undefined : this.#running(language, root, project, command);
 	}
 
 	/**
@@ -346,14 +347,14 @@ class Session {
 	 * @param language The language.
 	 * @param root The checkout.
 	 * @param project The project, where it starts.
-	 * @param argv Its command.
+	 * @param command Its command.
 	 * @returns The server, or undefined when it failed.
 	 */
 	async #running(
 		language: Language,
 		root: string,
 		project: Project,
-		argv: readonly [string, ...string[]],
+		command: Command,
 	): Promise<Running | undefined> {
 		const key = `${language}\0${project.root}`;
 		let start = this.#starts.get(key);
@@ -361,11 +362,11 @@ class Session {
 			// The pass can end while a row looks at the project, and a server
 			// started after `close` would never be stopped.
 			if (!this.#open()) return undefined;
-			start = this.#start(language, root, project, argv);
+			start = this.#start(language, root, project, command);
 			this.#starts.set(key, start);
 		}
 		const server = await start;
-		return server === undefined ? undefined : { language, root, key, argv, server };
+		return server === undefined ? undefined : { language, root, key, command, server };
 	}
 
 	/**
@@ -395,7 +396,7 @@ class Session {
 	 * @param root The checkout.
 	 * @returns The command, or undefined when the language has no server there.
 	 */
-	#commandOf(language: Language, root: string): readonly [string, ...string[]] | undefined {
+	#commandOf(language: Language, root: string): Command | undefined {
 		if (this.#unavailable.has(keyOf({ language, reason: "failed", root }))) return undefined;
 		const key = `${language}\0${root}`;
 		let server = this.#commands.get(key);
@@ -403,7 +404,7 @@ class Session {
 			server = this.#options.servers(language, root);
 			this.#commands.set(key, server);
 		}
-		if (server.status === "command") return server.argv;
+		if (server.status === "command") return server;
 		this.#note({ language, reason: "missing", root, detail: server.detail });
 		return undefined;
 	}
@@ -427,14 +428,14 @@ class Session {
 	 * @param language Its language.
 	 * @param root Its checkout.
 	 * @param project Its project: where it starts, and what it is told of its configuration.
-	 * @param argv Its command.
+	 * @param command Its command.
 	 * @returns The server, or undefined when it failed.
 	 */
 	async #start(
 		language: Language,
 		root: string,
 		project: Project,
-		argv: readonly [string, ...string[]],
+		command: Command,
 	): Promise<Server | undefined> {
 		const { signal } = this.#options;
 		const began = performance.now();
@@ -443,6 +444,8 @@ class Session {
 			language,
 			root,
 			project: path.relative(root, project.root) || ".",
+			program: path.basename(command.argv[0]),
+			...(command.typescript === undefined ? {} : { typescript: command.typescript }),
 			/**
 			 * Startup time when no server became ready.
 			 * @returns Elapsed milliseconds.
@@ -452,7 +455,16 @@ class Session {
 		this.#timings.set(`${language}\0${project.root}`, timing);
 		try {
 			const { root: at, settings } = project;
-			const start = { language, argv, root: at, settings, signal, stopMs: this.#stopMs };
+			const { argv, initializationOptions } = command;
+			const start = {
+				language,
+				argv,
+				root: at,
+				initializationOptions,
+				settings,
+				signal,
+				stopMs: this.#stopMs,
+			};
 			const server = await startServer(start);
 			this.#started.add(server);
 			timing.elapsedMs = server.elapsedMs;
@@ -460,7 +472,7 @@ class Session {
 		} catch (error) {
 			elapsedMs = performance.now() - began;
 			if (!signal.aborted)
-				this.#note({ language, reason: "failed", root, detail: failure(argv, error) });
+				this.#note({ language, reason: "failed", root, detail: failure(command.argv, error) });
 			return undefined;
 		}
 	}
@@ -474,8 +486,8 @@ class Session {
 	#failed(running: Running, error: unknown): void {
 		const refused = error instanceof RequestFailure && error.kind === "answered";
 		if (refused || this.#options.signal.aborted) return;
-		const { language, root, argv } = running;
-		this.#note({ language, reason: "failed", root, detail: failure(argv, error) });
+		const { language, root, command } = running;
+		this.#note({ language, reason: "failed", root, detail: failure(command.argv, error) });
 		this.#starts.set(running.key, Promise.resolve(undefined));
 		void running.server.stop(false);
 	}

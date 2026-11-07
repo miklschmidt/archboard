@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { z } from "zod";
+// The executable of a release carries the templates, so they are embedded, not read by path.
+import voiceTemplate from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/voice.json" with { type: "text" };
+import workhorseTemplate from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/workhorse.json" with { type: "text" };
+import { embeddedText } from "#runtime/host/rules/embedded-text.ts";
 
 type JsonSchema = Readonly<Record<string, unknown>>;
 
@@ -206,6 +209,11 @@ interface ReviewedNamespace {
 	readonly sha256: string;
 }
 
+const TEMPLATE_TEXTS: Readonly<Record<CoordinatorNamespaceRole, string>> = {
+	workhorse: embeddedText(workhorseTemplate, "workhorse manifest template"),
+	voice: embeddedText(voiceTemplate, "voice manifest template"),
+};
+
 /**
  * Reads a reviewed template beside this module and refuses it unless its bytes hash to the fixed
  * reviewed digest, so a silent edit cannot change what the coordinator may call.
@@ -214,13 +222,7 @@ interface ReviewedNamespace {
  */
 function loadTemplate(role: CoordinatorNamespaceRole): string {
 	const label = `${role} manifest template`;
-	const bytes = readFileSync(
-		new URL(
-			import.meta.resolve(
-				`#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/${role}.json`,
-			),
-		),
-	);
+	const bytes = Buffer.from(TEMPLATE_TEXTS[role], "utf8");
 	const text = decodeCanonicalBytes(bytes, label);
 	const actualSha256 = sha256(bytes);
 	if (actualSha256 !== TEMPLATE_DIGESTS[role]) {

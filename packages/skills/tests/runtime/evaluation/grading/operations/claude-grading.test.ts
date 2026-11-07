@@ -4,7 +4,7 @@
 // per-call usage, refuses a wrong version, and files a call that read outside
 // the workspace or returned no answer as an error.
 import { afterEach, expect, test } from "bun:test";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -22,7 +22,7 @@ import { keepBatchSkill } from "#runtime/evaluation/batch/services/citations.ts"
 import { loadSuite } from "#runtime/evaluation/batch/schemas/suite.ts";
 import { suppliedCaptures } from "#runtime/evaluation/grading/store/grading-images.ts";
 
-const checkout = SOURCE_CHECKOUT;
+const checkout = installation().root;
 const loaded = loadSuite(path.join(checkout, "evals"));
 const roots: string[] = [];
 afterEach(() => {

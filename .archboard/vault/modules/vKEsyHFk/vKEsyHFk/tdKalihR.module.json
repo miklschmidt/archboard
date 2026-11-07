@@ -2,7 +2,10 @@
   "order": 27000,
   "name": "workspace",
   "kind": "package",
-  "responsibility": "Where a vault, a checkout and the state directory are, and the atomic write",
+  "responsibility": "Which installation runs, where a vault, a checkout and the state directory are, and the atomic write",
+  "groups": [
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workspace"
@@ -15,8 +18,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "groups": [
-    "packages"
-  ]
+  "outgoing": []
 }

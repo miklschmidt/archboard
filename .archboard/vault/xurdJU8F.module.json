@@ -1,0 +1,29 @@
+{
+  "order": 3000,
+  "name": "Platform launcher",
+  "kind": "module",
+  "responsibility": "The bin archboard of the launcher packages: finds the platform package installed beside it and starts its executable with every argument",
+  "description": "A POSIX shell script. It follows the link that the package manager made to the package, names the platform from uname, and looks for @archboard/cli-<platform> in the node_modules of the package and then of each directory above it, which covers the nested layout of npm and the hoisted layout of bun add -g. It starts the executable in its own place, so the exit status is the executable's. It refuses a platform that has no release, and a missing platform package with the advice not to omit optional dependencies.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "scripts/release/launcher.sh"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#xurdJU8F",
+  "parent": "vKEsyHFk#02jxKSM1",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "start the platform package's executable",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/launcher.sh",
+        "symbol": "executable"
+      },
+      "id": "vKEsyHFk#0IgXUO7L",
+      "to": "vKEsyHFk/XppR9owz#peyArgPx"
+    }
+  ]
+}
