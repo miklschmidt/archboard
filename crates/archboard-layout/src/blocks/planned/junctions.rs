@@ -90,10 +90,9 @@ fn common_prefix(a: &[Point], b: &[Point]) -> f64 {
 /// and the bend behind it, then a bend and as long a straight again for the join.
 const JOIN_ROOM: f64 = APPROACH_STRAIGHT + 3.0 * BEND_RADIUS;
 
-/// Branches of one fan meet where a reader can see them meet. Two branches never
-/// meet head-on or part back to back on one line, which reads as one line through
-/// the junction, and a target fan joins a visible run before the box it enters.
-/// Where one branch runs wholly along the other, they never join.
+/// A target fan joins a visible run before the box it enters, so its junction
+/// never sits beside the arrowhead. Where one branch runs wholly along the other,
+/// they never join.
 pub(super) fn readable(a: &[Point], b: &[Point], target: bool) -> bool {
     let reversed = |path: &[Point]| path.iter().rev().copied().collect::<Vec<_>>();
     let joined = if target {
@@ -102,16 +101,7 @@ pub(super) fn readable(a: &[Point], b: &[Point], target: bool) -> bool {
         0.0
     };
     let room = JOIN_ROOM.min(super::geometry::length(a).min(super::geometry::length(b)));
-    (joined == 0.0 || joined >= room - 1e-6)
-        && !a.windows(2).any(|p| b.windows(2).any(|q| head_on(p, q)))
-}
-
-/// Two strokes on one line that touch end to end from opposite sides.
-fn head_on(p: &[Point], q: &[Point]) -> bool {
-    let sign = |d: f64| if d.abs() < 1e-6 { 0.0 } else { d.signum() };
-    let direction = |s: &[Point]| (sign(s[1].x - s[0].x), sign(s[1].y - s[0].y));
-    let (one, other) = (direction(p), direction(q));
-    one != (0.0, 0.0) && one == (-other.0, -other.1) && (p[1] == q[1] || p[0] == q[0])
+    joined == 0.0 || joined >= room - 1e-6
 }
 
 pub(super) fn ordered(a: &[Point], b: &[Point], sharing: bool) -> bool {
@@ -233,9 +223,9 @@ mod tests {
     }
 
     /// The owner's knot on the card `renderer`: callers from above and below met
-    /// head-on on one column, and only the arrow approach turned into the card.
+    /// on one column, and only the arrow approach turned into the card.
     #[test]
-    fn branches_of_a_target_fan_join_a_visible_run_before_the_box_and_never_head_on() {
+    fn branches_of_a_target_fan_join_a_visible_run_before_the_box() {
         let above = path(&[
             (2201.0, 74.82),
             (2201.0, 165.6),
@@ -258,10 +248,9 @@ mod tests {
         ]);
         assert!(!readable(&above, &below, true));
         assert!(readable(&above, &beside, true));
-        // A long run into the box still refuses branches that meet head-on on its far end.
+        // Branches that meet from both sides join well before the box.
         let far = |from: f64| path(&[(915.29, from), (915.29, 301.6), (855.27, 301.6)]);
-        assert!(!readable(&far(165.6), &far(1038.71), true));
-        assert!(readable(&far(165.6), &far(261.56), true));
+        assert!(readable(&far(165.6), &far(1038.71), true));
         // Parallel lines between two near cards share their whole short run and never join.
         let short = path(&[(150.0, 92.0), (150.0, 116.0)]);
         assert!(readable(&short, &short, true));
