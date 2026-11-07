@@ -5,7 +5,8 @@
 // a press of Narrate launches the next orb that is lit out of the key, lit from the start of its
 // flight, and the launch is cut when motion is not wanted, spent with that lighting and lost with
 // its key, so voice started by Talk is lit where it is wanted; as voice ends in the box the orb
-// flies home to the key while it is lit and fades there; and while the page is fullscreen a launch
+// flies home to the key while it is lit, stays lit in the air if voice is off before it lands, and
+// fades in the key's seat; and while the page is fullscreen a launch
 // waits in its key for a home on screen and crosses inside the element presented.
 
 import { expect, test } from "bun:test";
@@ -112,15 +113,18 @@ test("as voice ends in the box the orb flies home to the Narrate key while it is
 	expect(whereIs(stage)).toBe("air");
 	frames.step(0);
 	expect(inTheAir(stage)).toEqual({ x: 600, y: 700 });
+
+	// Voice is off before the orb is home, and the dock wishes it in itself: the orb is bound for the
+	// key it waits in, so it stays lit in the air, and lands in the key's seat before it fades.
+	stage.wish({ home: "dock", shown: false, fly: true });
+	frames.step(VOICE_MS.flight / 2);
+	expect(whereIs(stage)).toBe("air");
+	expect(stage.holder.dataset["shown"]).toBe("true");
 	frames.step(VOICE_MS.flight);
 	expect(whereIs(stage)).toBe("narrate");
 	expect(key.hasAttribute("data-occupied")).toBe(true);
-	expect(stage.holder.dataset["shown"]).toBe("true");
-
-	// Voice is off, and the dock wishes the orb in itself: a dark orb waits in the key it is in.
-	stage.wish({ home: "dock", shown: false, fly: true });
-	expect(whereIs(stage)).toBe("narrate");
 	expect(stage.holder.dataset["shown"]).toBe("false");
+	expect(frames.pending).toBe(0);
 });
 
 test("while the page is fullscreen a launch waits in its key for a home on screen, and crosses inside the element presented", () => {

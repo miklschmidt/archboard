@@ -46,11 +46,12 @@
 // A dark orb fades where it is and waits in the home it is wanted in: a Narrate key's,
 // while one is on the page, because voice is off and the key is where it starts again.
 // One that is still seen in another home fades there, and moves once it is out of
-// sight, which is when its fade ends. When voice ends with the orb in the box and a
-// Narrate key on the page, the dock wishes the orb into the key while the voice is
-// ending and the orb is still lit, so the orb flies back to the key it came from and
-// fades there. A holder moved in the same task as it is lit has no transition to run,
-// so the stage lets its style settle between the two.
+// sight, which is when its fade ends. One in the air for the home it waits in lands
+// lit, and fades there. When voice ends with the orb in the box and a Narrate key on
+// the page, the dock wishes the orb into the key while the voice is ending and the orb
+// is still lit, so the orb flies back to the key it came from, and fades in its seat
+// however soon the voice is off. A holder moved in the same task as it is lit has no
+// transition to run, so the stage lets its style settle between the two.
 
 import { VOICE_MS } from "@archboard/timing";
 import { flightAt, type Spot } from "#ui/workbench-client/orb/rules/orb-flight.ts";
@@ -447,11 +448,14 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 
 	/**
 	 * A dark orb fades where it is and waits in the home it is wanted in: it moves there at once
-	 * when it is in no home or out of sight, and otherwise once its fade has ended.
+	 * when it is in no home or out of sight, and otherwise once its fade has ended. One in the air
+	 * for that home lands lit, and fades there: a voice that ends while its orb flies home to the
+	 * Narrate key does not lose the orb on the way.
 	 * @param socket The home it waits in.
 	 */
 	const rest = (socket: HTMLElement): void => {
 		state.leftFrom = null;
+		if (state.flight?.socket === socket) return;
 		holder.dataset["shown"] = "false";
 		if (isBound(state, socket)) return;
 		const homeless = state.resting === null && state.flight === null;
