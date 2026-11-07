@@ -20,8 +20,8 @@
         "path": "scripts/engine-gallery.ts",
         "symbol": "readArchitectureModel"
       },
-      "to": "vKEsyHFk#ZGONZKxj",
-      "id": "vKEsyHFk#2yPtg2Dm"
+      "id": "vKEsyHFk#2yPtg2Dm",
+      "to": "vKEsyHFk#ZGONZKxj"
     },
     {
       "order": 200,
@@ -33,8 +33,8 @@
         "path": "scripts/engine-gallery.ts",
         "symbol": "renderArchitecture"
       },
-      "to": "vKEsyHFk#jAl99x56",
-      "id": "vKEsyHFk#GJ8lMAjK"
+      "id": "vKEsyHFk#GJ8lMAjK",
+      "to": "vKEsyHFk#jAl99x56"
     }
   ]
 }

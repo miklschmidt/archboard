@@ -3,6 +3,10 @@
   "name": "Public entries",
   "kind": "module",
   "responsibility": "What a page imports to build on the voice: the voice client, and the React provider and hooks over it",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/ui/voice-client"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#eOG7Eo1U",
   "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
@@ -12,9 +16,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/ui/voice-client"
-  }
+  "outgoing": []
 }
