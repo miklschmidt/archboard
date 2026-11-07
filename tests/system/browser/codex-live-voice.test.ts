@@ -235,7 +235,7 @@ test(
 			"subtitles on to carry the orb to the voice box",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		expect(boxed.box).toMatchObject({ place: "free", state: "muted", pane: "Pane A" });
+		expect(boxed.box).toMatchObject({ over: true, state: "muted", pane: "Pane A" });
 		expect(boxed.form).toBe("key");
 
 		// Presented fullscreen, the bar's key ends the same session, and the voice box carries it
@@ -248,7 +248,7 @@ test(
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 		expect(await stageIsFullscreen(browser)).toBe(true);
-		expect(presented.box).toMatchObject({ place: "free", state: "muted" });
+		expect(presented.box).toMatchObject({ over: true, state: "muted" });
 		expect(presented.orb).toBe("box");
 		// Fullscreen keeps the picture and hides the reader's navigation and inspection controls.
 		expect(
@@ -330,7 +330,7 @@ test(
 			"Talk on the bar's key to start a voice that the box carries in fullscreen",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		expect(barLive.box?.place).toBe("free");
+		expect(barLive.box?.over).toBe(true);
 		expect(await focusIs(browser, BAR_VOICE)).toEqual([true, false]);
 		const barStarts = frames(barFrom, "thread/realtime/start");
 		expect(barStarts).toHaveLength(1);
@@ -368,8 +368,8 @@ test(
 		// hands it to the voice model as speech. The user then steps by hand, and leaves; each is
 		// handed over the same way, and no coordinator turn is started for any of it. Narrating is a
 		// new voice session, and a coordinator carries one voice session, so it runs on a fresh one
-		// (TASK-301). Subtitles are still on, so the voice is in the box at the foot of the presented
-		// walkthrough, with the model's words.
+		// (TASK-301). Subtitles are still on, so the voice is in the box low over the presented
+		// walkthrough's picture, with the model's words.
 		const narrationFrom = records().length;
 		const speeches = () =>
 			frames(narrationFrom, "thread/realtime/appendSpeech").map(({ params }) => params?.["text"]);
@@ -392,13 +392,13 @@ test(
 		);
 		const [first] = await spokenBy(1, "the first step to be handed to the voice model");
 		expect(first).toContain("All of it");
-		const footed = await pollUntil(
+		const over = await pollUntil(
 			() => voiceNow(browser),
-			(value) => value.box?.place === "foot" && value.orb === "box" && value.lit,
-			"the voice to be in the box at the foot of the presented walkthrough",
+			(value) => value.box?.over === true && value.orb === "box" && value.lit,
+			"the voice to be in the box low over the presented walkthrough's picture",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		expect(footed.box?.pane).toBe("Pane A");
+		expect(over.box?.pane).toBe("Pane A");
 		const subtitled = await pollUntil(
 			() => subtitleSnapshot(browser),
 			(value) => value.text === VOICE_SAID,
@@ -442,8 +442,8 @@ test(
 		// The dock's key, which ends voice while the box has it, ends the narration and releases its media.
 		const freed = await pollUntil(
 			() => voiceNow(browser),
-			(value) => value.box?.place === "free" && value.form === "key" && value.enabled,
-			"the voice to be back in the box over the picture once the walkthrough is left",
+			(value) => value.box?.over === true && value.form === "key" && value.enabled,
+			"the voice to stay in the box over the picture once the walkthrough is left",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 		expect(freed.state).not.toBe("off");

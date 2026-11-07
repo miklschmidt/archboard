@@ -17,9 +17,9 @@ import type { GroupControls } from "#ui/architecture-drawing/canvas/presentation
 import { SemanticRefreshFailure } from "#ui/architecture-drawing/canvas/presentation/components/SemanticRefreshFailure.tsx";
 import { StageHeader } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStageHeader.tsx";
 import {
+	PictureOverlay,
 	ReadingArea,
 	pictureMarks,
-	overlayOver,
 	presentationBeside,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx";
 import { SemanticStageSidebar } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStageSidebar.tsx";
@@ -259,7 +259,7 @@ function SemanticStageView(view: RenderView): JSX.Element {
 				<ReadingArea presenting={view.narrative.open !== null}>
 					<div ref={attachPicture} className="relative flex min-h-0 min-w-0 flex-1">
 						{stageBody(view)}
-						{overlayOver(view)}
+						<PictureOverlay overlay={view.overlay} clearOfSidebar={view.sidebar.floating} />
 					</div>
 					{presentationBeside(view)}
 					<SemanticStageSidebar view={view} pictureLegend={view.pictureLegend} />

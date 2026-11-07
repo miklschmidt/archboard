@@ -480,7 +480,7 @@ voice box carry that same session. From the keyboard, the bar's key ends it,
 releases the browser's media and keeps its focus. Talk on the same key then
 starts a second session that the voice box carries, and Space ends it.
 Narrating the walkthrough starts a third session on a fresh coordinator. Its
-words are in the voice box at the foot of the presented walkthrough. Four
+words are in the voice box low over the presented walkthrough's picture. Four
 things reach the voice model as one `appendSpeech` line each: the first step, a
 step taken by hand, a part picked by hand mid-step, and leaving with Escape. No
 coordinator turn starts. The pick names the part and not its id, and the pane

@@ -1,5 +1,5 @@
-// What a semantic pane does while one of its walkthroughs is presented: the
-// column beside the picture, and the veil over whatever the step is not about.
+// What a semantic pane lays beside and over its picture: the column of a presented walkthrough,
+// the veil over whatever the step is not about, and what the shell lays over the picture.
 //
 // A group somebody selected is let go when a walkthrough opens, and a
 // walkthrough is left when somebody selects a group: both say what the reader
@@ -9,7 +9,6 @@ import type { CSSProperties, JSX, ReactNode } from "react";
 
 import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
 import { SemanticPresentation } from "#ui/architecture-drawing/canvas/presentation/components/SemanticPresentation.tsx";
-import type { Sidebar } from "#ui/architecture-drawing/canvas/picture/hooks/use-sidebar.ts";
 import type { WalkthroughReading } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-walkthrough.ts";
 import type { GroupSelection } from "#ui/architecture-drawing/canvas/picture/rules/groups.ts";
 import {
@@ -34,31 +33,32 @@ interface PresentationView {
 	readonly onCloseNarrative: () => void;
 	/** Narrating the open walkthrough aloud, when the shell can. */
 	readonly narration: WalkthroughNarration | undefined;
-	/** What the shell lays over the picture, such as subtitles of a voice; or nothing. */
-	readonly overlay: ReactNode;
-	/** The sidebar, which the overlay keeps clear of while it floats over the picture. */
-	readonly sidebar: Pick<Sidebar, "floating">;
 	/** The selected group and its members, or null. */
 	readonly group: GroupSelection | null;
 }
 
 /**
- * What the shell lays over the picture while nothing is presented: low in the frame, over the
- * picture and over the About page, taking no pointer input from the canvas under it, and clear of a
- * sidebar that floats over its right edge. A presented walkthrough draws it in its own column.
- * @param view What the stage knows.
- * @returns The overlay, or null.
+ * What the shell lays over a picture, such as a voice and its words: low in the frame and in the
+ * middle of the picture, over the picture and over the About page, taking no pointer input from the
+ * canvas under it, and clear of a sidebar that floats over its right edge. A presented walkthrough
+ * leaves it there, because its steps stand in the column beside the picture.
+ * @param props What is laid, and whether a sidebar floats over the picture's right edge.
+ * @param props.overlay What the shell lays over the picture, or nothing.
+ * @param props.clearOfSidebar Whether to keep clear of a floating sidebar.
+ * @returns The layer, or null where nothing is laid.
  */
-function overlayOver(view: PresentationView): ReactNode {
-	if (view.narrative.open !== null || view.overlay === null || view.overlay === undefined)
-		return null;
+function PictureOverlay(props: {
+	readonly overlay: ReactNode;
+	readonly clearOfSidebar: boolean;
+}): JSX.Element | null {
+	if (props.overlay === null || props.overlay === undefined) return null;
 	return (
 		<div
 			data-slot="semantic-stage-overlay"
-			style={view.sidebar.floating ? CLEAR_OF_SIDEBAR : undefined}
+			style={props.clearOfSidebar ? CLEAR_OF_SIDEBAR : undefined}
 			className="pointer-events-none absolute inset-x-0 bottom-6 z-25 flex justify-center px-8"
 		>
-			{view.overlay}
+			{props.overlay}
 		</div>
 	);
 }
@@ -73,7 +73,6 @@ function presentationBeside(view: PresentationView): ReactNode {
 	if (narrative.open === null) return null;
 	return (
 		<SemanticPresentation
-			overlay={view.overlay}
 			walkthrough={narrative.open}
 			index={narrative.beatIndex}
 			missing={view.missing}
@@ -124,4 +123,4 @@ function ReadingArea(props: {
 	);
 }
 
-export { ReadingArea, overlayOver, pictureMarks, presentationBeside };
+export { PictureOverlay, ReadingArea, pictureMarks, presentationBeside };

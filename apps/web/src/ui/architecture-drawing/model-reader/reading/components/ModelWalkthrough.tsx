@@ -6,11 +6,13 @@ import {
 	useState,
 	type ComponentProps,
 	type JSX,
+	type ReactNode,
 } from "react";
 import {
 	SemanticPresentation,
 	type SemanticPresentationProps,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticPresentation.tsx";
+import { PictureOverlay } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx";
 import { projectModel, type Model } from "@archboard/model/content";
 import { useAcceptedScene } from "#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts";
 import { usePictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
@@ -41,7 +43,8 @@ interface WalkthroughProps {
 	/** The step a presentation opens at, counted from zero. */
 	beat?: number | undefined;
 	onReading?: (reading: PaneReading | null) => void;
-	overlay?: SemanticPresentationProps["overlay"];
+	/** What the shell lays over the picture, such as the voice and its words. */
+	overlay?: ReactNode;
 	narration?: SemanticPresentationProps["narration"];
 }
 
@@ -144,6 +147,7 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 					onOpen={ignore}
 				/>
 				{!available && <UnavailableBeat status={unavailable} />}
+				<PictureOverlay overlay={props.overlay} clearOfSidebar={false} />
 			</div>
 			{index >= 0 && (
 				<SemanticPresentation
@@ -152,7 +156,6 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 					missing={NO_MISSING_SUBJECTS}
 					onGo={position.goTo}
 					onLeave={props.onLeave}
-					overlay={props.overlay}
 					narration={drawnNarration(props.narration, presentation, available)}
 				/>
 			)}

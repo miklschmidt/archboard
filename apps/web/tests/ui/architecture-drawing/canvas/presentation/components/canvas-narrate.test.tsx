@@ -1,5 +1,5 @@
 // The control that narrates a walkthrough aloud, in the model tab's rows and at the
-// foot of the box of a presented one.
+// foot of the column of a presented one.
 //
 // What these catch: a Narrate control that is taken out of its row while voice
 // runs or another pane is active, which resizes the row and moves everything
@@ -89,7 +89,7 @@ test("while voice runs every row keeps its control, dimmed, and says why, and pr
 	});
 	expect(held.started).toEqual([]);
 
-	// The foot of a presented walkthrough's box keeps its key in the same way, and says why.
+	// The foot of a presented walkthrough's column keeps its key in the same way, and says why.
 	act(() => {
 		fireEvent.click(offers()[0] ?? document.body);
 	});
@@ -103,7 +103,7 @@ test("while voice runs every row keeps its control, dimmed, and says why, and pr
 	expect(held.started).toEqual([]);
 });
 
-test("the key at the foot of a presented walkthrough's box narrates that walkthrough", async () => {
+test("the key at the foot of a presented walkthrough's column narrates that walkthrough", async () => {
 	const free = narrating(null);
 	await mountExplained(free.narration);
 	act(() => {

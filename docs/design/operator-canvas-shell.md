@@ -322,20 +322,20 @@ gold up to the step shown, and one piece of gold travels to that step. Under the
 sheet number is. Beside the number are the step's heading in the `presentation` type role, its
 words in the `reading` role, and the name of the walkthrough under those.
 
-The pill for the voice stands at the foot of the column, as wide as the column. The keys,
-previous, next and leave, stand under it on the right. While voice is off, the pill holds the key
-that narrates the walkthrough, a gold circle with a microphone in it. While voice is live, it holds the voice box, with its orb, its
-words, mute and the subtitles control. The foot keeps its place whatever the voice is doing and
-whichever step is shown, so nothing in the column moves with either. A fullscreen presentation
-has no dock. So the voice box carries the voice there, whatever the person wants of subtitles,
-and the bar holds one key that starts and ends voice. DESIGN.md describes the column.
+The key that narrates the walkthrough stands at the foot of the column, as wide as the column: a
+pill with a gold circle and a microphone in it. The keys, previous, next and leave, stand under
+it on the right. While a voice is on, the key is dimmed and says why. The voice box is not in the
+column: it stays low over the picture, in the middle of it, as it floats while nothing is
+presented. The foot keeps its place whichever step is shown, so nothing in the column moves. A
+fullscreen presentation has no dock. So the voice box carries the voice there, whatever the
+person wants of subtitles, and the bar holds one key that starts and ends voice. DESIGN.md
+describes the column.
 
-![The walkthrough column, idle and while the voice speaks, in the dark and the light
+![A presented walkthrough with the voice box over its picture, in the dark and the light
 theme](assets/walkthrough-box.png)
 
-Rendered captures at 1920×1080, cropped to the column. From the left: the dark theme while voice
-is off, with the key that narrates, then the dark theme while the voice speaks, then the same two
-captures in the light theme.
+Rendered captures at 1920×1080, cropped to the picture and the column. Left, the dark theme
+while the voice speaks. Right, the light theme.
 
 The camera fits the subjects of the step to the picture beside the column.
 The subjects include the parts at both ends of each relationship
@@ -604,10 +604,10 @@ that they show is now the dock at the foot of the left column.
   and takes the capsule away, and turning them on flies it out again: only one orb
   is ever on the page, and nothing that looks like it waits where it left or where
   it will land. Voice starting lights the orb in the capsule and does not launch it
-  from the Talk key. While a walkthrough is presented the voice is at the foot of its box, and in a
-  fullscreen presentation, which has no dock, it stays in a box whatever the person wants of
-  subtitles. A recording draws the same voice box at the foot of its walkthrough box, with an
-  orb that the recorded voice moves.
+  from the Talk key. While a walkthrough is presented the capsule stays over the picture, and in
+  a fullscreen presentation, which has no dock, it stays whatever the person wants of
+  subtitles. A recording draws the same voice box over its picture, with an orb that the
+  recorded voice moves.
   DESIGN.md describes the dock and the box.
 - Session details (account, model, context used, thread, the voice coordinator's
   model and what the voice was told) are one menu away, not on screen. The voice

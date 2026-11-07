@@ -9,14 +9,12 @@
 // carries the voice's orb and its controls too, and leaves the dock when subtitles are off. A
 // fullscreen presentation has no dock to leave for, so the box carries the voice there whatever the
 // person wants of subtitles (TASK-392), and what they want decides only whether there are words.
-//
-// Where the box is drawn is the stage's to say: free over the picture, or in the foot of a presented
-// walkthrough's box (use-overlay-place), where the voice is drawn in the pill that the box gives it.
+// The stage lays the box low over the picture, in the middle of it, whether or not a walkthrough is
+// presented.
 
 import { useSyncExternalStore, type JSX } from "react";
 
 import { subtitledTranscript, type VoiceFeed } from "#ui/application/rules/subtitled-transcript.ts";
-import { useOverlayPlace } from "#ui/architecture-drawing/canvas/picture/hooks/use-overlay-place.ts";
 import {
 	VoiceSubtitles,
 	useSubtitlesWanted,
@@ -68,7 +66,6 @@ function PaneSubtitles(props: PaneSubtitlesProps): JSX.Element {
 function Subtitled(props: SubtitledProps): JSX.Element {
 	const wanted = useSubtitlesWanted();
 	const surface = useVoiceSurface();
-	const place = useOverlayPlace();
 	const boxable = surface !== null && !props.recording;
 	const on = surface !== null && surface.voice.stage !== "idle";
 	const boxed = useVoiceBoxed(on, boxable, props.dockless);
@@ -80,7 +77,6 @@ function Subtitled(props: SubtitledProps): JSX.Element {
 				transcript={wanted ? props.transcript : NO_WORDS}
 				reducedMotion={props.reducedMotion}
 				shown={boxed}
-				place={place}
 			/>
 		);
 	}
@@ -89,7 +85,6 @@ function Subtitled(props: SubtitledProps): JSX.Element {
 			transcript={props.transcript}
 			enabled={wanted || props.recording}
 			reducedMotion={props.reducedMotion}
-			bare={place === "foot"}
 		/>
 	);
 }

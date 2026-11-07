@@ -1,36 +1,23 @@
-// The foot of a presented walkthrough's column: where the voice is in it.
+// The foot of a presented walkthrough's column: the key that has the walkthrough narrated.
 //
-// It is a pill, as high as the voice box that floats over a picture when nothing is presented, and
-// it is there for as long as the shell has a voice to offer. So the foot keeps one height whether
-// voice is off, starting, speaking or over, and the picture does not move with it. While voice is off
-// it holds the one key that starts it for this walkthrough, Narrate, and the key is a circle where
-// the orb will be lit, so the orb takes the key's place and the pill does not change shape. While a
-// voice is live and the shell has a place for it here, what the shell lays over the picture is drawn
-// inside the pill instead, and it is told where it is drawn (use-overlay-place) so it draws itself
-// to fit; the key then gives way to it (app.css, `semantic-presentation-foot`). The pill is as wide
-// as the column. Keyboard focus is not left on a key that gives way: pressing Narrate hands
-// it to the pill, from where Tab goes on to the voice box's keys.
+// It is there for as long as the shell has a voice to offer. It is a pill as wide as the column,
+// sunk into it, with a gold circle at its start where the microphone is. While a narration cannot
+// start, as while a voice is on, the key stays where it is, dimmed, and says why. The voice itself,
+// its orb and its words, stays where the shell lays it: low over the picture, in the middle of it
+// (SemanticStagePresentation, `overlayOver`).
 
 import { RiMicLine } from "@remixicon/react";
-import { useCallback, useRef, type CSSProperties, type JSX, type ReactNode } from "react";
+import { useCallback, type JSX } from "react";
 
-import { VOICE_MS } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/components";
-import { OverlayPlaceContext } from "#ui/architecture-drawing/canvas/picture/hooks/use-overlay-place.ts";
 import type { WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
-
-/** The paces the stylesheet crossfades the key and the voice box by (app.css, `semantic-presentation-narrate`). */
-const FOOT_STYLE: CSSProperties = {
-	"--voice-box-in-ms": `${VOICE_MS.boxIn}ms`,
-	"--voice-box-out-ms": `${VOICE_MS.boxOut}ms`,
-};
 
 /** What the key says while a narration can start. */
 const NARRATE_HINT = "Hear this walkthrough read aloud.";
 
 /**
- * The circle where the orb will be lit, with the microphone on it. It is the gold of the primary
- * action, as the site's Narrate key is, and it lifts and sinks with the key that holds it.
+ * The circle with the microphone on it. It is the gold of the primary action, as the site's
+ * Narrate key is, and it lifts and sinks with the key that holds it.
  */
 const SEAT =
 	"primary-finish pointer-events-none m-1.5 grid size-16 shrink-0 place-items-center rounded-full";
@@ -42,31 +29,33 @@ const LIFT = cn(
 );
 
 /** Inputs for the key that has the walkthrough narrated. */
-interface NarrateKeyProps {
+interface PresentationFootProps {
 	/** The walkthrough's id. */
 	readonly walkthrough: string;
-	/** What the shell offers. */
-	readonly narration: WalkthroughNarration;
-	/** Called once a narration has been asked for. */
-	readonly onAsked: () => void;
+	/** Narrating the walkthrough aloud, when the shell can. */
+	readonly narration?: WalkthroughNarration | undefined;
 }
 
 /**
  * The key that has the walkthrough narrated, from its first step. It stays where it is while a
- * narration cannot start, so nothing around it moves: it is dimmed, and says why where it says what it
- * does.
- * @param props The walkthrough, the narration and what to do once one is asked for.
- * @returns The key, which fills the pill.
+ * narration cannot start, so nothing around it moves: it is dimmed, and says why where it says what
+ * it does.
+ * @param props The walkthrough and the narration.
+ * @param props.walkthrough The walkthrough's id.
+ * @param props.narration What the shell offers.
+ * @returns The key.
  */
-function NarrateKey(props: NarrateKeyProps): JSX.Element {
-	const { walkthrough, narration, onAsked } = props;
-	const { held, start } = narration;
+function NarrateKey(props: {
+	readonly walkthrough: string;
+	readonly narration: WalkthroughNarration;
+}): JSX.Element {
+	const { walkthrough } = props;
+	const { held, start } = props.narration;
 	// A narration starts on the first step whatever the reader had reached; the server opens it
 	// once voice is starting, so the voice is handed the step it arrived on.
 	const narrate = useCallback((): void => {
 		start(walkthrough);
-		onAsked();
-	}, [start, walkthrough, onAsked]);
+	}, [start, walkthrough]);
 	const dimmed = held !== null;
 	return (
 		<button
@@ -75,8 +64,8 @@ function NarrateKey(props: NarrateKeyProps): JSX.Element {
 			aria-disabled={dimmed ? true : undefined}
 			onClick={dimmed ? undefined : narrate}
 			className={cn(
-				"group/narrate focus-visible:ring-ring absolute inset-0 flex items-center gap-3 rounded-full pr-6 text-left outline-none focus-visible:ring-2",
-				dimmed ? "cursor-default opacity-60" : "cursor-pointer",
+				"group/narrate bg-tray-sink shadow-well focus-visible:ring-ring flex shrink-0 items-center gap-3 rounded-full pr-6 text-left outline-none focus-visible:ring-2",
+				dimmed ? "cursor-default *:opacity-60" : "cursor-pointer",
 			)}
 		>
 			<span aria-hidden="true" className={cn(SEAT, !dimmed && LIFT)}>
@@ -90,68 +79,14 @@ function NarrateKey(props: NarrateKeyProps): JSX.Element {
 	);
 }
 
-/** Inputs for the foot. */
-interface PresentationFootProps {
-	/** The walkthrough's id. */
-	readonly walkthrough: string;
-	/** Narrating the walkthrough aloud, when the shell can. */
-	readonly narration?: WalkthroughNarration | undefined;
-	/** What the shell lays over the picture, such as a voice and its subtitles; drawn here, in the pill. */
-	readonly overlay?: ReactNode;
-	/** What places the pill in the column. */
-	readonly className?: string;
-}
-
-/** What names the pill while it holds the key that narrates. */
-const NARRATION_GROUP = { role: "group", "aria-label": "Narration" } as const;
-
-/**
- * What the shell lays over the picture, drawn in the pill and told that it is. It takes no pointer
- * input of its own, so that a press reaches the key under it while there is nothing to press.
- * @param props What is laid.
- * @param props.overlay What the shell lays over the picture, or nothing.
- * @returns The layer, or null where nothing is laid.
- */
-function LaidInPill(props: { readonly overlay: ReactNode }): JSX.Element | null {
-	if (props.overlay === null || props.overlay === undefined) return null;
-	return (
-		<div className="pointer-events-none absolute inset-0 flex">
-			<OverlayPlaceContext.Provider value="foot">{props.overlay}</OverlayPlaceContext.Provider>
-		</div>
-	);
-}
-
 /**
  * The foot of the column.
- * @param props The walkthrough, the narration, what the shell lays over the picture and what places the pill.
- * @returns The pill, or null where the shell has no voice to offer.
+ * @param props The walkthrough and the narration.
+ * @returns The key, or null where the shell has no voice to offer.
  */
 function PresentationFoot(props: PresentationFootProps): JSX.Element | null {
-	const { narration, overlay } = props;
-	const foot = useRef<HTMLDivElement>(null);
-	// The key that was pressed is about to give way to the voice box, so it hands over keyboard focus.
-	const handOver = useCallback((): void => {
-		foot.current?.focus({ preventScroll: true });
-	}, []);
-	if (narration === undefined && (overlay === null || overlay === undefined)) return null;
-	return (
-		<div
-			ref={foot}
-			tabIndex={-1}
-			{...(narration === undefined ? undefined : NARRATION_GROUP)}
-			data-slot="semantic-presentation-foot"
-			style={FOOT_STYLE}
-			className={cn(
-				"bg-tray-sink shadow-well focus-visible:ring-ring relative isolate flex h-[78px] shrink-0 rounded-full outline-none focus-visible:ring-2",
-				props.className,
-			)}
-		>
-			{narration !== undefined && (
-				<NarrateKey walkthrough={props.walkthrough} narration={narration} onAsked={handOver} />
-			)}
-			<LaidInPill overlay={overlay} />
-		</div>
-	);
+	if (props.narration === undefined) return null;
+	return <NarrateKey walkthrough={props.walkthrough} narration={props.narration} />;
 }
 
 export { PresentationFoot };

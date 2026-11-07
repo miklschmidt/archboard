@@ -27,62 +27,64 @@ import {
 	voiceWhere,
 } from "./support/voice-box-page.ts";
 
-// The voice in the box of a presented walkthrough, in the real shell, with a real voice session
-// started by Talk over the fake Codex and stand-in browser media (support/voice-box-page.ts).
+// The voice of a presented walkthrough, in the real shell, with a real voice session started by
+// Talk over the fake Codex and stand-in browser media (support/voice-box-page.ts).
 //
-// A presented walkthrough carries the voice at the foot of its own box, and the box keeps one height
-// whether the voice is in it or not, so the picture does not move with the voice. A fullscreen
-// presentation has no dock to take the voice back, so the box keeps it there whatever the person
-// wants of subtitles, which decide only whether there are words, and the bar holds the key that ends
-// it. A fullscreen page paints only the element presented, so on no frame may a lit orb be outside it.
-// The key that narrates, at the foot while the voice is off, takes the pointer through the empty
-// layer that the shell lays over it.
+// A presented walkthrough stands in a column beside the picture, and the voice box stays where the
+// stage lays it, low over the picture, as it floats while nothing is presented. The column keeps the
+// key that narrates, which says why it cannot while a voice is on. A fullscreen presentation has no
+// dock to take the voice back, so the box keeps it there whatever the person wants of subtitles,
+// which decide only whether there are words, and the bar holds the key that ends it. A fullscreen
+// page paints only the element presented, so on no frame may a lit orb be outside it.
 
-/** What the page says of a presented walkthrough's box and the voice at its foot. */
+/** What the page says of a presented walkthrough and the voice over its picture. */
 interface Presented {
 	/** Whether the page is fullscreen. */
 	readonly fullscreen: boolean;
-	/** Where the voice box is drawn: `foot` inside the walkthrough's box, `free` over the picture, or null. */
-	readonly place: string | null;
-	/** Whether the orb rests inside the walkthrough's box. */
+	/** Where the voice box is drawn: `over` the picture, `column` in the walkthrough's column, `elsewhere`, or null. */
+	readonly box: "over" | "column" | "elsewhere" | null;
+	/** Whether the orb rests in the voice box. */
 	readonly orbInBox: boolean;
-	/** The walkthrough box's height in pixels, or 0 while nothing is presented. */
-	readonly height: number;
-	/** Whether the key that narrates can be seen: it gives way while the voice has its place. */
-	readonly narrateShown: boolean;
+	/** Whether a walkthrough's column is on the page. */
+	readonly presented: boolean;
+	/** The column's key that narrates: `offered`, `held` while it cannot, or null without one. */
+	readonly narrate: "offered" | "held" | null;
 	/** What the presentation bar's voice key is, `talk` or `live`, or null outside a presentation. */
 	readonly bar: string | null;
 	/** Whether the box's words show: `true` or `false`, or null with no box. */
 	readonly words: string | null;
 }
 
-/** What the page says of the walkthrough's box. */
+/** What the page says of the walkthrough and the voice. */
 const PRESENTED = `(() => {
-	const box = document.querySelector('[data-slot="semantic-presentation"]');
-	const voice = [...document.querySelectorAll('[data-slot="voice-box"]')].find(element => element.checkVisibility());
+	const column = document.querySelector('[data-slot="semantic-presentation"]');
+	const voice = [...document.querySelectorAll('[data-slot="voice-box"]:not([data-leaving])')].find(element => element.checkVisibility());
 	const holder = document.querySelector('[data-slot="voice-orb-holder"]');
-	const narrate = box?.querySelector('[data-slot="semantic-presentation-narrate"]');
+	const narrate = column?.querySelector('[data-slot="semantic-presentation-narrate"]');
 	const key = document.querySelector('[data-slot="presentation-bar"] [data-voice-key]');
+	const where = !voice ? null
+		: voice.closest('[data-slot="semantic-stage-overlay"]') ? 'over'
+		: column?.contains(voice) ? 'column' : 'elsewhere';
 	return {
 		fullscreen: document.fullscreenElement !== null,
-		place: voice?.getAttribute('data-place') ?? null,
-		orbInBox: !!box && !!holder && box.contains(holder),
-		height: box ? Math.round(box.getBoundingClientRect().height) : 0,
-		narrateShown: !!narrate && getComputedStyle(narrate).visibility !== 'hidden',
+		box: where,
+		orbInBox: !!voice && !!holder && voice.contains(holder),
+		presented: column !== null,
+		narrate: !narrate ? null : narrate.getAttribute('aria-disabled') === 'true' ? 'held' : 'offered',
 		bar: key?.getAttribute('data-voice-key') ?? null,
 		words: voice?.querySelector('[data-slot="voice-subtitles"]')?.getAttribute('data-showing') ?? null,
 	};
 })()`;
 
 /**
- * What the page says of the walkthrough's box.
+ * What the page says of the walkthrough and the voice.
  * @param browser The page.
  * @returns What the page says.
  */
 const presentedNow = (browser: AgentBrowserSession): Promise<Presented> =>
 	browser.eval<Presented>(PRESENTED);
 
-/** A model with a walkthrough of two steps, for the tests of the box a presented one has. */
+/** A model with a walkthrough of two steps, for the tests of the voice over a presented one. */
 const TOUR = {
 	...SMALL_PIPELINE,
 	walkthroughs: [
@@ -134,9 +136,9 @@ async function wordsStay(
 	expect(looks.filter((words) => words !== "false")).toEqual([]);
 }
 
-test("a presented walkthrough carries the voice at the foot of its box, in the pane and in fullscreen", async () => {
+test("a presented walkthrough leaves the voice box low over its picture, in the pane and in fullscreen", async () => {
 	await using resources = new AsyncDisposableStack();
-	const { server, fixture } = await startVoiceServer(resources, "voice-foot-vault");
+	const { server, fixture } = await startVoiceServer(resources, "voice-over-vault");
 	const model = await seedCanonicalModel(server.vault, "pipeline", TOUR);
 
 	const browser = await stepBrowserMotion(resources.use(await createAgentBrowser()));
@@ -152,31 +154,30 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 	await talk(browser);
 	await pollUntil(
 		() => presentedNow(browser),
-		(now) => now.place === "free",
+		(now) => now.box === "over" && !now.presented,
 		"the voice box to float over the picture once voice has started",
 		WAIT,
 	);
 
-	// Presenting while the voice box floats over the picture: the orb flies into the foot of the box.
+	// Presenting while the voice box floats over the picture: the steps stand in the column, and the
+	// box stays over the picture with the orb in it. The column's key says why it cannot narrate.
 	await startModelWalkthrough(browser, model.walkthroughs[0]!.id);
-	const inFoot = await pollUntil(
+	const over = await pollUntil(
 		() => presentedNow(browser),
-		(now) => now.place === "foot" && now.orbInBox,
-		"the voice to move into the foot of the walkthrough's box",
+		(now) => now.presented && now.box === "over" && now.orbInBox,
+		"the voice box to stay over the picture of the presented walkthrough",
 		WAIT,
 	);
+	expect(over.narrate).toBe("held");
 	const there = await pollUntil(
 		() => voiceWhere(browser),
 		(where) => where.box && where.home === "box" && where.off < 1 && where.opacity === 1,
-		"the orb to rest in the foot's socket, with all of it showing",
+		"the orb to rest in the box's socket, with all of it showing",
 		WAIT,
 	);
 	expect(there.orbs).toBe(1);
-	expect(inFoot.narrateShown).toBeFalse();
 
-	// Subtitles off: the orb goes home to the dock, the foot keeps its place with the key that narrates
-	// (which says why it cannot while a real voice is on, as the stage owners hold), and the box does
-	// not change height, so the picture does not move with the voice.
+	// Subtitles off: the orb goes home to the dock, and the column keeps its key.
 	expect(await clickSubtitles(browser, "voice-box")).toBeTrue();
 	const docked = await pollUntil(
 		() => voiceWhere(browser),
@@ -185,21 +186,16 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 		WAIT,
 	);
 	expect(docked.orbs).toBe(1);
-	const withoutBox = await pollUntil(
-		() => presentedNow(browser),
-		(now) => now.place === null && now.narrateShown,
-		"the foot to hold the key that narrates",
-		WAIT,
-	);
-	expect(withoutBox.height).toBe(inFoot.height);
+	const withoutBox = await presentedNow(browser);
+	expect(withoutBox).toMatchObject({ box: null, presented: true, narrate: "held" });
 
-	// And on again, from the dock: back into the foot. Then off again, so that fullscreen is entered
-	// with the orb in a dock that fullscreen is about to hide.
+	// And on again, from the dock: back over the picture. Then off again, so that fullscreen is
+	// entered with the orb in a dock that fullscreen is about to hide.
 	expect(await clickSubtitles(browser, "agent-dock")).toBeTrue();
 	await pollUntil(
 		() => presentedNow(browser),
-		(now) => now.place === "foot" && now.orbInBox && !now.narrateShown,
-		"the orb to fly back into the foot",
+		(now) => now.box === "over" && now.orbInBox,
+		"the orb to fly back into the box over the picture",
 		WAIT,
 	);
 	expect(await clickSubtitles(browser, "voice-box")).toBeTrue();
@@ -215,8 +211,8 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 	await roleAction(browser, "button", "Present fullscreen");
 	const full = await pollUntil(
 		() => presentedNow(browser),
-		(now) => now.fullscreen && now.place === "foot" && now.orbInBox && now.bar !== null,
-		"the walkthrough's box to carry the voice in fullscreen, with the voice key in the bar",
+		(now) => now.fullscreen && now.box === "over" && now.orbInBox && now.bar !== null,
+		"the box over the picture to carry the voice in fullscreen, with the voice key in the bar",
 		WAIT,
 	);
 	expect(full.bar).toBe("live");
@@ -227,11 +223,11 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 	// What the person wants of subtitles decides only whether there are words, and the voice stays.
 	expect(await clickSubtitles(browser, "voice-box")).toBeTrue();
 	await wordsStay(browser, fixture, "true");
-	expect((await presentedNow(browser)).place).toBe("foot");
+	expect((await presentedNow(browser)).box).toBe("over");
 	expect(await clickSubtitles(browser, "voice-box")).toBeTrue();
 	await wordsStay(browser, fixture, "false");
 	const quiet = await presentedNow(browser);
-	expect(quiet.place).toBe("foot");
+	expect(quiet.box).toBe("over");
 	expect(quiet.orbInBox).toBeTrue();
 	// All of it is the one session Talk started in the dock: fullscreen started no other.
 	expect(voiceStarts(fixture)).toBe(1);
@@ -241,8 +237,8 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 	await roleAction(browser, "button", "Leave the walkthrough");
 	await pollUntil(
 		() => presentedNow(browser),
-		(now) => now.place === "free" && now.height === 0,
-		"the voice to be in the box over the picture once the walkthrough is left",
+		(now) => now.box === "over" && !now.presented,
+		"the voice to stay in the box over the picture once the walkthrough is left",
 		WAIT,
 	);
 

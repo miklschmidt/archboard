@@ -11,9 +11,9 @@
 // The column stands where the right panel stands while nothing is presented, a little wider. Along
 // its top is the rail of steps, with a piece of gold that travels to the step shown. Under it are
 // the step's number and its heading and words, with the name of the walkthrough under them. At its
-// foot is the voice's place (PresentationFoot): the key that has the walkthrough narrated, which
-// the voice's orb takes over, and the words the voice says, then the keys that step and leave. A
-// step is handed to the next by the steps' own places (see PresentationStep), and every step
+// foot is the key that has the walkthrough narrated (PresentationFoot), then the keys that step and
+// leave. The voice and its words stay where the shell lays them, low over the picture. A step is
+// handed to the next by the steps' own places (see PresentationStep), and every step
 // stands in one cell, so stepping never moves the foot. The picture is as wide as the column
 // leaves it, so the camera fits the step to all of its viewport and keeps nothing clear.
 //
@@ -27,7 +27,6 @@ import {
 	useRef,
 	type CSSProperties,
 	type JSX,
-	type ReactNode,
 	type RefObject,
 } from "react";
 
@@ -68,8 +67,6 @@ interface SemanticPresentationProps {
 	readonly onLeave: () => void;
 	/** Narrating this walkthrough aloud from its first step, when the shell can. */
 	readonly narration?: WalkthroughNarration | undefined;
-	/** What the shell lays over the picture; here it is drawn at the foot of the column, never over its words. */
-	readonly overlay?: ReactNode;
 }
 
 /**
@@ -129,11 +126,7 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 					<StepWords walkthrough={walkthrough} index={index} missing={props.missing} />
 				</div>
 				<div className="mt-auto flex flex-col gap-3">
-					<PresentationFoot
-						walkthrough={walkthrough.id}
-						narration={props.narration}
-						overlay={props.overlay}
-					/>
+					<PresentationFoot walkthrough={walkthrough.id} narration={props.narration} />
 					<PresentationKeys
 						hasPrevious={index > 0}
 						hasNext={index < count - 1}

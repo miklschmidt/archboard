@@ -1,15 +1,15 @@
 // The picture of a talk as it is rendered: the recording's frame, its one pane on the talk's model
 // at the talk's step, and the voice over it. It is the frame a recording page puts up around its
-// pane, so the pane and its walkthrough box stand where they stood while the talk was recorded.
+// pane, so the pane and its walkthrough column stand where they stood while the talk was recorded.
 //
 // The voice is drawn as the shell draws a live voice in a presented walkthrough (TASK-400): the
-// same voice box at the foot of the same walkthrough box, with the orb in its socket, the words or
-// the voice's word, and mute and the subtitles control. The voice of a talk is live from its first
+// same voice box low over the same picture, with the orb in its socket, the words or the voice's
+// word, and mute and the subtitles control. The voice of a talk is live from its first
 // frame to its last, and on each frame it is as loud as the talk's voice was then. A recording has
 // no dock, so this page hosts the one orb itself, in the box. The box is there once the walkthrough
 // is presented: before the first step a talk shows the whole model. Nobody presses a key in a
-// video, so the keys are drawn and do nothing. A recording cuts every move of the walkthrough box
-// and of the voice box in it (app.css), so the orb is never flown either: it is in its socket from
+// video, so the keys are drawn and do nothing. A recording cuts every move of the walkthrough's
+// column and of the voice box (app.css), so the orb is never flown either: it is in its socket from
 // the first frame the box is shown.
 
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
@@ -22,7 +22,6 @@ import { ModelWalkthrough } from "#ui/architecture-drawing/model-reader/reading/
 import { readingOf } from "#ui/application/rules/pane-reading.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { CanvasStage } from "#ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx";
-import { useOverlayPlace } from "#ui/architecture-drawing/canvas/picture/hooks/use-overlay-place.ts";
 import { type SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import {
 	OrbHost,
@@ -78,25 +77,26 @@ function talkVoice(level: VoiceLevel): AgentVoiceView {
 }
 
 /**
- * The voice box, where the stage lays it: shown at the foot of the presented walkthrough's box.
- * @param props The voice, and what it has said so far.
+ * The voice box, where the stage lays it, low over the picture: shown once the walkthrough is
+ * presented.
+ * @param props The voice, what it has said so far, and whether the walkthrough is presented.
  * @param props.voice The voice.
  * @param props.transcript What it has said, which a recording always subtitles.
+ * @param props.presented Whether the talk has reached its first step.
  * @returns The box.
  */
 function ReplayVoiceBox(props: {
 	readonly voice: AgentVoiceView;
 	readonly transcript: readonly SubtitleSource[];
+	readonly presented: boolean;
 }): JSX.Element {
-	const place = useOverlayPlace();
 	return (
 		<VoiceBox
 			voice={props.voice}
 			actions={WATCHED}
 			transcript={props.transcript}
 			reducedMotion={false}
-			shown={place === "foot"}
-			place={place}
+			shown={props.presented}
 		/>
 	);
 }
@@ -135,9 +135,10 @@ function ReplayStage(props: ReplayStageProps): JSX.Element {
 	);
 	const moment = useSyncExternalStore(playback.subscribe, playback.moment);
 	const voice = useMemo(() => talkVoice(level), [level]);
+	const presented = moment.step !== null;
 	const overlay = useMemo(
-		() => <ReplayVoiceBox voice={voice} transcript={moment.transcript} />,
-		[voice, moment.transcript],
+		() => <ReplayVoiceBox voice={voice} transcript={moment.transcript} presented={presented} />,
+		[voice, moment.transcript, presented],
 	);
 	return (
 		<QueryClientProvider client={props.client}>

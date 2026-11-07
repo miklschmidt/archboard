@@ -23,7 +23,7 @@ const TYPE_ROLES = [
 	"presentation",
 	"reading",
 	"figure",
-	"subtitle",
+	"section",
 ] as const;
 
 /**

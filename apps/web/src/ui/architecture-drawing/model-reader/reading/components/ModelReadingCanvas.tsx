@@ -11,6 +11,7 @@ import {
 	ModelUnavailableReading,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelDestinationState.tsx";
 import { StageSpinner } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStageStates.tsx";
+import { PictureOverlay } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
 import type {
 	AcceptedScene,
@@ -109,12 +110,7 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 							waiting={waiting}
 						/>
 					</div>
-					<div
-						data-slot="model-stage-overlay"
-						className="pointer-events-none absolute inset-x-0 bottom-6 z-25 flex justify-center px-8"
-					>
-						{props.overlay}
-					</div>
+					<PictureOverlay overlay={props.overlay} clearOfSidebar={false} />
 				</div>
 				{props.children}
 			</div>

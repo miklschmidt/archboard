@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-07T12:47:00Z'
-updated_date: '2026-11-07T13:25:00Z'
+updated_date: '2026-11-07T14:34:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-590
@@ -21,7 +21,7 @@ The owner likes the site walkthrough player: the picture on the left and a raise
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 A presented walkthrough shows its rail, number, heading, words, voice pill and keys in a column where the right panel stands, beside the picture
+- [x] #1 A presented walkthrough shows its rail, number, heading, words, Narrate key and keys in a column where the right panel stands, beside the picture, and the voice box stays low over the picture, in the middle of it
 - [x] #2 The rail fills with gold up to the step on screen
 - [x] #3 Narrate is the gold primary action, and previous and next are quiet keys
 - [x] #4 The picture keeps the camera behaviour of a presented step
@@ -43,6 +43,8 @@ The owner likes the site walkthrough player: the picture on the left and a raise
 The rail segments after the step keep Muted Ink at 70% rather than the site's dark wells, because they are controls and must keep the APCA floor of a mark (Lc 56 on chalk, Lc 37 on graphite). The orb is lit in the voice pill only while a voice is live, so AC1 names the pill and not the orb.
 
 Verified by captures in both themes, idle and with the fake voice speaking. The web unit tests (camera expectations moved to the whole viewport), the presentation, voice-box, narration, walkthrough and reader browser tests, and the recording and replay owners pass.
+
+Owner decision (2026-11-07): the voice box keeps its original form and floats low over the picture, in the middle of it, while a walkthrough is presented; the steps stay in the column. The column's foot holds only the Narrate key, dimmed with its reason while a voice is on. One PictureOverlay layer lays the overlay in the semantic stage, the canonical reader and the model walkthrough, and the overlay place hook and the voice box's foot skin are gone. A recording draws the voice box over its picture from the first step and cuts its motion. The voice box's words now take the reading role (16px on 24px, Body Ink), as the site sets its walkthrough narration; the old subtitle role became the section role of the About page's headings. Verified: voice-box-presented, codex-live-voice, canonical-model-narration, canonical-model-presentation and voice-box browser tests, walkthrough-render and canonical-walkthrough-replay, 1029 unit tests, lint, types, 169 repository tests; captures in both themes from page load show the orb's dark plate in dark mode. The earlier white plate in the doc capture came from the stepped motion clock, which does not repaint the canvas without an observation.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
