@@ -1,11 +1,11 @@
 ---
 id: TASK-590.11
 title: Measures opens as a dialog drawn from the site's Measures table
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-07T15:07:00Z'
-updated_date: '2026-11-07T16:21:00Z'
+updated_date: '2026-11-07T16:52:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-590
@@ -45,4 +45,14 @@ On 2026-11-07 the owner said that even the 448 px column is too narrow for Measu
 - The history reads when the What changes together view opens. ADR 0045 says that Measures asks when it opens. The read stays on request, but the ADR wording names the dialog.
 - The key in ModelReading.tsx is temporary and sits alone in its commit. The column's own key must carry data-slot="model-measures-open", or openMeasures in tests/system/browser/reader-measures.test.ts must change.
 - Verification: bun test --parallel on model-measures.test.tsx and model-code-evidence.test.tsx passed 17 tests. bun run fix and bun run lint exited 0. tsc of both projects exited 0. The browser lane with --focus tests/system/browser/reader-measures.test.ts exited 0. Screenshots at 1920x1080 in both themes show the selector, both tables, a lit row and the sorted column.
+
+2026-11-07, coordinator: the temporary trigger is reverted, and the sidebar's Measures key opens the dialog (data-column-dialog=measures). reader-measures.test.ts opens it from that key. ADR 0045 now says that Measures asks for history when What changes together opens (6aeb95179).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Measures is a ui-kit dialog that the sidebar's Measures key opens. The site's content selector stands at its head with three views: Where the map and the code disagree (TASK-590.06), What a module exposes and What changes together. Each table follows the site's Measures table: a row for each module with its kind chip, a column for each count, sorted from the column heads with a gold wash on the sorted cells. A row closes the dialog and selects its module on the picture, and Alt opens it beside. The history is read only while What changes together is open.
+
+Verified by the component tests of the table and the dialog, the reader-measures browser owner, the full gate, and screenshots in both themes. The zero counts keep the quiet ink they had on main, which measures Lc 44 in the dark theme, above the mark floor of PRODUCT.md.
+<!-- SECTION:FINAL_SUMMARY:END -->

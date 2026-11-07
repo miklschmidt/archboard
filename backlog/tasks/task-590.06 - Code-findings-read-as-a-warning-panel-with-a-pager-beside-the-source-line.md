@@ -1,11 +1,11 @@
 ---
 id: TASK-590.06
 title: Code findings read as a warning panel with a pager beside the source line
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-07T12:47:00Z'
-updated_date: '2026-11-07T16:28:00Z'
+updated_date: '2026-11-07T16:52:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-590
@@ -51,4 +51,14 @@ Server half (route of source lines), by the implementation agent of 2026-11-07: 
 - Criterion 2 is left open for the coordinator: the route was not in this worktree, so no excerpt was read from a real server. The screenshots used a network route with seeded lines.
 
 2026-11-07, coordinator: the excerpt read the real route on the integrated branch. The web client now parses the answer with CodeSourceLinesSchema of @archboard/code-intel/code-check, because the strict local schema refused the route's success field. On a scratch server, a code pass of this repository remembered 195 findings; the Measures dialog's second finding showed lines 225 to 231 of crates/archboard-flows/src/sequence/layout.rs with line 228 marked, the same lines the file holds. The route refused package.json:1 with EVIDENCE_NOT_REMEMBERED. The same pass found a stale anchor (Replay stage -> Voice orb named OrbHost), fixed in the model.
+
+2026-11-07, coordinator: the line numbers of the excerpt measured Lc 36 in the dark theme at 70% of muted ink, so they now take muted ink (Lc 61 or more in both themes, b17c854b3). A pass with no warning now counts only its information under the mark of information (769c386ef).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Where the map and the code disagree, the first view of the Measures dialog, shows the findings of the last code pass one at a time, warnings first, with a pager that selects each finding's subject on the picture. The card has a solid changed chip (the tint chip for information), the route, the check's words, the strength of each piece of evidence and the time of the pass. Beside it, the source excerpt reads GET /api/code/source-lines, a new route that answers only a place that a remembered finding names (ADR 0046 amendment of 2026-11-07), numbers the lines and marks the evidence line. The site's content selector chooses between the three views.
+
+Verified by model-code-evidence.test.tsx (pager, marked line, address, unavailable states), tests/system/server-state/source-lines.test.ts (window, refusals, symbolic links, origin guard), the reader-measures browser owner, the full gate, a real code pass of this repository whose excerpt matched the file's lines 225 to 231, and APCA measurements of the card and the excerpt in both themes. Risk: the route quotes source text to any page of the same origin, which ADR 0046's amendment accepts for remembered evidence only.
+<!-- SECTION:FINAL_SUMMARY:END -->
