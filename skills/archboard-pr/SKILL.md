@@ -124,8 +124,8 @@ For a temporary model, leave the repository's lifecycle unchanged.
 If another proposal reached Current first, `PROPOSAL_SUPERSEDED` refuses adoption.
 Do not force it: full replacement undoes the other adoption.
 Create a new proposal on Current with the same name, summary, documents, and changes.
-Compare it with Current through `model compare` before adoption.
-If one of its changes undoes or conflicts with a change of the other adoption, tell the owner, and adopt only after the owner decides.
+Before adoption, compare Current and the original each with the original's predecessor through `model compare --state <id> --against <predecessor-id>`.
+A subject that both comparisons change is a conflict. Tell the owner, and adopt only after the owner decides.
 Adopt that proposal, then shelve the original with a reason naming its replacement.
 If default-branch code already implements the draft, tell the owner before adoption and obtain agreement.
 For stopped work, follow the consumer shelving authorization rule and retain its reason and exact baseline.
