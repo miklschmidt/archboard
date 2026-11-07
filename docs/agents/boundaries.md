@@ -3,6 +3,7 @@
 Domain terms live in `CONTEXT.md`. This file defines where Archboard source lives, which
 folder can import which, and who owns a test. Oxlint enforces it (`bun run lint`).
 The decision is [ADR 0055](../adr/0055-packages-own-behavior-and-apps-compose-it.md).
+[ADR 0075](../adr/0075-each-area-groups-code-by-behavior-first.md) groups the code of each area by behavior first.
 [ADR 0058](../adr/0058-an-interface-is-the-few-operations-its-callers-need.md) decides how wide a package interface may be.
 `tests/system/repository-policy/package-graph.test.ts` declares the package layers and refuses upward imports and cycles.
 
@@ -27,8 +28,38 @@ either root and an import that starts with `@/`.
 
 The named areas below `src/` are `shared`, `runtime`, `server`, `ui`, and `cli` in the CLI app.
 A package can also hold files and folders outside these areas, such as `src/types.ts` or `src/types/`.
-Each area has role folders, and a role folder has one folder for each behavior. See [Area directions](#area-directions). For frontend concern placement, naming, and
-React ownership, read [frontend.md](frontend.md).
+The areas stay the first folder below `src/`, because they say where code runs. See [Area directions](#area-directions).
+Inside an area, code is grouped by behavior first.
+
+A **behavior folder** holds every file of one job in one area. A sub-job is a sub-folder.
+Name it for the job. It is never a role name, an area name, a generic bucket name, or `legacy`.
+
+A **role folder** is always the last folder of a path, and it holds files only. These are the roles:
+
+```text
+api clients components constants hooks lifecycle middleware operations processes
+projections protocol routes rules schemas services sockets state store wiring workers
+```
+
+The path form is `src/<area>/<behavior>[/<behavior>…]/<role>/<file>`.
+
+- `src/<area>/<role>/<file>` with no behavior folder is allowed, for code that belongs to the area as a whole.
+  Examples are `timing`, `diagnostics`, `process` and `shared/rules/ids.ts`.
+- `src/<area>/api/` stays directly under the area. It is the area's interface, and
+  `package-api.test.ts` holds the `exports` to it.
+- Tests mirror their source under `tests/<area>/…`. `tests/<area>/support/` stays.
+- Generated and ignored trees keep their tool's shape, such as `shared/protocol/generated/**`.
+- The `#*` aliases do not change. Every `package.json` maps `"#*": "./src/*"`.
+- A module with parts binds its behavior folder (TASK-582).
+
+`tests/system/repository-policy/workspace-layout.test.ts` holds the rule for every tracked TypeScript
+file below an area: exactly one role folder, the last folder, and no folder named after an area.
+Many trees still put the role first, and they move one commit at a time (TASK-582.03).
+Its ratchet, `ROLE_FIRST_TREES`, lists the trees that still break the rule. The test skips them, and
+it fails when a listed tree breaks it no more, so each move commit removes its trees from the list.
+Until the last move, the lint rules accept both layouts. `scripts/move-source.ts` moves the files of a
+reviewed manifest. It rewrites the imports and repository paths and rebinds the vault in the same run.
+For frontend concern placement, naming, and React ownership, read [frontend.md](frontend.md).
 
 The entries are `apps/cli/src/bin.ts`, `apps/server/src/server.ts`, `apps/web/src/main.tsx`,
 and the server and browser entries of `apps/workbench-example`.
@@ -89,14 +120,15 @@ packages/<name>/
   package.json      # name, private, and `exports`: the whole interface
   src/
     types.ts        # only for types that more than one area uses
-    <area>/<role>/  # areas: shared, runtime, server, ui. Roles: constants, rules, store, ...
+    <area>/<behavior>/<role>/  # areas: shared, runtime, server, ui. Roles: constants, rules, store, ...
+    <area>/<role>/  # code of the area as a whole
     <area>/api/     # the interface files of an area, in a package that adopts the role
   tests/            # internal tests, in folders that follow the areas
 ```
 
-A package has no `lib/` folder and no `index.ts` barrel. Name the role of a folder, such as
-`constants`, `schemas`, `rules` or `operations`, and let a folder that grows past about 12 files
-split by behavior.
+A package has no `lib/` folder and no `index.ts` barrel. Name a behavior folder for its job and
+a role folder for its role, such as `constants`, `schemas`, `rules` or `operations`. A role folder
+holds files only. When it grows past about 12 files, split its behavior into sub-behaviors.
 
 - **`exports` is the interface.** Each value names a source file under `src/` or a public asset under `assets/`. Inside the
   repository there is no build step, no wildcard pattern and no condition object. The npm build of
@@ -694,8 +726,9 @@ The shell reads the conversation controllers, transport, and media owners from `
 The voice-session adapter adds Archboard presentation and narration to shared media state.
 
 The UI uses the role folders in [frontend.md](frontend.md).
-Assistant-ui imports stay in the `thread/` and `runtime/` concerns.
-`@assistant-ui/react-markdown` stays in `thread/`.
+Assistant-ui imports stay in the `thread` and `assistant-runtime` behavior folders.
+Until the workbench moves, they sit below a role folder as `thread/` and `runtime/`.
+`@assistant-ui/react-markdown` stays in `thread`.
 Subtitles use the frame clock from `ui-kit`, so recordings render them frame by frame.
 Tailwind discovers package class names through the stylesheet's `@source` declarations.
 
@@ -715,8 +748,8 @@ holds an app to the rules of a package, with these differences:
 - **An app imports a package only through its `exports`.** Inside an app, imports use the `#`
   entries of its own `package.json`, as in a package. A `#` import that names no existing file is
   an error whoever owns the importing file.
-- **An app has areas and role folders like a package.** `apps/web/src/ui/<role>/<behavior>/`,
-  `apps/cli/src/{cli,runtime}/`, `apps/server/src/server/`. The thin entries are
+- **An app has areas, behavior folders and role folders like a package.**
+  `apps/web/src/ui/<behavior>/<role>/`, `apps/cli/src/{cli,runtime}/`, `apps/server/src/server/`. The thin entries are
   `apps/cli/src/bin.ts`, `apps/server/src/server.ts`, `apps/web/src/main.tsx`, and
   `apps/workbench-example/src/{server.ts,main.tsx}`. Both `main.tsx` entries count as browser code. Other files directly in `src/` and a folder beside `src/` and `tests/` that holds
   source are refused. An app also refuses a folder of `src/` that is no area.
@@ -797,7 +830,8 @@ behavior has an index: a caller imports the file that defines a name.
   `src/ui/theme/`, because a stylesheet is no role; the plugin judges TypeScript only. Its `@source` paths are
   relative to it. `vite.config.ts` stays at the repository root and names the root, the output and the dev server's
   `fs.allow`, which lets the dev server serve `packages/` and `node_modules` outside the root.
-- `src/ui/` is the `ui` area. Each behavior is a folder under each role it needs.
+- `src/ui/` is the `ui` area. Until its move (TASK-582.03.03), each behavior is a folder under each
+  role it needs. The move puts each behavior first, with its role folders inside it.
   `application` owns the root, the pane records and lists, the agent surfaces and the workspace port.
   `shell` owns the frame, navigator and rows. `pane-session` owns one pane's socket, status, reading and registration.
   `reading-routing` owns the workspace address, and `model-catalog` discovers canonical repository models.

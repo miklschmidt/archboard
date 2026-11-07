@@ -29,9 +29,12 @@ The six normal native lanes are:
   (`tests/system/repository-policy/readme-assets.test.ts`), which starts no browser,
   the owner that holds the README banner's mark to the shell's
   (`tests/system/repository-policy/readme-lockup.test.ts`),
-  and the owner of the crates' shape rules that no lint sees: every crate
+  the owner of the crates' shape rules that no lint sees: every crate
   inherits the workspace lints, and no `.rs` file is over 600 lines
-  (`tests/system/repository-policy/rust-crates.test.ts`);
+  (`tests/system/repository-policy/rust-crates.test.ts`),
+  and the owner that holds every path a Vite+ task or an Oxlint override names to a file that
+  exists, so a moved test cannot leave a stale lane or ignore pattern behind
+  (`tests/system/repository-policy/config-paths.test.ts`);
 - `test:serial-browser`: every owner in the executable `BROWSER_TEST_PATHS`
   inventory through the strict adapter, one owner for every six cores.
 

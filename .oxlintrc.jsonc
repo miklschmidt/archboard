@@ -187,8 +187,12 @@
 			// recording can render it frame by frame against a clock it steps
 			// (TASK-381). Nothing here reads the browser's clocks directly.
 			"files": [
-				// The canvas of apps/web: its folder below each role of the ui area.
+				// The canvas of apps/web and the subtitles of the workbench. Behavior first
+				// (ADR 0075), each is one behavior folder. Until each moves (TASK-582.03), each
+				// is also its folder below each role of the ui area.
+				"apps/web/src/ui/architecture-drawing/canvas/**",
 				"apps/web/src/ui/{api,clients,components,constants,hooks,rules,state,workers}/canvas/**",
+				"packages/workbench/src/ui/workbench-client/subtitles/**",
 				"packages/workbench/src/ui/components/subtitles/**",
 				"packages/workbench/src/ui/hooks/subtitles/**",
 				"packages/workbench/src/ui/rules/subtitles/**",

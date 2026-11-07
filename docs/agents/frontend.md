@@ -8,8 +8,9 @@ that workflow and keep its state out of the application root.
 
 ## Placement
 
-The browser app lives in `apps/web/src/ui/<role>/<behavior>/`.
-Name each behavior folder for the behavior that it owns.
+The browser app lives in `apps/web/src/ui/<behavior>/<role>/`
+([ADR 0075](../adr/0075-each-area-groups-code-by-behavior-first.md)).
+Name each behavior folder for the behavior that it owns. A sub-behavior is a sub-folder.
 Feature-specific UI, state and commands belong to that module. A visual section
 with its own workflow is a feature owner, not only a shared component.
 Reusable domain behavior belongs in a named peer module, and generic UI belongs
@@ -30,12 +31,18 @@ Use role folders as needed:
 | `workers/`    | Browser workers                                                    |
 | `api/`        | A package's public interface (an app has none)                     |
 
-The `ui/` area of a package or an app has no module root. It keeps role folders
-directly below `ui/` (`api/`, `clients/`, `components/`, `constants/`, `hooks/`,
-`rules/`, `state/`, `workers/`) with behavior folders below a role. A package's
-`api/` files are its public interface, so they may re-export hooks; an app has
-no `api/`, because nothing imports an app. The same naming rules hold, and the
-tests in `tests/ui/` are held to the UI lint policy.
+The `ui/` area of a package or an app has no module root. Its code sits in
+behavior folders, and the role folder is the last folder of a path:
+`ui/<behavior>[/<behavior>…]/<role>/<file>`. Code of the whole area keeps
+`ui/<role>/<file>`. A role folder holds files only, and a path has exactly one.
+A package's `api/` stays directly below `ui/`. Its files are the public
+interface, so they may re-export hooks. An app has no `api/`, because nothing
+imports an app. The same naming rules hold, and the tests in `tests/ui/` are
+held to the UI lint policy.
+
+The `ui` areas still put the role first (`ui/<role>/<behavior>/`) until each one
+moves (TASK-582.03). Until the last move, lint accepts the role folder first or
+last, and refuses a path with two role folders.
 
 All these folders are private. A package exposes only its `exports`, and nothing
 imports an app. `apps/web/src/ui/theme/` holds the one stylesheet; it is no role,
@@ -274,8 +281,9 @@ scopes. Existing generated/vendor conventions keep only their documented
 exceptions. Backend and CLI structure is outside this adoption.
 
 `archboard/ui-concern-placement` enforces the half of these rules that a machine
-can check, over authored UI source in packages and apps. It checks the role
-folder names above and PascalCase component files. It checks `use-` prefixed kebab-case hook
+can check, over authored UI source in packages and apps. It reads the one role
+folder of a path, first below `ui/` or last, and checks the role folder names
+above and PascalCase component files. It checks `use-` prefixed kebab-case hook
 files and scoped kebab-case everywhere else. It also permits React markup and
 hook exports only in `components/` and `hooks/`; a package's `api/` files may re-export hooks.
 
