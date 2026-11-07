@@ -7,7 +7,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { chmodSync, mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { declareDirectory, setLanguageServer } from "@archboard/workspace/checkouts";
+import { declareDirectory } from "@archboard/workspace/checkouts";
 import { checkoutsReadFrom } from "#runtime/services/vault-checkout.ts";
 import {
 	resolveRegisteredCheckout,
@@ -76,26 +76,6 @@ test("a vault reads its own checkout for its own identity, though nobody registe
 
 test("a vault reads the chosen checkout for any other identity", async () => {
 	expect(await resolvedFor(join(holder, ".archboard", "vault"), BILLING)).toBe(billing);
-});
-
-test("a vault's checkout runs the language servers registered for it, never the chosen checkout's", async () => {
-	const vault = join(holder, ".archboard", "vault");
-	/**
-	 * The language servers a reading of the vault runs for its own identity.
-	 * @returns The servers of the checkout it reads.
-	 */
-	async function serversRead() {
-		const snapshot = await snapshotCheckoutAccess({ vault });
-		return snapshot.entries.find((entry) => entry.repo === fixture.repository)?.servers;
-	}
-	expect(
-		setLanguageServer(fixture.checkout, "python", { command: "chosen", args: [] }),
-	).toBeDefined();
-	expect(await serversRead()).toBeUndefined();
-	await declareDirectory(holder);
-	expect(setLanguageServer(holder, "python", { command: "own", args: [] })).toBeDefined();
-	expect(await serversRead()).toEqual({ python: { command: "own", args: [] } });
-	expect(await resolvedFor(vault, fixture.repository)).toBe(holder);
 });
 
 test("a vault in no checkout reads the chosen checkouts alone", async () => {

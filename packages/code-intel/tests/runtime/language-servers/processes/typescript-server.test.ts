@@ -14,7 +14,7 @@ import { type Language } from "#runtime/language-servers/operations/languages.ts
 import { workspace, type Workspace } from "#tests/runtime/support/language-servers/fixture.ts";
 
 /** The TypeScript server of a checkout that installs no TypeScript: Archboard's own. */
-const servers = (language: Language, root: string) => languageServerOf(language, root, {});
+const servers = (language: Language, root: string) => languageServerOf(language, root, undefined);
 
 /** A plugin that leaves a mark wherever it is loaded. */
 const PLUGIN = [

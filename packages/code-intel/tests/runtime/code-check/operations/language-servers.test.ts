@@ -37,7 +37,7 @@ const shop = join(scratch, "shop");
 const vault = join(scratch, "vault");
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const SHOP = "github.com/test/shop";
-const native = languageServerOf("typescript", scratch, {}).status === "command";
+const native = languageServerOf("typescript", scratch, undefined).status === "command";
 let outcome: CodeCheckOutcome;
 
 /**

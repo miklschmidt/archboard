@@ -15,7 +15,7 @@ import { type Language } from "#runtime/language-servers/operations/languages.ts
 import { workspace, type Workspace } from "#tests/runtime/support/language-servers/fixture.ts";
 
 /** The TypeScript server the check chooses for a checkout with no configured one. */
-const servers = (language: Language, root: string) => languageServerOf(language, root, {});
+const servers = (language: Language, root: string) => languageServerOf(language, root, undefined);
 
 /**
  * The directory of a package Archboard installs for its tests.

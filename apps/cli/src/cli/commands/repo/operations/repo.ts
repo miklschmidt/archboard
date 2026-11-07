@@ -6,10 +6,8 @@ import {
 	listRegistry,
 	registryPath,
 	RepoRegistryError,
-	LanguageServersSchema,
 } from "@archboard/workspace/checkouts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
-import { commandLine } from "#cli/commands/repo/rules/command-line.ts";
 
 const tail = z.array(z.string()).default([]);
 
@@ -71,7 +69,6 @@ const RegisteredRepoResultSchema = z.object({
 	addedAt: z.string(),
 	chosen: z.boolean(),
 	exists: z.boolean().optional(),
-	servers: LanguageServersSchema.optional(),
 });
 const UntrackedVaultResultSchema = z.object({
 	name: z.string(),
@@ -93,7 +90,7 @@ const repoListContract = defineCommand({
 	shared: [],
 	summary: "List known repository checkouts and untracked vaults",
 	description:
-		"Reads the machine-local checkout registry: every known checkout with its repository identity, whether it is the chosen one for that identity and whether its directory exists, the language servers configured for each, every untracked vault with its registry name, and the identities that have no chosen checkout.",
+		"Reads the machine-local checkout registry: every known checkout with its repository identity, whether it is the chosen one for that identity and whether its directory exists, every untracked vault with its registry name, and the identities that have no chosen checkout.",
 	examples: ["archboard repo list"],
 	parameters: [
 		{
@@ -179,11 +176,8 @@ function listingText(listing: ReturnType<typeof listRegistry>): string {
 	const checkouts = identities.map((repo) => {
 		const own = listing.checkouts.filter((entry) => entry.repo === repo);
 		const lines = own.map((entry) => {
-			const servers = Object.entries(entry.servers ?? {}).map(
-				([language, server]) => `\n    ${language}: ${commandLine(server)}`,
-			);
 			const marks = `${entry.chosen ? "  (chosen)" : ""}${entry.exists ? "" : "  (gone)"}`;
-			return `  ${entry.root}${marks}  [${entry.source}]${servers.join("")}`;
+			return `  ${entry.root}${marks}  [${entry.source}]`;
 		});
 		const unchosen = listing.unchosen.includes(repo)
 			? ["  No checkout is chosen: run `repo use <dir>` with one of these."]
@@ -365,7 +359,6 @@ const repoAddContract = defineCommand({
 		"- The command derives the identity of the checkout from git: its origin remote, or with none the directory name of its main checkout. Every worktree has the identity of its main checkout.",
 		"- It records the local root of the checkout, with the worktrees that git lists for it.",
 		"- The first known checkout of a repository becomes the one read for it. Adding another never changes that, and repo use does.",
-		"- Registering the same root again keeps its language servers, unless its identity changed.",
 		"",
 		"An untracked vault:",
 		"- Outside any git checkout, a directory that holds .archboard/vault is registered as an untracked vault under its base name, made unique on this machine.",
@@ -455,7 +448,7 @@ const repoForgetContract = defineCommand({
 	shared: [],
 	summary: "Forget a known checkout or untracked vault",
 	description:
-		"Removes the checkout or untracked vault at a directory, and the language servers configured for it, from the machine-local registry. The directory need not exist. Forgetting the chosen checkout of a repository that has other known checkouts leaves it with no chosen checkout until repo use, and meanwhile its bindings resolve as unregistered, except from a vault inside one of its checkouts, which reads its own checkout. Every running server sees the change, so every tab lists it.",
+		"Removes the checkout or untracked vault at a directory from the machine-local registry. The directory need not exist. Forgetting the chosen checkout of a repository that has other known checkouts leaves it with no chosen checkout until repo use, and meanwhile its bindings resolve as unregistered, except from a vault inside one of its checkouts, which reads its own checkout. Every running server sees the change, so every tab lists it.",
 	examples: ["archboard repo forget ../payments-worktree"],
 	parameters: [
 		{

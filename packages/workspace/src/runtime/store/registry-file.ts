@@ -13,7 +13,6 @@ import { writeFileAtomic } from "#runtime/store/atomic-write.ts";
 import { stateDir } from "#runtime/services/state-dir.ts";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { MODEL_LOCK_MS } from "@archboard/timing";
-import { LanguageServersSchema, type LanguageServers } from "#runtime/store/language-servers.ts";
 
 /** New entries are declared; observed is retained for existing registry files. */
 type RepoSource = "declared" | "observed";
@@ -31,12 +30,6 @@ interface RegisteredRepo {
 	 * was forgotten.
 	 */
 	chosen: boolean;
-	/**
-	 * The language servers an agent configured for this checkout (ADR 0046,
-	 * TASK-433). Forgetting the checkout forgets them, and registering the same
-	 * root again keeps them.
-	 */
-	servers?: LanguageServers;
 }
 
 /** A directory outside any git checkout that holds `.archboard/vault`. */
@@ -82,18 +75,6 @@ function registryPath(): string {
 }
 
 /**
- * The servers a stored entry holds, as the field they go in. A server that is
- * not valid says nothing, so it is dropped with its siblings, and the entry
- * stays.
- * @param stored The stored value.
- * @returns The field, or none when there are no servers.
- */
-function serversOf(stored: unknown): { servers?: LanguageServers } {
-	const parsed = LanguageServersSchema.safeParse(stored);
-	return parsed.success && Object.keys(parsed.data).length > 0 ? { servers: parsed.data } : {};
-}
-
-/**
  * One stored checkout, when it names both a repository and a directory.
  *
  * An entry from before checkouts could be chosen has no `chosen` field and
@@ -115,7 +96,6 @@ function checkoutOf(entry: Record<string, unknown>): RegisteredRepo | null {
 		source: entry["source"] === "declared" ? "declared" : "observed",
 		addedAt: stringAt(entry, "addedAt") ?? new Date().toISOString(),
 		chosen: entry["chosen"] !== false,
-		...serversOf(entry["servers"]),
 	};
 }
 
@@ -311,8 +291,8 @@ function takeLock(lock: string): boolean {
 /**
  * Change the registry alone: read it, let the change edit it, write it whole.
  * A change that edits nothing writes nothing. Two changes that run together
- * would lose one of them, as `repo language-server` for two languages, called at
- * the same time, would keep one.
+ * would lose one of them, as two `repo add` calls at the same time would keep
+ * one.
  * @param change Edits the registry it is given and returns what the caller wants back.
  * @returns What the change returned.
  * @throws {RegistryWriteError} When the registry cannot be written.

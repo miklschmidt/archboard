@@ -1,18 +1,17 @@
 // Which command starts the server of a language in a checkout (ADR 0046,
-// TASK-433).
+// TASK-433, TASK-599).
 //
-// A server that can run code of a checkout runs only where the agent that
-// works in that repository configured it, as the server configuration of `repo
-// language-server` on the checkout's registration, and then as an editor runs
-// it: that command, those arguments, the user's environment. A bare command is
-// looked up on the `PATH`; an absolute path names the program itself. A
-// language with no configured server has no server, and the pass says so once
-// for the checkout.
+// A server runs where a file names it: the checkout's own
+// `.archboard/language-servers.json`, else the global `language-servers.json`
+// beside the registry. Then it runs as an editor runs it: that command, those
+// arguments, the environment of the Archboard server. A bare command is looked
+// up on the `PATH`; a path names the program itself. A language that no file
+// names has no server, and the pass says so once for the checkout.
 //
 // TypeScript has a default, which runs the checkout's own TypeScript, because
-// the checkout installed it for its own editor. A configured server wins.
-// Otherwise the rule reads the checkout's own `node_modules/typescript`, inside
-// the checkout once its links resolve (TASK-579.13):
+// the checkout installed it for its own editor. A server that a file names
+// wins. Otherwise the rule reads the checkout's own `node_modules/typescript`,
+// inside the checkout once its links resolve (TASK-579.13):
 // - version 7 or later with the native program for this machine: its
 //   `tsc --lsp --stdio`.
 // - a TypeScript before 7, which has no `--lsp` but holds `lib/tsserver.js`:
@@ -29,7 +28,7 @@ import path from "node:path";
 import { z } from "zod";
 import type { Language } from "#runtime/language-servers/operations/languages.ts";
 import type { ServerTypescript } from "#shared/protocol/code-check.ts";
-import type { LanguageServersSchema } from "@archboard/workspace/checkouts";
+import type { ServerChoice } from "@archboard/workspace/checkouts";
 import { installation } from "@archboard/workspace/installation";
 
 /** The server one language uses in a checkout, or why it has none. */
@@ -276,35 +275,52 @@ function defaultTypescriptServer(root: string, fallback: boolean): LanguageServe
 }
 
 /**
+ * The server of a language that no file names: TypeScript's default, and
+ * none for any other language.
+ * @param language The language.
+ * @param root The checkout, absolute.
+ * @returns The server, or why there is none.
+ */
+function unnamedServer(language: Language, root: string): LanguageServer {
+	if (language === "typescript") {
+		return defaultTypescriptServer(root, installation().mode === "checkout");
+	}
+	return {
+		status: "missing",
+		detail:
+			"neither the checkout's .archboard/language-servers.json nor the global language-servers.json names a server",
+	};
+}
+
+/**
  * The server one language uses in a checkout.
  * @param language The language.
  * @param root The checkout, absolute.
- * @param configured The servers the checkout's registration holds.
+ * @param configured What the checkout's files say about the language.
  * @returns The server, or why there is none.
  */
 function languageServerOf(
 	language: Language,
 	root: string,
-	configured: z.infer<typeof LanguageServersSchema>,
+	configured: ServerChoice,
 ): LanguageServer {
-	const server = configured[language];
-	if (server === undefined) {
-		return language === "typescript"
-			? defaultTypescriptServer(root, installation().mode === "checkout")
-			: { status: "missing", detail: "no server is configured" };
-	}
-	const program = Bun.which(server.command);
+	if (configured === undefined) return unnamedServer(language, root);
+	if ("problem" in configured) return { status: "missing", detail: configured.problem };
+	const program = Bun.which(configured.command);
 	if (program === null) {
 		// A name is looked up on the `PATH` this process started with, which a
 		// server that already runs keeps, whatever the agent's shell has since.
-		const where = path.isAbsolute(server.command)
+		const where = path.isAbsolute(configured.command)
 			? "is not an executable file"
 			: "is not on the PATH of the Archboard server";
-		return { status: "missing", detail: `${server.command} (configured for ${language}) ${where}` };
+		return {
+			status: "missing",
+			detail: `${configured.command} (named for ${language} in ${configured.file}) ${where}`,
+		};
 	}
 	return {
 		status: "command",
-		argv: [program, ...server.args],
+		argv: [program, ...configured.args],
 		...(language === "typescript" ? { initializationOptions: TYPESCRIPT_OPTIONS } : {}),
 	};
 }

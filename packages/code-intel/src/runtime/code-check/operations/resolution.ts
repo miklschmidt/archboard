@@ -49,8 +49,7 @@ import {
 	type UnavailableServer,
 } from "#runtime/language-servers/services/session.ts";
 import type { CheckTiming, CodeCheckSkip } from "#shared/protocol/code-check.ts";
-import type { z } from "zod";
-import { configureCommand, type LanguageServersSchema } from "@archboard/workspace/checkouts";
+import { checkoutServers, configureCommand, readServers } from "@archboard/workspace/checkouts";
 
 /** Where a server says a use is defined, as the pass reads the checkout. */
 type UseResolution =
@@ -204,30 +203,34 @@ function serverSkips(
 }
 
 /**
- * Open the resolution of one pass.
- * @param servers The servers configured for each repository's checkout.
+ * Open the resolution of one pass. It reads the global language server file
+ * once, and the file of each checkout it reads once, so a change during the
+ * pass applies to the next one.
  * @param signal The pass's signal.
  * @param facts The pass's code facts, which say whether a site declares or defines.
  * @param checkouts Each repository's checkout, which says where its servers run.
  * @param serverOf The server of a language in a checkout, where an owner fixes
- * it; by default the registration's own (`languageServerOf`).
+ * it; by default the checkout's files decide (`languageServerOf`).
  * @returns The resolution.
  */
 function openResolution(
-	servers: ReadonlyMap<string, z.infer<typeof LanguageServersSchema>>,
 	signal: AbortSignal,
 	facts: FactsPass,
 	checkouts: ReadonlyMap<string, Checkout>,
 	serverOf?: ServerOf,
 ): PassResolution {
+	const global = readServers("global");
 	const byRoot = new Map(
-		[...checkouts].flatMap(([repo, checkout]) =>
-			checkout.status === "read" ? [[checkout.root, servers.get(repo) ?? {}] as const] : [],
+		[...checkouts.values()].flatMap((checkout) =>
+			checkout.status === "read"
+				? [[checkout.root, checkoutServers(checkout.root, global)] as const]
+				: [],
 		),
 	);
 	const session = openLanguageServers({
 		servers:
-			serverOf ?? ((language, root) => languageServerOf(language, root, byRoot.get(root) ?? {})),
+			serverOf ??
+			((language, root) => languageServerOf(language, root, byRoot.get(root)?.(language))),
 		signal,
 	});
 	return {
