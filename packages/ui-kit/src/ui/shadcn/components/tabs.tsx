@@ -29,6 +29,10 @@ const tabsListVariants = cva(
 				// Archboard: the site's segmented tabs. A trough holds the choices, and the chosen one
 				// rises out of it as a raised face with a gold underline (`trough`, `chosen-face`).
 				trough: "trough group-data-horizontal/tabs:h-auto",
+				// Archboard: the site's content selector. The same trough holds a few large tabs of
+				// equal width, each with an icon, a label and a line that says what it shows.
+				selector:
+					"trough grid w-full auto-cols-fr grid-flow-col items-stretch gap-1 p-1 group-data-horizontal/tabs:h-auto",
 			},
 		},
 		defaultVariants: {
@@ -65,6 +69,9 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
 				// sets the type role on the label: cn drops a theme text size beside a colour.
 				// Archboard trough variant: a 28px choice in muted ink, raised in full ink when chosen.
 				"group-data-[variant=trough]/tabs-list:text-muted-foreground group-data-[variant=trough]/tabs-list:hover:text-foreground group-data-[variant=trough]/tabs-list:rounded-control group-data-[variant=trough]/tabs-list:data-active:chosen-face group-data-[variant=trough]/tabs-list:h-7 group-data-[variant=trough]/tabs-list:border-0 group-data-[variant=trough]/tabs-list:px-2 group-data-[variant=trough]/tabs-list:font-medium group-data-[variant=trough]/tabs-list:focus-visible:ring-inset dark:group-data-[variant=trough]/tabs-list:data-active:border-0",
+				// Archboard selector variant: a large choice that holds its icon, label and gloss from
+				// the top left, in muted ink, raised in full ink with a gold icon when chosen.
+				"group-data-[variant=selector]/tabs-list:text-muted-foreground group-data-[variant=selector]/tabs-list:hover:text-foreground group-data-[variant=selector]/tabs-list:data-active:chosen-face group-data-[variant=selector]/tabs-list:rounded-control group-data-[variant=selector]/tabs-list:hover:bg-face/50 group-data-[variant=selector]/tabs-list:data-active:[&_svg]:text-primary-mark group-data-[variant=selector]/tabs-list:h-auto group-data-[variant=selector]/tabs-list:items-start group-data-[variant=selector]/tabs-list:justify-start group-data-[variant=selector]/tabs-list:gap-3 group-data-[variant=selector]/tabs-list:border-0 group-data-[variant=selector]/tabs-list:px-4 group-data-[variant=selector]/tabs-list:py-3 group-data-[variant=selector]/tabs-list:text-left group-data-[variant=selector]/tabs-list:whitespace-normal group-data-[variant=selector]/tabs-list:focus-visible:ring-inset dark:group-data-[variant=selector]/tabs-list:data-active:border-0 group-data-[variant=selector]/tabs-list:[&_svg:not([class*='size-'])]:size-[18px]",
 				"group-data-[variant=underline]/tabs-list:text-muted-foreground group-data-[variant=underline]/tabs-list:data-active:text-foreground group-data-[variant=underline]/tabs-list:hover:text-foreground group-data-[variant=underline]/tabs-list:focus-visible:ring-ring group-data-[variant=underline]/tabs-list:after:bg-primary group-data-[variant=underline]/tabs-list:h-full group-data-[variant=underline]/tabs-list:flex-none group-data-[variant=underline]/tabs-list:rounded-none group-data-[variant=underline]/tabs-list:border-0 group-data-[variant=underline]/tabs-list:px-2 group-data-[variant=underline]/tabs-list:transition-none group-data-[variant=underline]/tabs-list:after:-bottom-px! group-data-[variant=underline]/tabs-list:focus-visible:ring-2 group-data-[variant=underline]/tabs-list:focus-visible:outline-none group-data-[variant=underline]/tabs-list:focus-visible:ring-inset group-data-[variant=underline]/tabs-list:data-active:bg-transparent group-data-[variant=underline]/tabs-list:data-active:after:opacity-100 dark:group-data-[variant=underline]/tabs-list:data-active:border-0 dark:group-data-[variant=underline]/tabs-list:data-active:bg-transparent",
 				className,
 			)}
