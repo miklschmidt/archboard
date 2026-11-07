@@ -42,6 +42,14 @@ jobs:
       - name: Install dependencies
         run: nix develop --command bun install --frozen-lockfile
 
+      # The compiled Rust dependencies. A run that changes Rust sources restores
+      # them and compiles only the workspace crates. The flake pins the toolchain,
+      # so its lockfile is part of the key.
+      - name: Cache the Rust dependency builds
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ hashFiles('flake.lock') }}
+
       # The built renderer core, under the hash of its sources (ADR 0059). A run whose core sources
       # did not change restores it, and `bun run build:core` then finds it current and builds
       # nothing. The cache is saved at the end of a job that passes.
@@ -120,6 +128,14 @@ jobs:
 
       - name: Install dependencies
         run: nix develop --command bun install --frozen-lockfile
+
+      # The compiled Rust dependencies. A run that changes Rust sources restores
+      # them and compiles only the workspace crates. The flake pins the toolchain,
+      # so its lockfile is part of the key.
+      - name: Cache the Rust dependency builds
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ hashFiles('flake.lock') }}
 
       # The built renderer core, under the hash of its sources (ADR 0059). A run whose core sources
       # did not change restores it, and `bun run build:core` then finds it current and builds
