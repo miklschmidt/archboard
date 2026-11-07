@@ -255,10 +255,12 @@ function MeasureTable(props: MeasureTableProps): JSX.Element {
 		},
 		[stop, keyRows, onChoose, focusRow],
 	);
+	// The head stands over the rows, so the well keeps a row that it scrolls to clear of the head:
+	// the selected row it reveals, and the row the keys walk to.
 	return (
 		<div
 			ref={list}
-			className="bg-tray-sink shadow-well rounded-panel min-h-0 flex-1 overflow-y-auto"
+			className="bg-tray-sink shadow-well rounded-panel min-h-0 flex-1 scroll-pt-10 overflow-y-auto"
 		>
 			<table className="w-full border-separate border-spacing-0">
 				<caption className="sr-only">{props.label}. A column's head sorts the rows by it.</caption>
