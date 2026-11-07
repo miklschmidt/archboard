@@ -317,14 +317,14 @@ header is held and says so, and it does not show or hide the sidebar.
 
 A presented walkthrough (TASK-250, TASK-392, TASK-590.05) is the picture and a column beside it,
 with the sidebar stepped aside. The column stands where the right panel stands, 400px wide at
-most, as the site's walkthrough player sets it. A rail of steps runs along its top, with one piece
-of gold that travels to the step shown. Under the rail is the step's number, set as a drawing's
+most, as the site's walkthrough player sets it. A rail of steps runs along its top. It fills with
+gold up to the step shown, and one piece of gold travels to that step. Under the rail is the step's number, set as a drawing's
 sheet number is. Beside the number are the step's heading in the `presentation` type role, its
 words in the `reading` role, and the name of the walkthrough under those.
 
 The pill for the voice stands at the foot of the column, as wide as the column. The keys,
 previous, next and leave, stand under it on the right. While voice is off, the pill holds the key
-that narrates the walkthrough. While voice is live, it holds the voice box, with its orb, its
+that narrates the walkthrough, a gold circle with a microphone in it. While voice is live, it holds the voice box, with its orb, its
 words, mute and the subtitles control. The foot keeps its place whatever the voice is doing and
 whichever step is shown, so nothing in the column moves with either. A fullscreen presentation
 has no dock. So the voice box carries the voice there, whatever the person wants of subtitles,

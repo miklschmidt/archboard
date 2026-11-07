@@ -28,12 +28,17 @@ const FOOT_STYLE: CSSProperties = {
 /** What the key says while a narration can start. */
 const NARRATE_HINT = "Hear this walkthrough read aloud.";
 
-/** The circle where the orb will be lit: the plate the orb stands on, with the microphone on it. */
-const SEAT = cn(
-	"border-border bg-card text-muted-foreground shadow-raised m-1.5 grid size-16 shrink-0 place-items-center",
-	"dark:border-input dark:bg-input/30 rounded-full border transition-[border-color,color,box-shadow]",
-	"group-hover/narrate:border-primary-mark group-hover/narrate:text-primary-mark",
-	"group-active/narrate:shadow-pressed",
+/**
+ * The circle where the orb will be lit, with the microphone on it. It is the gold of the primary
+ * action, as the site's Narrate key is, and it lifts and sinks with the key that holds it.
+ */
+const SEAT =
+	"primary-finish pointer-events-none m-1.5 grid size-16 shrink-0 place-items-center rounded-full";
+
+/** How the circle answers the pointer on a key that can narrate. */
+const LIFT = cn(
+	"group-hover/narrate:shadow-primary-hover group-hover/narrate:-translate-y-px",
+	"group-active/narrate:shadow-primary-pressed group-active/narrate:translate-y-px",
 );
 
 /** Inputs for the key that has the walkthrough narrated. */
@@ -74,7 +79,7 @@ function NarrateKey(props: NarrateKeyProps): JSX.Element {
 				dimmed ? "cursor-default opacity-60" : "cursor-pointer",
 			)}
 		>
-			<span aria-hidden="true" className={cn(SEAT, dimmed && "group-hover/narrate:border-border")}>
+			<span aria-hidden="true" className={cn(SEAT, !dimmed && LIFT)}>
 				<RiMicLine className="size-5" />
 			</span>
 			<span className="flex min-w-0 flex-col">

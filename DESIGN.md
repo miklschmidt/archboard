@@ -685,10 +685,12 @@ has 20px of padding and 20px between its parts. The picture is as wide as the co
 so the camera fits each step to all of the picture and keeps nothing clear.
 
 The rail runs along the top of the column, across its full width. It has one segment for each
-step. Each segment is a button, and a tooltip names its step. The segments are 4px high, in
-Muted Ink at 70%, which is APCA Lc 56 against the column on chalk and Lc 37 on graphite, over
-the floor of Lc 30 for a mark, because they are controls. One piece of Gold Mark marks the step
-shown. It is 6px high and as wide as a segment, with a paler wake of the same gold behind it.
+step. Each segment is a button, and a tooltip names its step. The segments are 4px high. The
+segments before the step shown are Gold Mark, so the rail fills up to the step shown, as on the
+site's player. The segments after it are Muted Ink at 70%, which is APCA Lc 56 against the
+column on chalk and Lc 37 on graphite, over the floor of Lc 30 for a mark, because they are
+controls. One piece of Gold Mark marks the step shown. It is 6px high and as wide as a segment,
+with a paler wake of the same gold behind it.
 
 Under the rail stands the step's number, set in the display face at 44px over a mono "of N",
 with a rule on its right, as on the sheet number of a drawing. Beside it are the heading of the
@@ -705,7 +707,8 @@ go is dimmed, as previous is on the first step. It stays a key, so that focus is
 nothing. A recording draws no keys, because nobody can press anything in the video.
 
 While voice is off, the pill holds the key that narrates the walkthrough. The key is a circle
-where the orb will be lit, with a microphone in it. Then come "Narrate" and a line of muted
+in the gold finish of the primary action, where the orb will be lit, with a microphone in it. It
+lifts 1px when hovered and sinks 1px when pressed, as the gold button does. Then come "Narrate" and a line of muted
 ink that says what it does. While a narration cannot start, the key is dimmed and never taken
 out, and the line says why. Pressing the key hands keyboard focus to the pill, because the key
 gives way.
