@@ -11,7 +11,7 @@ import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import { browserTestRoots, pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
 import { fixtureGit } from "./support/canonical-model.ts";
-import { openAbout, openDiagram, pick, settledOn } from "./support/canonical-page.ts";
+import { openAbout, pick, settledOn } from "./support/canonical-page.ts";
 import { WAIT, drawn, openReader } from "./support/reader-page.ts";
 
 const ROW = (id: string): string => `[data-measure-row="${id}"]`;
@@ -107,7 +107,18 @@ test("a selection reads the history, and the Measures dialog shows every module 
 		"the history on About with no button",
 		WAIT,
 	);
-	await openDiagram(browser);
+	await openMeasures(browser, "interface");
+	await browser.eval(`document.querySelector('${ROW("Shop#Gateway")} button').focus()`);
+	await browser.run(["press", "Enter"]);
+	await pollUntil(
+		() =>
+			browser.eval<{ dialog: boolean; about: boolean; focus: string | null }>(
+				`({ dialog: document.querySelector('${DIALOG}') !== null, about: document.querySelector('[data-slot="model-about"]') !== null, focus: document.activeElement?.getAttribute('data-slot') })`,
+			),
+		(state) => !state.dialog && !state.about && state.focus === "model-diagram",
+		"the chosen module on its picture after leaving About",
+		WAIT,
+	);
 	await pick(browser, "Shop#Worker");
 	await pick(browser, "Shop#Gateway");
 	expect(await reads(browser)).toBe(1);

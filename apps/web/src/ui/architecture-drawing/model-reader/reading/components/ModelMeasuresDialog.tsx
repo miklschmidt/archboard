@@ -99,12 +99,14 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 	const [together, setTogether] = useState(TOGETHER_VIEW);
 	const chosen = useRef<Choice | null>(null);
 	const { findModule } = reader.choices;
+	const { onDiagram } = reader;
 	const choose = useCallback(
 		(id: string, beside: boolean): void => {
 			chosen.current = { id, beside };
+			if (!beside) onDiagram();
 			onOpenChange(false);
 		},
-		[onOpenChange],
+		[onDiagram, onOpenChange],
 	);
 	// Base UI asks where the focus goes after the dialog has gone, so the choice stays until the
 	// dialog opens again, and the focus stays on the picture that the choice moved it to.
