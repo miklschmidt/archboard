@@ -3,7 +3,7 @@
 // What is guarded: a dark orb waits in the key while one is on the page, and a lit one never falls
 // back to it; the newest key is the home's, and the one before it is the home's again once it goes;
 // a press of Narrate launches the next orb that is lit out of the key, lit from the start of its
-// flight, and the launch is cut when motion is not wanted, spent with that lighting and lost with
+// flight, to the box or, with subtitles off, the dock, and the launch is cut when motion is not wanted, spent with that lighting and lost with
 // its key, so voice started by Talk is lit where it is wanted; as voice ends in the box the orb
 // flies home to the key while it is lit, stays lit in the air if voice is off before it lands, and
 // fades in the key's seat; and while the page is fullscreen a launch
@@ -79,6 +79,21 @@ test("a press of Narrate launches the orb voice lights out of the key, lit from 
 	stage.wish({ home: "box", shown: true, fly: true });
 	expect(whereIs(stage)).toBe("box");
 	expect(frames.pending).toBe(0);
+});
+
+test("with subtitles off a launch flies out of the key to the dock", () => {
+	const { stage, frames, dock } = homes();
+	stage.offer("dock", homed(dock, "dock"));
+	const key = narrateKey();
+	stage.offer("narrate", key);
+	stage.launch();
+	stage.wish({ home: "dock", shown: true, fly: true });
+	frames.step(0);
+	expect(inTheAir(stage)).toEqual({ x: 900, y: 650 });
+	frames.step(VOICE_MS.flight);
+	expect(whereIs(stage)).toBe("dock");
+	expect(stage.holder.dataset["shown"]).toBe("true");
+	expect(key.hasAttribute("data-occupied")).toBe(false);
 });
 
 test("a launch is cut when motion is not wanted, and is lost when its key goes", () => {
