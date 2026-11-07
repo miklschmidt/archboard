@@ -1,9 +1,8 @@
 ---
 name: archboard-pr
 description: >-
-  Write or update a PR body when architecture lives in this repository's
-  .archboard/vault or another repository's vault. Load with other PR-body
-  skills for proposal evidence, architecture pictures, and merge risk.
+  Help agents and humans understand architectural changes and choose meaningful
+  PR boundaries. Use when creating PRs, updating PRs, or writing PR bodies.
 ---
 
 # Explain a pull request
