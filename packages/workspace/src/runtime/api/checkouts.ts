@@ -2,14 +2,11 @@
 export { checkoutHead, inspectCheckout, repoIdentityAt, repoRootOf } from "#runtime/clients/git.ts";
 export { gitCheckoutOfVault } from "#runtime/clients/git-sync.ts";
 export {
-	checkoutServers,
-	configureCommand,
-	ConfiguredServerSchema,
 	LanguageServersSchema,
+	passServers,
 	readServers,
 	setServer,
 } from "#runtime/store/language-servers.ts";
-export type { ServerChoice, ServerFile, ServerScope } from "#runtime/store/language-servers.ts";
 export { registryPath, RepoRegistryError } from "#runtime/store/registry-file.ts";
 export type { RegisteredRepo } from "#runtime/store/registry-file.ts";
 export {

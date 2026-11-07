@@ -215,39 +215,19 @@ function setServer(
 }
 
 /**
- * A word as a shell reads it: as it stands when it has only characters a shell
- * leaves alone, and in single quotes otherwise.
- * @param word The word.
- * @returns The word, quoted when it needs it.
+ * The servers of one pass of the code check. It reads the global file at once,
+ * and the file of a checkout the first time that the pass asks about that
+ * checkout, so a change of a file during the pass applies to the next pass.
+ * @returns What the files say about a language in a checkout.
  */
-function shellWord(word: string): string {
-	return /^[\w@%+=:,./-]+$/u.test(word) ? word : `'${word.replaceAll("'", "'\\''")}'`;
+function passServers(): (root: string, language: ConfigurableLanguage) => ServerChoice {
+	const global = readServers("global");
+	const checkouts = new Map<string, ReturnType<typeof checkoutServers>>();
+	return (root, language) => {
+		const servers = checkouts.get(root) ?? checkoutServers(root, global);
+		checkouts.set(root, servers);
+		return servers(language);
+	};
 }
 
-/**
- * The command that sets the server of a language for a repository, as a
- * person types it. `<command>` is the program that the agent chooses. A
- * repository identity can hold a space when a checkout has no remote and is
- * named by its directory, so it is quoted for a shell.
- * @param language The language.
- * @param repo The repository identity, when the command must name it.
- * @returns The command.
- */
-function configureCommand(language: ConfigurableLanguage, repo?: string): string {
-	const checkout = repo === undefined ? "" : ` --repo ${shellWord(repo)}`;
-	return `archboard repo language-server ${language} <command>${checkout}`;
-}
-
-export {
-	type ConfiguredServer,
-	type LanguageServers,
-	type ServerChoice,
-	type ServerFile,
-	type ServerScope,
-	ConfiguredServerSchema,
-	LanguageServersSchema,
-	checkoutServers,
-	configureCommand,
-	readServers,
-	setServer,
-};
+export { LanguageServersSchema, passServers, readServers, setServer };

@@ -28,7 +28,7 @@ import path from "node:path";
 import { z } from "zod";
 import type { Language } from "#runtime/language-servers/operations/languages.ts";
 import type { ServerTypescript } from "#shared/protocol/code-check.ts";
-import type { ServerChoice } from "@archboard/workspace/checkouts";
+import type { passServers } from "@archboard/workspace/checkouts";
 import { installation } from "@archboard/workspace/installation";
 
 /** The server one language uses in a checkout, or why it has none. */
@@ -42,6 +42,9 @@ type LanguageServer =
 			readonly typescript?: ServerTypescript;
 	  }
 	| { readonly status: "missing"; readonly detail: string };
+
+/** What the language server files of a checkout say about one language. */
+type ServerChoice = ReturnType<ReturnType<typeof passServers>>;
 
 /** The first TypeScript that is a language server, with `tsc --lsp --stdio`. */
 const FIRST_NATIVE_TYPESCRIPT = 7;

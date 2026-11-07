@@ -6,16 +6,14 @@ import {
 	listRegistry,
 	readServers,
 	setServer,
-	ConfiguredServerSchema,
 	LanguageServersSchema,
-	type ServerFile,
 } from "@archboard/workspace/checkouts";
 import {
 	CliUsageError,
 	defineCommand,
 	type CommandContext,
 } from "#cli/contract/protocol/contract.ts";
-import { commandLine } from "#cli/commands/repo/rules/command-line.ts";
+import { commandLine, type NamedServer } from "#cli/commands/repo/rules/command-line.ts";
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
 
 const tail = z.array(z.string()).default([]);
@@ -167,7 +165,7 @@ const repoLanguageServerContract = defineCommand({
 /** A change that a call asks for: the language, and its server or none. */
 interface RequestedChange {
 	readonly language: NonNullable<RepoLanguageServerInput["language"]>;
-	readonly server: z.infer<typeof ConfiguredServerSchema> | undefined;
+	readonly server: NamedServer | undefined;
 }
 
 /**
@@ -213,10 +211,7 @@ function changeOf(
  * @returns The command as typed and its arguments.
  * @throws {CliUsageError} When the call gives no command.
  */
-function requestedServer(
-	language: string,
-	input: RepoLanguageServerInput,
-): z.infer<typeof ConfiguredServerSchema> {
+function requestedServer(language: string, input: RepoLanguageServerInput): NamedServer {
 	if (input.command === undefined) {
 		throw new CliUsageError(
 			`repo language-server ${language} needs the command that starts the server, or --remove`,
@@ -322,7 +317,7 @@ function storedCommand(
  */
 function changeNote(
 	language: string,
-	server: z.infer<typeof ConfiguredServerSchema> | undefined,
+	server: NamedServer | undefined,
 	file: string,
 	scope: "repository" | "global",
 	target: TargetCheckout | undefined,
@@ -340,7 +335,7 @@ function changeNote(
  * @param read What the file says.
  * @returns The file, its servers, and its problem when it cannot be read.
  */
-function fileResult(read: ServerFile): z.infer<typeof ServerFileResultSchema> {
+function fileResult(read: ReturnType<typeof readServers>): z.infer<typeof ServerFileResultSchema> {
 	return "problem" in read
 		? { file: read.file, servers: {}, problem: read.problem }
 		: { file: read.file, servers: read.servers };

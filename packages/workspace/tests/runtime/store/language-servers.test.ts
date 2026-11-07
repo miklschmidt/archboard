@@ -16,7 +16,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { checkoutServers, readServers, setServer } from "#runtime/store/language-servers.ts";
+import { passServers, setServer } from "#runtime/store/language-servers.ts";
 
 const caller = process.env["ARCHBOARD_REPOS"];
 let scratch = "";
@@ -54,18 +54,18 @@ test("the repository file wins for each language it names, the global file fills
 		globalFile,
 		JSON.stringify({ c: { command: "/opt/clangd" }, go: { command: "gopls", args: ["serve"] } }),
 	);
-	const servers = checkoutServers(root, readServers("global"));
-	expect(servers("rust")).toEqual({
+	const servers = passServers();
+	expect(servers(root, "rust")).toEqual({
 		command: join(root, "scripts", "rust-analyzer"),
 		args: [],
 		file: repositoryFile,
 	});
-	expect(servers("c")).toEqual({ command: "clangd", args: [], file: repositoryFile });
-	expect(servers("go")).toEqual({ command: "gopls", args: ["serve"], file: globalFile });
-	expect(servers("python")).toBeUndefined();
+	expect(servers(root, "c")).toEqual({ command: "clangd", args: [], file: repositoryFile });
+	expect(servers(root, "go")).toEqual({ command: "gopls", args: ["serve"], file: globalFile });
+	expect(servers(root, "python")).toBeUndefined();
 	rmSync(repositoryFile);
 	rmSync(globalFile);
-	expect(checkoutServers(root, readServers("global"))("c")).toBeUndefined();
+	expect(passServers()(root, "c")).toBeUndefined();
 });
 
 test.each([
@@ -76,18 +76,18 @@ test.each([
 ])("a repository file with %s decides every language with its problem", (_, text) => {
 	writeFileSync(repositoryFile, text);
 	writeFileSync(globalFile, JSON.stringify({ go: { command: "gopls" } }));
-	const servers = checkoutServers(root, readServers("global"));
+	const servers = passServers();
 	for (const language of ["c", "go", "typescript"] as const) {
-		expect(servers(language)).toEqual({ problem: expect.stringContaining(repositoryFile) });
+		expect(servers(root, language)).toEqual({ problem: expect.stringContaining(repositoryFile) });
 	}
 });
 
 test("a global file that cannot be read decides each language that the repository file leaves out, and a relative command is one it cannot hold", () => {
 	writeFileSync(repositoryFile, JSON.stringify({ c: { command: "clangd" } }));
 	writeFileSync(globalFile, JSON.stringify({ go: { command: "bin/gopls" } }));
-	const servers = checkoutServers(root, readServers("global"));
-	expect(servers("c")).toMatchObject({ command: "clangd" });
-	expect(servers("go")).toEqual({ problem: expect.stringContaining(globalFile) });
+	const servers = passServers();
+	expect(servers(root, "c")).toMatchObject({ command: "clangd" });
+	expect(servers(root, "go")).toEqual({ problem: expect.stringContaining(globalFile) });
 });
 
 test("setting a server keeps the file in language order without empty arguments, removing the last one deletes the file, and a file that cannot be read is never overwritten", () => {

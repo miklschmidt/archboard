@@ -41,6 +41,7 @@ import type { Checkout, ReadCheckout } from "#runtime/code-check/operations/chec
 import { codeSiteOf } from "#runtime/code-facts/operations/definition-site.ts";
 import { type Definition, type Reference } from "#runtime/code-facts/operations/facts.ts";
 import { type FactsPass } from "#runtime/code-facts/services/reader.ts";
+import type { Language } from "#runtime/language-servers/operations/languages.ts";
 import { languageServerOf } from "#runtime/language-servers/operations/server-command.ts";
 import {
 	openLanguageServers,
@@ -49,7 +50,7 @@ import {
 	type UnavailableServer,
 } from "#runtime/language-servers/services/session.ts";
 import type { CheckTiming, CodeCheckSkip } from "#shared/protocol/code-check.ts";
-import { checkoutServers, configureCommand, readServers } from "@archboard/workspace/checkouts";
+import { passServers } from "@archboard/workspace/checkouts";
 
 /** Where a server says a use is defined, as the pass reads the checkout. */
 type UseResolution =
@@ -173,6 +174,30 @@ interface PassResolution {
 }
 
 /**
+ * A word as a shell reads it: as it stands when it has only characters a shell
+ * leaves alone, and in single quotes otherwise.
+ * @param word The word.
+ * @returns The word, quoted when it needs it.
+ */
+function shellWord(word: string): string {
+	return /^[\w@%+=:,./-]+$/u.test(word) ? word : `'${word.replaceAll("'", "'\\''")}'`;
+}
+
+/**
+ * The command that names the server of a language for a repository, as a
+ * person types it. `<command>` is the program that the agent chooses. A
+ * repository identity can hold a space when a checkout has no remote and is
+ * named by its directory, so it is quoted for a shell.
+ * @param language The language.
+ * @param repo The repository identity, when the command must name it.
+ * @returns The command.
+ */
+function configureCommand(language: Language, repo?: string): string {
+	const checkout = repo === undefined ? "" : ` --repo ${shellWord(repo)}`;
+	return `archboard repo language-server ${language} <command>${checkout}`;
+}
+
+/**
  * The skips of what the servers could not answer.
  * @param unavailable Each language and why.
  * @param checkouts Each repository's checkout, to name the repository of a root.
@@ -203,9 +228,8 @@ function serverSkips(
 }
 
 /**
- * Open the resolution of one pass. It reads the global language server file
- * once, and the file of each checkout it reads once, so a change during the
- * pass applies to the next one.
+ * Open the resolution of one pass. It reads each language server file once
+ * (`passServers`), so a change during the pass applies to the next one.
  * @param signal The pass's signal.
  * @param facts The pass's code facts, which say whether a site declares or defines.
  * @param checkouts Each repository's checkout, which says where its servers run.
@@ -219,18 +243,10 @@ function openResolution(
 	checkouts: ReadonlyMap<string, Checkout>,
 	serverOf?: ServerOf,
 ): PassResolution {
-	const global = readServers("global");
-	const byRoot = new Map(
-		[...checkouts.values()].flatMap((checkout) =>
-			checkout.status === "read"
-				? [[checkout.root, checkoutServers(checkout.root, global)] as const]
-				: [],
-		),
-	);
+	const named = passServers();
 	const session = openLanguageServers({
 		servers:
-			serverOf ??
-			((language, root) => languageServerOf(language, root, byRoot.get(root)?.(language))),
+			serverOf ?? ((language, root) => languageServerOf(language, root, named(root, language))),
 		signal,
 	});
 	return {
