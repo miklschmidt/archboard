@@ -176,8 +176,9 @@ Tell the owner. Prepare the adoption in a PR of the vault's repository, link eac
 If the default branch adopted another proposal first, the proposal follows a former current state and the adoption refuses with `PROPOSAL_SUPERSEDED`.
 Do not force the adoption, because a forced adoption installs the proposal's complete state and undoes the other adoption.
 Create a new proposal on the current state with the same name, summary, documents and changes.
-Before you adopt it, compare it with the current state through `model compare`.
-If one of its changes undoes or conflicts with a change of the other adoption, tell the owner, and adopt only after the owner decides.
+Before you adopt it, find what the other adoption changed: `model compare --state <current-id> --against <original-predecessor-id>`.
+Then compare the original with that same predecessor. A subject that both comparisons change is a conflict.
+If the copy would undo or conflict with a change of the other adoption, tell the owner, and adopt only after the owner decides.
 After the adoption, shelve the original with a reason that names the copy.
 
 If a draft describes code that the default branch already holds, tell the owner. If the owner agrees, adopt it in the PR that you prepare.
