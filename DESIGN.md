@@ -135,6 +135,16 @@ components:
     backgroundColor: "{colors.well-floor}"
     textColor: "{colors.ink-graphite}"
     rounded: "{rounded.panel}"
+  column-section-head:
+    backgroundColor: "{colors.well-floor}"
+    textColor: "{colors.muted-ink}"
+    typography: "{typography.body}"
+    height: "28px"
+  history-current:
+    backgroundColor: "{colors.control-face}"
+    textColor: "{colors.ink-graphite}"
+    rounded: "{rounded.panel}"
+    padding: "12px"
   count-badge:
     backgroundColor: "{colors.slab-face}"
     textColor: "{colors.ink-graphite}"
@@ -299,16 +309,17 @@ paths, versions, counts and times.
 
 ## Layout
 
-The shell puts columns around the picture. The left column (448px) lists where to
-go, and the agent dock is at its foot. Its width comes from what it holds: five tabs with
-three-digit counts need 445px on one row. The panes are in the centre, one or two side
+The shell puts columns around the picture. The left column (280px) lists where to
+go, and the agent dock is at its foot. It is a sidebar of the usual width, as wide as the
+sidebar beside a picture, because History and Measures open in dialogs of their own and a
+list needs no more room. The panes are in the centre, one or two side
 by side. The conversation opens between the column and the panes: it slides
 in and out, and a handle on its edge, a grip on a line that takes the gold while
 it is dragged, resizes it between 320px and 720px, or drags it shut below that.
 Every Diagram reading of the canonical reader has a right panel beside its picture
 (360px, or 46 percent of a narrow pane), in every pane, and the picture fits the room
 that it leaves. A selection never refits the picture. A retained legacy board recording keeps a sidebar (280px). Every
-column starts with a chrome row (40px), and the left column has Find and the repository switcher, each 32px high. A pane's header stands
+column starts with a chrome row (40px), and the left column has Find, the repository switcher and the keys of History and Measures, each 32px high. A pane's header stands
 on a whole-pixel grid: 16px lines and icons, 32px crumbs and text trimmed to its
 cap height, so its parts sit on one line at any display scale. A row of a list
 is at least 28px high. Panels have 16px of padding. The shell has no narrow or
@@ -512,7 +523,7 @@ A row of a popover is at least 28px high. A tone of the ink marks the row under 
 
 ### Number badges
 
-A count of the left column stands on a low slab: `Badge` with the `count` variant and the `technical` size. It is 16px high on a front edge 2px thick, with 2px corners and the number in mono, because a small part of the picture is built the same way. On a chosen tab, which is itself a raised face, the count sits in a well cut into the face instead: Tray Sink with `shadow-well`. The badge has no border, so its glint or its lip lies on its edge, and the number stands in the middle of the face below the glint or of the floor above the lip. The counts of the tabs, the steps of a walkthrough and the checkouts of a repository all use it. A number that reads as part of a table, such as a count of `Measures`, stays bare in its column.
+A count of the left column stands on a low slab: `Badge` with the `count` variant and the `technical` size. It is 16px high on a front edge 2px thick, with 2px corners and the number in mono, because a small part of the picture is built the same way. On a chosen tab, which is itself a raised face, the count sits in a well cut into the face instead: Tray Sink with `shadow-well`. The badge has no border, so its glint or its lip lies on its edge, and the number stands in the middle of the face below the glint or of the floor above the lip. The counts of the column's section heads, the steps of a walkthrough and the checkouts of a repository all use it. A number that reads as part of a table, such as a count of `Measures`, stays bare in its column.
 
 ### Chips
 
@@ -527,7 +538,9 @@ The words of a chip keep APCA Lc 60: white on the chalk orange, near black on th
 
 - **Style:** the list lies in a well cut into the chrome, as a container is cut into the picture: the Well Floor, one thin line round it, an inner shadow from the whole of its top edge and a lit lip along its foot. The `column-well` utility holds the recipe. Nothing in the column is divided by a rule. A row is 28px at least, and a model or folder row 36px. Rails and elbows draw its levels. The chosen row rises out of the well as a Control Face with `shadow-raised`, and a row under the pointer takes Control Face at 50%. The row of what is open has a 2px line of Wayfinding Gold inside its foot, and a row that is both takes `shadow-chosen`. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
 
-The left column's destinations stand in a trough over the well of the list, as the tabs of the site do. The trough is the Well Floor with `shadow-trough`, 6px corners, 3px of padding and a 2px gap. It keeps 8px of room at each side and below it. Each tab is 28px high, in Control and muted ink, with 4px corners and 8px of room at each side. A tab under the pointer takes full ink. The open tab rises out of the trough as a Control Face in full ink with `shadow-chosen`. That is the raised shadow with a 2px underline of Wayfinding Gold inside its foot. The `trough` variant of `Tabs.List` draws all of it. On a proposal, `Changes` joins the row and the tabs drop their counts to make room. A pane's own tabs keep their underline of Wayfinding Gold.
+The left column has no tabs. Two quiet keys stand over the well, side by side and as wide as the room: `History` and `Measures`, each with its icon in muted ink. Each opens its dialog, and stays pressed in while the dialog is open. A migration candidate keeps no record, so it has `Measures` alone. A reading that failed has `History` alone, and no list.
+
+The well holds one list that scrolls, with a section for each thing the model lists: `Modules`, `Flows` and `Walkthroughs`, in that order. A proposal read against its base puts `Changes` first. A section with nothing to list is left out. The head of a section is one row of 28px on the Well Floor: a chevron, the name in Body semibold and muted ink, and the count of the whole model on a count badge at its end. It stays at the top of the well while the rows of its section scroll under it, and the next head pushes it away. A click on the head folds the section, and the chevron turns. What sticks inside a section, the open rows of the tree and the name of a group of flows or changes, sticks under the head (`--stuck-top`). The name of such a group is Body at weight 500 in muted ink on the Well Floor, with no rule round it. A pane's own tabs keep their underline of Wayfinding Gold.
 
 ### Content selector
 
@@ -625,7 +638,7 @@ filter took off the picture keeps its tag, dimmed and held.
 
 ### Change list
 
-A proposal read against its base adds `Changes` to the left column. Its interface changes
+A proposal read against its base puts a `Changes` section at the top of the left column's list. Its interface changes
 stand first, over a thin rule, because an interface change costs every caller. Each module
 reads once, as one row: its name, one line for each thing that moved, such as `Callers gained`
 with the parts it names, then the counts that differ as before and after, with the numbers in
@@ -636,15 +649,17 @@ on the drawing of the comparison. These rows wear no standing mark, score or war
 With no interface change, one quiet line in place of the rows says so. The change list follows
 under the rule, with a section for each owner. `N` and `P` walk only that list.
 
-### History timeline
+### History dialog
 
-The History tab reads as a timeline of the model's states. Each state is a row with a node on a rail at its left. The rail is a 2px line in the Rule tone. Each row draws its own piece. The pieces of one section join into one line from the first node to the last.
+`History` opens a dialog, 768px wide at most, from its key in the left column or from the state chip of a pane's header. It is drawn after the site's history. Its rows are read while it is open. A choice of a state, of a saved reading or of `Compare` closes the dialog and reads that choice in the pane.
+
+The current state stands first, on a card: a Control Face with 6px corners, 12px of padding, `shadow-raised` and a ring of Gold Mark at 35%. Every other state stands under it as a node on one rail: the proposals, then the states that were current, then the shelved ones. The rail is a 2px line in the Rule tone, from the first node to the last.
 
 A node is the node that the About page draws. The current state is solid Gold Mark with a halo of the same gold at 18%. A proposal is a ring in Changed Orange. A state that was current is a ring in muted ink, and a shelved state is a fainter ring. A hollow node takes the floor that it lies on.
 
-The first line of a row holds the lifecycle word in Body semibold and the state's name in Control semibold. The date stands at the end in mono. The word is Proposal, Current, Earlier or Shelved, and Unavailable when the record cannot name the state. It is accent text for the current state and muted ink for the others. Under the first line, up to two lines in Body Ink say why the state came to stand there, or what a proposal does. A shelved state says it in muted ink. The facts of the row follow in mono.
+The first line of a state holds the lifecycle word in Body semibold, the state's name in Title and the date at the end in mono. The word is Proposal, Current, Earlier or Shelved, and Unavailable when the record cannot name the state. It is accent text for the current state and muted ink for the others. Under the first line, Control at weight 400 in Body Ink says why the state came to stand there, or what a proposal does. A shelved state says it in muted ink. What tells a draft from the drafts that share its name follows in mono. The state that the pane reads says `On screen` in accent text after its name, and a state on the rail then rises as a Control Face with `shadow-raised`. A state under the pointer takes Control Face at 50%.
 
-The row that the reading is on rises as a Control Face with `shadow-raised` and a ring of Gold Mark at 35%. A row under the pointer takes Control Face at 50%. A saved checkpoint under a state is a plain row. It shows its time in mono over what was being done. `Compare` stands at its end while the checkpoint is not on screen.
+A state that saved readings has a quiet chip under its words: a chevron, how many and when the last one was saved, in mono on Tray Sink with `shadow-well`. The chip folds them. A saved reading is a row of its time in mono and what was being done in muted ink, and `Compare` stands at its end as an extra-small quiet key. The reading on screen says `On screen` there, and the base of the comparison says `Compared`.
 
 ### Claim card
 
