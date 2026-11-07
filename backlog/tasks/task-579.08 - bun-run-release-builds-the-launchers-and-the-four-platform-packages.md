@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-05T14:59:00Z'
-updated_date: '2026-11-05T17:06:00Z'
+updated_date: '2026-11-07T04:28:00Z'
 labels: []
 dependencies:
   - TASK-579.02
@@ -19,7 +19,7 @@ references:
   - scripts/build-core.ts
   - scripts/pack-codex-realtime-voice.ts
 documentation:
-  - docs/adr/0075-a-release-is-a-compiled-executable-for-each-platform-on-npm.md
+  - docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md
   - docs/agents/releasing.md
 parent_task_id: TASK-579
 type: task
@@ -29,7 +29,7 @@ ordinal: 1029000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-The packages of ADR 0075 must come from one reproducible command that CI and a maintainer run the same way.
+The packages of ADR 0076 must come from one reproducible command that CI and a maintainer run the same way.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

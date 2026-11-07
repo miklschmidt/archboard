@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-05T14:58:00Z'
-updated_date: '2026-11-05T15:45:00Z'
+updated_date: '2026-11-07T04:28:00Z'
 labels: []
 dependencies:
   - TASK-579.01
@@ -14,7 +14,7 @@ references:
   - packages/server-lifecycle/src/runtime/operations/restart.ts
   - apps/cli/src/cli/operations/server/status.ts
 documentation:
-  - docs/adr/0075-a-release-is-a-compiled-executable-for-each-platform-on-npm.md
+  - docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md
 parent_task_id: TASK-579
 type: task
 ordinal: 1024000
@@ -23,7 +23,7 @@ ordinal: 1024000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-A release never changes on disk except by an install, and npm normalizes file times, so the module-time staleness check says nothing after an upgrade. ADR 0075 decides a warning that names `archboard restart`, not a refusal.
+A release never changes on disk except by an install, and npm normalizes file times, so the module-time staleness check says nothing after an upgrade. ADR 0076 decides a warning that names `archboard restart`, not a refusal.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

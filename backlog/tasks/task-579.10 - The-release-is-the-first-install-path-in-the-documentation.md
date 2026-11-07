@@ -4,7 +4,7 @@ title: The release is the first install path in the documentation
 status: Done
 assignee: []
 created_date: '2026-11-05T14:59:00Z'
-updated_date: '2026-11-05T16:36:00Z'
+updated_date: '2026-11-07T04:28:00Z'
 labels: []
 dependencies:
   - TASK-579.09
@@ -13,7 +13,7 @@ references:
   - README.md
   - site/src/components/QuickStart.astro
 documentation:
-  - docs/adr/0075-a-release-is-a-compiled-executable-for-each-platform-on-npm.md
+  - docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md
 parent_task_id: TASK-579
 type: docs
 ordinal: 1031000

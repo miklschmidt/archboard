@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-05T15:40:00Z'
-updated_date: '2026-11-05T16:03:00Z'
+updated_date: '2026-11-07T04:28:00Z'
 labels: []
 dependencies: []
 references:
@@ -22,7 +22,7 @@ ordinal: 1034000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-TypeScript before 7 has no `tsc --lsp`. After TASK-579.12 such a checkout gets Archboard's own TypeScript 7 in a checkout of Archboard, which can disagree with the repository's compiler, and nothing in a release, which ships no TypeScript (ADR 0075). Many of these repositories, or the machines that work on them, already install typescript-language-server, the LSP wrapper around tsserver. Measured with typescript-language-server 5.1.3 and TypeScript 5.9.3: it answers only about an open file, and until its semantic server loads the project, its syntax server answers a definition with the import line instead of the declaration.
+TypeScript before 7 has no `tsc --lsp`. After TASK-579.12 such a checkout gets Archboard's own TypeScript 7 in a checkout of Archboard, which can disagree with the repository's compiler, and nothing in a release, which ships no TypeScript (ADR 0076). Many of these repositories, or the machines that work on them, already install typescript-language-server, the LSP wrapper around tsserver. Measured with typescript-language-server 5.1.3 and TypeScript 5.9.3: it answers only about an open file, and until its semantic server loads the project, its syntax server answers a definition with the import line instead of the declaration.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

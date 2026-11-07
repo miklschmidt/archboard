@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-05T15:15:00Z'
-updated_date: '2026-11-06T02:56:00Z'
+updated_date: '2026-11-07T04:28:00Z'
 labels: []
 dependencies: []
 references:
@@ -13,7 +13,7 @@ references:
   - package.json
   - scripts/pack-codex-realtime-voice.ts
 documentation:
-  - docs/adr/0075-a-release-is-a-compiled-executable-for-each-platform-on-npm.md
+  - docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md
 parent_task_id: TASK-579
 type: task
 ordinal: 1032000

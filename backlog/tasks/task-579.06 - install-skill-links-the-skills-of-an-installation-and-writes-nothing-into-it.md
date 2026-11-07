@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-05T14:58:00Z'
-updated_date: '2026-11-05T15:33:00Z'
+updated_date: '2026-11-07T04:28:00Z'
 labels: []
 dependencies:
   - TASK-579.01
@@ -13,7 +13,7 @@ references:
   - apps/cli/src/cli/operations/install-skill/install-skill.ts
   - packages/skills/src/runtime/operations/distribution/prepare.ts
 documentation:
-  - docs/adr/0075-a-release-is-a-compiled-executable-for-each-platform-on-npm.md
+  - docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md
 parent_task_id: TASK-579
 type: task
 ordinal: 1027000

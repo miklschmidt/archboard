@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-06T03:10:00Z'
-updated_date: '2026-11-06T03:38:00Z'
+updated_date: '2026-11-07T04:28:00Z'
 labels: []
 dependencies: []
 references:
@@ -17,7 +17,7 @@ references:
   - packages/skills/src/runtime/operations/distribution/prepare.ts
   - apps/cli/src/cli/operations/install-skill/repo-setup.ts
 documentation:
-  - docs/adr/0075-a-release-is-a-compiled-executable-for-each-platform-on-npm.md
+  - docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md
 parent_task_id: TASK-579
 ordinal: 1035000
 ---
@@ -48,7 +48,7 @@ The owner decided on 2026-11-06 that the README, the site and INSTALL.md install
 
 4. Skill text: SKILL.md tells the agent to run model init when the checkout has no vault. references/schemas.md points at model schema. INSTALL.md links go to GitHub main. skill-links.test.ts checks links against tracked files only.
 
-5. Docs: README, site QuickStart and FAQ, INSTALL.md section 3, ADR 0075, boundaries.md, TESTING.md.
+5. Docs: README, site QuickStart and FAQ, INSTALL.md section 3, ADR 0076, boundaries.md, TESTING.md.
 
 6. Verify: targeted tests, a git archive copy with a link check and the schema command, skills add --list, model init and model read on a scratch server, then the bun run check lanes.
 <!-- SECTION:PLAN:END -->
@@ -68,7 +68,7 @@ Evidence. AC1: apps/cli/tests/cli/operations/model/schema.test.ts, test "the CLI
 
 AC2: tests/system/repository-policy/skill-links.test.ts resolves links against the tracked files of each skill. It failed on the two references/generated/INSTALL.md links before the text change. By hand: an archive of HEAD in a scratch tree, and a separate link script over skills/archboard (7 documents, 20 relative links, 0 dead) and skills/archboard-pr (8, 12, 0). The same script over the archive of 7c991f551 finds the 2 dead links. skills 1.7.4 add of the tree with --list finds archboard and archboard-pr. A project-level skills add --copy into a scratch directory gives a copy identical to the tracked tree, with 0 dead links.
 
-AC3: tests/system/cli/install-targets.test.ts, test "model init in a checkout without a vault makes the vault that install-skill makes, and registers the checkout" (same vault files and config.yaml bytes as install-skill, model.json name, one signed checkpoint, repo list names the checkout). By hand in a scratch repository on a scratch server (port 18765, scratch ARCHBOARD_REPOS and XDG_STATE_HOME): model read refused with VAULT_NOT_FOUND that names model init; model init from src/ exited 0, made .archboard/vault/model.json and .archboard/config.yaml, and registered the checkout; model read then exited 0 with the manifest and vault origin working-directory; a retry returned the same checkpoint through the server. The server was stopped. AC4: skills/archboard/SKILL.md section Discover the model, references/setup.md step 4, references/schemas.md. AC5: README.md, site QuickStart.astro and Faq.astro, INSTALL.md section 3 with its install-skill subsection and options table, ADR 0075.
+AC3: tests/system/cli/install-targets.test.ts, test "model init in a checkout without a vault makes the vault that install-skill makes, and registers the checkout" (same vault files and config.yaml bytes as install-skill, model.json name, one signed checkpoint, repo list names the checkout). By hand in a scratch repository on a scratch server (port 18765, scratch ARCHBOARD_REPOS and XDG_STATE_HOME): model read refused with VAULT_NOT_FOUND that names model init; model init from src/ exited 0, made .archboard/vault/model.json and .archboard/config.yaml, and registered the checkout; model read then exited 0 with the manifest and vault origin working-directory; a retry returned the same checkpoint through the server. The server was stopped. AC4: skills/archboard/SKILL.md section Discover the model, references/setup.md step 4, references/schemas.md. AC5: README.md, site QuickStart.astro and Faq.astro, INSTALL.md section 3 with its install-skill subsection and options table, ADR 0076.
 
 Gate: bun run check stopped at format:core, because cargo in a nested worktree finds the parent workspace. No Rust file changed. Lanes run one by one inside nix develop: lint:all 0, format:check 0, test:first 0 (types, frontend, workbench-example, test:core, test:repository 163 pass), test:modules 0 (4924 pass), test:system 0 (238 pass), test:solo 0 (15 pass), test:serial-browser 0. bun scripts/evaluate-skill.ts check: suite ok.
 <!-- SECTION:NOTES:END -->
