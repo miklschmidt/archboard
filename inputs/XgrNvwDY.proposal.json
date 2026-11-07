@@ -1049,31 +1049,6 @@
     },
     {
       "type": "add",
-      "subject": "vKEsyHFk#ezZAyT0C",
-      "kind": "relationship",
-      "value": {
-        "order": 1000,
-        "kind": "dependency",
-        "label": "the frontend directory it serves",
-        "emphasis": "normal",
-        "anchor": {
-          "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/server/src/server/http/frontend/store/frontend-directory.ts",
-          "symbol": "installation"
-        },
-        "id": "vKEsyHFk#ezZAyT0C",
-        "to": "vKEsyHFk#4FdKQJqK"
-      }
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk#ezZAyT0C",
-      "placement": {
-        "holder": "vKEsyHFk/6E6hL0Zk#nU6dNHBE"
-      }
-    },
-    {
-      "type": "add",
       "subject": "vKEsyHFk#6umALxwj",
       "kind": "relationship",
       "value": {
@@ -1605,6 +1580,7 @@
   ],
   "retiredIds": [
     "vKEsyHFk/vKEsyHFk#mm4DLsd2",
-    "vKEsyHFk#8EhrdPUE"
+    "vKEsyHFk#8EhrdPUE",
+    "vKEsyHFk#ezZAyT0C"
   ]
 }
