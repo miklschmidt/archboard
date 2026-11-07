@@ -1,6 +1,7 @@
 // The owner of where to look across the model: a selection reads the code history with no button,
-// and one list holds every module with its counts, sorts by each measure, and selects a module on
-// its picture, from the keyboard too.
+// and the Measures dialog shows each of its views from its selector. A table holds every module
+// with its counts, sorts from its column heads and selects a module on its picture, from the
+// keyboard too, and the findings walk one at a time and select each subject.
 
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -10,16 +11,39 @@ import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import { browserTestRoots, pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
 import { fixtureGit } from "./support/canonical-model.ts";
-import {
-	openAbout,
-	openDestination,
-	openDiagram,
-	pick,
-	settledOn,
-} from "./support/canonical-page.ts";
+import { openAbout, openDiagram, pick, settledOn } from "./support/canonical-page.ts";
 import { WAIT, drawn, openReader } from "./support/reader-page.ts";
 
 const ROW = (id: string): string => `[data-measure-row="${id}"]`;
+const DIALOG = '[data-slot="model-measures-dialog"]';
+
+/**
+ * Open the Measures dialog on one of its views, from the key in the column.
+ * @param browser The page.
+ * @param view The view.
+ */
+async function openMeasures(
+	browser: AgentBrowserSession,
+	view: "code" | "interface" | "changes",
+): Promise<void> {
+	await browser.run(["click", '[data-slot="model-measures-open"]']);
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('${DIALOG}') !== null`),
+		Boolean,
+		"the Measures dialog",
+		WAIT,
+	);
+	await browser.run(["click", `[data-measures-tab="${view}"]`]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-measures-tab="${view}"]')?.getAttribute('aria-selected') === 'true'`,
+			),
+		Boolean,
+		`the ${view} view`,
+		WAIT,
+	);
+}
 
 /**
  * How many times the page asked for the code history.
@@ -33,7 +57,7 @@ function reads(browser: AgentBrowserSession): Promise<number> {
 }
 
 /**
- * What the list shows.
+ * What the open table shows.
  * @param browser The page.
  * @returns How its history stands, and each row with its sorted count.
  */
@@ -42,7 +66,7 @@ function list(browser: AgentBrowserSession) {
 		history: document.querySelector('[data-slot="model-measures"]')?.getAttribute('data-history') ?? null,
 		rows: [...document.querySelectorAll('[data-measure-row]')].map((row) => [
 			row.getAttribute('data-measure-row'),
-			row.querySelector('[data-slot="model-measure-sorted"]')?.firstChild?.textContent ?? null,
+			row.querySelector('[data-sorted]')?.textContent ?? null,
 		]),
 	})`);
 }
@@ -61,7 +85,7 @@ function commitCode(root: string, times: number): void {
 	}
 }
 
-test("a selection reads the history, and the list shows every module and selects one", async () => {
+test("a selection reads the history, and the Measures dialog shows every module and selects one", async () => {
 	await using resources = new AsyncDisposableStack();
 	const browser = await openReader(resources, "measures", () => undefined);
 	commitCode(join(browserTestRoots().ownerRoot, "measures"), 2);
@@ -88,14 +112,20 @@ test("a selection reads the history, and the list shows every module and selects
 	await pick(browser, "Shop#Gateway");
 	expect(await reads(browser)).toBe(1);
 
-	await openDestination(browser, "measures");
+	await openMeasures(browser, "changes");
 	await pollUntil(
 		() => list(browser),
 		(shown) => shown.history === "read",
-		"the list",
+		"the table",
 		WAIT,
 	);
-	const byCommits = await list(browser);
+	await browser.run(["click", '[data-measure-head="commits"]']);
+	const byCommits = await pollUntil(
+		() => list(browser),
+		(shown) => shown.rows[0]?.[1] === "2",
+		"the table by its commits",
+		WAIT,
+	);
 	expect(byCommits.rows.map(([id]) => id).toSorted()).toEqual([
 		"Shop#Gateway",
 		"Shop#Handler",
@@ -109,21 +139,16 @@ test("a selection reads the history, and the list shows every module and selects
 		),
 	).toBe("unbound");
 
-	await browser.eval(`document.querySelector('[data-slot="model-measure-sort"]').focus()`);
+	await openView(browser, "interface");
+	await browser.eval(`document.querySelector('[data-slot="model-measure-show"]').focus()`);
 	await browser.run(["press", "Enter"]);
 	// A key pressed before the list holds the focus does not reach it.
 	await pollUntil(
 		() => browser.eval<boolean>(`document.activeElement?.closest('[role="listbox"]') != null`),
 		Boolean,
-		"the sort choices",
+		"the choices of what is on show",
 		WAIT,
 	);
-	expect(
-		await browser.eval<boolean>(`(() => {
-			const choices = [...document.querySelectorAll('[data-slot="select-content"] [role="option"]')];
-			return choices.length > 0 && choices.every((choice) => choice.querySelector('[data-slot="select-description"]')?.textContent);
-		})()`),
-	).toBe(true);
 	// Base UI holds the transition off for the first frame of an open popover.
 	await pollUntil(
 		() =>
@@ -135,42 +160,120 @@ test("a selection reads the history, and the list shows every module and selects
 		WAIT,
 	);
 	await browser.run(["press", "ArrowDown"]);
-	await browser.run(["press", "ArrowDown"]);
 	await browser.run(["press", "Enter"]);
 	await pollUntil(
 		() => list(browser),
-		(shown) => shown.rows[0]?.[1] === "0" && shown.rows.at(-1)?.[1] === null,
-		"the list by another measure",
+		(shown) => shown.rows.length === 1 && shown.rows[0]?.[0] === "Shop#Gateway",
+		"only the module with parts",
+		WAIT,
+	);
+	await browser.eval(`document.querySelector('[data-slot="model-measure-show"]').focus()`);
+	await browser.run(["press", "Enter"]);
+	await pollUntil(
+		() => browser.eval<boolean>(`document.activeElement?.closest('[role="listbox"]') != null`),
+		Boolean,
+		"the choices again",
+		WAIT,
+	);
+	await browser.run(["press", "Home"]);
+	await browser.run(["press", "Enter"]);
+	await pollUntil(
+		() => list(browser),
+		(shown) => shown.rows.length === 3,
+		"every module again",
 		WAIT,
 	);
 
-	expect(
-		await browser.eval<{ tabRows: number; columns: number }>(`(() => {
-			const rows = [...document.querySelectorAll('[data-measure-row]')];
-			const right = (row) => row.querySelector('[data-measure="callers"]')?.getBoundingClientRect().right;
-			return {
-				tabRows: new Set([...document.querySelectorAll('[data-destination]')].map((tab) => tab.getBoundingClientRect().top)).size,
-				columns: new Set(rows.map(right).filter((edge) => edge !== undefined)).size,
-			};
-		})()`),
-	).toEqual({ tabRows: 1, columns: 1 });
-
-	await browser.eval(`document.querySelector('${ROW("Shop#Handler")}').focus()`);
+	await browser.eval(`document.querySelector('${ROW("Shop#Gateway")} button').focus()`);
+	await browser.run(["press", "End"]);
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.activeElement?.closest('[data-measure-row]')?.getAttribute('data-measure-row') ?? null`,
+			),
+		(row) => row !== "Shop#Gateway" && row !== null,
+		"the keys to walk the rows",
+		WAIT,
+	);
+	await browser.eval(`document.querySelector('${ROW("Shop#Handler")} button').focus()`);
 	await browser.run(["press", "Enter"]);
 	await settledOn(browser, "Shop#Gateway");
 	await drawn(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id') === 'Shop#Handler' && document.querySelector('${ROW("Shop#Handler")}')?.getAttribute('aria-selected') === 'true'`,
+				`document.querySelector('${DIALOG}') === null && document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id') === 'Shop#Handler' && document.activeElement?.getAttribute('data-slot') === 'model-diagram'`,
 			),
 		Boolean,
-		"the module selected on its picture",
+		"the module selected on its picture, with the keys there",
 		WAIT,
 	);
+	await openMeasures(browser, "interface");
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('${ROW("Shop#Handler")} button')?.getAttribute('aria-current') ?? null`,
+		),
+	).toBe("true");
+	await browser.run(["press", "Escape"]);
 	expect(await reads(browser)).toBe(1);
 	await walkWarnings(browser);
+	await pageFindings(browser);
 });
+
+/**
+ * Choose another view of the open dialog.
+ * @param browser The page.
+ * @param view The view.
+ */
+async function openView(
+	browser: AgentBrowserSession,
+	view: "code" | "interface" | "changes",
+): Promise<void> {
+	await browser.run(["click", `[data-measures-tab="${view}"]`]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-measures-tab="${view}"]')?.getAttribute('aria-selected') === 'true'`,
+			),
+		Boolean,
+		`the ${view} view`,
+		WAIT,
+	);
+}
+
+/**
+ * The findings of the dialog walk one at a time, and each step selects its subject.
+ * @param browser The reader, with the findings of walkWarnings remembered.
+ */
+async function pageFindings(browser: AgentBrowserSession): Promise<void> {
+	await openMeasures(browser, "code");
+	const position = `document.querySelector('[data-slot="code-evidence-position"]')?.textContent`;
+	await pollUntil(
+		() => browser.eval<string | null>(`${position} ?? null`),
+		(shown) => shown === "1 of 2",
+		"the first finding",
+		WAIT,
+	);
+	for (const [id, at] of [
+		["Shop#Worker", "2 of 2"],
+		["Shop#Handler", "1 of 2"],
+	] as const) {
+		await browser.run(["click", '[data-slot="code-evidence-next"]']);
+		await pollUntil(
+			() =>
+				browser.eval<string>(
+					`${position} + ' ' + document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id')`,
+				),
+			(shown) => shown === `${at} ${id}`,
+			"the next finding and its subject",
+			WAIT,
+		);
+	}
+	expect(
+		await browser.eval<string | null>(`document.activeElement?.getAttribute('data-slot') ?? null`),
+	).toBe("code-evidence-next");
+	await browser.run(["press", "Escape"]);
+}
 
 /**
  * A warning cycle survives selection and a move to another scope.
