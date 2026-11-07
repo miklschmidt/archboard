@@ -14,6 +14,12 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#XtzfRQkG",
   "parent": "vKEsyHFk/SMjRfwN3#ZAj4RMzN",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
   "outgoing": [
     {
       "order": 60000,
@@ -40,12 +46,6 @@
       },
       "id": "vKEsyHFk#IrR2bIPK",
       "to": "vKEsyHFk#6RJ25ejV"
-    }
-  ],
-  "documents": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ]
 }
