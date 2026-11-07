@@ -26,11 +26,9 @@ const tabsListVariants = cva(
 				// underline on the active tab.
 				underline:
 					"w-full justify-start gap-0 rounded-none border-b border-border bg-transparent p-0 group-data-horizontal/tabs:h-7",
-				// Archboard: the site's segmented tabs. A trough holds the choices, and the chosen one
-				// rises out of it as a raised face with a gold underline (`trough`, `chosen-face`).
-				trough: "trough group-data-horizontal/tabs:h-auto",
-				// Archboard: the site's content selector. The same trough holds a few large tabs of
-				// equal width, each with an icon, a label and a line that says what it shows.
+				// Archboard: the site's content selector. A trough holds a few large tabs of equal
+				// width, each with an icon, a label and a line that says what it shows, and the chosen
+				// one rises out of it as a raised face with a gold underline (`trough`, `chosen-face`).
 				selector:
 					"trough grid w-full auto-cols-fr grid-flow-col items-stretch gap-1 p-1 group-data-horizontal/tabs:h-auto",
 			},
@@ -67,8 +65,6 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
 				"after:bg-foreground after:absolute after:opacity-0 after:transition-opacity group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[-5px] group-data-horizontal/tabs:after:h-0.5 group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-1 group-data-vertical/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-active:after:opacity-100",
 				// Archboard (TASK-150.08) underline variant: flat, inset focus ring. The caller
 				// sets the type role on the label: cn drops a theme text size beside a colour.
-				// Archboard trough variant: a 28px choice in muted ink, raised in full ink when chosen.
-				"group-data-[variant=trough]/tabs-list:text-muted-foreground group-data-[variant=trough]/tabs-list:hover:text-foreground group-data-[variant=trough]/tabs-list:rounded-control group-data-[variant=trough]/tabs-list:data-active:chosen-face group-data-[variant=trough]/tabs-list:h-7 group-data-[variant=trough]/tabs-list:border-0 group-data-[variant=trough]/tabs-list:px-2 group-data-[variant=trough]/tabs-list:font-medium group-data-[variant=trough]/tabs-list:focus-visible:ring-inset dark:group-data-[variant=trough]/tabs-list:data-active:border-0",
 				// Archboard selector variant: a large choice that holds its icon, label and gloss from
 				// the top left, in muted ink, raised in full ink with a gold icon when chosen.
 				"group-data-[variant=selector]/tabs-list:text-muted-foreground group-data-[variant=selector]/tabs-list:hover:text-foreground group-data-[variant=selector]/tabs-list:data-active:chosen-face group-data-[variant=selector]/tabs-list:rounded-control group-data-[variant=selector]/tabs-list:hover:bg-face/50 group-data-[variant=selector]/tabs-list:data-active:[&_svg]:text-primary-mark group-data-[variant=selector]/tabs-list:h-auto group-data-[variant=selector]/tabs-list:items-start group-data-[variant=selector]/tabs-list:justify-start group-data-[variant=selector]/tabs-list:gap-3 group-data-[variant=selector]/tabs-list:border-0 group-data-[variant=selector]/tabs-list:px-4 group-data-[variant=selector]/tabs-list:py-3 group-data-[variant=selector]/tabs-list:text-left group-data-[variant=selector]/tabs-list:whitespace-normal group-data-[variant=selector]/tabs-list:focus-visible:ring-inset dark:group-data-[variant=selector]/tabs-list:data-active:border-0 group-data-[variant=selector]/tabs-list:[&_svg:not([class*='size-'])]:size-[18px]",

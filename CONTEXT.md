@@ -287,7 +287,7 @@ The live, pannable and zoomable surface in a pane that shows one reading at a ti
 _Avoid_: scene (that is what the renderer core answers), board, workspace, session, drawing area
 
 **Left column**:
-The column that lists where to go: Find, the repository switcher, the destinations `Modules`, `Flows`, `Walkthroughs`, `History` and `Measures`, and Talk.
+The column that lists where to go: Find, the repository switcher, the keys that open the `History` and `Measures` dialogs, one list with the sections `Modules`, `Flows` and `Walkthroughs`, and Talk.
 
 **Measures**:
 The dialog that checks the reading on screen against its code and its history. It shows where the model and its code disagree, one finding at a time. It also lists every module of the model on show in two tables, sorted by one count at a time. One table holds its interface measures. The other holds its commits, the modules it changes with and its unjoined pairs.
