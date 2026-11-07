@@ -98,7 +98,7 @@ The request integration case passes with a queued request and a worker result.
 
 ## Merge Danger
 
-The change is reversible. Queue callers depend on the message format in the gateway adapter.
+A revert restores direct dispatch, but it drops any request still in the queue. Workers read the queued message through `QueuedRequest` in `src/queue/message.ts`, so a change to that format breaks them first.
 <!-- archboard-pr:end -->
 ```
 
