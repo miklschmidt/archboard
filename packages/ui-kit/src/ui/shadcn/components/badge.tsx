@@ -19,8 +19,13 @@ const badgeVariants = cva(
 			variant: {
 				default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
 				// Archboard: how many of something, as the low slab the picture draws for its
-				// small parts. Its front edge stands under its box.
-				count: "mb-0.5 min-w-5 bg-slab-face tabular-nums text-foreground shadow-slab",
+				// small parts. Its front edge stands under its box. On a chosen tab, which is a
+				// raised face, the count sits in a well cut into it instead. It has no border, so
+				// its highlight lies on its edge: the glint on a slab's top, the lip at a well's
+				// foot. The number stands in the middle of the face below the glint, or of the
+				// floor above the lip.
+				count:
+					"mb-0.5 min-w-5 border-0 bg-slab-face tabular-nums text-foreground shadow-slab group-data-active/tab:mb-0 group-data-active/tab:pb-0.5 group-data-active/tab:bg-tray-sink group-data-active/tab:shadow-well",
 				// Archboard: the site's chips. A solid chip says changed in full, and a tinted one says
 				// it quietly. Their words keep APCA Lc 60: white on the chalk orange, near black on the
 				// graphite one, and ink on the tint, because the orange itself reads only Lc 51 to 56

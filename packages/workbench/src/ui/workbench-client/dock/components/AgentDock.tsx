@@ -399,7 +399,7 @@ function LiveControls(props: {
 /** The conversation's key beside Talk, shut, and pressed in with a gold mark under it. */
 const KEY = "size-8 shrink-0 rounded-control! [&_svg]:size-4";
 const KEY_OPEN =
-	"bg-muted text-foreground shadow-pressed before:bg-primary-mark before:absolute before:inset-x-2 before:bottom-[3px] before:h-0.5 before:rounded-full";
+	"bg-muted text-foreground shadow-pressed before:bg-primary before:absolute before:inset-x-2 before:bottom-[3px] before:h-0.5 before:rounded-full";
 /** The conversation's icon in the voice line, lit while it is open. */
 const ICON_OPEN = "bg-sidebar-accent text-foreground";
 const SHUT = "text-muted-foreground";

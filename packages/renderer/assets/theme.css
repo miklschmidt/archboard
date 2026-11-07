@@ -31,8 +31,9 @@
      4. the decisions, loops and terminals of a flowchart, each built as a
         primary action's piece of gold is, so they read as the flow's own
         pieces among the neutral cards of its steps.
-   --primary is the gold as a flat fill. --primary-mark is the gold as a mark:
-   a 2px bar or underline, a ring, an icon, the edge of something chosen.
+   --primary is the gold as a flat fill, and the 2px foot of a chosen tab, row or
+   key. --primary-mark is the gold as a mark: a ring, an icon, the edge of
+   something chosen, the underline of a link.
    --primary-text is the accent as text. On graphite it is the gold. On chalk
    it is the ink: a gold dark enough to reach APCA Lc 60 there reads as brown, so
    text on chalk stays ink and a gold mark beside or under it (a bar, an

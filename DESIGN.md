@@ -213,11 +213,11 @@ every role and changes the values. The file theme.css holds both themes.
 
 ### Primary
 
-- **Wayfinding Gold** (oklch(0.831 0.134 84.5)): the gold as a flat fill. It fills the voice ring, a status dot, a checked box and, in the dark theme, the selection on the picture.
+- **Wayfinding Gold** (oklch(0.831 0.134 84.5)): the gold as a flat fill, the gold of a primary button. It fills the voice ring, a status dot, a checked box, the 2px foot of a chosen tab, row or key and, in the dark theme, the selection on the picture.
 - **Gold Top and Gold Bottom** (oklch(0.87 0.135 88) to oklch(0.805 0.142 81)): the subtle gradient from top to bottom of a primary action. The dark theme sets the bottom a step darker, at oklch(0.8 0.142 81).
 - **Gold Rim** (oklch(0.7 0.125 76), dark oklch(0.58 0.11 74)): the edge of a primary action, one pixel wide.
 - **Gold Ink** (oklch(0.2 0.02 70)): text and icons on gold. It keeps APCA Lc 66 or more on every stop of the gradient.
-- **Gold Mark** (oklch(0.72 0.15 77), dark oklch(0.86 0.125 86)): the gold as a mark: a 2px bar or underline, a ring, an icon or the edge of something chosen. It lights the way to the chosen row, the active tab and the underline of a link.
+- **Gold Mark** (oklch(0.72 0.15 77), dark oklch(0.86 0.125 86)): the gold as a mark: a ring, an icon or the edge of something chosen, and the underline of a link.
 - **Gold Tint** (oklch(0.968 0.03 88), dark oklch(0.29 0.045 80)): a quiet wash behind something chosen on a page.
 
 ### Neutral
@@ -322,7 +322,7 @@ The file app.css holds the values for both themes and gives each one a
 - **edge-down, edge-side and edge-up** (`--elevation-edge-*`): the chrome casts these onto what is under it or beside it. On chalk, each is a 1px contact line and a soft shadow with a 10px offset and a 24px blur. On graphite, a header and a tray swap the contact line for a lit line inside their edge. The soft shadow of a column has a 12px offset there. A tray casts edge-up over the list that scrolls under it.
 - **raised** (`--elevation-raised`, a white highlight on top, a 1px contact line and a short soft shadow): a quiet key, a key cap, the voice circle and the chosen row of a list.
 - **pressed** (`--elevation-pressed`, the same value as well): a raised control while somebody presses it.
-- **chosen** (`--elevation-chosen`, raised and a 2px line of Gold Mark inside the foot): the chosen tab of a trough. It is also the chosen row of the tree that is the row of what is open.
+- **chosen** (`--elevation-chosen`, raised and a 2px line of Wayfinding Gold inside the foot): the chosen tab of a trough. It is also the chosen row of the tree that is the row of what is open.
 - **card** (`--elevation-card`, a highlight on top, a 1px contact shadow and two long soft shadows): a card on a page.
 - **float** (`--elevation-float`, the same value as card): menus, tips, lists of matches, the floating sidebar and the voice box.
 - **dialog** (`--elevation-dialog`, a highlight on top, the site window's stronger hairline ring inside its edge, a 2px contact line and two very long soft shadows): dialogs. A dialog has no border: the ring is its edge. Its footer is divided from it by a Rule line and has no fill of its own.
@@ -446,7 +446,7 @@ along the line on both grounds.
 
 **The Lit Plane Rule.** A raised plane carries a lit top edge, a contact line and a soft shadow, or it carries none. A contact line is 1px or 2px. No larger hard offset shadow appears in the shell.
 
-**The Chosen Rises Rule.** In a trough, the chosen choice rises out of it as a Control Face in full ink with `shadow-chosen`. That shadow is the raised one with a 2px underline of Gold Mark inside the foot.
+**The Chosen Rises Rule.** In a trough, the chosen choice rises out of it as a Control Face in full ink with `shadow-chosen`. That shadow is the raised one with a 2px underline of Wayfinding Gold inside the foot.
 
 ## Shapes
 
@@ -498,7 +498,7 @@ A row of a popover is at least 28px high. A tone of the ink marks the row under 
 
 ### Number badges
 
-A count of the left column stands on a low slab: `Badge` with the `count` variant and the `technical` size. It is 16px high on a front edge 2px thick, with 2px corners and the number in mono, because a small part of the picture is built the same way. The counts of the tabs, the steps of a walkthrough, the checkouts of a repository and the sorted count of a `Measures` row all use it. A number that reads as part of a table, such as the other counts of a `Measures` row, stays bare in its column.
+A count of the left column stands on a low slab: `Badge` with the `count` variant and the `technical` size. It is 16px high on a front edge 2px thick, with 2px corners and the number in mono, because a small part of the picture is built the same way. On a chosen tab, which is itself a raised face, the count sits in a well cut into the face instead: Tray Sink with `shadow-well`. The badge has no border, so its glint or its lip lies on its edge, and the number stands in the middle of the face below the glint or of the floor above the lip. The counts of the tabs, the steps of a walkthrough, the checkouts of a repository and the sorted count of a `Measures` row all use it. A number that reads as part of a table, such as the other counts of a `Measures` row, stays bare in its column.
 
 ### Chips
 
@@ -511,9 +511,9 @@ The words of a chip keep APCA Lc 60: white on the chalk orange, near black on th
 
 ### Navigation
 
-- **Style:** the list lies in a well cut into the chrome, as a container is cut into the picture: the Well Floor, one thin line round it, an inner shadow from the whole of its top edge and a lit lip along its foot. The `column-well` utility holds the recipe. Nothing in the column is divided by a rule. A row is 28px at least, and a model or folder row 36px. Rails and elbows draw its levels. The chosen row rises out of the well as a Control Face with `shadow-raised`, and a row under the pointer takes Control Face at 50%. The row of what is open has a 2px line of Gold Mark inside its foot, and a row that is both takes `shadow-chosen`. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
+- **Style:** the list lies in a well cut into the chrome, as a container is cut into the picture: the Well Floor, one thin line round it, an inner shadow from the whole of its top edge and a lit lip along its foot. The `column-well` utility holds the recipe. Nothing in the column is divided by a rule. A row is 28px at least, and a model or folder row 36px. Rails and elbows draw its levels. The chosen row rises out of the well as a Control Face with `shadow-raised`, and a row under the pointer takes Control Face at 50%. The row of what is open has a 2px line of Wayfinding Gold inside its foot, and a row that is both takes `shadow-chosen`. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
 
-The left column's destinations stand in a trough over the well of the list, as the tabs of the site do. The trough is the Well Floor with `shadow-trough`, 6px corners, 3px of padding and a 2px gap. It keeps 8px of room at each side and below it. Each tab is 28px high, in Control and muted ink, with 4px corners and 8px of room at each side. A tab under the pointer takes full ink. The open tab rises out of the trough as a Control Face in full ink with `shadow-chosen`. That is the raised shadow with a 2px underline of Gold Mark inside its foot. The `trough` variant of `Tabs.List` draws all of it. On a proposal, `Changes` joins the row and the tabs drop their counts to make room. A pane's own tabs keep their underline of Gold Mark.
+The left column's destinations stand in a trough over the well of the list, as the tabs of the site do. The trough is the Well Floor with `shadow-trough`, 6px corners, 3px of padding and a 2px gap. It keeps 8px of room at each side and below it. Each tab is 28px high, in Control and muted ink, with 4px corners and 8px of room at each side. A tab under the pointer takes full ink. The open tab rises out of the trough as a Control Face in full ink with `shadow-chosen`. That is the raised shadow with a 2px underline of Wayfinding Gold inside its foot. The `trough` variant of `Tabs.List` draws all of it. On a proposal, `Changes` joins the row and the tabs drop their counts to make room. A pane's own tabs keep their underline of Wayfinding Gold.
 
 `Measures` is a table of every module, the most of one measure first, on the floor of the well. A row is one line of 28px: the name, then seven count columns of 30px, in the order of the sort control. So each count stands in one place on every row, and a row never wraps. The numbers are mono in Technical, right aligned.
 

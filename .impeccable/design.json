@@ -231,7 +231,7 @@
 			{
 				"name": "chosen",
 				"value": "var(--elevation-chosen)",
-				"purpose": "The chosen tab of a trough: the raised shadow and a 2px line of Gold Mark inside the foot."
+				"purpose": "The chosen tab of a trough: the raised shadow and a 2px line of Wayfinding Gold inside the foot."
 			},
 			{
 				"name": "card",
@@ -337,7 +337,7 @@
 			"name": "Navigator Row",
 			"kind": "nav",
 			"refersTo": "nav-row-chosen",
-			"description": "The chosen row of the navigator rises out of its well as a Control Face. The row of what is open carries a 2px line of Gold Mark inside its foot, and the row has no bar.",
+			"description": "The chosen row of the navigator rises out of its well as a Control Face. The row of what is open carries a 2px line of Wayfinding Gold inside its foot, and the row has no bar.",
 			"html": "<div class=\"ds-nav\"><div class=\"ds-nav-row\">Agent workbench</div><div class=\"ds-nav-row ds-nav-chosen\">Archboard server</div><div class=\"ds-nav-row\">Browser application</div></div>",
 			"css": ".ds-nav { width: 300px; padding: 4px; background: var(--tray-sink); } .ds-nav-row { position: relative; height: 36px; padding: 0 12px; display: flex; align-items: center; font: 500 14px/20px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--sidebar-foreground); border-radius: 4px; } .ds-nav-row:hover { background: color-mix(in oklch, var(--face) 50%, transparent); } .ds-nav-chosen { background: var(--face); box-shadow: var(--elevation-chosen); }"
 		},

@@ -212,7 +212,7 @@ function rowClass(props: TreeRowProps): string {
 		// the site's gold underline inside its face.
 		props.selected ? "bg-face shadow-raised" : "hover:bg-face/50",
 		props.current === true &&
-			(props.selected ? "shadow-chosen" : "shadow-[inset_0_-2px_0_var(--primary-mark)]"),
+			(props.selected ? "shadow-chosen" : "shadow-[inset_0_-2px_0_var(--primary)]"),
 		props.disabled === true && "text-muted-foreground",
 	);
 }
