@@ -32,7 +32,7 @@
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/code-intel/src/runtime/code-check/operations/resolution.ts",
-        "symbol": "checkoutServers"
+        "symbol": "passServers"
       }
     },
     {
