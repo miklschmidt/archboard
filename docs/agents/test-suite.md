@@ -851,8 +851,8 @@ Unit owners hold its rules: `module-tree.test.ts`, `reader-keys.test.ts`, `searc
 `reader-context.test.ts` owns what the right column adds through a real browser: the lists that follow the open module or the selection, the rows that open a flow or a walkthrough, the interface line, whose counts select on the module's own picture and whose heading opens About at its Interface section, the door that opens at one click and lists its endpoints on hover, and the engine under the legend.
 `reader-expand.test.ts` owns a door's second action through a real browser: the control expands the door into the picture, the address keeps it across a reload and Back, and a tab, a panel row or a key takes it back. Unit owners hold its rules: `model-projection.test.ts` and `expansion.test.ts`.
 `reader-trace.test.ts` owns a trace in the reader: each further hop lights more faintly, across the doors, and goes with the pick.
-`reader-measures.test.ts` owns where to look across the model: a selection reads the code history with no button, and `Measures` lists every module, sorts it from the keyboard and selects a module on its picture.
-`module-measures.test.ts` owns the one order of each measure and how a reading stands with history, and `model-measures.test.tsx` owns what the list says in each state of a read.
+`reader-measures.test.ts` owns where to look across the model: a selection reads the code history with no button, and the `Measures` dialog lists every module, sorts it from a column head, walks it from the keyboard and selects a module on its picture. It also pages through the code findings.
+`module-measures.test.ts` owns the one order of each measure and how a reading stands with history. `model-measures.test.tsx` owns the views of the dialog and what a table says in each state of a read. `model-code-evidence.test.tsx` owns the pager of the findings and the source lines round a finding's evidence.
 `relevance.test.ts` owns which flows and walkthroughs touch a subject, and `use-accepted-scene.test.tsx` owns that one engine's drawing never answers for the other.
 
 `canonical-model-groups.test.ts` replaces the legacy board group browser fixture.

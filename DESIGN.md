@@ -161,6 +161,22 @@ components:
     rounded: "{rounded.chip}"
     height: "22px"
     padding: "0 8px"
+  selector-tab-chosen:
+    backgroundColor: "{colors.control-face}"
+    textColor: "{colors.ink-graphite}"
+    rounded: "{rounded.control}"
+    padding: "12px 16px"
+  measures-table:
+    backgroundColor: "{colors.well-floor}"
+    textColor: "{colors.ink-graphite}"
+    rounded: "{rounded.panel}"
+    height: "36px"
+    padding: "0 12px"
+  warning-card:
+    backgroundColor: "{colors.control-face}"
+    textColor: "{colors.ink-graphite}"
+    rounded: "{rounded.control}"
+    padding: "14px"
 ---
 
 # Design System: archboard
@@ -285,9 +301,7 @@ paths, versions, counts and times.
 
 The shell puts columns around the picture. The left column (448px) lists where to
 go, and the agent dock is at its foot. Its width comes from what it holds: five tabs with
-three-digit counts need 445px on one row, and the table of `Measures` needs 184px for a
-name, which fits 99 percent of the names of this repository's model, beside seven count
-columns of 30px. The panes are in the centre, one or two side
+three-digit counts need 445px on one row. The panes are in the centre, one or two side
 by side. The conversation opens between the column and the panes: it slides
 in and out, and a handle on its edge, a grip on a line that takes the gold while
 it is dragged, resizes it between 320px and 720px, or drags it shut below that.
@@ -498,7 +512,7 @@ A row of a popover is at least 28px high. A tone of the ink marks the row under 
 
 ### Number badges
 
-A count of the left column stands on a low slab: `Badge` with the `count` variant and the `technical` size. It is 16px high on a front edge 2px thick, with 2px corners and the number in mono, because a small part of the picture is built the same way. On a chosen tab, which is itself a raised face, the count sits in a well cut into the face instead: Tray Sink with `shadow-well`. The badge has no border, so its glint or its lip lies on its edge, and the number stands in the middle of the face below the glint or of the floor above the lip. The counts of the tabs, the steps of a walkthrough, the checkouts of a repository and the sorted count of a `Measures` row all use it. A number that reads as part of a table, such as the other counts of a `Measures` row, stays bare in its column.
+A count of the left column stands on a low slab: `Badge` with the `count` variant and the `technical` size. It is 16px high on a front edge 2px thick, with 2px corners and the number in mono, because a small part of the picture is built the same way. On a chosen tab, which is itself a raised face, the count sits in a well cut into the face instead: Tray Sink with `shadow-well`. The badge has no border, so its glint or its lip lies on its edge, and the number stands in the middle of the face below the glint or of the floor above the lip. The counts of the tabs, the steps of a walkthrough and the checkouts of a repository all use it. A number that reads as part of a table, such as a count of `Measures`, stays bare in its column.
 
 ### Chips
 
@@ -515,13 +529,37 @@ The words of a chip keep APCA Lc 60: white on the chalk orange, near black on th
 
 The left column's destinations stand in a trough over the well of the list, as the tabs of the site do. The trough is the Well Floor with `shadow-trough`, 6px corners, 3px of padding and a 2px gap. It keeps 8px of room at each side and below it. Each tab is 28px high, in Control and muted ink, with 4px corners and 8px of room at each side. A tab under the pointer takes full ink. The open tab rises out of the trough as a Control Face in full ink with `shadow-chosen`. That is the raised shadow with a 2px underline of Wayfinding Gold inside its foot. The `trough` variant of `Tabs.List` draws all of it. On a proposal, `Changes` joins the row and the tabs drop their counts to make room. A pane's own tabs keep their underline of Wayfinding Gold.
 
-`Measures` is a table of every module, the most of one measure first, on the floor of the well. A row is one line of 28px: the name, then seven count columns of 30px, in the order of the sort control. So each count stands in one place on every row, and a row never wraps. The numbers are mono in Technical, right aligned.
+### Content selector
 
-A shelf stands over the table while it scrolls, on Tray Chalk with `shadow-edge-down`. It holds the `Sort by` select, one line that says what the chosen measure counts and what it shows, and the head of each column. A head is turned on its side, as the dimension of a drawing is, because seven names do not fit seven narrow columns. The head of the sorted column is in full ink and semibold, with a piece of Gold Mark under it. Its numbers stand on number badges, so the sorted measure and its numbers read as one column.
+A few large tabs choose what a region shows, as the site's evidence tabs do. They stand in one trough across the region, with 4px between them and 4px of room inside the trough. Each tab has the same width. It holds an icon of 18px and, beside the icon, a label in Title. Under the label, one line in Body and muted ink says what the tab shows. All of it starts at the top left, with 12px of room above and below and 16px at each side. A tab is in muted ink, and under the pointer it takes full ink and Control Face at 50%. The chosen tab rises as a Control Face in full ink with `shadow-chosen`, and its icon takes Gold Mark. The `selector` variant of `Tabs.List` draws all of it.
 
-A bar under the name draws the sorted count of a row, on the scale of the most in the list. It is a slab in the colour of the module's kind, so that the list reads in colour and says what each row is. So the shape of the whole list shows at a glance: one module that stands far out, or a long even run. It draws one count and adds nothing up.
+### Measures
 
-A count of none is in a quieter ink, so what is there stands out. An empty cell is a module with no such measure: a module with no parts has no interface, and a count of none would say something else. Before the history arrives, its two cells stay empty. A module the read skipped takes one dash in each history cell, whose tooltip says why, and a row says all of it to assistive technology. A foot stands under the table on Tray Chalk with `shadow-edge-up`. It says once what the counts cover and why modules were not read, with `Refresh` at its end, or why there are no counts. No count takes a color, nothing combines the counts, and no row carries a rank.
+`Measures` is a dialog with the 12px corners of a window. It checks the reading on screen against its code and its history. A content selector stands at its head with three tabs: `Where the map and the code disagree`, `What a module exposes` and `What changes together`. It opens on the first. Each tab reads only while it is open. The dialog keeps its tab and the sort of each table while it is closed.
+
+The two tables follow the site's table. A table lies in a well (the Well Floor with `shadow-well` and 6px corners), and its rows scroll under its head. A row is 36px high, with a rule line at 55% between one row and the next. It holds the chip of the module's kind and the name, then one count in each column. The numbers are mono in Technical, right aligned. `What a module exposes` counts entries, hidden parts, pass-through, callers and the whole module. `What changes together` counts the modules that change with it, those of them that no relationship joins, and the commits.
+
+The head stands over the rows on the Well Floor with a rule under it. A press on the name of a column sorts by it, the most first, and a second press turns the order round. The sorted head is in full ink with a piece of Gold Mark under it and an arrow that says which end comes first. Each cell of the sorted column carries a gold wash from its right edge and a gold edge. The wash is as long as the count against the most in the table, and the edge is as strong. The name of a column says what it counts on hover. Over the table, one line says what the sorted column counts, and `Show` chooses which modules stand in the table.
+
+A row selects its module on its picture, from the pointer or from Enter. The dialog closes first, as Find does, so the keys go on from the picture. The arrows, Home and End walk the rows. The row of the selected module is lit: Control Face with a 2px line of Gold Mark inside its foot. A row under the pointer takes Control Face at 50%.
+
+A count of none is in a quieter ink, so what is there stands out. An empty cell is a module with no such measure: a module with no parts has no interface, and a count of none says something else. A module that the history read skipped takes one dash in each history cell, whose tooltip says why. A row says all of it to assistive technology. A line under the table says what a dash and a blank mean. Under the history, it also says what the read covers and why modules were not read, with `Refresh` at its end. No count takes a warning color, nothing combines the counts, and no row carries a rank.
+
+### Warning card
+
+`Where the map and the code disagree` shows the findings of the last code check one at a time, the warnings first. A plate holds the count of warnings, a pager and the card of one finding. The pager is two small quiet keys round `N of M` in mono. A step selects the subject of its finding on the picture, and the keys keep the focus.
+
+The card is a Control Face with `shadow-raised`, 4px corners and an inset ring of 1px. The ring is Changed Orange at 45% for a warning and the Rule tone for information. The card holds these, from the top:
+
+- a chip that names the finding: solid Changed for a warning, Changed tint for information
+- the route in Title, from one module to the other with an arrow between them, or the one module that the finding is about
+- the check's own words in Body Ink
+- how strong each piece of evidence is: `Resolved by analysis` with a check in Added Green, or `Matched by name only` with a question mark in muted ink
+- when the check ran
+
+With several pieces of evidence, each piece is a key that shows its file and line, and it chooses the source beside the card.
+
+Beside the plate, the source of the evidence stands on the Well Floor with 6px corners and an inset ring of 1px. Its caption holds the path in mono and the kind of evidence. Under it stand the evidence line and up to three lines on each side of it, in mono with their numbers in a quieter ink. The evidence line takes Changed Orange at 16% with a 2px edge of Changed Orange at its start. A finding with no evidence says that it names no line. While the lines load, the well says `Reading the source…`. If the server has no lines or fails, the well says `Source unavailable.` and the card stays complete.
 
 ### Right panel
 

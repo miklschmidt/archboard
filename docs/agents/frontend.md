@@ -198,7 +198,7 @@ Each behavior keeps its existing public boundary and one state owner.
   They name the reading that they belong to. Its state, checkpoint, and revision must match the inspected architecture.
   Remembered code findings also match the model identity, state, and exact revision.
   The existing warning control, diagram marks, and evidence panel show only that matching pass.
-  A selection of a bound canonical module reads the model's local Git history, and so does `Measures` when it opens (ADR 0045).
+  A selection of a bound canonical module reads the model's local Git history, and so does the `What changes together` view of `Measures` when it opens (ADR 0045).
   One answer holds every module, so a later selection reads nothing, and neither does a timer, a focus change, or a reconnect.
   The response must match the inspected model, state, checkpoint, and revision. A new revision reads again, and `Refresh` reads a moved HEAD.
   The read takes no signal, because a selection that moves on must not stop a read that the next selection joins.
@@ -405,12 +405,14 @@ The pane header slot takes the crumbs, the code path, the state chip, and `Diagr
 `useReader` gathers the reading, places, moves, and choices that the column, the header, and the surface read.
 `React.Activity` keeps the reading mounted while a walkthrough plays, so the column stays and the picture keeps its camera.
 A live `architecture_snapshot` has no `states`, so `History` and the timeline of About read `architectureRecordQuery`, which loads only when one of them opens.
-`ModelMeasures` is the `Measures` destination. It draws the accepted scene, and `model-reader/reading/rules/module-measures.ts` joins each module's interface, which needs no server, with what the one locality answer says of it.
+`ModelMeasuresDialog` is the `Measures` dialog. Its content selector shows one of three views, and only the open view reads.
+`ModelCodeEvidence` pages through the findings of the matching code pass and selects the subject of each finding.
+`ModelCodeSource` reads the lines round a finding's evidence through `sourceLinesQuery`. A 404 or a failure says that the source is unavailable.
+`ModelMeasures` draws one table of the accepted scene. `model-reader/reading/rules/module-measures.ts` joins each module's interface, which needs no server, with what the one locality answer says of it.
 That rule also holds the one order of each measure, and each measure's name and what it counts.
-`ModelMeasureRow` draws a row's cells on one track of seven columns, so the heads and the rows line up.
-`ModelChoiceList` puts them in `Tree.Facts`, and `flat` gives a table's row no room for a disclosure.
-A row selects through `findModule`, the path of Find and of a count in the interface line.
-A closed tab draws nothing, so `ReadingColumn` keeps the sort.
+`MeasureHead` sorts from the head of each column, and `ModelMeasureRow` draws one row of a native table.
+A row closes the dialog and then selects through `findModule`, the path of Find and of a count in the interface line.
+The dialog keeps its view and the sort of each table while it is closed.
 
 Find reads the complete selected model, including modules outside the visible scope.
 It searches names, code paths, responsibilities, descriptions, and code symbols without another server read.
