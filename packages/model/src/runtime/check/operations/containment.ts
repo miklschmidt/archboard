@@ -250,4 +250,4 @@ function containmentDiagnostics(
 	});
 }
 
-export { containmentDiagnostics };
+export { containmentDiagnostics, pathOf };

@@ -357,3 +357,78 @@ describe("container containment", () => {
 		expect(containment(structure)).toEqual([]);
 	});
 });
+
+describe("BINDING_SHARED", () => {
+	const bound = (id: string, path: string, symbol?: string): Module =>
+		part(id, {
+			binding: { repo: BINDING.repo, path, ...(symbol === undefined ? {} : { symbol }) },
+		});
+	const roots = (...modules: Module[]): Structure => ({
+		modules,
+		relationships: [],
+		collections: [],
+	});
+
+	test("names each later module bound to the same code, on its own file, and the first one", () => {
+		const diagnostics = structureDiagnostics(
+			roots(
+				bound(first, "src/a.ts", "run"),
+				bound(second, "src/a.ts/", "run"),
+				bound(other, "./src/a.ts", "run"),
+			),
+		).filter(({ code }) => code === "BINDING_SHARED");
+		expect(diagnostics).toMatchObject([
+			{ severity: "warning", file: `${second}.module.json`, subject: { id: second } },
+			{ severity: "warning", file: `${other}.module.json`, subject: { id: other } },
+		]);
+		expect(diagnostics[0]?.message).toContain("src/a.ts#run, as First is");
+	});
+
+	test.each<[string, Module, Module]>([
+		["a folder and a file inside it", bound(first, "src"), bound(second, "src/a.ts")],
+		["two symbols of one file", bound(first, "src/a.ts", "run"), bound(second, "src/a.ts", "stop")],
+		["a file and a symbol in it", bound(first, "src/a.ts"), bound(second, "src/a.ts", "run")],
+		[
+			"the same path in two repositories",
+			bound(first, "src/a.ts"),
+			part(second, { binding: { repo: "github.com/test/other", path: "src/a.ts" } }),
+		],
+	])("stays quiet for %s", (_case, one, two) => {
+		expect(warned(roots(one, two), "BINDING_SHARED")).toEqual([]);
+	});
+});
+
+describe("RELATIONSHIP_REPEATED", () => {
+	const anchored = (id: string, to: string, symbol: string): Relationship => ({
+		...relationship(first, to),
+		id,
+		anchor: { repo: BINDING.repo, path: "src/a.ts", symbol },
+	});
+	const connected = (...relationships: Relationship[]): Structure => ({
+		modules: [part(first), part(second), part(other)],
+		relationships,
+		collections: [],
+	});
+
+	test("names each later relationship with the same ends and anchor, on the file of its source", () => {
+		expect(
+			structureDiagnostics(
+				connected(anchored("Shop#One", other, "run"), anchored("Shop#Two", other, "run")),
+			).filter(({ code }) => code === "RELATIONSHIP_REPEATED"),
+		).toMatchObject([
+			{
+				severity: "warning",
+				file: `${first}.module.json`,
+				subject: { kind: "edge", id: "Shop#Two" },
+			},
+		]);
+	});
+
+	test.each<[string, Relationship, Relationship]>([
+		["two anchors", anchored("Shop#One", other, "run"), anchored("Shop#Two", other, "stop")],
+		["two targets", anchored("Shop#One", other, "run"), anchored("Shop#Two", second, "run")],
+		["no anchor", relationship(first, other), { ...relationship(first, other), id: "Shop#Two" }],
+	])("stays quiet for %s", (_case, one, two) => {
+		expect(warned(connected(one, two), "RELATIONSHIP_REPEATED")).toEqual([]);
+	});
+});

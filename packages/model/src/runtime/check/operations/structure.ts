@@ -1,7 +1,8 @@
-// What the semantics check says about one state of a canonical model. Four rules
+// What the semantics check says about one state of a canonical model. Six rules
 // read its shape: a container that gathers nothing, a root that nothing connects,
-// a relationship between a module and a part that it holds, and a container that
-// does not own one place in the code that holds its parts. A shape is a signal and
+// a relationship between a module and a part that it holds, a container that
+// does not own one place in the code that holds its parts, two modules bound to the
+// same code, and two relationships with the same ends and anchor. A shape is a signal and
 // never proves that a module has no job, so these are warnings and no write reads
 // them. No rule reads a name, a count or a file on disk. Two rules are errors. A
 // current flow with no summary breaks what every write of a flow now keeps. A
@@ -13,6 +14,7 @@ import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/mode
 import { containersOf } from "#shared/rules/scope.ts";
 import type { VaultDiagnostic } from "#shared/schemas/semantic-policy.ts";
 import { containmentDiagnostics } from "#runtime/check/operations/containment.ts";
+import { duplicateDiagnostics } from "#runtime/check/operations/duplicates.ts";
 import { edgeSubjects, nodeSubject } from "#runtime/check/operations/subject.ts";
 
 type ModelStructure = Pick<ArchitectureModel, "modules" | "relationships" | "collections">;
@@ -234,6 +236,7 @@ function structureDiagnostics(model: ModelStructure): VaultDiagnostic[] {
 	return [
 		...passThroughContainers(model, parents),
 		...containmentDiagnostics(model, parents),
+		...duplicateDiagnostics(model),
 		...unconnectedRoots(model, parents),
 		...linesToOwnParts(model, parents),
 		...endsOnContainers(model, parents),

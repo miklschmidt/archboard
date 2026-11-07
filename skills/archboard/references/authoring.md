@@ -10,6 +10,7 @@ Unbuilt proposal subjects remain plans until adoption.
 If two modules describe the same code, read it to decide whether they represent one responsibility.
 Resolve that question from source without asking the user.
 Matching names or bindings raise the question but do not answer it.
+`archboard check` warns with `BINDING_SHARED` when a module binds the same code as another.
 If they represent one module, keep the identity located with that code.
 In one intent, move relationships, flow steps, and walkthrough references to it, then remove the duplicate.
 Tell the user which modules you combined and which code proved the match.
@@ -49,6 +50,7 @@ If no part owns that responsibility, add a part for it.
 Model boundaries that callers name and architects need, not a part for every file.
 
 If two parts perform different jobs across a boundary, state two relationships.
+State each dependency once. `RELATIONSHIP_REPEATED` warns on a relationship with the same ends and anchor as another. Keep the one whose kind and label say what the code does.
 One relationship represents other calls across the same boundary.
 `RELATIONSHIP_UNDRAWN` reports those calls as information.
 
