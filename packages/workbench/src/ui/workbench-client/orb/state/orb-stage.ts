@@ -12,14 +12,15 @@
 // way, and puts it back in the socket on arrival. The canvas is never remounted,
 // so its light and its history go with it. A home may offer more than one socket,
 // as two presented panes each have a Narrate key: the newest is the home's, and the
-// one before it is the home's again when it goes.
+// one before it is the home's again when it goes. A press of Narrate makes its key
+// the newest, so the orb leaves the key that was pressed and comes back to it.
 //
-// The orb is the only one of its kind on the page at any moment, and so is the seat
-// it has. The holder carries a plate of its own, and a home draws its seat only
-// while the orb sits in it: the stage marks that socket occupied, and the stylesheet
-// draws the dock's seat and the Narrate key's gold disc for it. So nothing that looks
-// like the orb waits where it left or where it will land, and what is left behind is
-// the room the orb had.
+// The orb is the only one of its kind on the page at any moment. The holder carries a
+// plate of its own, and the stage marks the socket it sits in occupied, so that the
+// stylesheet draws the dock's seat only while the orb is in it. A Narrate key draws its
+// gold disc while it can narrate, and while voice is on only while the orb is in it. So
+// nothing that looks like the orb waits where it left or where it will land, and what is
+// left behind is the room the orb had.
 //
 // A flight meets its socket where the socket is on every frame, not where it was,
 // because a socket may itself be moving (the dock's plate is still forming, the
@@ -136,10 +137,12 @@ interface OrbStage {
 	 */
 	readonly wish: (wish: OrbWish) => void;
 	/**
-	 * Have the next orb that is lit leave the Narrate key it waits in, lit from the start of its
-	 * flight. Nothing is asked while no Narrate key is on the page.
+	 * Have the next orb that is lit leave the Narrate key that was pressed, lit from the start of its
+	 * flight. That key is the home's from then on, so the dark orb moves into it first, and the orb
+	 * comes back to it as voice ends. Nothing is asked while no Narrate key is on the page.
+	 * @param pressed The key that was pressed, which holds its socket.
 	 */
-	readonly launch: () => void;
+	readonly launch: (pressed: Element) => void;
 }
 
 /** A flight in the air. */
@@ -581,8 +584,18 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 			state.wish = wish;
 			reconcile();
 		},
-		/** Have the next orb that is lit leave the Narrate key that is the home's now. */
-		launch: () => {
+		/**
+		 * Have the next orb that is lit leave the Narrate key that was pressed, which is the home's
+		 * from now: the dark orb, out of sight, moves into it first.
+		 * @param pressed The key that was pressed.
+		 */
+		launch: (pressed) => {
+			const offered = state.sockets.get("narrate") ?? [];
+			const socket = offered.find((one) => pressed.contains(one));
+			if (socket !== undefined && socket !== offered.at(-1)) {
+				state.sockets.set("narrate", [...offered.filter((one) => one !== socket), socket]);
+				reconcile();
+			}
 			state.launch = socketOf(state, "narrate") ?? null;
 		},
 	};

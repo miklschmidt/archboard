@@ -58,10 +58,10 @@ function useOrbOffered(home: OrbHome): boolean {
 /**
  * How a Narrate key asks for a launch: the next orb that is lit leaves the key, lit from the
  * start of its flight, for the home it is wanted in. Voice started any other way is lit where it
- * is wanted. The key asks as it is pressed, before the voice it starts is lit.
+ * is wanted. The key asks as it is pressed, before the voice it starts is lit, and names itself.
  * @returns The ask, the same function for as long as the stage lasts.
  */
-function useOrbLaunch(): () => void {
+function useOrbLaunch(): (pressed: Element) => void {
 	return useOrbStage().launch;
 }
 

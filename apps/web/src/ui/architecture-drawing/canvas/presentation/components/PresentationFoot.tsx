@@ -2,16 +2,17 @@
 //
 // It is there for as long as the shell has a voice to offer. It is a pill as wide as the column,
 // sunk into it, with a gold circle at its start where the microphone is. The gold circle is a home
-// of the shell's one voice orb (OrbSlot): while voice is off the orb waits there, dark, and the key
-// draws its gold disc and microphone only while the orb is in it (app.css, `narrate-seat`). Pressing
-// the key asks the orb's stage to launch, so the orb that voice lights leaves the circle, lit, and
-// flies to the voice box low over the picture (SemanticStagePresentation, `overlayOver`), or to the
-// agent dock while subtitles are off. While the orb is away the key keeps the room it had, an empty
-// seat, and it stays where it is, dimmed, and says why it cannot narrate. When the voice ends in the
-// box, the orb flies back into the circle and fades there, and the gold disc is drawn again.
+// of the shell's one voice orb (OrbSlot): while voice is off the orb waits there, dark. Pressing
+// the key asks the orb's stage to launch from it, so the orb that voice lights leaves the circle,
+// lit, and flies to the voice box low over the picture (SemanticStagePresentation, `overlayOver`),
+// or to the agent dock while subtitles are off. While voice is on the key stays where it is, dimmed,
+// and says why it cannot narrate, and it draws its gold disc and microphone only while the orb is in
+// it (app.css, `narrate-seat`): the key the orb left keeps the room it had, an empty seat, and so
+// does the key of a second presented pane. When the voice ends in the box, the orb flies back into
+// the circle it left and fades there, and every key draws its gold disc again.
 
 import { RiMicLine } from "@remixicon/react";
-import { useCallback, type CSSProperties, type JSX } from "react";
+import { useCallback, type CSSProperties, type JSX, type MouseEvent } from "react";
 
 import { VOICE_MS } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/components";
@@ -66,10 +67,13 @@ function NarrateKey(props: {
 	// A narration starts on the first step whatever the reader had reached; the server opens it
 	// once voice is starting, so the voice is handed the step it arrived on. The orb that voice
 	// lights is launched out of this key.
-	const narrate = useCallback((): void => {
-		launch();
-		start(walkthrough);
-	}, [launch, start, walkthrough]);
+	const narrate = useCallback(
+		(event: MouseEvent<HTMLButtonElement>): void => {
+			launch(event.currentTarget);
+			start(walkthrough);
+		},
+		[launch, start, walkthrough],
+	);
 	const dimmed = held !== null;
 	return (
 		<button

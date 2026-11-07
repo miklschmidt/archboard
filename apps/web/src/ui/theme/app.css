@@ -876,15 +876,16 @@
 }
 
 /* The Narrate key's gold circle is the orb's third home (PresentationFoot.tsx). The orb waits in
-   it, dark, while voice is off, and the key draws its gold disc and microphone only while the orb
-   is in the socket. When the orb leaves, the disc goes in a blink as the orb fades in over it, and
-   the key keeps the room it had. When the orb lands there again, the disc is drawn at once under
-   the orb, and shows as the orb fades. The disc's other transitions are the gold finish's. */
+   it, dark, while voice is off, and every key that can narrate draws its gold disc and microphone.
+   While voice is on a key is held, and draws the disc only while the orb is in the socket. When the
+   orb leaves, the disc goes in a blink as the orb fades in over it, and the key keeps the room it
+   had. When the orb lands there again, the disc is drawn at once under the orb, and shows as the
+   orb fades. The disc's other transitions are the gold finish's. */
 [data-slot="narrate-seat"] > [data-part="disc"] {
 	transition-property: translate, box-shadow, background-image, opacity;
 	transition-duration: 160ms, 160ms, 160ms, 0s;
 }
-[data-slot="narrate-seat"]:not(:has(> [data-occupied])) > [data-part="disc"] {
+[aria-disabled] > [data-slot="narrate-seat"]:not(:has(> [data-occupied])) > [data-part="disc"] {
 	opacity: 0;
 	transition-duration: 160ms, 160ms, 160ms, var(--voice-seat-out-ms, 90ms);
 }
