@@ -165,7 +165,7 @@ pub(crate) const TAG_BESIDE: f64 = 8.0;
 /// The width of the one viewport the shell supports.
 pub const SHELL_WIDTH: f64 = 1920.0;
 /// The left column of the shell (`NAVIGATOR_WIDTH` of shell-geometry.ts).
-pub const NAVIGATOR_WIDTH: f64 = 448.0;
+pub const NAVIGATOR_WIDTH: f64 = 280.0;
 /// The line between the left column and the panes.
 pub const HANDLE_WIDTH: f64 = 1.0;
 /// The right panel beside the picture of a reading.
