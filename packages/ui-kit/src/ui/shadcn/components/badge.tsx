@@ -13,12 +13,20 @@ const badgeVariants = cva(
 				default: "h-5 rounded-4xl px-2 py-0.5 text-body font-medium",
 				technical: "text-technical h-4 rounded-chip px-1 font-mono font-medium",
 				chip: "text-body h-6 gap-1.5 rounded-chip px-2 font-normal",
+				// The site's chip: 22px, 2px corners, the words at 12px.
+				label: "text-body h-[22px] gap-1.5 rounded-chip px-2",
 			},
 			variant: {
 				default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
 				// Archboard: how many of something, as the low slab the picture draws for its
 				// small parts. Its front edge stands under its box.
 				count: "mb-0.5 min-w-5 bg-slab-face tabular-nums text-foreground shadow-slab",
+				// Archboard: the site's chips. A solid chip says changed in full, a tinted one says it
+				// quietly, and a quiet one sets a technical fact in mono on a well.
+				changed: "bg-standing-changed text-[oklch(0.2_0.03_50)] font-semibold",
+				"changed-tint":
+					"bg-standing-changed/14 text-standing-changed font-semibold inset-ring inset-ring-standing-changed/40",
+				quiet: "bg-tray-sink text-muted-foreground font-mono font-normal",
 				secondary: "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
 				destructive:
 					"bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",

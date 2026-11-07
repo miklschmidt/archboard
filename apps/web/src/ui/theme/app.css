@@ -153,6 +153,16 @@
 	--color-slab-face: var(--slab-face);
 	--color-tray-sink: var(--tray-sink);
 	--color-tray-tab: var(--tray-tab);
+	/* The face of a control, or of a chosen tab raised out of a trough, and that face
+	   under the pointer. The floor of code. The ink of prose in a panel. */
+	--color-face: var(--face);
+	--color-face-hover: var(--face-hover);
+	--color-code-bed: var(--code-bed);
+	--color-body-foreground: var(--body-foreground);
+	/* The comparison's three states, as marks and chips. */
+	--color-standing-added: var(--standing-added);
+	--color-standing-changed: var(--standing-changed);
+	--color-standing-removed: var(--standing-removed);
 	--color-popover-foreground: var(--popover-foreground);
 	--color-popover: var(--popover);
 	--color-card-foreground: var(--card-foreground);
@@ -176,11 +186,14 @@
 	--spacing-chrome: var(--shell-chrome-height);
 	--spacing-band: 36px;
 	--spacing-row: 28px;
-	/* Shape. chip: a key cap or a pane letter. control: buttons, fields, rows.
-	   panel: a card on a page, a menu, a popover. */
+	/* Shape, the site's ladder (site/DESIGN.md). chip: a chip, a key cap or a pane
+	   letter. control: buttons, fields, rows, a tab. panel: a trough, a card on a
+	   page, a menu, a popover, a code block. table: a tray that holds a plate, such
+	   as the walkthrough's box. */
 	--radius-chip: 2px;
-	--radius-control: 3px;
-	--radius-panel: 4px;
+	--radius-control: 4px;
+	--radius-panel: 6px;
+	--radius-table: 10px;
 	/* Depth: the elevation scale below (`--elevation-*`), one shadow utility
 	   per plane (`shadow-well`, `shadow-raised`, `shadow-float` and the rest).
 	   The chrome that casts an edge shadow onto the picture is `relative z-30`, so
@@ -197,7 +210,11 @@
 	--shadow-card: var(--elevation-card);
 	--shadow-float: var(--elevation-float);
 	--shadow-dialog: var(--elevation-dialog);
+	--shadow-table: var(--elevation-table);
+	--shadow-trough: var(--elevation-trough);
+	--shadow-chosen: var(--elevation-chosen);
 	--shadow-primary: var(--elevation-primary);
+	--shadow-primary-hover: var(--elevation-primary-hover);
 	--shadow-primary-pressed: var(--elevation-primary-pressed);
 	/* Motion. Controls move in 120ms; the chrome is quick. */
 	--default-transition-duration: 120ms;
@@ -354,21 +371,24 @@
 	/* The navigator's width and the chrome row's height,
 	   --shell-navigator-width and --shell-chrome-height, are set on the shell
 	   root from the renderer's shell-geometry: geometry is not the palette's. */
-	/* Small corners: controls about 3px, dialogs about 4px. */
-	--radius: 0.3rem;
+	/* Small corners: a control 4px, as on the site. */
+	--radius: 4px;
 }
 
-/* Depth. The shell is built as planes stacked over the picture, not as lines
-   on one sheet. Light comes from above. A plane says how high it sits with
-   its tone, a fine highlight on its top edge (--highlight, theme.css) and the
-   shadow it casts. Every shadow is soft, has an offset and is tinted toward
-   the warm neutrals; none is a grey-black blur. From the bottom up:
+/* Depth, in the language of the site (site/DESIGN.md, "Elevation & Depth"). The shell is
+   built as planes stacked over the picture, not as lines on one sheet. Light comes from
+   above. A raised plane carries all three of a lit top edge (--highlight, theme.css), a
+   1px or 2px contact line under it and a soft warm shadow beyond, or it carries none. A
+   recessed trough takes the opposite: an inner shadow under its top edge and a lit lip
+   along its foot. The only zero-blur offset shadows are the contact lines. Dark takes
+   the site's values; chalk takes the same construction in a warm umber. From the bottom up:
      ground   the picture. Nothing is drawn into it to make depth; the shell
               sits around it and over it. Only still shadows fall on it:
               nothing over it is blurred, filtered or animated, because every
               repaint over the picture slows down dragging it.
-     well     a field sunk into a surface (--elevation-well): an inner shadow
-              under its top edge.
+     well     a recessed trough (--elevation-well): a field, the trough that holds
+              tabs or a switch, a count cell, a code block. --elevation-trough is
+              the same piece by its other name.
      sink     the well that a column's list lies in (--elevation-sink), cut as
               the picture cuts a container: one inner shadow from the whole of
               its top edge and a lit lip along its foot.
@@ -382,20 +402,25 @@
               column casts one up over the list that scrolls under it
               (--elevation-edge-up).
      raised   a control, a key cap or the chosen row of a list, standing on
-              a surface (--elevation-raised): a highlight on top, a seat
-              below. Pressed, a control sinks: its shadow moves inside
-              (--elevation-pressed).
-     card     a card on a page (--elevation-card).
+              a surface (--elevation-raised): a lit top edge, a contact line and
+              a short shadow. Pressed, a control sinks into a trough
+              (--elevation-pressed). --elevation-chosen is a raised face with a
+              2px gold underline inside it: the chosen tab of a trough.
+     card     a card on a page (--elevation-card), as the site's float.
      float    what floats over the picture or the chrome (--elevation-float):
               the floating sidebar, menus, popovers, tips, a list of matches.
+     table    a tray that holds a plate (--elevation-table), as the plane a
+              demonstration lies on in the site.
      dialog   a dialog over everything (--elevation-dialog).
-   A primary action is seated by --elevation-primary and sinks into
-   --elevation-primary-pressed (`primary-finish` below).
+   A primary action is seated by --elevation-primary, lifts into
+   --elevation-primary-hover and sinks into --elevation-primary-pressed
+   (`primary-finish` below).
    A one-pixel --border stays where it still does work: it draws the edge of a
    control or a card, and it divides regions that share one plane. */
 :root {
-	/* Depth on chalk: shadows in a warm umber, highlights in white. */
-	--elevation-well: inset 0 1px 2px oklch(0.33 0.035 65 / 0.1);
+	/* Depth on chalk: the site's construction in a warm umber, highlights in white. */
+	--elevation-well: inset 0 2px 4px oklch(0.33 0.035 65 / 0.12), inset 0 -1px 0 var(--highlight);
+	--elevation-trough: var(--elevation-well);
 	/* The left column is the picture's own object, so its depth reads the picture's
 	   tokens, which hold both themes. */
 	--elevation-sink: inset 0 9px 9px -8px var(--slab-shadow), inset 0 -1px 0 var(--tray-lip);
@@ -403,80 +428,88 @@
 		inset 0 1px 0 color-mix(in oklch, var(--slab-glint) 16%, transparent), 0 2px 0 var(--slab-edge),
 		0 3px 4px -1px var(--slab-shadow);
 	--elevation-edge-down:
-		0 1px 2px oklch(0.33 0.035 65 / 0.07), 0 8px 18px -8px oklch(0.33 0.035 65 / 0.2);
+		0 1px 0 oklch(0.33 0.035 65 / 0.08), 0 10px 24px -12px oklch(0.33 0.035 65 / 0.22);
 	--elevation-edge-side:
-		-1px 0 2px oklch(0.33 0.035 65 / 0.05), -8px 0 18px -8px oklch(0.33 0.035 65 / 0.16),
-		1px 0 2px oklch(0.33 0.035 65 / 0.05), 8px 0 18px -8px oklch(0.33 0.035 65 / 0.16);
+		-1px 0 0 oklch(0.33 0.035 65 / 0.05), -10px 0 24px -12px oklch(0.33 0.035 65 / 0.18),
+		1px 0 0 oklch(0.33 0.035 65 / 0.05), 10px 0 24px -12px oklch(0.33 0.035 65 / 0.18);
 	--elevation-edge-up:
-		0 -1px 2px oklch(0.33 0.035 65 / 0.05), 0 -8px 18px -10px oklch(0.33 0.035 65 / 0.18);
+		0 -1px 0 oklch(0.33 0.035 65 / 0.06), 0 -10px 24px -12px oklch(0.33 0.035 65 / 0.2);
 	--elevation-raised:
-		inset 0 1px 0 var(--highlight), inset 0 -1px 0 oklch(0.33 0.035 65 / 0.05),
-		0 1px 1px oklch(0.33 0.035 65 / 0.07), 0 1px 3px -1px oklch(0.33 0.035 65 / 0.12);
-	--elevation-pressed: inset 0 1px 2px oklch(0.33 0.035 65 / 0.16);
+		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.33 0.035 65 / 0.16),
+		0 2px 6px -1px oklch(0.33 0.035 65 / 0.16);
+	--elevation-pressed: var(--elevation-well);
+	--elevation-chosen: var(--elevation-raised), inset 0 -2px 0 var(--primary-mark);
 	--elevation-card:
-		inset 0 1px 0 var(--highlight), 0 1px 2px oklch(0.33 0.035 65 / 0.06),
-		0 4px 12px -4px oklch(0.33 0.035 65 / 0.11);
-	--elevation-float:
-		inset 0 1px 0 var(--highlight), 0 1px 2px oklch(0.33 0.035 65 / 0.07),
-		0 8px 20px -6px oklch(0.33 0.035 65 / 0.14), 0 22px 48px -14px oklch(0.33 0.035 65 / 0.18);
+		inset 0 1px 0 var(--highlight), 0 1px 1px oklch(0.33 0.035 65 / 0.1),
+		0 12px 24px -8px oklch(0.33 0.035 65 / 0.14), 0 32px 64px -24px oklch(0.33 0.035 65 / 0.16);
+	--elevation-float: var(--elevation-card);
+	--elevation-table:
+		inset 0 1px 0 var(--highlight), 0 2px 0 oklch(0.33 0.035 65 / 0.08),
+		0 24px 48px -16px oklch(0.33 0.035 65 / 0.18), 0 64px 120px -48px oklch(0.33 0.035 65 / 0.22);
 	--elevation-dialog:
-		inset 0 1px 0 var(--highlight), 0 2px 4px oklch(0.33 0.035 65 / 0.08),
-		0 14px 32px -8px oklch(0.33 0.035 65 / 0.18), 0 36px 80px -16px oklch(0.33 0.035 65 / 0.26);
+		inset 0 1px 0 var(--highlight), 0 2px 0 oklch(0.33 0.035 65 / 0.08),
+		0 40px 80px -24px oklch(0.33 0.035 65 / 0.24), 0 100px 160px -40px oklch(0.33 0.035 65 / 0.26);
 	--elevation-primary:
-		inset 0 1px 0 oklch(1 0.04 95 / 0.6), inset 0 -1px 0 oklch(0.5 0.11 70 / 0.16),
-		0 1px 2px oklch(0.42 0.09 70 / 0.26), 0 2px 6px -2px oklch(0.42 0.09 70 / 0.32);
-	--elevation-primary-pressed: inset 0 1px 3px oklch(0.42 0.1 70 / 0.4);
+		inset 0 1px 0 oklch(1 0.04 95 / 0.6), 0 1px 0 oklch(0.42 0.09 70 / 0.3),
+		0 6px 16px -6px oklch(0.55 0.12 75 / 0.45);
+	--elevation-primary-hover:
+		inset 0 1px 0 oklch(1 0.04 95 / 0.65), 0 2px 0 oklch(0.42 0.09 70 / 0.3),
+		0 12px 28px -8px oklch(0.6 0.13 78 / 0.5);
+	--elevation-primary-pressed: inset 0 2px 3px oklch(0.45 0.1 70 / 0.45);
 }
 
 :root[data-theme="dark"] {
-	/* Depth on graphite: shadows in a warm near-black, highlights faint. */
-	--elevation-well: inset 0 1px 2px oklch(0.06 0.01 70 / 0.5);
+	/* Depth on graphite: the site's own values. */
+	--elevation-well: inset 0 2px 4px oklch(0.04 0.004 75 / 0.6), inset 0 -1px 0 var(--highlight);
 	--elevation-edge-down:
-		0 1px 2px oklch(0.05 0.01 70 / 0.45), 0 12px 28px -10px oklch(0.05 0.01 70 / 0.8);
+		inset 0 -1px 0 var(--highlight), 0 10px 24px -12px oklch(0.04 0.006 75 / 0.8);
 	--elevation-edge-side:
-		-1px 0 2px oklch(0.05 0.01 70 / 0.35), -12px 0 28px -10px oklch(0.05 0.01 70 / 0.7),
-		1px 0 2px oklch(0.05 0.01 70 / 0.35), 12px 0 28px -10px oklch(0.05 0.01 70 / 0.7);
+		-1px 0 0 oklch(0.06 0.004 75 / 0.6), -12px 0 28px -10px oklch(0.04 0.006 75 / 0.7),
+		1px 0 0 oklch(0.06 0.004 75 / 0.6), 12px 0 28px -10px oklch(0.04 0.006 75 / 0.7);
 	--elevation-edge-up:
-		0 -1px 2px oklch(0.05 0.01 70 / 0.4), 0 -10px 24px -10px oklch(0.05 0.01 70 / 0.7);
+		inset 0 1px 0 var(--highlight), 0 -10px 24px -14px oklch(0.04 0.006 75 / 0.9);
 	--elevation-raised:
-		inset 0 1px 0 var(--highlight), 0 1px 2px oklch(0.06 0.01 70 / 0.55),
-		0 2px 4px -2px oklch(0.06 0.01 70 / 0.4);
-	--elevation-pressed: inset 0 1px 3px oklch(0.04 0.01 70 / 0.6);
+		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.06 0.004 75 / 0.7),
+		0 2px 6px -1px oklch(0.06 0.006 75 / 0.5);
 	--elevation-card:
-		inset 0 1px 0 var(--highlight), 0 1px 2px oklch(0.06 0.01 70 / 0.45),
-		0 6px 16px -6px oklch(0.06 0.01 70 / 0.55);
-	--elevation-float:
-		inset 0 1px 0 var(--highlight), 0 2px 4px oklch(0.06 0.01 70 / 0.4),
-		0 12px 28px -8px oklch(0.06 0.01 70 / 0.55), 0 28px 60px -16px oklch(0.06 0.01 70 / 0.6);
+		inset 0 1px 0 var(--highlight), 0 1px 1px oklch(0.06 0.004 75 / 0.6),
+		0 12px 24px -8px oklch(0.06 0.006 75 / 0.6), 0 32px 64px -24px oklch(0.06 0.006 75 / 0.7);
+	--elevation-table:
+		inset 0 1px 0 var(--highlight), 0 2px 0 oklch(0.06 0.004 75 / 0.6),
+		0 24px 48px -16px oklch(0.06 0.006 75 / 0.75), 0 64px 120px -48px oklch(0.04 0.006 75 / 0.9);
 	--elevation-dialog:
-		inset 0 1px 0 var(--highlight), 0 2px 6px oklch(0.06 0.01 70 / 0.45),
-		0 18px 40px -10px oklch(0.06 0.01 70 / 0.6), 0 40px 96px -20px oklch(0.06 0.01 70 / 0.7);
+		inset 0 1px 0 oklch(1 0.01 85 / 0.12), 0 2px 0 oklch(0.06 0.004 75 / 0.6),
+		0 40px 80px -24px oklch(0.03 0.004 75 / 0.85), 0 100px 160px -40px oklch(0.03 0.004 75 / 0.9);
 	--elevation-primary:
-		inset 0 1px 0 oklch(1 0.05 95 / 0.55), inset 0 -1px 0 oklch(0.45 0.1 70 / 0.28),
-		0 1px 2px oklch(0.05 0.01 70 / 0.6), 0 4px 10px -3px oklch(0.05 0.01 70 / 0.55);
-	--elevation-primary-pressed: inset 0 1px 3px oklch(0.4 0.1 70 / 0.55);
+		inset 0 1px 0 oklch(1 0.02 90 / 0.55), 0 1px 0 oklch(0.06 0.004 75 / 0.8),
+		0 6px 16px -6px oklch(0.55 0.12 75 / 0.55);
+	--elevation-primary-hover:
+		inset 0 1px 0 oklch(1 0.02 90 / 0.6), 0 2px 0 oklch(0.06 0.004 75 / 0.8),
+		0 12px 28px -8px oklch(0.6 0.13 78 / 0.6);
+	--elevation-primary-pressed: inset 0 2px 3px oklch(0.45 0.1 70 / 0.6);
 }
 
 /* The finish of a region's one primary action (theme.css, "The accent"): a
    piece of gold with a subtle top-to-bottom gradient, a highlight along its
-   top edge, a darker rim and a shadow that seats it. Hovered, it brightens.
-   Pressed, the gradient turns over and the shadow moves inside; the control
-   sinks a pixel with the `active:translate-y-px` its site gives it. A site
-   that has a disabled look of its own sets it with `disabled:` utilities. */
+   top edge, a darker rim, a contact line and a warm glow. Hovered, it lifts a
+   pixel and its glow grows. Pressed, it sinks a pixel, the gradient turns over
+   and the shadow moves inside. A site that has a disabled look of its own sets
+   it with `disabled:` utilities. */
 @utility primary-finish {
 	color: var(--primary-foreground);
 	border-color: var(--primary-edge);
 	background-color: var(--primary-bottom);
 	background-image: linear-gradient(180deg, var(--primary-top), var(--primary-bottom));
 	@apply shadow-primary;
+	transition-property: translate, box-shadow, background-image;
+	transition-duration: 160ms;
+	transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 	&:hover:not(:disabled) {
-		background-image: linear-gradient(
-			180deg,
-			color-mix(in oklch, var(--primary-top), white 16%),
-			color-mix(in oklch, var(--primary-bottom), white 9%)
-		);
+		translate: 0 -1px;
+		@apply shadow-primary-hover;
 	}
 	&:active:not(:disabled) {
+		translate: 0 1px;
 		background-image: linear-gradient(
 			180deg,
 			color-mix(in oklch, var(--primary-bottom), black 4%),
@@ -484,6 +517,74 @@
 		);
 		@apply shadow-primary-pressed;
 	}
+}
+
+/* The quiet key: a raised face beside a gold one, as on the site. Its edge is the
+   site's hairline ring. Hovered it lifts a pixel onto a lighter face, and pressed it
+   sinks into a trough. */
+@utility quiet-key {
+	color: var(--foreground);
+	background-color: var(--face);
+	box-shadow:
+		var(--elevation-raised),
+		inset 0 0 0 1px var(--border);
+	transition-property: translate, background-color, box-shadow, color;
+	transition-duration: 160ms;
+	transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+	&:hover:not(:disabled, [aria-disabled="true"]) {
+		background-color: var(--face-hover);
+		translate: 0 -1px;
+	}
+	&:active:not(:disabled, [aria-disabled="true"]),
+	&[aria-expanded="true"],
+	&[aria-pressed="true"] {
+		translate: 0 0;
+		box-shadow:
+			var(--elevation-pressed),
+			inset 0 0 0 1px var(--border);
+	}
+}
+
+/* A trough: a recessed well that holds the choices of a switch or a row of tabs. The
+   chosen one rises out of it as a raised face with a 2px gold underline inside it
+   (`chosen-face`). */
+@utility trough {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 3px;
+	border-radius: var(--radius-panel);
+	background-color: var(--tray-sink);
+	box-shadow: var(--elevation-trough);
+}
+@utility chosen-face {
+	color: var(--foreground);
+	background-color: var(--face);
+	box-shadow: var(--elevation-chosen);
+}
+
+/* A tray: the frame a plate lies in, Chrome with 6px round its plate, on the site's
+   table shadow and a hairline ring. A plate in it is a plane of the ground's tone
+   with a ring (`plate`). */
+@utility tray {
+	padding: 6px;
+	border-radius: var(--radius-table);
+	background-color: var(--sidebar);
+	box-shadow:
+		var(--elevation-table),
+		inset 0 0 0 1px var(--border);
+}
+@utility plate {
+	border-radius: var(--radius-panel);
+	background-color: var(--background);
+	box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* The floor of code: commands, excerpts of source and paths, with a ring. */
+@utility code-bed {
+	border-radius: var(--radius-panel);
+	background-color: var(--code-bed);
+	box-shadow: inset 0 0 0 1px var(--border);
 }
 
 /* A popover that a person opened, a select or a menu. It grows a little from its
@@ -1173,75 +1274,6 @@
 	transform: translateX(2rem);
 	transition-duration: var(--sidebar-float-out-ms, 110ms);
 	transition-timing-function: ease-in;
-}
-
-/* The left column's tabs stand on the top edge of its well, as a container's name
-   stands on the picture (ADR 0044). The open tab is the lighter piece raised on that
-   edge, with the well's own corners. Its side turns into the edge in a crisp concave
-   curve in place of reaching it, the top edge runs on under it, and one line goes round
-   the tab and the well. The rules stand outside any layer, so they replace the
-   registry's trigger. */
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"] {
-	--foot: 5px;
-	flex: none;
-	gap: 6px;
-	height: 32px;
-	padding: 0 4px;
-	border: 1px solid transparent;
-	border-bottom: 0;
-	border-radius: 5px 5px 0 0;
-	background: none;
-	color: var(--muted-foreground);
-	font-size: var(--text-control);
-	line-height: var(--text-control--line-height);
-	font-weight: 500;
-	transition: color 120ms ease-out;
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"]:hover {
-	color: var(--foreground);
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"]:focus-visible {
-	box-shadow: inset 0 0 0 2px var(--ring);
-	outline: none;
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active] {
-	z-index: 1;
-	border-color: var(--border);
-	background-color: var(--tray-tab);
-	box-shadow:
-		inset 0 1px 0 var(--highlight),
-		0 -3px 6px -3px var(--slab-shadow);
-	color: var(--foreground);
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"]::before,
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"]::after {
-	content: none;
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::before,
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::after {
-	content: "";
-	position: absolute;
-	inset: auto;
-	bottom: 0;
-	width: calc(var(--foot) + 1px);
-	height: var(--foot);
-	opacity: 1;
-	pointer-events: none;
-	--curve:
-		transparent var(--foot), var(--border) var(--foot), var(--border) calc(var(--foot) + 1px),
-		var(--tray-tab) calc(var(--foot) + 1.5px);
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::before {
-	right: 100%;
-	background:
-		radial-gradient(circle at 0 0, var(--curve)),
-		linear-gradient(to left, var(--tray-tab) 1px, transparent 1px);
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::after {
-	left: 100%;
-	background:
-		radial-gradient(circle at 100% 0, var(--curve)),
-		linear-gradient(to right, var(--tray-tab) 1px, transparent 1px);
 }
 
 /* The sidebar's scroll areas are quiet: a thin bar in the theme's own tone, in

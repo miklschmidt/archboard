@@ -11,7 +11,8 @@ interface ModelSwitchProps<Choice extends string> {
 }
 
 /**
- * One of a few ways of reading the same thing, always one of them on.
+ * One of a few ways of reading the same thing, always one of them on: the site's trough, with the
+ * one on raised out of it.
  * @param props The choices and the one on.
  * @returns The switch.
  */
@@ -30,17 +31,17 @@ function ModelSwitch<Choice extends string>(props: ModelSwitchProps<Choice>): JS
 			aria-label={props.label}
 			data-slot={props.slot}
 			size="sm"
-			variant="outline"
-			spacing={0}
+			spacing={0.5}
 			value={pressed}
 			onValueChange={change}
+			className="trough"
 		>
 			{choices.map((choice) => (
 				<ToggleGroup.Item
 					key={choice.value}
 					value={choice.value}
 					data-choice={choice.value}
-					className="text-muted-foreground aria-pressed:bg-tray-tab aria-pressed:text-foreground aria-pressed:shadow-raised"
+					className="text-muted-foreground hover:text-foreground aria-pressed:text-foreground aria-pressed:chosen-face rounded-control aria-pressed:bg-face h-6 hover:bg-transparent"
 				>
 					{choice.label}
 				</ToggleGroup.Item>

@@ -75,8 +75,8 @@ function destinationEntries(props: ColumnDestinationsProps): readonly Destinatio
 }
 
 /**
- * Put a reader's destinations in the left column while its pane has focus: tabs on the top edge of
- * a well, with the count of the whole model on Flows and Walkthroughs, so a list here never changes
+ * Put a reader's destinations in the left column while its pane has focus: tabs in a trough over
+ * the well of the list, with the count of the whole model on Flows and Walkthroughs, so a list here never changes
  * under a reader. A proposal adds Changes to the row.
  * @param props The destination on screen and the lists.
  * @returns The destinations, or nothing while another pane has focus.
@@ -94,7 +94,7 @@ function ColumnDestinations(props: ColumnDestinationsProps): JSX.Element | null 
 					onValueChange={onDestination}
 					className="min-h-0 flex-1 gap-0"
 				>
-					<Tabs.List variant="edge" className="shrink-0 px-2">
+					<Tabs.List variant="trough" className="mx-2 mb-2 flex w-auto shrink-0">
 						{destinationEntries(props).map((entry) => (
 							<DestinationTab key={entry.value} entry={entry} />
 						))}

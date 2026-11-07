@@ -175,17 +175,19 @@ function Section(props: {
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
-		<section data-slot={props.slot} aria-label={props.title} className="flex flex-col gap-1">
-			<div className="flex items-center justify-between gap-2">
-				<h4 className="text-body text-muted-foreground flex items-baseline gap-2 font-semibold">
+		<section data-slot={props.slot} aria-label={props.title} className="flex flex-col gap-2">
+			<div className="flex min-h-6 items-center justify-between gap-2">
+				<h4 className="text-body text-foreground flex items-baseline gap-2 font-semibold">
 					{props.title}
 					{props.count !== undefined && (
-						<span className="text-technical font-mono font-normal">{props.count}</span>
+						<span className="text-technical text-muted-foreground font-mono font-normal">
+							{props.count}
+						</span>
 					)}
 				</h4>
 				{props.action}
 			</div>
-			<ul className="-mx-2 flex flex-col">{props.children}</ul>
+			<ul className="flex flex-col gap-0.5">{props.children}</ul>
 		</section>
 	);
 }
@@ -216,7 +218,7 @@ function Rows<Item>(props: {
 						type="button"
 						data-slot="model-panel-more"
 						onClick={showAll}
-						className="text-body text-muted-foreground hover:text-foreground px-2 py-1"
+						className="text-body text-muted-foreground hover:text-foreground rounded-control px-2 py-1"
 					>
 						{items.length - shown.length} more
 					</button>
@@ -253,7 +255,9 @@ function Row({
 				type="button"
 				{...button}
 				className={cn(
-					"hover:bg-muted/60 aria-pressed:bg-sidebar-accent aria-[current=location]:bg-sidebar-accent rounded-control flex min-h-7 min-w-0 flex-1 gap-x-2 px-2 py-1 text-left",
+					// A row is a plate on the panel, as the site's inspector lists its parts; the row on
+					// screen rises as a raised face.
+					"bg-background hover:bg-face aria-pressed:bg-face aria-pressed:shadow-raised aria-[current=location]:bg-face aria-[current=location]:shadow-raised rounded-control flex min-h-7 min-w-0 flex-1 gap-x-2 px-2 py-1 text-left transition-colors",
 					stacked ? "flex-col" : "items-baseline",
 				)}
 			>

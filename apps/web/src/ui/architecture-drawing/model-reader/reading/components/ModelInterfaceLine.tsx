@@ -40,7 +40,7 @@ function ModelInterfaceLine(props: ModelInterfaceLineProps): JSX.Element | null 
 				type="button"
 				data-slot="model-interface-about"
 				onClick={onAbout}
-				className="text-body border-border hover:bg-sidebar-accent/50 rounded-control flex h-6 shrink-0 items-center border px-2 transition-colors"
+				className="text-body quiet-key rounded-control flex h-6 shrink-0 items-center px-2 font-semibold"
 			>
 				Open in About
 			</button>
@@ -80,7 +80,7 @@ function Counts(props: {
 }): JSX.Element {
 	const { hidden, module, onShow } = props;
 	return (
-		<li className="ml-1.5 flex flex-wrap gap-x-0.5">
+		<li className="grid grid-cols-2 gap-1">
 			{props.counts
 				.filter(({ key }) => (key === "hiddenParts") === hidden)
 				.map((count) => (
@@ -91,16 +91,19 @@ function Counts(props: {
 }
 
 /**
- * A count in the mono face with what it counts in words, as every list of measures says it.
+ * What a count counts, and the count in the mono face at the end of its well, as the site's
+ * inspector sets it.
  * @param props The count.
  * @param props.count How many.
  * @param props.label What of.
  * @returns The words.
  */
 function CountWords(props: { readonly count: number; readonly label: string }): JSX.Element {
+	const { count, label } = props;
 	return (
 		<>
-			<span className="text-technical font-mono">{props.count}</span> {props.label}
+			<span className="truncate">{`${label.charAt(0).toUpperCase()}${label.slice(1)}`}</span>
+			<span className="text-foreground font-mono text-[12px] leading-4">{count}</span>
 		</>
 	);
 }
@@ -128,7 +131,7 @@ function Count(props: {
 			title={count.key === "hiddenParts" ? HIDDEN_MEANS : undefined}
 			disabled={count.subjects.length === 0}
 			onClick={show}
-			className="text-body text-muted-foreground enabled:hover:bg-sidebar-accent enabled:hover:text-foreground rounded-control px-0.5 py-0.5 text-left whitespace-nowrap"
+			className="text-body text-muted-foreground bg-tray-sink shadow-well enabled:hover:text-foreground enabled:hover:bg-face/60 rounded-control flex min-w-0 items-baseline justify-between gap-2 px-2 py-1.5 text-left whitespace-nowrap disabled:opacity-70"
 		>
 			<CountWords count={count.count} label={count.label} />
 		</button>
