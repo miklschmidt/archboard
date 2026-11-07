@@ -1,0 +1,68 @@
+{
+  "order": 2000,
+  "name": "Executable compile",
+  "kind": "module",
+  "responsibility": "Compiles the CLI, the server and the layout worker into one executable for a target, and lays out the assets and the marker beside it",
+  "description": "The executable embeds the program at its paths in the repository, which is why the installation names a program root. The grammars of the code check, the reviewed texts of the workbench and the theme colours are embedded, so the package holds no file that the program finds beside its source. Beside the executable it copies the frontend bundle, the core with its glue bundled with the panic guard, and the archboard and archboard-pr skills. It writes archboard-release.json with the version, the commit, the hash of the core sources and the Codex version. The flake's build names the commit in ARCHBOARD_RELEASE_COMMIT, because its source has no .git, and the Bun runtime of each target in ARCHBOARD_RELEASE_BUN_RUNTIMES, because its sandbox cannot download one. Otherwise the commit is the checkout's HEAD, and Bun downloads the runtime. It refuses a bundle that would load a native addon at run time, a checkout with no frontend build, and a core built from other sources than the checkout's.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "scripts/release/compile.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#5pa5C2WH",
+  "parent": "vKEsyHFk#02jxKSM1",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "data",
+      "label": "archboard-release.json, which Installation reads",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/compile.ts",
+        "symbol": "releaseMarker"
+      },
+      "id": "vKEsyHFk#ySiOpsWO",
+      "to": "vKEsyHFk#4FdKQJqK"
+    },
+    {
+      "order": 2000,
+      "kind": "call",
+      "label": "the hash of the core sources it records",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/compile.ts",
+        "symbol": "loadCore"
+      },
+      "id": "vKEsyHFk#Inhz9zl3",
+      "to": "vKEsyHFk#jY4mqBJe"
+    },
+    {
+      "order": 4000,
+      "kind": "dependency",
+      "label": "compiled as the executable's entry",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/compile.ts",
+        "symbol": "ENTRIES"
+      },
+      "id": "vKEsyHFk#zVHP2Mex",
+      "to": "vKEsyHFk/XppR9owz#peyArgPx"
+    },
+    {
+      "order": 5000,
+      "kind": "dependency",
+      "label": "compiled in, and imported when started as server",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/compile.ts",
+        "symbol": "ENTRIES"
+      },
+      "id": "vKEsyHFk#Yqj1H3vP",
+      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+    }
+  ]
+}

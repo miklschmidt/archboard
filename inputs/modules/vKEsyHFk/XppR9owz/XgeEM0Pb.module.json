@@ -3,7 +3,7 @@
   "name": "Install skill",
   "kind": "module",
   "responsibility": "install-skill: links the bundled skills to this checkout, or copies them into a skills root inside the repository, and makes this repository's vault, writing nothing into its CLAUDE.md or AGENTS.md",
-  "description": "TASK-471.03. A command finds the vault from the repository it runs in (ADR 0049), so nothing about it is written down. --repo, else the working directory, names a directory, and the vault is made at the root of the git checkout that holds it, where a command run anywhere in the checkout finds it. The receipt's setup names the repository, its vault, whether the vault was made, whether git ignores it and the documents an earlier block was removed from. --vault, --doc and --yes are gone, and --no-setup, once --no-doc, leaves the repository alone.",
+  "description": "TASK-471.03. A command finds the vault from the repository it runs in (ADR 0049), so nothing about it is written down. --repo, else the working directory, names a directory, and the vault is made at the root of the git checkout that holds it, where a command run anywhere in the checkout finds it. The receipt's setup names the repository, its vault, whether the vault was made, whether git ignores it and the documents an earlier block was removed from. --vault, --doc and --yes are gone, and --no-setup, once --no-doc, leaves the repository alone. It links the skills of the installation, whether a checkout's or a release's, and writes nothing into the installation, which a global install may make read-only; a release's skills arrive prepared. A copy into the repository's own skills root is a normal directory that the owner can write.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/install-skill/operations/install-skill.ts"
@@ -45,6 +45,19 @@
       },
       "id": "vKEsyHFk/XppR9owz#Kk4jceif",
       "to": "vKEsyHFk/XppR9owz#tTkbidT4"
+    },
+    {
+      "order": 70000,
+      "kind": "dependency",
+      "label": "the skills to link or copy, and the root",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/install-skill/operations/install-skill.ts",
+        "symbol": "installation"
+      },
+      "id": "vKEsyHFk#Rn3hOh85",
+      "to": "vKEsyHFk#4FdKQJqK"
     }
   ]
 }

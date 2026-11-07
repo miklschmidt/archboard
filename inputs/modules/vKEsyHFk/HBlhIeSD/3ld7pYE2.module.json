@@ -2,8 +2,8 @@
   "order": 7000,
   "name": "Service routes",
   "kind": "route",
-  "responsibility": "Serves the page, the health answer (the archboard-server service, its pid, the checkout whose source it runs and whether that is the source on disk) and the sync status",
-  "description": "The CLI signals a process for stop only when it both identifies as archboard-server and reports its own pid. A CLI refuses a server whose health names another checkout's source than its own, and names both checkouts.",
+  "responsibility": "Serves the page, the health answer (service, pid, version, mode, the checkout whose source it runs and whether that is the source on disk) and the sync status",
+  "description": "The CLI signals a process for stop only when it both identifies as archboard-server and reports its own pid. A CLI refuses a server whose health names another checkout's source than its own, and names both checkouts. The page is the installation's frontend directory. A command of another release version compares the version and the mode that the answer names.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts"
@@ -71,6 +71,32 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#CiOgt2S3",
       "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
+    },
+    {
+      "order": 121000,
+      "kind": "call",
+      "label": "whether source and bundle are current",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
+        "symbol": "sourceState"
+      },
+      "id": "vKEsyHFk#hhuZHtcv",
+      "to": "vKEsyHFk#apyQZjM7"
+    },
+    {
+      "order": 122000,
+      "kind": "dependency",
+      "label": "the version and the mode that health names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
+        "symbol": "installation"
+      },
+      "id": "vKEsyHFk#k8KGwI7m",
+      "to": "vKEsyHFk#4FdKQJqK"
     }
   ]
 }

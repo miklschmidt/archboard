@@ -1,0 +1,29 @@
+{
+  "order": 90000,
+  "name": "Staleness",
+  "kind": "function",
+  "responsibility": "Says whether the running server loaded the source and serves the frontend bundle that are on disk now",
+  "description": "A checkout's server runs TypeScript that it loaded once, so it compares the time of every source file it loaded with the time of loading, and compares the entry script of the bundle a tab fetched with the bundle on disk. It reads the root and the frontend directory from the installation. /health reports both answers, and status says when either is stale.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/server-lifecycle/src/runtime/services/staleness.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#apyQZjM7",
+  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "the root to compare, and the frontend directory",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/services/staleness.ts",
+        "symbol": "installation"
+      },
+      "id": "vKEsyHFk#iviIcqXR",
+      "to": "vKEsyHFk#4FdKQJqK"
+    }
+  ]
+}

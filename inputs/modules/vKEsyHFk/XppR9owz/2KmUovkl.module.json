@@ -2,7 +2,7 @@
   "order": 25000,
   "name": "Status",
   "kind": "module",
-  "responsibility": "status: whether the Archboard server answers, who it is, and what it reports",
+  "responsibility": "status: whether the Archboard server answers, who it is, its version and mode, and what it reports",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/server-control/operations/status.ts"

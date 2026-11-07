@@ -1,0 +1,15 @@
+{
+  "order": 91000,
+  "name": "Embedded grammars",
+  "kind": "config",
+  "responsibility": "Names the .wasm file and the query text of every grammar that code facts parse with, as module imports that a release embeds",
+  "description": "A checkout reads the grammars from node_modules and the queries beside this file. The executable of a release embeds the same imports, so a release holds no grammar file and the installation names no grammar location. Which grammar and query read which file is the adapter table's.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-intel/src/runtime/code-facts/services/grammar-files.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#DZGqA0Dn",
+  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+  "outgoing": []
+}

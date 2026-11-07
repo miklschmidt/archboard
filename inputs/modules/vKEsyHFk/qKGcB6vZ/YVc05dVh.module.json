@@ -3,6 +3,7 @@
   "name": "Shared instruction policy",
   "kind": "module",
   "responsibility": "Compose core role rules, the host's toolset, turn input, context encoding, and exact immutable profile hashes",
+  "description": "The reviewed documents are imported as text, so the executable of a release embeds them and nothing reads them by path; the digest check still refuses a changed document.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/host"

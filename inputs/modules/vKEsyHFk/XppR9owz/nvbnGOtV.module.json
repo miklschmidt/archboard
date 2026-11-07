@@ -2,8 +2,8 @@
   "order": 44000,
   "name": "Restart",
   "kind": "module",
-  "responsibility": "Stops the server, builds the frontend from this checkout, and starts the server again",
-  "description": "It refuses a server that it could not start again before it stops it, and a refused stop leaves the bundle unbuilt. A failed build refuses with FRONTEND_BUILD_FAILED, carries the build's output and says that the server is stopped. The answer names the entry script of the new bundle, as /health reports it.",
+  "responsibility": "Stops the server and starts it again; a checkout builds its frontend between the two, a release builds nothing",
+  "description": "It refuses a server that it could not start again before it stops it, and a refused stop leaves the bundle unbuilt. A checkout then builds the frontend, streams the build's output to stderr as it runs so that a slow core build is visible, and keeps stdout for the answer; a failed build refuses with FRONTEND_BUILD_FAILED, says that its output is above and that the server is stopped. A release builds nothing, because it changes on disk only by an install (ADR 0076), so restart is how a server runs the installed version. It silences the version warning for itself, because restart is the remedy that the warning names. The answer names the entry script of the bundle, as /health reports it.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/operations/restart.ts"
@@ -36,15 +36,15 @@
     {
       "order": 73000,
       "kind": "dependency",
-      "label": "the checkout to build",
+      "label": "the root of the installation to build",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
-        "symbol": "SOURCE_CHECKOUT"
+        "symbol": "installation"
       },
       "id": "vKEsyHFk/XppR9owz#i7r1YcDJ",
-      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+      "to": "vKEsyHFk#4FdKQJqK"
     },
     {
       "order": 74000,
@@ -58,6 +58,32 @@
       },
       "id": "vKEsyHFk/XppR9owz#eSv7lgu3",
       "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
+    },
+    {
+      "order": 75000,
+      "kind": "call",
+      "label": "silence the warning about the server it replaces",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+        "symbol": "silenceVersionWarning"
+      },
+      "id": "vKEsyHFk#e3hkROQO",
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    },
+    {
+      "order": 76000,
+      "kind": "call",
+      "label": "the bundle a release serves, which it does not build",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+        "symbol": "frontendBuild"
+      },
+      "id": "vKEsyHFk#2JxXOGhK",
+      "to": "vKEsyHFk#apyQZjM7"
     }
   ]
 }
