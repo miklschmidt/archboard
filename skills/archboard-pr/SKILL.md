@@ -2,7 +2,8 @@
 name: archboard-pr
 description: >-
   Help agents and humans understand architectural changes and choose meaningful
-  PR boundaries. Use when creating PRs, updating PRs, or writing PR bodies.
+  PR boundaries. Use when creating PRs, updating PRs, or writing PR bodies, and
+  load it together with any other PR skill, such as pr.
 ---
 
 # Explain a pull request

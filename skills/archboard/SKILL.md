@@ -2,8 +2,9 @@
 name: archboard
 description: >-
   Read, author, and visualize local architecture with the archboard CLI.
-  Always use when planning, implementing, explaining, visualizing, refactoring,
-  or improving a codebase. Load this skill when loading, reading, or using
+  Always use in repositories with an .archboard/vault directory: when planning,
+  implementing, explaining, visualizing, refactoring, or improving the
+  codebase. Load this skill when loading, reading, or using
   improve-codebase-architecture. Also use for architecture questions, request
   flows, proposals, and explicit migration of existing architecture vaults.
 ---
