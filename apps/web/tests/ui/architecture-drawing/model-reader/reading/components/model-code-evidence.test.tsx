@@ -182,6 +182,7 @@ test("the pager walks the warnings first, and each step selects the finding's su
 test("the excerpt marks the evidence line among the lines round it", async () => {
 	const asked = answering(() =>
 		Response.json({
+			success: true,
 			repo: CALL.repo,
 			path: CALL.path,
 			line: CALL.line,

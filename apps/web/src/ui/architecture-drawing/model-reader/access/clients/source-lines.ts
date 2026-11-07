@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
-import { z } from "zod";
-import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import type { z } from "zod";
+import { CodeSourceLinesSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { inVault } from "@archboard/server-requests";
 import { architectureModelKeys } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 
@@ -10,21 +10,8 @@ type EvidencePlace = Pick<
 	"repo" | "path" | "line"
 >;
 
-/**
- * The lines around a finding's evidence, as `GET /api/code/source-lines` answers: the evidence
- * line with up to three lines either side, and the number of the first of them.
- */
-const SourceLinesSchema = z
-	.object({
-		repo: z.string(),
-		path: z.string(),
-		line: z.int().positive(),
-		first: z.int().positive(),
-		lines: z.array(z.string()),
-	})
-	.strict();
-
-type SourceLines = z.infer<typeof SourceLinesSchema>;
+/** The lines around a finding's evidence, with the number of the first of them. */
+type SourceLines = z.infer<typeof CodeSourceLinesSchema>;
 
 /**
  * The source lines around one piece of a remembered finding's evidence. The server answers only for
@@ -59,7 +46,7 @@ function sourceLinesQuery(vault: string, place: EvidencePlace, checkedAt: string
 			});
 			if (response.status === 404) return null;
 			if (!response.ok) throw new Error(`The source lines could not be read (${response.status}).`);
-			return SourceLinesSchema.parse(await response.json());
+			return CodeSourceLinesSchema.parse(await response.json());
 		},
 		staleTime: Number.POSITIVE_INFINITY,
 		retry: false,
