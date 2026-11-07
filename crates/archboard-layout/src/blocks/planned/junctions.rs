@@ -1,5 +1,6 @@
 //! A shared fan can meet only at the ends of its declared shared strokes.
 
+use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS};
 use crate::geometry::Point;
 
 #[derive(Clone, Copy)]
@@ -83,6 +84,34 @@ fn common_prefix(a: &[Point], b: &[Point]) -> f64 {
         }
     }
     shared
+}
+
+/// How far before the box it enters a target fan joins at the nearest: the arrow
+/// and the bend behind it, then a bend and as long a straight again for the join.
+const JOIN_ROOM: f64 = APPROACH_STRAIGHT + 3.0 * BEND_RADIUS;
+
+/// Branches of one fan meet where a reader can see them meet. Two branches never
+/// meet head-on or part back to back on one line, which reads as one line through
+/// the junction, and a target fan joins a visible run before the box it enters.
+/// Where one branch runs wholly along the other, they never join.
+pub(super) fn readable(a: &[Point], b: &[Point], target: bool) -> bool {
+    let reversed = |path: &[Point]| path.iter().rev().copied().collect::<Vec<_>>();
+    let joined = if target {
+        common_prefix(&reversed(a), &reversed(b))
+    } else {
+        0.0
+    };
+    let room = JOIN_ROOM.min(super::geometry::length(a).min(super::geometry::length(b)));
+    (joined == 0.0 || joined >= room - 1e-6)
+        && !a.windows(2).any(|p| b.windows(2).any(|q| head_on(p, q)))
+}
+
+/// Two strokes on one line that touch end to end from opposite sides.
+fn head_on(p: &[Point], q: &[Point]) -> bool {
+    let sign = |d: f64| if d.abs() < 1e-6 { 0.0 } else { d.signum() };
+    let direction = |s: &[Point]| (sign(s[1].x - s[0].x), sign(s[1].y - s[0].y));
+    let (one, other) = (direction(p), direction(q));
+    one != (0.0, 0.0) && one == (-other.0, -other.1) && (p[1] == q[1] || p[0] == q[0])
 }
 
 pub(super) fn ordered(a: &[Point], b: &[Point], sharing: bool) -> bool {
@@ -198,6 +227,46 @@ fn near_parallel(one: &[Point], other: &[Point], horizontal: bool) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn path(points: &[(f64, f64)]) -> Vec<Point> {
+        points.iter().map(|&(x, y)| Point { x, y }).collect()
+    }
+
+    /// The owner's knot on the card `renderer`: callers from above and below met
+    /// head-on on one column, and only the arrow approach turned into the card.
+    #[test]
+    fn branches_of_a_target_fan_join_a_visible_run_before_the_box_and_never_head_on() {
+        let above = path(&[
+            (2201.0, 74.82),
+            (2201.0, 165.6),
+            (875.29, 165.6),
+            (875.29, 301.6),
+            (855.27, 301.6),
+        ]);
+        let below = path(&[
+            (187.88, 1038.71),
+            (875.29, 1038.71),
+            (875.29, 301.6),
+            (855.27, 301.6),
+        ]);
+        let beside = path(&[
+            (2245.88, 281.58),
+            (2245.88, 261.56),
+            (875.29, 261.56),
+            (875.29, 301.6),
+            (855.27, 301.6),
+        ]);
+        assert!(!readable(&above, &below, true));
+        assert!(readable(&above, &beside, true));
+        // A long run into the box still refuses branches that meet head-on on its far end.
+        let far = |from: f64| path(&[(915.29, from), (915.29, 301.6), (855.27, 301.6)]);
+        assert!(!readable(&far(165.6), &far(1038.71), true));
+        assert!(readable(&far(165.6), &far(261.56), true));
+        // Parallel lines between two near cards share their whole short run and never join.
+        let short = path(&[(150.0, 92.0), (150.0, 116.0)]);
+        assert!(readable(&short, &short, true));
+    }
+
     #[test]
     fn a_diagonal_or_zero_length_piece_cannot_stall_shared_prefix_detection() {
         let diagonal = [Point { x: 0.0, y: 0.0 }, Point { x: 10.0, y: 10.0 }];
