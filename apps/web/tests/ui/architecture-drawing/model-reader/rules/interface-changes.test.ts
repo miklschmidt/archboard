@@ -6,6 +6,7 @@ import type { Model } from "@archboard/model/content";
 import {
 	interfaceRows,
 	interfaceRowWords,
+	interfaceSides,
 } from "#ui/architecture-drawing/model-reader/rules/interface-changes.ts";
 import { SHOP } from "#tests/ui/support/model-reader/scene.ts";
 
@@ -122,4 +123,36 @@ test("a module the state lacks says so, and keeps its place in the drawing", () 
 
 test("a comparison with no interface change has no rows", () => {
 	expect(interfaceRows(reading([]), PARENTS)).toEqual([]);
+});
+
+test("a changed interface sets the base beside the state read, each with what only it has", () => {
+	const change = changeOf("Shop#Worker", {
+		becameHidden: [OTHER],
+		becameEntryPoints: [PART],
+		callersGained: [PART],
+		callersLost: [OTHER],
+	});
+	const read = { ...measuredOn(1, 0), entryPoints: [PART] };
+	const base = { ...measuredOn(2, 0), entryPoints: [OTHER] };
+	const model = reading([change], [{ container: change.container, byState: [read, base] }]);
+	const states = [
+		{ state: { id: "v2", name: "Queued", lifecycle: "draft" as const } },
+		{ state: { id: "v1", name: "Synchronous", lifecycle: "current" as const } },
+	];
+	const sides = interfaceSides(
+		{
+			...model.comparison!,
+			interfaceMeasures: { states, containers: model.comparison!.interfaceMeasures.containers },
+		},
+		"Shop#Worker",
+	);
+	expect(
+		sides?.map((side) => [side.state?.name, side.read, side.entries, side.hidden, side.callers]),
+	).toEqual([
+		["Synchronous", false, ["Decode"], ["Queue"], ["Decode"]],
+		["Queued", true, ["Queue"], ["Decode"], ["Queue"]],
+	]);
+	expect(sides?.map((side) => side.measures?.callers)).toEqual([2, 1]);
+	// A module whose interface did not change has no sides.
+	expect(interfaceSides(model.comparison!, "Shop#Gateway")).toBeNull();
 });

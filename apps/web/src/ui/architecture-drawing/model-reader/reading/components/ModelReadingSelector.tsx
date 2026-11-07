@@ -22,6 +22,7 @@ import { proposalStanding } from "#ui/architecture-drawing/model-reader/rules/st
 import { stateCatalogue } from "#ui/architecture-drawing/model-reader/reading/rules/state-catalogue.ts";
 import { NAME_GAP } from "#ui/shell/rules/tree-grid.ts";
 import { TimelineNode } from "#ui/variant-lifecycle/components/TimelineNode.tsx";
+import { LIFECYCLE_WORD } from "#ui/variant-lifecycle/rules/lifecycle-words.ts";
 import { cn } from "@archboard/ui-kit/components";
 
 interface ModelReadingSelectorProps {
@@ -52,10 +53,7 @@ const WORDS_STYLE = { marginLeft: NAME_GAP } as const;
 
 /** The word that says where a state stands on the timeline. */
 const KIND_WORD: Readonly<Record<RecordKind, string>> = {
-	draft: "Proposal",
-	current: "Current",
-	historical: "Earlier",
-	shelved: "Shelved",
+	...LIFECYCLE_WORD,
 	unknown: "Unavailable",
 };
 const NO_CHECKPOINTS: readonly never[] = [];

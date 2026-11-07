@@ -152,4 +152,97 @@ function interfaceRowWords(row: InterfaceRow): string {
 	return [row.name, ...facts, ...counts].join(". ");
 }
 
-export { interfaceRows, interfaceRowWords, type InterfaceFact, type InterfaceRow };
+/** One state's side of a module's interface, as the card that sets it beside the other. */
+interface InterfaceSide {
+	/** The state, or null for a reading of a model without states. */
+	readonly state: Comparison["interfaceMeasures"]["states"][number]["state"];
+	/** Whether this is the state read, rather than the one it is compared with. */
+	readonly read: boolean;
+	/** Its counts, or nothing where the module holds no parts in it. */
+	readonly measures: Measures | undefined;
+	/** Its entry points, by name. */
+	readonly entries: readonly string[];
+	/** The parts that are hidden here and entry points on the other side. */
+	readonly hidden: readonly string[];
+	/** The callers that only this side has. */
+	readonly callers: readonly string[];
+}
+
+/**
+ * A changed module's interface in the state read and in the state it is compared with, the base
+ * first, as the site's comparison sets them side by side. The entry points are each state's own;
+ * the hidden parts and the callers are those the two states differ by, because the comparison
+ * names only those.
+ * @param comparison The comparison of the reading.
+ * @param id The module.
+ * @returns The base's side and the side read, or null when the module's interface did not change.
+ */
+function interfaceSides(
+	comparison: Comparison,
+	id: string,
+): readonly [InterfaceSide, InterfaceSide] | null {
+	const change = comparison.interfaceChanges.changed.find((one) => one.container.id === id);
+	const measured = comparison.interfaceMeasures.containers.find((one) => one.container.id === id);
+	if (change === undefined || measured === undefined) return null;
+	return [sideOf(comparison, measured, change, 1), sideOf(comparison, measured, change, 0)];
+}
+
+/**
+ * The names of some parts.
+ * @param parts The parts.
+ * @returns Their names.
+ */
+function namesOf(parts: readonly { readonly name: string }[]): string[] {
+	return parts.map((part) => part.name);
+}
+
+/** What each side names of what moved: the state read its gains, the base what it gave up. */
+const SIDE_MOVES = {
+	read: { hidden: "becameHidden", callers: "callersGained" },
+	base: { hidden: "becameEntryPoints", callers: "callersLost" },
+} as const;
+
+/**
+ * The entry points of a module in one state, by name.
+ * @param on What the state says of the module.
+ * @returns Their names, or none where the module holds no parts.
+ */
+function entriesOn(on: Measured["byState"][number] | undefined): string[] {
+	return on?.holdsParts === true ? namesOf(on.entryPoints) : [];
+}
+
+/**
+ * One state's side of a changed module's interface.
+ * @param comparison The comparison of the reading.
+ * @param measured The module's counts in each state.
+ * @param change What moved about its interface.
+ * @param at The state: 0 for the one read, 1 for the one it is compared with.
+ * @returns The side.
+ */
+function sideOf(
+	comparison: Comparison,
+	measured: Measured,
+	change: InterfaceChange,
+	at: 0 | 1,
+): InterfaceSide {
+	const on = measured.byState[at];
+	const read = at === 0;
+	const moved = SIDE_MOVES[read ? "read" : "base"];
+	return {
+		state: comparison.interfaceMeasures.states[at]?.state ?? null,
+		read,
+		measures: countsOn(on),
+		entries: entriesOn(on),
+		hidden: namesOf(change[moved.hidden]),
+		callers: namesOf(change[moved.callers]),
+	};
+}
+
+export {
+	interfaceRows,
+	interfaceRowWords,
+	interfaceSides,
+	type InterfaceFact,
+	type InterfaceRow,
+	type InterfaceSide,
+};
