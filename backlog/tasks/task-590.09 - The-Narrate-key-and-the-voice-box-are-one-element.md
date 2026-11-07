@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T15:06:00Z'
-updated_date: '2026-11-07T16:17:00Z'
+updated_date: '2026-11-07T16:18:00Z'
 labels: []
 dependencies: []
 references:
@@ -52,6 +52,8 @@ Verification (2026-11-07): orb unit tests 34 pass (orb-stage, narrate-home, orb-
 Visual check: a scratch script over the fake Codex stepped the motion clock and captured 38 frames of the launch and the return at 1920x1080 in both themes. The first capture showed the return fading out mid-air, because the fake's stopping stage lasts under 64ms; the stage now lets a flight bound for the waiting socket land lit, and the next capture showed the orb landing in the seat at 680ms and fading to the gold disc.
 Out of write scope: apps/web/tests/ui/support/canvas/stage-harness.tsx wraps panes in OrbStageProvider (the Narrate key now needs the stage); apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx uses RecordedOrb (interface width, ADR 0058); .impeccable/design.json mirrors the DESIGN.md text.
 Known limits: two presented panes each have a Narrate key, and only the newest holds the orb, so the older key shows an empty seat while voice is off, and a press on it launches from the newest key. A Narrate press whose narration is then refused (the reading did not reach the server) leaves the launch armed until an orb is lit or the key goes.
+
+Criterion 3's dock path got its own unit test (a launch with subtitles off lands in the dock): the orb tests are 35 pass, and lint and format:check exit 0 after it. Status stays In Progress until the owner reviews the transition and the three edits outside the write scope.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
