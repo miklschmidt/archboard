@@ -175,7 +175,8 @@ The decision has these parts:
   checkout in `repos.json` keeps the command and its arguments. So the
   configuration is machine-local. `repo list` shows it, `repo forget` removes it,
   and registering the same root again keeps it. Registering the same identity at
-  another root drops it, because nobody configured a server there.
+  another root drops it, because nobody configured a server there. (Replaced by
+  the TASK-599 amendment: the checkout holds the configuration.)
 - Rust (TASK-540) has no default server either. rust-analyzer runs
   `cargo metadata`, the build scripts and the procedural macros of the
   workspace, and `cargo check` after it loads, so it runs the code of the
@@ -184,9 +185,11 @@ The decision has these parts:
   can download modules and the toolchain that a `go.mod` names, and runs the C
   compiler for a package that uses cgo.
 - `language-servers.json` and `ARCHBOARD_LANGUAGE_SERVERS` are gone. The `false`
-  value is gone too, because nothing needs it now. INSTALL.md and the consumer
+  value is gone too, because nothing needs it now. (The TASK-599 amendment adds a
+  global `language-servers.json` with another meaning.) INSTALL.md and the consumer
   skill say that a configured server runs the code of the repository. So an agent
-  configures one only for a repository that it works in.
+  configures one only for a repository that it works in. (The TASK-599 amendment
+  replaces the last sentence: a committed server command needs no trust step.)
 - A configured server runs with exactly its command, its arguments and the
   environment of the Archboard server, in the directory of its project. The check
   no longer changes what clangd reads or writes:
@@ -327,6 +330,75 @@ check chose, it also has `typescript`: the version, and `from` with `checkout`
 or `archboard`. A reader can then tell why the check and the repository's
 compiler disagree. A missing TypeScript server names the checkout's TypeScript
 version and says where to install `typescript-language-server`.
+
+Amended by TASK-599 (2026-11-08): a repository names its language servers in a
+committed file, `.archboard/language-servers.json` at the root of its checkout,
+and the check reads it with no trust step. This replaces the machine-local,
+per-checkout configuration in `repos.json` of the TASK-433 amendment. It also
+replaces the rejected alternative "Language server commands in the vault
+configuration or in a checkout" for the checkout. It replaces the safety
+sentence that a server runs only where the agent that works in that repository
+configured it.
+
+The decision has these parts:
+
+- The file maps a language (`typescript`, `python`, `csharp`, `swift`, `c`,
+  `rust` or `go`) to a `command` and optional `args`. A language or a field that
+  the schema does not name, a command that is empty, and text that is not JSON
+  make the file invalid. The check reads the file in every checkout that it
+  reads, registered or not.
+- A relative command in the repository file, a path with a `/` that is not
+  absolute, is a path from the checkout root. So a repository can commit a
+  wrapper script. This repository does: `scripts/rust-analyzer` runs the flake's
+  rust-analyzer through `nix develop`. Another repository can name `nix` with
+  `develop --command rust-analyzer`, or use `devenv shell` or `devbox run`.
+- A global file, `language-servers.json` in the state directory beside
+  `repos.json`, names a server for each language that the repository file leaves
+  out. The repository file wins for each language. `ARCHBOARD_REPOS` moves both
+  files. The command in the global file is a name on the `PATH` or an absolute
+  path, because the file has no checkout to read a path from.
+- Without either file, TypeScript keeps its default rule above. Any other
+  language has no server, and the check says `language-server-missing` once for
+  each checkout and language. Its detail says that neither the checkout's file
+  nor the global file names a server, and gives the command that names one.
+- A file that cannot be read decides every language that it could name. The
+  check says `language-server-missing` with the path of the file and the problem.
+  An invalid repository file blocks every language of its checkout, TypeScript's
+  default included. An invalid global file blocks each language that the
+  repository file leaves out.
+- A pass reads the global file once, and the file of each checkout once at its
+  start. A running Archboard server needs no restart.
+- `archboard repo language-server <language> <command>` writes the repository
+  file of the working directory's checkout, or of the chosen checkout of
+  `--repo <identity>`. The checkout need not be registered. `--global` writes the
+  global file. `--remove` removes a language, and a file left with no server is
+  deleted. Without a language, the command shows both files. It refuses to
+  overwrite an invalid file.
+- The registry holds no servers. `repo list` and `repo forget` no longer mention
+  them, and a `servers` field that an earlier `repos.json` holds is ignored.
+- A server still runs with exactly its command, its arguments and the
+  environment and `PATH` of the Archboard server, and it runs code of the
+  repository as an editor does.
+
+The decision has these reasons:
+
+- The owner decided on 2026-11-08 that a repository already comes with commands
+  to run, such as its build and its tests. A server command that the repository
+  commits is the same kind of command, so it needs no trust step. The
+  TASK-433 reason for the opt-in, that a repository did not choose to run the
+  server, does not hold for a command that the repository itself names.
+- Setup for each machine and for CI was the cost. A repository that installs its
+  servers through nix, devenv or devbox has them on every machine and in CI, yet
+  every machine and every worktree still needed `repo language-server`. This
+  repository worked around that with a `bun install` hook (TASK-584). A committed
+  file makes the check the same everywhere.
+- The registration of a machine and the file of a repository must not be two
+  separate things. With the file in the checkout, an unregistered checkout needs
+  no registration to get its servers.
+- The vault configuration stays rejected. A vault spans repositories, and a
+  server belongs to one repository.
+- The machine keeps a place for a command that no repository names: the global
+  file.
 
 Amended by TASK-436.01 (2026-10-07): SourceKit-LSP owns its background indexing,
 including building a Swift package on its first run. The check sends no
@@ -1286,7 +1358,9 @@ the findings, as ADR 0045 decides.
   on for checkouts that they trust.
 - **Language server commands in the vault configuration or in a checkout.** A
   command and its place on disk are facts about one machine, and the vault and
-  the checkout are shared. Archboard writes nothing into a checkout.
+  the checkout are shared. Archboard writes nothing into a checkout. (The
+  TASK-599 amendment replaces the checkout part. The vault configuration stays
+  rejected.)
 - **An environment value that moves `language-servers.json`**, as
   `ARCHBOARD_REPOS` moves `repos.json`. Nothing needs it yet. A test that needs
   one can add it.
