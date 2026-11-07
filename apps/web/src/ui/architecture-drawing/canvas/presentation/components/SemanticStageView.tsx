@@ -19,7 +19,8 @@ import { StageHeader } from "#ui/architecture-drawing/canvas/presentation/compon
 import {
 	ReadingArea,
 	pictureMarks,
-	presentationOver,
+	overlayOver,
+	presentationBeside,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx";
 import { SemanticStageSidebar } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStageSidebar.tsx";
 import {
@@ -251,15 +252,16 @@ function SemanticStageView(view: RenderView): JSX.Element {
 				nameOf={view.narrative.nameOf}
 				variantNameOf={variantNamer(view)}
 			/>
-			{/* Read left to right: the picture — with a presented walkthrough's
-			    caption over it, while the sidebar steps aside — then the model and
-			    whatever is selected on it. */}
+			{/* Read left to right: the picture, then the model and whatever is
+			    selected on it, or a presented walkthrough's column while the
+			    sidebar steps aside for it. */}
 			<PeekProvider selection={view.selection}>
 				<ReadingArea presenting={view.narrative.open !== null}>
 					<div ref={attachPicture} className="relative flex min-h-0 min-w-0 flex-1">
 						{stageBody(view)}
-						{presentationOver(view)}
+						{overlayOver(view)}
 					</div>
+					{presentationBeside(view)}
 					<SemanticStageSidebar view={view} pictureLegend={view.pictureLegend} />
 				</ReadingArea>
 			</PeekProvider>

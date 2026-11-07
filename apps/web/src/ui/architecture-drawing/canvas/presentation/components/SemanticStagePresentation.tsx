@@ -1,5 +1,5 @@
 // What a semantic pane does while one of its walkthroughs is presented: the
-// caption over the picture, and the veil over whatever the step is not about.
+// column beside the picture, and the veil over whatever the step is not about.
 //
 // A group somebody selected is let go when a walkthrough opens, and a
 // walkthrough is left when somebody selects a group: both say what the reader
@@ -36,8 +36,6 @@ interface PresentationView {
 	readonly narration: WalkthroughNarration | undefined;
 	/** What the shell lays over the picture, such as subtitles of a voice; or nothing. */
 	readonly overlay: ReactNode;
-	/** The pane's camera, which keeps its fits clear of the caption. */
-	readonly camera: { readonly reserve: (bottom: number) => void };
 	/** The sidebar, which the overlay keeps clear of while it floats over the picture. */
 	readonly sidebar: Pick<Sidebar, "floating">;
 	/** The selected group and its members, or null. */
@@ -45,25 +43,34 @@ interface PresentationView {
 }
 
 /**
- * The caption over the picture, while a walkthrough is presented.
+ * What the shell lays over the picture while nothing is presented: low in the frame, over the
+ * picture and over the About page, taking no pointer input from the canvas under it, and clear of a
+ * sidebar that floats over its right edge. A presented walkthrough draws it in its own column.
  * @param view What the stage knows.
- * @returns The caption, or null when nothing is presented.
+ * @returns The overlay, or null.
  */
-function presentationOver(view: PresentationView): ReactNode {
+function overlayOver(view: PresentationView): ReactNode {
+	if (view.narrative.open !== null || view.overlay === null || view.overlay === undefined)
+		return null;
+	return (
+		<div
+			data-slot="semantic-stage-overlay"
+			style={view.sidebar.floating ? CLEAR_OF_SIDEBAR : undefined}
+			className="pointer-events-none absolute inset-x-0 bottom-6 z-25 flex justify-center px-8"
+		>
+			{view.overlay}
+		</div>
+	);
+}
+
+/**
+ * The column beside the picture, while a walkthrough is presented.
+ * @param view What the stage knows.
+ * @returns The column, or null when nothing is presented.
+ */
+function presentationBeside(view: PresentationView): ReactNode {
 	const { narrative } = view;
-	if (narrative.open === null) {
-		// Low in the frame, over the picture and over the About page, taking no pointer input from
-		// the canvas under it, and clear of a sidebar that floats over its right edge.
-		return view.overlay === null || view.overlay === undefined ? null : (
-			<div
-				data-slot="semantic-stage-overlay"
-				style={view.sidebar.floating ? CLEAR_OF_SIDEBAR : undefined}
-				className="pointer-events-none absolute inset-x-0 bottom-6 z-25 flex justify-center px-8"
-			>
-				{view.overlay}
-			</div>
-		);
-	}
+	if (narrative.open === null) return null;
 	return (
 		<SemanticPresentation
 			overlay={view.overlay}
@@ -73,7 +80,6 @@ function presentationOver(view: PresentationView): ReactNode {
 			onGo={narrative.goTo}
 			onLeave={view.onCloseNarrative}
 			narration={view.narration}
-			reserve={view.camera.reserve}
 		/>
 	);
 }
@@ -118,4 +124,4 @@ function ReadingArea(props: {
 	);
 }
 
-export { ReadingArea, pictureMarks, presentationOver };
+export { ReadingArea, overlayOver, pictureMarks, presentationBeside };

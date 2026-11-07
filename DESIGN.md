@@ -52,9 +52,9 @@ typography:
     lineHeight: "16px"
   presentation:
     fontFamily: "Archboard Onest, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "28px"
+    fontSize: "22px"
     fontWeight: 600
-    lineHeight: "34px"
+    lineHeight: "28px"
     letterSpacing: "-0.01em"
   reading:
     fontFamily: "Archboard Onest, ui-sans-serif, system-ui, sans-serif"
@@ -264,8 +264,8 @@ over the picture is blurred or filtered, and nothing there loops but the voice
 orb, which draws itself on a canvas of its own, because every repaint over the
 picture makes it slower to drag. What moves over it moves as a layer of its own,
 once: a tip or a menu as it opens, the floating sidebar when it is shown or put
-away, the walkthrough box as it arrives and as it hands one step to the next,
-the voice box as it comes and goes, and each word of a subtitle as it arrives.
+away, the voice box as it comes and goes, and each word of a subtitle as it
+arrives. The walkthrough column stands beside the picture, not over it.
 The file app.css holds the values for both themes and gives each one a
 `shadow-*` utility.
 
@@ -278,7 +278,7 @@ The file app.css holds the values for both themes and gives each one a
 - **raised** (`--elevation-raised`, a white highlight on top and a 1px seat): a control, a key cap, the voice circle and the chosen row of a list.
 - **pressed** (`--elevation-pressed`, an inner shadow): a raised control while somebody presses it.
 - **card** (`--elevation-card`): a card on a page.
-- **float** (`--elevation-float`, a highlight on top and three shadows): menus, tips, lists of matches, the floating sidebar, the walkthrough box and the voice box.
+- **float** (`--elevation-float`, a highlight on top and three shadows): menus, tips, lists of matches, the floating sidebar and the voice box.
 - **dialog** (`--elevation-dialog`, a highlight on top and three shadows): dialogs.
 - **primary and primary-pressed** (`--elevation-primary*`): the gold finish at rest and pressed.
 
@@ -677,35 +677,32 @@ takes the room from the conversation.
 
 ### Walkthrough box
 
-A presented walkthrough lays one plate over the foot of its pane's picture. The plate is as
-wide as the pane less 20px at each side, the margin it keeps at its foot. The camera keeps
-the picture clear of all of it, the voice at its foot included, up to half the height of the
-pane. The plate is a card in Card White with a Rule edge, 4px corners and the float shadow.
-It has 20px of padding and 16px between its rows.
+A presented walkthrough stands in a column beside its pane's picture, as the site's walkthrough
+player sets it. The column stands where the right panel stands while nothing is presented, and
+the sidebar steps aside for it. It is 400px wide, or 46% of the pane when that is less. It is
+the panel's Chrome Chalk with a Rule edge on its left and the side shadow of the right panel. It
+has 20px of padding and 20px between its parts. The picture is as wide as the column leaves it,
+so the camera fits each step to all of the picture and keeps nothing clear.
 
-The rail runs along the top of the plate, across its full width. It has one segment for each
+The rail runs along the top of the column, across its full width. It has one segment for each
 step. Each segment is a button, and a tooltip names its step. The segments are 4px high, in
-Muted Ink at 70%, which is APCA Lc 60 against the plate on chalk and Lc 31 on graphite, over the floor of Lc 30 for a mark, because they are controls. One piece of
-Gold Mark marks the step shown. It is 6px high and as wide as a segment, with a paler wake of
-the same gold behind it.
+Muted Ink at 70%, which is APCA Lc 56 against the column on chalk and Lc 37 on graphite, over
+the floor of Lc 30 for a mark, because they are controls. One piece of Gold Mark marks the step
+shown. It is 6px high and as wide as a segment, with a paler wake of the same gold behind it.
 
-Under the rail, the words stand in a column in the middle of the plate. The column is 64rem
-wide at most, and its text is left aligned. It holds the heading of the step (28px) and the
-words of the step (16px). Under them is the name of the walkthrough, in muted ink. When
-the picture does not draw some subjects of the step, the same line says so after the name.
-The line is cut short and never wraps, so the plate keeps its height. The
-step's number stands to the left of the column. It is set in the display face at 44px, over a
-mono "of N". A rule stands on its right, as it does on the sheet number of a drawing.
+Under the rail stands the step's number, set in the display face at 44px over a mono "of N",
+with a rule on its right, as on the sheet number of a drawing. Beside it are the heading of the
+step (22px, as the site's player sets it) and the words of the step (16px). Under them is the
+name of the walkthrough, in muted ink. When the picture does not draw some subjects of the step,
+the same line says so after the name, and the name then keeps half of the line. The line is cut
+short and never wraps.
 
-The box's three keys stand to the right of the column. They are 32px high: previous, next,
-and leave, which says Esc. A key with nowhere to go is dimmed, as previous is on the first
-step. It stays a key, so that focus is not left on nothing. A recording draws no keys,
-because nobody can press anything in the video.
-
-Under the words, as wide as they are, is the voice pill. It is 78px high and round at both
-ends, a field sunk into the plate (the well shadow, on Chrome Chalk). It is there for as long
-as the shell has a voice to offer. So the box keeps one height whether the voice is off,
-starting, speaking or over, and the picture does not move with it.
+The voice pill stands at the foot of the column, as wide as the column. It is 78px high and
+round at both ends, a well sunk into the column (the well shadow, on the Well Floor). It is there
+for as long as the shell has a voice to offer. Under it on the right stand the box's three keys.
+They are quiet keys, 32px high: previous, next, and leave, which says Esc. A key with nowhere to
+go is dimmed, as previous is on the first step. It stays a key, so that focus is not left on
+nothing. A recording draws no keys, because nobody can press anything in the video.
 
 While voice is off, the pill holds the key that narrates the walkthrough. The key is a circle
 where the orb will be lit, with a microphone in it. Then come "Narrate" and a line of muted
@@ -714,18 +711,18 @@ out, and the line says why. Pressing the key hands keyboard focus to the pill, b
 gives way.
 
 While the voice is live and the voice box has it, the pill holds the voice box, and the key
-gives way. The orb takes the circle. Then come the words, which take the width that
-the orb and the keys leave, or the voice's word. Mute above the subtitles control stands at
-the right end, as in the box over the picture. A recording draws the same voice box in the
-pill, with the orb, the words or the voice's word, mute and the subtitles control. Its orb
-follows the voice that was recorded. Mute and the subtitles control are drawn as the shell
-draws them, although nobody can press them in the video.
+gives way. The orb takes the circle. Then come the words, which take the width that the orb and
+the keys leave, on two lines in the column, or the voice's word. Mute above the subtitles control
+stands at the right end, as in the box over the picture. A recording draws the same voice box in
+the pill, with the orb, the words or the voice's word, mute and the subtitles control. Its orb
+follows the voice that was recorded. Mute and the subtitles control are drawn as the shell draws
+them, although nobody can press them in the video.
 
-Every step stands in one cell of the column. So the box is as high as its highest step, and
-stepping never changes the room the picture has. A step is handed to the next over 520ms, and
-nothing else in the box moves. The step shown leaves first and fast. When the reader steps
-on, it leaves to the left. When the reader goes back, it leaves to the right. The number rolls
-up or down the same way, like the digit of a flip board.
+Every step stands in one cell. So the cell is as high as its highest step, and stepping never
+moves the foot of the column. A step is handed to the next over 520ms, and nothing else in the
+column moves. The step shown leaves first and fast. When the reader steps on, it leaves to the
+left. When the reader goes back, it leaves to the right. The number rolls up or down the same
+way, like the digit of a flip board.
 
 The next step arrives as the old one goes, its heading and then its words. The gold of the
 rail travels to the new step, with its wake behind it. The wake is the one part that ends
@@ -733,10 +730,11 @@ later. It sets out 26ms after the gold and takes 676ms, which is 1.3 times the p
 settles about 180ms after the rest. A step chosen out of order is handed over the same way.
 The steps that are not shown can be neither reached nor found.
 
-The plate itself arrives once. It rises 10px as it fades in over 220ms, and it leaves at
-once. With reduced motion, everything cuts. A recording and the replay of a kept talk cut as
-well. A stepped clock draws their frames, and a transition that starts on a frame is drawn a
-few milliseconds ahead of that clock. Their picture still glides, because the clock drives it.
+The words of the column arrive once. They move 12px in from the side as they fade in over
+220ms, and they leave at once. With reduced motion, everything cuts. A recording and the replay
+of a kept talk cut as well. A stepped clock draws their frames, and a transition that starts on
+a frame is drawn a few milliseconds ahead of that clock. Their picture still glides, because the
+clock drives it.
 
 ### Voice box
 

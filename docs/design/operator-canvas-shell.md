@@ -315,32 +315,30 @@ goes at once.
 A presented walkthrough steps the sidebar aside. While it lasts the control in the
 header is held and says so, and it does not show or hide the sidebar.
 
-A presented walkthrough (TASK-250, TASK-392) is the picture and one plate laid over its
-foot, with the sidebar stepped aside. The plate is as wide as the pane less the margin it
-keeps at its foot. It has a rail of steps along its top, with one piece of gold that travels to
-the step shown. Under the rail, the words stand in a column in the middle. The column is left
-aligned and 64rem wide at most. It holds the step's heading in the `presentation` type role,
-its words in the `reading` role, and the name of the walkthrough under those. The step's
-number is set as a drawing's sheet number is, to the left of the column. The keys, previous,
-next and leave, are to its right.
+A presented walkthrough (TASK-250, TASK-392, TASK-590.05) is the picture and a column beside it,
+with the sidebar stepped aside. The column stands where the right panel stands, 400px wide at
+most, as the site's walkthrough player sets it. A rail of steps runs along its top, with one piece
+of gold that travels to the step shown. Under the rail is the step's number, set as a drawing's
+sheet number is. Beside the number are the step's heading in the `presentation` type role, its
+words in the `reading` role, and the name of the walkthrough under those.
 
-Under the words, as wide as they are, is a pill for the voice. While voice is off, the pill
-holds the key that narrates the walkthrough. While voice is live, it holds the voice box, with
-its orb, its words, mute and the subtitles control. The box keeps one height whatever the voice
-is doing and whichever step is shown, so the picture does not move with either. A fullscreen
-presentation has no dock. So the voice box carries the voice there, whatever the person wants
-of subtitles, and the bar holds one key that starts and ends voice. DESIGN.md describes the
-plate.
+The pill for the voice stands at the foot of the column, as wide as the column. The keys,
+previous, next and leave, stand under it on the right. While voice is off, the pill holds the key
+that narrates the walkthrough. While voice is live, it holds the voice box, with its orb, its
+words, mute and the subtitles control. The foot keeps its place whatever the voice is doing and
+whichever step is shown, so nothing in the column moves with either. A fullscreen presentation
+has no dock. So the voice box carries the voice there, whatever the person wants of subtitles,
+and the bar holds one key that starts and ends voice. DESIGN.md describes the column.
 
-![The walkthrough box, idle and while the voice speaks, in the dark and the light
+![The walkthrough column, idle and while the voice speaks, in the dark and the light
 theme](assets/walkthrough-box.png)
 
-Rendered captures at 1920×1080, cropped to the box. In each theme, the upper capture shows
-the box while voice is off, with the key that narrates. The lower capture shows the box while
-the voice speaks. The dark theme is above the light one.
+Rendered captures at 1920×1080, cropped to the column. From the left: the dark theme while voice
+is off, with the key that narrates, then the dark theme while the voice speaks, then the same two
+captures in the light theme.
 
-The camera keeps the subjects of the step clear
-of the plate. The subjects include the parts at both ends of each relationship
+The camera fits the subjects of the step to the picture beside the column.
+The subjects include the parts at both ends of each relationship
 or step that the step names. If the step names messages of a flow, the camera
 shows their rows, and the one row before them, from the top of the picture.
 The row before them stays because it usually says why they happen. The camera

@@ -1,10 +1,10 @@
-// The steps a presented walkthrough's box shows: each step's number, set the way a drawing's sheet
-// number is, and beside it each step's heading and words, with the name of the walkthrough under
-// the words. When this reading does not draw some subjects of the step shown, that line says so
-// after the name, so the notice changes no height.
+// The steps a presented walkthrough's column shows: each step's number, set the way a drawing's
+// sheet number is, and beside it each step's heading and words, with the name of the walkthrough
+// under the words. When this reading does not draw some subjects of the step shown, that line says
+// so after the name, which then keeps half of it, so the notice changes no height.
 //
-// Every step stands in one cell, so the cell is as high as the highest step and the box keeps one
-// height from the first step to the last. Which step is shown is a matter of where each one stands
+// Every step stands in one cell, so the cell is as high as the highest step and nothing under it
+// moves from the first step to the last. Which step is shown is a matter of where each one stands
 // against it: the steps before it wait on its left (the number's: above), the steps after it on its
 // right (below), and the stylesheet (app.css, `presentation-slides`) slides them in and out. A step
 // chosen out of order slides the same way, and a reader who steps again at once turns the move
@@ -150,7 +150,10 @@ function StepWords(props: StepWordsProps): JSX.Element {
 				})}
 			</div>
 			<p className="text-body text-muted-foreground flex min-w-0 gap-2">
-				<span data-slot="semantic-presentation-name" className="max-w-1/2 shrink-0 truncate">
+				<span
+					data-slot="semantic-presentation-name"
+					className={cn("truncate", props.missing.length > 0 ? "max-w-1/2 shrink-0" : "min-w-0")}
+				>
 					{walkthrough.name}
 				</span>
 				<StepMissing missing={props.missing} />

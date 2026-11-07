@@ -1,14 +1,14 @@
-// The foot of a presented walkthrough's box: where the voice is in it.
+// The foot of a presented walkthrough's column: where the voice is in it.
 //
 // It is a pill, as high as the voice box that floats over a picture when nothing is presented, and
-// it is there for as long as the shell has a voice to offer. So the box keeps one height whether
+// it is there for as long as the shell has a voice to offer. So the foot keeps one height whether
 // voice is off, starting, speaking or over, and the picture does not move with it. While voice is off
 // it holds the one key that starts it for this walkthrough, Narrate, and the key is a circle where
 // the orb will be lit, so the orb takes the key's place and the pill does not change shape. While a
 // voice is live and the shell has a place for it here, what the shell lays over the picture is drawn
 // inside the pill instead, and it is told where it is drawn (use-overlay-place) so it draws itself
 // to fit; the key then gives way to it (app.css, `semantic-presentation-foot`). The pill is as wide
-// as the words above it. Keyboard focus is not left on a key that gives way: pressing Narrate hands
+// as the column. Keyboard focus is not left on a key that gives way: pressing Narrate hands
 // it to the pill, from where Tab goes on to the voice box's keys.
 
 import { RiMicLine } from "@remixicon/react";
@@ -93,7 +93,7 @@ interface PresentationFootProps {
 	readonly narration?: WalkthroughNarration | undefined;
 	/** What the shell lays over the picture, such as a voice and its subtitles; drawn here, in the pill. */
 	readonly overlay?: ReactNode;
-	/** What places the pill in the box. */
+	/** What places the pill in the column. */
 	readonly className?: string;
 }
 
@@ -117,7 +117,7 @@ function LaidInPill(props: { readonly overlay: ReactNode }): JSX.Element | null 
 }
 
 /**
- * The foot of the box.
+ * The foot of the column.
  * @param props The walkthrough, the narration, what the shell lays over the picture and what places the pill.
  * @returns The pill, or null where the shell has no voice to offer.
  */
@@ -137,7 +137,7 @@ function PresentationFoot(props: PresentationFootProps): JSX.Element | null {
 			data-slot="semantic-presentation-foot"
 			style={FOOT_STYLE}
 			className={cn(
-				"border-border bg-sidebar shadow-well focus-visible:ring-ring relative isolate flex h-[78px] shrink-0 rounded-full border outline-none focus-visible:ring-2",
+				"bg-tray-sink shadow-well focus-visible:ring-ring relative isolate flex h-[78px] shrink-0 rounded-full outline-none focus-visible:ring-2",
 				props.className,
 			)}
 		>

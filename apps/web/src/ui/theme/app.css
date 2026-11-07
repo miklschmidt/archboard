@@ -95,8 +95,8 @@
 	   About page. figure: the step's number, in the display face (the
 	   `title-figure` utility), set as a drawing's sheet number is, and the
 	   board's name at the head of its About page. */
-	--text-presentation: 28px;
-	--text-presentation--line-height: 34px;
+	--text-presentation: 22px;
+	--text-presentation--line-height: 28px;
 	--text-presentation--letter-spacing: -0.01em;
 	--text-presentation--font-weight: 600;
 	--text-reading: 16px;
@@ -949,9 +949,9 @@
 	opacity: 0.2;
 }
 
-/* A presented walkthrough's box arrives once, rising a few pixels as it fades in, as its own
-   layer and not as the picture's: a transition, so that nothing is replayed by a step. It leaves
-   at once, with the walkthrough, because the picture is already gliding back. */
+/* A presented walkthrough's column arrives once, moving in a few pixels from the side as it fades
+   in, as its own layer and not as the picture's: a transition, so that nothing is replayed by a
+   step. It leaves at once, with the walkthrough, because the picture is already gliding back. */
 [data-slot="semantic-presentation"] {
 	transition:
 		opacity var(--presentation-box-in-ms, 220ms) cubic-bezier(0.16, 1, 0.3, 1),
@@ -960,7 +960,7 @@
 @starting-style {
 	[data-slot="semantic-presentation"] {
 		opacity: 0;
-		transform: translateY(10px);
+		transform: translateX(12px);
 	}
 }
 @media (prefers-reduced-motion: reduce) {

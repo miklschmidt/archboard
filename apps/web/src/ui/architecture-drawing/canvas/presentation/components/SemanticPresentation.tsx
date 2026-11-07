@@ -1,26 +1,25 @@
-// A walkthrough, presented: one step at a time, in a box over the foot of the picture.
+// A walkthrough, presented: one step at a time, in a column beside the picture, as the site's
+// walkthrough player sets it.
 //
 // A walkthrough used to be read in a scrolling rail beside the picture, where the step on
 // screen was whichever one had crossed a line a third of the way down, so the picture moved
 // because of where some text happened to sit. A presentation is stepped on purpose, with the
-// arrows, Space, the keys of the box or a step chosen on its rail, and the picture follows: the
+// arrows, Space, the keys of the column or a step chosen on its rail, and the picture follows: the
 // camera glides to the step and what the step is not about recedes. Escape leaves, and gives the
 // reader back the camera and the view they had.
 //
-// The box is one plate, as wide as the pane less the margin it keeps at its foot. Along its top is
-// the rail of steps, with a piece of gold that travels to the step shown. Under it the words stand
-// in a column in the middle, left aligned and as wide as 64rem: each step's heading and words with
-// the name of the walkthrough under them, the step's number to their left and the keys that step
-// and leave to their right. Under the words, as wide as they are, is the voice's place
-// (PresentationFoot): the key that has the walkthrough narrated, which the voice's orb takes over,
-// and the words the voice says. A step is handed to the next by the steps' own places (see
-// PresentationStep), and the box is as high as its highest step, so stepping never changes the
-// room the picture has. The camera keeps the subjects of the step clear of the whole box, the voice
-// included, up to half the height of the picture.
+// The column stands where the right panel stands while nothing is presented, a little wider. Along
+// its top is the rail of steps, with a piece of gold that travels to the step shown. Under it are
+// the step's number and its heading and words, with the name of the walkthrough under them. At its
+// foot is the voice's place (PresentationFoot): the key that has the walkthrough narrated, which
+// the voice's orb takes over, and the words the voice says, then the keys that step and leave. A
+// step is handed to the next by the steps' own places (see PresentationStep), and every step
+// stands in one cell, so stepping never moves the foot. The picture is as wide as the column
+// leaves it, so the camera fits the step to all of its viewport and keeps nothing clear.
 //
-// The stage decides everything the picture does; this is the box and its keys. A page recording
+// The stage decides everything the picture does; this is the column and its keys. A page recording
 // the walkthrough (TASK-304) steps it by itself and nobody can press anything in the video, so
-// there the box keeps where it is in the walkthrough and drops the keys.
+// there the column keeps where it is in the walkthrough and drops the keys.
 
 import {
 	useCallback,
@@ -40,7 +39,6 @@ import {
 	StepFigure,
 	StepWords,
 } from "#ui/architecture-drawing/canvas/presentation/components/PresentationStep.tsx";
-import { useCaptionReserve } from "#ui/architecture-drawing/canvas/picture/hooks/use-caption-reserve.ts";
 import { usePresentationKeys } from "#ui/architecture-drawing/canvas/picture/hooks/use-presentation-keys.ts";
 import type { WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
 import type { VariantContent } from "@archboard/model/content";
@@ -70,13 +68,8 @@ interface SemanticPresentationProps {
 	readonly onLeave: () => void;
 	/** Narrating this walkthrough aloud from its first step, when the shell can. */
 	readonly narration?: WalkthroughNarration | undefined;
-	/** What the shell lays over the picture; here it is drawn at the foot of the box, never over its words. */
+	/** What the shell lays over the picture; here it is drawn at the foot of the column, never over its words. */
 	readonly overlay?: ReactNode;
-	/**
-	 * Keep the bottom of the picture clear of the box.
-	 * @param bottom How many pixels.
-	 */
-	readonly reserve: (bottom: number) => void;
 }
 
 /**
@@ -100,15 +93,14 @@ function useFocusWhenOpened(): RefObject<HTMLElement | null> {
 }
 
 /**
- * A walkthrough presented over the picture.
+ * A walkthrough presented beside the picture.
  * @param props The walkthrough, the step shown, and how to step and leave.
- * @returns The box.
+ * @returns The column.
  */
 function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 	const { walkthrough, index, onGo, onLeave } = props;
 	const count = walkthrough.beats.length;
 	usePresentationKeys({ index, count, go: onGo, leave: onLeave }, true);
-	const attach = useCaptionReserve(props.reserve);
 	const box = useFocusWhenOpened();
 	const previous = useCallback((): void => {
 		onGo(Math.max(0, index - 1));
@@ -117,12 +109,9 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 		onGo(Math.min(count - 1, index + 1));
 	}, [onGo, index, count]);
 	return (
-		// The frame is what the camera keeps clear: the box and the gap under it. It takes no pointer
-		// input beside the box, because the picture there is the reader's to work with.
 		<div
-			ref={attach}
 			data-slot="semantic-presentation-frame"
-			className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-5 pb-5"
+			className="border-border bg-sidebar shadow-edge-side relative z-30 flex min-h-0 w-[min(400px,46%)] shrink-0 flex-col border-l"
 		>
 			<section
 				ref={box}
@@ -132,20 +121,18 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 				data-slot="semantic-presentation"
 				data-step={index}
 				style={BOX_STYLE}
-				className="bg-card border-border shadow-float rounded-panel pointer-events-auto flex w-full flex-col gap-4 border p-5 outline-none"
+				className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-5 outline-none"
 			>
 				<PresentationRail walkthrough={walkthrough} index={index} onGo={onGo} />
-				<div className="grid grid-cols-[minmax(auto,1fr)_minmax(0,64rem)_minmax(auto,1fr)] gap-x-5 gap-y-4">
-					<StepFigure
-						walkthrough={walkthrough}
-						index={index}
-						className="col-start-1 row-start-1 justify-self-end"
-					/>
-					<StepWords
-						walkthrough={walkthrough}
-						index={index}
-						missing={props.missing}
-						className="col-start-2 row-start-1"
+				<div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4">
+					<StepFigure walkthrough={walkthrough} index={index} className="self-start" />
+					<StepWords walkthrough={walkthrough} index={index} missing={props.missing} />
+				</div>
+				<div className="mt-auto flex flex-col gap-3">
+					<PresentationFoot
+						walkthrough={walkthrough.id}
+						narration={props.narration}
+						overlay={props.overlay}
 					/>
 					<PresentationKeys
 						hasPrevious={index > 0}
@@ -153,13 +140,7 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 						onPrevious={previous}
 						onNext={next}
 						onLeave={onLeave}
-						className="col-start-3 row-start-1 justify-self-start"
-					/>
-					<PresentationFoot
-						walkthrough={walkthrough.id}
-						narration={props.narration}
-						overlay={props.overlay}
-						className="col-start-2 row-start-2"
+						className="justify-end"
 					/>
 				</div>
 			</section>
