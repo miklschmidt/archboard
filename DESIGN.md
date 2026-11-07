@@ -428,7 +428,7 @@ along the line on both grounds.
 
 ### Named Rules
 
-**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. No shell layer over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, a presented walkthrough's column or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. A select or a menu takes 160ms to arrive and 110ms to leave. The floating sidebar takes at most 160ms, the column 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
+**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. No shell layer over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, a presented walkthrough's column or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. A select or a menu takes 160ms to arrive and 110ms to leave. The floating sidebar takes at most 160ms, the column 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, when Narrate is pressed and when a voice ends in the box, in a layer of its own, over 680ms.
 
 **The Cursor Says What a Press Does Rule.** Whatever answers a click shows a pointer, in the shell and on the picture. A frame's floor is canvas, so it shows the arrow. Holding Space over the canvas shows an open hand, a press closes it, and a press with Space picks nothing.
 
@@ -790,11 +790,15 @@ short and never wraps.
 The key that narrates the walkthrough stands at the foot of the column, as wide as the column.
 It is a pill, 76px high and round at both ends, a well sunk into the column (the well shadow, on
 the Well Floor). It is there for as long as the shell has a voice to offer. At its start is a
-circle in the gold finish of the primary action, with a microphone in it. The circle lifts 1px
-when the key is hovered and sinks 1px when it is pressed, as the gold button does. Then come
-"Narrate" and a line of muted ink that says what it does. While a narration cannot start, as
-while a voice is on, the key is dimmed and never taken out, and the line says why. The voice
-itself is not in the column: the voice box stays low over the picture (Voice box, below).
+circle in the gold finish of the primary action, with a microphone in it. The circle is a home
+of the voice orb (Voice box, below). While voice is off the dark orb waits in it, and the gold
+circle is drawn only while the orb is there. The circle lifts 1px when the key is hovered and
+sinks 1px when it is pressed, as the gold button does. Then come "Narrate" and a line of muted
+ink that says what it does. Pressing the key sends the orb out of the circle into the voice box
+over the picture. While the orb is away, the key keeps the round room it had, and the room is
+empty. While a narration cannot start, as while a voice is on, the key's words are dimmed and
+the line says why. The key is never taken out. The voice itself is not in the column: the voice
+box stays low over the picture.
 
 Under the key on the right stand the column's three keys. They are quiet keys, 32px high:
 previous, next, and leave, which says Esc. A key with nowhere to go is dimmed, as previous is on
@@ -855,18 +859,26 @@ before it fades in, and leaves as fast as they return. Only opacity moves.
 
 The orb is one canvas, so it keeps its light and the last second of the voice it
 has drawn wherever it is, and it is one shared element: the orb and its plate are one
-object, and there is only ever one of it on the page. It rests in the dock's circle or in
-the box's socket, and when the person turns subtitles off or on it lifts off from where it
-was seen, crosses the page in a layer of its own, a little larger at the top of its flight,
-and settles in the circle or the socket in 680ms. The box has no seat of its own and the
-dock's is drawn only while the orb is in it, so nothing that looks like the orb waits where
+object, and there is only ever one of it on the page. It rests in the dock's circle, in
+the box's socket, or in the gold circle of a presented walkthrough's Narrate key. When the
+person turns subtitles off or on it lifts off from where it was seen, crosses the page in a
+layer of its own, a little larger at the top of its flight, and settles in the circle or the
+socket in 680ms. The box has no seat of its own. The dock's seat and the Narrate key's gold
+circle are drawn only while the orb is in them, so nothing that looks like the orb waits where
 it left or where it will land. A flight carries an orb that can be seen. When voice starts
 the orb is dark, so it is lit where it is wanted: with subtitles on it fades in inside the
-box as the box rises, and it does not come out of the Talk key. When voice ends it fades
-where it is, with the box. The dock's key grows out of the seat the orb has left as the
-orb flies out, and the circle forms as the orb arrives, and the box rises and fades in as
-the orb is on its way. A flight meets its socket where the socket is, so a socket that is
-still moving is met, and the opposite choice turns a flight round from where the orb is.
+box as the box rises, and it does not come out of the Talk key. Narrate is the one exception.
+While voice is off and a Narrate key is on the page, the dark orb waits in the key's gold
+circle. Pressing Narrate lights the orb at the start of its flight: it fades in over the gold
+circle as the circle goes, and it flies to the box, or to the dock while subtitles are off.
+When voice ends the orb fades where it is, with the box. Once it is out of sight it waits in
+a Narrate key, when one is on the page. A voice that ends in the box while a Narrate key is on
+the page sends the orb home instead. It flies out of the box while the box is still up, lands
+in the key's circle and fades there, so the gold circle and its microphone come back. The
+dock's key grows out of the seat the orb has left as the orb flies out, and the circle forms as
+the orb arrives, and the box rises and fades in as the orb is on its way. A flight meets its
+socket where the socket is, so a socket that is still moving is met, and the opposite choice
+turns a flight round from where the orb is.
 While a walkthrough is presented the voice box stays where it is, low over the picture and in
 the middle of it, because the steps stand in the column beside the picture. A fullscreen
 presentation has no dock to take the voice back, so the box carries the voice there whatever
@@ -875,8 +887,9 @@ the box says what the voice is doing in a word. The presentation's bar holds one
 which reads End voice while the voice is live. A recording has no dock either. It draws the
 voice box over its picture, as a presented pane does, from the first frame that shows the
 walkthrough. The orb is in its socket from that frame and is never flown, and it moves with the
-level of the recorded voice on each frame. With reduced motion the orb is in its home, and the box is
-there or gone, at once.
+level of the recorded voice on each frame. With reduced motion the orb is in its home at once,
+and the box is there or gone at once. When either end of a flight is not on screen, the orb is
+put in its home at once in the same way.
 Keyboard focus follows the subtitles control to the surface that takes it over.
 
 ## Do's and Don'ts

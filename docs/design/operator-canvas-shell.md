@@ -324,10 +324,14 @@ words in the `reading` role, and the name of the walkthrough under those.
 
 The key that narrates the walkthrough stands at the foot of the column, as wide as the column: a
 pill with a gold circle and a microphone in it. The keys, previous, next and leave, stand under
-it on the right. While a voice is on, the key is dimmed and says why. The voice box is not in the
-column: it stays low over the picture, in the middle of it, as it floats while nothing is
-presented. The foot keeps its place whichever step is shown, so nothing in the column moves. A
-fullscreen presentation has no dock. So the voice box carries the voice there, whatever the
+it on the right. The gold circle is a home of the one voice orb (TASK-590.09). While voice is
+off, the dark orb waits in it, and the circle is drawn only while the orb is there. Narrate
+launches the orb out of the circle, lit, into the voice box, or into the dock while subtitles
+are off. While the orb is away, the key keeps an empty seat. A voice that ends in the box sends
+the orb back into the circle, where it fades, and the gold circle comes back. While a voice is
+on, the key is dimmed and says why. The voice box is not in the column: it stays low over the
+picture, in the middle of it, as it floats while nothing is presented. The foot keeps its place
+whichever step is shown, so nothing in the column moves. A fullscreen presentation has no dock. So the voice box carries the voice there, whatever the
 person wants of subtitles, and the bar holds one key that starts and ends voice. DESIGN.md
 describes the column.
 
@@ -335,7 +339,8 @@ describes the column.
 theme](assets/walkthrough-box.png)
 
 Rendered captures at 1920×1080, cropped to the picture and the column. Left, the dark theme
-while the voice speaks. Right, the light theme.
+while the voice speaks. Right, the light theme. The orb is in the voice box, so the Narrate key
+keeps an empty seat.
 
 The camera fits the subjects of the step to the picture beside the column.
 The subjects include the parts at both ends of each relationship
@@ -604,7 +609,9 @@ that they show is now the dock at the foot of the left column.
   and takes the capsule away, and turning them on flies it out again: only one orb
   is ever on the page, and nothing that looks like it waits where it left or where
   it will land. Voice starting lights the orb in the capsule and does not launch it
-  from the Talk key. While a walkthrough is presented the capsule stays over the picture, and in
+  from the Talk key. Narrate is the exception: it launches the orb out of the gold circle of its
+  key, where the dark orb waits, and a voice that ends in the capsule sends the orb back there.
+  While a walkthrough is presented the capsule stays over the picture, and in
   a fullscreen presentation, which has no dock, it stays whatever the person wants of
   subtitles. A recording draws the same voice box over its picture, with an orb that the
   recorded voice moves.
