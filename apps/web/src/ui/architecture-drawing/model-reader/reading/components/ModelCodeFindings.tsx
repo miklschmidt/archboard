@@ -1,5 +1,6 @@
 import {
 	RiAlertLine,
+	RiInformationLine,
 	RiArrowLeftSLine,
 	RiArrowRightLine,
 	RiArrowRightSLine,
@@ -370,7 +371,8 @@ function FindingPager(
 }
 
 /**
- * How many findings the pass has, of each severity.
+ * How many findings the pass has, of each severity. A pass with no warning counts only its
+ * information, under the mark of information.
  * @param props The findings.
  * @param props.findings The findings.
  * @returns The count.
@@ -378,6 +380,13 @@ function FindingPager(
 function FindingCounts(props: { readonly findings: readonly CodeFinding[] }): JSX.Element {
 	const warnings = props.findings.filter((finding) => finding.severity === "warning").length;
 	const information = props.findings.length - warnings;
+	if (warnings === 0)
+		return (
+			<p className="text-control text-foreground flex items-center gap-2 font-semibold">
+				<RiInformationLine aria-hidden="true" className="text-muted-foreground size-4" />
+				{information} information
+			</p>
+		);
 	return (
 		<p className="text-control text-foreground flex items-center gap-2 font-semibold">
 			<RiAlertLine aria-hidden="true" className="text-standing-changed size-4" />
