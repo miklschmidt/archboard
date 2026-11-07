@@ -6,7 +6,34 @@ of a release and how to prove that they install.
 
 ## Build the packages
 
-Run this in a checkout, inside `nix develop`, after `bun install`:
+Run this in a checkout:
+
+```sh
+nix build .#release -L
+```
+
+The output exists for `x86_64-linux`, the system of the release job. Nix
+builds the packages in its sandbox, without network, and links `result` to
+them: the six packed `.tgz` files that the publish job publishes. The
+build runs the same scripts as a checkout, `bun run release` and
+`bun run pack:voice`, and packs the voice package. It takes every input
+from the flake:
+
+- The npm packages come from `bun.nix`, which `bun2nix` writes from
+  `bun.lock`. `bun.nix` is tracked, because a flake reads only tracked files.
+  After a change to `bun.lock`, run `bun2nix > bun.nix` inside
+  `nix develop` and commit both. The gate task `bun-nix` fails while
+  `bun.nix` does not match `bun.lock`.
+- The Rust crates come from `Cargo.lock`. Nix checks each one against the
+  checksum that `Cargo.lock` records.
+- The Bun runtime that each executable embeds comes from the Bun release
+  archives that `bunReleases` in `flake.nix` pins. Elsewhere, Bun downloads
+  it. A Bun upgrade adds the hashes of its three archives to `bunReleases`.
+- `archboard-release.json` records the commit of the flake. A build from a
+  tree with uncommitted changes records the commit with `-dirty`.
+
+In a checkout, inside `nix develop` and after `bun install`, the same
+packages come from:
 
 ```sh
 bun run release
@@ -47,15 +74,18 @@ The build stops in two cases:
 
 ## Prove that the packages install
 
-After `bun run release`, run:
+After `nix build .#release`, run:
 
 ```sh
-bun scripts/release/smoke.ts --installer bun --name @archboard/cli
-bun scripts/release/smoke.ts --installer npm --name archboard
+bun scripts/release/smoke.ts --installer bun --name @archboard/cli --packages result
+bun scripts/release/smoke.ts --installer npm --name archboard --packages result
 ```
 
-The script starts a local registry. The registry serves the tarballs in
-`dist/release` and passes every other request to `registry.npmjs.org`, so the
+After `bun run release`, leave out `--packages`: the script reads
+`dist/release` then.
+
+The script starts a local registry. The registry serves the tarballs of the
+packages directory and passes every other request to `registry.npmjs.org`, so the
 Codex package comes from npm, as it does for a user. The script installs the
 launcher into a scratch directory with `bun add -g` or `npm install --global`.
 Then it runs `archboard --version`, `start`, `status` and `stop`.
@@ -75,9 +105,9 @@ A merge of a release pull request is the release (ADR 0076). In that run of
 the job `gate` runs the complete CI gate of `.github/workflows/ci.yml` on that
 commit. Beside it, these jobs run, each after the one before:
 
-1. `build` checks out the tag on Linux, inside the Nix dev shell, and runs
-   `bun run release`. Bun cross-compiles the macOS executable. The job keeps
-   the tarballs as the `release-packages` artifact.
+1. `build` checks out the tag on Linux and runs `nix build .#release`. Bun
+   cross-compiles the macOS executable. The job keeps the tarballs as the
+   `release-packages` artifact.
 2. `smoke` runs `scripts/release/smoke.ts` on `ubuntu-latest` and on
    `macos-latest`, which is Apple silicon, once with npm and once with
    `bun add -g`.
@@ -96,7 +126,8 @@ The MIT voice package, `@archboard/codex-realtime-voice`, has the version of
 Archboard. The Archboard executable carries the voice package, and the voice
 package bundles other workspace packages. So every commit can change both, and
 one release pull request releases both. release-please writes the version into
-`packages/codex-realtime-voice/package.json` too. The `build` job runs
-`bun run pack:voice` and packs the result beside the other packages.
+`packages/codex-realtime-voice/package.json` too. The flake's `release`
+output runs `bun run pack:voice` and packs the result beside the other
+packages.
 
 The repository stores no npm token.

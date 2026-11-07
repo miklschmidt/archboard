@@ -70,6 +70,19 @@ function refuse(message: string): never {
 }
 
 /**
+ * The commit the release is built from: the flake's, whose source has no `.git`, or the checkout's.
+ * @returns The commit.
+ * @throws {Error} When neither names one.
+ */
+function releaseCommit(): string {
+	const flake = process.env["ARCHBOARD_RELEASE_COMMIT"];
+	if (flake !== undefined && flake !== "") return flake;
+	const commit = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: CHECKOUT });
+	if (commit.exitCode !== 0) refuse(`${CHECKOUT} has no commit to record. Commit, then compile.`);
+	return commit.stdout.toString().trim();
+}
+
+/**
  * The version, the commit, the hash of the checkout's core build and the pinned Codex, which the
  * installation module reads from `archboard-release.json`.
  * @returns The marker of the release.
@@ -79,11 +92,9 @@ function releaseMarker() {
 	const manifest = z
 		.object({ version: z.string(), dependencies: z.object({ "@openai/codex": z.string() }) })
 		.parse(JSON.parse(readFileSync(path.join(CHECKOUT, "package.json"), "utf8")));
-	const commit = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: CHECKOUT });
-	if (commit.exitCode !== 0) refuse(`${CHECKOUT} has no commit to record. Commit, then compile.`);
 	return {
 		version: manifest.version,
-		commit: commit.stdout.toString().trim(),
+		commit: releaseCommit(),
 		// The checkout refuses a core of other sources than its own, so the release records the
 		// hash of the sources it was built from.
 		coreSourceHash: loadCore().sourceHash(),
@@ -140,6 +151,19 @@ function packagesOf(inputs: readonly string[]): string[] {
 }
 
 /**
+ * The Bun runtime to embed for a target, from the directory that `ARCHBOARD_RELEASE_BUN_RUNTIMES`
+ * names, where each runtime is named by its target.
+ * @param target The Bun target.
+ * @returns The compile option that names it, or no option when Bun downloads it.
+ */
+function runtimeOf(target: Target): { executablePath?: string } {
+	const runtimes = process.env["ARCHBOARD_RELEASE_BUN_RUNTIMES"];
+	return runtimes === undefined || runtimes === ""
+		? {}
+		: { executablePath: path.join(runtimes, target) };
+}
+
+/**
  * Compile the executable, and refuse a bundle that would load a native addon at run time.
  * @param target The Bun target.
  * @param outfile Where the executable goes.
@@ -155,6 +179,9 @@ async function compileExecutable(target: Target, outfile: string): Promise<strin
 		compile: {
 			target,
 			outfile,
+			// The flake's build gives the runtime of each target, since the sandbox cannot
+			// download it. Otherwise Bun downloads it.
+			...runtimeOf(target),
 			// A user's bunfig.toml or tsconfig.json says nothing about how Archboard runs.
 			autoloadBunfig: false,
 			autoloadTsconfig: false,
