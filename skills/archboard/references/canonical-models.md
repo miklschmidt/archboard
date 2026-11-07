@@ -816,6 +816,7 @@ Use [retry and recovery](#retry-and-recover-operations) for interrupted family o
 Adoption records implemented architecture. Shelving records a stopped proposal.
 Adopt or shelve only with owner authorization.
 A request to prepare the implementing PR authorizes adoption on its branch.
+If the vault lives in another repository, the adoption is a commit there and cannot merge with the code. Tell the owner, and ask which PR merges first.
 A source commit, merge, approval, or checkpoint performs neither action. The browser performs neither action.
 
 Read the draft and claim its state, model, affected subjects, and affected descendant states and subjects.

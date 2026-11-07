@@ -118,11 +118,14 @@ Keep generation details and temporary limits in the handoff unless they affect r
 Follow the consumer proposal completion recipe for authorization and adoption.
 After implementation, adopt on the PR branch before review so code and architecture merge together.
 Commit adopted inputs and update the state comment.
+If the vault lives in another repository, the adoption cannot merge with the code. Prepare it in a PR of the vault's repository, link each PR from the other's body, and ask the owner which merges first.
 For a temporary model, leave the repository's lifecycle unchanged.
 
 If another proposal reached Current first, `PROPOSAL_SUPERSEDED` refuses adoption.
 Do not force it: full replacement undoes the other adoption.
 Create a new proposal on Current with the same name, summary, documents, and changes.
+Compare it with Current through `model compare` before adoption.
+If one of its changes undoes or conflicts with a change of the other adoption, tell the owner, and adopt only after the owner decides.
 Adopt that proposal, then shelve the original with a reason naming its replacement.
 If default-branch code already implements the draft, tell the owner before adoption and obtain agreement.
 For stopped work, follow the consumer shelving authorization rule and retain its reason and exact baseline.
