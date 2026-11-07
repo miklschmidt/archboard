@@ -242,6 +242,7 @@ function pane(
 			paneId,
 			clientId: `${paneId}-client`,
 			connected: true,
+			reconnecting: false,
 			registered: true,
 			vault,
 			repository,

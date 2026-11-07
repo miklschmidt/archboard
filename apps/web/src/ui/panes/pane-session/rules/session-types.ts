@@ -43,6 +43,14 @@ export interface PaneStatus {
 	clientId: string;
 	connected: boolean;
 	/**
+	 * Whether the pane lost the server it had, and no report is accepted again yet.
+	 *
+	 * A pane that never had the server is connecting, not reconnecting. Its
+	 * first report is accepted a moment after load, and a notice shown until
+	 * then moves the header's controls away from the pointer when it goes.
+	 */
+	reconnecting: boolean;
+	/**
 	 * Whether the server has this pane: it accepted the pane's own report.
 	 *
 	 * Not the same as connected, and the difference is a real moment rather than

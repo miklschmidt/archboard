@@ -6,6 +6,8 @@ import type { LegacyIdentity, PaneStatus } from "#ui/panes/pane-session/rules/se
 /** The live status of one pane. */
 interface LivePaneStatus {
 	connected: boolean;
+	/** Whether the server accepted a report of this pane once: a later loss is a reconnection. */
+	contacted: boolean;
 	registered: boolean;
 	model: LegacyIdentity | null;
 	paneKey: string | null;
@@ -39,6 +41,7 @@ interface PaneStatusOwner {
 function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 	const live: LivePaneStatus = {
 		connected: false,
+		contacted: false,
 		registered: false,
 		model: null,
 		paneKey: null,
@@ -54,6 +57,7 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 			paneId: parts.paneId,
 			clientId: parts.clientId,
 			connected: live.connected,
+			reconnecting: live.contacted && !live.connected,
 			registered: live.registered,
 			model: live.model,
 			paneKey: live.paneKey,
