@@ -238,7 +238,7 @@ archboard model retain --migration Shop --expected-plan <plan-digest-or-none> --
 
 Retention preserves exact bytes, old schemas, unresolved documents, conflict bases, and the saved plan.
 It changes no originals, current model, source HEAD, or index.
-It uses configured signing and the [retry and recovery rules](canonical-models.md#retry-and-recover-operations).
+If retention fails, follow the [retry and recovery rules](canonical-models.md#retry-and-recover-operations).
 A changed source or plan refuses a new retention request.
 Read retained originals without consulting live files:
 
@@ -360,7 +360,7 @@ archboard model migrate --input migration-request.json -C /path/to/checkout
 ```
 
 Installation retains exact originals and choices before removing live copies.
-It follows the shared [signing, retry, and recovery rules](canonical-models.md#retry-and-recover-operations).
+If installation fails, follow the shared [retry and recovery rules](canonical-models.md#retry-and-recover-operations).
 For a changed request, use a fresh preview and operation identity.
 Converted proposals retain predecessor, baseline, reason, and original checkpoint in `proposal.migration`.
 Planning-only subjects stay proposed. Current has one canonical representation after completion.

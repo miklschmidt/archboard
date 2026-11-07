@@ -123,11 +123,9 @@ archboard model read 'Shop#Gateway' -C <directory> --checkpoint <checkpoint.id>
 Supply the writer, doing line, operation identity, and expected revision.
 For each required baseline, add `--dependency <checkpoint.id>` with its complete immutable identity.
 A missing dependency refuses retention before checkpoint creation.
-Retained dependencies survive Git garbage collection.
+Retention keeps required baselines with the checkpoint.
 
-Retention honors configured Git identity and signing.
-If signing fails, repair the identity, key, or signer without disabling required signing.
-It preserves the source index, HEAD, checkout, and architecture files.
+Retention preserves the source index, HEAD, checkout, and architecture files.
 It saves recognized architecture inputs and metadata, not source-code bytes.
 
 The result includes `checkpoint.id`, `model`, `state`, `revision`, `createdAt`, `request`, `sources`, and `publication` evidence.
@@ -143,15 +141,11 @@ Reusing an identity with different input returns `OPERATION_REUSED`.
 
 For writes, `applied:true` means that installation completed durably.
 `cleanup:pending` still means applied. Repeat the exact request to finish cleanup.
-Completed retries work even with invalid current files or another operation holding the installation lease.
+Completed retries work even with invalid current files or another write in progress.
 If another process finishes cleanup after completion, the original request still succeeds with `cleanup:"pending"`.
 A refusal reports `applied:false` before installation or `applied:"unknown"` when the outcome remains uncertain.
 
-Signing precedes installation. A signing refusal changes no current input.
-Repair the configured signer before retrying the same request.
-
-Keep external editors and Git checkout idle during installation.
-Archboard detects interference but cannot make arbitrary filesystem readers see every file change at once.
+During installation, leave the vault files and checkout unchanged.
 Invalid or changing inputs block new writes.
 Unrelated authored files keep their exact bytes.
 
@@ -159,7 +153,7 @@ If a write returns `RECOVERY_REQUIRED`, run `archboard model recover -C <directo
 Recovery resumes the original operation and checkpoint.
 If recovery finds foreign content, preserve it before restoring a logged image.
 If the branch or HEAD differs, restore the recorded context before retrying.
-Preserve the journal when recovery refuses.
+Leave recovery files intact when recovery refuses.
 
 The failure's `recovery` names the operation, checkpoint, progress, fingerprints, branch, and HEAD.
 While current reads remain blocked, inspect the candidate with `model read --checkpoint <recovery.checkpoint>`.
@@ -173,16 +167,14 @@ For a vault outside a source repository, initialize its archive before retention
 archboard model archive-init -C <directory>
 ```
 
-The result's `archive` is a local bare Git directory.
-Configure its identity and signer through `git -C <archive> config`.
-It also reads global Git configuration. Keep required signing enabled.
+The result's `archive` names the local history directory.
 
 Initialization creates no `.git` in the vault or enclosing directory.
 It refuses source repositories and machine storage inside a source repository.
 Repeating it returns the same archive without replacing content.
 
 Retain, read, claim, edit, and recover use the archive automatically.
-Private checkpoints invent no source association or machine directory.
+Private checkpoints invent no source association.
 Current architecture and recovery records stay specific to the vault.
 
 Include the archive in backups.
@@ -226,12 +218,10 @@ Publication reports these states:
 
 Evidence survives restarts and describes the last successful exchange, not future remote availability.
 `retention.protected:false` states that limit.
-The remote owner must prohibit ref rewrites and deletion and keep a backup.
-Generic Git transport cannot install or inspect those controls.
+For durable shared history, the remote owner must prohibit ref rewrites and deletion and keep a backup.
 
-A stale push fetches named history and joins both archive tips through a signed record, without merging model content.
+If the remote has newer history, publication preserves both histories without merging model content.
 Publication preserves checkpoint identities and never force-pushes.
-If signing fails, repair the signer and repeat the explicit request.
 
 If the network fails, local history remains retained.
 Read saved status without network access through `model publication`.
@@ -299,7 +289,6 @@ Write `claim.json` with `target`, `writer`, `reason`, and `subjects`.
 Run `archboard model claim --input claim.json -C <directory>`.
 Keep `claim.id`.
 Use `model claims` to inspect writer, purpose, scope, and start time.
-Claims leave the installation lease free between operations.
 
 Prepare the request from that read and claim:
 
@@ -335,8 +324,6 @@ Run `archboard model release --input release.json -C <directory>` when the inten
 The browser shows claims and offers Take back control.
 That action changes ownership, not architecture.
 If your next write returns `CLAIM_REVOKED`, stop the intent and report the state it left.
-
-Each event-stream connection starts with fresh current content and claims. Historical selections stay pinned.
 
 ## Author module structure and relationships
 
@@ -636,11 +623,7 @@ A confirmed new part keeps its separate identity.
 The receipt's `confirmed` lists only acts that occurred.
 These proposal confirmations do not change current edits or automatic reconciliation.
 
-Stored changes distinguish `add`, `remove`, `assign`, `clear`, and `place`.
-Submit ordinary module and flow operations. Archboard derives the compact changes and requires an exact resulting model before installation.
 Composite fields, including bindings, change as a whole.
-Stored placement names its holder and following sibling by stable ID, plus the exact label for a decision alternative.
-Proposals store no unrelated module or flow snapshots.
 
 `model compare` and `model read --compare` use the same default base.
 Comparison defaults depend on ancestry:
@@ -869,7 +852,6 @@ It records the previous current state, reason, and time.
 A planning model receives its first Current without an invented predecessor.
 Shelving keeps the final changes, baseline, ancestry, documents, reason, and time.
 Completed states refuse ordinary content edits.
-Signed preparation precedes removal of the active proposal file.
 
 `model proposals` returns `states` beside active `proposals`.
 A current read without state or comparison selectors also exposes this catalogue.
@@ -960,8 +942,7 @@ archboard model export --out architecture.json -C <source-directory>
 ```
 
 Create an empty `.archboard/vault` at the destination.
-Outside a source repository, initialize [private history](#initialize-private-history) and configure its identity and signer before import.
-Inside a source checkout, its Git configuration governs import.
+Outside a source repository, initialize [private history](#initialize-private-history) before import.
 The empty destination revision is:
 
 ```json
@@ -1010,8 +991,9 @@ If the base changes during export, reread and retry `STALE_REVISION`.
 `model rasterize --out picture.png` accepts the same selectors, plus `--scale` and `--region`.
 Both artifacts carry a recipe with model identity, reading, revision, and picture digest.
 
-Track exported artifacts in Git when other files embed them.
-`check embeds` finds recipes. `check embeds --fix` redraws changed local sources when artifact replacement is authorized.
+Track exported pictures in Git when other files embed them.
+`check embeds` discovers only Git-tracked SVG and PNG files with render recipes.
+`check embeds --fix` redraws changed local sources when artifact replacement is authorized.
 It preserves legacy recipes until explicit migration and canonical export, and never selects a replacement model by name.
 
 If saved meaning draws incorrectly, fix the renderer. Do not change architecture or add geometry to repair placement.

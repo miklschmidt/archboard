@@ -42,7 +42,7 @@ The target accepts `state:"current"`, a stable proposal ID, or a unique proposal
 For exact history, use `checkpoint` with a complete retained Git object ID.
 Playback resolves the target once for all beats.
 A retained narrative requires its exact target as an archive dependency.
-If that dependency is missing, a new signed write refuses.
+If that dependency is missing, the write refuses.
 
 To edit, claim the walkthrough and all existing beats.
 Also claim the model when adding or removing identities.
@@ -91,8 +91,7 @@ Accepted captures stay complete for later beats despite file changes.
 If source or target changes or becomes unavailable, reopen the walkthrough before retrying narration.
 
 Live narration requests the first beat by pane and walkthrough, without a pane key.
-The recording page advances its own beats and receives no server request for the first beat.
-Both paths narrate only available beats after pane arrival.
+Live narration and recording wait until an available beat reaches the pane.
 Leaving the walkthrough stops narration.
 
 ## Write each beat

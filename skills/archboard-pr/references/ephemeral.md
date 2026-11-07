@@ -13,7 +13,7 @@ mkdir -p "$pr_evidence_root/.archboard/vault"
 archboard model archive-init -C "$pr_evidence_root"
 ```
 
-Configure the returned archive's identity and signer through the consumer private-history recipe, then initialize:
+Initialize the planning model:
 
 ```bash
 archboard model init --name 'Review evidence' --operation-id initialize-review --writer agent --doing 'Initialize review evidence' -C "$pr_evidence_root"

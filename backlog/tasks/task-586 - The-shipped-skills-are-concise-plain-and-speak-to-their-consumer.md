@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-06T19:12:00Z'
-updated_date: '2026-11-07T01:08:00Z'
+updated_date: '2026-11-07T01:27:00Z'
 labels: []
 dependencies: []
 ordinal: 1033000
@@ -27,6 +27,8 @@ Agents and readers need concise instructions without duplicate rules or internal
 
 <!-- SECTION:PLAN:BEGIN -->
 Read every shipped reference and preserve a rule inventory. Rewrite the references and remove repeated guidance through explicit pointers. Compare consumer commands and contradictions with CLI help or source. Regenerate artifacts, run the three required gates, record evidence, and commit the completed task.
+
+Audit the consumer skill for Git-signing instructions, unrelated repository policies, and implementation details. Remove those instructions, including their generated installation source. Preserve actionable Archboard commands and failure recovery. Inspect the diff, regenerate the installation reference, format touched Markdown, record the audit, and commit.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -49,10 +51,16 @@ PR guidance now points to consumer recipes for claims, checkpoints, comparison, 
 AC1 evidence: read and rewrote all 17 authored files, compared every reference section with its retained rule location, preserved all diagnostic codes and CLI flags, and kept the catalogue and citation contracts. The final prose audit found no paragraph above six sentences. The three longest prose sentences contain 20, 20, and 19 words, with code excluded. The final simplification pass removed repeated consumer recipes from development and PR guidance. AC2 evidence: generation and all three requested gates passed after the final skill edits. No full gate, browser lane, evaluation run, or grade command ran. No architecture proposal was needed. The complete report is /tmp/task586-completion-report.md.
 
 Added the requested user acceptance gate in split.md. The agent must present proposed PR contents, order, and dependencies, then receive explicit confirmation before branch restructuring, commit moves, or separate PR creation. Permission to explore a split does not authorize execution. Artifact generation, 169 repository tests, and formatting passed. The first module run found a missing renderer build. After build:core restored that generated artifact, the module suite passed. No architecture proposal is needed for this guidance change.
+
+User requested removal of all Git-signing guidance and an audit for other unrelated policies. This follow-up changes documentation only and needs no architecture proposal. Validation stays scoped to the Markdown changes and generated installation copy, without builds or broad tests.
+
+Completed the requested audit of the consumer entry point, authored references, and copied installation guidance. Removed Git-signing requirements, signer configuration and repair instructions, and internal signing descriptions. Updated INSTALL.md so regeneration cannot restore them. Removed the PR temporary-model pointer to the deleted signer setup. Also removed internal lease, event-stream, stored-patch, and recording-page mechanics that require no consumer action. Removed the unconditional installer commit instruction and the blanket exclusion of reproducible outputs from source control. Kept Git tracking for embedded SVG/PNG files: checkout-embeds.ts uses git ls-files --cached. Kept clangd cache exclusions and archive backups. Kept remote protection guidance for durable shared history, supported by model-publication.ts retention.recovery. All Archboard commands and recovery routes remain. Regeneration, touched-file formatting, and git diff --check passed. A scan of the full consumer skill, including generated files, found no Git-signing mentions. Its only remaining signed wording is Codex sign-in for voice. No builds or test suites ran for this documentation follow-up.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
 Rewrote all shipped skill prose for agents and readers. Centralized repeated rules and removed internal exposition while preserving consumer commands, fields, diagnostics, and guarantees. Corrected the footprint exit-status guidance from CLI help. Artifact generation, 163 repository tests, formatting, and 4908 module tests passed. One macOS-only test skipped. No product behavior changed. The completion report records file counts, rule destinations, source evidence, commits, and logs.
+
+The follow-up audit removes Git-signing policy and unnecessary implementation detail from consumer guidance and its installation source. It preserves embed tracking, cache exclusions, and history-protection requirements that serve Archboard workflows. Generated-reference preparation, focused formatting, and diff inspection passed.
 <!-- SECTION:FINAL_SUMMARY:END -->
