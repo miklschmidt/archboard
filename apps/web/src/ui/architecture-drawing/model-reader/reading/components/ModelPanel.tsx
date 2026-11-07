@@ -138,21 +138,30 @@ function Body(props: {
 }
 
 /**
- * Whose panel this is: its name, then one line that says what it is.
- * @param props The name and the line.
+ * Whose panel this is: the chip of its kind, when it has one, before its name, and under the name
+ * one line that says what it is, as the site's mock panel heads a module.
+ * @param props The mark, the name and the line.
+ * @param props.mark The chip of its kind.
  * @param props.title The name.
  * @param props.children The line.
  * @returns The head.
  */
-function Head(props: { readonly title: ReactNode; readonly children?: ReactNode }): JSX.Element {
+function Head(props: {
+	readonly mark?: ReactNode;
+	readonly title: ReactNode;
+	readonly children?: ReactNode;
+}): JSX.Element {
 	return (
-		<header className="flex flex-col gap-1 pr-8">
-			<h3 className="title-name text-balance [overflow-wrap:anywhere]">{props.title}</h3>
-			{props.children !== undefined && (
-				<div className="text-body text-muted-foreground flex min-w-0 flex-wrap gap-x-2">
-					{props.children}
-				</div>
-			)}
+		<header className="flex items-center gap-2.5 pr-8">
+			{props.mark}
+			<div className="flex min-w-0 flex-col gap-1">
+				<h3 className="title-name text-balance [overflow-wrap:anywhere]">{props.title}</h3>
+				{props.children !== undefined && (
+					<div className="text-body text-muted-foreground flex min-w-0 flex-wrap gap-x-2">
+						{props.children}
+					</div>
+				)}
+			</div>
 		</header>
 	);
 }

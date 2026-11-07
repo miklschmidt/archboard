@@ -5,6 +5,7 @@ import {
 	kindNames,
 	moduleName,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelConnections.tsx";
+import { KindChip } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutTable.tsx";
 import { ModelChangesWith } from "#ui/architecture-drawing/model-reader/reading/components/ModelChangesWith.tsx";
 import { ModelCodeDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
 import { ModelCollectionDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCollectionDetails.tsx";
@@ -39,6 +40,7 @@ import {
 	type SelectedSubject,
 } from "#ui/architecture-drawing/model-reader/rules/selected-subject.ts";
 import type { Way } from "#ui/architecture-drawing/canvas/picture/camera/rules/reach.ts";
+import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
 /** Inputs for what the panel says of a selection. */
 interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
@@ -54,6 +56,8 @@ interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
 	readonly onToggle: (id: string) => boolean;
 	/** What the interface line of a module does. */
 	readonly line: Pick<ComponentProps<typeof ModelInterfaceLine>, "onShow" | "onAbout">;
+	/** How the kinds look, with the icons the picture draws them with. */
+	readonly look: KindLook;
 }
 
 /**
@@ -61,6 +65,9 @@ interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
  * @param props What is open.
  * @param props.name Its name.
  * @param props.description What it says of itself.
+ * @param props.kind The kind of the open module, or nothing when the model's root is open.
+ * @param props.path The code path of the open module, when it has one.
+ * @param props.look How the kinds look.
  * @param props.flowHead The head of the flow on screen, which stands in place of the name.
  * @param props.children What touches it.
  * @returns The body.
@@ -68,12 +75,22 @@ interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
 function ModelPanelScope(props: {
 	readonly name: ReactNode;
 	readonly description: string | undefined;
+	readonly kind: string | undefined;
+	readonly path: string | undefined;
+	readonly look: KindLook;
 	readonly flowHead: ReactNode;
 	readonly children: ReactNode;
 }): JSX.Element {
+	const { kind } = props;
+	const head =
+		kind === undefined ? (
+			<ModelPanel.Head title={props.name} />
+		) : (
+			<KindHead look={props.look} kind={kind} title={props.name} path={props.path} />
+		);
 	return (
 		<ModelPanel.Body slot="model-panel-scope">
-			{props.flowHead ?? <ModelPanel.Head title={props.name} />}
+			{props.flowHead ?? head}
 			{Boolean(props.description) && (
 				<p className="text-control font-normal whitespace-pre-wrap">{props.description}</p>
 			)}
@@ -228,20 +245,47 @@ function ModuleSubject(
 function ModuleHead(
 	props: ModelPanelSubjectProps & { readonly module: Model["modules"][number] },
 ): JSX.Element {
-	const { module, model } = props;
-	const path = props.pathOf(module.id);
+	const { module } = props;
 	return (
 		<>
-			<ModelPanel.Head title={module.name}>
-				<span>{model.policy.nodeKinds[module.kind]?.name ?? module.kind}</span>
-				{path !== undefined && (
-					<code className="text-technical min-w-0 font-mono break-all">{path}</code>
-				)}
-			</ModelPanel.Head>
+			<KindHead
+				look={props.look}
+				kind={module.kind}
+				title={module.name}
+				path={props.pathOf(module.id)}
+			/>
 			{module.responsibility && (
 				<p className="text-control font-normal whitespace-pre-wrap">{module.responsibility}</p>
 			)}
 		</>
+	);
+}
+
+/**
+ * The head of a module's panel: the chip of its kind before its name, and its kind and its code
+ * path under the name.
+ * @param props The module's kind, name and path, and how the kinds look.
+ * @param props.look How the kinds look.
+ * @param props.kind The kind.
+ * @param props.title The name.
+ * @param props.path The code path, when it has one.
+ * @returns The head.
+ */
+function KindHead(props: {
+	readonly look: KindLook;
+	readonly kind: string;
+	readonly title: ReactNode;
+	readonly path: string | undefined;
+}): JSX.Element {
+	const { look, kind, path } = props;
+	const chip = useMemo(() => <KindChip look={look} kind={kind} />, [look, kind]);
+	return (
+		<ModelPanel.Head mark={chip} title={props.title}>
+			<span>{look.nodeName(kind)}</span>
+			{path !== undefined && (
+				<code className="text-technical min-w-0 font-mono break-all">{path}</code>
+			)}
+		</ModelPanel.Head>
 	);
 }
 

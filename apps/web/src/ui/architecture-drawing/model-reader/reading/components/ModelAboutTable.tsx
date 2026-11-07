@@ -65,7 +65,7 @@ function KindChip(props: { readonly kind: string; readonly look: KindLook }): JS
 	return (
 		<span
 			aria-hidden="true"
-			className="inline-flex size-6 shrink-0 items-center justify-center rounded-[5px] border border-(color:--kind)/45 bg-(color:--kind)/14 text-(color:--kind)"
+			className="rounded-control inline-flex size-6 shrink-0 items-center justify-center border border-(color:--kind)/45 bg-(color:--kind)/14 text-(color:--kind)"
 			style={ink}
 		>
 			<KindIcon look={look} kind={kind} className="size-4" />

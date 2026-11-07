@@ -43,6 +43,8 @@ import { useReaderKeys } from "#ui/architecture-drawing/model-reader/reading/hoo
 import type { Reader } from "#ui/architecture-drawing/model-reader/hooks/use-reader.ts";
 import { useSubjectMenu } from "#ui/architecture-drawing/model-reader/reading/hooks/use-subject-menu.ts";
 import { useShowSubject } from "#ui/architecture-drawing/model-reader/reading/hooks/use-show-subject.ts";
+import { useSceneAppearances } from "#ui/architecture-drawing/model-reader/reading/hooks/use-scene-appearances.ts";
+import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import {
 	flowSubjects,
 	collectionSubjects,
@@ -173,6 +175,8 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 	const selecting = ids.size > 0;
 	const pathOf = useCallback((id: string) => tree.owner.get(id)?.path, [tree]);
 	const head = scopeHead({ model, scope, tree, projection });
+	const appearances = useSceneAppearances(accepted.scene);
+	const look = useMemo(() => kindLookOf(model.policy, appearances), [model.policy, appearances]);
 	const context = <ReadingContext reader={reader} selected={ids} />;
 	const { flow, reference } = projection;
 	const { grammar, selectGrammar } = location;
@@ -210,6 +214,7 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 		context,
 		flowHead,
 		line,
+		look,
 	};
 	return (
 		<ModelPanel onClose={selecting ? selection.clear : undefined} covered={reader.page === "about"}>
@@ -219,6 +224,9 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 				) : (
 					<ModelPanelScope
 						name={head.name}
+						kind={head.kind}
+						path={head.path}
+						look={look}
 						description={head.description ?? head.lead}
 						flowHead={flowHead}
 					>
@@ -446,10 +454,7 @@ function ReadingAbout(props: {
 		[shown.model, shown.projection.opened],
 	);
 	const onShow = useShowSubject(reader);
-	const appearances = useMemo(
-		() => new Map(scene?.picture.appearances.map((one) => [one.id, one])),
-		[scene],
-	);
+	const appearances = useSceneAppearances(scene);
 	const evidence = useMemo(
 		() => (
 			<ModelCodeDetails

@@ -534,7 +534,7 @@ once. A new subject opens at the top of the panel and arrives with a 120ms fade.
 Long lists and evidence live on About, which lies over the panel, so the panel keeps its
 room and the picture keeps its camera. A pane presented fullscreen has no panel.
 
-A section of the panel opens with its title in Body semibold and full ink. Its count stands beside the title in mono and muted ink. Eight pixels part the title from its rows, and 2px part one row from the next.
+The panel heads a module as the site's mock panel does: the chip of its kind, with the icon the picture draws it with, then its name in the display face, and its kind and code path under the name. A subject with no kind, such as a flow or a connection, has only its name. A section of the panel opens with its title in Body semibold and full ink. Its count stands beside the title in mono and muted ink. Eight pixels part the title from its rows, and 2px part one row from the next.
 
 With a module expanded into the picture, the panel stays with the module that the reading
 opened. An `Expanded` section under `Interface` lists each expanded module, with its count.
