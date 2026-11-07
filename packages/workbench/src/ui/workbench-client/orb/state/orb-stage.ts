@@ -59,6 +59,7 @@ import { SIZE } from "#ui/workbench-client/orb/clients/orb-painter.ts";
 import {
 	isDark,
 	isDrawn,
+	isLaunched,
 	isOnScreen,
 	isSeen,
 	painted,
@@ -258,13 +259,12 @@ function isBound(state: StageState, socket: HTMLElement): boolean {
 }
 
 /**
- * Whether the orb was launched out of a Narrate key: it is lit from the start of its flight,
- * so it is flown as an orb that is seen.
- * @param holder The holder.
- * @returns True until it lands.
+ * Whether the holder is in no home: in the garage, or left where its socket was when that went.
+ * @param state The stage.
+ * @returns True when it is neither in a socket nor in the air.
  */
-function isLaunched(holder: HTMLElement): boolean {
-	return holder.dataset["launched"] !== undefined;
+function isHomeless(state: StageState): boolean {
+	return state.resting === null && state.flight === null;
 }
 
 /**
@@ -457,9 +457,8 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 		state.leftFrom = null;
 		if (state.flight?.socket === socket) return;
 		holder.dataset["shown"] = "false";
-		if (isBound(state, socket)) return;
-		const homeless = state.resting === null && state.flight === null;
-		if (homeless || isDark(holder)) land(socket);
+		if (state.resting === socket) return;
+		if (isHomeless(state) || isDark(holder)) land(socket);
 	};
 
 	/**

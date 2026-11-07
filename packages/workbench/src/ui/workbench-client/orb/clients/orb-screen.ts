@@ -98,4 +98,14 @@ function isDark(holder: HTMLElement): boolean {
 	return Number.parseFloat(getComputedStyle(holder).opacity) === 0;
 }
 
-export { isDark, isDrawn, isOnScreen, isSeen, painted, placeInLayer, spotIn, spotOf };
+/**
+ * Whether the orb was launched out of a Narrate key: it is lit from the start of its flight,
+ * so it is flown as an orb that is seen.
+ * @param holder The holder.
+ * @returns True until it lands.
+ */
+function isLaunched(holder: HTMLElement): boolean {
+	return holder.dataset["launched"] !== undefined;
+}
+
+export { isDark, isDrawn, isLaunched, isOnScreen, isSeen, painted, placeInLayer, spotIn, spotOf };
