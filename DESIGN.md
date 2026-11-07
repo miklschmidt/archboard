@@ -310,9 +310,8 @@ paths, versions, counts and times.
 ## Layout
 
 The shell puts columns around the picture. The left column (280px) lists where to
-go, and the agent dock is at its foot. It is a sidebar of the usual width, as wide as the
-sidebar beside a picture, because History and Measures open in dialogs of their own and a
-list needs no more room. The panes are in the centre, one or two side
+go, and the agent dock is at its foot. It is a sidebar of the usual width, because History
+and Measures open in dialogs of their own and a list needs no more room. The panes are in the centre, one or two side
 by side. The conversation opens between the column and the panes: it slides
 in and out, and a handle on its edge, a grip on a line that takes the gold while
 it is dragged, resizes it between 320px and 720px, or drags it shut below that.
