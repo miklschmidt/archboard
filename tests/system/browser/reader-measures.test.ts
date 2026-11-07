@@ -6,7 +6,6 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { COLUMN_MS } from "@archboard/timing";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import { browserTestRoots, pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
@@ -160,14 +159,14 @@ test("a selection reads the history, and the Measures dialog shows every module 
 		"the choices of what is on show",
 		WAIT,
 	);
-	// Base UI holds the transition off for the first frame of an open popover.
+	// Base UI prepares the popup before it accepts keyboard navigation.
 	await pollUntil(
 		() =>
-			browser.eval<string>(
-				`getComputedStyle(document.querySelector('[data-slot="select-content"]')).transitionDuration`,
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="select-content"]:not([data-starting-style])') !== null`,
 			),
-		(eases) => eases === `${COLUMN_MS.popoverIn / 1000}s, ${COLUMN_MS.popoverIn / 1000}s`,
-		"the popover to ease for its duration",
+		Boolean,
+		"the popup ready for keyboard navigation",
 		WAIT,
 	);
 	await browser.run(["press", "ArrowDown"]);
