@@ -33,7 +33,8 @@ decides the split.
 TASK-559.29 amended this ADR on 2026-10-31. The canonical reader asks on a
 selection and when `Measures` opens, and a measurement replaced the one of
 2026-10-06. The amendment after the section on derived readings gives the
-reasons.
+reasons. TASK-590.11 amended that amendment on 2026-11-07: `Measures` is a
+dialog, and it asks when its view What changes together opens.
 
 The history lens maps commits through bindings to give four readings.
 A board is behind its code by the commits that changed its parts after the
@@ -436,14 +437,15 @@ TASK-559.29 amended the section above for the canonical reader. Everything else
 stands.
 
 The canonical reader has no pane inspector. About holds the commits and the
-coupled parts of one module. The left column holds `Measures`, which lists the
-commits and the unjoined pairs of every module. So `Measures` is a second place
-where a user sees a reading. It is still derived on request, stored nowhere and
-drawn on no picture.
+coupled parts of one module. The `Measures` dialog has a view, What changes
+together, which lists the commits and the unjoined pairs of every module. So
+`Measures` is a second place where a user sees a reading. It is still derived
+on request, stored nowhere and drawn on no picture.
 
 A selection of a bound module asks the route, on the picture too, and About and
-`Measures` find the answer. `Measures` asks when it opens. Nothing asks while a
-reader holds no bound module and `Measures` is closed. The answer covers every
+`Measures` find the answer. `Measures` asks when its view What changes together
+opens, because its other views need no history. Nothing asks while a reader
+holds no bound module and that view is closed. The answer covers every
 module, so the browser keeps one answer for each model revision, and a later
 selection asks nothing. This replaces the rule that a later selection reads the
 server's memory, and the words that the next selection reads the HEADs. A HEAD
