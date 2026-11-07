@@ -3,7 +3,6 @@
 Use this reference only under the parent skill's delivery authorization rules.
 Module count alone never determines PR count.
 For authorized branch operations, use the installed gh-stack skill.
-Keep an existing PR intact unless restructuring is authorized.
 
 Read the whole diff, intended behavior, and proposal comparison.
 Choose layers that ship independently with clear contracts and focused evidence.
@@ -13,6 +12,10 @@ Tests belong with their implementation. Documentation belongs with its behavior.
 Name each layer's result and dependencies.
 If a layer exists only because a diagram shows another module, keep it in the integration PR.
 If no independent benefit remains, stop splitting.
+
+Present the proposed PRs, their contents, order, and dependencies to the user.
+Wait for explicit confirmation of that split before creating or restructuring branches, moving commits, or opening separate PRs.
+Permission to explore a split does not authorize carrying it out.
 
 For each layer, record model, stable state ID, exact predecessor, and comparison base.
 A proposal can span modules and flows.

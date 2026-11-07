@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-06T19:12:00Z'
-updated_date: '2026-11-06T19:42:00Z'
+updated_date: '2026-11-07T01:08:00Z'
 labels: []
 dependencies: []
 ordinal: 1033000
@@ -47,6 +47,8 @@ The consumer reference rewrite and preservation audit are complete. All original
 PR guidance now points to consumer recipes for claims, checkpoints, comparison, reconciliation, lifecycle, and narration. Posting and artifact inspection keep their PR-specific steps. Final authored-file validation passed: artifact generation, test:repository (163 passed), format:check, and test:modules (4908 passed, one macOS-only skip, zero failures). Logs are /tmp/task586-generation.log, /tmp/task586-test-repository.log, /tmp/task586-format-check.log, and /tmp/task586-test-modules.log.
 
 AC1 evidence: read and rewrote all 17 authored files, compared every reference section with its retained rule location, preserved all diagnostic codes and CLI flags, and kept the catalogue and citation contracts. The final prose audit found no paragraph above six sentences. The three longest prose sentences contain 20, 20, and 19 words, with code excluded. The final simplification pass removed repeated consumer recipes from development and PR guidance. AC2 evidence: generation and all three requested gates passed after the final skill edits. No full gate, browser lane, evaluation run, or grade command ran. No architecture proposal was needed. The complete report is /tmp/task586-completion-report.md.
+
+Added the requested user acceptance gate in split.md. The agent must present proposed PR contents, order, and dependencies, then receive explicit confirmation before branch restructuring, commit moves, or separate PR creation. Permission to explore a split does not authorize execution. Artifact generation, 169 repository tests, and formatting passed. The first module run found a missing renderer build. After build:core restored that generated artifact, the module suite passed. No architecture proposal is needed for this guidance change.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
