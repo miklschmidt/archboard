@@ -366,8 +366,9 @@ The decision has these parts:
   An invalid repository file blocks every language of its checkout, TypeScript's
   default included. An invalid global file blocks each language that the
   repository file leaves out.
-- A pass reads the global file once, and the file of each checkout once at its
-  start. A running Archboard server needs no restart.
+- A pass reads the global file once, and the file of each checkout once, when
+  it first asks about that checkout. A running Archboard server needs no
+  restart.
 - `archboard repo language-server <language> <command>` writes the repository
   file of the working directory's checkout, or of the chosen checkout of
   `--repo <identity>`. The checkout need not be registered. `--global` writes the

@@ -116,7 +116,7 @@ The command refuses to change an invalid file and exits with 1.
 Fix or delete the file, and run it again.
 
 Run `archboard check code` after you name servers. No Archboard restart is needed.
-A check reads the global file once, and each checkout's file once at its start.
+A check reads the global file once, and each checkout's file once, when it first asks about that checkout.
 If using clangd, add `.cache/` to the repository's `.gitignore` when absent.
 Its index lives in `.cache/clangd/index` beside `compile_commands.json`, or beside `build` when the compilation file is there.
 
