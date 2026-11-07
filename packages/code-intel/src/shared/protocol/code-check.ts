@@ -84,6 +84,24 @@ const CodeEvidenceSchema = z
 	.strict();
 
 /**
+ * The answer of `GET /api/code/source-lines` (TASK-590.06): the source excerpt
+ * of one piece of evidence that a finding the server remembers names, at its
+ * `repo`, `path` and `line`. `lines` holds the evidence line with up to 3 lines
+ * before it and 3 after it, without line terminators, and `first` is the line
+ * number of `lines[0]`. A line longer than the route's limit is cut and ends
+ * with `…`. It is the one answer that quotes text of a file, an exception that
+ * the owner asked for (ADR 0046, amendment of 2026-11-07). The route answers it
+ * beside `success: true`, and a parse keeps only the answer.
+ */
+const CodeSourceLinesSchema = z.object({
+	repo: z.string(),
+	path: z.string(),
+	line: z.int().positive(),
+	first: z.int().positive(),
+	lines: z.array(z.string()).min(1),
+});
+
+/**
  * The evidence of `INHERITED_PART_DROPPED` (TASK-488): the variant before the
  * draft that holds the part (`from`, its id), and where the code the draft is
  * read against still holds the part's bound path and symbol. `ref` and
@@ -440,6 +458,7 @@ export {
 	type CodeCheckSkip,
 	type CodeEvidence,
 	type CodeFinding,
+	CodeSourceLinesSchema,
 	RememberedFindingsSchema,
 	type RememberedFindings,
 	type ServerTypescript,
