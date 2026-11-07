@@ -20,8 +20,7 @@ import {
 import { pickModelChoice as pick } from "./support/model-choice.ts";
 import { servedRepository, serverPath } from "./support/navigator-support.ts";
 import { legacyNavigation } from "./support/legacy-navigation.ts";
-
-const WAIT = { timeoutMs: 10_000 } as const;
+import { TEST_BROWSER_STEP_WAIT as WAIT } from "../support/timing.ts";
 
 async function beat(browser: AgentBrowserSession, index: number, grammar: string): Promise<void> {
 	await pollUntil(

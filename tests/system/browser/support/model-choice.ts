@@ -1,6 +1,5 @@
+import { TEST_BROWSER_STEP_WAIT as WAIT } from "../../support/timing.ts";
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
-
-const WAIT = { timeoutMs: 10_000 } as const;
 
 async function pickModelChoice(
 	browser: AgentBrowserSession,
