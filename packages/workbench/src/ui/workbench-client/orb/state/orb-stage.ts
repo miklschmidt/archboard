@@ -12,8 +12,8 @@
 // way, and puts it back in the socket on arrival. The canvas is never remounted,
 // so its light and its history go with it. A home may offer more than one socket,
 // as two presented panes each have a Narrate key: the newest is the home's, and the
-// one before it is the home's again when it goes. A press of Narrate makes its key
-// the newest, so the orb leaves the key that was pressed and comes back to it.
+// one before it is the home's again when it goes. A press of Narrate makes its key the
+// newest, so the orb leaves the key that was pressed and comes back to it.
 //
 // The orb is the only one of its kind on the page at any moment. The holder carries a
 // plate of its own, and the stage marks the socket it sits in occupied, so that the
@@ -138,8 +138,7 @@ interface OrbStage {
 	readonly wish: (wish: OrbWish) => void;
 	/**
 	 * Have the next orb that is lit leave the Narrate key that was pressed, lit from the start of its
-	 * flight. That key is the home's from then on, so the dark orb moves into it first, and the orb
-	 * comes back to it as voice ends. Nothing is asked while no Narrate key is on the page.
+	 * flight. That key is the home's from then on. Nothing is asked while no key is on the page.
 	 * @param pressed The key that was pressed, which holds its socket.
 	 */
 	readonly launch: (pressed: Element) => void;
@@ -528,6 +527,22 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 	};
 	holder.addEventListener("transitionend", faded);
 
+	/**
+	 * Offer a socket as a home. A socket offered again is the home's newest.
+	 * @param home Which home.
+	 * @param socket The socket.
+	 * @returns How to withdraw it.
+	 */
+	const offer = (home: OrbHome, socket: HTMLElement): (() => void) => {
+		const others = (state.sockets.get(home) ?? []).filter((other) => other !== socket);
+		state.sockets.set(home, [...others, socket]);
+		reconcile();
+		notify();
+		return (): void => {
+			withdraw(home, socket);
+		};
+	};
+
 	return {
 		holder,
 		/**
@@ -544,21 +559,7 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 				state.garage.remove();
 			};
 		},
-		/**
-		 * Offer a socket as a home.
-		 * @param home Which home.
-		 * @param socket The socket.
-		 * @returns How to withdraw it.
-		 */
-		offer: (home, socket) => {
-			const others = (state.sockets.get(home) ?? []).filter((other) => other !== socket);
-			state.sockets.set(home, [...others, socket]);
-			reconcile();
-			notify();
-			return (): void => {
-				withdraw(home, socket);
-			};
-		},
+		offer,
 		/**
 		 * Whether a home has offered a socket.
 		 * @param home Which home.
@@ -585,17 +586,12 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 			reconcile();
 		},
 		/**
-		 * Have the next orb that is lit leave the Narrate key that was pressed, which is the home's
-		 * from now: the dark orb, out of sight, moves into it first.
+		 * Launch from the key that was pressed, the home's from now: the dark orb moves into it first.
 		 * @param pressed The key that was pressed.
 		 */
 		launch: (pressed) => {
-			const offered = state.sockets.get("narrate") ?? [];
-			const socket = offered.find((one) => pressed.contains(one));
-			if (socket !== undefined && socket !== offered.at(-1)) {
-				state.sockets.set("narrate", [...offered.filter((one) => one !== socket), socket]);
-				reconcile();
-			}
+			const socket = state.sockets.get("narrate")?.find((one) => pressed.contains(one));
+			if (socket !== undefined) offer("narrate", socket);
 			state.launch = socketOf(state, "narrate") ?? null;
 		},
 	};
