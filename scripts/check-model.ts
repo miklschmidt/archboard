@@ -60,7 +60,12 @@ try {
 	}
 	status = await closed;
 } finally {
-	spawnSync(archboard, ["stop"], { cwd: root, env, stdio: "ignore" });
+	// A server that outlives the stage must fail it, or a passing gate leaks one.
+	const stopped = spawnSync(archboard, ["stop"], { cwd: root, env, encoding: "utf8" });
+	if (stopped.status !== 0) {
+		console.error(`check:model: archboard stop failed: ${stopped.stderr.trim()}`);
+		if (status === 0) status = 1;
+	}
 	process.off("SIGINT", interrupt);
 	process.off("SIGTERM", interrupt);
 }
