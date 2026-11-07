@@ -124,13 +124,14 @@ jobs:
       - name: Install @archboard/cli with Bun and run it
         run: bun scripts/release/smoke.ts --installer bun --name @archboard/cli
 
-  # The environment `npm` holds the job until its required reviewer approves the run. npm trusts
-  # only this job, through OIDC (trusted publishing), so the repository stores no npm token, and
-  # each package gets provenance. Platform packages go first, so a launcher never names a
-  # version that is not on npm. A package version that is on npm already is skipped, so a failed
-  # run can be run again.
+  # npm trusts only this job, in the environment `npm`, through OIDC (trusted publishing), so the
+  # repository stores no npm token, and each package gets provenance. The job stages each package
+  # (`npm stage publish`): nothing is public until the owner approves it on npm with 2FA. Approve
+  # the platform packages before the launchers, so a launcher never names a version that is not
+  # public. A version that is public already is skipped. Before running a failed job again,
+  # approve or reject what it staged, because npm refuses to stage a version twice.
   publish:
-    name: Publish the packages to npm
+    name: Stage the packages on npm
     needs: [release-please, gate, smoke]
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -151,11 +152,11 @@ jobs:
         with:
           node-version: "24"
 
-      # Trusted publishing needs npm 11.5.1 or later.
+      # Staged publishing needs npm 11.15.0 or later.
       - name: Install npm
-        run: npm install --global npm@11.6.2
+        run: npm install --global npm@12.2.2
 
-      - name: Publish
+      - name: Stage the packages
         env:
           VERSION: ${{ needs.release-please.outputs.version }}
         run: |
@@ -168,5 +169,5 @@ jobs:
               echo "$name@$VERSION is on npm already."
               continue
             fi
-            npm publish "$file" --provenance --access public --tag "$tag"
+            npm stage publish "$file" --provenance --access public --tag "$tag"
           done
