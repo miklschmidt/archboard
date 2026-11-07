@@ -1,0 +1,29 @@
+{
+  "order": 90000,
+  "name": "CLI version",
+  "kind": "function",
+  "responsibility": "The version the CLI reports: the installation's, from the package.json of a checkout or the marker of a release",
+  "description": "--version and the header of the help read it, so the reported version cannot drift from what is published.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/routing/store/package-version.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#iBC7Z3dU",
+  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "the version",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/store/package-version.ts",
+        "symbol": "installation"
+      },
+      "id": "vKEsyHFk#13Ba8GhC",
+      "to": "vKEsyHFk#4FdKQJqK"
+    }
+  ]
+}

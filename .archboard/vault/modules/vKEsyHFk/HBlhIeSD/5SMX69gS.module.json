@@ -3,7 +3,7 @@
   "name": "Code check",
   "kind": "module",
   "responsibility": "Checks selected canonical architecture against source evidence",
-  "description": "The checker reads current architecture, one selected state, or independent drafts. It reports bindings, anchors, declared relationships, interfaces, and document references with canonical identities. Git locality and branch footprint use separate requested history operations.",
+  "description": "The checker reads current architecture, one selected state, or independent drafts. It reports bindings, anchors, declared relationships, interfaces, and document references with canonical identities. Git locality and branch footprint use separate requested history operations. The timings of its language servers name the program that ran and the TypeScript that it read.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/code-check"
@@ -136,6 +136,19 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#m1F0u7X1",
       "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    },
+    {
+      "order": 123000,
+      "kind": "call",
+      "label": "which server each language starts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-check/operations/resolution.ts",
+        "symbol": "languageServerOf"
+      },
+      "id": "vKEsyHFk#7Zm6sJS7",
+      "to": "vKEsyHFk#FMiMVZ28"
     }
   ]
 }

@@ -3,7 +3,7 @@
   "name": "Codex process",
   "kind": "module",
   "responsibility": "Owns the child: proves the executable, prepares the Codex home in the storage the host names, spawns the child in the coordinator's directory and reaps its group",
-  "description": "The host names the storage. Archboard names one Archboard-only CODEX_HOME and SQLite home under the state directory, which serve every server on the machine, so one sign-in serves them all; each server keeps its own owner lock and epoch ledger under its port. Its config.toml gets the auto-review defaults it lacks (approvals_reviewer auto_review, workspace-write sandbox with network access) and keeps whatever Codex or a person set; a config naming another SQLite home, or not TOML, is refused. The child runs in the coordinator's directory under the server's state directory, which is no checkout and holds no vault, only a link to the server's archboard skill: the coordinator thread works there, so a command it runs without -C is refused, while each workhorse thread works in its own checkout. The child's environment is a short allow-list plus what the host adds. Archboard adds the server's own URL, with auto-start off, and the server's bin directory first on PATH: a thread's archboard is the server's own source in whichever checkout the thread works in, and it never starts another server. On shutdown, stdin closes first. The owner waits within a short EOF grace, then reaps every remaining group within the composed deadline.",
+  "description": "The host names the storage. Archboard names one Archboard-only CODEX_HOME and SQLite home under the state directory, which serve every server on the machine, so one sign-in serves them all; each server keeps its own owner lock and epoch ledger under its port. Its config.toml gets the auto-review defaults it lacks (approvals_reviewer auto_review, workspace-write sandbox with network access) and keeps whatever Codex or a person set; a config naming another SQLite home, or not TOML, is refused. The child runs in the coordinator's directory under the server's state directory, which is no checkout and holds no vault, only a link to the server's archboard skill: the coordinator thread works there, so a command it runs without -C is refused, while each workhorse thread works in its own checkout. The child's environment is a short allow-list plus what the host adds. Archboard adds the server's own URL, with auto-start off, and the server's bin directory first on PATH: a thread's archboard is the server's own source in whichever checkout the thread works in, and it never starts another server. On shutdown, stdin closes first. The owner waits within a short EOF grace, then reaps every remaining group within the composed deadline. A release's native Codex binary gets the variables that Codex's own launcher would set.",
   "groups": [
     "child"
   ],
@@ -72,6 +72,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#f9xJZD6m",
       "to": "vKEsyHFk#R3jPedS8"
+    },
+    {
+      "order": 44000,
+      "kind": "call",
+      "label": "the variables a native binary needs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/processes/process-spawn.ts",
+        "symbol": "nativeCodexEnvironment"
+      },
+      "id": "vKEsyHFk#9SuYTCBQ",
+      "to": "vKEsyHFk#06cbjPhn"
     }
   ]
 }

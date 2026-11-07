@@ -89,6 +89,19 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#qHLocIlw",
       "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+    },
+    {
+      "order": 86000,
+      "kind": "call",
+      "label": "the address a browser opens",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
+        "symbol": "browserUrl"
+      },
+      "id": "vKEsyHFk#oEoVWYcz",
+      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
     }
   ]
 }

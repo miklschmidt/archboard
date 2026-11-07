@@ -26,5 +26,19 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "the files of each grammar",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-facts/operations/adapters.ts",
+        "symbol": "GRAMMARS"
+      },
+      "id": "vKEsyHFk#J2g3pRdG",
+      "to": "vKEsyHFk#DZGqA0Dn"
+    }
+  ]
 }

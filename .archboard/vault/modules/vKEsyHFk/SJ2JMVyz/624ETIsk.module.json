@@ -3,7 +3,7 @@
   "name": "Authored role instructions",
   "kind": "module",
   "responsibility": "Composes and checks the authored coordinator and workhorse instructions",
-  "description": "One instruction owner loads the two role documents, composes their policy, and exposes their text and digests. Callers use the same integrity checks for both roles.",
+  "description": "One instruction owner loads the two role documents, composes their policy, and exposes their text and digests. Callers use the same integrity checks for both roles. The reviewed documents are imported as text, so the executable of a release embeds them and nothing reads them by path; the digest check still refuses a changed document.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/runtime/instructions/rules/authored.ts"

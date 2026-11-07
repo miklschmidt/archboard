@@ -3,6 +3,7 @@
   "name": "Thread tools",
   "kind": "module",
   "responsibility": "The archboard_app manifest a workhorse is started with, pinned by its digest",
+  "description": "The reviewed manifest is imported as text, so the executable of a release embeds it and nothing reads them by path; the digest check still refuses a changed manifest.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/runtime/thread-tools/protocol"

@@ -3,6 +3,7 @@
   "name": "Server entry",
   "kind": "function",
   "responsibility": "The process entry that archboard start spawns: it starts the server and reports a startup failure",
+  "description": "Nothing imports this file. A checkout starts it with Bun, and the executable of a release imports it when the CLI's entry is started with the internal server argument, so it starts the server on every run and checks nothing about being the entry (ADR 0076).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server.ts"
@@ -27,19 +28,6 @@
     }
   ],
   "outgoing": [
-    {
-      "order": 20000,
-      "kind": "dependency",
-      "label": "whether this file is the process entry",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server.ts",
-        "symbol": "isMainModule"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#mm4DLsd2",
-      "to": "vKEsyHFk#8EhrdPUE"
-    },
     {
       "order": 92000,
       "kind": "call",

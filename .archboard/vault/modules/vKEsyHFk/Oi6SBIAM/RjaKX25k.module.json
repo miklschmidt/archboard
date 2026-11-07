@@ -3,6 +3,7 @@
   "name": "Browser origin guard",
   "kind": "module",
   "responsibility": "Checks browser request origins at HTTP and WebSocket entry points",
+  "description": "A browser opens a release server at archboard.localhost, which counts as loopback with localhost and 127.0.0.1 (ADR 0076).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-opener/src/server/middleware"

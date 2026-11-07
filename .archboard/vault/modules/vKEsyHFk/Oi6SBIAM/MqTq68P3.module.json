@@ -129,6 +129,32 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#NuehJHbK",
       "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
+    },
+    {
+      "order": 90000,
+      "kind": "call",
+      "label": "whether the tab's bundle is current",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "frontendState"
+      },
+      "id": "vKEsyHFk#4gRaPRO3",
+      "to": "vKEsyHFk#apyQZjM7"
+    },
+    {
+      "order": 91000,
+      "kind": "call",
+      "label": "the address a browser opens",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "browserUrl"
+      },
+      "id": "vKEsyHFk#vTfr79yF",
+      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
     }
   ]
 }
