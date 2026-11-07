@@ -6,9 +6,18 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # The release workflow runs this gate on the commit it releases (ADR 0076).
+  workflow_call:
+    inputs:
+      ref:
+        description: The released commit to validate
+        required: true
+        type: string
 
+# A called workflow gets the caller's context, so the workflow name keeps the gate of a release
+# run apart from the CI run of the same push, which would otherwise cancel it.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -25,6 +34,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Set up Vite+, Node.js, and Bun
         uses: voidzero-dev/setup-vp@v1.21.2
@@ -119,6 +130,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Set up Vite+, Node.js, and Bun
         uses: voidzero-dev/setup-vp@v1.21.2

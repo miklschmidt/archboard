@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { z } from "zod";
+// The executable of a release carries the manifest, so it is embedded, not read by path.
+import archboardAppManifest from "#runtime/thread-tools/protocol/archboard-app-manifest.json" with { type: "text" };
 
 import { parseStrictJson } from "#runtime/thread-tools/protocol/json.ts";
 
@@ -144,11 +145,21 @@ function parseManifestBytes(bytes: Uint8Array): {
 	return Object.freeze({ text, manifest: freezeDeep(parsed.data), sha256 });
 }
 
-const LOADED_MANIFEST = parseManifestBytes(
-	readFileSync(
-		new URL(import.meta.resolve("#runtime/thread-tools/protocol/archboard-app-manifest.json")),
-	),
-);
+/**
+ * The text of the manifest. TypeScript types a JSON module as its parsed value whatever its
+ * attributes, so this proves at run time that the `text` import gave the text.
+ * @param module - The manifest's default import.
+ * @returns The manifest text.
+ * @throws {TypeError} When the import gave anything but text.
+ */
+function manifestText(module: unknown): string {
+	if (typeof module !== "string") {
+		throw new TypeError("The archboard_app manifest was not imported as text.");
+	}
+	return module;
+}
+
+const LOADED_MANIFEST = parseManifestBytes(Buffer.from(manifestText(archboardAppManifest), "utf8"));
 
 export const ARCHBOARD_APP_MANIFEST_BYTES = LOADED_MANIFEST.text;
 export const ARCHBOARD_APP_MANIFEST = LOADED_MANIFEST.manifest;

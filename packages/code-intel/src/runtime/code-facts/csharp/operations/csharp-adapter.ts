@@ -50,6 +50,7 @@ import type {
 	ReferenceVia,
 } from "#runtime/code-facts/operations/facts.ts";
 import { treeSitter, type Grammar } from "#runtime/code-facts/services/grammars.ts";
+import { GRAMMARS } from "#runtime/code-facts/services/grammar-files.ts";
 import { spansOf, type Span, type Spans } from "#runtime/code-facts/operations/spans.ts";
 import { unparsedOf } from "#runtime/code-facts/operations/unparsed.ts";
 
@@ -451,7 +452,7 @@ function csharpFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 }
 
 /** The C# grammar and query, reading a parsed file through `csharpFacts`. */
-const PARSE = treeSitter("tree-sitter-c-sharp/tree-sitter-c_sharp.wasm", "csharp.scm", csharpFacts);
+const PARSE = treeSitter(GRAMMARS.csharp, csharpFacts);
 
 /**
  * How the adapter reads a `.cs` file: the first branch of each `#if`, through

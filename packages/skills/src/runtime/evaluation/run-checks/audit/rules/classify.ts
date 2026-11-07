@@ -142,9 +142,9 @@ const HELP_RE = /\barchboard\b(?:\s+\S+)*\s+(?:help|--help|-h)\b|\barchboard\s+h
 const HARNESS_SOURCE_RE =
 	/\bpackages\/skills\/|\bsrc\/runtime\/skill-evaluation\b|\bskill-evaluation\//u;
 /**
- * The package's shipping code, which prepares the skill's artifacts and is no evaluation
- * evidence. Reading it never exposed the harness, as it did not when it sat in its own module.
- * A batch recorded before the package laid out behavior first named its old folders.
+ * The package's former shipping code, which prepared the skill's artifacts and is no evaluation
+ * evidence. A batch recorded before TASK-579.14 can name it, in its old folders or in the
+ * behavior-first ones. Reading it never exposed the harness.
  */
 const DISTRIBUTION_PATH_RE =
 	/\bpackages\/skills\/src\/runtime\/(?:distribution|operations\/distribution|projections)\/\S*/gu;

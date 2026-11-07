@@ -3,7 +3,7 @@
   "name": "Tell coordinator",
   "kind": "module",
   "responsibility": "Defines and answers the workhorse tool that sends news to the coordinator",
-  "description": "One tool owner publishes its reviewed manifest and answers the corresponding requests. It validates the message, reports unavailable listeners, and queues news for the live coordinator.",
+  "description": "One tool owner publishes its reviewed manifest and answers the corresponding requests. It validates the message, reports unavailable listeners, and queues news for the live coordinator. The reviewed manifest template is imported as text, so the executable of a release embeds it and nothing reads them by path; the digest check still refuses a changed template.",
   "groups": [
     "voice"
   ],

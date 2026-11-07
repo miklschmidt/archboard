@@ -1,0 +1,15 @@
+{
+  "order": 91000,
+  "name": "Release version",
+  "kind": "function",
+  "responsibility": "Says when the server runs another release version than the installed one",
+  "description": "Two releases are compared by version and not by location, because an upgrade in place leaves the old release at no location. A difference is a warning that names archboard restart and refuses nothing, since the server still answers every command. When either side runs a checkout there is no warning, because a checkout has its own staleness check.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/server-lifecycle/src/runtime/rules/release-version.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#hcmla1Wa",
+  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
+  "outgoing": []
+}

@@ -1,6 +1,7 @@
-// Every relative link in a skill that `install-skill` ships names a file of that skill's
-// package and, when it names a heading, a heading of that file. An agent in another
-// repository follows these links in its installed copy.
+// Every relative link in a skill that `install-skill` ships names a tracked file of that
+// skill's package and, when it names a heading, a heading of that file. An agent in another
+// repository follows these links in its installed copy, and the skills CLI copies only what
+// Git tracks, so a file that exists here but is not tracked does not count.
 
 import { describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
@@ -37,12 +38,35 @@ const CODE =
 const SCHEME = /^[a-z][a-z+.-]*:/iu;
 
 /**
+ * The files Git tracks below a directory of the repository.
+ * @param directory The directory, relative to the repository.
+ * @returns Their absolute paths.
+ */
+function trackedFiles(directory: string): Set<string> {
+	const listed = execFileSync("git", ["ls-files", "-z", "--", directory], {
+		cwd: repository,
+		encoding: "utf8",
+	});
+	return new Set(
+		listed
+			.split("\0")
+			.filter((file) => file !== "")
+			.map((file) => path.join(repository, file)),
+	);
+}
+
+/**
  * The links of one document that name nothing inside its boundary.
  * @param file The document.
  * @param boundary The directory that owns the allowed targets.
+ * @param exists Whether a target file counts as present.
  * @returns Each broken link as `<document>: <target>`.
  */
-function brokenLinks(file: string, boundary: string): string[] {
+function brokenLinks(
+	file: string,
+	boundary: string,
+	exists: (target: string) => boolean = fs.existsSync,
+): string[] {
 	const name = path.relative(boundary, file);
 	const prose = fs.readFileSync(file, "utf8").replaceAll(CODE, "");
 	return [...prose.matchAll(LINK)].flatMap(([, target = ""]) => {
@@ -50,7 +74,7 @@ function brokenLinks(file: string, boundary: string): string[] {
 		const [relative = "", anchor] = target.split("#");
 		const resolved = relative === "" ? file : path.resolve(path.dirname(file), relative);
 		const inside = resolved.startsWith(`${boundary}${path.sep}`);
-		if (!inside || !fs.existsSync(resolved)) return [`${name}: ${target}`];
+		if (!inside || !exists(resolved)) return [`${name}: ${target}`];
 		if (anchor === undefined || !resolved.endsWith(".md")) return [];
 		return anchorsOf(fs.readFileSync(resolved, "utf8")).has(anchor) ? [] : [`${name}: ${target}`];
 	});
@@ -58,16 +82,14 @@ function brokenLinks(file: string, boundary: string): string[] {
 
 describe("the shipped skills' links", () => {
 	for (const skill of BUNDLED_SKILLS) {
-		test(`each in ${skill} names a file of its package, and a heading that file has`, () => {
+		test(`each in ${skill} names a tracked file of its package, and a heading that file has`, () => {
 			const skillRoot = path.join(repository, "skills", skill);
-			const documents = fs
-				.readdirSync(skillRoot, { recursive: true, encoding: "utf8" })
-				.filter(
-					(file) => file.endsWith(".md") && !file.startsWith(`references${path.sep}generated`),
-				)
-				.map((file) => path.join(skillRoot, file));
+			const tracked = trackedFiles(path.join("skills", skill));
+			const documents = [...tracked].filter((file) => file.endsWith(".md"));
 			expect(documents.length).toBeGreaterThan(0);
-			expect(documents.flatMap((file) => brokenLinks(file, skillRoot))).toEqual([]);
+			expect(
+				documents.flatMap((file) => brokenLinks(file, skillRoot, (target) => tracked.has(target))),
+			).toEqual([]);
 		});
 	}
 });

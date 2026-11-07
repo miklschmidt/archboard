@@ -1,10 +1,11 @@
 import net from "net";
 import { logger } from "@archboard/diagnostics/logger";
-import { checkoutPort, SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { DEFAULT_ARCHBOARD_URL } from "@archboard/workspace/source-checkout";
 
 // The CLI names the port when it starts a server. Started by hand, a server
-// takes its checkout's own port, as the CLI of that checkout expects (ADR 0049).
-const PORT = parseInt(process.env["PORT"] || String(checkoutPort(SOURCE_CHECKOUT)), 10);
+// takes the port that the CLI of its installation expects: a checkout's own, or the release
+// port (ADR 0049, 0076).
+const PORT = parseInt(process.env["PORT"] || new URL(DEFAULT_ARCHBOARD_URL).port, 10);
 const HOST = process.env["HOST"] || "127.0.0.1";
 const LOOPBACK_GUARD_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0", "::"]);
 const LOOPBACK_ADDRESSES = ["127.0.0.1", "::1"];

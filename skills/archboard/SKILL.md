@@ -25,8 +25,23 @@ Before preparing a request, read [schemas](references/schemas.md).
 For design decisions or refactors, read [the design lens](references/design-lens.md).
 For `improve-codebase-architecture`, follow [the integration workflow](references/design-lens.md#integrate-with-improve-codebase-architecture).
 For narrative authoring, playback, or recording, read [canonical walkthroughs](references/canonical-walkthroughs.md).
-For installation or updates, read [the installation guide](references/generated/INSTALL.md).
+For installation or updates, read [the installation guide](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md).
 For missing language servers or more precise source evidence, read [setup](references/setup.md).
+
+## Make the vault
+
+If the Git checkout has no `.archboard/vault`, a command refuses with `VAULT_NOT_FOUND`.
+If the refusal names another vault that holds the models of this repository, pass that vault with `-C`.
+Otherwise, make the vault with `model init` in the checkout before any other operation:
+
+```bash
+archboard model init --name <name> --operation-id initialize-<name> --writer agent --doing 'Initialize architecture'
+```
+
+Use the name of the repository directory as the model name, unless the user names the model.
+The command makes `<root>/.archboard/vault` with the default vocabulary and an empty planning model.
+It registers the checkout, so that a browser lists it. It needs no server.
+Tell the user that you made the vault, and where.
 
 ## Complete the intent
 

@@ -12,7 +12,7 @@ import { statSync } from "node:fs";
 import { join } from "node:path";
 
 import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { PRODUCERS } from "./assets.ts";
@@ -144,7 +144,7 @@ async function prove(need: Need): Promise<void> {
 	if (need === "chromium") chromiumPath();
 	if (need === "ffmpeg") await requireEncoders(ENCODERS);
 	if (need === "pyftsubset") pyftsubsetCommand();
-	if (need === "codex") resolveCodexExecutable({ installedIn: SOURCE_CHECKOUT });
+	if (need === "codex") resolveCodexExecutable(installation().codexLocation);
 }
 
 /**

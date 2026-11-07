@@ -3,14 +3,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import type { installation } from "@archboard/workspace/installation";
+
+/** The installation whose skills are installed. */
+type Installation = ReturnType<typeof installation>;
 import { CliUsageError } from "#cli/contract/protocol/contract.ts";
 
-/** The skill that authors models; its installed copy also carries the generated schemas and manual. */
-const CONSUMER_SKILL = "archboard";
-
 /** Every skill an install ships, each into its own directory of the skills root. */
-const BUNDLED_SKILLS = [CONSUMER_SKILL, "archboard-pr"] as const;
+const BUNDLED_SKILLS = ["archboard", "archboard-pr"] as const;
 type BundledSkill = (typeof BUNDLED_SKILLS)[number];
 
 interface SkillDestination {
@@ -19,12 +19,13 @@ interface SkillDestination {
 }
 
 /**
- * Locates one bundled skill directory, refusing a checkout that lost it.
+ * Locates one bundled skill directory, refusing an installation that lost it.
  * @param skill - The bundled skill.
+ * @param installed - The installation that ships the skill.
  * @returns The absolute path of the bundled skill.
  */
-function findSkillSource(skill: BundledSkill): string {
-	const source = path.join(SOURCE_CHECKOUT, "skills", skill);
+function findSkillSource(skill: BundledSkill, installed: Installation): string {
+	const source = path.join(installed.skillsDirectory, skill);
 	if (!fs.existsSync(path.join(source, "SKILL.md"))) {
 		throw new Error(`Bundled skill not found at ${source} (broken install?)`);
 	}
@@ -117,7 +118,6 @@ function countFiles(dir: string): number {
 }
 
 export {
-	CONSUMER_SKILL,
 	BUNDLED_SKILLS,
 	type BundledSkill,
 	type SkillDestination,

@@ -145,14 +145,8 @@ function packageText(root: string): Map<string, string> {
 	return files;
 }
 
-/** Where the product's own generated contract sits inside a skill package. */
-const GENERATED = `references${path.sep}generated${path.sep}`;
-
 /**
- * Every place a skill package names an evaluation. The package's generated
- * files are the product's contract (its schemas, its help), so a name the
- * product itself defines, which a request may quote, is not a leak and those
- * files are not searched.
+ * Every place a skill package names an evaluation.
  * @param scenarios The scenarios as the suite holds them.
  * @param fixtures Their starting vaults.
  * @param packages Each package to search, by the label a problem names it with.
@@ -163,15 +157,9 @@ function leakageProblems(
 	fixtures: Iterable<unknown>,
 	packages: ReadonlyMap<string, string>,
 ): string[] {
-	const texts = [...packages].map(([label, root]) => [label, packageText(root)] as const);
-	const product = new Map(
-		texts.flatMap(([, files]) => [...files].filter(([file]) => file.startsWith(GENERATED))),
-	);
-	const names = evaluationNames(scenarios, fixtures).filter(
-		(name) => leaks(product, [name]).length === 0,
-	);
-	return texts.flatMap(([label, files]) =>
-		leaks(new Map([...files].filter(([file]) => !file.startsWith(GENERATED))), names).map(
+	const names = evaluationNames(scenarios, fixtures);
+	return [...packages].flatMap(([label, root]) =>
+		leaks(packageText(root), names).map(
 			(leak) => `${label}/${leak}: a skill package must not carry an evaluation's names`,
 		),
 	);

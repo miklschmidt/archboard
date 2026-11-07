@@ -10,7 +10,6 @@
 		"#tests/*": "./tests/*"
 	},
 	"exports": {
-		"./distribution": "./src/runtime/api/distribution.ts",
 		"./evaluation": "./src/runtime/api/evaluation.ts",
 		"./citations": "./src/runtime/api/citations.ts"
 	}

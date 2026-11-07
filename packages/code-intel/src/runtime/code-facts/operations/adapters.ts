@@ -42,6 +42,7 @@ import {
 	flakeLockFacts,
 } from "#runtime/code-facts/nix/operations/flake-lock.ts";
 import { treeSitter } from "#runtime/code-facts/services/grammars.ts";
+import { GRAMMARS } from "#runtime/code-facts/services/grammar-files.ts";
 import {
 	helmValuesFacts,
 	isHelmValues,
@@ -112,28 +113,16 @@ function typeScriptResolver(checkout: CheckoutFiles, read: ReadText): ImportReso
 	};
 }
 
-const TYPESCRIPT = treeSitter(
-	"tree-sitter-typescript/tree-sitter-typescript.wasm",
-	"typescript.scm",
-	typeScriptFacts,
-);
-const TSX = treeSitter(
-	"tree-sitter-typescript/tree-sitter-tsx.wasm",
-	"typescript.scm",
-	typeScriptFacts,
-);
-const PYTHON = treeSitter("tree-sitter-python/tree-sitter-python.wasm", "python.scm", pythonFacts);
+const TYPESCRIPT = treeSitter(GRAMMARS.typescript, typeScriptFacts);
+const TSX = treeSitter(GRAMMARS.tsx, typeScriptFacts);
+const PYTHON = treeSitter(GRAMMARS.python, pythonFacts);
 /** The `terraform` dialect of the HCL grammar, which Terraform's and OpenTofu's templates follow (TASK-367.17). */
-const TERRAFORM = treeSitter(
-	"@tree-sitter-grammars/tree-sitter-hcl/tree-sitter-terraform.wasm",
-	"terraform.scm",
-	terraformFacts,
-);
+const TERRAFORM = treeSitter(GRAMMARS.terraform, terraformFacts);
 /** A flake reading follows local Nix imports; independent `.nix` files remain text (TASK-436.06). */
-const FLAKE = treeSitter("@lumis-sh/wasm-nix/tree-sitter-nix.wasm", "nix.scm", flakeFacts);
-const C = treeSitter("tree-sitter-c/tree-sitter-c.wasm", "c.scm", cFacts);
+const FLAKE = treeSitter(GRAMMARS.nix, flakeFacts);
+const C = treeSitter(GRAMMARS.c, cFacts);
 /** An unpaired C-family header defaults to C++ (TASK-367.09). */
-const CPP = treeSitter("tree-sitter-cpp/tree-sitter-cpp.wasm", "c.scm", cFacts);
+const CPP = treeSitter(GRAMMARS.cpp, cFacts);
 /**
  * An unpaired `.h` uses its text to choose Objective-C or C++; a paired
  * header uses its source's language (TASK-436.07). An `.m` is Objective-C.
@@ -143,18 +132,14 @@ const OBJECTIVE_C = objectiveCReadings(CPP);
 const { unpairedHeader: HEADER, source: OBJECTIVE_C_SOURCE } = OBJECTIVE_C(new Map());
 
 /** A `Package.swift` is Swift, and its targets are read beside its code (TASK-367.12). */
-const SWIFT = treeSitter("@lumis-sh/wasm-swift/tree-sitter-swift.wasm", "swift.scm", swiftFacts);
-const SWIFT_MANIFEST = treeSitter(
-	"@lumis-sh/wasm-swift/tree-sitter-swift.wasm",
-	"swift.scm",
-	manifestFacts,
-);
+const SWIFT = treeSitter(GRAMMARS.swift, swiftFacts);
+const SWIFT_MANIFEST = treeSitter(GRAMMARS.swift, manifestFacts);
 
 /** Rust through tree-sitter-rust; a `Cargo.toml` beside it with Bun's TOML parser (TASK-540). */
-const RUST = treeSitter("tree-sitter-rust/tree-sitter-rust.wasm", "rust.scm", rustFacts);
+const RUST = treeSitter(GRAMMARS.rust, rustFacts);
 
 /** Go through tree-sitter-go; a package is a directory, and each `go.mod` names a module (TASK-575). */
-const GO = treeSitter("tree-sitter-go/tree-sitter-go.wasm", "go.scm", goFacts);
+const GO = treeSitter(GRAMMARS.go, goFacts);
 
 /** Every adapter, one entry each. */
 const ADAPTERS: readonly Adapter[] = [
@@ -338,7 +323,7 @@ function flakeReading(
 ): ParseFacts {
 	let parse = flakes.get(file);
 	if (parse === undefined) {
-		parse = treeSitter("@lumis-sh/wasm-nix/tree-sitter-nix.wasm", "nix.scm", (tree, grammar) =>
+		parse = treeSitter(GRAMMARS.nix, (tree, grammar) =>
 			flakeFacts(tree, grammar, { root: checkout.root, file, read }),
 		);
 		flakes.set(file, parse);

@@ -2,7 +2,7 @@
 // one section per grader and the agreement between them, and the version
 // pins are rewritten from what is on PATH without touching anything else.
 import { expect, test } from "bun:test";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -147,7 +147,7 @@ test("the batch report renders one section per grader and the agreement between 
 });
 
 test("pin rewrites every version pin from PATH, says which starts a new baseline, and changes nothing else", async () => {
-	const evals = path.join(SOURCE_CHECKOUT, "evals");
+	const evals = path.join(installation().root, "evals");
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-pin-"));
 	try {
 		for (const file of ["pins.json", "graders.json"])

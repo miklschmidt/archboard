@@ -4,21 +4,15 @@
 // a `.git` directory or file, a package.json and a `bin/archboard`.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import {
-	existsSync,
-	mkdirSync,
-	mkdtempSync,
-	realpathSync,
-	rmSync,
-	symlinkSync,
-	writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+	browserUrl,
 	checkoutPort,
 	handOffTarget,
-	SOURCE_CHECKOUT,
+	installationPort,
+	RELEASE_PORT,
 	worktreePort,
 } from "#runtime/services/source-checkout.ts";
 
@@ -55,13 +49,6 @@ function checkout(name: string, options: { linked?: boolean; packageName?: strin
 	return root;
 }
 
-test("the running source is the checkout that holds packages/ and apps/, not the package", () => {
-	// This file is packages/workspace/tests/runtime/services/ below the checkout.
-	expect(SOURCE_CHECKOUT).toBe(realpathSync(join(import.meta.dir, "..", "..", "..", "..", "..")));
-	expect(existsSync(join(SOURCE_CHECKOUT, "packages", "workspace", "package.json"))).toBe(true);
-	expect(existsSync(join(SOURCE_CHECKOUT, "apps", "cli", "src", "bin.ts"))).toBe(true);
-});
-
 test("the main checkout keeps 3000 and a linked worktree takes a stable port in 10000 to 19999", () => {
 	expect(checkoutPort(checkout("main"))).toBe(3000);
 	const linked = checkout("linked", { linked: true });
@@ -73,6 +60,23 @@ test("the main checkout keeps 3000 and a linked worktree takes a stable port in 
 	// change to it moves every worktree's server.
 	expect(worktreePort("/home/ada/archboard/.worktrees/feature")).toBe(19275);
 	expect(worktreePort("/home/ada/archboard/.worktrees/other")).toBe(16646);
+});
+
+test("a release server takes port 4242 wherever it is installed, and a checkout keeps its own", () => {
+	expect(installationPort({ mode: "release", root: checkout("release-root") })).toBe(RELEASE_PORT);
+	expect(installationPort({ mode: "checkout", root: checkout("daily") })).toBe(3000);
+});
+
+test("a person opens a release server at archboard.localhost, and a checkout server where it listens", () => {
+	expect(browserUrl("http://127.0.0.1:4242", "release")).toBe("http://archboard.localhost:4242");
+	expect(browserUrl("http://localhost:4242", "release")).toBe("http://archboard.localhost:4242");
+	expect(browserUrl("http://127.0.0.1:3000", "checkout")).toBe("http://127.0.0.1:3000");
+	expect(browserUrl("http://127.0.0.1:4242", "checkout")).toBe("http://127.0.0.1:4242");
+});
+
+test("a server that ARCHBOARD_URL or --url names elsewhere is shown as named", () => {
+	expect(browserUrl("http://127.0.0.1:4000", "release")).toBe("http://127.0.0.1:4000");
+	expect(browserUrl("http://example.test:4242", "release")).toBe("http://example.test:4242");
 });
 
 test("a command in another archboard checkout runs that checkout's bin/archboard", () => {

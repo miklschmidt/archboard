@@ -259,6 +259,75 @@ The decision has these parts:
   says `language-server-failed` once. Nobody measured whether the index shards
   that clangd writes before the check kills it let a later pass finish.
 
+Amended by TASK-579.12 (2026-11-05): TypeScript is a language a checkout can
+configure (`archboard repo language-server typescript <command>`), and a
+configured server wins. Without one, the rule above holds in order: the
+checkout's own native `tsc` of TypeScript 7 or later, then, only in a checkout
+of Archboard, Archboard's own. A release ships no TypeScript (ADR 0076), so it
+looks for none, and the check says `language-server-missing` with the command
+that configures a server. A repository on TypeScript before 7 configures
+`typescript-language-server`.
+
+Amended by TASK-579.13 (2026-11-05): a checkout on TypeScript before 7 runs
+`typescript-language-server` without configuration. This replaces the last
+sentence of the TASK-579.12 amendment and the rejected alternative
+"`typescript-language-server`" below. The default for a checkout with no
+configured server is now, in order:
+
+1. The checkout's own native `tsc --lsp --stdio` of TypeScript 7 or later.
+2. For the checkout's own TypeScript before 7 whose `lib/tsserver.js` is inside
+   the checkout: `typescript-language-server --stdio`. The check takes it from
+   the checkout's `node_modules/.bin` when its links resolve inside the
+   checkout. Otherwise it takes it from the `PATH` of the Archboard server.
+   The initialization option `tsserver.path` names the checkout's
+   `tsserver.js`, so the server never runs a TypeScript that it finds itself.
+3. Only in a checkout of Archboard: Archboard's own `tsc`.
+
+The decision has these reasons:
+
+- It runs no other class of code than the rule of TASK-433 #8. The code of
+  the checkout that runs is its own TypeScript, which the checkout installed
+  for its own editor. `typescript-language-server` itself is a program of the
+  checkout, under the same rule, or a program that the user installed on the
+  machine.
+- `tsserver` loads each plugin that `tsconfig.json` names from the checkout's
+  `node_modules`. This was measured with TypeScript 5.9.3 and
+  typescript-language-server 6.0.3. `tsc --lsp` of TypeScript 7.0.2 loads
+  none. This adds no power to the checkout: whoever can put a plugin in
+  `node_modules` can also change `tsserver.js`.
+- The check sends `disableAutomaticTypingAcquisition: true` to the server that
+  it chose. Otherwise `tsserver` runs npm to download type packages for a file
+  that no `tsconfig.json` holds. That reaches the network, and no answer of
+  the check needs it.
+- The repository's own compiler answers. Archboard's TypeScript 7 can resolve
+  modules and types differently from TypeScript 5, and a release has none.
+- Configuration stays possible and wins. A user who does not want the default
+  configures another server.
+
+What the protocol needs from `typescript-language-server`, measured with
+5.1.3 and 6.0.3 on TypeScript 5.9.3:
+
+- It answers about an open file only. It answers a definition in a file that
+  is not open with `null` and an outline with `[]`. So the client opens each
+  TypeScript file before it asks about it, for every TypeScript server.
+  `tsc --lsp` answers the same about an open file.
+- Until its semantic server loads the project, its syntax server answers a
+  definition with the import of a name, not its declaration. So every
+  TypeScript server, configured or not, gets the initialization option
+  `tsserver.useSyntaxServer: "never"`. `tsc --lsp` ignores it.
+- `workspace/configuration` with no settings, the `rootUri` and the one
+  workspace folder are enough.
+  `packages/code-intel/tests/runtime/processes/language-servers/typescript-language-server.test.ts`
+  runs a real typescript-language-server 6.0.3 on TypeScript 5.9.3 and gets the
+  declarations that `tsc --lsp` gets.
+
+The check names the server that answered. Each `language-server` timing has
+`program`, the file name of the program. For a TypeScript server that the
+check chose, it also has `typescript`: the version, and `from` with `checkout`
+or `archboard`. A reader can then tell why the check and the repository's
+compiler disagree. A missing TypeScript server names the checkout's TypeScript
+version and says where to install `typescript-language-server`.
+
 Amended by TASK-436.01 (2026-10-07): SourceKit-LSP owns its background indexing,
 including building a Swift package on its first run. The check sends no
 `backgroundIndexing` initialization option and requires no prebuilt index. A
@@ -1210,6 +1279,8 @@ the findings, as ADR 0045 decides.
 - **`typescript-language-server`.** It is one more program for every machine to
   install. It can also start the TypeScript of the checkout, which is code of
   the project. Archboard's own TypeScript already answers the protocol.
+  TASK-579.13 replaces this for TypeScript before 7: the check runs it where it
+  is installed (see the amendment).
 - **Language servers that run project code, on by default.** The safety rules
   say that the check runs no code of the project. The user turns such a server
   on for checkouts that they trust.

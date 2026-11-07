@@ -22,7 +22,7 @@ import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { checkSemanticVaultOnServer } from "#cli/server-access/clients/vault-check.ts";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { diagnosticLine, VaultCheckSchema } from "@archboard/model/policy";
-import { VaultConfigurationSchema } from "@archboard/model/vault-policy";
+import { jsonSchema } from "#cli/commands/model/operations/schema.ts";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 
 /** How long one check took. */
@@ -100,6 +100,18 @@ const planRefusal = {
 };
 
 /**
+ * Which server a language server timing is of: its program, and the
+ * TypeScript the check chose for it.
+ * @param timing The timing.
+ * @returns Its text.
+ */
+function serverName(timing: Extract<CheckTiming, { check: "language-server" }>): string {
+	const { typescript } = timing;
+	const whose = typescript?.from === "archboard" ? "Archboard's" : "the checkout's";
+	return `${timing.program}${typescript === undefined ? "" : ` with ${whose} TypeScript ${typescript.version}`}`;
+}
+
+/**
  * One elapsed time, before the findings and the JSON answer.
  * @param timing The check and its elapsed wall time.
  * @returns Its text line.
@@ -107,7 +119,7 @@ const planRefusal = {
 function timingLine(timing: CheckTiming): string {
 	const name =
 		timing.check === "language-server"
-			? `language server ${timing.language}${timing.repo === undefined ? "" : ` (${timing.repo}, ${timing.project})`}`
+			? `language server ${timing.language}${timing.repo === undefined ? "" : ` (${timing.repo}, ${timing.project})`}, ${serverName(timing)}`
 			: timing.check === "code-facts"
 				? "code facts"
 				: timing.check === "history"
@@ -567,7 +579,7 @@ const semanticConfigContract = defineCommand({
 	 * @returns Policy or generated schema.
 	 */
 	async handler(input, context) {
-		if (input.schema) return { result: z.toJSONSchema(VaultConfigurationSchema) };
+		if (input.schema) return { result: jsonSchema("vault-config") };
 		await context.require("server", "model config");
 		return { result: await checkSemanticVaultOnServer() };
 	},

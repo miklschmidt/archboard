@@ -1,6 +1,6 @@
 // Model-free owners of attachment delivery: no author or model is started.
 import { afterEach, expect, test } from "bun:test";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -17,7 +17,7 @@ afterEach(() => {
 	for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 const run = "run-0123456789";
-const loaded = loadSuite(path.join(SOURCE_CHECKOUT, "evals"));
+const loaded = loadSuite(path.join(installation().root, "evals"));
 // These bytes exercise only the PNG header/dimensions preflight. Codex's
 // image decoder owns complete decoding and a failed call produces no receipt.
 const png = (width = 1, height = 1) => {

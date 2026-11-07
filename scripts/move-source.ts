@@ -21,7 +21,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { createHash } from "node:crypto";
 
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 import { z } from "zod";
 
 import {
@@ -57,7 +57,7 @@ import {
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./move-source/vault.ts";
 
-const root = SOURCE_CHECKOUT;
+const root = installation().root;
 
 /** A reviewed manifest. */
 const ManifestSchema = z.object({

@@ -88,12 +88,26 @@ async function run(argv: string[]): Promise<{ stdout: string; stderr: string; ex
 const readsDirectory = () =>
 	cliContractRegistry().filter((entry) => entry.contract.shared.includes("directory"));
 
+/**
+ * Whether a command refuses to run without an option that only its caller can give.
+ * @param contract The command.
+ * @returns True when one of its options is always required.
+ */
+const needsOptions = (contract: ReturnType<typeof readsDirectory>[number]["contract"]) =>
+	contract.parameters.some((parameter) => parameter.kind === "option" && parameter.required);
+
 test("in a checkout without a vault only a command that runs without one runs, and every other is refused before it asks the server", async () => {
 	const ran: string[] = [];
 	for (const { name, contract } of readsDirectory()) {
 		asked.length = 0;
 		const { stdout, stderr, exited } = await run([...contract.path, "-C", checkout]);
-		if (contract.runsWithoutVault === true) {
+		if (contract.runsWithoutVault === true && needsOptions(contract)) {
+			// Past the vault search, its parser refuses the missing options, and nothing is made.
+			ran.push(name);
+			expect(exited, name).toBe(2);
+			expect(stderr, name).toContain("Usage:");
+			expect(asked, name).toEqual([]);
+		} else if (contract.runsWithoutVault === true) {
 			ran.push(name);
 			expect(exited, `${name}: ${stderr}`).toBe(0);
 			expect(JSON.parse(stdout), name).not.toHaveProperty("vault");

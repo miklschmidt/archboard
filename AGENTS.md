@@ -15,6 +15,7 @@ Where things are written down:
 - Measured investigations: [docs/design/](docs/design/). The visual authority of the UI is
   [docs/design/operator-canvas-shell.md](docs/design/operator-canvas-shell.md) with its reference image.
 - Writing tests, and changing tests or CI: [docs/agents/test-suite.md](docs/agents/test-suite.md)
+- Building and publishing a release on npm: [docs/agents/releasing.md](docs/agents/releasing.md)
 - Refreshing the README's diagrams, clips, banner and videos:
   [docs/agents/readme-assets.md](docs/agents/readme-assets.md)
 - Using archboard: the [archboard skill](skills/archboard/SKILL.md). Maintaining this repository's
@@ -29,7 +30,7 @@ Where things are written down:
 
 Track authored inputs, including the canonical model in `.archboard/vault`.
 Keep cheaply reproducible output ignored unless it matches an exception below.
-Build output, caches, generated bindings, and `skills/archboard/references/generated/` stay ignored.
+Build output, caches, and generated bindings stay ignored.
 
 Keep these exceptions tracked:
 
@@ -37,6 +38,7 @@ Keep these exceptions tracked:
 - Published documentation assets that readers need from the checkout. These include README diagrams, thumbnails, the social card, and `docs/readme/assets.json`. Follow [the asset guide](docs/agents/readme-assets.md) for updates. Large clips and videos remain external attachments.
 - Exact historical fixtures, including `examples/web-shop/history.import.json`. They preserve readings and baselines that current inputs cannot reproduce. Follow [the fixture procedure](docs/agents/readme-assets.md#canonical-fixtures) when updating them.
 - Dependency lockfiles: `bun.lock`, `Cargo.lock`, and `flake.lock`. They preserve the selected dependency versions for later installs.
+- `bun.nix`, which the flake's release output (`nix build .#release`) installs its npm packages from. It is tracked because a flake reads only Git-tracked files. Update it with `bun2nix > bun.nix` inside `nix develop`. If it does not match `bun.lock`, the `bun-nix` gate task fails.
 
 Do not untrack these exceptions merely because a tool produced them.
 For a new exception, add its consumer, reason for tracking, and update procedure to this list.

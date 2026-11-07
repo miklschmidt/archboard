@@ -1,7 +1,7 @@
 // What answers at the server URL: nothing, something that is not this checkout's
 // Archboard server, or the server with what it reports about itself.
 
-import { ARCHBOARD_URL } from "#runtime/services/config.ts";
+import { ARCHBOARD_BROWSER_URL } from "#runtime/services/config.ts";
 import { getHealth, getSyncStatus, type HealthStatus } from "#runtime/clients/server-client.ts";
 import { OtherSourceError } from "#runtime/clients/server-client-transport.ts";
 import { isServerHealth, serverPort } from "#runtime/operations/server-spawn-target.ts";
@@ -25,6 +25,9 @@ type ServerStatus =
 			readonly browserClients: number | undefined;
 			/** Which checkout's source the server runs, and whether it is the source on disk now. */
 			readonly source: HealthStatus["source"];
+			/** The version of the installation the server runs, and whether that is a release or a checkout. */
+			readonly version: HealthStatus["version"];
+			readonly mode: HealthStatus["mode"];
 			/** The synchronization state, empty when it could not be read. */
 			readonly sync: Record<string, unknown>;
 	  };
@@ -54,22 +57,24 @@ async function serverStatus(): Promise<ServerStatus> {
 		health = await getHealth();
 	} catch (error) {
 		return error instanceof OtherSourceError
-			? { state: "conflict", url: ARCHBOARD_URL, conflict: error.message }
-			: { state: "absent", url: ARCHBOARD_URL };
+			? { state: "conflict", url: ARCHBOARD_BROWSER_URL, conflict: error.message }
+			: { state: "absent", url: ARCHBOARD_BROWSER_URL };
 	}
 	if (!isServerHealth(health)) {
 		return {
 			state: "conflict",
-			url: ARCHBOARD_URL,
+			url: ARCHBOARD_BROWSER_URL,
 			conflict: "another service (or a pre-1.1 Archboard server build) is answering at this URL",
 		};
 	}
 	return {
 		state: "running",
-		url: ARCHBOARD_URL,
+		url: ARCHBOARD_BROWSER_URL,
 		pid: health.pid ?? readPidFile(serverPort()) ?? undefined,
 		browserClients: health.websocket_clients,
 		source: health.source,
+		version: health.version,
+		mode: health.mode,
 		sync: await bestEffortSyncStatus(),
 	};
 }

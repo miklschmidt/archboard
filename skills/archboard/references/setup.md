@@ -7,20 +7,31 @@ Configure a server for `language-server-missing` or when the task needs more pre
 Configure servers only in repositories that you work in, never repositories that you only read.
 Servers can run repository code, as an editor does.
 Tell the user when you configure one.
-TypeScript needs no configuration. Other languages start no server until configured.
+TypeScript has a default server. Other languages start no server until configured.
 
 ## TypeScript selection
 
-Archboard uses the checkout's `tsc --lsp --stdio` only when all these conditions hold:
+A server that you configure with `archboard repo language-server typescript <command>` wins.
+Without one, Archboard reads `node_modules/typescript` at the checkout root.
+The package must resolve inside the checkout, including through links.
+Then Archboard uses the first of these that applies:
 
-- `node_modules/typescript` exists at the checkout root.
-- It declares TypeScript 7 or later, which supports `tsc --lsp`.
-- The native `@typescript/typescript-<platform>-<arch>` program exists beside or inside that package.
-- The package and native program resolve inside the checkout, including through links.
+1. TypeScript 7 or later, with the native `@typescript/typescript-<platform>-<arch>` program beside or inside that package:
+   Archboard runs `tsc --lsp --stdio`.
+2. A TypeScript before version 7, which has no `--lsp`: Archboard runs `typescript-language-server --stdio`
+   from `node_modules/.bin` of the checkout, else from the `PATH` of the Archboard server.
+   That server runs the `tsserver` of the checkout's TypeScript.
+3. When Archboard runs from a clone: the `tsc` of the TypeScript package installed with Archboard.
+   An Archboard release ships no TypeScript.
 
-Otherwise, it uses the TypeScript package installed with Archboard.
-This fallback covers older or missing packages, missing native programs, and links outside the checkout.
+If none applies, inspection reports `language-server-missing` for TypeScript.
+For a TypeScript before version 7, tell the user to install `typescript-language-server` in the repository or on the machine.
+Do not install it yourself unless the user asks.
 Monorepos use the root version, regardless of versions in their packages.
+
+Each `time: language server typescript` line names the program that answered.
+For a server that Archboard chose, it also names the TypeScript version and whose it is.
+If inspection and the repository's compiler disagree, read that line first.
 
 ## Server prerequisites
 
@@ -51,6 +62,8 @@ Inspection waits for both clangd and Swift indexes to become ready.
 
 ## Register and configure
 
+If the repository has no vault, make it with `archboard model init` first, as [the skill](../SKILL.md#make-the-vault) says.
+That command also registers the checkout.
 If the checkout is unregistered, run `archboard repo add <dir>`.
 For a repository already registered elsewhere, this adds another known checkout.
 Inspection uses the chosen checkout, except that a vault uses its own checkout for its repository.
@@ -59,7 +72,7 @@ Run `archboard repo use <dir>` only when requested because it changes what every
 
 In the checkout, run `archboard repo language-server <language> <command>`.
 Use one `--arg=<argument>` per argument.
-Supported languages are `python`, `csharp`, `swift`, `c`, `rust`, and `go`.
+Supported languages are `python`, `csharp`, `swift`, `c`, `rust`, `go`, and `typescript`.
 `c` covers C, C++, and Objective-C:
 
 ```bash
@@ -69,6 +82,7 @@ archboard repo language-server csharp csharp-ls
 archboard repo language-server swift sourcekit-lsp
 archboard repo language-server rust rust-analyzer
 archboard repo language-server go gopls
+archboard repo language-server typescript typescript-language-server --arg=--stdio
 ```
 
 For basedpyright, replace `pyright-langserver` with `basedpyright-langserver`.
@@ -109,4 +123,4 @@ Output starts with step durations, also available as JSON `code.timings`.
 `language-server-failed` means that the server failed to start or stopped.
 Archboard keeps no server output. Run its configured command in the repository to read the failure.
 In every failure case, uses remain candidates.
-For installation details, read [the installation guide](generated/INSTALL.md).
+For installation details, read [the installation guide](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md).

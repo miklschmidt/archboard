@@ -3,6 +3,7 @@
   "name": "Server launcher",
   "kind": "module",
   "responsibility": "Starts the Archboard server, which needs no vault, as a detached child when nothing answers, stops it, and says what answers at its address and how many browsers look at it",
+  "description": "The command that it spawns comes from the installation: a checkout's Bun with apps/server/src/server.ts, or a release's own executable with its internal server argument. It refuses to start where the installation's Codex is not installed, and reports the address a browser opens.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/operations"
@@ -44,6 +45,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#z5LT96h1",
       "to": "vKEsyHFk#06cbjPhn"
+    },
+    {
+      "order": 34000,
+      "kind": "dependency",
+      "label": "the server command, and where Codex must be installed",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "installation"
+      },
+      "id": "vKEsyHFk#yiUSoTWB",
+      "to": "vKEsyHFk#4FdKQJqK"
     },
     {
       "order": 45000,

@@ -433,6 +433,8 @@ test(
 					const action = notice?.querySelector('[data-slot="alert-action"] button');
 					const dismiss = notice?.querySelector('button[aria-label^="Dismiss notice"]');
 					if (!notice || !centre || !text || !action || !dismiss) return null;
+					// The toast slides in with a transform, which a box measured mid-flight carries.
+					if ((notice.closest('[data-sonner-toast]') ?? notice).getAnimations({ subtree: true }).some(animation => animation.playState === 'running')) return null;
 					const metrics = node => { const value = getComputedStyle(node); return { family: value.fontFamily.toLowerCase(),
 						size: parseFloat(value.fontSize), lineHeight: parseFloat(value.lineHeight), weight: parseFloat(value.fontWeight) }; };
 					const noticeRect = notice.getBoundingClientRect();

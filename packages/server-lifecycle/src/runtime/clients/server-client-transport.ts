@@ -1,9 +1,10 @@
 // One request to the Archboard server, and the identity gate in front of it.
 
-import { ARCHBOARD_URL } from "#runtime/services/config.ts";
+import { ARCHBOARD_BROWSER_URL, ARCHBOARD_URL } from "#runtime/services/config.ts";
+import { bothRelease, otherVersionWarning } from "#runtime/rules/release-version.ts";
 import { withVault, withWriteClaims } from "#runtime/state/server-client-session.ts";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
-import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
+import { installation } from "@archboard/workspace/installation";
 
 /** Identity marker the Archboard server puts in /health (v1.1+). */
 const ARCHBOARD_SERVICE_NAME = "archboard-server";
@@ -48,7 +49,7 @@ class OtherSourceError extends Error {
 	constructor(serverCheckout: string) {
 		super(
 			`The Archboard server at ${ARCHBOARD_URL} runs the source of ${serverCheckout}, ` +
-				`and this command runs the source of ${SOURCE_CHECKOUT}. Run the command in ${serverCheckout}, ` +
+				`and this command runs the source of ${installation().root}. Run the command in ${serverCheckout}, ` +
 				"stop that server there with `archboard stop`, or name another server with --url.",
 		);
 	}
@@ -111,16 +112,47 @@ async function serverHealthOf(response: Response): Promise<Record<string, unknow
 	return isRecord(health) && stringAt(health, "service") === ARCHBOARD_SERVICE_NAME ? health : null;
 }
 
+let versionWarned = false;
+
+/**
+ * Say once, on stderr, that the server runs another release version than the installed one. The
+ * command goes on, because the server still answers it.
+ * @param health The server's health body.
+ */
+function warnOfOtherVersion(health: Record<string, unknown>): void {
+	const warning = otherVersionWarning(
+		{ mode: stringAt(health, "mode"), version: stringAt(health, "version") },
+		installation(),
+		ARCHBOARD_BROWSER_URL,
+	);
+	if (warning !== null && !versionWarned) {
+		versionWarned = true;
+		process.stderr.write(`${warning}\n`);
+	}
+}
+
+/**
+ * Keep this process from warning about the server it is about to replace, because
+ * `archboard restart` is the remedy that the warning names.
+ */
+function silenceVersionWarning(): void {
+	versionWarned = true;
+}
+
 /**
  * The checkout a server says it runs the source of, when it is not this
- * command's. A server older than ADR 0049 names none and is taken as it is.
+ * command's. A server older than ADR 0049 names none and is taken as it is. A
+ * release is no checkout: two releases differ by their version, not their location.
  * @param health The server's health body.
  * @returns The server's checkout, or undefined when it matches or is not named.
  */
 function otherSourceOf(health: Record<string, unknown>): string | undefined {
+	if (bothRelease({ mode: stringAt(health, "mode") }, installation())) {
+		return undefined;
+	}
 	const source = health["source"];
 	const checkout = isRecord(source) ? stringAt(source, "checkout") : undefined;
-	return checkout === SOURCE_CHECKOUT ? undefined : checkout;
+	return checkout === installation().root ? undefined : checkout;
 }
 
 /**
@@ -143,6 +175,7 @@ async function verifyIdentity(): Promise<void> {
 		if (otherSource !== undefined) {
 			throw new OtherSourceError(otherSource);
 		}
+		warnOfOtherVersion(health);
 		identityVerifiedAt = Date.now();
 	} finally {
 		identityProbe = null;
@@ -266,4 +299,5 @@ export {
 	markServerIdentityVerified,
 	OtherSourceError,
 	requestJson,
+	silenceVersionWarning,
 };

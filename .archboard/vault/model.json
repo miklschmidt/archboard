@@ -3,21 +3,29 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "5fVvhgsV",
-    "name": "install-skill links global skills to the checkout",
-    "summary": "A global install links each skill to the checkout's skills directory, so a git pull keeps it current; a skills root inside the repository still gets a copy.",
+    "id": "XgrNvwDY",
+    "name": "A compiled npm release runs Archboard, and one Installation module tells it from a checkout",
+    "summary": "Archboard also runs as a compiled executable that npm installs and a release workflow publishes, so one Installation module decides checkout or release and names every location, and a release differs from a checkout only in how it starts its server, restarts, loads its core, finds Codex and TypeScript and addresses its server.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "backlog/tasks/task-471.02 - install-skill-links-global-skills-to-the-checkout-and-copies-repo-local-skills.md"
+        "path": "backlog/tasks/task-579.01 - One-installation-module-decides-checkout-or-release-and-names-every-location.md"
+      },
+      {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
+      },
+      {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/agents/releasing.md"
       }
     ],
-    "predecessor": "oDsh4l57",
-    "baseline": "8a0bbd5b28fa3aaf6d19bff69f19f7fb80c18fc3",
-    "createdAt": "2026-11-06T17:26:43.724Z",
-    "adoptedAt": "2026-11-06T17:27:02.679Z",
-    "reason": "install-skill links global skills to the checkout describes code that main holds since PR 30. Nobody adopted the first copy, so this copy carries it onto current. The owner asked for its adoption.",
-    "previousCurrent": "oDsh4l57"
+    "predecessor": "5fVvhgsV",
+    "baseline": "efa1d96e536b07d17a6da0da58ad3b85a7aae783",
+    "createdAt": "2026-11-07T10:11:34.837Z",
+    "adoptedAt": "2026-11-07T10:16:28.522Z",
+    "reason": "The branch merges PR 46 with main: Archboard installs from npm as one compiled executable for each platform, the flake's nix build .#release builds the packages, and one Installation module tells a release from a checkout. The owner authorized this adoption. It carries b2zJw510 onto current 5fVvhgsV.",
+    "previousCurrent": "5fVvhgsV"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
@@ -1655,6 +1663,9 @@
     "vKEsyHFk/vKEsyHFk#hfMj0fMk",
     "vKEsyHFk/9ncuT5DP#XAd3chIR",
     "vKEsyHFk/SJ2JMVyz#W87z7uEB",
-    "vKEsyHFk/SMjRfwN3#44gQ5gUw"
+    "vKEsyHFk/SMjRfwN3#44gQ5gUw",
+    "vKEsyHFk/vKEsyHFk#mm4DLsd2",
+    "vKEsyHFk#8EhrdPUE",
+    "vKEsyHFk#ezZAyT0C"
   ]
 }

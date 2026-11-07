@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { coreSourceHash } from "@archboard/renderer/core";
@@ -17,15 +17,18 @@ import {
 
 const repositoryRoot = fileURLToPath(new URL(".", import.meta.url));
 
-// Git's tracked entries are stable across checkouts and also cover staged skill links.
-const trackedInputsFingerprint = createHash("sha256")
-	.update(
-		execFileSync("git", ["ls-files", "--stage", "-z", "--", ".", ":(exclude)backlog/**"], {
-			cwd: repositoryRoot,
-			env: { ...process.env, GIT_DIR: undefined, GIT_WORK_TREE: undefined },
-		}),
-	)
-	.digest("hex");
+// Git's tracked entries are stable across checkouts and also cover staged skill links. The
+// flake's release build runs in a source tree without Git, and runs no repository tests.
+const trackedInputsFingerprint = existsSync(join(repositoryRoot, ".git"))
+	? createHash("sha256")
+			.update(
+				execFileSync("git", ["ls-files", "--stage", "-z", "--", ".", ":(exclude)backlog/**"], {
+					cwd: repositoryRoot,
+					env: { ...process.env, GIT_DIR: undefined, GIT_WORK_TREE: undefined },
+				}),
+			)
+			.digest("hex")
+	: "no-git";
 
 /** The module a page imports to draw pictures itself (TASK-247). */
 const RENDERER_MODULE = "virtual:archboard-renderer";
@@ -252,6 +255,20 @@ export default defineConfig({
 					output: ["dist/codex-realtime-voice/**"],
 				},
 			},
+			// The npm packages of a release (ADR 0076), from the frontend and the core of this
+			// checkout. It compiles for every platform, so it is never cached.
+			"release-packages": {
+				dependsOn: ["contracts", "frontend"],
+				command: "bun scripts/release/build.ts",
+				cache: false,
+			},
+			// The flake's release build installs the npm packages of bun.nix, which bun2nix writes
+			// from bun.lock (docs/agents/releasing.md).
+			"bun-nix": {
+				command:
+					'test "$(bun2nix)" = "$(cat bun.nix)" || { echo "bun.nix does not match bun.lock. Run bun2nix > bun.nix inside nix develop." >&2; exit 1; }',
+				cache: { input: ["bun.lock", "bun.nix", "flake.lock"] },
+			},
 			types: {
 				dependsOn: ["contracts", "core"],
 				command:
@@ -342,7 +359,14 @@ export default defineConfig({
 				...stageGroup,
 			},
 			"check:first": {
-				dependsOn: ["lint:all", "format:check", "format:core", "check:model", "test:first"],
+				dependsOn: [
+					"lint:all",
+					"format:check",
+					"format:core",
+					"check:model",
+					"bun-nix",
+					"test:first",
+				],
 				...stageGroup,
 			},
 			"test:all": {
@@ -486,7 +510,7 @@ export default defineConfig({
 	root: join(repositoryRoot, "apps", "web"),
 	plugins: [react(), tailwindcss(), rendererBuild(), frontendInputs()],
 	build: {
-		// The server serves SOURCE_CHECKOUT/dist/frontend. It lies outside the root, so it is emptied on purpose.
+		// The server serves the frontend directory of the installation (dist/frontend of the checkout). It lies outside the root, so it is emptied on purpose.
 		outDir: join(repositoryRoot, "dist", "frontend"),
 		emptyOutDir: true,
 		rolldownOptions: {

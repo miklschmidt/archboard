@@ -2,8 +2,8 @@
   "order": 16000,
   "name": "Entry point",
   "kind": "module",
-  "responsibility": "Hands the command to the archboard checkout it stands in, if that is not the running source; else takes --url out before configuration loads, refuses a removed environment variable and runs the table",
-  "description": "TASK-472.09. EXPRESS_SERVER_URL and a set ARCHBOARD_VAULT are refused with exit 2, unless the call asks for help, so a variable that is no longer read never addresses another vault or server than the person means.",
+  "responsibility": "Refuses a process that is no installation; a release started as its server runs the server's entry; else hands the command to the checkout it stands in, or runs the table",
+  "description": "TASK-472.09. EXPRESS_SERVER_URL and a set ARCHBOARD_VAULT are refused with exit 2, unless the call asks for help, so a variable that is no longer read never addresses another vault or server than the person means. It asks Installation first, which refuses a process that is neither a release nor in a checkout. A release executable started with its internal first argument imports the server's entry and runs no command, which is how a release starts its server.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/bin.ts"
@@ -49,6 +49,19 @@
       },
       "id": "vKEsyHFk/XppR9owz#SWg7BPZu",
       "to": "vKEsyHFk/XppR9owz#iIVu1bGE"
+    },
+    {
+      "order": 20000,
+      "kind": "dependency",
+      "label": "refuse a non-installation, read the version",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/bin.ts",
+        "symbol": "installation"
+      },
+      "id": "vKEsyHFk#P06aHDH6",
+      "to": "vKEsyHFk#4FdKQJqK"
     },
     {
       "order": 22000,
@@ -105,6 +118,19 @@
       },
       "id": "vKEsyHFk/XppR9owz#4y3I6aju",
       "to": "vKEsyHFk/XppR9owz#e5UQUj78"
+    },
+    {
+      "order": 69000,
+      "kind": "call",
+      "label": "a release imports the server's entry",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/bin.ts",
+        "symbol": "serverModule"
+      },
+      "id": "vKEsyHFk#9Py1rCVf",
+      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
     }
   ]
 }

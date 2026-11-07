@@ -8,8 +8,10 @@
 // coordinator runs no turn without voice.
 
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { z } from "zod";
+// The executable of a release carries the template, so it is embedded, not read by path.
+import coordinatorTemplate from "#runtime/voice/coordinator-callbacks/services/coordinator.json" with { type: "text" };
+import { embeddedText } from "#runtime/host/rules/embedded-text.ts";
 
 import type { CodexTransport, DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type {
@@ -54,8 +56,9 @@ const TellCoordinatorArgumentsSchema = z.strictObject({
  * @throws {TypeError} When the bytes drifted.
  */
 function loadTemplate(): string {
-	const bytes = readFileSync(
-		new URL(import.meta.resolve("#runtime/voice/coordinator-callbacks/services/coordinator.json")),
+	const bytes = Buffer.from(
+		embeddedText(coordinatorTemplate, "coordinator callback manifest template"),
+		"utf8",
 	);
 	const digest = createHash("sha256").update(bytes).digest("hex");
 	if (digest !== COORDINATOR_CALLBACK_TEMPLATE_SHA256) {

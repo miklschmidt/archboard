@@ -10,7 +10,10 @@ interface BrowserCsrfHeaders {
 
 type BrowserCsrfResult = { ok: true } | { ok: false; code: "CROSS_ORIGIN_REFUSED"; error: string };
 
-const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+// The name a browser opens a release server at is loopback too: browsers resolve every
+// `*.localhost` name to the loopback address themselves (ADR 0076). It is the `BROWSER_HOST` of
+// `@archboard/workspace`'s source-checkout, and `browser-csrf.test.ts` holds the two together.
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "archboard.localhost"]);
 
 /**
  * Lower-cases a hostname and strips the brackets an IPv6 literal carries in a URL.

@@ -219,14 +219,15 @@ where it is without registering anything. `findAndRegisterVault` is what a comma
 starts: it finds the vault, registers the checkout or untracked vault that holds it when the registry
 does not know it, and answers with the vault, what it registered, or why the registry could not be
 written, which does not refuse the command. The CLI words its line on stderr from that answer.
-`./source-checkout` finds the checkout whose source runs, and
+`./installation` decides once whether the process runs a checkout or a release (ADR 0076) and names its root, version
+and the locations of its frontend, core, grammars, skills, `bin`, Codex and server command; it is the only module
+that finds the checkout, and lint refuses an import of `SOURCE_CHECKOUT`. `./source-checkout` gives the port of a checkout's server and the hand-off to another checkout's source, and
 `./atomic-write` and `./state-dir` write files durably and name the state directory: `writeFileAtomic`
 with `exclusive: true` refuses a file that is there instead of replacing it.
-`./repository-listing` is the answer of `GET /api/repositories`, in `server/api/`. `source-checkout`
-finds the checkout by walking up to the nearest directory that is an archboard checkout, so the
-depth of the file decides nothing, and `bin.ts` loads it lazily, so a command that hands itself to
-another checkout loads nothing else first. `module-paths` is not here: it moved into `workbench`, which
-derives the checkout root from `SOURCE_CHECKOUT`.
+`./repository-listing` is the answer of `GET /api/repositories`, in `server/api/`. `installation` finds the
+checkout by walking up to the nearest directory that is an archboard checkout, so the depth of the file
+decides nothing. `bin.ts` loads `installation` and then `source-checkout` lazily, so a command that hands itself to
+another checkout loads nothing else first.
 
 The fifth is `code-binding` (`@archboard/code-binding`). It knows what a node's code binding is and
 where its path lives in a checkout. It adopts the `api/` role for `shared/` and `runtime/` and
@@ -273,7 +274,7 @@ Archboard owns captured architecture context in `workbench` through its `./seman
   submission. The session's storage proof is in `runtime/session/store/`.
 - `./process` owns the `codex app-server` child of `runtime/processes/`: it creates the process and
   reports its lifecycle. It also carries the executable check, which finds the Codex executable of
-  the checkout whose source runs, through `SOURCE_CHECKOUT` of `workspace`, and refuses a global one
+  the installation that runs, through `installation()` of `workspace`, and refuses a global one
   or one of another checkout. `runtime/store/` prepares and locks the private Codex home, and
   `runtime/services/` holds the child's environment and its diagnostics buffer.
 - A test that needs the process owner's injected dependencies imports
@@ -436,7 +437,7 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
   with their dotfiles. A test finds them through `FIXTURES` of the `checkout.ts` beside them.
 
 The eleventh is `renderer` (`@archboard/renderer`). It draws projected architecture as a picture. It adopts the `api/` role for
-`shared/`, `runtime/` and `ui/`. It imports `model`, `timing` and `process`.
+`shared/`, `runtime/` and `ui/`. It imports `model`, `timing`, `process` and `workspace`.
 The files of `shared/api/` and `ui/api/` are safe for the browser, with no Node import.
 The files of `runtime/api/` are Node-bound and run only in Bun.
 
@@ -558,15 +559,15 @@ files of `runtime/api/` run only in Bun.
   disk, `runtime/recorder/clients/` the page client, `runtime/recorder/operations/` the browser flags of the render and
   `runtime/video-encoding/` the encoder. The end-to-end owners stay in `tests/system/server-state/walkthrough-*.test.ts`.
 
-The fourteenth is `skills` (`@archboard/skills`). It ships the archboard skill and evaluates it. It adopts the `api/`
-role for `runtime/` and exposes 3 subpaths with 3 names. It imports `model`, `timing`, `renderer`, `process` and
-`walkthrough`. Every file is Node-bound and runs only in Bun. The 3 files of `runtime/api/` are the
+The fourteenth is `skills` (`@archboard/skills`). It evaluates the archboard skill. It adopts the `api/`
+role for `runtime/` and exposes 2 subpaths with 2 names. It imports `model`, `timing`, `renderer`, `process` and
+`walkthrough`. Every file is Node-bound and runs only in Bun. The 2 files of `runtime/api/` are the
 interface.
 
-- `./distribution` is `prepareSkillArtifacts`. It prepares the copy of the skill that the checkout, the installer and
-  `generate:skill-artifacts` ship: the JSON Schemas that Zod renders for canonical manifests, modules, flows, operations, and vault policy (`runtime/distribution/projections/schemas.ts`), and the installation-local manual
-  (`runtime/distribution/operations/prepare.ts`). The CLI's `install-skill` keeps which skills it ships and how it
-  links or copies them.
+- The skill ships as its tracked files and nothing else, so a copy that the skills CLI makes from GitHub is complete.
+  The skill reads its JSON Schemas from the installed CLI with `archboard model schema`
+  (`apps/cli/src/cli/commands/model/operations/schema.ts`), which renders them from the Zod authorities of `model`. The CLI's
+  `install-skill` keeps which skills it ships and how it links or copies them.
 - `./evaluation` is `runEvaluationCommand`, the whole command line of `bun run eval:skill`
   (`runtime/evaluation/operations/command.ts`): `check`, `run`, `grade`, `pin` and `report`. `scripts/evaluate-skill.ts`
   passes it the arguments and the checkout. The evaluation is human-run and never part of the gate: real Codex authors
@@ -584,7 +585,7 @@ interface.
 - `runtime/evaluation/run-checks/audit/rules/classify.ts` treats `packages/skills` as the harness's source, so an author that reads it has the
   exposure `harness-source`. It still counts the old module directory `skill-evaluation/`, for a batch recorded before
   the move. No file of the package finds a path from where it sits. A test finds the checkout with
-  `@archboard/workspace/source-checkout`.
+  `installation().root` of `@archboard/workspace/installation`.
 - The tests are in `tests/`, in the folder of the file they test. `runtime/support/` holds the fake `claude` and `codex`
   executables and the fixtures. Their end-to-end owner is `bun run eval:skill`, which a person runs.
 
@@ -621,7 +622,7 @@ CLI route clients remain in `apps/cli/src/cli/server-access/clients/`.
   startup pipe and what the server sends a pane. `runtime/rules/` holds the pane layout, `runtime/store/` the pid
   file, `runtime/state/` the invocation's statement and `runtime/services/` the configuration and the staleness
   check.
-- The server entry is found with `SOURCE_CHECKOUT` of `workspace`, because the package sits at another depth than
+- The server command is found with `installation()` of `workspace`, because the package sits at another depth than
   the module did: the spawn runs `apps/server/src/server.ts` of that checkout. The staleness check watches
   `packages/` and `apps/` of it. The startup preload
   of `tests/system/server-state/` mocks the cleanup timing of `runtime/operations/server-startup-cleanup.ts` by path,
@@ -641,7 +642,7 @@ It bundles the four MIT packages into ESM and bundled declarations for each publ
 `tsconfig.voice-package.json` names the sources the declarations come from.
 The generated manifest declares zod and ws, `@openai/codex` at the pinned version as a peer, and React and Express as optional peers.
 The owner publishes that directory with `npm publish`.
-`resolveCodexExecutable` from `./server` finds the installed `@openai/codex` and proves its exact version. Archboard passes `installedIn: SOURCE_CHECKOUT` to refuse any other install.
+`resolveCodexExecutable` from `./server` finds the installed `@openai/codex` and proves its exact version. Archboard passes `installation().codexLocation`: `installedIn` refuses any other install in a checkout, and `releasedIn` finds the native binary of a release.
 `tests/system/process-contracts/voice-package.test.ts` installs the packed tarball into a project outside the repository.
 
 Its public entries separate browser code from Bun code.
@@ -771,12 +772,16 @@ holds an app to the rules of a package, with these differences:
 runs `apps/cli/src/bin.ts`. The checkout hand-off needs the launcher's real path to equal its root
 path, so the launcher cannot be a symlink.
 
-`bin.ts` first imports the checkout hand-off, then the bootstrap that extracts `--url`.
+`bin.ts` first decides the installation. A release executable started with the arguments of its
+`serverCommand` imports the `serverModule` of `installation()` and runs no command (ADR 0076).
+Otherwise `bin.ts` imports the checkout hand-off, then the bootstrap that extracts `--url`.
 For commands other than help, it checks for retired environment variables before it imports the
 command table. Help returns before prerequisite checks or command execution. The command table
 still imports configuration and logging modules.
 
-Never import the server there: the CLI reaches it by spawning `apps/server/src/server.ts`. Nothing imports the app.
+Never import the server there: the CLI reaches it by spawning the `serverCommand` of `installation()`.
+The server process of a release is the one place that loads the server's entry by its URL, and it
+is a process of its own. Nothing imports the app.
 The root `generate:cli-contract` script, the system tests and the skill evaluation spawn it by
 path, and `archboard install-skill --print-source` is how a test learns which skills it ships.
 
@@ -788,7 +793,8 @@ path, and `archboard install-skill --print-source` is how a test learns which sk
   `contract/operations/` runs one contract and presents its result.
   `commands/<command>/` holds each command family: `model`, `vault`, `pane`, `repo`,
   `install-skill`, `server-control` and `contract-artifacts`.
-  `commands/model/` owns model commands, including claims, edits, inspection, migration, history, and rendering.
+  `commands/model/` owns model commands, including claims, edits, inspection, migration, history, rendering, and schemas.
+  `commands/model/operations/initialize.ts` makes every new vault: `model init` in a checkout without a vault and `install-skill` call its `makeVault`.
   `commands/model/rules/` puts the shared interface derivations into the answers and words of `model inspect` and `model compare`.
   `commands/contract-artifacts/` generates the command proof from the shipped contracts.
   `server-access/clients/` calls the public canonical HTTP routes through the gated server client.
@@ -801,10 +807,11 @@ path, and `archboard install-skill --print-source` is how a test learns which sk
 ### `apps/server`
 
 `apps/server` is the HTTP and socket host (TASK-500.24.03). Its entry is `src/server.ts`, which starts
-`startServer` when it is the process entry (`isMainModule`) and exports nothing. Nothing imports it: the
-launcher of `server-lifecycle` spawns `join(SOURCE_CHECKOUT, "apps", "server", "src", "server.ts")`, and a
+`startServer` and exports nothing. Nothing imports it: the
+launcher of `server-lifecycle` spawns the `serverCommand` of `installation()` (`apps/server/src/server.ts` of a checkout,
+the executable with `--internal-server` in a release), and a
 system test spawns the same path, with `bun --preload` where it has to replace a module before the server loads.
-The host serves the browser build from `SOURCE_CHECKOUT/dist/frontend` (`store/frontend/`) and nothing else
+The host serves the browser build from the `frontendDirectory` of `installation()` (`dist/frontend` of a checkout; `store/frontend/`) and nothing else
 of `dist/`.
 
 - `src/server/` owns HTTP composition and process lifetime.

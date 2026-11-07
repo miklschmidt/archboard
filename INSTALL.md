@@ -7,12 +7,25 @@ Its manifest identifies the model and optional current state.
 Module, flow, active proposal, and walkthrough files hold the authored architecture.
 
 This document is also the installation reference for agents: the installed
-skill carries a copy of it. To set up the voice loop for development of
+skill links to it on GitHub. To set up the voice loop for development of
 archboard itself, read [TESTING.md](TESTING.md).
 
 ## What you need
 
-You need these things:
+You install archboard in one of two ways. The npm release needs no build
+tools. A clone builds archboard from its source, so that you can change it.
+
+The release needs these things:
+
+- Linux on x64 or arm64, or macOS on Apple silicon. Under Windows, use WSL 2.
+- Git, and npm or Bun to install the package.
+- A desktop browser, to read architecture. The browser layout is for desktop
+  screens only.
+- Chromium or Google Chrome, only to draw PNG files and to record videos.
+- `ffmpeg` with libx264 and aac, or Nix, only to record videos. If there is no
+  `ffmpeg`, the recorder runs `nixpkgs#ffmpeg-headless` through Nix.
+
+A clone needs these things:
 
 - Linux or macOS, Bash, Git, and Bun 1.4.4 or newer. Bun must be on the `PATH` of
   every process that runs archboard.
@@ -27,7 +40,27 @@ You need these things:
 
 ## 1. Install archboard on the machine
 
-Clone the repository once:
+### Install the release
+
+Install the package once:
+
+```bash
+npm install --global archboard
+```
+
+With Bun, run `bun add --global @archboard/cli` instead. Both names install the
+same program. The package manager installs only the package of your platform,
+with the Codex binary that archboard is pinned to. The install puts `archboard`
+on your `PATH`, so skip section 2. Then set up a repository as section 3 says.
+
+A release server listens on <http://archboard.localhost:4242>. Chrome and
+Firefox send every `*.localhost` name to this machine without any setup. The
+CLI connects to `127.0.0.1:4242` itself.
+
+### Install from a clone
+
+Use a clone to change archboard, or on a platform that has no release. Clone the
+repository once:
 
 ```bash
 git clone https://github.com/miklschmidt/archboard.git ~/Projects/archboard
@@ -85,7 +118,8 @@ checkout, and generates the contract for it. The Archboard server does not start
 that Codex passes its checks. A Codex on your `PATH` is not used.
 
 `bun run build` builds the renderer core to WebAssembly and the browser
-application into `dist/frontend`. Without it, the page tells you to run the
+application into `dist/frontend`. If cargo or `wasm-bindgen` does not run and `nix` is on
+the `PATH`, the core build runs inside `nix develop` by itself. Without it, the page tells you to run the
 build. A build needs the Rust tools only when the core's sources changed. The
 server and the CLI run from the TypeScript in `apps/` and `packages/`. If the
 renderer core was built from other sources than the checkout holds, they refuse
@@ -97,7 +131,8 @@ start without those links.
 
 ## 2. Put the CLI on your PATH
 
-The entry point is `bin/archboard` in the checkout. Give it the name `archboard` on
+A release install does this step for you. In a clone, the entry point is
+`bin/archboard` in the checkout. Give it the name `archboard` on
 your `PATH`, because the skill uses that name:
 
 ```bash
@@ -111,7 +146,48 @@ has no such command.
 
 ## 3. Set up a repository
 
-Run the installer from the repository that you want to diagram:
+Install the skills with the [skills CLI](https://skills.sh):
+
+```bash
+npx skills add miklschmidt/archboard -g
+```
+
+The skills CLI copies two skills from this repository on GitHub: `archboard`,
+which writes and reads canonical models, and `archboard-pr`, which gives a pull
+request an architecture explainer. It asks which agents to install them for.
+With `-g`, it installs them for your user, so they work in every repository.
+`npx skills update -g` updates them. The skills read the JSON Schemas of the
+model files from the archboard CLI on your `PATH`, with `archboard model schema`.
+So the schemas always match the installed program.
+
+The first time an agent works in a Git checkout that has no `.archboard/vault`,
+the agent makes the vault with `archboard model init`. You can also run it
+yourself:
+
+```bash
+cd ~/Projects/payments-api
+archboard model init --name payments-api --operation-id initialize-payments-api \
+  --writer me --doing 'Initialize architecture'
+```
+
+The command does these things:
+
+1. It creates `.archboard/vault` at the root of the checkout.
+2. It writes `.archboard/config.yaml` into the vault, with the default vocabulary.
+3. It initializes an empty canonical planning model through the signed model
+   installer. The new model has no implemented current state.
+4. It registers the checkout, so that a browser lists it.
+
+It needs no server. Existing vaults keep their inputs. If a vault contains
+legacy boards, it needs explicit migration. Commit the vault with your code.
+Setup honors the configured Git identity and signer. If signing fails, repair
+that configuration before retrying. Keep signing enabled.
+
+### Install the skills from a clone or offline
+
+`archboard install-skill` installs the skills from the installation itself, a
+release package or a checkout, with no network. It also sets the repository up.
+Run it from the repository that you want to diagram:
 
 ```bash
 cd ~/Projects/payments-api
@@ -122,30 +198,28 @@ Use `--agent claude-code` for Claude Code. Without it, the installer sets up
 Codex. The installer does these things:
 
 1. It links two skills from a skills directory to the `skills/` directory of
-   this checkout: `archboard`, which writes and reads canonical models, and
-   `archboard-pr`, which gives a pull request an architecture explainer. The
+   the installation: `archboard` and `archboard-pr`. The
    default directory is `~/.agents/skills`, which Codex reads. With
    `--agent claude-code` it is `~/.claude/skills`. Each link replaces an earlier
    copy or a link to another place, and the installer names what it replaced.
-   A `git pull` and `bun install` update the linked skills.
+   An upgrade of a release, or a `git pull` in a clone,
+   updates the linked skills.
    If `--dir` names a directory inside the repository, the installer copies the
    skills there instead, because the repository carries them to other machines.
    If a target in that directory is a symlink, the installer stops and changes
    nothing.
-2. If the repository has no `.archboard/vault`, the installer creates that directory.
-   An empty vault receives a `.archboard/config.yaml` file with the default vocabulary.
-   It initializes a canonical planning model.
-   The new model has no implemented current state.
-   Existing vaults keep their inputs and require explicit migration when they contain legacy boards.
+2. If the repository has no `.archboard/vault`, the installer makes the vault
+   as `archboard model init` does. The model name is the name of the repository
+   directory.
 3. It removes the block that earlier versions of the installer wrote into
    `CLAUDE.md` and `AGENTS.md` between `<!-- archboard:begin -->` and
    `<!-- archboard:end -->`. It says which files it changed and changes nothing
    else in them.
 
 The repository is the nearest parent directory that holds `.git`. The installer
-creates no `CLAUDE.md` or `AGENTS.md` and adds nothing to them, because a command
-finds the vault from the repository (see section 4), and the file would hold
-paths of your machine.
+creates no `CLAUDE.md` or `AGENTS.md` and adds nothing to them. A command finds
+the vault from the repository (see section 4), and such a file holds paths of
+your machine.
 
 The installer prints what it did, and a JSON receipt. If Git ignores the vault,
 the installer warns you.
@@ -204,7 +278,7 @@ layout, and refuses a call that names another directory.
 A vault in the repository keeps current architecture next to the code.
 A reviewer can read its changes in the same diff.
 To describe several repositories together, keep one model in a directory of its own,
-for example a repository for a meta project. Run `archboard install-skill`
+for example a repository for a meta project. Run `archboard model init`
 there, and then run commands there or give `-C <that directory>`. A binding
 names a repository by its identity, so a module in that vault can describe any
 repository (see "Code bindings").
@@ -220,7 +294,8 @@ do not want this, set `ARCHBOARD_NO_AUTOSTART=1`. `archboard start` starts the
 server in both cases. The server uses the environment of the command that
 started it.
 
-The server listens on <http://127.0.0.1:3000>. To use another address, set
+The server of a clone listens on <http://127.0.0.1:3000>. A release server
+listens on <http://archboard.localhost:4242>. To use another address, set
 `ARCHBOARD_URL`, or give `--url` to one command. A command starts a server only
 for a loopback address, that is, an address that only this machine can reach.
 The old variable `EXPRESS_SERVER_URL` is refused with a message, as
@@ -247,7 +322,8 @@ an OpenAI API key. The sign-in is kept apart from your own `~/.codex`, in
 The server needs no vault to start, and one server serves every vault. The
 navigator in the browser lists each repository that this machine knows and that
 has a vault. A command that runs in a checkout makes its repository known. So
-does `archboard repo add`, and so does `archboard install-skill`. A page opens
+does `archboard repo add`, and so do `archboard model init` and
+`archboard install-skill`. A page opens
 what its address names, or else the last reading of this browser. A machine with
 one repository that holds a model opens it. Any other page shows a repository
 chooser. If this machine knows no repository with a vault, the page says so and
@@ -412,16 +488,17 @@ A configured server runs the code of that repository. Configure one only for a r
 
 ### TypeScript
 
-TypeScript needs no configuration. If all of these are true, the check runs `tsc --lsp --stdio` from the `typescript` package that the checkout installs:
+TypeScript has a default server. A server that you configure wins (see [the other languages](#the-other-languages)). Without one, the check reads the `typescript` package in `node_modules/typescript` at the root of the checkout. The package must be inside the checkout once its links resolve. Then the check uses the first of these that applies:
 
-- The package is in `node_modules/typescript` at the root of the checkout.
-- The package is version 7 or later. TypeScript 7 is the first version that has a language server.
-- The package has the native program for your machine, `@typescript/typescript-<platform>-<arch>`, beside it or inside it.
-- The package and the program are inside the checkout once their links resolve.
+1. If the package is version 7 or later and has the native program for your machine, `@typescript/typescript-<platform>-<arch>`, beside it or inside it, the check runs `tsc --lsp --stdio`. TypeScript 7 is the first version that has a language server.
+2. If the package is a TypeScript before version 7, which has no `--lsp`, the check runs `typescript-language-server --stdio`. It is the language server that wraps the `tsserver` of TypeScript. The check looks for it in `node_modules/.bin` of the checkout first, and then on the `PATH` of the Archboard server. It tells the server to run the `lib/tsserver.js` of the checkout's TypeScript. To get one, run `npm install --save-dev typescript-language-server` in the repository, or `npm install --global typescript-language-server`.
+3. When you run archboard from a clone, the check runs the `tsc` of the `typescript` package that archboard installs. An archboard release ships no TypeScript, so it skips this step.
 
-Otherwise the check runs the `tsc` of the `typescript` package that archboard installs. This is so for an older TypeScript, for no TypeScript, for no native program, and for a link that leads out of the checkout. The check does not look in the parent directories of the checkout. If the `typescript` package of archboard has no native program for your machine either, the check says `language-server-missing` for TypeScript.
+If none applies, the check says `language-server-missing` for TypeScript. The detail names the checkout's TypeScript version and the command that configures a server. The check does not look in the parent directories of the checkout. In a monorepo, the check reads the root only. A package that installs another version than the root uses the version at the root.
 
-In a monorepo, the check reads the root only. A package that installs another version than the root uses the version at the root. `tsc --lsp` loads no plugin that `tsconfig.json` names. This was measured with TypeScript 7.0.2.
+The check names the server that it used. Each `time: language server typescript` line, and each `language-server` entry of `timings` in the JSON answer, gives the program (`program`). For a server that the check chose, it also gives the TypeScript version and whether that TypeScript is the checkout's or archboard's (`typescript`). Use it when the check and the compiler of the repository disagree.
+
+The default server runs code of the checkout, because the checkout installed that TypeScript for its own editor. `tsc --lsp` loads no plugin that `tsconfig.json` names. This was measured with TypeScript 7.0.2. The `tsserver` of an older TypeScript loads each plugin that `tsconfig.json` names from the checkout's `node_modules`, as it does in an editor. This was measured with TypeScript 5.9.3 and typescript-language-server 6.0.3. The check turns off automatic type acquisition, so `tsserver` does not run npm to download type packages.
 
 ### The other languages
 
@@ -435,7 +512,7 @@ Python, C, C++, Objective-C, C#, Swift, Rust and Go have no default server. To c
 archboard repo language-server <language> <command> [--arg=<argument>]...
 ```
 
-The language is `python`, `csharp`, `swift`, `c`, `rust` or `go`. The language `c` covers C, C++ and Objective-C. The command is a program on the `PATH` of the Archboard server, or the absolute path of a program. Write an argument that starts with `-` as `--arg=<argument>`.
+The language is `typescript`, `python`, `csharp`, `swift`, `c`, `rust` or `go`. The language `c` covers C, C++ and Objective-C. The command is a program on the `PATH` of the Archboard server, or the absolute path of a program. Write an argument that starts with `-` as `--arg=<argument>`.
 
 `--repo <identity>` names another repository, and the command then configures its chosen checkout. Without it, the command configures the known checkout that holds the working directory. `--remove` removes the server of the language. `archboard repo list` shows the configured servers of each checkout. `archboard repo forget` removes them with the checkout.
 
@@ -613,7 +690,12 @@ gh 2.99 or newer.
 
 ## Update and remove
 
-To update archboard, run `git pull` in the checkout. Make sure that `bun --version`
+To update a release, run the install command again, for example
+`npm install --global archboard`. Then run `archboard restart`, so that the
+server runs the new version. Until then, every command warns that the server
+runs another version. A release restart builds nothing.
+
+To update a clone, run `git pull` in the checkout. Make sure that `bun --version`
 and `node --version` still satisfy [What you need](#what-you-need), because nothing
 refuses an older one. Then run `bun install` and
 `archboard restart` with the Rust tools on your `PATH`, because the restart builds
@@ -633,15 +715,19 @@ archboard restart
 
 `archboard restart` stops the Archboard server, builds the frontend and starts
 the server on the new source. If the build fails, the server stays stopped.
-`archboard status` reports a server that runs older source. The linked skills
-follow the checkout. If a repository holds a copy of the skills, run
-`archboard install-skill --dir <that directory>` again to update it.
+`archboard status` reports a server that runs older source.
+
+Run `npx skills update -g` to update skills that the skills CLI installed. Skills
+that `archboard install-skill` linked follow the installation. If a repository
+holds a copy of the skills, run `archboard install-skill --dir <that directory>`
+again to update it.
 
 There is no uninstall command. To remove archboard, delete these things:
 
 - The skill directories, for example `~/.agents/skills/archboard` and
   `~/.agents/skills/archboard-pr`.
-- The `archboard` link on your `PATH`.
+- The `archboard` link on your `PATH`, or the package of a release, for example
+  with `npm uninstall --global archboard`.
 - The state directory. It holds the Codex sign-in, `repos.json` (with the
   configured language servers of each checkout), the opener configuration, the
   server process files, the log and the kept talks of recordings.

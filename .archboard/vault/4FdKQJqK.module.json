@@ -1,0 +1,25 @@
+{
+  "order": 35000,
+  "name": "Installation",
+  "kind": "module",
+  "responsibility": "Decides once whether the process runs a checkout or a release, and names where its frontend, core, skills, bin, Codex, program and server command are",
+  "description": "A release is a compiled executable with archboard-release.json beside it, in its directory or in the parent of the bin directory that holds it. The marker records the version, the commit, the hash of the core sources and the pinned Codex version. Otherwise the nearest archboard checkout above the module is the installation, and with neither the process refuses with INSTALLATION_NOT_FOUND. A marker that cannot be read refuses with RELEASE_MARKER_INVALID. It answers the root, the version, the locations of the frontend, the renderer core, the skills and the bin directory, where the pinned Codex lies (under the checkout's node_modules, or in the platform package of a release), the program root below which the server and the layout worker lie at their paths in the repository, the server's entry, the command that starts the server, and where the hash of the core sources comes from: the checkout's sources, or the hash the release recorded. A release starts its own executable with --internal-server as its server command. The grammars and the reviewed texts are embedded in the executable and have no location. It is the only module that finds the checkout, and lint refuses an import of SOURCE_CHECKOUT (ADR 0076).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workspace/src/runtime/services/installation.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#4FdKQJqK",
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-579.01 - One-installation-module-decides-checkout-or-release-and-names-every-location.md"
+    }
+  ],
+  "outgoing": []
+}

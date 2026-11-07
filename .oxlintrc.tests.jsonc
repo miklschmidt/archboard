@@ -53,6 +53,18 @@
 				"variant": "classic",
 			},
 		],
+		"no-restricted-imports": [
+			"error",
+			{
+				"patterns": [
+					{
+						"group": ["**/source-checkout", "**/source-checkout.ts"],
+						"importNames": ["SOURCE_CHECKOUT"],
+						"message": "Ask installation() from @archboard/workspace/installation. It decides once whether this process runs a checkout or a release, and names the root and every location in it (ADR 0076).",
+					},
+				],
+			},
+		],
 		"no-console": "error",
 		"import/no-cycle": "error",
 		"import/no-relative-parent-imports": "off",
