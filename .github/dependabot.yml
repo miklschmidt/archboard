@@ -1,0 +1,18 @@
+# Dependabot proposes new versions of the actions that the workflows pin by commit SHA. It
+# updates the SHA and the version comment beside it, so the pins stay current
+# (tests/system/repository-policy/workflow-pins.test.ts). One pull request a week carries
+# every action, and a release waits seven days before Dependabot proposes it.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+      include: scope
