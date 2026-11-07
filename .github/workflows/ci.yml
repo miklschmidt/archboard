@@ -46,6 +46,7 @@ jobs:
       # them and compiles only the workspace crates. The action reads the toolchain
       # that the flake pins, so its version keys the cache.
       - name: Cache the Rust dependency builds
+        id: rust-cache
         uses: Swatinem/rust-cache@v2
         with:
           cmd-format: nix develop --command {0}
@@ -58,13 +59,17 @@ jobs:
         run: echo "hash=$(bun --print 'require("@archboard/renderer/core").coreSourceHash()')" >> "$GITHUB_OUTPUT"
 
       - name: Cache the renderer core
+        if: steps.rust-cache.outputs.cache-hit == 'true'
         uses: actions/cache@v6
         with:
           path: packages/renderer/src/shared/protocol/generated/core
           key: renderer-core-${{ runner.os }}-${{ steps.core-sources.outputs.hash }}
 
+      # A run without its exact Rust cache runs every task and builds the renderer core,
+      # so the Rust cache that it saves holds every dependency build. A replayed task
+      # or a restored core compiles nothing, and the action never saves over its key.
       - name: Restore validation task cache
-        id: task-cache
+        if: steps.rust-cache.outputs.cache-hit == 'true'
         uses: actions/cache/restore@v6
         with:
           path: node_modules/.vite/task-cache
@@ -105,7 +110,7 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: node_modules/.vite/task-cache
-          key: ${{ steps.task-cache.outputs.cache-primary-key }}
+          key: vite-task-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
 
   macos-processes:
     name: macOS native process ownership
@@ -133,6 +138,7 @@ jobs:
       # them and compiles only the workspace crates. The action reads the toolchain
       # that the flake pins, so its version keys the cache.
       - name: Cache the Rust dependency builds
+        id: rust-cache
         uses: Swatinem/rust-cache@v2
         with:
           cmd-format: nix develop --command {0}
@@ -145,13 +151,17 @@ jobs:
         run: echo "hash=$(bun --print 'require("@archboard/renderer/core").coreSourceHash()')" >> "$GITHUB_OUTPUT"
 
       - name: Cache the renderer core
+        if: steps.rust-cache.outputs.cache-hit == 'true'
         uses: actions/cache@v6
         with:
           path: packages/renderer/src/shared/protocol/generated/core
           key: renderer-core-${{ runner.os }}-${{ steps.core-sources.outputs.hash }}
 
+      # A run without its exact Rust cache runs every task and builds the renderer core,
+      # so the Rust cache that it saves holds every dependency build. A replayed task
+      # or a restored core compiles nothing, and the action never saves over its key.
       - name: Restore validation task cache
-        id: task-cache
+        if: steps.rust-cache.outputs.cache-hit == 'true'
         uses: actions/cache/restore@v6
         with:
           path: node_modules/.vite/task-cache
@@ -167,4 +177,4 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: node_modules/.vite/task-cache
-          key: ${{ steps.task-cache.outputs.cache-primary-key }}
+          key: vite-task-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
