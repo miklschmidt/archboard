@@ -7,8 +7,8 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/panes/reading-routing/components/ReadingRoutingHost.tsx"
   },
-  "parent": "vKEsyHFk/yejBBUFY#HCghQa6I",
   "schemaVersion": 1,
   "id": "vKEsyHFk#4DTJtXk6",
+  "parent": "vKEsyHFk/yejBBUFY#HCghQa6I",
   "outgoing": []
 }

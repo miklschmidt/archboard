@@ -3,6 +3,10 @@
   "name": "Workhorses",
   "kind": "module",
   "responsibility": "The sustained work of each checkout: a workhorse's thread link, queue, operations, start and context delivery, built per tab session on first use, with its tool calls",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/workhorses"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
   "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
@@ -12,9 +16,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/workhorses"
-  }
+  "outgoing": []
 }
