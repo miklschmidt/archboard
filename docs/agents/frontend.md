@@ -260,9 +260,7 @@ The `trough` variant of `Tabs.List` holds the destinations over that well. The t
 `app.css` holds the site's physical vocabulary as utilities, so reach for them before you write a shadow.
 `quiet-key` is the raised key that stands beside a gold one, and `Button` takes it as its `outline` variant.
 `trough` and `chosen-face` build a switch or a row of tabs, as `ModelSwitch` does.
-`plate` is a ringed plane in the ground's tone, and `tray` is the frame that a plate lies in.
-`code-bed` is the floor of a command or an excerpt of source.
-No component draws `tray` or `code-bed` yet.
+`plate` is a ringed plane in the ground's tone.
 A count is `Badge` with `variant="count"` and `size="technical"`.
 
 Every dropdown is `Select` or `DropdownMenu` from the ui-kit, and both ease with the `menu-motion` utility. The kit reads no timing, because it stands in the lowest layer, and a popover stands in a portal outside the shell root. So `applyShellDurations` puts `COLUMN_MS.popoverIn` and `popoverOut` on the root element when the page starts.

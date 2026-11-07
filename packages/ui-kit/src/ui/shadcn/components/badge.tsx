@@ -21,14 +21,13 @@ const badgeVariants = cva(
 				// Archboard: how many of something, as the low slab the picture draws for its
 				// small parts. Its front edge stands under its box.
 				count: "mb-0.5 min-w-5 bg-slab-face tabular-nums text-foreground shadow-slab",
-				// Archboard: the site's chips. A solid chip says changed in full, a tinted one says it
-				// quietly, and a quiet one sets a technical fact in mono on a well. Their words keep
-				// APCA Lc 60: white on the chalk orange, near black on the graphite one, and ink on
-				// the tint, because the orange itself reads only Lc 51 to 56 there.
+				// Archboard: the site's chips. A solid chip says changed in full, and a tinted one says
+				// it quietly. Their words keep APCA Lc 60: white on the chalk orange, near black on the
+				// graphite one, and ink on the tint, because the orange itself reads only Lc 51 to 56
+				// there.
 				changed: "bg-standing-changed text-white dark:text-[oklch(0.12_0.02_50)] font-semibold",
 				"changed-tint":
 					"bg-standing-changed/14 text-foreground font-semibold inset-ring inset-ring-standing-changed/50",
-				quiet: "bg-tray-sink text-muted-foreground font-mono font-normal",
 				secondary: "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
 				destructive:
 					"bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",

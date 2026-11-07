@@ -54,11 +54,6 @@
 				"displayName": "Well Floor",
 				"canonical": "oklch(0.95 0.005 85)"
 			},
-			"code-bed": {
-				"role": "neutral",
-				"displayName": "Code Bed",
-				"canonical": "oklch(0.962 0.004 85)"
-			},
 			"tab-piece": {
 				"role": "neutral",
 				"displayName": "Tab Piece",
@@ -247,11 +242,6 @@
 				"name": "float",
 				"value": "var(--elevation-float)",
 				"purpose": "Menus, tips, lists of matches, the floating sidebar and the voice box. The same value as card."
-			},
-			{
-				"name": "table",
-				"value": "var(--elevation-table)",
-				"purpose": "The tray that holds a plate. No shell surface uses it yet."
 			},
 			{
 				"name": "dialog",

@@ -17,9 +17,9 @@
                    it as a plate.
    --highlight is the fine highlight on the top edge of a plane.
    --face is the face of a control or of a chosen tab raised out of a well,
-   and --face-hover the same face under the pointer. --code-bed is the floor
-   of a code block or an excerpt of source. --body-foreground is the ink of
-   prose in a panel, a step under --foreground, as the site's body ink is.
+   and --face-hover the same face under the pointer. --body-foreground is the
+   ink of prose in a panel, a step under --foreground, as the site's body ink
+   is.
 
    The accent. One warm gold, from the picks (the wayfinding band and the
    streaming title wall). It marks four things and nothing else:
@@ -180,7 +180,6 @@
 	--highlight: oklch(1 0 0 / 0.85);
 	--face: oklch(1 0 0);
 	--face-hover: oklch(0.978 0.004 88);
-	--code-bed: oklch(0.962 0.004 85);
 	--body-foreground: oklch(0.3 0.008 75);
 	--slab-face: oklch(0.915 0.005 85);
 	--slab-edge: oklch(0.76 0.006 85);
@@ -296,7 +295,6 @@
 	--highlight: oklch(1 0.01 85 / 0.09);
 	--face: oklch(0.255 0.008 78);
 	--face-hover: oklch(0.31 0.007 75);
-	--code-bed: oklch(0.155 0.005 75);
 	--body-foreground: oklch(0.86 0.008 85);
 	--slab-face: oklch(0.31 0.007 75);
 	--slab-edge: oklch(0.215 0.006 75);

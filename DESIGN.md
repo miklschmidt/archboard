@@ -10,7 +10,6 @@ colors:
   tray-chalk: "oklch(0.986 0.003 88)"
   reading-tone: "oklch(0.935 0.006 85)"
   well-floor: "oklch(0.95 0.005 85)"
-  code-bed: "oklch(0.962 0.004 85)"
   tab-piece: "oklch(1 0 0)"
   control-face: "oklch(1 0 0)"
   control-face-hover: "oklch(0.978 0.004 88)"
@@ -85,7 +84,6 @@ rounded:
   chip: "2px"
   control: "4px"
   panel: "6px"
-  table: "10px"
 spacing:
   row: "28px"
   band: "36px"
@@ -230,7 +228,6 @@ every role and changes the values. The file theme.css holds both themes.
 - **Tab Piece** (`--tray-tab`, oklch(1 0 0), dark oklch(0.25 0.007 75)): the lighter piece that the picture raises on the edge of a container. The shell does not use it. A chosen tab or row takes Control Face.
 - **Slab Face** (`--slab-face`, oklch(0.915 0.005 85), dark oklch(0.31 0.007 75)): the top face of a number badge, on a front edge of `--slab-edge`.
 - **Control Face** (`--face`, oklch(1 0 0), dark oklch(0.255 0.008 78)): the face of a quiet key, of a chosen tab or row, and of a card on a panel or a page. **Face Hover** (`--face-hover`, oklch(0.978 0.004 88), dark oklch(0.31 0.007 75)) is the same face of a quiet key under the pointer.
-- **Code Bed** (`--code-bed`, oklch(0.962 0.004 85), dark oklch(0.155 0.005 75)): the floor of a command or an excerpt of source. The `code-bed` utility holds it, and no shell surface draws it yet.
 - **Body Ink** (`--body-foreground`, oklch(0.3 0.008 75), dark oklch(0.86 0.008 85)): the ink of prose in a panel, a step under Ink Graphite. The words of an explanation, the reason of a state and the callers of an interface card use it.
 - **Card White** (oklch(1 0 0), dark oklch(0.235 0.007 75)): cards, popovers, dialogs and the plate of the voice circle.
 - **Ink Graphite** (oklch(0.17 0.006 75), dark oklch(0.955 0.006 90)) and **Muted Ink** (oklch(0.48 0.008 75), dark oklch(0.78 0.008 85)): text.
@@ -326,7 +323,6 @@ The file app.css holds the values for both themes and gives each one a
 - **chosen** (`--elevation-chosen`, raised and a 2px line of Gold Mark inside the foot): the chosen tab of a trough. It is also the chosen row of the tree that is the row of what is open.
 - **card** (`--elevation-card`, a highlight on top, a 1px contact shadow and two long soft shadows): a card on a page.
 - **float** (`--elevation-float`, the same value as card): menus, tips, lists of matches, the floating sidebar and the voice box.
-- **table** (`--elevation-table`, a highlight on top, a 2px contact line and two long soft shadows): the tray that holds a plate. No shell surface uses it yet.
 - **dialog** (`--elevation-dialog`, a highlight on top, a 2px contact line and two very long soft shadows): dialogs.
 - **primary, primary-hover and primary-pressed** (`--elevation-primary*`): the gold finish at rest, under the pointer and pressed. At rest it has a 1px contact line and a glow of 6px offset. Under the pointer the line grows to 2px and the glow to a 12px offset. Pressed, an inner shadow replaces both.
 
@@ -338,8 +334,6 @@ The file app.css gives the pieces of the site's lit table as utilities. Reach fo
 - **trough**: a recessed well that holds the choices of a switch or a row of tabs. It is Well Floor with `shadow-trough`, 6px corners, 3px of padding and a 2px gap.
 - **chosen-face**: the choice raised out of a trough, in Control Face and full ink with `shadow-chosen`.
 - **plate**: a plane in the ground's tone with 6px corners and an inset ring of 1px in the Rule tone. The reply to an explanation lies on one.
-- **tray**: the frame that a plate lies in, in Chrome Chalk with 6px of padding, 10px corners, `shadow-table` and the ring. No shell surface draws it yet.
-- **code-bed**: the floor of a command or an excerpt of source, in Code Bed with 6px corners and the ring. No shell surface draws it yet.
 
 ### The Picture's Own Depth
 
@@ -457,8 +451,7 @@ along the line on both grounds.
 Corners are small and firm, in the ladder of the site. Chips have 2px corners, and so does the key
 combination in a tooltip. Controls, rows, tabs and the key cap that hints a shortcut
 beside a field have 4px corners. Cards, menus, popovers, troughs and plates have 6px corners. A dialog
-takes the ui-kit's medium corner, 3.2px. The stylesheet also holds a 10px corner for a tray that
-holds a plate, which no shell surface draws yet. The voice and the medallion of a part are circles.
+takes the ui-kit's medium corner, 3.2px. The voice and the medallion of a part are circles.
 
 Some forms are capsules, round at both ends. These are the voice box and the
 voice pill at the foot of the walkthrough box. The segments of the rail and the
@@ -507,7 +500,6 @@ A count of the left column stands on a low slab: `Badge` with the `count` varian
 
 - **Changed:** a solid chip in Changed Orange, semibold, with white words on chalk and near black on graphite. On the interface cards of About it names the state that the reading is on.
 - **Changed tint:** Changed Orange at 14% under Ink, semibold, with an inset ring of 1px in Changed Orange at 50%. It says `Unjoined` in a partner row of the right panel.
-- **Quiet:** a Well Floor chip with muted ink in the mono face. No shell surface uses it yet.
 
 The words of a chip keep APCA Lc 60: white on the chalk orange, near black on the graphite one, and Ink on the tint. The orange alone reads only Lc 51 to 56 on the tint.
 
