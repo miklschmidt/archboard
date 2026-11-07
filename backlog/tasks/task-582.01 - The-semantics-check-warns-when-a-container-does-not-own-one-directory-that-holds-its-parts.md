@@ -3,11 +3,11 @@ id: TASK-582.01
 title: >-
   The semantics check warns when a container does not own one directory that
   holds its parts
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06T15:13:00Z'
-updated_date: '2026-11-06T15:55:00Z'
+updated_date: '2026-11-07T00:12:00Z'
 labels:
   - model
   - check
@@ -48,5 +48,5 @@ Rule in packages/model/src/runtime/operations/check/containment.ts, wired in str
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-The semantics check holds each container to one directory that owns its parts: CONTAINER_UNBOUND and CONTAINER_PARTS_OUTSIDE, with suggestedBinding when one directory holds every part and no other module's code, and the judgement for spread parts otherwise. The consumer skill, archboard-dev and check help say how to act, including telling the user when the code layout splits a job. Follow-up: TASK-582.03.
+archboard check warns with CONTAINER_UNBOUND and CONTAINER_PARTS_OUTSIDE, names the directory to bind in suggestedBinding when one holds every part and no other module, and otherwise names the folders and the judgement. The consumer skill tells agents to act on it and to tell the user about a layout that splits one job.
 <!-- SECTION:FINAL_SUMMARY:END -->

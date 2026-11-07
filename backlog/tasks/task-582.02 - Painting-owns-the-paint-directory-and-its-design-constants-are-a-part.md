@@ -1,11 +1,11 @@
 ---
 id: TASK-582.02
 title: Painting owns the paint directory, and its design constants are a part
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06T15:13:00Z'
-updated_date: '2026-11-06T15:30:00Z'
+updated_date: '2026-11-07T00:12:00Z'
 labels:
   - model
 dependencies: []
@@ -38,4 +38,12 @@ Painting has no binding, so `crates/archboard-scene/src/paint/design.rs` and the
 
 <!-- SECTION:NOTES:BEGIN -->
 Draft s3dmAjji, Painting owns the paint directory. Changes: Painting binds crates/archboard-scene/src/paint. Design constants binds paint/design.rs and Viewer marks binds paint/marks.rs. SVG document moves to renderer beside Painter core and Browser painter, because it is the archboard-svg crate. New relationships: Painter stage to Viewer marks (the warning mark), Viewer marks to Theme palette and to Subject standing marks, and Flowchart, Sequence layout and Core render to Design constants. archboard check --state s3dmAjji: Painting has no containment warning, and the containment warnings fall from 84 to 83. With the PR 50 checker, check code on the draft reports 0 warnings and 188 information findings, against 0 and 184 on current. The main checkout's checker still reports TEST_IMPORT_UNEXPOSED on design.rs until PR 50 merges, because it treats every Rust file but mod.rs as private. model compare: Painting has 5 entry points, 10 hidden parts and 5 callers, against 4, 10 and 3. Not adopted.
+
+After the PR prepared the draft, the owner asked for its adoption: Painting owns the paint directory is adopted (TASK-580), so criterion 4 held for the draft step and the owner then decided the adoption.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Painting binds crates/archboard-scene/src/paint with Design constants and Viewer marks as parts, and SVG document sits beside the other painters. The draft was adopted at the owner request once its code was confirmed on main.
+<!-- SECTION:FINAL_SUMMARY:END -->

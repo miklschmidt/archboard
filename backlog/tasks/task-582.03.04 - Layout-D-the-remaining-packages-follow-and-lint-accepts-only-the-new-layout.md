@@ -1,11 +1,11 @@
 ---
 id: TASK-582.03.04
 title: 'Layout D: the remaining packages follow, and lint accepts only the new layout'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06T19:07:00Z'
-updated_date: '2026-11-06T23:50:00Z'
+updated_date: '2026-11-07T00:12:00Z'
 labels: []
 dependencies:
   - TASK-582.03.03
@@ -23,9 +23,9 @@ Packages without a containment warning still sit role first, and the ratchet and
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every tracked source and test file under an area has exactly one role folder, and it is the last folder of its path
-- [ ] #2 The ratchet constant and the old-form lint paths are gone, and the lint rules accept only the new layout
-- [ ] #3 bun run check passes
+- [x] #1 Every tracked source and test file under an area has exactly one role folder, and it is the last folder of its path
+- [x] #2 The ratchet constant and the old-form lint paths are gone, and the lint rules accept only the new layout
+- [x] #3 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -56,4 +56,12 @@ ebb5fe022 workbench-example: 14 moves: server/{lifecycle,rules}/startup -> serve
 97c1065c7 Walkthrough pages 44gQ5gUw removed: its responsibility (the recording page and the replay page Chromium loads) is the code of apps/web/src/ui/walkthroughs/recording and replay, bound by Walkthrough recording fscW90Xt and Walkthrough replay aixSjfNe under Walkthrough recordings; the recorder's side is Page driver (recorder/clients/recording-page.ts). Its parent Walkthrough video binds packages/walkthrough/src/runtime, which holds no page, so it could not be bound there. No relationship, no flow step; its walkthroughs read the retained checkpoint. check 0 warnings; bun run check 21/21.
 
 Final scans at 97c1065c7: no binding key shared by two modules; no relationship group with the same source, target and anchor; archboard check exit 0, 0 warnings, 0 errors; the area-file layout scan finds no file off the rule. git grep for role-first repository paths outside backlog, docs/design, docs/adr and proposals finds only: the generated trees shared/protocol/generated (kept by rule), and synthetic paths that name no file: crates/archboard-scene/src/measure/cards.rs:439, code-intel workspace-imports.test.ts OPEN (code-opener/src/ui/clients/code-target/open.ts, a temp-checkout fixture), the retired semantic-board routes in top-port-header-clearance.json, and the refused role-first fixtures of role-folder-lint.test.ts. Criteria left unchecked for the reviewer and parent.
+
+Parent verification at 703f9fc1a: archboard check exits 0 with no warning; no shared binding and no duplicate relationship; ROLE_FIRST_TREES is gone from workspace-layout.test.ts, whose rule now checks every file below an area; every code and vault commit passed bun run check 21/21 (agent report), and the layer above passes the full gate including check:model (see TASK-585).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The last role-first trees (ui-kit, workbench-example, code-intel) moved; the ratchet and the old-layout lint forms are gone, so the rule holds every file. 25 relationships that stated one dependency twice are removed, each decided by its anchored code, and the Walkthrough pages leaf is removed because the web app pages it described are already bound.
+<!-- SECTION:FINAL_SUMMARY:END -->
