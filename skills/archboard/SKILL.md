@@ -54,6 +54,7 @@ Read and compare each proposal through `model read`, `model proposals`, or `mode
 Settle reported standing before adoption.
 Adopt or shelve only when the owner explicitly requests that outcome.
 A request to prepare the PR that implements a proposal requests its adoption on that PR's branch, so code and architecture merge together.
+If the vault lives in another repository, the adoption is a commit in that repository, so it cannot merge with the code. Tell the owner, and ask which PR merges first.
 A source merge never adopts architecture.
 
 Keep continuing subject identities unchanged.

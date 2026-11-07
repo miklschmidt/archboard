@@ -170,10 +170,15 @@ Use the shared `model edit` adoption intent with a fresh complete revision and a
 Settle blocked ancestry before adoption.
 Commit the adopted vault files with the implementation, and update the state comment.
 
+If the vault lives in another repository, the adoption is a commit in that repository, so it cannot merge with the code.
+Tell the owner. Prepare the adoption in a PR of the vault's repository, link each PR from the other's body, and ask the owner which merges first.
+
 If the default branch adopted another proposal first, the proposal follows a former current state and the adoption refuses with `PROPOSAL_SUPERSEDED`.
 Do not force the adoption, because a forced adoption installs the proposal's complete state and undoes the other adoption.
-Create a new proposal on the current state with the same name, summary, documents and changes, and adopt it.
-Then shelve the original with a reason that names the copy.
+Create a new proposal on the current state with the same name, summary, documents and changes.
+Before you adopt it, compare it with the current state through `model compare`.
+If one of its changes undoes or conflicts with a change of the other adoption, tell the owner, and adopt only after the owner decides.
+After the adoption, shelve the original with a reason that names the copy.
 
 If a draft describes code that the default branch already holds, tell the owner. If the owner agrees, adopt it in the PR that you prepare.
 
