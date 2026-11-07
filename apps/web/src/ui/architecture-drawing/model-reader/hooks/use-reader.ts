@@ -1,6 +1,5 @@
 import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
-import type { Destination } from "#ui/architecture-drawing/model-reader/reading/components/ModelColumn.tsx";
 import type { Page } from "#ui/architecture-drawing/model-reader/reading/components/ModelHeading.tsx";
 import { useAcceptedScene } from "#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts";
 import { useChangeWalk } from "#ui/architecture-drawing/model-reader/hooks/use-change-walk.ts";
@@ -12,7 +11,6 @@ import { useModuleBranches } from "#ui/architecture-drawing/model-reader/hooks/u
 import { useReaderChoices } from "#ui/architecture-drawing/model-reader/hooks/use-reader-choices.ts";
 import { useReaderMoves } from "#ui/architecture-drawing/model-reader/hooks/use-reader-moves.ts";
 import { usePictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
-import { reviewsChanges } from "#ui/architecture-drawing/model-reader/rules/change-list.ts";
 import { openModules, toggled } from "#ui/architecture-drawing/model-reader/rules/expansion.ts";
 import { moduleTree } from "#ui/architecture-drawing/model-reader/rules/module-tree.ts";
 import {
@@ -77,33 +75,14 @@ function useReaderPage(opened: string | null, selecting: boolean) {
 }
 
 /**
- * Where the left column stands and how the open module is read. A proposal that opens with the
- * reader starts on its changes, and its changes leave the column with it.
- * @param structural Whether the reading draws the structure.
- * @param opened The open module.
- * @param selecting Whether anything is selected.
- * @param proposal Whether a proposal is read against a base.
- * @returns The destination and the page, and how to change them.
+ * Whether the History dialog is open. The key in the left column and the state chip of the header
+ * both open it, so the reader holds it.
+ * @returns Whether it is open, and how to open it or change it.
  */
-function useReaderPlaces(
-	structural: boolean,
-	opened: string | null,
-	selecting: boolean,
-	proposal: boolean,
-) {
-	const [chosen, setDestination] = useState<Destination>(() => {
-		if (proposal) return "changes";
-		return structural ? "modules" : "flows";
-	});
-	const openHistory = useCallback((): void => setDestination("history"), []);
-	const onList = useCallback((): void => setDestination("changes"), []);
-	return {
-		destination: chosen === "changes" && !proposal ? "modules" : chosen,
-		onDestination: setDestination,
-		openHistory,
-		onList,
-		...useReaderPage(opened, selecting),
-	};
+function useHistoryDialog() {
+	const [history, onHistory] = useState(false);
+	const openHistory = useCallback((): void => onHistory(true), []);
+	return { history, onHistory, openHistory };
 }
 
 /**
@@ -122,7 +101,7 @@ function useReader(inputs: ReaderInputs) {
 		inputs.failed,
 	);
 	const { location, comparison, structure, request } = reading;
-	const { open, setExpand, grammar } = location;
+	const { open, setExpand } = location;
 	const { depicted, opened } = structure;
 	const pane = useContext(ModelPaneContext);
 	if (pane === null) throw new Error("A model reading requires its pane presentation.");
@@ -173,12 +152,8 @@ function useReader(inputs: ReaderInputs) {
 	);
 	const tree = useMemo(() => moduleTree(depicted), [depicted]);
 	const branches = useModuleBranches(tree, opened);
-	const places = useReaderPlaces(
-		grammar === "architecture",
-		opened,
-		selection.ids.size > 0,
-		reviewsChanges(model),
-	);
+	const places = useReaderPage(opened, selection.ids.size > 0);
+	const history = useHistoryDialog();
 	const flowReadings = useFlowReadings({
 		model,
 		entry: request.entry,
@@ -194,7 +169,6 @@ function useReader(inputs: ReaderInputs) {
 		openFlow,
 		opened,
 		selected: selection.ids,
-		onList: places.onList,
 		onDiagram: places.onDiagram,
 	});
 	const frames = useMemo(() => openModules(shown.projection), [shown.projection]);
@@ -207,7 +181,6 @@ function useReader(inputs: ReaderInputs) {
 		area,
 		selectMany,
 		onOpen,
-		onDestination: places.onDestination,
 	});
 	const onMove = useReaderMoves({
 		location,
@@ -225,6 +198,7 @@ function useReader(inputs: ReaderInputs) {
 	return {
 		...reading,
 		...places,
+		...history,
 		vault: inputs.vault,
 		model,
 		accepted,

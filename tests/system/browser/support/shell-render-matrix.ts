@@ -223,8 +223,8 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const present = paneHeader?.querySelector('button[aria-label^="Present"]');
 		const column = document.querySelector('${NAVIGATOR_COLUMN}');
 		const nav = document.querySelector('${NAVIGATOR}');
-		// A technical token in the mono face: the count on a tab of the left column.
-		const technical = nav?.querySelector('[data-slot="destination-count"]');
+		// A technical token in the mono face: the count on the head of a section of the left column.
+		const technical = nav?.querySelector('[data-slot="section-count"]');
 		const stages = document.querySelector('${STAGE_ROOT}');
 		const bar = document.querySelector('${AGENT_DOCK}');
 		// The switcher names the repository of the focused pane, a human label beside the header's.

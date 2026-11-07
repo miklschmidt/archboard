@@ -14,7 +14,7 @@ import {
 	type InterfaceFact,
 	type InterfaceRow,
 } from "#ui/architecture-drawing/model-reader/rules/interface-changes.ts";
-import { NAME_GAP, ROW_HEIGHT } from "#ui/shell/rules/tree-grid.ts";
+import { NAME_GAP, ROW_HEIGHT, stuckTop } from "#ui/shell/rules/tree-grid.ts";
 
 /** One row of a flat tree, and what it stands for. */
 interface FlatRow<Item> {
@@ -59,7 +59,8 @@ function flatRows<Item extends { readonly id: string }>(
 }
 
 /**
- * Keep the row of a reader's place in view, clear of the owner's name that sticks above it.
+ * Keep the row of a reader's place in view, clear of the owner's name and the section's head that
+ * stick above it.
  * @param place The change the reader stands on.
  * @returns The ref for the element around the list.
  */
@@ -69,7 +70,7 @@ function useKeptInView(place: string | null) {
 		if (place === null) return;
 		const row = box.current?.querySelector<HTMLElement>(`[data-row-id="${CSS.escape(place)}"]`);
 		if (row === undefined || row === null) return;
-		row.style.scrollMarginTop = `${ROW_HEIGHT}px`;
+		row.style.scrollMarginTop = stuckTop(ROW_HEIGHT);
 		row.scrollIntoView({ block: "nearest" });
 	}, [place]);
 	return box;
@@ -202,7 +203,6 @@ function InterfaceChangeRow(props: {
 		<Tree.Row
 			id={row.id}
 			depth={0}
-			flat
 			selected={lit}
 			current={lit}
 			label={interfaceRowWords(row)}

@@ -1,5 +1,6 @@
 // The owner of the left column's workflow: a reader finds a module, enters it, walks its
-// siblings, opens a flow and adds a pane, and all of it works from the keyboard alone.
+// siblings, folds a section of the one list, opens a flow and adds a pane, and all of it works
+// from the keyboard alone.
 
 import { expect, test } from "bun:test";
 import { cpSync, writeFileSync } from "node:fs";
@@ -184,8 +185,31 @@ test("every move of the left column has a keyboard route, also in a presented pa
 	await browser.run(["press", "Backspace"]);
 	await reads(browser, "Shop#Handler");
 
+	// The modules and the flows are sections of one list. A section's head folds its rows away
+	// and brings them back, and the keys reach it as a button.
+	expect(
+		await browser.eval<string[]>(
+			`[...document.querySelectorAll('[data-slot="model-sections"] [data-column-section]')].map(section => section.getAttribute('data-column-section'))`,
+		),
+	).toEqual(["modules", "flows"]);
+	const modulesHead = '[data-column-section="modules"] [aria-expanded]';
+	await browser.run(["focus", modulesHead]);
+	await browser.run(["press", "Enter"]);
+	await pollUntil(
+		() => treeRows(browser),
+		(now) => now.length === 0,
+		"the folded modules",
+		WAIT,
+	);
+	await browser.run(["press", "Enter"]);
+	await pollUntil(
+		() => treeRows(browser),
+		(now) => now.includes("Shop#Decode"),
+		"the modules again",
+		WAIT,
+	);
+
 	// Flows stay listed while a flow is read, and the representation comes second.
-	await browser.run(["click", '[data-destination="flows"]']);
 	await clickWhenDrawn(browser, '[data-flow-id="Shop#Request"]');
 	await pollUntil(
 		() => reading(browser),

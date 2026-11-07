@@ -65,7 +65,8 @@ function writeTour(vault: string, name: string, subject: string): void {
 /**
  * What the reader shows beside the picture and in the left column.
  * @param browser The page.
- * @returns The rows of each list, the counts of the tabs, and where the legend ends.
+ * @returns The rows of each list, the counts of the flows and walkthroughs sections of the left
+ * column, and where the legend ends.
  */
 function column(browser: AgentBrowserSession) {
 	return browser.eval<{
@@ -79,7 +80,7 @@ function column(browser: AgentBrowserSession) {
 		return {
 			flows: rows('model-panel-flows'),
 			walkthroughs: rows('model-panel-walkthroughs'),
-			counts: [...document.querySelectorAll('[data-slot="destination-count"]')].map((count) => count.textContent),
+			counts: ['flows', 'walkthroughs'].map((section) => document.querySelector('[data-column-section="' + section + '"] [data-slot="section-count"]')?.textContent),
 			more: document.querySelectorAll('[data-slot="model-panel-more"]').length,
 			legendFits: document.querySelector('[data-slot="model-legend"]').getBoundingClientRect().bottom <= window.innerHeight,
 		};
@@ -185,7 +186,7 @@ async function selectedCard(browser: AgentBrowserSession, id: string): Promise<v
 	);
 }
 
-test("the right column follows what a reader looks at, and the left tabs hold the whole model", async () => {
+test("the right column follows what a reader looks at, and the left column holds the whole model", async () => {
 	await using resources = new AsyncDisposableStack();
 	const browser = await openReader(resources, "reader-context", (vault) => {
 		writeFileSync(
@@ -216,7 +217,7 @@ test("the right column follows what a reader looks at, and the left tabs hold th
 		writeTour(vault, "Work", "Shop#Worker");
 	});
 
-	// At the roots with nothing selected, the left tabs already hold it all.
+	// At the roots with nothing selected, the sections of the left column already hold it all.
 	const counts = ["7", "2"];
 	expect(await column(browser)).toMatchObject({ flows: [], walkthroughs: [], counts });
 
@@ -263,7 +264,7 @@ test("the right column follows what a reader looks at, and the left tabs hold th
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-reading"]')?.getAttribute('data-grammar') === 'sequence' && document.querySelector('[data-destination="flows"]')?.getAttribute('aria-selected') === 'true'`,
+				`document.querySelector('[data-slot="model-reading"]')?.getAttribute('data-grammar') === 'sequence' && document.querySelector('[data-column-section="flows"] [data-flow-id="${GATEWAY_FLOWS[0]}"]')?.getAttribute('aria-current') === 'location'`,
 			),
 		Boolean,
 		"the sequence of the flow",

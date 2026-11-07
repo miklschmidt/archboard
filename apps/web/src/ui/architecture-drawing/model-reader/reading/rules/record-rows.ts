@@ -1,4 +1,4 @@
-// The record of a model, as the History tab lists it: what is proposed, what is current, what came
+// The record of a model, as the History dialog lists it: what is proposed, what is current, what came
 // before and what was let go. Each state folds its own checkpoints into its row. A checkpoint of a
 // state that the catalogue does not list keeps a row of its own, so it never reads as another
 // state's. Pure.
@@ -16,10 +16,10 @@ const CURRENT = "current";
 /** The group of checkpoints that belong to no state: those of a planning model. */
 const NO_STATE = "no-state";
 
-/** One row of the record, which the keys of a tree walk. */
+/** One row of the record: a state, or a reading it saved. */
 interface RecordRow {
 	readonly id: string;
-	readonly parent: string | null;
+	/** Whether it folds saved readings. */
 	readonly branch: boolean;
 	readonly open: boolean;
 	/** The state the row opens, or null for one that opens current or a checkpoint. */
@@ -38,7 +38,10 @@ interface RecordRow {
 interface RecordWords {
 	readonly lead: string;
 	readonly name: string | undefined;
+	/** What tells it from the drafts that share its name, and anything that stands in its way. */
 	readonly facts: string | undefined;
+	/** How many readings it saved, and when the latest was saved, or nothing for none. */
+	readonly kept: string | undefined;
 	/** Where the state stands on the timeline, in a word. */
 	readonly kind: RecordKind;
 	/** When it came to stand there, as an ISO timestamp, when the record says. */
@@ -47,7 +50,7 @@ interface RecordWords {
 	readonly reason: string | undefined;
 }
 
-/** Where a state stands on the timeline of the History tab: its lifecycle, or unknown. */
+/** Where a state stands on the timeline of the History dialog: its lifecycle, or unknown. */
 type RecordKind = NonNullable<State>["lifecycle"] | "unknown";
 
 /** A state and what it folds. */
@@ -173,10 +176,9 @@ function entryOf(place: EntryPlace, inputs: RecordInputs): RecordEntry {
 	const { id, stateId, state, held, opens } = place;
 	const open = inputs.unfolded.has(id) || held.some((entry) => entry.id === inputs.checkpoint);
 	const standing = reported(state);
-	const facts = [inputs.touches.get(id), standingLabel(standing), savedFact(held)].filter(Boolean);
+	const facts = [inputs.touches.get(id), standingLabel(standing)].filter(Boolean);
 	const head: RecordRow = {
 		id,
-		parent: null,
 		branch: held.length > 0,
 		open,
 		stateId,
@@ -186,13 +188,14 @@ function entryOf(place: EntryPlace, inputs: RecordInputs): RecordEntry {
 			...timelineOf(standing),
 			reason: standing?.reason,
 			facts: facts.length === 0 ? undefined : facts.join(" · "),
+			kept: savedFact(held),
 		},
 		saved: undefined,
 		standing,
 	};
 	return {
 		head,
-		held: open ? held.map((entry) => checkpointRow(entry.id, entry, id, stateId)) : [],
+		held: open ? held.map((entry) => checkpointRow(entry.id, entry, stateId)) : [],
 	};
 }
 
@@ -200,19 +203,16 @@ function entryOf(place: EntryPlace, inputs: RecordInputs): RecordEntry {
  * One exact retained reading.
  * @param id The checkpoint.
  * @param saved What the list says of it, which an exact address can outrun.
- * @param parent The row that folds it.
- * @param stateId The state of that row.
+ * @param stateId The state of the row that folds it.
  * @returns Its row.
  */
 function checkpointRow(
 	id: string,
 	saved: Checkpoint | undefined,
-	parent: string | null,
 	stateId: string | null,
 ): RecordRow {
 	return {
 		id,
-		parent,
 		branch: false,
 		open: false,
 		stateId,
@@ -311,7 +311,7 @@ function holds(entry: RecordEntry, checkpoint: string | null): boolean {
  * @returns The sections with that row.
  */
 function outrun(sections: readonly RecordSection[], checkpoint: string): RecordSection[] {
-	const head = checkpointRow(checkpoint, undefined, null, null);
+	const head = checkpointRow(checkpoint, undefined, null);
 	return sections.map((section) =>
 		section.label === "Earlier"
 			? { ...section, entries: [{ head, held: [] }, ...section.entries] }
@@ -319,18 +319,8 @@ function outrun(sections: readonly RecordSection[], checkpoint: string): RecordS
 	);
 }
 
-/**
- * The rows in the order that the keys walk them.
- * @param sections The sections.
- * @returns The rows.
- */
-function recordRows(sections: readonly RecordSection[]): readonly RecordRow[] {
-	return sections.flatMap(({ entries }) => entries.flatMap(({ head, held }) => [head, ...held]));
-}
-
 export {
 	CURRENT,
-	recordRows,
 	recordSections,
 	type Checkpoint,
 	type ListedState,

@@ -139,7 +139,7 @@ function ReadingContext(props: {
 			projection={projection}
 			selected={props.selected}
 			flow={reading.grammar === "architecture" ? null : reading.flow}
-			onFlow={choices.findFlow}
+			onFlow={choices.chooseFlow}
 			onWalkthrough={choices.findWalkthrough}
 		/>
 	);

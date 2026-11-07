@@ -1,10 +1,18 @@
 import { expect, test } from "bun:test";
 import {
-	recordRows,
 	recordSections,
 	type Checkpoint,
 	type ListedState,
 } from "#ui/architecture-drawing/model-reader/reading/rules/record-rows.ts";
+
+/**
+ * Every row of the record, in the order the dialog draws them.
+ * @param sections The record.
+ * @returns The rows.
+ */
+function recordRows(sections: ReturnType<typeof recordSections>) {
+	return sections.flatMap(({ entries }) => entries.flatMap(({ head, held }) => [head, ...held]));
+}
 
 const CURRENT: ListedState = {
 	id: "Now",
@@ -50,8 +58,8 @@ test("a run of checkpoints folds into its state, newest first, with a count and 
 		open: false,
 		held: [],
 	});
-	expect(head.words?.facts).toStartWith("2 saved · ");
-	expect(head.words?.facts).toContain("2026");
+	expect(head.words?.kept).toStartWith("2 saved · ");
+	expect(head.words?.kept).toContain("2026");
 
 	const unfolded = recordSections({
 		...NOTHING,
@@ -84,7 +92,7 @@ test("a state the catalogue lacks keeps its own row, which opens its newest chec
 	});
 	expect(sections.map(({ label }) => label)).toEqual(["Current", "Earlier"]);
 	const [current, earlier] = sections;
-	expect(current!.entries[0]!.head.words?.facts).toStartWith("1 saved");
+	expect(current!.entries[0]!.head.words?.kept).toStartWith("1 saved");
 	const { head } = earlier!.entries[0]!;
 	expect(head).toMatchObject({ id: "Gone", stateId: null, checkpoint: "newest" });
 	expect(head.words).toMatchObject({ lead: "Said", name: "Name of Gone" });
@@ -104,7 +112,8 @@ test("a draft folds its own checkpoints, and a row leads with the summary, then 
 	expect(section!.label).toBe("Proposals");
 	const { head } = section!.entries[0]!;
 	expect(head.words).toMatchObject({ lead: "Does this", name: "Called" });
-	expect(head.words?.facts).toStartWith("Touches Gateway · 1 saved");
+	expect(head.words?.facts).toBe("Touches Gateway");
+	expect(head.words?.kept).toStartWith("1 saved");
 });
 
 test("an exact address that the list does not hold still shows where the reader stands", () => {

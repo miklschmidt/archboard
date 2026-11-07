@@ -1,5 +1,5 @@
-// What a state is called by where it stands in its model's life, in the one word the History tab
-// and a comparison of interfaces both use. Pure.
+// What a state is called by where it stands in its model's life, in the one word the History
+// dialog and a comparison of interfaces both use. Pure.
 
 import type { Model } from "@archboard/model/content";
 
