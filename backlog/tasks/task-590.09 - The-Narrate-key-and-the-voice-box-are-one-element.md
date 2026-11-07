@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T15:06:00Z'
-updated_date: '2026-11-07T16:18:00Z'
+updated_date: '2026-11-07T16:44:00Z'
 labels: []
 dependencies: []
 references:
@@ -54,14 +54,16 @@ Out of write scope: apps/web/tests/ui/support/canvas/stage-harness.tsx wraps pan
 Known limits: two presented panes each have a Narrate key, and only the newest holds the orb, so the older key shows an empty seat while voice is off, and a press on it launches from the newest key. A Narrate press whose narration is then refused (the reading did not reach the server) leaves the launch armed until an orb is lit or the key goes.
 
 Criterion 3's dock path got its own unit test (a launch with subtitles off lands in the dock): the orb tests are 35 pass, and lint and format:check exit 0 after it. Status stays In Progress until the owner reviews the transition and the three edits outside the write scope.
+
+2026-11-07, coordinator, on the integrated branch: the known limit of two presented panes is fixed (commits 2e3ab4ff4 and 5ceecf69d). A press of Narrate makes its own key the stage's newest narrate socket, so the dark orb moves into it first, the orb leaves that key, and it comes back there as voice ends. Every key that can narrate draws its gold disc. While voice is on a held key draws it only while the orb is in its socket, so criterion 2 holds for the key the orb left, and the other key of a second pane shows an empty seat only while voice is on. A new unit test (the older of two keys) fails without the change and passes with it. Screenshots of two presented panes show both gold circles in both themes. Reduced motion was checked in a real browser: a throwaway copy of the Narrate browser test with prefers-reduced-motion found no frame in the air on the way into the box or back. The browser owners voice-box-presented (2) and voice-box (1) pass. The Replay stage's anchor in the model now names RecordedOrb (1407c2da9).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-A presented walkthrough's Narrate key is now the voice orb's third home, so the key and the voice box share one element. While voice is off the dark orb waits in the key's gold circle, and the key draws its gold disc and microphone only while the orb is there. Pressing Narrate launches the next lit orb out of the circle, lit from the start of its flight, into the voice box, or the dock while subtitles are off. While the orb is away the key keeps an empty seat and still says why it cannot narrate. A voice that ends in the box sends the orb back to the key, where it lands lit and fades, so the disc comes back. Talk keeps today's rule, reduced motion and off-screen ends cut, and a fullscreen launch crosses inside the presented element.
+A presented walkthrough's Narrate key is now the voice orb's third home, so the key and the voice box share one element. While voice is off the dark orb waits in a key's gold circle. Pressing Narrate makes that key the orb's home and launches the next lit orb out of its circle, lit from the start of its flight, into the voice box, or the dock while subtitles are off. As voice ends the orb flies back to the key it left and fades there. Every key that can narrate draws its gold disc; while voice is on, a key draws it only while the orb is in it. Reduced motion, a home off screen and fullscreen cut the flight or keep it inside the presented element.
 
-The stage keeps sockets per home, newest last. The page geometry moved to orb-screen.ts. To fit ADR 0058's ceiling, the replay's orb assembly became one RecordedOrb export.
+The stage keeps sockets per home, newest last, and a launch offers the pressed key's socket again. Page geometry moved to orb-screen.ts. To fit ADR 0058's ceiling, the replay's orb assembly became one RecordedOrb export.
 
-Verified by unit tests of the stage and the narrate home, a browser owner that presses Narrate and ends voice, and frames of the launch and return in both themes. Risks: an older second Narrate key shows an empty seat and launches from the newest key, and a refused narration leaves the launch armed until an orb is lit or the key goes. Three edits lie outside the write scope: the apps/web stage harness, ReplayStage.tsx and .impeccable/design.json.
+Verified by unit tests of the stage and the narrate home (36 pass), the browser owners voice-box-presented and voice-box, a reduced-motion run of the Narrate browser test, and screenshots of one and two presented panes in both themes. Risk: a Narrate press whose narration is then refused leaves the launch armed until an orb is lit or the key goes. The owner reviews the transition in the PR.
 <!-- SECTION:FINAL_SUMMARY:END -->
