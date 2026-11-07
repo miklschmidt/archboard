@@ -8,7 +8,8 @@
 // for it, and keyboard focus stays on it. The dock's motion moves its plate between
 // the shapes (hooks/dock/use-dock-motion.ts); the voice orb draws the circle's face
 // (components/orb), and the one orb is drawn here, into a holder that flies it
-// between the dock's circle and the box, where the dock says it is wanted.
+// between the dock's circle, the box and a presented walkthrough's Narrate key,
+// where the dock says it is wanted.
 //
 // The orb follows the model's measured output level while it speaks and breathes
 // while it listens. Nothing here listens to the microphone.

@@ -17,8 +17,11 @@
 // it the words give way and the orb and the keys stay.
 //
 // A presented walkthrough leaves the box where it is, low over the picture, because the steps
-// stand in a column beside it. A fullscreen presentation has no dock to take the voice back, so
-// the box carries it there whatever the person wants of subtitles, and the subtitles control then
+// stand in a column beside it. The column's Narrate key is the orb's third home: a narration
+// started there launches the orb out of the key's gold circle into this box, and a voice that ends
+// here sends the orb back to the key while the box is still up. A fullscreen presentation has no
+// dock to take the voice back, so the box carries it there whatever the person wants of
+// subtitles, and the subtitles control then
 // decides only whether there are words. A recording is drawn with this same box over the same
 // picture (apps/web/src/ui/walkthroughs/replay): the orb follows the recorded voice, and the keys
 // are drawn as here, with nobody to press them.
@@ -26,7 +29,7 @@
 // The box comes with the voice and leaves with it. It stays mounted while it leaves,
 // so it eases away with the orb's flight out of it, and it takes no input while it
 // does: it is inert. The dock tells the stage that flies the orb where it goes
-// (`state/orb/orb-stage.ts`), by the rule the box asks too (useVoiceBoxed), once the box has
+// (`orb/state/orb-stage.ts`), by the rule the box asks too (useVoiceBoxed), once the box has
 // offered the stage its socket.
 
 import type { CSSProperties, JSX } from "react";

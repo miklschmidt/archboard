@@ -1,5 +1,5 @@
-// The orb's stage, as a component reads it, and the one move a surface makes on
-// it: saying where the orb is wanted.
+// The orb's stage, as a component reads it, and the two moves a surface makes on
+// it: saying where the orb is wanted, and asking a Narrate key to launch it.
 
 import { createContext, useContext, useLayoutEffect, useSyncExternalStore } from "react";
 
@@ -55,4 +55,14 @@ function useOrbOffered(home: OrbHome): boolean {
 	);
 }
 
-export { OrbStageContext, useOrbOffered, useOrbPlacement, useOrbStage };
+/**
+ * How a Narrate key asks for a launch: the next orb that is lit leaves the key, lit from the
+ * start of its flight, for the home it is wanted in. Voice started any other way is lit where it
+ * is wanted. The key asks as it is pressed, before the voice it starts is lit.
+ * @returns The ask, the same function for as long as the stage lasts.
+ */
+function useOrbLaunch(): () => void {
+	return useOrbStage().launch;
+}
+
+export { OrbStageContext, useOrbLaunch, useOrbOffered, useOrbPlacement, useOrbStage };
