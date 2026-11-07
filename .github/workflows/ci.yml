@@ -157,11 +157,9 @@ jobs:
           path: packages/renderer/src/shared/protocol/generated/core
           key: renderer-core-${{ runner.os }}-${{ steps.core-sources.outputs.hash }}
 
-      # A run without its exact Rust cache runs every task and builds the renderer core,
-      # so the Rust cache that it saves holds every dependency build. A replayed task
-      # or a restored core compiles nothing, and the action never saves over its key.
+      # The core task is never cached and runs even when test:macos replays, so on a
+      # Rust cache miss, skipping the renderer core cache alone fills the Rust cache.
       - name: Restore validation task cache
-        if: steps.rust-cache.outputs.cache-hit == 'true'
         uses: actions/cache/restore@v6
         with:
           path: node_modules/.vite/task-cache
