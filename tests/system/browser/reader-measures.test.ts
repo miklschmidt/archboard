@@ -26,7 +26,7 @@ async function openMeasures(
 	browser: AgentBrowserSession,
 	view: "code" | "interface" | "changes",
 ): Promise<void> {
-	await browser.run(["click", '[data-slot="model-measures-open"]']);
+	await browser.run(["click", '[data-column-dialog="measures"]']);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('${DIALOG}') !== null`),
 		Boolean,
