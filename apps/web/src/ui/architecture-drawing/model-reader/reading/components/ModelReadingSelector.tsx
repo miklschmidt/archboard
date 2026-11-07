@@ -347,17 +347,16 @@ function EventHead(props: { readonly words: Words; readonly shown: boolean }): J
  * @returns The words.
  */
 function EventWords({ words }: { readonly words: Words }): JSX.Element {
-	const told = words.kind === "draft" ? undefined : words.reason;
 	return (
 		<>
-			{words.name !== undefined && (
+			{words.told !== undefined && (
 				<span
 					className={cn(
 						"text-control max-w-[72ch] font-normal",
 						words.kind === "shelved" ? "text-muted-foreground" : "text-body-foreground",
 					)}
 				>
-					{told ?? words.lead}
+					{words.told}
 				</span>
 			)}
 			{words.facts !== undefined && (

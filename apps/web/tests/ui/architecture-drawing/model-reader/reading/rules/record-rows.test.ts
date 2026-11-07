@@ -116,6 +116,16 @@ test("a draft folds its own checkpoints, and a row leads with the summary, then 
 	expect(head.words?.kept).toStartWith("1 saved");
 });
 
+test("a row tells why its state stands where it does, also when the state has no summary", () => {
+	const [current] = recordSections({
+		...NOTHING,
+		states: [
+			{ id: "Now", state: { lifecycle: "current", id: "Now", name: "Now", reason: "It shipped" } },
+		],
+	});
+	expect(current!.entries[0]!.head.words).toMatchObject({ lead: "Now", told: "It shipped" });
+});
+
 test("an exact address that the list does not hold still shows where the reader stands", () => {
 	const sections = recordSections({ ...NOTHING, checkpoint: "unlisted" });
 	expect(recordRows(sections).map(({ id }) => id)).toContain("unlisted");

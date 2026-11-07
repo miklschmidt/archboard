@@ -46,8 +46,11 @@ interface RecordWords {
 	readonly kind: RecordKind;
 	/** When it came to stand there, as an ISO timestamp, when the record says. */
 	readonly when: string | undefined;
-	/** Why it was adopted or shelved, as the record says it. */
-	readonly reason: string | undefined;
+	/**
+	 * What the row says under its head: why the state came to stand where it does, as the record
+	 * says it, or else what it does when the head names it.
+	 */
+	readonly told: string | undefined;
 }
 
 /** Where a state stands on the timeline of the History dialog: its lifecycle, or unknown. */
@@ -138,6 +141,17 @@ function leadOf(place: EntryPlace): Pick<RecordWords, "lead" | "name"> {
 	return summary === undefined ? { lead: name, name: undefined } : { lead: summary, name };
 }
 
+/**
+ * What a row says under its head. A draft has stood nowhere yet, so it has no reason to give.
+ * @param state What the catalogue reports of the state.
+ * @param lead What the row says first, and the name under that.
+ * @returns Why the state stands where it does, or what it does when the head names it, or nothing.
+ */
+function toldOf(state: State, lead: Pick<RecordWords, "lead" | "name">): string | undefined {
+	const reason = state?.lifecycle === "draft" ? undefined : state?.reason;
+	return reason ?? (lead.name === undefined ? undefined : lead.lead);
+}
+
 /** The field that dates when a state came to stand where it does, for each lifecycle. */
 const WHEN = {
 	draft: "createdAt",
@@ -177,6 +191,7 @@ function entryOf(place: EntryPlace, inputs: RecordInputs): RecordEntry {
 	const open = inputs.unfolded.has(id) || held.some((entry) => entry.id === inputs.checkpoint);
 	const standing = reported(state);
 	const facts = [inputs.touches.get(id), standingLabel(standing)].filter(Boolean);
+	const lead = leadOf(place);
 	const head: RecordRow = {
 		id,
 		branch: held.length > 0,
@@ -184,9 +199,9 @@ function entryOf(place: EntryPlace, inputs: RecordInputs): RecordEntry {
 		stateId,
 		checkpoint: opens ?? null,
 		words: {
-			...leadOf(place),
+			...lead,
 			...timelineOf(standing),
-			reason: standing?.reason,
+			told: toldOf(standing, lead),
 			facts: facts.length === 0 ? undefined : facts.join(" · "),
 			kept: savedFact(held),
 		},
