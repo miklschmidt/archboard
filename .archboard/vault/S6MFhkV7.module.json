@@ -1,5 +1,5 @@
 {
-  "order": 74000,
+  "order": 29012,
   "name": "Layout scorecards",
   "kind": "module",
   "responsibility": "Measures saved fixture geometry against the drawing scorecard",
@@ -9,8 +9,20 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#S6MFhkV7",
-  "parent": "vKEsyHFk#F0aENCVG",
   "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "the vault's policy",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/design/wide-board-layout-fixtures/measure.ts",
+        "symbol": "readVaultConfiguration"
+      },
+      "id": "vKEsyHFk#NZXdvNpk",
+      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
+    },
     {
       "order": 71000,
       "kind": "call",

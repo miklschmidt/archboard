@@ -5,7 +5,7 @@
   "responsibility": "Routes reviewed thread operations and returns one answer for each request",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/runtime/operations/dynamic-tools"
+    "path": "packages/workbench/src/runtime/dynamic-tools/dispatch"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#iPnxvJWp",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
+        "path": "packages/workbench/src/runtime/dynamic-tools/dispatch/mutation/operations/mutation-staging.ts",
         "symbol": "stageOperation"
       },
       "id": "vKEsyHFk/SJ2JMVyz#Uflv9hM7",
@@ -31,7 +31,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/operations/dynamic-tools/dispatch/dispatch-support.ts",
+        "path": "packages/workbench/src/runtime/dynamic-tools/dispatch/operations/dispatch-support.ts",
         "symbol": "GeneralThreadToolName"
       },
       "id": "vKEsyHFk/SJ2JMVyz#t5YUCWX1",
@@ -44,7 +44,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
+        "path": "packages/workbench/src/runtime/dynamic-tools/dispatch/mutation/operations/mutation-staging.ts",
         "symbol": "WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256"
       },
       "id": "vKEsyHFk/SJ2JMVyz#VOPbBx8O",
@@ -57,7 +57,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutations.ts",
+        "path": "packages/workbench/src/runtime/dynamic-tools/dispatch/mutation/operations/mutations.ts",
         "symbol": "threadStart"
       },
       "id": "vKEsyHFk/SJ2JMVyz#r1jVxlwm",
@@ -71,7 +71,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/authority-classification.ts",
+        "path": "packages/workbench/src/runtime/dynamic-tools/authority/rules/authority-classification.ts",
         "symbol": "resolveExactLogicalCaller"
       },
       "id": "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
@@ -84,7 +84,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/operations/dynamic-tools/dispatch/dispatch-mutations.ts",
+        "path": "packages/workbench/src/runtime/dynamic-tools/dispatch/operations/dispatch-mutations.ts",
         "symbol": "DynamicServerRequest"
       },
       "id": "vKEsyHFk/vKEsyHFk#Gh6v3DzI",

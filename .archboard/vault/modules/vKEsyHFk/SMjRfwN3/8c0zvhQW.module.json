@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/services/rasterizer/session.ts"
+    "path": "packages/renderer/src/runtime/rasterizer/services/session.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#8c0zvhQW",
@@ -26,7 +26,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+        "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
         "symbol": "launchHeadlessChromium"
       },
       "id": "vKEsyHFk/SMjRfwN3#tJ3SgMcL",
@@ -44,7 +44,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+        "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
         "symbol": "DevTools.evaluate"
       },
       "id": "vKEsyHFk/SMjRfwN3#aYI0EhkT",
@@ -61,7 +61,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+        "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
         "symbol": "checkedReadiness"
       },
       "id": "vKEsyHFk/SMjRfwN3#TBd33jdx",
@@ -74,7 +74,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+        "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
         "symbol": "regionOf"
       },
       "id": "vKEsyHFk/SMjRfwN3#6dBMtPdX",
@@ -87,7 +87,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+        "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
         "symbol": "RasterSession"
       },
       "id": "vKEsyHFk/SMjRfwN3#ZflKJBv6",

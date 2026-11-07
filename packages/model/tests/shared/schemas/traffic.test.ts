@@ -7,8 +7,8 @@ import {
 	effectiveTraffic,
 	type VariantContent,
 } from "#shared/schemas/content.ts";
-import { compareVariants } from "#shared/rules/compare/variants.ts";
-import { reconcileVariant } from "#shared/rules/reconcile/variant.ts";
+import { compareVariants } from "#shared/compare/rules/variants.ts";
+import { reconcileVariant } from "#shared/reconcile/rules/variant.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
 
 const NODES = [

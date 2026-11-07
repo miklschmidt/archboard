@@ -4,6 +4,10 @@
   "kind": "module",
   "responsibility": "Draws projected canonical architecture and flow content in any host through the shared layout and SVG core.",
   "description": "Canonical readers project models and flows through @archboard/model/content before drawing. The renderer receives content, grammar, policy and host inputs; it does not resolve model identity or navigation.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/render"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
   "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",

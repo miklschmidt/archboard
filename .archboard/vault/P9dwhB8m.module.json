@@ -5,7 +5,7 @@
   "responsibility": "Announces each durable completion to subscribers in this process",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/store/model-news.ts"
+    "path": "packages/model/src/runtime/canonical/installation/news/store/model-news.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#P9dwhB8m",

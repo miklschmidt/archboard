@@ -1,8 +1,8 @@
 import { expect } from "bun:test";
 
-import { CodexWorkbenchGatewayError } from "#server/protocol/gateway/contract.ts";
-import type { BrowserCommand } from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserDynamicApprovalResponse } from "#shared/schemas/dynamic-approval/approval.ts";
+import { CodexWorkbenchGatewayError } from "#server/chat-conversations/gateway/protocol/contract.ts";
+import type { BrowserCommand } from "#shared/browser/schemas/snapshot.ts";
+import type { BrowserDynamicApprovalResponse } from "#shared/dynamic-approval/schemas/approval.ts";
 import { commandTarget, type GatewayHarness } from "#tests/server/support/gateway/support.ts";
 
 function expectGatewayError(action: () => unknown, code: CodexWorkbenchGatewayError["code"]): void {

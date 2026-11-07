@@ -6,7 +6,7 @@
   "description": "One instruction owner loads the two role documents, composes their policy, and exposes their text and digests. Callers use the same integrity checks for both roles.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/runtime/rules/instructions/authored.ts"
+    "path": "packages/workbench/src/runtime/instructions/rules/authored.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SJ2JMVyz#624ETIsk",
@@ -29,7 +29,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/rules/instructions/context.ts",
+        "path": "packages/workbench/src/runtime/instructions/rules/context.ts",
         "symbol": "ADDITIONAL_CONTEXT_POLICY"
       },
       "id": "vKEsyHFk/SJ2JMVyz#9ymbrMYT",
@@ -42,7 +42,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/services/host/archboard.ts",
+        "path": "packages/workbench/src/runtime/host/services/archboard.ts",
         "symbol": "COORDINATOR_DOMAIN_INSTRUCTIONS"
       },
       "id": "vKEsyHFk/qKGcB6vZ#qU9USAdL",
@@ -55,7 +55,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/rules/instructions/bodies.ts",
+        "path": "packages/workbench/src/runtime/instructions/rules/bodies.ts",
         "symbol": "createTextUserInput"
       },
       "id": "vKEsyHFk/qKGcB6vZ#6wH1TupJ",
@@ -68,7 +68,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/rules/instructions/context.ts",
+        "path": "packages/workbench/src/runtime/instructions/rules/context.ts",
         "symbol": "SemanticSubjectKindSchema"
       },
       "id": "vKEsyHFk/vKEsyHFk#xEGElQkc",

@@ -5,7 +5,7 @@
   "responsibility": "One socket to a target: its calls and events, the page's last complaints, and a Blob streamed into a file",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/clients/headless-chromium/devtools.ts"
+    "path": "packages/renderer/src/runtime/headless-chromium/clients/devtools.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#AVCQVNqI",
@@ -22,11 +22,11 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/clients/headless-chromium/devtools.ts",
+        "path": "packages/renderer/src/runtime/headless-chromium/clients/devtools.ts",
         "symbol": "WebSocket"
       },
       "id": "vKEsyHFk/SMjRfwN3#JgtXFRyO",
-      "to": "vKEsyHFk/SMjRfwN3#R9St060W"
+      "to": "vKEsyHFk/vKEsyHFk#t7W7wJHv"
     }
   ]
 }

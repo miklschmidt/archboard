@@ -53,7 +53,7 @@ import { SUBTITLES_IN_BOX, openForVoice, startVoiceServer } from "./support/voic
 /** What the controlled session transcribes, as the fixture emits it. */
 const USER_SAID = "Show the controlled voice context.";
 const VOICE_SAID = "The controlled voice context is visible.";
-/** Where the page keeps whether the person wants subtitles (packages/workbench/src/ui/state/subtitles/preference.ts). */
+/** Where the page keeps whether the person wants subtitles (packages/workbench/src/ui/workbench-client/subtitles/state/preference.ts). */
 const SUBTITLES_KEY = "archboard.voice.subtitles";
 
 test(

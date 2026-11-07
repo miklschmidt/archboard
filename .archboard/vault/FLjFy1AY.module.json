@@ -5,7 +5,7 @@
   "responsibility": "Journals an operation and installs its files through durable atomic writes",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/store/model-install.ts"
+    "path": "packages/model/src/runtime/canonical/installation/store/model-install.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#FLjFy1AY",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-install.ts",
+        "path": "packages/model/src/runtime/canonical/installation/store/model-install.ts",
         "symbol": "installFile"
       },
       "id": "vKEsyHFk#3sW3Kpz8",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-install.ts",
+        "path": "packages/model/src/runtime/canonical/installation/store/model-install.ts",
         "symbol": "writeState"
       },
       "id": "vKEsyHFk/0T9enjhi#4BbNhYeL",
@@ -44,7 +44,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-install.ts",
+        "path": "packages/model/src/runtime/canonical/installation/store/model-install.ts",
         "symbol": "prepareCheckpointAppend"
       },
       "id": "vKEsyHFk/0T9enjhi#lihhHpxZ",
@@ -57,7 +57,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-install.ts",
+        "path": "packages/model/src/runtime/canonical/installation/store/model-install.ts",
         "symbol": "writeFileAtomic"
       },
       "id": "vKEsyHFk/0T9enjhi#VESQgtYF",
@@ -70,7 +70,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-install.ts",
+        "path": "packages/model/src/runtime/canonical/installation/store/model-install.ts",
         "symbol": "editResult"
       },
       "id": "vKEsyHFk/0T9enjhi#06G2g8VM",
@@ -83,7 +83,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-install.ts",
+        "path": "packages/model/src/runtime/canonical/installation/store/model-install.ts",
         "symbol": "git"
       },
       "id": "vKEsyHFk/0T9enjhi#D5n9O1JP",
@@ -95,7 +95,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-install.ts",
+        "path": "packages/model/src/runtime/canonical/installation/store/model-install.ts",
         "symbol": "ArchiveError"
       },
       "id": "vKEsyHFk/0T9enjhi#MGi2prjj",

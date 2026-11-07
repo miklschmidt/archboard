@@ -6,7 +6,7 @@
   "description": "The shown checkout is listed even before its first message, as not live, because a typed message goes there. A workhorse is live once its start has a thread. The list is bounded so a snapshot always fits the browser contract, and it is read into the owner projection that every chat of the tab receives. The label is the host's checkoutLabel, by default the name of the checkout's directory; Archboard labels a checkout by the repository of the vault it holds.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/projections/browser-state/workhorse-list.ts"
+    "path": "packages/codex-realtime-voice/src/server/chat-conversations/browser-state/projections/workhorse-list.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#ME7EbWl8",
@@ -25,7 +25,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/projections/browser-state/workhorse-list.ts",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/browser-state/projections/workhorse-list.ts",
         "symbol": "inspect"
       },
       "id": "vKEsyHFk/9ncuT5DP#95g4rJnq",

@@ -272,7 +272,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/ui/components/panel/AgentComposer.tsx",
+            "path": "packages/workbench/src/ui/workbench-client/panel/components/AgentComposer.tsx",
             "symbol": "onSend"
           }
         },
@@ -301,7 +301,7 @@
               "kind": "self",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
                 "symbol": "pump"
               }
             },
@@ -321,7 +321,7 @@
                       "kind": "self",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                        "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
                         "symbol": "failWaiting"
                       }
                     }
@@ -338,7 +338,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                        "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
                         "symbol": "askSignIn"
                       }
                     },
@@ -350,7 +350,7 @@
                       "kind": "async",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/codex-realtime-voice/src/ui/clients/transport/socket-run.ts",
+                        "path": "packages/codex-realtime-voice/src/ui/transport/clients/socket-run.ts",
                         "symbol": "sendRequest"
                       }
                     }
@@ -367,7 +367,7 @@
                       "kind": "self",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                        "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
                         "symbol": "advance"
                       }
                     }
@@ -384,7 +384,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                        "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
                         "symbol": "link"
                       }
                     },
@@ -396,7 +396,7 @@
                       "kind": "async",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/codex-realtime-voice/src/ui/clients/transport/socket-run.ts",
+                        "path": "packages/codex-realtime-voice/src/ui/transport/clients/socket-run.ts",
                         "symbol": "sendRequest"
                       }
                     }
@@ -413,7 +413,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                        "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
                         "symbol": "deliverNext"
                       }
                     },
@@ -425,7 +425,7 @@
                       "kind": "async",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/codex-realtime-voice/src/ui/clients/transport/socket-run.ts",
+                        "path": "packages/codex-realtime-voice/src/ui/transport/clients/socket-run.ts",
                         "symbol": "sendRequest"
                       }
                     }
@@ -441,7 +441,7 @@
               "kind": "async",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/codex-realtime-voice/src/ui/clients/transport/socket-run.ts",
+                "path": "packages/codex-realtime-voice/src/ui/transport/clients/socket-run.ts",
                 "symbol": "onMessage"
               }
             },
@@ -453,7 +453,7 @@
               "kind": "async",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
                 "symbol": "connect"
               }
             }
@@ -467,7 +467,7 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+            "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
             "symbol": "prune"
           }
         }
@@ -493,7 +493,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/ui/rules/dock/circle-state.ts",
+            "path": "packages/workbench/src/ui/workbench-client/dock/rules/circle-state.ts",
             "symbol": "talk"
           }
         },
@@ -518,7 +518,7 @@
           "note": "the same phases as a message waits on: see Send a message to the agent",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+            "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
             "symbol": "startVoice"
           }
         },
@@ -530,7 +530,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+            "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
             "symbol": "startTalk"
           }
         },
@@ -542,7 +542,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/ui/rules/voice-session/binding.ts",
+            "path": "packages/workbench/src/ui/voice-session/rules/binding.ts",
             "symbol": "captureBinding"
           }
         },
@@ -554,7 +554,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/ui/rules/voice-session/binding.ts",
+            "path": "packages/workbench/src/ui/voice-session/rules/binding.ts",
             "symbol": "captureBinding"
           }
         },
@@ -574,7 +574,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workbench/src/ui/state/voice-session/session.ts",
+                    "path": "packages/workbench/src/ui/voice-session/state/session.ts",
                     "symbol": "startNew"
                   }
                 },
@@ -586,7 +586,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workbench/src/ui/state/voice-session/session.ts",
+                    "path": "packages/workbench/src/ui/voice-session/state/session.ts",
                     "symbol": "run"
                   }
                 }
@@ -603,7 +603,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workbench/src/ui/rules/voice-session/binding.ts",
+                    "path": "packages/workbench/src/ui/voice-session/rules/binding.ts",
                     "symbol": "captureBinding"
                   }
                 }
@@ -670,7 +670,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+            "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
             "symbol": "startTalk"
           }
         },
@@ -854,7 +854,7 @@
       "participants": [
         "vKEsyHFk/vKEsyHFk#cPOdAA3f",
         "vKEsyHFk/yejBBUFY#aixSjfNe",
-        "vKEsyHFk/yejBBUFY#rouptSyK",
+        "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
         "vKEsyHFk/yejBBUFY#dtYjWvlf"
       ],
       "steps": [
@@ -885,7 +885,7 @@
         {
           "id": "vKEsyHFk/yejBBUFY#OxJKtMIe",
           "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
-          "to": "vKEsyHFk/yejBBUFY#rouptSyK",
+          "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
           "label": "install the stepped clock",
           "kind": "sync",
           "anchor": {
@@ -957,7 +957,7 @@
             {
               "id": "vKEsyHFk/yejBBUFY#IE58RDy7",
               "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
-              "to": "vKEsyHFk/yejBBUFY#rouptSyK",
+              "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
               "label": "move the clock to the frame's time",
               "kind": "sync",
               "anchor": {
@@ -1001,7 +1001,7 @@
                     {
                       "id": "vKEsyHFk/yejBBUFY#RCy7lhz4",
                       "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
-                      "to": "vKEsyHFk/yejBBUFY#rouptSyK",
+                      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
                       "label": "run the due timers, sync animations, paint",
                       "kind": "sync",
                       "anchor": {

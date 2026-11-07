@@ -1,4 +1,4 @@
-import type { ServerReadinessProcessFacts } from "#server/rules/generation/readiness.ts";
+import type { ServerReadinessProcessFacts } from "#server/generation/rules/readiness.ts";
 
 /** One typed owned-process fact set; each owner overrides only what it proves. */
 function processFacts(

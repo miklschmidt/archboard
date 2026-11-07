@@ -1,5 +1,5 @@
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type {
 	BrowserDynamicApproval,
 	BrowserDynamicApprovalEffect,
@@ -7,7 +7,7 @@ import type {
 	DynamicApprovalDecision,
 	DynamicApprovalEffect,
 	DynamicApprovalRequest,
-} from "#shared/schemas/dynamic-approval/approval.ts";
+} from "#shared/dynamic-approval/schemas/approval.ts";
 
 const authorities = createIdentityAuthorities();
 const model = createCodexBrowserModel(authorities);

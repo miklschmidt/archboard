@@ -51,6 +51,19 @@
       "to": "vKEsyHFk/XppR9owz#iIVu1bGE"
     },
     {
+      "order": 19000,
+      "kind": "dependency",
+      "label": "the package it hands off through",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/bin.ts",
+        "symbol": "handOff"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#wImHhbk7",
+      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+    },
+    {
       "order": 22000,
       "kind": "call",
       "label": "take --url",
@@ -94,17 +107,17 @@
       "to": "vKEsyHFk/XppR9owz#e5UQUj78"
     },
     {
-      "order": 19000,
-      "kind": "dependency",
-      "label": "the package it hands off through",
+      "order": 32000,
+      "kind": "http",
+      "label": "the run's reads and writes, each naming its vault",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/bin.ts",
-        "symbol": "handOff"
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "fetch"
       },
-      "id": "vKEsyHFk/vKEsyHFk#wImHhbk7",
-      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+      "id": "vKEsyHFk/IbGtfJE2#Tt8yC8yW",
+      "to": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
     }
   ]
 }

@@ -70,19 +70,6 @@
       },
       "id": "vKEsyHFk#V2ti26xJ",
       "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
-    },
-    {
-      "order": 76000,
-      "kind": "call",
-      "label": "address each request with its model, vault, and write claims",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
-        "symbol": "withVault"
-      },
-      "id": "vKEsyHFk/XppR9owz#AvVUuBuI",
-      "to": "vKEsyHFk/XppR9owz#fF4A9uvU"
     }
   ]
 }

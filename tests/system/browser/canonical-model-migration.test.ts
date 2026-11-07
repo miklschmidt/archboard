@@ -241,11 +241,11 @@ test("an unmigrated repository exposes migration and follows durable recovery to
 			"--preload",
 			join(
 				import.meta.dir,
-				"../../../packages/model/tests/runtime/operations/model-edit/crash-preload.ts",
+				"../../../packages/model/tests/runtime/canonical/edit/operations/crash-preload.ts",
 			),
 			join(
 				import.meta.dir,
-				"../../../packages/model/tests/runtime/operations/legacy-preview/installation-crash-runner.ts",
+				"../../../packages/model/tests/runtime/legacy-boards/reading/inventory/operations/installation-crash-runner.ts",
 			),
 			fixture.vault,
 			input,

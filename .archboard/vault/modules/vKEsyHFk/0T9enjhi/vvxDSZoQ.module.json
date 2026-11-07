@@ -5,7 +5,7 @@
   "responsibility": "Resolves explicit references and bound code through the public model reader",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/operations/read/model-navigation.ts"
+    "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#vvxDSZoQ",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/read/model-navigation.ts",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
         "symbol": "resolveModelReferences"
       },
       "id": "vKEsyHFk/0T9enjhi#aEqCF5VY",
@@ -52,7 +52,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/read/model-navigation.ts",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
         "symbol": "modelCodeTarget"
       },
       "id": "vKEsyHFk/0T9enjhi#wlWo6SPu",
@@ -65,7 +65,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/read/model-navigation.ts",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
         "symbol": "readSelectedState"
       },
       "id": "vKEsyHFk/0T9enjhi#gcijTSIS",
@@ -78,7 +78,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/read/model-navigation.ts",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
         "symbol": "readCheckpointModel"
       },
       "id": "vKEsyHFk/0T9enjhi#AjGkFCES",
@@ -91,7 +91,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/read/model-navigation.ts",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
         "symbol": "failure"
       },
       "id": "vKEsyHFk/0T9enjhi#WdOzlOvq",
@@ -104,7 +104,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/read/model-navigation.ts",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
         "symbol": "readMigrationPreview"
       },
       "id": "vKEsyHFk/0T9enjhi#YU9IQsiJ",
@@ -117,7 +117,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/read/model-navigation.ts",
+        "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts",
         "symbol": "readPlayback"
       },
       "id": "vKEsyHFk/0T9enjhi#hVCOfnrb",

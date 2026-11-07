@@ -6,7 +6,7 @@
   "description": "A citation is a skill file and a heading anchor, never a line number, so rewording a passage keeps it cited and renaming a heading breaks it at check time rather than at grading.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/services/citations.ts"
+    "path": "packages/skills/src/runtime/evaluation/batch/services/citations.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#wOZsx1lS",

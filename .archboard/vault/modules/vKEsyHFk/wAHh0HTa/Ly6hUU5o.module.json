@@ -6,7 +6,7 @@
   "description": "Compares handshake storage facts with canonical, non-symlinked CODEX_HOME, SQLite, and config paths before the session becomes usable.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-app-server/src/runtime/store/storage-proof.ts"
+    "path": "packages/codex-app-server/src/runtime/session/store/storage-proof.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/wAHh0HTa#Ly6hUU5o",

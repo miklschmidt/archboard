@@ -1,4 +1,4 @@
-import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
+import type { ArchboardContext } from "#runtime/instructions/rules/context.ts";
 
 export const contextFixture: ArchboardContext = {
 	schema: 1,

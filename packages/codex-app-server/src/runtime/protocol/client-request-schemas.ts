@@ -42,7 +42,7 @@ import {
 	ThreadQueueReorderParamsSchema,
 	ThreadQueueStartParamsSchema,
 	ThreadQueueUpdateParamsSchema,
-} from "#runtime/schemas/session-contract.ts";
+} from "#runtime/session/schemas/session-contract.ts";
 import { TurnItemsViewSchema } from "#runtime/schemas/thread-schemas.ts";
 import { codexIngressSchemas } from "#runtime/schemas/vendor-schema.ts";
 

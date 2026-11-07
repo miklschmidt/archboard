@@ -3,11 +3,11 @@ id: TASK-582.03.01
 title: >-
   Layout A: the behavior-first rule, lint that accepts both layouts, and the
   move codemod
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-06T19:06:00Z'
-updated_date: '2026-11-06T19:47:00Z'
+updated_date: '2026-11-06T20:16:00Z'
 labels: []
 dependencies: []
 documentation:
@@ -28,7 +28,7 @@ The layout moves hundreds of files across many commits, and every commit must ke
 - [x] #2 workspace-layout.test.ts holds the new rule with a ratchet of trees still role-first, and fails if a listed tree has no role-first file left
 - [x] #3 Each lint rule that reads a role folder accepts both layouts and keeps its guarantee, proven by rule tests in both forms
 - [x] #4 A repository test fails when vite.config.ts names a test path that does not exist
-- [ ] #5 scripts/move-source.ts moves a reviewed manifest with git mv, rewrites aliases, relative specifiers and repository-path literals, and updates bindings and anchors through archboard model edit; a dry run over apps/web changes nothing
+- [x] #5 scripts/move-source.ts moves a reviewed manifest with git mv, rewrites aliases, relative specifiers and repository-path literals, and updates bindings and anchors through archboard model edit; a dry run over apps/web changes nothing
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -58,10 +58,15 @@ Scratch proof in a throwaway clone (scratchpad, stub CLI that checks each reques
 
 Gate: nix develop -c bun run check passed, 21/21 tasks: test:repository 170 pass across 16 files, test:modules 4909 pass across 742 files, test:system 234 pass across 64 files, test:solo 15 pass across 2 files, test:serial-browser 49/49 owners, cargo test 33 suites ok, lint, format and both type checks clean. The first run failed one test (package-api.test.ts refused literal private workbench paths in the frame-clock fixtures), which 8abcb83a2 fixed.
 AC #5 left unchecked: git mv, rewrites, claim growth and release ran for real in a scratch clone, but the vault answers there came from a stub CLI that checks each request against the real schemas. On this checkout only a claim and release of the 445 web subjects ran. A successful model edit on a real vault needs a real move, which this layer must not run. The first move (B1) proves it.
+
+AC #5 proven by the first real move (TASK-582.03.02 B1, commit 2d131626b): apply of the codex-app-server manifest ran git mv on 46 files and rewrote 52 (# aliases in src and tests, the capacity lane path in vite.config.ts). The vault step on the real vault wrote 86 statements (12 edit-module set.binding, 19 edit-relationship set.anchor, 55 edit-step set.anchor) through archboard model edit: attempt 1 answered CLAIM_REQUIRED, the claim grew, attempt 2 (operation move-source-6f7f716e4061-1793994758915-2) answered success, applied: true; model claims was empty afterwards. archboard check then held 81 warnings, only CONTAINER_UNBOUND and CONTAINER_PARTS_OUTSIDE, and bun run check passed 21/21.
+The first apply stopped after the moves because archboard restart refuses -C; f05718f21 drops -C (the restart runs in the checkout) and makes apply format the files it rewrote, because a rewritten import can change how a line wraps (the format check failed on 7 files of B1 without it). rebind then finished the vault step from the moved checkout, as designed.
+
+Second codemod fix after B3 (341d3c461): a template-literal # specifier's static folder now follows a folder that moves as one (the role instructions of the workbench broke server start), and a relative import in a file outside a workspace follows its target (site/src/scripts/voice-orb.ts).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Layer A of the behavior-first layout (doc-003 A1 and A2). ADR 0075 amends ADR 0055: areas stay first, code is grouped by behavior inside them, and the role folder is the last folder of a path. boundaries.md, frontend.md and test-suite.md state it. workspace-layout.test.ts holds the rule (one role folder, the last; no area-named folder; api directly under the area; tests/<area>/support exempt) with ROLE_FIRST_TREES, the 36 trees that still break it. config-paths.test.ts fails for any path a Vite+ task or a single-file Oxlint override names that does not exist. ui-concern-placement and assistant-ui-imports accept both layouts (new twoConcerns and misplacedConcern refusals). The frame clock gains the architecture-drawing/canvas and workbench-client/subtitles globs, and state-files-pure gets behavior-first fixtures. role-folder-lint.test.ts proves both forms and the old refusals. scripts/move-source.ts plans, applies (git mv, alias, URL and import.meta.dir, exports and repository-path rewrites, restart, one claimed model edit that grows its claim on CLAIM_REQUIRED) and rebinds. The apps/web dry run proposes 567 moves, 463 rewrites and 445 vault statements, and changes nothing. bun run check passes. Open: AC #5's real vault write is unproven until the first real move.
+Layer A of the behavior-first layout (doc-003 A1 and A2). ADR 0075 amends ADR 0055: areas stay first, code is grouped by behavior inside them, and the role folder is the last folder of a path. boundaries.md, frontend.md and test-suite.md state it. workspace-layout.test.ts holds the rule (one role folder, the last; no area-named folder; api directly under the area; tests/<area>/support exempt) with ROLE_FIRST_TREES, the 36 trees that still break it. config-paths.test.ts fails for any path a Vite+ task or a single-file Oxlint override names that does not exist. ui-concern-placement and assistant-ui-imports accept both layouts (new twoConcerns and misplacedConcern refusals). The frame clock gains the architecture-drawing/canvas and workbench-client/subtitles globs, and state-files-pure gets behavior-first fixtures. role-folder-lint.test.ts proves both forms and the old refusals. scripts/move-source.ts plans, applies (git mv, alias, URL and import.meta.dir, exports and repository-path rewrites, formatting of the rewritten files, restart, one claimed model edit that grows its claim on CLAIM_REQUIRED) and rebinds. The apps/web dry run proposes 567 moves, 463 rewrites and 445 vault statements, and changes nothing. The first real move (codex-app-server, 2d131626b) proved the vault write on the real vault after f05718f21 fixed the restart call. bun run check passes.
 <!-- SECTION:FINAL_SUMMARY:END -->

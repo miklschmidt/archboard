@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/ui/state/conversation/controllers.ts",
+    "path": "packages/codex-realtime-voice/src/ui/conversation/state/controllers.ts",
     "symbol": "createConversationControllers"
   },
   "schemaVersion": 1,

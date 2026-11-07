@@ -1,7 +1,7 @@
 import { createServer } from "node:net";
 import { join } from "node:path";
-import { holdModel } from "#runtime/store/lock/acquisition.ts";
-import { releaseHold } from "#runtime/store/lock/lease-state.ts";
+import { holdModel } from "#runtime/lock/store/acquisition.ts";
+import { releaseHold } from "#runtime/lock/store/lease-state.ts";
 async function lockMode(): Promise<void> {
 	const vault = process.env["ARCHBOARD_TEST_LOCK_VAULT"];
 	if (!vault) {

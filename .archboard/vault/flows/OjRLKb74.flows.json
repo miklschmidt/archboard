@@ -453,7 +453,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/runtime/processes/layout-worker.ts",
+            "path": "packages/renderer/src/runtime/bun-renderer/processes/layout-worker.ts",
             "symbol": "layOutPicture"
           }
         },
@@ -501,7 +501,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+            "path": "packages/renderer/src/shared/engine/rules/layout-engine.ts",
             "symbol": "serveLayoutEngine"
           }
         },

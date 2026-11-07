@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	canonicalDynamicApprovalJson,
 	dynamicApprovalHashForCanonicalJson,
-} from "#shared/schemas/dynamic-approval/approval.ts";
+} from "#shared/dynamic-approval/schemas/approval.ts";
 import { DYNAMIC_APPROVAL_HASH_VECTORS } from "#tests/shared/support/dynamic-hash-vectors.ts";
 
 describe("dynamic approval canonical hash contract", () => {

@@ -1,14 +1,14 @@
-import { createWorkbenchThreadProfile } from "#runtime/rules/host/instructions.ts";
-import { WorkbenchExecutionContextSchema } from "#runtime/rules/host/context.ts";
+import { createWorkbenchThreadProfile } from "#runtime/host/rules/instructions.ts";
+import { WorkbenchExecutionContextSchema } from "#runtime/host/turn-input/rules/context.ts";
 import type {
 	WorkbenchContextCodec,
 	WorkbenchExecutionContext,
-} from "#runtime/protocol/host/context.ts";
-import type { WorkbenchInstructions } from "#runtime/protocol/host/instructions.ts";
+} from "#runtime/host/protocol/context.ts";
+import type { WorkbenchInstructions } from "#runtime/host/protocol/instructions.ts";
 import type {
 	WorkbenchVoicePolicy,
 	WorkbenchVoiceInput,
-} from "#runtime/protocol/host/context-source.ts";
+} from "#runtime/host/protocol/context-source.ts";
 
 const TEST_CONTEXT_CODEC: WorkbenchContextCodec = Object.freeze({
 	key: "test_host",

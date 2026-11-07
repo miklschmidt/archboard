@@ -1,7 +1,7 @@
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
-import type { BrowserCommand, BrowserSnapshot } from "#shared/schemas/browser/snapshot.ts";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
+import type { BrowserCommand, BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 
 // The queue carries a server OperationId, so the fixture model needs the complete
 // authority pair rather than the identity half alone.

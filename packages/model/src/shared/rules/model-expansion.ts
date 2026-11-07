@@ -1,7 +1,7 @@
 // What a reading opens beside its scope, and the control that a door or a frame wears for a live
 // reader. A module opened this way folds as a scope folds, so a frame is the end of its chain.
 
-import type { ChangeKind } from "#shared/rules/compare/variants.ts";
+import type { ChangeKind } from "#shared/compare/rules/variants.ts";
 import { containment, foldedScope } from "#shared/rules/module-fold.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
 

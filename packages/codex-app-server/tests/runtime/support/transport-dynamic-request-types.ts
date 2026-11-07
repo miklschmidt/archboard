@@ -1,4 +1,4 @@
-import type { DynamicServerRequest } from "#runtime/clients/transport-types.ts";
+import type { DynamicServerRequest } from "#runtime/transport/clients/transport-types.ts";
 
 type DynamicParams = DynamicServerRequest["params"];
 

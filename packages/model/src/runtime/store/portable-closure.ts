@@ -1,19 +1,19 @@
-import { retainedMigrationPreview } from "#runtime/operations/legacy-inventory/retained.ts";
+import { retainedMigrationPreview } from "#runtime/legacy-boards/reading/inventory/operations/retained.ts";
 import { git } from "@archboard/process/git";
-import { archiveReader } from "#runtime/store/model-archive-blobs.ts";
-import type { ArchitectureModel } from "#shared/schemas/model.ts";
+import { archiveReader } from "#runtime/canonical/archive/store/model-archive-blobs.ts";
+import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/model.ts";
 import { ArchitecturePortableBundleSchema } from "#shared/schemas/model-portable.ts";
-import { requireCompleteArchive } from "#runtime/store/model-publication.ts";
+import { requireCompleteArchive } from "#runtime/canonical/history/store/model-publication.ts";
 import {
 	readCheckpointInputs,
 	ArchiveError,
 	type ArchiveContext,
 	type CheckpointRecordSchema,
-} from "#runtime/store/model-archive.ts";
+} from "#runtime/canonical/archive/store/model-archive.ts";
 import { isDeepStrictEqual } from "node:util";
-import { decodeModel, discoveryFailure } from "#runtime/operations/read/model-read.ts";
-import { proposalBaseline, decodeProposal } from "#runtime/operations/proposals/read.ts";
-import { walkthroughDependencies } from "#runtime/operations/history/walkthrough-targets.ts";
+import { decodeModel, discoveryFailure } from "#runtime/canonical/read/operations/model-read.ts";
+import { proposalBaseline, decodeProposal } from "#runtime/canonical/proposals/operations/read.ts";
+import { walkthroughDependencies } from "#runtime/canonical/history/retained-reading/operations/walkthrough-targets.ts";
 type Record = ReturnType<typeof CheckpointRecordSchema.parse>;
 type Proposal = ArchitectureModel["proposals"][number];
 type Selection = Record["selection"];

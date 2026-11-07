@@ -2,7 +2,10 @@ import { createHash } from "node:crypto";
 import { lstatSync, readFileSync, readdirSync, type Dirent } from "node:fs";
 import { join } from "node:path";
 import { errorMessage } from "@archboard/diagnostics/errno";
-import type { ArchitectureModel, ModelDiagnostic } from "#shared/schemas/model.ts";
+import type {
+	ArchitectureModel,
+	ModelDiagnostic,
+} from "#shared/canonical-contracts/schemas/model.ts";
 
 /**
  * Identify required architecture inputs independently of unrelated vault files.

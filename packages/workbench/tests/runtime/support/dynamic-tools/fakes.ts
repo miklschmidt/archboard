@@ -6,7 +6,7 @@ import type {
 	EpochOperationRecord,
 	ThreadLinkTarget,
 	CodexWaitGraph,
-} from "#runtime/protocol/voice/extension.ts";
+} from "#runtime/voice/protocol/extension.ts";
 import { emptyManifest } from "@archboard/codex-realtime-voice/runtime";
 import type {
 	ReverseResponse,
@@ -22,7 +22,7 @@ import {
 	type TurnId,
 	createIdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
-import type { GeneralThreadToolName } from "#runtime/protocol/thread-tools/manifest.ts";
+import type { GeneralThreadToolName } from "#runtime/thread-tools/protocol/manifest.ts";
 import type {
 	CodexDynamicToolsOptions,
 	DynamicCallerAuthority,
@@ -31,8 +31,8 @@ import type {
 	DynamicThreadAuthorityPort,
 	DynamicToolApprovalDecision,
 	DynamicToolApprovalPort,
-} from "#runtime/protocol/dynamic-tools/contract.ts";
-import type { DynamicImmutableEffect } from "#runtime/protocol/dynamic-tools/effect-contract.ts";
+} from "#runtime/dynamic-tools/protocol/contract.ts";
+import type { DynamicImmutableEffect } from "#runtime/dynamic-tools/protocol/effect-contract.ts";
 import {
 	CALLER_WIRE_ID,
 	authorityToken,

@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/services/panes/registry.ts"
+    "path": "packages/workbench/src/server/panes/services/registry.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
@@ -34,7 +34,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/registry.ts",
+        "path": "packages/workbench/src/server/panes/services/registry.ts",
         "symbol": "resolvePane"
       },
       "id": "vKEsyHFk/vKEsyHFk#YHDPy2Y1",
@@ -48,7 +48,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/registry.ts",
+        "path": "packages/workbench/src/server/panes/services/registry.ts",
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/Oi6SBIAM#6kzjcG2u",

@@ -5,7 +5,7 @@
   "responsibility": "Publishes and fetches a checkpoint with its complete history",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/operations/history/publication.ts"
+    "path": "packages/model/src/runtime/canonical/history/operations/publication.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#EyYNaZT0",
@@ -17,7 +17,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/publication.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/publication.ts",
         "symbol": "publicationContext"
       },
       "id": "vKEsyHFk/0T9enjhi#KCxoznsN",
@@ -37,7 +37,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/publication.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/publication.ts",
         "symbol": "git"
       },
       "id": "vKEsyHFk/0T9enjhi#LfosB6s2",
@@ -50,7 +50,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/publication.ts",
+        "path": "packages/model/src/runtime/canonical/history/operations/publication.ts",
         "symbol": "readArchitectureCheckpoint"
       },
       "id": "vKEsyHFk#A1U73QNd",

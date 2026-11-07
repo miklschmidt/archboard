@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/store/model-state.ts"
+    "path": "packages/model/src/runtime/canonical/installation/store/model-state.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#YREYrbYW",
@@ -43,7 +43,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-state.ts",
+        "path": "packages/model/src/runtime/canonical/installation/store/model-state.ts",
         "symbol": "writeFileAtomic"
       },
       "id": "vKEsyHFk/0T9enjhi#ROJixHYk",
@@ -56,7 +56,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-state.ts",
+        "path": "packages/model/src/runtime/canonical/installation/store/model-state.ts",
         "symbol": "ArchiveError"
       },
       "id": "vKEsyHFk/0T9enjhi#2PHWJ0zL",
@@ -69,7 +69,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-state.ts",
+        "path": "packages/model/src/runtime/canonical/installation/store/model-state.ts",
         "symbol": "privateArchivePath"
       },
       "id": "vKEsyHFk/0T9enjhi#oX4usVcY",

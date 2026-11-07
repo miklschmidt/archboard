@@ -14,11 +14,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/processes/isolation.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-world/processes/isolation.ts",
         "symbol": "writeCliWrapper"
       },
       "id": "vKEsyHFk/IbGtfJE2#NJCua3tZ",
-      "to": "vKEsyHFk/IbGtfJE2#fRFvnVRE"
+      "to": "vKEsyHFk/XppR9owz#peyArgPx"
     }
   ]
 }

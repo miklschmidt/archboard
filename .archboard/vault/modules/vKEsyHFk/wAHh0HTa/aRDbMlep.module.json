@@ -6,7 +6,7 @@
   "description": "Defines the response shapes of the session's methods from the codex-protocol schemas and SESSION_PROTOCOL_METHODS, the identity kinds each result contains, which the adoption step collects.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-app-server/src/runtime/schemas/session-responses.ts"
+    "path": "packages/codex-app-server/src/runtime/session/schemas/session-responses.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/wAHh0HTa#aRDbMlep",

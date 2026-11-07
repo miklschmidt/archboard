@@ -34,7 +34,7 @@ const RENDERER_MODULE = "virtual:archboard-renderer";
 const RENDERER_SOURCES = [
 	"packages/renderer/src/shared",
 	"packages/renderer/src/ui",
-	"packages/renderer/src/runtime/processes/layout-worker.ts",
+	"packages/renderer/src/runtime/bun-renderer/processes/layout-worker.ts",
 	"packages/model/src/shared",
 	"packages/code-binding/src/shared",
 	"packages/timing/src",
@@ -186,18 +186,18 @@ const browserTestCache = {
 };
 
 // Corpus rendering and speed gates run only through the uncached benchmark task.
-const benchmarkTests = ["packages/renderer/tests/runtime/operations/blocks/wide-pictures.test.ts"];
+const benchmarkTests = ["packages/renderer/tests/runtime/blocks/operations/wide-pictures.test.ts"];
 
 const capacityTests = [
-	"packages/workbench/tests/runtime/operations/dynamic-tools/wire-capacity.test.ts",
-	"packages/codex-app-server/tests/runtime/clients/transport-write-capacity.test.ts",
+	"packages/workbench/tests/runtime/dynamic-tools/operations/wire-capacity.test.ts",
+	"packages/codex-app-server/tests/runtime/transport/clients/transport-write-capacity.test.ts",
 	"packages/codex-app-server/tests/shared/constants/app-server-capacity.test.ts",
 ];
 
 // A contended machine changes what these real programs answer: Chromium's exact bytes, and
 // whether rust-analyzer answers at all. They run after the parallel lanes, alone.
 const soloTests = [
-	"packages/renderer/tests/runtime/services/rasterizer/rasterizer.test.ts",
+	"packages/renderer/tests/runtime/rasterizer/services/rasterizer.test.ts",
 	"packages/code-intel/tests/runtime/processes/language-servers/rust-server.test.ts",
 ];
 
@@ -402,15 +402,16 @@ export default defineConfig({
 					"packages/process/tests",
 					"packages/codex-app-server/tests/runtime/processes",
 					"packages/codex-app-server/tests/runtime/store",
+					"packages/codex-app-server/tests/runtime/session/store",
 					"packages/codex-app-server/tests/runtime/services/diagnostics.test.ts",
 					"packages/codex-app-server/tests/runtime/services/executable.test.ts",
 					"packages/server-lifecycle/tests/runtime/store/pidfile.test.ts",
-					"packages/renderer/tests/runtime/processes/headless-chromium/startup.test.ts",
-					"packages/model/tests/runtime/operations/read/model-read.test.ts",
-					"packages/model/tests/runtime/operations/model-edit/structure.test.ts",
+					"packages/renderer/tests/runtime/headless-chromium/processes/startup.test.ts",
+					"packages/model/tests/runtime/canonical/read/operations/model-read.test.ts",
+					"packages/model/tests/runtime/canonical/edit/operations/structure.test.ts",
 					"packages/code-binding/tests/runtime/operations/resolution.test.ts",
-					"packages/workbench/tests/server/services/owner/production-initialization.test.ts",
-					"packages/workbench/tests/server/services/actions/dynamic-approval-sessions.test.ts",
+					"packages/workbench/tests/server/workbench-host/services/production-initialization.test.ts",
+					"packages/workbench/tests/server/actions/services/dynamic-approval-sessions.test.ts",
 					"apps/cli/tests/cli/operations/vault/language-server-configuration.test.ts",
 					"tests/system/models/model-proposals.test.ts",
 					"tests/system/models/model-corrections.test.ts",

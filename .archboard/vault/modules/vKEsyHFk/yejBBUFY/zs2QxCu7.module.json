@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/state/agent-setup"
+    "path": "packages/workbench/src/ui/agent-setup/state"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#zs2QxCu7",
@@ -36,7 +36,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+        "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
         "symbol": "createConversation"
       },
       "id": "vKEsyHFk/yejBBUFY#FWzvKaC4",
@@ -49,7 +49,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+        "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
         "symbol": "startVoice"
       },
       "id": "vKEsyHFk/yejBBUFY#UBmrpsBg",

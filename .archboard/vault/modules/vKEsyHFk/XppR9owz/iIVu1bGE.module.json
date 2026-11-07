@@ -33,23 +33,6 @@
   ],
   "outgoing": [
     {
-      "order": 2000,
-      "kind": "call",
-      "label": "argv",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
-        "symbol": "runCliWith"
-      },
-      "id": "vKEsyHFk/XppR9owz#WUygSWX0",
-      "to": "vKEsyHFk/XppR9owz#PQcK5dF2"
-    },
-    {
       "order": 48000,
       "kind": "call",
       "label": "its contract",
@@ -122,6 +105,36 @@
       },
       "id": "vKEsyHFk/XppR9owz#yiZPCy4w",
       "to": "vKEsyHFk/XppR9owz#twkUdQwl"
+    },
+    {
+      "order": 7000,
+      "kind": "call",
+      "label": "argv",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "symbol": "runCliWith"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0",
+      "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT"
+    },
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "registryOf, for the contract audit",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "symbol": "registryOf"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#Ml9zYVzq",
+      "to": "vKEsyHFk/nAmiQ3Vc#45uNvMac"
     }
   ]
 }

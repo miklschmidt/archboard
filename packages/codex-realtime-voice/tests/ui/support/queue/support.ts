@@ -2,14 +2,14 @@
 // authority, snapshots and transport states. The transport double is in
 // `fake-transport.ts`.
 
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
 import type {
 	BrowserQueue,
 	BrowserSnapshot,
 	BrowserThreadLink,
-} from "#shared/schemas/browser/snapshot.ts";
+} from "#shared/browser/schemas/snapshot.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import type { WorkbenchQueueEntry } from "#ui/state/queue/contracts.ts";
+import type { WorkbenchQueueEntry } from "#ui/queue/state/contracts.ts";
 import type {
 	WorkbenchCommandIntent,
 	WorkbenchCommandName,
@@ -17,7 +17,7 @@ import type {
 	WorkbenchCommandTarget,
 	WorkbenchTransportCapabilities,
 	WorkbenchTransportState,
-} from "#ui/state/queue/transport-port.ts";
+} from "#ui/queue/state/transport-port.ts";
 
 type ExecutableLink = Extract<BrowserThreadLink, { readonly state: "executable" }>;
 type QueueStatus = BrowserQueue["status"];

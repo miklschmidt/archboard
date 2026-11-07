@@ -1,5 +1,6 @@
-// The text that follows a move: `#` aliases of the same workspace, the relative paths of
-// `new URL(…, import.meta.url)` and `join(import.meta.dir, …)`, the `exports` of a
+// The text that follows a move: `#` aliases of the same workspace, also the static folder of one
+// in a template literal, the relative paths of `new URL(…, import.meta.url)` and
+// `join(import.meta.dir, …)`, relative imports outside a workspace, the `exports` of a
 // workspace, and repository paths in code and in the config and doc files that name them.
 import { posix } from "node:path";
 
@@ -19,6 +20,10 @@ interface FileMove {
 }
 
 const ALIAS = /(["'`])(#[\w\-./@]+)(\?[^"'`]*)?\1/gu;
+/** The static folder of a `#` specifier in a template literal: `` `#a/b/${name}.ts` `` names `#a/b`. */
+const TEMPLATE_ALIAS = /(`)(#[\w\-./@]*)\/(?=[\w\-.@]*\$\{)/gu;
+/** A relative import or export specifier, which is code only outside a workspace. */
+const IMPORT_FORM = /(\b(?:from|import)\s*\(?\s*)(["'])(\.\.?\/[^"'`$]+)\2/gu;
 const URL_FORM = /(new URL\(\s*)(["'])([^"'`$:]+)\2(?=\s*,\s*import\.meta\.url\s*\))/gu;
 const JOIN_FORM =
 	/(\b(?:path\.)?(?:join|resolve)\(\s*import\.meta\.dir)((?:\s*,\s*(["'])[^"'`$:]*\3)+)/gu;
@@ -86,7 +91,20 @@ function rewriteAliases(text: string, file: FileMove, map: MoveMap, problems: st
 					changes += 1;
 					return `${quote}${alias}${String(query)}${quote}`;
 				});
-	return { text: rewritten, changes };
+	if (workspace === undefined) return { text: rewritten, changes };
+	const templated = rewritten.replace(TEMPLATE_ALIAS, (whole, tick: string, folder: string) => {
+		const target = aliasTarget(workspace, folder);
+		const next = map.path(target);
+		if (next === undefined) {
+			problems.push(`${file.from}: \`${folder}/\${…}\` names ${target}, whose files part`);
+			return whole;
+		}
+		const alias = next === target ? undefined : aliasOf(workspace, `${next}/x`);
+		if (alias === undefined) return whole;
+		changes += 1;
+		return `${tick}${alias.slice(0, -1)}`;
+	});
+	return { text: templated, changes };
 }
 
 /**
@@ -158,9 +176,10 @@ function styled(old: string, next: string): string {
 
 /**
  * Rewrite relative paths: `new URL(…, import.meta.url)` and the literal parts of
- * `join(import.meta.dir, …)`, for a file that moved or a path whose target moved. Lint refuses
- * relative imports in a workspace, so a relative specifier in a workspace file is fixture text,
- * which this leaves alone.
+ * `join(import.meta.dir, …)`, for a file that moved or a path whose target moved, and relative
+ * imports in a file outside a workspace, such as the site's scripts. Lint refuses relative
+ * imports in a workspace, so a relative specifier in a workspace file is fixture text, which
+ * this leaves alone.
  * @param text The file's text.
  * @param file The file, before and after the moves.
  * @param map The moves.
@@ -205,7 +224,9 @@ function rewriteRelatives(
 		return `${head}${segments.map((segment) => `, ${quote}${segment}${quote}`).join("")}`;
 	};
 	const rewritten = text.replace(URL_FORM, single).replace(JOIN_FORM, joinedArgs);
-	return { text: rewritten, changes };
+	const code =
+		workspaceOf(file.from) === undefined ? rewritten.replace(IMPORT_FORM, single) : rewritten;
+	return { text: code, changes };
 }
 
 /**

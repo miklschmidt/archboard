@@ -9,7 +9,7 @@ import {
 	ModelDiagnosticSchema,
 	ModelRevisionSchema,
 	ModelRecoverySchema,
-} from "#shared/schemas/model.ts";
+} from "#shared/canonical-contracts/schemas/model.ts";
 
 const LegacyIdentitySchema = z.strictObject({
 	id: QualifiedSubjectIdSchema,

@@ -1,9 +1,12 @@
 import { EventEmitter } from "node:events";
 import { PassThrough, Writable } from "node:stream";
 
-import { createCodexTransport } from "#runtime/clients/transport.ts";
-import { type CodexTransport, type CodexTransportChild } from "#runtime/clients/transport-types.ts";
-import type { DynamicDispatcherRegistration } from "#runtime/clients/transport-types.ts";
+import { createCodexTransport } from "#runtime/transport/clients/transport.ts";
+import {
+	type CodexTransport,
+	type CodexTransportChild,
+} from "#runtime/transport/clients/transport-types.ts";
+import type { DynamicDispatcherRegistration } from "#runtime/transport/clients/transport-types.ts";
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,

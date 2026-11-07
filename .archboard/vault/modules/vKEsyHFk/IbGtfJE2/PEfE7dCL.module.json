@@ -5,25 +5,12 @@
   "responsibility": "Starts this checkout's server on a free port, with the run's registry and no vault of its own, and owns its shutdown",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/processes/server.ts"
+    "path": "packages/skills/src/runtime/evaluation/run-world/processes/server.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
   "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
   "outgoing": [
-    {
-      "order": 46000,
-      "kind": "dependency",
-      "label": "own each evaluation process group",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/processes/process.ts",
-        "symbol": "createCodexProcessGroupOperations"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#VJXR3kbp",
-      "to": "vKEsyHFk#R3jPedS8"
-    },
     {
       "order": 9000,
       "kind": "call",
@@ -31,11 +18,24 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/processes/server.ts",
+        "path": "packages/skills/src/runtime/evaluation/run-world/processes/server.ts",
         "symbol": "startServer"
       },
       "id": "vKEsyHFk/vKEsyHFk#SoK3eMhj",
       "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+    },
+    {
+      "order": 46000,
+      "kind": "dependency",
+      "label": "own each evaluation process group",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/processes/process.ts",
+        "symbol": "createCodexProcessGroupOperations"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#VJXR3kbp",
+      "to": "vKEsyHFk#R3jPedS8"
     }
   ]
 }

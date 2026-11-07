@@ -6,7 +6,7 @@
   "description": "Keeps the talk with the model, the vault check and, when record was given --against, the variant every picture of it is read against, so a replay draws the same comparison. It starts Chromium with --disable-gpu, so the page paints on the CPU painter.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts"
+    "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#jQpIqcDx",
@@ -20,7 +20,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "DevTools.readBlobTo"
       },
       "id": "vKEsyHFk/SMjRfwN3#2fcZLCiQ",
@@ -37,7 +37,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "drive"
       },
       "id": "vKEsyHFk/SMjRfwN3#m9ReACWz",
@@ -50,7 +50,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "writeTalk"
       },
       "id": "vKEsyHFk/SMjRfwN3#fiurAdpc",
@@ -67,24 +67,11 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "renderTalk"
       },
       "id": "vKEsyHFk/SMjRfwN3#jAnbZCzu",
       "to": "vKEsyHFk/SMjRfwN3#EWBbxckL"
-    },
-    {
-      "order": 42000,
-      "kind": "data",
-      "label": "keep the recorded talk and voice",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
-        "symbol": "writeTalk"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#SGwsCHPo",
-      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
     },
     {
       "order": 51000,
@@ -93,24 +80,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "startBrowser"
       },
       "id": "vKEsyHFk/SMjRfwN3#c4z5J6ZL",
       "to": "vKEsyHFk/SMjRfwN3#L1cYIenF"
-    },
-    {
-      "order": 70047,
-      "kind": "call",
-      "label": "record and replay exact walkthroughs",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
-        "symbol": "WalkthroughRecordingError"
-      },
-      "id": "vKEsyHFk#YAA7XugC",
-      "to": "vKEsyHFk/XppR9owz#XAJYaUnv"
     },
     {
       "order": 980070,
@@ -119,7 +93,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "canonicalRecordingModel"
       },
       "id": "vKEsyHFk#109Kq4Cc",

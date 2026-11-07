@@ -2,18 +2,18 @@
 // authority, so a fixture the contract would refuse fails here instead of
 // proving something about a shape the server can never publish.
 
-import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/schemas/browser/spoken-approval.ts";
-import { createCodexBrowserModel } from "#shared/schemas/browser/model.ts";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
+import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 
 import type {
 	BrowserApproval,
 	BrowserSnapshot,
 	DeliveryOutcome,
-} from "#shared/schemas/browser/snapshot.ts";
-import type { BrowserDynamicApproval } from "#shared/schemas/dynamic-approval/approval.ts";
+} from "#shared/browser/schemas/snapshot.ts";
+import type { BrowserDynamicApproval } from "#shared/dynamic-approval/schemas/approval.ts";
 
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import type { WorkbenchApprovalsInput } from "#ui/state/approvals/contracts.ts";
+import type { WorkbenchApprovalsInput } from "#ui/approvals/state/contracts.ts";
 import type {
 	ApprovalCommandDraft,
 	WorkbenchApprovalsTransportPort,
@@ -24,7 +24,7 @@ import type {
 	WorkbenchTransportCapabilities,
 	WorkbenchTransportErrorCode,
 	WorkbenchTransportState,
-} from "#ui/state/approvals/transport-port.ts";
+} from "#ui/approvals/state/transport-port.ts";
 
 const authorities = createIdentityAuthorities();
 const authority = authorities.identity;

@@ -1,4 +1,4 @@
-import type { BrowserSnapshot, DeliveryOutcome } from "#shared/schemas/browser/snapshot.ts";
+import type { BrowserSnapshot, DeliveryOutcome } from "#shared/browser/schemas/snapshot.ts";
 import type { BrowserCommandId, TurnId } from "@archboard/codex-app-server/identity";
 import type { AnswerSdp } from "#shared/protocol/realtime-contract.ts";
 

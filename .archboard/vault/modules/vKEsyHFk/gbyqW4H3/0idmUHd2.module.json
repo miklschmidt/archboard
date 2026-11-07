@@ -10,7 +10,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#0idmUHd2",
-  "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
+  "parent": "vKEsyHFk#oKj5LOcd",
   "outgoing": [
     {
       "order": 56000,
@@ -50,6 +50,19 @@
       },
       "id": "vKEsyHFk#PLVZZKxC",
       "to": "vKEsyHFk#w44DwfpV"
+    },
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "the chart's boxes as the layout's nodes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-flows/src/flowchart/graph.rs",
+        "symbol": "GraphNode"
+      },
+      "to": "vKEsyHFk#nAfoKoOs",
+      "id": "vKEsyHFk#fXxVxFvc"
     }
   ]
 }

@@ -1,4 +1,4 @@
-import type { ApprovalOwnerView } from "#runtime/services/approvals/contract.ts";
+import type { ApprovalOwnerView } from "#runtime/approvals/services/contract.ts";
 import type {
 	ApprovalId,
 	ChildEpoch,

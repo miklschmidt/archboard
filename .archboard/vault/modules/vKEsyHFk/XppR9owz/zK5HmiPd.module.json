@@ -42,15 +42,15 @@
     {
       "order": 16000,
       "kind": "data",
-      "label": "keep a talk; read one to render again",
+      "label": "read a kept talk to render again",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
-        "symbol": "writeTalk"
+        "path": "apps/cli/src/cli/operations/model/replay.ts",
+        "symbol": "readTalkOrRefuse"
       },
       "id": "vKEsyHFk/vKEsyHFk#OPwTCiKt",
-      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
+      "to": "vKEsyHFk/SMjRfwN3#XtzfRQkG"
     }
   ]
 }

@@ -5,10 +5,10 @@
   "responsibility": "Lays the model out as blocks: ranks the cards of each block, packs blocks and routes the lines between them",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-layout/src/blocks/mod.rs"
+    "path": "crates/archboard-layout/src/blocks"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#tppVDaSZ",
-  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "parent": "vKEsyHFk/gbyqW4H3#ld6jjHND",
   "outgoing": []
 }

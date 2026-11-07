@@ -6,7 +6,7 @@
   "description": "It keeps one Semantic context publisher per tab session and announces each event it publishes. A settled change's brief goes to the workhorse of the model's checkout, withheld once the brief is stale. The voice hears the news of a model on screen, as speech when it stops the narration, and nothing of a model no pane shows. The coordinator hears only what an agent outside the session did. A focus or selection the user made carries a topic, so a later one replaces it while it waits.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/services/host/archboard-announcements.ts"
+    "path": "packages/workbench/src/server/host/services/archboard-announcements.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
@@ -25,7 +25,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+        "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
         "symbol": "announce"
       },
       "id": "vKEsyHFk/qKGcB6vZ#FQ6Dm2Go",
@@ -38,7 +38,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+        "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
         "symbol": "canonicalContextFromBrief"
       },
       "id": "vKEsyHFk#uTLOYjNB",
@@ -51,7 +51,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+        "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
         "symbol": "announce"
       },
       "id": "vKEsyHFk/9ncuT5DP#GFyFbH49",

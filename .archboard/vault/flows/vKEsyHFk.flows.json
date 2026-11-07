@@ -11,7 +11,7 @@
         "vKEsyHFk/vKEsyHFk#TBnOCNx2",
         "vKEsyHFk/vKEsyHFk#cPOdAA3f",
         "vKEsyHFk/vKEsyHFk#t7W7wJHv",
-        "vKEsyHFk/vKEsyHFk#VgzgNAGW",
+        "vKEsyHFk/SMjRfwN3#XtzfRQkG",
         "vKEsyHFk/vKEsyHFk#nugpFSIX"
       ],
       "steps": [
@@ -42,7 +42,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/walkthrough/src/runtime/services/ffmpeg.ts",
+            "path": "packages/walkthrough/src/runtime/video-encoding/services/ffmpeg.ts",
             "symbol": "probeFfmpeg"
           }
         },
@@ -81,7 +81,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+                    "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts",
                     "symbol": "spawnChromium"
                   }
                 },
@@ -93,7 +93,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+                    "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
                     "symbol": "recordingPageUrl"
                   }
                 },
@@ -122,7 +122,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
+                        "path": "packages/walkthrough/src/runtime/recorder/clients/recording-page.ts",
                         "symbol": "finished"
                       }
                     },
@@ -143,7 +143,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
+                    "path": "packages/walkthrough/src/runtime/recorder/clients/recording-page.ts",
                     "symbol": "logOf"
                   }
                 },
@@ -155,7 +155,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+                    "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
                     "symbol": "pageHandle"
                   }
                 },
@@ -167,19 +167,19 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+                    "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
                     "symbol": "talkedWith"
                   }
                 },
                 {
                   "id": "vKEsyHFk/vKEsyHFk#bauTjH5g",
                   "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
-                  "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW",
+                  "to": "vKEsyHFk/SMjRfwN3#XtzfRQkG",
                   "label": "Keep talk.json and voice.wav in one rename",
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+                    "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
                     "symbol": "writeTalk"
                   }
                 },
@@ -191,7 +191,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+                    "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
                     "symbol": "startBrowsers"
                   }
                 },
@@ -203,7 +203,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+                    "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
                     "symbol": "replayUrl"
                   }
                 },
@@ -215,7 +215,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+                    "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
                     "symbol": "openVideoEncoder"
                   }
                 },
@@ -232,7 +232,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+                        "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
                         "symbol": "drawFrames"
                       }
                     },
@@ -251,7 +251,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/walkthrough/src/runtime/operations/frame-order.ts",
+                        "path": "packages/walkthrough/src/runtime/recorder/operations/frame-order.ts",
                         "symbol": "writeFrame"
                       }
                     }
@@ -265,7 +265,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+                    "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
                     "symbol": "stopAll"
                   }
                 },
@@ -277,7 +277,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+                    "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
                     "symbol": "renderTalk"
                   }
                 },

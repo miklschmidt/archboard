@@ -93,7 +93,7 @@
 			"groups": ["agent"],
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/server/services/owner"
+				"path": "packages/workbench/src/server/workbench-host/services"
 			},
 			"drillDown": {
 				"board": "Codex realtime voice",
@@ -129,7 +129,7 @@
 			"groups": ["writes"],
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/model/src/runtime/store/lock"
+				"path": "packages/model/src/runtime/lock/store"
 			}
 		},
 		{
@@ -196,7 +196,7 @@
 			"parent": "nU6dNHBE",
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/server/services/request/vault.ts"
+				"path": "packages/workbench/src/server/request/services/vault.ts"
 			}
 		},
 		{
@@ -371,7 +371,7 @@
 			"emphasis": "hero",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/server/services/panes/registry.ts",
+				"path": "packages/workbench/src/server/panes/services/registry.ts",
 				"symbol": "sendToVaultClients"
 			}
 		},
@@ -432,8 +432,8 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/model/src/runtime/operations/write/write.ts",
-				"symbol": "withBoardLock"
+				"path": "packages/model/src/runtime/canonical/installation/store/model-state.ts",
+				"symbol": "holdModel"
 			}
 		},
 		{
@@ -502,7 +502,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/server/services/owner/wiring.ts",
+				"path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
 				"symbol": "semanticChangeFeed"
 			}
 		},
@@ -516,7 +516,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/server/services/owner/wiring.ts",
+				"path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
 				"symbol": "tabSessionOf"
 			}
 		},
@@ -558,7 +558,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/workbench/src/server/services/panes/registry.ts",
+				"path": "packages/workbench/src/server/panes/services/registry.ts",
 				"symbol": "watchBoardLocks"
 			}
 		},

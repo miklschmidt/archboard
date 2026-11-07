@@ -188,15 +188,11 @@
 			// (TASK-381). Nothing here reads the browser's clocks directly.
 			"files": [
 				// The canvas of apps/web and the subtitles of the workbench. Behavior first
-				// (ADR 0075), each is one behavior folder. Until each moves (TASK-582.03), each
-				// is also its folder below each role of the ui area.
+				// (ADR 0075), each is one behavior folder. Until the canvas moves (TASK-582.03),
+				// it is also its folder below each role of the ui area.
 				"apps/web/src/ui/architecture-drawing/canvas/**",
 				"apps/web/src/ui/{api,clients,components,constants,hooks,rules,state,workers}/canvas/**",
 				"packages/workbench/src/ui/workbench-client/subtitles/**",
-				"packages/workbench/src/ui/components/subtitles/**",
-				"packages/workbench/src/ui/hooks/subtitles/**",
-				"packages/workbench/src/ui/rules/subtitles/**",
-				"packages/workbench/src/ui/state/subtitles/**",
 			],
 			"rules": {
 				"no-restricted-globals": [
@@ -330,10 +326,10 @@
 				"packages/ui-kit/src/ui/components/shadcn/toggle-group.tsx",
 				"packages/ui-kit/src/ui/components/shadcn/toggle.tsx",
 				"packages/ui-kit/src/ui/components/shadcn/tooltip.tsx",
-				// TASK-150.05: official assistant-ui base-nova registry source (packages/workbench/src/ui/components/thread/README.md)
-				"packages/workbench/src/ui/components/thread/markdown-text.tsx",
-				"packages/workbench/src/ui/components/thread/tooltip-icon-button.tsx",
-				"packages/workbench/src/ui/hooks/thread/use-copy-to-clipboard.ts",
+				// TASK-150.05: official assistant-ui base-nova registry source (packages/workbench/src/ui/workbench-client/thread/components/README.md)
+				"packages/workbench/src/ui/workbench-client/thread/components/markdown-text.tsx",
+				"packages/workbench/src/ui/workbench-client/thread/components/tooltip-icon-button.tsx",
+				"packages/workbench/src/ui/workbench-client/thread/hooks/use-copy-to-clipboard.ts",
 			],
 			"rules": {
 				"complexity": "off",

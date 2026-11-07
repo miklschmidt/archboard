@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start"
+    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#6Jjha6LN",

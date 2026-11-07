@@ -5,7 +5,7 @@
   "responsibility": "Owns the live voice of a tab: start, stop, level and mute",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/state/voice-session/session.ts"
+    "path": "packages/workbench/src/ui/voice-session/state/session.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#rG1FeuCg",
@@ -22,7 +22,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/voice/realtime-actions.ts",
+        "path": "packages/codex-realtime-voice/src/server/voice/services/realtime-actions.ts",
         "symbol": "createOffer"
       },
       "id": "vKEsyHFk/qKGcB6vZ#ntLLD7Df",
@@ -35,7 +35,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/state/voice-session/session.ts",
+        "path": "packages/workbench/src/ui/voice-session/state/session.ts",
         "symbol": "capabilities"
       },
       "id": "vKEsyHFk/yejBBUFY#DTRtWKab",
@@ -48,7 +48,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/state/voice-session/session.ts",
+        "path": "packages/workbench/src/ui/voice-session/state/session.ts",
         "symbol": "start"
       },
       "id": "vKEsyHFk/yejBBUFY#bFY85rkM",

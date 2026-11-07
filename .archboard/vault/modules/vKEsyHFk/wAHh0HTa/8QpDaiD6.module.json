@@ -6,7 +6,7 @@
   "description": "Distinguishes invalid inputs and failures that were not delivered from mutations whose remote outcome is unknown and requires inspection.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-app-server/src/runtime/services/session-failures.ts"
+    "path": "packages/codex-app-server/src/runtime/session/services/session-failures.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/wAHh0HTa#8QpDaiD6",

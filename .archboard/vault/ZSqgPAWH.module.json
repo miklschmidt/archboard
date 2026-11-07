@@ -5,7 +5,7 @@
   "responsibility": "Starts, reuses and replaces the fast thread of a tab session and hears what it does",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator"
+    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/services"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#ZSqgPAWH",
@@ -18,7 +18,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/start.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/services/start.ts",
         "symbol": "threadStart"
       },
       "id": "vKEsyHFk/qKGcB6vZ#uWKB5oF9",
@@ -31,7 +31,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/coordinator.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/services/coordinator.ts",
         "symbol": "captureThreadProfile"
       },
       "id": "vKEsyHFk/qKGcB6vZ#QEitA6l5",
@@ -44,7 +44,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/start.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/services/start.ts",
         "symbol": "threadStart"
       },
       "id": "vKEsyHFk/9ncuT5DP#XAd3chIR",
@@ -58,7 +58,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/coordinator.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/services/coordinator.ts",
         "symbol": "unload"
       },
       "id": "vKEsyHFk/qKGcB6vZ#cDFB96mF",
@@ -71,7 +71,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/model.ts",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/services/model.ts",
         "symbol": "createCoordinatorThreadStartParams"
       },
       "id": "vKEsyHFk/qKGcB6vZ#X6q6P132",

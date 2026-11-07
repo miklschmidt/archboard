@@ -5,7 +5,7 @@
   "responsibility": "The dock: the agent's state, Talk, the composer and the tab's workhorses",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx"
+    "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#UoblaIEv",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx",
         "symbol": "showConversation"
       },
       "id": "vKEsyHFk/yejBBUFY#4FfFQ9ag",
@@ -31,11 +31,11 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx",
         "symbol": "SubtitlesToggle"
       },
-      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc",
-      "id": "vKEsyHFk#tJGMgOeT"
+      "id": "vKEsyHFk#tJGMgOeT",
+      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
     },
     {
       "order": 980230,
@@ -44,11 +44,11 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx",
         "symbol": "VoiceControl"
       },
-      "to": "vKEsyHFk#ZTh8T7Ym",
-      "id": "vKEsyHFk#pzWBfyor"
+      "id": "vKEsyHFk#pzWBfyor",
+      "to": "vKEsyHFk#ZTh8T7Ym"
     }
   ]
 }

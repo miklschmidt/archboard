@@ -3,7 +3,7 @@ import { CODEX_APP_SERVER_CAPACITY } from "#shared/constants/app-server-capacity
 import {
 	CodexTransportUsageError,
 	CodexTransportWriteError,
-} from "#runtime/clients/transport-errors.ts";
+} from "#runtime/transport/clients/transport-errors.ts";
 
 export type WireId = string | number;
 

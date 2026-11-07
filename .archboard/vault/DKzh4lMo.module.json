@@ -6,10 +6,10 @@
   "description": "One derivation serves the reader, model inspect and a comparison. Nothing here is authored or stored.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/shared/rules/inspect/container-interface.ts"
+    "path": "packages/model/src/shared/inspect/rules/container-interface.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#DKzh4lMo",
-  "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
   "outgoing": []
 }

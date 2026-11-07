@@ -45,6 +45,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#Ggbqp1CU",
       "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "order": 66000,
+      "kind": "call",
+      "label": "the checkouts the registry knows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
+        "symbol": "listRegistry"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#qwdogTBE",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     }
   ]
 }

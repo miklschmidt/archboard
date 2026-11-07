@@ -5,7 +5,7 @@
   "responsibility": "Reopens a checkpoint or a recorded state as one exact reading, and shapes the answer of each history operation",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/operations/history"
+    "path": "packages/model/src/runtime/canonical/history/retained-reading"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#v5jpAVBo",
@@ -18,7 +18,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/result.ts",
+        "path": "packages/model/src/runtime/canonical/history/retained-reading/operations/result.ts",
         "symbol": "errorMessage"
       },
       "id": "vKEsyHFk#PxGHOuMG",
@@ -30,7 +30,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/result.ts",
+        "path": "packages/model/src/runtime/canonical/history/retained-reading/operations/result.ts",
         "symbol": "ArchitectureModelRead"
       },
       "id": "vKEsyHFk/0T9enjhi#fupHXbVx",
@@ -43,7 +43,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/read.ts",
+        "path": "packages/model/src/runtime/canonical/history/retained-reading/operations/read.ts",
         "symbol": "recordedSelection"
       },
       "id": "vKEsyHFk/0T9enjhi#Zf3j7TZc",
@@ -56,7 +56,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/read.ts",
+        "path": "packages/model/src/runtime/canonical/history/retained-reading/operations/read.ts",
         "symbol": "retainedMigrationPreview"
       },
       "id": "vKEsyHFk/0T9enjhi#T1wYjUBf",
@@ -69,24 +69,11 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/read.ts",
+        "path": "packages/model/src/runtime/canonical/history/retained-reading/operations/read.ts",
         "symbol": "requireCompleteArchive"
       },
       "id": "vKEsyHFk#Rutvvekt",
       "to": "vKEsyHFk/0T9enjhi#yEqHs86l"
-    },
-    {
-      "order": 980040,
-      "kind": "call",
-      "label": "install the first model",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/operations/history/initialize-model.ts",
-        "symbol": "installArchitectureModel"
-      },
-      "id": "vKEsyHFk#BbwtsMPQ",
-      "to": "vKEsyHFk/0T9enjhi#2gFwMLTT"
     }
   ]
 }

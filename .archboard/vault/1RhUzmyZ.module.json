@@ -5,7 +5,7 @@
   "responsibility": "Writes and reads the signed checkpoint objects of the independent archive",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/store/model-archive.ts"
+    "path": "packages/model/src/runtime/canonical/archive/store/model-archive.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#1RhUzmyZ",
@@ -17,7 +17,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-archive.ts",
+        "path": "packages/model/src/runtime/canonical/archive/store/model-archive.ts",
         "symbol": "ArchitectureCheckpointSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#1RheXFhl",
@@ -29,7 +29,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-archive.ts",
+        "path": "packages/model/src/runtime/canonical/archive/store/model-archive.ts",
         "symbol": "git"
       },
       "id": "vKEsyHFk/0T9enjhi#WjLC9RCr",
@@ -42,7 +42,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-archive.ts",
+        "path": "packages/model/src/runtime/canonical/archive/store/model-archive.ts",
         "symbol": "RecordedModuleEditSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#2fr60kVw",
@@ -55,7 +55,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-archive-location.ts",
+        "path": "packages/model/src/runtime/canonical/archive/store/model-archive-location.ts",
         "symbol": "archiveContext"
       },
       "id": "vKEsyHFk/0T9enjhi#QrFo5jjd",
@@ -68,7 +68,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-archive.ts",
+        "path": "packages/model/src/runtime/canonical/archive/store/model-archive.ts",
         "symbol": "captureBoundSources"
       },
       "id": "vKEsyHFk/0T9enjhi#kn7RIsa6",
@@ -82,7 +82,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/store/model-archive.ts",
+        "path": "packages/model/src/runtime/canonical/archive/store/model-archive.ts",
         "symbol": "checkpointBlobs"
       },
       "id": "vKEsyHFk/0T9enjhi#108U3Rhl",
