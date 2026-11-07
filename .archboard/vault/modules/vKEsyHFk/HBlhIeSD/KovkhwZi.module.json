@@ -2,7 +2,11 @@
   "order": 31001,
   "name": "Code checks on request",
   "kind": "module",
-  "responsibility": "Runs the code check, locality and footprint when somebody asks, as checkout work, and keeps the last code findings in memory.",
+  "responsibility": "Runs the code check, locality and footprint when somebody asks, as checkout work, keeps the last code findings in memory, and quotes the source excerpt of a remembered piece of evidence.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/http/handlers/code-checks"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#KovkhwZi",
   "parent": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
@@ -27,9 +31,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/http/handlers/code-checks"
-  }
+  "outgoing": []
 }
