@@ -29,7 +29,12 @@ async function freePort(): Promise<number> {
 	return address.port;
 }
 
-const env = { ...process.env, ARCHBOARD_URL: `http://127.0.0.1:${String(await freePort())}` };
+// Workbench agents disable auto-start for their host server. This stage owns its server.
+const env = {
+	...process.env,
+	ARCHBOARD_URL: `http://127.0.0.1:${String(await freePort())}`,
+	ARCHBOARD_NO_AUTOSTART: "0",
+};
 // stdout carries the JSON result. stderr carries the lines a person reads.
 const check = spawn(archboard, ["check"], { cwd: root, env, stdio: ["ignore", "ignore", "pipe"] });
 const closed = new Promise<number>((resolve) => {
