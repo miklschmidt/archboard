@@ -113,7 +113,7 @@ function SourceLine(props: {
 		<>
 			<span
 				aria-hidden="true"
-				className="text-muted-foreground/70 inline-block w-12 shrink-0 pr-4 text-right select-none"
+				className="text-muted-foreground inline-block w-12 shrink-0 pr-4 text-right select-none"
 			>
 				{number}
 			</span>

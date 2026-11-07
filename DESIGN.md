@@ -572,7 +572,7 @@ The card is a Control Face with `shadow-raised`, 4px corners and an inset ring o
 
 With several pieces of evidence, each piece is a key that shows its file and line, and it chooses the source beside the card.
 
-Beside the plate, the source of the evidence stands on the Well Floor with 6px corners and an inset ring of 1px. Its caption holds the path in mono and the kind of evidence. Under it stand the evidence line and up to three lines on each side of it, in mono with their numbers in a quieter ink. The evidence line takes Changed Orange at 16% with a 2px edge of Changed Orange at its start. A finding with no evidence says that it names no line. While the lines load, the well says `Reading the source…`. If the server has no lines or fails, the well says `Source unavailable.` and the card stays complete.
+Beside the plate, the source of the evidence stands on the Well Floor with 6px corners and an inset ring of 1px. Its caption holds the path in mono and the kind of evidence. Under it stand the evidence line and up to three lines on each side of it, in mono with their numbers in muted ink. The evidence line takes Changed Orange at 16% with a 2px edge of Changed Orange at its start. A finding with no evidence says that it names no line. While the lines load, the well says `Reading the source…`. If the server has no lines or fails, the well says `Source unavailable.` and the card stays complete.
 
 ### Right panel
 
