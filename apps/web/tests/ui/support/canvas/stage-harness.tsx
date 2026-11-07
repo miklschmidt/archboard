@@ -9,11 +9,14 @@ import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import { type PaneChrome, PaneChromeContext } from "#ui/components/canvas/PaneChrome.tsx";
-import { usePaneChrome } from "#ui/hooks/canvas/use-pane-chrome.ts";
-import { PaneVaultContext } from "#ui/state/canvas/pane-vault.ts";
-import { CanvasStage } from "#ui/components/canvas/CanvasStage.tsx";
-import { type SemanticPaneReading } from "#ui/rules/canvas/reading/address.ts";
+import {
+	type PaneChrome,
+	PaneChromeContext,
+} from "#ui/architecture-drawing/canvas/presentation/components/PaneChrome.tsx";
+import { usePaneChrome } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts";
+import { PaneVaultContext } from "#ui/architecture-drawing/canvas/pane-vault/state/pane-vault.ts";
+import { CanvasStage } from "#ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx";
+import { type SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 
 import {
 	server,

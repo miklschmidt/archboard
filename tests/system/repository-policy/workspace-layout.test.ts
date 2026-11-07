@@ -87,12 +87,6 @@ const AREAS = new Set(["cli", "runtime", "server", "shared", "ui"]);
  * test fails for a listed tree that breaks the rule no more, and the last move removes the list.
  */
 const ROLE_FIRST_TREES: readonly string[] = [
-	"apps/cli/src/cli",
-	"apps/cli/tests/cli",
-	"apps/server/src/server",
-	"apps/server/tests/server",
-	"apps/web/src/ui",
-	"apps/web/tests/ui",
 	"apps/workbench-example/src/server",
 	"apps/workbench-example/src/ui",
 	"apps/workbench-example/tests/ui",

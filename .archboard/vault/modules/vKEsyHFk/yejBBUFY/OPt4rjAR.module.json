@@ -6,7 +6,7 @@
   "description": "The shell decides what they are and provides them around each pane's stage; the stage decides where its header puts them. A pane outside the shell has none.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/canvas/PaneChrome.tsx"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/PaneChrome.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#OPt4rjAR",
@@ -33,7 +33,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/PaneHeader.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/PaneHeader.tsx",
         "symbol": "usePaneChrome"
       },
       "id": "vKEsyHFk/UOXNWLhR#QPqsk43l",

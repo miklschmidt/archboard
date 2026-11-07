@@ -5,7 +5,7 @@
   "responsibility": "Says what is selected in a retained diagram: its details, its interface, where it opens and how it stands",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/canvas/SemanticInspector.tsx"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticInspector.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#zrv2H09S",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/GoDeeper.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/GoDeeper.tsx",
         "symbol": "useDrillTarget"
       },
       "id": "vKEsyHFk/UOXNWLhR#TQiSprch",
@@ -31,7 +31,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/SemanticInspector.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticInspector.tsx",
         "symbol": "useModelChanges"
       },
       "id": "vKEsyHFk/UOXNWLhR#ieYgCFQc",
@@ -44,7 +44,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/DetailsPanel.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/DetailsPanel.tsx",
         "symbol": "reachOf"
       },
       "id": "vKEsyHFk/UOXNWLhR#UXs6A8o7",
@@ -57,7 +57,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/SemanticInspector.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticInspector.tsx",
         "symbol": "retainedDocumentQuery"
       },
       "id": "vKEsyHFk/UOXNWLhR#hxPvFxCk",
@@ -70,7 +70,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/SemanticInspector.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticInspector.tsx",
         "symbol": "usePaneVault"
       },
       "id": "vKEsyHFk/UOXNWLhR#5llRZ8no",
@@ -83,7 +83,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/ContainerInterface.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/ContainerInterface.tsx",
         "symbol": "inspectContainer"
       },
       "id": "vKEsyHFk#YUNbvrVu",

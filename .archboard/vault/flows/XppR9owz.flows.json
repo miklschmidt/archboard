@@ -99,7 +99,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/bootstrap/bootstrap.ts",
+                    "path": "apps/cli/src/cli/routing/operations/bootstrap.ts",
                     "symbol": "applyCliBootstrap"
                   }
                 },
@@ -111,7 +111,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/bootstrap/bootstrap.ts",
+                    "path": "apps/cli/src/cli/routing/operations/bootstrap.ts",
                     "symbol": "applyCliBootstrap"
                   }
                 },
@@ -184,7 +184,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/cli/src/cli/operations/invocation/run.ts",
+                            "path": "apps/cli/src/cli/routing/operations/run.ts",
                             "symbol": "runCliWith"
                           }
                         },
@@ -204,7 +204,7 @@
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                                     "symbol": "commandToRun"
                                   }
                                 }
@@ -221,7 +221,7 @@
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                                     "symbol": "refuseRetiredForms"
                                   }
                                 },
@@ -233,7 +233,7 @@
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                                     "symbol": "takeShared"
                                   }
                                 },
@@ -245,7 +245,7 @@
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                    "path": "apps/cli/src/cli/routing/operations/session.ts",
                                     "symbol": "dispatchedTo"
                                   }
                                 },
@@ -265,7 +265,7 @@
                                           "kind": "self",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                            "path": "apps/cli/src/cli/routing/operations/session.ts",
                                             "symbol": "assertSharedApplies"
                                           }
                                         }
@@ -282,7 +282,7 @@
                                           "kind": "self",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                            "path": "apps/cli/src/cli/routing/operations/session.ts",
                                             "symbol": "applyShared"
                                           }
                                         },
@@ -294,7 +294,7 @@
                                           "kind": "self",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                            "path": "apps/cli/src/cli/routing/operations/session.ts",
                                             "symbol": "addressedVault"
                                           }
                                         },
@@ -306,7 +306,7 @@
                                           "kind": "sync",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/cli/src/cli/operations/invocation/session.ts",
+                                            "path": "apps/cli/src/cli/routing/operations/session.ts",
                                             "symbol": "runCommand"
                                           }
                                         }
@@ -349,7 +349,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/cli/src/cli/clients/server/vault-check.ts",
+            "path": "apps/cli/src/cli/server-access/clients/vault-check.ts",
             "symbol": "requestJson"
           }
         },
@@ -460,7 +460,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/cli/src/cli/clients/server/vault-check.ts",
+                            "path": "apps/cli/src/cli/server-access/clients/vault-check.ts",
                             "symbol": "checkSemanticVaultOnServer"
                           }
                         }
@@ -494,7 +494,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/cli/src/cli/clients/server/prerequisites.ts",
+            "path": "apps/cli/src/cli/contract/clients/prerequisites.ts",
             "symbol": "ensureServerRunning"
           }
         },

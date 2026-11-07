@@ -5,7 +5,7 @@
   "responsibility": "Takes -C, --doing and --as-session out of argv before a command's parser sees them",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/rules/routing/global-flags.ts"
+    "path": "apps/cli/src/cli/routing/rules/global-flags.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/nAmiQ3Vc#zs4XwBa9",

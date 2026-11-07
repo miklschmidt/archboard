@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/replay.ts"
+    "path": "apps/cli/src/cli/commands/model/operations/replay.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#zK5HmiPd",
@@ -46,7 +46,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/replay.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/replay.ts",
         "symbol": "readTalkOrRefuse"
       },
       "id": "vKEsyHFk/vKEsyHFk#OPwTCiKt",

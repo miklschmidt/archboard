@@ -5,7 +5,7 @@
   "responsibility": "Translate inventory, mapping, and owner-authorized cutover requests through the one public architecture runtime and existing recovery contract",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/routes/architecture/migration-routes.ts"
+    "path": "apps/server/src/server/http/handlers/reads/routes/migration-routes.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#YWQbfysA",
@@ -41,7 +41,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/migration-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/migration-routes.ts",
         "symbol": "requireVault"
       },
       "id": "vKEsyHFk/HBlhIeSD#Z7IOHBEv",
@@ -54,7 +54,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/migration-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/migration-routes.ts",
         "symbol": "asyncEndpoint"
       },
       "id": "vKEsyHFk/HBlhIeSD#EJAnYLlO",
@@ -66,7 +66,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/migration-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/migration-routes.ts",
         "symbol": "readLegacyInventory"
       },
       "id": "vKEsyHFk/0T9enjhi#VoM3JXyO",
@@ -78,7 +78,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/migration-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/migration-routes.ts",
         "symbol": "LegacyMappingWriteSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#LF1VUIUY",

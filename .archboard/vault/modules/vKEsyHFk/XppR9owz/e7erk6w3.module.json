@@ -5,7 +5,7 @@
   "responsibility": "Inventory legacy meaning, save explicit choices, and apply an owner-authorized complete preview through the shared runtime",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/migration.ts"
+    "path": "apps/cli/src/cli/commands/model/operations/migration.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#e7erk6w3",
@@ -41,7 +41,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/migration.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/migration.ts",
         "symbol": "readLegacyInventoryOnServer"
       },
       "id": "vKEsyHFk/XppR9owz#BLYJHegI",
@@ -54,7 +54,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/migration.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/migration.ts",
         "symbol": "modelMigrateContract"
       },
       "id": "vKEsyHFk/XppR9owz#aENuebFB",
@@ -67,7 +67,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/migration.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/migration.ts",
         "symbol": "modelMigrateContract"
       },
       "id": "vKEsyHFk/XppR9owz#LyrDsLte",

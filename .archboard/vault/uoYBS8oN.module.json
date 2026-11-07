@@ -1,0 +1,14 @@
+{
+  "order": 90005,
+  "name": "vello_encoding",
+  "kind": "external",
+  "responsibility": "The data Vello encodes for a frame, with the buffer sizes Vello allocates for it",
+  "description": "Vendored from vello_encoding 0.11.0 through [patch.crates-io] in the root Cargo.toml: BufferSizes::new allocates twice upstream's tiles and path commands, so a large board still draws (crates/vendor/README.md). Vello, which the browser painter runs, depends on it.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/vendor/vello_encoding"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#uoYBS8oN",
+  "outgoing": []
+}

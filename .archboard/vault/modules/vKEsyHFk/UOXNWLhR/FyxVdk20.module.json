@@ -6,7 +6,7 @@
   "description": "A press within the pick tolerance selects what it landed on. A drag pans immediately and stops where released. A second touch pointer hands the gesture to useTouchPinch, which calls the camera controller with both fingers before and after each move. A press stops an eased move already under way.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-diagram-gestures.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#FyxVdk20",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-diagram-gestures.ts",
         "symbol": "subjectAt"
       },
       "id": "vKEsyHFk/UOXNWLhR#DtoJyBxi",
@@ -33,7 +33,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-diagram-gestures.ts",
         "symbol": "panBy"
       },
       "id": "vKEsyHFk/UOXNWLhR#RSxtiSv5",
@@ -46,7 +46,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-diagram-gestures.ts",
         "symbol": "pickedTarget"
       },
       "id": "vKEsyHFk#CokUWpsM",

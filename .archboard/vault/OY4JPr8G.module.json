@@ -51,32 +51,6 @@
       "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
     },
     {
-      "order": 49000,
-      "kind": "data",
-      "description": "changes since its cursor",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
-        "symbol": "semanticChangeFeed"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#hjFA6kH4",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
-      "order": 51000,
-      "kind": "call",
-      "description": "a pane's tab, and the end of a tab gone for 60 s; the model the pane shows",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
-        "symbol": "tabSessionOf"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#fpTfPg1T",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
       "order": 61000,
       "kind": "dependency",
       "label": "host Archboard on the voice agent",

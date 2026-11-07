@@ -6,9 +6,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { replayAskedOf } from "@archboard/walkthrough/talk";
-import { Application } from "#ui/components/application/Application.tsx";
-import { applyShellDurations } from "#ui/clients/application/shell-durations.ts";
-import { createReadingRoutingHost } from "#ui/components/reading-routing/ReadingRoutingHost.tsx";
+import { Application } from "#ui/application/components/Application.tsx";
+import { applyShellDurations } from "#ui/application/clients/shell-durations.ts";
+import { createReadingRoutingHost } from "#ui/panes/reading-routing/components/ReadingRoutingHost.tsx";
 
 const root = document.getElementById("root");
 if (!root) {
@@ -29,7 +29,7 @@ const renderer = import("@archboard/renderer/browser").then((module) => {
 // (TASK-381). Otherwise the application is the one route, so the URL says
 // which readings the panes show and Back retraces deliberate navigation.
 if (replayAskedOf(window.location.search)) {
-	void import("#ui/clients/walkthrough-replay/start-replay.ts").then((module) =>
+	void import("#ui/walkthroughs/replay/clients/start-replay.ts").then((module) =>
 		module.startWalkthroughReplay(root, renderer),
 	);
 } else {

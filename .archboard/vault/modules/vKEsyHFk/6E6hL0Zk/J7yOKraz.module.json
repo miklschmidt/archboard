@@ -5,7 +5,7 @@
   "responsibility": "Boots and stops the server, which needs no vault: the loopback refusal, the pidfile, the ordered shutdown",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts"
+    "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
@@ -43,7 +43,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
         "symbol": "server"
       },
       "id": "vKEsyHFk/6E6hL0Zk#4TwcHVXq",
@@ -56,24 +56,11 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
         "symbol": "prepareCodexWorkbench"
       },
       "id": "vKEsyHFk/6E6hL0Zk#elH6AHHL",
       "to": "vKEsyHFk#OY4JPr8G"
-    },
-    {
-      "order": 47000,
-      "kind": "dependency",
-      "description": "starts the socket server",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
-        "symbol": "startWebSocketServer"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#7kWTFGGA",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
     },
     {
       "order": 70045,
@@ -82,7 +69,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
         "symbol": "startWebSocketServer"
       },
       "id": "vKEsyHFk#4Uvqzrek",
@@ -95,7 +82,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
         "symbol": "ServerApplicationBusyError"
       },
       "id": "vKEsyHFk/6E6hL0Zk#RZ5ulVj7",
@@ -108,7 +95,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
         "symbol": "watchRegistry"
       },
       "id": "vKEsyHFk/HBlhIeSD#5zRUOSGW",
@@ -121,11 +108,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
         "symbol": "logger"
       },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#25xiZ6jI"
+      "id": "vKEsyHFk#25xiZ6jI",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     }
   ]
 }

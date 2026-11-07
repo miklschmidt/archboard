@@ -6,7 +6,7 @@
   "description": "The flight holds the camera controller's rest from takeoff until the opened model has taken over and fitted. Both pictures inherit the same near or far reading during the flight; releasing the hold applies the opened model's reading once. Reduced motion, missing prefetched pictures and interrupted flights use the plain opening path.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/canvas/use-dive.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#hc77pwzB",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
         "symbol": "legInto"
       },
       "id": "vKEsyHFk/UOXNWLhR#h0Y3tFJb",
@@ -32,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
         "symbol": "stageIn"
       },
       "id": "vKEsyHFk/UOXNWLhR#1PbM9cTg",
@@ -46,7 +46,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
         "symbol": "glide"
       },
       "id": "vKEsyHFk/UOXNWLhR#gR2omDZs",
@@ -59,7 +59,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
         "symbol": "semanticRenderQuery"
       },
       "id": "vKEsyHFk/UOXNWLhR#9T6sHrUv",
@@ -72,7 +72,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-auto-fit.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts",
         "symbol": "FitRequest"
       },
       "id": "vKEsyHFk/UOXNWLhR#glLEAt7s",
@@ -85,7 +85,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
         "symbol": "PICTURE_MOTION_ATTRIBUTE"
       },
       "id": "vKEsyHFk/UOXNWLhR#RORIgWix",
@@ -98,7 +98,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
         "symbol": "frameClock"
       },
       "id": "vKEsyHFk/UOXNWLhR#115rtbFD",
@@ -111,7 +111,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
         "symbol": "stageOf"
       },
       "id": "vKEsyHFk#fDFYdO1w",

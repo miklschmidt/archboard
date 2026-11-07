@@ -5,11 +5,11 @@
   "responsibility": "Adds code-check warning overlays to the rendered subjects",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/canvas/subjects/code-marks.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#n7ZlRkbA",
-  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
   "outgoing": [
     {
       "order": 54000,
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/subjects/code-marks.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts",
         "symbol": "cornerWarning"
       },
       "id": "vKEsyHFk/gbyqW4H3#kxJJ5IPb",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/canvas/SemanticInspectorCode.tsx",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts",
         "symbol": "lineWarning"
       },
       "id": "vKEsyHFk/gbyqW4H3#bwa7JRYk",
@@ -44,7 +44,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/subjects/code-marks.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts",
         "symbol": "stageOf"
       },
       "id": "vKEsyHFk#KTwHgUQG",

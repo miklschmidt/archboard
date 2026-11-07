@@ -6,7 +6,7 @@
   "description": "Reads the public selected-state metadata. Prior states and exact baselines use existing router actions. Missing retained architecture stays explicit, with ordinary publication recovery. It writes no architecture. The same bounded history disclosure identifies factual corrections, their reasons, immutable source commits, and prior and corrected exact readings. It also exposes correction evidence for the comparison base. Archive-only events refresh logical readings without replacing exact originals. The selected audit and comparison audit remain separate, including an empty selected model. Exact unavailable readings retain their requested checkpoint for recovery.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/architecture-model/ModelStateHistory.tsx"
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelStateHistory.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#J2zHlR4v",

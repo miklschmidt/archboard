@@ -5,7 +5,7 @@
   "responsibility": "Translates explicit publication and recovery requests without interpreting archive history",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/routes/architecture/publication-routes.ts"
+    "path": "apps/server/src/server/http/handlers/reads/routes/publication-routes.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#eoaqHAIX",
@@ -38,7 +38,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/publication-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/publication-routes.ts",
         "symbol": "publishArchitectureHistory"
       },
       "id": "vKEsyHFk/HBlhIeSD#iq4BoP3P",
@@ -50,7 +50,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/publication-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/publication-routes.ts",
         "symbol": "requireVault"
       },
       "id": "vKEsyHFk/HBlhIeSD#ofrMAblk",
@@ -63,7 +63,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/publication-routes.ts",
+        "path": "apps/server/src/server/http/handlers/reads/routes/publication-routes.ts",
         "symbol": "asyncEndpoint"
       },
       "id": "vKEsyHFk#5vteOoed",

@@ -597,7 +597,7 @@ Those types have one definition in `shared/protocol` and import no runtime code.
 The runtime pane entry no longer exports these message types.
 Moving the existing exports adds no public names or interface allowance.
 Each lifecycle job remains one operation, so callers never assemble process readiness or shutdown steps.
-CLI route clients remain in `apps/cli/src/cli/clients/server/`.
+CLI route clients remain in `apps/cli/src/cli/server-access/clients/`.
 
 - `./server` is what a command does to the server of its checkout. `ensureServerRunning` reaches the server at the
   URL, or starts one when it may and waits for its readiness, and answers its URL, whether it started it and its pid
@@ -782,15 +782,17 @@ The root `generate:cli-contract` script, the system tests and the skill evaluati
 path, and `archboard install-skill --print-source` is how a test learns which skills it ships.
 
 - `src/cli/` owns command contracts, dispatch, discovery, server clients, and file receipts.
-  `protocol/contract/` declares invocation, answer, and refusal contracts.
-  `rules/` projects those contracts into Commander parsing and help.
-  `rules/model/` puts the shared interface derivations into the answers and words of `model inspect` and `model compare`.
-  `clients/server/` calls the public canonical HTTP routes through the gated server client.
-  `operations/model/` owns model commands, including claims, edits, inspection, migration, history, and rendering.
-  Pane, repository, server, vault, and skill installation commands retain their existing operation owners.
-  `operations/invocation/` resolves the command table, session, and explicit vault.
-  `operations/execution/` presents one operation result.
-  `operations/contract-artifacts/` generates the command proof from the shipped contracts.
+  `routing/` resolves the command table, the bootstrap, the session, and the explicit vault, and
+  dispatches one command. `routing/rules/` holds dispatch, the registry and help.
+  `contract/protocol/` declares invocation, answer, and refusal contracts.
+  `contract/rules/` projects those contracts into Commander parsing and help.
+  `contract/operations/` runs one contract and presents its result.
+  `commands/<command>/` holds each command family: `model`, `vault`, `pane`, `repo`,
+  `install-skill`, `server-control` and `contract-artifacts`.
+  `commands/model/` owns model commands, including claims, edits, inspection, migration, history, and rendering.
+  `commands/model/rules/` puts the shared interface derivations into the answers and words of `model inspect` and `model compare`.
+  `commands/contract-artifacts/` generates the command proof from the shipped contracts.
+  `server-access/clients/` calls the public canonical HTTP routes through the gated server client.
   No legacy board or top-level claim/release command remains live.
 - `command-owner` paths in the command table and the `generatedFrom` field of the proof are
   repository paths of these files. Moving a command file means editing `run.ts`.
@@ -807,20 +809,21 @@ The host serves the browser build from `SOURCE_CHECKOUT/dist/frontend` (`store/f
 of `dist/`.
 
 - `src/server/` owns HTTP composition and process lifetime.
-  `wiring/` mounts routes and shares their owners.
-  `lifecycle/` owns startup, mutation admission, and resource shutdown.
-  `routes/architecture/` adapts canonical reads, edits, claims, migration, history, publication, rendering, and explanations.
+  `http/` mounts the routes on one application and listener and tracks admitted mutation work
+  (`http/middleware/`). `wiring/server-owners.ts` holds the owners that the whole server shares.
+  `start-stop/` owns startup, mutation admission, machine-local checkout work and its cancellation, and resource shutdown.
+  `http/handlers/` holds the route families: `reads/` adapts canonical reads, health, migration, history,
+  publication, rendering, and explanations; `architecture-writes/` adapts edits, claims and portable models;
+  `code-checks/` and `repositories/` own the code check and repository routes.
   These adapters call the public runtime rather than private storage transitions.
-  `routes/panes/` owns reports, canonical navigation, and browser activation.
-  Repository, code inspection, and service routes retain their existing owners.
-  `sockets/panes/` accepts explicitly addressed pane sockets.
-  `services/checkout-work/` owns machine-local source work and cancellation.
+  `panes/connections/` accepts explicitly addressed pane sockets and owns pane reports, canonical navigation, and
+  browser activation. `panes/announcements/` keeps each vault's agent activity.
   The existing architecture change feed announces only coherent durable results.
   Retired legacy board routes perform no live reads or writes.
 - The app reads the pane and tab services, request context and listener address through the exports of
   `packages/workbench`. It mounts that package's pane context and voice trace routes, and the router of
   `packages/code-opener`.
-- The tests are in `tests/server/`, in the folders of the code they cover. `lifecycle/lifetime/` also holds the
+- The tests are in `tests/server/`, in the folders of the code they cover. `start-stop/lifecycle/` also holds the
   proof that a stop force-reaps a real process group. The system tests that start the whole server stay in
   `tests/system/`.
 
@@ -837,20 +840,22 @@ behavior has an index: a caller imports the file that defines a name.
   `src/ui/theme/`, because a stylesheet is no role; the plugin judges TypeScript only. Its `@source` paths are
   relative to it. `vite.config.ts` stays at the repository root and names the root, the output and the dev server's
   `fs.allow`, which lets the dev server serve `packages/` and `node_modules` outside the root.
-- `src/ui/` is the `ui` area. Until its move (TASK-582.03.03), each behavior is a folder under each
-  role it needs. The move puts each behavior first, with its role folders inside it.
+- `src/ui/` is the `ui` area. Each behavior is a folder, and its role folders sit inside it.
   `application` owns the root, the pane records and lists, the agent surfaces and the workspace port.
-  `shell` owns the frame, navigator and rows. `pane-session` owns one pane's socket, status, reading and registration.
-  `reading-routing` owns the workspace address, and `model-catalog` discovers canonical repository models.
-  Canonical model components own module navigation, reading controls, claims, and selected-state presentation.
-  The existing canvas, walkthrough-recording, and walkthrough-replay owners retain local rendering and playback.
-  `rules/` holds pure behavior, `state/` holds state that outlives a render, and `clients/` owns external effects.
-  `components/` and `hooks/` hold React code. `clients/renderer-build/` holds the declaration of the
-  `virtual:archboard-renderer` module that `vite.config.ts` serves, a `.d.ts` that sits in a role folder because the
-  files directly in `src/` are for entries.
-- The canvas has no index either. Its parts are in `rules/` (`camera/`, `walkthrough/`, `drilling/`, `reading/`,
-  `picture/`), `state/`, and `clients/` (`reads/`, `picture/`, `subjects/`).
-- The tests are in `tests/ui/<role>/<behavior>/`, in the folders of the code they cover. `tests/ui/support/<behavior>/`
+  `shell` owns the frame, navigator and rows. `panes/` holds the jobs of one pane: `pane-session` owns its socket,
+  status, reading and registration, `reading-routing` owns the workspace address, `model-catalog` discovers canonical
+  repository models, and `tab-session` holds the tab's identity. `walkthroughs/` holds `recording` and `replay`.
+  `vault-diagnostics` and `variant-lifecycle` own the vault repair surface and the variant timeline.
+  `renderer-build/clients/` holds the declaration of the `virtual:archboard-renderer` module that `vite.config.ts`
+  serves, a `.d.ts` that sits in a role folder because the files directly in `src/` are for entries.
+- `architecture-drawing/` draws canonical readings. `model-reader/` explores module scopes and their connections:
+  `access/` reads content and claims and applies live updates, `reading/` holds the reading's components, controls
+  and selected-state presentation, and `reading/module-navigation/` opens selected code and foreign subjects.
+- The canvas has no index either. It is `architecture-drawing/canvas/`: `presentation/` holds the diagram's
+  components, `pane-vault/` the vault a pane reads, and `picture/` the picture's clients, with `supply/`, `reads/`,
+  `camera/` and `transitions/` for the jobs inside it. The frame-clock rule of `.oxlintrc.jsonc` holds every file
+  below `canvas/`.
+- The tests are in `tests/ui/<behavior>/<role>/`, in the folders of the code they cover. `tests/ui/support/<behavior>/`
   holds the harnesses and fixtures that tests share. `tests/contracts/` holds the one test that holds the recorder's page
   address to the address bar's reading of it: it imports a Bun-side package export, which no `ui` test may.
 

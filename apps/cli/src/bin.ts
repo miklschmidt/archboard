@@ -20,7 +20,7 @@ if (handedOff !== null) {
 
 // Must run before importing anything that reads runtime configuration. A help
 // request is answered from the command table alone, so it configures nothing.
-const { applyCliBootstrap } = await import("#cli/operations/bootstrap/bootstrap.ts");
+const { applyCliBootstrap } = await import("#cli/routing/operations/bootstrap.ts");
 const bootstrap = applyCliBootstrap(argv);
 
 if (!bootstrap.help) {
@@ -36,5 +36,5 @@ if (!bootstrap.help) {
 	}
 }
 
-const { runCli } = await import("#cli/operations/invocation/run.ts");
+const { runCli } = await import("#cli/routing/operations/run.ts");
 await runCli(argv, bootstrap);

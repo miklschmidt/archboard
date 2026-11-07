@@ -6,7 +6,7 @@
   "description": "A selection never moves the picture, because the panel always holds its place. Beside what it explains it lists the flows and walkthroughs that concern the open module. One click opens a door, and a click with Ctrl selects it. A door's tip shows up to eight endpoints, and About keeps the whole list. The panel's contents compose its Row, Body, Head, Section and Rows.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/architecture-model/ModelPanel.tsx"
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#iOyrvcQp",

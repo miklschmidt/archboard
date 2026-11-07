@@ -12,10 +12,10 @@ import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
-import { defineCommand } from "#cli/protocol/contract/contract.ts";
-import type { AnyCommandContract, PendingArtifact } from "#cli/protocol/contract/contract.ts";
-import { runCommand } from "#cli/operations/execution/runner.ts";
-import { PendingArtifactSchema, type AnsweredVault } from "#cli/protocol/contract/schemas.ts";
+import { defineCommand } from "#cli/contract/protocol/contract.ts";
+import type { AnyCommandContract, PendingArtifact } from "#cli/contract/protocol/contract.ts";
+import { runCommand } from "#cli/contract/operations/runner.ts";
+import { PendingArtifactSchema, type AnsweredVault } from "#cli/contract/protocol/schemas.ts";
 
 const temporaryDirectories: string[] = [];
 

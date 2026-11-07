@@ -33,7 +33,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
             "symbol": "useDrillOpen"
           }
         },
@@ -53,7 +53,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-drill-open.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-open.ts",
                     "symbol": "readTarget"
                   }
                 },
@@ -65,7 +65,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts",
                     "symbol": "RepositoryPlacesContext"
                   }
                 },
@@ -77,7 +77,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/state/canvas/repository-places.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/state/repository-places.ts",
                     "symbol": "RepositoryPlacesContext"
                   }
                 },
@@ -97,7 +97,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts",
                             "symbol": "retainedListingQuery"
                           }
                         },
@@ -109,7 +109,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
+                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
                             "symbol": "retainedListingQuery"
                           }
                         }
@@ -129,7 +129,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts",
                     "symbol": "placeOf"
                   }
                 },
@@ -150,7 +150,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts",
                             "symbol": "retainedDocumentQuery"
                           }
                         },
@@ -162,7 +162,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
+                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
                             "symbol": "retainedDocumentQuery"
                           }
                         },
@@ -174,7 +174,7 @@
                           "kind": "self",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts",
                             "symbol": "variantOf"
                           }
                         },
@@ -186,7 +186,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/canvas/use-drill-open.ts",
+                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-open.ts",
                             "symbol": "readTarget"
                           }
                         },
@@ -206,7 +206,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/web/src/ui/hooks/canvas/use-drill-open.ts",
+                                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-open.ts",
                                     "symbol": "onOpenDown"
                                   }
                                 },
@@ -226,7 +226,7 @@
                                           "kind": "sync",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/web/src/ui/hooks/canvas/use-drill-moves.ts",
+                                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-moves.ts",
                                             "symbol": "open"
                                           }
                                         }
@@ -243,7 +243,7 @@
                                           "kind": "sync",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/web/src/ui/hooks/canvas/use-drill-moves.ts",
+                                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-moves.ts",
                                             "symbol": "into"
                                           }
                                         },
@@ -255,7 +255,7 @@
                                           "kind": "return",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
+                                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
                                             "symbol": "proceed"
                                           }
                                         },
@@ -267,7 +267,7 @@
                                           "kind": "sync",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/web/src/ui/hooks/canvas/use-drill-moves.ts",
+                                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-moves.ts",
                                             "symbol": "open"
                                           }
                                         }
@@ -324,7 +324,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/canvas/use-drill-moves.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-moves.ts",
             "symbol": "into"
           }
         },
@@ -344,7 +344,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
                     "symbol": "frameClock"
                   }
                 },
@@ -356,7 +356,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
                     "symbol": "semanticRenderQuery"
                   }
                 },
@@ -368,7 +368,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
                     "symbol": "semanticRenderQuery"
                   }
                 },
@@ -388,7 +388,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
+                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
                             "symbol": "legInto"
                           }
                         },
@@ -400,7 +400,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/rules/canvas/camera/dive.ts",
+                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/dive.ts",
                             "symbol": "legInto"
                           }
                         },
@@ -420,7 +420,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
+                                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
                                     "symbol": "glide"
                                   }
                                 },
@@ -432,7 +432,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
+                                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
                                     "symbol": "dive"
                                   }
                                 },
@@ -445,7 +445,7 @@
                                   "note": "If something moves the camera off its course, the model opens the plain way.",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
+                                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
                                     "symbol": "glide"
                                   }
                                 },
@@ -457,7 +457,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/web/src/ui/hooks/canvas/use-picture-camera.ts",
+                                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
                                     "symbol": "glide"
                                   }
                                 }
@@ -493,7 +493,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
             "symbol": "proceed"
           }
         },
@@ -505,7 +505,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/canvas/use-drill-moves.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-moves.ts",
             "symbol": "open"
           }
         }
@@ -533,7 +533,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
             "symbol": "useWalkthrough"
           }
         },
@@ -545,7 +545,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/canvas/use-walkthrough.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-walkthrough.ts",
             "symbol": "useWalkthrough"
           }
         },
@@ -557,7 +557,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/canvas/use-settled-focus.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/hooks/use-settled-focus.ts",
             "symbol": "beatFocus"
           }
         },
@@ -569,7 +569,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts",
             "symbol": "subjectOf"
           }
         },
@@ -581,7 +581,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/rules/canvas/reading/document.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/rules/document.ts",
             "symbol": "subjectOf"
           }
         },
@@ -593,7 +593,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts",
             "symbol": "subjectBox"
           }
         },
@@ -605,7 +605,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/canvas/subjects/subjects.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/clients/subjects.ts",
             "symbol": "subjectBox"
           }
         },
@@ -625,7 +625,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts",
                     "symbol": "focusTarget"
                   }
                 }
@@ -642,7 +642,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts",
                     "symbol": "beatFocus"
                   }
                 }
@@ -666,7 +666,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts",
                     "symbol": "beatFocus"
                   }
                 }
@@ -683,7 +683,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts",
                     "symbol": "beatFocus"
                   }
                 }
@@ -699,7 +699,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts",
             "symbol": "beatFocus"
           }
         },
@@ -711,7 +711,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
             "symbol": "useAutoFit"
           }
         },
@@ -731,7 +731,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-auto-fit.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts",
                     "symbol": "remember"
                   }
                 },
@@ -743,7 +743,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-auto-fit.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts",
                     "symbol": "glide"
                   }
                 }
@@ -777,7 +777,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
             "symbol": "useDiagramGestures"
           }
         },
@@ -789,7 +789,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-diagram-gestures.ts",
             "symbol": "subjectAt"
           }
         },
@@ -801,7 +801,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/canvas/subjects/subjects.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/clients/subjects.ts",
             "symbol": "subjectAt"
           }
         },
@@ -813,7 +813,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-diagram-gestures.ts",
             "symbol": "stop"
           }
         },
@@ -838,7 +838,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
+                        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-diagram-gestures.ts",
                         "symbol": "panBy"
                       }
                     }
@@ -857,7 +857,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-diagram-gestures.ts",
                     "symbol": "onSelect"
                   }
                 }
@@ -874,7 +874,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-diagram-gestures.ts",
                     "symbol": "openDown"
                   }
                 },
@@ -887,7 +887,7 @@
                   "note": "Goes on as 'A reader opens a card's picture'.",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
                     "symbol": "useDrillOpen"
                   }
                 }
@@ -925,7 +925,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-picture-camera.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
                     "symbol": "zoomCameraAbout"
                   }
                 },
@@ -937,7 +937,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-picture-camera.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
                     "symbol": "createCameraStore"
                   }
                 }
@@ -954,7 +954,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-picture-camera.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
                     "symbol": "zoomAt"
                   }
                 },
@@ -974,7 +974,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/canvas/use-camera-motion.ts",
+                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-motion.ts",
                             "symbol": "zoomCameraAbout"
                           }
                         }
@@ -996,7 +996,7 @@
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/web/src/ui/hooks/canvas/use-camera-motion.ts",
+                                "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-motion.ts",
                                 "symbol": "frameClock"
                               }
                             },
@@ -1008,7 +1008,7 @@
                               "kind": "return",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/web/src/ui/hooks/canvas/use-camera-motion.ts",
+                                "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-motion.ts",
                                 "symbol": "frameClock"
                               }
                             },
@@ -1020,7 +1020,7 @@
                               "kind": "self",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/web/src/ui/hooks/canvas/use-camera-motion.ts",
+                                "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-motion.ts",
                                 "symbol": "tick"
                               }
                             }
@@ -1042,7 +1042,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/canvas/use-picture-camera.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
             "symbol": "frameClock"
           }
         }
@@ -1067,7 +1067,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx",
             "symbol": "useReveal"
           }
         },
@@ -1103,7 +1103,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/canvas/use-reveal.ts",
+                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-reveal.ts",
                             "symbol": "subjectBox"
                           }
                         },
@@ -1115,7 +1115,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/clients/canvas/subjects/subjects.ts",
+                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/clients/subjects.ts",
                             "symbol": "subjectBox"
                           }
                         },
@@ -1139,7 +1139,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/web/src/ui/hooks/canvas/use-reveal.ts",
+                                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-reveal.ts",
                                     "symbol": "glide"
                                   }
                                 }
@@ -1179,7 +1179,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
             "symbol": "useLighting"
           }
         },
@@ -1191,7 +1191,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/canvas/use-lighting.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-lighting.ts",
             "symbol": "LightingInputs"
           }
         },
@@ -1203,7 +1203,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/canvas/use-resting-part.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-resting-part.ts",
             "symbol": "frameClock"
           }
         },
@@ -1223,7 +1223,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-lighting.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-lighting.ts",
                     "symbol": "standsDown"
                   }
                 }
@@ -1248,7 +1248,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/canvas/use-lighting.ts",
+                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-lighting.ts",
                             "symbol": "reachOf"
                           }
                         },
@@ -1260,7 +1260,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/rules/canvas/reading/reach.ts",
+                            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/rules/reach.ts",
                             "symbol": "reachOf"
                           }
                         }
@@ -1284,7 +1284,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/canvas/use-lighting.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-lighting.ts",
             "symbol": "useLighting"
           }
         },
@@ -1296,7 +1296,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
             "symbol": "useSweep"
           }
         },
@@ -1308,7 +1308,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
             "symbol": "setLight"
           }
         }
@@ -1334,7 +1334,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+            "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
             "symbol": "readRetainedFrom"
           }
         },
@@ -1346,7 +1346,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+            "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
             "symbol": "driveFramesFrom"
           }
         },
@@ -1358,7 +1358,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+            "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
             "symbol": "CanvasStage"
           }
         },
@@ -1375,7 +1375,7 @@
               "kind": "sync",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
                 "symbol": "draw"
               }
             },
@@ -1387,7 +1387,7 @@
               "kind": "self",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
                 "symbol": "playTo"
               }
             },
@@ -1404,7 +1404,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+                    "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
                     "symbol": "onReading"
                   }
                 }
@@ -1418,7 +1418,7 @@
               "kind": "sync",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
                 "symbol": "paintersStarting"
               }
             },
@@ -1430,7 +1430,7 @@
               "kind": "sync",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
                 "symbol": "draw"
               }
             },
@@ -1450,7 +1450,7 @@
                       "kind": "self",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
                         "symbol": "violationsOf"
                       }
                     }
@@ -1467,7 +1467,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                        "path": "apps/web/src/ui/walkthroughs/replay/clients/replay-page.ts",
                         "symbol": "draw"
                       }
                     }
@@ -1500,7 +1500,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
+            "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
             "symbol": "usePictureTransition"
           }
         },
@@ -1520,7 +1520,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts",
                     "symbol": "showPicture"
                   }
                 }
@@ -1542,7 +1542,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
+                        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts",
                         "symbol": "frameClock"
                       }
                     },
@@ -1554,7 +1554,7 @@
                       "kind": "return",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
+                        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts",
                         "symbol": "frameClock"
                       }
                     }
@@ -1573,7 +1573,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts",
                     "symbol": "stageOf"
                   }
                 },
@@ -1585,7 +1585,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
                     "symbol": "enter"
                   }
                 },
@@ -1597,7 +1597,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/canvas/picture/picture-stage.ts",
+                    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
                     "symbol": "frameClock"
                   }
                 },
@@ -1626,7 +1626,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
+                        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts",
                         "symbol": "frameClock"
                       }
                     },
@@ -1638,7 +1638,7 @@
                       "kind": "return",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
+                        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts",
                         "symbol": "frameClock"
                       }
                     }

@@ -1,0 +1,81 @@
+{
+  "order": 50000,
+  "name": "Pane show route",
+  "kind": "route",
+  "responsibility": "browser show: shows a reading in a pane, choosing the checkout it shows and moving every pane to follow",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/panes/connections/routes/pane-show-route.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#RZTsoQN5",
+  "parent": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+  "outgoing": [
+    {
+      "order": 18000,
+      "kind": "event",
+      "label": "send the reading to the pane",
+      "description": "model and agent news",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-show-route.ts",
+        "symbol": "sendToPane"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#VO9ngl7m",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 62000,
+      "kind": "dependency",
+      "label": "move the pane into the vault it shows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-show-route.ts",
+        "symbol": "movePaneVault"
+      },
+      "id": "vKEsyHFk#HIkVOOeA",
+      "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J"
+    },
+    {
+      "order": 65000,
+      "kind": "call",
+      "label": "the repository and checkout of a pane's vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-show-route.ts",
+        "symbol": "placeOfVault"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#57KDyakx",
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "order": 80000,
+      "kind": "call",
+      "label": "an agent's show chooses the checkout it shows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-show-route.ts",
+        "symbol": "chooseKnownCheckout"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#ALYb99sn",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "order": 81000,
+      "kind": "call",
+      "label": "a show that chose: every pane follows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-show-route.ts",
+        "symbol": "followRegistry"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#epRLrdt6",
+      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    }
+  ]
+}

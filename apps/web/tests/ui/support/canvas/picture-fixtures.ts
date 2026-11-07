@@ -1,7 +1,7 @@
 // Pictures of the model `pipeline` as the renderer draws them, for the tests
 // that hold a transition or an entrance to what it does with one.
 
-import type { SemanticDrawing } from "#ui/clients/canvas/reads/drawings.ts";
+import type { SemanticDrawing } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 
 /** A box, as the atlas spells it. */
 interface Box {

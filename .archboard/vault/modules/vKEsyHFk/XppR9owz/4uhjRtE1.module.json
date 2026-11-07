@@ -5,7 +5,7 @@
   "responsibility": "Explicitly initializes local history for a vault outside source repositories",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/archive.ts"
+    "path": "apps/cli/src/cli/commands/model/operations/archive.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#4uhjRtE1",
@@ -38,7 +38,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/archive.ts",
+        "path": "apps/cli/src/cli/commands/model/operations/archive.ts",
         "symbol": "initializeArchitectureArchiveOnServer"
       },
       "id": "vKEsyHFk/XppR9owz#mNv08eg5",

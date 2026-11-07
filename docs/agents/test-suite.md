@@ -254,7 +254,7 @@ These module owners cover the supporting contracts:
 
 - `packages/walkthrough/tests/runtime/video-encoding/services` and `processes`: finding and running ffmpeg.
 - `packages/walkthrough/tests/shared/protocol`: the talk's contract.
-- `apps/web/tests/ui/rules/walkthrough-replay`: the frame that shows each event.
+- `apps/web/tests/ui/walkthroughs/replay/state`: the frame that shows each event.
 - `packages/ui-kit/tests/ui/state/frame-clock`: the stepped clock.
 - `packages/walkthrough/tests/runtime/recorder/store` and `operations`: the talk on disk and the browsers'
   flags.
@@ -502,9 +502,9 @@ The slice adds no browser behavior.
   proofs are derived views. The gate renders and validates them in memory, then
   invokes `bun run generate:cli-contract -- --output-dir <temporary-directory>`
   twice from absent output directories and compares exact bytes. The script
-  is `apps/cli/src/cli/operations/contract-artifacts/generate.ts`, which the
+  is `apps/cli/src/cli/commands/contract-artifacts/operations/generate.ts`, which the
   root script runs by path, and
-  `apps/cli/tests/cli/operations/contract-artifacts/render.test.ts` holds
+  `apps/cli/tests/cli/commands/contract-artifacts/operations/render.test.ts` holds
   the rendered routes to the live registry. The system case removes
   the temporary outputs and proves the checkout status is unchanged. For a
   local readable copy, `bun run generate:cli-contract` writes the three views
@@ -513,7 +513,7 @@ The slice adds no browser behavior.
 - The CLI owners in `test:system` resolve `bin.archboard` from `package.json` and drive
   that executable from outside the checkout. They cover vault lookup, checkout hand-off,
   repository selection, skill installation, canonical operations, and resource cleanup.
-  `apps/cli/tests/cli/rules/routing/help.test.ts` discovers command topics from
+  `apps/cli/tests/cli/routing/rules/help.test.ts` discovers command topics from
   `cliContractRegistry()` and tests their help through the real parser.
 - Normal lock owners prove reachable one-server exclusion. The opt-in topology
   owner proves a claim in one Archboard server process excludes writes through
@@ -781,7 +781,7 @@ The model package interface narrows to 184 exports, and its ceiling drops to 184
 
 The repository navigator lists one canonical model per repository.
 It no longer contains folders, legacy boards, variant rows, or a second architecture hierarchy.
-`apps/web/tests/ui/components/shell/navigator-repositories.test.tsx` retains repository identity, activity, the checkout list, failure recovery, and filter behavior.
+`apps/web/tests/ui/shell/components/navigator-repositories.test.tsx` retains repository identity, activity, the checkout list, failure recovery, and filter behavior.
 `canonical-model-agent-navigation.test.ts` owns keyboard opens, adjacent panes, active repository selection, and pane letters through the browser.
 The old `navigator-tree.test.tsx` retires with the legacy hierarchy and variant expansion.
 Its private React-prop inspection also retires because it tests implementation details.
@@ -855,11 +855,11 @@ Retained camera and presentation-box UI owners keep their existing behavior asse
 The walkthrough header owner also proves that sidebar controls remain held during playback and restore afterward.
 The agent-navigation owner proves that a completed remote presentation cannot reopen after an uncached state read.
 
-`apps/web/tests/ui/clients/architecture-model/history-on-selection.test.tsx` replaces the old locality query owner.
+`apps/web/tests/ui/architecture-drawing/model-reader/access/clients/history-on-selection.test.tsx` replaces the old locality query owner.
 It exercises canonical HTTP reads and owns one read for every later pick, a read that outlives the pick that started it, and isolation between vaults.
 The legacy locality endpoint adapter, query key, and retained-replay placeholder retire.
 
-`apps/web/tests/ui/components/architecture-model/model-history.test.tsx` replaces the legacy history component fixture.
+`apps/web/tests/ui/architecture-drawing/model-reader/reading/components/model-history.test.tsx` replaces the legacy history component fixture.
 It mounts the actual canonical consumer and retains commit expansion, coupled-subject callbacks, evidence distinctions, and explicit retry.
 A new architecture revision hides the prior revision's evidence while the request runs.
 The old blanket refusal for historical variants retires because canonical history supports explicit states and checkpoints.

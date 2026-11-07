@@ -6,7 +6,7 @@
   "description": "Finds the vault the target model is in (this one, or the chosen checkout of the repository the link names, read from this vault's listing first), reads the target model there and picks the variant the link names, by a name it has or had. A named variant that is not there is reported, never swapped for the current one. The inspector subscribes to the reading and hears the target model change under the name it goes by now; the double-click asks once and gets a promise.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts",
         "symbol": "readDocument"
       },
       "id": "vKEsyHFk/UOXNWLhR#EIAfMMlW",
@@ -32,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts",
         "symbol": "retainedDocumentQuery"
       },
       "id": "vKEsyHFk/UOXNWLhR#61t3maku",
@@ -45,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts",
         "symbol": "usePaneVault"
       },
       "id": "vKEsyHFk/UOXNWLhR#1mkfOmRs",
@@ -58,7 +58,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts",
         "symbol": "RepositoryPlacesContext"
       },
       "id": "vKEsyHFk/UOXNWLhR#1YBYgVBE",
@@ -71,7 +71,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts",
         "symbol": "useModelChanges"
       },
       "id": "vKEsyHFk/UOXNWLhR#X1i20uYe",

@@ -5,7 +5,7 @@
   "responsibility": "Applies server placement, activity and layout messages to a pane",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/rules/pane-session/socket-messages.ts"
+    "path": "apps/web/src/ui/panes/pane-session/rules/socket-messages.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#8yYKWsmB",

@@ -6,7 +6,7 @@
   "description": "Plain fetch to the semantic read routes; refused, unreachable or invalid replies become explicit viewer failures carrying the server's code. There is no write call.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/canvas/reads/drawings.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
@@ -23,7 +23,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/drawings.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts",
         "symbol": "fetch"
       },
       "id": "vKEsyHFk/yejBBUFY#pqG9kqlF",
@@ -36,7 +36,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
         "symbol": "mountCodeCheckRoute"
       },
       "id": "vKEsyHFk/HBlhIeSD#poDLrJ2M",
@@ -49,7 +49,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/drawings.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts",
         "symbol": "inVault"
       },
       "id": "vKEsyHFk/yejBBUFY#wQi4PrJj",
@@ -62,7 +62,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/canvas/reads/drawings.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts",
         "symbol": "fetchCodeFindings"
       },
       "id": "vKEsyHFk#aFx2toJd",

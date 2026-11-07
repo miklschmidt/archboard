@@ -6,7 +6,7 @@
   "description": "Only subscribed presentation readers redraw on a camera change. While a hand moves it or a flight holds it, the rest stays where it was. The surface reads moving to keep its transform layer; SemanticDiagram reads rest.scale for the near/far swap and traffic resumes from the same rest. This is presentation state, never a copy of model meaning.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/state/canvas/camera-store.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/state/camera-store.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#JYR55KwD",

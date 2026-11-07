@@ -5,7 +5,7 @@
   "responsibility": "Draws each render that Git tracks here again from its recipe, and reports or redraws the outdated ones; fetches a vault no checkout here holds",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/vault/embeds"
+    "path": "apps/cli/src/cli/commands/vault/embeds"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#s25sE5P3",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/vault/embeds/fetched-vaults.ts",
+        "path": "apps/cli/src/cli/commands/vault/embeds/operations/fetched-vaults.ts",
         "symbol": "fetchSteps"
       },
       "id": "vKEsyHFk/XppR9owz#pn92tto1",
@@ -52,7 +52,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/vault/embeds/embeds-check.ts",
+        "path": "apps/cli/src/cli/commands/vault/embeds/operations/embeds-check.ts",
         "symbol": "checkoutsReadFrom"
       },
       "id": "vKEsyHFk#5yYA6WLY",

@@ -5,7 +5,7 @@
   "responsibility": "Shares current update availability between model readers",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/architecture-model/use-architecture-feed.ts",
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/access/hooks/use-architecture-feed.ts",
     "symbol": "useArchitectureFeed"
   },
   "schemaVersion": 1,
@@ -33,11 +33,11 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/architecture-model/use-architecture-feed.ts",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/access/hooks/use-architecture-feed.ts",
         "symbol": "architectureFeed"
       },
-      "to": "vKEsyHFk#guvtYApo",
-      "id": "vKEsyHFk#kGvw1c2d"
+      "id": "vKEsyHFk#kGvw1c2d",
+      "to": "vKEsyHFk#guvtYApo"
     }
   ]
 }

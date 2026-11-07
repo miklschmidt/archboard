@@ -6,7 +6,7 @@
   "description": "A new model, variant or view fits the entire selected reading; each walkthrough step takes the camera back and fits its subjects; a new picture glides from the last reading, and leaving a presentation glides back. The model a flight arrived at is fitted at once, because the flight has already put the camera there.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/canvas/use-auto-fit.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#VcgeYlnZ",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-auto-fit.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts",
         "symbol": "glide"
       },
       "id": "vKEsyHFk/UOXNWLhR#yMDD4Gv0",

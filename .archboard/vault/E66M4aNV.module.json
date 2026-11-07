@@ -5,7 +5,7 @@
   "responsibility": "Defines a command contract, its shared options, its schemas and its usage errors",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/protocol/contract"
+    "path": "apps/cli/src/cli/contract/protocol"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#E66M4aNV",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/protocol/contract/shared-options.ts",
+        "path": "apps/cli/src/cli/contract/protocol/shared-options.ts",
         "symbol": "DEFAULT_ARCHBOARD_URL"
       },
       "id": "vKEsyHFk/XppR9owz#NAzwezpK",

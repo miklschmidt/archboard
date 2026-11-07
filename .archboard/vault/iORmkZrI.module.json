@@ -5,7 +5,7 @@
   "responsibility": "Keeps one socket per page that names its vault and its tab, and hears model and agent news on it",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/pane-session"
+    "path": "apps/web/src/ui/panes/pane-session/clients"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#iORmkZrI",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+        "path": "apps/web/src/ui/panes/pane-session/clients/pane-socket.ts",
         "symbol": "socketUrl"
       },
       "id": "vKEsyHFk/Oi6SBIAM#yG8Hyadm",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/pane-session/workbench-socket.ts",
+        "path": "apps/web/src/ui/panes/pane-session/clients/workbench-socket.ts",
         "symbol": "createTransport"
       },
       "id": "vKEsyHFk/yejBBUFY#rcSUaP1b",
@@ -57,7 +57,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+        "path": "apps/web/src/ui/panes/pane-session/clients/pane-socket.ts",
         "symbol": "tabSessionId"
       },
       "id": "vKEsyHFk/yejBBUFY#w9Qrw2Xe",
@@ -78,26 +78,13 @@
       "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     },
     {
-      "order": 45000,
-      "kind": "event",
-      "description": "one socket per page",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
-        "symbol": "acceptWebSocketConnection"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#ENymHNDK",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
       "order": 980210,
       "kind": "call",
       "label": "send the report",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/pane-session/pane-report-sender.ts",
+        "path": "apps/web/src/ui/panes/pane-session/clients/pane-report-sender.ts",
         "symbol": "reportPane"
       },
       "id": "vKEsyHFk#2UrR4Yp6",

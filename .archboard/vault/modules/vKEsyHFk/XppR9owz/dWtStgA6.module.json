@@ -6,7 +6,7 @@
   "description": "The shared input helper parses the stated text. Each canonical command validates that value against its public operation schema.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/input.ts"
+    "path": "apps/cli/src/cli/commands/model/operations/input.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#dWtStgA6",

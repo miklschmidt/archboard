@@ -188,10 +188,8 @@
 			// (TASK-381). Nothing here reads the browser's clocks directly.
 			"files": [
 				// The canvas of apps/web and the subtitles of the workbench. Behavior first
-				// (ADR 0075), each is one behavior folder. Until the canvas moves (TASK-582.03),
-				// it is also its folder below each role of the ui area.
+				// (ADR 0075), each is one behavior folder.
 				"apps/web/src/ui/architecture-drawing/canvas/**",
-				"apps/web/src/ui/{api,clients,components,constants,hooks,rules,state,workers}/canvas/**",
 				"packages/workbench/src/ui/workbench-client/subtitles/**",
 			],
 			"rules": {

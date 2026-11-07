@@ -6,7 +6,7 @@
   "description": "Reads the findings of the model, variant and version on screen and puts the renderer's own warning mark in the subject's group, where the picture puts it on an undecided subject. The picture's markup stays the renderer's; information draws nothing.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/canvas/use-code-marks.ts",
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-code-marks.ts",
     "symbol": "useCodeMarks"
   },
   "schemaVersion": 1,
@@ -20,11 +20,24 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/canvas/use-code-findings.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/hooks/use-code-findings.ts",
         "symbol": "codeFindingsQuery"
       },
       "id": "vKEsyHFk/UOXNWLhR#8VT4p2DT",
       "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
+    },
+    {
+      "order": 80000,
+      "kind": "dependency",
+      "label": "mark the warnings on the drawn picture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/hooks/use-code-marks.ts",
+        "symbol": "markCodeWarnings"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#n7ZlRkbA",
+      "id": "vKEsyHFk#4msTmvFC"
     }
   ]
 }

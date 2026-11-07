@@ -1,0 +1,286 @@
+// The page that renders a talk frame by frame (TASK-381).
+//
+// Loading a talk points the pane's model reads at the talk, swaps every moving
+// picture onto a stepped clock and mounts the recording's frame on the talk's
+// model. It then plays the model's entrance through, uncaptured, so the first
+// frame shows the model at rest, as the talk's first moment did.
+//
+// Each frame is then drawn the same way. The clock moves to the frame's time,
+// running the timers due on the way. What happened by then is shown. The page
+// waits until the picture for that step is drawn and nothing is changing. The
+// frames the viewer asked for run. Every animation and picture clock is stood
+// where the clock is. The browser draws once. Anything that moved outside the
+// clock fails the frame, because a frame that depends on how fast this machine
+// drew it is not the recording.
+
+import type { QueryClient } from "@tanstack/react-query";
+import { createElement } from "react";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
+
+import { REPLAY_MS } from "@archboard/timing";
+import {
+	SAMPLES_PER_FRAME,
+	TALK_SAMPLE_RATE,
+	type Talk,
+	type publishReplayPage,
+} from "@archboard/walkthrough/talk";
+import { createModelQueryClient } from "#ui/panes/model-catalog/clients/query-client.ts";
+import {
+	createSteppedClock,
+	driveFramesFrom,
+	type SteppedClock,
+} from "@archboard/ui-kit/frame-clock";
+import { chooseLayoutEngine } from "#ui/architecture-drawing/canvas/picture/clients/layout-engine.ts";
+import {
+	pictureSource,
+	takePicturesFrom,
+} from "#ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts";
+import { readRetainedFrom } from "#ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts";
+import { stageOf } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts";
+import { sameModelName } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
+import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
+import { ReplayStage } from "#ui/walkthroughs/replay/components/ReplayStage.tsx";
+import { FrameReadiness } from "#ui/walkthroughs/replay/clients/frame-readiness.ts";
+import { TalkPlayback } from "#ui/walkthroughs/replay/state/talk-playback.ts";
+import { talkReads } from "#ui/walkthroughs/replay/clients/talk-reads.ts";
+
+/** What the page does to render a talk, as the replay contract publishes it. */
+type ReplayRenderer = Parameters<typeof publishReplayPage>[0];
+
+/** How long one frame lasts, in milliseconds: a frame is a fixed run of the voice's samples. */
+const FRAME_MS = (SAMPLES_PER_FRAME * 1000) / TALK_SAMPLE_RATE;
+
+/** The frames before the talk's first, drawn and not captured, as whole frames. */
+const PREROLL_FRAMES = Math.ceil(REPLAY_MS.preroll / FRAME_MS);
+
+/** A talk on the page, and where its rendering has got to. */
+interface Rendering {
+	readonly talk: Talk;
+	readonly clock: SteppedClock;
+	readonly playback: TalkPlayback;
+	readonly client: QueryClient;
+	/** The element the talk is mounted in. */
+	readonly root: HTMLElement;
+	readonly readiness: FrameReadiness;
+	/** Models read that the talk could not answer. */
+	readonly foreign: string[];
+	/** What the pane last said it is reading. */
+	reading: PaneReading | null;
+	/** The step on screen, counted from nought, or null before the first. */
+	beat: number | null;
+	/** The next frame to draw. */
+	next: number;
+}
+
+/**
+ * Draw every picture of the page against the variant a talk was recorded with, whichever
+ * variant the pane asks for: a talk read against a variant draws that comparison in every
+ * frame, and no pane could have asked for it.
+ * @param against The variant the talk is read against.
+ */
+function drawAgainst(against: string): void {
+	const source = pictureSource();
+	takePicturesFrom({
+		...source,
+		/**
+		 * Draw the picture the pane asked for, read against the talk's variant.
+		 * @param request What the pane asked for.
+		 * @param client The page's cache.
+		 * @param signal Cancels the read.
+		 * @returns The drawing.
+		 */
+		draw: (request, client, signal) => source.draw({ ...request, against }, client, signal),
+	});
+}
+
+/**
+ * Whether the pane shows the talk's model as the talk drew it, or what it waits for.
+ * @param rendering The rendering.
+ * @returns What it waits for, in words, or null when the model is drawn.
+ */
+function modelPending(rendering: Rendering): string | null {
+	const { reading, talk } = rendering;
+	if (talk.architecture !== undefined) return canonicalPending(talk.architecture, reading);
+	if (reading?.model == null || !sameModelName(reading.model.name, talk.board.name)) {
+		return `the pane to draw ${talk.board.name}`;
+	}
+	return reading.version === talk.board.version
+		? null
+		: `the model at version ${talk.board.version}, not ${reading.version}`;
+}
+
+/**
+ * Require the exact captured canonical picture before a replay frame can advance.
+ * @param model The immutable architecture carried by the talk.
+ * @param reading The picture that the pane finished drawing.
+ * @returns What remains unavailable, or null when the exact picture is drawn.
+ */
+function canonicalPending(
+	model: NonNullable<Talk["architecture"]>,
+	reading: PaneReading | null,
+): string | null {
+	const shown = reading?.architecture;
+	return shown?.model === model.manifest.id && shown.expectedRevision === model.revision.digest
+		? null
+		: `the captured architecture at revision ${model.revision.digest}`;
+}
+
+/**
+ * Whether a painter of the page is still on its way, so a frame would show its SVG.
+ * @param rendering The rendering.
+ * @returns True while one starts.
+ */
+function paintersStarting(rendering: Rendering): boolean {
+	const surfaces = rendering.root.querySelectorAll("[data-slot='canvas-surface']");
+	return [...surfaces].some((surface) => stageOf(surface)?.starting === true);
+}
+
+/**
+ * What a frame still waits for before it shows the talk's model at its step.
+ * @param rendering The rendering.
+ * @returns What it waits for, in words, or null when nothing.
+ */
+function pendingOf(rendering: Rendering): string | null {
+	if (rendering.client.isFetching() > 0) return "the model's picture to be drawn";
+	if (paintersStarting(rendering)) return "the painter to start";
+	const model = modelPending(rendering);
+	if (model !== null) return model;
+	return stepPending(rendering);
+}
+
+/**
+ * Whether the pane shows the talk's step, or which step it waits for.
+ * @param rendering The rendering.
+ * @returns The step it waits for, in words, or null when it shows the talk's.
+ */
+function stepPending(rendering: Rendering): string | null {
+	const { beat, reading } = rendering;
+	return beat === null || reading?.presentation?.beat === beat ? null : `step ${beat + 1}`;
+}
+
+/**
+ * What moved outside the frame clock, or was read outside the talk, in words.
+ * @param rendering The rendering.
+ * @returns The violations.
+ */
+function violationsOf(rendering: Rendering): readonly string[] {
+	const moved = rendering.clock.violations().map((violation) => violation.what);
+	const read = rendering.foreign.map((model) => `The model ${model} was read, not the talk's.`);
+	return [...moved, ...read];
+}
+
+/**
+ * Draw one frame: the clock at its time, what happened by then, and every moving picture there.
+ * @param rendering The rendering.
+ * @param index The frame, counted from nought; the entrance before the talk counts below it.
+ * @returns Once the browser has drawn it.
+ * @throws {Error} When it was not ready in time, or something moved outside the clock.
+ */
+async function draw(rendering: Rendering, index: number): Promise<void> {
+	const { clock, readiness } = rendering;
+	clock.advanceTo(index * FRAME_MS);
+	if (index >= 0) {
+		flushSync(() => {
+			rendering.beat = rendering.playback.playTo(index);
+		});
+	}
+	/**
+	 * What the frame still waits for.
+	 * @returns It, in words, or null when nothing.
+	 */
+	const pending = (): string | null => pendingOf(rendering);
+	await readiness.until(pending, index);
+	clock.runFrame();
+	await readiness.until(pending, index);
+	clock.syncAnimations(document);
+	await clock.paint();
+	const violations = violationsOf(rendering);
+	if (violations.length > 0) {
+		throw new Error(`Frame ${index} cannot be rendered from the talk: ${violations.join(" ")}`);
+	}
+}
+
+/** The page's side of rendering one talk. */
+class WalkthroughReplay {
+	/** What the recorder drives. */
+	readonly page: ReplayRenderer;
+	readonly #root: HTMLElement;
+	#rendering: Rendering | null = null;
+
+	/**
+	 * A page ready to be given a talk.
+	 * @param root The element the talk is mounted in.
+	 */
+	constructor(root: HTMLElement) {
+		this.#root = root;
+		this.page = Object.freeze({ load: this.load.bind(this), frame: this.frame.bind(this) });
+	}
+
+	/**
+	 * Put a talk on the page and play the model's entrance through.
+	 * @param talk The talk.
+	 * @param options The theme and layout engine to render it in, and how loud its voice is on each frame.
+	 * @throws {Error} When the page already has a talk, or the model never draws.
+	 */
+	async load(talk: Talk, options: Parameters<ReplayRenderer["load"]>[1]): Promise<void> {
+		if (this.#rendering !== null) throw new Error("This page already has a talk; open it again.");
+		const { theme, layout, levels } = options;
+		document.documentElement.dataset["theme"] = theme;
+		chooseLayoutEngine(layout);
+		const clock = createSteppedClock(-PREROLL_FRAMES * FRAME_MS);
+		driveFramesFrom(clock);
+		clock.install(window);
+		const rendering: Rendering = {
+			talk,
+			clock,
+			playback: new TalkPlayback(talk, levels),
+			client: createModelQueryClient(),
+			root: this.#root,
+			readiness: new FrameReadiness(this.#root),
+			foreign: [],
+			reading: null,
+			beat: null,
+			next: 0,
+		};
+		readRetainedFrom(talkReads(talk, (model) => rendering.foreign.push(model)));
+		if (talk.board.against !== undefined) drawAgainst(talk.board.against);
+		this.#rendering = rendering;
+		createRoot(this.#root).render(
+			createElement(ReplayStage, {
+				talk,
+				playback: rendering.playback,
+				client: rendering.client,
+				/**
+				 * Keep what the pane says it is reading.
+				 * @param reading The reading.
+				 */
+				onReading: (reading: PaneReading | null): void => {
+					rendering.reading = reading;
+				},
+			}),
+		);
+		for (let index = -PREROLL_FRAMES; index < 0; index += 1) {
+			// oxlint-disable-next-line no-await-in-loop -- frames are drawn in order: each stands on the clock the last one left
+			await draw(rendering, index);
+		}
+	}
+
+	/**
+	 * Draw the next frame of the talk.
+	 * @param index The frame, counted from nought, in order.
+	 * @returns Once it is drawn.
+	 * @throws {Error} When no talk is loaded, a frame is skipped, or the frame cannot be drawn.
+	 */
+	async frame(index: number): Promise<void> {
+		const rendering = this.#rendering;
+		if (rendering === null) throw new Error("Load a talk before drawing its frames.");
+		if (index !== rendering.next) {
+			throw new Error(`Frames are drawn in order: ${rendering.next} is next, not ${index}.`);
+		}
+		rendering.next += 1;
+		await draw(rendering, index);
+	}
+}
+
+export { WalkthroughReplay };

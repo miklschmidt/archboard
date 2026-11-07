@@ -68,7 +68,10 @@ describe("harness source exposure by path", () => {
 
 describe("product source by path", () => {
 	test("a read of the old src modules or of an app is a read of the product", () => {
-		for (const file of ["src/cli/semantic/edit.ts", "apps/cli/src/cli/operations/pane/pane.ts"]) {
+		for (const file of [
+			"src/cli/semantic/edit.ts",
+			"apps/cli/src/cli/commands/pane/operations/pane.ts",
+		]) {
 			expect(classified(`bash -lc 'sed -n 1,80p ../archboard/${file}'`).class, file).toBe(
 				"product-source",
 			);

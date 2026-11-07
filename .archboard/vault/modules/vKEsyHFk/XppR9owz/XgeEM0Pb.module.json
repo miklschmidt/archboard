@@ -6,7 +6,7 @@
   "description": "TASK-471.03. A command finds the vault from the repository it runs in (ADR 0049), so nothing about it is written down. --repo, else the working directory, names a directory, and the vault is made at the root of the git checkout that holds it, where a command run anywhere in the checkout finds it. The receipt's setup names the repository, its vault, whether the vault was made, whether git ignores it and the documents an earlier block was removed from. --vault, --doc and --yes are gone, and --no-setup, once --no-doc, leaves the repository alone.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/install-skill/install-skill.ts"
+    "path": "apps/cli/src/cli/commands/install-skill/operations/install-skill.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#XgeEM0Pb",
@@ -40,7 +40,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/install-skill/install-skill.ts",
+        "path": "apps/cli/src/cli/commands/install-skill/operations/install-skill.ts",
         "symbol": "setUpRepository"
       },
       "id": "vKEsyHFk/XppR9owz#Kk4jceif",

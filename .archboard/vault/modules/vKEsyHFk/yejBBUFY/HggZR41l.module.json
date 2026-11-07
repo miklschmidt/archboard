@@ -6,7 +6,7 @@
   "description": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/application"
+    "path": "apps/web/src/ui/application"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#HggZR41l",

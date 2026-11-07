@@ -293,20 +293,12 @@ describe("the lint configs split app tests the way they split package tests", ()
 	});
 });
 
-describe("the frame clock rule follows the model canvas and the subtitles in both layouts", () => {
+describe("the frame clock rule follows the model canvas and the subtitles", () => {
 	// A frame-clocked file reads the browser's clock directly, which a recording cannot step.
 	const CLOCK_READ = "export const stamp = [Date.now(), requestAnimationFrame];\n";
 	// Fixture paths in the workbench's ui area, which the override names; no file loads them.
 	const WORKBENCH_UI = "packages/workbench/src/ui";
 	const canvas = [
-		"apps/web/src/ui/api/canvas/stamp.ts",
-		"apps/web/src/ui/clients/canvas/stamp.ts",
-		"apps/web/src/ui/components/canvas/Stamp.tsx",
-		"apps/web/src/ui/constants/canvas/stamp.ts",
-		"apps/web/src/ui/hooks/canvas/use-stamp.ts",
-		"apps/web/src/ui/rules/canvas/stamp.ts",
-		"apps/web/src/ui/state/canvas/stamp.ts",
-		"apps/web/src/ui/workers/canvas/stamp.ts",
 		// Behavior first (ADR 0075), the canvas is one folder of the architecture drawing.
 		"apps/web/src/ui/architecture-drawing/canvas/presentation/components/Stamp.tsx",
 		"apps/web/src/ui/architecture-drawing/canvas/picture/camera/rules/stamp.ts",
@@ -317,8 +309,8 @@ describe("the frame clock rule follows the model canvas and the subtitles in bot
 	];
 	const tests = canvas.map((file) => file.replace("/src/", "/tests/"));
 	const sibling = [
-		"apps/web/src/ui/components/shell/Stamp.tsx",
-		"apps/web/src/ui/hooks/canvasx/use-stamp.ts",
+		"apps/web/src/ui/shell/components/Stamp.tsx",
+		"apps/web/src/ui/architecture-drawing/canvasx/hooks/use-stamp.ts",
 		"apps/web/src/ui/architecture-drawing/model-reader/reading/components/Stamp.tsx",
 		`${WORKBENCH_UI}/workbench-client/dock/components/Stamp.tsx`,
 	];

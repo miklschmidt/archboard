@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/routes/panes/pane-routes.ts"
+    "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#MqTq68P3",
@@ -33,7 +33,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
         "symbol": "panes"
       },
       "id": "vKEsyHFk/Oi6SBIAM#oi6YF8VO",
@@ -46,7 +46,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
         "symbol": "publishPaneContext"
       },
       "id": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
@@ -59,7 +59,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
         "symbol": "requireVault"
       },
       "id": "vKEsyHFk/Oi6SBIAM#hDNka8yA",
@@ -72,11 +72,24 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
         "symbol": "getPanesRoute"
       },
       "id": "vKEsyHFk/Oi6SBIAM#wX9a448V",
       "to": "vKEsyHFk/Oi6SBIAM#Am1mLDP5"
+    },
+    {
+      "order": 61500,
+      "kind": "dependency",
+      "label": "mounts the show route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "showPaneRoute"
+      },
+      "id": "vKEsyHFk#wvK4SWe1",
+      "to": "vKEsyHFk#RZTsoQN5"
     },
     {
       "order": 66000,
@@ -85,7 +98,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
         "symbol": "shownConversationRoute"
       },
       "id": "vKEsyHFk/Oi6SBIAM#Evb1IqVj",
@@ -98,7 +111,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
         "symbol": "asyncEndpoint"
       },
       "id": "vKEsyHFk#kEIA3Iaa",
@@ -111,7 +124,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
         "symbol": "createBrowserOriginGuard"
       },
       "id": "vKEsyHFk/Oi6SBIAM#NuehJHbK",

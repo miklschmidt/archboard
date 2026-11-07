@@ -5,7 +5,7 @@
   "responsibility": "Send explicit-vault inventory, mapping, and migration requests and preserve shared receipts and recovery refusals",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/clients/server/legacy-migration.ts"
+    "path": "apps/cli/src/cli/server-access/clients/legacy-migration.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#AhjN13Ip",
@@ -41,7 +41,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/clients/server/legacy-migration.ts",
+        "path": "apps/cli/src/cli/server-access/clients/legacy-migration.ts",
         "symbol": "requestJson"
       },
       "id": "vKEsyHFk/XppR9owz#YyXXHRVN",
@@ -53,7 +53,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/clients/server/legacy-migration.ts",
+        "path": "apps/cli/src/cli/server-access/clients/legacy-migration.ts",
         "symbol": "statedInvocation"
       },
       "id": "vKEsyHFk/XppR9owz#DugcdHTp",

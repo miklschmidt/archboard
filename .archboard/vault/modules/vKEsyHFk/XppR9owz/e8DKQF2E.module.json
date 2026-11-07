@@ -6,7 +6,7 @@
   "description": "The comparison command selects explicit canonical states and returns their exact revisions and semantic differences through the public model reader. It states interface changes first, then the interface counts of each compared state with no combined score. A repeated --beside adds competing proposals to those counts.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/model/read.ts",
+    "path": "apps/cli/src/cli/commands/model/operations/read.ts",
     "symbol": "modelCompareContract"
   },
   "schemaVersion": 1,

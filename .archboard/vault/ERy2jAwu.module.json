@@ -5,7 +5,7 @@
   "responsibility": "A pane's calls to the server: its report, its readings, its inventory and the checkout a person activated",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts"
+    "path": "apps/web/src/ui/panes/pane-session/clients/pane-requests.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#ERy2jAwu",
@@ -18,24 +18,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+        "path": "apps/web/src/ui/panes/pane-session/clients/pane-requests.ts",
         "symbol": "reportPane"
       },
       "id": "vKEsyHFk/Oi6SBIAM#wH0rE1x7",
       "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
-    },
-    {
-      "order": 17000,
-      "kind": "http",
-      "description": "what this pane is reading",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
-        "symbol": "postPaneRoute"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#VkGzebtq",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
     },
     {
       "order": 17000,
@@ -44,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+        "path": "apps/web/src/ui/panes/pane-session/clients/pane-requests.ts",
         "symbol": "requestJson"
       },
       "id": "vKEsyHFk/yejBBUFY#5U5bpM9T",
@@ -71,7 +58,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+        "path": "apps/web/src/ui/panes/pane-session/clients/pane-requests.ts",
         "symbol": "showConversation"
       },
       "id": "vKEsyHFk/Oi6SBIAM#MCGiGynf",

@@ -6,7 +6,7 @@
   "description": "Owns only dismissal and result presentation. The backend identifies the latest action in the tab. Toolbar, context menu, keyboard, typed requests, and voice use one backend action. The existing query cache holds result snapshots. The answer names its captured model and state. Progress, unavailable agents, cancellation, failure, and exact captured retry remain visible. Answers become architecture only through an explicit later agent write.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/architecture-model/ModelExplanationHost.tsx"
+    "path": "apps/web/src/ui/application/components/ModelExplanationHost.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#YLoD5SNo",
@@ -33,7 +33,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ModelExplanationHost.tsx",
+        "path": "apps/web/src/ui/application/components/ModelExplanationHost.tsx",
         "symbol": "ModelExplanationHost"
       },
       "id": "vKEsyHFk/yejBBUFY#ZV5gxAfu",
@@ -54,7 +54,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ModelExplanationHost.tsx",
+        "path": "apps/web/src/ui/application/components/ModelExplanationHost.tsx",
         "symbol": "tabSessionId"
       },
       "id": "vKEsyHFk/yejBBUFY#FmzPTTiB",

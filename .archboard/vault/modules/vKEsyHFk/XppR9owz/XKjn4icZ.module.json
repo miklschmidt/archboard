@@ -5,7 +5,7 @@
   "responsibility": "Makes sure what a command needs is there: the server, started when it is not running, and an open canvas",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/clients/server/prerequisites.ts"
+    "path": "apps/cli/src/cli/contract/clients/prerequisites.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#XKjn4icZ",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/clients/server/prerequisites.ts",
+        "path": "apps/cli/src/cli/contract/clients/prerequisites.ts",
         "symbol": "ensureServerRunning"
       },
       "id": "vKEsyHFk/XppR9owz#dMtR5BqB",
@@ -52,7 +52,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/clients/server/prerequisites.ts",
+        "path": "apps/cli/src/cli/contract/clients/prerequisites.ts",
         "symbol": "connectedBrowsers"
       },
       "id": "vKEsyHFk/XppR9owz#EywCr04W",

@@ -1,0 +1,28 @@
+{
+  "order": 90001,
+  "name": "graphviz-pure-geom",
+  "kind": "external",
+  "responsibility": "Node shapes, labels, HTML tables and pathplan of graphviz-pure",
+  "description": "Vendored from graphviz-pure 0.2.1 (crates/vendor/README.md); a path dependency of the Graphviz crate, not a workspace member.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/vendor/graphviz-pure-geom"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#1Af2oLOM",
+  "outgoing": [
+    {
+      "order": 91004,
+      "kind": "dependency",
+      "label": "the graph and its nodes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure-geom/src/shapes.rs",
+        "symbol": "NodeData"
+      },
+      "to": "vKEsyHFk#FLnwES7I",
+      "id": "vKEsyHFk#GTrRDM2m"
+    }
+  ]
+}

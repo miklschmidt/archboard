@@ -105,7 +105,7 @@
                   "kind": "async",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+                    "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
                     "symbol": "WalkthroughRecorder.start"
                   }
                 },

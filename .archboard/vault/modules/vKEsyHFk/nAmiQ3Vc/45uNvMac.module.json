@@ -5,7 +5,7 @@
   "responsibility": "Builds the command registry and resolves a child command",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/rules/routing/registry.ts"
+    "path": "apps/cli/src/cli/routing/rules/registry.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/nAmiQ3Vc#45uNvMac",
