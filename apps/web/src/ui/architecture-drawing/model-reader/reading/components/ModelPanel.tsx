@@ -235,6 +235,7 @@ function Rows<Item>(props: {
  * @param props.detail What it says of that.
  * @param props.stacked Whether the detail stands under the name.
  * @param props.action What else can be done with what it names, at its end.
+ * @param props.foot A mark along the foot of the row, such as a meter.
  * @returns The row.
  */
 function Row({
@@ -242,12 +243,14 @@ function Row({
 	detail,
 	stacked = false,
 	action,
+	foot,
 	...button
 }: ComponentProps<"button"> & {
 	readonly name: ReactNode;
 	readonly detail?: ReactNode;
 	readonly stacked?: boolean;
 	readonly action?: ReactNode;
+	readonly foot?: ReactNode;
 }): JSX.Element {
 	return (
 		<li className="flex items-center">
@@ -259,6 +262,7 @@ function Row({
 					// screen rises as a raised face.
 					"bg-background hover:bg-face aria-pressed:bg-face aria-pressed:shadow-raised aria-[current=location]:bg-face aria-[current=location]:shadow-raised rounded-control flex min-h-7 min-w-0 flex-1 gap-x-2 px-2 py-1 text-left transition-colors",
 					stacked ? "flex-col" : "items-baseline",
+					foot !== undefined && "relative overflow-hidden",
 				)}
 			>
 				<span
@@ -277,6 +281,7 @@ function Row({
 				>
 					{detail}
 				</span>
+				{foot}
 			</button>
 			{action}
 		</li>

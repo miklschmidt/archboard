@@ -166,9 +166,9 @@ test("a module lists the modules that change with it, the most shared commits fi
 	const rows = document.querySelectorAll<HTMLElement>("[data-part]");
 	expect(rows[0]?.getAttribute("data-shared")).toBe("35");
 	expect(rows[0]?.textContent).toContain("35");
-	// The mark stands on the unjoined partner only.
-	expect(rows[0]?.querySelector(".text-foreground")).not.toBeNull();
-	expect(rows[1]?.querySelector(".text-foreground")).toBeNull();
+	// The Unjoined chip stands on the unjoined partner only.
+	expect(rows[0]?.textContent).toContain("Unjoined");
+	expect(rows[1]?.textContent).not.toContain("Unjoined");
 });
 
 test("a row selects its partner", async () => {

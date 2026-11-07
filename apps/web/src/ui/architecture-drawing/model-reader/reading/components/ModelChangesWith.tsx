@@ -1,5 +1,6 @@
-import { useMemo, type JSX } from "react";
+import { useMemo, type CSSProperties, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Badge, cn } from "@archboard/ui-kit/components";
 import type { Model } from "@archboard/model/content";
 import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/access/clients/history.ts";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
@@ -65,8 +66,61 @@ function ModelChangesWith(props: ModelChangesWithProps): JSX.Element | null {
 }
 
 /**
- * One partner: its name, the commits that it shares with the module, and a plain mark when no
- * relationship joins the two. It selects the partner, and lights it on the picture while pointed at.
+ * The meter along the foot of a partner's row: as long as the degree, in gold for a pair that a
+ * relationship joins and in the changed orange for one that nothing joins, as on the site.
+ * @param props The partner.
+ * @param props.partner How much the two change together, and whether they are joined.
+ * @returns The meter.
+ */
+function DegreeMeter(props: { readonly partner: Partner }): JSX.Element {
+	const { degree, unjoined } = props.partner;
+	const width = useMemo<CSSProperties>(() => ({ width: `${degree}%` }), [degree]);
+	return (
+		<span
+			aria-hidden="true"
+			data-slot="model-partner-meter"
+			style={width}
+			className={cn(
+				"absolute bottom-0 left-0 h-0.5 bg-linear-to-r from-transparent opacity-80",
+				unjoined ? "to-standing-changed" : "to-primary-mark",
+			)}
+		/>
+	);
+}
+
+/**
+ * What a partner's row says under its name: a line that joins it to the module, or a dashed orange
+ * line and Unjoined when no relationship does, then the commits they share and how much of their
+ * changes that is.
+ * @param props The partner.
+ * @param props.partner The partner.
+ * @returns The line.
+ */
+function PartnerFacts(props: { readonly partner: Partner }): JSX.Element {
+	const { shared, degree, unjoined } = props.partner;
+	return (
+		<span className="flex items-center gap-2">
+			<span
+				aria-hidden="true"
+				className={cn(
+					"w-3.5 shrink-0 border-t-2",
+					unjoined ? "border-standing-changed border-dashed" : "border-muted-foreground/60",
+				)}
+			/>
+			{unjoined && (
+				<Badge variant="changed-tint" size="label" title="No relationship joins these modules">
+					Unjoined
+				</Badge>
+			)}
+			<span className="text-technical font-mono">{shared} shared</span>
+			<span className="text-technical text-foreground ml-auto font-mono">{degree}%</span>
+		</span>
+	);
+}
+
+/**
+ * One partner: its name, then what the two share, with the meter of their degree along its foot. It
+ * selects the partner, and lights it on the picture while pointed at.
  * @param props The partner and what the row does.
  * @param props.partner The partner.
  * @param props.onSelect Select the partner.
@@ -81,15 +135,8 @@ function PartnerRow(props: {
 	const pick = useModelPick(id, onSelect);
 	const peek = usePeekRow(id);
 	const { shared, unjoined } = partner;
-	const detail = useMemo(
-		() => (
-			<>
-				{shared} commits together
-				{unjoined && <span className="text-foreground"> · no relationship</span>}
-			</>
-		),
-		[shared, unjoined],
-	);
+	const detail = useMemo(() => <PartnerFacts partner={partner} />, [partner]);
+	const meter = useMemo(() => <DegreeMeter partner={partner} />, [partner]);
 	return (
 		<ModelPanel.Row
 			data-part={id}
@@ -100,6 +147,7 @@ function PartnerRow(props: {
 			name={name}
 			stacked
 			detail={detail}
+			foot={meter}
 		/>
 	);
 }
