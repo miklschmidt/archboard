@@ -40,12 +40,28 @@ const check = spawn(archboard, ["check"], { cwd: root, env, stdio: ["ignore", "i
 const closed = new Promise<number>((resolve) => {
 	check.on("close", (code) => resolve(code ?? 1));
 });
-// An information block continues on indented evidence lines.
-let information = false;
-for await (const line of createInterface({ input: check.stderr })) {
-	information = line.startsWith("information:") || (information && line.startsWith(" "));
-	if (!information) console.error(line);
+/**
+ * Cancel the CLI but keep this stage alive until it stops its detached server.
+ * @param signal The signal from the terminal or the gate that stopped early.
+ */
+function interrupt(signal: NodeJS.Signals): void {
+	check.kill(signal);
 }
-const status = await closed;
-spawnSync(archboard, ["stop"], { cwd: root, env, stdio: "ignore" });
+process.on("SIGINT", interrupt);
+process.on("SIGTERM", interrupt);
+
+let status = 1;
+try {
+	// An information block continues on indented evidence lines.
+	let information = false;
+	for await (const line of createInterface({ input: check.stderr })) {
+		information = line.startsWith("information:") || (information && line.startsWith(" "));
+		if (!information) console.error(line);
+	}
+	status = await closed;
+} finally {
+	spawnSync(archboard, ["stop"], { cwd: root, env, stdio: "ignore" });
+	process.off("SIGINT", interrupt);
+	process.off("SIGTERM", interrupt);
+}
 process.exit(status);
