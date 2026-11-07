@@ -1,6 +1,5 @@
 import { Activity, useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
-import { RiBarChartBoxLine } from "@remixicon/react";
-import { Button, IconButton } from "@archboard/ui-kit/components";
+import { Button } from "@archboard/ui-kit/components";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import type { Model as Content } from "@archboard/model/content";
 import { ModelBreadcrumbs } from "#ui/architecture-drawing/model-reader/reading/components/ModelBreadcrumbs.tsx";
@@ -16,7 +15,7 @@ import {
 	ModelHeading,
 	ModelStateChip,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelHeading.tsx";
-import { ModelMeasuresDialog } from "#ui/architecture-drawing/model-reader/reading/components/ModelMeasuresDialog.tsx";
+import { ModelMeasures } from "#ui/architecture-drawing/model-reader/reading/components/ModelMeasures.tsx";
 import { ModelReadingSurface } from "#ui/architecture-drawing/model-reader/reading/components/ModelReadingSurface.tsx";
 import { ModelRecords } from "#ui/architecture-drawing/model-reader/reading/components/ModelRecords.tsx";
 import { ModelTree } from "#ui/architecture-drawing/model-reader/reading/components/ModelTree.tsx";
@@ -25,6 +24,10 @@ import type { ChangeWalk } from "#ui/architecture-drawing/model-reader/hooks/use
 import { useChangeKeys } from "#ui/architecture-drawing/model-reader/reading/hooks/use-reader-keys.ts";
 import { useReader, type Reader } from "#ui/architecture-drawing/model-reader/hooks/use-reader.ts";
 import { flowCollections } from "#ui/architecture-drawing/model-reader/rules/flow-reading.ts";
+import {
+	MEASURE_VIEW,
+	type MeasureView,
+} from "#ui/architecture-drawing/model-reader/reading/rules/module-measures.ts";
 import type { InterfaceRow } from "#ui/architecture-drawing/model-reader/rules/interface-changes.ts";
 import { changeStepOf } from "#ui/architecture-drawing/model-reader/rules/reader-keys.ts";
 
@@ -49,8 +52,14 @@ interface ModelReadingProps {
 }
 
 /** What every reading offers, and what a reading with a record adds. */
-const READING: readonly Destination[] = ["modules", "flows", "walkthroughs"];
-const RECORDED: readonly Destination[] = ["modules", "flows", "walkthroughs", "history"];
+const READING: readonly Destination[] = ["modules", "flows", "walkthroughs", "measures"];
+const RECORDED: readonly Destination[] = [
+	"modules",
+	"flows",
+	"walkthroughs",
+	"history",
+	"measures",
+];
 const REVIEWED: readonly Destination[] = [...RECORDED, "changes"];
 
 /**
@@ -146,11 +155,11 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 	const { reader } = props;
 	const { model, location, structure, tree, branches, choices, walk } = reader;
 	const { opened, depicted } = structure;
+	const { shown } = reader.accepted;
 	const [finding, setFinding] = useState(false);
 	const [query, setQuery] = useState("");
-	// Temporary trigger: the column agent opens the dialog from a key in the column.
-	const [measuring, setMeasuring] = useState(false);
-	const measure = useCallback((): void => setMeasuring(true), []);
+	// The reader's sort and what it shows stay while the list is away: a closed tab draws nothing.
+	const [measureView, setMeasureView] = useState<MeasureView>(MEASURE_VIEW);
 	const { reviewing, step } = walk;
 	const typeAhead = useCallback(
 		(text: string): void => {
@@ -178,10 +187,6 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 					model={model}
 					onChoose={choices.chooseFind}
 				/>
-				<IconButton label="Measures" slot="model-measures-open" onClick={measure}>
-					<RiBarChartBoxLine />
-				</IconButton>
-				<ModelMeasuresDialog reader={reader} open={measuring} onOpenChange={setMeasuring} />
 			</ModelColumn.Find>
 			<ModelColumn.Destinations
 				destination={reader.destination}
@@ -213,6 +218,17 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 				</ModelColumn.List>
 				<ModelColumn.List value="walkthroughs">
 					<ModelWalkthroughs walkthroughs={model.walkthroughs} />
+				</ModelColumn.List>
+				<ModelColumn.List value="measures">
+					<ModelMeasures
+						vault={reader.vault}
+						model={shown.model}
+						projection={shown.projection}
+						selected={soleOf(reader.selection.ids)}
+						view={measureView}
+						onView={setMeasureView}
+						onChoose={choices.findModule}
+					/>
 				</ModelColumn.List>
 				<ReadingChanges reader={reader} />
 				{records && (
