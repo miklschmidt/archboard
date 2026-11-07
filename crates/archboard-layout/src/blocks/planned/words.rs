@@ -428,7 +428,12 @@ mod tests {
         let quiet = without_trunk_words(&graph).expect("a door's lines with words");
         let routed = dense_drawing(&quiet).expect("a drawing without their words");
         let drawing = dress(&graph, routed).expect("their words on their branches");
-        let last_stretch = |line: &PlacedLine| line.points[line.points.len() - 2];
+        // A line's last stretch: where it ends, and whether it runs in upright.
+        let last_stretch = |line: &PlacedLine| {
+            let [from, to] =
+                [line.points.len() - 2, line.points.len() - 1].map(|at| line.points[at]);
+            (to, from.x == to.x)
+        };
         let door = drawing.edges[0].points.last().copied();
         assert_eq!(drawing.edges.len(), ids.len());
         for line in &drawing.edges {
