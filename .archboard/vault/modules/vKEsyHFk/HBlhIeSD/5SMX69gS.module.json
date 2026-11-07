@@ -101,15 +101,15 @@
     {
       "order": 70055,
       "kind": "call",
-      "label": "resolve configured source tooling",
+      "label": "read each checkout's language server files",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/code-intel/src/runtime/code-check/operations/resolution.ts",
-        "symbol": "serverSkips"
+        "symbol": "passServers"
       },
       "id": "vKEsyHFk#73DTR15V",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+      "to": "vKEsyHFk#fEJJNr2X"
     },
     {
       "order": 71000,
