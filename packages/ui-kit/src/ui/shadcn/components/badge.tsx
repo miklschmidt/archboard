@@ -22,10 +22,12 @@ const badgeVariants = cva(
 				// small parts. Its front edge stands under its box.
 				count: "mb-0.5 min-w-5 bg-slab-face tabular-nums text-foreground shadow-slab",
 				// Archboard: the site's chips. A solid chip says changed in full, a tinted one says it
-				// quietly, and a quiet one sets a technical fact in mono on a well.
-				changed: "bg-standing-changed text-[oklch(0.2_0.03_50)] font-semibold",
+				// quietly, and a quiet one sets a technical fact in mono on a well. Their words keep
+				// APCA Lc 60: white on the chalk orange, near black on the graphite one, and ink on
+				// the tint, because the orange itself reads only Lc 51 to 56 there.
+				changed: "bg-standing-changed text-white dark:text-[oklch(0.12_0.02_50)] font-semibold",
 				"changed-tint":
-					"bg-standing-changed/14 text-standing-changed font-semibold inset-ring inset-ring-standing-changed/40",
+					"bg-standing-changed/14 text-foreground font-semibold inset-ring inset-ring-standing-changed/50",
 				quiet: "bg-tray-sink text-muted-foreground font-mono font-normal",
 				secondary: "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
 				destructive:
