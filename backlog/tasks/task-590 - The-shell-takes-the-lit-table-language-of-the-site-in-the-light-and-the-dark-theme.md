@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T12:41:00Z'
-updated_date: '2026-11-07T16:52:00Z'
+updated_date: '2026-11-07T19:51:00Z'
 labels: []
 dependencies: []
 documentation:
@@ -54,4 +54,6 @@ On 2026-11-07 the owner said that the mock shell pieces on the marketing site lo
 - Criterion 5: the picture reads only its own --diagram-* and standing tokens, and the branch changed none of them. The only change to the picture is the owner's narrower column (448 to 280px), which widens the core's reference pane (ADR 0043 amendment). The full gate (bun run check) exits 0, including drawn-glyphs.test.ts with assertThemeParity.
 - Criterion 6: DESIGN.md records the shell as built, and site/DESIGN.md says that the shell shares the site's language in its dark theme with a chalk translation in its light theme.
 The parent stays In Progress while TASK-590.09 waits for the owner's review of the orb's flight in the PR.
+
+2026-11-07, the design-smells clip: scripts/readme-assets/design-smells.ts now films the Measures dialog (open from its key, pick a view, sort from a column head, choose a row) in place of the retired Measures tab, and the regenerated still shows the table of what a module exposes sorted by Entries. The take showed that a Measures row walked to by the arrow keys went under the table's sticky head, so the scroll well now keeps a top scroll padding as tall as the head. The new clip waits to be attached with gh attach and put in README.md.
 <!-- SECTION:NOTES:END -->
