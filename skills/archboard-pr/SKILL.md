@@ -1,12 +1,10 @@
 ---
 name: archboard-pr
 description: >-
-  Explain a pull request with Summary, Evidence, and Merge Danger sections.
-  Use canonical model proposals for architecture changes, temporary canonical
-  models for incidental flows, and retained readings for renders and narrated
-  walkthroughs. Use when creating, updating, or explaining a pull request in
-  a repository with an .archboard/vault, including architecture kept in another
-  repository.
+  Write or update a PR body in a repository with an .archboard/vault, or one
+  whose architecture lives in another repository's vault. Load it together
+  with any other PR-body skill: it adds the proposal, the rendered architecture
+  pictures and the evidence that Summary, Evidence and Merge Danger need.
 ---
 
 # Explain a pull request
@@ -112,6 +110,7 @@ Done: artifacts name their exact reading, and their inspection and history avail
 ## Write and post
 
 Keep the visible body brief and use the repository's domain terms.
+Name each proposal and state in the visible body by its name, as the consumer skill says. The state comment carries the IDs.
 Lead Summary with the concrete problem and resulting behavior.
 Show pictures with descriptive alt text.
 Put a narrated video and collapsed transcript below its picture when one exists.
@@ -158,13 +157,31 @@ On update, replace the marked section and preserve author text outside it.
 Read the body back after posting.
 Make sure that each image uses an uploaded URL and each video URL occupies its own paragraph.
 
-## After the source merge
+## Adopt in the implementing PR
 
-A source merge does not adopt the proposal.
-Adopt only when the owner's instructions explicitly authorize implemented architecture.
+A PR that implements a proposal adopts that proposal on its own branch.
+Then the code and its architecture reach the default branch in one merge.
+A source merge never adopts by itself. A PR that merges without the adoption leaves a draft that describes code the default branch already holds.
+Most projects change the default branch only through PRs, so that draft then needs a PR of its own.
+The owner's request to prepare the implementing PR authorizes the adoption.
+
+After the code on the branch does what the proposal says, adopt the proposal. Do this before the PR is ready for review.
 Use the shared `model edit` adoption intent with a fresh complete revision and affected claims.
 Settle blocked ancestry before adoption.
-For superseded architecture, read the explicit comparison before any authorized forced adoption.
+Commit the adopted vault files with the implementation, and update the state comment.
+
+If the vault lives in another repository, the adoption is a commit in that repository, so it cannot merge with the code.
+Tell the owner. Prepare the adoption in a PR of the vault's repository, link each PR from the other's body, and ask the owner which merges first.
+
+If the default branch adopted another proposal first, the proposal follows a former current state and the adoption refuses with `PROPOSAL_SUPERSEDED`.
+Do not force the adoption, because a forced adoption installs the proposal's complete state and undoes the other adoption.
+Create a new proposal on the current state with the same name, summary, documents and changes.
+Before you adopt it, find what the other adoption changed: `model compare --state <current-id> --against <original-predecessor-id>`.
+Then compare the original with that same predecessor. A subject that both comparisons change is a conflict.
+If the copy would undo or conflict with a change of the other adoption, tell the owner, and adopt only after the owner decides.
+After the adoption, shelve the original with a reason that names the copy.
+
+If a draft describes code that the default branch already holds, tell the owner. If the owner agrees, adopt it in the PR that you prepare.
 
 If the work stops, shelve only when the owner authorizes that disposition.
 Retain the reason and exact baseline through the existing archive.

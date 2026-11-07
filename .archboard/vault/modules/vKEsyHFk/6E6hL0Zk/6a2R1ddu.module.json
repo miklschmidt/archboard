@@ -2,8 +2,8 @@
   "order": 9000,
   "name": "Code opener",
   "kind": "module",
-  "responsibility": "Resolves a node's binding against this machine and opens it",
-  "description": "The existing code opener also resolves an explicit migration preview before opening the candidate module binding. It refuses stale plans rather than using installed or legacy subjects.",
+  "responsibility": "Resolves a node's binding, or a file an agent's answer names, against this machine and opens it",
+  "description": "The existing code opener also resolves an explicit migration preview before opening the candidate module binding. It refuses stale plans rather than using installed or legacy subjects. A file an agent's answer names opens as the binding it would be, in the innermost checkout that the vault reads and that holds it. Any other path opens nothing.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-opener/src/server"

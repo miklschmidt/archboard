@@ -38,6 +38,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#RSxtiSv5",
       "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
+    },
+    {
+      "order": 990100,
+      "kind": "call",
+      "label": "what a press landed on",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
+        "symbol": "pickedTarget"
+      },
+      "id": "vKEsyHFk#CokUWpsM",
+      "to": "vKEsyHFk#IYU05cQX"
     }
   ]
 }

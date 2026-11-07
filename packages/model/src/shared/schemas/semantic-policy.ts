@@ -227,6 +227,8 @@ const VaultDiagnosticSchema = z.object({
 	variant: z.string().optional(),
 	subject: DiagnosticSubjectSchema.optional(),
 	sharedSymbol: SharedSymbolSchema.optional(),
+	/** The binding that a containment warning asks its container to take: one directory that holds every part. */
+	suggestedBinding: z.object({ repo: z.string(), path: z.string() }).optional(),
 	message: z.string(),
 });
 type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;

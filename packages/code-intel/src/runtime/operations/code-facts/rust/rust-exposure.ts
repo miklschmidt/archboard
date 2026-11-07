@@ -92,4 +92,4 @@ function rustHolds(directory: string, file: string): boolean {
 	return directory === "" || file.startsWith(`${directory}/`) || file === `${directory}.rs`;
 }
 
-export { RUST_FILE, rustHolds, rustRootFiles };
+export { RUST_FILE, cratesIn, rustHolds, rustRootFiles };

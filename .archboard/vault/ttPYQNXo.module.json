@@ -1,0 +1,71 @@
+{
+  "order": 1000,
+  "name": "Painter stage",
+  "kind": "function",
+  "responsibility": "Holds one canvas's picture, how it is seen and everything that moves on it, and draws a frame of it for the time a host gives",
+  "description": "The host hands it a picture, how the picture arrives, the camera, the light, the far view, the marks and the traffic. It also holds the sweeps, the warnings and the traffic clock. Everything that changes over time is worked out from the clock the host gives, so a stepped clock records it frame by frame.",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-paint/src/stage/mod.rs"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#ttPYQNXo",
+  "parent": "vKEsyHFk#NFwqWgrm",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "a whole picture's move, as a flight",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-paint/src/flight.rs",
+        "symbol": "Between"
+      },
+      "id": "vKEsyHFk#xalAnyTh",
+      "to": "vKEsyHFk#9jix9Dsx"
+    },
+    {
+      "order": 2000,
+      "kind": "call",
+      "label": "draw each frame's items",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-paint/src/stage/frame.rs",
+        "symbol": "draw_items"
+      },
+      "id": "vKEsyHFk#oKYGWd42",
+      "to": "vKEsyHFk#290spzv7"
+    },
+    {
+      "order": 3000,
+      "kind": "call",
+      "label": "what lies under a point",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-paint/src/stage/mod.rs",
+        "symbol": "Targets"
+      },
+      "id": "vKEsyHFk#HIuM9juy",
+      "to": "vKEsyHFk#107AGlEf"
+    },
+    {
+      "order": 4000,
+      "kind": "call",
+      "label": "the warning mark on a warned subject",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/marks.rs",
+        "symbol": "viewer_marks"
+      },
+      "id": "vKEsyHFk#9MKtlnoC",
+      "to": "vKEsyHFk#GqMdZbTF"
+    }
+  ]
+}

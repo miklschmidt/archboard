@@ -760,5 +760,5 @@
 <g class="ab-far" display="none"><g class="ab-words" style="--away:translate(-14.2px,18.5px) scale(0.7)"><g transform="translate(66 45) scale(0.02)" style="fill:var(--diagram-text)" aria-hidden="true"><use href="#gs5-11" x="0"/><use href="#gs5-23" x="649"/><use href="#gs5-137" x="887"/><use href="#gs5-138" x="1453"/><use href="#gs5-139" x="2015"/><use href="#gs5-137" x="2861"/><use href="#gs5-25" x="3427"/><use href="#gs5-143" x="4301"/><use href="#gs5-144" x="4902"/><use href="#gs5-20" x="5282"/><use href="#gs5-139" x="5905"/><use href="#gs5-144" x="6481"/></g><text x="66" y="45" font-size="20" textLength="137.42" lengthAdjust="spacingAndGlyphs" style="fill:transparent">Place an order</text></g></g>
 <g class="ab-near"></g>
 <g class="ab-far" display="none"></g></g>
-<metadata><archboard:render-recipe xmlns:archboard="https://github.com/miklschmidt/archboard/render-recipe">{"recipe":2,"model":{"id":"Shop","name":"Shop"},"vault":{"repo":"example.invalid/web-shop"},"reading":{"flow":"Shop#zV8LprrL","grammar":"flowchart","theme":"dark"},"fingerprint":"sha256:cbf61075a06e53e5c859f82d1da073d0e7e725e9b3975640e22ec7282cf195fc","picture":"sha256:9650193785eeb40563a540e8d9d0e63a808498b1ea09b32aab7c6ab7351273e7"}</archboard:render-recipe></metadata>
+
 </svg>
