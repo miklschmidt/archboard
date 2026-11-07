@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-07T12:47:00Z'
-updated_date: '2026-11-07T13:25:00Z'
+updated_date: '2026-11-07T14:53:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-590
@@ -42,6 +42,8 @@ The shell builds its planes with borders and short blurred shadows, while the si
 
 <!-- SECTION:NOTES:BEGIN -->
 Verified by captures at 1920x1080 in both themes of the left column, the pane header, the switches and the right panel. drawn-glyphs.test.ts passes, so the picture is unchanged: the renderer reads only the diagram tokens and the background.
+
+Corner pass (aacc657fd): every shadcn primitive and the app's own surfaces use the site's five corners, chip 2px, control 4px, panel 6px, table 10px and window 12px. app.css clears Tailwind's radius namespace and registers only these, so the built CSS holds no other corner. Dialogs take the window corner and the site's inset Rule Strong ring, fields are wells, and the breadcrumb is set at 500. Checked by captures in both themes of the Find dialog, the select, the menu, the popover, the Vault diagnostics dialog and the tooltip. The shell test keeps only behavior and contracts (01396df3c).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
