@@ -5,11 +5,15 @@ colors:
   ground-chalk: "oklch(0.99 0.0025 90)"
   ink-graphite: "oklch(0.17 0.006 75)"
   muted-ink: "oklch(0.48 0.008 75)"
+  body-ink: "oklch(0.3 0.008 75)"
   chrome-chalk: "oklch(0.973 0.004 88)"
   tray-chalk: "oklch(0.986 0.003 88)"
   reading-tone: "oklch(0.935 0.006 85)"
-  well-floor: "oklch(0.95 0.005 255)"
+  well-floor: "oklch(0.95 0.005 85)"
+  code-bed: "oklch(0.962 0.004 85)"
   tab-piece: "oklch(1 0 0)"
+  control-face: "oklch(1 0 0)"
+  control-face-hover: "oklch(0.978 0.004 88)"
   slab-face: "oklch(0.915 0.005 85)"
   card-white: "oklch(1 0 0)"
   rule: "oklch(0.905 0.005 85)"
@@ -79,8 +83,9 @@ typography:
     lineHeight: "14px"
 rounded:
   chip: "2px"
-  control: "3px"
-  panel: "4px"
+  control: "4px"
+  panel: "6px"
+  table: "10px"
 spacing:
   row: "28px"
   band: "36px"
@@ -92,20 +97,37 @@ components:
     rounded: "{rounded.control}"
     height: "32px"
     padding: "0 10px"
-  button-outline:
-    backgroundColor: "{colors.card-white}"
+    button-outline:
+    backgroundColor: "{colors.control-face}"
     textColor: "{colors.ink-graphite}"
     rounded: "{rounded.control}"
     height: "32px"
     padding: "0 10px"
+  button-outline-hover:
+    backgroundColor: "{colors.control-face-hover}"
   field:
     backgroundColor: "transparent"
     textColor: "{colors.ink-graphite}"
     rounded: "{rounded.control}"
     height: "32px"
     padding: "4px 10px"
+    field-group:
+    backgroundColor: "{colors.well-floor}"
+    textColor: "{colors.ink-graphite}"
+    rounded: "{rounded.control}"
+    height: "32px"
+  tab-trough:
+    backgroundColor: "{colors.well-floor}"
+    rounded: "{rounded.panel}"
+    padding: "3px"
+  tab-chosen:
+    backgroundColor: "{colors.control-face}"
+    textColor: "{colors.ink-graphite}"
+    rounded: "{rounded.control}"
+    height: "28px"
+    padding: "0 8px"
   nav-row-chosen:
-    backgroundColor: "{colors.tab-piece}"
+    backgroundColor: "{colors.control-face}"
     textColor: "{colors.ink-graphite}"
     rounded: "{rounded.control}"
     height: "28px"
@@ -118,11 +140,27 @@ components:
     textColor: "{colors.ink-graphite}"
     rounded: "{rounded.chip}"
     height: "16px"
-  page-card:
+    page-card:
     backgroundColor: "{colors.card-white}"
     textColor: "{colors.ink-graphite}"
     rounded: "{rounded.panel}"
     padding: "20px"
+  interface-card:
+    backgroundColor: "{colors.control-face}"
+    textColor: "{colors.ink-graphite}"
+    rounded: "{rounded.panel}"
+    padding: "16px"
+  claim-card:
+    backgroundColor: "{colors.chrome-chalk}"
+    textColor: "{colors.ink-graphite}"
+    rounded: "{rounded.panel}"
+    padding: "10px 16px"
+  chip-changed:
+    backgroundColor: "{colors.changed-orange}"
+    textColor: "{colors.card-white}"
+    rounded: "{rounded.chip}"
+    height: "22px"
+    padding: "0 8px"
 ---
 
 # Design System: archboard
@@ -152,10 +190,17 @@ everything. One warm yellow-gold marks what is chosen. It also marks the one
 primary action of a region, and that action is drawn as a physical piece of
 gold.
 
+The shell speaks the language of the site's lit table. In its dark theme it
+shares the values of the site. In its light theme it translates them to chalk.
+A control is a physical key that lifts 1px under the pointer and sinks when it
+is pressed. A choice in a trough rises out of it as a raised face with a gold
+underline.
+
 **Key Characteristics:**
 
 - The picture is the ground. The shell sits around it and over it.
 - Planes stack under a light from above. Each plane has a tone step, a highlight on its top edge and a warm shadow with an offset.
+- Keys are physical. A gold key and a quiet key lift on hover and sink on press, and a chosen tab rises out of its trough.
 - One gold has three uses: what is chosen, the one primary action, and the voice and the brand mark. On the picture, the palette's yellow is that gold, on purpose.
 - Tall condensed capitals set a name as a title. Plain sans sets every other word. Mono sets technical tokens only.
 - The shell is for the desktop only, near full screen at 1920×1080.
@@ -180,13 +225,16 @@ every role and changes the values. The file theme.css holds both themes.
 - **Ground Chalk** (oklch(0.99 0.0025 90), dark oklch(0.2 0.006 75)): the ground of the picture, and of the About page that lies over it.
 - **Chrome Chalk** (oklch(0.973 0.004 88), dark oklch(0.165 0.005 75)): the navigator, the pane header and the sidebar.
 - **Tray Chalk** (oklch(0.986 0.003 88), dark oklch(0.205 0.007 75)): a tray at the foot of a column, raised over the chrome. The agent dock and the foot of the selection tab use it.
-- **Reading Tone** (oklch(0.935 0.006 85), dark oklch(0.255 0.008 78)): the chosen row of a list on a page or in the right panel, raised as a plate.
-- **Well Floor** (`--tray-sink`, oklch(0.95 0.005 85), dark oklch(0.14 0.005 75)): the floor of the well that the left column's list lies in, and of a field sunk into the column. It is the floor of a nested container on the picture, so the column and the picture are one material.
-- **Tab Piece** (`--tray-tab`, oklch(1 0 0), dark oklch(0.25 0.007 75)): the lighter piece raised on the edge of a well: the open tab of the left column, and its chosen row.
+- **Reading Tone** (oklch(0.935 0.006 85), dark oklch(0.255 0.008 78)): the chosen row of a list on the About page.
+- **Well Floor** (`--tray-sink`, oklch(0.95 0.005 85), dark oklch(0.14 0.005 75)): the floor of the well that the left column's list lies in, and of the trough that holds tabs or a switch. It is also the floor of a field or a count cell sunk into a surface. It is the floor of a nested container on the picture, so the column and the picture are one material.
+- **Tab Piece** (`--tray-tab`, oklch(1 0 0), dark oklch(0.25 0.007 75)): the lighter piece that the picture raises on the edge of a container. The shell does not use it. A chosen tab or row takes Control Face.
 - **Slab Face** (`--slab-face`, oklch(0.915 0.005 85), dark oklch(0.31 0.007 75)): the top face of a number badge, on a front edge of `--slab-edge`.
-- **Card White** (oklch(1 0 0), dark oklch(0.235 0.007 75)): cards, popovers, dialogs and raised controls.
-- **Ink Graphite** (oklch(0.17 0.006 75), dark oklch(0.955 0.006 90)) and **Muted Ink** (oklch(0.48 0.008 75), dark oklch(0.72 0.01 80)): text.
-- **Rule** (oklch(0.905 0.005 85), dark chalk at 9%): the edge of a control or a card, one pixel wide. It also divides regions on one plane.
+- **Control Face** (`--face`, oklch(1 0 0), dark oklch(0.255 0.008 78)): the face of a quiet key, of a chosen tab or row, and of a card on a panel or a page. **Face Hover** (`--face-hover`, oklch(0.978 0.004 88), dark oklch(0.31 0.007 75)) is the same face of a quiet key under the pointer.
+- **Code Bed** (`--code-bed`, oklch(0.962 0.004 85), dark oklch(0.155 0.005 75)): the floor of a command or an excerpt of source. The `code-bed` utility holds it, and no shell surface draws it yet.
+- **Body Ink** (`--body-foreground`, oklch(0.3 0.008 75), dark oklch(0.86 0.008 85)): the ink of prose in a panel, a step under Ink Graphite. The words of an explanation, the reason of a state and the callers of an interface card use it.
+- **Card White** (oklch(1 0 0), dark oklch(0.235 0.007 75)): cards, popovers, dialogs and the plate of the voice circle.
+- **Ink Graphite** (oklch(0.17 0.006 75), dark oklch(0.955 0.006 90)) and **Muted Ink** (oklch(0.48 0.008 75), dark oklch(0.78 0.008 85)): text.
+- **Rule** (oklch(0.905 0.005 85), dark chalk at 9%): the edge of a control or a card, one pixel wide. It also divides regions on one plane. A quiet key and a plate draw it as an inset ring.
 
 ### Status
 
@@ -222,9 +270,9 @@ paths, versions, counts and times.
 - **Display** (650, 20px, 24px, 0.07em, capitals): a name set as a title. Examples are a picked part, a variant and a walkthrough. The utility is `title-name`. The model in a pane's breadcrumb is not one: it is Onest (650, 13px) in full ink, so the display face stays with the wordmark and the titles.
 - **Title** (600, 14px, 20px): the titles of regions and dialogs.
 - **Nav** (500, 14px, 20px): the name of a model in the navigator.
-- **Control** (500, 13px, 18px): buttons, tabs and fields.
+- **Control** (500, 13px, 18px): buttons, tabs and fields. The words of a button are semibold.
 - **Body** (400, 12px, 16px): prose and row labels. A section heading uses it in semibold.
-- **Presentation** (600, 28px, 34px): the heading of a presented step.
+- **Presentation** (600, 22px, 28px): the heading of a presented step.
 - **Reading** (400, 16px, 24px): the words of a presented step, in a column 64rem wide at most, and the summary under a model's name on its About page.
 - **Figure** (650, 44px, 44px, display face): the number of a presented step, and a model's name, in capitals, at the head of its About page.
 - **Subtitle** (500, 20px, 28px): the words the voice says. A section heading of the About page uses it in semibold.
@@ -257,9 +305,7 @@ phone layout.
 
 The system is layered. Planes stack over the picture under a light from above.
 Each plane shows its height in three ways. The first is a tone step. The second
-is a fine highlight on its top edge. The third is a soft shadow with an offset,
-tinted toward the warm neutrals: umber on chalk and a warm near-black on
-graphite. The picture is the ground, and only still shadows fall on it. Nothing
+is a fine highlight on its top edge. The third is a soft shadow with an offset, tinted toward the warm neutrals: umber on chalk and a warm near-black on graphite. A raised plane keeps a contact line of 1px or 2px under its edge, as the planes of the site do. A trough takes the opposite: an inner shadow under its top edge and a lit line along its foot. The picture is the ground, and only still shadows fall on it. Nothing
 over the picture is blurred or filtered, and nothing there loops but the voice
 orb, which draws itself on a canvas of its own, because every repaint over the
 picture makes it slower to drag. What moves over it moves as a layer of its own,
@@ -271,16 +317,29 @@ The file app.css holds the values for both themes and gives each one a
 
 ### Shadow Vocabulary
 
-- **well** (`--elevation-well`, an inner shadow of 1px offset and 2px blur): a field sunk into a surface, such as an input or the composer.
+- **well** (`--elevation-well`, an inner shadow with a lit line along the foot): a field sunk into a surface, a trough, a count cell and a pressed key. `--elevation-trough` is the same piece under its other name.
 - **sink** (`--elevation-sink`, built from `--slab-shadow` and `--tray-lip`): the well that a column's list lies in. One inner shadow falls from the whole of its top edge, and a lit lip runs along its foot, as on a container of the picture. The `column-well` utility holds the recipe.
 - **slab** (`--elevation-slab`, built from `--slab-glint`, `--slab-edge` and `--slab-shadow`): a number that lies on a surface, as a small part of the picture does: a lit top edge, a front edge 2px thick and a short shadow.
-- **edge-down, edge-side and edge-up** (`--elevation-edge-*`): the chrome casts these onto what is under it or beside it. Each is a 1px contact shadow and a soft shadow. The soft shadow has an 8px offset on chalk and 10px to 12px on graphite. A tray casts edge-up over the list that scrolls under it.
-- **raised** (`--elevation-raised`, a white highlight on top and a 1px seat): a control, a key cap, the voice circle and the chosen row of a list.
-- **pressed** (`--elevation-pressed`, an inner shadow): a raised control while somebody presses it.
-- **card** (`--elevation-card`): a card on a page.
-- **float** (`--elevation-float`, a highlight on top and three shadows): menus, tips, lists of matches, the floating sidebar and the voice box.
-- **dialog** (`--elevation-dialog`, a highlight on top and three shadows): dialogs.
-- **primary and primary-pressed** (`--elevation-primary*`): the gold finish at rest and pressed.
+- **edge-down, edge-side and edge-up** (`--elevation-edge-*`): the chrome casts these onto what is under it or beside it. On chalk, each is a 1px contact line and a soft shadow with a 10px offset and a 24px blur. On graphite, a header and a tray swap the contact line for a lit line inside their edge. The soft shadow of a column has a 12px offset there. A tray casts edge-up over the list that scrolls under it.
+- **raised** (`--elevation-raised`, a white highlight on top, a 1px contact line and a short soft shadow): a quiet key, a key cap, the voice circle and the chosen row of a list.
+- **pressed** (`--elevation-pressed`, the same value as well): a raised control while somebody presses it.
+- **chosen** (`--elevation-chosen`, raised and a 2px line of Gold Mark inside the foot): the chosen tab of a trough. It is also the chosen row of the tree that is the row of what is open.
+- **card** (`--elevation-card`, a highlight on top, a 1px contact shadow and two long soft shadows): a card on a page.
+- **float** (`--elevation-float`, the same value as card): menus, tips, lists of matches, the floating sidebar and the voice box.
+- **table** (`--elevation-table`, a highlight on top, a 2px contact line and two long soft shadows): the tray that holds a plate. No shell surface uses it yet.
+- **dialog** (`--elevation-dialog`, a highlight on top, a 2px contact line and two very long soft shadows): dialogs.
+- **primary, primary-hover and primary-pressed** (`--elevation-primary*`): the gold finish at rest, under the pointer and pressed. At rest it has a 1px contact line and a glow of 6px offset. Under the pointer the line grows to 2px and the glow to a 12px offset. Pressed, an inner shadow replaces both.
+
+### Utilities of the Lit Table
+
+The file app.css gives the pieces of the site's lit table as utilities. Reach for them before you write a new shadow.
+
+- **quiet-key**: Control Face and Ink with `shadow-raised` and an inset ring of 1px in the Rule tone. Under the pointer it lifts 1px onto Face Hover. Pressed, open or pressed in, it sinks into `shadow-pressed`. It eases over 160ms. `Button` takes it as `outline`, and the trigger of a select takes it too.
+- **trough**: a recessed well that holds the choices of a switch or a row of tabs. It is Well Floor with `shadow-trough`, 6px corners, 3px of padding and a 2px gap.
+- **chosen-face**: the choice raised out of a trough, in Control Face and full ink with `shadow-chosen`.
+- **plate**: a plane in the ground's tone with 6px corners and an inset ring of 1px in the Rule tone. The reply to an explanation lies on one.
+- **tray**: the frame that a plate lies in, in Chrome Chalk with 6px of padding, 10px corners, `shadow-table` and the ring. No shell surface draws it yet.
+- **code-bed**: the floor of a command or an excerpt of source, in Code Bed with 6px corners and the ring. No shell surface draws it yet.
 
 ### The Picture's Own Depth
 
@@ -389,31 +448,36 @@ along the line on both grounds.
 
 **The Planes Not Lines Rule.** Regions read as layered planes. A one-pixel rule stays only where it draws the edge of a control or a card, or where it divides regions on one plane.
 
+**The Lit Plane Rule.** A raised plane carries a lit top edge, a contact line and a soft shadow, or it carries none. A contact line is 1px or 2px. No larger hard offset shadow appears in the shell.
+
+**The Chosen Rises Rule.** In a trough, the chosen choice rises out of it as a Control Face in full ink with `shadow-chosen`. That shadow is the raised one with a 2px underline of Gold Mark inside the foot.
+
 ## Shapes
 
-Corners are small and firm. Chips have 2px corners, and so does the key
-combination in a tooltip. Controls, rows and the key cap that hints a shortcut
-beside a field have 3px corners. Cards, menus and dialogs have 4px corners. The
-voice and the medallion of a part are circles.
+Corners are small and firm, in the ladder of the site. Chips have 2px corners, and so does the key
+combination in a tooltip. Controls, rows, tabs and the key cap that hints a shortcut
+beside a field have 4px corners. Cards, menus, popovers, troughs and plates have 6px corners. A dialog
+takes the ui-kit's medium corner, 3.2px. The stylesheet also holds a 10px corner for a tray that
+holds a plate, which no shell surface draws yet. The voice and the medallion of a part are circles.
 
 Some forms are capsules, round at both ends. These are the voice box and the
 voice pill at the foot of the walkthrough box. The segments of the rail and the
-gold piece that travels along it are capsules too. Edges are one-pixel rules in
-the Rule tone.
+gold piece that travels along it are capsules too. Edges are one-pixel rules in the Rule tone. A quiet key and a plate draw theirs as an inset ring of 1px, not as a border.
 
 ## Components
 
 ### Buttons
 
-- **Shape:** firm corners (3px to about 4.8px).
+- **Shape:** firm corners (4px, and about 3px on the small and icon sizes).
 - **Primary:** a physical piece of gold, drawn by the `primary-finish` utility. It has the gradient from Gold Top to Gold Bottom and a Gold Rim edge. It has a highlight on its top edge, a shadow that seats it and Gold Ink text. It is the one primary action of a region: Open <model> at the foot of the selection tab, Send, and the button of a dialog that saves or agrees.
-- **Hover and pressed:** hover makes the gradient brighter. Pressed turns the gradient over, moves the shadow inside and sinks the control by 1px.
-- **Outline and secondary:** Card White, a Rule edge and `shadow-raised`. When pressed, they use `shadow-pressed`.
+- **Hover and pressed:** hover lifts the gold finish 1px and lengthens its glow. Pressed sinks it 1px, turns the gradient over and moves the shadow inside. Both ease over 160ms.
+- **Outline, the quiet key:** Control Face with Ink words, drawn by the `quiet-key` utility. It has `shadow-raised` and an inset ring of 1px in the Rule tone. Hover lifts it 1px onto Face Hover. Pressed or open, it sinks into `shadow-pressed`. Disabled, it loses its shadow.
+- **Secondary:** the secondary tone with `shadow-raised`. When pressed, it uses `shadow-pressed`.
 - **Ghost:** no fill until hover.
 
 ### Cards / Containers
 
-- **Corner Style:** 4px.
+- **Corner Style:** 6px.
 - **Background:** Card White.
 - **Shadow Strategy:** `shadow-card`. A card holds controls and is not one itself, so it does not rise on hover.
 - **Border:** a one-pixel Rule.
@@ -422,13 +486,14 @@ the Rule tone.
 ### Inputs / Fields
 
 - **Style:** a Field Rule edge and `shadow-well`, with no fill of its own, so it takes the tone of the surface it sits in. The dark theme fills it with the Field Rule at 30%.
+- **Group:** an input group stands on the Well Floor with `shadow-well`. Its edge shows only on focus, so it reads as cut into its surface.
 - **Size:** 32px high, with 10px of room at each side, as a button is.
 - **Focus:** the edge changes to the ring colour.
 - **In the left column:** Find and the field of the repository list stand on the Well Floor, so they read as cut into the chrome.
 
 ### Selects and menus
 
-Every dropdown of the shell is one popover from the ui-kit. A select's trigger is a raised key: Card White, a Field Rule edge, `shadow-raised` and 3px corners. It sinks into `shadow-pressed` while its popover is open, and its chevron turns over. The popover stands under its trigger, never over it, in Card White with a Rule edge, 4px corners and `shadow-float`. It fades in and grows from 97 percent, once, from the side of the control that opened it, and it leaves faster than it came. A menu moves the same way. With reduced motion both are there and gone at once. The durations are `popoverIn` and `popoverOut` of `COLUMN_MS`.
+Every dropdown of the shell is one popover from the ui-kit. A select's trigger is a quiet key: Control Face, `shadow-raised`, an inset ring of 1px and 4px corners. It sinks into `shadow-pressed` while its popover is open, and its chevron turns over. The popover stands under its trigger, never over it, in Card White with a Rule edge, 6px corners and `shadow-float`. It fades in and grows from 97 percent, once, from the side of the control that opened it, and it leaves faster than it came. A menu moves the same way. With reduced motion both are there and gone at once. The durations are `popoverIn` and `popoverOut` of `COLUMN_MS`.
 
 A row of a popover is at least 28px high. A tone of the ink marks the row under the pointer or the keys, and a check in Gold Mark marks the chosen one. A group has a heading in Body at weight 500, in sentence case. A choice can carry one line in Body in muted ink under its name, which says what it is for. `Select.Item` takes it as `description`.
 
@@ -436,11 +501,21 @@ A row of a popover is at least 28px high. A tone of the ink marks the row under 
 
 A count of the left column stands on a low slab: `Badge` with the `count` variant and the `technical` size. It is 16px high on a front edge 2px thick, with 2px corners and the number in mono, because a small part of the picture is built the same way. The counts of the tabs, the steps of a walkthrough, the checkouts of a repository and the sorted count of a `Measures` row all use it. A number that reads as part of a table, such as the other counts of a `Measures` row, stays bare in its column.
 
+### Chips
+
+`Badge` has the chips of the site in its `label` size. A chip is 22px high, with 2px corners, 8px of room at each side and Body words.
+
+- **Changed:** a solid chip in Changed Orange, semibold, with white words on chalk and near black on graphite. On the interface cards of About it names the state that the reading is on.
+- **Changed tint:** Changed Orange at 14% under Ink, semibold, with an inset ring of 1px in Changed Orange at 50%. It says `Unjoined` in a partner row of the right panel.
+- **Quiet:** a Well Floor chip with muted ink in the mono face. No shell surface uses it yet.
+
+The words of a chip keep APCA Lc 60: white on the chalk orange, near black on the graphite one, and Ink on the tint. The orange alone reads only Lc 51 to 56 on the tint.
+
 ### Navigation
 
-- **Style:** the list lies in a well cut into the chrome, as a container is cut into the picture: the Well Floor, one thin line round it, an inner shadow from the whole of its top edge and a lit lip along its foot. The `column-well` utility holds the recipe. Nothing in the column is divided by a rule. A row is 28px at least, and a model or folder row 36px. Rails and elbows draw its levels. The chosen row is a plate in the Tab Piece tone with `shadow-raised`, and the row of what is open has a front edge in Gold Mark along its foot. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
+- **Style:** the list lies in a well cut into the chrome, as a container is cut into the picture: the Well Floor, one thin line round it, an inner shadow from the whole of its top edge and a lit lip along its foot. The `column-well` utility holds the recipe. Nothing in the column is divided by a rule. A row is 28px at least, and a model or folder row 36px. Rails and elbows draw its levels. The chosen row rises out of the well as a Control Face with `shadow-raised`, and a row under the pointer takes Control Face at 50%. The row of what is open has a 2px line of Gold Mark inside its foot, and a row that is both takes `shadow-chosen`. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
 
-The left column's tabs stand on the top edge of the well, as a container's name stands on the picture. They are 32px high, in Control and muted ink. The open tab is the Tab Piece raised on that edge, in full ink, with an underline of Gold Mark under its words. Its corners are 5px, and it meets the edge in a concave curve of 8px. The well's top edge runs on under it, so a line parts the tab from the floor. A tab at the well's left end keeps the well's left side, so it has no curve there. On a proposal, `Changes` and the walk share a second row. A pane's own tabs keep their underline of Gold Mark.
+The left column's destinations stand in a trough over the well of the list, as the tabs of the site do. The trough is the Well Floor with `shadow-trough`, 6px corners, 3px of padding and a 2px gap. It keeps 8px of room at each side and below it. Each tab is 28px high, in Control and muted ink, with 4px corners and 8px of room at each side. A tab under the pointer takes full ink. The open tab rises out of the trough as a Control Face in full ink with `shadow-chosen`. That is the raised shadow with a 2px underline of Gold Mark inside its foot. The `trough` variant of `Tabs.List` draws all of it. On a proposal, `Changes` joins the row and the tabs drop their counts to make room. A pane's own tabs keep their underline of Gold Mark.
 
 `Measures` is a table of every module, the most of one measure first, on the floor of the well. A row is one line of 28px: the name, then seven count columns of 30px, in the order of the sort control. So each count stands in one place on every row, and a row never wraps. The numbers are mono in Technical, right aligned.
 
@@ -457,17 +532,17 @@ Chrome Chalk with a rule down its inner edge and `shadow-edge-side`. With nothin
 selected, it says the open module's name and description, or at the roots the model's
 name and the summary of its state. A flow reading says the flow. With a selection, it
 explains the selected thing, and a click on a card lights the card and fills the panel at
-once. A new subject opens at the top of the panel and arrives with a 120ms fade. A row
-answers the pointer with a change of tone and nothing else, and a row of a subject on the
-picture also lights it. Its actions stand over the legend, so a selection never moves a tag.
+once. A new subject opens at the top of the panel and arrives with a 120ms fade. A row of a list is a plate in the ground's tone on the panel. Under the pointer it takes Control Face and nothing else changes. The row on screen, or the row that is pressed, rises as a Control Face with `shadow-raised`. A row of a subject on the picture also lights it. Its actions stand over the legend, so a selection never moves a tag.
 Long lists and evidence live on About, which lies over the panel, so the panel keeps its
 room and the picture keeps its camera. A pane presented fullscreen has no panel.
+
+A section of the panel opens with its title in Body semibold and full ink. Its count stands beside the title in mono and muted ink. Eight pixels part the title from its rows, and 2px part one row from the next.
 
 With a module expanded into the picture, the panel stays with the module that the reading
 opened. An `Expanded` section under `Interface` lists each expanded module, with its count.
 A row selects that frame, and a minus at the end of the row collapses it. A line under the
 rows says how many modules of the address cannot open here. With a door or an expanded
-module selected, an outlined action at the foot expands or collapses it.
+module selected, a quiet key at the foot expands or collapses it.
 
 Under what it says, the panel lists the flows and the walkthroughs that touch the
 selection, or else the open module. At the roots with nothing selected it lists neither.
@@ -475,16 +550,13 @@ Each list has a count, four rows and a line that says how many more. A flow's ro
 with its collection and a walkthrough's with its steps, and the flow on screen takes the
 tone of a chosen row.
 
-For a module with parts, open or selected, an `Interface` section under its head holds
-one quiet line: entries, hidden, callers, `to module` when callers reach the module itself,
-and pass-through. Each count selects what it counts on the module's picture, and a count
-of none is disabled. `Open in About`, a 24px outlined control in the heading, opens the
-Interface section of About. Each count of a module open in the picture selects on this
-picture. No count takes a warning color, nothing combines the counts,
-and the picture gains no permanent mark. With one module selected, the head of
-`Sends to` and the head of `Receives from` each hold a 24px outlined toggle, `Trace onward`
-and `Trace back`, with the number of cards it reaches in the mono face. A pressed toggle
-takes the primary mark, and the picture grades what it reached, each further hop fainter.
+A module with parts, open or selected, has an `Interface` section under its head. It holds the counts of entries, callers, `To module` and pass-through. `To module` counts the callers that reach the module itself. An `Implementation` section holds the hidden parts. A count is a cell sunk into the panel: the Well Floor with `shadow-well` and 4px corners. Its name stands at the start in muted ink, and its number in the mono face stands at the end. Two cells share a row.
+
+Each count selects what it counts on the module's picture, and a count of none is disabled. `Open in About`, a 24px quiet key in the heading, opens the Interface section of About. Each count of a module open in the picture selects on this picture. No count takes a warning color, nothing combines the counts, and the picture gains no permanent mark.
+
+With one module selected, the head of `Sends to` and the head of `Receives from` each hold a 24px outlined toggle, `Trace onward` and `Trace back`, with the number of cards it reaches in the mono face. A pressed toggle takes the primary mark, and the picture grades what it reached, each further hop fainter.
+
+A module with code history has a `Changes with` section. It lists the modules whose code changes in the same commits as its own, the strongest first. A row names the partner. Under the name, one line holds a short mark that joins the pair. An `Unjoined` tint chip follows it when no relationship joins them. The commits that they share stand next in mono, and the degree stands at the end in full ink. The mark is a solid line in muted ink for a joined pair and a dashed line in Changed Orange for an unjoined one. A meter of 2px runs along the foot of the row, as long as the degree. It fades from clear to Gold Mark for a joined pair and to Changed Orange for an unjoined one.
 
 The legend is a tray at the foot of the panel (Tray Chalk and `shadow-edge-up`), and it needs
 no click. A long subject and its lists scroll above it, and the whole legend stays on screen.
@@ -497,14 +569,12 @@ The rows come from the whole reading, not from what the picture draws now, and e
 the order of the policy. So hiding a kind moves no row, and the legend keeps its height. A line
 type that a reader hid stays, dimmed. So does a part kind, a mixed line or a line's mark that
 left the picture with it. A chip that the picture does not draw takes the icon that the policy
-names. `Filter` is an outline key with a funnel and the count of hidden kinds in mono, and it
-grows into the free room of its column. While the switches show it is pressed in, with a gold
-mark under its words, as the dock's conversation key is. `Show all` stands at the end of the
+names. `Filter` is a quiet key with a funnel and the count of hidden kinds in mono, and it
+grows into the free room of its column. While the switches show it is pressed in. `Show all` stands at the end of the
 row while a kind is hidden. A line type keeps the room of its switch at all times, and a mixed
 line has no switch, because it is no kind of relationship.
 
-Under the legend on a structural reading, one row holds `Layout engine` and a switch between
-Blocks and Tracks.
+Under the legend on a structural reading, one row holds `Layout engine` and a switch between Blocks and Tracks. The switch is a trough, and the engine in use rises out of it as a raised face.
 
 A group is a tag with its name inside, and the tags wrap. A tag is one bright piece in
 both themes, cut from the dark value of its palette color (`--bright-<name>`): a gradient
@@ -529,6 +599,28 @@ picture back. A module that the state lacks says `Not in this state`, and its ro
 on the drawing of the comparison. These rows wear no standing mark, score or warning color.
 With no interface change, one quiet line in place of the rows says so. The change list follows
 under the rule, with a section for each owner. `N` and `P` walk only that list.
+
+### History timeline
+
+The History tab reads as a timeline of the model's states. Each state is a row with a node on a rail at its left. The rail is a 2px line in the Rule tone. Each row draws its own piece. The pieces of one section join into one line from the first node to the last.
+
+A node is the node that the About page draws. The current state is solid Gold Mark with a halo of the same gold at 18%. A proposal is a ring in Changed Orange. A state that was current is a ring in muted ink, and a shelved state is a fainter ring. A hollow node takes the floor that it lies on.
+
+The first line of a row holds the lifecycle word in Body semibold and the state's name in Control semibold. The date stands at the end in mono. The word is Proposal, Current, Earlier or Shelved, and Unavailable when the record cannot name the state. It is accent text for the current state and muted ink for the others. Under the first line, up to two lines in Body Ink say why the state came to stand there, or what a proposal does. A shelved state says it in muted ink. The facts of the row follow in mono.
+
+The row that the reading is on rises as a Control Face with `shadow-raised` and a ring of Gold Mark at 35%. A row under the pointer takes Control Face at 50%. A saved checkpoint under a state is a plain row. It shows its time in mono over what was being done. `Compare` stands at its end while the checkpoint is not on screen.
+
+### Claim card
+
+A current reading shows each claim as a card across the top of its pane. The card is Chrome Chalk with 6px corners and a ring of 1px in Live Lime at 40%. It stands on the ground with 12px of room at the top and at each side.
+
+The head of the card holds a live dot, `Claimed` in Control semibold and the time that the claim began in mono. The dot is 6px in Live Lime with a halo of the same colour at 25%. Next, three terms, State, Doing and Subjects, stand in muted ink with their words in full ink, cut short. At the end is `Take back control`, the one primary action of the card, in the gold finish. A refusal shows its words in the destructive colour before the key.
+
+### Explanation reply
+
+An explanation of the selection stands at the foot of its pane. The foot is Chrome Chalk with `shadow-edge-up`, a Rule line on its top edge, 12px of padding and 20rem of height at most. The reply lies on a plate inside it.
+
+The head of the plate is 40px high. It holds the status of Codex in Body semibold, with the OpenAI mark in Gold Mark before it. The status is accent text, which is gold on graphite and Ink on chalk. After the status come what the answer is about, in muted ink and cut short, and the retry and cancel keys when they apply. A ghost key closes the reply. The words are Body in Body Ink, 48rem wide at most, and they scroll under the head.
 
 ### Pane sidebar
 
@@ -588,8 +680,7 @@ smoothly, or at once with reduced motion.
 A section heading is Subtitle in semibold, and 56px separate one section from the
 next. A walkthrough is a Page Card, 24px from the next one. Its head has the name
 in the Display role and the number of steps in Body in muted ink. Under them is the
-summary in Control at weight 400 in muted ink. At the end of the head are the
-outline button Present and the icon button Narrate. Each step is a row under a
+summary in Control at weight 400 in muted ink. At the end of the head are the quiet key Present and the icon button Narrate. Each step is a row under a
 Rule, with 16px of padding above and below and 20px at each side. The step's
 number is Display in muted ink, right aligned in a column 48px wide. A Rule on its
 right sets it as the sheet number of a drawing is set. Its heading is Title, and
@@ -608,17 +699,16 @@ and a 2px piece of Gold Mark on its left edge. A relationship with a picked part
 either end takes Gold Tint. The control at the end of a row is an icon button in
 muted ink.
 
-The variants are the navigator's timeline at the page's room: the lanes are 28px
-apart. A variant's name is Display, where it stands is Body and its reason is
-Control at weight 400 in muted ink. The row of the variant on screen is a plate in
-Reading Tone with `shadow-raised` and a 2px piece of Gold Mark on its left edge. The
-words On screen stand at the end of that row in accent text.
+The states are a timeline at the page's room: the lanes are 28px apart. Each state has a node of 12px on its lane, drawn as the history of the site draws it. The current state is solid Gold Mark with a soft halo. A proposal is a ring in Changed Orange. A state that was current is a ring in muted ink, and a shelved state is a fainter ring. A state's summary, or its name when it has none, is Title. Where it stands is Body, and its reason is Control at weight 400 in muted ink. The state on screen rises as a card: a Control Face with 6px corners, `shadow-raised` and a ring of Gold Mark at 35%. The words On screen stand at the end of its first line in accent text.
+
+A module whose interface changed in a comparison opens the Interface section with two cards side by side, the base first. A card is a Control Face with 6px corners, 16px of padding and 12px between its parts. It has `shadow-raised` and an inset ring of 1px in the Rule tone. The card of the state that the reading is on wears a ring of Changed Orange at 45% in place of the Rule ring. Its head names the module in the Display role. A chip at the end says where the state stands: Proposal, Current, Earlier, Shelved, or This reading for a model with no states. The state read has the solid Changed chip, and the other has an outline chip. The state's name stands under the head in Body and muted ink.
+
+Three Well Floor cells, Entries, Hidden and Callers, hold the counts in the mono face at 18px under their names in Body and muted ink. Under them, the entry points of the state are rows in the ground's tone with a filled 8px mark. A part that is hidden here but an entry point on the other side is a row outlined by a ring of 1px, with a hollow mark in muted ink. The ring is Changed Orange at 50% on the card of the state read, and the Rule tone on the other. A last line names the callers that only this state has. A state with no parts says so in one line.
 
 ### Agent dock
 
 The agent dock is a tray at the foot of the navigator. It uses Tray Chalk and
-`shadow-edge-up`. While voice is off it is calm. Two raised keys of one height
-(32px, 3px corners) stand in a row at its foot: Talk, as wide as the room, and
+`shadow-edge-up`. While voice is off it is calm. Two quiet keys of one height (32px, 4px corners) stand in a row at its foot: Talk, as wide as the room, and
 a key to the conversation, an icon alone. The conversation's key is pressed in,
 with a gold mark under it, while the conversation is open, and has a gold dot
 while words wait unread. When the agent is on something, its state, what it is
@@ -755,8 +845,7 @@ shows no state, because pressing it acts. They stand 6px in from the capsule's e
 orb does, and 6px from each other, one stack as high as the orb. The stack is a half circle
 on its right, round the same middle as the capsule's own end, so each key is a quarter of
 it, and the curve follows the capsule's all the way round at the same distance. They are
-straight on the side that looks into the box and where the two face each other, with the
-corner of a key, 3px, at the two corners that look into the box. Mute is dimmed while the
+straight on the side that looks into the box and where the two face each other, with the corner of a key, 4px, at the two corners that look into the box. Mute is dimmed while the
 voice is starting or ending. Where there are no words the box says what
 the voice is doing in a word, at 13px, in the accent text while the voice is lit and in
 muted ink while it is muted or ending. The words are 20px and two lines at most. A warm
@@ -808,6 +897,7 @@ Keyboard focus follows the subtitles control to the surface that takes it over.
 - **Do** draw the one primary action of a region with `primary-finish`, and only that one.
 - **Do** separate regions with tone steps and elevation tokens before you add a rule.
 - **Do** keep shadows warm and offset. Take them from the elevation tokens in app.css.
+- **Do** reach for `quiet-key`, `trough`, `chosen-face` and `plate` before you write a new shadow.
 - **Do** keep the ink on gold at Gold Ink (APCA Lc 66 or more).
 
 ### Don't:
