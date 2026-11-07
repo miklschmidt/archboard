@@ -10,7 +10,7 @@ const badgeVariants = cva(
 			// Archboard sizes (TASK-150.08): `technical` is the 16px mono mark for a
 			// level, a type or a pane letter; `chip` is the 24px flat state chip.
 			size: {
-				default: "h-5 rounded-4xl px-2 py-0.5 text-body font-medium",
+				default: "h-5 rounded-chip px-2 py-0.5 text-body font-medium",
 				technical: "text-technical h-4 rounded-chip px-1 font-mono font-medium",
 				chip: "text-body h-6 gap-1.5 rounded-chip px-2 font-normal",
 				// The site's chip: 22px, 2px corners, the words at 12px.

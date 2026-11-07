@@ -30,7 +30,7 @@ function ModelReconciliation(props: ModelReconciliationProps): JSX.Element | nul
 	return (
 		<details
 			data-slot="model-reconciliation"
-			className="text-body bg-status-subtle rounded-md px-3 py-2"
+			className="text-body bg-status-subtle rounded-panel px-3 py-2"
 		>
 			<summary className="text-status-foreground cursor-pointer font-medium">
 				{standing.issues.length} unresolved{" "}
@@ -56,7 +56,7 @@ function BlockedProposal(props: ModelReconciliationProps & { ancestor: string })
 	return (
 		<div
 			data-slot="model-reconciliation"
-			className="text-body bg-status-subtle flex items-center justify-between gap-4 rounded-md px-3 py-2"
+			className="text-body bg-status-subtle rounded-panel flex items-center justify-between gap-4 px-3 py-2"
 		>
 			<p>
 				This proposal waits for unresolved decisions in {name}. Its last coherent content remains

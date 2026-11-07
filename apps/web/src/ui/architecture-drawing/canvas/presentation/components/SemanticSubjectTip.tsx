@@ -98,7 +98,7 @@ function TipCard(props: { readonly slot: string; readonly children: ReactNode })
 	return (
 		<div
 			data-slot={props.slot}
-			className="bg-popover text-popover-foreground border-border text-body shadow-float animate-in fade-in-0 flex min-h-0 w-max max-w-full min-w-[min(14rem,100%)] flex-col items-stretch gap-2.5 rounded-lg border px-3.5 py-3 [overflow-wrap:anywhere]"
+			className="bg-popover text-popover-foreground border-border text-body shadow-float animate-in fade-in-0 rounded-table flex min-h-0 w-max max-w-full min-w-[min(14rem,100%)] flex-col items-stretch gap-2.5 border px-3.5 py-3 [overflow-wrap:anywhere]"
 		>
 			{props.children}
 		</div>

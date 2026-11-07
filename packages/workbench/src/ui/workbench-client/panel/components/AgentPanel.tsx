@@ -197,11 +197,7 @@ function PanelMenu(props: PanelMenuProps): JSX.Element {
 			>
 				<RiMoreLine className="size-4" />
 			</DropdownMenu.Trigger>
-			<DropdownMenu.Content
-				align="end"
-				sideOffset={6}
-				className="border-border w-52 rounded-md border"
-			>
+			<DropdownMenu.Content align="end" sideOffset={6} className="w-52">
 				<DropdownMenu.Item onClick={actions.newConversation}>New conversation</DropdownMenu.Item>
 				<DropdownMenu.Item onClick={props.details ? props.onConversation : props.onDetails}>
 					{props.details ? "Back to the conversation" : "Session details"}

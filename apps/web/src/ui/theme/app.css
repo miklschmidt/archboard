@@ -184,12 +184,19 @@
 	--spacing-chrome: var(--shell-chrome-height);
 	--spacing-band: 36px;
 	--spacing-row: 28px;
-	/* Shape, the site's ladder (site/DESIGN.md). chip: a chip, a key cap or a pane
-	   letter. control: buttons, fields, rows, a tab. panel: a trough, a card on a
-	   page, a menu, a popover, a plate. */
+	/* Shape, the site's ladder (site/DESIGN.md, "Shapes"), and no other corner:
+	   Tailwind's own sizes are cleared. chip: a chip, a key cap, a pane letter or
+	   inline code. control: buttons, fields, rows, a tab, the item of a menu.
+	   panel: a trough, a plate, a card set in a panel, an alert, a label tip, a
+	   code block. table: what floats alone, as the site's cards do: a menu, a
+	   popover, a tip that explains, a notice. window: a dialog, as the site's
+	   mock window. */
+	--radius-*: initial;
 	--radius-chip: 2px;
 	--radius-control: 4px;
 	--radius-panel: 6px;
+	--radius-table: 10px;
+	--radius-window: 12px;
 	/* Depth: the elevation scale below (`--elevation-*`), one shadow utility
 	   per plane (`shadow-well`, `shadow-raised`, `shadow-float` and the rest).
 	   The chrome that casts an edge shadow onto the picture is `relative z-30`, so
@@ -213,13 +220,6 @@
 	--shadow-primary-pressed: var(--elevation-primary-pressed);
 	/* Motion. Controls move in 120ms; the chrome is quick. */
 	--default-transition-duration: 120ms;
-	--radius-sm: calc(var(--radius) * 0.6);
-	--radius-md: calc(var(--radius) * 0.8);
-	--radius-lg: var(--radius);
-	--radius-xl: calc(var(--radius) * 1.4);
-	--radius-2xl: calc(var(--radius) * 1.8);
-	--radius-3xl: calc(var(--radius) * 2.2);
-	--radius-4xl: calc(var(--radius) * 2.6);
 }
 
 /* Desktop icon buttons are 28px visual inside a 32px hit area: the
@@ -362,14 +362,6 @@
 	background-position: 4px 4px;
 }
 
-:root {
-	/* The navigator's width and the chrome row's height,
-	   --shell-navigator-width and --shell-chrome-height, are set on the shell
-	   root from the renderer's shell-geometry: geometry is not the palette's. */
-	/* Small corners: a control 4px, as on the site. */
-	--radius: 4px;
-}
-
 /* Depth, in the language of the site (site/DESIGN.md, "Elevation & Depth"). The shell is
    built as planes stacked over the picture, not as lines on one sheet. Light comes from
    above. A raised plane carries all three of a lit top edge (--highlight, theme.css), a
@@ -404,7 +396,9 @@
      card     a card on a page (--elevation-card), as the site's float.
      float    what floats over the picture or the chrome (--elevation-float):
               the floating sidebar, menus, popovers, tips, a list of matches.
-     dialog   a dialog over everything (--elevation-dialog).
+     dialog   a dialog over everything (--elevation-dialog), as the site's mock
+              window: a stronger hairline ring inside its edge in place of a
+              border, a contact line and a long, deep shadow.
    A primary action is seated by --elevation-primary, lifts into
    --elevation-primary-hover and sinks into --elevation-primary-pressed
    (`primary-finish` below).
@@ -437,8 +431,9 @@
 		0 12px 24px -8px oklch(0.33 0.035 65 / 0.14), 0 32px 64px -24px oklch(0.33 0.035 65 / 0.16);
 	--elevation-float: var(--elevation-card);
 	--elevation-dialog:
-		inset 0 1px 0 var(--highlight), 0 2px 0 oklch(0.33 0.035 65 / 0.08),
-		0 40px 80px -24px oklch(0.33 0.035 65 / 0.24), 0 100px 160px -40px oklch(0.33 0.035 65 / 0.26);
+		inset 0 1px 0 var(--highlight), inset 0 0 0 1px oklch(0.33 0.035 65 / 0.2),
+		0 2px 0 oklch(0.33 0.035 65 / 0.08), 0 40px 80px -24px oklch(0.33 0.035 65 / 0.24),
+		0 100px 160px -40px oklch(0.33 0.035 65 / 0.26);
 	--elevation-primary:
 		inset 0 1px 0 oklch(1 0.04 95 / 0.6), 0 1px 0 oklch(0.42 0.09 70 / 0.3),
 		0 6px 16px -6px oklch(0.55 0.12 75 / 0.45);
@@ -465,8 +460,9 @@
 		inset 0 1px 0 var(--highlight), 0 1px 1px oklch(0.06 0.004 75 / 0.6),
 		0 12px 24px -8px oklch(0.06 0.006 75 / 0.6), 0 32px 64px -24px oklch(0.06 0.006 75 / 0.7);
 	--elevation-dialog:
-		inset 0 1px 0 oklch(1 0.01 85 / 0.12), 0 2px 0 oklch(0.06 0.004 75 / 0.6),
-		0 40px 80px -24px oklch(0.03 0.004 75 / 0.85), 0 100px 160px -40px oklch(0.03 0.004 75 / 0.9);
+		inset 0 1px 0 oklch(1 0.01 85 / 0.12), inset 0 0 0 1px oklch(1 0.01 85 / 0.15),
+		0 2px 0 oklch(0.06 0.004 75 / 0.6), 0 40px 80px -24px oklch(0.03 0.004 75 / 0.85),
+		0 100px 160px -40px oklch(0.03 0.004 75 / 0.9);
 	--elevation-primary:
 		inset 0 1px 0 oklch(1 0.02 90 / 0.55), 0 1px 0 oklch(0.06 0.004 75 / 0.8),
 		0 6px 16px -6px oklch(0.55 0.12 75 / 0.55);

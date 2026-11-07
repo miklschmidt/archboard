@@ -323,7 +323,7 @@
 			"refersTo": "field",
 			"description": "A field sunk into its surface.",
 			"html": "<input class=\"ds-field\" placeholder=\"Ask about Archboard\">",
-			"css": ".ds-field { font: 400 13px/18px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--foreground); background: transparent; border: 1px solid var(--input); border-radius: 4px; height: 32px; padding: 4px 10px; box-shadow: var(--elevation-well); outline: none; } .ds-field::placeholder { color: var(--muted-foreground); } .ds-field:focus-visible { border-color: var(--ring); box-shadow: var(--elevation-well), 0 0 0 2px var(--ring); }"
+			"css": ".ds-field { font: 400 13px/18px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--foreground); background-color: var(--tray-sink); border: 1px solid transparent; border-radius: 4px; height: 32px; padding: 4px 10px; box-shadow: var(--elevation-well); outline: none; } .ds-field::placeholder { color: var(--muted-foreground); } .ds-field:focus-visible { border-color: var(--ring); box-shadow: var(--elevation-well), 0 0 0 2px var(--ring); }"
 		},
 		{
 			"name": "Trough Tabs",

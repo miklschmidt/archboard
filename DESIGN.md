@@ -84,6 +84,8 @@ rounded:
   chip: "2px"
   control: "4px"
   panel: "6px"
+  table: "10px"
+  window: "12px"
 spacing:
   row: "28px"
   band: "36px"
@@ -104,7 +106,7 @@ components:
   button-outline-hover:
     backgroundColor: "{colors.control-face-hover}"
   field:
-    backgroundColor: "transparent"
+    backgroundColor: "{colors.well-floor}"
     textColor: "{colors.ink-graphite}"
     rounded: "{rounded.control}"
     height: "32px"
@@ -264,7 +266,7 @@ paths, versions, counts and times.
 
 ### Hierarchy
 
-- **Display** (650, 20px, 24px, 0.07em, capitals): a name set as a title. Examples are a picked part, a variant and a walkthrough. The utility is `title-name`. The model in a pane's breadcrumb is not one: it is Onest (650, 13px) in full ink, so the display face stays with the wordmark and the titles.
+- **Display** (650, 20px, 24px, 0.07em, capitals): a name set as a title. Examples are a picked part, a variant and a walkthrough. The utility is `title-name`. The model in a pane's breadcrumb is not one: it is Onest (500, 13px) in full ink, as the site sets its nav links, so the display face stays with the wordmark and the titles.
 - **Title** (600, 14px, 20px): the titles of regions and dialogs.
 - **Nav** (500, 14px, 20px): the name of a model in the navigator.
 - **Control** (500, 13px, 18px): buttons, tabs and fields. The words of a button are semibold.
@@ -323,7 +325,7 @@ The file app.css holds the values for both themes and gives each one a
 - **chosen** (`--elevation-chosen`, raised and a 2px line of Gold Mark inside the foot): the chosen tab of a trough. It is also the chosen row of the tree that is the row of what is open.
 - **card** (`--elevation-card`, a highlight on top, a 1px contact shadow and two long soft shadows): a card on a page.
 - **float** (`--elevation-float`, the same value as card): menus, tips, lists of matches, the floating sidebar and the voice box.
-- **dialog** (`--elevation-dialog`, a highlight on top, a 2px contact line and two very long soft shadows): dialogs.
+- **dialog** (`--elevation-dialog`, a highlight on top, the site window's stronger hairline ring inside its edge, a 2px contact line and two very long soft shadows): dialogs. A dialog has no border: the ring is its edge. Its footer is divided from it by a Rule line and has no fill of its own.
 - **primary, primary-hover and primary-pressed** (`--elevation-primary*`): the gold finish at rest, under the pointer and pressed. At rest it has a 1px contact line and a glow of 6px offset. Under the pointer the line grows to 2px and the glow to a 12px offset. Pressed, an inner shadow replaces both.
 
 ### Utilities of the Lit Table
@@ -448,10 +450,14 @@ along the line on both grounds.
 
 ## Shapes
 
-Corners are small and firm, in the ladder of the site. Chips have 2px corners, and so does the key
-combination in a tooltip. Controls, rows, tabs and the key cap that hints a shortcut
-beside a field have 4px corners. Cards, menus, popovers, troughs and plates have 6px corners. A dialog
-takes the ui-kit's medium corner, 3.2px. The voice and the medallion of a part are circles.
+Corners are small and firm, in the ladder of the site, and the shell has no others: Tailwind's
+own sizes are cleared, so a corner off the ladder draws nothing. Chips, inline code and the key
+combination in a tooltip have 2px corners. Controls, rows, tabs, the item of a menu and the key
+cap that hints a shortcut beside a field have 4px corners. Troughs, plates, alerts, a label tip,
+a card set in a panel and code blocks have 6px corners. What floats alone has the 10px corners of
+the site's cards: a menu, a select's popover, a popover, a tip that explains a part and a notice.
+A dialog has the 12px corners of the site's mock window. The voice and the medallion of a part
+are circles.
 
 Some forms are capsules, round at both ends. These are the voice box and the
 key that narrates, at the foot of a presented walkthrough's column. The segments of the rail and the
@@ -478,15 +484,15 @@ gold piece that travels along it are capsules too. Edges are one-pixel rules in 
 
 ### Inputs / Fields
 
-- **Style:** a Field Rule edge and `shadow-well`, with no fill of its own, so it takes the tone of the surface it sits in. The dark theme fills it with the Field Rule at 30%.
-- **Group:** an input group stands on the Well Floor with `shadow-well`. Its edge shows only on focus, so it reads as cut into its surface.
+- **Style:** a well, as the site cuts its troughs: the Well Floor with `shadow-well` and no ring, so it reads as cut into its surface. Its edge shows only on focus. An input group is the same well.
 - **Size:** 32px high, with 10px of room at each side, as a button is.
 - **Focus:** the edge changes to the ring colour.
 - **In the left column:** Find and the field of the repository list stand on the Well Floor, so they read as cut into the chrome.
 
 ### Selects and menus
 
-Every dropdown of the shell is one popover from the ui-kit. A select's trigger is a quiet key: Control Face, `shadow-raised`, an inset ring of 1px and 4px corners. It sinks into `shadow-pressed` while its popover is open, and its chevron turns over. The popover stands under its trigger, never over it, in Card White with a Rule edge, 6px corners and `shadow-float`. It fades in and grows from 97 percent, once, from the side of the control that opened it, and it leaves faster than it came. A menu moves the same way. With reduced motion both are there and gone at once. The durations are `popoverIn` and `popoverOut` of `COLUMN_MS`.
+Every dropdown of the shell is one popover from the ui-kit. A select's trigger is a quiet key: Control Face, `shadow-raised`, an inset ring of 1px and 4px corners. It sinks into `shadow-pressed` while its popover is open, and its chevron turns over. The popover stands under its trigger, never over it, in Card White with a Rule edge, 10px corners, 6px of padding round its rows, as the site pads
+a tray, and `shadow-float`. A row has 4px corners. It fades in and grows from 97 percent, once, from the side of the control that opened it, and it leaves faster than it came. A menu moves the same way. With reduced motion both are there and gone at once. The durations are `popoverIn` and `popoverOut` of `COLUMN_MS`.
 
 A row of a popover is at least 28px high. A tone of the ink marks the row under the pointer or the keys, and a check in Gold Mark marks the chosen one. A group has a heading in Body at weight 500, in sentence case. A choice can carry one line in Body in muted ink under its name, which says what it is for. `Select.Item` takes it as `description`.
 
