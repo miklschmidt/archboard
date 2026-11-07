@@ -42,33 +42,65 @@ function ModelExplanationResult(props: ResultProps): JSX.Element {
 			data-action-id={action.actionId}
 			data-status={action.status}
 			aria-label="Architecture explanation"
-			className="border-border bg-sidebar shadow-edge-up relative z-40 flex max-h-80 shrink-0 flex-col border-t"
+			className="border-border bg-sidebar shadow-edge-up relative z-40 flex max-h-80 shrink-0 flex-col border-t p-3"
 		>
-			<header className="border-border h-chrome flex shrink-0 items-center gap-3 border-b pr-2 pl-5">
-				<RiOpenaiFill aria-hidden="true" className="text-muted-foreground size-4 shrink-0" />
-				<h3 aria-live="polite" className="text-control shrink-0 font-semibold">
-					{STATUS[action.status]}
-				</h3>
-				<ExplanationContext action={action} />
-				<ExplanationControls {...props} />
-				<Button size="icon" variant="ghost" aria-label="Close explanation" onClick={props.onClose}>
-					<RiCloseLine aria-hidden="true" className="size-4" />
-				</Button>
-			</header>
-			<div className="min-h-0 flex-1 overflow-auto px-5 py-3">
-				{working && <ExplanationActivity activity={action.activity} />}
-				{action.error !== undefined && (
-					<p role="alert" className="text-body">
-						{action.error}
-					</p>
-				)}
-				{action.text && (
-					<div data-slot="model-explanation-text" className="text-body max-w-3xl">
-						<AgentAnswer text={action.text} running={working} />
-					</div>
-				)}
+			{/* The answer is the site's reply: a ringed plate, with the voice that answers named in
+			    the gold over what it says. */}
+			<div className="plate flex min-h-0 flex-1 flex-col">
+				<header className="flex h-10 shrink-0 items-center gap-3 pr-1.5 pl-4">
+					<h3
+						aria-live="polite"
+						className="text-body text-primary-text flex shrink-0 items-center gap-1.5 font-semibold"
+					>
+						<RiOpenaiFill aria-hidden="true" className="text-primary-mark size-3.5 shrink-0" />
+						{STATUS[action.status]}
+					</h3>
+					<ExplanationContext action={action} />
+					<ExplanationControls {...props} />
+					<Button
+						size="icon-sm"
+						variant="ghost"
+						aria-label="Close explanation"
+						onClick={props.onClose}
+					>
+						<RiCloseLine aria-hidden="true" className="size-4" />
+					</Button>
+				</header>
+				<ExplanationBody action={action} working={working} />
 			</div>
 		</section>
+	);
+}
+
+/**
+ * What Codex says, under the head of the reply.
+ * @param props The answer, and whether Codex still has something to say.
+ * @param props.action The answer.
+ * @param props.working Whether Codex still has something to say.
+ * @returns The words.
+ */
+function ExplanationBody(props: {
+	readonly action: ExplanationAction;
+	readonly working: boolean;
+}): JSX.Element {
+	const { action, working } = props;
+	return (
+		<div className="min-h-0 flex-1 overflow-auto px-4 pb-3">
+			{working && <ExplanationActivity activity={action.activity} />}
+			{action.error !== undefined && (
+				<p role="alert" className="text-body">
+					{action.error}
+				</p>
+			)}
+			{action.text && (
+				<div
+					data-slot="model-explanation-text"
+					className="text-body text-body-foreground max-w-3xl"
+				>
+					<AgentAnswer text={action.text} running={working} />
+				</div>
+			)}
+		</div>
 	);
 }
 
