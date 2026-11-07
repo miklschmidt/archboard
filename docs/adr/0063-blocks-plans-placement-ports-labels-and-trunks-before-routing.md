@@ -38,9 +38,12 @@ The implementation counts those cases.
 Words remain horizontal on horizontal or vertical runs.
 A stack of separate label plates uses a vertical run long enough to carry every plate.
 The label never covers shared ink, crosses a frame wall, or lies under a foreign line.
+It never lies over another stretch of its own route either.
+When a route leaves no spot clear of its other stretches, the label may stand closer beside them, but not over them.
 A route never gains a bend to reach a label slot.
 
 The complete geometry guard protects cards, headers, captions, walls, labels, endpoints, and fan ownership before emission.
+It also refuses a route that crosses or touches its own ink, because no hop can mark where a line crosses itself.
 The painter measures actual decorated ink for page bounds.
 Plain Blocks views omit hidden comparison subjects before placement, so those subjects reserve no space.
 The visible subject set stays the same, but turning comparison on can move the remaining cards.
