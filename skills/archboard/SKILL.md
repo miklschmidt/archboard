@@ -1,11 +1,11 @@
 ---
 name: archboard
 description: >-
-  Read and author local canonical architecture models with the archboard CLI.
-  Create module structure, source-owned relationships, independent flows, compact
-  proposals, exact history, and walkthroughs. Render diagrams and reproducible
-  embeds. Use for architecture questions, request flows, proposals, and explicit
-  migration of existing architecture vaults.
+  Read, author, and visualize local architecture with the archboard CLI.
+  Always use when planning, implementing, explaining, visualizing, refactoring,
+  or improving a codebase. Load this skill when loading, reading, or using
+  improve-codebase-architecture. Also use for architecture questions, request
+  flows, proposals, and explicit migration of existing architecture vaults.
 ---
 
 # Archboard
@@ -22,6 +22,7 @@ Before describing implemented architecture or authoring changes, read [authoring
 Before preparing a request, read [schemas](references/schemas.md).
 
 For design decisions or refactors, read [the design lens](references/design-lens.md).
+For `improve-codebase-architecture`, follow [the integration workflow](references/design-lens.md#integrate-with-improve-codebase-architecture).
 For narrative authoring, playback, or recording, read [canonical walkthroughs](references/canonical-walkthroughs.md).
 For installation or updates, read [the installation guide](references/generated/INSTALL.md).
 For missing language servers or more precise source evidence, read [setup](references/setup.md).

@@ -97,3 +97,17 @@ Footprints retain large commits with `large` and list unread modules in `skipped
 Findings alone change no exit status.
 If a repository cannot read the requested base or head, the command names it and exits with status 2.
 Source refs stay local. The command retains no source history.
+
+## Integrate with improve-codebase-architecture
+
+Use Archboard alongside [improve-codebase-architecture](https://github.com/mattpocock/skills/tree/main/skills/engineering/improve-codebase-architecture).
+Keep that skill's exploration, candidate selection, and design discussion.
+During exploration, use [locality](#locality) to find active modules and [interface inspection](#interface) to examine their callers and dependencies.
+
+For candidate designs, use the [proposal workflow](canonical-models.md#create-and-compare-compact-proposals) to describe intended changes without changing Current.
+Use [comparison](#comparison) to explain each candidate's effect on callers.
+Use [canonical renders](canonical-models.md#initialize-and-consume-one-live-model) for the before-and-after architecture pictures in its HTML report.
+
+During implementation, keep the chosen proposal aligned with the code.
+Use [footprint](#footprint) to account for branch changes against that proposal.
+Follow [proposal completion](canonical-models.md#complete-a-proposal) for adoption or shelving under the owner's authorization.
