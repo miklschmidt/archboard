@@ -296,10 +296,12 @@ const shop = drawings.webShop;
 		font-weight: 600;
 		color: var(--ink);
 	}
-	/* The shell's chrome is one plane round the picture, whose top corners are rounded against it. */
+	/* The shell's chrome holds the picture on every side, with a strip under it, and the
+	   picture's corners are rounded against it. */
 	.picture {
 		position: relative;
-		border-radius: 12px 12px 0 0;
+		margin-bottom: 8px;
+		border-radius: 12px;
 		display: grid;
 		place-items: center;
 		padding: 20px 16px;
