@@ -43,8 +43,8 @@ import { ModelFailedRecords } from "#ui/architecture-drawing/model-reader/readin
 import { CheckpointEvidence } from "#ui/architecture-drawing/model-reader/reading/components/CheckpointEvidence.tsx";
 import { ModelPublication } from "#ui/architecture-drawing/model-reader/reading/components/ModelPublication.tsx";
 import {
-	ModelClaims,
-	ModelClaimsFailure,
+	ModelClaimFrame,
+	ModelClaimsOver,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelClaims.tsx";
 
 import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
@@ -178,6 +178,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const client = useQueryClient();
 	const { vault } = props;
 	const current = checkpoint === null;
+	const lost = feed.connection === "unavailable";
 	const unread = isUnread(query.error);
 	const stale = readingIsStale(query, current, feed);
 	const refresh = useCallback((): void => {
@@ -198,7 +199,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				refresh={unread ? undefined : offeredRefresh(query, feed, refresh)}
 				refreshing={query.isFetching}
 			/>
-			<ModelControls vault={vault} checkpoint={checkpoint} />
+			<ModelControls vault={vault} checkpoint={checkpoint} model={data} lost={lost} />
 		</>
 	);
 	return (
@@ -223,7 +224,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				catalogue={catalogue.data}
 				current={current}
 				stale={stale}
-				lost={feed.connection === "unavailable"}
+				lost={lost}
 				failure={feed.failure}
 				refresh={refresh}
 				onCodeTargetNotice={props.onCodeTargetNotice}
@@ -268,15 +269,24 @@ function modelIdentity(model: ModelQuery["data"]): string | undefined {
 }
 
 /**
- * An exact checkpoint offers to publish its history. Current ownership stands over the picture,
- * with the notices (`ReadingNotices`).
- * @param props The selected reading.
+ * Current ownership and exact-history publication have separate controls. The header owns the
+ * claims of a current reading for every answer, and they stand over the surface on screen.
+ * @param props The selected reading and its coherent content.
  * @param props.vault The addressed vault.
  * @param props.checkpoint The exact checkpoint, or current.
- * @returns The publication of an exact checkpoint, or nothing.
+ * @param props.model The current query result.
+ * @param props.lost Whether the stream lost the server.
+ * @returns Only the controls that belong to this reading.
  */
-function ModelControls(props: { vault: string; checkpoint: string | null }): JSX.Element | null {
-	return props.checkpoint === null ? null : (
+function ModelControls(props: {
+	vault: string;
+	checkpoint: string | null;
+	model: ModelQuery["data"];
+	lost: boolean;
+}): JSX.Element {
+	return props.checkpoint === null ? (
+		<ModelClaimsOver vault={props.vault} model={props.model} lost={props.lost} />
+	) : (
 		<ModelPublication key={props.checkpoint} vault={props.vault} checkpoint={props.checkpoint} />
 	);
 }
@@ -482,7 +492,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
  * @returns The notices that hold now.
  */
 function ReadingNotices(
-	props: Pick<ModelResponseProps, "vault" | "query" | "current" | "stale" | "lost" | "refresh"> & {
+	props: Pick<ModelResponseProps, "query" | "current" | "stale" | "lost" | "refresh"> & {
 		problem: ModelErrorProps | null;
 	},
 ): JSX.Element {
@@ -490,8 +500,7 @@ function ReadingNotices(
 	return (
 		<>
 			{stale && <StaleNotice lost={lost} />}
-			{props.current && !lost && <ModelClaimsFailure vault={props.vault} />}
-			{props.current && <ModelClaims vault={props.vault} model={props.query.data} />}
+			{props.current && <ModelClaimFrame frame="picture" />}
 			{!serverLost(props) && <ReadFailure problem={props.problem} onRetry={props.refresh} />}
 		</>
 	);

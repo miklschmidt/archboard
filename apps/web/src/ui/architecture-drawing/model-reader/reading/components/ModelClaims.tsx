@@ -1,13 +1,19 @@
-import { useCallback, type JSX } from "react";
+import { useCallback, useContext, type JSX } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ArchitectureClaim, ArchitectureModelRead } from "@archboard/model/contract";
 import { RiLockUnlockLine } from "@remixicon/react";
-import { Button } from "@archboard/ui-kit/components";
+import { Button, cn } from "@archboard/ui-kit/components";
 import { takeBackClaim } from "#ui/architecture-drawing/model-reader/access/clients/claims.ts";
 import {
 	architectureClaimsQuery,
 	architectureModelKeys,
 } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
+import {
+	ModelPaneContext,
+	type ClaimFrame,
+	type ClaimFrames,
+} from "#ui/architecture-drawing/model-reader/state/presentation.ts";
 import { clockTime } from "#ui/shell/rules/time.ts";
 
 interface ModelClaimsProps {
@@ -15,11 +21,82 @@ interface ModelClaimsProps {
 	model: ArchitectureModelRead | undefined;
 }
 
+/** A place that lies over the top of its surface and lets the pointer through beside the claims. */
+const CLAIMS_LAYER =
+	"pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col *:pointer-events-auto";
+
+/**
+ * The one owner of the claims of a current reading. They stand over the surface of the pane that
+ * is on screen: a walkthrough that plays, About, or the picture, and over the pane itself while no
+ * surface is, as when the first read fails. So the claims and Take back control stay in reach in
+ * every state of the pane, and nothing in the pane moves for them.
+ * @param props The vault, its model for subject names, and whether the stream lost the server.
+ * @param props.lost Whether the stream lost the server, which says nothing about ownership.
+ * @returns The claims where they stand, or nothing until the pane holds a place for them.
+ */
+function ModelClaimsOver(props: ModelClaimsProps & { lost: boolean }): JSX.Element | null {
+	const frames = useContext(ModelPaneContext)?.claimFrames;
+	const frame = frames === undefined ? null : frameOnScreen(frames);
+	if (frame === null) return null;
+	return (
+		<>
+			{createPortal(
+				<>
+					{!props.lost && <ModelClaimsFailure vault={props.vault} />}
+					<ModelClaims vault={props.vault} model={props.model} />
+				</>,
+				frame,
+			)}
+		</>
+	);
+}
+
+/**
+ * The surface on screen. A walkthrough hides the reading while it plays, and About covers the
+ * picture. A hidden surface gives its place up, and the pane holds one under every surface.
+ * @param frames The places that the surfaces of the pane hold.
+ * @returns The place of the surface on top, or null while none holds one.
+ */
+function frameOnScreen(frames: ClaimFrames): HTMLElement | null {
+	return frames.walkthrough ?? frames.about ?? frames.picture ?? frames.pane;
+}
+
+/**
+ * The place that a surface holds for the claims while it is on screen. On the picture the claims
+ * stand among its notices, which already lie over it. Elsewhere they lie over the top of the
+ * surface, and `className` can lower them under what the top of the surface holds.
+ * @param props The surface and where on it the claims stand.
+ * @param props.frame The surface.
+ * @param props.className Where the place lies on the surface.
+ * @returns The place, or nothing outside a pane.
+ */
+function ModelClaimFrame(props: {
+	readonly frame: ClaimFrame;
+	readonly className?: string;
+}): JSX.Element | null {
+	const hold = useContext(ModelPaneContext)?.holdClaimFrame;
+	const { frame } = props;
+	const attach = useCallback(
+		(element: HTMLElement | null) =>
+			element === null || hold === undefined ? undefined : hold(frame, element),
+		[hold, frame],
+	);
+	if (hold === undefined) return null;
+	return (
+		<div
+			ref={attach}
+			data-slot="model-claims-frame"
+			data-frame={frame}
+			className={cn(frame === "picture" ? "contents" : CLAIMS_LAYER, props.className)}
+		/>
+	);
+}
+
 /**
  * A current reading tells who holds its subjects and how to end that ownership. The claims stand
- * at the top centre of the picture, inside its frame, over the picture and never beside it, so a
- * claim that starts or ends moves nothing in the reading. Each pane shows the claims of the vault
- * it reads.
+ * at the top centre of their surface, inside its frame, over it and never beside it, so a claim
+ * that starts or ends moves nothing in the reading. Each pane shows the claims of the vault it
+ * reads.
  * @param props The vault and its coherent model for subject names.
  * @returns Current claims, each with one explicit human action, or nothing.
  */
@@ -44,8 +121,8 @@ interface ModelClaimProps extends ModelClaimsProps {
 }
 
 /**
- * Say that ownership cannot be read. It lies over the picture with the other notices, which a
- * line in the header above the picture would move.
+ * Say that ownership cannot be read. It lies over the surface with the claims, where a line in
+ * the header above it would move it.
  * @param props The vault.
  * @param props.vault The addressed vault.
  * @returns The refusal, or nothing.
@@ -238,4 +315,4 @@ function relationshipName(
 	return relationship.label === undefined ? ends : `${ends} (${relationship.label})`;
 }
 
-export { ModelClaims, ModelClaimsFailure };
+export { ModelClaimFrame, ModelClaimsOver };

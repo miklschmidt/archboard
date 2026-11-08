@@ -7,7 +7,6 @@ import type {
 	ArchitectureCheckpointRetain,
 	ArchitectureModelRead,
 	ArchitectureClaimResult,
-	ArchitectureClaimList,
 } from "@archboard/model/contract";
 import type { listArchitectureCheckpoints } from "@archboard/model/store-read";
 import { createJsonRequester } from "../support/http.ts";
@@ -158,110 +157,6 @@ test("canonical modules open their authored details without writing architecture
 		await browser.eval<boolean>(`document.querySelector('[data-slot="module-details"]') === null`),
 	).toBe(true);
 	await server.assertRunning();
-}, 30_000);
-
-test("canonical subject claims show their purpose, not their writer, and let the reader take back control", async () => {
-	await using resources = new AsyncDisposableStack();
-	const root = join(browserTestRoots().ownerRoot, "claimed-model");
-	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
-		recursive: true,
-	});
-	initializeSource(root);
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
-	resources.defer(() => server.dispose());
-	registerServerBase(server.base);
-	const request = createJsonRequester(server);
-	const model = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!model.body.success || !model.body.manifest.current) throw new Error("Missing fixture model");
-	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/`]);
-	await browser.run(["set", "viewport", "1920", "1080"]);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-connection') === 'live'`,
-			),
-		Boolean,
-		"the connected model reading before an agent claims it",
-		WAIT,
-	);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(`document.querySelector('[data-slot="model-diagram"] svg') !== null`),
-		Boolean,
-		"the scene before ownership changes",
-		WAIT,
-	);
-	await browser.eval(
-		`document.querySelector('[data-slot="model-diagram"] svg').setAttribute('data-test-scene', 'kept')`,
-	);
-	// A claim floats over the picture, so it never changes the room of the picture.
-	const pictureRoom = (): Promise<string> =>
-		browser.eval<string>(
-			`JSON.stringify(document.querySelector('[data-slot="model-diagram"]').getBoundingClientRect())`,
-		);
-	const room = await pictureRoom();
-	const claimed = await request<ArchitectureClaimResult>("/api/architecture/claims", {
-		method: "POST",
-		body: {
-			vault,
-			target: { model: model.body.manifest.id, state: model.body.manifest.current.id },
-			writer: "Agent Ada",
-			reason: "Explain gateway responsibility",
-			subjects: ["Shop#Gateway"],
-		},
-	});
-	if (!claimed.body.success) throw new Error(claimed.body.error);
-	const claim = claimed.body.claim.id;
-	const claimVisible = (): Promise<boolean> =>
-		browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-claim"][data-claim-id="${claim}"]') !== null`,
-		);
-	await pollUntil(claimVisible, Boolean, "the current subject claim", WAIT);
-	const notice = await browser.eval<string>(
-		`document.querySelector('[data-slot="model-claim"]').textContent`,
-	);
-	expect(notice).not.toContain("Agent Ada");
-	expect(notice).toContain("Explain gateway responsibility");
-	expect(notice).toContain("Gateway");
-	// The card names its subjects and never counts them.
-	expect(notice).not.toMatch(/\d+ subjects?/);
-	expect(await pictureRoom()).toBe(room);
-	// The card leaves the focus where the reader had it.
-	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-claim"]').contains(document.activeElement)`,
-		),
-	).toBe(false);
-	// Each pane that reads the vault shows the claim over its own picture.
-	const stages = (): Promise<number> =>
-		browser.eval<number>(
-			`document.querySelectorAll('[data-slot="architecture-model-stage"]').length`,
-		);
-	const claimCards = (): Promise<number> =>
-		browser.eval<number>(
-			`document.querySelectorAll('[data-slot="model-claim"][data-claim-id="${claim}"]').length`,
-		);
-	await request("/api/panes/open", { method: "POST", body: {} });
-	await pollUntil(stages, (count) => count === 2, "the second pane to read the vault", WAIT);
-	await pollUntil(claimCards, (count) => count === 2, "the claim over each pane's picture", WAIT);
-	await request("/api/panes/close", { method: "POST", body: { pane: "focused" } });
-	await pollUntil(stages, (count) => count === 1, "the second pane to close", WAIT);
-	expect(await claimCards()).toBe(1);
-	await browser.run(["click", '[data-slot="model-take-back"]']);
-	await pollUntil(claimVisible, (visible) => !visible, "the claim to end", WAIT);
-	const claims = await request<ArchitectureClaimList>("/api/architecture/claims");
-	if (!claims.body.success) throw new Error(claims.body.error);
-	expect(claims.body.claims).toEqual([]);
-	const after = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!after.body.success) throw new Error(after.body.error);
-	expect(after.body.revision).toEqual(model.body.revision);
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="model-diagram"] svg')?.getAttribute('data-test-scene') ?? null`,
-		),
-	).toBe("kept");
 }, 30_000);
 
 test("current model readings refresh after external edits and reconnect with explicit stale content", async () => {

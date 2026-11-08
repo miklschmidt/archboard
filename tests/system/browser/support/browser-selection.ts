@@ -4,6 +4,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/shell-layout.test.ts",
 	"tests/system/browser/workspace-address.test.ts",
 	"tests/system/browser/canonical-model-viewer.test.ts",
+	"tests/system/browser/canonical-model-claims.test.ts",
 	"tests/system/browser/canonical-model-navigation.test.ts",
 	"tests/system/browser/canonical-model-surface.test.ts",
 	"tests/system/browser/canonical-model-agent-navigation.test.ts",

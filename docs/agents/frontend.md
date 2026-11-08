@@ -387,7 +387,11 @@ A failed drawing or a failed read of a destination leaves the accepted scene whe
 The failure lies over the picture with Retry and Back, and with `No comparison` when a comparison can be what failed.
 Back is the browser's, so a reading opened directly has none.
 Every notice about a reading lies over the picture in `model-notices`, so no failure and no lost server moves it.
-The claims of a current reading lie there too: `ModelClaims` stacks a card for each at the top centre of the picture, so a claim that starts or ends never moves it.
+The claims of a current reading have one owner, `ModelClaimsOver`, which the header's `ModelControls` mounts for every answer.
+Each surface lends it a place through the pane context with `ModelClaimFrame`: the picture among its notices, About, and a walkthrough that plays.
+The owner portals the claims into the place of the surface on top.
+The pane itself lends the last place, under the header. If no surface lends a place, the claims stand there. A failed first read is such a state.
+A hidden surface gives its place up, because a hidden `Activity` detaches its refs. So a claim that starts or ends moves nothing, and Take back control stays in reach in every state of the pane.
 A cached reading is stale only when a read failed or the stream was lost. An event being applied is healthy and shows nothing.
 A retained reading stays through a lost server. A refusal of that same reading removes it, because the server has then said that it is unavailable.
 A message about a wait appears after `PICTURE_MS.waitNotice` and names the destination.

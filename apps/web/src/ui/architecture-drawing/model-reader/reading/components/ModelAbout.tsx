@@ -25,6 +25,8 @@ import {
 	type AboutPageSection,
 	type AboutPlace,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutFrame.tsx";
+import { ABOUT_CLAIMS } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutOutline.tsx";
+import { ModelClaimFrame } from "#ui/architecture-drawing/model-reader/reading/components/ModelClaims.tsx";
 import { ModelCodeWarnings } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
 import { ModelConnectionTable } from "#ui/architecture-drawing/model-reader/reading/components/ModelConnectionTable.tsx";
 import { ModelFlowDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelFlowDetails.tsx";
@@ -104,6 +106,7 @@ function ModelAbout(props: ModelAboutProps): JSX.Element {
 				) : (
 					<ScopePage {...props} look={look} state={state} tools={tools} timeline={timeline} />
 				)}
+				<ModelClaimFrame frame="about" className={ABOUT_CLAIMS} />
 			</div>
 		</article>
 	);

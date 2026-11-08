@@ -13,6 +13,7 @@ import type { Model } from "@archboard/model/content";
 import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import { modelWalkthroughQuery } from "#ui/architecture-drawing/model-reader/access/clients/walkthroughs.ts";
 import { ModelWalkthrough } from "#ui/architecture-drawing/model-reader/reading/components/ModelWalkthrough.tsx";
+import { ModelClaimFrame } from "#ui/architecture-drawing/model-reader/reading/components/ModelClaims.tsx";
 
 type PlaybackRequest = Parameters<typeof modelWalkthroughQuery>[1];
 interface ReaderProps extends Pick<
@@ -80,18 +81,22 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 	return (
 		<ModelWalkthroughContext value={context}>
 			{props.chrome}
-			{/* The reading hides itself, so the left column it owns stays while this plays. */}
-			<div className={context.active ? "hidden" : "contents"}>{props.children}</div>
-			{request !== null && model !== undefined && (
-				<CapturedWalkthrough
-					key={request.id}
-					{...props}
-					model={model}
-					request={request}
-					onLeave={leave}
-					onRestart={select}
-				/>
-			)}
+			<div className="relative flex min-h-0 flex-1 flex-col">
+				{/* The reading hides itself, so the left column it owns stays while this plays. */}
+				<div className={context.active ? "hidden" : "contents"}>{props.children}</div>
+				{request !== null && model !== undefined && (
+					<CapturedWalkthrough
+						key={request.id}
+						{...props}
+						model={model}
+						request={request}
+						onLeave={leave}
+						onRestart={select}
+					/>
+				)}
+				{/* The claims stand over the pane itself while no surface of it holds them. */}
+				<ModelClaimFrame frame="pane" />
+			</div>
 		</ModelWalkthroughContext>
 	);
 }

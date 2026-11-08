@@ -11,6 +11,14 @@ const ABOUT_PAGE = "relative z-0 overflow-x-hidden overflow-y-auto [container:ab
 const ABOUT_COLUMNS =
 	"mx-auto grid max-w-[1320px] grid-cols-1 gap-x-12 px-6 pt-8 pb-16 wrap-break-word @min-[1040px]/about:grid-cols-[176px_minmax(0,1fr)] @min-[1040px]/about:px-10";
 
+/**
+ * Where the claims of the reading stand over the page: under the line of the name and its tools,
+ * which ends 68px down, after the 32px that the columns leave over it and the 36px of the tools.
+ * The bar of the outline, which stays over a narrow page, is less high, so the claims leave both
+ * in reach.
+ */
+const ABOUT_CLAIMS = "top-17";
+
 /** Where the name of the subject stands in those columns. */
 const ABOUT_TITLE =
 	"flex min-w-0 flex-col gap-3 pb-10 @min-[1040px]/about:col-start-2 @min-[1040px]/about:row-start-1";
@@ -154,6 +162,7 @@ function AboutSectionFrame(props: {
 }
 
 export {
+	ABOUT_CLAIMS,
 	ABOUT_COLUMNS,
 	ABOUT_PAGE,
 	ABOUT_SHEET,
