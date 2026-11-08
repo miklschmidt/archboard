@@ -1,11 +1,11 @@
 ---
 id: TASK-600
 title: The renderer corpus benchmark passes on this repository's model again
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-07T23:49:00Z'
-updated_date: '2026-11-08T01:38:00Z'
+updated_date: '2026-11-08T04:25:00Z'
 labels:
   - renderer
 dependencies: []
@@ -32,7 +32,7 @@ The opt-in benchmark (`bun run benchmark`, `packages/renderer/tests/runtime/bloc
 - [x] #6 Crossings that a crest would crowd form one cluster, and a unit test covers it
 - [x] #7 Against #66, the notes list every corpus picture that changes, with its size, and every other picture is byte-identical
 - [x] #8 ADR 0063 states the loop rule, the label rule and the join room that contraction keeps
-- [ ] #9 The owner accepts the changed pictures by eye
+- [x] #9 The owner accepts the changed pictures by eye
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -68,4 +68,12 @@ Checks on the stack: benchmark 220/220, root 1.97 s; renderer package tests 829/
 Review on gpt-6.1-sol at xhigh, in three scopes. The dense grid speed-up, and the hop clusters with the arc reader: no findings. Blocks guard, labels and contraction: three findings, fixed in 2c8a347f3, fa2b25e0d, 9146019c1 and 796aa4691. Contraction missed the join where two branches turn onto their shared last stretch at one point from opposite sides, and it kept only the first card where one run carries joins toward two cards. Both now keep the junction room, and unit tests in `compact/tests.rs` cover them. `route_labels/mod.rs` had grown to 606 lines, over the 600-line limit of the Rust source policy test. Reusing the route path brings it to 592.
 After the review, one more picture changes against #66: vKEsyHFk#cPOdAA3f (Archboard server) 1889x1115 -> 1815x1046, with the same placement. So 17 of 110 pictures change and 93 are byte-identical.
 Checks after the review: benchmark 220/220, root 1.96 s; renderer package tests 829/829; archboard-layout tests pass; repository lane 170/170; clippy for wasm32, rustdoc and cargo fmt clean.
+
+Owner review on 2026-11-08: the owner looked at the 17 changed pictures, before and after, and accepted them: none is significantly worse. The owner then pointed at the blank space and long lines on the right side of 0T9enjhi#Zeo3aQWz, which the picture on #66 has too. That dead space belongs to TASK-559.09.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Blocks routes never cross, touch or run along their own ink, and a label never lies over another stretch of its own route. The corpus arc reader reads two flat-topped arcs on one line as two arcs. Contraction keeps the room a join needs before its card and stands a crossing at exactly its least room, and crossings that a crest would crowd form one cluster. The dense grid search weighs its pairs once and settles each grid once, so the root's first layout fell from 2.9 s to about 1.9 s. The benchmark passes 220 of 220. Against #66, 17 of 110 pictures change and cover 8.5% less area, and the owner accepted them by eye. ADR 0063 records the loop rule, the label rule and the join room. The dead space that is left in pictures such as 0T9enjhi#Zeo3aQWz is TASK-559.09.
+<!-- SECTION:FINAL_SUMMARY:END -->
