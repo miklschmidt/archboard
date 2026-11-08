@@ -341,12 +341,19 @@ test("current model readings refresh after external edits and reconnect with exp
 	});
 	if (!claim.body.success) throw new Error(claim.body.error);
 	const claimId = claim.body.claim.id;
+	const claimVisible = (): Promise<boolean> =>
+		browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-claim"][data-claim-id="${claimId}"]') !== null`,
+		);
+	await pollUntil(claimVisible, Boolean, "the claim before the connection drops", WAIT);
 	const working = (): Promise<boolean> =>
 		browser.eval<boolean>(`document.querySelector('[data-slot="working-now"]') !== null`);
 	await pollUntil(working, Boolean, "activity before the connection drops", WAIT);
 	await server.restart({
 		whileStopped: async () => {
 			await pollUntil(stale, Boolean, "the disconnected reading notice", WAIT);
+			// Losing the stream says nothing about ownership, so its last known card stays.
+			expect(await claimVisible()).toBe(true);
 			expect(await details()).toContain("Repaired external description");
 			const released = await releaseArchitectureClaim(vault, {
 				claim: claimId,
@@ -364,6 +371,12 @@ test("current model readings refresh after external edits and reconnect with exp
 		WAIT,
 	);
 	await pollUntil(stale, (value) => !value, "the reconnected reading to become current", WAIT);
+	await pollUntil(
+		claimVisible,
+		(visible) => !visible,
+		"the released claim after reconnection",
+		WAIT,
+	);
 	await pollUntil(working, (visible) => !visible, "the expired activity to leave the shell", WAIT);
 }, 40_000);
 

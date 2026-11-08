@@ -490,12 +490,8 @@ function ReadingNotices(
 	return (
 		<>
 			{stale && <StaleNotice lost={lost} />}
-			{props.current && !lost && (
-				<>
-					<ModelClaimsFailure vault={props.vault} />
-					<ModelClaims vault={props.vault} model={props.query.data} />
-				</>
-			)}
+			{props.current && !lost && <ModelClaimsFailure vault={props.vault} />}
+			{props.current && <ModelClaims vault={props.vault} model={props.query.data} />}
 			{!serverLost(props) && <ReadFailure problem={props.problem} onRetry={props.refresh} />}
 		</>
 	);
