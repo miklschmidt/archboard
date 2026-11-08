@@ -211,10 +211,10 @@ function rowClass(props: TreeRowProps): string {
 		// Square corners, so nothing that scrolls beneath shows at the corners of a stuck row.
 		props.expanded === true && "sticky z-10 rounded-none",
 		// A chosen row rises out of the well as a raised face. The row of what is open carries
-		// the site's gold underline inside its face.
-		props.selected ? "bg-face shadow-raised" : "hover:bg-face/50",
-		props.current === true &&
-			(props.selected ? "shadow-chosen" : "shadow-[inset_0_-2px_0_var(--primary)]"),
+		// the site's gold underline inside that face.
+		props.selected
+			? cn("bg-face", props.current === true ? "shadow-chosen" : "shadow-raised")
+			: "hover:bg-face/50",
 		props.disabled === true && "text-muted-foreground",
 	);
 }

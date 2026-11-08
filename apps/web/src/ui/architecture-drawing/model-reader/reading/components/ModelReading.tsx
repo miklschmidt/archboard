@@ -174,7 +174,6 @@ function ReadingSections(props: {
 					tree={tree}
 					open={branches.open}
 					scope={structure.opened}
-					selected={soleOf(reader.selection.ids)}
 					onToggle={branches.toggle}
 					onOpen={choices.chooseModule}
 					onTypeAhead={onTypeAhead}

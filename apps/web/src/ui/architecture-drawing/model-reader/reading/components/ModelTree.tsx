@@ -13,10 +13,8 @@ import {
 interface ModelTreeProps {
 	readonly tree: ModuleTree;
 	readonly open: ReadonlySet<string>;
-	/** The module the pane has open. */
+	/** The module the pane has open: the one row the tree marks. A selection on the picture marks no row. */
 	readonly scope: string | null;
-	/** The module that is selected on the picture, or null. */
-	readonly selected: string | null;
 	readonly onToggle: (id: string) => void;
 	readonly onOpen: (id: string, beside: boolean) => void;
 	/** A printable key typed in the tree, handed to Find. */
@@ -39,29 +37,17 @@ function rowOf(tree: ModuleTree, id: string | null): string | null {
 }
 
 /**
- * The row that is lit: the selected module's while it is drawn, or else the open scope's.
- * @param rows The drawn rows.
- * @param picked The selected module's row.
- * @param opened The open scope's row.
- * @returns The row's id and how many rows stick above it.
- */
-function litRow(rows: readonly ModuleRow[], picked: string | null, opened: string | null) {
-	const row = rows.find((one) => one.id === picked) ?? rows.find((one) => one.id === opened);
-	return { lit: row?.id ?? opened, depth: row?.depth ?? 0 };
-}
-
-/**
  * The Modules tree.
  * @param props The tree and what the reader does in it.
  * @returns The tree.
  */
 function ModelTree(props: ModelTreeProps): JSX.Element {
-	const { tree, open, scope, selected, onToggle, onOpen, onTypeAhead, follows } = props;
+	const { tree, open, scope, onToggle, onOpen, onTypeAhead, follows } = props;
 	const list = useRef<HTMLDivElement>(null);
 	const rows = useMemo(() => treeRows(tree, open), [tree, open]);
 	const opened = rowOf(tree, scope);
-	const { lit, depth } = litRow(rows, rowOf(tree, selected), opened);
-	useRevealedRow(list, follows ? lit : null, depth);
+	const depth = rows.find((one) => one.id === opened)?.depth ?? 0;
+	useRevealedRow(list, follows ? opened : null, depth);
 	const toggle = useCallback((row: ModuleRow): void => onToggle(row.id), [onToggle]);
 	const openRow = useCallback(
 		(row: ModuleRow, beside: boolean): void => onOpen(row.module.end, beside),
@@ -72,20 +58,13 @@ function ModelTree(props: ModelTreeProps): JSX.Element {
 			<Tree
 				label="Modules"
 				rows={rows}
-				home={lit}
+				home={opened}
 				onOpen={openRow}
 				onToggle={toggle}
 				onTypeAhead={onTypeAhead}
 			>
 				{tree.roots.map((branch) => (
-					<BranchRow
-						key={branch.id}
-						{...props}
-						branch={branch}
-						depth={0}
-						lit={lit}
-						opened={opened}
-					/>
+					<BranchRow key={branch.id} {...props} branch={branch} depth={0} opened={opened} />
 				))}
 			</Tree>
 		</div>
@@ -101,7 +80,6 @@ function BranchRow(
 	props: ModelTreeProps & {
 		readonly branch: ModuleBranch;
 		readonly depth: number;
-		readonly lit: string | null;
 		readonly opened: string | null;
 	},
 ): JSX.Element {
@@ -116,7 +94,7 @@ function BranchRow(
 			<Tree.Row
 				id={branch.id}
 				depth={depth}
-				selected={branch.id === props.lit}
+				selected={branch.id === props.opened}
 				current={branch.id === props.opened}
 				expanded={expanded}
 				dataset={dataset}
