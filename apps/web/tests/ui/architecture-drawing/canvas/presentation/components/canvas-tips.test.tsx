@@ -1,9 +1,11 @@
-// Where a tip stands: against the part it is about, inside its pane.
+// Where a tip stands: against the part it is about, inside its pane, and how long it stays there.
 
 import { act, fireEvent } from "@testing-library/react";
 import { expect, spyOn, test } from "bun:test";
 
+import { EXPLORING_MS } from "@archboard/timing";
 import { takeFrames } from "#tests/ui/support/canvas/camera-probes.ts";
+import { viewport } from "#tests/ui/support/canvas/stage-harness.tsx";
 import { group, served } from "#tests/ui/support/canvas/wiring-fixture.tsx";
 
 /**
@@ -54,6 +56,24 @@ test("a tip stands against its part, and the next part's tip keeps inside the pa
 		const [left = 0] = (place.style.transform.match(/\d+/g) ?? []).map(Number);
 		expect(left).toBeGreaterThan(190);
 		expect(left + 200).toBeLessThanOrEqual(1000);
+	} finally {
+		frames.restore();
+	}
+});
+
+test("a tip stays open while the camera is asked for the view it already shows", async () => {
+	await served();
+	const frames = takeFrames();
+	try {
+		restOn("q");
+		frames.run(500);
+		expect(tipPlace().querySelector("[data-slot='semantic-subject-tip']")).not.toBeNull();
+		// The picture is fitted already, so the fit key moves nothing, and the part is where it was.
+		act(() => {
+			fireEvent.keyDown(viewport(), { key: "0" });
+		});
+		frames.run(EXPLORING_MS.cameraFit);
+		expect(tipPlace().querySelector("[data-slot='semantic-subject-tip']")).not.toBeNull();
 	} finally {
 		frames.restore();
 	}
