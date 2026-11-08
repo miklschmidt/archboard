@@ -61,16 +61,18 @@ const shop = drawings.webShop;
 				</figure>
 				<canvas class="paint" aria-hidden="true"></canvas>
 				<div class="claim">
-					<p class="claim-state">
-						<span class="live"><span class="dot"></span> Claimed</span>
-						<span class="mono since">since 14:02</span>
-					</p>
+					<div class="claim-head">
+						<p class="claim-state">
+							<span class="live"><span class="dot"></span> Claimed</span>
+							<span class="mono since">since 14:02</span>
+						</p>
+						<span class="take"><Icon name="unlock" size={14} /> Take back control</span>
+					</div>
 					<dl class="claim-facts">
 						<dt>State</dt><dd>Synchronous checkout</dd>
 						<dt>Doing</dt><dd>mapping the shop</dd>
-						<dt>Subjects</dt><dd>1 subject</dd>
+						<dt>Subjects</dt><dd>Shop (the whole model)</dd>
 					</dl>
-					<span class="take"><Icon name="lock" size={15} /> Take back control</span>
 				</div>
 				<button class="replay" type="button" data-replay hidden>
 					<Icon name="back" size={15} /> Replay
@@ -200,18 +202,19 @@ const shop = drawings.webShop;
 	.claim {
 		position: absolute;
 		top: 12px;
-		left: 12px;
-		right: 12px;
+		left: 50%;
+		width: min(420px, calc(100% - 24px));
+		transform: translateX(-50%);
 		z-index: 1;
 		display: flex;
-		align-items: center;
-		gap: 22px;
-		padding: 10px 14px;
-		border-radius: 6px;
+		flex-direction: column;
+		gap: 10px;
+		padding: 16px;
+		border-radius: 10px;
 		background: var(--chrome);
 		box-shadow:
 			var(--shadow-float),
-			inset 0 0 0 1px color-mix(in oklch, var(--live) 35%, transparent);
+			inset 0 0 0 1px color-mix(in oklch, var(--live) 40%, transparent);
 		font-size: 12.5px;
 		opacity: 0;
 		translate: 0 -4px;
@@ -227,6 +230,13 @@ const shop = drawings.webShop;
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
+		flex-shrink: 0;
+	}
+	.claim-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
 	}
 	.live {
 		display: inline-flex;
@@ -238,12 +248,6 @@ const shop = drawings.webShop;
 	.live .dot {
 		color: var(--live);
 		box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 25%, transparent);
-		animation: live 1.6s var(--ease-in-out) infinite;
-	}
-	@keyframes live {
-		50% {
-			box-shadow: 0 0 0 5px color-mix(in srgb, var(--live) 5%, transparent);
-		}
 	}
 	.since {
 		font-size: 11px;
@@ -251,8 +255,8 @@ const shop = drawings.webShop;
 	}
 	.claim-facts {
 		display: grid;
-		grid-template-columns: auto auto;
-		gap: 0 14px;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: 2px 12px;
 		margin: 0;
 	}
 	.claim-facts dt {
@@ -261,14 +265,16 @@ const shop = drawings.webShop;
 	.claim-facts dd {
 		margin: 0;
 		color: var(--ink);
+		overflow-wrap: anywhere;
 	}
 	.take {
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
 		margin-left: auto;
-		height: 30px;
-		padding: 0 12px;
+		height: 28px;
+		padding: 0 10px;
+		flex-shrink: 0;
 		border-radius: 4px;
 		font-weight: 600;
 		color: var(--gold-ink);

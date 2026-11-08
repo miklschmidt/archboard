@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T13:12:00Z'
-updated_date: '2026-11-08T15:44:00Z'
+updated_date: '2026-11-08T15:53:00Z'
 labels:
   - frontend
   - design
@@ -55,6 +55,10 @@ Verified in the running app (port 4467) at 1440x900 in both themes: chrome strip
 Review of a2af63695..cd031b68f found that a lost event connection hides an active claim. Keep cached claims mounted until ownership changes, and extend the existing reconnect owner. The Browser module vKEsyHFk/vKEsyHFk#6nZjwK9W keeps its existing reader, Query, and event ownership. These presentation fixes change no architecture contract, so no proposal is needed.
 
 Review also found that a flow or walkthrough leaves the previous module marked in the navigator. Mark only the active reading, and extend the reader-column browser owner to cover the flow and the return to structure.
+
+The site audit found an old claim banner in ProductWindow. Replace it with the centered card, name the whole model, and remove its looping status halo. Rebuilt diagrams differ only in newly allocated sample identities, so keep the existing drawings.
+
+Review completed for a2af63695..cd031b68f. Fixed claim persistence during connection loss, exclusive navigation markers for flows and walkthroughs, the old claim banner in the site mock, and the stale design statement about selection in the tree. Validation passed: lint, type-check, 36 focused unit tests, canonical-model-viewer, canonical-model-proposals, canonical-model-reconciliation, shell-layout, reader-column, formatting, model semantics, site paint, site render, and the final site build. Compared the app in both themes, one and two panes, and the site demos through the shared browser. The existing ownership boundaries remain accurate.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
