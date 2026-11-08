@@ -535,9 +535,9 @@ The language is `typescript`, `python`, `csharp`, `swift`, `c`, `rust` or `go`. 
 
 The file has one key for each language. Each value has a `command` and, if the server needs any, `args`. A language or a field that this list does not name, a command that is empty, or text that is not JSON makes the whole file invalid.
 
-The command is a program on the `PATH` of the Archboard server, an absolute path, or in the repository file a path that starts at the checkout root. A command with a `/` that is not absolute is such a path. So a repository can commit a wrapper script that starts its server through its own tools, and the server then matches the repository on every machine. This repository does that for Rust: `scripts/rust-analyzer` runs the `rust-analyzer` of the flake through `nix develop`. Other repositories use a command such as `nix` with the arguments `develop --command rust-analyzer`, or the equivalent for `devenv shell` or `devbox run`.
+Every machine and CI run that has the checkout reads the repository file, and nothing is known of their environments. So a command in the repository file is a program on the `PATH` of the Archboard server, or a path inside the checkout that starts at the checkout root. A command with a `/` that is not absolute is such a path. A path that leaves the checkout, absolute or relative, makes the file invalid. So a repository can commit a wrapper script that starts its server through its own tools, and the server then matches the repository on every machine. This repository does that for Rust: `scripts/rust-analyzer` runs the `rust-analyzer` of the flake through `nix develop`. Other repositories use a command such as `nix` with the arguments `develop --command rust-analyzer`, or the equivalent for `devenv shell` or `devbox run`.
 
-`--repo <identity>` names another repository, and the command then writes the file of its chosen checkout. Without it, the command writes the file of the checkout that holds the working directory. `--remove` removes the language from the file, and the command deletes a file that is left with no server. A command that you type as a path is read from the working directory. The repository file keeps a path inside the checkout as a path from the checkout root, written with `/`. It keeps any other path as an absolute path.
+`--repo <identity>` names another repository, and the command then writes the file of its chosen checkout. Without it, the command writes the file of the checkout that holds the working directory. `--remove` removes the language from the file, and the command deletes a file that is left with no server. A command that you type as a path is read from the working directory. The repository file keeps a path inside the checkout as a path from the checkout root, written with `/`. The command refuses a path outside the checkout. Install the server through the repository's own environment, such as its Nix flake, devenv, devbox or package manager, so that it is on the `PATH`, or commit a wrapper script. Only a program of this machine alone goes in the global file, with `--global`.
 
 Run the command with no language to see both files. It shows the file of the checkout, the global file, and the servers that each names. The answer is JSON with `repo`, `root`, `repository` and `global`. Each of the last two has `file`, `servers` and, when the file is invalid, `problem`.
 
@@ -549,7 +549,7 @@ The global file is `language-servers.json` in the state directory, beside `repos
 archboard repo language-server c clangd --global
 ```
 
-The command in the global file is a name on the `PATH` or an absolute path, because the file has no checkout to read a path from. The command stores a path that you type as an absolute path.
+The global file belongs to this machine, so its command is a name on the `PATH` or an absolute path. It has no checkout to read a relative path from. The command stores a path that you type as an absolute path.
 
 #### What the check does
 
@@ -563,7 +563,7 @@ If neither file names a server for another language, the check says `language-se
 
 A file that the check cannot read decides every language that it could name. The check then says `language-server-missing` with the path of the file and the problem. An invalid repository file blocks every language of that checkout, TypeScript included. An invalid global file blocks each language that the repository file leaves out. `archboard repo language-server` refuses to change an invalid file and exits with 1. Fix the file or delete it, and run the command again.
 
-A check reads the global file once, and the file of each checkout once, when it first asks about that checkout. A running Archboard server uses a file that you wrote after it started, in the next check. The Archboard server looks up a command that is a name on its own `PATH`. That `PATH` is the `PATH` of the command that started it. If that `PATH` lacks the command, give the absolute path of the command, or commit a wrapper script. Or run `archboard stop` and run a command again.
+A check reads the global file once, and the file of each checkout once, when it first asks about that checkout. A running Archboard server uses a file that you wrote after it started, in the next check. The Archboard server looks up a command that is a name on its own `PATH`. That `PATH` is the `PATH` of the command that started it. If that `PATH` lacks the command, commit a wrapper script that starts it through the repository's environment. For a program of this machine alone, give its absolute path in the global file. Or run `archboard stop` and run a command again.
 
 The registry holds no servers. `archboard repo list` and `archboard repo forget` do not mention them, and a `servers` field in a `repos.json` from an earlier version is ignored. To keep a server that you configured earlier, run `archboard repo language-server` again in the checkout.
 

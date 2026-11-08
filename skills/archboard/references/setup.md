@@ -95,7 +95,10 @@ Tell the user to commit that file with the vault, so that every machine and CI r
 Without it, the command writes the file of the checkout that holds the working directory.
 `--remove` removes that language's server. The command deletes a file that is left with no server.
 A command that you type as a path is read from the working directory.
-The file keeps a path inside the checkout as a path from the checkout root, and any other path as an absolute path.
+The file keeps a path inside the checkout as a path from the checkout root.
+Every machine reads the committed file, so the command refuses a path outside the checkout, absolute or relative.
+Install the server through the repository's own environment, such as its Nix flake, devenv, devbox or package manager, so that it is on the `PATH`, or commit a wrapper script.
+Only a program of this machine alone goes in the global file, with `--global`.
 
 In the repository file, a command with a `/` that is not absolute is a path from the checkout root.
 So a repository can commit a wrapper script that starts its server through its own tools, such as `nix develop`, `devenv shell` or `devbox run`.
@@ -106,7 +109,7 @@ For a server for every repository on this machine, add `--global`.
 That writes `language-servers.json` in the Archboard state directory, beside `repos.json`.
 It works outside a checkout and takes no `--repo`.
 It names a server for each language that the repository file leaves out, and the repository file wins for each language.
-Its command is a name on the `PATH` or an absolute path.
+Its command is a name on the `PATH` or an absolute path, because the file belongs to this machine.
 
 Run `archboard repo language-server` with no language to see both files and the servers that each names.
 The answer is JSON with `repo`, `root`, `repository` and `global`.
@@ -128,7 +131,8 @@ An invalid file decides every language that it could name, so the detail gives t
 An invalid repository file blocks every language of that checkout, TypeScript included.
 Fix or delete that file.
 If the program is absent from the Archboard server's `PATH`, run `command -v <program>` in your shell.
-Name that absolute path as the command, or a wrapper script of the repository.
+First, make the repository's own environment put the server on the `PATH`, or commit a wrapper script in the repository that starts it.
+Only for a program of this machine alone, name that absolute path with `--global`.
 
 `language-server-unready` means that the project lacks required input:
 

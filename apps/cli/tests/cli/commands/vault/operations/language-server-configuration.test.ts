@@ -16,6 +16,9 @@ import type * as CodeCheck from "@archboard/code-intel/code-check-run";
 
 /** A repository with no remote is named by its directory, here with a space. */
 const IDENTITY = "my project";
+/** A program on no PATH, which the repository file can name. */
+const ABSENT = "archboard-no-such-clangd";
+/** A program of no machine, which only the global file can name. */
 const NEVER = "/nonexistent/clangd";
 const cwd = process.cwd();
 const caller = {
@@ -159,7 +162,7 @@ test("the command a language-server-missing skip names is one the CLI accepts, a
 	const named = /`(archboard [^`]*)`/u.exec(skip?.detail ?? "")?.[1];
 	expect(named).toContain("language-server c");
 	// Read as a shell reads it, with the program the agent chose.
-	const words = Bun.spawnSync(["sh", "-c", `printf '%s\\0' ${named?.replace("<command>", NEVER)}`])
+	const words = Bun.spawnSync(["sh", "-c", `printf '%s\\0' ${named?.replace("<command>", ABSENT)}`])
 		.stdout.toString()
 		.split("\0")
 		.slice(1, -1);
@@ -167,7 +170,7 @@ test("the command a language-server-missing skip names is one the CLI accepts, a
 	// The same process asks again, as a server that started before the command ran.
 	const [again, ...rest] = await missingSkips();
 	expect(rest).toEqual([]);
-	expect(again?.detail).toContain(NEVER);
+	expect(again?.detail).toContain(ABSENT);
 });
 
 test("the repository file wins over the global one, and a path the CLI keeps from the checkout root is the program the check starts", async () => {

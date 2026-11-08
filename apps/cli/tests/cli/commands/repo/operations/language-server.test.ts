@@ -2,8 +2,9 @@
 // files (TASK-599): it writes the repository file of the working directory's
 // checkout, registered or not, or of the chosen checkout that `--repo` names,
 // writes the global file with `--global`, removes with `--remove`, keeps a
-// path from the checkout root, and shows both files without a language.
-// Nothing here needs a server: the files are files.
+// path from the checkout root, refuses a path outside the checkout in the
+// repository file, keeps every change of commands that run together, and shows
+// both files without a language. Nothing here needs a server: the files are files.
 
 import { afterAll, beforeAll, beforeEach, expect, spyOn, test } from "bun:test";
 import {
@@ -149,6 +150,14 @@ test.each([
 		["repo", "language-server", "c", "clangd", "--global", "--repo", IDENTITY],
 	],
 	["a language that has no server", ["repo", "language-server", "cobol", "cobol-lsp"]],
+	[
+		"an absolute path outside the checkout",
+		["repo", "language-server", "rust", "/usr/bin/rust-analyzer"],
+	],
+	[
+		"a relative path outside the checkout",
+		["repo", "language-server", "rust", "../bin/rust-analyzer"],
+	],
 ])("repo language-server refuses %s with a usage error and writes nothing", async (_, argv) => {
 	expect((await run(checkout, argv)).exited).toBe(2);
 	expect(existsSync(repositoryFile)).toBe(false);

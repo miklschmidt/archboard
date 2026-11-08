@@ -284,13 +284,14 @@ function filesResult(
 
 /**
  * The command as its file keeps it. A name stays a name. A path is read from
- * the working directory. The repository file keeps one inside the checkout as
- * a path from the checkout root, so that it holds on every machine. Every
- * other path is kept absolute.
+ * the working directory. The global file belongs to this machine and keeps it
+ * absolute. Every machine reads the repository file, so it keeps a path inside
+ * the checkout as a path from the checkout root, and refuses any other path.
  * @param command The command as typed.
  * @param root The checkout root, for the repository file.
  * @param resolvePath Resolves a path from the working directory.
  * @returns The command to store.
+ * @throws {CliUsageError} When the repository file would hold a path outside the checkout.
  */
 function storedCommand(
 	command: string,
@@ -303,7 +304,11 @@ function storedCommand(
 	const relative = path.relative(root, absolute);
 	const outside =
 		relative === "" || path.isAbsolute(relative) || relative.split(path.sep)[0] === "..";
-	return outside ? absolute : `./${relative.split(path.sep).join("/")}`;
+	if (outside)
+		throw new CliUsageError(
+			`${absolute} is outside the checkout, and every machine reads the committed repository file. Install the server through the repository's own environment, such as its Nix flake, devenv, devbox or package manager, so that it is on the PATH, or name a script in the checkout by its path from the checkout root. To name a program of this machine only, add --global.`,
+		);
+	return `./${relative.split(path.sep).join("/")}`;
 }
 
 /**

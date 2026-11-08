@@ -73,6 +73,8 @@ test.each([
 	["an unknown language", JSON.stringify({ cobol: { command: "cobol-lsp" } })],
 	["an unknown field", JSON.stringify({ c: { command: "clangd", env: {} } })],
 	["an empty command", JSON.stringify({ c: { command: "" } })],
+	["an absolute path", JSON.stringify({ c: { command: "/opt/clangd" } })],
+	["a path that leaves the checkout", JSON.stringify({ c: { command: "tools/../../clangd" } })],
 ])("a repository file with %s decides every language with its problem", (_, text) => {
 	writeFileSync(repositoryFile, text);
 	writeFileSync(globalFile, JSON.stringify({ go: { command: "gopls" } }));

@@ -37,12 +37,30 @@ const LanguageServersSchema = z.partialRecord(
 type LanguageServers = z.infer<typeof LanguageServersSchema>;
 
 /**
- * The global file has no directory to read a relative path from, so its
- * command is a name on the `PATH` or an absolute path.
+ * The global file belongs to one machine and has no directory to read a
+ * relative path from, so its command is a name on the `PATH` or an absolute path.
  */
 const GlobalServersSchema = LanguageServersSchema.refine(
 	(servers) => Object.values(servers).every(({ command }) => !isRelativePath(command)),
 	{ message: "a command in the global file is a name on the PATH or an absolute path" },
+);
+
+/**
+ * Every machine and CI run that has the checkout reads the repository file, and
+ * nothing is known of their environments. So its command is a name on the
+ * `PATH` or a path inside the checkout, from its root, never a path that leaves
+ * the checkout, absolute or relative.
+ */
+const RepositoryServersSchema = LanguageServersSchema.refine(
+	(servers) =>
+		Object.values(servers).every(
+			({ command }) =>
+				!path.isAbsolute(command) && path.posix.normalize(command).split("/")[0] !== "..",
+		),
+	{
+		message:
+			"a command in the repository file is a name on the PATH or a path inside the checkout, never a path that leaves it",
+	},
 );
 
 /** Which file a server comes from. */
@@ -127,7 +145,7 @@ function readServers(scope: ServerScope, root?: string): ServerFile {
 	} catch (error) {
 		return { file, problem: `${file} is not valid JSON: ${errorMessage(error)}` };
 	}
-	const schema = scope === "global" ? GlobalServersSchema : LanguageServersSchema;
+	const schema = scope === "global" ? GlobalServersSchema : RepositoryServersSchema;
 	const servers = schema.safeParse(parsed);
 	return servers.success
 		? { file, servers: servers.data }
