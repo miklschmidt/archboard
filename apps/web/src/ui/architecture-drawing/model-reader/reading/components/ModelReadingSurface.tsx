@@ -57,6 +57,7 @@ import {
 	walkthroughsAbout,
 } from "#ui/architecture-drawing/model-reader/reading/rules/relevance.ts";
 import { claimsOn } from "#ui/architecture-drawing/model-reader/rules/claimed-subjects.ts";
+import { selectedSubject } from "#ui/architecture-drawing/model-reader/rules/selected-subject.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 
@@ -183,11 +184,11 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 	const { flow, reference } = projection;
 	const { grammar, selectGrammar } = location;
 	const { claimed } = reader;
-	// The panel says a selection is claimed, and a flow on screen speaks for its steps.
-	const claims = useMemo(
-		() => (selecting ? claimsOn(claimed, flow === null ? ids : [...ids, flow.id]) : NO_CLAIMS),
-		[selecting, claimed, ids, flow],
-	);
+	const claims = useMemo(() => {
+		if (!selecting) return NO_CLAIMS;
+		const subject = selectedSubject({ model, projection, ids });
+		return claimsOn(claimed, subject.kind === "flow" ? [...ids, subject.flow.id] : ids);
+	}, [selecting, claimed, model, projection, ids]);
 	const flowHead = useMemo(
 		() =>
 			flow === null ? undefined : (

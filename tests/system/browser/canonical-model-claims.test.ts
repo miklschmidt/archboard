@@ -245,6 +245,38 @@ test("a claim is a status mark on its rows, its model and a selected subject, an
 			`document.querySelector('[data-slot="model-diagram"] svg')?.getAttribute('data-test-scene') ?? null`,
 		),
 	).toBe("kept");
+
+	// A claimed flow does not claim the participants that its picture shows.
+	const flowClaim = await request<ArchitectureClaimResult>("/api/architecture/claims", {
+		method: "POST",
+		body: {
+			vault,
+			target: { model: model.body.manifest.id, state: model.body.manifest.current.id },
+			writer: "Agent Ada",
+			reason: "Explain the request",
+			subjects: ["Shop#Request"],
+		},
+	});
+	if (!flowClaim.body.success) throw new Error(flowClaim.body.error);
+	await browser.run([
+		"open",
+		`${server.base}/?modelA=Shop&grammarA=sequence&flowA=Shop%23Request&subjectA=Shop%23Worker`,
+	]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id') === 'Shop#Worker' && document.querySelector('${ROWS.flow} [data-slot="claim-mark"]') !== null`,
+			),
+		Boolean,
+		"the unclaimed participant of the claimed flow",
+		WAIT,
+	);
+	expect(await browser.eval<boolean>(`document.querySelector('${BADGE}') === null`)).toBe(true);
+	const flowReleased = await request<ArchitectureClaimList>("/api/architecture/claims/release", {
+		method: "POST",
+		body: { vault, claim: flowClaim.body.claim.id, writer: "Agent Ada" },
+	});
+	if (!flowReleased.body.success) throw new Error(flowReleased.body.error);
 }, 30_000);
 
 /**
