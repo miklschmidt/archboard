@@ -45,8 +45,12 @@ function namesRunner(binding: Binding): boolean {
 	const { symbol } = binding;
 	if (symbol === undefined) return false;
 	const path = pathOf(binding);
-	if (/\.ya?ml$/u.test(path))
-		return /^[A-Z][A-Za-z]*\/[^/]+$/u.test(symbol) || symbol.startsWith("services.");
+	if (/\.ya?ml$/u.test(path)) {
+		const compose = /^(docker-)?compose(\.override)?\.ya?ml$/u.test(posix.basename(path));
+		return (
+			/^[A-Z][A-Za-z]*\/[^/]+$/u.test(symbol) || (compose && /^services\.[\w.-]+$/u.test(symbol))
+		);
+	}
 	const terraform = /\.(tf|tofu)$/u.test(path) || !/\.[^/]+$/u.test(path);
 	return (
 		terraform && /^(module\.[\w-]+\.)*(data\.)?[a-z][a-z0-9]*_[a-z0-9_]+\.[\w-]+$/u.test(symbol)

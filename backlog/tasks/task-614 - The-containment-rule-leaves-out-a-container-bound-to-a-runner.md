@@ -4,6 +4,7 @@ title: The containment rule leaves out a container bound to a runner
 status: In Progress
 assignee: []
 created_date: '2026-11-08T23:29:00Z'
+updated_date: '2026-11-08T23:36:00Z'
 labels:
   - bug
   - model
@@ -25,3 +26,17 @@ The containment rule (TASK-582.01, #49) warns CONTAINER_PARTS_OUTSIDE when a par
 - [ ] #3 archboard check all passes on the main branch of miklschmidt/archboard-relay-example, and still reports RELATIONSHIP_UNDRAWN on its pull request #1
 - [ ] #4 The consumer skill says that a deployed service binds its runner
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Review corrections: restrict compose recognition to the eight filenames that the reader accepts. Support Terraform instance addresses, module calls, and explicit directory paths with dots. Add focused containment regressions and explain the syntactic exception in consumer guidance. Run the requested test, type, and lint commands, then exercise both relay branches.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Review affects the model module (vKEsyHFk/vKEsyHFk#DmbKboxU). The module ownership and relationships stay accurate, so these address-recognition corrections need no architecture proposal. The containment rule reads stated bindings only. Its infrastructure exception cannot prove that a declaration runs code.
+
+Review fix: compose recognition now requires a supported compose filename and a nonempty service address. Regression cases for a YAML configuration key, an unsupported compose filename, and an empty service address failed before the fix. All 60 structure tests pass after the fix.
+<!-- SECTION:NOTES:END -->

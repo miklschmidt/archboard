@@ -307,10 +307,28 @@ describe("container containment", () => {
 		["a YAML file bound without an address", at("deploy/web.yaml")],
 		["a symbol of a code file", at("src/shop.ts", "Shop/cart")],
 		["a code symbol in a directory", at("src/shop", "shop.cart")],
+		["a YAML configuration key", at("config/app.yaml", "services.web")],
+		["a compose filename the reader does not accept", at("compose.prod.yaml", "services.web")],
+		["an empty compose service address", at("compose.yaml", "services.")],
 	])("still holds the parts of %s", (_case, binding) => {
 		expect(containment(shaped({ binding }, ["lib/a.ts", "lib/b.ts"]))).toMatchObject([
 			{ code: "CONTAINER_PARTS_OUTSIDE", id: box },
 		]);
+	});
+
+	test.each([
+		"compose.yaml",
+		"compose.yml",
+		"docker-compose.yaml",
+		"docker-compose.yml",
+		"compose.override.yaml",
+		"compose.override.yml",
+		"docker-compose.override.yaml",
+		"docker-compose.override.yml",
+	])("recognizes a service in %s", (file) => {
+		expect(
+			containment(shaped({ binding: at(`deploy/${file}`, "services.web.api") }, ["a.ts", "b.ts"])),
+		).toEqual([]);
 	});
 
 	test("a part outside the container's directory makes its parts spread", () => {
