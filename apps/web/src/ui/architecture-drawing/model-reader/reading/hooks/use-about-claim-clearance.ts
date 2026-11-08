@@ -8,7 +8,7 @@ import { useLayoutEffect } from "react";
 function useAboutClaimClearance(page: HTMLElement | null, outlined: boolean): void {
 	useLayoutEffect(() => {
 		if (page === null) return undefined;
-		const surface = page.parentElement;
+		const surface = page.closest<HTMLElement>('[data-slot="model-about"]');
 		const title = page.querySelector<HTMLElement>('[data-slot="model-about-head"]');
 		if (surface === null || title === null) return undefined;
 		/** Measure content coordinates, so scrolling never moves the claim. */

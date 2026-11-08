@@ -18,7 +18,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { initializeSource } from "./support/canonical-model.ts";
-import { openAbout, startModelWalkthrough } from "./support/canonical-page.ts";
+import { openAbout, openDiagram, pick, startModelWalkthrough } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 6_000 } as const;
@@ -217,6 +217,18 @@ test("a claim stays in reach over About, a walkthrough and a model that cannot b
 		"the claim to remain over About after the other pane closes",
 		WAIT,
 	);
+	// About on a selected module wraps its page once more, and the card still clears its title.
+	await openDiagram(browser);
+	await pick(browser, "Shop#Gateway");
+	await openAbout(browser, "selection");
+	await browser.run(["set", "viewport", "900", "900"]);
+	await pollUntil(
+		() => claimFrames(browser, overAbout),
+		(frames) => frames.length === 1 && frames[0] === "about",
+		"the claim over About on the selected module",
+		WAIT,
+	);
+	expect(await aboutControlsReachable(browser)).toBe(true);
 	await takeBack(overAbout);
 
 	const overWalkthrough = await claimFor("Narrate the gateway");
