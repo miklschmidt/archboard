@@ -333,6 +333,7 @@ function checkMentions(file: string, prose: string, problems: string[]): void {
 
 /** Pins that a guide writes by hand, which go stale with the next release. */
 const HAND_PINS = [
+	/\{\s+\{\s*(?:version|ref)\s*\}\s*\}/u,
 	/version:\s*["']?\d+\.\d+/u,
 	/(?:^|[\s"'])(?:@archboard\/cli|archboard)@\d/u,
 	/"(?:@archboard\/cli|archboard)":\s*"[\^~]?\d/u,

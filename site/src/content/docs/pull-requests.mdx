@@ -48,7 +48,7 @@ jobs:
       - run: pip install pyright
       - uses: miklschmidt/archboard/actions/check@{{ref}}
         with:
-          version: { { version } }
+          version: "{{version}}"
 ```
 
 The code check resolves a call only through a language server, so the job installs the dependencies and the servers first. [The gate in CI](../gate/#in-ci) says which servers to install. Without a server, the finding below stays information.
@@ -129,7 +129,7 @@ jobs:
           fetch-depth: 0
       - uses: miklschmidt/archboard/actions/pull-request@{{ref}}
         with:
-          version: { { version } }
+          version: "{{version}}"
           out-of-plan: warn
 ```
 

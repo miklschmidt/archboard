@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T15:10:00Z'
-updated_date: '2026-11-08T15:20:00Z'
+updated_date: '2026-11-08T15:30:00Z'
 labels: []
 dependencies: []
 ordinal: 1061000
@@ -39,10 +39,16 @@ The docs site describes the CLI on main, but readers install a release from npm.
 6. The guides write `{{version}}` where they pin the CLI, a remark plugin fills in the version, and `guides.ts` refuses a pinned version written by hand.
 7. Pages that name their source (the CLI overview, the edit link) follow `DOCS_VERSION` and `DOCS_REF`.
 8. ADR for versioned docs, the archboard-dev skill and `site/DESIGN.md` for the switcher.
+
+Review fixes: repair the guide version tokens and release-version substitution. Make release discovery fail on download errors. Check release concurrency, assembled links, search, and the version switch. Run the requested gates and commit each verified fix.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Built and checked locally (2026-11-08): a release build with DOCS_VERSION=0.3.0 DOCS_REF=v0.3.0, a fake 0.2.9 copy and main, assembled with site/scripts/versions.ts. links.ts passes on 65 pages. In the browser: /docs/ is 0.3.0 with no note, /docs/next/ and /docs/0.2.9/ name their version and link to the latest, the switch lists every version and marks the current one, Escape closes it and returns focus, search results stay under their own root, release pages link to their tag and pin @v0.3.0. Without releases, /docs/ and /docs/next/ are main (33 pages, links pass). actionlint 1.7.12 passes on site.yml and release.yml. The release leg of site.yml runs first on the next release, so its first real run is the proof of the workflow.
+
+Review scope: 8076b638c...579024abc in docs/versioned-docs. The architecture read resolves to this checkout. The fixes preserve ADR 0077 and its module boundaries, so they need no new architecture proposal.
+
+Review fix: quote the YAML version tokens so formatting preserves them. Fill guide pins from DOCS_VERSION for release builds and reject tokens that formatting splits. A 0.3.0 build shows scalar 0.3.0 pins and @v0.3.0 Action refs. A malformed-token probe fails the guide guard.
 <!-- SECTION:NOTES:END -->

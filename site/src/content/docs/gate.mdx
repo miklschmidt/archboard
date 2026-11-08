@@ -123,7 +123,7 @@ jobs:
       - run: pip install pyright
       - uses: miklschmidt/archboard/actions/check@{{ref}}
         with:
-          version: { { version } }
+          version: "{{version}}"
 ```
 
 The code check resolves a name only through a language server, and only resolved evidence makes a warning. So install the dependencies first. `npm ci` installs the checkout's own TypeScript, which serves from version {reference.facts.nativeTypescript}. Before {reference.facts.nativeTypescript}, the check also needs `typescript-language-server` in the dev dependencies. Install the server of each other language that `.archboard/language-servers.json` names, as `pip install pyright` does for Python. Without a server, a call that needs resolved evidence stays information, and the gate passes.

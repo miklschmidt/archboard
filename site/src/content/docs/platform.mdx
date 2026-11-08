@@ -112,7 +112,7 @@ jobs:
           path: platform
       - uses: miklschmidt/archboard/actions/check@{{ref}}
         with:
-          version: { { version } }
+          version: "{{version}}"
           working-directory: app
           repos: |
             platform
