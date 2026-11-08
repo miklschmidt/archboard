@@ -52,8 +52,10 @@ gives up on a route. The wrong fix routes the picture twice and keeps the old pl
   A change that lets a refused placement route therefore changes which placements compete, and
   many readings can change.
 - `reading::order` and `reading::rank` in `blocks/planned/reading.rs` rank finished drawings:
-  landing first, then long detours, then route cost plus crossings, times the cost of the room.
-  If the ranking itself is wrong, change the ranking. Otherwise leave it alone.
+  landing first, then the count of long detours, then route cost plus crossings, times the cost
+  of the room. A long detour outranks every cost, so a change that removes one detour can change
+  which placement wins. If the ranking itself is wrong, change the ranking. Otherwise leave it alone.
+- Routing is greedy. One line that takes a shorter way can force later lines into detours.
 - `finish` in `blocks/planned/fixed.rs` is the last guard. It places the labels, checks every
   line, the port spacing and the fan runs. Contraction runs it again. A pass that edits routes
   must pass it too.
@@ -74,3 +76,14 @@ Build the core after every change to `crates/` (see [TESTING.md](../../TESTING.m
 
 Look at the pictures of the readings that changed most, in both themes. A number tells you where
 to look, and the picture decides.
+
+## Trace a decision
+
+The core lays out in a worker as WebAssembly, where `eprintln!` prints nothing. To see why a
+reading picks a placement or a route, run its layout natively:
+
+1. Make the layout worker in `packages/renderer/src/runtime/bun-renderer/processes/` write each
+   graph that it receives to a file, and render the reading.
+2. Lay out each saved graph with `archboard_layout::lay_out_picture` in a temporary integration
+   test under `crates/archboard-layout/tests/`, with `eprintln!` where the decision is made.
+3. Remove the worker change, the test and the trace before you commit.
