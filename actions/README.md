@@ -34,11 +34,11 @@ warning is a warning, and information is a notice. A finding that rests on code 
 carries each end of its evidence with the excerpt of the line and one line around it. When a finding
 crosses a network hop, each annotation carries the code and manifest evidence.
 It annotates both places when they belong to the checked repository. A finding with no evidence is
-annotated at the vault file it names. The job summary lists the counts, every finding with a link
-to its entry in the findings reference, the evidence of each error and warning, and what the check
-did not read.
+annotated at the vault file it names. The job summary lists the counts, up to 100 findings with links
+to the findings reference, evidence for the first 30 errors and warnings, and what the check did not read.
 
-GitHub shows 10 annotations of each level in a step. The summary lists every finding.
+GitHub shows 10 annotations of each level in a step. The summary names omitted entries.
+The complete JSON report is at the `report-path` output. Upload that file as an artifact to keep it for review.
 
 | Input               | Default   | Meaning                                                                                                  |
 | ------------------- | --------- | -------------------------------------------------------------------------------------------------------- |
