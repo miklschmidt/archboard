@@ -28,15 +28,18 @@ pub(in crate::blocks::planned) fn seat(
             continue;
         };
         let path = &shape.routes[index].points;
-        match spot_on(
-            model,
-            Own::new(edge, path),
-            path,
-            shape,
-            &strokes,
-            &labels,
-            false,
-        ) {
+        let spot = |narrow| {
+            spot_on(
+                model,
+                Own::new(edge, path),
+                path,
+                shape,
+                &strokes,
+                &labels,
+                narrow,
+            )
+        };
+        match spot(false).or_else(|| spot(true)) {
             Some((label, _)) => {
                 shape.labels.insert(edge, label);
                 labels.remember(edge, label);
