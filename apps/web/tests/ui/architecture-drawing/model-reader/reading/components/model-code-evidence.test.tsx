@@ -240,12 +240,15 @@ async function lay(layout: "cards" | "list"): Promise<void> {
 }
 
 // The first test, because the page reads its storage once, when the layout is first asked for.
-test("a page starts with the layout its browser remembers", () => {
+test("a page starts with the layout its browser remembers", async () => {
 	answering(() => Response.json({ error: "no" }, { status: 404 }));
 	localStorage.setItem(CODE_FINDINGS_LAYOUT_KEY, "list");
 	mount();
 	expect(document.querySelector('[data-slot="code-evidence"]')?.getAttribute("data-layout")).toBe(
 		"list",
+	);
+	await waitFor(() =>
+		expect(document.querySelector('[data-slot="code-source-state"][data-unavailable]')).not.toBeNull(),
 	);
 });
 
