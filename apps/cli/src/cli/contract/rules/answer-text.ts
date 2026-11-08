@@ -207,19 +207,24 @@ function listLines(items: readonly unknown[], paint: Paint): string[] {
 }
 
 /**
- * Records keyed by their ids, as a table with the key first, when they fit one.
+ * Records keyed by their ids, with exact keys in tables or block headings.
  * @param fields - The object.
  * @param paint - Colours a part of the text.
  * @returns The lines, or null when the object is no such object.
  */
-function keyedTableLines(fields: Fields, paint: Paint): string[] | null {
+function keyedRecordLines(fields: Fields, paint: Paint): string[] | null {
 	const entries = Object.entries(fields);
 	const records = entries.flatMap(([key, record]) =>
 		isFields(record) ? [{ id: key, ...record }] : [],
 	);
-	return entries.length > 1 && records.length === entries.length
-		? tableLines(records, paint)
-		: null;
+	if (entries.length === 0 || records.length !== entries.length) return null;
+	return (
+		tableLines(records, paint) ??
+		entries.flatMap(([key, record]) => [
+			paint("bold", key),
+			...valueLines(record, paint).map((line) => `${INDENT}${line}`),
+		])
+	);
 }
 
 /**
@@ -233,7 +238,7 @@ function valueLines(value: unknown, paint: Paint): string[] {
 	if (Array.isArray(value))
 		return value.length === 0 ? [paint("dim", "none")] : listLines(value, paint);
 	if (!isFields(value)) return [plain(value, paint)];
-	return keyedTableLines(value, paint) ?? fieldLines(value, paint);
+	return keyedRecordLines(value, paint) ?? fieldLines(value, paint);
 }
 
 /**

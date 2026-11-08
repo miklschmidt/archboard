@@ -37,6 +37,30 @@ test("records with short fields form a table, and records too wide for one are b
 	);
 });
 
+test("keyed records keep vocabulary identities for single records and blocks", () => {
+	const groups = { "api-team": { name: "API team", color: "sky" } };
+	const single = answerText({ policy: { groups } }, bare);
+	expect(single).toContain("api-team");
+	const longName = "API team ".repeat(20).trim();
+	const multiLineName = "Event bus\nOperations team";
+	const blocks = answerText(
+		{
+			policy: {
+				groups: {
+					"api-team": { name: longName, color: "sky" },
+					eventBus: { name: multiLineName, color: "blue" },
+				},
+			},
+		},
+		bare,
+	);
+	expect(blocks).toContain("api-team");
+	expect(blocks).toContain("eventBus");
+	expect(blocks).toContain(longName);
+	expect(blocks).toContain("Event bus\n");
+	expect(blocks).toContain("Operations team");
+});
+
 test("colour marks places, codes, numbers and yes or no, and an empty answer is done", () => {
 	const answer = {
 		success: true,
