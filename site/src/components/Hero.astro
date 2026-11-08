@@ -1,5 +1,6 @@
 ---
 import Icon from "./Icon.astro";
+import InstallCommands from "./InstallCommands.astro";
 import DockLines from "./window/DockLines.astro";
 import ProductWindow from "./window/ProductWindow.astro";
 import { links } from "../lib/links";
@@ -20,12 +21,9 @@ import { links } from "../lib/links";
 					<a class="btn btn-quiet" href={links.repository}><Icon name="github" /> View on GitHub</a>
 				</div>
 			</div>
-			<ul class="facts" aria-label="What it runs with">
-				<li>For Claude Code and Codex</li>
-				<li>Linux and macOS</li>
-				<li>Runs locally, installed from npm</li>
-				<li>Source-available</li>
-			</ul>
+			<div class="hero-install">
+				<InstallCommands id="hero-install" then={["archboard init"]} />
+			</div>
 		</div>
 		<div class="room"></div>
 	</div>
@@ -93,28 +91,8 @@ import { links } from "../lib/links";
 		flex-wrap: wrap;
 		gap: 12px;
 	}
-	.facts {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px 28px;
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		font-size: 0.9375rem;
-		color: var(--ink-muted);
-	}
-	.facts li {
-		display: inline-flex;
-		align-items: center;
-		gap: 10px;
-	}
-	.facts li::before {
-		content: "";
-		width: 6px;
-		height: 6px;
-		border-radius: 1px;
-		background: var(--gold-mark);
-		box-shadow: 0 0 10px oklch(0.86 0.125 86 / 0.6);
+	.hero-install {
+		width: min(100%, 30rem);
 	}
 	.hero-window {
 		margin-top: clamp(40px, 5vw, 72px);

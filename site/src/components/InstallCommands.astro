@@ -1,0 +1,154 @@
+---
+// The commands that install Archboard, for the package manager that the reader picks, and the
+// commands that follow. Every copy on the page shows the package manager that the reader picked
+// last.
+import CopyButton from "./CopyButton.astro";
+
+interface Props {
+	/** A prefix that keeps the ids of this copy unique on the page. */
+	readonly id: string;
+	/** The commands that follow the install. */
+	readonly then: readonly string[];
+}
+
+const { id, then } = Astro.props;
+
+// The Bun line names the scoped launcher, as INSTALL.md does and the release smoke test installs.
+const managers = [
+	{ key: "npm", install: "npm install --global archboard" },
+	{ key: "pnpm", install: "pnpm add --global archboard" },
+	{ key: "yarn", install: "yarn global add archboard" },
+	{ key: "bun", install: "bun add --global @archboard/cli" },
+].map((manager) => ({ ...manager, commands: [manager.install, ...then] }));
+const [first] = managers;
+---
+
+<div class="install" data-install>
+	<div class="head">
+		<div class="tabs" role="tablist" aria-label="Package manager">
+			{
+				managers.map((manager, index) => (
+					<button
+						type="button"
+						role="tab"
+						id={`${id}-tab-${manager.key}`}
+						aria-controls={`${id}-panel-${manager.key}`}
+						aria-selected={index === 0 ? "true" : "false"}
+						tabindex={index === 0 ? 0 : -1}
+						data-tab={manager.key}
+					>
+						{manager.key}
+					</button>
+				))
+			}
+		</div>
+		<CopyButton text={first?.commands.join("\n") ?? ""} />
+	</div>
+	{
+		managers.map((manager, index) => (
+			<pre
+				class="block"
+				role="tabpanel"
+				tabindex="0"
+				id={`${id}-panel-${manager.key}`}
+				aria-labelledby={`${id}-tab-${manager.key}`}
+				data-panel={manager.key}
+				data-commands={manager.commands.join("\n")}
+				hidden={index !== 0}
+			><code>{manager.commands.map((command) => (
+				<span class="line"><span class="ps" aria-hidden="true">$ </span>{command}</span>
+			))}</code></pre>
+		))
+	}
+</div>
+
+<style>
+	.install {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 6px;
+		border-radius: var(--radius-table);
+		background: var(--chrome);
+		box-shadow:
+			var(--shadow-float),
+			inset 0 0 0 1px var(--rule);
+	}
+	.head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+	}
+	.tabs {
+		display: inline-flex;
+		gap: 2px;
+		padding: 3px;
+		border-radius: var(--radius-panel);
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	.tabs button {
+		height: 30px;
+		padding: 0 12px;
+		border: 0;
+		border-radius: var(--radius-control);
+		background: transparent;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--ink-muted);
+		cursor: pointer;
+		transition: color 160ms var(--ease-out);
+	}
+	.tabs button:hover {
+		color: var(--ink);
+	}
+	.tabs button[aria-selected="true"] {
+		background: var(--raised);
+		color: var(--ink);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 -2px 0 var(--gold-mark);
+	}
+	.block {
+		margin: 0;
+		padding: 14px 16px;
+		border-radius: var(--radius-panel);
+		background: oklch(0.155 0.005 75);
+		box-shadow: inset 0 0 0 1px var(--rule);
+		font-size: 0.8125rem;
+		line-height: 1.75;
+		color: var(--ink);
+		overflow-x: auto;
+	}
+	.block code {
+		font-size: inherit;
+	}
+	.line {
+		display: block;
+		white-space: pre;
+	}
+	.ps {
+		color: var(--gold-mark);
+		user-select: none;
+	}
+</style>
+
+<script>
+	import { mountTabs } from "../scripts/tabs";
+
+	const installs = [...document.querySelectorAll<HTMLElement>("[data-install]")];
+	/**
+	 * Show one package manager in every copy, and make each copy button copy its commands.
+	 * @param key The package manager.
+	 */
+	const choose = (key: string): void => {
+		installs.forEach((root, index) => {
+			shows[index]?.(key);
+			const panel = root.querySelector<HTMLElement>(`[data-panel="${key}"]`);
+			const copy = root.querySelector<HTMLButtonElement>("[data-copy]");
+			if (panel && copy) copy.dataset["copy"] = panel.dataset["commands"] ?? "";
+		});
+	};
+	const shows = installs.map((root) => mountTabs(root, choose));
+</script>

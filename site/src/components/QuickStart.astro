@@ -1,10 +1,10 @@
 ---
-// The README's quick start and the prompts to try. Each block copies as one command list.
-import Icon from "./Icon.astro";
+// The quick start and the prompts to try. Each block copies as one command list.
+import CopyButton from "./CopyButton.astro";
+import InstallCommands from "./InstallCommands.astro";
 import { links } from "../lib/links";
 
-const tryIt = `npm install --global archboard
-mkdir -p ~/archboard-example/.archboard/vault
+const tryIt = `mkdir -p ~/archboard-example/.archboard/vault
 curl -fsSL https://codeload.github.com/miklschmidt/archboard/tar.gz/main | \\
   tar -xz -C ~/archboard-example/.archboard/vault \\
   --strip-components=3 archboard-main/examples/web-shop
@@ -13,8 +13,6 @@ git -C ~/archboard-example remote add origin https://example.invalid/web-shop.gi
 archboard -C ~/archboard-example model import \\
   --input ~/archboard-example/.archboard/vault/history.import.json
 archboard start`;
-
-const ownCode = `npx skills add miklschmidt/archboard -g`;
 
 const prompts = [
 	["Draw how a request travels from the API to the database.", "a flow across modules bound to source"],
@@ -31,39 +29,31 @@ const prompts = [
 <div class="quick">
 	<div class="steps">
 		<div class="step" data-reveal>
-			<div class="step-head">
-				<h3 class="h3">Try the example shop</h3>
-				<button type="button" class="copy" data-copy={tryIt}>
-					<Icon name="copy" size={15} /> <span>Copy</span>
-				</button>
-			</div>
+			<h3 class="h3">Map your own code</h3>
 			<p class="body small">
-				You need Linux on x64 or arm64, or macOS on Apple silicon, with Git and npm. To build from a
-				clone instead, read <a href={links.install}>INSTALL.md</a>.
+				Install Archboard, then run <code>archboard init</code> in the repository that you want
+				mapped. It installs the skills for Codex, and for Claude Code when it finds it. It makes the
+				vault, and it starts your agent to set up the language servers. The agent shows you its plan
+				before it changes anything.
 			</p>
-			<pre class="block" tabindex="0"><code>{tryIt}</code></pre>
+			<InstallCommands id="quick-install" then={["archboard init"]} />
 			<p class="body small">
-				Then open <code>http://archboard.localhost:4242/?modelA=Shop</code> to explore the modules, proposals,
-				history and walkthroughs.
+				You need Linux on x64 or arm64, or macOS on Apple silicon, with Git. Agent, voice,
+				narration and recordings need a Codex sign-in, from the agent dock.
+				<a href={links.install}>INSTALL.md</a> covers vault discovery, code bindings and language
+				servers.
 			</p>
 		</div>
 		<div class="step" data-reveal style="--reveal-delay: 120">
 			<div class="step-head">
-				<h3 class="h3">Use it on your own code</h3>
-				<button type="button" class="copy" data-copy={ownCode}>
-					<Icon name="copy" size={15} /> <span>Copy</span>
-				</button>
+				<h3 class="h3">Try the example shop</h3>
+				<CopyButton text={tryIt} />
 			</div>
+			<p class="body small">After the install, load the example shop and start the server.</p>
+			<pre class="block" tabindex="0"><code>{tryIt}</code></pre>
 			<p class="body small">
-				Install the skills for your agent. The skills CLI asks which agents to install them for.
-				Then ask your agent to describe the repository you want mapped. The first time it works
-				in a repository, it makes the vault there.
-			</p>
-			<pre class="block" tabindex="0"><code>{ownCode}</code></pre>
-			<p class="body small">
-				Agent, voice, narration and recordings need a Codex sign-in, from the agent dock.
-				<a href={links.install}>INSTALL.md</a> covers vault discovery, code bindings and language
-				servers.
+				Then open <code>http://archboard.localhost:4242/?modelA=Shop</code> to explore the modules, proposals,
+				history and walkthroughs.
 			</p>
 		</div>
 	</div>
@@ -110,30 +100,6 @@ const prompts = [
 		align-items: center;
 		justify-content: space-between;
 		gap: 12px;
-	}
-	.copy {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		height: 32px;
-		padding: 0 12px;
-		border: 0;
-		border-radius: 4px;
-		background: var(--raised);
-		color: var(--ink);
-		font-size: 0.8125rem;
-		font-weight: 600;
-		box-shadow:
-			var(--shadow-raised),
-			inset 0 0 0 1px var(--rule);
-		cursor: pointer;
-		transition: background-color 160ms var(--ease-out);
-	}
-	.copy:hover {
-		background: var(--slab);
-	}
-	.copy.is-done {
-		color: var(--added);
 	}
 	.block {
 		margin: 0;
@@ -200,22 +166,3 @@ const prompts = [
 		}
 	}
 </style>
-
-<script>
-	for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy]")) {
-		const label = button.querySelector("span");
-		button.addEventListener("click", async () => {
-			try {
-				await navigator.clipboard.writeText(button.dataset["copy"] ?? "");
-				button.classList.add("is-done");
-				if (label) label.textContent = "Copied";
-			} catch {
-				if (label) label.textContent = "Select and copy";
-			}
-			window.setTimeout(() => {
-				button.classList.remove("is-done");
-				if (label) label.textContent = "Copy";
-			}, 1800);
-		});
-	}
-</script>
