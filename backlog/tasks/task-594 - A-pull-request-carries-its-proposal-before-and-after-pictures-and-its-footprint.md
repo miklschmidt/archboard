@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-07T12:42:00Z'
-updated_date: '2026-11-08T12:09:00Z'
+updated_date: '2026-11-08T12:30:00Z'
 labels: []
 dependencies:
   - TASK-591
@@ -36,6 +36,8 @@ Leads who review agent pull requests say that plain diffs are the wrong level fo
 
 <!-- SECTION:NOTES:BEGIN -->
 actions/pull-request posts one sticky comment. On relay PR #2 (https://github.com/miklschmidt/archboard-relay-example/pull/2) it shows the proposal named by the archboard-pr marker, its summary, 'relationships: 1 added', the SVGs before and after from the orphan branch archboard-assets, the footprint (planned and changed: Accept parcel; planned but unchanged: Rate card) and links to the full-size map and the vault. out-of-plan warn, fail and off, and the override label, are held by tests/system/actions/pull-request-action.test.ts. The Action runs only model proposals, read, compare, footprint, render, repo add, repo forget and stop. Fixed during proof: model footprint sets changes against a draft only, and the skill adopts on the branch, so the Action now reads the plan of an adopted proposal from the base's Current and the head's state (actions/pull-request/adopted.ts, rule of ADR 0045). A run again at the same head keeps its pictures.
+
+Review fixes: footprint buckets match stable module identities and sort their labels (82cef6704). Refused model reads leave comparison unjudged (e74cf48f5). Footprint reads use the same immutable PR base SHA as the pictures and plan, and expose skipped modules (757872421). An adopted proposal also reads removed bindings from the base vault over the PR range (d76f991fc). Sixteen focused PR Action tests, source types, and focused lint pass. These fixes preserve the existing Action responsibilities, so no new architecture proposal is needed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
