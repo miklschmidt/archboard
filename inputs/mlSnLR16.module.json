@@ -118,7 +118,7 @@
     {
       "order": 71000,
       "kind": "render",
-      "label": "the settings dialog's opener tab, when the person opens it",
+      "label": "the code opener panel in the Settings dialog",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
