@@ -71,7 +71,7 @@ function conventions(routes: CommandRoutes): string {
 		),
 		"",
 		"Commands that contact the Archboard server start it when nothing answers, unless",
-		"ARCHBOARD_NO_AUTOSTART=1. Results are JSON on stdout unless a command's help says",
+		"`ARCHBOARD_NO_AUTOSTART=1`. Results are JSON on stdout unless a command's help says",
 		"otherwise; diagnostics go to stderr. With `--text` anywhere before `--`, a command",
 		"prints its result as coloured text for a person to read instead of JSON.",
 		"",

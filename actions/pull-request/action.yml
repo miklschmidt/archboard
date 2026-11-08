@@ -2,13 +2,13 @@ name: Archboard pull request
 description: >-
   Comment on a pull request with its architecture: the proposal it carries, the architecture before
   and after as SVG, the footprint of the change against the plan, and a link to the map. Optionally
-  warn or fail when modules change outside the plan. Runs on pull_request events and needs a checkout
-  with fetch-depth: 0.
+  warn or fail when modules change outside the plan. Runs on `pull_request` events and needs a
+  checkout with `fetch-depth: 0`.
 author: Mikkel Schmidt
 
 inputs:
   version:
-    description: The version of @archboard/cli to install, such as `0.1.0`, or `latest`.
+    description: The version of `@archboard/cli` to install, such as `0.1.0`, or `latest`.
     default: latest
   working-directory:
     description: The directory, relative to the workspace, that holds the checkout whose vault is read.

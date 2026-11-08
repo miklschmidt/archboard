@@ -96,7 +96,7 @@ const planRefusal = {
 	exit: 2,
 	stream: "stderr" as const,
 	description:
-		"--plan names a file outside the checkout that holds the vault and the chosen checkout of every other repository, Terraform state, a variable file or a file under .terraform, or a file that is not a plan JSON. The refusal names the plan and why.",
+		"--plan names a file outside the checkout that holds the vault and the chosen checkout of every other repository, Terraform state, a variable file or a file under `.terraform`, or a file that is not a plan JSON. The refusal names the plan and why.",
 };
 
 /**
@@ -293,7 +293,7 @@ const codeCheckParameters = [
 		occurrences: "append",
 		placeholder: "file",
 		description:
-			"Read this plan JSON, from terraform show -json or tofu show -json, for the root module of its directory. The check reads only its addresses and references, for the modules it does not read itself. The file must be in the checkout that holds the vault or in the chosen checkout of another repository",
+			"Read this plan JSON, from `terraform show -json` or `tofu show -json`, for the root module of its directory. The check reads only its addresses and references, for the modules it does not read itself. The file must be in the checkout that holds the vault or in the chosen checkout of another repository",
 	},
 ] as const;
 

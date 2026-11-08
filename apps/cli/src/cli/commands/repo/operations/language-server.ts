@@ -92,14 +92,14 @@ const repoLanguageServerContract = defineCommand({
 			kind: "positional",
 			key: "language",
 			name: "language",
-			description: `One of ${CONFIGURABLE_LANGUAGES.join(", ")}; without it, the command shows both files`,
+			description: `One of ${CONFIGURABLE_LANGUAGES.map((language) => `\`${language}\``).join(", ")}; without it, the command shows both files`,
 		},
 		{
 			kind: "positional",
 			key: "command",
 			name: "command",
 			description:
-				"A program on the PATH, or a path to one; required with a language unless --remove is given",
+				"A program on the `PATH`, or a path to one; required with a language unless --remove is given",
 		},
 		{
 			kind: "option",
@@ -109,7 +109,7 @@ const repoLanguageServerContract = defineCommand({
 			occurrences: "append",
 			placeholder: "argument",
 			description:
-				"An argument after the command; write one that starts with - as --arg=<argument>",
+				"An argument after the command; write one that starts with `-` as `--arg=<argument>`",
 		},
 		{
 			kind: "option",

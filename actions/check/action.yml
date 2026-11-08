@@ -7,7 +7,7 @@ author: Mikkel Schmidt
 
 inputs:
   version:
-    description: The version of @archboard/cli to install, such as `0.1.0`, or `latest`.
+    description: The version of `@archboard/cli` to install, such as `0.1.0`, or `latest`.
     default: latest
   working-directory:
     description: The directory, relative to the workspace, that holds the checkout whose vault is checked.

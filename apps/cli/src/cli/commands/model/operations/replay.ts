@@ -115,7 +115,7 @@ const modelReplayContract = defineCommand({
 			value: "required",
 			placeholder: "file.mp4",
 			required: true,
-			description: "Where to write the video: a .mp4 or .webm file",
+			description: "Where to write the video: a `.mp4` or `.webm` file",
 		},
 		{
 			kind: "option",

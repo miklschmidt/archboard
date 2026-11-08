@@ -109,7 +109,7 @@ const modelPlanContract = defineCommand({
 	shared: ["url", "directory", "doing"],
 	summary: "Save explicit legacy identity mappings and conflict choices",
 	description:
-		"Reads {plan, expectedPlan} from JSON and saves only .archboard/migration-plan.json. Source and plan fingerprints refuse stale choices. Legacy boards remain the active architecture. No canonical composition or cutover occurs.",
+		"Reads `{plan, expectedPlan}` from JSON and saves only `.archboard/migration-plan.json`. Source and plan fingerprints refuse stale choices. Legacy boards remain the active architecture. No canonical composition or cutover occurs.",
 	examples: [
 		'archboard model plan --input choices.json --doing "Record the owner identity choices" -C /tmp/shop',
 	],

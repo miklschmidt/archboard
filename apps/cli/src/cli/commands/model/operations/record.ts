@@ -129,7 +129,7 @@ const modelRecordContract = defineCommand({
 			value: "required",
 			placeholder: "file.mp4",
 			required: true,
-			description: "Where to write the video: a .mp4 or .webm file",
+			description: "Where to write the video: a `.mp4` or `.webm` file",
 		},
 		{
 			kind: "option",
@@ -158,7 +158,7 @@ const modelRecordContract = defineCommand({
 			value: "required",
 			placeholder: "tag",
 			default: DEFAULT_RECORDING_LANGUAGE,
-			description: "The language of the narration, as a BCP 47 tag such as en, da or pt-BR",
+			description: "The language of the narration, as a BCP 47 tag such as `en`, `da` or `pt-BR`",
 		},
 		{
 			kind: "option",

@@ -175,7 +175,7 @@ const paneCloseContract = defineCommand({
 			required: true,
 			route: "staged",
 			description:
-				"Which pane to close: left, right, top, bottom, focused, primary, a position or a pane id",
+				"Which pane to close: `left`, `right`, `top`, `bottom`, `focused`, `primary`, a position or a pane id",
 		},
 		stagedTokens("close-token"),
 	],
@@ -406,7 +406,7 @@ const browserShowContract = defineCommand({
 			spellings: [key === "legacyAddress" ? "--legacy-address" : `--${key}`] as const,
 			value: "required" as const,
 			placeholder: "value",
-			description: `The explicit ${key} selector`,
+			description: `The explicit \`${key}\` selector`,
 		})),
 		{
 			kind: "option",
@@ -445,7 +445,7 @@ const browserShowContract = defineCommand({
 			value: "required" as const,
 			occurrences: "append" as const,
 			placeholder: "id",
-			description: `The ${key} identities`,
+			description: `The \`${key}\` identities`,
 		})),
 	],
 	input: {

@@ -19,7 +19,7 @@ const vaultRequiredRefusal = {
 	exit: 2,
 	stream: "stderr" as const,
 	description:
-		"A server call named no vault. A command names the vault it finds from the working directory or -C <dir>.",
+		"A server call named no vault. A command names the vault it finds from the working directory or `-C <dir>`.",
 };
 const vaultUnreadableRefusal = {
 	code: "VAULT_UNREADABLE",

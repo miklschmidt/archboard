@@ -47,7 +47,7 @@ const modelClaimContract = defineCommand({
 	shared: ["url", "directory"],
 	summary: "Claim canonical subjects and proposal states",
 	description:
-		"Reads target, writer, reason and subjects from JSON. Include the affected descendant states and existing subjects. A claim leaves the installation lock free between operations.",
+		"Reads `target`, `writer`, `reason` and `subjects` from JSON. Include the affected descendant states and existing subjects. A claim leaves the installation lock free between operations.",
 	examples: ["archboard model claim --input claim.json -C /tmp/shop"],
 	parameters: [
 		{
@@ -117,7 +117,7 @@ const modelEditContract = defineCommand({
 	shared: ["url", "directory", "doing"],
 	summary: "Edit canonical modules and independent flow behavior durably",
 	description: [
-		"Reads one complete revision, target, operation, writer, claim and change batch from JSON. Changes can edit modules, flows, or walkthroughs.",
+		"Reads `expectedRevision`, `target`, `operationId`, `writer`, `claim` and `changes` from JSON. Changes can edit modules, flows, or walkthroughs.",
 		"",
 		"Proposal intents create, edit, reconcile, settle, adopt, or shelve states. Corrections name the previous checkpoint and immutable source revisions.",
 		"",
@@ -166,7 +166,7 @@ const modelReleaseContract = defineCommand({
 	path: ["model", "release"],
 	summary: "Release a canonical subject claim",
 	description:
-		"Reads claim and writer from JSON. Only the writer that holds a claim can release it.",
+		"Reads `claim` and `writer` from JSON. Only the writer that holds a claim can release it.",
 	examples: ["archboard model release --input release.json -C /tmp/shop"],
 	result: ArchitectureClaimListSchema,
 	relationships: [

@@ -26,7 +26,7 @@ const WORDS = {
 			checkpoint: "Read this exact retained checkpoint instead of a live state",
 			against: "Read the state beside this one, so the answer says what a plan joins",
 			since:
-				"Start the period at this date, or at a date and time with offset; a year before each HEAD when absent",
+				"Start the period at this date, or at a date and time with offset; a year before each `HEAD` when absent",
 		},
 	},
 	footprint: {
@@ -45,8 +45,8 @@ const WORDS = {
 			state: "Read this draft by identity or name; current when absent",
 			checkpoint: "Read this exact retained checkpoint instead of a live state",
 			against: "Read the draft beside this state; its base or current when absent",
-			base: "The Git ref the branch started from, such as main (required)",
-			head: "The Git ref the commits run up to; the HEAD of each checkout when absent",
+			base: "The Git ref the branch started from, such as `main` (required)",
+			head: "The Git ref the commits run up to; the `HEAD` of each checkout when absent",
 		},
 	},
 } as const;

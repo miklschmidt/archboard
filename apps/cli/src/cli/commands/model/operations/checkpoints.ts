@@ -109,7 +109,7 @@ const modelRetainContract = defineCommand({
 			spellings: ["--expected-plan"],
 			value: "required",
 			placeholder: "digest-or-none",
-			description: "The exact saved mapping revision, or none when no plan exists",
+			description: "The exact saved mapping revision, or `none` when no plan exists",
 		},
 		{
 			kind: "option",
@@ -136,7 +136,7 @@ const modelRetainContract = defineCommand({
 			value: "required",
 			placeholder: "digest",
 			required: true,
-			description: "The exact input digest returned by model read",
+			description: "The exact input digest returned by `model read`",
 		},
 		{
 			kind: "option",

@@ -17,7 +17,8 @@ const startContract = defineCommand({
 	path: ["start"],
 	shared: ["url"],
 	summary: "Start the Archboard server (detached)",
-	description: "Explicitly starts the local Archboard server, overriding automatic-start opt-outs.",
+	description:
+		"Explicitly starts the local Archboard server, overriding an `ARCHBOARD_NO_AUTOSTART=1` opt-out of automatic start.",
 	examples: ["archboard start"],
 	parameters: [
 		{
@@ -162,7 +163,7 @@ const restartContract = defineCommand({
 	shared: ["url"],
 	summary: "Stop the Archboard server, build the frontend and start it again",
 	description:
-		"Stops the server as stop does, builds the frontend of this checkout, and starts the server as start does, so the server runs the source and serves the bundle that are on disk now.",
+		"Stops the server as `stop` does, builds the frontend of this checkout, and starts the server as `start` does, so the server runs the source and serves the bundle that are on disk now.",
 	examples: ["archboard restart"],
 	parameters: [
 		{

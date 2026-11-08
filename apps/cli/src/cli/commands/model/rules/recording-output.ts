@@ -23,14 +23,14 @@ const encoderUnavailableRefusal = {
 	exit: 4,
 	stream: "stderr" as const,
 	description:
-		"No ffmpeg with the encoders the file needs (libx264 and aac for MP4, libvpx-vp9 and libopus for WebM) is on PATH or named by ARCHBOARD_FFMPEG, and Nix is not there to run nixpkgs#ffmpeg-headless, or running it failed. Checked before a browser starts, so nothing was started.",
+		"No `ffmpeg` with the encoders the file needs (`libx264` and `aac` for MP4, `libvpx-vp9` and `libopus` for WebM) is on `PATH` or named by `ARCHBOARD_FFMPEG`, and Nix is not there to run `nixpkgs#ffmpeg-headless`, or running it failed. Checked before a browser starts, so nothing was started.",
 };
 const renderFailedRefusal = {
 	code: "RENDER_FAILED",
 	exit: 1,
 	stream: "stderr" as const,
 	description:
-		"The picture could not be rendered to a file: the page did not draw a frame in time, the browser stopped, or ffmpeg failed. No video was written and the talk was kept, to render again with model replay.",
+		"The picture could not be rendered to a file: the page did not draw a frame in time, the browser stopped, or `ffmpeg` failed. No video was written and the talk was kept, to render again with `model replay`.",
 };
 
 /**
