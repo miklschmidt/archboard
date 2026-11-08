@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T22:50:00Z'
-updated_date: '2026-11-08T23:11:00Z'
+updated_date: '2026-11-08T23:25:00Z'
 labels:
   - frontend
   - design
@@ -62,6 +62,14 @@ Sweep of this repository's model at 1920 by 1080, 107 readings: the whole legend
 Site audit on port 4399: the window mock now shows HTTP and Data with eyes and Illustrated traffic apart, as the root reading of the app does. Every section renders. The window, drill-down, proposal switch, claim release, walkthrough and talk demos play with no page error. render redrew place-order-flowchart and place-order-sequence with only new sample IDs, so they were restored. astro check reports 0 errors after the filter icon was removed.
 
 No architecture proposal: the change is presentation inside the legend, and no module, relationship or flow of .archboard/vault names the Filter key.
+
+PR #74 review found a site regression: the taller line list clips the Groups tags in the mock inspector. Repair the mock layout, compare it with the running app, and repeat the site build and visual audit. The six requested browser owners, lint:all, type-check, and format:check pass before this repair.
+
+PR #74 review repair: Inspector.astro now allows vertical scrolling instead of clipping the mock panel. In the 1280 by 760 mock, content exceeds its scroll region by 27 pixels. Scrolling reveals both Groups tags with space above the fixed footer. No architecture proposal is needed because this changes only CSS in the marketing mock. The canonical Model reading and Right panel modules remain accurate.
+
+Review evidence for 96e5e77a1..963083f68: bun install and bun run build pass inside nix develop. lint:all, type-check, format:check, and all six requested browser files pass. Manual agent-browser inspection covers both themes, Tab, Space, Enter, switch names and states, and 344 by 28 pixel targets. The legend keeps its coordinates when a type is hidden and Show all appears. Storefront supplies one HTTP switch, and the sequence reading supplies no switches. The filters owner proves history and reload behavior.
+
+The site paint and render commands pass. Regenerated flow SVGs differ only in allocated identities, so the tracked originals remain. The site build reports no errors, warnings, or hints after the required paintings are generated. The window, drill, proposal, claim, walkthrough, and talk demos run without a page error. One specification finding was fixed: the clipped legend violated acceptance criterion 7. No code standards findings remain. The frontend build still reports chunks above 500 kB, outside this legend repair.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
