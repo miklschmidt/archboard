@@ -2,8 +2,8 @@
 	"$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
 	"bootstrap-sha": "558d97cab3754ede4b399cb36c3c5377ac7f5d90",
 	"bump-minor-pre-major": true,
-	"pull-request-header": " ",
-	"pull-request-footer": " ",
+	"pull-request-header": "<!-- release-please -->",
+	"pull-request-footer": "<!-- release-please -->",
 	"packages": {
 		".": {
 			"release-type": "node",
