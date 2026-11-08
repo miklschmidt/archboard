@@ -15,12 +15,6 @@ import type { ShellActions, ShellNotice, ShellNoticeAction } from "#ui/shell/rul
 /** A 24px outline action with two-pixel corners. */
 const TOASTER_STYLE = { fontFamily: "var(--font-sans)", position: "absolute" } as const;
 
-/**
- * Every toast stands in full, one over the other: a stack that folds its older toasts behind the
- * newest hides a claim's Take back control and a notice's recovery action.
- */
-const ALL_TOASTS = Number.POSITIVE_INFINITY;
-
 const ACTION_CLASS = "rounded-chip font-medium";
 
 const LINK_BUTTON_CLASS = buttonVariants({
@@ -204,9 +198,7 @@ function Notices(props: NoticesProps): JSX.Element {
 		},
 		[],
 	);
-	return (
-		<Toaster position="bottom-right" expand visibleToasts={ALL_TOASTS} style={TOASTER_STYLE} />
-	);
+	return <Toaster position="bottom-right" style={TOASTER_STYLE} />;
 }
 
 /**

@@ -1,6 +1,5 @@
-import { useCallback, useEffect, type JSX } from "react";
+import { useCallback, type JSX } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import type { ArchitectureClaim, ArchitectureModelRead } from "@archboard/model/contract";
 import { RiLockUnlockLine } from "@remixicon/react";
 import { Button } from "@archboard/ui-kit/components";
@@ -17,84 +16,31 @@ interface ModelClaimsProps {
 }
 
 /**
- * A current reading tells who holds its subjects and how to end that ownership. Each claim floats
- * as a persistent toast in the shell's notice corner, so a claim that starts or ends moves
- * nothing in the reading. This draws no layout of its own.
+ * A current reading tells who holds its subjects and how to end that ownership. The claims stand
+ * at the top centre of the picture, inside its frame, over the picture and never beside it, so a
+ * claim that starts or ends moves nothing in the reading. Each pane shows the claims of the vault
+ * it reads.
  * @param props The vault and its coherent model for subject names.
- * @returns Current claims, each with one explicit human action, as toasts.
+ * @returns Current claims, each with one explicit human action, or nothing.
  */
 function ModelClaims(props: ModelClaimsProps): JSX.Element | null {
 	const claims = useQuery(architectureClaimsQuery(props.vault));
 	if (claims.data === undefined || !claims.data.success) return null;
+	if (claims.data.claims.length === 0) return null;
 	return (
-		<>
+		<div
+			data-slot="model-claims"
+			className="mt-3 flex max-w-[calc(100%-1.5rem)] flex-col gap-2 self-center"
+		>
 			{claims.data.claims.map((claim) => (
-				<ModelClaimToast key={claim.id} {...props} claim={claim} />
+				<ModelClaim key={claim.id} {...props} claim={claim} />
 			))}
-		</>
+		</div>
 	);
 }
 
-/** How many mounted readings show each claim, by its toast. Two panes can read one vault. */
-const readings = new Map<string, number>();
-
 interface ModelClaimProps extends ModelClaimsProps {
 	claim: ArchitectureClaim;
-}
-
-/**
- * Hold one toast for a claim while a reading shows it. It has no timer and no dismiss: only the
- * end of the claim or the take-back ends it. Two panes on one vault share the toast, which stays
- * until the last of them stops showing the claim. Taking back a claim changes runtime ownership,
- * never authored architecture. Every change of the card goes through the stack, which measures
- * the toast again.
- * @param props The exact claim identity and its current subject names.
- * @returns Nothing: the toast lies in the shell's notice stack.
- */
-function ModelClaimToast(props: ModelClaimProps): null {
-	const { vault, claim, model } = props;
-	const id = `claim:${claim.id}`;
-	const client = useQueryClient();
-	const { mutate, isPending, error } = useMutation({
-		/**
-		 * End the displayed claim as an explicit human action.
-		 * @returns The remaining claims.
-		 */
-		mutationFn: () => takeBackClaim(vault, claim.id),
-		/**
-		 * Read ownership again after the mutation settles.
-		 * @returns The fresh claim read.
-		 */
-		onSuccess: () => client.invalidateQueries({ queryKey: architectureModelKeys.claims(vault) }),
-	});
-	const release = useCallback((): void => mutate(), [mutate]);
-	useEffect(() => {
-		readings.set(id, (readings.get(id) ?? 0) + 1);
-		return () => {
-			const left = (readings.get(id) ?? 1) - 1;
-			if (left > 0) {
-				readings.set(id, left);
-				return;
-			}
-			readings.delete(id);
-			toast.dismiss(id);
-		};
-	}, [id]);
-	useEffect(() => {
-		toast.custom(
-			() => (
-				<ModelClaim
-					claim={claim}
-					model={model}
-					pending={isPending}
-					error={error?.message ?? null}
-					onTakeBack={release}
-				/>
-			),
-			{ id, duration: Infinity, dismissible: false },
-		);
-	}, [id, claim, model, isPending, error, release]);
-	return null;
 }
 
 /**
@@ -116,51 +62,61 @@ function ModelClaimsFailure(props: { vault: string }): JSX.Element | null {
 	);
 }
 
-/** The card's claim and subject names, with how its take-back stands. */
-interface ModelClaimCardProps extends Pick<ModelClaimProps, "claim" | "model"> {
-	pending: boolean;
-	error: string | null;
-	onTakeBack: () => void;
-}
-
 /**
- * The writer stays out: it is an identity such as a thread's, which says nothing to a reader. The
- * claim is the site's claim card: a live ring round it, the facts as terms, and Take back control
- * as its one primary action. It floats as a notice, so its head and key share the first line and
- * the facts stand under them.
- * @param props The claim, its subject names and how its take-back stands.
+ * Taking back a claim changes runtime ownership, never authored architecture. The writer stays
+ * out: it is an identity such as a thread's, which says nothing to a reader. The claim is the
+ * site's claim card: a live ring round it, the facts as terms, and Take back control as its one
+ * primary action. It has no timer and no key to dismiss it: only the end of the claim or the
+ * take-back ends it.
+ * @param props The exact claim identity and its current subject names.
  * @returns The state, subjects, purpose, time, and take-back control.
  */
-function ModelClaim(props: ModelClaimCardProps): JSX.Element {
-	const { claim, model, pending, error } = props;
+function ModelClaim(props: ModelClaimProps): JSX.Element {
+	const { vault, claim, model } = props;
+	const client = useQueryClient();
+	const { mutate, isPending, error } = useMutation({
+		/**
+		 * End the displayed claim as an explicit human action.
+		 * @returns The remaining claims.
+		 */
+		mutationFn: () => takeBackClaim(vault, claim.id),
+		/**
+		 * Read ownership again after the mutation settles.
+		 * @returns The fresh claim read.
+		 */
+		onSuccess: () => client.invalidateQueries({ queryKey: architectureModelKeys.claims(vault) }),
+	});
+	const release = useCallback((): void => mutate(), [mutate]);
 	return (
 		<div
 			data-slot="model-claim"
 			data-claim-id={claim.id}
 			data-target-state={claim.target.state ?? ""}
-			className="bg-sidebar rounded-table text-body shadow-float inset-ring-status/40 flex w-(--width) flex-col gap-2.5 p-4 inset-ring"
+			className="bg-sidebar rounded-table text-body shadow-float inset-ring-status/40 flex w-[420px] max-w-full flex-col gap-2.5 p-4 inset-ring"
 		>
 			<div className="flex items-center justify-between gap-3">
 				<ClaimHead since={claim.since} />
 				<Button
 					size="sm"
 					data-slot="model-take-back"
-					onClick={props.onTakeBack}
-					disabled={pending}
-					aria-busy={pending}
+					onClick={release}
+					disabled={isPending}
+					aria-busy={isPending}
 				>
 					<RiLockUnlockLine aria-hidden="true" />
-					{pending ? "Taking back control…" : "Take back control"}
+					{isPending ? "Taking back control…" : "Take back control"}
 				</Button>
 			</div>
 			<dl className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5">
 				<ClaimFact label="State">{claimedStateName(claim, model)}</ClaimFact>
 				<ClaimFact label="Doing">{claim.reason}</ClaimFact>
-				<ClaimFact label="Subjects">{claimedSubjects(claim, model)}</ClaimFact>
+				<ClaimFact label="Subjects" whole>
+					{claimedSubjects(claim, model)}
+				</ClaimFact>
 			</dl>
 			{error !== null && (
 				<span role="alert" className="text-destructive text-body">
-					{error}
+					{error.message}
 				</span>
 			)}
 		</div>
@@ -191,17 +147,27 @@ function ClaimHead(props: { readonly since: string }): JSX.Element {
 }
 
 /**
- * One fact of a claim, as a term and its words.
+ * One fact of a claim, as a term and its words. A fact keeps one line unless it is whole.
  * @param props The term and its words.
  * @param props.label The term.
  * @param props.children The words.
+ * @param props.whole Whether the words wrap, so every one of them shows.
  * @returns The fact.
  */
-function ClaimFact(props: { readonly label: string; readonly children: string }): JSX.Element {
+function ClaimFact(props: {
+	readonly label: string;
+	readonly children: string;
+	readonly whole?: boolean;
+}): JSX.Element {
 	return (
 		<>
 			<dt className="text-muted-foreground">{props.label}</dt>
-			<dd className="text-foreground truncate" title={props.children}>
+			<dd
+				className={
+					props.whole === true ? "text-foreground break-words" : "text-foreground truncate"
+				}
+				title={props.children}
+			>
 				{props.children}
 			</dd>
 		</>
@@ -221,21 +187,55 @@ function claimedStateName(claim: ArchitectureClaim, model: ModelClaimsProps["mod
 }
 
 /**
- * Name what a claim holds. A subject that this reading lacks, such as a module new in a draft, is
- * counted: an identity says nothing to a reader.
+ * Name what a claim holds, every subject by its name: the whole model, a module, a relationship
+ * by its ends, a flow or a walkthrough. A subject that this reading lacks, such as a module new in
+ * a draft, is named as new in the claimed state.
  * @param claim The claim.
  * @param model The reading, for its names.
- * @returns The names.
+ * @returns The names, in the claim's order.
  */
 function claimedSubjects(claim: ArchitectureClaim, model: ModelClaimsProps["model"]): string {
-	const reading = model?.success ? model : undefined;
-	const names = claim.subjects.flatMap(
-		(id) => reading?.modules.find((one) => one.id === id)?.name ?? [],
-	);
-	const others = claim.subjects.length - names.length;
-	if (others === 0) return names.join(", ");
-	const more = `${others} ${others === 1 ? "subject" : "subjects"}`;
-	return names.length === 0 ? more : `${names.join(", ")} and ${more}`;
+	const names = model?.success ? subjectNames(model) : new Map<string, string>();
+	const known = claim.subjects.flatMap((id) => names.get(id) ?? []);
+	if (known.length === claim.subjects.length) return known.join(", ");
+	const state = claimedStateName(claim, model);
+	return known.length === 0
+		? `Parts new in ${state}`
+		: `${known.join(", ")}, and parts new in ${state}`;
+}
+
+/** A reading that answered. */
+type Reading = Extract<ArchitectureModelRead, { success: true }>;
+
+/**
+ * The name of everything a claim can hold in a reading, by its identity.
+ * @param reading The reading.
+ * @returns The names.
+ */
+function subjectNames(reading: Reading): ReadonlyMap<string, string> {
+	const modules = new Map(reading.modules.map((one) => [one.id, one.name]));
+	const names = new Map(modules);
+	names.set(reading.manifest.id, `${reading.manifest.name} (the whole model)`);
+	for (const one of reading.relationships) names.set(one.id, relationshipName(one, modules));
+	for (const one of reading.collections.flatMap((collection) => collection.flows)) {
+		names.set(one.id, one.name);
+	}
+	for (const one of reading.walkthroughs) names.set(one.id, one.name);
+	return names;
+}
+
+/**
+ * A relationship by its ends, and its label when it has one.
+ * @param relationship The relationship.
+ * @param modules The modules' names.
+ * @returns The name.
+ */
+function relationshipName(
+	relationship: Reading["relationships"][number],
+	modules: ReadonlyMap<string, string>,
+): string {
+	const ends = `${modules.get(relationship.from) ?? "?"} → ${modules.get(relationship.to) ?? "?"}`;
+	return relationship.label === undefined ? ends : `${ends} (${relationship.label})`;
 }
 
 export { ModelClaims, ModelClaimsFailure };

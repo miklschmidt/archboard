@@ -198,7 +198,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				refresh={unread ? undefined : offeredRefresh(query, feed, refresh)}
 				refreshing={query.isFetching}
 			/>
-			<ModelControls vault={vault} checkpoint={checkpoint} model={data} />
+			<ModelControls vault={vault} checkpoint={checkpoint} />
 		</>
 	);
 	return (
@@ -268,21 +268,15 @@ function modelIdentity(model: ModelQuery["data"]): string | undefined {
 }
 
 /**
- * Current ownership and exact-history publication have separate controls.
- * @param props The selected reading and its coherent content.
+ * An exact checkpoint offers to publish its history. Current ownership stands over the picture,
+ * with the notices (`ReadingNotices`).
+ * @param props The selected reading.
  * @param props.vault The addressed vault.
  * @param props.checkpoint The exact checkpoint, or current.
- * @param props.model The current query result.
- * @returns Only the controls that belong to this reading.
+ * @returns The publication of an exact checkpoint, or nothing.
  */
-function ModelControls(props: {
-	vault: string;
-	checkpoint: string | null;
-	model: ModelQuery["data"];
-}): JSX.Element {
-	return props.checkpoint === null ? (
-		<ModelClaims vault={props.vault} model={props.model} />
-	) : (
+function ModelControls(props: { vault: string; checkpoint: string | null }): JSX.Element | null {
+	return props.checkpoint === null ? null : (
 		<ModelPublication key={props.checkpoint} vault={props.vault} checkpoint={props.checkpoint} />
 	);
 }
@@ -496,7 +490,12 @@ function ReadingNotices(
 	return (
 		<>
 			{stale && <StaleNotice lost={lost} />}
-			{props.current && !lost && <ModelClaimsFailure vault={props.vault} />}
+			{props.current && !lost && (
+				<>
+					<ModelClaimsFailure vault={props.vault} />
+					<ModelClaims vault={props.vault} model={props.query.data} />
+				</>
+			)}
 			{!serverLost(props) && <ReadFailure problem={props.problem} onRetry={props.refresh} />}
 		</>
 	);

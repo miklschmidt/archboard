@@ -387,8 +387,7 @@ A failed drawing or a failed read of a destination leaves the accepted scene whe
 The failure lies over the picture with Retry and Back, and with `No comparison` when a comparison can be what failed.
 Back is the browser's, so a reading opened directly has none.
 Every notice about a reading lies over the picture in `model-notices`, so no failure and no lost server moves it.
-A claim is no such notice. `ModelClaims` hands each claim to the shell's toast stack (`Notices`) as a persistent toast of its own, `claim:<id>`, so a claim that starts or ends never moves the picture.
-The toast ends only with the claim, and two panes of one vault share it.
+The claims of a current reading lie there too: `ModelClaims` stacks a card for each at the top centre of the picture, so a claim that starts or ends never moves it.
 A cached reading is stale only when a read failed or the stream was lost. An event being applied is healthy and shows nothing.
 A retained reading stays through a lost server. A refusal of that same reading removes it, because the server has then said that it is unavailable.
 A message about a wait appears after `PICTURE_MS.waitNotice` and names the destination.
