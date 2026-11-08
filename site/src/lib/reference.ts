@@ -23,6 +23,7 @@ export interface OptionEntry {
 export interface PositionalEntry {
 	readonly kind: "positional";
 	readonly name: string;
+	readonly choices: readonly string[] | null;
 	readonly description: string;
 	readonly required: boolean;
 	readonly repeatable: boolean;
@@ -92,6 +93,7 @@ export interface Reference {
 		readonly releasePort: number;
 		readonly summaryRows: number;
 		readonly summaryDetails: number;
+		readonly annotationsPerLevel: number;
 	};
 	readonly exitCodes: typeof EXIT_CODES;
 	readonly environment: typeof ENVIRONMENT;

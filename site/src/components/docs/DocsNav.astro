@@ -14,7 +14,12 @@ interface Props {
 const { path } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const items = [
-	{ href: docsHref(""), label: "Docs", active: !path.startsWith("reference") },
+	// The findings and the Actions belong to the docs: only the CLI and the schemas have a tab.
+	{
+		href: docsHref(""),
+		label: "Docs",
+		active: !path.startsWith("reference/cli") && path !== "reference/schemas",
+	},
 	{ href: docsHref("reference/cli"), label: "CLI", active: path.startsWith("reference/cli") },
 	{
 		href: docsHref("reference/schemas"),

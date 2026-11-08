@@ -7,13 +7,15 @@ interface Props {
 const { id } = Astro.props;
 ---
 
-<p class="sub-head" id={id}>
+<h3 class="sub-head" id={id}>
 	<a href={`#${id}`}><slot /></a>
-</p>
+</h3>
 
 <style>
 	.sub-head {
 		margin-top: 22px;
+		line-height: 1.4;
+		letter-spacing: 0;
 		font-size: 0.875rem;
 		font-weight: 600;
 		color: var(--ink);

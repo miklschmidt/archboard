@@ -53,7 +53,7 @@ Evidence:
       14 |
 ```
 
-The job summary lists up to {reference.facts.summaryRows} findings, evidence for the first {reference.facts.summaryDetails} errors and warnings, and the skipped subjects. Each code links to [its explanation](../reference/findings/). GitHub shows at most ten annotations of each level for one step. The Action saves the complete JSON report at its [`report`](../reference/actions/#check-report) output. Upload that file as an artifact to keep the complete list for review.
+The job summary lists up to {reference.facts.summaryRows} findings, evidence for the first {reference.facts.summaryDetails} errors and warnings, and the skipped subjects. Each code links to [its explanation](../reference/findings/). GitHub shows at most {reference.facts.annotationsPerLevel} annotations of each level for one step. The Action saves the complete JSON report at its [`report`](../reference/actions/#check-report) output. Upload that file as an artifact to keep the complete list for review.
 
 <Aside type="note" title="See it on a real pull request">
 	[Pull request #1 of the relay

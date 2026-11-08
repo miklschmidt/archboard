@@ -112,6 +112,70 @@ function checkWorkflow(file: string, yaml: string): void {
 	}
 }
 
+/** An exit code of the CLI written by hand: in prose, or alone in a table cell. 0 means success. */
+const HAND_EXITS = [
+	/\bexits? (?:code |with )?`?[1-9]\b/iu,
+	/\bexit code `?[1-9]\b/iu,
+	/\|\s*`[1-9]`\s*\|/u,
+];
+
+/**
+ * Refuse each line of prose that states an exit code by hand. A guide reads it from the contract
+ * with `<Exit refusal="…" />` or `<Exit outcome="…" />`.
+ * @param file The guide.
+ * @param prose The guide without its code blocks.
+ */
+function checkExits(file: string, prose: string): void {
+	// Alt text describes a recording as it plays, which no contract changes.
+	for (const line of prose.split("\n").filter((one) => !one.trimStart().startsWith("alt="))) {
+		if (HAND_EXITS.some((pattern) => pattern.test(line))) {
+			problems.push(
+				`${file}: "${line.trim().slice(0, 80)}" states an exit code by hand; use <Exit>`,
+			);
+		}
+	}
+}
+
+/**
+ * Refuse a value of an Action input that its `action.yml` does not name: the input's default, or a
+ * value in backticks in its description.
+ * @param file The guide.
+ * @param target The link to the input's row, such as `../reference/actions/#check-fail-on`.
+ * @param value The value that the guide gives the input.
+ */
+function checkValue(file: string, target: string, value: string): void {
+	const anchor = /reference\/actions\/#(.+)$/u.exec(target)?.[1];
+	const input = reference.actions
+		.flatMap((action) =>
+			action.inputs.map((one) => ({ anchor: `${action.slug}-${one.name}`, one })),
+		)
+		.find((entry) => entry.anchor === anchor)?.one;
+	if (input === undefined) return;
+	if (value !== input.default && !input.description.includes(`\`${value}\``)) {
+		problems.push(`${file}: the input ${input.name} takes no value \`${value}\` in its action.yml`);
+	}
+}
+
+/**
+ * Check the values in a table whose first head links to an Action input, such as `out-of-plan`.
+ * @param file The guide.
+ * @param prose The guide without its code blocks.
+ */
+function checkValueTables(file: string, prose: string): void {
+	let target: string | undefined;
+	for (const line of prose.split("\n")) {
+		if (!line.startsWith("|")) {
+			target = undefined;
+			continue;
+		}
+		const first = line.split("|")[1]?.trim() ?? "";
+		const head = /^\[`[\w-]+`\]\(([^)\s]*reference\/actions\/#[^)\s]+)\)$/u.exec(first)?.[1];
+		if (head !== undefined) target = head;
+		else if (target !== undefined && /^`[^`]+`$/u.test(first))
+			checkValue(file, target, first.slice(1, -1));
+	}
+}
+
 /**
  * Require a link on each code span that names an Action input or output, or a finding code.
  * @param file The guide.
@@ -133,6 +197,8 @@ function checkMentions(file: string, prose: string): void {
 				`${file}: \`${span}\` names an Action port; link it to reference/actions/#<action>-${key}`,
 			);
 		}
+		const value = /^[\w-]+:\s*(.+)$/u.exec(span)?.[1];
+		if (value !== undefined) checkValue(file, target, value);
 		if (findings.has(span) && !target.includes("reference/findings/#")) {
 			problems.push(
 				`${file}: \`${span}\` names a finding; link it to reference/findings/#${span.toLowerCase().replaceAll("_", "-")}`,
@@ -152,6 +218,8 @@ for (const entry of readdirSync(GUIDES).filter((name) => name.endsWith(".mdx")))
 	}
 	const prose = blocks.reduce((text, block) => text.replace(block[0], ""), source);
 	checkMentions(entry, prose);
+	checkExits(entry, prose);
+	checkValueTables(entry, prose);
 }
 
 if (problems.length > 0) {

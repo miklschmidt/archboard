@@ -1,11 +1,12 @@
 ---
 title: The check as a gate
-description: Run `archboard check` where you already run `tsc`, `ruff` and your tests. It exits 1 while the map and the code disagree, in a Git hook, in CI and in an agent's loop.
+description: Run `archboard check` where you already run `tsc`, `ruff` and your tests. It fails while the map and the code disagree, in a Git hook, in CI and in an agent's loop.
 ---
 
 import Aside from "../../components/docs/Aside.astro";
 import LinkCards from "../../components/docs/LinkCards.astro";
 import Clip from "../../components/docs/Clip.astro";
+import Exit from "../../components/docs/Exit.astro";
 
 A rule in `AGENTS.md` is a request. An agent can ignore it. A check that fails the build is a fact that the agent must deal with. `archboard check` is deterministic: the same model and the same code give the same answer, with an exit code that CI understands.
 
@@ -23,18 +24,18 @@ A rule in `AGENTS.md` is a request. An agent can ignore it. A check that fails t
 
 ## What passes and what fails
 
-`archboard check` runs three checks in order: semantics, code, then embeds. It exits 1 while one of them has something that you must fix.
+`archboard check` runs three checks in order: semantics, code, then embeds. It exits <Exit outcome="issues" /> while one of them has something that you must fix.
 
-| Outcome                       | Exit                            | Example                                                                                                                  |
-| ----------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Nothing to report             | `0`                             | A model that matches its code                                                                                            |
-| Information only              | `0`                             | A relationship whose evidence is a candidate, matched by name only                                                       |
-| A code warning                | `1`                             | [`RELATIONSHIP_UNDRAWN`](../reference/findings/#relationship-undrawn): code calls a module that the model does not join  |
-| A semantic diagnostic         | `1`                             | [`RELATIONSHIP_ON_CONTAINER`](../reference/findings/#relationship-on-container): a line that ends on a module with parts |
-| An outdated picture           | `1`                             | [`EMBED_OUTDATED`](../reference/findings/#embed-outdated): a tracked SVG that no longer matches the model                |
-| No vault in the checkout      | `0`, or `1` when an embed warns | Only the embeds check runs, and a skip says that the others did not                                                      |
-| A usage error, or no checkout | `2`                             | `VAULT_NOT_FOUND` outside any Git checkout, with no vault above it                                                       |
-| No server                     | `3`                             | The server did not answer and could not start                                                                            |
+| Outcome                       | Exit                                                  | Example                                                                                                                  |
+| ----------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Nothing to report             | `0`                                                   | A model that matches its code                                                                                            |
+| Information only              | `0`                                                   | A relationship whose evidence is a candidate, matched by name only                                                       |
+| A code warning                | <Exit outcome="issues" />                             | [`RELATIONSHIP_UNDRAWN`](../reference/findings/#relationship-undrawn): code calls a module that the model does not join  |
+| A semantic diagnostic         | <Exit outcome="issues" />                             | [`RELATIONSHIP_ON_CONTAINER`](../reference/findings/#relationship-on-container): a line that ends on a module with parts |
+| An outdated picture           | <Exit outcome="issues" />                             | [`EMBED_OUTDATED`](../reference/findings/#embed-outdated): a tracked SVG that no longer matches the model                |
+| No vault in the checkout      | `0`, or <Exit outcome="issues" /> when an embed warns | Only the embeds check runs, and a skip says that the others did not                                                      |
+| A usage error, or no checkout | <Exit refusal="VAULT_NOT_FOUND" />                    | Outside any Git checkout, with no vault above it                                                                         |
+| No server                     | <Exit refusal="SERVER_UNREACHABLE" />                 | The server did not answer and could not start                                                                            |
 
 Information and skips print on standard error and never change the exit status. [Check findings](../reference/findings/) lists every code. Each check also runs alone:
 
@@ -154,7 +155,7 @@ Give the check's words back to the agent before a person reviews the work. The a
 
 ### Claude Code: a Stop hook
 
-A Stop hook runs when Claude Code wants to finish. Exit code 2 sends the hook's standard error back to Claude, and Claude goes on working:
+A Stop hook runs when Claude Code wants to finish. When the hook ends with status 2, Claude Code gives the hook's standard error back to Claude, and Claude goes on working:
 
 ```json title=".claude/settings.json"
 {

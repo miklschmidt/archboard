@@ -104,6 +104,11 @@ export function neighbours(path: string): {
 	return { previous: docsPages[index - 1], next: docsPages[index + 1] };
 }
 
+/** Whether a page's label names commands, such as `init and repo`, which sets it in mono. */
+export function namesCommands(path: string): boolean {
+	return path.startsWith("reference/cli/");
+}
+
 /** The address of a docs page under the site's base. */
 export function docsHref(path: string): string {
 	const base = import.meta.env.BASE_URL.replace(/\/$/, "");

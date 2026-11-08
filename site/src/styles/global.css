@@ -45,6 +45,11 @@
 	--raised: oklch(0.255 0.008 78);
 	--slab: oklch(0.31 0.007 75);
 	--well: oklch(0.14 0.005 75);
+	--code-bed: oklch(0.155 0.005 75);
+	/* The shell colours of archboard-night in ec.config.mjs, for code that Expressive Code does not draw. */
+	--syntax-program: #f2f0ea;
+	--syntax-flag: #8fd0f5;
+	--syntax-argument: #d3cfc6;
 	--highlight: oklch(1 0.01 85 / 0.09);
 	--rule: oklch(1 0.01 85 / 0.09);
 	--rule-strong: oklch(1 0.01 85 / 0.15);

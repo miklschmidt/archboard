@@ -175,7 +175,7 @@ const open = depth < 1;
 				{limits.length > 0 && pattern && ", "}
 				{pattern && (
 					<>
-						matches <code>{pattern}</code>
+						matches <code class="pattern">{pattern}</code>
 					</>
 				)}
 			</p>
@@ -245,6 +245,11 @@ const open = depth < 1;
 </div>
 
 <style>
+	/* A pattern can be hundreds of characters, so it wraps anywhere instead of leaving the page. */
+	.pattern {
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
 	.node:not(.root) {
 		padding: 12px 0 12px 16px;
 	}

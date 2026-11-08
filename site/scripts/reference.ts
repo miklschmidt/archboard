@@ -26,6 +26,7 @@ import {
 import { ENVIRONMENT, EXIT_CODES } from "../../apps/cli/src/cli/routing/protocol/conventions.ts";
 import { RELEASE_PORT } from "../../packages/workspace/src/runtime/services/source-checkout.ts";
 import { DETAILED_FINDINGS, TABLE_ROWS } from "../../actions/check/summary.ts";
+import { ANNOTATION_LIMIT_PER_LEVEL } from "../../actions/shared/workflow-commands.ts";
 
 const ROOT = join(import.meta.dir, "../..");
 const OUT = join(import.meta.dir, "../src/generated");
@@ -130,6 +131,8 @@ const commands = registry.map(({ name, parent, bare, contract }) => ({
 				: {
 						kind: "positional" as const,
 						name: parameter.name,
+						// A placeholder such as `a|b|c` names the values that the argument takes.
+						choices: parameter.placeholder?.includes("|") ? parameter.placeholder.split("|") : null,
 						description: parameter.description,
 						required: parameter.required === true,
 						repeatable: parameter.repeatable === true,
@@ -281,6 +284,8 @@ const facts = {
 	summaryRows: TABLE_ROWS,
 	/** The errors and warnings whose evidence that summary shows. */
 	summaryDetails: DETAILED_FINDINGS,
+	/** The annotations of each level that GitHub shows for one step. */
+	annotationsPerLevel: ANNOTATION_LIMIT_PER_LEVEL,
 };
 
 mkdirSync(OUT, { recursive: true });

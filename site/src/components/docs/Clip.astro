@@ -21,7 +21,7 @@ const { src, still, alt, width, height } = Astro.props;
 			<source media="(prefers-reduced-motion: reduce)" srcset={still} />
 			<img src={src} alt={alt} width={width} height={height} loading="lazy" data-clip-image />
 		</picture>
-		<button type="button" class="toggle" data-clip-toggle aria-pressed="false" hidden>Pause</button>
+		<button type="button" class="toggle" data-clip-toggle hidden>Pause</button>
 	</div>
 	<figcaption><slot /></figcaption>
 </figure>
@@ -37,11 +37,10 @@ const { src, still, alt, width, height } = Astro.props;
 			clip.querySelector("source")?.remove();
 			image.src = playing ? src : still;
 			toggle.textContent = playing ? "Pause" : "Play";
-			toggle.setAttribute("aria-pressed", String(!playing));
 		};
 		let playing = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+		// The label says what the button does next, so it needs no pressed state.
 		toggle.textContent = playing ? "Pause" : "Play";
-		toggle.setAttribute("aria-pressed", String(!playing));
 		toggle.hidden = false;
 		toggle.addEventListener("click", () => {
 			playing = !playing;
@@ -61,6 +60,7 @@ const { src, still, alt, width, height } = Astro.props;
 		min-width: 64px;
 		min-height: 32px;
 		padding: 0 12px;
+		border: 0;
 		border-radius: var(--radius-chip);
 		background: var(--raised);
 		color: var(--ink);

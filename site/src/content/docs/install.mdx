@@ -7,6 +7,7 @@ import Aside from "../../components/docs/Aside.astro";
 import Steps from "../../components/docs/Steps.astro";
 import InstallCommands from "../../components/InstallCommands.astro";
 import reference from "../../generated/reference.json";
+import Exit from "../../components/docs/Exit.astro";
 
 ## What you need
 
@@ -108,7 +109,7 @@ A command finds its vault the way Git finds its repository. Inside a checkout, t
 archboard -C ~/Projects/payments-api model read
 ```
 
-If the root has no vault, the command refuses with `VAULT_NOT_FOUND` and exit code 2. The refusal names each known vault whose models bind this repository.
+If the root has no vault, the command refuses with exit <Exit command="model read" refusal="VAULT_NOT_FOUND" />, and its error says how to make one. The refusal names each known vault whose models bind this repository, as the `-C` to give.
 
 ## Update and remove
 

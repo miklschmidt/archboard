@@ -407,6 +407,7 @@ Edges are inset hairline rings, never borders. The only borders are the CSS tria
 
 - **Style:** Code Bed floor, a hairline ring, 6px radius, mono at 0.72rem to 0.8125rem with 1.7 line height. Commands are Ink and replies are Muted Ink. A `$` prompt is Lamp Gold. A warning is Changed Text and a success is Added Green. A block that can scroll sideways takes keyboard focus.
 - **Copy:** Each block copies as one command list.
+- **Syntax:** The TextMate theme `archboard-night` in `site/ec.config.mjs` colours the code. A TextMate theme takes literal colours, so its palette is written there in hex: Ink `#f2f0ea` for commands and functions, Body `#d3cfc6` for arguments and variables, Muted `#bdb8ad` for comments and punctuation, Faint `#8f897d` for line numbers, Sky `#8fd0f5` for flags and keys, Violet `#c4b2f2` for keywords, Parchment `#e8d9b0` for strings, Teal `#86dbc8` for numbers and constants, and `#7fe0a0` and `#f39a8c` for inserted and deleted lines. Its ground `#16140f` is under the Code Bed token, which every frame paints. Every other colour of a code block is a token of this file. The install panel, which Expressive Code does not draw, takes the same shell colours from the tokens `--syntax-program`, `--syntax-flag` and `--syntax-argument`.
 
 ### Navigation
 
