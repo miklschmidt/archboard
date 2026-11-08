@@ -37,6 +37,8 @@ A reviewer needs the code and the manifest evidence of a missing relationship on
 On relay PR #1 the check Action's annotation sits at services/intake/src/accept.ts:51 (GitHub API check-run annotations). Its message names both ends with their repository, path, line and the environment name, and an excerpt of each (the code line and the ConfigMap line in the infra repository). Fixed during proof: annotation paths were relative to the workspace (app/services/...), so with the app checked out under app/ no annotation landed on the diff. They are now relative to the checked repository, and an end in another repository gets no annotation of its own.
 
 Review: quoted arguments preserve backslashes (b7ec443ea). Evidence uses the checked repository even when the registry chooses another checkout (cce76b346, 6e23564ed). The summary reports omitted details and points to the complete JSON report (01fcba8e2). The docs now state the summary limits. No architecture proposal is needed because the Action responsibilities stay the same.
+
+Review: the canonical Check Action description now limits annotations to the checked repository and keeps evidence from both ends. The public model edit applied with reconciliation false. Semantic and code checks passed. The embeds check refreshed only the two README SVG recipes and returned no findings.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
