@@ -3,6 +3,7 @@
 // are the CLI's own help, so a new finding appears here when the CLI learns it.
 import Docs from "../../../layouts/Docs.astro";
 import Aside from "../../../components/docs/Aside.astro";
+import Exit from "../../../components/docs/Exit.astro";
 import { findingAnchor, inlineCode, reference, type FindingEntry } from "../../../lib/reference";
 
 const groups: { slug: string; title: string; text: string; entries: FindingEntry[] }[] = [
@@ -43,7 +44,7 @@ const label = { warning: "Warning, fails", error: "Error, fails", information: "
 	source="apps/cli/src/cli/commands/vault/operations/check-help.ts"
 >
 	<p>
-		<code>archboard check</code> exits 1 while a semantic diagnostic or a warning remains. Information
+		<code>archboard check</code> exits <Exit outcome="issues" /> while a semantic diagnostic or a warning remains. Information
 		and skips print, and they never change the exit status. Each finding names its subject, and a
 		code finding names the evidence that it rests on, with its file and line.
 	</p>

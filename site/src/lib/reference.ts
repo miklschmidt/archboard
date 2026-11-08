@@ -230,6 +230,9 @@ const BARE_CODE = new RegExp(
 	"gu",
 );
 
+/** An exit status in words, such as "exits 1" or "Exit 2", whose number is code. */
+const EXIT_STATUS = /\b((?:[Ee]xits?|status)(?: code)?(?: with)? )(\d)\b/gu;
+
 /**
  * Words with `code` in backticks, and the codes and commands that the CLI writes bare, set as
  * HTML with inline code. The text is escaped first, so it is never read as markup.
@@ -237,13 +240,13 @@ const BARE_CODE = new RegExp(
 export function inlineCode(text: string): string {
 	const escaped = text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 	// Spans in backticks first, then, outside them, the words the CLI writes bare: flags, codes in
-	// capitals, file names and paths.
+	// capitals, file names, paths and exit statuses.
 	return escaped
 		.split(/(`[^`]+`)/u)
 		.map((part) =>
 			part.startsWith("`") && part.endsWith("`") && part.length > 1
 				? `<code>${part.slice(1, -1)}</code>`
-				: part.replace(BARE_CODE, "$1<code>$2</code>"),
+				: part.replace(BARE_CODE, "$1<code>$2</code>").replace(EXIT_STATUS, "$1<code>$2</code>"),
 		)
 		.join("");
 }
