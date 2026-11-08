@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-07T12:42:00Z'
-updated_date: '2026-11-08T12:32:00Z'
+updated_date: '2026-11-08T13:38:00Z'
 labels: []
 dependencies:
   - TASK-591
@@ -32,6 +32,12 @@ Leads who review agent pull requests say that plain diffs are the wrong level fo
 - [x] #3 The action uses only existing CLI commands
 <!-- AC:END -->
 
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Review d76f991fc..HEAD: make sure that the publication guard runs after rendering and immediately before each picture or comment write. Refuse publication when the current head cannot be read. Add focused regressions. The affected module is vKEsyHFk#mAh7CmuS. Its responsibility and relationships stay accurate, so no architecture proposal is needed.
+<!-- SECTION:PLAN:END -->
+
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
@@ -40,6 +46,8 @@ actions/pull-request posts one sticky comment. On relay PR #2 (https://github.co
 Review fixes: footprint buckets match stable module identities and sort their labels (82cef6704). Refused model reads leave comparison unjudged (e74cf48f5). Footprint reads use the same immutable PR base SHA as the pictures and plan, and expose skipped modules (757872421). An adopted proposal also reads removed bindings from the base vault over the PR range (d76f991fc). Sixteen focused PR Action tests, source types, and focused lint pass. These fixes preserve the existing Action responsibilities, so no new architecture proposal is needed.
 
 Final review validation: all 32 Action tests pass under Node 22.18.0. Both TypeScript projects, focused Action and test lint, and repository formatting pass. The docs site builds with no errors, warnings or hints. Semantic inspection returns no diagnostics. Code inspection exits 0 with existing informational findings and skipped evidence. The embeds check returns no findings. No push or merge occurs in this review.
+
+Review standards fix: the new Action tests assert annotation structure, diagnostic codes, source paths and report identity instead of full prose. Pure plan tests move to their own owner so the entry owner remains below 500 lines as publication regressions are added. All 39 focused tests pass.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
