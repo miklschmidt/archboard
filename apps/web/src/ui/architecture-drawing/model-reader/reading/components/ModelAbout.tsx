@@ -98,7 +98,7 @@ function ModelAbout(props: ModelAboutProps): JSX.Element {
 		>
 			{/* The page is a sheet in the chrome, as the picture is: a strip of chrome under it and
 			    beside it, and four rounded corners. */}
-			<div className="picture-corners bg-background relative mr-2 mb-2 flex min-h-0 flex-1 flex-col">
+			<div className="picture-corners bg-background relative mr-2 mb-2 flex min-h-0 flex-1 flex-col in-data-presenting:m-0">
 				{subject === "selection" ? (
 					<ModelAboutSelection {...props} look={look} state={state} tools={tools} />
 				) : (
