@@ -114,6 +114,15 @@ const READING: Reading = {
 	],
 };
 
+/**
+ * The same pass with no evidence, so the page reads no source lines. A test of the layout alone has
+ * no excerpt to wait for, whatever the load on the machine.
+ */
+const UNEVIDENCED: Reading = {
+	...READING,
+	findings: READING.findings.map(({ evidence: _evidence, ...finding }) => finding),
+};
+
 const ENDS: Props["ends"] = {
 	nodes: [
 		{ id: "Shop#Gateway", name: "Gateway" },
@@ -166,9 +175,13 @@ function cacheClient(): InstanceType<typeof QueryClient> {
 /**
  * Mount the findings of the pass.
  * @param check How the pass the view started stands.
+ * @param reading The pass, the one with evidence unless a test needs another.
  * @returns The subjects that choosing a finding selected, in turn.
  */
-function mount(check: Props["check"] = { status: "checking" }): (string | null)[] {
+function mount(
+	check: Props["check"] = { status: "checking" },
+	reading: Reading = READING,
+): (string | null)[] {
 	const shown: (string | null)[] = [];
 	render(
 		createElement(
@@ -176,7 +189,7 @@ function mount(check: Props["check"] = { status: "checking" }): (string | null)[
 			{ client: cacheClient() },
 			createElement(ModelCodeEvidence, {
 				vault: VAULT,
-				reading: READING,
+				reading,
 				check,
 				ends: ENDS,
 				/**
@@ -326,8 +339,7 @@ test("the list walks its rows with the keys, and each finding chosen selects its
 
 test("the switch is remembered, and a page without storage still switches", async () => {
 	answering(() => Response.json({ error: "no" }, { status: 404 }));
-	mount();
-	await excerptsRead();
+	mount(undefined, UNEVIDENCED);
 	expect(document.querySelector('[data-slot="code-evidence"]')?.getAttribute("data-layout")).toBe(
 		"cards",
 	);
@@ -338,8 +350,7 @@ test("the switch is remembered, and a page without storage still switches", asyn
 	Object.defineProperty(globalThis, "localStorage", { configurable: true, get: storageOff });
 	try {
 		chooseCodeFindingsLayout("cards");
-		mount();
-		await excerptsRead();
+		mount(undefined, UNEVIDENCED);
 		await lay("list");
 		expect(document.querySelector('[data-slot="code-evidence"]')?.getAttribute("data-layout")).toBe(
 			"list",
