@@ -7,7 +7,7 @@ import {
 	registryPath,
 	RepoRegistryError,
 } from "@archboard/workspace/checkouts";
-import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
+import { CliUsageError, defineCommand, type Paint } from "#cli/contract/protocol/contract.ts";
 
 const tail = z.array(z.string()).default([]);
 
@@ -76,7 +76,7 @@ const UntrackedVaultResultSchema = z.object({
 	addedAt: z.string(),
 	exists: z.boolean().optional(),
 });
-const RepoListInputSchema = z.object({ text: z.boolean().default(false), tail });
+const RepoListInputSchema = z.object({ tail });
 const RepoListJsonResultSchema = z.object({
 	success: z.literal(true),
 	registry: z.string(),
@@ -94,13 +94,6 @@ const repoListContract = defineCommand({
 	examples: ["archboard repo list"],
 	parameters: [
 		{
-			kind: "option",
-			key: "text",
-			spellings: ["--text"],
-			value: "none",
-			description: "Print a human-readable listing",
-		},
-		{
 			kind: "positional",
 			key: "tail",
 			name: "ignored",
@@ -113,26 +106,12 @@ const repoListContract = defineCommand({
 	input: { ingress: RepoListInputSchema },
 	result: RepoListResultSchema,
 	output: {
-		cases: [
-			{
-				id: "json",
-				when: { key: "text", present: false },
-				mode: "json",
-				description: "Checkout registry",
-			},
-			{
-				id: "text",
-				when: { key: "text", present: true },
-				mode: "text",
-				description: "Human-readable registry",
-			},
-		],
+		cases: [{ id: "json", when: {}, mode: "json", description: "Checkout registry" }],
 		/**
-		 * Chooses the human listing when `--text` was given, otherwise the json one.
-		 * @param input - The parsed list options.
-		 * @returns The output case id.
+		 * Selects the only output case.
+		 * @returns The json case id.
 		 */
-		select: (input) => (input.text ? "text" : "json"),
+		select: () => "json",
 	},
 	prerequisites: [],
 	effects: ["local-read"],
@@ -141,12 +120,13 @@ const repoListContract = defineCommand({
 	/**
 	 * Lists the known checkouts and vaults, noting the ones whose directory is
 	 * gone and the identities that have no chosen checkout.
-	 * @param input - The parsed list options.
-	 * @returns The registry as text or json.
+	 * @param _input - The parsed list options.
+	 * @param context - The command context, which says who reads the answer.
+	 * @returns The registry, or the listing that a person reads.
 	 */
-	async handler(input) {
+	async handler(_input, context) {
 		const listing = listRegistry();
-		if (!input.text) {
+		if (context.answer === "json") {
 			const { checkouts, vaults, unchosen } = listing;
 			return {
 				result: {
@@ -158,7 +138,7 @@ const repoListContract = defineCommand({
 				},
 			};
 		}
-		return { result: listingText(listing) };
+		return { result: listingText(listing, context.paint) };
 	},
 });
 
@@ -166,26 +146,29 @@ const repoListContract = defineCommand({
  * The registry as a person reads it: each identity with its checkouts, then
  * the untracked vaults.
  * @param listing The registry.
+ * @param paint Colours a part of the text.
  * @returns The text.
  */
-function listingText(listing: ReturnType<typeof listRegistry>): string {
+function listingText(listing: ReturnType<typeof listRegistry>, paint: Paint): string {
 	if (listing.checkouts.length === 0 && listing.vaults.length === 0) {
 		return "No checkout is known on this machine yet.\nRun `repo add` inside a checkout to register it.";
 	}
+	const gone = paint("red", "  (gone)");
 	const identities = [...new Set(listing.checkouts.map((entry) => entry.repo))];
 	const checkouts = identities.map((repo) => {
 		const own = listing.checkouts.filter((entry) => entry.repo === repo);
 		const lines = own.map((entry) => {
-			const marks = `${entry.chosen ? "  (chosen)" : ""}${entry.exists ? "" : "  (gone)"}`;
-			return `  ${entry.root}${marks}  [${entry.source}]`;
+			const marks = `${entry.chosen ? paint("green", "  (chosen)") : ""}${entry.exists ? "" : gone}`;
+			return `  ${paint("cyan", entry.root)}${marks}  ${paint("dim", `[${entry.source}]`)}`;
 		});
 		const unchosen = listing.unchosen.includes(repo)
-			? ["  No checkout is chosen: run `repo use <dir>` with one of these."]
+			? [paint("yellow", "  No checkout is chosen: run `repo use <dir>` with one of these.")]
 			: [];
-		return [repo, ...unchosen, ...lines].join("\n");
+		return [paint("bold", repo), ...unchosen, ...lines].join("\n");
 	});
 	const vaults = listing.vaults.map(
-		(vault) => `${vault.name}  (untracked vault)\n  ${vault.root}${vault.exists ? "" : "  (gone)"}`,
+		(vault) =>
+			`${paint("bold", vault.name)}  ${paint("dim", "(untracked vault)")}\n  ${paint("cyan", vault.root)}${vault.exists ? "" : gone}`,
 	);
 	return [...checkouts, ...vaults].join("\n");
 }

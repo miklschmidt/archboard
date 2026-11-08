@@ -44,8 +44,9 @@ if (installed.mode === "release" && argv.join("\0") === serverArguments.join("\0
 	if (!bootstrap.help) {
 		// Output to a pipe or a file is often JSON that an agent parses, and an ANSI colour code
 		// breaks it. So such output has no colour, even when the caller forces colour. A terminal,
-		// and every program that a command starts in it, keeps its colours. Help prints no JSON.
-		if (!process.stdout.isTTY) {
+		// and every program that a command starts in it, keeps its colours. Help prints no JSON,
+		// and neither does `--text`, which colours by the usual rules where it writes.
+		if (!process.stdout.isTTY && !bootstrap.text) {
 			process.env["NODE_DISABLE_COLORS"] = "1";
 			process.env["NO_COLOR"] = "1";
 			delete process.env["FORCE_COLOR"];

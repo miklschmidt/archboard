@@ -348,6 +348,10 @@ archboard model config
 archboard check semantics
 ```
 
+Each command answers in JSON, which an agent reads. To read an answer yourself,
+add `--text` anywhere before a `--`, as in `archboard --text model read`. The
+answer then shows the same fields as coloured text. Help prints text without it.
+
 A new model returns an empty planning state without a current designation.
 For an existing empty vault without a manifest, initialize it explicitly:
 

@@ -4,7 +4,9 @@
 // in either spelling, and put into the environment — except for a help
 // request, which contacts nothing and must leave the environment alone.
 // A `-C <dir>` written before the command name, on either side of a `--url`,
-// is moved behind it here too, before anything reads the command name.
+// is moved behind it here too, before anything reads the command name. The
+// global `--text`, which asks for the answer as text for a person (TASK-602),
+// is taken out here as well, so that every command accepts it.
 
 /** What the bootstrap took out of the arguments. */
 interface CliBootstrap {
@@ -12,6 +14,8 @@ interface CliBootstrap {
 	readonly url: string | null;
 	/** Whether the invocation asks for help, which contacts no server. */
 	readonly help: boolean;
+	/** Whether a person reads the answer as text, instead of an agent reading JSON. */
+	readonly text: boolean;
 }
 
 /**
@@ -65,6 +69,23 @@ function usableUrlValue(value: string | undefined): value is string {
 }
 
 /**
+ * Removes every `--text` before a `--`, in place.
+ * @param argv - The arguments, edited in place.
+ * @returns Whether the flag was there.
+ */
+function takeText(argv: string[]): boolean {
+	const end = argv.includes("--") ? argv.indexOf("--") : argv.length;
+	let found = false;
+	for (let index = end - 1; index >= 0; index--) {
+		if (argv[index] === "--text") {
+			argv.splice(index, 1);
+			found = true;
+		}
+	}
+	return found;
+}
+
+/**
  * Moves a leading `-C <dir>` behind the command name, in place, so that
  * `archboard -C <dir> <command>` reads as git's own `-C` does. Routing takes
  * the flag from there like any other shared option.
@@ -95,12 +116,13 @@ function applyCliBootstrap(
 	// arguments: `archboard -C <dir> --url <url> check` and
 	// `archboard --url <url> -C <dir> check` both read as `check -C <dir>`.
 	const url = takeUrl(argv);
+	const text = takeText(argv);
 	moveLeadingDirectory(argv);
 	const help = isHelpInvocation(argv);
 	if (url !== null && !help) {
 		environment["ARCHBOARD_URL"] = url;
 	}
-	return { url, help };
+	return { url, help, text };
 }
 
 export { applyCliBootstrap, isHelpInvocation, type CliBootstrap };

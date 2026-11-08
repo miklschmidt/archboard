@@ -72,7 +72,8 @@ function conventions(routes: CommandRoutes): string {
 		"",
 		"Commands that contact the Archboard server start it when nothing answers, unless",
 		"ARCHBOARD_NO_AUTOSTART=1. Results are JSON on stdout unless a command's help says",
-		"otherwise; diagnostics go to stderr.",
+		"otherwise; diagnostics go to stderr. With `--text` anywhere before `--`, a command",
+		"prints its result as coloured text for a person to read instead of JSON.",
 		"",
 		"Exit codes: 0 ok, 1 error, 2 usage or a refused operation (a claim held, revoked or",
 		"missing, or a revision that moved: read the model again), 3 server unreachable,",
@@ -140,8 +141,8 @@ function commandFor(
 
 /**
  * Adds the options accepted by a namespace's bare default to the namespace
- * menu. For example, `repo --text` runs `repo list --text`, so `repo --help`
- * must show `--text` even while it also lists the immediate subcommands.
+ * menu. For example, `model --state <id>` runs `model read --state <id>`, so
+ * `model --help` must show `--state` even while it also lists the immediate subcommands.
  * @param command - The namespace's Commander model.
  * @param route - The namespace route.
  */

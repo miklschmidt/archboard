@@ -6,7 +6,11 @@
 // input read or any handler run, so `--help` anywhere in an invocation prints
 // help and exits 0 whatever else the invocation got wrong.
 import { CliUsageError } from "#cli/contract/protocol/contract.ts";
-import type { AnyCommandContract, SharedOptionKey } from "#cli/contract/protocol/contract.ts";
+import type {
+	Answer,
+	AnyCommandContract,
+	SharedOptionKey,
+} from "#cli/contract/protocol/contract.ts";
 import type { AnsweredVault } from "#cli/contract/protocol/schemas.ts";
 import type { CliBootstrap } from "#cli/routing/operations/bootstrap.ts";
 import { isHelpInvocation } from "#cli/routing/operations/bootstrap.ts";
@@ -45,11 +49,13 @@ interface Addressed {
  * @param commandContract - The contract to run.
  * @param argv - The contract's own arguments.
  * @param addressed - The vault the invocation addresses, or the checkout without one.
+ * @param answer - Who reads the answer: JSON for an agent, or text for a person.
  */
 async function runInterruptibleCommand(
 	commandContract: AnyCommandContract,
 	argv: readonly string[],
 	addressed: Addressed,
+	answer: Answer,
 ): Promise<void> {
 	const controller = new AbortController();
 	let interrupted: NodeJS.Signals | undefined;
@@ -79,7 +85,14 @@ async function runInterruptibleCommand(
 	process.on("SIGINT", interrupt);
 	process.on("SIGTERM", interrupt);
 	try {
-		await runCommand(commandContract, argv, controller.signal, addressed.vault, addressed.checkout);
+		await runCommand(
+			commandContract,
+			argv,
+			controller.signal,
+			addressed.vault,
+			addressed.checkout,
+			answer,
+		);
 	} finally {
 		remove();
 		if (forceTimer !== undefined) {
@@ -460,7 +473,7 @@ function commandToRun(
 async function runCliWith(
 	routes: CommandRoutes,
 	argv: string[],
-	bootstrap: CliBootstrap = { url: null, help: false },
+	bootstrap: CliBootstrap = { url: null, help: false, text: false },
 ): Promise<void> {
 	const command = commandToRun(routes, argv);
 	if (command === null) {
@@ -476,7 +489,12 @@ async function runCliWith(
 		assertSharedApplies(selected, stated, dispatched.argv);
 		applyShared(stated);
 		const addressed = await addressedVault(selected.contract, dispatched.argv, stated);
-		await runInterruptibleCommand(selected.contract, dispatched.argv, addressed);
+		await runInterruptibleCommand(
+			selected.contract,
+			dispatched.argv,
+			addressed,
+			bootstrap.text ? "text" : "json",
+		);
 	} catch (error) {
 		reportFailure(error, usageLine(routes, selected.contract.path));
 		process.exitCode = exitCodeFor(error, selected);

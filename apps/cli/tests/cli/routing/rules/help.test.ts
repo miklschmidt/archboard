@@ -298,7 +298,7 @@ test("a shared option the command does not read is refused before anything runs"
 			const argv = [...entry.contract.path, option.spellings[0], "value"];
 			await runCli(
 				argv,
-				option.key === "url" ? { url: "http://127.0.0.1:1", help: false } : undefined,
+				option.key === "url" ? { url: "http://127.0.0.1:1", help: false, text: false } : undefined,
 			);
 			expect(process.exitCode, argv.join(" ")).toBe(2);
 			expect(stdout, argv.join(" ")).not.toHaveBeenCalled();
@@ -331,6 +331,7 @@ test("a shared option excluded by a selected local mode is refused", async () =>
 				await runCli(argv, {
 					url: key === "url" ? "http://127.0.0.1:1" : null,
 					help: false,
+					text: false,
 				});
 				expect(process.exitCode, argv.join(" ")).toBe(2);
 				expect(stdout, argv.join(" ")).not.toHaveBeenCalled();

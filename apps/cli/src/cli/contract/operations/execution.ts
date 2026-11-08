@@ -1,13 +1,17 @@
+import { styleText } from "node:util";
 import { z } from "zod";
 import type {
+	Answer,
 	AnyCommandContract,
 	CommandOutcomeDeclaration,
 	CommandContext,
 	OutputCase,
+	Paint,
 	PendingArtifact,
 } from "#cli/contract/protocol/contract.ts";
 import { CliUsageError } from "#cli/contract/protocol/contract.ts";
 import { CommanderArgvParser } from "#cli/contract/rules/argv-parser.ts";
+import { answerText } from "#cli/contract/rules/answer-text.ts";
 import { processCommandHost } from "#cli/contract/store/host.ts";
 import { commitArtifact, presentResult } from "#cli/contract/operations/presentation.ts";
 import { requirePrerequisite } from "#cli/contract/clients/prerequisites.ts";
@@ -124,24 +128,37 @@ function parseInput<T>(schema: z.ZodType<T>, value: unknown): T {
 }
 
 /**
+ * Colours text where stdout shows colour: at a terminal, unless NO_COLOR, or
+ * wherever FORCE_COLOR asks for it.
+ * @param format - The style.
+ * @param text - The text.
+ * @returns The text, styled where colour shows.
+ */
+const paintStdout: Paint = (format, text) => styleText(format, text, { stream: process.stdout });
+
+/**
  * Builds the capabilities a handler is given: the process host's I/O, the
  * shared parser, and prerequisite checks memoised so a handler that asks
  * twice starts the server once.
  * @param signal - The abort signal the command runs under.
  * @param vault - The vault the command addressed, when it found one.
  * @param checkout - The checkout without a vault that the command runs in, when it runs in one.
+ * @param answer - Who reads the answer.
  * @returns The context handed to the handler.
  */
 function createCommandContext(
 	signal: AbortSignal,
 	vault: AnsweredVault | null,
 	checkout: string | null,
+	answer: Answer,
 ): CommandContext {
 	const prerequisiteCache = new Map<string, Promise<void>>();
 	return {
 		signal,
 		vault,
 		checkout,
+		answer,
+		paint: paintStdout,
 		/**
 		 * Ensures a prerequisite, at most once per command run.
 		 * @param prerequisite - What the command needs running.
@@ -241,6 +258,28 @@ function withAnsweredVault(
 }
 
 /**
+ * The text that a person reads in place of a JSON answer, with the vault the
+ * command addressed last. A command that prints text or raw content keeps it.
+ * @param answer - Who reads the answer.
+ * @param outputCase - The selected output case.
+ * @param result - The validated result.
+ * @param vault - The vault the command addressed, or null.
+ * @returns The text, or nothing when the answer stays as it is.
+ */
+function personAnswer(
+	answer: Answer,
+	outputCase: OutputCase,
+	result: unknown,
+	vault: AnsweredVault | null,
+): { text?: string } {
+	if (answer === "json" || outputCase.mode === "text" || outputCase.mode === "raw") return {};
+	const body = answerText(result, paintStdout);
+	return {
+		text: vault === null ? body : `${body}\n\n${paintStdout("dim", `Vault  ${vault.path}`)}`,
+	};
+}
+
+/**
  * Validates and publishes what a handler produced: the result the contract
  * declares, the artifact its output case declares, and the exit code of a
  * selected outcome. Nothing reaches stdout before all of it validates.
@@ -248,19 +287,27 @@ function withAnsweredVault(
  * @param input - The parsed input, which selects the output case.
  * @param execution - What the handler returned.
  * @param vault - The vault the command addressed, which a JSON object answer names.
+ * @param answer - Who reads the answer: JSON for an agent, or text for a person.
  */
 function publishExecution(
 	contract: AnyCommandContract,
 	input: unknown,
 	execution: Awaited<ReturnType<AnyCommandContract["handler"]>>,
 	vault: AnsweredVault | null,
+	answer: Answer,
 ): void {
 	const outcome = selectedOutcome(contract, execution.outcome);
 	const outputCase = selectedCase(contract, input);
-	const result = withAnsweredVault(outputCase, contract.result.parse(execution.result), vault);
+	const validated = contract.result.parse(execution.result);
+	const result = withAnsweredVault(outputCase, validated, vault);
 	if (outcome === undefined || outcome.exit === 0)
 		commitArtifact(outputCase, validatedArtifact(outputCase, execution.pendingArtifact));
-	const presentation = { outputCase, result, diagnostics: execution.diagnostics ?? [] };
+	const presentation = {
+		outputCase,
+		result,
+		diagnostics: execution.diagnostics ?? [],
+		...personAnswer(answer, outputCase, validated, vault),
+	};
 	if (outcome) {
 		presentResult({ ...presentation, outcome });
 		processCommandHost.setExitCode(outcome.exit);
@@ -278,6 +325,7 @@ function publishExecution(
  * @param signal - The abort signal the command runs under.
  * @param vault - The vault the command addressed, when it found one.
  * @param checkout - The checkout without a vault that the command runs in, when it runs in one.
+ * @param answer - Who reads the answer: JSON for an agent, or text for a person.
  */
 export async function executeCommand(
 	contract: AnyCommandContract,
@@ -285,9 +333,13 @@ export async function executeCommand(
 	signal: AbortSignal = new AbortController().signal,
 	vault: AnsweredVault | null = null,
 	checkout: string | null = null,
+	answer: Answer = "json",
 ): Promise<void> {
 	const tokens = await commanderParser.parse(contract, argv);
 	const input = parseInput(contract.input.ingress, tokens);
-	const execution = await contract.handler(input, createCommandContext(signal, vault, checkout));
-	publishExecution(contract, input, execution, vault);
+	const execution = await contract.handler(
+		input,
+		createCommandContext(signal, vault, checkout, answer),
+	);
+	publishExecution(contract, input, execution, vault, answer);
 }

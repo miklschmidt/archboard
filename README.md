@@ -377,7 +377,7 @@ The copy is the vault of `~/archboard-example`. Use your configured Git identity
 archboard init
 ```
 
-It installs the skills with the [skills CLI](https://skills.sh): for Codex, and for Claude Code when `claude` is on the `PATH`. It makes the vault, an empty canonical model in `.archboard/vault`, and registers the repository. Then it starts Claude Code or Codex to set up the language servers, and the agent shows you its plan before it changes anything. Existing architecture requires explicit migration. Commit authored inputs with your code. Commands find the vault from the working directory or `-C <dir>`. Then ask your agent:
+It installs the skills with the [skills CLI](https://skills.sh): for Codex, and for Claude Code when `claude` is on the `PATH`. It makes the vault, an empty canonical model in `.archboard/vault`, and registers the repository. Then it starts Claude Code or Codex to set up the language servers, and the agent shows you its plan before it changes anything. Existing architecture requires explicit migration. Commit authored inputs with your code. Commands find the vault from the working directory or `-C <dir>`. Each command answers in JSON for your agent. To read an answer yourself, add `--text`, as in `archboard --text check semantics`. Then ask your agent:
 
 ```text
 Describe this repository with canonical modules, their responsibilities, and their relationships.
