@@ -86,13 +86,14 @@ describe("the shipped skills' links", () => {
 	}
 });
 
-test("the repository navigation and development skill reach existing files and headings", () => {
+test("the repository navigation and development skills reach existing files and headings", () => {
 	const documents = [
 		"AGENTS.md",
 		"TESTING.md",
 		"INSTALL.md",
 		".archboard/README.md",
 		"skills/archboard-dev/SKILL.md",
+		"skills/archboard-renderer/SKILL.md",
 		...fs
 			.readdirSync(path.join(repository, "docs/agents"))
 			.filter((file) => file.endsWith(".md"))
