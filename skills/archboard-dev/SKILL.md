@@ -62,7 +62,7 @@ Search them for each changed command, flag, code and exit status, and correct ev
 
 The build guards the guides with two more scripts:
 
-- `site/scripts/guides.ts` refuses an `archboard` command or flag in code that the CLI lacks, and a `with:` key that an Action lacks. It also refuses a code span that names an Action input or output, or a finding code, without a link to its row in the reference. It refuses an exit code written by hand, which `<Exit>` reads from the contract, an Action value or default that the `action.yml` does not give, a workflow whose Node.js differs from the check Action's default, and an `ARCHBOARD_…` variable that the CLI does not read.
+- `site/scripts/guides.ts` refuses an `archboard` command or flag in code that the CLI lacks, and a `with:` key that an Action lacks. It also refuses a code span that names an Action input or output, or a finding code, without a link to its row in the reference. It refuses an exit code written by hand, which `<Exit>` reads from the contract, an Action value or default that the `action.yml` does not give, a workflow whose Node.js differs from the check Action's default, a permission that an Action's `action.yml` does not name, a workflow without the `fetch-depth: 0` that an Action asks for, and an `ARCHBOARD_…` variable that the CLI does not read.
 - `site/scripts/links.ts` refuses a dead internal link or anchor in `dist`, and a guide's `{reference.…}` expression that shows as text. So a renamed input or code breaks the build at each guide that links it.
 
 A guide reads a number of the program from `reference.facts`, which `reference.ts` imports from the source, such as the release port. Add a fact there when a guide states a new one.

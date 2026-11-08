@@ -3,6 +3,7 @@ description: >-
   Run `archboard check` on a repository's architecture model. The step fails on a semantic
   diagnostic or a warning, puts each finding on the pull request's diff as an annotation with
   excerpts of the code and the manifest it rests on, and writes the findings to the job summary.
+  It needs only `contents: read`.
 author: Mikkel Schmidt
 
 inputs:

@@ -5,6 +5,8 @@
 // - a `with:` key under one of this repository's Actions that the Action has no input for;
 // - a workflow that sets up another Node.js than the check Action's default;
 // - an `ARCHBOARD_…` environment variable that the CLI does not read;
+// - a permission for an Action that its `action.yml` does not name, and a workflow that runs an
+//   Action that needs the whole history without `fetch-depth: 0`;
 // - a code span that names an Action input, an Action output or a finding code without linking to
 //   its row in the reference. The link makes a rename visible: `links.ts` fails on its anchor.
 //
@@ -99,6 +101,17 @@ function checkWorkflow(file: string, yaml: string): void {
 			);
 		}
 	}
+	// A job that runs an Action whose description asks for `fetch-depth: 0` checks out that deep.
+	const deep = [...actions.values()].filter((action) =>
+		action.description.includes("`fetch-depth: 0`"),
+	);
+	for (const action of deep) {
+		if (yaml.includes(`actions/${action.slug}@`) && !/fetch-depth:\s*0\b/u.test(yaml)) {
+			problems.push(
+				`${file}: a workflow runs ${action.slug} without the checkout's fetch-depth: 0`,
+			);
+		}
+	}
 	const visit = (node: unknown): void => {
 		if (Array.isArray(node)) return node.forEach(visit);
 		if (typeof node !== "object" || node === null) return;
@@ -123,6 +136,26 @@ function checkWorkflow(file: string, yaml: string): void {
 		visit(Bun.YAML.parse(yaml));
 	} catch (error) {
 		problems.push(`${file}: a YAML block does not parse: ${String(error)}\n${yaml}`);
+	}
+}
+
+/**
+ * Refuse a permission that a guide gives an Action on the line that names it, such as
+ * `contents: write`, unless the Action's `action.yml` names that permission.
+ * @param file The guide.
+ * @param prose The guide without its code blocks.
+ */
+function checkPermissions(file: string, prose: string): void {
+	for (const line of prose.split("\n")) {
+		const slug = /miklschmidt\/archboard\/actions\/([\w-]+)/u.exec(line)?.[1];
+		const action = slug === undefined ? undefined : actions.get(slug);
+		if (action === undefined) continue;
+		const text = [action.description, ...action.inputs.map((input) => input.description)].join(" ");
+		for (const match of line.matchAll(/`([a-z-]+: (?:read|write))`/gu)) {
+			if (!text.includes(`\`${match[1] ?? ""}\``)) {
+				problems.push(`${file}: the ${slug} Action's action.yml asks for no \`${match[1] ?? ""}\``);
+			}
+		}
 	}
 }
 
@@ -246,6 +279,7 @@ for (const entry of readdirSync(GUIDES).filter((name) => name.endsWith(".mdx")))
 	const prose = blocks.reduce((text, block) => text.replace(block[0], ""), source);
 	checkMentions(entry, prose);
 	checkExits(entry, prose);
+	checkPermissions(entry, prose);
 	checkValueTables(entry, prose);
 }
 

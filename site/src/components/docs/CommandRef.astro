@@ -32,6 +32,11 @@ const exits = [
 	...command.outcomes.map((outcome) => ({ exit: outcome.exit, what: outcome.id, text: outcome.description })),
 ];
 const blocks = descriptionBlocks(command.description);
+/** The command that a group runs without a subcommand, linked, with the comma against the link. */
+const routerRuns =
+	command.router?.runs === undefined || command.router.runs === null
+		? ""
+		: `<a href="#${commandAnchor(command.router.runs)}"><code>archboard ${command.router.runs}</code></a>, and the options before the subcommand go to it.`;
 /** The synopsis, one span for each group, so a narrow line wraps between groups, never inside. */
 const synopsisHtml = synopsis(command)
 	.map((group, index) => {
@@ -56,9 +61,7 @@ const schema = reference.schemas.find((entry) => entry.name === command.name.rep
 				{command.router.runs ? (
 					<>
 						Without a subcommand, <code>archboard {command.name}</code> runs{" "}
-						<a href={`#${commandAnchor(command.router.runs)}`}>
-							<code>archboard {command.router.runs}</code>
-						</a>{", and the options before the subcommand go to it."}
+						<Fragment set:html={routerRuns} />
 					</>
 				) : (
 					<>
