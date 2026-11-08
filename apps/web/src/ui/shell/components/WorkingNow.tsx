@@ -3,8 +3,8 @@
 // what it last said it was doing and how long ago. Gathered at the foot of the
 // navigator so the tree above never grows or reorders because of activity.
 // Entries keep the order they arrived in; the block is absent when nothing is
-// live. Its lamps sit in the tree's marker column and its words start where
-// the names of the top rows start.
+// live. It stands at the top of the agent's card, so it keeps the card's inset
+// as the dock under it does: its heading and lamps start 16px in.
 
 import { useCallback, useState, type JSX, type MouseEvent } from "react";
 
@@ -15,7 +15,6 @@ import { RepositoryName } from "@archboard/ui-kit/components";
 import { shortAge, useClock } from "@archboard/ui-kit/time";
 import {
 	FACTS_GAP,
-	FACTS_INSET,
 	MARKER_WIDTH,
 	markerX,
 	NAME_GAP,
@@ -24,17 +23,17 @@ import {
 } from "#ui/shell/rules/tree-grid.ts";
 import type { AgentActivityEntry } from "#ui/panes/pane-session/rules/session-types.ts";
 
-/** The heading starts where the names do. */
-const HEADING_STYLE = { paddingLeft: nameX(0) } as const;
+/** The card's inset, as the dock under it keeps it. */
+const CARD_INSET = 16;
 
-/** The list keeps the tree's gutter. */
-const LIST_STYLE = { paddingInline: ROW_GUTTER } as const;
+/** The heading starts at the card's inset. */
+const HEADING_STYLE = { paddingLeft: CARD_INSET } as const;
 
-/** An entry's lamp in the marker column and its facts on the tree's right edge. */
-const ENTRY_STYLE = {
-	paddingLeft: markerX(0) - ROW_GUTTER,
-	paddingRight: FACTS_INSET - ROW_GUTTER,
-} as const;
+/** The list keeps the card's inset, less the gutter a row's light takes. */
+const LIST_STYLE = { paddingInline: CARD_INSET - ROW_GUTTER } as const;
+
+/** An entry's lamp and its facts stand at the card's inset. */
+const ENTRY_STYLE = { paddingInline: ROW_GUTTER } as const;
 
 /** The lamp's column, as wide as the tree's marker column. */
 const LAMP_STYLE = { width: MARKER_WIDTH } as const;
@@ -106,7 +105,7 @@ function WorkingNow(props: WorkingNowProps): JSX.Element | null {
 		<section
 			aria-label="Working now"
 			data-slot="working-now"
-			className="flex max-h-[45%] shrink-0 flex-col"
+			className="flex max-h-[40vh] shrink-0 flex-col pt-2"
 		>
 			<h2
 				style={HEADING_STYLE}

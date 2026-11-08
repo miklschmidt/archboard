@@ -38,7 +38,7 @@ const PLATE = cn(
 	"rounded-control border-border bg-card shadow-raised absolute inset-0 border",
 	"dark:border-input dark:bg-input/30 transition-[border-color,background-color,box-shadow]",
 	"group-hover/voice:border-primary-mark group-active/voice:shadow-pressed",
-	"group-focus-visible/voice:ring-ring group-focus-visible/voice:ring-2 group-focus-visible/voice:ring-offset-2 group-focus-visible/voice:ring-offset-(--background)",
+	"group-focus-visible/voice:ring-ring group-focus-visible/voice:ring-2 group-focus-visible/voice:ring-offset-2 group-focus-visible/voice:ring-offset-(--raised)",
 	"group-aria-disabled/voice:opacity-50",
 );
 

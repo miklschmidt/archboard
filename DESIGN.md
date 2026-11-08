@@ -7,6 +7,7 @@ colors:
   muted-ink: "oklch(0.48 0.008 75)"
   body-ink: "oklch(0.3 0.008 75)"
   chrome-chalk: "oklch(0.973 0.004 88)"
+  tray-chalk: "oklch(0.986 0.003 88)"
   reading-tone: "oklch(0.935 0.006 85)"
   well-floor: "oklch(0.95 0.005 85)"
   tab-piece: "oklch(1 0 0)"
@@ -251,6 +252,7 @@ every role and changes the values. The file theme.css holds both themes.
 - **Ground Chalk** (oklch(0.99 0.0025 90), dark oklch(0.2 0.006 75)): the ground of the picture, and of the About page that lies over it.
 - **Chrome Chalk** (oklch(0.973 0.004 88), dark oklch(0.165 0.005 75)): the navigator, the pane header and the sidebar.
 - **Reading Tone** (oklch(0.935 0.006 85), dark oklch(0.255 0.008 78)): the chosen row of a list on the About page.
+- **Tray Chalk** (`--raised`, oklch(0.986 0.003 88), dark oklch(0.205 0.007 75)): the agent's card, which lies in the left column's well and holds Working now and the agent dock.
 - **Well Floor** (`--tray-sink`, oklch(0.95 0.005 85), dark oklch(0.14 0.005 75)): the floor of the well that the left column's list lies in, and of the trough that holds tabs or a switch. It is also the floor of a field or a count cell sunk into a surface. It is the floor of a nested container on the picture, so the column and the picture are one material.
 - **Tab Piece** (`--tray-tab`, oklch(1 0 0), dark oklch(0.25 0.007 75)): the lighter piece that the picture raises on the edge of a container. The shell does not use it. A chosen tab or row takes Control Face.
 - **Slab Face** (`--slab-face`, oklch(0.915 0.005 85), dark oklch(0.31 0.007 75)): the top face of a number badge, on a front edge of `--slab-edge`.
@@ -340,9 +342,10 @@ The file app.css holds the values for both themes and gives each one a
 ### Shadow Vocabulary
 
 - **well** (`--elevation-well`, an inner shadow with a lit line along the foot): a field sunk into a surface, a trough, a count cell and a pressed key. `--elevation-trough` is the same piece under its other name.
+- **tray** (`--elevation-tray`): the agent's card in the left column's well. A lit top edge, and a soft shadow that rises from it over the list.
 - **sink** (`--elevation-sink`, built from `--slab-shadow` and `--tray-lip`): the well that a column's list lies in. One inner shadow falls from the whole of its top edge, and a lit lip runs along its foot, as on a container of the picture. The `column-well` utility holds the recipe.
 - **slab** (`--elevation-slab`, built from `--slab-glint`, `--slab-edge` and `--slab-shadow`): a number that lies on a surface, as a small part of the picture does: a lit top edge, a front edge 2px thick and a short shadow.
-- **No edge shadow.** The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane. It casts no shadow and draws no line where it meets the picture: the tone step is the edge. The chrome holds the picture on every side: an 8px strip of chrome runs under it, and beside it while the right panel hides. The picture's four corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility. A presented picture fills its pane with square corners. While the picture has keyboard focus, a 2px Ring line runs inside its edge and follows the rounded corners. The legend and the composer lie on the chrome at the foot of their columns, with no tone of their own, no line and no shadow. The agent dock is the one card in the chrome: a sheet in the picture's tone with the same 12px corners and 8px of chrome on every side, so its foot lines up with the picture's.
+- **No edge shadow.** The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane. It casts no shadow and draws no line where it meets the picture: the tone step is the edge. The chrome holds the picture on every side: an 8px strip of chrome runs under it, and beside it while the right panel hides. The picture's four corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility. A presented picture fills its pane with square corners. While the picture has keyboard focus, a 2px Ring line runs inside its edge and follows the rounded corners. The legend and the composer lie on the chrome at the foot of their columns, with no tone of their own, no line and no shadow. In the left column the well runs to the foot of the window, with no lip at its foot. The agent's card lies in that well: Tray Chalk, 12px corners, 8px of the well's floor on every side, and the tray depth (`--elevation-tray`): a lit top edge and a soft shadow that rises from it over the list. Working now stands at its top while an agent works, and the dock under it.
 - **raised** (`--elevation-raised`, a white highlight on top, a 1px contact line and a short soft shadow): a quiet key, a key cap, the voice circle and the chosen row of a list.
 - **pressed** (`--elevation-pressed`, the same value as well): a raised control while somebody presses it.
 - **chosen** (`--elevation-chosen`, raised and a 2px line of Wayfinding Gold inside the foot): the chosen tab of a trough. It is also the chosen row of the tree that is the row of what is open.
@@ -759,8 +762,10 @@ Three Well Floor cells, Entries, Hidden and Callers, hold the counts in the mono
 
 ### Agent dock
 
-The agent dock is a card at the foot of the navigator: the picture's tone, 12px corners
-and 8px of chrome round it, with no line and no shadow. While voice is off it is calm. Two quiet keys of one height (32px, 4px corners) stand in a row at its foot: Talk, as wide as the room, and
+The agent dock is the foot of the agent's card, which lies in the navigator's well: Tray
+Chalk, 12px corners and 8px of the well's floor round it, with a lit top edge and a soft
+shadow that rises over the list.
+While an agent works, Working now stands at the top of the card, and the card grows. While voice is off it is calm. Two quiet keys of one height (32px, 4px corners) stand in a row at its foot: Talk, as wide as the room, and
 a key to the conversation, an icon alone. The conversation's key is pressed in,
 with a gold mark under it, while the conversation is open, and has a gold dot
 while words wait unread. When the agent is on something, its state, what it is

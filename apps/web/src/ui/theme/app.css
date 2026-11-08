@@ -145,6 +145,8 @@
 	--color-primary-subtle: var(--primary-subtle);
 	/* The rim of a primary action's gold (`primary-finish`). */
 	--color-primary-edge: var(--primary-edge);
+	/* The agent dock: a card that lies in the left column's well. */
+	--color-raised: var(--raised);
 	/* The picture's own pieces, which the left column is built from: the face of a
 	   slab, the floor a well sinks to, and the lighter piece raised on a well's edge. */
 	--color-slab-face: var(--slab-face);
@@ -200,6 +202,7 @@
 	--shadow-well: var(--elevation-well);
 	--shadow-sink: var(--elevation-sink);
 	--shadow-slab: var(--elevation-slab);
+	--shadow-tray: var(--elevation-tray);
 	--shadow-raised: var(--elevation-raised);
 	--shadow-pressed: var(--elevation-pressed);
 	--shadow-card: var(--elevation-card);
@@ -378,8 +381,9 @@
               conversation are one flat plane round the picture. They cast
               no shadow onto it: the tone step is the edge, and the picture's
               corners are rounded against the chrome (`picture-corners`).
-              The legend and the composer lie on the chrome too. The agent
-              dock is a card in the picture's tone, framed as the picture is.
+              The legend and the composer lie on the chrome too. In the left
+              column the well runs to its foot, and the agent's card lies in
+              it (`--raised`): Working now at its top, then the dock.
      raised   a control, a key cap or the chosen row of a list, standing on
               a surface (--elevation-raised): a lit top edge, a contact line and
               a short shadow. Pressed, a control sinks into a trough
@@ -406,6 +410,11 @@
 	--elevation-slab:
 		inset 0 1px 0 color-mix(in oklch, var(--slab-glint) 16%, transparent), 0 2px 0 var(--slab-edge),
 		0 3px 4px -1px var(--slab-shadow);
+	/* The agent's card in the left column's well: a lit top edge, and a soft shadow that rises
+	   from it over the list, as the tray at the foot of the column cast before it was a card. */
+	--elevation-tray:
+		inset 0 1px 0 var(--highlight), 0 -1px 0 oklch(0.33 0.035 65 / 0.06),
+		0 -10px 24px -12px oklch(0.33 0.035 65 / 0.2);
 	--elevation-raised:
 		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.33 0.035 65 / 0.16),
 		0 2px 6px -1px oklch(0.33 0.035 65 / 0.16);
@@ -431,6 +440,7 @@
 :root[data-theme="dark"] {
 	/* Depth on graphite: the site's own values. */
 	--elevation-well: inset 0 2px 4px oklch(0.04 0.004 75 / 0.6), inset 0 -1px 0 var(--highlight);
+	--elevation-tray: inset 0 1px 0 var(--highlight), 0 -10px 24px -14px oklch(0.04 0.006 75 / 0.9);
 	--elevation-raised:
 		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.06 0.004 75 / 0.7),
 		0 2px 6px -1px oklch(0.06 0.006 75 / 0.5);
@@ -562,6 +572,12 @@
    of its top edge and a lit lip along its foot. The shadow is a layer over the list, so
    what scrolls in the well passes under it. What stands proud of the floor, such as the
    shelf of a list, stands over that layer. */
+/* Over the agent's card the left column's well runs to the foot of the window, so it has no
+   lit lip at its foot. */
+[data-slot="navigator-column"]:has(> [data-slot="navigator-foot"]) .column-well::after {
+	box-shadow: inset 0 9px 9px -8px var(--slab-shadow);
+}
+
 @utility column-well {
 	position: relative;
 	isolation: isolate;

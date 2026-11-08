@@ -132,6 +132,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 		},
 		[actions],
 	);
+	const working = <WorkingNow entries={workingEntries(view, panes)} onOpen={openPaneKey} />;
 	return (
 		<div
 			data-slot="navigator-column"
@@ -186,9 +187,21 @@ function Navigator(props: NavigatorProps): JSX.Element {
 						onLeave={leave}
 					/>
 				)}
-				<WorkingNow entries={workingEntries(view, panes)} onOpen={openPaneKey} />
+				{props.foot === undefined && working}
 			</nav>
-			{props.foot}
+			{props.foot !== undefined && (
+				// The well's floor runs on under the foot, and the agent's card lies in it: what agents
+				// work on now at its top, then the dock.
+				<div data-slot="navigator-foot" className="bg-tray-sink shrink-0 p-2">
+					<div
+						data-slot="agent-card"
+						className="bg-raised shadow-tray rounded-window flex flex-col overflow-clip"
+					>
+						{working}
+						{props.foot}
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

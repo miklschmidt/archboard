@@ -91,12 +91,13 @@ const READ_PANE_LETTERS = `(() => {
 })()`;
 
 /**
- * What the navigator says an agent is doing on the one model: the latest
- * doing line under "Working now", and whether the model's row carries the lamp.
+ * What the left column says an agent is doing on the one model: the latest
+ * doing line under "Working now", at the top of the agent's card, and whether
+ * the model's row carries the lamp.
  */
 const READ_ACTIVITY = `(() => {
 	const nav = document.querySelector('${NAVIGATOR}');
-	const section = nav?.querySelector('[data-slot="working-now"]');
+	const section = document.querySelector('[data-slot="navigator-column"] [data-slot="working-now"]');
 	const entries = [...(section?.querySelectorAll('li') ?? [])];
 	const line = entries[0]?.querySelector('[data-slot="activity-doing"]');
 	const own = line ? [...line.childNodes].filter(child => child.nodeType === 3)

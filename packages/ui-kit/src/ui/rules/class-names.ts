@@ -34,6 +34,7 @@ const TYPE_ROLES = [
  */
 const ELEVATIONS = [
 	"well",
+	"tray",
 	"raised",
 	"pressed",
 	"card",
