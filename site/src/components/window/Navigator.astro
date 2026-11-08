@@ -8,8 +8,10 @@ interface Row {
 	name: string;
 	/** The row holds parts, so the shell gives it a chevron. */
 	branch?: boolean;
-	/** The row names the owner of the rows under it. */
+	/** The line names the collection of the rows under it: it is no row. */
 	owner?: boolean;
+	/** The row stands one step deeper, under the line of its collection. */
+	child?: boolean;
 	count?: number;
 }
 const sections: { title: string; count: number; rows: Row[] }[] = [
@@ -32,9 +34,9 @@ const sections: { title: string; count: number; rows: Row[] }[] = [
 		count: 2,
 		rows: [
 			{ name: "Inventory service", owner: true },
-			{ name: "Reserve an order's items" },
+			{ name: "Reserve an order's items", child: true },
 			{ name: "Web shop", owner: true },
-			{ name: "Place an order" },
+			{ name: "Place an order", child: true },
 		],
 	},
 	{
@@ -63,13 +65,13 @@ const selected = "Checkout API";
 			sections.map((section) => (
 				<section class="section">
 					<p class="head">
-						<Icon name="chevronDown" size={15} />
 						<span class="title">{section.title}</span>
-						<span class="count">{section.count}</span>
+						<span class="mono total">{section.count}</span>
+						<span class="end"><Icon name="chevronDown" size={15} /></span>
 					</p>
 					<ul class="rows">
 						{section.rows.map((row) => (
-							<li class:list={["row", { "is-on": row.name === selected, owner: row.owner }]}>
+							<li class:list={["row", { "is-on": row.name === selected, owner: row.owner, child: row.child }]}>
 								<span class="fold">{row.branch && <Icon name="chevronRight" size={15} />}</span>
 								<span class="name">{row.name}</span>
 								{row.count !== undefined && <span class="count">{row.count}</span>}
@@ -140,12 +142,24 @@ const selected = "Checkout API";
 		height: 28px;
 		padding: 0 8px;
 	}
+	/* A section's label stands at the column's inset in full ink, with its count beside it, and
+	   the chevron that folds it at the end of the head, where the rows' facts end. */
 	.head {
-		color: var(--ink-muted);
-		gap: 9px;
+		gap: 6px;
+		padding-right: 12px;
+		font-size: 12.5px;
+		font-weight: 600;
+		color: var(--ink);
 	}
-	.title {
-		flex: 1;
+	.total {
+		font-size: 11px;
+		font-weight: 400;
+		color: var(--ink-muted);
+	}
+	.end {
+		display: inline-flex;
+		margin-left: auto;
+		color: var(--ink-muted);
 	}
 	.count {
 		font-family: var(--font-mono);
@@ -165,9 +179,24 @@ const selected = "Checkout API";
 		border-radius: 3px;
 		color: var(--ink-body);
 	}
+	/* The name of a collection is no row: it stands in full ink where a row's name stands, and
+	   its flows stand one step deeper under a rail. */
 	.row.owner {
-		color: var(--ink-muted);
-		font-size: 12px;
+		color: var(--ink);
+		font-weight: 500;
+	}
+	.row.child {
+		position: relative;
+		padding-left: 24px;
+	}
+	.row.child::before {
+		content: "";
+		position: absolute;
+		left: 15px;
+		top: 0;
+		bottom: 0;
+		width: 1px;
+		background: var(--rule);
 	}
 	.row.is-on {
 		background: var(--raised);

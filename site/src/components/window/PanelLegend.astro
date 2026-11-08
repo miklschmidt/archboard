@@ -1,5 +1,6 @@
 ---
-// The foot of the mock shell's right panel: the legend of the shop's picture, as the shell shows it.
+// The last section of the mock shell's right panel: the legend of the shop's picture, as the shell
+// shows it, with the kind chip of the panel's head.
 import Icon from "../Icon.astro";
 import KindChip from "../KindChip.astro";
 import type { Kind } from "../../lib/icons";
@@ -24,7 +25,7 @@ const lines = [
 		{
 			kinds.map(([kind, name]) => (
 				<li>
-					<KindChip kind={kind} size={20} /> {name}
+					<KindChip kind={kind} size={24} look="panel" /> {name}
 				</li>
 			))
 		}
@@ -42,19 +43,18 @@ const lines = [
 </div>
 
 <style>
-	/* The legend lies on the two columns of the foot over it, as the shell's does: the head is a
-	   panel section head, its key stands at the start of the second column, and a row is 24px. */
+	/* The legend is a section of the panel: its label is any section's, its key stands at the start
+	   of the second column, and a row is 28px, with no plate under it. */
 	.legend {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
-		padding: 16px;
+		gap: 4px;
 		color: var(--ink);
 	}
-	/* 8px part the head from its rows, and 12px part one list from the next. */
+	/* 12px part one list from the next. */
 	.grid + .grid,
 	.grid + .tags {
-		margin-top: 4px;
+		margin-top: 8px;
 	}
 	.head {
 		display: grid;
@@ -91,10 +91,11 @@ const lines = [
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		min-height: 24px;
+		min-height: 28px;
+		font-size: 13px;
 	}
 	.line {
-		width: 22px;
+		width: 24px;
 		height: 2px;
 		background: var(--c);
 	}

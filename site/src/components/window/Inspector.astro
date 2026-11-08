@@ -1,7 +1,8 @@
 ---
 // The right panel of the mock shell, with Checkout API selected at the shop's root, as the shell
-// shows it: the subject, its interface and implementation, its actions and the legend. The
-// counts are the example shop's.
+// shows it: the subject and its interface and implementation, then the legend that ends the scroll,
+// over a row of keys. The shell lists more under a module, and the mock keeps its first sections.
+// The counts are the example shop's.
 import Icon from "../Icon.astro";
 import KindChip from "../KindChip.astro";
 import PanelLegend from "./PanelLegend.astro";
@@ -14,10 +15,10 @@ const interfaceCounts = [
 ---
 
 <aside class="inspector" aria-hidden="true" data-inspector>
-	<div class="subject">
+	<div class="scroll">
 		<div class="identity">
 			<div class="head">
-				<KindChip kind="service" size={24} />
+				<KindChip kind="service" size={24} look="panel" />
 				<div class="title">
 					<p class="name">Checkout API</p>
 					<p class="kind">Service</p>
@@ -28,33 +29,30 @@ const interfaceCounts = [
 		</div>
 		<div class="block">
 			<p class="label">Interface <span class="small">Open in About</span></p>
-			<dl class="counts">
+			<ul class="rows">
 				{
 					interfaceCounts.map(([label, value]) => (
-						<div class:list={{ none: value === 0 }}>
-							<dt>{label}</dt>
-							<dd>{value}</dd>
-						</div>
+						<li class:list={{ off: value === 0 }}>
+							{label}
+							<span class="mono">{value}</span>
+						</li>
 					))
 				}
-			</dl>
+			</ul>
 		</div>
 		<div class="block">
 			<p class="label">Implementation</p>
-			<dl class="counts">
-				<div>
-					<dt>Hidden part</dt>
-					<dd>1</dd>
-				</div>
-			</dl>
+			<ul class="rows">
+				<li>Hidden part <span class="mono">1</span></li>
+			</ul>
 		</div>
+		<PanelLegend />
 	</div>
 	<div class="actions">
 		<span class="action gold">Open module</span>
 		<span class="action">Focus</span>
-		<span class="action"><Icon name="openai" size={15} /> Explain with Codex <Icon name="chevronDown" size={15} /></span>
+		<span class="action"><Icon name="openai" size={15} /> Explain <Icon name="chevronDown" size={15} /></span>
 	</div>
-	<PanelLegend />
 </aside>
 
 <style>
@@ -65,7 +63,9 @@ const interfaceCounts = [
 		background: var(--chrome);
 		font-size: 12.5px;
 	}
-	.subject {
+	/* What the panel says scrolls, and the legend ends it: it stands at the foot of the scroll
+	   while the subject leaves room. */
+	.scroll {
 		flex: 1;
 		min-height: 0;
 		overflow: hidden;
@@ -73,6 +73,9 @@ const interfaceCounts = [
 		flex-direction: column;
 		gap: 20px;
 		padding: 16px;
+	}
+	.scroll > :global(:last-child) {
+		margin-top: auto;
 	}
 	.identity {
 		display: flex;
@@ -110,12 +113,14 @@ const interfaceCounts = [
 	.block {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: 4px;
 	}
+	/* A section's label is the left column's: its name in full ink and semibold. */
 	.label {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		min-height: 24px;
 		font-weight: 600;
 		color: var(--ink);
 	}
@@ -126,39 +131,34 @@ const interfaceCounts = [
 		background: var(--raised);
 		box-shadow: var(--shadow-raised);
 	}
-	.counts {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 4px;
+	/* A count is a row of the left column, on the panel's ground with no plate: what it counts at
+	   the start, its number at the end. */
+	.rows {
+		list-style: none;
 		margin: 0;
+		padding: 0;
 	}
-	.counts div {
+	.rows li {
 		display: flex;
+		align-items: center;
 		justify-content: space-between;
-		align-items: baseline;
-		padding: 5px 8px;
-		border-radius: 3px;
-		background: var(--well);
-		box-shadow: var(--shadow-well);
-		color: var(--ink-body);
+		height: 28px;
+		font-size: 13px;
+		color: var(--ink);
 	}
-	.counts div:last-child:nth-child(odd) {
-		grid-column: 1 / -1;
+	.rows li.off {
+		color: var(--ink-muted);
 	}
-	.counts div.none {
-		color: var(--ink-faint);
+	.rows .mono {
+		font-size: 11px;
+		color: var(--ink-muted);
 	}
-	.counts dd {
-		margin: 0;
-		font-family: var(--font-mono);
-		font-size: 12px;
-	}
-	/* The foot lies on the legend's two columns: a key fills its cell, and the agent's menu takes both. */
+	/* The foot is a row of keys on the panel's ground, on two columns. */
 	.actions {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 8px;
-		padding: 8px 16px 0;
+		padding: 4px 16px 16px;
 	}
 	.action {
 		display: flex;
