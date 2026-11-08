@@ -29,7 +29,8 @@ function pinActions(): { ref: string; sha: string } {
 		.split("\n")
 		.find(
 			(name) =>
-				name !== "" && git("ls-tree", "--name-only", name, "actions/check/action.yml") !== "",
+				name !== "" &&
+				git("ls-tree", "--full-tree", "--name-only", name, "actions/check/action.yml") !== "",
 		);
 	if (tag === undefined) return { ref: "main", sha: git("rev-parse", "HEAD") };
 	return { ref: tag, sha: git("rev-parse", `${tag}^{commit}`) };
