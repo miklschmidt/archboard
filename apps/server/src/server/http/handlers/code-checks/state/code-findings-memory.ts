@@ -1,9 +1,10 @@
 // The findings of the last code pass of each vault, kept for the panes (ADR 0046,
 // TASK-367.24).
 //
-// A pane never starts a pass: a pass reads code and Git and takes seconds, and
-// every open canvas would start one. So the server remembers what the last pass
-// found, and a pane reads that. The memory holds one reading for each document and
+// A pane reads what a pass found and does not start one: a pass reads code and Git
+// and takes seconds, and every open canvas would start one. So the server remembers
+// what the last pass found, and a pane reads that. Only the code view of Measures
+// starts a pass, once for a reading no pass read (ADR 0046, amendment of 2026-11-08). The memory holds one reading for each document and
 // variant a pass has read: the version of the document it read, when it ran, and
 // what it found on that document. A pass replaces the readings of the documents it
 // read and leaves the others, so a pass over a named draft does not forget what
@@ -13,7 +14,7 @@
 // It lives in memory and nowhere else. Nothing writes a finding into a document,
 // the vault or any file (ADR 0015), and the memory goes with the process: a
 // restarted server knows nothing until somebody runs the code check, with
-// `archboard check` or `archboard check code`.
+// `archboard check`, `archboard check code` or the code view of Measures.
 // It is no copy of a document either: it answers what the code said, never what is
 // on a document, and a pane shows it only over the version it was found on.
 

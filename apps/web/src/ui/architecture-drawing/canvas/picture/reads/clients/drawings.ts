@@ -229,6 +229,34 @@ async function fetchVaultCheck(vault: string, signal?: AbortSignal): Promise<Vau
 /** The route the server answers the findings of the last code pass on. */
 const CODE_FINDINGS_URL = "/api/vault/code-findings";
 
+/** The route that runs a code pass and remembers what it found. */
+const CODE_CHECK_URL = "/api/vault/code-check";
+
+/** One version of one reading, as a code pass names what it read. */
+interface CodeCheckReading {
+	readonly model: string;
+	/** The state the reading shows, or null for a model with no current state. */
+	readonly state: string | null;
+	/** Whether the state is the model's Current, which a pass reads when it is asked for nothing. */
+	readonly current: boolean;
+	/** The digest of the version on screen. */
+	readonly revision: string;
+}
+
+/**
+ * Run one code pass over a reading, which the server remembers for every pane (ADR 0046,
+ * amendment of 2026-11-08). A pass reads code and Git and takes seconds, so only the code view
+ * of Measures starts one, once for a version of a reading. It asks for a draft by its state and
+ * for Current by nothing, as `archboard check code` does. It is not cancelled when the view
+ * closes: what it finds is remembered, and the view shows it when it opens again.
+ * @param vault The vault.
+ * @param reading The reading.
+ */
+async function runCodeCheck(vault: string, reading: CodeCheckReading): Promise<void> {
+	const named = reading.current || reading.state === null ? "" : `?${new URLSearchParams({ state: reading.state })}`;
+	await readRoute(`${CODE_CHECK_URL}${named}`, vault);
+}
+
 /**
  * What the last code pass found on each model it read, as the server remembers
  * it. The route reads the server's memory and never starts a pass (ADR 0046),
@@ -253,6 +281,8 @@ async function fetchCodeFindings(vault: string, signal?: AbortSignal): Promise<R
 export {
 	ReadingError,
 	fetchCodeFindings,
+	runCodeCheck,
+	type CodeCheckReading,
 	comparisonKey,
 	fetchVaultCheck,
 	type AppliedAppearance,

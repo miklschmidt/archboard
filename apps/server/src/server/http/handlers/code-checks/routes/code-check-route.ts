@@ -2,9 +2,11 @@
 // `GET /api/vault/code-check[?variant=<draft> | ?every-draft=true][&plan=<file>]...`
 // (ADR 0046).
 //
-// `archboard check code` and `archboard check all` ask it. It reads code and
-// Git, which takes seconds, so it runs only on a request and never inside
-// `/api/vault/check`, which every open canvas reads. It runs as
+// `archboard check code` and `archboard check all` ask it, and so does the code view
+// of Measures when it opens on a reading that no remembered pass read (ADR 0046,
+// amendment of 2026-11-08). It reads code and Git, which takes seconds, so it runs
+// only on a request and never inside `/api/vault/check`, which every open canvas
+// reads. It runs as
 // checkout work, the admission the code opener uses: a caller that hangs up
 // cancels it, and a stop cancels it and waits for it to settle, so a stop
 // never refuses because of it. A pass changes nothing, so the route is a GET.
@@ -19,10 +21,10 @@
 // registered checkout, one the check never reads or one that is not a plan
 // JSON refuses the check, as `PLAN_REFUSED`, before the pass starts.
 //
-// A pane never starts a pass (TASK-367.24). Each pass that finishes leaves its
-// findings in the server's memory, and `GET /api/vault/code-findings` answers
-// from that memory alone, so the panes that read it on a timer never cost a
-// reading of code. A pass the caller cancelled, or a refusal, leaves the memory
+// Only the code view of Measures starts a pass from a page; the panes read (TASK-367.24).
+// Each pass that finishes leaves its findings in the server's memory, and
+// `GET /api/vault/code-findings` answers from that memory alone, so the panes that
+// read it on a timer never cost a reading of code. A pass the caller cancelled, or a refusal, leaves the memory
 // as it was.
 //
 // `GET /api/code/source-lines?repo=<repo>&path=<path>&line=<line>` answers the

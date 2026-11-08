@@ -426,7 +426,8 @@ const RememberedReadingSchema = CodeCheckDocumentSchema.extend({
  * The answer of `GET /api/vault/code-findings`: one reading for each document and
  * variant that a pass has read since the server started. The route only reads
  * the server's memory and never starts a pass, so it is empty until somebody
- * runs the code check, with `archboard check` or `archboard check code`. The
+ * runs the code check, with `archboard check`, `archboard check code` or the
+ * code view of Measures. The
  * route answers it beside `success: true`, and a parse keeps only the answer.
  */
 const RememberedModelSchema = CodeCheckModelSchema.extend({

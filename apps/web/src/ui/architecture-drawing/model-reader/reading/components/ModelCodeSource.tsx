@@ -1,6 +1,10 @@
 import { RiFileCodeLine } from "@remixicon/react";
-import type { JSX } from "react";
+import type { CSSProperties, JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
+import {
+	codeTokensQuery,
+	type CodeToken,
+} from "#ui/architecture-drawing/model-reader/access/clients/code-highlighter.ts";
 import { sourceLinesQuery } from "#ui/architecture-drawing/model-reader/access/clients/source-lines.ts";
 import type { CodeEvidence } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorCode.tsx";
 
@@ -12,12 +16,15 @@ import type { CodeEvidence } from "#ui/architecture-drawing/canvas/presentation/
  * @param props.vault The vault of the reading.
  * @param props.evidence The piece, or nothing for a finding that names no code.
  * @param props.checkedAt When the pass ran.
+ * @param props.reading Whether its lines are read now; they wait while it is false.
  * @returns The excerpt, or what stands in its place.
  */
 function ModelCodeSource(props: {
 	readonly vault: string;
 	readonly evidence: CodeEvidence | undefined;
 	readonly checkedAt: string;
+	/** Whether the lines are read now, or wait until the excerpt comes near the screen. */
+	readonly reading?: boolean | undefined;
 }): JSX.Element {
 	const { evidence } = props;
 	return (
@@ -42,6 +49,8 @@ function ModelCodeSource(props: {
 				<p className="text-body text-muted-foreground p-3.5">
 					This finding says that something is missing, so it names no line of code.
 				</p>
+			) : props.reading === false ? (
+				<SourceWaiting />
 			) : (
 				<SourceExcerpt vault={props.vault} evidence={evidence} checkedAt={props.checkedAt} />
 			)}
@@ -64,12 +73,7 @@ function SourceExcerpt(props: {
 }): JSX.Element {
 	const { vault, evidence, checkedAt } = props;
 	const query = useQuery(sourceLinesQuery(vault, evidence, checkedAt));
-	if (query.isPending)
-		return (
-			<output data-slot="code-source-state" className="text-body text-muted-foreground p-3.5">
-				Reading the source…
-			</output>
-		);
+	if (query.isPending) return <SourceWaiting />;
 	if (query.data == null)
 		return (
 			<p
@@ -81,13 +85,50 @@ function SourceExcerpt(props: {
 			</p>
 		);
 	const { first, lines } = query.data;
-	const numbered = lines.map((text, index) => ({ number: first + index, text }));
+	return <SourceText path={evidence.path} line={evidence.line} first={first} lines={lines} />;
+}
+
+/**
+ * What stands in the excerpt's place until its lines come.
+ * @returns The words.
+ */
+function SourceWaiting(): JSX.Element {
+	return (
+		<output data-slot="code-source-state" className="text-body text-muted-foreground p-3.5">
+			Reading the source…
+		</output>
+	);
+}
+
+/**
+ * The lines of an excerpt, plain at once and in their language's colours once they are worked out.
+ * @param props The lines and where they are.
+ * @param props.path The file they are from.
+ * @param props.line The evidence line.
+ * @param props.first The number of the first line.
+ * @param props.lines The lines.
+ * @returns The lines.
+ */
+function SourceText(props: {
+	readonly path: string;
+	readonly line: number;
+	readonly first: number;
+	readonly lines: readonly string[];
+}): JSX.Element {
+	const { path, line, first, lines } = props;
+	const tokens = useQuery(codeTokensQuery(path, lines)).data ?? null;
 	// A long line wraps, so nothing scrolls sideways and the excerpt needs no key of its own.
 	return (
 		<pre className="text-technical m-0 min-h-0 overflow-y-auto py-3.5 font-mono leading-[1.85]">
-			<code className="block">
-				{numbered.map(({ number, text }) => (
-					<SourceLine key={number} number={number} text={text} marked={number === evidence.line} />
+			<code className="block" data-highlighted={tokens === null ? undefined : ""}>
+				{numbered(first, lines, tokens).map(({ number, text, tokens: colours }) => (
+					<SourceLine
+						key={number}
+						number={number}
+						text={text}
+						tokens={colours}
+						marked={number === line}
+					/>
 				))}
 			</code>
 		</pre>
@@ -100,15 +141,17 @@ function SourceExcerpt(props: {
  * @param props The line.
  * @param props.number Its number in the file.
  * @param props.text Its text.
+ * @param props.tokens Its text in the colours of its language, once they are worked out.
  * @param props.marked Whether it is the evidence line.
  * @returns The line.
  */
 function SourceLine(props: {
 	readonly number: number;
 	readonly text: string;
+	readonly tokens: readonly CodeToken[] | undefined;
 	readonly marked: boolean;
 }): JSX.Element {
-	const { number, text, marked } = props;
+	const { number, text, tokens, marked } = props;
 	const words = (
 		<>
 			<span
@@ -117,7 +160,15 @@ function SourceLine(props: {
 			>
 				{number}
 			</span>
-			<span className="min-w-0 [overflow-wrap:anywhere] whitespace-pre-wrap">{text}</span>
+			<span className="min-w-0 [overflow-wrap:anywhere] whitespace-pre-wrap">
+				{tokens === undefined
+					? text
+					: placed(tokens).map(({ at, content, style }) => (
+							<span key={at} style={style}>
+								{content}
+							</span>
+						))}
+			</span>
 		</>
 	);
 	if (!marked)
@@ -135,6 +186,38 @@ function SourceLine(props: {
 			{words}
 		</mark>
 	);
+}
+
+/**
+ * Each line of an excerpt with its number in the file and its colours.
+ * @param first The number of the first line.
+ * @param lines The lines.
+ * @param tokens The colours of each line, once they are worked out.
+ * @returns The lines.
+ */
+function numbered(
+	first: number,
+	lines: readonly string[],
+	tokens: readonly (readonly CodeToken[])[] | null,
+): { number: number; text: string; tokens: readonly CodeToken[] | undefined }[] {
+	return lines.map((text, offset) => ({ number: first + offset, text, tokens: tokens?.[offset] }));
+}
+
+/**
+ * The tokens of a line, each with the place in the line where it starts, which names it, and the
+ * style that colours it.
+ * @param tokens The tokens.
+ * @returns The tokens with their places and styles.
+ */
+function placed(
+	tokens: readonly CodeToken[],
+): { at: number; content: string; style: CSSProperties | undefined }[] {
+	let at = 0;
+	return tokens.map(({ content, color }) => {
+		const start = at;
+		at += content.length;
+		return { at: start, content, style: color === undefined ? undefined : { color } };
+	});
 }
 
 export { ModelCodeSource };

@@ -6,13 +6,23 @@ import { codeFindingsQuery } from "#ui/architecture-drawing/canvas/picture/reads
 
 type ModelCodeReading = NonNullable<RememberedFindings["models"]>[number];
 
+/** What a code pass names a reading by: its model, its state and the digest of its version. */
+interface CodeReadingName {
+	readonly manifest: Pick<Model["manifest"], "id">;
+	readonly selectedState?: Pick<NonNullable<Model["selectedState"]>, "id" | "lifecycle"> | null;
+	readonly revision: Pick<Model["revision"], "digest">;
+	/** A migration preview, which is not in the vault, so no pass reads it. */
+	readonly migrationPreview?: unknown;
+}
+
 /**
  * Show remembered code evidence only for the exact architecture that the pass read.
  * @param vault The reading's explicit vault.
- * @param model The coherent current, proposal, or retained architecture.
- * @returns Its matching findings and the subjects that carry warning marks.
+ * @param model The coherent current, proposal, or retained architecture, by its name.
+ * @returns Its matching findings, the subjects that carry warning marks, and how the read of the
+ * remembered findings stands.
  */
-function useModelCodeFindings(vault: string, model: Model) {
+function useModelCodeFindings(vault: string, model: CodeReadingName) {
 	const id = model.manifest.id;
 	const state = model.selectedState?.id ?? null;
 	const revision = model.revision.digest;
@@ -30,6 +40,7 @@ function useModelCodeFindings(vault: string, model: Model) {
 		enabled: model.migrationPreview === undefined,
 	});
 	const reading = model.migrationPreview === undefined ? (query.data ?? null) : null;
+	const read = query.status;
 	const warnings = useMemo(
 		() =>
 			new Set(
@@ -41,7 +52,7 @@ function useModelCodeFindings(vault: string, model: Model) {
 			),
 		[reading],
 	);
-	return { reading, warnings };
+	return { reading, warnings, read };
 }
 
-export { useModelCodeFindings, type ModelCodeReading };
+export { useModelCodeFindings, type CodeReadingName, type ModelCodeReading };

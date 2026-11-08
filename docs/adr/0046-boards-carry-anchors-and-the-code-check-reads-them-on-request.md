@@ -1518,3 +1518,29 @@ at another ref can do that too.
 
 The route quotes the other text near the evidence line, also a key that
 somebody wrote into the code. These limits do not prevent that.
+
+## Amendment of 2026-11-08: the code view of Measures starts a pass
+
+TASK-590.13 narrows the rule of TASK-367.24 that a pane never starts a pass.
+The owner asked for it on 2026-11-08, after the code view of Measures said only
+that no code check had read the reading.
+
+When the code view of Measures opens on a reading, and no remembered pass read
+that version of the reading, the page asks `GET /api/vault/code-check` for one
+pass. It names a draft by its state, and Current by no state, as
+`archboard check code` does. The view says that it is checking. When the pass
+ends, the page reads the remembered findings again and shows them. A refused or
+failed pass shows the server's words and a key that tries again.
+
+The limits of TASK-367.24 still hold everywhere else:
+
+- Only the open code view starts a pass. The panes, the warning count and the
+  inspector read the remembered findings, and the route they read on a timer
+  never starts one.
+- A page starts one pass for one version of one reading. The page keeps the
+  outcome for as long as it is open. A pass that ends without a matching
+  reading is not started again until somebody presses the key.
+- Closing the view does not cancel the pass. What it finds is remembered,
+  and the view shows it when it opens again. A page that goes away cancels it,
+  as any caller that hangs up does.
+- A migration preview is not in the vault, so the view starts no pass for it.

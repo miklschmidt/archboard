@@ -9,6 +9,7 @@ import { Dialog, Tabs } from "@archboard/ui-kit/components";
 import { ModelCodeEvidence } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
 import { ModelMeasures } from "#ui/architecture-drawing/model-reader/reading/components/ModelMeasures.tsx";
 import type { Reader } from "#ui/architecture-drawing/model-reader/hooks/use-reader.ts";
+import { useCodeCheck } from "#ui/architecture-drawing/model-reader/reading/hooks/use-code-check.ts";
 import { useModelCodeFindings } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
 import { useSceneAppearances } from "#ui/architecture-drawing/model-reader/reading/hooks/use-scene-appearances.ts";
 import { useShowSubject } from "#ui/architecture-drawing/model-reader/reading/hooks/use-show-subject.ts";
@@ -149,7 +150,7 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 							</Tabs.Trigger>
 						))}
 					</Tabs.List>
-					<Tabs.Content value="code" className="min-h-0 overflow-y-auto">
+					<Tabs.Content value="code" className={PANEL}>
 						<CodePanel reader={reader} />
 					</Tabs.Content>
 					<Tabs.Content value="interface" className={PANEL}>
@@ -179,7 +180,8 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 }
 
 /**
- * The findings of the pass that read the reading on screen.
+ * The findings of the pass that read the reading on screen. Opening the view starts a pass over the
+ * reading when no remembered pass read it.
  * @param props The reader.
  * @param props.reader The reader.
  * @returns The findings.
@@ -187,12 +189,14 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 function CodePanel(props: { readonly reader: Reader }): JSX.Element {
 	const { reader } = props;
 	const { shown } = reader.accepted;
-	const { reading } = useModelCodeFindings(reader.vault, shown.model);
+	const { reading, read } = useModelCodeFindings(reader.vault, shown.model);
+	const check = useCodeCheck(reader.vault, shown.model, { read, matched: reading !== null });
 	const onShow = useShowSubject(reader);
 	return (
 		<ModelCodeEvidence
 			vault={reader.vault}
 			reading={reading}
+			check={check}
 			ends={shown.projection.complete}
 			onShow={onShow}
 		/>

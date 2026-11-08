@@ -1,9 +1,11 @@
-// Where the map and the code disagree: the findings of a pass one at a time, warnings first, with a
-// pager that selects each finding's subject, and the source lines round a finding's evidence with
-// that line marked. The server's route answers the lines, and here a stub answers in its place.
+// Where the map and the code disagree: the findings of a pass, warnings first, as cards beside their
+// code or as a list beside the code of the one chosen, in the layout this browser remembers; the
+// source lines round a finding's evidence with that line marked and coloured by its language; and
+// the pass the view starts when no remembered pass read the reading. The server's routes are
+// answered by a stub in its place.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
-import { afterAll, afterEach, expect, test } from "bun:test";
+import { afterAll, afterEach, beforeEach, expect, test } from "bun:test";
 import { createElement, type ComponentProps } from "react";
 
 GlobalRegistrator.register();
@@ -12,18 +14,39 @@ const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query
 const { act, cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
 const { ModelCodeEvidence } =
 	await import("#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx");
+const { useModelCodeFindings } =
+	await import("#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts");
+const { useCodeCheck } =
+	await import("#ui/architecture-drawing/model-reader/reading/hooks/use-code-check.ts");
+const { CODE_FINDINGS_LAYOUT_KEY, chooseCodeFindingsLayout } =
+	await import("#ui/architecture-drawing/model-reader/reading/clients/code-findings-layout.ts");
+const { readRetainedFrom, retainedReads } =
+	await import("#ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts");
+const { fetchCodeFindings } =
+	await import("#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts");
 
 type Props = ComponentProps<typeof ModelCodeEvidence>;
 type Reading = NonNullable<Props["reading"]>;
 
 const realFetch = globalThis.fetch;
+const observer = Object.getOwnPropertyDescriptor(globalThis, "IntersectionObserver")!;
 const clients: InstanceType<typeof QueryClient>[] = [];
 const VAULT = "/work/shop/.archboard/vault";
 
+// A page that cannot tell where an element is counts every finding's source as near, so each
+// excerpt is read at once.
+// The findings are read from the server stub of each test, whatever reader another test installed.
+beforeEach(() => {
+	Reflect.deleteProperty(globalThis, "IntersectionObserver");
+	readRetainedFrom({ ...retainedReads(), codeFindings: fetchCodeFindings });
+});
 afterEach(() => {
 	cleanup();
+	chooseCodeFindingsLayout("cards");
+	localStorage.clear();
 	for (const client of clients.splice(0)) client.clear();
 	globalThis.fetch = realFetch;
+	Object.defineProperty(globalThis, "IntersectionObserver", observer);
 });
 afterAll(async () => {
 	await Bun.sleep(1);
@@ -82,17 +105,31 @@ const ENDS: Props["ends"] = {
 	edges: [],
 };
 
+/** The lines round the call, as the server answers them. */
+const LINES = {
+	success: true,
+	repo: CALL.repo,
+	path: CALL.path,
+	line: CALL.line,
+	first: 18,
+	lines: ["const a = 1;", "b();", "c();", "work();", "e();", "f();", "g();"],
+};
+
 /**
- * Answer every read of source lines as a test says, and keep what was asked.
- * @param reply The answer.
+ * Answer every request as a test says, and keep what was asked.
+ * @param reply The answer to each address.
  * @returns The addresses asked for.
  */
-function answering(reply: () => Response): string[] {
-	const asked: string[] = [];
+function answering(reply: (address: URL) => Response | Promise<Response>): URL[] {
+	const asked: URL[] = [];
 	globalThis.fetch = Object.assign(
 		async (input: RequestInfo | URL) => {
-			asked.push(input instanceof Request ? input.url : input.toString());
-			return reply();
+			const address = new URL(
+				input instanceof Request ? input.url : input.toString(),
+				"http://archboard.invalid",
+			);
+			asked.push(address);
+			return reply(address);
 		},
 		{ preconnect: realFetch.preconnect },
 	);
@@ -100,23 +137,33 @@ function answering(reply: () => Response): string[] {
 }
 
 /**
- * Mount the findings.
- * @returns The subjects that the pager selected, in turn.
+ * A client of the page's cache.
+ * @returns The client.
  */
-function mount(): (string | null)[] {
-	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-	clients.push(client);
+function cacheClient(): InstanceType<typeof QueryClient> {
+	const made = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	clients.push(made);
+	return made;
+}
+
+/**
+ * Mount the findings of the pass.
+ * @param check How the pass the view started stands.
+ * @returns The subjects that choosing a finding selected, in turn.
+ */
+function mount(check: Props["check"] = { status: "checking" }): (string | null)[] {
 	const shown: (string | null)[] = [];
 	render(
 		createElement(
 			QueryClientProvider,
-			{ client },
+			{ client: cacheClient() },
 			createElement(ModelCodeEvidence, {
 				vault: VAULT,
 				reading: READING,
+				check,
 				ends: ENDS,
 				/**
-				 * Report the subject a step selected.
+				 * Report the subject a choice selected.
 				 * @param id The subject, or null for the whole model.
 				 */
 				onShow: (id) => {
@@ -129,67 +176,142 @@ function mount(): (string | null)[] {
 }
 
 /**
- * The words of a part of the findings.
- * @param slot The part.
- * @returns Its words, or null when it is absent.
+ * The findings on screen, in their order.
+ * @param slot The part each finding is drawn as.
+ * @returns Their codes.
  */
-function words(slot: string): string | null {
-	return document.querySelector(`[data-slot="${slot}"]`)?.textContent ?? null;
+function codes(slot: "code-finding" | "code-finding-row"): (string | null)[] {
+	return [...document.querySelectorAll(`[data-slot="${slot}"]`)].map((one) =>
+		one.getAttribute("data-finding-code"),
+	);
 }
 
 /**
- * What the card shows now.
- * @returns The code of its finding, where the pager stands and the route.
+ * Press something.
+ * @param element What to press.
  */
-function card(): { code: string | null; position: string | null; route: string | null } {
-	const finding = document.querySelector('[data-slot="code-finding"]');
-	return {
-		code: finding?.getAttribute("data-finding-code") ?? null,
-		position: words("code-evidence-position"),
-		route: words("code-finding-route"),
-	};
-}
-
-/**
- * Press a key of the pager.
- * @param slot The key.
- */
-async function press(slot: "code-evidence-next" | "code-evidence-back"): Promise<void> {
+async function press(element: Element): Promise<void> {
 	await act(async () => {
-		fireEvent.click(document.querySelector(`[data-slot="${slot}"]`)!);
+		fireEvent.click(element);
 	});
 }
 
-test("the pager walks the warnings first, and each step selects the finding's subject", async () => {
+/**
+ * The storage of a page that cannot reach it.
+ * @throws {Error} Always.
+ */
+function storageOff(): never {
+	throw new Error("Storage is off.");
+}
+
+/** Nothing happens: the view's findings are not chosen here. */
+function nothing(): void {
+	// No finding is chosen.
+}
+
+/**
+ * The rows of the list.
+ * @returns The rows, in order.
+ */
+function rows(): Element[] {
+	return [...document.querySelectorAll('[data-slot="code-finding-row"]')];
+}
+
+/**
+ * The passes a page asked for.
+ * @param asked The addresses it asked for.
+ * @returns The addresses of the code check.
+ */
+function checksIn(asked: readonly URL[]): URL[] {
+	return asked.filter((one) => one.pathname === "/api/vault/code-check");
+}
+
+/**
+ * Switch the layout.
+ * @param layout The layout to switch to.
+ */
+async function lay(layout: "cards" | "list"): Promise<void> {
+	await press(document.querySelector(`[data-slot="code-findings-layout"] [data-choice="${layout}"]`)!);
+}
+
+// The first test, because the page reads its storage once, when the layout is first asked for.
+test("a page starts with the layout its browser remembers", () => {
 	answering(() => Response.json({ error: "no" }, { status: 404 }));
-	const shown = mount();
-	expect(card()).toEqual({
-		code: "RELATIONSHIP_UNDRAWN",
-		position: "1 of 3",
-		route: "GatewaytoWorker",
-	});
-	await press("code-evidence-next");
-	expect(card()).toEqual({ code: "BINDING_SYMBOL_MISSING", position: "2 of 3", route: "Gateway" });
-	await press("code-evidence-next");
-	expect(card().code).toBe("EXPOSED_UNUSED");
-	await press("code-evidence-next");
-	expect(card().position).toBe("1 of 3");
-	await press("code-evidence-back");
-	expect(card().position).toBe("3 of 3");
-	expect(shown).toEqual(["Shop#Gateway", "Shop#Worker", "Shop#Worker", "Shop#Worker"]);
+	localStorage.setItem(CODE_FINDINGS_LAYOUT_KEY, "list");
+	mount();
+	expect(document.querySelector('[data-slot="code-evidence"]')?.getAttribute("data-layout")).toBe(
+		"list",
+	);
 });
 
-test("the excerpt marks the evidence line among the lines round it", async () => {
-	const asked = answering(() =>
-		Response.json({
-			success: true,
-			repo: CALL.repo,
-			path: CALL.path,
-			line: CALL.line,
-			first: 18,
-			lines: ["a", "b", "c", "work();", "e", "f", "g"],
-		}),
+test("cards show every finding beside its code, warnings first, and a card's key selects its subject", async () => {
+	answering(() => Response.json({ error: "no" }, { status: 404 }));
+	const shown = mount();
+	expect(codes("code-finding")).toEqual([
+		"RELATIONSHIP_UNDRAWN",
+		"BINDING_SYMBOL_MISSING",
+		"EXPOSED_UNUSED",
+	]);
+	expect(document.querySelectorAll('[data-slot="code-source"]')).toHaveLength(3);
+	const keys = [...document.querySelectorAll('[data-slot="code-finding-show"]')];
+	expect(keys.map((key) => key.getAttribute("aria-label"))).toEqual([
+		"Show Worker on the picture",
+		"Show Gateway on the picture",
+		"Show Worker on the picture",
+	]);
+	await press(keys[1]!);
+	expect(shown).toEqual(["Shop#Gateway"]);
+});
+
+test("the list walks its rows with the keys, and each finding chosen selects its subject", async () => {
+	answering(() => Response.json({ error: "no" }, { status: 404 }));
+	const shown = mount();
+	await lay("list");
+	expect(codes("code-finding-row")).toEqual([
+		"RELATIONSHIP_UNDRAWN",
+		"BINDING_SYMBOL_MISSING",
+		"EXPOSED_UNUSED",
+	]);
+	expect(codes("code-finding")).toEqual(["RELATIONSHIP_UNDRAWN"]);
+	await act(async () => {
+		fireEvent.keyDown(rows()[0]!, { key: "ArrowDown" });
+	});
+	expect(codes("code-finding")).toEqual(["BINDING_SYMBOL_MISSING"]);
+	expect(document.activeElement).toBe(rows()[1]!);
+	await act(async () => {
+		fireEvent.keyDown(rows()[1]!, { key: "End" });
+	});
+	expect(codes("code-finding")).toEqual(["EXPOSED_UNUSED"]);
+	await press(rows()[0]!);
+	expect(rows()[0]!.getAttribute("aria-current")).toBe("true");
+	expect(shown).toEqual(["Shop#Gateway", "Shop#Worker", "Shop#Worker"]);
+});
+
+test("the switch is remembered, and a page without storage still switches", async () => {
+	answering(() => Response.json({ error: "no" }, { status: 404 }));
+	mount();
+	expect(document.querySelector('[data-slot="code-evidence"]')?.getAttribute("data-layout")).toBe(
+		"cards",
 	);
+	await lay("list");
+	expect(localStorage.getItem(CODE_FINDINGS_LAYOUT_KEY)).toBe("list");
+	cleanup();
+	const storage = Object.getOwnPropertyDescriptor(globalThis, "localStorage")!;
+	Object.defineProperty(globalThis, "localStorage", { configurable: true, get: storageOff });
+	try {
+		chooseCodeFindingsLayout("cards");
+		mount();
+		await lay("list");
+		expect(document.querySelector('[data-slot="code-evidence"]')?.getAttribute("data-layout")).toBe(
+			"list",
+		);
+	} finally {
+		Object.defineProperty(globalThis, "localStorage", storage);
+	}
+});
+
+test("the excerpt marks the evidence line among the lines round it, in the colours of its language", async () => {
+	const asked = answering(() => Response.json(LINES));
 	mount();
 	await waitFor(() => expect(document.querySelector("mark")).not.toBeNull());
 	const lines = [...document.querySelectorAll("[data-line]")];
@@ -205,14 +327,19 @@ test("the excerpt marks the evidence line among the lines round it", async () =>
 	expect(document.querySelectorAll("mark")).toHaveLength(1);
 	expect(document.querySelector("mark")?.getAttribute("data-line")).toBe("21");
 	expect(document.querySelector("mark")?.textContent).toContain("work();");
-	const address = new URL(asked[0]!, "http://archboard.invalid");
-	expect(address.pathname).toBe("/api/code/source-lines");
-	expect(Object.fromEntries(address.searchParams)).toEqual({
+	expect(asked[0]?.pathname).toBe("/api/code/source-lines");
+	expect(Object.fromEntries(asked[0]!.searchParams)).toEqual({
 		vault: VAULT,
 		repo: CALL.repo,
 		path: CALL.path,
 		line: String(CALL.line),
 	});
+	await waitFor(() => expect(document.querySelector("code[data-highlighted]")).not.toBeNull());
+	const keyword = [...document.querySelectorAll<HTMLElement>("[data-line='18'] span[style]")].find(
+		(token) => token.textContent === "const",
+	);
+	expect(keyword?.style.color).toBe("var(--code-token-keyword)");
+	expect(document.querySelector("mark")?.textContent).toContain("work();");
 });
 
 test.each([404, 500])(
@@ -228,3 +355,116 @@ test.each([404, 500])(
 		expect(document.querySelector("mark")).toBeNull();
 	},
 );
+
+/** The reading on screen, by the names a code pass gives it. */
+const MODEL = {
+	manifest: { id: "Shop" },
+	selectedState: { id: "Current", lifecycle: "current" },
+	revision: { digest: "a".repeat(64) },
+} as const;
+
+/**
+ * The code view of the reading on screen, as Measures draws it: the remembered findings, and the
+ * pass it starts when none of them read the reading.
+ * @param props The reading.
+ * @param props.model The reading on screen.
+ * @returns The view.
+ */
+function CodeView(props: { readonly model: typeof MODEL | typeof DRAFT }) {
+	const { reading, read } = useModelCodeFindings(VAULT, props.model);
+	const check = useCodeCheck(VAULT, props.model, { read, matched: reading !== null });
+	return createElement(ModelCodeEvidence, {
+		vault: VAULT,
+		reading,
+		check,
+		ends: ENDS,
+		onShow: nothing,
+	});
+}
+
+/** A draft of the model, which a pass reads only when it is asked for by its state. */
+const DRAFT = {
+	manifest: { id: "Shop" },
+	selectedState: { id: "TASK-1", lifecycle: "draft" },
+	revision: { digest: "b".repeat(64) },
+} as const;
+
+/**
+ * A server whose memory is empty until the code check runs.
+ * @param reading What the pass finds.
+ * @returns The addresses asked for, and how to let the pass finish.
+ */
+function serverWithPass(reading: Reading): { asked: URL[]; finish: () => void } {
+	const { promise: passed, resolve: finish } = Promise.withResolvers<void>();
+	let checked = false;
+	const asked = answering(async (address) => {
+		if (address.pathname === "/api/vault/code-check") {
+			await passed;
+			checked = true;
+			return Response.json({ success: true, timings: [], states: [], findings: [], skipped: [], behind: [] });
+		}
+		if (address.pathname === "/api/vault/code-findings")
+			return Response.json({ success: true, readings: [], models: checked ? [reading] : [] });
+		return Response.json({ error: "no" }, { status: 404 });
+	});
+	return { asked, finish };
+}
+
+test("the code view starts one pass when no pass read the reading, and then shows what it found", async () => {
+	const { asked, finish } = serverWithPass(READING);
+	const cache = cacheClient();
+	const view = render(
+		createElement(QueryClientProvider, { client: cache }, createElement(CodeView, { model: MODEL })),
+	);
+	await waitFor(() =>
+		expect(document.querySelector('[data-slot="code-evidence-checking"]')).not.toBeNull(),
+	);
+	await waitFor(() =>
+		expect(checksIn(asked)).toHaveLength(1),
+	);
+	expect(asked.find((one) => one.pathname === "/api/vault/code-check")?.searchParams.has("state")).toBe(
+		false,
+	);
+	view.unmount();
+	render(
+		createElement(QueryClientProvider, { client: cache }, createElement(CodeView, { model: MODEL })),
+	);
+	await act(async () => {
+		finish();
+	});
+	await waitFor(() => expect(codes("code-finding")).toHaveLength(3));
+	expect(checksIn(asked)).toHaveLength(1);
+});
+
+test("a draft is checked by its state, and a refused pass says why and tries again", async () => {
+	let refuse = true;
+	const asked = answering((address) => {
+		if (address.pathname === "/api/vault/code-check")
+			return refuse
+				? Response.json(
+						{ success: false, code: "NO_SUCH_DRAFT", error: "No document has the draft TASK-1." },
+						{ status: 422 },
+					)
+				: Response.json({ success: true, timings: [], states: [], findings: [], skipped: [], behind: [] });
+		if (address.pathname === "/api/vault/code-findings")
+			return Response.json({ success: true, readings: [], models: [] });
+		return Response.json({ error: "no" }, { status: 404 });
+	});
+	render(
+		createElement(QueryClientProvider, { client: cacheClient() }, createElement(CodeView, { model: DRAFT })),
+	);
+	await waitFor(() =>
+		expect(document.querySelector('[data-slot="code-evidence-failed"]')?.textContent).toContain(
+			"No document has the draft TASK-1.",
+		),
+	);
+	expect(checksIn(asked)[0]?.searchParams.get("state")).toBe("TASK-1");
+	refuse = false;
+	await press(document.querySelector('[data-slot="code-evidence-retry"]')!);
+	await waitFor(() => expect(checksIn(asked)).toHaveLength(2));
+	await waitFor(() =>
+		expect(document.querySelector('[data-slot="code-evidence-failed"]')?.textContent).toContain(
+			"did not read this version",
+		),
+	);
+});

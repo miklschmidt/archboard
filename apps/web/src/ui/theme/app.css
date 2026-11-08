@@ -1396,3 +1396,21 @@ html[data-theme-switching] *::after {
 		scroll-behavior: auto !important;
 	}
 }
+
+/* The colours of a source excerpt (code-highlighter.ts): shiki's theme names these variables in
+   place of colours, so a theme switch recolours the code without highlighting it again. Each is a
+   colour of the palette mixed a quarter of the way to the foreground, which darkens it on the
+   light ground and lightens it on the dark one, so the code reads in both themes. */
+:root {
+	--code-foreground: var(--body-foreground);
+	--code-background: transparent;
+	--code-token-keyword: color-mix(in oklch, var(--semantic-violet) 74%, var(--foreground));
+	--code-token-string: color-mix(in oklch, var(--semantic-emerald) 70%, var(--foreground));
+	--code-token-string-expression: var(--code-token-string);
+	--code-token-constant: color-mix(in oklch, var(--semantic-orange) 74%, var(--foreground));
+	--code-token-function: color-mix(in oklch, var(--semantic-blue) 74%, var(--foreground));
+	--code-token-parameter: color-mix(in oklch, var(--semantic-rose) 74%, var(--foreground));
+	--code-token-link: var(--code-token-function);
+	--code-token-comment: var(--muted-foreground);
+	--code-token-punctuation: var(--muted-foreground);
+}

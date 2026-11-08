@@ -559,7 +559,9 @@ A count of none is in a quieter ink, so what is there stands out. An empty cell 
 
 ### Warning card
 
-`Where the map and the code disagree` shows the findings of the last code check one at a time, the warnings first. A plate holds the count of warnings, a pager and the card of one finding. The pager is two small quiet keys round `N of M` in mono. A step selects the subject of its finding on the picture, and the keys keep the focus.
+`Where the map and the code disagree` shows the findings of the last code check, the warnings first. When the view opens on a reading that no remembered pass read, it starts one pass and says `Checking this reading against its code…` on the Well Floor until the pass ends. A pass that fails says why, with a quiet `Try again` key.
+
+The head of the view holds the count of warnings, when the check ran and a switch of two layouts, `Cards` and `List`. The browser remembers the layout, and it starts with `Cards`. In `Cards`, every finding is a card with its source beside it, one under the other, in a column that scrolls. A source is read when its card comes near the screen. A small quiet key at the top right of a card selects the subject of its finding on the picture, and the key keeps the focus. In `List`, a plate holds a row for each finding, and the card and the source of the chosen finding stand beside it. A row says the finding's name, what it is about and the first line of its words. The chosen row is raised out of the plate. The arrows, Home and End walk the rows, a row selects the subject of its finding on the picture, and the row keeps the focus.
 
 The card is a Control Face with `shadow-raised`, 4px corners and an inset ring of 1px. The ring is Changed Orange at 45% for a warning and the Rule tone for information. The card holds these, from the top:
 
@@ -567,11 +569,10 @@ The card is a Control Face with `shadow-raised`, 4px corners and an inset ring o
 - the route in Title, from one module to the other with an arrow between them, or the one module that the finding is about
 - the check's own words in Body Ink
 - how strong each piece of evidence is: `Resolved by analysis` with a check in Added Green, or `Matched by name only` with a question mark in muted ink
-- when the check ran
 
 With several pieces of evidence, each piece is a key that shows its file and line, and it chooses the source beside the card.
 
-Beside the plate, the source of the evidence stands on the Well Floor with 6px corners and an inset ring of 1px. Its caption holds the path in mono and the kind of evidence. Under it stand the evidence line and up to three lines on each side of it, in mono with their numbers in muted ink. The evidence line takes Changed Orange at 16% with a 2px edge of Changed Orange at its start. A finding with no evidence says that it names no line. While the lines load, the well says `Reading the source…`. If the server has no lines or fails, the well says `Source unavailable.` and the card stays complete.
+Beside the plate, the source of the evidence stands on the Well Floor with 6px corners and an inset ring of 1px. Its caption holds the path in mono and the kind of evidence. Under it stand the evidence line and up to three lines on each side of it, in mono with their numbers in muted ink. The code takes the colours of its language once its grammar loads: keywords violet, strings emerald, constants orange, functions blue, parameters rose, comments and punctuation muted. Each is the palette colour mixed a quarter of the way to the foreground, so it reads on the Well Floor of either theme. The evidence line takes Changed Orange at 16% with a 2px edge of Changed Orange at its start. A finding with no evidence says that it names no line. While the lines load, the well says `Reading the source…`. If the server has no lines or fails, the well says `Source unavailable.` and the card stays complete.
 
 ### Right panel
 
