@@ -30,7 +30,8 @@ function scratch(): string {
 
 /**
  * Write a stand-in for the `archboard` program. It answers from files in a directory it is told
- * about by FAKE_DIR, and exits as FAKE_EXIT says for `check`.
+ * about by FAKE_DIR, and exits as FAKE_EXIT says for `check`. A picture names the vault it draws,
+ * so the base and the head differ, unless FAKE_PICTURE gives them all one text.
  * @param directory Where to write it.
  * @returns The program's path.
  */
@@ -60,7 +61,7 @@ case "$1" in
 			footprint) cat "$FAKE_DIR/footprint.json" ;;
 			render)
 				while [ $# -gt 0 ]; do
-					if [ "$1" = "--out" ]; then echo "<svg/>" > "$2"; fi
+					if [ "$1" = "--out" ]; then echo "<svg>\${FAKE_PICTURE:-$dir}</svg>" > "$2"; fi
 					shift
 				done ;;
 		esac ;;

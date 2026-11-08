@@ -12,6 +12,9 @@ interface PictureLinks {
 	readonly dark?: string | undefined;
 }
 
+/** How the one picture of an unchanged architecture is drawn: whole, or close up on the code. */
+type PictureSameness = "whole" | "close-up";
+
 /** Everything the comment says. */
 interface PullRequestReport {
 	readonly baseSha: string;
@@ -26,6 +29,8 @@ interface PullRequestReport {
 	readonly footprintNote?: string | undefined;
 	readonly before?: PictureLinks | undefined;
 	readonly after?: PictureLinks | undefined;
+	/** The base and the head draw the same picture, so `after` is the only picture. */
+	readonly same?: PictureSameness | undefined;
 	/** Why the pictures are absent or incomplete. */
 	readonly picturesNote?: string | undefined;
 	readonly outOfPlan: OutOfPlanDecision;
@@ -139,11 +144,51 @@ function planProblem(choice: StateChoice): string | undefined {
 }
 
 /**
- * The before and after pictures, stacked.
+ * The one picture of an architecture that the pull request leaves as it was.
+ * @param report The report.
+ * @param picture The picture's addresses.
+ * @returns The Markdown lines.
+ */
+function samePictureSection(report: PullRequestReport, picture: PictureLinks): string[] {
+	const drawn =
+		report.choice.state === undefined
+			? "the current architecture"
+			: `proposal "${report.choice.state.name}"`;
+	const closeUp = report.same === "close-up";
+	return [
+		closeUp ? "### Where the code changed" : "### Architecture",
+		"",
+		`The architecture is the same at the base \`${report.baseSha.slice(0, 7)}\` and the head \`${report.headSha.slice(0, 7)}\`. ${
+			closeUp
+				? `The picture shows ${drawn} close up on the modules whose code changed.`
+				: `The picture shows ${drawn}.`
+		}`,
+		"",
+		pictureHtml(
+			closeUp ? "The modules whose code changed" : "Architecture of this pull request",
+			picture,
+		),
+		"",
+	];
+}
+
+/**
+ * The pictures: one when the architecture is the same at the base and the head, else two.
  * @param report The report.
  * @returns The Markdown lines.
  */
 function picturesSection(report: PullRequestReport): string[] {
+	return report.same !== undefined && report.after !== undefined
+		? samePictureSection(report, report.after)
+		: beforeAndAfterSection(report);
+}
+
+/**
+ * The before and after pictures, stacked.
+ * @param report The report.
+ * @returns The Markdown lines.
+ */
+function beforeAndAfterSection(report: PullRequestReport): string[] {
 	const after =
 		report.choice.state === undefined
 			? "current architecture at the head"
@@ -284,5 +329,6 @@ export {
 	planProblem,
 	pullRequestComment,
 	type PictureLinks,
+	type PictureSameness,
 	type PullRequestReport,
 };

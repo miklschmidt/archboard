@@ -95,7 +95,7 @@ An agent that plans a change first writes it as a proposal: the architecture aft
 <Steps>
 
 1. **The proposal.** Its name and summary, and what it adds, removes and changes.
-2. **Before and after.** The current architecture at the base commit, and the proposal at the head commit, as SVG in the reader's light or dark theme.
+2. **Before and after.** The current architecture at the base commit, and the proposal at the head commit, as SVG in the reader's light or dark theme. If the two pictures are the same, the comment shows one picture, close up on the modules whose code changed.
 3. **The footprint.** The modules whose code the pull request changed, in three groups: planned and changed, changed outside the plan, and planned but unchanged.
 4. **The map.** A link to the full-size picture and to the vault at the head commit.
 
@@ -147,7 +147,7 @@ The Action takes the first of these that it finds:
 
 </Steps>
 
-With none, the comment shows the architecture before and after and the changed modules, and judges nothing against a plan.
+With none, the comment shows the changed modules and judges nothing against a plan. If the pull request leaves the architecture as it was, one picture shows the current architecture, close up on the modules whose code changed. [Pull request #1 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/1) has such a comment.
 
 The plan is what the proposal changes against the current architecture at the base, as the pictures show: each module that it adds, removes or changes, and both ends of each relationship or flow step that it adds, removes or changes. This holds for a draft and for a proposal that the branch already adopted, as the skill does once the code matches it.
 

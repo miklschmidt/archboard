@@ -75,6 +75,7 @@ describe("the sticky comment", () => {
 			outsidePlan: ["Stock API"],
 			plannedUnchanged: ["Fulfilment worker"],
 			changed: ["Checkout API", "Stock API"],
+			changedIds: ["m#checkout", "m#stock"],
 		},
 		outOfPlan: { status: "fail", failed: true },
 		overrideLabel: "archboard: out of plan",
@@ -240,6 +241,7 @@ describe("the entry", () => {
 		expect(comments).toHaveLength(1);
 		expect(comments[0]?.body).toContain(COMMENT_MARKER);
 		expect(comments[0]?.body).toContain("Stock API");
+		expect(comments[0]?.body).toContain(`pr-7/${headSha}/before-light.svg`);
 		expect(comments[0]?.body).toContain(`pr-7/${headSha}/after-light.svg`);
 		const published = Bun.spawnSync([
 			"git",
@@ -247,7 +249,18 @@ describe("the entry", () => {
 			"show",
 			`archboard-assets:pr-7/${headSha}/after-light.svg`,
 		]);
-		expect(published.stdout.toString().trim()).toBe("<svg/>");
+		expect(published.stdout.toString()).toStartWith("<svg>");
+	});
+
+	test("equal pictures at the base and the head become one picture, close up on the changed code", async () => {
+		const result = await step({ FAKE_PICTURE: "same" });
+		expect(result.exitCode).toBe(0);
+		expect(result.commands).toContain("--focus Shop/a#n1 --focus Shop/a#n2");
+		const body = comments[0]?.body ?? "";
+		expect(body).toContain("### Where the code changed");
+		expect(body).toContain(`pr-7/${headSha}/focus-light.svg`);
+		expect(body).not.toContain("before-light.svg");
+		expect(body).toMatch(/\[Open the map, full size\]\([^)]*after-light\.svg\)/);
 	});
 
 	test("fail mode fails, the override label lets the pull request through, and the comment is updated", async () => {

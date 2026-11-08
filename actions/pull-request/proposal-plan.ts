@@ -87,6 +87,8 @@ interface Buckets {
 	readonly plannedUnchanged: readonly string[];
 	/** Every changed module, which the comment lists when there is no proposal. */
 	readonly changed: readonly string[];
+	/** Every changed module by stable identity, which a picture can draw close up. */
+	readonly changedIds: readonly string[];
 }
 
 /** The plan of a proposal. */
@@ -288,6 +290,7 @@ function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 			.map(([, name]) => name)
 			.toSorted(),
 		changed: [...changed.values()].toSorted(),
+		changedIds: [...changed.keys()].toSorted(),
 	};
 }
 

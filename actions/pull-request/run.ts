@@ -218,7 +218,9 @@ async function buildReport(
 	// The pictures replace those of older heads, so a run of an older head never pushes them.
 	const problem = await publicationProblem(context.access, context.number, context.headSha);
 	const pictures =
-		problem === undefined ? await makePictures(context, trees, choice.state) : { note: problem };
+		problem === undefined
+			? await makePictures(context, trees, choice.state, footprint.buckets?.changedIds)
+			: { note: problem };
 	return {
 		baseSha: context.baseSha,
 		headSha: context.headSha,
@@ -229,10 +231,11 @@ async function buildReport(
 		footprintNote: footprint.note,
 		before: pictures.before,
 		after: pictures.after,
+		same: pictures.same,
 		picturesNote: pictures.note,
 		outOfPlan: judge(context, choice, footprint.buckets),
 		overrideLabel: context.overrideLabel,
-		mapUrl: pictures.after?.light,
+		mapUrl: pictures.map,
 		vaultUrl: vaultAddress(context, trees, proposals.vault?.path),
 	};
 }
