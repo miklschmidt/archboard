@@ -4,6 +4,7 @@
 // - an `archboard …` line in code that runs no command, or passes a flag that its command lacks;
 // - a `with:` key under one of this repository's Actions that the Action has no input for;
 // - a workflow that sets up another Node.js than the check Action's default;
+// - an `ARCHBOARD_…` environment variable that the CLI does not read;
 // - a code span that names an Action input, an Action output or a finding code without linking to
 //   its row in the reference. The link makes a rename visible: `links.ts` fails on its anchor.
 //
@@ -23,6 +24,7 @@ const BUILT_INS = new Set(["help", "version"]);
 const commands = new Map(reference.commands.map((command) => [command.name, command]));
 const shared = new Map(reference.shared.map((option) => [option.key, option.spellings]));
 const actions = new Map(reference.actions.map((action) => [action.slug, action]));
+const environment = new Set(reference.environment.map((entry) => entry.name));
 const findings = new Set(reference.findings.flatMap((finding) => finding.codes));
 
 /** Each problem, as `file: text`. */
@@ -224,6 +226,10 @@ function checkMentions(file: string, prose: string): void {
 			problems.push(
 				`${file}: \`${span}\` names a finding; link it to reference/findings/#${span.toLowerCase().replaceAll("_", "-")}`,
 			);
+		}
+		const variable = /^(ARCHBOARD_[A-Z_]+)(?:=.*)?$/u.exec(span)?.[1];
+		if (variable !== undefined && !environment.has(variable)) {
+			problems.push(`${file}: the CLI reads no environment variable ${variable}`);
 		}
 		checkShell(file, span);
 	}

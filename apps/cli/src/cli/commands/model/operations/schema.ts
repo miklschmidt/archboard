@@ -16,6 +16,15 @@ import { defineCommand } from "#cli/contract/protocol/contract.ts";
 
 const model = ArchitectureModelReadSchema.options[0];
 
+/** The JSON that `model edit` reads. `--doing` gives the doing line, so the JSON leaves it out. */
+const [correction, proposal, description, batch] = ArchitectureModuleEditSchema.options;
+const ModelEditRequestSchema = z.union([
+	correction.omit({ doing: true }),
+	proposal.omit({ doing: true }),
+	description.omit({ doing: true }),
+	batch.omit({ doing: true }),
+]);
+
 /** The schemas, by the names that the skill uses. */
 const SCHEMA_NAMES = [
 	"model-manifest",
@@ -35,7 +44,7 @@ const SCHEMAS: Readonly<Record<SchemaName, readonly [string, z.ZodType]>> = {
 	module: ["Canonical module definition", model.shape.modules.element.omit({ file: true })],
 	flows: ["Independent flow collection", model.shape.collections.element.omit({ file: true })],
 	"model-initialize": ["Canonical initialization intent", ArchitectureInitializationRequestSchema],
-	"model-edit": ["Claimed canonical edit intent", ArchitectureModuleEditSchema],
+	"model-edit": ["Claimed canonical edit intent", ModelEditRequestSchema],
 	"model-import": ["Portable canonical installation", ArchitectureImportRequestSchema],
 	"model-migrate": ["Explicit legacy migration intent", ArchitectureMigrationRequestSchema],
 	"vault-config": ["Shared semantic vocabulary", VaultConfigurationSchema],

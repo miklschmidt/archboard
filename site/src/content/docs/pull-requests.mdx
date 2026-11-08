@@ -39,12 +39,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      # The checkout's own TypeScript is the default TypeScript server.
+      - run: npm ci
+      # A server for each other language in .archboard/language-servers.json.
+      - run: pip install pyright
       - uses: miklschmidt/archboard/actions/check@main
         with:
           version: 0.2.0
 ```
 
-The code check resolves a call only through a language server, so install the repository's dependencies and servers first, as [the gate in CI](../gate/#in-ci) shows. Without a server, the finding below stays information.
+The code check resolves a call only through a language server, so the job installs the dependencies and the servers first. [The gate in CI](../gate/#in-ci) says which servers to install. Without a server, the finding below stays information.
 
 In the relay example, the code is in one repository and the manifest is in another. The annotation on `services/intake/src/accept.ts` line 51 reads:
 

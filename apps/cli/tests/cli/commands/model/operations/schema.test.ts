@@ -96,18 +96,19 @@ test("the printed input schemas accept and refuse the same expressible input as 
 	const cases = [
 		{
 			name: "model-initialize" as const,
-			schema: ArchitectureInitializationRequestSchema,
+			accepts: (input: object) => ArchitectureInitializationRequestSchema.safeParse(input).success,
 			input: { name: "Shop", operationId: "init", writer: "agent", doing: "Initialize model" },
 		},
 		{
+			// `model edit` takes the doing line from `--doing` and adds it to the JSON it read.
 			name: "model-edit" as const,
-			schema: ArchitectureModuleEditSchema,
+			accepts: (input: object) =>
+				ArchitectureModuleEditSchema.safeParse({ ...input, doing: "Add initial state" }).success,
 			input: {
 				target: { model: "Shop", state: null },
 				expectedRevision: { digest: "abc", files: [] },
 				operationId: "edit",
 				writer: "agent",
-				doing: "Add initial state",
 				claim: "claim",
 				proposal: { type: "create", name: "Initial" },
 				changes: [],
@@ -116,10 +117,10 @@ test("the printed input schemas accept and refuse the same expressible input as 
 	];
 	for (const item of cases) {
 		const validate = ajv.compile(jsonSchema(item.name));
-		expect(item.schema.safeParse(item.input).success).toBe(true);
+		expect(item.accepts(item.input)).toBe(true);
 		expect(validate(item.input)).toBe(true);
 		const invalid = { ...item.input, operationId: 42 };
-		expect(item.schema.safeParse(invalid).success).toBe(false);
+		expect(item.accepts(invalid)).toBe(false);
 		expect(validate(invalid)).toBe(false);
 	}
 	const validatePortable = ajv.compile(jsonSchema("model-import"));
