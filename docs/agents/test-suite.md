@@ -108,6 +108,7 @@ The code check's rust-analyzer builds in `target/rust-analyzer`, so it never wai
 `lint:core-docs`, rustdoc over every doc comment of the crates, and
 `format:core` checks their formatting with `cargo fmt`.
 `lint:all` includes `lint:css`, which applies the shared import boundaries to authored CSS.
+`lint:all` includes `lint:workflows`, which runs actionlint and its shellcheck over `.github/workflows`.
 The CSS fixtures and package graph own the refusal and dependency regressions.
 The hosted run includes opener persistence and the entire browser inventory.
 The workflow retains its full output as the `validation-log` artifact.

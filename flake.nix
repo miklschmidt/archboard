@@ -222,6 +222,8 @@
               # configures it, and it runs the go command to load packages.
               pkgs.go
               pkgs.gopls
+              # Lints the GitHub workflows, and their scripts with shellcheck.
+              pkgs.actionlint
             ];
             # rust-analyzer reads the standard library's source from here.
             RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";

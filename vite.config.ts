@@ -314,6 +314,12 @@ export default defineConfig({
 					"cargo clippy --locked --workspace --all-targets --target wasm32-unknown-unknown -- --deny warnings",
 				cache: coreCache,
 			},
+			// actionlint checks each workflow's syntax, expressions and action inputs, and shellcheck
+			// checks its run scripts.
+			"lint:workflows": {
+				command: "actionlint",
+				cache: { input: [".github/workflows/**"] },
+			},
 			// rustdoc reads every doc, private ones too, and fails on any of its lints.
 			"lint:core-docs": {
 				command:
@@ -336,7 +342,14 @@ export default defineConfig({
 				cache: false,
 			},
 			"lint:all": {
-				dependsOn: ["lint:tests", "lint:policy", "lint:css", "lint:core", "lint:core-docs"],
+				dependsOn: [
+					"lint:tests",
+					"lint:policy",
+					"lint:css",
+					"lint:core",
+					"lint:core-docs",
+					"lint:workflows",
+				],
 				...stageGroup,
 			},
 			"fix:all": {

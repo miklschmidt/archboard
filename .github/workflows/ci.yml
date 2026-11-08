@@ -106,7 +106,8 @@ jobs:
         shell: bash
         env:
           CI: "true"
-        run: nix develop --command bash -o pipefail -c 'bun run check 2>&1 | tee "$RUNNER_TEMP/archboard-check.log"'
+        # A bash step runs with pipefail, so the gate's exit status survives the tee.
+        run: nix develop --command bun run check 2>&1 | tee "$RUNNER_TEMP/archboard-check.log"
 
       - name: Retain validation evidence
         if: always() && (steps.validation.outcome == 'success' || steps.validation.outcome == 'failure' || steps.validation.outcome == 'cancelled')
