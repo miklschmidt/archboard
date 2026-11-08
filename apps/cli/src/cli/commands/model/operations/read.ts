@@ -33,8 +33,18 @@ const modelReadContract = defineCommand({
 	path: ["model", "read"],
 	shared: ["url", "directory"],
 	summary: "Read an authored canonical module model",
-	description:
-		"Returns ordered root modules, authored details, source-owned relationships, and the exact input revision. A module selector accepts a qualified id or unique name. Use --preview <origin> for the saved legacy mapping plan, --state <qualified-original-id> for one original model state, or --checkpoint <id> for retained originals. Legacy authority stays unchanged. Use --walkthrough <id|name> for pinned narrative playback; --shared requires an exact retained playback target.",
+	description: [
+		"Returns ordered root modules, authored details, source-owned relationships, and the exact input revision. A module selector accepts a qualified id or unique name.",
+		"",
+		"Use these for legacy data:",
+		"- `--preview <origin>`: the saved legacy mapping plan.",
+		"- `--state <qualified-original-id>`: one original model state.",
+		"- `--checkpoint <id>`: retained originals.",
+		"",
+		"Legacy authority stays unchanged.",
+		"",
+		"Use `--walkthrough <id|name>` for pinned narrative playback. `--shared` requires an exact retained playback target.",
+	].join("\n"),
 	examples: ["archboard model read", "archboard model read 'Shop#Gateway' -C /tmp/shop"],
 	parameters: [
 		{
@@ -230,8 +240,11 @@ const modelProposalsContract = defineCommand({
 	...modelReadContract,
 	path: ["model", "proposals"],
 	summary: "List compact proposals and current state metadata",
-	description:
-		"Lists the active proposals and every retained state of the model: current, draft, historical and shelved, with each one's identity, name, summary, predecessor, baseline and lifecycle. The --state selector of the other model commands takes one of these identities or names.",
+	description: [
+		"Lists the active proposals and every retained state of the model: current, draft, historical and shelved. Each one comes with its identity, name, summary, predecessor, baseline and lifecycle.",
+		"",
+		"The `--state` selector of the other `model` commands takes one of these identities or names.",
+	].join("\n"),
 	examples: ["archboard model proposals", "archboard model proposals -C ../platform"],
 	parameters: [],
 	input: { ingress: z.object({}) },
@@ -240,8 +253,15 @@ const modelCompareContract = defineCommand({
 	...modelReadContract,
 	path: ["model", "compare"],
 	summary: "Compare coherent canonical architectural states",
-	description:
-		"Reads the selected state with its comparison. Interface changes come first, on standard error and in the comparison: an interface change costs every caller, and a change inside a module costs one module. The interface measures of each state follow side by side, as counts that are never combined and rank no state. The comparison also lists every stable subject. Use --beside for a competing proposal that is not the base. The selectors are those of model read.",
+	description: [
+		"Reads the selected state with its comparison. The selectors are those of `model read`.",
+		"",
+		"Interface changes come first, on standard error and in the comparison. An interface change costs every caller, and a change inside a module costs one module.",
+		"",
+		"The interface measures of each state follow side by side, as counts that are never combined and rank no state.",
+		"",
+		"The comparison also lists every stable subject. Use `--beside` for a competing proposal that is not the base.",
+	].join("\n"),
 	examples: [
 		"archboard model compare --state 'Queued fulfilment'",
 		"archboard model compare --state 'One index' --beside 'Entry per job'",

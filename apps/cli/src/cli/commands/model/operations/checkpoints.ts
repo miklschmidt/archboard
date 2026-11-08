@@ -84,8 +84,13 @@ const modelRetainContract = defineCommand({
 	path: ["model", "retain"],
 	shared: ["url", "directory", "doing"],
 	summary: "Retain exact current architecture or original migration inputs locally",
-	description:
-		"Uses configured Git identity and signing without changing current files, index or HEAD. Repeat the same operation identity and request to recover the same checkpoint. Required dependencies are complete checkpoint identities. Migration retention names --migration and --expected-plan. Use none for an absent plan. The expected source revision comes from model inventory.",
+	description: [
+		"Uses configured Git identity and signing without changing current files, index or `HEAD`.",
+		"",
+		"Repeat the same operation identity and request to recover the same checkpoint. Required dependencies are complete checkpoint identities.",
+		"",
+		"Migration retention names `--migration` and `--expected-plan`. Use `none` for an absent plan. The expected source revision comes from `model inventory`.",
+	].join("\n"),
 	examples: [
 		"archboard model retain --operation-id capture-1 --writer agent --expect-revision <digest> --doing 'retaining the reviewed reading' -C /tmp/shop",
 	],

@@ -82,8 +82,14 @@ const modelInitContract = defineCommand({
 	},
 	path: ["model", "init"],
 	summary: "Initialize an empty canonical planning model",
-	description:
-		"Creates one canonical model through the existing signed installation and recovery workflow. Existing models and legacy boards are never replaced. In a Git checkout that has no vault, it first makes <root>/.archboard/vault with the default vocabulary, registers the checkout, and needs no server.",
+	description: [
+		"Creates one canonical model through the existing signed installation and recovery workflow. Existing models and legacy boards are never replaced.",
+		"",
+		"In a Git checkout that has no vault, it first:",
+		"- Makes `<root>/.archboard/vault` with the default vocabulary.",
+		"- Registers the checkout.",
+		"- Needs no server.",
+	].join("\n"),
 	examples: [
 		"archboard model init --name Shop --operation-id initialize-shop --writer agent --doing 'Initialize architecture'",
 	],

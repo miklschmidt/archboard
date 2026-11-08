@@ -70,8 +70,17 @@ const modelSchemaContract = defineCommand({
 	path: ["model", "schema"],
 	shared: [],
 	summary: "List the JSON Schemas of the model files and requests, or print one",
-	description:
-		"Without a name, lists each schema's name and title. With a name, prints that JSON Schema, rendered from the validation of this installation. Needs no server and no vault. A valid shape is not yet valid architecture: a write also checks names, identities, the claim and the complete revision.",
+	description: [
+		"Without a name, lists each schema's name and title. With a name, prints that JSON Schema, rendered from the validation of this installation.",
+		"",
+		"Needs no server and no vault.",
+		"",
+		"A valid shape is not yet valid architecture. A write also checks:",
+		"- Names.",
+		"- Identities.",
+		"- The claim.",
+		"- The complete revision.",
+	].join("\n"),
 	examples: ["archboard model schema", "archboard model schema model-edit"],
 	parameters: [
 		{

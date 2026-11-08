@@ -3,16 +3,16 @@ const vaultNotFoundRefusal = {
 	exit: 2,
 	stream: "stderr" as const,
 	description:
-		"No vault was found from the working directory or the directory -C names. " +
-		"Inside a checkout only <root>/.archboard/vault counts; outside one, the nearest enclosing <dir>/.archboard/vault. " +
-		"In a checkout with no vault, the refusal names each known vault whose models bind the checkout's repository, as the -C to give. Nothing was done.",
+		"The command found no vault from the working directory or the directory `-C` names. " +
+		"Inside a checkout, only `<root>/.archboard/vault` counts. Outside one, the nearest enclosing `<dir>/.archboard/vault` counts. " +
+		"In a checkout with no vault, the refusal names each known vault whose models bind the checkout's repository, as the `-C` to give. The command changed nothing.",
 };
 /** VAULT_NOT_FOUND of a command that runs without a vault (`runsWithoutVault`). */
 const outsideCheckoutRefusal = {
 	...vaultNotFoundRefusal,
 	description:
-		"The working directory, or the directory -C names, is in no Git checkout, and no enclosing <dir>/.archboard/vault exists. " +
-		"In a Git checkout that holds no vault, this command runs without one and is not refused. Nothing was done.",
+		"The working directory, or the directory `-C` names, is in no Git checkout. No enclosing `<dir>/.archboard/vault` exists. " +
+		"In a Git checkout that holds no vault, this command runs without one and is not refused. The command changed nothing.",
 };
 const vaultRequiredRefusal = {
 	code: "VAULT_REQUIRED",

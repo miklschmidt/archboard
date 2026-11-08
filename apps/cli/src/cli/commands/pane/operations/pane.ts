@@ -264,11 +264,17 @@ const panesContract = defineCommand({
 	path: ["browser", "panes"],
 	shared: ["url"],
 	summary: "What every pane is showing and reading",
-	description:
-		"Reports where each pane sits, which model and variant it shows, which view it is read " +
-		"through, and what the user has picked out. View state only: never model content. Each " +
-		"pane names its repository and checkout, and own says whether it shows the vault that a " +
-		"command run in this directory finds. It needs no vault: where none is found, no pane is own.",
+	description: [
+		"Reports, for each pane:",
+		"- Where it sits.",
+		"- Which model and variant it shows.",
+		"- Which view it is read through.",
+		"- What the user has picked out.",
+		"",
+		"This is view state only, never model content.",
+		"",
+		"Each pane names its repository and checkout, and `own` says whether it shows the vault that a command run in this directory finds. It needs no vault. Where none is found, no pane is `own`.",
+	].join("\n"),
 	examples: ["archboard browser panes", "archboard --text browser panes"],
 	parameters: [stagedTokens("panes-token")],
 	input: {
