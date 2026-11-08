@@ -487,6 +487,9 @@ export default defineConfig({
 			// Vendored third-party crates keep upstream's files for the same reason
 			// (crates/vendor/README.md).
 			"crates/vendor/*/**",
+			// release-please writes CHANGELOG.md in its own style on every release
+			// (docs/agents/releasing.md).
+			"/CHANGELOG.md",
 			"dist/**",
 			"node_modules/**",
 			"backlog/**",
