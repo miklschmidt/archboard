@@ -10,10 +10,12 @@ import { createElement, type ComponentProps } from "react";
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
-const { QueryClient, QueryClientProvider, focusManager, onlineManager } =
+const { QueryClient, QueryClientProvider, focusManager, onlineManager, notifyManager } =
 	await import("@tanstack/react-query");
 const { act, cleanup, configure, fireEvent, getConfig, render, waitFor } =
 	await import("@testing-library/react");
+// Query notifications can arrive between assertions, outside Testing Library's own act scopes.
+notifyManager.setNotifyFunction(act);
 const { ModelCodeEvidence } =
 	await import("#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx");
 const { useModelCodeFindings } =
@@ -66,6 +68,9 @@ afterEach(() => {
 });
 afterAll(async () => {
 	configure({ asyncUtilTimeout: waitCeiling });
+	notifyManager.setNotifyFunction((notify) => {
+		notify();
+	});
 	await Bun.sleep(1);
 	await GlobalRegistrator.unregister();
 });
