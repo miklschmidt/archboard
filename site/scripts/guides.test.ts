@@ -57,7 +57,7 @@ test("a linked input, output, or finding must point to its own reference row", (
 
 test("a deep checkout must precede the Action in its own job and directory", () => {
 	const checkout = "- uses: actions/checkout@v5\n        with:\n          fetch-depth: 0";
-	const action = "- uses: miklschmidt/archboard/actions/pull-request@main";
+	const action = "- uses: miklschmidt/archboard/actions/pull-request@{{sha}} # {{ref}}";
 	const job = (steps: string): string => `    steps:\n      ${steps}`;
 	const workflow = (steps: string): string => code("yaml", `jobs:\n  report:\n${job(steps)}`);
 	expect(problems(workflow(`${checkout}\n      ${action}`))).toEqual([]);
