@@ -96,8 +96,10 @@ excerpt.
 
 The action comments on the pull request with the proposal it carries, the architecture at the base
 and at the head as SVG, the footprint of the change, and a link to the map. It keeps one comment and
-updates it on each push. It uses only `model proposals`, `model compare`, `model footprint` and
-`model render`.
+updates it on each push. The plan is what the proposal changes against the current architecture at
+the base: each module that it adds, removes or changes, and both ends of each relationship or flow
+step that it adds, removes or changes. It uses only `model proposals`, `model read`,
+`model footprint` and `model render`.
 
 ```yaml
 name: Architecture report
