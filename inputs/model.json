@@ -3,21 +3,21 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "y017ReIz",
-    "name": "A global --text prints every CLI answer as coloured text for a person",
-    "summary": "The CLI answers in JSON for agents. With --text anywhere before --, the same answer prints as coloured text that names each field in words, so that a person can read it.",
+    "id": "6KbyNVXO",
+    "name": "Language server files states which file wins",
+    "summary": "The responsibility of Language server files said the repository's file comes first in a phrase that read as cut off. It now says that the repository file wins for each language.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "backlog/tasks/task-602 - A-global-text-flag-renders-every-CLI-answer-as-coloured-human-readable-text.md"
+        "path": "backlog/tasks/task-599 - A-repository-configures-its-language-servers-in-a-committed-file.md"
       }
     ],
-    "predecessor": "0lFlN04l",
-    "baseline": "bea0348f109c8999c855897412044369d7d325d0",
-    "createdAt": "2026-11-08T01:13:35.717Z",
-    "adoptedAt": "2026-11-08T01:14:44.575Z",
-    "reason": "Implemented on the PR branch of TASK-599 and TASK-601 at the owner's request: a global --text prints every CLI answer as coloured text for a person, and repo list and browser panes keep their own read-outs. The owner asked for this work in the open PR, which authorizes this adoption on its branch.",
-    "previousCurrent": "0lFlN04l"
+    "predecessor": "y017ReIz",
+    "baseline": "ce1c521e6e3f0e3333094d2c9fba2822a2cb4e79",
+    "createdAt": "2026-11-08T01:47:40.732Z",
+    "adoptedAt": "2026-11-08T01:47:58.895Z",
+    "reason": "A wording fix that the review of PR 67 asked for, adopted on its branch with the change it describes.",
+    "previousCurrent": "y017ReIz"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
