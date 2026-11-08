@@ -86,7 +86,11 @@ function readFootprint(
 	headDir: string,
 	state: ModelState | undefined,
 ): { buckets?: Buckets; note?: string } {
-	const args = ["model", "footprint", "--base", context.baseSha, "--head", context.headSha];
+	// Every registered repository reads the same --base, and only this one holds the pull request's
+	// commits. The base branch's remote ref exists in each checkout that CI fetched in full. Without
+	// --head, each checkout counts up to its own HEAD: this one's is the head commit.
+	const base = context.baseRef === "" ? context.baseSha : `origin/${context.baseRef}`;
+	const args = ["model", "footprint", "--base", base];
 	const result = archboard(context, headDir, [
 		...args,
 		...(state === undefined ? [] : ["--state", state.id]),
