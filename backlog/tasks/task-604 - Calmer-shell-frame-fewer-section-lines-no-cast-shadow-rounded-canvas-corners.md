@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T13:12:00Z'
-updated_date: '2026-11-08T21:26:00Z'
+updated_date: '2026-11-08T21:27:00Z'
 labels:
   - frontend
   - design
@@ -67,6 +67,8 @@ Review completed for 545f27fbe..a552e0c27. Fixed the stale gold rule in DESIGN.m
 Review of 00557c0dc..5fd18e4e2 follows the later owner specification: both side lists and the agent card surround use the shell tone, and panes have no separator. Inspect the open repository chooser, remove stale depth notes, and run the requested browser owners and site audit. Browser ownership remains vKEsyHFk/vKEsyHFk#6nZjwK9W. These surface changes alter no module responsibility or interface, so no architecture proposal is needed.
 
 Review of 00557c0dc..5fd18e4e2 completed. Standards: two findings fixed, stale CSS depth notes and the component catalog that retained the deleted sink shadow. Spec: one finding fixed, the open repository chooser used the popover tone while its sticky row used the shell tone. The smallest fix sets bg-sidebar on the existing popup owner. No new utility, state, or architecture proposal is needed. Fresh installation and build ran inside nix develop. lint:all, both TypeScript projects, formatting, architecture semantics, and nine tests across five browser files passed. Browser files: shell-layout, reader-column, canonical-model-viewer, canonical-model-claims, and workspace-address. Manual browser work used app port 4491 and site port 4492. Both themes keep opaque sticky heads and rows, an 8px card surround, equal pane widths, hidden presentation siblings, and focus recovery. The site paint, diagram generation, and build passed. Every section and demo was inspected, including completed Talk playback and all four walkthrough steps. Regenerated SVG differences contain only allocated sample identities, so existing drawings remain. The frontend build retains its existing chunk-size advisory. No unfixed review findings remain.
+
+Hook triage after the shell review: the width transition matches the docked sidebar behavior documented in DESIGN.md. Record its file-scoped detector exception. Refresh the sidecar date and include the repository chooser tone. The hang-up bounce easing already exists at 00557c0dc. The owner explicitly keeps it outside this review, so leave its code and detector finding unchanged.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
