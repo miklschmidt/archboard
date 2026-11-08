@@ -258,11 +258,7 @@ async function endClaim(
 			const state = claimState(vault);
 			const claim = state.claims.find((value) => value.id === id);
 			if (claim !== undefined && writer !== undefined && claim.writer !== writer)
-				throw new ArchiveError(
-					"CLAIM_HELD",
-					"Only the claim writer can release it.",
-					id,
-				);
+				throw new ArchiveError("CLAIM_HELD", "Only the claim writer can release it.", id);
 			writeState(vault, "claims.json", {
 				claims: state.claims.filter((value) => value.id !== id),
 				revoked: [...new Set([...state.revoked, id])],
