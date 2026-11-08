@@ -15,6 +15,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import reference from "../src/generated/reference.json" with { type: "json" };
+import type { CommandEntry } from "../src/lib/reference";
 
 const GUIDES = join(import.meta.dir, "../src/content/docs");
 
@@ -23,25 +24,30 @@ const GLOBAL_FLAGS = new Set(["--text", "--help", "-h", "--version", "-v"]);
 /** Words after `archboard` that are no command of the registry but still run. */
 const BUILT_INS = new Set(["help", "version"]);
 
-const commands = new Map(reference.commands.map((command) => [command.name, command]));
+const commands = new Map(
+	reference.commands.map((command) => [command.name, command as CommandEntry]),
+);
 const shared = new Map(reference.shared.map((option) => [option.key, option.spellings]));
 const actions = new Map(reference.actions.map((action) => [action.slug, action]));
-const environment = new Set(reference.environment.map((entry) => entry.name));
+const environment = new Set<string>(reference.environment.map((entry) => entry.name));
 const findings = new Set(reference.findings.flatMap((finding) => finding.codes));
-
-/** Each problem, as `file: text`. */
-const problems: string[] = [];
 
 /**
  * Read one `archboard …` invocation: the longest command name that it starts with, then its flags.
  * @param file The guide.
  * @param line The invocation, from `archboard` to the end of the shell command.
  */
-function checkInvocation(file: string, line: string): void {
-	const words = line.trim().split(/\s+/u).slice(1);
+function checkInvocation(file: string, line: string, problems: string[]): void {
+	// A quoted directory or option value stays one word.
+	const words = (line.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/gu) ?? []).slice(1);
 	// The global options can come before the command: --text, -C <dir> and --url <url>.
-	while (words[0] === "--text" || words[0] === "-C" || words[0] === "--url") {
-		words.splice(0, words[0] === "--text" ? 1 : 2);
+	while (
+		words[0] === "--text" ||
+		words[0] === "-C" ||
+		words[0] === "--url" ||
+		words[0]?.startsWith("--url=")
+	) {
+		words.splice(0, words[0] === "--text" || words[0]?.startsWith("--url=") ? 1 : 2);
 	}
 	const first = words[0];
 	if (first === undefined || first.startsWith("<") || BUILT_INS.has(first)) return;
@@ -61,16 +67,28 @@ function checkInvocation(file: string, line: string): void {
 	if (command.router && next !== undefined && /^[a-z][a-z-]*$/u.test(next)) {
 		problems.push(`${file}: "${line}": "${name}" has no command "${next}"`);
 	}
+	const target = command.router?.runs ? (commands.get(command.router.runs) ?? command) : command;
 	const flags = new Set([
 		...GLOBAL_FLAGS,
-		...command.parameters.flatMap((parameter) => parameter.spellings),
-		...command.shared.flatMap((key) => shared.get(key) ?? []),
+		...target.parameters.flatMap((parameter) =>
+			parameter.kind === "option" ? parameter.spellings : [],
+		),
+		...target.shared.flatMap((key) => shared.get(key) ?? []),
 	]);
-	for (const word of rest) {
+	const values = new Set([
+		...target.parameters.flatMap((parameter) =>
+			parameter.kind === "option" && parameter.value === "required" ? parameter.spellings : [],
+		),
+		...target.shared.flatMap((key) => shared.get(key) ?? []),
+	]);
+	for (let index = 0; index < rest.length; index += 1) {
+		const word = rest[index] ?? "";
+		if (word === "--") break;
 		const flag = /^(--?[A-Za-z][\w-]*)/u.exec(word)?.[1];
 		if (flag !== undefined && !flags.has(flag)) {
 			problems.push(`${file}: "${line}": "archboard ${name}" has no option ${flag}`);
 		}
+		if (flag !== undefined && values.has(flag) && !word.includes("=")) index += 1;
 	}
 }
 
@@ -78,9 +96,12 @@ function checkInvocation(file: string, line: string): void {
  * Read every `archboard …` invocation in a piece of shell or a code span. An invocation ends at a
  * shell operator or a comment.
  */
-function checkShell(file: string, text: string): void {
-	for (const match of text.matchAll(/(?:^|[\s(;&|$])(archboard(?:[ \t]+[^\s;&|>#)]+)*)/gmu)) {
-		checkInvocation(file, match[1] ?? "");
+function checkShell(file: string, text: string, problems: string[]): void {
+	const joined = text.replaceAll(/\\\r?\n/gu, "");
+	for (const match of joined.matchAll(
+		/(?:^|[\s(;&|$])((?:\.\/node_modules\/\.bin\/)?archboard(?:[ \t]+[^\s;&|>#)]+)*)/gmu,
+	)) {
+		checkInvocation(file, match[1] ?? "", problems);
 	}
 }
 
@@ -89,7 +110,7 @@ function checkShell(file: string, text: string): void {
  * @param file The guide.
  * @param yaml The YAML of one code block.
  */
-function checkWorkflow(file: string, yaml: string): void {
+function checkWorkflow(file: string, yaml: string, problems: string[]): void {
 	// The Node.js that a workflow sets up for the CLI is the one that the check Action defaults to.
 	const nodeVersion = actions
 		.get("check")
@@ -101,30 +122,65 @@ function checkWorkflow(file: string, yaml: string): void {
 			);
 		}
 	}
-	// A job that runs an Action whose description asks for `fetch-depth: 0` checks out that deep.
-	const deep = [...actions.values()].filter((action) =>
-		action.description.includes("`fetch-depth: 0`"),
+	const deep = new Set(
+		[...actions.values()]
+			.filter((action) => action.description.includes("`fetch-depth: 0`"))
+			.map((action) => action.slug),
 	);
-	for (const action of deep) {
-		if (yaml.includes(`actions/${action.slug}@`) && !/fetch-depth:\s*0\b/u.test(yaml)) {
-			problems.push(
-				`${file}: a workflow runs ${action.slug} without the checkout's fetch-depth: 0`,
+	const record = (value: unknown): Record<string, unknown> =>
+		typeof value === "object" && value !== null && !Array.isArray(value)
+			? (value as Record<string, unknown>)
+			: {};
+	const actionSlug = (step: Record<string, unknown>): string | undefined =>
+		typeof step.uses === "string"
+			? /^miklschmidt\/archboard\/actions\/([\w-]+)@/u.exec(step.uses)?.[1]
+			: undefined;
+	const pathOf = (value: unknown): string =>
+		String(value ?? ".")
+			.replace(/^\.\//u, "")
+			.replace(/\/$/u, "");
+	const history = (steps: unknown[]): void => {
+		for (const [index, value] of steps.entries()) {
+			const step = record(value);
+			const slug = actionSlug(step);
+			if (slug === undefined || !deep.has(slug)) continue;
+			const action = actions.get(slug);
+			const directory = pathOf(
+				record(step.with)["working-directory"] ??
+					action?.inputs.find((input) => input.name === "working-directory")?.default,
 			);
+			const checkout = steps
+				.slice(0, index)
+				.map(record)
+				.findLast((prior) => {
+					if (typeof prior.uses !== "string" || !prior.uses.startsWith("actions/checkout@"))
+						return false;
+					const path = pathOf(record(prior.with).path);
+					return path === "." || directory === path || directory.startsWith(`${path}/`);
+				});
+			if (String(record(checkout?.with)["fetch-depth"]) !== "0") {
+				problems.push(`${file}: a workflow runs ${slug} without its checkout's fetch-depth: 0`);
+			}
 		}
-	}
+	};
 	const visit = (node: unknown): void => {
 		if (Array.isArray(node)) return node.forEach(visit);
 		if (typeof node !== "object" || node === null) return;
-		const { uses, with: inputs } = node as { uses?: unknown; with?: unknown };
-		const slug =
-			typeof uses === "string"
-				? /^miklschmidt\/archboard\/actions\/([\w-]+)@/u.exec(uses)?.[1]
-				: undefined;
+		const fields = record(node);
+		const inputs = record(fields.with);
+		const slug = actionSlug(fields);
+		if (Array.isArray(fields.steps)) history(fields.steps);
+		for (const key of ["run", "script", "before_script", "after_script"]) {
+			const scripts = Array.isArray(fields[key]) ? fields[key] : [fields[key]];
+			for (const script of scripts) {
+				if (typeof script === "string") checkShell(file, script, problems);
+			}
+		}
 		if (slug !== undefined) {
 			const action = actions.get(slug);
 			const names = new Set(action?.inputs.map((input) => input.name));
 			if (action === undefined) problems.push(`${file}: no Action "${slug}" in actions/`);
-			for (const key of Object.keys(typeof inputs === "object" && inputs !== null ? inputs : {})) {
+			for (const key of Object.keys(inputs)) {
 				if (action !== undefined && !names.has(key)) {
 					problems.push(`${file}: the Action "${slug}" has no input "${key}"`);
 				}
@@ -145,7 +201,7 @@ function checkWorkflow(file: string, yaml: string): void {
  * @param file The guide.
  * @param prose The guide without its code blocks.
  */
-function checkPermissions(file: string, prose: string): void {
+function checkPermissions(file: string, prose: string, problems: string[]): void {
 	for (const line of prose.split("\n")) {
 		const slug = /miklschmidt\/archboard\/actions\/([\w-]+)/u.exec(line)?.[1];
 		const action = slug === undefined ? undefined : actions.get(slug);
@@ -172,7 +228,7 @@ const HAND_EXITS = [
  * @param file The guide.
  * @param prose The guide without its code blocks.
  */
-function checkExits(file: string, prose: string): void {
+function checkExits(file: string, prose: string, problems: string[]): void {
 	// Alt text describes a recording as it plays, which no contract changes.
 	for (const line of prose.split("\n").filter((one) => !one.trimStart().startsWith("alt="))) {
 		if (HAND_EXITS.some((pattern) => pattern.test(line))) {
@@ -191,7 +247,13 @@ function checkExits(file: string, prose: string): void {
  * @param value The value that the guide gives the input.
  * @param line The line that gives it. A line that calls the value the default must be right.
  */
-function checkValue(file: string, target: string, value: string, line: string): void {
+function checkValue(
+	file: string,
+	target: string,
+	value: string,
+	line: string,
+	problems: string[],
+): void {
 	const anchor = /reference\/actions\/#(.+)$/u.exec(target)?.[1];
 	const input = reference.actions
 		.flatMap((action) =>
@@ -213,7 +275,7 @@ function checkValue(file: string, target: string, value: string, line: string): 
  * @param file The guide.
  * @param prose The guide without its code blocks.
  */
-function checkValueTables(file: string, prose: string): void {
+function checkValueTables(file: string, prose: string, problems: string[]): void {
 	let target: string | undefined;
 	for (const line of prose.split("\n")) {
 		if (!line.startsWith("|")) {
@@ -224,7 +286,7 @@ function checkValueTables(file: string, prose: string): void {
 		const head = /^\[`[\w-]+`\]\(([^)\s]*reference\/actions\/#[^)\s]+)\)$/u.exec(first)?.[1];
 		if (head !== undefined) target = head;
 		else if (target !== undefined && /^`[^`]+`$/u.test(first))
-			checkValue(file, target, first.slice(1, -1), line);
+			checkValue(file, target, first.slice(1, -1), line, problems);
 	}
 }
 
@@ -233,18 +295,20 @@ function checkValueTables(file: string, prose: string): void {
  * @param file The guide.
  * @param prose The guide without its code blocks.
  */
-function checkMentions(file: string, prose: string): void {
-	const ports = new Set(
-		reference.actions.flatMap((action) => [
-			...action.inputs.map((input) => input.name),
-			...action.outputs.map((output) => output.name),
-		]),
+function checkMentions(file: string, prose: string, problems: string[]): void {
+	const ports = reference.actions.flatMap((action) =>
+		[...action.inputs, ...action.outputs].map((port) => ({
+			name: port.name,
+			anchor: `${action.slug}-${port.name}`,
+		})),
 	);
 	for (const match of prose.matchAll(/(\[)?`([^`\n]+)`(\]\(([^)\s]+)\))?/gu)) {
 		const span = match[2] ?? "";
 		const target = match[4] ?? "";
 		const key = /^([\w-]+)(?::|$)/u.exec(span)?.[1] ?? "";
-		if (ports.has(key) && !target.includes("reference/actions/#")) {
+		const named = ports.filter((port) => port.name === key);
+		const actionAnchor = /reference\/actions\/#([^\s]+)$/u.exec(target)?.[1];
+		if (named.length > 0 && !named.some((port) => port.anchor === actionAnchor)) {
 			problems.push(
 				`${file}: \`${span}\` names an Action port; link it to reference/actions/#<action>-${key}`,
 			);
@@ -253,39 +317,48 @@ function checkMentions(file: string, prose: string): void {
 		if (value !== undefined) {
 			const start = prose.lastIndexOf("\n", match.index) + 1;
 			const end = prose.indexOf("\n", match.index);
-			checkValue(file, target, value, prose.slice(start, end === -1 ? undefined : end));
+			checkValue(file, target, value, prose.slice(start, end === -1 ? undefined : end), problems);
 		}
-		if (findings.has(span) && !target.includes("reference/findings/#")) {
+		const finding = span.toLowerCase().replaceAll("_", "-");
+		if (findings.has(span) && !target.endsWith(`reference/findings/#${finding}`)) {
 			problems.push(
 				`${file}: \`${span}\` names a finding; link it to reference/findings/#${span.toLowerCase().replaceAll("_", "-")}`,
 			);
 		}
-		const variable = /^(ARCHBOARD_[A-Z_]+)(?:=.*)?$/u.exec(span)?.[1];
-		if (variable !== undefined && !environment.has(variable)) {
-			problems.push(`${file}: the CLI reads no environment variable ${variable}`);
-		}
-		checkShell(file, span);
+		checkShell(file, span, problems);
 	}
 }
 
-for (const entry of readdirSync(GUIDES).filter((name) => name.endsWith(".mdx"))) {
-	const source = readFileSync(join(GUIDES, entry), "utf8");
+/** Find disagreements with the program in one authored guide. */
+export function guideProblems(file: string, source: string): string[] {
+	const problems: string[] = [];
+	for (const variable of new Set(source.match(/\bARCHBOARD_[A-Z0-9_]+\b/gu) ?? [])) {
+		if (!environment.has(variable))
+			problems.push(`${file}: the CLI reads no environment variable ${variable}`);
+	}
 	const blocks = [...source.matchAll(/^([ \t]*)```(\w*)[^\n]*\n([\s\S]*?)^\1```/gmu)];
 	for (const block of blocks) {
 		const [, , lang = "", body = ""] = block;
-		if (["bash", "sh", "shell"].includes(lang)) checkShell(entry, body);
-		if (["yaml", "yml"].includes(lang)) checkWorkflow(entry, body);
+		if (["bash", "sh", "shell"].includes(lang)) checkShell(file, body, problems);
+		if (["yaml", "yml"].includes(lang)) checkWorkflow(file, body, problems);
 	}
 	const prose = blocks.reduce((text, block) => text.replace(block[0], ""), source);
-	checkMentions(entry, prose);
-	checkExits(entry, prose);
-	checkPermissions(entry, prose);
-	checkValueTables(entry, prose);
+	checkMentions(file, prose, problems);
+	checkExits(file, prose, problems);
+	checkPermissions(file, prose, problems);
+	checkValueTables(file, prose, problems);
+	return problems;
 }
 
-if (problems.length > 0) {
-	throw new Error(
-		`The guides disagree with the program:\n${problems.map((one) => `- ${one}`).join("\n")}`,
+if (import.meta.main) {
+	const guides = readdirSync(GUIDES).filter((name) => name.endsWith(".mdx"));
+	const problems = guides.flatMap((entry) =>
+		guideProblems(entry, readFileSync(join(GUIDES, entry), "utf8")),
 	);
+	if (problems.length > 0) {
+		throw new Error(
+			`The guides disagree with the program:\n${problems.map((one) => `- ${one}`).join("\n")}`,
+		);
+	}
+	console.log(`guides: ${guides.length} guides agree with the CLI and the Actions`);
 }
-console.log(`guides: ${readdirSync(GUIDES).length} guides agree with the CLI and the Actions`);
