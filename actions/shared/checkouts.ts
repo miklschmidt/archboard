@@ -17,15 +17,19 @@ interface RepoList {
 }
 
 /**
- * The checkout of each repository identity: the chosen one, else the first that exists.
+ * The checkout of each repository identity: the checked repository's own root, the chosen one,
+ * else the first that exists. The CLI reads its own vault's checkout regardless of registry choice.
  * @param list The answer of `archboard repo list`.
+ * @param preferredRoot The root of the repository whose vault was checked.
  * @returns The root of each repository's checkout.
  */
-function checkoutRoots(list: RepoList | undefined): Map<string, string> {
+function checkoutRoots(list: RepoList | undefined, preferredRoot?: string): Map<string, string> {
 	const roots = new Map<string, string>();
 	const present = (list?.repos ?? []).filter((entry) => entry.exists !== false);
 	for (const entry of present.toSorted(
-		(a, b) => Number(b.chosen === true) - Number(a.chosen === true),
+		(a, b) =>
+			Number(b.root === preferredRoot) - Number(a.root === preferredRoot) ||
+			Number(b.chosen === true) - Number(a.chosen === true),
 	)) {
 		if (!roots.has(entry.repo)) roots.set(entry.repo, entry.root);
 	}
