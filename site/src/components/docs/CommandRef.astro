@@ -253,6 +253,10 @@ const blocks = descriptionBlocks(command.description);
 	.traits li + li {
 		margin-top: 0;
 	}
+	.command-text :global(p),
+	.command-text :global(li) {
+		max-width: var(--docs-prose);
+	}
 	.command-text > :global(* + *) {
 		margin-top: 0.9em;
 	}
