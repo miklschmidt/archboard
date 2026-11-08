@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T15:10:00Z'
-updated_date: '2026-11-08T15:31:00Z'
+updated_date: '2026-11-08T17:35:00Z'
 labels: []
 dependencies: []
 ordinal: 1061000
@@ -20,12 +20,12 @@ The docs site describes the CLI on main, but readers install a release from npm.
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 The release workflow builds the docs of the released tag and attaches them to its GitHub release
-- [ ] #2 The site deploy serves the newest release with docs at /docs/, every release with docs at /docs/<version>/, and main at /docs/next/. Without a release that has docs, /docs/ shows main
-- [ ] #3 Every docs page offers a switcher between the versions, and it lists versions that were released after the page was built
-- [ ] #4 The pages of main and of an older release say which version they describe and link to the latest release
-- [ ] #5 Search, internal links and the edit link of each version stay inside that version and its own source
-- [ ] #6 The guides show the version of the CLI that their docs describe, and the build refuses a pinned version that is written by hand
-- [ ] #7 The archboard-dev skill says how a release gets its docs
+- [x] #2 The site deploy serves the newest release with docs at /docs/, every release with docs at /docs/<version>/, and main at /docs/next/. Without a release that has docs, /docs/ shows main
+- [x] #3 Every docs page offers a switcher between the versions, and it lists versions that were released after the page was built
+- [x] #4 The pages of main and of an older release say which version they describe and link to the latest release
+- [x] #5 Search, internal links and the edit link of each version stay inside that version and its own source
+- [x] #6 The guides show the version of the CLI that their docs describe, and the build refuses a pinned version that is written by hand
+- [x] #7 The archboard-dev skill says how a release gets its docs
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -55,4 +55,6 @@ Review fix: quote the YAML version tokens so formatting preserves them. Fill gui
 Review fix: discover published releases through the paginated GitHub API and select only releases with docs.tar.gz. List and download failures now stop assembly. Shell probes reproduce the old silent success and show nonzero exits for both failures after the fix. An empty release list still succeeds.
 
 Review fix: attach each release archive before it enters the deploy queue. GitHub can replace a pending deployment without canceling the release attachment. Assembly and Pages deployment now share one serialized job, so each queued deployment fetches the archives after it starts. PR builds still replace earlier builds of the same PR. Validation: lint and formatting pass with no code warnings. Repository policy passes all 170 tests. The main and release site builds pass, and actionlint passes both workflows. Assembly passes internal links for 65 pages with two synthetic releases and 33 pages without releases. Browser probes cover main, the release root, the latest alias, search isolation, tagged source links, Escape focus on the switch, mobile layout, and an old build listing a newer release. The browser session is closed. Live GitHub release upload and Pages deployment remain untested until the next release. Simplification pass: keep one job for archive assembly and deployment, and limit write permission to the release attachment job.
+
+Re-checked at head 7f51579db (2026-11-08): release builds of 0.3.0 and 0.2.9 and main, assembled with site/scripts/versions.ts. links.ts passes on 65 pages. In the browser: /docs/ is 0.3.0 with no note; /docs/next/ and /docs/0.2.9/ name their version and link to 0.3.0; the switch marks the current version; each edit link names its tag; search from /docs/0.2.9/ and /docs/next/ returns only pages of that version. Examples pin the Actions as `@<sha> # <tag>` (`# main` until a release holds actions/). AC 1 waits for the first release after merge: only the release workflow can show that it builds and attaches docs.tar.gz.
 <!-- SECTION:NOTES:END -->
