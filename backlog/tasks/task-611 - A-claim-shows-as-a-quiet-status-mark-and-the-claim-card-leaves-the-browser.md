@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T21:25:00Z'
-updated_date: '2026-11-08T22:08:00Z'
+updated_date: '2026-11-08T22:11:00Z'
 labels:
   - frontend
 dependencies: []
@@ -53,6 +53,8 @@ Verification: lint:all, type-check, site build (astro check) and scripts/check-m
 Left open: the README take-back clip (README.md:243) and its recipe scripts/readme-assets/take-back.ts still show and click the removed control, so the recipe fails until the clip is filmed again. The refusal messages in packages/model/src/runtime/canonical/edit/operations/claims.ts:117 and :347 still tell agents to ask for a take-back.
 
 Review of 2ceca8bcf..d160f8feb: fixed remaining release refusal guidance, missing badges on mixed selections and flow collections, and a claimed flow marking an unclaimed participant. The claim mark now reuses ActivityLamp inside a still Status Foreground rim on chalk. Existing panel heads and subject classification own these cases. No module or relationship changes. Browser owners claims, viewer, proposals, shell-layout and reader-context pass. Focused unit owners: 15 pass. Backend claim/news owner: 5 pass. Lint and both TypeScript projects pass. Both themes and reduced motion inspected with agent-browser on port 3489. Site paintings and diagrams regenerated, and the site build passes with no Astro warnings. Diagram changes contained only allocated sample identities and were restored. The README clip and recipe remain deferred as requested.
+
+Final review validation: the expanded claims browser owner passes in 3.2 seconds, including a selected flow collection. The final lint and TypeScript runs pass. Architecture semantics pass with no diagnostics. The architecture code pass has no warnings, with existing informational findings and skipped evidence: 82 unknown exposures, nine unbound subjects and one text-only checkout. Site demos include all four walkthrough beats, each grammar, each evidence tab, proposal choices and claim release. Headless Chromium leaves the WebGL hero blank, which limits that visual inspection. The existing frontend build reports large bundle chunks. These evidence limits and the deferred README media remain outside this review. All private browsers and servers stopped. The final simplification pass retained the existing panel head, subject classification and activity lamp owners.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

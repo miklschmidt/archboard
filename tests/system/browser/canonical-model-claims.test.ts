@@ -254,7 +254,7 @@ test("a claim is a status mark on its rows, its model and a selected subject, an
 			target: { model: model.body.manifest.id, state: model.body.manifest.current.id },
 			writer: "Agent Ada",
 			reason: "Explain the request",
-			subjects: ["Shop#Request"],
+			subjects: ["Shop#Request", "Shop#Behavior"],
 		},
 	});
 	if (!flowClaim.body.success) throw new Error(flowClaim.body.error);
@@ -272,6 +272,16 @@ test("a claim is a status mark on its rows, its model and a selected subject, an
 		WAIT,
 	);
 	expect(await browser.eval<boolean>(`document.querySelector('${BADGE}') === null`)).toBe(true);
+	await browser.run(["open", `${server.base}/?modelA=Shop&subjectA=Shop%23Behavior`]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-collection-details"]') !== null && document.querySelector('${BADGE}') !== null`,
+			),
+		Boolean,
+		"the claim badge on the selected flow collection",
+		WAIT,
+	);
 	const flowReleased = await request<ArchitectureClaimList>("/api/architecture/claims/release", {
 		method: "POST",
 		body: { vault, claim: flowClaim.body.claim.id, writer: "Agent Ada" },
