@@ -347,18 +347,18 @@ The decision has these parts:
   the schema does not name, a command that is empty, and text that is not JSON
   make the file invalid. The check reads the file in every checkout that it
   reads, registered or not.
-- Every machine and CI run that has the checkout reads the repository file, and
-  nothing is known of their environments. So a command in the repository file is
-  a name on the `PATH` or a path inside the checkout, from its root. A path that
-  leaves the checkout, absolute or relative, makes the file invalid. A
-  repository can commit a wrapper script that starts its server through its own
-  tools, or name `nix` with `develop --command rust-analyzer`, `devenv shell` or
-  `devbox run`.
+- A relative command in the repository file, a path with a `/` that is not
+  absolute, is a path from the checkout root. So a repository can commit a
+  wrapper script. This repository does: `scripts/rust-analyzer` runs the flake's
+  rust-analyzer through `nix develop`. Another repository can name `nix` with
+  `develop --command rust-analyzer`, or use `devenv shell` or `devbox run`.
+  Every machine reads the repository file, so a path that leaves the checkout,
+  absolute or relative, makes the file invalid.
 - A global file, `language-servers.json` in the state directory beside
   `repos.json`, names a server for each language that the repository file leaves
   out. The repository file wins for each language. `ARCHBOARD_REPOS` moves both
-  files. The global file belongs to one machine, so its command is a name on the
-  `PATH` or an absolute path. It has no checkout to read a relative path from.
+  files. The command in the global file is a name on the `PATH` or an absolute
+  path, because the file has no checkout to read a path from.
 - Without either file, TypeScript keeps its default rule above. Any other
   language has no server, and the check says `language-server-missing` once for
   each checkout and language. Its detail says that neither the checkout's file
