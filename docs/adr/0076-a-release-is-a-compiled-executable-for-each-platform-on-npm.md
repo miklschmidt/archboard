@@ -147,10 +147,11 @@ same workflow and not on a tag trigger.
 Every package is published through npm trusted publishing. npm trusts the
 release workflow of this repository through OpenID Connect (OIDC), so the
 repository stores no npm token, and each package gets provenance. npm trusts
-only the publish job, which runs in the GitHub environment `npm`. That
-environment holds the job until the owner approves it. So release-please tags
-a merged release pull request at once, but the release reaches npm only after
-that approval. Each package on npm names the trusted workflow and refuses
+only the publish job, which runs in the GitHub environment `npm`, and lets it
+only stage a version (`npm stage publish`). A staged version is public only
+after the owner approves it on npm with 2FA. So release-please tags a merged
+release pull request at once, but the release reaches npm only after that
+approval. Each package on npm names the trusted workflow and refuses
 publication by token. If npm
 trusts a workflow only for a package that already exists, the owner publishes
 a placeholder of each name once by hand.

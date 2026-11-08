@@ -641,7 +641,7 @@ The package and the four packages it reads are MIT-licensed, each with its own `
 It bundles the four MIT packages into ESM and bundled declarations for each public entry, and keeps zod, ws, React, Express and `@openai/codex` external.
 `tsconfig.voice-package.json` names the sources the declarations come from.
 The generated manifest declares zod and ws, `@openai/codex` at the pinned version as a peer, and React and Express as optional peers.
-The owner publishes that directory with `npm publish`.
+The release workflow packs that directory and stages it on npm ([releasing](releasing.md)).
 `resolveCodexExecutable` from `./server` finds the installed `@openai/codex` and proves its exact version. Archboard passes `installation().codexLocation`: `installedIn` refuses any other install in a checkout, and `releasedIn` finds the native binary of a release.
 `tests/system/process-contracts/voice-package.test.ts` installs the packed tarball into a project outside the repository.
 
