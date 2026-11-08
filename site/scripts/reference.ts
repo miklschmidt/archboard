@@ -35,6 +35,37 @@ function releaseDefault(value: string | undefined): string | undefined {
 
 const registry = cliContractRegistry();
 
+/** The command that each router runs bare, such as `check all` for `check`, by the router. */
+const bareRouters = new Map(
+	registry.flatMap(({ name, bare }) =>
+		bare?.kind === "default" ? [[`${name} ${bare.child}`, name] as const] : [],
+	),
+);
+
+/**
+ * A command's examples, each of which must run that command, by its name or by the router that
+ * runs it bare. An example that names another command, such as one that was renamed, fails the
+ * build so that the docs never show it.
+ * @param name The command, such as `model config`.
+ * @param examples The examples of its contract.
+ * @returns The examples.
+ * @throws {Error} When an example runs another command.
+ */
+function examplesOf(name: string, examples: readonly string[]): string[] {
+	const spellings = [name, bareRouters.get(name)].filter((one) => one !== undefined);
+	// The global options can come before the command: --text, -C <dir> and --url <url>.
+	const command = (example: string) =>
+		example.replace(/^archboard (?:(?:--text|-C \S+|--url \S+) )*/u, "archboard ");
+	const stale = examples.filter(
+		(example) =>
+			!spellings.some((spelling) => `${command(example)} `.startsWith(`archboard ${spelling} `)),
+	);
+	if (stale.length > 0) {
+		throw new Error(`The examples of "archboard ${name}" run another command: ${stale.join("; ")}`);
+	}
+	return [...examples];
+}
+
 const commands = registry.map(({ name, parent, bare, contract }) => ({
 	name,
 	parent: parent ?? null,
@@ -46,7 +77,7 @@ const commands = registry.map(({ name, parent, bare, contract }) => ({
 		: null,
 	summary: contract.summary,
 	description: contract.description,
-	examples: [...contract.examples],
+	examples: examplesOf(name, contract.examples),
 	parameters: contract.parameters
 		.filter((parameter) => !parameter.hidden)
 		.map((parameter) =>

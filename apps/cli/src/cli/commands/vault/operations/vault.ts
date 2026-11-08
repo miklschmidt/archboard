@@ -544,10 +544,7 @@ const semanticConfigContract = defineCommand({
 	summary: "Discover the configured vocabulary or its editor schema",
 	description:
 		"Prints the vault policy, source path and current diagnostics. --schema emits a JSON Schema generated from the canonical YAML validation schema, without requiring a running server.",
-	examples: [
-		"archboard semantic config",
-		"archboard semantic config --schema > config.schema.json",
-	],
+	examples: ["archboard model config", "archboard model config --schema > config.schema.json"],
 	parameters: [
 		{
 			kind: "option",

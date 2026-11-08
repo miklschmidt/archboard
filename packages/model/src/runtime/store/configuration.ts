@@ -56,7 +56,7 @@ function readVaultConfiguration(root: string): VaultConfigurationRead {
 	} catch (error) {
 		problem =
 			errnoCode(error) === "ENOENT"
-				? "Configuration is missing. Create .archboard/config.yaml; run archboard semantic config to discover the bundled vocabulary and schema."
+				? "Configuration is missing. Create .archboard/config.yaml; run archboard model config to discover the bundled vocabulary and schema."
 				: `Cannot interpret YAML configuration: ${errorMessage(error)}`;
 	}
 	const diagnostics: VaultDiagnostic[] = configurationWarnings(file, problem, at);

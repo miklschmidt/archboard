@@ -230,6 +230,9 @@ const modelProposalsContract = defineCommand({
 	...modelReadContract,
 	path: ["model", "proposals"],
 	summary: "List compact proposals and current state metadata",
+	description:
+		"Lists the active proposals and every retained state of the model: current, draft, historical and shelved, with each one's identity, name, summary, predecessor, baseline and lifecycle. The --state selector of the other model commands takes one of these identities or names.",
+	examples: ["archboard model proposals", "archboard model proposals -C ../platform"],
 	parameters: [],
 	input: { ingress: z.object({}) },
 });
