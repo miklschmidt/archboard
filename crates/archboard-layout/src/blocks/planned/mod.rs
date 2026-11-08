@@ -26,6 +26,7 @@ mod reading;
 mod room;
 mod runs;
 mod shape;
+mod swaps;
 mod topology;
 mod words;
 

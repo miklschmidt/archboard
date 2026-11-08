@@ -36,6 +36,8 @@ Local conflict repair and grid windows have explicit work limits.
 A failed candidate can request bounded extra room from the legacy placer.
 No unchecked route reaches the painter.
 
+After selecting routes, two lines that meet one card wall side by side and cross just beside it trade their places on that wall.
+Each keeps its first stretch and its turn, and a trade stands only when it removes a crossing and passes the complete geometry guard.
 After selecting routes, the planner closes the space that nothing uses while preserving card sizes, route topology, and clearance around bends and boundaries.
 A line that joins another before the card they enter keeps the room the guard asks of that junction.
 A line that leaves another after the card they start from keeps the same room when one of them draws an arrowhead there, as a two-way line does.

@@ -27,6 +27,7 @@ pub(super) fn route(
     let candidates = candidates(&model, &topology, &mut shape, &previous)?;
     shape.routes = super::selection::greedy(&model, &topology, &shape, &candidates, orders)
         .map_err(|edges| blocked(&model, &edges))?;
+    super::swaps::untangle(&model, &topology, &mut shape);
     let routed = shape.routed();
     let mut drawing = settled(&model, &topology, &mut shape)?;
     drawing.routed = Some(std::rc::Rc::new(routed));
