@@ -260,7 +260,7 @@ async function endClaim(
 			if (claim !== undefined && writer !== undefined && claim.writer !== writer)
 				throw new ArchiveError(
 					"CLAIM_HELD",
-					"Only the claim writer can release it. A reader can explicitly take it back.",
+					"Only the claim writer can release it.",
 					id,
 				);
 			writeState(vault, "claims.json", {

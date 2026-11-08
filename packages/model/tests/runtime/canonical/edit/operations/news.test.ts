@@ -162,6 +162,11 @@ test("explicit scope exclusion and take-back reject the former writer without ch
 		success: false,
 		code: "CLAIM_HELD",
 	});
+	const claims = readArchitectureClaims(vault);
+	expect(
+		await releaseArchitectureClaim(vault, { claim: input.claim, writer: "other" }),
+	).toMatchObject({ success: false, code: "CLAIM_HELD" });
+	expect(readArchitectureClaims(vault)).toEqual(claims);
 	await takeBackArchitectureClaim(vault, { claim: input.claim, origin: "human" });
 	expect(await editArchitectureModule(vault, input)).toMatchObject({
 		success: false,
