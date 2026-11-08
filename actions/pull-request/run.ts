@@ -1,14 +1,12 @@
 // The entry of the pull request action. It draws the architecture at the base and at the head of
-// the pull request, reads the proposal and its footprint, keeps one comment on the pull request
-// up to date, and fails the step when the configuration says changes outside the plan block.
-// Only existing CLI commands do the architecture work: `model proposals`, `model read`,
-// `model compare`, `model footprint` and `model render`. Node runs this file as it is.
+// the pull request, reads the proposal, its plan and its footprint, keeps one comment on the pull
+// request up to date, and fails the step when the configuration says changes outside the plan
+// block. Only existing CLI commands read the architecture: `model proposals`, `model read`,
+// `model footprint` and `model render`. Node runs this file as it is.
 
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
 import { appendFileSync, rmSync } from "node:fs";
 import { join, relative } from "node:path";
-import { adoptedBuckets, adoptedPlan } from "./adopted.ts";
-import type { AdoptedPlan, ModelReading } from "./adopted.ts";
 import { pullRequestComment } from "./comment.ts";
 import type { PullRequestReport } from "./comment.ts";
 import { addWorktree, archboard, firstLine, readContext } from "./context.ts";
@@ -16,11 +14,12 @@ import type { Context } from "./context.ts";
 import { upsertComment } from "./github.ts";
 import { folderUrl } from "./links.ts";
 import { parseBodyMarker } from "./marker.ts";
-import type { BodyMarker } from "./marker.ts";
 import { makePictures } from "./pictures.ts";
 import type { Trees } from "./pictures.ts";
-import { chooseState, decideOutOfPlan, describeComparison, readBuckets } from "./plan.ts";
-import type { Buckets, FootprintReading, ModelState, StateChoice } from "./plan.ts";
+import { chooseState, decideOutOfPlan } from "./plan.ts";
+import type { ModelState } from "./plan.ts";
+import { planBuckets, proposalPlan } from "./proposal-plan.ts";
+import type { Buckets, FootprintReading, ModelReading, ProposalPlan } from "./proposal-plan.ts";
 import { input, parseJson, run } from "../shared/process.ts";
 import { annotationLine } from "../shared/workflow-commands.ts";
 
@@ -31,104 +30,73 @@ interface ProposalsReading {
 }
 
 /**
- * Pick the proposal of the pull request.
- * @param context The run.
- * @param states The states of the model at the head.
- * @returns The choice, and the marker of the description.
- */
-function pickProposal(
-	context: Context,
-	states: readonly ModelState[],
-): { choice: StateChoice; marker: BodyMarker | undefined } {
-	const marker = parseBodyMarker(context.body);
-	return { choice: chooseState(context.stateInput, marker, states), marker };
-}
-
-/**
- * What the proposal changes, from `model compare`.
- * @param context The run.
- * @param headDir The vault at the head.
- * @param state The proposal.
- * @param against The state the description says to compare against.
- * @returns The phrases, or the reason there are none.
- */
-function compareProposal(
-	context: Context,
-	headDir: string,
-	state: ModelState,
-	against: string | undefined,
-): { comparison: string[]; note?: string } {
-	const args = [
-		"model",
-		"compare",
-		"--state",
-		state.id,
-		...(against === undefined ? [] : ["--against", against]),
-	];
-	const result = archboard(context, headDir, args);
-	const answer = parseJson(result.stdout);
-	if (result.exitCode !== 0 || answer === undefined) {
-		return {
-			comparison: [],
-			note: `The proposal could not be compared: ${firstLine(result.stderr)}`,
-		};
-	}
-	return { comparison: describeComparison(answer) };
-}
-
-/**
  * The footprint of the pull request, from `model footprint`.
  * @param context The run.
  * @param headDir The vault at the head.
- * @param state The proposal, if the pull request carries one.
- * @param adopted The plan of a proposal that the head adopted, which the footprint cannot read.
+ * @param state The proposal, if the pull request carries one. Its bindings place the changes.
+ * @param plan The proposal's plan.
  * @returns The buckets, or the reason there are none.
  */
 function readFootprint(
 	context: Context,
 	headDir: string,
 	state: ModelState | undefined,
-	adopted: AdoptedPlan | undefined,
+	plan: ProposalPlan,
 ): { buckets?: Buckets; note?: string } {
-	// Every registered repository reads the same --base, and only this one holds the pull request's
-	// commits. The base branch's remote ref exists in each checkout that CI fetched in full. Without
-	// --head, each checkout counts up to its own HEAD: this one's is the head commit.
-	const base = context.baseRef === undefined ? context.baseSha : `origin/${context.baseRef}`;
-	const args = ["model", "footprint", "--base", base];
 	const result = archboard(context, headDir, [
-		...args,
+		"model",
+		"footprint",
+		"--base",
+		footprintBase(context),
 		...(state === undefined ? [] : ["--state", state.id]),
 	]);
 	const answer: FootprintReading | undefined = parseJson(result.stdout);
 	if (result.exitCode !== 0 || answer === undefined) {
 		return { note: `The footprint could not be read: ${firstLine(result.stderr)}` };
 	}
-	return {
-		buckets: adopted === undefined ? readBuckets(answer) : adoptedBuckets(answer, adopted.named),
-	};
+	return { buckets: planBuckets(answer, plan.named) };
 }
 
 /**
- * The plan of a proposal that is no draft at the head, such as one that the branch adopted. It is
- * what the state changes against the base's Current.
+ * The ref that the footprint counts from. Every registered repository reads the same --base, and
+ * only this one holds the pull request's commits. The base branch's remote ref exists in each
+ * checkout that CI fetched in full. Without --head, each checkout counts up to its own HEAD: this
+ * one's is the head commit.
+ * @param context The run.
+ * @returns The base branch's remote ref, else the base commit.
+ */
+function footprintBase(context: Context): string {
+	return context.baseRef === undefined ? context.baseSha : `origin/${context.baseRef}`;
+}
+
+/** The plan of a pull request with no proposal. */
+const NO_PLAN: ProposalPlan = { comparison: [], named: new Set() };
+
+/**
+ * The plan of the proposal: what it changes against the base's Current, as the pictures show.
  * @param context The run.
  * @param trees Where the base's and the head's vaults are.
  * @param state The proposal, if the pull request carries one.
- * @returns The plan, or undefined for a draft, for no proposal, or when a model cannot be read.
+ * @returns The plan, empty for no proposal, and why it is empty when a model cannot be read.
  */
-function readAdoptedPlan(
+function readPlan(
 	context: Context,
 	trees: Trees,
 	state: ModelState | undefined,
-): AdoptedPlan | undefined {
-	if (state === undefined || state.lifecycle === "draft") return undefined;
+): { plan: ProposalPlan; note?: string } {
+	if (state === undefined) return { plan: NO_PLAN };
 	const base: ModelReading | undefined = parseJson(
 		archboard(context, trees.baseDir, ["model", "read"]).stdout,
 	);
 	const head: ModelReading | undefined = parseJson(
 		archboard(context, trees.headDir, ["model", "read", "--state", state.id]).stdout,
 	);
-	return base === undefined || head === undefined ? undefined : adoptedPlan(base, head);
+	if (base === undefined || head === undefined) {
+		const note =
+			"The proposal could not be compared: a model could not be read at the base or the head.";
+		return { plan: NO_PLAN, note };
+	}
+	return { plan: proposalPlan(base, head) };
 }
 
 /**
@@ -167,25 +135,6 @@ function registerCheckouts(context: Context): string | undefined {
 		}
 	}
 	return undefined;
-}
-
-/**
- * What the proposal changes, when the pull request carries one.
- * @param context The run.
- * @param trees Where the head's vault is.
- * @param pick The choice of proposal and the description's marker.
- * @param pick.choice The choice of proposal.
- * @param pick.marker The marker of the description.
- * @returns The phrases and a note.
- */
-function compareIfProposed(
-	context: Context,
-	trees: Trees,
-	pick: { choice: StateChoice; marker: BodyMarker | undefined },
-): { comparison: string[]; note?: string } {
-	const { state } = pick.choice;
-	if (state === undefined) return { comparison: [] };
-	return compareProposal(context, trees.headDir, state, pick.marker?.against);
 }
 
 /**
@@ -235,23 +184,26 @@ function buildReport(
 	trees: Trees,
 	proposals: ProposalsReading,
 ): PullRequestReport {
-	const pick = pickProposal(context, proposals.states ?? []);
-	const adopted = readAdoptedPlan(context, trees, pick.choice.state);
-	const compared = adopted ?? compareIfProposed(context, trees, pick);
-	const footprint = readFootprint(context, trees.headDir, pick.choice.state, adopted);
-	const pictures = makePictures(context, trees, pick.choice.state);
+	const choice = chooseState(
+		context.stateInput,
+		parseBodyMarker(context.body),
+		proposals.states ?? [],
+	);
+	const { plan, note } = readPlan(context, trees, choice.state);
+	const footprint = readFootprint(context, trees.headDir, choice.state, plan);
+	const pictures = makePictures(context, trees, choice.state);
 	return {
 		baseSha: context.baseSha,
 		headSha: context.headSha,
-		choice: pick.choice,
-		comparison: compared.comparison,
-		comparisonNote: "note" in compared ? compared.note : undefined,
+		choice,
+		comparison: plan.comparison,
+		comparisonNote: note,
 		buckets: footprint.buckets,
 		footprintNote: footprint.note,
 		before: pictures.before,
 		after: pictures.after,
 		picturesNote: pictures.note,
-		outOfPlan: judge(context, pick.choice.state, footprint.buckets),
+		outOfPlan: judge(context, choice.state, footprint.buckets),
 		overrideLabel: context.overrideLabel,
 		mapUrl: pictures.after?.light,
 		vaultUrl: vaultAddress(context, trees, proposals.vault?.path),

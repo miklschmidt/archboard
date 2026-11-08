@@ -1,5 +1,4 @@
-// Which proposal a pull request carries, what its footprint says about the plan, and whether that
-// fails the step. Pure: the entry reads the CLI and the event, and these functions only decide.
+// Which proposal a pull request carries, and whether changes outside its plan fail the step. Pure: the entry reads the CLI and the event, and these functions only decide.
 
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
 import type { BodyMarker } from "./marker.ts";
@@ -152,105 +151,10 @@ function decideOutOfPlan(facts: PlanFacts): OutOfPlanDecision {
 		: { status: "fail", failed: true };
 }
 
-/** The part of a footprint answer that names modules. */
-interface FootprintPart {
-	readonly subject: { readonly name: string };
-}
-
-/** The part of a footprint answer the action reads. Either the three buckets or one list. */
-interface FootprintReading {
-	readonly proposal?: { readonly id: string; readonly name: string } | null | undefined;
-	readonly namedAndChanged?: readonly FootprintPart[] | undefined;
-	readonly changedNotNamed?: readonly FootprintPart[] | undefined;
-	readonly namedNotChanged?: readonly FootprintPart[] | undefined;
-	readonly changed?: readonly FootprintPart[] | undefined;
-	/** The parts it could not read, such as a part in a repository this machine has not registered. */
-	readonly skipped?: readonly FootprintPart[] | undefined;
-}
-
-/** The module names of each bucket, in the order the answer gives them. */
-interface Buckets {
-	readonly plannedAndChanged: readonly string[];
-	readonly outsidePlan: readonly string[];
-	readonly plannedUnchanged: readonly string[];
-	/** With no proposal, every changed module. */
-	readonly changed: readonly string[];
-}
-
-/**
- * The names of a list of parts, each module once.
- * @param parts The parts.
- * @returns The distinct names.
- */
-function names(parts: readonly FootprintPart[] | undefined): string[] {
-	return [...new Set((parts ?? []).map((part) => part.subject.name))];
-}
-
-/**
- * Read the buckets of a footprint.
- * @param footprint The answer of `model footprint`.
- * @returns The module names of each bucket.
- */
-function readBuckets(footprint: FootprintReading): Buckets {
-	return {
-		plannedAndChanged: names(footprint.namedAndChanged),
-		outsidePlan: names(footprint.changedNotNamed),
-		plannedUnchanged: names(footprint.namedNotChanged),
-		changed: names(footprint.changed),
-	};
-}
-
-/** The part of a comparison answer the action counts. */
-interface ComparisonReading {
-	readonly comparison?:
-		| {
-				readonly subjects?:
-					| readonly { readonly subjectKind: string; readonly kind: string }[]
-					| undefined;
-		  }
-		| undefined;
-}
-
-/** One subject of a comparison. */
-type ComparedSubject = NonNullable<
-	NonNullable<ComparisonReading["comparison"]>["subjects"]
->[number];
-
-/**
- * Count the subjects of one kind by what became of them.
- * @param subjects The changed subjects of one kind.
- * @returns A phrase such as "2 added, 1 changed".
- */
-function tally(subjects: readonly ComparedSubject[]): string {
-	const outcomes = [...new Set(subjects.map((subject) => subject.kind))];
-	return outcomes
-		.map((outcome) => `${String(subjects.filter((one) => one.kind === outcome).length)} ${outcome}`)
-		.join(", ");
-}
-
-/**
- * Count what a proposal changes: for each kind of subject, how many were added, removed or changed.
- * @param answer The answer of `model compare`.
- * @returns One phrase for each kind of subject that has a change, such as "modules: 2 added, 1 changed".
- */
-function describeComparison(answer: ComparisonReading): string[] {
-	const changed = (answer.comparison?.subjects ?? []).filter(
-		(subject) => subject.kind !== "unchanged",
-	);
-	return [...new Set(changed.map((subject) => subject.subjectKind))].map(
-		(kind) => `${kind}s: ${tally(changed.filter((subject) => subject.subjectKind === kind))}`,
-	);
-}
-
 export {
 	chooseState,
 	decideOutOfPlan,
-	describeComparison,
 	parseOutOfPlanMode,
-	readBuckets,
-	type Buckets,
-	type ComparisonReading,
-	type FootprintReading,
 	type ModelState,
 	type OutOfPlanDecision,
 	type OutOfPlanMode,

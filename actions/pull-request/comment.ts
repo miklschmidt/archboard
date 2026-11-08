@@ -3,7 +3,8 @@
 
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
 import { COMMENT_MARKER } from "./marker.ts";
-import type { Buckets, OutOfPlanDecision, StateChoice, StateSource } from "./plan.ts";
+import type { OutOfPlanDecision, StateChoice, StateSource } from "./plan.ts";
+import type { Buckets } from "./proposal-plan.ts";
 
 /** One picture, in the themes it was drawn in, by the address it can be embedded from. */
 interface PictureLinks {

@@ -1,14 +1,10 @@
-// The plan of a pull request whose proposal is already adopted at its head, as the archboard-pr
-// skill does on the branch. `model footprint` sets the changed modules against a draft only, and
-// `model compare` cannot read the state that the adoption replaced in a fresh clone, because that
-// state lives only in the archive. Both vaults are checked out, so the action compares the base's
-// Current with the adopted state itself, by the rule of ADR 0045: a proposal names each module
-// that it adds, removes or changes, and both ends of each relationship or flow step that it adds,
-// removes or changes. Pure: the entry reads the two models.
-
-/* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
-import { describeComparison } from "./plan.ts";
-import type { Buckets, FootprintReading } from "./plan.ts";
+// The plan of a pull request: what its proposal changes against the base's Current, which is also
+// what the pictures before and after show. The action compares the two readings itself, because
+// the proposal is often adopted on the branch, as the archboard-pr skill does. Then `model
+// footprint` has no draft to set the changes against, and a fresh clone cannot read the state
+// that the adoption replaced, because that state lives only in the archive. The rule is that of
+// ADR 0045: a proposal names each module that it adds, removes or changes, and both ends of each
+// relationship or flow step that it adds, removes or changes. Pure: the entry reads the models.
 
 /** A subject of a model reading, compared as a whole. */
 interface Subject {
@@ -61,8 +57,40 @@ interface Parts {
 /** What became of one subject between the two readings. */
 type Outcome = "added" | "removed" | "changed";
 
-/** The plan of an adopted proposal. */
-interface AdoptedPlan {
+/** One changed subject, by its kind and what became of it. */
+interface Compared {
+	readonly subjectKind: string;
+	readonly kind: Outcome;
+}
+
+/** The part of a footprint answer that names modules. */
+interface FootprintPart {
+	readonly subject: { readonly name: string };
+}
+
+/**
+ * The part of a footprint answer the action reads. For a draft the CLI sorts the changed modules
+ * into named and not named, else it lists them in one list.
+ */
+interface FootprintReading {
+	readonly namedAndChanged?: readonly FootprintPart[] | undefined;
+	readonly changedNotNamed?: readonly FootprintPart[] | undefined;
+	readonly changed?: readonly FootprintPart[] | undefined;
+	/** The parts it could not read, such as a part in a repository this machine has not registered. */
+	readonly skipped?: readonly FootprintPart[] | undefined;
+}
+
+/** The module names of each bucket. */
+interface Buckets {
+	readonly plannedAndChanged: readonly string[];
+	readonly outsidePlan: readonly string[];
+	readonly plannedUnchanged: readonly string[];
+	/** Every changed module, which the comment lists when there is no proposal. */
+	readonly changed: readonly string[];
+}
+
+/** The plan of a proposal. */
+interface ProposalPlan {
 	/** What it changes, as phrases such as "modules: 1 changed". */
 	readonly comparison: string[];
 	/** The names of the modules it names that are bound to code. */
@@ -78,6 +106,29 @@ interface AdoptedPlan {
 function ownFields(module: Subject): unknown {
 	const { outgoing: _outgoing, file: _file, ...own } = module;
 	return own;
+}
+
+/**
+ * Count the subjects of one kind by what became of them.
+ * @param subjects The changed subjects of one kind.
+ * @returns A phrase such as "2 added, 1 changed".
+ */
+function tally(subjects: readonly Compared[]): string {
+	const kinds = [...new Set(subjects.map((subject) => subject.kind))];
+	return kinds
+		.map((outcome) => `${String(subjects.filter((one) => one.kind === outcome).length)} ${outcome}`)
+		.join(", ");
+}
+
+/**
+ * Count what a proposal changes: for each kind of subject, how many were added, removed or changed.
+ * @param changed The changed subjects.
+ * @returns One phrase for each kind of subject that has a change, such as "modules: 2 added, 1 changed".
+ */
+function describeComparison(changed: readonly Compared[]): string[] {
+	return [...new Set(changed.map((subject) => subject.subjectKind))].map(
+		(kind) => `${kind}s: ${tally(changed.filter((subject) => subject.subjectKind === kind))}`,
+	);
 }
 
 /**
@@ -156,12 +207,12 @@ function partsOf(model: ModelReading): Parts {
 }
 
 /**
- * The plan of a proposal that the head adopted: what it changes against the base's Current.
+ * The plan of a proposal: what it changes against the base's Current.
  * @param baseModel The base's Current.
- * @param headModel The adopted state at the head.
+ * @param headModel The proposal at the head, a draft or adopted on the branch.
  * @returns The comparison phrases and the modules that the plan names.
  */
-function adoptedPlan(baseModel: ModelReading, headModel: ModelReading): AdoptedPlan {
+function proposalPlan(baseModel: ModelReading, headModel: ModelReading): ProposalPlan {
 	const base = partsOf(baseModel);
 	const head = partsOf(headModel);
 	const modules = outcomes(base.modules, head.modules, ownFields);
@@ -176,25 +227,31 @@ function adoptedPlan(baseModel: ModelReading, headModel: ModelReading): AdoptedP
 			.filter((module) => module.binding !== undefined)
 			.map((module) => [module.id, module.name]),
 	);
-	const subjects = [
+	const changed: Compared[] = [
 		...modules.map((one) => ({ subjectKind: "module", kind: one.outcome })),
 		...relationships.map((one) => ({ subjectKind: "relationship", kind: one.outcome })),
 		...steps.map((one) => ({ subjectKind: "step", kind: one.outcome })),
 	];
 	return {
-		comparison: describeComparison({ comparison: { subjects } }),
+		comparison: describeComparison(changed),
 		named: new Set([...ids].flatMap((id) => bound.get(id) ?? [])),
 	};
 }
 
 /**
- * Set the modules that a footprint changed against the plan of an adopted proposal.
- * @param footprint The answer of `model footprint`, which lists the changed modules only.
+ * Set the modules that a footprint changed against the plan.
+ * @param footprint The answer of `model footprint`. For a draft it sorts the changed modules into
+ * named and not named, else it lists them in one list.
  * @param named The modules that the plan names.
  * @returns The three buckets.
  */
-function adoptedBuckets(footprint: FootprintReading, named: ReadonlySet<string>): Buckets {
-	const changed = [...new Set((footprint.changed ?? []).map((part) => part.subject.name))];
+function planBuckets(footprint: FootprintReading, named: ReadonlySet<string>): Buckets {
+	const parts = [
+		...(footprint.changed ?? []),
+		...(footprint.namedAndChanged ?? []),
+		...(footprint.changedNotNamed ?? []),
+	];
+	const changed = [...new Set(parts.map((part) => part.subject.name))];
 	const unread = new Set((footprint.skipped ?? []).map((part) => part.subject.name));
 	return {
 		plannedAndChanged: changed.filter((name) => named.has(name)),
@@ -204,4 +261,11 @@ function adoptedBuckets(footprint: FootprintReading, named: ReadonlySet<string>)
 	};
 }
 
-export { adoptedBuckets, adoptedPlan, type AdoptedPlan, type ModelReading };
+export {
+	planBuckets,
+	proposalPlan,
+	type Buckets,
+	type FootprintReading,
+	type ModelReading,
+	type ProposalPlan,
+};

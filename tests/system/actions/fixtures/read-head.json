@@ -1,0 +1,40 @@
+{
+	"success": true,
+	"modules": [
+		{
+			"id": "Shop/a#n1",
+			"name": "Checkout API",
+			"responsibility": "Answers the shopper once the payment has started",
+			"binding": {
+				"path": "src/checkout.ts"
+			},
+			"outgoing": []
+		},
+		{
+			"id": "Shop/a#n2",
+			"name": "Stock API",
+			"binding": {
+				"path": "src/stock.ts"
+			},
+			"outgoing": []
+		},
+		{
+			"id": "Shop/a#n3",
+			"name": "Fulfilment worker",
+			"binding": {
+				"path": "src/worker.ts"
+			},
+			"outgoing": []
+		},
+		{
+			"id": "Shop/a#n4",
+			"name": "Payments",
+			"binding": {
+				"path": "src/payments.ts"
+			},
+			"outgoing": []
+		}
+	],
+	"relationships": [],
+	"collections": []
+}

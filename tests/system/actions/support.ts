@@ -52,7 +52,11 @@ case "$1" in
 	model)
 		case "$2" in
 			proposals) sed "s#__HEADDIR__#$dir#" "$FAKE_DIR/proposals.json" ;;
-			compare) cat "$FAKE_DIR/compare.json" ;;
+			read)
+				case "$*" in
+					*--state*) cat "$FAKE_DIR/read-head.json" ;;
+					*) cat "$FAKE_DIR/read-base.json" ;;
+				esac ;;
 			footprint) cat "$FAKE_DIR/footprint.json" ;;
 			render)
 				while [ $# -gt 0 ]; do

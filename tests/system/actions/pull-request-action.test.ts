@@ -6,7 +6,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { adoptedBuckets, adoptedPlan } from "../../../actions/pull-request/adopted.ts";
 import { pullRequestComment } from "../../../actions/pull-request/comment.ts";
 import type { PullRequestReport } from "../../../actions/pull-request/comment.ts";
 import {
@@ -14,8 +13,9 @@ import {
 	findStickyComment,
 	parseBodyMarker,
 } from "../../../actions/pull-request/marker.ts";
-import { chooseState, decideOutOfPlan, readBuckets } from "../../../actions/pull-request/plan.ts";
+import { chooseState, decideOutOfPlan } from "../../../actions/pull-request/plan.ts";
 import type { ModelState } from "../../../actions/pull-request/plan.ts";
+import { planBuckets, proposalPlan } from "../../../actions/pull-request/proposal-plan.ts";
 import { fixture, runEntryAsync, scratch, writeStandIn } from "./support.ts";
 
 /**
@@ -25,6 +25,15 @@ import { fixture, runEntryAsync, scratch, writeStandIn } from "./support.ts";
  */
 function repository(full: string) {
 	return { full_name: full };
+}
+
+/**
+ * One changed part, as a footprint lists it.
+ * @param name The module's name.
+ * @returns The list of that one part.
+ */
+function part(name: string) {
+	return [{ subject: { name } }];
 }
 
 const states: ModelState[] = [
@@ -55,7 +64,7 @@ describe("the proposal of a pull request", () => {
 	});
 });
 
-describe("the plan of a proposal that the branch adopted", () => {
+describe("the plan of a proposal", () => {
 	const intake = { id: "m#intake", name: "Intake", binding: { path: "intake" }, outgoing: [] };
 	const billing = { id: "m#billing", name: "Billing", binding: { path: "billing" } };
 	const docs = { id: "m#docs", name: "Docs" };
@@ -66,17 +75,26 @@ describe("the plan of a proposal that the branch adopted", () => {
 	};
 
 	test("names both ends of a new relationship, and only modules bound to code", () => {
-		const plan = adoptedPlan(base, head);
+		const plan = proposalPlan(base, head);
 		expect(plan.comparison).toEqual(["relationships: 1 added"]);
 		expect([...plan.named].toSorted()).toEqual(["Billing", "Intake"]);
 	});
 
-	test("sets the changed modules of the footprint against that plan", () => {
+	test("sets the changed modules of the footprint against that plan, for a draft or an adopted proposal", () => {
+		const named = proposalPlan(base, head).named;
+		const expected = {
+			plannedAndChanged: ["Intake"],
+			outsidePlan: ["Catalog"],
+			plannedUnchanged: ["Billing"],
+			changed: ["Intake", "Catalog"],
+		};
+		expect(
+			planBuckets({ namedAndChanged: part("Intake"), changedNotNamed: part("Catalog") }, named),
+		).toEqual(expected);
 		const footprint = {
-			proposal: null,
 			changed: [{ subject: { name: "Intake" } }, { subject: { name: "Catalog" } }],
 		};
-		expect(adoptedBuckets(footprint, adoptedPlan(base, head).named)).toEqual({
+		expect(planBuckets(footprint, named)).toEqual({
 			plannedAndChanged: ["Intake"],
 			outsidePlan: ["Catalog"],
 			plannedUnchanged: ["Billing"],
@@ -115,7 +133,12 @@ describe("the sticky comment", () => {
 		headSha: "b".repeat(40),
 		choice: { state: states[1], source: "input" },
 		comparison: ["modules: 1 added"],
-		buckets: readBuckets(JSON.parse(fixture("footprint.json"))),
+		buckets: {
+			plannedAndChanged: ["Checkout API"],
+			outsidePlan: ["Stock API"],
+			plannedUnchanged: ["Fulfilment worker"],
+			changed: ["Checkout API", "Stock API"],
+		},
 		outOfPlan: { status: "fail", failed: true },
 		overrideLabel: "archboard: out of plan",
 		picturesNote: "The pictures are not shown: no token.",
@@ -202,7 +225,7 @@ describe("the entry", () => {
 	 */
 	function step(inputs: Record<string, string> = {}, fork = false) {
 		const folder = scratch();
-		for (const name of ["proposals", "compare", "footprint"]) {
+		for (const name of ["proposals", "read-base", "read-head", "footprint"]) {
 			writeFileSync(join(folder, `${name}.json`), fixture(`${name}.json`));
 		}
 		const event = join(folder, "event.json");
