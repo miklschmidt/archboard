@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T00:04:00Z'
-updated_date: '2026-11-08T00:36:00Z'
+updated_date: '2026-11-08T00:52:00Z'
 labels: []
 dependencies:
   - TASK-599
@@ -36,6 +36,7 @@ A repository names its language servers in a committed file now (TASK-599), but 
 - [x] #8 Each new behavior has one test owner, and tests of the removed link and copy behavior are deleted
 - [x] #9 The skills CLI installs the skills for Codex always, and for Claude Code only when `claude` is on the PATH
 - [x] #10 The site hero shows the install and `archboard init` with tabs for npm, pnpm, yarn and bun in place of its list of facts, the quick start holds the same commands, and the site no longer says that Archboard runs from a clone
+- [x] #11 The CLI sets NO_COLOR only when its stdout is not a terminal, and then drops an inherited FORCE_COLOR, so a command and the agent that init starts keep their colours at a terminal
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -44,6 +45,8 @@ A repository names its language servers in a committed file now (TASK-599), but 
 Scope: on 2026-11-08 the owner added two criteria while the work ran: Claude Code gets the skills only when `claude` is on the PATH (AC 9), and the site hero and quick start install with a package manager switcher (AC 10).
 
 Evidence (2026-11-08): `archboard install-skill` now exits 2 with Unknown command. tests/system/cli/init.test.ts (9 tests) runs the real CLI on a scratch PATH with a stand-in bun: without a terminal it calls `bun x skills@1.7.6 add <skills> -g -y --agent codex --skill archboard archboard-pr`, adds `claude-code` when a `claude` is on the PATH, stops with exit 1 and no repository change when the skills CLI fails, keeps every setup behavior, and ends the answer with `next`. apps/cli/tests/cli/commands/init/rules/setup-choices.test.ts owns the runner order. A drive through a real pseudo-terminal showed both pickers: Enter on bun ran the skills CLI without -y for claude-code and codex, and Enter on Claude Code started it in the repository with the prompt; Skip on both printed the later install command and ended the answer with the prompt in `next`. The release-executable test compiles a release and runs `init` there; its PATH has no runner, so the skills step skips. The evaluation harness registers its checkout with `repo add` and lays the package itself (install.test.ts and failed-captures.test.ts pass). The site builds with astro check at 0 errors, and screenshots at 1440x900 and 390x844 show the switcher in the hero and the quick start, kept in sync, with no horizontal scroll. Model: proposal 0lFlN04l adopted; its code check cleared the four stale-path findings and added none; the README architecture drawings were drawn again.
+
+Owner requests later on 2026-11-08: Bun installs `archboard` like the other package managers (site, INSTALL.md, the Bun smoke step of the release workflow and docs/agents/releasing.md), and the CLI sets NO_COLOR only when stdout is not a terminal (AC 11). Evidence for AC 11: tests/system/cli/output-colour.test.ts failed first with Bun's two-line FORCE_COLOR warning and passes now; `bunx vp run test:system` passes 235 of 235, where the three tests that expect one stderr line failed before; a drive through a pseudo-terminal recorded `NO_COLOR=unset` in the Claude Code that init started. Sol round 1 found that `repo language-server rust ./rust-server` stored `rust-server`, a name on the PATH; every stored path from the checkout root now starts with `./`.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
