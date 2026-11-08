@@ -10,7 +10,8 @@ import { createElement, type ComponentProps } from "react";
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
-const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
+const { QueryClient, QueryClientProvider, focusManager, onlineManager } =
+	await import("@tanstack/react-query");
 const { act, cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
 const { ModelCodeEvidence } =
 	await import("#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx");
@@ -47,6 +48,8 @@ afterEach(() => {
 	for (const client of clients.splice(0)) client.clear();
 	globalThis.fetch = realFetch;
 	Object.defineProperty(globalThis, "IntersectionObserver", observer);
+	focusManager.setFocused(undefined);
+	onlineManager.setOnline(true);
 });
 afterAll(async () => {
 	await Bun.sleep(1);
@@ -445,13 +448,25 @@ test("a draft is checked by its state, and a refused pass says why and tries aga
 						{ success: false, code: "NO_SUCH_DRAFT", error: "No document has the draft TASK-1." },
 						{ status: 422 },
 					)
-				: Response.json({ success: true, timings: [], states: [], findings: [], skipped: [], behind: [] });
+				: Response.json({
+						success: true,
+						timings: [],
+						states: [],
+						findings: [],
+						skipped: [],
+						behind: [],
+					});
 		if (address.pathname === "/api/vault/code-findings")
 			return Response.json({ success: true, readings: [], models: [] });
 		return Response.json({ error: "no" }, { status: 404 });
 	});
-	render(
-		createElement(QueryClientProvider, { client: cacheClient() }, createElement(CodeView, { model: DRAFT })),
+	const cache = cacheClient();
+	const view = render(
+		createElement(
+			QueryClientProvider,
+			{ client: cache },
+			createElement(CodeView, { model: DRAFT }),
+		),
 	);
 	await waitFor(() =>
 		expect(document.querySelector('[data-slot="code-evidence-failed"]')?.textContent).toContain(
@@ -459,6 +474,24 @@ test("a draft is checked by its state, and a refused pass says why and tries aga
 		),
 	);
 	expect(checksIn(asked)[0]?.searchParams.get("state")).toBe("TASK-1");
+	view.unmount();
+	render(
+		createElement(
+			QueryClientProvider,
+			{ client: cache },
+			createElement(CodeView, { model: DRAFT }),
+		),
+	);
+	await waitFor(() =>
+		expect(document.querySelector('[data-slot="code-evidence-failed"]')).not.toBeNull(),
+	);
+	await act(async () => {
+		focusManager.setFocused(false);
+		focusManager.setFocused(true);
+		onlineManager.setOnline(false);
+		onlineManager.setOnline(true);
+	});
+	expect(checksIn(asked)).toHaveLength(1);
 	refuse = false;
 	await press(document.querySelector('[data-slot="code-evidence-retry"]')!);
 	await waitFor(() => expect(checksIn(asked)).toHaveLength(2));

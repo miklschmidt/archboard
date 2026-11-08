@@ -33,7 +33,17 @@ function useCodeCheck(
 	const preview = model.migrationPreview !== undefined;
 	const query = useQuery({
 		...codeCheckQuery(vault, checkedReading(model)),
-		enabled: !preview && remembered.read === "success" && !remembered.matched,
+		/**
+		 * A failed query stays stale even with an infinite stale time. Only a pass with no
+		 * outcome starts automatically. Refetch still permits Try again.
+		 * @param pass The cached pass.
+		 * @returns Whether the view can start its first attempt.
+		 */
+		enabled: (pass) =>
+			!preview &&
+			remembered.read === "success" &&
+			!remembered.matched &&
+			pass.state.status === "pending",
 	});
 	const { refetch } = query;
 	const retry = useCallback((): void => {
@@ -81,7 +91,8 @@ function progressOf(
 	if (query.isFetching) return { status: "checking" };
 	if (query.isError) return { status: "failed", error: messageOf(query.error), retry };
 	if (query.isSuccess) return { status: "unread", retry };
-	if (read === "error") return { status: "failed", error: "The Archboard server did not answer.", retry };
+	if (read === "error")
+		return { status: "failed", error: "The Archboard server did not answer.", retry };
 	return { status: "checking" };
 }
 
