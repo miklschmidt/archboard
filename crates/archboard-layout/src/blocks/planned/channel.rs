@@ -244,8 +244,12 @@ pub(super) fn shared_junction(
     points: &[Point],
     line: &PlacedLine,
 ) -> bool {
-    Junction::new(model, topology, index, line)
-        .is_some_and(|pair| pair.clear(points, super::junctions::Envelope::new(points)))
+    let bounds = super::junctions::Envelope::new(points);
+    // A line far from this one clears it whatever their fans and ends.
+    if bounds.apart(super::junctions::Envelope::new(&line.points)) {
+        return model.edge_index.contains_key(line.id.as_str());
+    }
+    Junction::new(model, topology, index, line).is_some_and(|pair| pair.clear(points, bounds))
 }
 
 pub(super) fn shared_fragment(

@@ -106,16 +106,24 @@ pub(super) fn readable(a: &[Point], b: &[Point], start: bool, target: bool) -> b
 }
 
 pub(super) fn ordered(a: &[Point], b: &[Point], sharing: bool) -> bool {
+    // Runs twelve or more apart neither cross, share ink nor run close beside each other, so
+    // only the runs of one route that come near the other route are compared.
+    let around = Envelope::new(b);
+    let near = || a.windows(2).filter(move |p| !Envelope::new(p).apart(around));
     let shared: Vec<_> = if sharing {
-        a.windows(2)
+        near()
             .flat_map(|p| b.windows(2).filter_map(move |q| shared_ends(p, q)))
             .flatten()
             .collect()
     } else {
         Vec::new()
     };
-    a.windows(2).all(|p| {
+    near().all(|p| {
+        let run = Envelope::new(p);
         b.windows(2).all(|q| {
+            if Envelope::new(q).apart(run) {
+                return true;
+            }
             let ph = p[0].y == p[1].y;
             let qh = q[0].y == q[1].y;
             if ph == qh {

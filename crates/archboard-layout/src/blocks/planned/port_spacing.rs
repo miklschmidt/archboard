@@ -52,15 +52,21 @@ fn conflicts_at(
     source: bool,
     old: &PlacedLine,
 ) -> bool {
+    // The ends' geometry is cheaper than the lookup of the other line, so it goes first.
+    let near = [true, false].map(|os| {
+        opposite_offset(end(points, source), end(&old.points, os)).is_some_and(|by| by.abs() < APART)
+    });
+    if near == [false, false] {
+        return false;
+    }
     let other = model.edge_index[old.id.as_str()];
     edge != other
-        && [true, false].into_iter().any(|os| {
-            one_subject(
+        && [true, false].into_iter().zip(near).any(|(os, near)| {
+            near && one_subject(
                 model,
                 endpoint(model, edge, source),
                 endpoint(model, other, os),
-            ) && opposite_offset(end(points, source), end(&old.points, os))
-                .is_some_and(|by| by.abs() < APART)
+            )
         })
 }
 

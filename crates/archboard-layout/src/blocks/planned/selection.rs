@@ -150,7 +150,8 @@ fn next(
         })
         .or_else(|| fan_join(model, topology, shape, &paths[edge], edge))
         .or_else(|| dynamic(model, topology, shape, edge, super::fixed::Search::Channels))
-        .or_else(|| repair(model, topology, shape, paths, edge, repairs))
+        // Repair follows a first fit that found no route of the pool.
+        .or_else(|| repair(model, topology, shape, paths, edge, repairs, true))
         .or_else(|| hierarchy(model, topology, shape, edge, windows))
         .or_else(|| dynamic(model, topology, shape, edge, super::fixed::Search::Ports))
 }
@@ -206,7 +207,7 @@ fn shorten(
     }
     let mut shorter = paths.to_vec();
     shorter[edge].retain(|line| length(line) < picked - 300.0);
-    let repaired = repair(model, topology, shape, &shorter, edge, repairs)?;
+    let repaired = repair(model, topology, shape, &shorter, edge, repairs, false)?;
     let total = |s: &Shape| {
         s.routes
             .iter()
@@ -234,12 +235,13 @@ fn repair(
     paths: &[Vec<PlacedLine>],
     edge: usize,
     repairs: &mut usize,
+    blocked: bool,
 ) -> Option<Shape> {
     if *repairs >= 8 {
         return None;
     }
     *repairs += 1;
-    super::repair::reconsider(model, topology, shape, paths, edge)
+    super::repair::reconsider(model, topology, shape, paths, edge, blocked)
 }
 fn hierarchy(
     model: &Model<'_>,

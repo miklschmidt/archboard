@@ -15,25 +15,25 @@ struct Conflict<'a> {
     bad: Vec<usize>,
     line: &'a PlacedLine,
 }
+/// Fit one relationship by moving the routes that block it. `blocked` says that no route of
+/// its pool fits the shape as it stands, because the caller just tried them all.
 pub(super) fn reconsider(
     model: &Model<'_>,
     topology: &Topology,
     shape: &Shape,
     paths: &[Vec<PlacedLine>],
     edge: usize,
+    blocked: bool,
 ) -> Option<Shape> {
-    insert(
-        model,
-        topology,
-        shape,
-        paths,
-        edge,
-        &[],
-        &mut Work {
-            attempts: 96,
-            generated: 0,
-        },
-    )
+    let work = &mut Work {
+        attempts: 96,
+        generated: 0,
+    };
+    if blocked {
+        displace(model, topology, shape, paths, edge, &[], work)
+    } else {
+        insert(model, topology, shape, paths, edge, &[], work)
+    }
 }
 fn insert(
     model: &Model<'_>,
@@ -51,6 +51,18 @@ fn insert(
     {
         return Some(next);
     }
+    displace(model, topology, shape, paths, edge, locked, work)
+}
+/// Move the routes that block one relationship, and fit it in their place.
+fn displace(
+    model: &Model<'_>,
+    topology: &Topology,
+    shape: &Shape,
+    paths: &[Vec<PlacedLine>],
+    edge: usize,
+    locked: &[usize],
+    work: &mut Work,
+) -> Option<Shape> {
     if locked.len() == 3 || work.attempts == 0 {
         return None;
     }
