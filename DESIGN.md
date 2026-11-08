@@ -7,7 +7,6 @@ colors:
   muted-ink: "oklch(0.48 0.008 75)"
   body-ink: "oklch(0.3 0.008 75)"
   chrome-chalk: "oklch(0.973 0.004 88)"
-  tray-chalk: "oklch(0.986 0.003 88)"
   reading-tone: "oklch(0.935 0.006 85)"
   well-floor: "oklch(0.95 0.005 85)"
   tab-piece: "oklch(1 0 0)"
@@ -202,7 +201,7 @@ file is stale.
 **Creative North Star: "The Lit Drafting Table"**
 
 The picture is a model in low relief that lies on a table. The shell is the furniture
-around it: rails, a header under the lamp, a tray at the foot of each column
+around it: rails, a header under the lamp, the foot of each column
 and a few pieces of gold hardware. An agent drew the picture, and the architect
 reads it. Nothing in the shell competes with the picture for attention, and
 nothing in the shell paints on it.
@@ -251,7 +250,6 @@ every role and changes the values. The file theme.css holds both themes.
 
 - **Ground Chalk** (oklch(0.99 0.0025 90), dark oklch(0.2 0.006 75)): the ground of the picture, and of the About page that lies over it.
 - **Chrome Chalk** (oklch(0.973 0.004 88), dark oklch(0.165 0.005 75)): the navigator, the pane header and the sidebar.
-- **Tray Chalk** (oklch(0.986 0.003 88), dark oklch(0.205 0.007 75)): a tray at the foot of a column, raised over the chrome. The agent dock and the foot of the selection tab use it.
 - **Reading Tone** (oklch(0.935 0.006 85), dark oklch(0.255 0.008 78)): the chosen row of a list on the About page.
 - **Well Floor** (`--tray-sink`, oklch(0.95 0.005 85), dark oklch(0.14 0.005 75)): the floor of the well that the left column's list lies in, and of the trough that holds tabs or a switch. It is also the floor of a field or a count cell sunk into a surface. It is the floor of a nested container on the picture, so the column and the picture are one material.
 - **Tab Piece** (`--tray-tab`, oklch(1 0 0), dark oklch(0.25 0.007 75)): the lighter piece that the picture raises on the edge of a container. The shell does not use it. A chosen tab or row takes Control Face.
@@ -344,7 +342,7 @@ The file app.css holds the values for both themes and gives each one a
 - **well** (`--elevation-well`, an inner shadow with a lit line along the foot): a field sunk into a surface, a trough, a count cell and a pressed key. `--elevation-trough` is the same piece under its other name.
 - **sink** (`--elevation-sink`, built from `--slab-shadow` and `--tray-lip`): the well that a column's list lies in. One inner shadow falls from the whole of its top edge, and a lit lip runs along its foot, as on a container of the picture. The `column-well` utility holds the recipe.
 - **slab** (`--elevation-slab`, built from `--slab-glint`, `--slab-edge` and `--slab-shadow`): a number that lies on a surface, as a small part of the picture does: a lit top edge, a front edge 2px thick and a short shadow.
-- **No edge shadow.** The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane. It casts no shadow and draws no line where it meets the picture: the tone step is the edge. The chrome holds the picture on every side: an 8px strip of chrome runs under it, and beside it while the right panel hides. The picture's four corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility. A presented picture fills its pane with square corners. While the picture has keyboard focus, a 2px Ring line runs inside its edge and follows the rounded corners. A tray at the foot of a column is one tone step lighter, with no line and no shadow.
+- **No edge shadow.** The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane. It casts no shadow and draws no line where it meets the picture: the tone step is the edge. The chrome holds the picture on every side: an 8px strip of chrome runs under it, and beside it while the right panel hides. The picture's four corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility. A presented picture fills its pane with square corners. While the picture has keyboard focus, a 2px Ring line runs inside its edge and follows the rounded corners. The legend and the composer lie on the chrome at the foot of their columns, with no tone of their own, no line and no shadow. The agent dock is the one card in the chrome: a sheet in the picture's tone with the same 12px corners and 8px of chrome on every side, so its foot lines up with the picture's.
 - **raised** (`--elevation-raised`, a white highlight on top, a 1px contact line and a short soft shadow): a quiet key, a key cap, the voice circle and the chosen row of a list.
 - **pressed** (`--elevation-pressed`, the same value as well): a raised control while somebody presses it.
 - **chosen** (`--elevation-chosen`, raised and a 2px line of Wayfinding Gold inside the foot): the chosen tab of a trough. It is also the chosen row of the tree that is the row of what is open.
@@ -608,7 +606,7 @@ With one module selected, the head of `Sends to` and the head of `Receives from`
 
 A module with code history has a `Changes with` section. It lists the modules whose code changes in the same commits as its own, the strongest first. A row names the partner. Under the name, one line holds a short mark that joins the pair. An `Unjoined` tint chip follows it when no relationship joins them. The commits that they share stand next in mono, and the degree stands at the end in full ink. The mark is a solid line in muted ink for a joined pair and a dashed line in Changed Orange for an unjoined one. A meter of 2px runs along the foot of the row, as long as the degree. It fades from clear to Gold Mark for a joined pair and to Changed Orange for an unjoined one.
 
-The legend is a tray at the foot of the panel (Tray Chalk, with no line over it), and it needs
+The legend stands at the foot of the panel, on the chrome with no line over it, and it needs
 no click. A long subject and its lists scroll above it, and the whole legend stays on screen.
 Nothing stands under it, so a selection never moves it. A heading row holds `Legend` and, at the start of the
 second column, the key `Filter`. Under it stand the kinds in two columns, the line types in two
@@ -763,8 +761,8 @@ Three Well Floor cells, Entries, Hidden and Callers, hold the counts in the mono
 
 ### Agent dock
 
-The agent dock is a tray at the foot of the navigator. It uses Tray Chalk, with no
-line over it. While voice is off it is calm. Two quiet keys of one height (32px, 4px corners) stand in a row at its foot: Talk, as wide as the room, and
+The agent dock is a card at the foot of the navigator: the picture's tone, 12px corners
+and 8px of chrome round it, with no line and no shadow. While voice is off it is calm. Two quiet keys of one height (32px, 4px corners) stand in a row at its foot: Talk, as wide as the room, and
 a key to the conversation, an icon alone. The conversation's key is pressed in,
 with a gold mark under it, while the conversation is open, and has a gold dot
 while words wait unread. When the agent is on something, its state, what it is
@@ -809,7 +807,7 @@ connects, send a ring of light round the circle. Muted, the lines go flat and di
 The face follows the model's measured output level and nothing else. It never
 listens to the microphone.
 
-The tray is lit by what the agent is doing: a warm wash blooms from the voice
+The dock is lit by what the agent is doing: a warm wash blooms from the voice
 circle while voice is on and brightens and fades with the voice, and a quieter
 one in the status colour spreads while the agent works. At rest it is plain. Its
 lines are all 13px and are told apart by weight and ink: its state at 500 in muted
@@ -817,7 +815,7 @@ ink, what it is on at 400. The voice's word is in the accent text while the circ
 lit, which is gold on graphite and ink on chalk (the Ink On Chalk Rule), and in muted
 ink while it is muted or ending. The clock is 12px mono.
 
-The composer is in the conversation pane, on a tray at its foot (Tray Chalk, with no
+The composer is in the conversation pane, at its foot on the chrome (with no
 line over it), with its gold Send. It grows upward as a message grows, and
 takes the room from the conversation.
 

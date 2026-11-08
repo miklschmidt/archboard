@@ -161,7 +161,8 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 			data-agent-tone={status.tone}
 			aria-label="Agent"
 			style={DOCK_STYLE}
-			className="bg-raised relative shrink-0 px-4 py-3"
+			// A card in the chrome, framed as the picture is: chrome on every side and the same corners.
+			className="bg-background rounded-window relative m-2 shrink-0 px-4 py-3"
 		>
 			{slots.head}
 			<VoiceControl

@@ -145,8 +145,6 @@
 	--color-primary-subtle: var(--primary-subtle);
 	/* The rim of a primary action's gold (`primary-finish`). */
 	--color-primary-edge: var(--primary-edge);
-	/* A plane raised over the chrome: the tray at the foot of a column. */
-	--color-raised: var(--raised);
 	/* The picture's own pieces, which the left column is built from: the face of a
 	   slab, the floor a well sinks to, and the lighter piece raised on a well's edge. */
 	--color-slab-face: var(--slab-face);
@@ -380,8 +378,8 @@
               conversation are one flat plane round the picture. They cast
               no shadow onto it: the tone step is the edge, and the picture's
               corners are rounded against the chrome (`picture-corners`).
-              A tray at the foot of a column is a step lighter, with no line
-              and no shadow.
+              The legend and the composer lie on the chrome too. The agent
+              dock is a card in the picture's tone, framed as the picture is.
      raised   a control, a key cap or the chosen row of a list, standing on
               a surface (--elevation-raised): a lit top edge, a contact line and
               a short shadow. Pressed, a control sinks into a trough
@@ -1211,7 +1209,7 @@
 /* The dock is lit by what the agent is doing. While voice is on, a warm wash
    blooms from the voice circle and then breathes with it: --lit is the light
    the orb gives, 0 to 1, written by the orb on every frame. A quieter wash in
-   the status colour shows while the agent works. At rest the tray is plain:
+   the status colour shows while the agent works. At rest the dock is plain:
    nothing glows for a state the product is not in. Each wash has a layer of its
    own, so each fades out in its own colour. The bloom is a registered number so
    that it can be eased: the wash grows out of the circle and does not fade up

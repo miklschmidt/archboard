@@ -7,12 +7,10 @@
    its shadows) is not a colour and lives in app.css.
 
    Neutrals. Warm graphite and chalk: the hue of every neutral sits near the
-   gold's (75 to 95), at a chroma low enough to read as grey. Four surface
+   gold's (75 to 95), at a chroma low enough to read as grey. Three surface
    steps carry the shell:
      --background  the ground: the picture, and the About page over it;
      --sidebar     the chrome that frames it (navigator, pane header, sidebar);
-     --raised      a plane raised over the chrome: the tray at the foot of a
-                   column (the agent dock, Go deeper);
      --sidebar-accent  the reading tone: the chosen row of a list, raised off
                    it as a plate.
    --highlight is the fine highlight on the top edge of a plane.
@@ -177,7 +175,6 @@
 	--sidebar-accent-foreground: oklch(0.17 0.006 75);
 	--sidebar-border: oklch(0.905 0.005 85);
 	--sidebar-ring: oklch(0.62 0.13 78);
-	--raised: oklch(0.986 0.003 88);
 	--highlight: oklch(1 0 0 / 0.85);
 	--face: oklch(1 0 0);
 	--face-hover: oklch(0.978 0.004 88);
@@ -292,7 +289,6 @@
 	--sidebar-accent-foreground: oklch(0.955 0.006 90);
 	--sidebar-border: oklch(1 0.01 85 / 9%);
 	--sidebar-ring: oklch(0.831 0.134 84.5);
-	--raised: oklch(0.205 0.007 75);
 	--highlight: oklch(1 0.01 85 / 0.09);
 	--face: oklch(0.255 0.008 78);
 	--face-hover: oklch(0.31 0.007 75);

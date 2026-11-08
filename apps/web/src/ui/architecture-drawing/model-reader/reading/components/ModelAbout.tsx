@@ -94,13 +94,17 @@ function ModelAbout(props: ModelAboutProps): JSX.Element {
 		<article
 			data-slot="model-about"
 			data-subject={subject}
-			className="bg-background absolute inset-0 z-20 flex min-h-0 flex-col"
+			className="bg-sidebar absolute inset-0 z-20 flex min-h-0 flex-col"
 		>
-			{subject === "selection" ? (
-				<ModelAboutSelection {...props} look={look} state={state} tools={tools} />
-			) : (
-				<ScopePage {...props} look={look} state={state} tools={tools} timeline={timeline} />
-			)}
+			{/* The page is a sheet in the chrome, as the picture is: a strip of chrome under it and
+			    beside it, and four rounded corners. */}
+			<div className="picture-corners bg-background relative mr-2 mb-2 flex min-h-0 flex-1 flex-col">
+				{subject === "selection" ? (
+					<ModelAboutSelection {...props} look={look} state={state} tools={tools} />
+				) : (
+					<ScopePage {...props} look={look} state={state} tools={tools} timeline={timeline} />
+				)}
+			</div>
 		</article>
 	);
 }

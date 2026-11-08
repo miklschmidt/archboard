@@ -77,7 +77,7 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 		<section
 			aria-label="Legend"
 			data-slot="model-legend"
-			className="bg-raised relative flex shrink-0 flex-col gap-2 px-4 pt-3 pb-4"
+			className="relative flex shrink-0 flex-col gap-2 px-4 pt-3 pb-4"
 		>
 			<LegendHead
 				hidden={lines.filter((line) => line.hidden).length}

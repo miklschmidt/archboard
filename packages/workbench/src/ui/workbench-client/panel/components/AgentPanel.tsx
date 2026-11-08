@@ -102,7 +102,7 @@ function PanelFooter(props: {
 }): JSX.Element {
 	const running = props.view.conversation.turns.some((turn) => turn.outcome === "running");
 	return (
-		<div data-slot="agent-panel-footer" className="bg-raised relative shrink-0 px-4 py-3">
+		<div data-slot="agent-panel-footer" className="relative shrink-0 px-4 py-3">
 			<AgentComposer draft={props.draft} running={running} onSend={props.actions.send} />
 		</div>
 	);

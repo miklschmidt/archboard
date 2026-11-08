@@ -39,11 +39,6 @@
 				"displayName": "Chrome Chalk",
 				"canonical": "oklch(0.973 0.004 88)"
 			},
-			"tray-chalk": {
-				"role": "neutral",
-				"displayName": "Tray Chalk",
-				"canonical": "oklch(0.986 0.003 88)"
-			},
 			"reading-tone": {
 				"role": "neutral",
 				"displayName": "Reading Tone",

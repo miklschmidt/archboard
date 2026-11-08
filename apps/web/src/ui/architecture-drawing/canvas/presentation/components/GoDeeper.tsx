@@ -488,7 +488,7 @@ function GoDeeper(props: GoDeeperProps): JSX.Element | null {
 	return (
 		<footer
 			data-slot="semantic-go-deeper"
-			className="bg-raised relative flex shrink-0 flex-col gap-2 px-4 py-4"
+			className="relative flex shrink-0 flex-col gap-2 px-4 py-4"
 		>
 			{target !== undefined && (
 				<WayDown target={target} kind={props.kind} here={props.here} onOpen={props.onOpen} />
