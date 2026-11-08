@@ -17,7 +17,11 @@ import type { Locations } from "./evidence.ts";
 import { splitArguments, inputLines } from "../shared/arguments.ts";
 import { cachedFileReader, checkoutRoots } from "../shared/checkouts.ts";
 import { input, parseJson, run } from "../shared/process.ts";
-import { annotationLine, outputLines } from "../shared/workflow-commands.ts";
+import {
+	ANNOTATION_LIMIT_PER_LEVEL,
+	annotationLine,
+	outputLines,
+} from "../shared/workflow-commands.ts";
 
 const CHECKS = ["all", "semantics", "code", "embeds"];
 
@@ -227,7 +231,7 @@ function reportOutcome(
 ): void {
 	if (dropped > 0) {
 		process.stdout.write(
-			`::notice::GitHub shows 10 annotations of each level. ${String(dropped)} annotations were omitted; the saved JSON report contains all findings.\n`,
+			`::notice::GitHub shows ${String(ANNOTATION_LIMIT_PER_LEVEL)} annotations of each level. ${String(dropped)} annotations were omitted; the saved JSON report contains all findings.\n`,
 		);
 	}
 	if (outcome.failed) {
