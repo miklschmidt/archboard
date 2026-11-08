@@ -284,7 +284,11 @@ samp {
 	font-size: 0.9375rem;
 	line-height: 1.55;
 }
+/* A caption stands over the shadow of the picture above it: a transformed picture paints in a
+   layer of its own, and its long shadow would otherwise darken the words. */
 .caption {
+	position: relative;
+	z-index: 1;
 	font-size: 0.875rem;
 	line-height: 1.5;
 	color: var(--ink-muted);
