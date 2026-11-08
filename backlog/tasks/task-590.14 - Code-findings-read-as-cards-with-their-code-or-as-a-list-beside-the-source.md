@@ -1,11 +1,11 @@
 ---
 id: TASK-590.14
 title: Code findings read as cards with their code, or as a list beside the source
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T02:17:00Z'
-updated_date: '2026-11-08T02:25:00Z'
+updated_date: '2026-11-08T03:35:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-590
@@ -21,10 +21,10 @@ On 2026-11-08 the owner asked to see more than one code finding at a time: the p
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The code view shows every finding as a card with its source excerpt under it, warnings first, and loads an excerpt only when its card comes near the screen
-- [ ] #2 A key switches to a list of findings beside the source excerpt of the chosen one; arrow keys walk the list, and choosing a finding selects its subject on the picture
-- [ ] #3 The browser remembers the chosen layout, and a page without storage still works with cards
-- [ ] #4 Tests cover the switch, the remembered layout and choosing a finding
+- [x] #1 The code view shows every finding as a card with its source excerpt beside it, warnings first, and loads an excerpt only when its card comes near the screen
+- [x] #2 A key switches to a list of findings beside the source excerpt of the chosen one; arrow keys walk the list, and choosing a finding selects its subject on the picture
+- [x] #3 The browser remembers the chosen layout, and a page without storage still works with cards
+- [x] #4 Tests cover the switch, the remembered layout and choosing a finding
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -36,3 +36,15 @@ On 2026-11-08 the owner asked to see more than one code finding at a time: the p
 4. clients/code-findings-layout.ts keeps the choice in localStorage (archboard.code-findings-layout), as hover-light.ts does, with cards when storage fails.
 5. Split the file where it passes the size rules; tests for the switch, the remembered layout and choosing a finding.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The excerpt stands beside each card, not under it; criterion 1 now says so. The browser test reader-measures.test.ts walks the List layout with the arrow keys in place of the old pager.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Findings show as Cards, each beside its source excerpt and loaded near the screen, or as a List beside the chosen finding's card and source. The arrow keys, Home and End walk the list, and a choice selects its subject. The layout is kept in localStorage under archboard.code-findings-layout and falls back to Cards. Proof: model-code-evidence.test.tsx, reader-measures.test.ts in the browser lane, and screenshots of both layouts in both themes.
+<!-- SECTION:FINAL_SUMMARY:END -->
