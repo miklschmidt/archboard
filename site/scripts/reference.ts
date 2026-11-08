@@ -190,14 +190,22 @@ function catalog(check: "code" | "embeds" | "semantics", help: string) {
 			continue;
 		}
 		if (severity === null) continue;
-		const match = /^- ([A-Za-z_, -]+?): (.*)$/.exec(line);
-		if (!match) continue;
-		const codes = match[1].split(", ").map((code) => code.trim());
+		// A line under a severity head is one entry: `- CODE, CODE: text`, each code maybe in
+		// backticks. A line that does not parse would drop out of the reference, so it fails.
+		const match = /^- ([A-Za-z_, `-]+?): (.*)$/.exec(line);
+		const codes = (match?.[1] ?? "")
+			.replaceAll("`", "")
+			.split(", ")
+			.map((code) => code.trim());
 		const valid =
 			severity === "skip"
 				? codes.every((code) => /^[a-z]+(-[a-z]+)+$/.test(code))
 				: codes.every((code) => /^[A-Z]+(_[A-Z]+)+$/.test(code));
-		if (!valid) continue;
+		if (!match || !valid) {
+			throw new Error(
+				`The help of "archboard check ${check}" has an entry that is no finding: ${line}`,
+			);
+		}
 		const text = match[2];
 		entries.push({
 			codes,
