@@ -236,7 +236,9 @@ function checksIn(asked: readonly URL[]): URL[] {
  * @param layout The layout to switch to.
  */
 async function lay(layout: "cards" | "list"): Promise<void> {
-	await press(document.querySelector(`[data-slot="code-findings-layout"] [data-choice="${layout}"]`)!);
+	await press(
+		document.querySelector(`[data-slot="code-findings-layout"] [data-choice="${layout}"]`)!,
+	);
 }
 
 // The first test, because the page reads its storage once, when the layout is first asked for.
@@ -248,7 +250,9 @@ test("a page starts with the layout its browser remembers", async () => {
 		"list",
 	);
 	await waitFor(() =>
-		expect(document.querySelector('[data-slot="code-source-state"][data-unavailable]')).not.toBeNull(),
+		expect(
+			document.querySelector('[data-slot="code-source-state"][data-unavailable]'),
+		).not.toBeNull(),
 	);
 });
 
@@ -370,7 +374,12 @@ test.each([
 ])("the excerpt highlights %s evidence that the code check reads", async (path, source) => {
 	const tokens = await cacheClient().fetchQuery(codeTokensQuery(path, [source]));
 	expect(tokens).not.toBeNull();
-	expect(tokens?.flat().map((token) => token.content).join("")).toBe(source);
+	expect(
+		tokens
+			?.flat()
+			.map((token) => token.content)
+			.join(""),
+	).toBe(source);
 });
 
 /** The reading on screen, by the names a code pass gives it. */
@@ -418,7 +427,14 @@ function serverWithPass(reading: Reading): { asked: URL[]; finish: () => void } 
 		if (address.pathname === "/api/vault/code-check") {
 			await passed;
 			checked = true;
-			return Response.json({ success: true, timings: [], states: [], findings: [], skipped: [], behind: [] });
+			return Response.json({
+				success: true,
+				timings: [],
+				states: [],
+				findings: [],
+				skipped: [],
+				behind: [],
+			});
 		}
 		if (address.pathname === "/api/vault/code-findings")
 			return Response.json({ success: true, readings: [], models: checked ? [reading] : [] });
@@ -431,20 +447,26 @@ test("the code view starts one pass when no pass read the reading, and then show
 	const { asked, finish } = serverWithPass(READING);
 	const cache = cacheClient();
 	const view = render(
-		createElement(QueryClientProvider, { client: cache }, createElement(CodeView, { model: MODEL })),
+		createElement(
+			QueryClientProvider,
+			{ client: cache },
+			createElement(CodeView, { model: MODEL }),
+		),
 	);
 	await waitFor(() =>
 		expect(document.querySelector('[data-slot="code-evidence-checking"]')).not.toBeNull(),
 	);
-	await waitFor(() =>
-		expect(checksIn(asked)).toHaveLength(1),
-	);
-	expect(asked.find((one) => one.pathname === "/api/vault/code-check")?.searchParams.has("state")).toBe(
-		false,
-	);
+	await waitFor(() => expect(checksIn(asked)).toHaveLength(1));
+	expect(
+		asked.find((one) => one.pathname === "/api/vault/code-check")?.searchParams.has("state"),
+	).toBe(false);
 	view.unmount();
 	render(
-		createElement(QueryClientProvider, { client: cache }, createElement(CodeView, { model: MODEL })),
+		createElement(
+			QueryClientProvider,
+			{ client: cache },
+			createElement(CodeView, { model: MODEL }),
+		),
 	);
 	await act(async () => {
 		finish();

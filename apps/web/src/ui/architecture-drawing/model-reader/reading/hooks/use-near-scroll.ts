@@ -12,7 +12,10 @@ const NEAR = "600px 0px";
  * A browser that cannot tell counts every element as near.
  * @returns The ref for the element, and whether it has come near.
  */
-function useNearScroll(): { readonly ref: (element: Element | null) => void; readonly near: boolean } {
+function useNearScroll(): {
+	readonly ref: (element: Element | null) => void;
+	readonly near: boolean;
+} {
 	const [element, setElement] = useState<Element | null>(null);
 	const [near, setNear] = useState(() => typeof IntersectionObserver === "undefined");
 	useEffect(() => {

@@ -83,12 +83,4 @@ function voiceEnd(voice: AgentVoiceView, actions: AgentActions): (() => void) | 
 	return !voice.busy && ENDABLE.has(voice.stage) ? actions.endVoice : undefined;
 }
 
-export {
-	CIRCLE_NAMES,
-	ENDABLE,
-	VOICE_WORDS,
-	circleState,
-	voiceEnd,
-	voicePress,
-	type CircleState,
-};
+export { CIRCLE_NAMES, ENDABLE, VOICE_WORDS, circleState, voiceEnd, voicePress, type CircleState };

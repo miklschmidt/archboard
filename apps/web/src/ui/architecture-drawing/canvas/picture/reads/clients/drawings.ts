@@ -253,7 +253,10 @@ interface CodeCheckReading {
  * @param reading The reading.
  */
 async function runCodeCheck(vault: string, reading: CodeCheckReading): Promise<void> {
-	const named = reading.current || reading.state === null ? "" : `?${new URLSearchParams({ state: reading.state })}`;
+	const named =
+		reading.current || reading.state === null
+			? ""
+			: `?${new URLSearchParams({ state: reading.state })}`;
 	await readRoute(`${CODE_CHECK_URL}${named}`, vault);
 }
 

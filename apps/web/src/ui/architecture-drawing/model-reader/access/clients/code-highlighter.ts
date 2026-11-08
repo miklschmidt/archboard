@@ -8,11 +8,7 @@
 // A file of another language, or a grammar that fails to load, keeps its plain text.
 
 import { queryOptions } from "@tanstack/react-query";
-import {
-	createCssVariablesTheme,
-	createHighlighterCore,
-	type HighlighterCore,
-} from "shiki/core";
+import { createCssVariablesTheme, createHighlighterCore, type HighlighterCore } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import {
 	GRAMMARS,

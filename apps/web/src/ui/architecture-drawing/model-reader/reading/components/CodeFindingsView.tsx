@@ -351,7 +351,10 @@ function FindingRowHead(props: {
 		<span className="flex min-w-0 items-center gap-2">
 			<Mark
 				aria-hidden="true"
-				className={cn("size-3.5 shrink-0", warning ? "text-standing-changed" : "text-muted-foreground")}
+				className={cn(
+					"size-3.5 shrink-0",
+					warning ? "text-standing-changed" : "text-muted-foreground",
+				)}
 			/>
 			<span className="sr-only">{SEVERITY_WORDS[finding.severity]}: </span>
 			<span className="text-control text-foreground shrink-0 font-medium">
