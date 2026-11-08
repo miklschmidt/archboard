@@ -114,16 +114,16 @@ function onePicture(
 	drawn: Record<string, string>,
 ): PictureSameness | undefined {
 	if (!sameDrawings(drawn)) return undefined;
-	for (const theme of THEMES) delete drawn[`before-${theme}.svg`];
-	let same: PictureSameness = "whole";
-	for (const theme of drawings.focus.length === 0 ? [] : THEMES) {
+	for (const theme of THEMES) {
+		delete drawn[`before-${theme}.svg`];
+		if (drawings.focus.length === 0) continue;
 		const out = join(context.scratch, "pictures", `focus-${theme}.svg`);
 		if (renderPicture(context, drawings.headDir, { ...drawings, theme, out })) {
 			drawn[`focus-${theme}.svg`] = out;
-			same = "close-up";
 		}
 	}
-	return same;
+	// The comment needs a light picture for its <img>, even when a dark source exists.
+	return drawn["focus-light.svg"] === undefined ? "whole" : "close-up";
 }
 
 /**

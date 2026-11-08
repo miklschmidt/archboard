@@ -279,7 +279,10 @@ describe("the entry", () => {
 
 	test("a pull request from a fork still gets its comment, without pictures, and says why", async () => {
 		comments.length = 0;
-		const result = await step({ GITHUB_SERVER_URL: `file://${join(root, "missing")}` }, true);
+		const result = await step(
+			{ GITHUB_SERVER_URL: `file://${join(root, "missing")}`, FAKE_PICTURE: "same" },
+			true,
+		);
 		expect(result.exitCode).toBe(0);
 		expect(comments[0]?.body).not.toContain("<img");
 		expect(comments[0]?.body).toContain("fork");
@@ -397,9 +400,9 @@ describe("the entry", () => {
 		movedTo = current;
 		moveOnRead = 3;
 		try {
-			const result = await step();
+			const result = await step({ FAKE_PICTURE: "same" });
 			expect(result.exitCode).toBe(0);
-			expect(result.commands).toContain("model render");
+			expect(result.commands).toContain("--focus");
 			expect(publishedHead()).toBe(before);
 			expect(comments.map((one) => one.body)).toEqual(bodies);
 		} finally {
