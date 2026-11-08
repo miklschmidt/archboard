@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T13:12:00Z'
-updated_date: '2026-11-08T15:53:00Z'
+updated_date: '2026-11-08T16:40:00Z'
 labels:
   - frontend
   - design
@@ -59,6 +59,8 @@ Review also found that a flow or walkthrough leaves the previous module marked i
 The site audit found an old claim banner in ProductWindow. Replace it with the centered card, name the whole model, and remove its looping status halo. Rebuilt diagrams differ only in newly allocated sample identities, so keep the existing drawings.
 
 Review completed for a2af63695..cd031b68f. Fixed claim persistence during connection loss, exclusive navigation markers for flows and walkthroughs, the old claim banner in the site mock, and the stale design statement about selection in the tree. Validation passed: lint, type-check, 36 focused unit tests, canonical-model-viewer, canonical-model-proposals, canonical-model-reconciliation, shell-layout, reader-column, formatting, model semantics, site paint, site render, and the final site build. Compared the app in both themes, one and two panes, and the site demos through the shared browser. The existing ownership boundaries remain accurate.
+
+Review of 545f27fbe..a552e0c27: inspect shared rows, section labels, legend movement, and site mocks against the owner specification. Replace wrapper-shape assertions with legend reachability and keep DESIGN.md consistent. The Browser module keeps its reader, selection, and event ownership, so no architecture proposal is needed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

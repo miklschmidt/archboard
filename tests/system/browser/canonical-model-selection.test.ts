@@ -41,15 +41,19 @@ async function subjectShown(browser: AgentBrowserSession): Promise<boolean> {
 	);
 }
 
-/** Whether the legend ends the panel beside the picture, under the subject, with no click. */
+/** Whether the reader can scroll the legend into view beside the picture, with no click. */
 async function legendInView(browser: AgentBrowserSession): Promise<boolean> {
 	return browser.eval<boolean>(`(() => {
 		const legend = document.querySelector('[data-slot="model-legend"]');
 		const scroll = document.querySelector('[data-slot="model-panel-scroll"]');
 		const picture = document.querySelector('[data-slot="model-diagram"]').getBoundingClientRect();
+		if (legend === null) return false;
+		legend.scrollIntoView({ block: 'end' });
+		const bounds = legend.getBoundingClientRect();
+		const viewport = scroll.getBoundingClientRect();
 		return legend !== null && legend.querySelector('[data-slot="model-legend-kinds"] li') !== null
-			&& scroll.lastElementChild.contains(legend) && legend.closest('[data-slot="model-panel-subject"]') === null
-			&& legend.getBoundingClientRect().left >= picture.right;
+			&& legend.checkVisibility() && bounds.top >= viewport.top && bounds.bottom <= viewport.bottom
+			&& bounds.left >= picture.right;
 	})()`);
 }
 
