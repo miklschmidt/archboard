@@ -13,7 +13,7 @@ Where things are written down:
 - Changing frontend code: [docs/agents/frontend.md](docs/agents/frontend.md)
 - Decisions: [docs/adr/](docs/adr/). Read the ADR before you touch what it decides.
 - Measured investigations: [docs/design/](docs/design/). The visual authority of the UI is
-  [docs/design/operator-canvas-shell.md](docs/design/operator-canvas-shell.md) with its reference image.
+  [DESIGN.md](DESIGN.md).
 - Writing tests, and changing tests or CI: [docs/agents/test-suite.md](docs/agents/test-suite.md)
 - Building and publishing a release on npm: [docs/agents/releasing.md](docs/agents/releasing.md)
 - Refreshing the README's diagrams, clips, banner and videos:
