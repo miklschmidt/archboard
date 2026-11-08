@@ -1,10 +1,10 @@
 ---
 id: TASK-608
 title: An open tab learns of a rebuilt frontend at the next selection or navigation
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-08T15:51:00Z'
-updated_date: '2026-11-08T16:10:00Z'
+updated_date: '2026-11-08T16:11:00Z'
 labels:
   - bug
   - frontend
@@ -24,11 +24,11 @@ TASK-056 meant an open tab to hear that the server now serves a newer frontend b
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A tab whose registered build differs from the built frontend gets the stale-build notice after it changes its selection or navigates, with no pane report in between
-- [ ] #2 A tab on the current build, on the dev server, or with no named build hears nothing from a reading
-- [ ] #3 The notice appears once per served build, whichever reply said it first
-- [ ] #4 One staleness rule answers both the pane report and the reading, and no timer or poll is added
-- [ ] #5 No comment or doc claims that a pane reports on every scroll, resize and zoom
+- [x] #1 A tab whose registered build differs from the built frontend gets the stale-build notice after it changes its selection or navigates, with no pane report in between
+- [x] #2 A tab on the current build, on the dev server, or with no named build hears nothing from a reading
+- [x] #3 The notice appears once per served build, whichever reply said it first
+- [x] #4 One staleness rule answers both the pane report and the reading, and no timer or poll is added
+- [x] #5 No comment or doc claims that a pane reports on every scroll, resize and zoom
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -66,3 +66,13 @@ Validation inside nix develop: bun install and bun run build pass. The unrelated
 
 The initial build reports its existing large-chunk warning. Both private servers stopped.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+An open tab now learns that the server serves a newer frontend build at its next selection or navigation. The semantic-context route answers the same `staleFrontend` fact as the pane report, from the build the pane named when it registered, through one `staleFrontend` rule in server-lifecycle. The client feeds both replies into one notice memory that lasts as long as the page, so each served build is announced once, across panes and late replies. No timer or poll was added. The comments that said a pane reports on every scroll, resize and zoom now describe when it reports, and the model anchor of Pane routes -> Staleness names `staleFrontend`.
+
+Verification: the frontend staleness system owner, the reading-publisher and stale-build module owners (each fails without its fix), type-check, lint, format, and `check:model`. In a real browser, a card selection alone raised the notice, a dismissed notice stayed dismissed for the same build, a newer build raised it again, and the reloaded tab stayed silent.
+
+Limit: `packages/workbench/src/server/panes/services/context.ts` has no model module, so its call to Staleness is not drawn.
+<!-- SECTION:FINAL_SUMMARY:END -->
