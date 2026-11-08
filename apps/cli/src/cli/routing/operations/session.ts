@@ -105,6 +105,7 @@ async function runInterruptibleCommand(
 }
 
 const RETIRED_COMMANDS: Readonly<Record<string, string>> = {
+	"install-skill": "Use `archboard init`.",
 	pane: "Use `archboard browser open` or `archboard browser close <pane>`.",
 	panes: "Use `archboard browser panes`.",
 	selection: "Use `archboard browser panes`: it lists what each pane shows and what is selected.",
