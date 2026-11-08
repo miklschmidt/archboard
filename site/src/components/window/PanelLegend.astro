@@ -15,7 +15,6 @@ const kinds: [Kind, string][] = [
 const lines = [
 	["HTTP", "var(--sky)"],
 	["Data", "var(--emerald)"],
-	["Illustrated traffic", "var(--neutral)"],
 ] as const;
 ---
 
@@ -30,24 +29,29 @@ const lines = [
 			))
 		}
 	</ul>
-	<p class="head">Relationships <span class="filter"><Icon name="filter" size={12} /> Filter</span></p>
-	<ul class="grid lines">
+	<p class="head">Relationships</p>
+	<ul class="lines">
 		{
 			lines.map(([name, color]) => (
 				<li>
 					<span class="line" style={`--c: ${color}`}></span> {name}
+					<Icon name="eye" size={16} class="eye" />
 				</li>
 			))
 		}
+	</ul>
+	<ul class="grid marks">
+		<li><span class="line" style="--c: var(--neutral)"></span> Illustrated traffic</li>
 	</ul>
 	<p class="head">Groups</p>
 	<p class="tags"><span class="tag payments">Payments</span><span class="tag fulfilment">Fulfilment</span></p>
 </div>
 
 <style>
-	/* The legend has three parts, each under the label of any section of the panel. Only a line
-	   type can be hidden, so Filter stands at the right end of the Relationships label. A row is
-	   28px, with no plate under it. */
+	/* The legend has three parts, each under the label of any section of the panel. A line type
+	   stands on a row of its own, and the row is its switch, with an eye at its end. The marks of
+	   lines, which no reader hides, stand under the types in two columns. A row is 28px, with no
+	   plate under it. */
 	.legend {
 		display: flex;
 		flex-direction: column;
@@ -68,17 +72,6 @@ const lines = [
 		font-size: 12.5px;
 		font-weight: 600;
 	}
-	.filter {
-		display: inline-flex;
-		align-items: center;
-		gap: 4px;
-		height: 24px;
-		padding: 0 8px;
-		border-radius: 3px;
-		font-size: 12px;
-		font-weight: 400;
-		box-shadow: inset 0 0 0 1px var(--rule);
-	}
 	.grid {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
@@ -87,12 +80,23 @@ const lines = [
 		margin: 0;
 		padding: 0;
 	}
-	.grid li {
+	.grid li,
+	.lines li {
 		display: flex;
 		align-items: center;
 		gap: 8px;
 		min-height: 28px;
 		font-size: 13px;
+	}
+	.lines {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	/* The eye stands at the end of its own row, where a click on the row hides the type. */
+	.lines :global(.eye) {
+		margin: 0 4px 0 auto;
+		color: var(--ink-muted);
 	}
 	.line {
 		width: 24px;

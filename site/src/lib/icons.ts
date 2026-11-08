@@ -40,7 +40,6 @@ import bell from "remixicon/icons/Media/notification-3-line.svg?raw";
 import chart from "remixicon/icons/Business/bar-chart-2-line.svg?raw";
 import chevronDown from "remixicon/icons/Arrows/arrow-down-s-line.svg?raw";
 import close from "remixicon/icons/System/close-line.svg?raw";
-import filter from "remixicon/icons/System/filter-line.svg?raw";
 import fullscreen from "remixicon/icons/Media/fullscreen-line.svg?raw";
 import openai from "remixicon/icons/Logos/openai-line.svg?raw";
 import settings from "remixicon/icons/System/settings-3-line.svg?raw";
@@ -89,7 +88,6 @@ export const icons = {
 	chart,
 	chevronDown,
 	close,
-	filter,
 	fullscreen,
 	openai,
 	settings,
