@@ -642,8 +642,8 @@ no key to find first, because a control that only appears on request reads as mi
 the line types, 4px apart and in two columns, stand what no reader hides, with no switch: a
 mixed line, which is no kind of relationship, then `More emphasis` and `Illustrated traffic`,
 the marks that lines wear beside their kinds. A row with an eye can be hidden, and a mark in the
-two columns cannot. While a line type of the reading is hidden, a ghost key `Show all` stands
-at the right end of the `Relationships` row and brings every type back in one press. It needs
+two columns cannot. While a line type of the reading is hidden, the key `Show all` stands at
+the right end of the `Relationships` row, 24px high and drawn as `Trace back` is, and brings every type back in one press. It needs
 no count, because every hidden type stays in the list.
 
 The rows come from the whole reading, not from what the picture draws now, and each list keeps

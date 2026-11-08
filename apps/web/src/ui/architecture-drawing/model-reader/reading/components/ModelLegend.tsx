@@ -2,7 +2,7 @@ import { RiEyeLine, RiEyeOffLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 import type { Model, ModelFilters, projectModel } from "@archboard/model/content";
-import { Button, cn } from "@archboard/ui-kit/components";
+import { cn } from "@archboard/ui-kit/components";
 import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import {
 	EmphasisSample,
@@ -38,6 +38,9 @@ const SAMPLE_WIDTH = 24;
  * the same columns.
  */
 const CELLS = "grid grid-cols-2 gap-x-2";
+/** `Show all` looks like the panel's other keys on a label row, such as `Trace back` (`TraceToggle`). */
+const PANEL_KEY =
+	"text-body border-border hover:bg-sidebar-accent/50 rounded-control flex h-6 shrink-0 items-center border px-2 transition-colors";
 
 /** Inputs for the legend. */
 interface ModelLegendProps {
@@ -186,15 +189,14 @@ function Lines(props: LinesProps): JSX.Element | null {
 	const action = useMemo(
 		() =>
 			hidden ? (
-				<Button
+				<button
+					type="button"
 					data-slot="model-legend-show-all"
-					variant="ghost"
-					size="xs"
 					onClick={onShowAll}
-					className="px-2"
+					className={PANEL_KEY}
 				>
 					Show all
-				</Button>
+				</button>
 			) : undefined,
 		[hidden, onShowAll],
 	);
