@@ -17,6 +17,7 @@ import {
 	CHECK_SEMANTICS_HELP,
 	FIX_HELP,
 } from "#cli/commands/vault/operations/check-help.ts";
+import { checkResult } from "#cli/commands/vault/operations/check-result.ts";
 import { checkEmbeds } from "#cli/commands/vault/embeds/operations/embeds-check.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { checkSemanticVaultOnServer } from "#cli/server-access/clients/vault-check.ts";
@@ -316,34 +317,6 @@ const codeCheckStages = [
 	},
 ];
 
-const checkOutput = {
-	cases: [
-		{
-			id: "json",
-			when: {},
-			mode: "json" as const,
-			description: "One part for each check that ran: semantics, code, embeds",
-			presentation: ["diagnostics", "result"] as const,
-		},
-	],
-	/**
-	 * Select JSON output.
-	 * @returns The output case.
-	 */
-	select: () => "json",
-} as const;
-
-const checkOutcomes = [
-	{
-		id: "issues",
-		exit: 1,
-		description:
-			"The semantics check has a diagnostic or a warning, or the code check or the embeds check a warning. Information never changes the exit status",
-		stream: "stdout-and-stderr",
-		presentation: ["diagnostics", "result"],
-	},
-] as const;
-
 const embedsRelationships = [
 	{
 		method: "GET",
@@ -434,12 +407,14 @@ const checkAllContract = defineCommand({
 	parameters: [...codeCheckParameters, fixParameter],
 	input: { ingress: CodeCheckInputSchema.extend(FixInputSchema.shape), stages: codeCheckStages },
 	result: CheckAnswerSchema,
-	output: checkOutput,
+	...checkResult(
+		"One part for each check that ran: `semantics`, `code`, `embeds`",
+		"The `semantics` part has a diagnostic, or the `code` part or the `embeds` part a warning. Information never changes the exit status",
+	),
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
 	refusals: [serverRefusal, noSuchDraftRefusal, planRefusal],
 	relationships: [semanticsRoute, codeRoute, ...embedsRelationships],
-	outcomes: checkOutcomes,
 	/**
 	 * Run every check.
 	 * @param input What the code check reads, and whether the embeds check fixes.
@@ -465,12 +440,14 @@ const checkEmbedsContract = defineCommand({
 	parameters: [fixParameter],
 	input: { ingress: FixInputSchema },
 	result: CheckAnswerSchema,
-	output: checkOutput,
+	...checkResult(
+		"One part, `embeds`: the artifacts it inspected, the source `vaults`, the `findings` and the repairs in `fixed`",
+		"The `embeds` part has a warning. Information never changes the exit status",
+	),
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
 	refusals: [serverRefusal],
 	relationships: embedsRelationships,
-	outcomes: checkOutcomes,
 	/**
 	 * Run the embeds check.
 	 * @param input Whether it fixes.
@@ -491,12 +468,14 @@ const checkSemanticsContract = defineCommand({
 	parameters: [],
 	input: { ingress: z.object({}) },
 	result: CheckAnswerSchema,
-	output: checkOutput,
+	...checkResult(
+		"One part, `semantics`: the vault policy, its `diagnostics` and the `timings`",
+		"The `semantics` part has a diagnostic: a warning or an error",
+	),
 	prerequisites: ["server"],
 	effects: ["read"],
 	refusals: [serverRefusal],
 	relationships: [semanticsRoute],
-	outcomes: checkOutcomes,
 	/**
 	 * Run the semantics check.
 	 * @param _input Nothing: the semantics check takes no option.
@@ -522,12 +501,14 @@ const checkCodeContract = defineCommand({
 	parameters: codeCheckParameters,
 	input: { ingress: CodeCheckInputSchema, stages: codeCheckStages },
 	result: CheckAnswerSchema,
-	output: checkOutput,
+	...checkResult(
+		"One part, `code`: the `findings`, the `skipped` reads and the `timings`",
+		"The `code` part has a warning. Information and skips never change the exit status",
+	),
 	prerequisites: ["server"],
 	effects: ["read"],
 	refusals: [serverRefusal, noSuchDraftRefusal, planRefusal],
 	relationships: [codeRoute],
-	outcomes: checkOutcomes,
 	/**
 	 * Run the code check.
 	 * @param input What the code check reads.
