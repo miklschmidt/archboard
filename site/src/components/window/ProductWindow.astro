@@ -20,16 +20,23 @@ const shop = drawings.webShop;
 			<div class="column-head">
 				<Mark size={18} id="window-mark" />
 				<span class="wordmark">archboard</span>
+				<span class="tools">
+					<Icon name="search" size={16} />
+					<Icon name="bell" size={16} />
+					<Icon name="settings" size={16} />
+					<Icon name="sun" size={16} />
+				</span>
 			</div>
 			<div class="pane-head">
 				<span class="crumb">Shop</span>
-				<span class="state"><span class="dot"></span> Current: Synchronous checkout</span>
-				<span class="claim" data-claim>
-					<span class="dot"></span> codex is mapping the shop
-				</span>
-				<span class="voice"><Icon name="voice" size={14} /> Codex</span>
+				<span class="field reading">Current</span>
+				<span class="field">No comparison <Icon name="chevronDown" size={15} /></span>
 			</div>
-			<div class="panel-head">Selection</div>
+			<div class="panel-head">
+				<span class="views"><span class="is-on">Diagram</span><span>About</span></span>
+				<Icon name="fullscreen" size={16} />
+				<Icon name="add" size={16} />
+			</div>
 			<div class="left">
 				<Navigator />
 				<div class="dock">
@@ -42,6 +49,18 @@ const shop = drawings.webShop;
 					<img src={shop.url} width={shop.width} height={shop.height} alt="" decoding="async" />
 				</figure>
 				<canvas class="paint" aria-hidden="true"></canvas>
+				<div class="claim">
+					<p class="claim-state">
+						<span class="live"><span class="dot"></span> Claimed</span>
+						<span class="mono since">since 14:02</span>
+					</p>
+					<dl class="claim-facts">
+						<dt>State</dt><dd>Synchronous checkout</dd>
+						<dt>Doing</dt><dd>mapping the shop</dd>
+						<dt>Subjects</dt><dd>1 subject</dd>
+					</dl>
+					<span class="take"><Icon name="lock" size={15} /> Take back control</span>
+				</div>
 				<button class="replay" type="button" data-replay hidden>
 					<Icon name="back" size={15} /> Replay
 				</button>
@@ -73,7 +92,7 @@ const shop = drawings.webShop;
 		scale: var(--scale);
 		transform-origin: 0 0;
 		display: grid;
-		grid-template-columns: 290px 1fr 290px;
+		grid-template-columns: 280px 1fr 360px;
 		grid-template-rows: 44px 1fr;
 		width: var(--window-width);
 		height: var(--window-height);
@@ -118,67 +137,138 @@ const shop = drawings.webShop;
 		color: var(--ink);
 		margin-top: 2px;
 	}
+	.tools {
+		display: flex;
+		gap: 14px;
+		margin-left: auto;
+		color: var(--ink);
+	}
 	.panel-head {
-		box-shadow:
-			inset 0 -1px 0 var(--rule),
-			inset 1px 0 0 var(--rule);
-		font-weight: 600;
+		justify-content: flex-end;
+		gap: 16px;
 		color: var(--ink);
 	}
 	.crumb {
-		font-weight: 650;
+		font-weight: 600;
 		color: var(--ink);
 		font-size: 13px;
 	}
-	.state,
-	.claim,
-	.voice {
+	.field,
+	.views {
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		height: 24px;
-		padding: 0 9px;
+		height: 28px;
+		padding: 0 10px;
 		border-radius: 3px;
-		font-size: 11.5px;
-		background: var(--card);
+		font-size: 13px;
+		color: var(--ink);
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	.reading {
+		justify-content: center;
+		width: 128px;
+		background: var(--raised);
 		box-shadow: var(--shadow-raised);
+	}
+	.views {
+		margin-right: auto;
+		padding: 2px;
+		gap: 0;
+	}
+	.views span {
+		padding: 3px 10px;
+		border-radius: 3px;
 		color: var(--ink-muted);
 	}
-	.state .dot {
-		color: var(--gold-mark);
-		width: 6px;
-		height: 6px;
-	}
-	.claim {
+	.views .is-on {
 		color: var(--ink);
-		background: color-mix(in srgb, var(--live) 14%, var(--card));
+		background: var(--raised);
 		box-shadow:
 			var(--shadow-raised),
-			inset 0 0 0 1px color-mix(in srgb, var(--live) 40%, transparent);
+			inset 0 -2px 0 var(--gold-mark);
+	}
+	/* The claim lies over the top of the picture while the agent holds it, as the shell shows it. */
+	.claim {
+		position: absolute;
+		top: 12px;
+		left: 12px;
+		right: 12px;
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		gap: 22px;
+		padding: 10px 14px;
+		border-radius: 6px;
+		background: var(--chrome);
+		box-shadow:
+			var(--shadow-float),
+			inset 0 0 0 1px color-mix(in oklch, var(--live) 35%, transparent);
+		font-size: 12.5px;
 		opacity: 0;
-		translate: 0 4px;
+		translate: 0 -4px;
 		transition:
 			opacity 300ms var(--ease-out),
 			translate 300ms var(--ease-out);
 	}
-	.claim .dot {
-		color: var(--live);
-		width: 6px;
-		height: 6px;
-		box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 25%, transparent);
-		animation: live 1.6s var(--ease-in-out) infinite;
-	}
 	:global(.window[data-claimed]) .claim {
 		opacity: 1;
 		translate: 0 0;
+	}
+	.claim-state {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.live {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.live .dot {
+		color: var(--live);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 25%, transparent);
+		animation: live 1.6s var(--ease-in-out) infinite;
 	}
 	@keyframes live {
 		50% {
 			box-shadow: 0 0 0 5px color-mix(in srgb, var(--live) 5%, transparent);
 		}
 	}
-	.voice {
+	.since {
+		font-size: 11px;
+		color: var(--ink-muted);
+	}
+	.claim-facts {
+		display: grid;
+		grid-template-columns: auto auto;
+		gap: 0 14px;
+		margin: 0;
+	}
+	.claim-facts dt {
+		color: var(--ink-muted);
+	}
+	.claim-facts dd {
+		margin: 0;
+		color: var(--ink);
+	}
+	.take {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
 		margin-left: auto;
+		height: 30px;
+		padding: 0 12px;
+		border-radius: 4px;
+		font-weight: 600;
+		color: var(--gold-ink);
+		background: linear-gradient(180deg, var(--gold-top), var(--gold-bottom));
+		box-shadow:
+			inset 0 1px 0 oklch(1 0.02 90 / 0.55),
+			inset 0 0 0 1px var(--gold-edge);
 	}
 	.left {
 		display: grid;
