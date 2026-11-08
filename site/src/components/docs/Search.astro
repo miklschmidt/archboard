@@ -13,15 +13,18 @@ import Icon from "../Icon.astro";
 				placeholder="Search the docs"
 				autocomplete="off"
 				spellcheck="false"
+				role="combobox"
 				aria-label="Search the docs"
 				aria-controls="search-results"
+				aria-autocomplete="list"
+				aria-expanded="false"
 				data-search-input
 			/>
 			<button type="button" class="close" data-search-close aria-label="Close the search">
 				<kbd>Esc</kbd>
 			</button>
 		</div>
-		<div class="results" id="search-results" role="listbox" data-search-results>
+		<div class="results" id="search-results" role="listbox" aria-label="Search results" data-search-results>
 			<p class="hint" data-search-hint>Type to search every page, command and schema.</p>
 		</div>
 		<div class="foot" aria-hidden="true">

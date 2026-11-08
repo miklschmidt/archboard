@@ -134,11 +134,18 @@ function mountSearch(): void {
 		line.className = "hint";
 		line.textContent = text;
 		list.replaceChildren(line);
+		input.removeAttribute("aria-activedescendant");
 	};
 	const items = (): HTMLAnchorElement[] => [...list.querySelectorAll<HTMLAnchorElement>(".result")];
 	const select = (index: number): void => {
 		const all = items();
-		all.forEach((item, at) => item.setAttribute("aria-selected", at === index ? "true" : "false"));
+		all.forEach((item, at) => {
+			item.id = `search-result-${at}`;
+			item.setAttribute("aria-selected", at === index ? "true" : "false");
+		});
+		const active = all[index];
+		if (active) input.setAttribute("aria-activedescendant", active.id);
+		else input.removeAttribute("aria-activedescendant");
 		all[index]?.scrollIntoView({ block: "nearest" });
 	};
 	const selected = (): number => items().findIndex((item) => item.ariaSelected === "true");
@@ -193,6 +200,7 @@ function mountSearch(): void {
 	const open = (): void => {
 		if (dialog.open) return;
 		dialog.showModal();
+		input.setAttribute("aria-expanded", "true");
 		input.select();
 		void load();
 	};
@@ -200,6 +208,7 @@ function mountSearch(): void {
 		trigger.addEventListener("click", open);
 	}
 	dialog.querySelector("[data-search-close]")?.addEventListener("click", () => dialog.close());
+	dialog.addEventListener("close", () => input.setAttribute("aria-expanded", "false"));
 	dialog.addEventListener("click", (event) => {
 		if (event.target === dialog) dialog.close();
 	});
