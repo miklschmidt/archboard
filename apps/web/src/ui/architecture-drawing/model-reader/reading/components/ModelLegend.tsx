@@ -48,8 +48,9 @@ const CELLS = "grid grid-cols-2 gap-x-2";
 const NO_LINES: readonly LegendLine[] = [];
 const SECOND_CELL = "w-[calc(50%-0.25rem)]";
 
-/** A key held pressed in. */
-const PRESSED = "bg-muted dark:bg-muted text-foreground shadow-pressed";
+/** The legend's Filter key looks like the panel's other keys, such as Trace back (`TraceToggle`). */
+const PANEL_KEY =
+	"text-body border-border hover:bg-sidebar-accent/50 aria-pressed:border-primary-mark aria-pressed:bg-primary-subtle rounded-control flex h-6 shrink-0 items-center gap-1.5 border px-2 transition-colors";
 
 /** Inputs for the legend. */
 interface ModelLegendProps {
@@ -136,24 +137,26 @@ function LegendKeys(props: {
 	if (!props.filterable) return null;
 	return (
 		<div className={cn(SECOND_CELL, "flex shrink-0 items-center justify-between gap-2")}>
-			<Button
+			<button
+				type="button"
 				data-slot="model-legend-filter"
-				variant="outline"
-				size="xs"
 				aria-pressed={filtering}
 				title={filtering ? "Put the switches away" : "Choose which lines to draw"}
 				onClick={props.onFilter}
-				className={cn("relative", filtering && PRESSED)}
+				className={PANEL_KEY}
 			>
-				<RiFilterLine aria-hidden="true" />
+				<RiFilterLine aria-hidden="true" className="text-muted-foreground size-3.5" />
 				Filter
 				{hidden > 0 && (
-					<span data-slot="model-legend-hidden" className="text-technical font-mono">
+					<span
+						data-slot="model-legend-hidden"
+						className="text-technical text-muted-foreground font-mono"
+					>
 						{hidden}
 						<span className="sr-only"> hidden</span>
 					</span>
 				)}
-			</Button>
+			</button>
 			{hidden > 0 && (
 				<Button
 					data-slot="model-legend-show-all"
