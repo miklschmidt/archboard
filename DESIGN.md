@@ -31,8 +31,8 @@ typography:
     fontFamily: "Archboard Display, Big Shoulders Display, sans-serif"
     fontSize: "20px"
     fontWeight: 650
-    lineHeight: "24px"
-    letterSpacing: "0.07em"
+    lineHeight: "22px"
+    letterSpacing: "0.06em"
   title:
     fontFamily: "Archboard Onest, ui-sans-serif, system-ui, sans-serif"
     fontSize: "14px"
@@ -257,7 +257,7 @@ every role and changes the values. The file theme.css holds both themes.
 - **Tab Piece** (`--tray-tab`, oklch(1 0 0), dark oklch(0.25 0.007 75)): the lighter piece that the picture raises on the edge of a container. The shell does not use it. A chosen tab or row takes Control Face.
 - **Slab Face** (`--slab-face`, oklch(0.915 0.005 85), dark oklch(0.31 0.007 75)): the top face of a number badge, on a front edge of `--slab-edge`.
 - **Control Face** (`--face`, oklch(1 0 0), dark oklch(0.255 0.008 78)): the face of a quiet key, of a chosen tab or row, and of a card on a panel or a page. **Face Hover** (`--face-hover`, oklch(0.978 0.004 88), dark oklch(0.31 0.007 75)) is the same face of a quiet key under the pointer.
-- **Body Ink** (`--body-foreground`, oklch(0.3 0.008 75), dark oklch(0.86 0.008 85)): the ink of prose in a panel, a step under Ink Graphite. The words of an explanation, the reason of a state and the callers of an interface card use it.
+- **Body Ink** (`--body-foreground`, oklch(0.3 0.008 75), dark oklch(0.86 0.008 85)): the ink of prose in a panel, a step under Ink Graphite. The words of an explanation, the reason of a state, the callers of an interface card and the summary under a panel's name use it.
 - **Card White** (oklch(1 0 0), dark oklch(0.235 0.007 75)): cards, popovers, dialogs and the plate of the voice circle.
 - **Ink Graphite** (oklch(0.17 0.006 75), dark oklch(0.955 0.006 90)) and **Muted Ink** (oklch(0.48 0.008 75), dark oklch(0.78 0.008 85)): text.
 - **Rule** (oklch(0.905 0.005 85), dark chalk at 9%): the edge of a control or a card, one pixel wide. It also divides regions on one plane. A quiet key and a plate draw it as an inset ring.
@@ -293,7 +293,7 @@ paths, versions, counts and times.
 
 ### Hierarchy
 
-- **Display** (650, 20px, 24px, 0.07em, capitals): a name set as a title. Examples are a picked part, a variant and a walkthrough. The utility is `title-name`. The model in a pane's breadcrumb is not one: it is Onest (500, 13px) in full ink, as the site sets its nav links, so the display face stays with the wordmark and the titles.
+- **Display** (650, 20px, 22px, 0.06em, capitals): a name set as a title, in the same face and setting as the site's panel mock. Examples are a picked part, a variant and a walkthrough. The utility is `title-name`. The model in a pane's breadcrumb is not one: it is Onest (500, 13px) in full ink, as the site sets its nav links, so the display face stays with the wordmark and the titles.
 - **Title** (600, 14px, 20px): the titles of regions and dialogs.
 - **Nav** (500, 14px, 20px): the name of a model in the navigator.
 - **Control** (500, 13px, 18px): buttons, tabs and fields. The words of a button are semibold.
@@ -587,7 +587,7 @@ once. A new subject opens at the top of the panel and arrives with a 120ms fade.
 Long lists and evidence live on About, which lies over the panel, so the panel keeps its
 room and the picture keeps its camera. A pane presented fullscreen has no panel.
 
-The panel heads a module as the site's mock panel does: the chip of its kind, with the icon the picture draws it with, then its name in the display face, and its kind and code path under the name. A subject with no kind, such as a flow or a connection, has only its name. A section of the panel opens with its title in Body semibold and full ink. Its count stands beside the title in mono and muted ink. Eight pixels part the title from its rows, and 2px part one row from the next.
+The panel heads a module as the site's mock panel does: the chip of its kind, with the icon the picture draws it with, then its name in the display face, and its kind and code path under the name. The chip stands on the top of the name's first line, so a name that wraps leaves it at the top. A subject with no kind, such as a flow or a connection, has only its name. The name and the summary under it stand 8px apart as one block, and the sections follow 20px apart. A section of the panel opens with its title in Body semibold and full ink. Its count stands beside the title in mono and muted ink, 6px from it. Eight pixels part the title from its rows, and 2px part one row from the next. The boxes of the panel, its rows, cells and keys, share one left edge and one right edge, 16px from the panel's sides, and the ink of the close key ends on the right one.
 
 With a module expanded into the picture, the panel stays with the module that the reading
 opened. An `Expanded` section under `Interface` lists each expanded module, with its count.
@@ -601,7 +601,7 @@ Each list has a count, four rows and a line that says how many more. A flow's ro
 with its collection and a walkthrough's with its steps, and the flow on screen takes the
 tone of a chosen row.
 
-A module with parts, open or selected, has an `Interface` section under its head. It holds the counts of entries, callers, `To module` and pass-through. `To module` counts the callers that reach the module itself. An `Implementation` section holds the hidden parts. A count is a cell sunk into the panel: the Well Floor with `shadow-well` and 4px corners. Its name stands at the start in muted ink, and its number in the mono face stands at the end. Two cells share a row.
+A module with parts, open or selected, has an `Interface` section under its head. It holds the counts of entries, callers, `To module` and pass-through. `To module` counts the callers that reach the module itself. An `Implementation` section holds the hidden parts. A count is a cell sunk into the panel: the Well Floor with `shadow-well` and 4px corners. Its name stands at the start in muted ink, and its number in the mono face stands at the end. Two cells share a row, and a cell with no partner takes the whole row, so the rows end on one edge. A count of none keeps its well and sets its name and number in the quieter ink.
 
 Each count selects what it counts on the module's picture, and a count of none is disabled. `Open in About`, a 24px quiet key in the heading, opens the Interface section of About. Each count of a module open in the picture selects on this picture. No count takes a warning color, nothing combines the counts, and the picture gains no permanent mark.
 

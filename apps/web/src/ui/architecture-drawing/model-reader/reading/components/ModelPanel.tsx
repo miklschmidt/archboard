@@ -82,10 +82,12 @@ function ModelPanelRoot(props: ModelPanelProps): JSX.Element {
 			{!props.covered && (
 				<>
 					{onClose !== undefined && (
+						// Its ink, not its box, ends on the 16px edge that the panel's rows and cells end on, and
+						// it centres on the first line of the name.
 						<IconButton
 							label="Clear selection"
 							slot="semantic-selection-clear"
-							className="absolute top-3 right-3 z-10"
+							className="absolute top-3.25 right-1.5 z-10"
 							onClick={onClose}
 						>
 							<RiCloseLine />
@@ -130,7 +132,7 @@ function Body(props: {
 		<article
 			data-slot={props.slot}
 			data-module-id={props.moduleId}
-			className="flex min-h-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto p-4"
+			className="flex min-h-0 flex-1 flex-col gap-5 overflow-x-hidden overflow-y-auto p-4"
 		>
 			{props.children}
 		</article>
@@ -152,9 +154,9 @@ function Head(props: {
 	readonly children?: ReactNode;
 }): JSX.Element {
 	return (
-		<header className="flex items-center gap-2.5 pr-8">
+		<header className="flex items-start gap-2.5 pr-8">
 			{props.mark}
-			<div className="flex min-w-0 flex-col gap-1">
+			<div className="flex min-w-0 flex-col gap-0.5">
 				<h3 className="title-name text-balance [overflow-wrap:anywhere]">{props.title}</h3>
 				{props.children !== undefined && (
 					<div className="text-body text-muted-foreground flex min-w-0 flex-wrap gap-x-2">
@@ -186,7 +188,7 @@ function Section(props: {
 	return (
 		<section data-slot={props.slot} aria-label={props.title} className="flex flex-col gap-2">
 			<div className="flex min-h-6 items-center justify-between gap-2">
-				<h4 className="text-body text-foreground flex items-baseline gap-2 font-semibold">
+				<h4 className="text-body text-foreground flex items-baseline gap-1.5 font-semibold">
 					{props.title}
 					{props.count !== undefined && (
 						<span className="text-technical text-muted-foreground font-mono font-normal">
@@ -269,7 +271,7 @@ function Row({
 				className={cn(
 					// A row is a plate on the panel, as the site's inspector lists its parts; the row on
 					// screen rises as a raised face.
-					"bg-background hover:bg-face aria-pressed:bg-face aria-pressed:shadow-raised aria-[current=location]:bg-face aria-[current=location]:shadow-raised rounded-control flex min-h-7 min-w-0 flex-1 gap-x-2 px-2 py-1 text-left transition-colors",
+					"bg-background hover:bg-face aria-pressed:bg-face aria-pressed:shadow-raised aria-[current=location]:bg-face aria-[current=location]:shadow-raised rounded-control flex min-h-7 min-w-0 flex-1 gap-x-2 px-2 py-1.25 text-left transition-colors",
 					stacked ? "flex-col" : "items-baseline",
 					foot !== undefined && "relative overflow-hidden",
 				)}

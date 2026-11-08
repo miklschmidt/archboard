@@ -64,7 +64,8 @@ function ModelInterfaceLine(props: ModelInterfaceLineProps): JSX.Element | null 
 }
 
 /**
- * The counts of one section, on one line.
+ * The counts of one section, two to a row. A count with no partner takes the whole row, so the
+ * rows end on one edge.
  * @param props The counts and what they do.
  * @param props.counts Every count of the module.
  * @param props.hidden Whether this section shows its hidden parts, or the rest.
@@ -103,7 +104,7 @@ function CountWords(props: { readonly count: number; readonly label: string }): 
 	return (
 		<>
 			<span className="truncate">{`${label.charAt(0).toUpperCase()}${label.slice(1)}`}</span>
-			<span className="text-foreground font-mono text-[12px] leading-4">{count}</span>
+			<span className="group-enabled:text-foreground font-mono text-[12px] leading-4">{count}</span>
 		</>
 	);
 }
@@ -131,7 +132,7 @@ function Count(props: {
 			title={count.key === "hiddenParts" ? HIDDEN_MEANS : undefined}
 			disabled={count.subjects.length === 0}
 			onClick={show}
-			className="text-body text-muted-foreground bg-tray-sink shadow-well enabled:hover:text-foreground enabled:hover:bg-face/60 rounded-control flex min-w-0 items-baseline justify-between gap-2 px-2 py-1.5 text-left whitespace-nowrap disabled:opacity-70"
+			className="group text-body text-muted-foreground bg-tray-sink shadow-well enabled:hover:text-foreground enabled:hover:bg-face/60 rounded-control disabled:text-muted-foreground/80 flex min-w-0 items-baseline justify-between gap-2 px-2 py-1.5 text-left whitespace-nowrap odd:last:col-span-2"
 		>
 			<CountWords count={count.count} label={count.label} />
 		</button>

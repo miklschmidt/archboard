@@ -87,8 +87,8 @@
 	/* name: the display face's one chrome size, for a name set as a title
 	   (the `title-name` utility adds the face, the capitals and the tracking). */
 	--text-name: 20px;
-	--text-name--line-height: 24px;
-	--text-name--letter-spacing: 0.07em;
+	--text-name--line-height: 22px;
+	--text-name--letter-spacing: 0.06em;
 	--text-name--font-weight: 650;
 	/* presentation: a presented walkthrough's step heading, part of the picture's
 	   frame rather than of the chrome. reading: the step's words under it, read
