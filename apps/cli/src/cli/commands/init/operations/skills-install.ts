@@ -119,7 +119,7 @@ async function installBundledSkills(
 	context: Pick<CommandContext, "diagnostic">,
 ): Promise<SkillsInstall> {
 	const source = skillsSource();
-	const manual = `npx skills add ${source} -g`;
+	const manual = `npx skills add ${source} -g --skill ${BUNDLED_SKILLS.join(" ")}`;
 	const found = runnersOn(which);
 	const chosen = await pickRunner(found, interactive);
 	if (chosen === undefined) {
