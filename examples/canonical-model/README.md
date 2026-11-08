@@ -173,7 +173,7 @@ A retry finishes cleanup without another checkpoint.
 
 The backend event stream is `/api/architecture/events?vault=<absolute-vault-path>`.
 It sends a fresh current reading and claim list on every connection.
-The current browser reading shows the agent claim and offers Take back control.
+The current browser reading marks each claimed subject with the purpose of the claim.
 Stable external edits refresh the reading automatically.
 Invalid input or disconnected updates leave the last coherent reading visible with a stale notice.
 Repairing the files or reconnecting restores a fresh reading without changing the selected subject.

@@ -388,12 +388,12 @@ A failed drawing or a failed read of a destination leaves the accepted scene whe
 The failure lies over the picture with Retry and Back, and with `No comparison` when a comparison can be what failed.
 Back is the browser's, so a reading opened directly has none.
 Every notice about a reading lies over the picture in `model-notices`, so no failure and no lost server moves it.
-The claims of a current reading have one owner, `ModelClaimsOver`, which the header's `ModelControls` mounts for every answer.
-Each surface lends it a place through the pane context with `ModelClaimFrame`: the picture among its notices, About, and a walkthrough that plays.
-The owner portals the claims into the place of the surface on top.
-About measures its title row to place the claim below wrapped names and tools. Its narrow section bar stands before that row.
-The pane itself lends the last place, under the header. If no surface lends a place, the claims stand there. A failed first read is such a state.
-A hidden surface gives its place up, because a hidden `Activity` detaches its refs. So a claim that starts or ends moves nothing, and Take back control stays in reach in every state of the pane.
+A claim is status, and no surface offers an action on it.
+`useClaimedSubjects` reads the claims of a live reading for the state that it shows, and `useReader` hands them on as `claimed`.
+The module tree, Flows and Walkthroughs mark each claimed row with `ClaimMark`.
+`ModelPanel.Subject` holds the claims of the selection, and its `Head` shows `ClaimBadge` while they hold it.
+The shell marks the claimed model in the repository switcher and its list from the agent activity that it already holds.
+A mark takes no click and no focus, so a claim that starts or ends moves nothing.
 A cached reading is stale only when a read failed or the stream was lost. An event being applied is healthy and shows nothing.
 A retained reading stays through a lost server. A refusal of that same reading removes it, because the server has then said that it is unavailable.
 A message about a wait appears after `PICTURE_MS.waitNotice` and names the destination.

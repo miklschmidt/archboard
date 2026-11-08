@@ -159,11 +159,11 @@ components:
     textColor: "{colors.ink-graphite}"
     rounded: "{rounded.panel}"
     padding: "16px"
-  claim-card:
-    backgroundColor: "{colors.chrome-chalk}"
+  claim-badge:
     textColor: "{colors.ink-graphite}"
-    rounded: "{rounded.table}"
-    padding: "16px"
+    rounded: "{rounded.chip}"
+    height: "18px"
+    padding: "0 8px"
   chip-changed:
     backgroundColor: "{colors.changed-orange}"
     textColor: "{colors.card-white}"
@@ -485,7 +485,7 @@ own sizes are cleared, so a corner off the ladder draws nothing. Chips, inline c
 combination in a tooltip have 2px corners. Controls, rows, tabs, the item of a menu and the key
 cap that hints a shortcut beside a field have 4px corners. Troughs, plates, alerts, a label tip,
 a card set in a panel and code blocks have 6px corners. What floats alone has the 10px corners of
-the site's cards: a menu, a select's popover, a popover, a tip that explains a part, a notice and a claim.
+the site's cards: a menu, a select's popover, a popover, a tip that explains a part and a notice.
 A dialog has the 12px corners of the site's mock window. The voice and the medallion of a part
 are circles.
 
@@ -681,11 +681,13 @@ The first line of a state holds the lifecycle word in Body semibold, the state's
 
 A state that saved readings has a quiet chip under its words: a chevron, how many and when the last one was saved, in mono on Tray Sink with `shadow-well`. The chip folds them. A saved reading is a row of its time in mono and what was being done in muted ink, and `Compare` stands at its end as an extra-small quiet key. The reading on screen says `On screen` there, and the base of the comparison says `Compared`.
 
-### Claim card
+### Claim marks
 
-A current reading shows each claim as a card at the top centre of the surface on screen. The card stands inside the frame of that surface, 12px under its top edge. That surface is the picture or a walkthrough that plays, also in a presentation. A pane that has no model, as after a failed first read, is its own surface. Over About, the card stands 12px under the line of the name and its tools. Those tools and the bar of the outline stay in reach. Several claims stack, 8px apart. The card stays until the claim ends or the person takes back control, and it has no timer and no key to dismiss it. It floats over the surface and moves nothing in it, so a claim that starts or ends leaves the reading where it was. Each pane shows the claims of the vault it reads, over its own surface. The card is Chrome Chalk with 10px corners, as every thing that floats alone, `shadow-float` and a ring of 1px in Live Lime at 40%. It is 420px wide at most, with 16px of padding.
+A claim is status. The shell marks what an agent claims and offers no action on it. The mark is the lamp of Working now: a dot of 6px in Live Lime that pulses while the claim lasts. Under reduced motion it stands still. It takes no click and no focus, and it moves nothing. On hover and to assistive technology it says `Claimed by an agent:` and the agent's purpose. It never names the writer, because the writer is an identity such as a thread's.
 
-The first line holds the head of the card and, at its end, `Take back control`, the one primary action of the card, in the gold finish. The head has a live dot, `Claimed` in Control semibold and, under it, the time that the claim began in mono. The dot is 6px in Live Lime with a halo of the same colour at 25%. Under the first line, three terms, State, Doing and Subjects, stand in muted ink with their words in full ink. State and Doing keep one line. Subjects names every subject in full and wraps: the whole model, a module, a relationship by its ends, a flow or a walkthrough. It never gives a count. A subject that the reading lacks, such as a module new in a draft, is named as a part new in the claimed state. A refusal shows its words in the destructive colour under the terms.
+A claimed model carries the mark in the repository switcher, after its name, and on the corner of its icon in the list of repositories. In the left column, each row of a module, a flow or a walkthrough that a claim holds carries the mark at the end of the row, before a count. A claim marks the rows only in a reading of the state that it names. A retained checkpoint marks nothing.
+
+While a claim holds the selected subject, the line under the name in the head of the right panel ends with the `Claimed` badge. The badge is the dot and the word in a chip with an edge of 1px in the Rule tone. It is 18px high, so the line keeps its height. Nothing shows while the selection is not claimed, and every mark leaves when the claim ends.
 
 ### Explanation reply
 

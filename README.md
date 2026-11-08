@@ -236,7 +236,7 @@ The panel shows what Codex does. The answer arrives under the picture and in the
 
 ## Agents work in plain sight
 
-An agent claims the subjects it plans to change. Each pane shows the writer, purpose, subjects, and start time. Take back control ends that claim. The server then refuses the former intent.
+An agent claims the subjects it plans to change. The browser marks the claimed model and each claimed module, flow, and walkthrough with a pulsing dot, and the panel says Claimed on a selected subject. Each mark names the agent's purpose. The marks leave when the agent releases the claim.
 
 Each write names its intent and the exact architecture revision that it read. If the architecture changed, the server refuses the stale write. Agents can claim different subjects without copying the model.
 

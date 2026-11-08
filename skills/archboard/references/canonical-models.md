@@ -321,8 +321,8 @@ Stable external corrections change current content without adoption metadata.
 To release a claim, write `{"claim":"<claim.id>","writer":"architecture-agent"}` to `release.json`.
 Run `archboard model release --input release.json -C <directory>` when the intent ends.
 
-The browser shows claims and offers Take back control.
-That action changes ownership, not architecture.
+The browser marks each claimed model and subject with your `reason` while the claim lasts.
+It offers no action on a claim.
 If your next write returns `CLAIM_REVOKED`, stop the intent and report the state it left.
 
 ## Author module structure and relationships

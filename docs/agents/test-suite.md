@@ -457,11 +457,11 @@ It also proves that a hidden metadata edit preserves the mounted scene while the
 `canonical-model-modes.test.ts` covers explicit flow choices, complete behavioral diagrams, architecture restoration, and selection across modes.
 `canonical-model-structure.test.ts` covers current structural updates through real claims and the public writer.
 It covers pinned history, stable selection through renames, relationship transfer, parent changes, and removal without replacement selection.
-`canonical-model-claims.test.ts` proves visible subject claims and human take-back through the public writer.
-A claim shows as a card over the picture that leaves the room of the picture and the focus as they were, names its subjects, and shows in each pane that reads the vault.
-The one card of a claim also stands over About, over a walkthrough that plays, and over a pane whose first read fails.
-Over About it leaves the tools of the title line in reach. Take back control ends the claim from each of these places.
-The next write receives `CLAIM_REVOKED`, and the architecture keeps every accepted edit.
+`canonical-model-claims.test.ts` proves that a claim through the public writer is status.
+The claim marks its module, flow and walkthrough rows, and the model in the repository switcher and its list.
+The right panel shows the Claimed badge only while the selected subject is claimed.
+A mark names the purpose and not the writer, holds no control, and moves neither the picture nor the focus.
+No take-back control exists. The marks leave when the agent releases the claim, and the revision stays the same.
 
 ### Controlled text workbench (TASK-143.03.13)
 
