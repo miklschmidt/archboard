@@ -622,8 +622,6 @@ grows into the free room of its column. While the switches show it is pressed in
 row while a kind is hidden. A line type keeps the room of its switch at all times, and a mixed
 line has no switch, because it is no kind of relationship.
 
-Under the legend on a structural reading, one row holds `Layout engine` and a switch between Blocks and Tracks. The switch is a trough, and the engine in use rises out of it as a raised face.
-
 A group is a tag with its name inside, and the tags wrap. A tag is one bright piece in
 both themes, cut from the dark value of its palette color (`--bright-<name>`): a gradient
 from L+.02 C+.02 to L-.06 C+.03, a 1px edge at L-.26 C-.02, ink at oklch(0.2 0.03 H), an

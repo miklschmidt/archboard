@@ -849,7 +849,8 @@ Existing canonical navigation, code, and reference owners cover containment and 
 Unit owners hold its rules: `module-tree.test.ts`, `reader-keys.test.ts`, `search.test.ts`, `tree-keys.test.ts`, and `repository-choices.test.ts`.
 `presentation-keys.test.ts` owns the steps of `[` and `]` in a presented walkthrough.
 
-`reader-context.test.ts` owns what the right column adds through a real browser: the lists that follow the open module or the selection, the rows that open a flow or a walkthrough, the interface line, whose counts select on the module's own picture and whose heading opens About at its Interface section, the door that opens at one click and lists its endpoints on hover, and the engine under the legend.
+`reader-context.test.ts` owns what the right column adds through a real browser: the lists that follow the open module or the selection, the rows that open a flow or a walkthrough, the interface line, whose counts select on the module's own picture and whose heading opens About at its Interface section, and the door that opens at one click and lists its endpoints on hover.
+It also owns the layout engine switch in the `Picture` tab of the Settings dialog.
 `reader-expand.test.ts` owns a door's second action through a real browser: the control expands the door into the picture, the address keeps it across a reload and Back, and a tab, a panel row or a key takes it back. Unit owners hold its rules: `model-projection.test.ts` and `expansion.test.ts`.
 `reader-trace.test.ts` owns a trace in the reader: each further hop lights more faintly, across the doors, and goes with the pick.
 `reader-measures.test.ts` owns where to look across the model: a selection reads the code history with no button, and the `Measures` dialog lists every module, sorts it from a column head, walks it from the keyboard and selects a module on its picture. It also pages through the code findings.
