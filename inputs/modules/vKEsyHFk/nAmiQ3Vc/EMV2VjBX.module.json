@@ -3,7 +3,7 @@
   "name": "Command routing",
   "kind": "module",
   "responsibility": "Turns argv and the command table into one bounded invocation",
-  "description": "bin.ts runs the bootstrap of routing/operations first, then the command table in run.ts. session.ts reads the global flags, the addressed vault and a help request, and dispatch.ts picks one route of the registry and runs it through runCommand of Command contract.",
+  "description": "bin.ts runs the bootstrap of routing/operations first, then the command table in run.ts. The bootstrap takes --url and the global --text out of argv before routing; output to a pipe loses its colour unless --text asks for text. session.ts reads the global flags, the addressed vault and a help request, and dispatch.ts picks one route of the registry and runs it through runCommand of Command contract, saying whether an agent or a person reads the answer.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/routing"

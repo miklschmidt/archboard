@@ -46,8 +46,8 @@
         "path": "crates/archboard-graphviz/src/dot.rs",
         "symbol": "Statements"
       },
-      "to": "vKEsyHFk#hBkjiO4k",
-      "id": "vKEsyHFk#dontbmL6"
+      "id": "vKEsyHFk#dontbmL6",
+      "to": "vKEsyHFk#hBkjiO4k"
     },
     {
       "order": 91014,
@@ -59,8 +59,8 @@
         "path": "crates/archboard-graphviz/src/lib.rs",
         "symbol": "set_y_invert"
       },
-      "to": "vKEsyHFk#7yGUY6ta",
-      "id": "vKEsyHFk#jsgdn0M9"
+      "id": "vKEsyHFk#jsgdn0M9",
+      "to": "vKEsyHFk#7yGUY6ta"
     }
   ]
 }
