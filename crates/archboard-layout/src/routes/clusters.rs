@@ -5,9 +5,10 @@
 use crate::ecma::sorted_by;
 
 use super::drawn_lines::{DrawnCrossing, Line, Run, along};
+use super::hops::crest_margin;
 use super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS};
 
-/// How close two crossings along one line are for hops on it to touch: one cluster.
+/// How close two crossings along one line are for single hops on it to touch.
 const CLUSTER_REACH: f64 = (BRIDGE_RADIUS + BRIDGE_CLEARANCE) * 2.0;
 
 /// Crossings along one run close enough that hops on it would touch.
@@ -44,19 +45,27 @@ pub(super) fn at_on(run: &Run, crossing: &DrawnCrossing) -> f64 {
 }
 
 /// Crossings along one run, in order, split where hops on it would not touch.
+/// A crest over several crossings runs on past its outer ones, so it touches
+/// a hop that a single hop over its nearest crossing would not.
 fn groups_along(run: &Run, crossings: &[DrawnCrossing], on: &[usize]) -> Vec<Vec<usize>> {
+    let at = |crossing: usize| at_on(run, &crossings[crossing]);
+    let touch = |before: &[usize], after: &[usize]| {
+        at(after[0]) - at(before[before.len() - 1])
+            <= CLUSTER_REACH + crest_margin(before.len()) + crest_margin(after.len())
+    };
     let mut groups: Vec<Vec<usize>> = Vec::new();
-    let mut previous: Option<f64> = None;
-    for crossing in sorted_by(on, |&a, &b| {
-        at_on(run, &crossings[a]) - at_on(run, &crossings[b])
-    }) {
-        let at = at_on(run, &crossings[crossing]);
-        let starts = previous.is_none_or(|previous| at - previous > CLUSTER_REACH);
-        match groups.last_mut() {
-            Some(group) if !starts => group.push(crossing),
-            _ => groups.push(vec![crossing]),
+    for crossing in sorted_by(on, |&a, &b| at(a) - at(b)) {
+        groups.push(vec![crossing]);
+        // A group that grows reaches further, so it may now touch the one before.
+        while let [.., before, after] = groups.as_slice()
+            && touch(before, after)
+        {
+            let after = groups.pop().expect("the group that touches");
+            groups
+                .last_mut()
+                .expect("the group it touches")
+                .extend(after);
         }
-        previous = Some(at);
     }
     groups
 }

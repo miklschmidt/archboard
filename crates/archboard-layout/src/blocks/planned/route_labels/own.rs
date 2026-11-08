@@ -9,6 +9,10 @@ use crate::geometry::{Point, Rect, inflate};
 pub(super) struct Own<'a> {
     pub(super) edge: usize,
     pub(super) path: &'a [Point],
+    /// Whether the words may stand beside the route's other stretches, within the clearance
+    /// they keep from other lines, for a route that leaves them no spot clear of its own ink.
+    /// They still never stand over another stretch of it.
+    pub(super) beside: bool,
 }
 
 /// One stretch of a route, as a box with no width.
@@ -43,7 +47,22 @@ fn carries(pair: &[Point], span: Span) -> bool {
     }
 }
 
-impl Own<'_> {
+impl<'a> Own<'a> {
+    /// The words of a route, kept clear of its other stretches.
+    pub(super) fn new(edge: usize, path: &'a [Point]) -> Self {
+        Self {
+            edge,
+            path,
+            beside: false,
+        }
+    }
+
+    /// How far the words keep from the route's other stretches: a clearance, or only off
+    /// them for words that stand beside them.
+    pub(super) fn keep(self, clearance: f64) -> f64 {
+        if self.beside { 0.01 } else { clearance }
+    }
+
     /// Every stretch of the route but the one that holds the span the words ride.
     pub(super) fn others(self, span: Span) -> impl Iterator<Item = Rect> {
         self.path
@@ -64,7 +83,7 @@ pub(in crate::blocks::planned) fn words_clear(model: &Model<'_>, shape: &Shape) 
     shape.routes.iter().all(|line| {
         let edge = model.edge_index[line.id.as_str()];
         let path = line.points.as_slice();
-        let own = Own { edge, path };
+        let own = Own::new(edge, path);
         shape
             .labels
             .get(&edge)

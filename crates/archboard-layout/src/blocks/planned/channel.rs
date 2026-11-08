@@ -7,7 +7,7 @@ use crate::blocks::assembly::PlacedLine;
 use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS};
 use crate::geometry::{Point, Rect, inflate};
 
-use super::geometry::{contains, intersection, length};
+use super::geometry::{contains, intersection, length, meets_itself};
 use super::model::Model;
 use super::ports::{center, port};
 use super::shape::{LINE_CLEAR, Shape};
@@ -335,6 +335,9 @@ fn basic(points: &[Point], source: Rect, target: Rect, bounds: Rect) -> Option<&
     }
     if points.len() < 2 || !approaches(points) {
         return Some("approach");
+    }
+    if meets_itself(points) {
+        return Some("loop");
     }
     if !attached(points[0], points[1], source)
         || !attached(points[points.len() - 1], points[points.len() - 2], target)

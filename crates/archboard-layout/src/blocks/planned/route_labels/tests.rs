@@ -116,25 +116,46 @@ fn words_never_stand_across_another_stretch_of_their_own_line() {
     assert!(label.y + label.height < 300.0);
 }
 
-#[test]
-fn a_route_that_leaves_its_words_no_spot_off_its_own_line_still_carries_them() {
+/// Where a line's words stand, if anywhere, and whether that is a fallback.
+type Found = Option<(Rect, bool)>;
+
+/// A hairpin whose legs stand some way apart, and where its words stand clear of its other
+/// stretches, then where they stand at all.
+fn hairpin_slots(apart: f64) -> (Found, Found) {
     let graph = graph();
     let model = Model::new(&graph).unwrap();
     let route: &[(f64, f64)] = &[
         (100.0, 100.0),
         (100.0, 300.0),
-        (140.0, 300.0),
-        (140.0, 100.0),
+        (100.0 + apart, 300.0),
+        (100.0 + apart, 100.0),
     ];
     let shape = drawing(&[("ab", route)]);
     let path: Vec<Point> = route.iter().map(|&(x, y)| Point { x, y }).collect();
     let edge = model.edge_index["ab"];
     let slots = Slots::new(&model, &shape);
-    assert!(slots.slot(&model, edge, &path).is_none());
-    let (_, fallback) = slots
-        .any_slot(&model, edge, &path)
-        .expect("a line keeps its words");
+    (
+        slots.slot(&model, edge, &path),
+        slots.any_slot(&model, edge, &path),
+    )
+}
+
+#[test]
+fn a_route_that_leaves_its_words_no_clear_spot_still_carries_them_beside_its_other_stretches() {
+    // Words 80 wide on one leg stand 10 from the other: nearer than they keep from a line.
+    let (clear, beside) = hairpin_slots(50.0);
+    assert!(clear.is_none());
+    let (label, fallback) = beside.expect("a line keeps its words");
     assert!(fallback);
+    // They ride one leg and stop short of the other.
+    let middle = label.x + label.width / 2.0;
+    assert!(middle == 100.0 && label.x + label.width < 150.0 || middle == 150.0 && label.x > 100.0);
+}
+
+#[test]
+fn words_never_stand_over_another_stretch_of_their_own_line() {
+    // Words 80 wide on one leg would reach the other.
+    assert_eq!(hairpin_slots(40.0), (None, None));
 }
 
 #[test]
@@ -146,10 +167,7 @@ fn words_that_stand_over_another_stretch_of_their_own_line_are_not_kept() {
         (140.0, 100.0),
     ];
     let path: Vec<Point> = route.iter().map(|&(x, y)| Point { x, y }).collect();
-    let own = Own {
-        edge: 0,
-        path: &path,
-    };
+    let own = Own::new(0, &path);
     let words = |x| Rect {
         x,
         y: 188.0,

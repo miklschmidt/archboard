@@ -248,7 +248,7 @@ impl<'a> Slots<'a> {
         edge: usize,
         path: &[Point],
     ) -> Option<(Rect, bool)> {
-        let own = Own { edge, path };
+        let own = Own::new(edge, path);
         spot_on(model, own, path, self.shape, &self.strokes, &self.labels)
     }
     /// A spot that may stand beside the route's other stretches, for a route with no better.
@@ -263,7 +263,8 @@ impl<'a> Slots<'a> {
 }
 
 /// Where a route's words stand: clear of the route's other stretches, or as a fallback beside
-/// them when the route leaves no such spot, because a line keeps its words.
+/// them when the route leaves no such spot, because a line keeps its words. Words never stand
+/// over another stretch of their own line, where a reader takes them for a different line's.
 fn slot_index(
     model: &Model<'_>,
     edge: usize,
@@ -272,9 +273,12 @@ fn slot_index(
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Option<(Rect, bool)> {
-    spot_on(model, Own { edge, path }, path, shape, index, labels).or_else(|| {
-        let free = Own { edge, path: &[] };
-        let (at, _) = spot_on(model, free, path, shape, index, labels)?;
+    spot_on(model, Own::new(edge, path), path, shape, index, labels).or_else(|| {
+        let beside = Own {
+            beside: true,
+            ..Own::new(edge, path)
+        };
+        let (at, _) = spot_on(model, beside, path, shape, index, labels)?;
         Some((at, true))
     })
 }
@@ -329,7 +333,7 @@ fn midway(
             f64::midpoint(span.a.y, span.b.y)
         };
         let label = at(span, position, size);
-        let kept = inflate(label, 12.01);
+        let kept = inflate(label, own.keep(12.01));
         (length(&[span.a, span.b]) >= required + 32.0
             && own.others(span).all(|stretch| !meets(kept, stretch))
             && clear(shape, own.edge, label, index, labels))
@@ -394,7 +398,7 @@ fn spots_for(
         protect(inflate(r, 8.02));
     }
     for stretch in own.others(span) {
-        protect(inflate(stretch, 12.02));
+        protect(inflate(stretch, own.keep(12.02)));
     }
     let window = search_window(a, b, across, across_half, horizontal);
     index.touching(own.edge, window, |r| protect(inflate(r, 12.02)));
@@ -513,18 +517,11 @@ fn consistent(
         }
         let old = shape.labels.remove(&edge)?;
         let path = &shape.routes[index].points;
-        if keeps(shape, Own { edge, path }, old, strokes, labels) {
+        if keeps(shape, Own::new(edge, path), old, strokes, labels) {
             shape.labels.insert(edge, old);
             continue;
         }
-        let (label, _) = slot_index(
-            model,
-            edge,
-            shape,
-            &shape.routes[index].points,
-            strokes,
-            labels,
-        )?;
+        let (label, _) = slot_index(model, edge, shape, path, strokes, labels)?;
         shape.labels.insert(edge, old);
         if old != label {
             return None;
@@ -567,7 +564,8 @@ fn update(
         }
         let old = shape.labels.remove(&edge);
         let path = &shape.routes[index].points;
-        if let Some(kept) = old.filter(|&at| keeps(shape, Own { edge, path }, at, strokes, labels))
+        if let Some(kept) =
+            old.filter(|&at| keeps(shape, Own::new(edge, path), at, strokes, labels))
         {
             shape.labels.insert(edge, kept);
             labels.remember(edge, kept);
@@ -575,18 +573,12 @@ fn update(
         }
         // A plate that contraction carried with its run can fill the room it has exactly, so
         // that no search finds it, and it can stay where it stands.
-        let (label, fallback) = slot_index(
-            model,
-            edge,
-            shape,
-            &shape.routes[index].points,
-            strokes,
-            labels,
-        )
-        .or_else(|| {
-            old.filter(|&at| clear(shape, edge, at, strokes, labels))
-                .map(|at| (at, true))
-        })?;
+        let (label, fallback) =
+            slot_index(model, edge, shape, path, strokes, labels).or_else(|| {
+                let own = Own::new(edge, path);
+                old.filter(|&at| own.rides_one(at) && clear(shape, edge, at, strokes, labels))
+                    .map(|at| (at, true))
+            })?;
         changed |= old != Some(label);
         shape.labels.insert(edge, label);
         labels.remember(edge, label);

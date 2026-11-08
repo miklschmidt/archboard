@@ -1,7 +1,7 @@
 //! Crossings along one line close enough for their hops to touch: who rises
 //! over them, and under how many arcs.
 
-use super::super::BRIDGE_RADIUS;
+use super::super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS};
 use super::{
     DrawingBridge, Emphasis, across, across_from, bridged, curve_bounds, down, down_from, drawing,
     drawn, hops, points,
@@ -196,4 +196,62 @@ fn hops_on_crossing_lines_keep_a_hops_radius_between_them() {
     assert_eq!(ids, ["1", "0"]);
     let [first, second] = [hops[0], hops[1]].map(|hop| curve_bounds(&hop.curve));
     assert!(second.x - (first.x + first.width) >= BRIDGE_RADIUS);
+}
+
+// Archboard (root): a line rose over two lines under one crest, and
+// over a third twenty points short of them with a hop of its own, three points
+// from the crest. A crest over several crossings runs on past them, so the
+// third crossing is one cluster with them and its arc stands clear of theirs.
+#[test]
+fn a_crossing_a_crest_would_touch_is_one_cluster_with_the_crests_crossings() {
+    let result = bridged(&drawn(
+        &[
+            // Turns down seventeen short of its first crossing: too near its bend to rise.
+            points(&[(300.0, 50.0), (100.0, 50.0), (100.0, 150.0)]),
+            down(117.0),
+            down(137.5),
+            down(153.5),
+        ],
+        &[
+            (1, "event", Emphasis::Normal),
+            (3, "event", Emphasis::Normal),
+        ],
+    ));
+    let hops = hops_of(&result.bridges);
+    // Every crossing has an arc.
+    let mut arcs: Vec<&str> = hops
+        .iter()
+        .flat_map(|hop| {
+            if hop.edge_id == "0" {
+                hop.under.iter().map(String::as_str).collect()
+            } else {
+                vec![hop.edge_id.as_str()]
+            }
+        })
+        .collect();
+    arcs.sort_unstable();
+    assert_eq!(arcs, ["1", "2", "3"]);
+    // No two arcs crowd each other: arcs along one axis keep the clear space of
+    // hops side by side, and arcs across each other a hop's radius each.
+    for (index, one) in hops.iter().enumerate() {
+        for other in &hops[index + 1..] {
+            let [a, b] = [one, other].map(|hop| curve_bounds(&hop.curve));
+            let apart = (b.x - (a.x + a.width))
+                .max(a.x - (b.x + b.width))
+                .max(b.y - (a.y + a.height))
+                .max(a.y - (b.y + b.height));
+            let crosswise = (a.width > a.height) != (b.width > b.height);
+            let clear = if crosswise {
+                BRIDGE_RADIUS
+            } else {
+                BRIDGE_CLEARANCE
+            };
+            assert!(
+                apart >= 2.0 * clear,
+                "{} and {}: {apart}",
+                one.edge_id,
+                other.edge_id
+            );
+        }
+    }
 }

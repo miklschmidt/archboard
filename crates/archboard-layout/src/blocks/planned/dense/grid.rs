@@ -61,6 +61,34 @@ pub(super) struct Grid {
 /// What two parts that share a door cost for each cell between them.
 const APART: f64 = 0.25;
 
+/// Two parts that share doors or groups, in reading order, and how hard they pull together.
+#[derive(Clone, Copy)]
+struct Pull {
+    one: usize,
+    other: usize,
+    shared: f64,
+}
+
+/// Every pair of parts that pulls together. A search weighs them at every swap, and they
+/// stay the same through it.
+fn pulls(items: &[Item<'_>]) -> Vec<Pull> {
+    let mut pulls = Vec::new();
+    for (one, item) in items.iter().enumerate() {
+        for (other, peer) in items.iter().enumerate().skip(one + 1) {
+            let doors = item.doors.iter().filter(|door| peer.doors.contains(door));
+            let groups = item
+                .groups
+                .iter()
+                .filter(|group| peer.groups.contains(group));
+            let shared = doors.count() as f64 + groups.count() as f64 * GROUP_PULL;
+            if shared > 0.0 {
+                pulls.push(Pull { one, other, shared });
+            }
+        }
+    }
+    pulls
+}
+
 /// What one line costs, by how far it reaches across the grid.
 fn reach(dx: f64, dy: f64, pitch: Point, label: f64) -> f64 {
     let mut cost = dx.abs() * pitch.x + dy.abs() * pitch.y;
@@ -98,7 +126,7 @@ impl Grid {
         (cell % self.columns, cell / self.columns)
     }
 
-    fn cost(&self, joins: &[Join], items: &[Item<'_>], pitch: Point) -> f64 {
+    fn cost(&self, joins: &[Join], items: &[Item<'_>], pulls: &[Pull], pitch: Point) -> f64 {
         let joined: f64 = joins
             .iter()
             .map(|join| {
@@ -117,28 +145,18 @@ impl Grid {
             .zip(&self.cells)
             .map(|(item, &cell)| item.outward * self.wall_distance(cell) * pitch.y)
             .sum();
-        joined + walled + self.apart(items, pitch)
+        joined + walled + self.apart(pulls, pitch)
     }
 
     /// How far apart the parts of each door and of each group stand.
-    fn apart(&self, items: &[Item<'_>], pitch: Point) -> f64 {
+    fn apart(&self, pulls: &[Pull], pitch: Point) -> f64 {
         let mut cost = 0.0;
-        for (one, item) in items.iter().enumerate() {
+        for &Pull { one, other, shared } in pulls {
             let (ax, ay) = self.at(self.cells[one]);
-            for (other, peer) in items.iter().enumerate().skip(one + 1) {
-                let doors = item.doors.iter().filter(|door| peer.doors.contains(door));
-                let groups = item
-                    .groups
-                    .iter()
-                    .filter(|group| peer.groups.contains(group));
-                let shared = doors.count() as f64 + groups.count() as f64 * GROUP_PULL;
-                if shared > 0.0 {
-                    let (bx, by) = self.at(self.cells[other]);
-                    cost += shared
-                        * APART
-                        * (ax.abs_diff(bx) as f64 * pitch.x + ay.abs_diff(by) as f64 * pitch.y);
-                }
-            }
+            let (bx, by) = self.at(self.cells[other]);
+            cost += shared
+                * APART
+                * (ax.abs_diff(bx) as f64 * pitch.x + ay.abs_diff(by) as f64 * pitch.y);
         }
         cost
     }
@@ -153,7 +171,14 @@ impl Grid {
     }
 
     /// One pass over every part and every cell, keeping each swap that lowers the cost.
-    fn pass(&mut self, joins: &[Join], items: &[Item<'_>], pitch: Point, best: &mut f64) -> bool {
+    fn pass(
+        &mut self,
+        joins: &[Join],
+        items: &[Item<'_>],
+        pulls: &[Pull],
+        pitch: Point,
+        best: &mut f64,
+    ) -> bool {
         let mut moved = false;
         for part in 0..self.cells.len() {
             for cell in 0..self.cells.len() {
@@ -163,7 +188,7 @@ impl Grid {
                     continue;
                 }
                 self.cells.swap(part, other);
-                let cost = self.cost(joins, items, pitch);
+                let cost = self.cost(joins, items, pulls, pitch);
                 if cost + 1e-9 < *best {
                     *best = cost;
                     moved = true;
@@ -183,9 +208,10 @@ impl Grid {
             x: width + CELL_GAP,
             y: height + CELL_GAP,
         };
-        let mut best = self.cost(joins, items, pitch);
+        let pulls = pulls(items);
+        let mut best = self.cost(joins, items, &pulls, pitch);
         for _ in 0..PASSES {
-            if !self.pass(joins, items, pitch, &mut best) {
+            if !self.pass(joins, items, &pulls, pitch, &mut best) {
                 break;
             }
         }

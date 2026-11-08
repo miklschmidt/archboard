@@ -64,6 +64,19 @@ pub(super) fn intersection(a: &[Point], b: &[Point]) -> (bool, bool) {
         .fold((false, false), |(a, b), (c, d)| (a || c, b || d))
 }
 
+/// Whether a route meets its own ink away from its bends: it crosses, touches or runs along a
+/// stroke of its own that it does not turn from. Such a route closes a loop, and no hop can
+/// stand where a line crosses itself, so the loop would read as a junction.
+pub(super) fn meets_itself(path: &[Point]) -> bool {
+    let strokes: Vec<&[Point]> = path.windows(2).collect();
+    strokes.iter().enumerate().any(|(index, stroke)| {
+        strokes.iter().skip(index + 2).any(|later| {
+            let (along, across) = pair_intersection(stroke, later);
+            along || across
+        })
+    })
+}
+
 fn pair_intersection(p: &[Point], q: &[Point]) -> (bool, bool) {
     let ph = p[0].y == p[1].y;
     let qh = q[0].y == q[1].y;
@@ -107,4 +120,50 @@ fn transverse(h: &[Point], v: &[Point]) -> bool {
         && v[0].x <= h[0].x.max(h[1].x)
         && h[0].y >= v[0].y.min(v[1].y)
         && h[0].y <= v[0].y.max(v[1].y)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::meets_itself;
+    use crate::geometry::Point;
+
+    fn route(points: &[(f64, f64)]) -> Vec<Point> {
+        points.iter().map(|&(x, y)| Point { x, y }).collect()
+    }
+
+    #[test]
+    fn a_route_that_loops_back_to_its_own_line_meets_itself() {
+        // Down past its target's row, round, and back across its own descent.
+        let across = [
+            (1033.0, 74.0),
+            (1033.0, 1116.0),
+            (874.0, 1116.0),
+            (874.0, 1006.0),
+            (1328.0, 1006.0),
+            (1328.0, 986.0),
+        ];
+        assert!(meets_itself(&route(&across)));
+        // Ending on its own line reads as a join.
+        let onto = [
+            (0.0, 0.0),
+            (0.0, 100.0),
+            (-50.0, 100.0),
+            (-50.0, 50.0),
+            (0.0, 50.0),
+        ];
+        assert!(meets_itself(&route(&onto)));
+    }
+
+    #[test]
+    fn a_route_that_turns_back_beside_itself_does_not_meet_itself() {
+        let hairpin = [
+            (100.0, 100.0),
+            (100.0, 300.0),
+            (140.0, 300.0),
+            (140.0, 100.0),
+        ];
+        assert!(!meets_itself(&route(&hairpin)));
+        let step = [(0.0, 0.0), (200.0, 0.0), (200.0, 100.0), (400.0, 100.0)];
+        assert!(!meets_itself(&route(&step)));
+    }
 }

@@ -85,14 +85,16 @@ function axisOf(piece: Piece | undefined): "x" | "y" | undefined {
 /**
  * The pieces that draw a route's arcs: two curves, with or without a flat
  * crest between them, that leave a straight line and come back to it. A
- * corner or a jog turns onto another line instead.
+ * corner or a jog turns onto another line instead. The curve that brings an
+ * arc back down starts none: the straight line after it is the line, not the
+ * crest of a dip toward the next arc's crest.
  * @param pieces A route's pieces.
  * @returns The indexes of its arc pieces.
  */
 function arcPieces(pieces: readonly Piece[]): Set<number> {
 	const arcs = new Set<number>();
 	for (let index = 1; index < pieces.length; index++) {
-		if (pieces[index]!.kind !== "cubic") continue;
+		if (pieces[index]!.kind !== "cubic" || arcs.has(index)) continue;
 		const crest = pieces[index + 1]?.kind === "line" && pieces[index + 2]?.kind === "cubic";
 		const last = crest ? index + 2 : index + 1;
 		if (pieces[last]?.kind !== "cubic") continue;

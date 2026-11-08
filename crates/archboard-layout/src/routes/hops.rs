@@ -191,6 +191,13 @@ pub(super) fn carried(curve: &Curve, drawer: &Run, member: &Run) -> Curve {
     }
 }
 
+/// How far a crest over this many crossings runs on past the outer ones before
+/// it turns: a crest over several runs on, so each line passes under its flat
+/// and none meets it where it turns.
+pub(super) fn crest_margin(crossings: usize) -> f64 {
+    if crossings > 1 { BRIDGE_CLEARANCE } else { 0.0 }
+}
+
 /// The crest over some crossings along a run, at the places along it, when the
 /// run keeps `room` of straight line past each foot.
 pub(super) fn crest_along(
@@ -200,13 +207,7 @@ pub(super) fn crest_along(
     room: f64,
     bulge: Bulge,
 ) -> Option<Curve> {
-    // A crest over several lines runs on past the outer ones, so each passes
-    // under its flat and none meets it where it turns.
-    let margin = if places.len() > 1 {
-        BRIDGE_CLEARANCE
-    } else {
-        0.0
-    };
+    let margin = crest_margin(places.len());
     let first = min(places.iter().copied()) - margin;
     let last = max(places.iter().copied()) + margin;
     let low = run

@@ -11,7 +11,9 @@ use super::super::crowding::{
     mark_crowding, own_head_crowding,
 };
 use super::super::drawn_lines::{Axis, Run, along, on_run};
-use super::super::hops::{Bulge, Hop, crest_along, flipped, hop_fits, hump, passes_beneath};
+use super::super::hops::{
+    Bulge, Hop, crest_along, crest_margin, flipped, hop_fits, hump, passes_beneath,
+};
 use super::super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS};
 use super::{LEAST_ROOM, Rise, Settling, at_on};
 use crate::ecma::{js_min, max, min, sign};
@@ -419,11 +421,7 @@ impl Settling<'_> {
         let mut replaces: Vec<usize> = Vec::new();
         loop {
             let places = self.places(run, &over);
-            let margin = if places.len() > 1 {
-                BRIDGE_CLEARANCE
-            } else {
-                0.0
-            };
+            let margin = crest_margin(places.len());
             let low = min(places.iter().copied()) - margin - BRIDGE_RADIUS;
             let high = max(places.iter().copied()) + margin + BRIDGE_RADIUS;
             let near = (0..self.stood.len()).find(|&index| {
