@@ -175,7 +175,7 @@ function mountSearch(): void {
 		}
 		const engine = await load();
 		if (!engine) {
-			hint("The search index comes with the built site. Run bun run build, then bun run preview.");
+			hint("Search is unavailable. Reload this page to try again.");
 			return;
 		}
 		const found = await engine.debouncedSearch(query, {}, 120);
