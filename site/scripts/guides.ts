@@ -3,6 +3,7 @@
 // `reference.ts` wrote and fails the build on the first drift:
 // - an `archboard …` line in code that runs no command, or passes a flag that its command lacks;
 // - a `with:` key under one of this repository's Actions that the Action has no input for;
+// - a workflow that sets up another Node.js than the check Action's default;
 // - a code span that names an Action input, an Action output or a finding code without linking to
 //   its row in the reference. The link makes a rename visible: `links.ts` fails on its anchor.
 //
@@ -85,6 +86,17 @@ function checkShell(file: string, text: string): void {
  * @param yaml The YAML of one code block.
  */
 function checkWorkflow(file: string, yaml: string): void {
+	// The Node.js that a workflow sets up for the CLI is the one that the check Action defaults to.
+	const nodeVersion = actions
+		.get("check")
+		?.inputs.find((input) => input.name === "node-version")?.default;
+	for (const match of yaml.matchAll(/(?:node-version:\s*["']?|image:\s*node:)(\d+)/gu)) {
+		if (nodeVersion !== undefined && match[1] !== nodeVersion) {
+			problems.push(
+				`${file}: "${match[0]}" sets up Node.js ${match[1]}; the check Action defaults to ${nodeVersion}`,
+			);
+		}
+	}
 	const visit = (node: unknown): void => {
 		if (Array.isArray(node)) return node.forEach(visit);
 		if (typeof node !== "object" || node === null) return;
