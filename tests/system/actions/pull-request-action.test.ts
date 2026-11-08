@@ -254,12 +254,17 @@ describe("the entry", () => {
 	 * Run the action as the pull request's workflow would.
 	 * @param inputs The inputs and the repository's server to override.
 	 * @param fork Whether the pull request comes from a fork.
+	 * @param answers Answers to replace in the stand-in CLI.
 	 * @returns The step's exit status and output.
 	 */
-	function step(inputs: Record<string, string> = {}, fork = false) {
+	function step(
+		inputs: Record<string, string> = {},
+		fork = false,
+		answers: Readonly<Record<string, string>> = {},
+	) {
 		const folder = scratch();
 		for (const name of ["proposals", "read-base", "read-head", "footprint"]) {
-			writeFileSync(join(folder, `${name}.json`), fixture(`${name}.json`));
+			writeFileSync(join(folder, `${name}.json`), answers[name] ?? fixture(`${name}.json`));
 		}
 		const event = join(folder, "event.json");
 		writeFileSync(
@@ -326,5 +331,15 @@ describe("the entry", () => {
 		expect(comments[0]?.body).not.toContain("<img");
 		expect(comments[0]?.body).toContain("fork");
 		expect(readFileSync(join(root, "work/a.txt"), "utf8")).toBe("b");
+	});
+
+	test("a refused model read leaves the plan unjudged rather than treating the refusal as an empty model", async () => {
+		const result = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" }, false, {
+			"read-base": JSON.stringify({ success: false, code: "INVALID_MODEL" }),
+		});
+		expect(result.exitCode).toBe(0);
+		expect(result.stdout).toContain("::warning title=Archboard plan::");
+		expect(result.stdout).not.toContain("::error title=Archboard plan::");
+		expect(comments[0]?.body).not.toContain("**Planned and changed**");
 	});
 });

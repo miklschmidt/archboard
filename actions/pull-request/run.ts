@@ -73,11 +73,32 @@ function footprintBase(context: Context): string {
 const NO_PLAN: ProposalPlan = { comparison: [], named: new Map() };
 
 /**
+ * Read one complete model, keeping a refusal distinct from an empty architecture.
+ * @param context The run.
+ * @param directory The vault to read.
+ * @param state The state, or Current when absent.
+ * @returns The model only when the command succeeded with a model reading.
+ */
+function readModel(
+	context: Context,
+	directory: string,
+	state?: ModelState,
+): ModelReading | undefined {
+	const result = archboard(context, directory, [
+		"model",
+		"read",
+		...(state === undefined ? [] : ["--state", state.id]),
+	]);
+	const model: ModelReading | undefined = parseJson(result.stdout);
+	return result.exitCode === 0 && model?.modules !== undefined ? model : undefined;
+}
+
+/**
  * The plan of the proposal: what it changes against the base's Current, as the pictures show.
  * @param context The run.
  * @param trees Where the base's and the head's vaults are.
  * @param state The proposal, if the pull request carries one.
- * @returns The plan, empty for no proposal, and why it is empty when a model cannot be read.
+ * @returns The plan, empty for no proposal, or why the comparison could not be read.
  */
 function readPlan(
 	context: Context,
@@ -85,12 +106,8 @@ function readPlan(
 	state: ModelState | undefined,
 ): { plan: ProposalPlan; note?: string } {
 	if (state === undefined) return { plan: NO_PLAN };
-	const base: ModelReading | undefined = parseJson(
-		archboard(context, trees.baseDir, ["model", "read"]).stdout,
-	);
-	const head: ModelReading | undefined = parseJson(
-		archboard(context, trees.headDir, ["model", "read", "--state", state.id]).stdout,
-	);
+	const base = readModel(context, trees.baseDir);
+	const head = readModel(context, trees.headDir, state);
 	if (base === undefined || head === undefined) {
 		const note =
 			"The proposal could not be compared: a model could not be read at the base or the head.";
@@ -104,6 +121,7 @@ function readPlan(
  * @param report The report.
  */
 function annotatePlan(report: PullRequestReport): void {
+	annotateUnavailable(report);
 	const outside = report.buckets?.outsidePlan ?? [];
 	const text = `${String(outside.length)} module(s) changed outside the plan: ${outside.join(", ")}.`;
 	const levels = { warn: "warning", fail: "error", overridden: "notice" } as const;
@@ -111,6 +129,16 @@ function annotatePlan(report: PullRequestReport): void {
 	if (status === "warn" || status === "fail" || status === "overridden") {
 		process.stdout.write(`${annotationLine(levels[status], { title: "Archboard plan" }, text)}\n`);
 	}
+}
+
+/**
+ * Make an unavailable plan check visible in the workflow log.
+ * @param report The report.
+ */
+function annotateUnavailable(report: PullRequestReport): void {
+	if (report.outOfPlan.status !== "unjudged") return;
+	const text = report.comparisonNote ?? report.footprintNote ?? "The plan could not be checked.";
+	process.stdout.write(`${annotationLine("warning", { title: "Archboard plan" }, text)}\n`);
 }
 
 /**
@@ -190,7 +218,10 @@ function buildReport(
 		proposals.states ?? [],
 	);
 	const { plan, note } = readPlan(context, trees, choice.state);
-	const footprint = readFootprint(context, trees.headDir, choice.state, plan);
+	const footprint =
+		note !== undefined
+			? { note: "The footprint was not judged because the proposal could not be compared." }
+			: readFootprint(context, trees.headDir, choice.state, plan);
 	const pictures = makePictures(context, trees, choice.state);
 	return {
 		baseSha: context.baseSha,
