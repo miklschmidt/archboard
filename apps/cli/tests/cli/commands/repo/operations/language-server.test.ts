@@ -167,3 +167,25 @@ test("repo language-server needs a checkout for the repository file, and never o
 	expect((await run(checkout, ["repo", "language-server", "c", "clangd"])).exited).toBe(1);
 	expect(readFileSync(repositoryFile, "utf8")).toBe("{");
 });
+
+test("repo language-server commands that run together keep every change", async () => {
+	const cli = join(import.meta.dir, "..", "..", "..", "..", "..", "src", "bin.ts");
+	const servers = { c: "clangd", go: "gopls", rust: "rust-analyzer", swift: "sourcekit-lsp" };
+	const exits = await Promise.all(
+		Object.entries(servers).map(
+			([language, command]) =>
+				Bun.spawn([process.execPath, cli, "repo", "language-server", language, command], {
+					cwd: checkout,
+					env: { ...process.env },
+					stdout: "ignore",
+					stderr: "ignore",
+				}).exited,
+		),
+	);
+	expect(exits).toEqual([0, 0, 0, 0]);
+	expect(named(repositoryFile)).toEqual(
+		Object.fromEntries(
+			Object.entries(servers).map(([language, command]) => [language, { command }]),
+		),
+	);
+});

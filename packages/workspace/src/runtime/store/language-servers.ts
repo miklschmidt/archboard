@@ -12,7 +12,7 @@ import path from "node:path";
 import { z } from "zod";
 import { errnoCode, errorMessage } from "@archboard/diagnostics/errno";
 import { unlinkDurably, writeFileAtomic } from "#runtime/store/atomic-write.ts";
-import { registryPath } from "#runtime/store/registry-file.ts";
+import { registryPath, withFileLock } from "#runtime/store/registry-file.ts";
 import {
 	CONFIGURABLE_LANGUAGES,
 	type ConfigurableLanguage,
@@ -180,38 +180,40 @@ function setServer(
 	server: ConfiguredServer | undefined,
 	root?: string,
 ): { readonly file: string; readonly servers: LanguageServers } {
-	const current = readServers(scope, root);
-	if ("problem" in current)
-		throw new Error(`${current.problem}. Fix or delete it, then run this again.`);
-	const { file } = current;
-	const { [language]: _replaced, ...others } = current.servers;
-	const changed: LanguageServers =
-		server === undefined ? others : { ...others, [language]: server };
-	const servers: LanguageServers = Object.fromEntries(
-		CONFIGURABLE_LANGUAGES.flatMap((each) => {
-			const entry = changed[each];
-			return entry === undefined ? [] : [[each, entry]];
-		}),
-	);
-	try {
-		if (Object.keys(servers).length === 0) {
-			if (fs.existsSync(file)) unlinkDurably(file);
-		} else {
-			fs.mkdirSync(path.dirname(file), { recursive: true });
-			const stored = Object.fromEntries(
-				Object.entries(servers).map(([each, { command, args }]) => [
-					each,
-					args.length === 0 ? { command } : { command, args },
-				]),
-			);
-			writeFileAtomic(file, `${JSON.stringify(stored, null, "\t")}\n`);
+	return withFileLock(serversPath(scope, root), () => {
+		const current = readServers(scope, root);
+		if ("problem" in current)
+			throw new Error(`${current.problem}. Fix or delete it, then run this again.`);
+		const { file } = current;
+		const { [language]: _replaced, ...others } = current.servers;
+		const changed: LanguageServers =
+			server === undefined ? others : { ...others, [language]: server };
+		const servers: LanguageServers = Object.fromEntries(
+			CONFIGURABLE_LANGUAGES.flatMap((each) => {
+				const entry = changed[each];
+				return entry === undefined ? [] : [[each, entry]];
+			}),
+		);
+		try {
+			if (Object.keys(servers).length === 0) {
+				if (fs.existsSync(file)) unlinkDurably(file);
+			} else {
+				fs.mkdirSync(path.dirname(file), { recursive: true });
+				const stored = Object.fromEntries(
+					Object.entries(servers).map(([each, { command, args }]) => [
+						each,
+						args.length === 0 ? { command } : { command, args },
+					]),
+				);
+				writeFileAtomic(file, `${JSON.stringify(stored, null, "\t")}\n`);
+			}
+		} catch (error) {
+			throw new Error(`Could not write ${file}, so nothing changed: ${errorMessage(error)}`, {
+				cause: error,
+			});
 		}
-	} catch (error) {
-		throw new Error(`Could not write ${file}, so nothing changed: ${errorMessage(error)}`, {
-			cause: error,
-		});
-	}
-	return { file, servers };
+		return { file, servers };
+	});
 }
 
 /**

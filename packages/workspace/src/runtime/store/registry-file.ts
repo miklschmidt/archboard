@@ -289,26 +289,39 @@ function takeLock(lock: string): boolean {
 }
 
 /**
+ * Run a change of a file that reads it and writes it whole, under the lock
+ * beside it, `<file>.lock`. Two such changes that run together would lose one
+ * of them. The lock is an empty directory, which Git never commits.
+ * @param file The file.
+ * @param change Reads and writes the file, and returns what the caller wants back.
+ * @returns What the change returned.
+ */
+function withFileLock<T>(file: string, change: () => T): T {
+	const lock = `${file}.lock`;
+	const held = takeLock(lock);
+	try {
+		return change();
+	} finally {
+		if (held) fs.rmSync(lock, { recursive: true, force: true });
+	}
+}
+
+/**
  * Change the registry alone: read it, let the change edit it, write it whole.
- * A change that edits nothing writes nothing. Two changes that run together
- * would lose one of them, as two `repo add` calls at the same time would keep
- * one.
+ * A change that edits nothing writes nothing. Two `repo add` calls at the same
+ * time take turns on the lock, so each keeps its change.
  * @param change Edits the registry it is given and returns what the caller wants back.
  * @returns What the change returned.
  * @throws {RegistryWriteError} When the registry cannot be written.
  */
 function changeRegistry<T>(change: (registry: Registry) => T): T {
-	const lock = `${registryPath()}.lock`;
-	const held = takeLock(lock);
-	try {
+	return withFileLock(registryPath(), () => {
 		const registry = readRegistry();
 		const before = JSON.stringify(registry);
 		const result = change(registry);
 		if (JSON.stringify(registry) !== before) writeRegistry(registry);
 		return result;
-	} finally {
-		if (held) fs.rmSync(lock, { recursive: true, force: true });
-	}
+	});
 }
 
 export {
@@ -322,4 +335,5 @@ export {
 	readRegistry,
 	isDirectory,
 	changeRegistry,
+	withFileLock,
 };
