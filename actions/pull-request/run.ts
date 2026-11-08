@@ -13,6 +13,7 @@ import { addWorktree, archboard, firstLine, readContext } from "./context.ts";
 import type { Context } from "./context.ts";
 import { readFootprint } from "./footprint.ts";
 import { publicationProblem, upsertComment } from "./github.ts";
+import type { PostResult } from "./github.ts";
 import { folderUrl } from "./links.ts";
 import { parseBodyMarker } from "./marker.ts";
 import { makePictures } from "./pictures.ts";
@@ -249,7 +250,16 @@ async function postComment(context: Context, report: PullRequestReport): Promise
 		pullRequestComment(report),
 		context.headSha,
 	);
+	reportPost(result);
+}
+
+/**
+ * Say what came of the comment when it was not posted.
+ * @param result What posting it came to.
+ */
+function reportPost(result: PostResult): void {
 	if ("failure" in result) warnUnposted(result.failure);
+	if ("stopped" in result) process.stdout.write(`::notice::${result.stopped}\n`);
 }
 
 /**
@@ -347,7 +357,7 @@ async function reportNoVault(context: Context): Promise<void> {
 		context.headSha,
 		false,
 	);
-	if ("failure" in result) warnUnposted(result.failure);
+	reportPost(result);
 }
 
 /**

@@ -365,7 +365,7 @@ describe("the entry", () => {
 		movedTo = "f".repeat(40);
 		try {
 			const result = await step();
-			expect(result.stdout).toContain("::warning title=Archboard::");
+			expect(result.stdout).toContain("::notice::The pull request moved on");
 			expect(result.stdout).toContain(movedTo.slice(0, 7));
 			expect(comments.map((one) => one.body)).toEqual(before);
 			expect(requests.slice(sent).filter((one) => !one.startsWith("GET"))).toHaveLength(0);

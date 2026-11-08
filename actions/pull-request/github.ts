@@ -176,7 +176,8 @@ async function listComments(
 /** What posting the comment came to. */
 type PostResult =
 	| { readonly posted: "created" | "updated" | "none" }
-	| { readonly failure: string };
+	| { readonly failure: string }
+	| { readonly stopped: string };
 
 /**
  * Create the pull request's sticky comment, or update the one this action made before.
@@ -185,7 +186,8 @@ type PostResult =
  * @param body The comment's Markdown, which carries the marker.
  * @param headSha The commit this run reports.
  * @param create False to only update an earlier comment, and create none.
- * @returns What happened. A refusal, such as the read-only token of a fork, says why.
+ * @returns What happened. A refusal, such as the read-only token of a fork, says why, and a run
+ * that must not publish, such as one of an older head, says why it stopped.
  */
 async function upsertComment(
 	access: ApiAccess,
@@ -199,7 +201,7 @@ async function upsertComment(
 		return { failure: "the token cannot read the pull request's comments" };
 	const existing = findStickyComment(comments);
 	const problem = await publicationProblem(access, number, headSha);
-	if (problem !== undefined) return { failure: problem };
+	if (problem !== undefined) return { stopped: problem };
 	if (existing === undefined) {
 		if (!create) return { posted: "none" };
 		const answer = await call(access, "POST", `/issues/${String(number)}/comments`, { body });

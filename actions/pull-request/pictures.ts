@@ -148,6 +148,8 @@ async function makePictures(
 ): Promise<Pictures> {
 	const drawn = drawPictures(context, { ...trees, state });
 	if (Object.keys(drawn).length === 0) return { note: "No picture could be drawn." };
+	// A run that must not publish says why in its own words, not as a refused push.
+	let stopped: string | undefined;
 	const failure = await pushAssets(
 		{
 			server: context.hosting.server,
@@ -158,8 +160,12 @@ async function makePictures(
 			pullRequestFolder: `pr-${String(context.number)}`,
 			files: drawn,
 		},
-		() => publicationProblem(context.access, context.number, context.headSha),
+		async () => {
+			stopped = await publicationProblem(context.access, context.number, context.headSha);
+			return stopped;
+		},
 	);
+	if (stopped !== undefined) return { note: stopped };
 	if (failure !== undefined) return { note: notPushed(context, failure) };
 	const before = linksOf(context, "before", drawn);
 	return {
