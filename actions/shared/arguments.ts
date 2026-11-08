@@ -19,9 +19,11 @@ function splitArguments(line: string): string[] {
 		throw new Error(`The arguments have an unclosed quote: ${line}`);
 	}
 	return words.map((word) =>
-		word.replaceAll(QUOTED, (_whole, double?: string, single?: string, escaped?: string) =>
-			(double ?? single ?? escaped ?? "").replaceAll(/\\(.)/gu, "$1"),
-		),
+		word.replaceAll(QUOTED, (_whole, double?: string, single?: string, escaped?: string) => {
+			if (single !== undefined) return single;
+			if (double !== undefined) return double.replaceAll(/\\(["\\$`])/gu, "$1");
+			return escaped ?? "";
+		}),
 	);
 }
 
