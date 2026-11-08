@@ -145,7 +145,7 @@
 	--color-primary-subtle: var(--primary-subtle);
 	/* The rim of a primary action's gold (`primary-finish`). */
 	--color-primary-edge: var(--primary-edge);
-	/* The agent dock: a card that lies in the left column's well. */
+	/* The agent dock: a card that stands on the left column's chrome. */
 	--color-raised: var(--raised);
 	/* The picture's own pieces, which the left column is built from: the face of a
 	   slab, the floor a well sinks to, and the lighter piece raised on a well's edge. */
@@ -378,8 +378,8 @@
               no shadow onto it: the tone step is the edge, and the picture's
               corners are rounded against the chrome (`picture-corners`).
               The legend and the composer lie on the chrome too. In the left
-              column the well runs to its foot, and the agent's card lies in
-              it (`--raised`): Working now at its top, then the dock.
+              column the agent's card stands on the chrome (`--raised`), 8px
+              from the window's foot: Working now at its top, then the dock.
      raised   a control, a key cap or the chosen row of a list, standing on
               a surface (--elevation-raised): a lit top edge, a contact line and
               a short shadow. Pressed, a control sinks into a trough
@@ -400,13 +400,12 @@
 	/* Depth on chalk: the site's construction in a warm umber, highlights in white. */
 	--elevation-well: inset 0 2px 4px oklch(0.33 0.035 65 / 0.12), inset 0 -1px 0 var(--highlight);
 	--elevation-trough: var(--elevation-well);
-	/* The left column is the picture's own object, so its depth reads the picture's
-	   tokens, which hold both themes. */
+	/* Number badges use the picture's slab tokens, which hold both themes. */
 	--elevation-slab:
 		inset 0 1px 0 color-mix(in oklch, var(--slab-glint) 16%, transparent), 0 2px 0 var(--slab-edge),
 		0 3px 4px -1px var(--slab-shadow);
-	/* The agent's card in the left column's well: a lit top edge, and a soft shadow that rises
-	   from it over the list, as the tray at the foot of the column cast before it was a card. */
+	/* The agent's card on the left column's chrome: a lit top edge and a soft shadow
+	   that rises from it over the list. */
 	--elevation-tray:
 		inset 0 1px 0 var(--highlight), 0 -1px 0 oklch(0.33 0.035 65 / 0.06),
 		0 -10px 24px -12px oklch(0.33 0.035 65 / 0.2);

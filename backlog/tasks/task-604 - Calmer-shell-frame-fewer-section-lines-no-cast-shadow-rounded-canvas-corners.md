@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T13:12:00Z'
-updated_date: '2026-11-08T16:49:00Z'
+updated_date: '2026-11-08T19:25:00Z'
 labels:
   - frontend
   - design
@@ -63,6 +63,8 @@ Review completed for a2af63695..cd031b68f. Fixed claim persistence during connec
 Review of 545f27fbe..a552e0c27: inspect shared rows, section labels, legend movement, and site mocks against the owner specification. Replace wrapper-shape assertions with legend reachability and keep DESIGN.md consistent. The Browser module keeps its reader, selection, and event ownership, so no architecture proposal is needed.
 
 Review completed for 545f27fbe..a552e0c27. Fixed the stale gold rule in DESIGN.md, replaced wrapper assertions with visible legend reachability, and rounded observed legend coordinates after a 0.0015-pixel animation difference failed the stability test. Validation passed: fresh install/build, lint:all, type-check, formatting, 11 code-evidence tests, and canonical-model-legend, canonical-model-viewer, shell-layout, reader-column, reader-context, canonical-model-walkthroughs, and canonical-model-selection through the browser adapter. Inspected the app with agent-browser on port 4397 in both themes, one and two panes, two levels of expansion, and an overflowing subject. Focused axe rules found no panel or navigator violations. Site paint, diagram rendering, and build passed. Audited the site sections and demo states on port 4398, including completed talk and window playback. Regenerated diagram differences contain only allocated sample IDs and were restored. Architecture semantics passed. Existing Browser ownership stays accurate, so no model change is needed.
+
+Review of 00557c0dc..5fd18e4e2 follows the later owner specification: both side lists and the agent card surround use the shell tone, and panes have no separator. Inspect the open repository chooser, remove stale depth notes, and run the requested browser owners and site audit. Browser ownership remains vKEsyHFk/vKEsyHFk#6nZjwK9W. These surface changes alter no module responsibility or interface, so no architecture proposal is needed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
