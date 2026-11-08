@@ -3,9 +3,11 @@ id: TASK-596
 title: >-
   INSTALL shows a platform setup of application and infrastructure checkouts,
   and the limits of hop evidence
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-11-07T12:43:00Z'
+updated_date: '2026-11-08T12:09:00Z'
 labels: []
 dependencies:
   - TASK-592
@@ -25,6 +27,18 @@ A platform team keeps application code and infrastructure in several checkouts. 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 INSTALL registers an application checkout and an infrastructure checkout and runs one `archboard check code`, and the steps work on the public example
-- [ ] #2 The README states the limits of hop evidence beside its claim: both ends must declare the connection, and the report names the analysis it skipped
+- [x] #1 INSTALL registers an application checkout and an infrastructure checkout and runs one `archboard check code`, and the steps work on the public example
+- [x] #2 The README states the limits of hop evidence beside its claim: both ends must declare the connection, and the report names the analysis it skipped
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+INSTALL.md 'Application and infrastructure checkouts' clones both relay repositories, registers both and runs one archboard check code. Followed verbatim on fresh clones with an isolated XDG_STATE_HOME and server port: exit 0, then exit 1 after gate:break with one evidence line in each repository, then exit 0, with nothing skipped. README states the limits beside its claim: both ends must declare the connection, one end alone is information, and the report names what it skipped. The docs page /docs/platform/ adds the CI setup and the full list of limits; the literal env claim matches kubernetes-adapter.ts and kubernetes-runners.ts.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+INSTALL and the docs show an application and an infrastructure checkout checked together, with the limits of hop evidence; the steps work on the public relay example from fresh clones.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -3,9 +3,11 @@ id: TASK-594
 title: >-
   A pull request carries its proposal, before and after pictures and its
   footprint
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-11-07T12:42:00Z'
+updated_date: '2026-11-08T12:09:00Z'
 labels: []
 dependencies:
   - TASK-591
@@ -25,7 +27,19 @@ Leads who review agent pull requests say that plain diffs are the wrong level fo
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A GitHub Action posts on a sample pull request the proposal summary, the architecture before and after as SVG, the footprint buckets and a link to the map
-- [ ] #2 A configuration makes changes outside the plan warn or fail, and an override lets a pull request through
-- [ ] #3 The action uses only existing CLI commands
+- [x] #1 A GitHub Action posts on a sample pull request the proposal summary, the architecture before and after as SVG, the footprint buckets and a link to the map
+- [x] #2 A configuration makes changes outside the plan warn or fail, and an override lets a pull request through
+- [x] #3 The action uses only existing CLI commands
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+actions/pull-request posts one sticky comment. On relay PR #2 (https://github.com/miklschmidt/archboard-relay-example/pull/2) it shows the proposal named by the archboard-pr marker, its summary, 'relationships: 1 added', the SVGs before and after from the orphan branch archboard-assets, the footprint (planned and changed: Accept parcel; planned but unchanged: Rate card) and links to the full-size map and the vault. out-of-plan warn, fail and off, and the override label, are held by tests/system/actions/pull-request-action.test.ts. The Action runs only model proposals, read, compare, footprint, render, repo add, repo forget and stop. Fixed during proof: model footprint sets changes against a draft only, and the skill adopts on the branch, so the Action now reads the plan of an adopted proposal from the base's Current and the head's state (actions/pull-request/adopted.ts, rule of ADR 0045). A run again at the same head keeps its pictures.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The pull-request Action puts the plan on a pull request: proposal, pictures before and after, footprint buckets and map link, with out-of-plan warn or fail and an override label. Proof: relay PR #2's comment in CI.
+<!-- SECTION:FINAL_SUMMARY:END -->
