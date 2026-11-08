@@ -159,6 +159,40 @@ fn fraction_of(at: Rect, index: usize, count: usize, margin: f64) -> Point {
     }
 }
 
+/// Whether a line meets each door it joins on a side that faces the line's far end. A line
+/// that met a door on another side would loop round the door, or reach it from behind.
+pub(super) fn faces_far_end(model: &Model<'_>, shape: &Shape, edge: usize, points: &[Point]) -> bool {
+    let (from, to) = model.ends[edge];
+    let last = points.len() - 1;
+    [(from, to, points[0], points[1]), (to, from, points[last], points[last - 1])]
+        .into_iter()
+        .all(|(at, far, attachment, next)| {
+            model.endpoints[at].node.option(DOOR).is_none()
+                || facing(shape.endpoints[&at], center(shape.endpoints[&far]), attachment, next)
+        })
+}
+
+/// Whether a line that leaves a box from one point toward the next heads for a far point.
+/// A far point beside the box in neither direction leaves every side open.
+fn facing(at: Rect, far: Point, attachment: Point, next: Point) -> bool {
+    let above = far.y < at.y;
+    let below = far.y > at.y + at.height;
+    let before = far.x < at.x;
+    let after = far.x > at.x + at.width;
+    if !(above || below || before || after) {
+        return true;
+    }
+    if next.y < attachment.y {
+        above
+    } else if next.y > attachment.y {
+        below
+    } else if next.x < attachment.x {
+        before
+    } else {
+        after
+    }
+}
+
 pub(super) fn center(at: Rect) -> Point {
     Point {
         x: at.x + at.width / 2.0,
