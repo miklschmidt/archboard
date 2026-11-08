@@ -468,6 +468,33 @@ mod tests {
     }
 
     #[test]
+    fn coincident_whole_routes_need_no_junction_room() {
+        let line = |id: &str| PlacedLine {
+            id: id.into(),
+            points: vec![
+                Point { x: 100.0, y: 100.0 },
+                Point { x: 100.0, y: 300.0 },
+                Point { x: 400.0, y: 300.0 },
+                Point { x: 400.0, y: 500.0 },
+            ],
+            label: None,
+        };
+        let shape = Shape::new(Placed {
+            width: 1000.0,
+            height: 1000.0,
+            cards: vec![card("source", 0.0, 0.0), card("target", 300.0, 500.0)],
+            frames: Vec::new(),
+            regions: Vec::new(),
+            edges: vec![line("one"), line("two")],
+            titles: Vec::new(),
+            routed: None,
+        });
+        let drawn = drawing(&shape, 8.0).expect("room to take out");
+        let points = &drawn.edges[0].points;
+        assert!(points[3].y - points[2].y < JOIN_ROOM);
+    }
+
+    #[test]
     fn alignment_cannot_chain_small_gaps_into_a_large_cost() {
         let mut cards = Vec::new();
         for row in 0..3 {

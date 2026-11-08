@@ -1,6 +1,7 @@
 //! What moves on one axis of a drawing: each card, wall, word plate and run of a line is a
 //! piece with a mover, and a shift for each mover moves the drawing.
 
+use super::super::{geometry::length, junctions::common_suffix};
 use crate::{
     blocks::assembly::Placed,
     geometry::{Axis, Point, Rect},
@@ -100,14 +101,11 @@ fn joined_card(drawing: &Placed, line: usize) -> Option<usize> {
     let [.., turn, end] = points.as_slice() else {
         return None;
     };
+    let approach = length(&[*turn, *end]);
+    let total = length(points);
     let along = |other: &[Point]| {
-        let [.., before, last] = other else {
-            return false;
-        };
-        let between = |a: f64, b: f64, c: f64| a.min(c) <= b && b <= a.max(c);
-        last == end
-            && (before.x == turn.x && turn.x == end.x && between(before.y, turn.y, end.y)
-                || before.y == turn.y && turn.y == end.y && between(before.x, turn.x, end.x))
+        let shared = common_suffix(points, other);
+        (shared - approach).abs() < 1e-6 && shared < total - 1e-6 && shared < length(other) - 1e-6
     };
     let joins = (drawing.edges.iter().enumerate())
         .any(|(other, route)| other != line && along(&route.points));
