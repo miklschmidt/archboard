@@ -3,7 +3,7 @@
 # The Archboard server runs it with the PATH of the shell that started the
 # server. That PATH can predate the flake, or find another rust-analyzer first.
 # nix develop gives the flake's rust-analyzer, cargo and RUST_SRC_PATH for any
-# PATH. scripts/configure-language-servers.ts configures it on `bun install`.
+# PATH. .archboard/language-servers.json names it for every checkout.
 # Its Cargo runs build into their own directory, so they never wait on the lock
 # that the Rust stages of `bun run check` hold.
 root="$(dirname "$(realpath "$0")")/.."

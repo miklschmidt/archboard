@@ -1,5 +1,6 @@
 ---
 import Icon from "./Icon.astro";
+import InstallCommands from "./InstallCommands.astro";
 import DockLines from "./window/DockLines.astro";
 import ProductWindow from "./window/ProductWindow.astro";
 import { links } from "../lib/links";
@@ -11,21 +12,21 @@ import { links } from "../lib/links";
 		<div class="container hero-copy" data-words>
 			<h1 id="hero-title" class="display h1">Understand the code <br />your agents write.</h1>
 			<div class="hero-row">
-				<p class="lead">
-					Plan the next change with your agent on a map of the system, before it writes a line. Then
-					follow any feature into the code, and see every place where the map and the code disagree.
-				</p>
-				<div class="hero-actions">
-					<a class="btn btn-gold" href="#quick-start">Get started <Icon name="arrowRight" /></a>
-					<a class="btn btn-quiet" href={links.repository}><Icon name="github" /> View on GitHub</a>
+				<div class="hero-pitch">
+					<p class="lead">
+						Plan the next change with your agent on a map of the system, before it writes a line.
+						Then follow any feature into the code, and see every place where the map and the code
+						disagree.
+					</p>
+					<div class="hero-actions">
+						<a class="btn btn-gold" href="#quick-start">Get started <Icon name="arrowRight" /></a>
+						<a class="btn btn-quiet" href={links.repository}><Icon name="github" /> View on GitHub</a>
+					</div>
+				</div>
+				<div class="hero-install">
+					<InstallCommands id="hero-install" then={["archboard init"]} />
 				</div>
 			</div>
-			<ul class="facts" aria-label="What it runs with">
-				<li>For Claude Code and Codex</li>
-				<li>Linux and macOS</li>
-				<li>Runs locally, installed from npm</li>
-				<li>Source-available</li>
-			</ul>
 		</div>
 		<div class="room"></div>
 	</div>
@@ -79,13 +80,20 @@ import { links } from "../lib/links";
 		max-width: 20ch;
 		text-wrap: balance;
 	}
+	/* The subline and the buttons at the left, the install commands beside them. */
 	.hero-row {
+		display: grid;
+		grid-template-columns: auto minmax(0, 30rem);
+		align-items: end;
+		gap: 28px clamp(32px, 5vw, 72px);
+	}
+	.hero-pitch {
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 28px;
 	}
-	.hero-row .lead {
+	.hero-pitch .lead {
 		max-width: 30em;
 	}
 	.hero-actions {
@@ -93,28 +101,10 @@ import { links } from "../lib/links";
 		flex-wrap: wrap;
 		gap: 12px;
 	}
-	.facts {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px 28px;
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		font-size: 0.9375rem;
-		color: var(--ink-muted);
-	}
-	.facts li {
-		display: inline-flex;
-		align-items: center;
-		gap: 10px;
-	}
-	.facts li::before {
-		content: "";
-		width: 6px;
-		height: 6px;
-		border-radius: 1px;
-		background: var(--gold-mark);
-		box-shadow: 0 0 10px oklch(0.86 0.125 86 / 0.6);
+	@media (max-width: 1000px) {
+		.hero-row {
+			grid-template-columns: minmax(0, 30rem);
+		}
 	}
 	.hero-window {
 		margin-top: clamp(40px, 5vw, 72px);

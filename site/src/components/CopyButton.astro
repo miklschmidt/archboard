@@ -1,0 +1,63 @@
+---
+// A button that copies a text. A click puts data-copy on the clipboard, so a script that changes
+// data-copy changes what the next click copies.
+import Icon from "./Icon.astro";
+
+interface Props {
+	/** The text that a click copies. */
+	readonly text: string;
+}
+
+const { text } = Astro.props;
+---
+
+<button type="button" class="copy" data-copy={text}>
+	<Icon name="copy" size={15} /> <span>Copy</span>
+</button>
+
+<style>
+	.copy {
+		display: inline-flex;
+		flex: none;
+		align-items: center;
+		gap: 6px;
+		height: 32px;
+		padding: 0 12px;
+		border: 0;
+		border-radius: 4px;
+		background: var(--raised);
+		color: var(--ink);
+		font-size: 0.8125rem;
+		font-weight: 600;
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule);
+		cursor: pointer;
+		transition: background-color 160ms var(--ease-out);
+	}
+	.copy:hover {
+		background: var(--slab);
+	}
+	.copy.is-done {
+		color: var(--added);
+	}
+</style>
+
+<script>
+	for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy]")) {
+		const label = button.querySelector("span");
+		button.addEventListener("click", async () => {
+			try {
+				await navigator.clipboard.writeText(button.dataset["copy"] ?? "");
+				button.classList.add("is-done");
+				if (label) label.textContent = "Copied";
+			} catch {
+				if (label) label.textContent = "Select and copy";
+			}
+			window.setTimeout(() => {
+				button.classList.remove("is-done");
+				if (label) label.textContent = "Copy";
+			}, 1800);
+		});
+	}
+</script>

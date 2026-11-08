@@ -13,15 +13,21 @@ interface Presentation {
 	result: unknown;
 	diagnostics: readonly string[];
 	outcome?: CommandOutcomeDeclaration;
+	/** The result as a person reads it, which the global `--text` prints in place of the JSON. */
+	text?: string;
 }
 
 /**
- * Writes the validated public result to stdout in the case's own mode.
+ * Writes the validated public result to stdout in the case's own mode, or as
+ * the text for a person when there is one.
  * @param outputCase - The selected output case.
  * @param result - The validated result.
+ * @param text - The result as a person reads it, when a person reads it.
  */
-function emitPublicResult(outputCase: OutputCase, result: unknown): void {
-	if (outputCase.mode === "json" || outputCase.mode === "file-receipt") {
+function emitPublicResult(outputCase: OutputCase, result: unknown, text?: string): void {
+	if (text !== undefined) {
+		processCommandHost.writeStdout(`${text}\n`);
+	} else if (outputCase.mode === "json" || outputCase.mode === "file-receipt") {
 		processCommandHost.writeStdout(`${JSON.stringify(result, null, 2)}\n`);
 	} else {
 		const content = z.union([z.string(), z.instanceof(Uint8Array)]).parse(result);
@@ -69,7 +75,7 @@ const STEP_EMITTERS: Readonly<Record<OutcomePresentationStep, (input: Presentati
 	 * @param input - The presentation.
 	 */
 	result: (input) => {
-		emitPublicResult(input.outputCase, input.result);
+		emitPublicResult(input.outputCase, input.result, input.text);
 	},
 };
 

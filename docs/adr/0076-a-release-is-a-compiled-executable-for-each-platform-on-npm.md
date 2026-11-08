@@ -178,3 +178,15 @@ shipped `LICENSE`.
   executable.
 - A checkout keeps its port, its hand-off, its source-hash refusal and its
   rebuild on restart.
+
+## Amendment
+
+Amended by TASK-601 (2026-11-08): `archboard install-skill` is now
+`archboard init`. It no longer links or copies the skills itself. It runs the
+skills CLI on the skills directory of the installation, started by `bun x`,
+`pnpm dlx` or `npx`, so the skills CLI decides where each agent reads its
+skills. The skills CLI copies the skills, so a person runs `archboard init`
+again after an update. `init` still never writes into the installation. Its
+last step gives the setup of the language servers to an agent: at a terminal
+it starts Claude Code or Codex with a prompt, and without a terminal its answer
+ends with that prompt.

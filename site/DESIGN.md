@@ -243,7 +243,7 @@ The palette is warm graphite at hue 75, one gold, and a few meaning colours. Pla
 ### Primary
 
 - **Drafting Gold** (oklch(0.831 0.134 84.5)): The flat gold. It fills the text selection and the skip link, and it rings the card that invites a click (the drill-down hint ring).
-- **Lamp Gold** (oklch(0.86 0.125 86)): The gold on dark that carries marks. It sets the focus outline, link underlines, and list and fact markers. It also sets the `$` prompt, selected-tab underlines, the sorted column, the FAQ sign, wires and the current-history node. It matches the renderer's yellow.
+- **Lamp Gold** (oklch(0.86 0.125 86)): The gold on dark that carries marks. It sets the focus outline, link underlines, and list markers. It also sets the `$` prompt, selected-tab underlines, the sorted column, the FAQ sign, wires and the current-history node. It matches the renderer's yellow.
 - **Gold Button Face** (oklch(0.87 0.135 88) to oklch(0.8 0.142 81)): The vertical gradient on the primary button, edged by Gold Edge (oklch(0.58 0.11 74)). Text on it is Gold Ink (oklch(0.2 0.02 70)).
 - **Mark Gradient** (oklch(0.89 0.105 90) to oklch(0.72 0.13 75)): The brand mark, and the voice orb's lines and ring.
 
@@ -336,7 +336,7 @@ A feature is a grid of prose beside a demonstration, centered vertically. The de
 
 Inside components the rhythm steps in 4px, 8px, 12px, 16px and 24px. Panels pad 18px to 24px. Trays pad 6px. Prose lines stay near 36em, leads near 38em, and notes under a demonstration run up to 52em.
 
-Responsive behaviour is simple and observed. At 1000px the pipeline and the quick start stack. At 960px features and the walkthrough player stack. At 900px section heads, tab bars and the share bento stack. The bento is one grid. The document tile spans both rows at the left, and the embed and question tiles share the right. Each tile's visual takes the height that its row gives it. At 860px the nav links hide and the FAQ goes to one column. At 760px the hero window shows only its canvas, laid out at 760 by 600 and scaled to the column. A copy of the agent's lines appears beneath it. The comparison table becomes one block per row that names every tool. The footer drops to two columns. At 420px the GitHub label hides. The review looked at 1440 by 900 and 390 by 844.
+Responsive behaviour is simple and observed. At 1000px the hero's install commands drop under its buttons, and the pipeline and the quick start stack. At 960px features and the walkthrough player stack. At 900px section heads, tab bars and the share bento stack. The bento is one grid. The document tile spans both rows at the left, and the embed and question tiles share the right. Each tile's visual takes the height that its row gives it. At 860px the nav links hide and the FAQ goes to one column. At 760px the hero window shows only its canvas, laid out at 760 by 600 and scaled to the column. A copy of the agent's lines appears beneath it. The comparison table becomes one block per row that names every tool. The footer drops to two columns. At 420px the GitHub label hides. The review looked at 1440 by 900 and 390 by 844.
 
 ## Elevation & Depth
 
@@ -351,7 +351,7 @@ Depth is layered tone plus a light from above. A plane is lighter than the one u
 - **Hairline ring** (`box-shadow: inset 0 0 0 1px oklch(1 0.01 85 / 0.09)`): The edge of every plane, in place of a border.
 - **Gold button** (`inset 0 1px 0 oklch(1 0.02 90 / 0.55), inset 0 0 0 1px oklch(0.58 0.11 74), 0 1px 0 oklch(0.06 0.004 75 / 0.8), 0 6px 16px -6px oklch(0.55 0.12 75 / 0.55)`): The primary button at rest. Hover lifts it 1px with a longer glow. Press drops it 1px with an inset shade.
 - **Mock window** (`inset 0 1px 0 oklch(1 0.01 85 / 0.12), inset 0 0 0 1px oklch(1 0.01 85 / 0.15), 0 2px 0 oklch(0.06 0.004 75 / 0.6), 0 40px 80px -24px oklch(0.03 0.004 75 / 0.85), 0 100px 160px -40px oklch(0.03 0.004 75 / 0.9)`): The hero window, which stands higher than any table.
-- **Marker glow** (`box-shadow: 0 0 10px oklch(0.86 0.125 86 / 0.6)`): A small gold square or dot that glows, such as a hero fact, a pipeline wire end or the current history node.
+- **Marker glow** (`box-shadow: 0 0 10px oklch(0.86 0.125 86 / 0.6)`): A small gold square or dot that glows, such as a pipeline wire end or the current history node.
 
 ### Named Rules
 
@@ -375,6 +375,7 @@ Edges are inset hairline rings, never borders. The only borders are the CSS tria
 - **Primary (gold):** A physical piece of gold. A vertical gradient from Gold Button Face top to bottom with Gold Ink text, edge ring, lit top edge, contact line and warm glow. Hover lifts 1px and deepens the glow. Press sinks 1px with an inset shade. One gold button leads a region: the nav, the hero, the closing, and the action inside a demonstration (Open Inventory service, Take back control, Narrate, Talk).
 - **Quiet:** A raised plane with Ink text, the Raised shadow and a hairline ring. Hover moves to Slab and lifts 1px. Press shows the Well shadow. It always pairs with a gold button ("View on GitHub").
 - **Copy button:** 32px high, a raised face at 0.8125rem. It says "Copied" in Added Green for 1.8s.
+- **Install commands:** A tray of Chrome holds a trough of package manager tabs (npm, pnpm, yarn, bun), the copy button and a code block with the install and `archboard init`. The hero holds one beside its subline and buttons, the quick start holds the other, and a pick in one shows the same package manager in both. The copy button copies the commands of the picked tab.
 - **Focus:** Every focusable element shows a 2px Lamp Gold outline with 3px offset. Transitions run 160ms with the ease-out curve.
 
 ### Tabs and segments
@@ -479,7 +480,7 @@ A tray holds a conversation with the Codex voice about the example shop, from `s
 - **Do** run every new loop only while visible, and give it a still state for reduced motion.
 - **Do** give each demonstration its own form, and keep the composition left-aligned.
 - **Do** label mock interface data as an example.
-- **Do** make bold claims that a command backs, and name the command. Put planning first wherever the page compares jobs. State the platform, license and model-provider limits before the install step. Put the renderer's implementation under the outcome it explains.
+- **Do** make bold claims that a command backs, and name the command. Put planning first wherever the page compares jobs. State the platform and model-provider limits beside the install step. The license stands in the questions and the footer. Put the renderer's implementation under the outcome it explains.
 
 ### Don't:
 

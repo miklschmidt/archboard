@@ -24,10 +24,8 @@
 // ambient working directory again with extra steps, and each entry traces back
 // to a checkout somebody registered.
 //
-// An entry also holds the language servers that an agent configured for that
-// checkout (`repo language-server`, ADR 0046). They belong to the checkout, so
-// they stay while the same root registers again and go with `repo forget`.
-// The file and its lock are in `runtime/store/registry-file.ts`.
+// The file and its lock are in `runtime/store/registry-file.ts`. A checkout's
+// language servers are in the checkout itself (`runtime/store/language-servers.ts`).
 
 import fs from "fs";
 import path from "path";
@@ -49,8 +47,6 @@ import {
 	type UntrackedVaultStatus,
 } from "#runtime/store/registry-file.ts";
 import { VAULT_DIRECTORY, vaultHolder } from "#runtime/services/vault-finder.ts";
-import type { ConfiguredServer, LanguageServers } from "#runtime/store/language-servers.ts";
-import type { ConfigurableLanguage } from "#shared/schemas/configurable-languages.ts";
 
 /** How a caller cancels the git calls a declaration has to make. */
 interface DeclareOptions {
@@ -176,16 +172,12 @@ function isChosen(
 }
 
 /**
- * What a re-registered directory keeps: when it was added and the servers an
- * agent configured for it.
+ * What a re-registered directory keeps: when it was added.
  * @param previous What the registry held for this directory and identity.
  * @returns The fields to carry over.
  */
-function keptFrom(
-	previous: RegisteredRepo | undefined,
-): Pick<RegisteredRepo, "addedAt" | "servers"> {
-	const addedAt = previous?.addedAt ?? new Date().toISOString();
-	return previous?.servers === undefined ? { addedAt } : { addedAt, servers: previous.servers };
+function keptFrom(previous: RegisteredRepo | undefined): Pick<RegisteredRepo, "addedAt"> {
+	return { addedAt: previous?.addedAt ?? new Date().toISOString() };
 }
 
 /**
@@ -493,33 +485,6 @@ async function forgetDirectory(
 	});
 }
 
-/**
- * Set the server of one language for a registered checkout, or remove it.
- * @param root The checkout's root.
- * @param language The language.
- * @param server Its command and arguments, or undefined to remove it.
- * @returns The entry as it now stands, or undefined when the directory is not a known checkout.
- * @throws {RegistryWriteError} When the registry cannot be written: the caller
- * asked for the change, so it hears that nothing changed.
- */
-function setLanguageServer(
-	root: string,
-	language: ConfigurableLanguage,
-	server: ConfiguredServer | undefined,
-): RegisteredRepo | undefined {
-	return changeRegistry((registry) => {
-		const entry = registry.checkouts.find((candidate) => candidate.root === root);
-		if (entry === undefined) return undefined;
-		const { [language]: _replaced, ...others } = entry.servers ?? {};
-		const servers: LanguageServers =
-			server === undefined ? others : { ...others, [language]: server };
-		const { servers: _before, ...bare } = entry;
-		const updated = Object.keys(servers).length === 0 ? bare : { ...bare, servers };
-		registry.checkouts = registry.checkouts.map((each) => (each === entry ? updated : each));
-		return updated;
-	});
-}
-
 export {
 	type RegisteredRepoStatus,
 	type Declared,
@@ -531,5 +496,4 @@ export {
 	declareIfUnknown,
 	forgetDirectory,
 	repositoryOfVault,
-	setLanguageServer,
 };

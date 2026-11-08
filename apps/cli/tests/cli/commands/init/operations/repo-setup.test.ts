@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { withoutOldBlock } from "#cli/commands/install-skill/operations/repo-setup.ts";
+import { withoutOldBlock } from "#cli/commands/init/operations/repo-setup.ts";
 
-// Which bytes of an agent document an upgrade cuts. The install system test
+// Which bytes of an agent document an upgrade cuts. The init system test
 // owns the plain case end to end; owned here are the documents a person edited
 // by hand or saved with other line endings, where a wider cut deletes their text.
 

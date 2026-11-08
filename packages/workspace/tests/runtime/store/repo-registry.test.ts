@@ -23,7 +23,6 @@ import {
 	listRegistry,
 	RepoRegistryError,
 	repositoryOfVault,
-	setLanguageServer,
 } from "#runtime/store/repo-registry.ts";
 
 /**
@@ -377,20 +376,6 @@ test("forgetting an untracked vault removes it, from the directory below it that
 		vault: { root: holder },
 	});
 	expect(listRegistry().vaults).toEqual([]);
-});
-
-test("language servers belong to a checkout: another checkout of the identity does not share them, and forgetting drops them", async () => {
-	await declareDirectory(main);
-	await declareDirectory(clone);
-	const server = { command: "clangd", args: [] };
-	expect(setLanguageServer(clone, "c", server)?.servers).toEqual({ c: server });
-	const entries = listRegistry().checkouts;
-	expect(entries.find((each) => each.root === clone)?.servers).toEqual({ c: server });
-	expect(entries.find((each) => each.root === main)?.servers).toBeUndefined();
-	expect(setLanguageServer(join(scratch, "unknown"), "c", server)).toBeUndefined();
-	await forgetDirectory(clone);
-	await declareDirectory(clone);
-	expect(listRegistry().checkouts.find((each) => each.root === clone)?.servers).toBeUndefined();
 });
 
 test("a registry from before checkouts could be chosen reads with every entry chosen, and a read writes nothing", async () => {

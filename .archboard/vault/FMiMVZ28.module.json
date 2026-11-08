@@ -3,7 +3,7 @@
   "name": "Language server choice",
   "kind": "function",
   "responsibility": "Chooses the command that starts the language server of a language in a checkout: the configured one, else for TypeScript the checkout's own",
-  "description": "A configured server wins and runs as an editor's would. TypeScript has a default that reads the checkout's own node_modules/typescript at its root. Version 7 or later runs its native tsc --lsp --stdio. An earlier version, which has no --lsp, runs typescript-language-server from the checkout's node_modules/.bin or the server's PATH, told to use the checkout's lib/tsserver.js. Without either, a checkout of Archboard falls back to Archboard's own native tsc, and a release, which ships no TypeScript, reports the server as missing and says why. The TypeScript that the choice read is reported with the check's timings.",
+  "description": "A server that the checkout's language server files name wins and runs as an editor's would. A file that cannot be read gives its problem instead. TypeScript has a default that reads the checkout's own node_modules/typescript at its root. Version 7 or later runs its native tsc --lsp --stdio. An earlier version, which has no --lsp, runs typescript-language-server from the checkout's node_modules/.bin or the server's PATH, told to use the checkout's lib/tsserver.js. Without either, a checkout of Archboard falls back to Archboard's own native tsc, and a release, which ships no TypeScript, reports the server as missing and says why. The TypeScript that the choice read is reported with the check's timings.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/language-servers/operations/server-command.ts"

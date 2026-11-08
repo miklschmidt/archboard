@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { createCliHttpDouble } from "./support/cli-http-double.ts";
-import { createInstallFixture } from "./support/install-fixture.ts";
+import { createInitFixture } from "./support/init-fixture.ts";
 import {
 	createPackageCliOwner,
 	checkoutRoot,
@@ -110,14 +110,14 @@ describe("CLI resource cleanup", () => {
 	test("removes install and repository roots after assertion failures", () => {
 		let installRoot = "";
 		let repositoryRoot = "";
-		let installFixture: ReturnType<typeof createInstallFixture> | undefined;
+		let installFixture: ReturnType<typeof createInitFixture> | undefined;
 		let repositoryFixture: ReturnType<typeof createRepositoryFixture> | undefined;
 		let installRegistered = false;
 		let repositoryRegistered = false;
 		let installError: unknown;
 		let repositoryError: unknown;
 		try {
-			using fixture = createInstallFixture();
+			using fixture = createInitFixture();
 			installFixture = fixture;
 			installRoot = fixture.root;
 			installRegistered = true;

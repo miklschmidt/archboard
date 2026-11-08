@@ -121,8 +121,8 @@ jobs:
       - name: Install archboard with npm and run it
         run: bun scripts/release/smoke.ts --installer npm --name archboard
 
-      - name: Install @archboard/cli with Bun and run it
-        run: bun scripts/release/smoke.ts --installer bun --name @archboard/cli
+      - name: Install archboard with Bun and run it
+        run: bun scripts/release/smoke.ts --installer bun --name archboard
 
   # npm trusts only this job, in the environment `npm`, through OIDC (trusted publishing), so the
   # repository stores no npm token, and each package gets provenance. The job stages each package

@@ -16,8 +16,9 @@
 //
 // A question the session cannot put gets no answer, and the use stays as code
 // facts read it. The reason is said once:
-// - for each checkout and language that has no server (`missing`): none is
-//   configured for the checkout, or the configured command is not installed.
+// - for each checkout and language that has no server (`missing`): no
+//   language server file names one, a file cannot be read, or the command it
+//   names is not installed.
 // - for each project where the server cannot answer yet (`unready`), such as a
 //   Swift file with no package or a C file with no compilation database.
 // - for each checkout where a server did not start or ended (`failed`).

@@ -31,7 +31,7 @@ interface StartShellProps {
 }
 
 /** The command that gives a checkout a vault and makes it known to this machine. */
-const SET_UP = "archboard install-skill";
+const SET_UP = "archboard init";
 
 /** Nothing is on the panes before they exist. */
 const NO_ACTIVITY = {};

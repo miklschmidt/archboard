@@ -5,10 +5,15 @@
 /**
  * Make the tabs inside one root work.
  * @param root The element that holds the tab list and the panels.
+ * @param onSelect Told the data-tab value of each tab that the reader selects.
+ * @returns A function that shows the tab with a data-tab value, without focus and without onSelect.
  */
-export function mountTabs(root: HTMLElement): void {
+export function mountTabs(
+	root: HTMLElement,
+	onSelect?: (key: string) => void,
+): (key: string) => void {
 	const tabs = [...root.querySelectorAll<HTMLButtonElement>("[role='tab'][data-tab]")];
-	const select = (tab: HTMLButtonElement, focus: boolean) => {
+	const show = (tab: HTMLButtonElement) => {
 		for (const other of tabs) {
 			const on = other === tab;
 			other.setAttribute("aria-selected", String(on));
@@ -16,7 +21,11 @@ export function mountTabs(root: HTMLElement): void {
 			const panel = root.querySelector<HTMLElement>(`[data-panel="${other.dataset["tab"]}"]`);
 			if (panel) panel.hidden = !on;
 		}
+	};
+	const select = (tab: HTMLButtonElement, focus: boolean) => {
+		show(tab);
 		if (focus) tab.focus();
+		onSelect?.(tab.dataset["tab"] ?? "");
 	};
 	tabs.forEach((tab, index) => {
 		tab.addEventListener("click", () => select(tab, false));
@@ -45,4 +54,8 @@ export function mountTabs(root: HTMLElement): void {
 			select(next, true);
 		});
 	});
+	return (key) => {
+		const tab = tabs.find((candidate) => candidate.dataset["tab"] === key);
+		if (tab) show(tab);
+	};
 }

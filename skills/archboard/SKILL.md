@@ -42,6 +42,8 @@ Use the name of the repository directory as the model name, unless the user name
 The command makes `<root>/.archboard/vault` with the default vocabulary and an empty planning model.
 It registers the checkout, so that a browser lists it. It needs no server.
 Tell the user that you made the vault, and where.
+Then configure the repository's language servers as [setup](references/setup.md) says.
+Tell the user to commit `.archboard/language-servers.json` with the vault.
 
 ## Complete the intent
 

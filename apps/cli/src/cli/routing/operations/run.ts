@@ -72,7 +72,7 @@ import {
 	repoListContract,
 	repoUseContract,
 } from "#cli/commands/repo/operations/repo.ts";
-import { installSkillContract } from "#cli/commands/install-skill/operations/install-skill.ts";
+import { initContract } from "#cli/commands/init/operations/init.ts";
 import { type CliBootstrap, runCliWith } from "#cli/routing/operations/session.ts";
 import {
 	type CliRegistryEntry,
@@ -262,11 +262,8 @@ const COMMANDS: Record<string, CommandRoute> = {
 		},
 		bare: { kind: "default", child: "list", withLeadingOptions: true },
 	},
-	"install-skill": {
-		owner: contract(
-			installSkillContract,
-			"apps/cli/src/cli/commands/install-skill/operations/install-skill.ts",
-		),
+	init: {
+		owner: contract(initContract, "apps/cli/src/cli/commands/init/operations/init.ts"),
 	},
 };
 

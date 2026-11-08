@@ -151,8 +151,7 @@ const DISTRIBUTION_PATH_RE =
 /** The words that begin a read of evaluation inputs by their canonical names. */
 const EVALUATION_INPUT_RE =
 	/\bevals\/(?:evals\.json|pins\.json|coverage\.json|rubric\.md|README\.md|fixtures\/S\d{2}\.json)\b/u;
-const OPERATION_RE =
-	/\barchboard\s+(?:model|repo|check|start|stop|status|install-skill|browser)\b/u;
+const OPERATION_RE = /\barchboard\s+(?:model|repo|check|start|stop|status|init|browser)\b/u;
 const INVESTIGATION_RE =
 	/\b(?:rg|grep|cat|sed|head|tail|less|find|ls|tree|python3?|awk|wc|bat|fd|git\s+(?:log|show|grep|ls-files|blame|diff))\b/u;
 const SOURCE_RE = /\b(?:src|tests|docs)\/|\.(?:py|rst|toml|cfg|md|txt)\b/u;

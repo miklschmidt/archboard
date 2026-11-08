@@ -1,47 +1,53 @@
-// `archboard repo language-server` from its arguments to the registry file
-// (TASK-433): it sets or removes the server of one language for the working
-// directory's registered checkout or the one `--repo` names, `repo list` shows
-// it, registering the same checkout again keeps it and `repo forget` removes
-// it with the checkout. Nothing here needs a server: the registry is a file.
+// `archboard repo language-server` from its arguments to the language server
+// files (TASK-599): it writes the repository file of the working directory's
+// checkout, registered or not, or of the chosen checkout that `--repo` names,
+// writes the global file with `--global`, removes with `--remove`, keeps a
+// path from the checkout root, refuses a path outside the checkout in the
+// repository file, keeps every change of commands that run together, and shows
+// both files without a language. Nothing here needs a server: the files are files.
 
-import { afterAll, beforeAll, expect, spyOn, test } from "bun:test";
+import { afterAll, beforeAll, beforeEach, expect, spyOn, test } from "bun:test";
 import {
-	chmodSync,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
 	realpathSync,
 	rmSync,
-	utimesSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { passServers } from "@archboard/workspace/checkouts";
 
 const IDENTITY = "github.com/test/orders";
 const cwd = process.cwd();
 const reposFile = process.env["ARCHBOARD_REPOS"];
 let scratch = "";
 let checkout = "";
-let registry = "";
+let repositoryFile = "";
+let globalFile = "";
 let runCli: (argv: string[]) => Promise<void>;
 
 beforeAll(async () => {
 	scratch = realpathSync(mkdtempSync(join(tmpdir(), "archboard-repo-language-server-")));
 	checkout = join(scratch, "orders");
-	registry = join(scratch, "repos.json");
-	process.env["ARCHBOARD_REPOS"] = registry;
-	const git = (...args: string[]) => {
-		const done = Bun.spawnSync(["git", ...args], {
-			cwd: scratch,
-			env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null" },
-		});
-		if (done.exitCode !== 0) throw new Error(done.stderr.toString());
-	};
-	git("init", "-q", checkout);
+	repositoryFile = join(checkout, ".archboard", "language-servers.json");
+	globalFile = join(scratch, "state", "language-servers.json");
+	process.env["ARCHBOARD_REPOS"] = join(scratch, "state", "repos.json");
+	const done = Bun.spawnSync(["git", "init", "-q", checkout], {
+		cwd: scratch,
+		env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null" },
+	});
+	if (done.exitCode !== 0) throw new Error(done.stderr.toString());
 	Bun.spawnSync(["git", "remote", "add", "origin", `https://${IDENTITY}.git`], { cwd: checkout });
+	mkdirSync(join(checkout, "src"));
 	({ runCli } = await import("#cli/routing/operations/run.ts"));
+});
+
+beforeEach(() => {
+	rmSync(join(checkout, ".archboard"), { recursive: true, force: true });
+	rmSync(join(scratch, "state"), { recursive: true, force: true });
 });
 
 afterAll(() => {
@@ -55,7 +61,7 @@ afterAll(() => {
  * Run the CLI in a directory and capture what it wrote and how it exited.
  * @param directory Where it runs.
  * @param argv The arguments.
- * @returns Its stdout parsed as JSON where it is, and its exit code.
+ * @returns Its stdout and its exit code.
  */
 async function run(directory: string, argv: string[]) {
 	process.chdir(directory);
@@ -77,123 +83,105 @@ async function run(directory: string, argv: string[]) {
 }
 
 /**
- * The servers `repo list` shows for the checkout.
- * @returns Them, or undefined when it shows none.
+ * The servers that a file names.
+ * @param file The file.
+ * @returns Them, or undefined when the file is not there.
  */
-async function listed(): Promise<unknown> {
-	const { stdout } = await run(scratch, ["repo", "list"]);
-	const parsed = JSON.parse(stdout) as { repos: { root: string; servers?: unknown }[] };
-	return parsed.repos.find((entry) => entry.root === checkout)?.servers;
+function named(file: string): unknown {
+	return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : undefined;
 }
 
-test("repo language-server sets the server of a language for the working directory's registered checkout, repo list shows it, and registering the checkout again keeps it", async () => {
-	const added = await run(checkout, ["repo", "add", "."]);
-	expect(added.exited).toBe(0);
-	expect(JSON.parse(added.stdout)).toMatchObject({ repo: IDENTITY, source: "declared" });
-	const set = await run(checkout, [
+test("repo language-server writes the repository file of an unregistered checkout, keeps a path from the checkout root, and --remove empties it", async () => {
+	const set = await run(join(checkout, "src"), [
 		"repo",
 		"language-server",
-		"c",
-		"clangd",
-		"--arg=--background-index",
+		"rust",
+		"../scripts/rust-analyzer",
 	]);
 	expect(set.exited).toBe(0);
-	const servers = { c: { command: "clangd", args: ["--background-index"] } };
-	expect(JSON.parse(set.stdout)).toMatchObject({ repo: IDENTITY, language: "c", servers });
-	expect(await listed()).toEqual(servers);
-	await run(checkout, ["repo", "add", "."]);
-	expect(await listed()).toEqual(servers);
-	await run(scratch, [
-		"repo",
-		"language-server",
-		"python",
-		"pyright-langserver",
-		"--repo",
-		IDENTITY,
-	]);
-	expect(Object.keys((await listed()) as object).toSorted()).toEqual(["c", "python"]);
-	await run(checkout, ["repo", "language-server", "c", "--remove"]);
-	expect(Object.keys((await listed()) as object)).toEqual(["python"]);
-});
-
-test("repo language-server configures the TypeScript server of a checkout and --remove removes it", async () => {
-	await run(scratch, ["repo", "forget", checkout]);
-	await run(checkout, ["repo", "add", "."]);
-	const set = await run(checkout, [
-		"repo",
-		"language-server",
-		"typescript",
-		"typescript-language-server",
-		"--arg=--stdio",
-	]);
-	expect(set.exited).toBe(0);
-	expect(await listed()).toEqual({
-		typescript: { command: "typescript-language-server", args: ["--stdio"] },
+	expect(
+		(await run(checkout, ["repo", "language-server", "c", "clangd", "--arg=--background-index"]))
+			.exited,
+	).toBe(0);
+	const servers = {
+		c: { command: "clangd", args: ["--background-index"] },
+		rust: { command: "./scripts/rust-analyzer" },
+	};
+	expect(named(repositoryFile)).toEqual(servers);
+	const shown = await run(join(checkout, "src"), ["repo", "language-server"]);
+	expect(shown.exited).toBe(0);
+	expect(JSON.parse(shown.stdout)).toMatchObject({
+		repo: IDENTITY,
+		repository: { file: repositoryFile, servers: { c: servers.c, rust: { args: [] } } },
+		global: { file: globalFile, servers: {} },
 	});
-	expect((await run(checkout, ["repo", "language-server", "typescript", "--remove"])).exited).toBe(
-		0,
-	);
-	expect(await listed()).toBeUndefined();
+	await run(checkout, ["repo", "language-server", "c", "--remove"]);
+	await run(checkout, ["repo", "language-server", "rust", "--remove"]);
+	expect(existsSync(repositoryFile)).toBe(false);
 });
 
-test("repo forget removes the servers with the checkout", async () => {
-	await run(scratch, ["repo", "forget", checkout]);
-	await run(checkout, ["repo", "add", "."]);
-	expect(await listed()).toBeUndefined();
+test("--repo writes the file of the repository's chosen checkout, and --global writes the file of this machine with an absolute path", async () => {
+	expect((await run(checkout, ["repo", "add", "."])).exited).toBe(0);
+	expect(
+		(await run(scratch, ["repo", "language-server", "go", "gopls", "--repo", IDENTITY])).exited,
+	).toBe(0);
+	expect(named(repositoryFile)).toEqual({ go: { command: "gopls" } });
+	expect(
+		(await run(checkout, ["repo", "language-server", "python", "bin/pyright", "--global"])).exited,
+	).toBe(0);
+	expect(named(globalFile)).toEqual({ python: { command: join(checkout, "bin", "pyright") } });
+	expect(named(repositoryFile)).toEqual({ go: { command: "gopls" } });
+});
+
+test("a wrapper in the checkout root stays a path instead of a PATH name", async () => {
+	const set = await run(checkout, ["repo", "language-server", "rust", "./rust-server"]);
+	expect(set.exited).toBe(0);
+	expect(passServers()(checkout, "rust")).toMatchObject({
+		command: join(checkout, "rust-server"),
+	});
 });
 
 test.each([
-	["a checkout that is not registered", ["repo", "language-server", "c", "clangd"], "unregistered"],
-	["a registry that is not valid", ["repo", "language-server", "c", "clangd"], "invalid"],
-	["no command and no --remove", ["repo", "language-server", "c"], "registered"],
-	["a relative command", ["repo", "language-server", "c", "./bin/clangd"], "registered"],
+	["a command without a language", ["repo", "language-server", "--remove"]],
+	["no command and no --remove", ["repo", "language-server", "c"]],
+	["a command with --remove", ["repo", "language-server", "c", "clangd", "--remove"]],
 	[
-		"a language that has no configurable server",
-		["repo", "language-server", "cobol", "cobol-lsp"],
-		"registered",
+		"--global with --repo",
+		["repo", "language-server", "c", "clangd", "--global", "--repo", IDENTITY],
 	],
-])(
-	"repo language-server refuses %s with a usage error and changes nothing",
-	async (_, argv, state) => {
-		await run(scratch, ["repo", "forget", checkout]);
-		if (state === "registered") await run(checkout, ["repo", "add", "."]);
-		if (state === "invalid") writeFileSync(registry, "{");
-		const before = readFileSync(registry, "utf8");
-		const refused = await run(checkout, argv);
-		expect(refused.exited).toBe(2);
-		expect(readFileSync(registry, "utf8")).toBe(before);
-	},
-);
-
-test("a registration from before servers existed, and one that was observed, takes a server and stays what it was", async () => {
-	const stored = { repo: IDENTITY, root: checkout, source: "observed", addedAt: "2026-10-01" };
-	writeFileSync(registry, JSON.stringify({ repos: [stored] }));
-	const before = readFileSync(registry, "utf8");
-	const listedLegacy = await run(scratch, ["repo", "list"]);
-	expect(listedLegacy.exited).toBe(0);
-	expect(JSON.parse(listedLegacy.stdout)).toMatchObject({
-		repos: [{ ...stored, exists: true, chosen: true }],
-		unchosen: [],
-	});
-	expect(readFileSync(registry, "utf8")).toBe(before);
-	expect((await run(checkout, ["repo", "language-server", "c", "clangd"])).exited).toBe(0);
-	expect(await listed()).toEqual({ c: { command: "clangd", args: [] } });
-	const [kept] = JSON.parse(readFileSync(registry, "utf8")) as { source: string }[];
-	expect(kept?.source).toBe("observed");
+	["a language that has no server", ["repo", "language-server", "cobol", "cobol-lsp"]],
+	[
+		"an absolute path outside the checkout",
+		["repo", "language-server", "rust", "/usr/bin/rust-analyzer"],
+	],
+	[
+		"a relative path outside the checkout",
+		["repo", "language-server", "rust", "../bin/rust-analyzer"],
+	],
+])("repo language-server refuses %s with a usage error and writes nothing", async (_, argv) => {
+	expect((await run(checkout, argv)).exited).toBe(2);
+	expect(existsSync(repositoryFile)).toBe(false);
+	expect(existsSync(globalFile)).toBe(false);
 });
 
-test("repo commands that run together keep every change", async () => {
-	await run(scratch, ["repo", "forget", checkout]);
-	await run(checkout, ["repo", "add", "."]);
+test("repo language-server needs a checkout for the repository file, and never overwrites a file that it cannot read", async () => {
+	const outside = join(scratch, "outside");
+	mkdirSync(outside, { recursive: true });
+	expect((await run(outside, ["repo", "language-server", "c", "clangd"])).exited).toBe(2);
+	expect((await run(outside, ["repo", "language-server", "c", "clangd", "--global"])).exited).toBe(
+		0,
+	);
+	mkdirSync(join(checkout, ".archboard"));
+	writeFileSync(repositoryFile, "{");
+	expect((await run(checkout, ["repo", "language-server", "c", "clangd"])).exited).toBe(1);
+	expect(readFileSync(repositoryFile, "utf8")).toBe("{");
+});
+
+test("repo language-server commands that run together keep every change", async () => {
 	const cli = join(import.meta.dir, "..", "..", "..", "..", "..", "src", "bin.ts");
-	const commands = {
-		python: "pyright-langserver",
-		csharp: "csharp-ls",
-		swift: "sourcekit-lsp",
-		c: "clangd",
-	};
+	const servers = { c: "clangd", go: "gopls", rust: "rust-analyzer", swift: "sourcekit-lsp" };
 	const exits = await Promise.all(
-		Object.entries(commands).map(
+		Object.entries(servers).map(
 			([language, command]) =>
 				Bun.spawn([process.execPath, cli, "repo", "language-server", language, command], {
 					cwd: checkout,
@@ -204,39 +192,9 @@ test("repo commands that run together keep every change", async () => {
 		),
 	);
 	expect(exits).toEqual([0, 0, 0, 0]);
-	expect(await listed()).toEqual(
+	expect(named(repositoryFile)).toEqual(
 		Object.fromEntries(
-			Object.entries(commands).map(([language, command]) => [language, { command, args: [] }]),
+			Object.entries(servers).map(([language, command]) => [language, { command }]),
 		),
 	);
 });
-
-test("repo language-server takes the lock that a process that died left behind", async () => {
-	await run(checkout, ["repo", "add", "."]);
-	const lock = `${registry}.lock`;
-	mkdirSync(lock);
-	const longAgo = new Date(Date.now() - 60_000);
-	utimesSync(lock, longAgo, longAgo);
-	expect((await run(checkout, ["repo", "language-server", "c", "clangd"])).exited).toBe(0);
-	expect(existsSync(lock)).toBe(false);
-});
-
-test.skipIf(process.getuid?.() === 0)(
-	"repo language-server exits 1 and leaves the registry as it was when it cannot write it",
-	async () => {
-		const readOnly = join(scratch, "read-only");
-		const file = join(readOnly, "repos.json");
-		mkdirSync(readOnly);
-		const stored = [{ repo: IDENTITY, root: checkout, source: "declared", addedAt: "2026-10-01" }];
-		writeFileSync(file, JSON.stringify(stored));
-		process.env["ARCHBOARD_REPOS"] = file;
-		chmodSync(readOnly, 0o500);
-		try {
-			expect((await run(checkout, ["repo", "language-server", "c", "clangd"])).exited).toBe(1);
-			expect(JSON.parse(readFileSync(file, "utf8"))).toEqual(stored);
-		} finally {
-			chmodSync(readOnly, 0o700);
-			process.env["ARCHBOARD_REPOS"] = registry;
-		}
-	},
-);
