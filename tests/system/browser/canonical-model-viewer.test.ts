@@ -371,12 +371,7 @@ test("current model readings refresh after external edits and reconnect with exp
 		WAIT,
 	);
 	await pollUntil(stale, (value) => !value, "the reconnected reading to become current", WAIT);
-	await pollUntil(
-		claimVisible,
-		(visible) => !visible,
-		"the released claim after reconnection",
-		WAIT,
-	);
+	await pollUntil(claimVisible, (visible) => !visible, "the released claim to leave", WAIT);
 	await pollUntil(working, (visible) => !visible, "the expired activity to leave the shell", WAIT);
 }, 40_000);
 
