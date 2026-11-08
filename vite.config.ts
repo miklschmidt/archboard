@@ -489,7 +489,7 @@ export default defineConfig({
 			"crates/vendor/*/**",
 			// release-please writes CHANGELOG.md in its own style on every release
 			// (docs/agents/releasing.md).
-			"CHANGELOG.md",
+			"/CHANGELOG.md",
 			"dist/**",
 			"node_modules/**",
 			"backlog/**",
