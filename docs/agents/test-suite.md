@@ -101,6 +101,7 @@ The three Rust stages take turns on the lock of Cargo's build directory.
 `check:model` runs `archboard check` on this checkout's vault: the semantics, the code check against the bound source, and the embeds.
 Any warning or error fails it.
 It starts a server from this checkout's source on a free port and stops it after the check, because a running server checks with the source that it read at its start.
+That server must answer within the CLI's start window, so `check:model` runs alone after `check:first`, before the test lanes.
 The code check's rust-analyzer builds in `target/rust-analyzer`, so it never waits on that lock.
 `lint:all` includes `lint:core`, clippy over the crates and their tests, and
 `lint:core-docs`, rustdoc over every doc comment of the crates, and

@@ -354,19 +354,15 @@ export default defineConfig({
 			// The stages that wait on no shared timing: `vp` runs them at once, and the first
 			// failure ends the run. Each test lane fills the machine, so those run after them,
 			// one at a time, and the browser lane shares the machine with nothing (TASK-097).
+			// The model check starts a server that must answer within the CLI's start window,
+			// so it runs alone after these stages too: beside them, a runner of four threads
+			// starts that server too slowly.
 			"test:first": {
 				dependsOn: ["types", "frontend", "workbench-example", "test:core", "test:repository"],
 				...stageGroup,
 			},
 			"check:first": {
-				dependsOn: [
-					"lint:all",
-					"format:check",
-					"format:core",
-					"check:model",
-					"bun-nix",
-					"test:first",
-				],
+				dependsOn: ["lint:all", "format:check", "format:core", "bun-nix", "test:first"],
 				...stageGroup,
 			},
 			"test:all": {
@@ -382,6 +378,7 @@ export default defineConfig({
 			"check:all": {
 				command: [
 					`vp run ${stageOptions} check:first`,
+					"vp run check:model",
 					"vp run test:modules",
 					"vp run test:system",
 					"vp run test:solo",
