@@ -174,10 +174,13 @@ Run the agent, run the check, and give the findings back until the check passes 
 set -u
 task="$1"
 codex exec "$task"
-for round in 1 2 3; do
+for round in 0 1 2 3; do
   if archboard check > /dev/null 2> check.log; then
     echo "archboard check passed after round $round"
     exit 0
+  fi
+  if [ "$round" -eq 3 ]; then
+    break
   fi
   codex exec "archboard check failed. Fix the code or the Archboard model so that it passes. Do not hide a finding. The findings:
 $(cat check.log)"

@@ -37,6 +37,8 @@ Market research on X (2026-11-06) found that experienced engineers who run codin
 Exit codes: the docs page /docs/gate/ and the CLI reference list 0 pass, 1 warning or diagnostic, 2 usage or refusal, 3 no server. Tests hold them: apps/cli/tests/cli/commands/vault/operations/check-parts.test.ts (information passes, a warning fails the code check, a semantic diagnostic fails, an embed that nobody can draw again fails, refusals exit 2). The check Action (actions/check) installs the published CLI, annotates each finding and fails on fail-on: warning; tests/system/actions/check-action.test.ts holds fail-on and allow-codes. On relay PR #1 it failed with the annotation on services/intake/src/accept.ts:51. The relay example's .githooks/pre-push runs node_modules/.bin/archboard check, the pinned executable that CI runs; on a fresh clone it exited 1 after gate:break and 0 after gate:restore. INSTALL.md section 7 and README show the gate and an agent loop. docs/clips/gate.gif in the relay repo is a real recording that fails and passes again.
 
 Review of docs/relay-cli-reference: the local hook now names ./node_modules/.bin/archboard, so the documented pinned CLI runs without a global install. No architecture proposal is needed for this documentation correction.
+
+Review: the shell loop now checks the final repair attempt before it reports failure. A stand-in agent and CLI proved exit 0 after the third repair and exit 1 when all three repairs fail. The test owner also stays below the 500-line limit after its fixture moves to JSON (5c4c996cd).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
