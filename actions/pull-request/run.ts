@@ -7,7 +7,7 @@
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
 import { appendFileSync, existsSync, rmSync } from "node:fs";
 import { join, relative } from "node:path";
-import { planProblem, pullRequestComment } from "./comment.ts";
+import { noVaultComment, planProblem, pullRequestComment } from "./comment.ts";
 import type { PullRequestReport } from "./comment.ts";
 import { addWorktree, archboard, firstLine, readContext } from "./context.ts";
 import type { Context } from "./context.ts";
@@ -24,11 +24,19 @@ import type { Buckets, ModelReading, ProposalPlan } from "./proposal-plan.ts";
 import { input, parseJson, run } from "../shared/process.ts";
 import { annotationLine } from "../shared/workflow-commands.ts";
 
+/** A diagnostic of a refusal of `model proposals`. */
+interface ProposalsDiagnostic {
+	readonly code?: string;
+	readonly file?: string;
+	readonly message?: string;
+}
+
 /** What `model proposals` says that this action reads. */
 interface ProposalsReading {
 	readonly success?: boolean;
 	readonly code?: string;
 	readonly error?: string;
+	readonly diagnostics?: readonly ProposalsDiagnostic[];
 	readonly states?: readonly ModelState[];
 	readonly vault?: { readonly path: string };
 }
@@ -261,7 +269,7 @@ function cleanUp(context: Context): void {
  * @returns The report.
  */
 function unreadableReport(context: Context, reason: string): PullRequestReport {
-	const choice = { source: "unreadable", named: reason } as const;
+	const choice = { source: "unreadable", reason } as const;
 	return {
 		baseSha: context.baseSha,
 		headSha: context.headSha,
@@ -274,15 +282,36 @@ function unreadableReport(context: Context, reason: string): PullRequestReport {
 }
 
 /**
- * Why `model proposals` gave no usable answer: the refusal it printed, else its first line on
- * standard error.
+ * Why `model proposals` gave no usable answer: the refusal it printed with its first diagnostic,
+ * else its first line on standard error.
  * @param answer The answer, when it printed one.
  * @param stderr What it wrote on standard error.
- * @returns The reason.
+ * @returns The reason, without a closing period.
  */
 function refusalOf(answer: ProposalsReading | undefined, stderr: string): string {
-	if (answer?.code === undefined) return firstLine(stderr);
-	return answer.error === undefined ? answer.code : `${answer.code}: ${answer.error}`;
+	if (answer?.code === undefined) return withoutPeriod(firstLine(stderr));
+	const error = answer.error === undefined ? "" : `: ${withoutPeriod(answer.error)}`;
+	return `${answer.code}${error}${diagnosticDetail(answer.diagnostics?.[0])}`;
+}
+
+/**
+ * A diagnostic of a refusal, in brackets.
+ * @param diagnostic The diagnostic, if any.
+ * @returns Its code, file and first line of message, or an empty string.
+ */
+function diagnosticDetail(diagnostic: ProposalsDiagnostic | undefined): string {
+	if (diagnostic?.message === undefined) return "";
+	const where = [diagnostic.code, diagnostic.file].filter(Boolean).join(" in ");
+	return ` (${where === "" ? "" : `${where}: `}${firstLine(diagnostic.message)})`;
+}
+
+/**
+ * A text without its closing period, to be placed inside a sentence.
+ * @param text The text.
+ * @returns The text.
+ */
+function withoutPeriod(text: string): string {
+	return text.replace(/\.$/u, "");
 }
 
 /**
@@ -297,6 +326,7 @@ async function reportOn(context: Context, trees: Trees): Promise<number> {
 		process.stdout.write(
 			"::notice::The head commit holds no Archboard vault, so there is nothing to report.\n",
 		);
+		await upsertComment(context.access, context.number, noVaultComment(context.headSha), false);
 		return 0;
 	}
 	const result = archboard(context, trees.headDir, ["model", "proposals"]);

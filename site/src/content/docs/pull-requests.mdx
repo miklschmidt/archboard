@@ -70,7 +70,7 @@ A check that cannot run fails the job in every case: a usage error, a refusal or
 
 ## The plan on the pull request
 
-An agent that plans a change first writes it as a proposal: the architecture after the change, beside the current one. The pull-request Action finds that proposal and posts one comment. It updates the same comment on each push. [Pull request #2 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/2) makes the same call to Billing with a plan, and its comment shows each part below.
+An agent that plans a change first writes it as a proposal: the architecture after the change, beside the current one. The pull-request Action finds that proposal and posts one comment. It updates the same comment on each push. When a push removes the vault, the comment says so. [Pull request #2 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/2) makes the same call to Billing with a plan, and its comment shows each part below.
 
 <Steps>
 
@@ -137,11 +137,11 @@ The footprint's middle group is the interesting one: modules whose code changed 
 | `fail`        | The job fails. It also fails when the plan cannot be checked: the proposals or the footprint cannot be read, the pull request names a proposal that the model does not have, or the model has several drafts and the pull request names none. The label `archboard: out of plan` lets the pull request through, and the comment says that the label did it. |
 | `off`         | The footprint shows, and nothing is judged.                                                                                                                                                                                                                                                                                                                 |
 
-Change the label with `override-label`. A pull request with no proposal has no plan, so nothing in it is out of plan. Without a marker the Action still takes the only draft proposal of the model, and with several drafts it cannot check the plan, so removing the marker does not stop the judgement. Set `out-of-plan: off` for that.
+Change the label with `override-label`. A pull request with no proposal has no plan, so nothing in it is out of plan. When the model has one draft, the Action takes it without a marker, so removing the marker does not stop the judgement. Set `out-of-plan: off` for that. When the model has several drafts and the pull request names none, the plan cannot be checked.
 
 ### Where the pictures live
 
-GitHub shows an image in a comment only from an address on the web. The Action commits the SVGs to an orphan branch, `archboard-assets`, under `pr-<number>/<head commit>/`, and links them from there. It removes the folders of older commits of the same pull request. A pull request from a fork gets a read-only token, so the Action can publish neither the pictures nor the comment. The job summary then holds the report, without pictures.
+GitHub shows an image in a comment only from an address on the web. The Action commits the SVGs to an orphan branch, `archboard-assets`, under `pr-<number>/<head commit>/`, and links them from there. It removes the folders of older commits of the same pull request. A pull request from a fork gets a read-only token, so the Action cannot publish the pictures. It still posts the comment when the token allows it, without pictures, and the comment says why. When GitHub refuses the comment too, the report is in the job summary.
 
 <Aside type="caution" title="Private repositories">
 	An image on `raw.githubusercontent.com` of a private repository needs the reader's sign-in, and

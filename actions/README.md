@@ -14,8 +14,9 @@ third-party action, because the pull-request action holds a token that can write
 ## The check as a gate
 
 `archboard check` exits 0 when nothing is wrong, 1 when a semantic diagnostic or a warning remains,
-and 2 or more when it could not run (usage error, refusal, no vault, server unreachable: 3).
-Information findings never fail it.
+and 2 or more when it could not run (usage error, refusal, outside any Git checkout, server
+unreachable: 3). In a checkout without a vault only the embeds check runs. Information findings
+never fail it.
 
 ```yaml
 name: Architecture
@@ -96,7 +97,7 @@ The message and job summary also carry excerpts from the other checkout.
 
 The action comments on the pull request with the proposal it carries, the architecture at the base
 and at the head as SVG, the footprint of the change, and a link to the map. It keeps one comment and
-updates it on each push. The plan is what the proposal changes against the current architecture at
+updates it on each push. When a push leaves the head without a vault, the comment says so. The plan is what the proposal changes against the current architecture at
 the base: each module that it adds, removes or changes, and both ends of each relationship or flow
 step that it adds, removes or changes. It uses only `model proposals`, `model read`,
 `model footprint` and `model render`.

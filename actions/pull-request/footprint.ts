@@ -48,9 +48,15 @@ function readFootprint(
 	if (result.exitCode !== 0 || answer === undefined) {
 		return { note: `The footprint could not be read: ${firstLine(result.stderr)}` };
 	}
-	const skipped = (answer.skipped ?? []).map(
-		(part) => `${part.subject.name} (${part.reason ?? "unavailable"})`,
-	);
+	const skipped = [
+		...(answer.skipped ?? []).map(
+			(part) => `${part.subject.name} (${part.reason ?? "unavailable"})`,
+		),
+		// The head binds no code to a module the proposal removes, so its code is read nowhere.
+		...[...plan.named]
+			.filter(([id]) => plan.baseOnlyBindings.has(id))
+			.map(([, name]) => `${name} (no binding at the head)`),
+	];
 	return {
 		buckets: planBuckets(answer, plan),
 		note: skipped.length === 0 ? undefined : `The footprint did not read: ${skipped.join(", ")}.`,

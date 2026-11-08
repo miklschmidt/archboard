@@ -93,14 +93,30 @@ function typeOf(target: JsonSchema): string {
 	return "any";
 }
 
-/** What tells one shape of a choice from another: the value of its first constant field. */
-function shapeName(target: JsonSchema, index: number): string {
-	for (const [key, value] of Object.entries(fieldsOf(target) ?? {})) {
+/**
+ * What tells one shape of a choice from the others: its constant field, its title, the fields that
+ * only it has, the fields the others have and it lacks, or its type and pattern.
+ */
+function shapeName(target: JsonSchema, others: readonly JsonSchema[]): string {
+	const own = fieldsOf(target);
+	for (const [key, value] of Object.entries(own ?? {})) {
 		const field = asObject(value);
 		if (field && "const" in field) return `${key}: ${JSON.stringify(field["const"])}`;
 	}
 	const title = target["title"];
-	return typeof title === "string" ? title : `Shape ${index + 1} · ${typeOf(target)}`;
+	if (typeof title === "string") return title;
+	if (own) {
+		const keys = Object.keys(own);
+		const elsewhere = new Set(others.flatMap((other) => Object.keys(fieldsOf(other) ?? {})));
+		const only = keys.filter((key) => !elsewhere.has(key));
+		if (only.length > 0) return `object with ${only.slice(0, 2).join(" and ")}`;
+		const lacks = [...elsewhere].filter((key) => !keys.includes(key));
+		if (lacks.length > 0) return `object without ${lacks.slice(0, 3).join(" or ")}`;
+	}
+	const pattern = target["pattern"];
+	return typeof pattern === "string" && pattern.length <= 64
+		? `${typeOf(target)} matching ${pattern}`
+		: typeOf(target);
 }
 
 const ENUM_SHOWN = 12;
@@ -188,7 +204,7 @@ const open = depth < 1;
 					{mapValue && <Astro.self name="<any key>" schema={mapValue} depth={depth + 1} defs={defs} seen={inside} />}
 					{shapes.map((shape, index) => (
 						<details class="shape" open={depth < 0}>
-							<summary>{shapeName(shape, index)}</summary>
+							<summary>{shapeName(shape, shapes.filter((_, other) => other !== index))}</summary>
 							<Astro.self name={null} schema={shape} depth={depth + 1} defs={defs} seen={inside} />
 						</details>
 					))}
@@ -215,7 +231,7 @@ const open = depth < 1;
 						{mapValue && <Astro.self name="<any key>" schema={mapValue} depth={depth + 1} defs={defs} seen={inside} />}
 						{shapes.map((shape, index) => (
 							<details class="shape">
-								<summary>{shapeName(shape, index)}</summary>
+								<summary>{shapeName(shape, shapes.filter((_, other) => other !== index))}</summary>
 								<Astro.self name={null} schema={shape} depth={depth + 1} defs={defs} seen={inside} />
 							</details>
 						))}

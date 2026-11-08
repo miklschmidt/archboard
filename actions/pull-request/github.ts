@@ -133,26 +133,47 @@ async function listComments(
 }
 
 /** What posting the comment came to. */
-type PostResult = { readonly posted: "created" | "updated" } | { readonly failure: string };
+type PostResult =
+	| { readonly posted: "created" | "updated" | "none" }
+	| { readonly failure: string };
 
 /**
  * Create the pull request's sticky comment, or update the one this action made before.
  * @param access How to reach the API.
  * @param number The pull request's number.
  * @param body The comment's Markdown, which carries the marker.
+ * @param create False to only update an earlier comment, and create none.
  * @returns What happened. A refusal, such as the read-only token of a fork, says why.
  */
-async function upsertComment(access: ApiAccess, number: number, body: string): Promise<PostResult> {
+async function upsertComment(
+	access: ApiAccess,
+	number: number,
+	body: string,
+	create = true,
+): Promise<PostResult> {
 	const comments = await listComments(access, number, 1);
 	if (comments === undefined)
 		return { failure: "the token cannot read the pull request's comments" };
 	const existing = findStickyComment(comments);
-	const answer =
-		existing === undefined
-			? await call(access, "POST", `/issues/${String(number)}/comments`, { body })
-			: await call(access, "PATCH", `/issues/comments/${String(existing)}`, { body });
-	if (answer.ok) return { posted: existing === undefined ? "created" : "updated" };
-	return { failure: `GitHub answered ${String(answer.status)} to the comment` };
+	if (existing === undefined) {
+		if (!create) return { posted: "none" };
+		const answer = await call(access, "POST", `/issues/${String(number)}/comments`, { body });
+		return posted(answer, "created");
+	}
+	const answer = await call(access, "PATCH", `/issues/comments/${String(existing)}`, { body });
+	return posted(answer, "updated");
+}
+
+/**
+ * What a write of the comment came to.
+ * @param answer The API's answer.
+ * @param done What a success did.
+ * @returns The result.
+ */
+function posted(answer: ApiAnswer, done: "created" | "updated"): PostResult {
+	return answer.ok
+		? { posted: done }
+		: { failure: `GitHub answered ${String(answer.status)} to the comment` };
 }
 
 export { readPullRequest, upsertComment, type ApiAccess, type PostResult };

@@ -11,7 +11,6 @@ interface ModelState {
 	readonly lifecycle: string;
 }
 
-/** Where the proposal came from, or why there is none. */
 /**
  * Where the proposal came from, or why there is none. `unreadable`: the proposals at the head
  * could not be read, which the entry finds before it chooses.
@@ -31,6 +30,8 @@ interface StateChoice {
 	readonly source: StateSource;
 	/** For `unknown`, the name that matched no state. */
 	readonly named?: string | undefined;
+	/** For `unreadable`, why the proposals could not be read. */
+	readonly reason?: string | undefined;
 }
 
 /**

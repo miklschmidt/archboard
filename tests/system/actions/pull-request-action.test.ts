@@ -386,12 +386,19 @@ describe("the entry", () => {
 
 	test("proposals that cannot be read fail the step in fail mode, whether the CLI refuses or prints nothing", async () => {
 		const refused = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" }, false, {
-			proposals: JSON.stringify({ success: false, code: "INVALID_MODEL" }),
+			proposals: JSON.stringify({
+				success: false,
+				code: "MODEL_INVALID",
+				error: "The canonical model cannot be read coherently.",
+				diagnostics: [
+					{ code: "MALFORMED_JSON", file: "model.json", message: "Unexpected EOF\nat line 1" },
+				],
+			}),
 		});
 		expect(refused.exitCode).toBe(1);
 		expect(refused.stdout).toContain("::error title=Archboard plan::The proposals at the head");
 		expect(comments.at(-1)?.body).toContain(
-			"could not be read, so the plan was not checked: INVALID_MODEL",
+			"could not be read, so the plan was not checked: MODEL_INVALID: The canonical model cannot be read coherently (MALFORMED_JSON in model.json: Unexpected EOF).",
 		);
 		expect(comments.at(-1)?.body).toContain("could not be checked, so this check fails");
 		const silent = await step({}, false, { proposals: "" });
@@ -434,7 +441,7 @@ describe("the entry", () => {
 		expect(comments[0]?.body).toContain("Infrastructure (base-unresolved)");
 	});
 
-	test("an adopted proposal never lists a module it removed as planned but unchanged", async () => {
+	test("an adopted proposal names a module it removed as unread, never as planned but unchanged", async () => {
 		const head = JSON.parse(fixture("read-head.json"));
 		head.modules = head.modules.filter((module: { id: string }) => module.id !== "Shop/a#n4");
 		const proposals = JSON.parse(fixture("proposals.json"));
@@ -449,5 +456,18 @@ describe("the entry", () => {
 		const body = comments[0]?.body ?? "";
 		expect(body).toContain("- Checkout API");
 		expect(body).not.toContain("- Payments");
+		expect(body).toContain("The footprint did not read: Payments (no binding at the head).");
+	});
+
+	test("a head without a vault replaces the earlier comment and creates none", async () => {
+		git("rm", "-q", "-r", ".archboard");
+		git("commit", "-q", "-m", "no vault");
+		headSha = git("rev-parse", "HEAD");
+		const count = comments.length;
+		const result = await step();
+		expect(result.exitCode).toBe(0);
+		expect(result.stdout).toContain("::notice::The head commit holds no Archboard vault");
+		expect(comments).toHaveLength(count);
+		expect(comments[0]?.body).toContain(`${headSha.slice(0, 7)} holds no Archboard vault`);
 	});
 });

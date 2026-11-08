@@ -98,7 +98,8 @@ const label = { warning: "Warning, fails", error: "Error, fails", information: "
 	.code-row + .code-row {
 		box-shadow: inset 0 1px 0 var(--rule);
 	}
-	.code-row:target {
+	.code-row:target,
+	.code-row:has(.code-name:target) {
 		background: oklch(0.86 0.125 86 / 0.06);
 	}
 	.code-head {
@@ -115,6 +116,8 @@ const label = { warning: "Warning, fails", error: "Error, fails", information: "
 	}
 	.code-name {
 		text-decoration: none;
+		/* The row's own margin, plus its top padding, so a second code's anchor shows the whole row. */
+		scroll-margin-top: 112px;
 	}
 	.code-name code {
 		font-size: 0.875rem !important;

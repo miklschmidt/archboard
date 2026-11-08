@@ -127,7 +127,7 @@ function noProposalText(choice: StateChoice): string {
  */
 function planProblem(choice: StateChoice): string | undefined {
 	if (choice.source === "unreadable") {
-		return `The proposals at the head commit could not be read, so the plan was not checked: ${choice.named ?? "no reason given"}.`;
+		return `The proposals at the head commit could not be read, so the plan was not checked: ${choice.reason ?? "no reason given"}.`;
 	}
 	if (choice.source === "unknown") {
 		return `The pull request names the proposal "${choice.named ?? ""}", and the model at the head commit has no state by that identity or name.`;
@@ -264,4 +264,25 @@ function pullRequestComment(report: PullRequestReport): string {
 	].join("\n");
 }
 
-export { planProblem, pullRequestComment, type PictureLinks, type PullRequestReport };
+/**
+ * The comment that replaces an earlier report when the head commit holds no vault, so the report
+ * of an older head never stands for this one.
+ * @param headSha The head commit.
+ * @returns The comment's Markdown.
+ */
+function noVaultComment(headSha: string): string {
+	return [
+		COMMENT_MARKER,
+		"## Architecture",
+		"",
+		`The head commit ${headSha.slice(0, 7)} holds no Archboard vault, so there is nothing to report.`,
+	].join("\n");
+}
+
+export {
+	noVaultComment,
+	planProblem,
+	pullRequestComment,
+	type PictureLinks,
+	type PullRequestReport,
+};
