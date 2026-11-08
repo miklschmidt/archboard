@@ -28,7 +28,6 @@ import search from "remixicon/icons/System/search-line.svg?raw";
 import stack from "remixicon/icons/Business/stack-line.svg?raw";
 import subtract from "remixicon/icons/System/subtract-line.svg?raw";
 import terminal from "remixicon/icons/Development/terminal-box-line.svg?raw";
-import unlock from "remixicon/icons/System/lock-unlock-line.svg?raw";
 import box from "remixicon/icons/Others/box-3-line.svg?raw";
 import codeLine from "remixicon/icons/Development/code-line.svg?raw";
 import database from "remixicon/icons/Device/database-2-line.svg?raw";
@@ -77,7 +76,6 @@ export const icons = {
 	stack,
 	subtract,
 	terminal,
-	unlock,
 	voice,
 	box,
 	codeLine,

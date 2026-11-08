@@ -1,0 +1,324 @@
+---
+// An agent's claim as the shell shows it: a pulsing mark on the claimed model and on each claimed
+// row of the left column, and the Claimed badge in the head of the selected subject. A claim is
+// status, so the reader has nothing to act on. The demo plays the agent's release, the real
+// `Claims  none` answer prints, and the marks leave.
+import Icon from "../Icon.astro";
+import KindChip from "../KindChip.astro";
+
+const rows = [
+	{ name: "Storefront" },
+	{ name: "Checkout API", claimed: true, open: true },
+	{ name: "Place order", claimed: true, child: true },
+	{ name: "Basket route", child: true },
+	{ name: "Orders DB" },
+];
+---
+
+<div class="claimed table" data-claim-marks data-loop>
+	<div class="shell" aria-hidden="true">
+		<div class="column">
+			<p class="switcher">
+				<span class="repo">example.invalid/web-shop</span>
+				<span class="dot mark"></span>
+				<Icon name="chevronDown" size={15} />
+			</p>
+			<p class="head">Modules <span class="mono total">18</span></p>
+			<ul class="rows">
+				{
+					rows.map((row) => (
+						<li class:list={["row", { "is-on": row.open, child: row.child }]}>
+							<span class="fold">{row.open && <Icon name="chevronDown" size={14} />}</span>
+							<span class="name">{row.name}</span>
+							{row.claimed && <span class="dot mark" />}
+						</li>
+					))
+				}
+			</ul>
+		</div>
+		<div class="panel">
+			<div class="subject">
+				<KindChip kind="service" size={24} look="panel" />
+				<div class="title">
+					<p class="subject-name">Checkout API</p>
+					<p class="kind">
+						Service
+						<span class="badge"><span class="dot mark"></span>Claimed</span>
+					</p>
+				</div>
+			</div>
+			<p class="summary">Takes an order, charges it and confirms it</p>
+		</div>
+	</div>
+	<div class="side">
+		<div class="term">
+			<p class="t"><span class="ps">$</span> archboard model claim --input claim.json</p>
+			<p class="t out">Claimed Checkout API and Place order for codex: rewording Checkout API</p>
+			<p class="t" data-after><span class="ps">$</span> archboard model release --input release.json</p>
+			<p class="t out" data-after>Claims  none</p>
+		</div>
+		<button type="button" class="release" data-release>
+			<span data-release-label>Release the claim</span>
+		</button>
+	</div>
+</div>
+<p class="caption example-caption">Example claim. Release it as the agent does, and the marks leave.</p>
+
+<style>
+	.claimed {
+		display: grid;
+		grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+		gap: 6px;
+		padding: 6px;
+		background: var(--chrome);
+	}
+	.shell {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 6px;
+		font-size: 12.5px;
+	}
+	.column,
+	.panel {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 10px 8px;
+		border-radius: 6px;
+		background: var(--plane);
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+	.panel {
+		gap: 8px;
+		padding: 14px;
+	}
+	/* The mark is the lamp of Working now: Live Lime that pulses while the claim lasts. */
+	.mark {
+		width: 6px;
+		height: 6px;
+		color: var(--live);
+		animation: claimed 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+		transition: opacity 300ms var(--ease-out);
+	}
+	@keyframes claimed {
+		50% {
+			opacity: 0.5;
+		}
+	}
+	.switcher {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		height: 32px;
+		padding: 0 10px;
+		border-radius: 4px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+		color: var(--ink);
+	}
+	.repo {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.head {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		height: 28px;
+		padding: 0 4px;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.total {
+		font-size: 11px;
+		font-weight: 400;
+		color: var(--ink-muted);
+	}
+	.rows {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		height: 28px;
+		padding: 0 10px 0 4px;
+		border-radius: 3px;
+		color: var(--ink-body);
+	}
+	.fold {
+		display: inline-flex;
+		width: 14px;
+		color: var(--ink-muted);
+	}
+	.name {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.row.child {
+		position: relative;
+		padding-left: 24px;
+	}
+	.row.child::before {
+		content: "";
+		position: absolute;
+		left: 11px;
+		top: 0;
+		bottom: 0;
+		width: 1px;
+		background: var(--rule);
+	}
+	.row.is-on {
+		color: var(--ink);
+		background: var(--raised);
+		box-shadow: var(--shadow-raised);
+	}
+	.subject {
+		display: flex;
+		align-items: flex-start;
+		gap: 10px;
+	}
+	.title {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 0;
+	}
+	.subject-name {
+		font-family: var(--font-display);
+		font-size: 20px;
+		line-height: 22px;
+		font-weight: 650;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--ink);
+	}
+	.kind {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px;
+		font-size: 12px;
+		line-height: 16px;
+		color: var(--ink-muted);
+	}
+	/* The badge keeps to the line of the words beside it, so a claim moves nothing under it. */
+	.badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		height: 18px;
+		margin: -1px 0;
+		padding: 0 8px;
+		border-radius: var(--radius-chip);
+		box-shadow: inset 0 0 0 1px var(--rule);
+		color: var(--ink);
+		transition: opacity 300ms var(--ease-out);
+	}
+	.summary {
+		color: var(--ink-body);
+	}
+	.claimed.is-released .mark,
+	.claimed.is-released .badge {
+		opacity: 0;
+	}
+	.side {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.term {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 8px;
+		padding: 18px;
+		border-radius: 6px;
+		background: oklch(0.155 0.005 75);
+		box-shadow: inset 0 0 0 1px var(--rule);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		line-height: 1.6;
+		color: var(--ink);
+	}
+	.t {
+		word-break: break-word;
+	}
+	.ps {
+		color: var(--gold-mark);
+	}
+	.out {
+		color: var(--ink-muted);
+	}
+	/* The release keeps its room before it prints, so the example does not grow when it plays. */
+	.claimed:not(.is-released) [data-after] {
+		visibility: hidden;
+	}
+	.claimed.is-released [data-after] {
+		animation: arrive 420ms var(--ease-out);
+	}
+	@keyframes arrive {
+		from {
+			opacity: 0;
+			translate: 0 4px;
+		}
+	}
+	.release {
+		align-self: flex-start;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		height: 36px;
+		padding: 0 14px;
+		border: 0;
+		border-radius: 4px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--gold-ink);
+		background: linear-gradient(180deg, var(--gold-top), var(--gold-bottom));
+		box-shadow:
+			inset 0 1px 0 oklch(1 0.02 90 / 0.55),
+			inset 0 0 0 1px var(--gold-edge),
+			0 1px 0 oklch(0.06 0.004 75 / 0.8);
+		cursor: pointer;
+	}
+	.release:active {
+		transform: translateY(1px);
+	}
+	.claimed.is-released .release {
+		color: var(--ink);
+		background: var(--raised);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule);
+	}
+	@media (max-width: 720px) {
+		.claimed,
+		.shell {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>
+
+<script>
+	for (const root of document.querySelectorAll<HTMLElement>("[data-claim-marks]")) {
+		const button = root.querySelector<HTMLButtonElement>("[data-release]");
+		const label = root.querySelector<HTMLElement>("[data-release-label]");
+		if (!button || !label) continue;
+		let released = false;
+		button.addEventListener("click", () => {
+			released = !released;
+			root.classList.toggle("is-released", released);
+			label.textContent = released ? "Reset the example" : "Release the claim";
+		});
+	}
+</script>

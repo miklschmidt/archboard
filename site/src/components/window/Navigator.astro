@@ -53,7 +53,8 @@ const selected = "Checkout API";
 
 <aside class="navigator" aria-hidden="true">
 	<div class="switcher">
-		<span>example.invalid/web-shop</span>
+		<span class="repo">example.invalid/web-shop</span>
+		<span class="dot claim-mark"></span>
 		<Icon name="chevronDown" size={16} />
 	</div>
 	<div class="keys">
@@ -105,9 +106,29 @@ const selected = "Checkout API";
 		color: var(--ink);
 	}
 	.switcher {
-		justify-content: space-between;
+		gap: 8px;
 		margin: 0 8px;
 		padding: 0 10px;
+	}
+	.repo {
+		flex: 1;
+	}
+	/* While the agent claims the model, the switcher marks it with the lamp of Working now. */
+	.claim-mark {
+		width: 6px;
+		height: 6px;
+		color: var(--live);
+		opacity: 0;
+		transition: opacity 300ms var(--ease-out);
+	}
+	:global(.window[data-claimed]) .claim-mark {
+		opacity: 1;
+		animation: claimed 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	}
+	@keyframes claimed {
+		50% {
+			opacity: 0.5;
+		}
 	}
 	.keys {
 		display: grid;
