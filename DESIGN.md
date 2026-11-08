@@ -163,8 +163,8 @@ components:
   claim-card:
     backgroundColor: "{colors.chrome-chalk}"
     textColor: "{colors.ink-graphite}"
-    rounded: "{rounded.panel}"
-    padding: "10px 16px"
+    rounded: "{rounded.table}"
+    padding: "16px"
   chip-changed:
     backgroundColor: "{colors.changed-orange}"
     textColor: "{colors.card-white}"
@@ -481,7 +481,7 @@ own sizes are cleared, so a corner off the ladder draws nothing. Chips, inline c
 combination in a tooltip have 2px corners. Controls, rows, tabs, the item of a menu and the key
 cap that hints a shortcut beside a field have 4px corners. Troughs, plates, alerts, a label tip,
 a card set in a panel and code blocks have 6px corners. What floats alone has the 10px corners of
-the site's cards: a menu, a select's popover, a popover, a tip that explains a part and a notice.
+the site's cards: a menu, a select's popover, a popover, a tip that explains a part, a notice and a claim.
 A dialog has the 12px corners of the site's mock window. The voice and the medallion of a part
 are circles.
 
@@ -667,9 +667,11 @@ A state that saved readings has a quiet chip under its words: a chevron, how man
 
 ### Claim card
 
-A current reading shows each claim as a card across the top of its pane. The card is Chrome Chalk with 6px corners and a ring of 1px in Live Lime at 40%. It stands on the ground with 12px of room at the top and at each side.
+A current reading shows each claim as a toast in the notice stack, at the bottom right of the pane centre. The toast stays until the claim ends or the person takes back control, and it has no timer and no key to dismiss it. It floats over the reading and moves nothing in it, so a claim that starts or ends leaves the picture where it was. The card is Chrome Chalk with 10px corners, as every thing that floats alone, `shadow-float` and a ring of 1px in Live Lime at 40%. It is 356px wide, with 16px of padding.
 
-The head of the card holds a live dot, `Claimed` in Control semibold and the time that the claim began in mono. The dot is 6px in Live Lime with a halo of the same colour at 25%. Next, three terms, State, Doing and Subjects, stand in muted ink with their words in full ink, cut short. At the end is `Take back control`, the one primary action of the card, in the gold finish. A refusal shows its words in the destructive colour before the key.
+The first line holds the head of the card and, at its end, `Take back control`, the one primary action of the card, in the gold finish. The head has a live dot, `Claimed` in Control semibold and, under it, the time that the claim began in mono. The dot is 6px in Live Lime with a halo of the same colour at 25%. Under the first line, three terms, State, Doing and Subjects, stand in muted ink with their words in full ink, cut short. A refusal shows its words in the destructive colour under the terms.
+
+Each claim has a toast of its own, and two panes that read one vault share the toast of a claim. The stack keeps every toast in full, one over the other, so no claim hides the key of another and no notice hides one of a claim.
 
 ### Explanation reply
 

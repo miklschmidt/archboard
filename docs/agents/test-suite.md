@@ -450,6 +450,7 @@ It also proves that a hidden metadata edit preserves the mounted scene while the
 `canonical-model-structure.test.ts` covers current structural updates through real claims and the public writer.
 It covers pinned history, stable selection through renames, relationship transfer, parent changes, and removal without replacement selection.
 `canonical-model-viewer.test.ts` also proves visible subject claims and human take-back through the public writer.
+A claim shows as a toast that leaves the room of the picture and the focus as they were, and a second pane of the vault shares the toast.
 The next write receives `CLAIM_REVOKED`, and the architecture keeps every accepted edit.
 
 ### Controlled text workbench (TASK-143.03.13)
