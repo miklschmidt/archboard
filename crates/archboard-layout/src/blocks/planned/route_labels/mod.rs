@@ -521,14 +521,7 @@ fn consistent(
             shape.labels.insert(edge, old);
             continue;
         }
-        let (label, _) = slot_index(
-            model,
-            edge,
-            shape,
-            &shape.routes[index].points,
-            strokes,
-            labels,
-        )?;
+        let (label, _) = slot_index(model, edge, shape, path, strokes, labels)?;
         shape.labels.insert(edge, old);
         if old != label {
             return None;
@@ -580,19 +573,12 @@ fn update(
         }
         // A plate that contraction carried with its run can fill the room it has exactly, so
         // that no search finds it, and it can stay where it stands.
-        let (label, fallback) = slot_index(
-            model,
-            edge,
-            shape,
-            &shape.routes[index].points,
-            strokes,
-            labels,
-        )
-        .or_else(|| {
-            let own = Own::new(edge, &shape.routes[index].points);
-            old.filter(|&at| own.rides_one(at) && clear(shape, edge, at, strokes, labels))
-                .map(|at| (at, true))
-        })?;
+        let (label, fallback) =
+            slot_index(model, edge, shape, path, strokes, labels).or_else(|| {
+                let own = Own::new(edge, path);
+                old.filter(|&at| own.rides_one(at) && clear(shape, edge, at, strokes, labels))
+                    .map(|at| (at, true))
+            })?;
         changed |= old != Some(label);
         shape.labels.insert(edge, label);
         labels.remember(edge, label);
