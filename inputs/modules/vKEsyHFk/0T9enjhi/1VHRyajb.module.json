@@ -3,6 +3,10 @@
   "name": "Canonical architecture",
   "kind": "module",
   "responsibility": "Reads and edits one canonical model with durable history and explicit sharing",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model/src/runtime/canonical"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#1VHRyajb",
   "parent": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
@@ -27,9 +31,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/canonical"
-  }
+  "outgoing": []
 }
