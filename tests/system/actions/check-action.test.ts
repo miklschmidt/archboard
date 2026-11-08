@@ -134,12 +134,18 @@ describe("the entry", () => {
 	 * @param exit The exit status the stand-in's `check` ends with.
 	 * @param inputs The action's inputs, as the step sets them.
 	 * @param check The answer to print.
+	 * @param registeredRepos The repository registry answer to print.
 	 * @returns The step's exit status, its output, and what it wrote for the runner.
 	 */
-	function step(exit: number, inputs: Record<string, string> = {}, check: object = answer) {
+	function step(
+		exit: number,
+		inputs: Record<string, string> = {},
+		check: object = answer,
+		registeredRepos = repos,
+	) {
 		const folder = scratch();
 		writeFileSync(join(folder, "check.json"), JSON.stringify(check));
-		writeFileSync(join(folder, "repos.json"), repos);
+		writeFileSync(join(folder, "repos.json"), registeredRepos);
 		const summary = join(folder, "summary.md");
 		const outputs = join(folder, "outputs");
 		writeFileSync(summary, "");
@@ -171,6 +177,28 @@ describe("the entry", () => {
 		expect(result.outputs).toContain("warnings=1");
 		expect(result.outputs).toContain("information=1");
 		expect(result.summary).toContain("RELATIONSHIP_UNSUPPORTED");
+	});
+
+	test("the checked repository supplies its own evidence when the registry chooses another checkout", () => {
+		const otherCheckout = join(workspace, "other-app");
+		mkdirSync(join(otherCheckout, "src"), { recursive: true });
+		writeFileSync(join(otherCheckout, "src/config.ts"), "// another checkout\n\nwrongSource();\n");
+		const registered = JSON.stringify({
+			repos: [
+				{ repo: "github.com/test/app", root: otherCheckout, chosen: true, exists: true },
+				{ repo: "github.com/test/app", root: join(workspace, "app"), exists: true },
+				{
+					repo: "github.com/test/infra",
+					root: join(workspace, "infra"),
+					chosen: true,
+					exists: true,
+				},
+			],
+		});
+		const result = step(1, {}, answer, registered);
+		expect(result.stdout).toContain("::warning file=src/config.ts,line=3,");
+		expect(result.stdout).toContain("process.env.ORDERS_URL");
+		expect(result.stdout).not.toContain("wrongSource");
 	});
 
 	test("information alone passes", () => {

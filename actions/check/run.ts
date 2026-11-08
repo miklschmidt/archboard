@@ -72,10 +72,11 @@ function locate(
 	answer: CheckReading | undefined,
 ): Locations {
 	const list = run(cli, ["repo", "list"], { cwd: directory });
+	const repository = repositoryRoot(directory);
 	return {
 		workspace,
-		repository: repositoryRoot(directory),
-		roots: checkoutRoots(parseJson(list.stdout)),
+		repository,
+		roots: checkoutRoots(parseJson(list.stdout), repository),
 		vault: answer?.vault?.path,
 		home: embedsCheckout(answer) ?? directory,
 		files: cachedFileReader(),
