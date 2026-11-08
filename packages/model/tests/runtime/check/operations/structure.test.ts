@@ -331,6 +331,38 @@ describe("container containment", () => {
 		).toEqual([]);
 	});
 
+	test.each<[string, ReturnType<typeof at>]>([
+		["a resource instance", at("infra/main.tf", "aws_lambda_function.api[0]")],
+		[
+			"an OpenTofu instance key with a dot",
+			at("infra/main.tofu", 'aws_lambda_function.api["a.b"]'),
+		],
+		["a module call", at("infra", "module.api")],
+		["a nested module instance", at("infra", 'module.app[0].module.api["a.b"]')],
+		[
+			"a resource inside module instances",
+			at("infra", 'module.app[0].module.api["a.b"].aws_lambda_function.api[0]'),
+		],
+		["an explicit directory with a dot", at("infra/prod.eu/", "aws_lambda_function.api")],
+		["a data source", at("infra/main.tf", "data.aws_iam_policy_document.api")],
+		["a Kubernetes ConfigMap", at("deploy/objects.yaml", "ConfigMap/api")],
+		["a Kubernetes Secret", at("deploy/objects.yaml", "Secret/api")],
+	])("leaves source containment to the parts of %s", (_case, binding) => {
+		expect(containment(shaped({ binding }, ["api/a.ts", "api/b.ts"]))).toEqual([]);
+	});
+
+	test("still checks code containers inside a runner, in any repository", () => {
+		const structure = model({
+			modules: [
+				part(box, { binding: at("deploy/web.yaml", "Deployment/web") }),
+				part(first, { parent: box, binding: at("src/api") }),
+				part(second, { parent: first, binding: at("lib/a.ts") }),
+				part(other, { parent: box, binding: { repo: "other", path: "src/api" } }),
+			],
+		});
+		expect(containment(structure)).toMatchObject([{ code: "CONTAINER_PARTS_OUTSIDE", id: first }]);
+	});
+
 	test("a part outside the container's directory makes its parts spread", () => {
 		const structure = shaped(
 			{ binding: at("src/shop") },

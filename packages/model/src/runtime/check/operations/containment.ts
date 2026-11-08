@@ -2,10 +2,10 @@
 // with parts and no binding leaves the code of its folder that no part binds to no
 // module, so the code check cannot see a call into it. A part bound outside its
 // container's binding says that the model or the code layout splits one job. A
-// container bound to a runner, the address of a workload in infrastructure,
-// holds the code that the workload runs wherever that code lives (ADR 0046), so
-// the rule leaves it out. The rule reads only the bindings that the model states,
-// never the files.
+// container bound to an infrastructure address does not own a source directory:
+// its parts can be the code a workload runs wherever that code lives (ADR 0046).
+// The rule leaves that container out. It reads only the bindings that the model
+// states, never the files.
 
 import { posix } from "node:path";
 import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/model.ts";
@@ -33,15 +33,34 @@ function pathOf(binding: Binding): string {
 }
 
 /**
- * Whether a binding names a runner: the address of a declaration that runs code
- * built elsewhere, in the forms of ADR 0046. A Kubernetes object (`Deployment/web`)
- * or a compose service (`services.web`) in a YAML file, or a Terraform or OpenTofu
- * resource (`module.api.aws_lambda_function.api`) in a `.tf` or `.tofu` file or in
- * its root module's directory.
+ * Whether a binding names a Terraform declaration or module call.
+ * @param binding The binding.
+ * @param symbol The declaration's address, including any instance keys.
+ * @returns True when its path and address have the infrastructure forms.
+ */
+function namesTerraform(binding: Binding, symbol: string): boolean {
+	const path = pathOf(binding);
+	const terraform =
+		/\.(tf|tofu)$/u.test(path) || binding.path.endsWith("/") || !/\.[^/]+$/u.test(path);
+	// Instance keys do not change which declaration owns the code (ADR 0046).
+	const address = symbol.replaceAll(/\[(?:"(?:[^"\\]|\\.)*"|\d+)\]/gu, "");
+	return (
+		terraform &&
+		/^(module\.[\w-]+\.)*(module\.[\w-]+|(data\.)?[a-z][a-z0-9]*_[a-z0-9_]+\.[\w-]+)$/u.test(
+			address,
+		)
+	);
+}
+
+/**
+ * Whether a binding has an infrastructure address in the forms of ADR 0046.
+ * This is syntax, not proof that a declaration runs code. The code check owns
+ * that evidence. A directory with a dot needs a trailing slash to distinguish
+ * it from a file without reading the checkout.
  * @param binding The binding.
  * @returns True when it does.
  */
-function namesRunner(binding: Binding): boolean {
+function namesInfrastructure(binding: Binding): boolean {
 	const { symbol } = binding;
 	if (symbol === undefined) return false;
 	const path = pathOf(binding);
@@ -51,10 +70,7 @@ function namesRunner(binding: Binding): boolean {
 			/^[A-Z][A-Za-z]*\/[^/]+$/u.test(symbol) || (compose && /^services\.[\w.-]+$/u.test(symbol))
 		);
 	}
-	const terraform = /\.(tf|tofu)$/u.test(path) || !/\.[^/]+$/u.test(path);
-	return (
-		terraform && /^(module\.[\w-]+\.)*(data\.)?[a-z][a-z0-9]*_[a-z0-9_]+\.[\w-]+$/u.test(symbol)
-	);
+	return namesTerraform(binding, symbol);
 }
 
 /**
@@ -242,14 +258,14 @@ function siteOf(reading: Reading): Omit<VaultDiagnostic, "code" | "message"> {
 
 /**
  * The bound parts that a container's binding does not hold: all of them when it has
- * no binding, and none when it binds a runner.
+ * no binding, and none when it binds an infrastructure address.
  * @param binding The container's binding.
  * @param parts Its bound parts.
  * @returns The parts outside it.
  */
 function partsAway(binding: Binding | undefined, parts: readonly Module[]): readonly Module[] {
 	if (binding === undefined) return parts;
-	if (namesRunner(binding)) return [];
+	if (namesInfrastructure(binding)) return [];
 	return parts.filter((part) => part.binding !== undefined && !holds(binding, part.binding));
 }
 

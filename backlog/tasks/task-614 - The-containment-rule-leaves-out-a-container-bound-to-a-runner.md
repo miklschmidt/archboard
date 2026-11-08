@@ -4,7 +4,7 @@ title: The containment rule leaves out a container bound to a runner
 status: In Progress
 assignee: []
 created_date: '2026-11-08T23:29:00Z'
-updated_date: '2026-11-08T23:36:00Z'
+updated_date: '2026-11-08T23:39:00Z'
 labels:
   - bug
   - model
@@ -39,4 +39,6 @@ Review corrections: restrict compose recognition to the eight filenames that the
 Review affects the model module (vKEsyHFk/vKEsyHFk#DmbKboxU). The module ownership and relationships stay accurate, so these address-recognition corrections need no architecture proposal. The containment rule reads stated bindings only. Its infrastructure exception cannot prove that a declaration runs code.
 
 Review fix: compose recognition now requires a supported compose filename and a nonempty service address. Regression cases for a YAML configuration key, an unsupported compose filename, and an empty service address failed before the fix. All 60 structure tests pass after the fix.
+
+Review fix: Terraform module calls, nested module instances, resource instance keys, and explicit directory paths with dots now receive the infrastructure exception. Six regression cases failed before this fix. All 70 structure tests pass after it. ConfigMap, Secret, and Terraform data addresses retain the syntax-based exception required by the task. A nested code container still receives its own warning. The guidance now explains that source evidence stays with check code. A directory code symbol such as order_service.start remains indistinguishable from a Terraform address without reading files or adding binding metadata; binding the code file removes that ambiguity.
 <!-- SECTION:NOTES:END -->
