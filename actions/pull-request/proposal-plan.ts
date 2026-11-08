@@ -95,6 +95,8 @@ interface ProposalPlan {
 	readonly comparison: string[];
 	/** The bound modules it names, by stable identity. Names alone can be ambiguous. */
 	readonly named: ReadonlyMap<string, string>;
+	/** Bindings that the base holds and the proposal no longer does. */
+	readonly baseOnlyBindings: ReadonlySet<string>;
 }
 
 /**
@@ -227,6 +229,9 @@ function proposalPlan(baseModel: ModelReading, headModel: ModelReading): Proposa
 			.filter((module) => module.binding !== undefined)
 			.map((module) => [module.id, module.name]),
 	);
+	const headBindings = new Set(
+		head.modules.filter((module) => module.binding !== undefined).map((module) => module.id),
+	);
 	const changed: Compared[] = [
 		...modules.map((one) => ({ subjectKind: "module", kind: one.outcome })),
 		...relationships.map((one) => ({ subjectKind: "relationship", kind: one.outcome })),
@@ -235,6 +240,11 @@ function proposalPlan(baseModel: ModelReading, headModel: ModelReading): Proposa
 	return {
 		comparison: describeComparison(changed),
 		named: new Map([...bound].filter(([id]) => ids.has(id))),
+		baseOnlyBindings: new Set(
+			base.modules
+				.filter((module) => module.binding !== undefined && !headBindings.has(module.id))
+				.map((module) => module.id),
+		),
 	};
 }
 

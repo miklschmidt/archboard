@@ -263,7 +263,13 @@ describe("the entry", () => {
 		answers: Readonly<Record<string, string>> = {},
 	) {
 		const folder = scratch();
-		for (const name of ["proposals", "read-base", "read-head", "footprint"]) {
+		for (const name of new Set([
+			"proposals",
+			"read-base",
+			"read-head",
+			"footprint",
+			...Object.keys(answers),
+		])) {
 			writeFileSync(join(folder, `${name}.json`), answers[name] ?? fixture(`${name}.json`));
 		}
 		const event = join(folder, "event.json");
@@ -282,10 +288,12 @@ describe("the entry", () => {
 		const cli = writeStandIn(folder);
 		writeFileSync(
 			cli,
-			readFileSync(cli, "utf8").replace(
-				"#!/bin/sh",
-				'#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$FAKE_DIR/commands.log"',
-			),
+			readFileSync(cli, "utf8")
+				.replace("#!/bin/sh", '#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$FAKE_DIR/commands.log"')
+				.replace(
+					'footprint) cat "$FAKE_DIR/footprint.json" ;;',
+					'footprint) case "$*" in *--head*) cat "$FAKE_DIR/footprint-base.json" ;; *) cat "$FAKE_DIR/footprint.json" ;; esac ;;',
+				),
 		);
 		const result = await runEntryAsync(entry, {
 			ARCHBOARD_BIN: cli,
@@ -363,5 +371,24 @@ describe("the entry", () => {
 		expect(result.commands).toContain(`model footprint --base ${baseSha}`);
 		expect(result.commands).not.toContain("model footprint --base origin/main");
 		expect(comments[0]?.body).toContain("Infrastructure (base-unresolved)");
+	});
+
+	test("an adopted proposal keeps changed code for a module that only the base vault holds", async () => {
+		const head = JSON.parse(fixture("read-head.json"));
+		head.modules = head.modules.filter((module: { id: string }) => module.id !== "Shop/a#n4");
+		const proposals = JSON.parse(fixture("proposals.json"));
+		proposals.states = [{ id: "p1", name: "Queued fulfilment", lifecycle: "current" }];
+		const result = await step({ ARCHBOARD_INPUT_STATE: "p1" }, false, {
+			proposals: JSON.stringify(proposals),
+			"read-head": JSON.stringify(head),
+			footprint: JSON.stringify({ changed: part("Checkout API", "Shop/a#n1"), skipped: [] }),
+			"footprint-base": JSON.stringify({ changed: part("Payments", "Shop/a#n4"), skipped: [] }),
+		});
+		expect(result.exitCode).toBe(0);
+		expect(result.commands).toContain(`model footprint --base ${baseSha} --head ${headSha}`);
+		const body = comments[0]?.body ?? "";
+		const [planned, rest] = body.split("**Changed outside the plan**");
+		expect(planned).toContain("- Payments");
+		expect(rest).not.toContain("- Payments");
 	});
 });

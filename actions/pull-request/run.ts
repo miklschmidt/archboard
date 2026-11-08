@@ -11,6 +11,7 @@ import { pullRequestComment } from "./comment.ts";
 import type { PullRequestReport } from "./comment.ts";
 import { addWorktree, archboard, firstLine, readContext } from "./context.ts";
 import type { Context } from "./context.ts";
+import { readFootprint } from "./footprint.ts";
 import { upsertComment } from "./github.ts";
 import { folderUrl } from "./links.ts";
 import { parseBodyMarker } from "./marker.ts";
@@ -18,8 +19,8 @@ import { makePictures } from "./pictures.ts";
 import type { Trees } from "./pictures.ts";
 import { chooseState, decideOutOfPlan } from "./plan.ts";
 import type { ModelState } from "./plan.ts";
-import { planBuckets, proposalPlan } from "./proposal-plan.ts";
-import type { Buckets, FootprintReading, ModelReading, ProposalPlan } from "./proposal-plan.ts";
+import { proposalPlan } from "./proposal-plan.ts";
+import type { Buckets, ModelReading, ProposalPlan } from "./proposal-plan.ts";
 import { input, parseJson, run } from "../shared/process.ts";
 import { annotationLine } from "../shared/workflow-commands.ts";
 
@@ -29,42 +30,8 @@ interface ProposalsReading {
 	readonly vault?: { readonly path: string };
 }
 
-/**
- * The footprint of the pull request, from `model footprint`.
- * @param context The run.
- * @param headDir The vault at the head.
- * @param state The proposal, if the pull request carries one. Its bindings place the changes.
- * @param plan The proposal's plan.
- * @returns The buckets, or the reason there are none.
- */
-function readFootprint(
-	context: Context,
-	headDir: string,
-	state: ModelState | undefined,
-	plan: ProposalPlan,
-): { buckets?: Buckets; note?: string } {
-	const result = archboard(context, headDir, [
-		"model",
-		"footprint",
-		"--base",
-		context.baseSha,
-		...(state === undefined ? [] : ["--state", state.id]),
-	]);
-	const answer: FootprintReading | undefined = parseJson(result.stdout);
-	if (result.exitCode !== 0 || answer === undefined) {
-		return { note: `The footprint could not be read: ${firstLine(result.stderr)}` };
-	}
-	const skipped = (answer.skipped ?? []).map(
-		(part) => `${part.subject.name} (${part.reason ?? "unavailable"})`,
-	);
-	return {
-		buckets: planBuckets(answer, plan.named),
-		note: skipped.length === 0 ? undefined : `The footprint did not read: ${skipped.join(", ")}.`,
-	};
-}
-
 /** The plan of a pull request with no proposal. */
-const NO_PLAN: ProposalPlan = { comparison: [], named: new Map() };
+const NO_PLAN: ProposalPlan = { comparison: [], named: new Map(), baseOnlyBindings: new Set() };
 
 /**
  * Read one complete model, keeping a refusal distinct from an empty architecture.
@@ -215,7 +182,7 @@ function buildReport(
 	const footprint =
 		note !== undefined
 			? { note: "The footprint was not judged because the proposal could not be compared." }
-			: readFootprint(context, trees.headDir, choice.state, plan);
+			: readFootprint(context, trees, choice.state, plan);
 	const pictures = makePictures(context, trees, choice.state);
 	return {
 		baseSha: context.baseSha,
