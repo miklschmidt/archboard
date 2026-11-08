@@ -2,7 +2,7 @@
   "order": 15000,
   "name": "Semantic queries",
   "kind": "function",
-  "responsibility": "The query options and freshness of the listing, a model's document, a picture and a model's locality",
+  "responsibility": "The query options and freshness of the listing, a model's document, a picture, a model's locality, and the one code pass the code view of Measures starts",
   "description": "No timer: a picture and a document stay fresh until their model announces a new version, and are read again on a reconnect. The last picture of the same model stays as the placeholder while another reading of it is drawn. A model's locality is asked once for each pick of a part, and never on a timer, a return to the tab or a reconnect. Every key names a vault, because two repositories can each have a model of the same name. A listing it reads is handed to the refresh module, which reads again what moved since.",
   "groups": [
     "drawing"
@@ -92,6 +92,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#GNx2x7VX",
       "to": "vKEsyHFk/UOXNWLhR#OeUYLDxp"
+    },
+    {
+      "order": 125000,
+      "kind": "call",
+      "label": "run one code pass over a reading",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
+        "symbol": "runCodeCheck"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
+      "id": "vKEsyHFk#H1PT503W"
     }
   ]
 }

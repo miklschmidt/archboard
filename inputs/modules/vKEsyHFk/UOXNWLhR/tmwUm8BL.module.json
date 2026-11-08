@@ -2,7 +2,7 @@
   "order": 3000,
   "name": "Fetch semantic reads",
   "kind": "function",
-  "responsibility": "Decode the listing, a model, a render, the vault check, the code findings and a model's locality",
+  "responsibility": "Decode the listing, a model, a render, the vault check, the code findings and a model's locality, and ask for one code pass",
   "description": "Plain fetch to the semantic read routes; refused, unreachable or invalid replies become explicit viewer failures carrying the server's code. There is no write call.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",

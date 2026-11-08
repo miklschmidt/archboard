@@ -2,11 +2,11 @@
   "order": 23000,
   "name": "Repositories",
   "kind": "module",
-  "responsibility": "repo list, add, use, forget and language-server: the checkouts bindings resolve to, the chosen one for each repository, and the language servers that a repository or this machine names",
-  "description": "Keeps this machine's checkout registry. repo add registers a checkout, with the worktrees git lists for it, or an untracked vault, and never changes which checkout of a repository is chosen. A checkout whose identity is an untracked vault's name keeps it, and the answer's renamed gives the vault's new name. repo use chooses one. repo forget removes one; list shows each, chosen or gone. None of them calls a server: every running server watches the registry file. language-server, in language-server.ts beside it, shows, sets and removes the servers of the working directory's checkout in its committed .archboard/language-servers.json, of the chosen checkout that --repo names, or of this machine with --global; the registry holds no servers.",
+  "responsibility": "repo list, add, use, forget and language-server: the checkouts bindings resolve to, the chosen one for each repository, and the servers configured for each",
+  "description": "Keeps this machine's checkout registry. repo add registers a checkout, with the worktrees git lists for it, or an untracked vault, and never changes which checkout of a repository is chosen. A checkout whose identity is an untracked vault's name keeps it, and the answer's renamed gives the vault's new name. repo use chooses one. repo forget removes one; list shows each, chosen or gone. None of them calls a server: every running server watches the registry file. language-server lives in repo-language-server.ts.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/commands/repo/operations"
+    "path": "apps/cli/src/cli/commands/repo/operations/repo.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#jAKtfzMA",
@@ -45,19 +45,6 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#J5WjwmUn",
       "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
-    },
-    {
-      "order": 15000,
-      "kind": "call",
-      "label": "show and write a repository's or this machine's servers",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/repo/operations/language-server.ts",
-        "symbol": "setServer"
-      },
-      "id": "vKEsyHFk#KpH0k8PU",
-      "to": "vKEsyHFk#fEJJNr2X"
     }
   ]
 }

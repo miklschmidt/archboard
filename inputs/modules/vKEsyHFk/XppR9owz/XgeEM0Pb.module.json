@@ -1,19 +1,16 @@
 {
   "order": 24000,
-  "name": "Init",
+  "name": "Install skill",
   "kind": "module",
-  "responsibility": "init: installs the bundled skills with the skills CLI, makes and registers this repository's vault, and hands the setup of its language servers to Claude Code or Codex",
-  "description": "TASK-601, in place of install-skill (TASK-471.03). The skills CLI (skills.sh), started by bun x, pnpm dlx or npx, installs the archboard and archboard-pr skills of the installation globally for Codex, and for Claude Code when claude is on the PATH. A person at a terminal picks the runner or skips; a caller without a terminal gets the first one found. Then the repository setup makes the vault at the root of the git checkout that holds --repo, else the working directory, and registers the checkout. Choosing and installing a language server depends on the repository, so init leaves it to an agent: at a terminal it starts Claude Code or Codex, as the person picks, with a prompt that has the agent confirm its plan first; without a terminal its answer ends with that prompt in next, for the agent that ran it. It writes nothing into the installation, CLAUDE.md or AGENTS.md.",
+  "responsibility": "install-skill: links the bundled skills to this checkout, or copies them into a skills root inside the repository, and makes this repository's vault, writing nothing into its CLAUDE.md or AGENTS.md",
+  "description": "TASK-471.03. A command finds the vault from the repository it runs in (ADR 0049), so nothing about it is written down. --repo, else the working directory, names a directory, and the vault is made at the root of the git checkout that holds it, where a command run anywhere in the checkout finds it. The receipt's setup names the repository, its vault, whether the vault was made, whether git ignores it and the documents an earlier block was removed from. --vault, --doc and --yes are gone, and --no-setup, once --no-doc, leaves the repository alone. It links the skills of the installation, whether a checkout's or a release's, and writes nothing into the installation, which a global install may make read-only; a release's skills arrive prepared. A copy into the repository's own skills root is a normal directory that the owner can write.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/commands/init/operations/init.ts"
+    "path": "apps/cli/src/cli/commands/install-skill/operations/install-skill.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#XgeEM0Pb",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
-  "formerNames": [
-    "Install skill"
-  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -43,7 +40,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/init/operations/init.ts",
+        "path": "apps/cli/src/cli/commands/install-skill/operations/install-skill.ts",
         "symbol": "setUpRepository"
       },
       "id": "vKEsyHFk/XppR9owz#Kk4jceif",
@@ -52,11 +49,11 @@
     {
       "order": 70000,
       "kind": "dependency",
-      "label": "the skills directory to install from",
+      "label": "the skills to link or copy, and the root",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/init/operations/skills-install.ts",
+        "path": "apps/cli/src/cli/commands/install-skill/operations/install-skill.ts",
         "symbol": "installation"
       },
       "id": "vKEsyHFk#Rn3hOh85",

@@ -73,7 +73,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
-        "symbol": "OrbHost"
+        "symbol": "RecordedOrb"
       },
       "id": "vKEsyHFk/yejBBUFY#gIVISpC9",
       "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"

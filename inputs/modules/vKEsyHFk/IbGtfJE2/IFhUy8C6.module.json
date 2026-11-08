@@ -2,8 +2,8 @@
   "order": 7000,
   "name": "Skill install",
   "kind": "module",
-  "responsibility": "Registers the run's checkout through the CLI, then lays the arm's package, the frozen baseline or the candidate copy the batch kept, in the run's agents' skills root",
-  "description": "TASK-601. The run registers its checkout with repo add, as archboard init does, and lays the package itself, so a run needs no skills CLI and no network. The run's vault is the .archboard/vault that the run's checkout already holds (the run's configuration is written there before the install), so a command run in the checkout finds it without a setting. The install record holds the digest of the installed skill.",
+  "responsibility": "Installs through the CLI, then swaps in the arm's package, the frozen baseline or the candidate copy the batch kept, and re-derives its generated files",
+  "description": "TASK-471.03. install-skill runs with --repo alone and writes no setup block. The run's vault is the .archboard/vault that the run's checkout already holds (the run's configuration is written there before the install), so a command run in the checkout finds it without a setting. The install record holds the digest of the installed skill and no block.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/run-world/operations/install.ts"
@@ -15,7 +15,7 @@
     {
       "order": 21000,
       "kind": "call",
-      "label": "register the run's checkout",
+      "label": "install the arm",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

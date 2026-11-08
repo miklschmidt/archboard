@@ -3,7 +3,7 @@
   "name": "Command contract",
   "kind": "module",
   "responsibility": "Runs one bound command contract: parse, prerequisites, handler, presentation",
-  "description": "contract/protocol defines a command and contract/operations runs one: runCommand in runner.ts is the one call routing makes, and it passes straight on to executeCommand in execution.ts. contract/rules turns a contract into Commander parsing and the usage that help prints, and turns an answer into the text a person reads when the global --text asks for it (TASK-602): each field named in words, records with short fields as a table, a refusal said to be one, coloured where standard output shows colour. A handler learns from its context who reads the answer, so repo list and browser panes keep their own read-outs.",
+  "description": "contract/protocol defines a command and contract/operations runs one: runCommand in runner.ts is the one call routing makes, and it passes straight on to executeCommand in execution.ts. contract/rules turns a contract into Commander parsing and the usage that help prints.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/contract"
