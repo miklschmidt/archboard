@@ -114,7 +114,7 @@ function renewClaim(
 	)
 		throw new ArchiveError(
 			"CLAIM_HELD",
-			`Subjects are claimed by ${overlap.writer}. Wait for release or ask the reader to take the claim back.`,
+			`Subjects are claimed by ${overlap.writer}. Wait until the claim is released or reaches its deadline.`,
 			"claims",
 			request.subjects,
 		);
@@ -344,7 +344,7 @@ function requireSubjectClaim(
 	if (competing !== undefined)
 		throw new ArchiveError(
 			"CLAIM_HELD",
-			`Affected subjects are claimed by ${competing.writer}. Wait for release or request human take-back.`,
+			`Affected subjects are claimed by ${competing.writer}. Wait until the claim is released or reaches its deadline.`,
 			"model.json",
 			subjects,
 		);

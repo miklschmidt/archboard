@@ -56,7 +56,7 @@ const recovery: Partial<Record<Failure["code"], string>> = {
 	TARGET_CHANGED: "Read the intended model and current state again before preparing a new intent.",
 	CLAIM_REQUIRED:
 		"Claim every affected existing subject and required model structure scope before editing.",
-	CLAIM_HELD: "Wait for the owner to release the scope, or ask the reader to take the claim back.",
+	CLAIM_HELD: "Wait until the owner releases the scope or the claim reaches its deadline.",
 	CLAIM_REVOKED:
 		"Stop the former intent. Obtain a new explicit claim before preparing another edit.",
 	RECOVERY_REQUIRED:
