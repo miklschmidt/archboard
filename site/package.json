@@ -6,7 +6,9 @@
 	"license": "BUSL-1.1",
 	"type": "module",
 	"scripts": {
+		"predev": "bun scripts/reference.ts",
 		"dev": "astro dev",
+		"prebuild": "bun scripts/reference.ts",
 		"build": "astro check && astro build && pagefind --site dist",
 		"preview": "astro preview",
 		"render": "scripts/render-diagrams.sh"
