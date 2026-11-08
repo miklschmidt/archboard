@@ -62,9 +62,9 @@ jobs:
       - name: Use Chrome for model rendering
         run: echo "ARCHBOARD_RENDERER_CHROMIUM=/opt/google/chrome/chrome" >> "$GITHUB_ENV"
 
-      # A label or a description edit changes only the report, so the check runs on a push.
+      # Every run checks the architecture, so a label or description edit cannot replace a
+      # failed gate with a successful report for the same commit.
       - name: Check the architecture
-        if: contains(fromJSON('["opened", "synchronize", "reopened"]'), github.event.action)
         uses: ./actions/check
         with:
           cli: ./bin/archboard
