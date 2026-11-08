@@ -117,7 +117,7 @@ const modelEditContract = defineCommand({
 	shared: ["url", "directory", "doing"],
 	summary: "Edit canonical modules and independent flow behavior durably",
 	description: [
-		"Reads `expectedRevision`, `target`, `operationId`, `writer`, `claim` and `changes` from JSON. Changes can edit modules, flows, or walkthroughs.",
+		"Reads `expectedRevision`, `target`, `operationId`, `writer`, `doing`, `claim` and `changes` from JSON. Changes can edit modules, flows, or walkthroughs.",
 		"",
 		"Proposal intents create, edit, reconcile, settle, adopt, or shelve states. Corrections name the previous checkpoint and immutable source revisions.",
 		"",
