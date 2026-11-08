@@ -1,6 +1,5 @@
-// The orb's stage, as a component reads it, and the two moves a surface makes on
-// it: saying where the orb is wanted, and asking a Narrate key to launch it.
-// A Narrate key also reads where the lit orb is wanted, to know when it is in the box.
+// The orb's stage, as a component reads it, and the move a surface makes on it: saying where
+// the orb is wanted.
 
 import { createContext, useContext, useLayoutEffect, useSyncExternalStore } from "react";
 
@@ -56,31 +55,4 @@ function useOrbOffered(home: OrbHome): boolean {
 	);
 }
 
-/**
- * Where the lit orb is wanted, as the dock says it: the voice box, the dock, or a Narrate key while
- * voice ends. A Narrate key reads it to know when the orb has gone to the box.
- * @returns The home, or null while voice is off.
- */
-function useOrbWanted(): OrbHome | null {
-	const stage = useOrbStage();
-	return useSyncExternalStore(stage.subscribe, stage.wanted, () => null);
-}
-
-/**
- * How a Narrate key asks for a launch: the next orb that is lit leaves the key, lit from the
- * start of its flight, for the home it is wanted in. Voice started any other way is lit where it
- * is wanted. The key asks as it is pressed, before the voice it starts is lit, and names itself.
- * @returns The ask, the same function for as long as the stage lasts.
- */
-function useOrbLaunch(): (pressed: Element) => void {
-	return useOrbStage().launch;
-}
-
-export {
-	OrbStageContext,
-	useOrbLaunch,
-	useOrbOffered,
-	useOrbPlacement,
-	useOrbStage,
-	useOrbWanted,
-};
+export { OrbStageContext, useOrbOffered, useOrbPlacement, useOrbStage };

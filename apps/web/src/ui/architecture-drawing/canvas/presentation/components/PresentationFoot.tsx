@@ -21,8 +21,7 @@ import { useCallback, type CSSProperties, type JSX, type MouseEvent } from "reac
 
 import { VOICE_MS } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/components";
-import { OrbSlot, useOrbLaunch } from "@archboard/workbench/voice";
-import { useHangUp } from "#ui/architecture-drawing/canvas/presentation/hooks/use-hang-up.ts";
+import { OrbSlot, useNarrateKey } from "@archboard/workbench/voice";
 import type { WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
 
 /** What the key says while a narration can start. */
@@ -75,8 +74,7 @@ function NarrateKey(props: {
 }): JSX.Element {
 	const { walkthrough } = props;
 	const { held, start } = props.narration;
-	const launch = useOrbLaunch();
-	const { hangingUp, end } = useHangUp();
+	const { launch, hangingUp, end } = useNarrateKey();
 	// A narration starts on the first step whatever the reader had reached; the server opens it
 	// once voice is starting, so the voice is handed the step it arrived on. The orb that voice
 	// lights is launched out of this key.
