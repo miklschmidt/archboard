@@ -323,7 +323,9 @@ html:has(.docs) {
 .heading-link {
 	display: inline-grid;
 	place-items: center;
-	width: 1.1em;
+	/* A target of at least 24 by 24 pixels (WCAG 2.5.8). */
+	min-width: 24px;
+	min-height: 24px;
 	margin-left: 0.25em;
 	font-family: var(--font-mono);
 	font-size: 0.6em;
