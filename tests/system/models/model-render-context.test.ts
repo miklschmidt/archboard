@@ -320,6 +320,10 @@ test("a file the CLI renders stands alone, in a directory it creates, and refuse
 	const drawn = run("--out", out);
 	expect(drawn.status, drawn.stderr).toBe(0);
 	expect(readFileSync(out, "utf8")).toContain("color-scheme");
+	expect(readFileSync(out, "utf8")).toContain('data-slot="export-legend"');
+	const bare = join(home, "docs", "bare.svg");
+	expect(run("--legend", "none", "--out", bare).status).toBe(0);
+	expect(readFileSync(bare, "utf8")).not.toContain('data-slot="export-legend"');
 	expect(run("--flow", "Shop#Request", "--out", join(home, "refused.svg")).status).toBe(2);
 	expect(run().status).toBe(2);
 	// An older file whose recipe names no theme redraws as `auto`, never as a black page.
@@ -338,4 +342,15 @@ test("a file the CLI renders stands alone, in a directory it creates, and refuse
 		kind: "recipe",
 		recipe: { reading: { theme: "auto" } },
 	});
+	// A file drawn before renders carried a legend has none, and its recipe names none: it redraws with one.
+	writeFileSync(bare, readFileSync(bare, "utf8").replace(',"legend":"none"', ""));
+	Bun.spawnSync(["git", "-C", home, "add", bare]);
+	const legend = runServerCli({
+		repoRoot,
+		server: server!,
+		input: undefined,
+		args: ["check", "embeds", "--fix"],
+	});
+	expect(legend.status, legend.stderr).toBe(0);
+	expect(readFileSync(bare, "utf8")).toContain('data-slot="export-legend"');
 }, 30000);

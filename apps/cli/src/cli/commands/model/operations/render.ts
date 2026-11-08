@@ -99,6 +99,17 @@ const modelRenderContract = defineCommand({
 		},
 		{
 			kind: "option",
+			key: "legend",
+			spellings: ["--legend"],
+			value: "required",
+			placeholder: "layout",
+			choices: ArchitectureRenderRequestSchema.shape.legend.removeDefault().options,
+			default: "horizontal",
+			description:
+				"Draw the legend under the picture, beside it (`vertical`), or not at all (`none`)",
+		},
+		{
+			kind: "option",
 			key: "out",
 			spellings: ["--out"],
 			value: "required",

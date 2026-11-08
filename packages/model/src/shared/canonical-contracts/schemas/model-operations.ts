@@ -6,7 +6,11 @@ import {
 	SelectedStateSchema,
 } from "#shared/schemas/model-proposals.ts";
 import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
-import { StandaloneThemeSchema, DiagramAtlasSchema } from "#shared/protocol/render-reply.ts";
+import {
+	StandaloneThemeSchema,
+	DiagramAtlasSchema,
+	LegendLayoutSchema,
+} from "#shared/protocol/render-reply.ts";
 import {
 	FlowChangeSchema,
 	RecordedFlowChangeSchema,
@@ -34,6 +38,8 @@ const ArchitectureRenderRequestSchema = z.strictObject({
 	hideKinds: z.array(z.string()).optional(),
 	checkpoint: z.string().min(1).optional(),
 	theme: StandaloneThemeSchema.optional(),
+	/** Where the legend is drawn: under the picture, beside it, or `none` to leave it out. */
+	legend: z.enum([...LegendLayoutSchema.options, "none"]).default("horizontal"),
 });
 const ArchitectureRenderResultSchema = z.discriminatedUnion("success", [
 	z.strictObject({
