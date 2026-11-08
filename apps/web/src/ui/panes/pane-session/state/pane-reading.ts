@@ -19,6 +19,7 @@ import { PANE_MS } from "@archboard/timing";
 import { createUserMarks } from "#ui/panes/pane-session/state/user-marks.ts";
 import { inVault, requestJson } from "@archboard/server-requests";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { StaleFrontend } from "#ui/panes/pane-session/clients/pane-requests.ts";
 import type { z } from "zod";
 
 type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
@@ -85,12 +86,21 @@ interface ReadingPublisherParts {
 	 * @param message What happened.
 	 */
 	readonly warn?: (message: string) => void;
+	/**
+	 * Hear what the reader's answer says about this tab's build. A reading goes
+	 * out at every selection and navigation, so this is where an open tab hears
+	 * at its next interaction that the frontend was rebuilt (TASK-056).
+	 * @param reply The reader's answer.
+	 */
+	readonly noteBuild: (reply: ReadingReply) => void;
 }
 
 /** What the reader answers a report with. */
 interface ReadingReply {
 	/** False when this report was overtaken by a later one and dropped. */
 	readonly kept?: boolean;
+	/** Set when this tab is running a bundle the server no longer serves. */
+	readonly staleFrontend?: StaleFrontend;
 }
 
 /**
@@ -158,6 +168,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 		})
 			.then((reply) => {
 				noteDropped(reply, counted);
+				parts.noteBuild(reply);
 				return reply.kept !== false;
 			})
 			.catch(() => {
@@ -272,4 +283,4 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 	};
 }
 
-export { NOTHING_READ, createReadingPublisher, type PaneReading };
+export { NOTHING_READ, createReadingPublisher, type PaneReading, type ReadingReply };

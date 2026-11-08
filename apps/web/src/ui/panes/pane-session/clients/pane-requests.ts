@@ -34,6 +34,16 @@ interface PaneReport {
 	recording?: true;
 }
 
+/**
+ * What the server says to a tab running a bundle it no longer serves, i.e.
+ * somebody rebuilt the frontend after the tab was opened (TASK-056).
+ */
+interface StaleFrontend {
+	loaded: string | null;
+	current: string | null;
+	message: string | null;
+}
+
 /** The server's answer to a pane report. */
 interface PaneReply {
 	success: true;
@@ -45,11 +55,8 @@ interface PaneReply {
 	 */
 	code?: "PANE_MOVED";
 	paneCount: number;
-	/**
-	 * Set when this tab is running a bundle the server no longer serves, i.e.
-	 * somebody rebuilt the frontend after the tab was opened (TASK-056).
-	 */
-	staleFrontend?: { loaded: string | null; current: string | null; message: string | null };
+	/** Set when this tab is running a bundle the server no longer serves. */
+	staleFrontend?: StaleFrontend;
 }
 
 /**
@@ -109,4 +116,12 @@ function showConversation(
 	});
 }
 
-export { loadedBundle, reportPane, showModel, showConversation, type PaneReply, type PaneReport };
+export {
+	loadedBundle,
+	reportPane,
+	showModel,
+	showConversation,
+	type PaneReply,
+	type PaneReport,
+	type StaleFrontend,
+};

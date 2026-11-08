@@ -14,6 +14,7 @@ import {
 	type PaneReading,
 } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { createPaneReportSender } from "#ui/panes/pane-session/clients/pane-report-sender.ts";
+import { createStaleBuildNotice } from "#ui/panes/pane-session/state/stale-build.ts";
 import {
 	createPaneSocketConnector,
 	type PaneSocketGeneration,
@@ -119,7 +120,8 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		return !disposed;
 	}
 	const paneReportDeadline = createPaneReportDeadline();
-	const reading = createReadingPublisher({ paneId, clientId, vault: paneVault });
+	const noteBuild = createStaleBuildNotice((message) => ports.options().onStaleFrontend?.(message));
+	const reading = createReadingPublisher({ paneId, clientId, vault: paneVault, noteBuild });
 
 	/**
 	 * Tell the shell what this pane is, now.
@@ -374,7 +376,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		connector,
 		setConnected,
 		setRegistered,
-		listeners: ports.options,
+		noteBuild,
 	});
 
 	/**

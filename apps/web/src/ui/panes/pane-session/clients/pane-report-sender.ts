@@ -9,18 +9,12 @@ import {
 } from "#ui/panes/pane-session/clients/pane-requests.ts";
 import { buildPaneReport, paneReportKey } from "#ui/panes/pane-session/clients/pane-report.ts";
 import type { PaneSocketConnector } from "#ui/panes/pane-session/clients/pane-socket.ts";
-import type { PaneSessionOptions } from "#ui/panes/pane-session/rules/session-contracts.ts";
 import {
 	createPaneReportSequencer,
 	type PaneReportCurrent,
 	type PaneReportDispatch,
 	type PaneReportEffects,
 } from "#ui/panes/pane-session/clients/workbench-socket.ts";
-
-/**
- * A stale-build refusal belongs to the existing session listener.
- */
-type PaneReportListeners = Pick<PaneSessionOptions<never>, "onStaleFrontend">;
 
 /** What the sender reads and tells. */
 interface PaneReportSenderParts {
@@ -40,8 +34,11 @@ interface PaneReportSenderParts {
 	 * @param registered What the server answered.
 	 */
 	readonly setRegistered: (registered: boolean) => void;
-	/** The session's listeners, read at the moment there is something to say. */
-	readonly listeners: () => PaneReportListeners;
+	/**
+	 * Hear what an answer says about this tab's build.
+	 * @param result The answer, or null when the request never settled.
+	 */
+	readonly noteBuild: (result: PaneReply | null) => void;
 }
 
 /** One pane's report sender. */
@@ -52,28 +49,6 @@ interface PaneReportSender {
 	readonly forget: () => void;
 }
 
-/** What an answer says about this tab's build, once it says anything. */
-interface StaleBuild {
-	/** The build the server serves now, which is what a repeat is judged against. */
-	readonly current: string;
-	/** What to tell the person about it. */
-	readonly message: string;
-}
-
-/**
- * What a pane-report answer says about this tab's build, when it says anything.
- * @param result The answer, or null when the request never settled.
- * @returns The stale build, or null when nothing is stale.
- */
-function staleBuildOf(result: PaneReply | null): StaleBuild | null {
-	const stale = result?.staleFrontend;
-	if (stale === undefined) {
-		return null;
-	}
-	const { current, message } = stale;
-	return message === null ? null : { current: current ?? "", message };
-}
-
 /**
  * Create the sender for one pane.
  * @param parts What it reads and tells.
@@ -82,7 +57,6 @@ function staleBuildOf(result: PaneReply | null): StaleBuild | null {
 function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender {
 	const sequencer = createPaneReportSequencer();
 	let publishedKey = "";
-	let staleBuild = "";
 
 	/**
 	 * The identity the pane holds right now.
@@ -95,29 +69,6 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 			generation: generation?.generation ?? 0,
 			registration: parts.connector.registration(),
 		};
-	}
-
-	/**
-	 * Say once per build that this tab is running old code (TASK-056).
-	 * @param result The pane-report answer.
-	 */
-	function noteStaleBuild(result: PaneReply | null): void {
-		const stale = staleBuildOf(result);
-		if (stale !== null && staleBuild !== stale.current) {
-			staleBuild = stale.current;
-			tellStaleBuild(stale.message);
-		}
-	}
-
-	/**
-	 * Tell the session this tab is running old code.
-	 * @param message What the server said about it.
-	 */
-	function tellStaleBuild(message: string): void {
-		const listener = parts.listeners().onStaleFrontend;
-		if (listener !== undefined) {
-			listener(message);
-		}
 	}
 
 	/**
@@ -164,7 +115,7 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 			publishedKey = "";
 		}
 		if (effects.applyStaleBuild) {
-			noteStaleBuild(result);
+			parts.noteBuild(result);
 		}
 	}
 

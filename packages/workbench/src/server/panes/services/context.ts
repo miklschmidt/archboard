@@ -17,6 +17,7 @@ import {
 	SEMANTIC_PANE_CONTEXT_ROUTE,
 	SemanticPaneContextSchema,
 } from "@archboard/model/pane-context";
+import { staleFrontend } from "@archboard/server-lifecycle/server-host";
 import { publishPaneContext } from "#server/workbench-host/services/wiring-hooks.ts";
 import { panePresentations } from "#server/panes/services/presentation.ts";
 import { paneVaults, panes } from "#server/panes/services/registry.ts";
@@ -161,7 +162,17 @@ function reportRoute(req: Request, res: Response): void {
 	// A dropped report is not an error: a pane that raced itself has already been
 	// overtaken by its own later one, and saying so lets a publisher notice it is
 	// sending out of order.
-	res.json({ success: true, paneId: parsed.data.paneId, kept });
+	//
+	// A pane reads at every selection and navigation, and its pane report goes out
+	// far less often, so this answer is where a tab opened before somebody rebuilt
+	// the frontend hears so at its next interaction (TASK-056). The build is the
+	// one the pane named when it registered.
+	res.json({
+		success: true,
+		paneId: parsed.data.paneId,
+		kept,
+		staleFrontend: staleFrontend(panes.get(parsed.data.clientId)?.build),
+	});
 }
 
 /**

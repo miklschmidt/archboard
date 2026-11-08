@@ -4,7 +4,9 @@ import {
 	NOTHING_READ,
 	createReadingPublisher,
 	type PaneReading,
+	type ReadingReply,
 } from "#ui/panes/pane-session/state/pane-reading.ts";
+import { createStaleBuildNotice } from "#ui/panes/pane-session/state/stale-build.ts";
 import { PANE_MS } from "@archboard/timing";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
@@ -40,13 +42,14 @@ function reading(id: string): PaneReading {
 }
 
 /**
- * A publisher with its sends and warnings captured.
+ * A publisher with its sends, warnings and stale-build notices captured.
  * @param replies What the reader answers each report with, in order.
- * @returns The publisher and what it sent.
+ * @returns The publisher and what it sent, warned and told.
  */
-function watched(replies: Array<{ kept?: boolean }> = []) {
+function watched(replies: ReadingReply[] = []) {
 	const sent: SemanticPaneContext[] = [];
 	const warnings: string[] = [];
+	const told: string[] = [];
 	const publisher = createReadingPublisher({
 		paneId: "pane-A",
 		clientId: "client-1",
@@ -71,8 +74,21 @@ function watched(replies: Array<{ kept?: boolean }> = []) {
 		warn: (message): void => {
 			warnings.push(message);
 		},
+		noteBuild: createStaleBuildNotice((message) => told.push(message)),
 	});
-	return { publisher, sent, warnings };
+	return { publisher, sent, warnings, told };
+}
+
+/**
+ * The reader's answer to a tab whose build the server no longer serves.
+ * @param current The build the server serves now.
+ * @returns The answer.
+ */
+function staleReply(current: string): ReadingReply {
+	return {
+		kept: true,
+		staleFrontend: { loaded: "/assets/index-old.js", current, message: `now ${current}` },
+	};
 }
 
 describe("a pane's reading publisher", () => {
@@ -145,6 +161,8 @@ describe("a pane's reading publisher", () => {
 			},
 			/** Warnings are not what this one is about. */
 			warn: (): void => {},
+			/** The build is not what this one is about. */
+			noteBuild: (): void => {},
 		});
 		publisher.publish(reading("a"));
 		await settled();
@@ -188,5 +206,33 @@ describe("a pane whose socket came back", () => {
 		await settled();
 		publisher.dispose();
 		expect(sent).toHaveLength(1);
+	});
+});
+
+describe("a tab running a build the server no longer serves", () => {
+	test("hears so at its next selection, once for each build the server serves", async () => {
+		const { publisher, told } = watched([
+			{ kept: true },
+			staleReply("/assets/index-new.js"),
+			staleReply("/assets/index-new.js"),
+			staleReply("/assets/index-newer.js"),
+		]);
+		publisher.publish(reading("a"));
+		await settled();
+		expect(told).toEqual([]);
+
+		// Selecting is all the person did: no pane report goes out for it.
+		publisher.publish(reading("b"));
+		await settled();
+		expect(told).toEqual(["now /assets/index-new.js"]);
+
+		publisher.publish(reading("c"));
+		await settled();
+		expect(told).toHaveLength(1);
+
+		publisher.publish(reading("d"));
+		await settled();
+		publisher.dispose();
+		expect(told).toEqual(["now /assets/index-new.js", "now /assets/index-newer.js"]);
 	});
 });

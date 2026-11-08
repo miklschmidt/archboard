@@ -18,12 +18,12 @@ const PANE_MS = durations({
 	 */
 	selectionDebounce: 150,
 	/**
-	 * How long the pane waits before reporting where it sits and what of its model
-	 * is on screen.
+	 * How long the pane waits before reporting which model it shows and where it
+	 * sits.
 	 *
-	 * It changes on every scroll and zoom, and it is only sent when it has
-	 * actually changed. An agent must be able to read it every turn, which it can
-	 * only afford if the browser is not posting it continuously.
+	 * It is only sent when it has actually changed. An agent must be able to read
+	 * it every turn, which it can only afford if the browser is not posting it
+	 * continuously.
 	 */
 	report: 300,
 	/**
