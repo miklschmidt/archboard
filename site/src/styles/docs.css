@@ -616,6 +616,13 @@ html:has(.docs) {
 	}
 }
 
+/* Expressive Code reverts every style inside a frame, so its copy button takes the site's focus
+   ring here. */
+.expressive-code .copy button:focus-visible {
+	outline: 2px solid var(--gold-mark);
+	outline-offset: 3px;
+}
+
 /* A code frame whose title is a file, a path or a code sets that title in the monospace face. */
 .expressive-code .code-title .header .title {
 	font-family: var(--font-mono);

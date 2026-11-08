@@ -12,7 +12,7 @@ import Exit from "../../components/docs/Exit.astro";
 ## What you need
 
 - Linux on x64 or arm64, or macOS on Apple silicon. Under Windows, use WSL 2.
-- Git, and npm or Bun to install the package.
+- Git, and a package manager to install the package: npm, pnpm, Yarn or Bun.
 - A Codex sign-in for the agent dock, voice, narration and recordings. The map, the checks and the pictures work without it.
 - Chromium or Chrome only for PNG pictures and recordings. SVG pictures need no browser.
 
@@ -119,5 +119,14 @@ Run the install command again, then restart the server so that it runs the new v
 npm install --global archboard@latest
 archboard restart
 ```
+
+There is no uninstall command. To remove Archboard, stop the server and remove the package:
+
+```bash
+archboard stop
+npm uninstall --global archboard
+```
+
+Then delete the skill directories, such as `~/.agents/skills/archboard` and `~/.agents/skills/archboard-pr`, and the state directory. The state directory holds the Codex sign-in, the registry of checkouts and the logs. On Linux it is `~/.local/state/archboard`, and on macOS it is `~/Library/Application Support/archboard`. Keep each vault that you still need: it is in its repository, not in the state directory.
 
 [`INSTALL.md`](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md) covers builds from a clone, Nix, every language server, recordings, machine state and macOS.

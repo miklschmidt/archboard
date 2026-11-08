@@ -40,6 +40,16 @@ const ENVIRONMENT = [
 			"The registry of checkouts, `repos.json`. The global `language-servers.json` is beside it.",
 	},
 	{
+		name: "ARCHBOARD_RENDERER_CHROMIUM",
+		meaning:
+			"Names the Chromium or Chrome that draws PNG pictures and records walkthroughs, when the one on `PATH` is not the one to use.",
+	},
+	{
+		name: "ARCHBOARD_FFMPEG",
+		meaning:
+			"Names the `ffmpeg` that encodes a recorded walkthrough, in place of the one on `PATH`.",
+	},
+	{
 		name: "XDG_STATE_HOME",
 		meaning: "On Linux, moves the state directory: the Codex sign-in, the registry and the logs.",
 	},
