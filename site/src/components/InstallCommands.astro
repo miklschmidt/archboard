@@ -13,12 +13,11 @@ interface Props {
 
 const { id, then } = Astro.props;
 
-// The Bun line names the scoped launcher, as INSTALL.md does and the release smoke test installs.
 const managers = [
 	{ key: "npm", install: "npm install --global archboard" },
 	{ key: "pnpm", install: "pnpm add --global archboard" },
 	{ key: "yarn", install: "yarn global add archboard" },
-	{ key: "bun", install: "bun add --global @archboard/cli" },
+	{ key: "bun", install: "bun add --global archboard" },
 ].map((manager) => ({ ...manager, commands: [manager.install, ...then] }));
 const [first] = managers;
 ---

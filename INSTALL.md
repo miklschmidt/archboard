@@ -48,8 +48,8 @@ Install the package once:
 npm install --global archboard
 ```
 
-With Bun, run `bun add --global @archboard/cli` instead. Both names install the
-same program. The package manager installs only the package of your platform,
+With Bun, run `bun add --global archboard` instead. `@archboard/cli` is the same
+program under a second name. The package manager installs only the package of your platform,
 with the Codex binary that archboard is pinned to. The install puts `archboard`
 on your `PATH`, so skip section 2. Then set up a repository as section 3 says.
 

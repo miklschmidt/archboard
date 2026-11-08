@@ -77,7 +77,7 @@ The build stops in two cases:
 After `nix build .#release`, run:
 
 ```sh
-bun scripts/release/smoke.ts --installer bun --name @archboard/cli --packages result
+bun scripts/release/smoke.ts --installer bun --name archboard --packages result
 bun scripts/release/smoke.ts --installer npm --name archboard --packages result
 ```
 
