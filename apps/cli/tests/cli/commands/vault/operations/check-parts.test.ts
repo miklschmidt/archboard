@@ -15,6 +15,7 @@ import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/model/policy";
+import codeCheckFixture from "#tests/cli/commands/vault/fixtures/check-parts-code.json";
 import type { CliRegistryEntry } from "#cli/routing/protocol/route.ts";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
 
@@ -41,54 +42,7 @@ const warned: VaultCheck = {
 		},
 	],
 };
-const codeCheck: CodeCheckAnswer = {
-	timings: [
-		{ check: "code-facts", elapsedMs: 12.5 },
-		{
-			check: "language-server",
-			language: "typescript",
-			project: ".",
-			repo: "github.com/test/orders",
-			program: "tsc",
-			typescript: { version: "7.0.2", from: "checkout" },
-			elapsedMs: 42.5,
-		},
-		{ check: "history", elapsedMs: 8.5 },
-	],
-	states: [{ model: "Orders", variant: "v1", version: 4 }],
-	findings: [],
-	skipped: [{ reason: "no-current-variant", model: "Refunds" }],
-	behind: [
-		{
-			model: "Orders",
-			variant: "v1",
-			lastChange: {
-				kind: "commit",
-				commit: "a".repeat(40),
-				committedAt: "2026-10-01T00:00:00.000Z",
-			},
-			commits: [
-				{
-					repo: "github.com/test/orders",
-					commit: "b".repeat(40),
-					committedAt: "2026-10-02T00:00:00.000Z",
-					subject: "change the ledger",
-					files: 40,
-					large: true,
-				},
-			],
-			parts: [
-				{
-					subject: { kind: "node", id: "pL", name: "Ledger" },
-					repo: "github.com/test/orders",
-					path: "src/ledger.ts",
-					commits: ["b".repeat(40)],
-				},
-			],
-			skipped: [{ subject: { kind: "node", id: "pC", name: "Customer" }, reason: "unbound" }],
-		},
-	],
-};
+const codeCheck = CodeCheckAnswerSchema.parse(codeCheckFixture);
 
 const vault = makeStandInVault();
 let service = "";
