@@ -7,7 +7,7 @@ import mdx from "@astrojs/mdx";
 import { rehypeHeadingIds, unified } from "@astrojs/markdown-remark";
 import expressiveCode from "astro-expressive-code";
 import { rehypeHeadingLinks } from "./src/lib/rehype-heading-links.ts";
-import { docsRef, docsVersion, isRelease } from "./src/lib/docs-version.ts";
+import { actionsPin, docsVersion, isRelease } from "./src/lib/docs-version.ts";
 import { remarkVersion } from "./src/lib/remark-version.mjs";
 import { coreSourceHash } from "../packages/renderer/src/runtime/store/core-sources.ts";
 
@@ -34,7 +34,7 @@ export default defineConfig({
 	markdown: {
 		processor: unified({
 			remarkPlugins: [
-				[remarkVersion, { version: isRelease ? docsVersion : version, ref: docsRef }],
+				[remarkVersion, { version: isRelease ? docsVersion : version, ...actionsPin }],
 			],
 			rehypePlugins: [rehypeHeadingIds, rehypeHeadingLinks],
 		}),

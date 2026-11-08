@@ -30,10 +30,11 @@ docs pages.
   docs path, so both move unchanged.
 - When a page loads, it reads `/docs/versions.json`. So a page of an old release offers the
   releases after it, and main and an older release say which version they describe.
-- A guide writes `{{version}}` where it pins the CLI and `{{ref}}` where it pins an Action. A
-  release's docs fill in that release and its tag. Main's docs fill in the latest release, which is
-  the version in `package.json` on main, and `main`. The build refuses a version or an Action ref
-  that a guide pins by hand.
+- A guide writes `{{version}}` where it pins the CLI and `@{{sha}} # {{ref}}` where it pins an
+  Action: the commit, and its tag in a comment. A release's docs fill in that release, its commit
+  and its tag. Main's docs fill in the latest release, which is the version in `package.json` on
+  main, and the newest release tag that holds the Actions. While no release holds them, main's
+  docs pin main's commit. The build refuses a version or an Action ref that a guide pins by hand.
 
 ## Consequences
 

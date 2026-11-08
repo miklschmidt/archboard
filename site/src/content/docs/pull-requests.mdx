@@ -46,7 +46,7 @@ jobs:
       - run: npm ci
       # A server for each other language in .archboard/language-servers.json.
       - run: pip install pyright
-      - uses: miklschmidt/archboard/actions/check@{{ref}}
+      - uses: miklschmidt/archboard/actions/check@{{sha}} # {{ref}}
         with:
           version: "{{version}}"
 ```
@@ -127,7 +127,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: miklschmidt/archboard/actions/pull-request@{{ref}}
+      - uses: miklschmidt/archboard/actions/pull-request@{{sha}} # {{ref}}
         with:
           version: "{{version}}"
           out-of-plan: warn

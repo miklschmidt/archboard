@@ -110,7 +110,7 @@ jobs:
         with:
           repository: miklschmidt/archboard-relay-example-infra
           path: platform
-      - uses: miklschmidt/archboard/actions/check@{{ref}}
+      - uses: miklschmidt/archboard/actions/check@{{sha}} # {{ref}}
         with:
           version: "{{version}}"
           working-directory: app
