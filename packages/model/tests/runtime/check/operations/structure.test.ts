@@ -303,6 +303,16 @@ describe("container containment", () => {
 		]);
 	});
 
+	test.each<[string, ReturnType<typeof at>]>([
+		["a YAML file bound without an address", at("deploy/web.yaml")],
+		["a symbol of a code file", at("src/shop.ts", "Shop/cart")],
+		["a code symbol in a directory", at("src/shop", "shop.cart")],
+	])("still holds the parts of %s", (_case, binding) => {
+		expect(containment(shaped({ binding }, ["lib/a.ts", "lib/b.ts"]))).toMatchObject([
+			{ code: "CONTAINER_PARTS_OUTSIDE", id: box },
+		]);
+	});
+
 	test("a part outside the container's directory makes its parts spread", () => {
 		const structure = shaped(
 			{ binding: at("src/shop") },
@@ -352,6 +362,29 @@ describe("container containment", () => {
 		[
 			"a model that binds no code",
 			model({ modules: [part(box), part(first, { parent: box }), part(other)] }),
+		],
+		[
+			"a Kubernetes workload that runs code from another repository",
+			model({
+				modules: [
+					part(box, {
+						binding: { repo: "infra", path: "deploy/web.yaml", symbol: "Deployment/web" },
+					}),
+					part(first, { parent: box, binding: at("services/web/src/a.ts") }),
+					part(other, { binding: at("services/api") }),
+				],
+			}),
+		],
+		[
+			"a compose service",
+			shaped({ binding: at("compose.yaml", "services.web") }, ["web/a.ts", "web/b.ts"]),
+		],
+		[
+			"a Terraform resource in its root module's directory",
+			shaped({ binding: at("infra", "module.api.aws_lambda_function.api") }, [
+				"api/a.ts",
+				"api/b.ts",
+			]),
 		],
 	])("stays quiet for %s", (_case, structure) => {
 		expect(containment(structure)).toEqual([]);

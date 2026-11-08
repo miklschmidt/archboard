@@ -26,6 +26,10 @@ Its binding also owns code that no part binds. Code inspection includes calls in
 - `CONTAINER_PARTS_OUTSIDE`: A part binds code outside its container.
 - `suggestedBinding`: A directory contains all parts and no other module's code.
 
+A container bound to a runner holds its parts wherever their code lives, and the check reports neither code for it.
+A runner is a Kubernetes workload (`Deployment/web`), a compose service (`services.web`), or a Terraform or OpenTofu resource.
+Bind a deployed service to its runner and draw its code as parts, so a call through infrastructure reaches them.
+
 If supplied, use `suggestedBinding`.
 Otherwise, read the source before changing containment.
 Move a misplaced part to the module that owns it.
