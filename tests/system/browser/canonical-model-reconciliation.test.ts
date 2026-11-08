@@ -180,6 +180,10 @@ test("proposal conflicts preserve coherent content, blocked ancestry, live settl
 			`document.querySelector('[data-slot="model-blocked-ancestor"]')?.getAttribute('data-state-id') ?? null`,
 		),
 	).toBe(draftId);
+	// About is a sheet inside the chrome, so a key at the foot of the window can stand past its edge.
+	await browser.eval(
+		`document.querySelector('[data-slot="model-blocked-ancestor"]').scrollIntoView({ block: "center" })`,
+	);
 	await browser.run(["click", '[data-slot="model-blocked-ancestor"]']);
 	await standing(browser, "conflicted");
 	expect(
