@@ -386,13 +386,7 @@ Bind each implemented module to its code and add a short walkthrough for a new t
 
 See [INSTALL.md](INSTALL.md) for how a command finds its vault, code bindings and the configuration. [The docs](https://miklschmidt.github.io/archboard/docs/) cover the CLI command by command, the schemas, and [a first map in one session](https://miklschmidt.github.io/archboard/docs/first-map/).
 
-**Make the check a gate**. `archboard check` exits 1 while the map and the code disagree, so run it where you run `tsc` or `ruff`: in a pre-push hook, in CI and in your agent's loop. In GitHub Actions, the check Action puts each finding on the pull request's diff:
-
-```yaml
-- uses: miklschmidt/archboard/actions/check@main
-  with:
-    version: 0.1.0
-```
+**Make the check a gate**. `archboard check` exits 1 while the map and the code disagree, so run it where you run `tsc` or `ruff`: in a pre-push hook, in CI and in your agent's loop. In GitHub Actions, [the check Action](https://miklschmidt.github.io/archboard/docs/gate/) puts each finding on the pull request's diff.
 
 Give the check's words back to the agent before you review its work:
 

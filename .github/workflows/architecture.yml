@@ -1,0 +1,76 @@
+name: Architecture
+
+# This repository runs its own Actions on each pull request, with the CLI of the commit under
+# review: the published CLI can lag the vault and the Actions on main. The `cli` input skips the
+# npm install and runs ./bin/archboard instead.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled, edited]
+
+# A newer push cancels the run of an older one.
+concurrency:
+  group: architecture-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  architecture:
+    name: Architecture check and report
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write # pushes the pictures to the archboard-assets branch
+      pull-requests: write # posts the report comment
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the report reads the base and the head from Git history
+
+      - name: Set up Vite+, Node.js, and Bun
+        uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          version-file: package.json
+          node-version: "26"
+          cache: true
+          run-install: false
+
+      # The renderer core builds and the Rust language server runs inside the flake's dev shell.
+      - name: Setup Nix
+        uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+
+      - name: Install dependencies
+        run: nix develop --command bun install --frozen-lockfile
+
+      # The CI gate saves the core under the hash of its sources. Without it, the build compiles it.
+      - name: Hash the core sources
+        id: core-sources
+        run: echo "hash=$(bun --print 'require("@archboard/renderer/core").coreSourceHash()')" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the renderer core
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: packages/renderer/src/shared/protocol/generated/core
+          key: renderer-core-${{ runner.os }}-${{ steps.core-sources.outputs.hash }}
+
+      - name: Build the renderer core
+        run: nix develop --command bun run build:core
+
+      - name: Use Chrome for model rendering
+        run: echo "ARCHBOARD_RENDERER_CHROMIUM=/opt/google/chrome/chrome" >> "$GITHUB_ENV"
+
+      # A label or a description edit changes only the report, so the check runs on a push.
+      - name: Check the architecture
+        if: contains(fromJSON('["opened", "synchronize", "reopened"]'), github.event.action)
+        uses: ./actions/check
+        with:
+          cli: ./bin/archboard
+
+      - name: Report the architecture of the pull request
+        if: success() || failure()
+        uses: ./actions/pull-request
+        with:
+          cli: ./bin/archboard

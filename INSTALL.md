@@ -382,14 +382,8 @@ archboard check > /dev/null
 ```
 
 In GitHub Actions, the check Action installs the CLI, runs the check and puts
-each finding on the diff of the pull request:
-
-```yaml
-- uses: actions/checkout@v5
-- uses: miklschmidt/archboard/actions/check@main
-  with:
-    version: 0.1.0
-```
+each finding on the diff of the pull request.
+[The gate guide](https://miklschmidt.github.io/archboard/docs/gate/) has the workflow, pinned to a release.
 
 In an agent's loop, give the check's output back to the agent before a person
 reviews the work. This loop gives the agent three rounds:

@@ -8,8 +8,14 @@ author: Mikkel Schmidt
 
 inputs:
   version:
-    description: The version of `@archboard/cli` to install, such as `0.2.0`, or `latest`.
+    description: The version of `@archboard/cli` to install, such as `0.2.0`, or `latest`. `cli` replaces it.
     default: latest
+  cli:
+    description: >-
+      A CLI to run instead of installing `@archboard/cli`: a path to its executable, relative to the
+      workspace. Archboard's own repository gives `./bin/archboard`, built from the commit under
+      review. Leave it out to install `version`.
+    default: ""
   working-directory:
     description: The directory, relative to the workspace, that holds the checkout whose vault is read.
     default: "."
@@ -54,6 +60,7 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
     - name: Install the archboard CLI
+      if: inputs.cli == ''
       shell: bash
       env:
         ARCHBOARD_VERSION: ${{ inputs.version }}
@@ -62,6 +69,7 @@ runs:
       shell: bash
       env:
         ACTION_PATH: ${{ github.action_path }}
+        ARCHBOARD_CLI: ${{ inputs.cli }}
         ARCHBOARD_INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
         ARCHBOARD_INPUT_REPOS: ${{ inputs.repos }}
         ARCHBOARD_INPUT_STATE: ${{ inputs.state }}
@@ -69,4 +77,11 @@ runs:
         ARCHBOARD_INPUT_OVERRIDE_LABEL: ${{ inputs.override-label }}
         ARCHBOARD_INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
         ARCHBOARD_INPUT_ASSETS_BRANCH: ${{ inputs.assets-branch }}
-      run: node "${ACTION_PATH}/run.ts"
+      run: |
+        if [ -n "$ARCHBOARD_CLI" ]; then
+          case "$ARCHBOARD_CLI" in
+          /*) export ARCHBOARD_BIN="$ARCHBOARD_CLI" ;;
+          *) export ARCHBOARD_BIN="$GITHUB_WORKSPACE/$ARCHBOARD_CLI" ;;
+          esac
+        fi
+        node "${ACTION_PATH}/run.ts"
