@@ -3,6 +3,10 @@
   "name": "Walkthrough recordings",
   "kind": "module",
   "responsibility": "Records a walkthrough's talk in a page of its own and draws the recorded talk again, one frame at a time",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/walkthroughs"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#01sVgqBF",
   "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
@@ -20,9 +24,5 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/walkthroughs"
-  }
+  "outgoing": []
 }

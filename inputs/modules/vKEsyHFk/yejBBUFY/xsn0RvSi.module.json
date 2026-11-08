@@ -7,6 +7,10 @@
   "groups": [
     "panes"
   ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/panes/pane-session"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#xsn0RvSi",
   "parent": "vKEsyHFk/yejBBUFY#wlbLOPSH",
@@ -24,9 +28,5 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/panes/pane-session"
-  }
+  "outgoing": []
 }
