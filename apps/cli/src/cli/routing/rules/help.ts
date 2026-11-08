@@ -10,6 +10,7 @@ import { declareCommand } from "#cli/contract/rules/commander.ts";
 import { HELP_STYLE, afterText, heading } from "#cli/routing/rules/help-style.ts";
 import { SHARED_OPTIONS, SHARED_OPTION_KEYS } from "#cli/contract/protocol/shared-options.ts";
 import type { CommandRoute, CommandRoutes } from "#cli/routing/protocol/route.ts";
+import { ENVIRONMENT, EXIT_CODES } from "#cli/routing/protocol/conventions.ts";
 
 /** The program every usage line starts with. */
 const PROGRAM = "archboard";
@@ -63,6 +64,7 @@ function readSharedKeys(routes: CommandRoutes): (typeof SHARED_OPTION_KEYS)[numb
 function conventions(routes: CommandRoutes): string {
 	const keys = readSharedKeys(routes);
 	const width = Math.max(...keys.map((key) => sharedSpelling(key).length));
+	const names = Math.max(...ENVIRONMENT.map(({ name }) => name.length));
 	return [
 		"",
 		heading("Shared options (each command's help lists the ones it reads; any other is refused):"),
@@ -75,10 +77,11 @@ function conventions(routes: CommandRoutes): string {
 		"otherwise; diagnostics go to stderr. With `--text` anywhere before `--`, a command",
 		"prints its result as coloured text for a person to read instead of JSON.",
 		"",
-		"Exit codes: 0 ok, 1 error, 2 usage or a refused operation (a claim held, revoked or",
-		"missing, or a revision that moved: read the model again), 3 server unreachable,",
-		"4 browser pane required.",
-		"`check` exits 1 while a check still has a diagnostic or a warning.",
+		heading("Exit codes:"),
+		...EXIT_CODES.map(({ exit, meaning }) => `  ${String(exit)}  ${meaning}`),
+		"",
+		heading("Environment:"),
+		...ENVIRONMENT.map(({ name, meaning }) => `  ${name.padEnd(names)}  ${meaning}`),
 		"",
 		`Inside the archboard checkout, \`./bin/archboard <command>\` runs the CLI from source.`,
 		`Run \`${PROGRAM} help <command>\` or \`${PROGRAM} <command> --help\` for one command.`,

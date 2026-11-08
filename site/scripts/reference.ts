@@ -23,6 +23,7 @@ import {
 	SHARED_OPTIONS,
 	SHARED_OPTION_KEYS,
 } from "../../apps/cli/src/cli/contract/protocol/shared-options.ts";
+import { ENVIRONMENT, EXIT_CODES } from "../../apps/cli/src/cli/routing/protocol/conventions.ts";
 import { RELEASE_PORT } from "../../packages/workspace/src/runtime/services/source-checkout.ts";
 import { DETAILED_FINDINGS, TABLE_ROWS } from "../../actions/check/summary.ts";
 
@@ -285,7 +286,7 @@ const facts = {
 mkdirSync(OUT, { recursive: true });
 writeFileSync(
 	join(OUT, "reference.json"),
-	`${JSON.stringify({ version, facts, shared, commands, schemas, findings, actions: actions() }, null, "\t")}\n`,
+	`${JSON.stringify({ version, facts, exitCodes: EXIT_CODES, environment: ENVIRONMENT, shared, commands, schemas, findings, actions: actions() }, null, "\t")}\n`,
 );
 console.log(
 	`reference: ${commands.length} commands, ${schemas.length} schemas, ${findings.length} findings and skips`,

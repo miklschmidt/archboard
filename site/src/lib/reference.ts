@@ -1,6 +1,10 @@
 // The reference that scripts/reference.ts writes from the CLI's own registry, read at build time.
 // The shapes here are what that script writes; the script is the one place that knows the CLI.
 import { readFileSync } from "node:fs";
+import type {
+	ENVIRONMENT,
+	EXIT_CODES,
+} from "../../../apps/cli/src/cli/routing/protocol/conventions.ts";
 import { join } from "node:path";
 
 export interface OptionEntry {
@@ -83,6 +87,14 @@ export interface ActionEntry {
 
 export interface Reference {
 	readonly version: string;
+	/** Numbers that the guides state: the release port and the job summary limits. */
+	readonly facts: {
+		readonly releasePort: number;
+		readonly summaryRows: number;
+		readonly summaryDetails: number;
+	};
+	readonly exitCodes: typeof EXIT_CODES;
+	readonly environment: typeof ENVIRONMENT;
 	readonly shared: readonly SharedEntry[];
 	readonly commands: readonly CommandEntry[];
 	readonly schemas: readonly SchemaEntry[];

@@ -14,21 +14,6 @@ const headings = [
 	{ depth: 2, slug: "commands", text: "Every command" },
 ];
 
-const exitCodes = [
-	["0", "The command did what it said. A check found no warning and no diagnostic. Information can still print."],
-	["1", "An error. For `archboard check`, a semantic diagnostic or a warning remains."],
-	["2", "A usage error or a refused operation: a claim held, revoked or missing, a revision that moved, or no vault found. Read the model again and retry."],
-	["3", "The Archboard server did not answer and could not start."],
-	["4", "The command needs a browser pane, and none is open."],
-];
-
-const environment = [
-	["ARCHBOARD_URL", "The server that commands talk to. `--url` overrides it. The default is `http://127.0.0.1:4242`."],
-	["ARCHBOARD_NO_AUTOSTART", "Set it to `1` and a command no longer starts the server when nothing answers. It fails with exit 3 instead."],
-	["ARCHBOARD_REPOS", "The registry of checkouts, `repos.json`. The global `language-servers.json` lives beside it."],
-	["XDG_STATE_HOME", "On Linux, moves the state directory: the Codex sign-in, the registry and the logs."],
-	["ARCHBOARD_VAULT", "Refused. A command finds its vault from the working directory or `-C`. Unset it."],
-];
 ---
 
 <Docs
@@ -77,10 +62,10 @@ const environment = [
 			<tr><th scope="col">Exit</th><th scope="col">Meaning</th></tr>
 		</thead>
 		<tbody>
-			{exitCodes.map(([code, text]) => (
+			{reference.exitCodes.map(({ exit, meaning }) => (
 				<tr>
-					<td><code>{code}</code></td>
-					<td set:html={inlineCode(text ?? "")} />
+					<td><code>{exit}</code></td>
+					<td set:html={inlineCode(meaning)} />
 				</tr>
 			))}
 		</tbody>
@@ -102,7 +87,7 @@ const environment = [
 				<tr>
 					<td><code>{option.spellings.join(", ")} &lt;{option.placeholder}&gt;</code></td>
 					<td>
-						<span set:html={inlineCode(option.description)} />
+						<span set:html={inlineCode(/[.!?]$/u.test(option.description) ? option.description : `${option.description}.`)} />
 						{option.default && <> Default <code>{option.default}</code>.</>}
 					</td>
 				</tr>
@@ -122,10 +107,10 @@ const environment = [
 			<tr><th scope="col">Variable</th><th scope="col">What it does</th></tr>
 		</thead>
 		<tbody>
-			{environment.map(([name, text]) => (
+			{reference.environment.map(({ name, meaning }) => (
 				<tr>
 					<td><code>{name}</code></td>
-					<td set:html={inlineCode(text ?? "")} />
+					<td set:html={inlineCode(meaning)} />
 				</tr>
 			))}
 		</tbody>
