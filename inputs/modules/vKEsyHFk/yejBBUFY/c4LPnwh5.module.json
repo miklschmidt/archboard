@@ -29,7 +29,7 @@
     {
       "order": 73000,
       "kind": "render",
-      "label": "each pane's letter, controls and claim",
+      "label": "each pane's letter and controls",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
