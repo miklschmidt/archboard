@@ -47,6 +47,17 @@ function embedsCheckout(answer: CheckReading | undefined): string | undefined {
 }
 
 /**
+ * The root of the checkout that holds the working directory: the repository that the pull
+ * request belongs to. A directory outside Git is its own root.
+ * @param directory The working directory.
+ * @returns The root.
+ */
+function repositoryRoot(directory: string): string {
+	const top = run("git", ["-C", directory, "rev-parse", "--show-toplevel"]);
+	return top.exitCode === 0 && top.stdout.trim() !== "" ? resolve(top.stdout.trim()) : directory;
+}
+
+/**
  * Where files are on this machine, from the registered checkouts.
  * @param cli The archboard program.
  * @param workspace GITHUB_WORKSPACE.
@@ -63,6 +74,7 @@ function locate(
 	const list = run(cli, ["repo", "list"], { cwd: directory });
 	return {
 		workspace,
+		repository: repositoryRoot(directory),
 		roots: checkoutRoots(parseJson(list.stdout)),
 		vault: answer?.vault?.path,
 		home: embedsCheckout(answer) ?? directory,

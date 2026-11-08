@@ -1,8 +1,9 @@
 // The workflow-command annotations of a check's findings. A reviewer sees each finding on the
 // diff of the file it is about. A finding that crosses a network hop rests on evidence in several
 // files, such as the code that reads an address and the manifest that sets it. It is annotated at
-// each of them, and every annotation carries the whole message with both ends and both excerpts,
-// so the reviewer sees the other end wherever they open it. Pure.
+// each of them that is in the checked repository, because GitHub can put an annotation only on a
+// file of the pull request's repository. Every annotation carries the whole message with both ends
+// and both excerpts, so the reviewer sees the other end, even in another repository. Pure.
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
 
 import { excerptText, evidenceDetails, findingFile } from "./evidence.ts";
@@ -51,12 +52,12 @@ function annotationMessage(finding: Finding, details: readonly EvidenceDetail[])
 }
 
 /**
- * The places a finding is annotated: each distinct evidence line in this workspace, else the
- * file the finding names.
+ * The places a finding is annotated: each distinct evidence line in the checked repository, else
+ * the file the finding names.
  * @param finding The finding.
  * @param details Its evidence.
  * @param locations Where files are on this machine.
- * @returns The files and lines. A finding that is in no file of this workspace has one place with no file.
+ * @returns The files and lines. A finding that is in no file of the repository has one place with no file.
  */
 function anchorsOf(
 	finding: Finding,
@@ -65,10 +66,10 @@ function anchorsOf(
 ): { file?: string | undefined; line?: number | undefined }[] {
 	const seen = new Set<string>();
 	const places = details.flatMap((detail) => {
-		const key = `${detail.workspaceFile ?? ""}:${String(detail.line)}`;
-		if (detail.workspaceFile === undefined || seen.has(key)) return [];
+		const key = `${detail.repositoryFile ?? ""}:${String(detail.line)}`;
+		if (detail.repositoryFile === undefined || seen.has(key)) return [];
 		seen.add(key);
-		return [{ file: detail.workspaceFile, line: detail.line }];
+		return [{ file: detail.repositoryFile, line: detail.line }];
 	});
 	if (places.length > 0) return places;
 	return [{ file: findingFile(finding, locations) }];

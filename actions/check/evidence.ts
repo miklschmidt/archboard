@@ -13,8 +13,13 @@ interface SourceFiles {
 
 /** Where the files of a run are. */
 interface Locations {
-	/** GITHUB_WORKSPACE: annotations name files relative to it. */
+	/** GITHUB_WORKSPACE. */
 	readonly workspace: string;
+	/**
+	 * The root of the checkout of the repository that this run checks. GitHub puts an annotation
+	 * on the diff by the file's path in that repository, so annotations name files relative to it.
+	 */
+	readonly repository: string;
 	/** The checkout of each repository identity, by the registered checkouts of this machine. */
 	readonly roots: ReadonlyMap<string, string>;
 	/** The vault's directory, which a diagnostic may name its file against. */
@@ -36,8 +41,8 @@ interface Excerpt {
 interface EvidenceDetail {
 	readonly description: string;
 	readonly line: number;
-	/** The file relative to the workspace, when it is a file of this run's workspace. */
-	readonly workspaceFile?: string | undefined;
+	/** The file relative to the checked repository, when it is a file of that repository. */
+	readonly repositoryFile?: string | undefined;
 	readonly excerpt?: Excerpt | undefined;
 }
 
@@ -45,13 +50,13 @@ const CONTEXT_LINES = 1;
 const MAX_LINE_LENGTH = 200;
 
 /**
- * A path relative to the workspace, with forward slashes.
- * @param workspace The workspace.
+ * A path relative to the checked repository, with forward slashes.
+ * @param repository The root of the checked repository.
  * @param absolute The absolute path.
- * @returns The path, or undefined when it lies outside the workspace.
+ * @returns The path, or undefined when it lies outside the repository.
  */
-function workspaceRelative(workspace: string, absolute: string): string | undefined {
-	const path = relative(workspace, absolute);
+function repositoryRelative(repository: string, absolute: string): string | undefined {
+	const path = relative(repository, absolute);
 	if (path === "" || path.startsWith("..") || isAbsolute(path)) return undefined;
 	return path.split(sep).join("/");
 }
@@ -118,7 +123,7 @@ function describeEnd(end: Evidence, withRepo: boolean, locations: Locations): Ev
 	return {
 		description: `${end.kind}, ${end.resolution}: ${where} (${end.symbol})`,
 		line: end.line,
-		workspaceFile: read && workspaceRelative(locations.workspace, read.absolute),
+		repositoryFile: read && repositoryRelative(locations.repository, read.absolute),
 		excerpt: read && excerptOf(read.text, end.line),
 	};
 }
@@ -141,7 +146,7 @@ function readEnd(
 }
 
 /**
- * The file a finding names, as a path relative to the workspace, when it is in this workspace.
+ * The file a finding names, as a path relative to the checked repository, when it is in it.
  * @param finding The finding.
  * @param locations Where files are on this machine.
  * @returns The path, or undefined.
@@ -163,7 +168,7 @@ function findingFile(finding: Finding, locations: Locations): string | undefined
 	const found = candidates.find(
 		(candidate) => isAbsolute(candidate) && locations.files.read(candidate) !== undefined,
 	);
-	return found === undefined ? undefined : workspaceRelative(locations.workspace, found);
+	return found === undefined ? undefined : repositoryRelative(locations.repository, found);
 }
 
 export {
@@ -171,7 +176,7 @@ export {
 	excerptText,
 	evidenceDetails,
 	findingFile,
-	workspaceRelative,
+	repositoryRelative,
 	type EvidenceDetail,
 	type Excerpt,
 	type Locations,

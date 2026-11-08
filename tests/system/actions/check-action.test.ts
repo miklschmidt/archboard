@@ -33,8 +33,9 @@ beforeAll(() => {
 	answer = JSON.parse(fixture("hop-check.json", { WORKSPACE: workspace }));
 });
 
-const locations = () => ({
+const locations = (repository = join(workspace, "app")) => ({
 	workspace,
+	repository,
 	roots: new Map([
 		["github.com/test/app", join(workspace, "app")],
 		["github.com/test/infra", join(workspace, "infra")],
@@ -51,10 +52,10 @@ describe("the fixture is an answer of the CLI", () => {
 });
 
 describe("a finding that crosses a network hop", () => {
-	test("is annotated at each end, and each annotation carries both ends and both excerpts", () => {
+	test("is annotated at each end in one repository, and each annotation carries both ends and both excerpts", () => {
 		const hop = collectFindings(answer).find((finding) => finding.evidence.length === 2);
 		expect(hop).toBeDefined();
-		const annotations = annotationsFor(hop!, locations());
+		const annotations = annotationsFor(hop!, locations(workspace));
 		expect(annotations.map((one) => [one.properties.file, one.properties.line])).toEqual([
 			["app/src/config.ts", 3],
 			["infra/compose.yaml", 4],
@@ -69,13 +70,22 @@ describe("a finding that crosses a network hop", () => {
 		}
 	});
 
+	test("names files by their path in the checked repository, and annotates no end in another", () => {
+		const hop = collectFindings(answer).find((finding) => finding.evidence.length === 2);
+		const annotations = annotationsFor(hop!, locations());
+		expect(annotations.map((one) => [one.properties.file, one.properties.line])).toEqual([
+			["src/config.ts", 3],
+		]);
+		expect(annotations[0]?.message).toContain("ORDERS_URL: http://orders:8000");
+	});
+
 	test("falls back to the vault file when no end is on this machine", () => {
 		const hop = collectFindings(answer).find((finding) => finding.evidence.length === 2);
 		mkdirSync(join(workspace, "app/.archboard/vault/modules/Shop"), { recursive: true });
 		writeFileSync(join(workspace, "app/.archboard/vault/modules/Shop/rel.module.json"), "{}");
 		const annotations = annotationsFor(hop!, { ...locations(), roots: new Map() });
 		expect(annotations.map((one) => one.properties.file)).toEqual([
-			"app/.archboard/vault/modules/Shop/rel.module.json",
+			".archboard/vault/modules/Shop/rel.module.json",
 		]);
 	});
 });
@@ -155,8 +165,8 @@ describe("the entry", () => {
 	test("a seeded warning annotates the diff, fails the step and sets the outputs", () => {
 		const result = step(1);
 		expect(result.exitCode).toBe(1);
-		expect(result.stdout).toContain("::warning file=app/src/config.ts,line=3,");
-		expect(result.stdout).toContain("::warning file=infra/compose.yaml,line=4,");
+		expect(result.stdout).toContain("::warning file=src/config.ts,line=3,");
+		expect(result.stdout).not.toContain("file=infra/compose.yaml");
 		expect(result.outputs).toContain("exit-code=1");
 		expect(result.outputs).toContain("warnings=1");
 		expect(result.outputs).toContain("information=1");
@@ -184,7 +194,7 @@ describe("the entry", () => {
 			ARCHBOARD_INPUT_ALLOW_CODES: "OTHER_CODE,\nRELATIONSHIP_UNSUPPORTED",
 		});
 		expect(allowed.exitCode).toBe(0);
-		expect(allowed.stdout).toContain("::warning file=app/src/config.ts");
+		expect(allowed.stdout).toContain("::warning file=src/config.ts");
 		expect(allowed.summary).toContain("(allowed)");
 		expect(allowed.summary).toContain("/docs/reference/findings/#relationship-unsupported");
 		const another = {
