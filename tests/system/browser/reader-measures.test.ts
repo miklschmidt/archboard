@@ -1,7 +1,8 @@
 // The owner of where to look across the model: a selection reads the code history with no button,
 // and the Measures dialog shows each of its views from its selector. A table holds every module
 // with its counts, sorts from its column heads and selects a module on its picture, from the
-// keyboard too, and the findings walk one at a time and select each subject.
+// keyboard too, and the findings show together as cards, and as a list whose keys walk them and
+// select each subject.
 
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -87,6 +88,7 @@ function commitCode(root: string, times: number): void {
 test("a selection reads the history, and the Measures dialog shows every module and selects one", async () => {
 	await using resources = new AsyncDisposableStack();
 	const browser = await openReader(resources, "measures", () => undefined);
+	await rememberFindings(browser);
 	commitCode(join(browserTestRoots().ownerRoot, "measures"), 2);
 
 	await pick(browser, "Shop#Gateway");
@@ -225,6 +227,12 @@ test("a selection reads the history, and the Measures dialog shows every module 
 		),
 	).toBe("true");
 	await browser.run(["press", "Escape"]);
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('${DIALOG}') === null`),
+		Boolean,
+		"the dialog closed",
+		WAIT,
+	);
 	expect(await reads(browser)).toBe(1);
 	await walkWarnings(browser);
 	await pageFindings(browser);
@@ -252,44 +260,59 @@ async function openView(
 }
 
 /**
- * The findings of the dialog walk one at a time, and each step selects its subject.
- * @param browser The reader, with the findings of walkWarnings remembered.
+ * The findings of the dialog show together as cards. The list walks them with the arrow keys, and
+ * each step selects its subject.
+ * @param browser The reader, with the findings of rememberFindings read.
  */
 async function pageFindings(browser: AgentBrowserSession): Promise<void> {
 	await openMeasures(browser, "code");
-	const position = `document.querySelector('[data-slot="code-evidence-position"]')?.textContent`;
 	await pollUntil(
-		() => browser.eval<string | null>(`${position} ?? null`),
-		(shown) => shown === "1 of 2",
-		"the first finding",
+		() =>
+			browser.eval<number>(
+				`document.querySelectorAll('[data-slot="code-finding-cards"] [data-slot="code-finding"]').length`,
+			),
+		(cards) => cards === 2,
+		"every finding as a card",
 		WAIT,
 	);
-	for (const [id, at] of [
-		["Shop#Worker", "2 of 2"],
-		["Shop#Handler", "1 of 2"],
+	await browser.run(["click", '[data-slot="code-findings-layout"] [data-choice="list"]']);
+	await pollUntil(
+		() =>
+			browser.eval<number>(`document.querySelectorAll('[data-slot="code-finding-row"]').length`),
+		(rows) => rows === 2,
+		"a row for each finding",
+		WAIT,
+	);
+	await browser.eval(
+		`document.querySelector('[data-slot="code-finding-row"][aria-current="true"]').focus()`,
+	);
+	for (const [key, id] of [
+		["ArrowDown", "Shop#Worker"],
+		["ArrowUp", "Shop#Handler"],
 	] as const) {
-		await browser.run(["click", '[data-slot="code-evidence-next"]']);
+		await browser.run(["press", key]);
 		await pollUntil(
 			() =>
-				browser.eval<string>(
-					`${position} + ' ' + document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id')`,
+				browser.eval<string | null>(
+					`document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id') ?? null`,
 				),
-			(shown) => shown === `${at} ${id}`,
+			(shown) => shown === id,
 			"the next finding and its subject",
 			WAIT,
 		);
 	}
 	expect(
 		await browser.eval<string | null>(`document.activeElement?.getAttribute('data-slot') ?? null`),
-	).toBe("code-evidence-next");
+	).toBe("code-finding-row");
 	await browser.run(["press", "Escape"]);
 }
 
 /**
- * A warning cycle survives selection and a move to another scope.
+ * Have the page read two remembered warnings for the reading it shows, so that the code view finds
+ * the reading checked and starts no pass of its own.
  * @param browser The reader.
  */
-async function walkWarnings(browser: AgentBrowserSession): Promise<void> {
+async function rememberFindings(browser: AgentBrowserSession): Promise<void> {
 	const vault = join(browserTestRoots().ownerRoot, "measures", ".archboard", "vault");
 	const base = await browser.eval<string>("location.origin");
 	const model: ArchitectureModelRead = await (
@@ -322,6 +345,13 @@ async function walkWarnings(browser: AgentBrowserSession): Promise<void> {
 		"--body",
 		JSON.stringify({ success: true, ...remembered }),
 	]);
+}
+
+/**
+ * A warning cycle survives selection and a move to another scope.
+ * @param browser The reader, with the findings of rememberFindings read.
+ */
+async function walkWarnings(browser: AgentBrowserSession): Promise<void> {
 	const warning = '[data-slot="model-panel"] [data-slot="code-warning-count"]';
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('${warning}')?.matches(':enabled')`),
