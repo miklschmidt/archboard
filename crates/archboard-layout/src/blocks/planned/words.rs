@@ -7,7 +7,7 @@ use std::{collections::BTreeMap, rc::Rc};
 
 use super::{
     Refused,
-    channel::{Probe, shared_junction},
+    channel::{Probe, TWO_WAY, shared_junction},
     endpoint_choices::ends,
     fixed::{Search, choose, feasible, placement, settled},
     geometry::{clean, length},
@@ -53,7 +53,7 @@ fn trunk_lines(model: &Model<'_>) -> BTreeMap<usize, bool> {
             let end = if part_first { to } else { from };
             let line = &model.edges[edge];
             let kind = line.option("archboard.relationship.kind");
-            let two_way = line.option("archboard.relationship.two-way");
+            let two_way = line.option(TWO_WAY);
             trunks
                 .entry((end, part_first, kind, two_way))
                 .or_default()

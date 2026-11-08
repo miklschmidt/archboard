@@ -39,8 +39,12 @@ pub(super) fn settled(
     topology: &Topology,
     shape: &mut Shape,
 ) -> Result<Placed, super::Refused> {
+    let two_way: Vec<&str> = (model.edges.iter())
+        .filter(|edge| edge.option(super::channel::TWO_WAY).is_some())
+        .map(|edge| edge.id.as_str())
+        .collect();
     for clear in [8.0, 12.0, 16.0, 24.0, 32.0] {
-        if let Some(drawing) = super::compact::drawing(shape, clear)
+        if let Some(drawing) = super::compact::drawing(shape, clear, &two_way)
             && let Ok(mut compact) = placement(model, drawing)
         {
             compact.trunk = std::rc::Rc::clone(&shape.trunk);

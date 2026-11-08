@@ -117,7 +117,8 @@ impl Found {
     }
 
     /// The second keeps its order past the first, with its room or the room it has. A line
-    /// joining another before a card keeps the room of a junction from that card.
+    /// that joins or leaves another beside an arrowhead on a card keeps a junction's room
+    /// from that card.
     fn keep(&mut self, first: &Piece, second: &Piece) {
         let gap = second.low - first.high;
         let mut least = room(first.kind, second.kind, self.reach);
@@ -297,8 +298,14 @@ fn shortening(
 }
 
 /// Move everything on one axis as near the start of the page as its rules allow.
-fn squeeze(drawing: &mut Placed, axis: Axis, stations: &[Vec<usize>], reach: f64) -> bool {
-    let mut sheet = Sheet::of(drawing, axis);
+fn squeeze(
+    drawing: &mut Placed,
+    axis: Axis,
+    stations: &[Vec<usize>],
+    reach: f64,
+    two_way: &[&str],
+) -> bool {
+    let mut sheet = Sheet::of(drawing, axis, two_way);
     reach_through(&mut sheet.pieces, reach);
     let (rules, bodies) = rules_of(&sheet.pieces, sheet.movers, reach);
     let start = sheet.pieces.iter().map(|piece| piece.low);
@@ -321,17 +328,17 @@ fn squeeze(drawing: &mut Placed, axis: Axis, stations: &[Vec<usize>], reach: f64
 }
 
 /// A routed drawing with the space that nothing uses taken out, if any was. Every run keeps
-/// a clearance of `clear` on each side. The caller must place the labels again and apply the
-/// complete geometry guard.
-pub(super) fn drawing(shape: &Shape, clear: f64) -> Option<Placed> {
+/// a clearance of `clear` on each side. `two_way` names the lines with an arrowhead at their
+/// start. The caller must place the labels again and apply the complete geometry guard.
+pub(super) fn drawing(shape: &Shape, clear: f64, two_way: &[&str]) -> Option<Placed> {
     let mut drawing = shape.routed();
     let reach = 2.0 * clear;
     let columns = stations(&drawing, Axis::X);
     let rows = stations(&drawing, Axis::Y);
     let mut moved = false;
     for _ in 0..PASSES {
-        moved |= squeeze(&mut drawing, Axis::X, &columns, reach);
-        moved |= squeeze(&mut drawing, Axis::Y, &rows, reach);
+        moved |= squeeze(&mut drawing, Axis::X, &columns, reach, two_way);
+        moved |= squeeze(&mut drawing, Axis::Y, &rows, reach, two_way);
     }
     moved.then_some(drawing)
 }

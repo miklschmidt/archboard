@@ -54,7 +54,7 @@ fn a_busy_row_leaves_the_gap_of_a_quiet_row_alone() {
         titles: Vec::new(),
         routed: None,
     });
-    let drawn = drawing(&shape, 8.0).expect("a gap to close");
+    let drawn = drawing(&shape, 8.0, &[]).expect("a gap to close");
     let gap = |one: usize, two: usize| {
         let (first, second) = (drawn.cards[one].bx, drawn.cards[two].bx);
         second.x - first.x - first.width
@@ -86,9 +86,38 @@ fn a_line_joining_another_before_their_card_keeps_a_junctions_room() {
         titles: Vec::new(),
         routed: None,
     });
-    let drawn = drawing(&shape, 8.0).expect("room to take out");
+    let drawn = drawing(&shape, 8.0, &[]).expect("room to take out");
     let join = drawn.edges[1].points[1].y;
     assert!(drawn.cards[1].bx.y - join >= JOIN_ROOM);
+    assert!(drawn.cards[1].bx.y < 500.0);
+}
+
+// Architecture drawing: lines that left one card on one stretch parted just below it,
+// right beside the back arrowhead of the two-way line among them, here `straight`.
+#[test]
+fn a_line_leaving_another_after_their_card_keeps_a_junctions_room() {
+    let line = |id: &str, points: &[(f64, f64)]| PlacedLine {
+        id: id.into(),
+        points: points.iter().map(|&(x, y)| Point { x, y }).collect(),
+        label: None,
+    };
+    let shape = Shape::new(Placed {
+        width: 1000.0,
+        height: 1000.0,
+        cards: vec![card("source", 300.0, 20.0), card("target", 300.0, 500.0)],
+        frames: Vec::new(),
+        regions: Vec::new(),
+        edges: vec![
+            line("straight", &[(400.0, 120.0), (400.0, 500.0)]),
+            line("parting", &[(400.0, 120.0), (400.0, 300.0), (600.0, 300.0)]),
+        ],
+        titles: Vec::new(),
+        routed: None,
+    });
+    let drawn = drawing(&shape, 8.0, &["straight"]).expect("room to take out");
+    let source = drawn.cards[0].bx;
+    let part = drawn.edges[1].points[1].y;
+    assert!(part - (source.y + source.height) >= JOIN_ROOM);
     assert!(drawn.cards[1].bx.y < 500.0);
 }
 
@@ -118,10 +147,11 @@ fn branches_that_join_from_opposite_sides_keep_a_junctions_room() {
         titles: Vec::new(),
         routed: None,
     });
-    let drawn = drawing(&shape, 8.0).expect("room to take out");
+    let drawn = drawing(&shape, 8.0, &[]).expect("room to take out");
     assert!(super::super::junctions::readable(
         &drawn.edges[0].points,
         &drawn.edges[1].points,
+        false,
         true,
     ));
     assert!(drawn.cards[2].bx.y < 500.0);
@@ -149,7 +179,7 @@ fn coincident_whole_routes_need_no_junction_room() {
         titles: Vec::new(),
         routed: None,
     });
-    let drawn = drawing(&shape, 8.0).expect("room to take out");
+    let drawn = drawing(&shape, 8.0, &[]).expect("room to take out");
     let points = &drawn.edges[0].points;
     assert!(points[3].y - points[2].y < JOIN_ROOM);
 }
@@ -233,11 +263,12 @@ fn one_incoming_run_keeps_room_for_each_target_join() {
             ))
     );
     assert!(super::super::runs::freeze(&model, &shape.routes).is_some());
-    let drawn = drawing(&shape, 8.0).expect("room to take out");
+    let drawn = drawing(&shape, 8.0, &[]).expect("room to take out");
     for (branch, straight) in [(0, 2), (1, 3)] {
         assert!(super::super::junctions::readable(
             &drawn.edges[branch].points,
             &drawn.edges[straight].points,
+            false,
             true
         ));
     }
@@ -262,7 +293,7 @@ fn alignment_cannot_chain_small_gaps_into_a_large_cost() {
         titles: Vec::new(),
         routed: None,
     });
-    let drawn = drawing(&shape, 8.0).expect("room between the cards");
+    let drawn = drawing(&shape, 8.0, &[]).expect("room between the cards");
     for row in drawn.cards.as_chunks::<2>().0 {
         let gap = row[1].bx.x - row[0].bx.x - row[0].bx.width;
         assert!(gap <= CARD_GAP + STAY_ALIGNED);

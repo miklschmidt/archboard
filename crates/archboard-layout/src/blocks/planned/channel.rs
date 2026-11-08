@@ -13,6 +13,9 @@ use super::ports::{center, port};
 use super::shape::{LINE_CLEAR, Shape};
 use super::topology::Topology;
 
+/// The option a line carries when it draws an arrowhead at both ends.
+pub(super) const TWO_WAY: &str = "archboard.relationship.two-way";
+
 pub(super) fn feasible(
     model: &Model<'_>,
     topology: &Topology,
@@ -191,6 +194,8 @@ struct Junction<'a> {
     shared: bool,
     source: bool,
     target: bool,
+    /// Whether the two share their source and either draws an arrowhead there.
+    start: bool,
 }
 impl<'a> Junction<'a> {
     fn new(
@@ -200,6 +205,8 @@ impl<'a> Junction<'a> {
         line: &'a PlacedLine,
     ) -> Option<Self> {
         let &other = model.edge_index.get(line.id.as_str())?;
+        let source = model.ends[index].0 == model.ends[other].0;
+        let two_way = |edge: usize| model.edges[edge].option(TWO_WAY).is_some();
         Some(Self {
             line,
             bounds: super::junctions::Envelope::new(&line.points),
@@ -207,15 +214,21 @@ impl<'a> Junction<'a> {
                 .iter()
                 .flatten()
                 .any(|fan| topology.memberships[other].contains(&Some(*fan))),
-            source: model.ends[index].0 == model.ends[other].0,
+            source,
             target: model.ends[index].1 == model.ends[other].1,
+            start: source && (two_way(index) || two_way(other)),
         })
     }
     fn clear(&self, points: &[Point], bounds: super::junctions::Envelope) -> bool {
         bounds.apart(self.bounds)
             || ((!self.shared
                 || super::junctions::sharing(points, &self.line.points, self.source, self.target)
-                    && super::junctions::readable(points, &self.line.points, self.target))
+                    && super::junctions::readable(
+                        points,
+                        &self.line.points,
+                        self.start,
+                        self.target,
+                    ))
                 && super::junctions::ordered(points, &self.line.points, self.shared))
     }
 }

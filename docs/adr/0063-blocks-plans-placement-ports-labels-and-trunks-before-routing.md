@@ -38,6 +38,7 @@ No unchecked route reaches the painter.
 
 After selecting routes, the planner closes the space that nothing uses while preserving card sizes, route topology, and clearance around bends and boundaries.
 A line that joins another before the card they enter keeps the room the guard asks of that junction.
+A line that leaves another after the card they start from keeps the same room when one of them draws an arrowhead there, as a two-way line does.
 TASK-559.37 replaced the bands, which had to stand empty across the whole page, with a contraction.
 In it, each piece moves on its own and keeps its order against what shares its slab.
 It places labels again on those shorter runs and applies the same complete geometry guard.

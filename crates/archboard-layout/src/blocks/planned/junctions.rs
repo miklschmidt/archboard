@@ -50,7 +50,8 @@ fn shared_only_at_ends(a: &[Point], b: &[Point], prefix: f64, suffix: f64) -> bo
     true
 }
 
-fn common_prefix(a: &[Point], b: &[Point]) -> f64 {
+/// The length of ink two routes share on their way from the same endpoint.
+pub(super) fn common_prefix(a: &[Point], b: &[Point]) -> f64 {
     if a.first() != b.first() || a.is_empty() {
         return 0.0;
     }
@@ -90,17 +91,18 @@ pub(super) fn common_suffix(a: &[Point], b: &[Point]) -> f64 {
     )
 }
 
-/// How far before the box it enters a target fan joins at the nearest: the arrow
-/// and the bend behind it, then a bend and as long a straight again for the join.
+/// How far from an arrowhead on the box at its shared end a fan joins or parts at the
+/// nearest: the arrow and the bend behind it, then a bend and as long a straight again.
 pub(super) const JOIN_ROOM: f64 = APPROACH_STRAIGHT + 3.0 * BEND_RADIUS;
 
-/// A target fan joins a visible run before the box it enters, so its junction
-/// never sits beside the arrowhead. Where one branch runs wholly along the other,
-/// they never join.
-pub(super) fn readable(a: &[Point], b: &[Point], target: bool) -> bool {
-    let joined = if target { common_suffix(a, b) } else { 0.0 };
+/// A fan joins or parts on a visible run beside an arrowhead at its shared end, so its
+/// junction never sits beside that arrowhead, whichever way the lines run. A target fan
+/// always ends on arrowheads. A source fan starts on one when a line of it runs both
+/// ways, so `start` says so. Where one branch runs wholly along the other, they never join.
+pub(super) fn readable(a: &[Point], b: &[Point], start: bool, target: bool) -> bool {
     let room = JOIN_ROOM.min(super::geometry::length(a).min(super::geometry::length(b)));
-    joined == 0.0 || joined >= room - 1e-6
+    let clear = |joined: f64| joined == 0.0 || joined >= room - 1e-6;
+    (!start || clear(common_prefix(a, b))) && (!target || clear(common_suffix(a, b)))
 }
 
 pub(super) fn ordered(a: &[Point], b: &[Point], sharing: bool) -> bool {
@@ -246,14 +248,33 @@ mod tests {
             (875.29, 301.6),
             (855.27, 301.6),
         ]);
-        assert!(!readable(&above, &below, true));
-        assert!(readable(&above, &beside, true));
+        assert!(!readable(&above, &below, false, true));
+        assert!(readable(&above, &beside, false, true));
         // Branches that meet from both sides join well before the box.
         let far = |from: f64| path(&[(915.29, from), (915.29, 301.6), (855.27, 301.6)]);
-        assert!(readable(&far(165.6), &far(1038.71), true));
+        assert!(readable(&far(165.6), &far(1038.71), false, true));
         // Parallel lines between two near cards share their whole short run and never join.
         let short = path(&[(150.0, 92.0), (150.0, 116.0)]);
-        assert!(readable(&short, &short, true));
+        assert!(readable(&short, &short, true, true));
+    }
+
+    /// The owner's Architecture drawing: a two-way line leaves its card with four
+    /// others and draws its back arrowhead where they share their first stretch. A
+    /// source fan without such an arrowhead parts where it likes.
+    #[test]
+    fn branches_of_a_source_fan_part_on_a_visible_run_after_the_box() {
+        let down = path(&[(1177.0, 584.22), (1177.0, 948.81)]);
+        let right = |turn: f64| {
+            path(&[
+                (1177.0, 584.22),
+                (1177.0, turn),
+                (1314.0, turn),
+                (1314.0, 961.79),
+            ])
+        };
+        assert!(!readable(&right(604.24), &down, true, false));
+        assert!(readable(&right(640.0), &down, true, false));
+        assert!(readable(&right(604.24), &down, false, false));
     }
 
     #[test]
