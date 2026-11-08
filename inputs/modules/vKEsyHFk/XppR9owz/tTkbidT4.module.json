@@ -3,10 +3,10 @@
   "name": "Repository setup",
   "kind": "function",
   "responsibility": "Makes the .archboard/vault of the git checkout that holds the directory when it has none, and takes the block an earlier version wrote out of CLAUDE.md and AGENTS.md, changing nothing else in the file",
-  "description": "The existing installer initializes new vaults through the shared canonical initializer. Existing vaults receive an explicit migration route without automatic rewriting.",
+  "description": "init makes new vaults through the shared canonical initializer. Existing vaults receive an explicit migration route without automatic rewriting.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/commands/install-skill/operations/repo-setup.ts",
+    "path": "apps/cli/src/cli/commands/init/operations/repo-setup.ts",
     "symbol": "setUpRepository"
   },
   "schemaVersion": 1,

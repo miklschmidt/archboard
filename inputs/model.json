@@ -3,25 +3,25 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "lOtqXMAp",
-    "name": "A repository names its language servers in a committed file",
-    "summary": "A checkout's committed .archboard/language-servers.json names its language servers, and a global file fills the rest, so a repository that installs its servers through nix, devenv or devbox needs no setup on each machine or in CI.",
+    "id": "0lFlN04l",
+    "name": "archboard init sets a repository up and hands its language servers to an agent",
+    "summary": "install-skill becomes init: the skills CLI installs the skills for Codex and, when it is installed, Claude Code, and the language servers go to an agent that confirms its plan with the user, because their setup depends on the repository.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "backlog/tasks/task-599 - A-repository-configures-its-language-servers-in-a-committed-file.md"
+        "path": "backlog/tasks/task-601 - `archboard-init`-installs-the-skills-with-the-skills-CLI-and-hands-language-server-setup-to-an-agent.md"
       },
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0046-boards-carry-anchors-and-the-code-check-reads-them-on-request.md"
+        "path": "docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
       }
     ],
-    "predecessor": "XgrNvwDY",
-    "baseline": "b3fec8144068098eaf342b1e9f307eb421adbdff",
-    "createdAt": "2026-11-07T23:52:46.281Z",
-    "adoptedAt": "2026-11-07T23:56:42.330Z",
-    "reason": "Implemented on the TASK-599 branch: the code check reads a checkout's committed .archboard/language-servers.json, else the global file, and repo language-server writes them. The owner asked for the implementing PR, which authorizes this adoption on its branch.",
-    "previousCurrent": "XgrNvwDY"
+    "predecessor": "lOtqXMAp",
+    "baseline": "4ae2b27c306e674fef3dd13e702deb4cbfab2e96",
+    "createdAt": "2026-11-08T00:26:22.171Z",
+    "adoptedAt": "2026-11-08T00:34:23.422Z",
+    "reason": "Implemented on the TASK-601 branch: archboard init installs the skills with the skills CLI, sets the repository up and hands its language servers to an agent, and the skill evaluation registers its checkout instead of running the installer. The owner asked for the implementing PR, which authorizes this adoption on its branch.",
+    "previousCurrent": "lOtqXMAp"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
