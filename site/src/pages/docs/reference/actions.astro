@@ -10,14 +10,14 @@ const usage: Record<string, string> = {
 	check: `- uses: actions/checkout@v5
 - uses: miklschmidt/archboard/actions/check@main
   with:
-    version: 0.1.0
+    version: 0.2.0
     fail-on: warning`,
 	"pull-request": `- uses: actions/checkout@v5
   with:
     fetch-depth: 0
 - uses: miklschmidt/archboard/actions/pull-request@main
   with:
-    version: 0.1.0
+    version: 0.2.0
     out-of-plan: warn`,
 };
 const guide: Record<string, { path: string; label: string }> = {
