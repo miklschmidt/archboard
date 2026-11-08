@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-07T12:43:00Z'
-updated_date: '2026-11-08T12:24:00Z'
+updated_date: '2026-11-08T12:32:00Z'
 labels: []
 dependencies:
   - TASK-591
@@ -39,6 +39,8 @@ On relay PR #1 the check Action's annotation sits at services/intake/src/accept.
 Review: quoted arguments preserve backslashes (b7ec443ea). Evidence uses the checked repository even when the registry chooses another checkout (cce76b346, 6e23564ed). The summary reports omitted details and points to the complete JSON report (01fcba8e2). The docs now state the summary limits. No architecture proposal is needed because the Action responsibilities stay the same.
 
 Review: the canonical Check Action description now limits annotations to the checked repository and keeps evidence from both ends. The public model edit applied with reconciliation false. Semantic and code checks passed. The embeds check refreshed only the two README SVG recipes and returned no findings.
+
+Final review validation: all 32 Action tests pass under Node 22.18.0. Both TypeScript projects, focused Action and test lint, and repository formatting pass. The docs site builds with no errors, warnings or hints. Semantic inspection returns no diagnostics. Code inspection exits 0 with existing informational findings and skipped evidence. The embeds check returns no findings. No push or merge occurs in this review.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
