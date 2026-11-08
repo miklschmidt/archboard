@@ -70,7 +70,13 @@ const blocks = descriptionBlocks(command.description);
 				block.kind === "paragraph" ? (
 					<p set:html={inlineCode(block.text)} />
 				) : block.kind === "head" ? (
-					<p class="block-head">{block.text}</p>
+					<p class="block-head" set:html={inlineCode(block.text)} />
+				) : block.ordered ? (
+					<ol>
+						{block.items.map((item) => (
+							<li set:html={inlineCode(item)} />
+						))}
+					</ol>
 				) : (
 					<ul>
 						{block.items.map((item) => (
@@ -255,7 +261,8 @@ const blocks = descriptionBlocks(command.description);
 		font-weight: 600;
 		color: var(--ink);
 	}
-	.block-head + :global(ul) {
+	.block-head + :global(ul),
+	.block-head + :global(ol) {
 		margin-top: 0.5em;
 	}
 	.command table {

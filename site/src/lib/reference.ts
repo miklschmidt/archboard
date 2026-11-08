@@ -159,31 +159,62 @@ export function synopsis(command: CommandEntry): string {
 /** A block of a description: a paragraph, a list, or a short head over the block after it. */
 export type DescriptionBlock =
 	| { kind: "paragraph"; text: string }
-	| { kind: "list"; items: string[] }
+	| { kind: "list"; ordered: boolean; items: string[] }
 	| { kind: "head"; text: string };
 
+/** A list item's marker, as the CLI's help writes it: `-`, `*` or a number and a period. */
+const LIST_ITEM = /^(?:([-*])|\d+\.)\s+/u;
+
 /**
- * A command's description as blocks. The CLI writes a description as paragraphs and as lists
- * whose items start with "- ", under a line that ends with a colon.
+ * A command's description as blocks, in the format that the CLI's terminal help also reads
+ * (`apps/cli/src/cli/routing/rules/help-style.ts`): a blank line starts a paragraph, a line
+ * that ends with a colon is a head, and a line that starts with `-`, `*` or `1.` is a list item.
  */
 export function descriptionBlocks(text: string): DescriptionBlock[] {
 	const blocks: DescriptionBlock[] = [];
+	let joinable = false;
 	for (const line of text.split("\n")) {
 		const trimmed = line.trim();
-		if (trimmed === "") continue;
 		const last = blocks.at(-1);
-		if (trimmed.startsWith("- ")) {
-			const item = trimmed.slice(2);
-			if (last?.kind === "list") last.items.push(item);
-			else blocks.push({ kind: "list", items: [item] });
+		if (trimmed === "") {
+			joinable = false;
+			continue;
+		}
+		const item = LIST_ITEM.exec(trimmed);
+		if (item !== null) {
+			const ordered = item[1] === undefined;
+			const words = trimmed.slice(item[0].length);
+			if (last?.kind === "list" && last.ordered === ordered) last.items.push(words);
+			else blocks.push({ kind: "list", ordered, items: [words] });
+			joinable = false;
 		} else if (trimmed.endsWith(":") && trimmed.length < 90) {
 			blocks.push({ kind: "head", text: trimmed.slice(0, -1) });
+			joinable = false;
+		} else if (joinable && last?.kind === "paragraph") {
+			// A line break inside a paragraph is only where the source wrapped it.
+			last.text = `${last.text} ${trimmed}`;
 		} else {
 			blocks.push({ kind: "paragraph", text: trimmed });
+			joinable = true;
 		}
 	}
 	return blocks;
 }
+
+/** A flag, a code in capitals, a file name with a known extension, or a path with a slash. */
+const BARE_CODE = new RegExp(
+	String.raw`(^|[\s(])(` +
+		[
+			String.raw`--[a-z][a-z0-9-]*(?:=[^\s,;)]+)?`,
+			String.raw`-C\b`,
+			String.raw`[A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+`,
+			String.raw`(?!Node\.js)[\w.@~-]*[\w-]\.(?:md|json|ya?ml|ts|js|svg|png|wav|mp4|webm|toml|lock)`,
+			// A path's segments never end in a period, so the period that ends a sentence stays out.
+			String.raw`(?:&lt;[\w-]+&gt;|[\w.~-]*)?(?:\/[\w.*&;-]*[\w*;-])+\/?`,
+		].join("|") +
+		String.raw`)(?=[\s,.;:)]|$)`,
+	"gu",
+);
 
 /**
  * Words with `code` in backticks, and the codes and commands that the CLI writes bare, set as
@@ -191,12 +222,16 @@ export function descriptionBlocks(text: string): DescriptionBlock[] {
  */
 export function inlineCode(text: string): string {
 	const escaped = text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+	// Spans in backticks first, then, outside them, the words the CLI writes bare: flags, codes in
+	// capitals, file names and paths.
 	return escaped
-		.replace(/`([^`]+)`/g, "<code>$1</code>")
-		.replace(
-			/(^|[\s(])(--[a-z][a-z0-9-]*(?:=[^\s,;)]+)?|-C\b|[A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+)(?=[\s,.;:)]|$)/g,
-			"$1<code>$2</code>",
-		);
+		.split(/(`[^`]+`)/u)
+		.map((part) =>
+			part.startsWith("`") && part.endsWith("`") && part.length > 1
+				? `<code>${part.slice(1, -1)}</code>`
+				: part.replace(BARE_CODE, "$1<code>$2</code>"),
+		)
+		.join("");
 }
 
 /** What a command needs and does, in a reader's words. */
