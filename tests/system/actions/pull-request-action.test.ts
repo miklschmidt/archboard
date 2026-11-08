@@ -30,10 +30,11 @@ function repository(full: string) {
 /**
  * One changed part, as a footprint lists it.
  * @param name The module's name.
+ * @param id The module's stable identity.
  * @returns The list of that one part.
  */
-function part(name: string) {
-	return [{ subject: { name } }];
+function part(name: string, id = `m#${name.toLowerCase()}`) {
+	return [{ subject: { id, name } }];
 }
 
 const states: ModelState[] = [
@@ -77,7 +78,7 @@ describe("the plan of a proposal", () => {
 	test("names both ends of a new relationship, and only modules bound to code", () => {
 		const plan = proposalPlan(base, head);
 		expect(plan.comparison).toEqual(["relationships: 1 added"]);
-		expect([...plan.named].toSorted()).toEqual(["Billing", "Intake"]);
+		expect([...plan.named.values()].toSorted()).toEqual(["Billing", "Intake"]);
 	});
 
 	test("sets the changed modules of the footprint against that plan, for a draft or an adopted proposal", () => {
@@ -86,20 +87,52 @@ describe("the plan of a proposal", () => {
 			plannedAndChanged: ["Intake"],
 			outsidePlan: ["Catalog"],
 			plannedUnchanged: ["Billing"],
-			changed: ["Intake", "Catalog"],
+			changed: ["Catalog", "Intake"],
 		};
 		expect(
 			planBuckets({ namedAndChanged: part("Intake"), changedNotNamed: part("Catalog") }, named),
 		).toEqual(expected);
 		const footprint = {
-			changed: [{ subject: { name: "Intake" } }, { subject: { name: "Catalog" } }],
+			changed: [...part("Intake"), ...part("Catalog")],
 		};
 		expect(planBuckets(footprint, named)).toEqual({
 			plannedAndChanged: ["Intake"],
 			outsidePlan: ["Catalog"],
 			plannedUnchanged: ["Billing"],
-			changed: ["Intake", "Catalog"],
+			changed: ["Catalog", "Intake"],
 		});
+	});
+
+	test("joins by identity when names are ambiguous, and sorts each bucket", () => {
+		const named = new Map([
+			["planned", "API"],
+			["billing", "Billing"],
+			["catalog", "Catalog"],
+			["removed", "Gone"],
+		]);
+		const buckets = planBuckets(
+			{
+				changed: [...part("Zulu", "z"), ...part("API", "unplanned"), ...part("Billing", "billing")],
+				skipped: part("Gone", "removed"),
+			},
+			named,
+		);
+		expect(buckets).toEqual({
+			plannedAndChanged: ["Billing"],
+			outsidePlan: ["API", "Zulu"],
+			plannedUnchanged: ["API", "Catalog"],
+			changed: ["API", "Billing", "Zulu"],
+		});
+		expect(
+			decideOutOfPlan({
+				mode: "fail",
+				hasProposal: true,
+				footprintRead: true,
+				outside: buckets.outsidePlan,
+				labels: [],
+				overrideLabel: "override",
+			}).failed,
+		).toBe(true);
 	});
 });
 

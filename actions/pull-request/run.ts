@@ -70,7 +70,7 @@ function footprintBase(context: Context): string {
 }
 
 /** The plan of a pull request with no proposal. */
-const NO_PLAN: ProposalPlan = { comparison: [], named: new Set() };
+const NO_PLAN: ProposalPlan = { comparison: [], named: new Map() };
 
 /**
  * The plan of the proposal: what it changes against the base's Current, as the pictures show.

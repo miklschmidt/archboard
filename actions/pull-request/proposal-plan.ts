@@ -65,7 +65,7 @@ interface Compared {
 
 /** The part of a footprint answer that names modules. */
 interface FootprintPart {
-	readonly subject: { readonly name: string };
+	readonly subject: { readonly id: string; readonly name: string };
 }
 
 /**
@@ -93,8 +93,8 @@ interface Buckets {
 interface ProposalPlan {
 	/** What it changes, as phrases such as "modules: 1 changed". */
 	readonly comparison: string[];
-	/** The names of the modules it names that are bound to code. */
-	readonly named: ReadonlySet<string>;
+	/** The bound modules it names, by stable identity. Names alone can be ambiguous. */
+	readonly named: ReadonlyMap<string, string>;
 }
 
 /**
@@ -234,7 +234,7 @@ function proposalPlan(baseModel: ModelReading, headModel: ModelReading): Proposa
 	];
 	return {
 		comparison: describeComparison(changed),
-		named: new Set([...ids].flatMap((id) => bound.get(id) ?? [])),
+		named: new Map([...bound].filter(([id]) => ids.has(id))),
 	};
 }
 
@@ -245,19 +245,28 @@ function proposalPlan(baseModel: ModelReading, headModel: ModelReading): Proposa
  * @param named The modules that the plan names.
  * @returns The three buckets.
  */
-function planBuckets(footprint: FootprintReading, named: ReadonlySet<string>): Buckets {
+function planBuckets(footprint: FootprintReading, named: ReadonlyMap<string, string>): Buckets {
 	const parts = [
 		...(footprint.changed ?? []),
 		...(footprint.namedAndChanged ?? []),
 		...(footprint.changedNotNamed ?? []),
 	];
-	const changed = [...new Set(parts.map((part) => part.subject.name))];
-	const unread = new Set((footprint.skipped ?? []).map((part) => part.subject.name));
+	const changed = new Map(parts.map((part) => [part.subject.id, part.subject.name]));
+	const unread = new Set((footprint.skipped ?? []).map((part) => part.subject.id));
 	return {
-		plannedAndChanged: changed.filter((name) => named.has(name)),
-		outsidePlan: changed.filter((name) => !named.has(name)),
-		plannedUnchanged: [...named].filter((name) => !changed.includes(name) && !unread.has(name)),
-		changed,
+		plannedAndChanged: [...changed]
+			.filter(([id]) => named.has(id))
+			.map(([, name]) => name)
+			.toSorted(),
+		outsidePlan: [...changed]
+			.filter(([id]) => !named.has(id))
+			.map(([, name]) => name)
+			.toSorted(),
+		plannedUnchanged: [...named]
+			.filter(([id]) => !changed.has(id) && !unread.has(id))
+			.map(([, name]) => name)
+			.toSorted(),
+		changed: [...changed.values()].toSorted(),
 	};
 }
 
