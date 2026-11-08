@@ -142,19 +142,6 @@ function PaneStages(props: PaneStagesProps): JSX.Element {
 }
 
 /**
- * The stage's classes: the inset gold ring is drawn only while two panes
- * share the centre, as a layer over the pane so the header, the picture and
- * the sidebar, each with a ground of its own, never cover it.
- * @param framed Whether the active stage should carry the ring.
- * @returns The class list.
- */
-function stageClass(framed: boolean): string {
-	return framed
-		? "relative flex min-h-0 min-w-0 flex-1 flex-col outline-none data-active:after:pointer-events-none data-active:after:absolute data-active:after:inset-0 data-active:after:z-30 data-active:after:ring-1 data-active:after:ring-primary-mark data-active:after:ring-inset"
-		: "relative flex min-h-0 min-w-0 flex-1 flex-col outline-none";
-}
-
-/**
  * Whether two shell panes say the same: each part is the same one. The shell
  * view makes every pane new for any piece of news, and a pane whose own parts
  * did not change keeps the shell's parts of its header, so its header and the
@@ -180,7 +167,7 @@ interface PaneStageProps {
 	paneCount: number;
 	active: boolean;
 	column: PaneColumn;
-	/** Draw the focus ring on the active stage: only while two panes share the centre. */
+	/** Mark the active stage's picture with a quiet edge: only while two panes share the centre. */
 	framed: boolean;
 	first: boolean;
 	hidden: boolean;
@@ -190,8 +177,8 @@ interface PaneStageProps {
 /**
  * One pane, with the separator that divides it from the pane before, and the
  * shell's parts of its header. The pane itself is the application's. With two
- * panes, the active one carries a one-pixel inset gold ring and a filled
- * letter.
+ * panes, the active one's picture carries a quiet neutral edge and its letter
+ * is filled.
  * @param props The pane, its letter, whether it is first, framed, hidden and the actions.
  * @returns The mounted pane.
  */
@@ -224,10 +211,12 @@ function PaneStage(props: PaneStageProps): JSX.Element {
 				aria-label={`Pane ${paneId}`}
 				aria-current={props.active ? "true" : undefined}
 				data-active={props.active ? "" : undefined}
+				// The picture of the active stage draws a quiet edge while this is set (`picture-corners`).
+				data-framed={props.framed ? "" : undefined}
 				hidden={props.hidden}
 				// Focus lands here when a presentation ends: programmatic only, no tab stop.
 				tabIndex={-1}
-				className={stageClass(props.framed)}
+				className="relative flex min-h-0 min-w-0 flex-1 flex-col outline-none"
 			>
 				<PaneChromeContext.Provider value={chrome}>{pane.stage}</PaneChromeContext.Provider>
 			</section>

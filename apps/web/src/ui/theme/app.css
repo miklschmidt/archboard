@@ -600,9 +600,10 @@
 /* The picture is a sheet held by the chrome on every side: its four corners are rounded
    against it. One layer over the picture paints a piece of chrome in each corner, cut by a
    quarter circle, so the picture keeps its size and nothing in it is clipped. The tone step is
-   the picture's edge, so no line draws it. A second layer draws the focus ring along the same
-   radius while the picture has keyboard focus. A presented picture has no chrome round it, so
-   its corners stay square. */
+   the picture's edge, so no line draws it. While two panes share the centre, a second layer
+   draws a quiet edge along the same radius round the active pane's picture: neutral ink, never
+   gold, so it stays below a chosen card on the picture. One pane alone has no such edge. A
+   presented picture has no chrome round it, so its corners stay square. */
 @utility picture-corners {
 	&::before {
 		--corner: var(--radius-window);
@@ -636,8 +637,8 @@
 	[data-presenting] &::after {
 		border-radius: 0;
 	}
-	&:has(> :focus-visible)::after {
-		box-shadow: inset 0 0 0 2px var(--ring);
+	[data-framed][data-active] &::after {
+		box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--foreground) 32%, transparent);
 	}
 }
 
