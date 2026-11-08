@@ -96,14 +96,16 @@ fn runs_of(drawing: &Placed, axis: Axis) -> Vec<Run> {
     runs
 }
 
+/// How much ink two routes share from one of their ends.
+type Shared = fn(&[Point], &[Point]) -> f64;
+
 /// The card a line joins or leaves another line beside, at its start or at its end: the line
 /// runs its stretch at that end along the other line's, and both meet that card at one point.
 /// At the start, one of the two also draws an arrowhead there, as a line in `two_way` does.
 /// Where they join or part must stay as far from the card as the guard asks of a junction there.
 fn joined_card(drawing: &Placed, line: usize, start: bool, two_way: &[&str]) -> Option<usize> {
     let points = &drawing.edges[line].points;
-    let (end, approach, shared): (_, _, fn(&[Point], &[Point]) -> f64) = match points.as_slice()
-    {
+    let (end, approach, shared): (_, _, Shared) = match points.as_slice() {
         [end, turn, ..] if start => (*end, length(&[*end, *turn]), common_prefix),
         [.., turn, end] if !start => (*end, length(&[*turn, *end]), common_suffix),
         _ => return None,

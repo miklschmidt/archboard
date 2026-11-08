@@ -114,17 +114,22 @@ fn shut_wall(frame: &Rect, at: Point) -> Option<(usize, f64)> {
     }
 }
 
-/// Move a door beside the frame outward, by `outward` times what it takes, until it meets
-/// none of the doors above and below the frame. Those stand first, and a door beside the
-/// frame that reaches past its corner would stand over one.
-fn stand_clear<'a>(bx: &mut Rect, level: impl Iterator<Item = &'a Rect> + Clone, outward: f64) {
+/// Move a door beside the frame outward until it meets none of the doors above and below the
+/// frame. Those stand first, and a door beside the frame that reaches past its corner would
+/// stand over one. A door above or below the frame stays where it stands.
+fn stand_clear(bx: &mut Rect, placed: &[Option<Rect>], wall: Wall) {
+    let outward = match wall {
+        Wall::Left => -1.0,
+        Wall::Right => 1.0,
+        Wall::Top | Wall::Bottom => return,
+    };
     let meets = |one: &Rect, other: &Rect| {
         one.x < other.x + other.width
             && other.x < one.x + one.width
             && one.y < other.y + other.height
             && other.y < one.y + one.height
     };
-    while let Some(other) = level.clone().find(|other| meets(bx, other)) {
+    while let Some(other) = placed.iter().flatten().find(|other| meets(bx, other)) {
         bx.x = if outward < 0.0 {
             other.x - STEP - bx.width
         } else {
@@ -353,10 +358,7 @@ impl Ring<'_> {
                     width: node.w(),
                     height: node.h(),
                 };
-                if !wall.level() {
-                    let outward = if wall == Wall::Left { -1.0 } else { 1.0 };
-                    stand_clear(&mut bx, boxes.iter().flatten(), outward);
-                }
+                stand_clear(&mut bx, &boxes, wall);
                 boxes[at] = Some(bx);
             }
         }
@@ -531,7 +533,10 @@ mod tests {
         }))
         .expect("a node");
         let set = Set {
-            size: Point { x: 1000.0, y: 300.0 },
+            size: Point {
+                x: 1000.0,
+                y: 300.0,
+            },
             parts: vec![Rect {
                 x: 850.0,
                 y: 100.0,

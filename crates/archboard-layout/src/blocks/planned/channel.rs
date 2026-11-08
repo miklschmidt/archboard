@@ -192,10 +192,11 @@ struct Junction<'a> {
     line: &'a PlacedLine,
     bounds: super::junctions::Envelope,
     shared: bool,
-    source: bool,
-    target: bool,
-    /// Whether the two share their source and either draws an arrowhead there.
-    start: bool,
+    /// Whether the two share their source, and their target.
+    ends: [bool; 2],
+    /// Whether the two share their source and either draws an arrowhead there, and whether
+    /// they share their target.
+    arrows: [bool; 2],
 }
 impl<'a> Junction<'a> {
     fn new(
@@ -206,6 +207,7 @@ impl<'a> Junction<'a> {
     ) -> Option<Self> {
         let &other = model.edge_index.get(line.id.as_str())?;
         let source = model.ends[index].0 == model.ends[other].0;
+        let target = model.ends[index].1 == model.ends[other].1;
         let two_way = |edge: usize| model.edges[edge].option(TWO_WAY).is_some();
         Some(Self {
             line,
@@ -214,21 +216,24 @@ impl<'a> Junction<'a> {
                 .iter()
                 .flatten()
                 .any(|fan| topology.memberships[other].contains(&Some(*fan))),
-            source,
-            target: model.ends[index].1 == model.ends[other].1,
-            start: source && (two_way(index) || two_way(other)),
+            ends: [source, target],
+            arrows: [source && (two_way(index) || two_way(other)), target],
         })
     }
     fn clear(&self, points: &[Point], bounds: super::junctions::Envelope) -> bool {
         bounds.apart(self.bounds)
             || ((!self.shared
-                || super::junctions::sharing(points, &self.line.points, self.source, self.target)
-                    && super::junctions::readable(
-                        points,
-                        &self.line.points,
-                        self.start,
-                        self.target,
-                    ))
+                || super::junctions::sharing(
+                    points,
+                    &self.line.points,
+                    self.ends[0],
+                    self.ends[1],
+                ) && super::junctions::readable(
+                    points,
+                    &self.line.points,
+                    self.arrows[0],
+                    self.arrows[1],
+                ))
                 && super::junctions::ordered(points, &self.line.points, self.shared))
     }
 }
