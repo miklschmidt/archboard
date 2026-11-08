@@ -116,8 +116,9 @@ text, and long lists stay in About.
   put a group's tag out from under the pointer. Escape and the close control let the
   selection go, and the keyboard returns to the picture.
 - **Warnings sit on their subject.** The picture marks the warned subject, and the
-  panel and About give the check's words for a module, a line or a step. Only About
-  shows the count for the whole model.
+  panel and About give the check's words for a module, a line or a step. About shows
+  the count for the whole model. The panel's foot shows it only while the check found
+  a warning to walk through, and says nothing when it found none.
 - **The legend stands at the foot of the panel and needs no click.** It replaces the
   button at the picture's lower left and `Filters`, and it lists the kinds, line types
   and groups of the reading. A mark explains, and `Filter` puts a switch on each line type that a reader

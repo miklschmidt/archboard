@@ -25,6 +25,24 @@ const PANEL_STYLE: CSSProperties = {
 /** How many rows of a list the panel shows before it offers the rest. */
 const ROWS_SHOWN = 8;
 
+/**
+ * The foot lies on the two columns of the legend under it, which are 8px apart. A key takes half
+ * its line less half that gap, so two keys stand on the columns and a key alone grows to the whole
+ * line. A key that is too wide for half a line wraps to a line of its own. A foot with nothing in
+ * it takes no room.
+ */
+const FOOT = [
+	"flex flex-wrap gap-2 px-4 pt-2 empty:hidden",
+	// The selection bar groups its parts for About, and here its parts stand in the line.
+	"[&>[data-slot=model-selection-bar]]:contents",
+	"[&_button]:h-8 [&_button]:flex-[1_1_calc(50%-0.25rem)]",
+	// The agent's menu, the count of a selection and a note take the whole line.
+	"[&_[data-slot=model-explain]]:basis-full [&_output]:basis-full [&_p]:basis-full",
+	// The warnings take the whole line too, with their words flush with the keys under them and
+	// their plate 8px wider on each side.
+	"[&_[data-slot=code-warning-count]]:-mx-2 [&_[data-slot=code-warning-count]]:basis-[calc(100%+1rem)]",
+].join(" ");
+
 /** Inputs for the panel. */
 interface ModelPanelProps {
 	/** Let go of the selection, while there is one. */
@@ -116,7 +134,9 @@ function Subject(props: { readonly children: ReactNode }): JSX.Element {
 }
 
 /**
- * What the panel says, which scrolls.
+ * What the panel says, which scrolls. Its words fade out over the last 12px, inside the 16px of
+ * padding that the last row keeps, so a row that the foot would cut in two dissolves into the
+ * chrome, and the last row at the end of the scroll stays whole.
  * @param props What it holds.
  * @param props.children The head and the sections.
  * @param props.slot Where a test finds what it explains.
@@ -132,7 +152,7 @@ function Body(props: {
 		<article
 			data-slot={props.slot}
 			data-module-id={props.moduleId}
-			className="flex min-h-0 flex-1 flex-col gap-5 overflow-x-hidden overflow-y-auto p-4"
+			className="flex min-h-0 flex-1 flex-col gap-5 overflow-x-hidden overflow-y-auto [mask-image:linear-gradient(to_bottom,#000_calc(100%-12px),transparent)] p-4"
 		>
 			{props.children}
 		</article>
@@ -300,17 +320,14 @@ function Row({
 }
 
 /**
- * What can be done with the subject, pinned under it and over the legend.
+ * What can be done with the subject, pinned under it and over the legend, on the legend's columns.
  * @param props The actions.
  * @param props.children The actions.
  * @returns The foot.
  */
 function Foot(props: { readonly children: ReactNode }): JSX.Element {
 	return (
-		<footer
-			data-slot="model-panel-foot"
-			className="flex shrink-0 flex-wrap items-center gap-1.5 py-3 pr-3 pl-4"
-		>
+		<footer data-slot="model-panel-foot" className={cn(FOOT, "shrink-0")}>
 			{props.children}
 		</footer>
 	);

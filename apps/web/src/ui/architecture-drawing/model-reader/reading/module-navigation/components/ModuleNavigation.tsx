@@ -82,7 +82,11 @@ function NavigationControls(props: ModuleNavigationProps): JSX.Element {
 	const references = props.module.references;
 	return (
 		<section data-slot="module-navigation" className="space-y-6">
-			{props.module.binding !== undefined && <BoundCode {...props} navigation={navigation} />}
+			{props.module.binding !== undefined && (
+				<div className="space-y-3">
+					<BoundCode {...props} navigation={navigation} />
+				</div>
+			)}
 			{references !== undefined && references.length > 0 && (
 				<ModuleReferences
 					key={JSON.stringify([props.vault, navigation.target, props.model.revision.digest])}
@@ -96,7 +100,8 @@ function NavigationControls(props: ModuleNavigationProps): JSX.Element {
 }
 
 /**
- * The existing opener resolves and opens the selected state on the server.
+ * The existing opener resolves and opens the selected state on the server. Its key and its note
+ * are two siblings, so that a caller lays them out.
  * @param props The module binding and exact architecture context.
  * @returns One source action with pending and unavailable outcomes.
  */
@@ -110,7 +115,7 @@ function BoundCode(
 		activateCodeTarget({ vault, target: { model, subject, state, checkpoint, preview }, onNotice });
 	}, [vault, model, subject, state, checkpoint, preview, onNotice]);
 	return (
-		<div className="space-y-3">
+		<>
 			<Button
 				variant="outline"
 				data-slot="module-open-code"
@@ -120,7 +125,7 @@ function BoundCode(
 				Open code
 			</Button>
 			<CodeAvailability navigation={navigation} />
-		</div>
+		</>
 	);
 }
 

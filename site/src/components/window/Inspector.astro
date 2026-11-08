@@ -153,17 +153,19 @@ const interfaceCounts = [
 		font-family: var(--font-mono);
 		font-size: 12px;
 	}
+	/* The foot lies on the legend's two columns: a key fills its cell, and the agent's menu takes both. */
 	.actions {
-		display: flex;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
 		gap: 8px;
-		padding: 12px 16px;
+		padding: 8px 16px 0;
 	}
 	.action {
-		display: inline-flex;
+		display: flex;
 		align-items: center;
+		justify-content: center;
 		gap: 6px;
-		height: 30px;
+		height: 32px;
 		padding: 0 10px;
 		border-radius: 4px;
 		font-weight: 600;
@@ -173,9 +175,10 @@ const interfaceCounts = [
 			var(--shadow-raised),
 			inset 0 0 0 1px var(--rule);
 	}
+	.action:last-child {
+		grid-column: span 2;
+	}
 	.action.gold {
-		flex-basis: 100%;
-		max-width: fit-content;
 		color: var(--gold-ink);
 		background: linear-gradient(180deg, var(--gold-top), var(--gold-bottom));
 		box-shadow:

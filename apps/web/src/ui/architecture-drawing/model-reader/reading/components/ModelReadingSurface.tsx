@@ -148,7 +148,8 @@ interface ReadingPanelProps {
 /**
  * The column beside the picture: what is selected, or else what is open, and what touches it,
  * over the legend and the engine. Only the engine stands under the legend, so a selection never
- * moves a group tag out from under the pointer.
+ * moves a group tag out from under the pointer. The foot and the legend lie on the same two
+ * columns.
  * @param props The surface and what the panel explains.
  * @returns The panel.
  */
@@ -238,7 +239,7 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 				)}
 			</ModelPanel.Subject>
 			<ModelPanel.Foot>
-				<ModelCodeWarnings reading={code.reading} onSelect={onShow} />
+				<ModelCodeWarnings reading={code.reading} onSelect={onShow} quiet />
 				{selecting ? (
 					<ModelPanelActions {...subject}>
 						<SelectionControls {...props.actions} />

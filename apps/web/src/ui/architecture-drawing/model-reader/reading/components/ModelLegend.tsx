@@ -40,8 +40,11 @@ const SAMPLE_WIDTH = 22;
 /** The size of a kind's chip and its icon, as wide as the ink of a line's sample. */
 const CHIP = "size-5 [&>svg]:size-3.5";
 
-/** The two columns that the head, the kinds and the line types stand in. */
-const CELLS = "grid grid-cols-2 gap-x-4";
+/**
+ * The two columns that the head, the kinds and the line types stand in. The foot over the legend
+ * lies on the same columns: a key there takes half its line less half this gap.
+ */
+const CELLS = "grid grid-cols-2 gap-x-2";
 
 /** A key held pressed in. */
 const PRESSED = "bg-muted dark:bg-muted text-foreground shadow-pressed";
@@ -77,7 +80,7 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 		<section
 			aria-label="Legend"
 			data-slot="model-legend"
-			className="relative flex shrink-0 flex-col gap-2 px-4 pt-3 pb-4"
+			className="relative flex shrink-0 flex-col gap-2 px-4 pt-4 pb-4"
 		>
 			<LegendHead
 				hidden={lines.filter((line) => line.hidden).length}
@@ -121,14 +124,14 @@ function LegendHead(props: {
 }): JSX.Element {
 	const { hidden, filtering } = props;
 	return (
-		<header className={`${CELLS} min-h-7 items-center`}>
-			<h3 className="text-title font-semibold">Legend</h3>
+		<header className={`${CELLS} min-h-6 items-center`}>
+			<h3 className="text-body font-semibold">Legend</h3>
 			{props.filterable && (
 				<div className="flex items-center justify-between gap-2">
 					<Button
 						data-slot="model-legend-filter"
 						variant="outline"
-						size="sm"
+						size="xs"
 						aria-pressed={filtering}
 						title={filtering ? "Put the switches away" : "Choose which lines to draw"}
 						onClick={props.onFilter}
@@ -147,7 +150,7 @@ function LegendHead(props: {
 						<Button
 							data-slot="model-legend-show-all"
 							variant="ghost"
-							size="sm"
+							size="xs"
 							onClick={props.onShowAll}
 							className="-mr-1.5 px-1.5"
 						>

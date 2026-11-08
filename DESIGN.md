@@ -609,11 +609,14 @@ With one module selected, the head of `Sends to` and the head of `Receives from`
 
 A module with code history has a `Changes with` section. It lists the modules whose code changes in the same commits as its own, the strongest first. A row names the partner. Under the name, one line holds a short mark that joins the pair. An `Unjoined` tint chip follows it when no relationship joins them. The commits that they share stand next in mono, and the degree stands at the end in full ink. The mark is a solid line in muted ink for a joined pair and a dashed line in Changed Orange for an unjoined one. A meter of 2px runs along the foot of the row, as long as the degree. It fades from clear to Gold Mark for a joined pair and to Changed Orange for an unjoined one.
 
+The foot of the panel holds what can be done, on the chrome over the legend, and it shares the legend's two columns, which are 8px apart. A key in it is 32px high, as the keys of the left column are, and takes half its line, so two keys stand on the legend's columns and a key alone takes the whole line. `Explain with Codex`, the count of a selection and a note about the code take the whole line. The count of warnings is the first line of the foot while the last code check found a warning to walk through. Its icon and words start where the keys start, and its plate reaches 8px past them. When the check found none, the foot says nothing of it, because a count of none has nothing to do and reads as noise on a panel that is quiet when nothing is wrong. A foot with nothing in it takes no room. The words that scroll above the foot fade out over their last 12px, inside the padding of the last row, so that the foot never cuts a row in two and the last row at the end of the scroll stays whole.
+
 The legend stands at the foot of the panel, on the chrome with no line over it, and it needs
 no click. A long subject and its lists scroll above it, and the whole legend stays on screen.
-Nothing stands under it, so a selection never moves it. A heading row holds `Legend` and, at the start of the
-second column, the key `Filter`. Under it stand the kinds in two columns, the line types in two
-columns and the groups, with 12px between them and no rule. A row is 24px high, and every mark stands in
+Nothing stands under it, so a selection never moves it. Sixteen pixels part it from the foot. A heading row is the heading
+of any other section of the panel: `Legend` in Body semibold and, at the start of the second column, the key
+`Filter`, 24px high as the keys of the other headings. Eight pixels part it from the rows. Under it stand the
+kinds in two columns, the line types in two columns and the groups, with 12px between them and no rule. A row is 24px high, and every mark stands in
 a box 22px wide, so the names start on one line. A section with nothing to show is absent.
 
 The rows come from the whole reading, not from what the picture draws now, and each list keeps
