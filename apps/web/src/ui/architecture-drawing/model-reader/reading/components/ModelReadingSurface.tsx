@@ -56,11 +56,15 @@ import {
 	scopeSubjects,
 	walkthroughsAbout,
 } from "#ui/architecture-drawing/model-reader/reading/rules/relevance.ts";
+import { claimsOn } from "#ui/architecture-drawing/model-reader/rules/claimed-subjects.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 
 /** What a flow reading filters: nothing, because it keeps its whole exchange. */
 const NO_FILTERS = {};
+
+/** No agent claims what the panel explains. */
+const NO_CLAIMS: readonly string[] = [];
 
 /** Inputs for what the middle of a reading shows. */
 interface ModelReadingSurfaceProps {
@@ -178,6 +182,12 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 	const context = <ReadingContext reader={reader} selected={ids} />;
 	const { flow, reference } = projection;
 	const { grammar, selectGrammar } = location;
+	const { claimed } = reader;
+	// The panel says a selection is claimed, and a flow on screen speaks for its steps.
+	const claims = useMemo(
+		() => (selecting ? claimsOn(claimed, flow === null ? ids : [...ids, flow.id]) : NO_CLAIMS),
+		[selecting, claimed, ids, flow],
+	);
 	const flowHead = useMemo(
 		() =>
 			flow === null ? undefined : (
@@ -217,7 +227,7 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 	return (
 		<ModelPanel onClose={selecting ? selection.clear : undefined} covered={reader.page === "about"}>
 			<ModelPanel.Scroll subject={key} under={legend}>
-				<ModelPanel.Subject key={key}>
+				<ModelPanel.Subject key={key} claims={claims}>
 					{selecting ? (
 						<ModelPanelSubject {...subject} />
 					) : (

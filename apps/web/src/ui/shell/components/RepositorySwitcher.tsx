@@ -19,10 +19,11 @@ import {
 
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import { Badge, cn, Popover, RepositoryName, shownRepository } from "@archboard/ui-kit/components";
-import { MarkerLamp } from "#ui/shell/components/ActivityLamp.tsx";
+import { ClaimMark, MarkerClaim, MarkerLamp } from "#ui/shell/components/ActivityLamp.tsx";
 import { PaneChips } from "#ui/shell/components/PaneChips.tsx";
 import { PaneLetter } from "#ui/shell/components/PaneControls.tsx";
 import { Tree } from "#ui/shell/components/Tree.tsx";
+import { claimPurposes, claimWords } from "#ui/shell/rules/claims.ts";
 import { foldQuery } from "#ui/shell/rules/text-match.ts";
 import {
 	repositoryRows,
@@ -94,6 +95,8 @@ function checkoutNote(checkout: RepositoryEntry["checkouts"][number]): string | 
 interface RepositorySwitcherProps {
 	/** Every pane, by its letter. */
 	readonly panes: readonly PaneMark[];
+	/** The purposes of the claims on the focused pane's model, each once. */
+	readonly claims: readonly string[];
 	/** Whether the list is on screen. */
 	readonly open: boolean;
 	readonly ref?: Ref<HTMLButtonElement>;
@@ -150,6 +153,7 @@ function RepositorySwitcher(props: RepositorySwitcherProps): JSX.Element {
 		>
 			{letter !== null && <PaneLetter letter={letter} active />}
 			<SwitcherName name={name} />
+			{props.claims.length > 0 && <ClaimMark purposes={props.claims} />}
 			<RiArrowDownSLine
 				aria-hidden="true"
 				className={cn(
@@ -295,20 +299,31 @@ function RepositoryChooser(props: RepositoryChooserProps): JSX.Element {
  */
 function repositoryLabel(row: RepositoryChoice): string {
 	const { shell } = row;
-	return [shell.repository.name, "repository", repositoryFacts(shell), shell.error]
+	const claims = claimPurposes(shell);
+	return [
+		shell.repository.name,
+		"repository",
+		repositoryFacts(shell),
+		claims.length > 0 && claimWords(claims),
+		shell.error,
+	]
 		.filter(Boolean)
 		.join(", ");
 }
 
 /**
- * Mark the row of what agents are doing in a repository.
- * @param shell The repository.
- * @returns Active claims, a recent write, or no activity.
+ * Mark the row of what agents are doing in a repository: the claim mark while an agent claims its
+ * model, or else the lamp of a recent write.
+ * @param props The repository.
+ * @param props.shell The repository.
+ * @returns The mark, or nothing while no agent is at work there.
  */
-function activityOf(shell: ShellRepository): "claimed" | "wrote" | null {
-	const entries = Object.values(shell.activity);
-	if (entries.length === 0) return null;
-	return entries.some((entry) => entry.claims.length > 0) ? "claimed" : "wrote";
+function RepositoryActivity(props: { readonly shell: ShellRepository }): JSX.Element | null {
+	const { shell } = props;
+	const claims = claimPurposes(shell);
+	if (claims.length > 0) return <MarkerClaim purposes={claims} />;
+	if (Object.keys(shell.activity).length === 0) return null;
+	return <MarkerLamp state="wrote" title="Activity in this repository" slot="agent-activity" />;
 }
 
 /**
@@ -329,7 +344,6 @@ function RepositoryLine(props: {
 	const shown = shownRepository(shell.repository.name);
 	const open = useCallback((beside: boolean) => onOpen(row, beside), [onOpen, row]);
 	const fold = useCallback(() => onToggle(row), [onToggle, row]);
-	const activity = activityOf(shell);
 	return (
 		<Tree.Row
 			id={row.id}
@@ -345,9 +359,7 @@ function RepositoryLine(props: {
 				icon={shown.onGitHub ? RepositoryName.GitHubMark : RiGitRepositoryLine}
 				title={shown.onGitHub ? "GitHub repository" : "Repository"}
 			>
-				{activity !== null && (
-					<MarkerLamp state={activity} title="Activity in this repository" slot="agent-activity" />
-				)}
+				<RepositoryActivity shell={shell} />
 			</Tree.Marker>
 			<Tree.Name
 				text={shown.name}

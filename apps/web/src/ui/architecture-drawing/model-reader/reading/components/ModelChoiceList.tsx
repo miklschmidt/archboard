@@ -1,7 +1,12 @@
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
+import { ClaimMark } from "#ui/shell/components/ActivityLamp.tsx";
 import { Tree } from "#ui/shell/components/Tree.tsx";
 import { sectionRuns } from "#ui/architecture-drawing/model-reader/reading/rules/section-runs.ts";
+import {
+	claimsOn,
+	type ClaimedSubjects,
+} from "#ui/architecture-drawing/model-reader/rules/claimed-subjects.ts";
 
 /** One thing a list offers. */
 interface Choice {
@@ -22,6 +27,8 @@ interface ModelChoiceListProps<Entry extends Choice> {
 	readonly onChoose: (entry: Entry, beside: boolean) => void;
 	/** What a row says at its end. */
 	readonly facts?: ((entry: Entry) => ReactNode) | undefined;
+	/** What the agents claim, which marks the row of each claimed entry. */
+	readonly claimed: ClaimedSubjects;
 	/** What a row says to assistive technology, where its words alone do not say it. */
 	readonly rowLabel?: ((entry: Entry) => string) | undefined;
 	/** Rows with no depth, which keep no room for a disclosure. */
@@ -118,10 +125,16 @@ function ChoiceLine<Entry extends Choice>(
 	props: ModelChoiceListProps<Entry> & { readonly entry: Entry },
 ): JSX.Element {
 	const { entry, facts } = props;
+	const claims = claimsOn(props.claimed, [entry.id]);
 	return (
 		<>
 			<Tree.Name text={entry.name} title={entry.title} />
-			{facts !== undefined && <Tree.Facts>{facts(entry)}</Tree.Facts>}
+			{(facts !== undefined || claims.length > 0) && (
+				<Tree.Facts>
+					{claims.length > 0 && <ClaimMark purposes={claims} />}
+					{facts?.(entry)}
+				</Tree.Facts>
+			)}
 		</>
 	);
 }

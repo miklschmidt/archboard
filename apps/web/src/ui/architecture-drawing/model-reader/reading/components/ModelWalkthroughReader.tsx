@@ -13,7 +13,6 @@ import type { Model } from "@archboard/model/content";
 import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import { modelWalkthroughQuery } from "#ui/architecture-drawing/model-reader/access/clients/walkthroughs.ts";
 import { ModelWalkthrough } from "#ui/architecture-drawing/model-reader/reading/components/ModelWalkthrough.tsx";
-import { ModelClaimFrame } from "#ui/architecture-drawing/model-reader/reading/components/ModelClaims.tsx";
 
 type PlaybackRequest = Parameters<typeof modelWalkthroughQuery>[1];
 interface ReaderProps extends Pick<
@@ -94,8 +93,6 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 						onRestart={select}
 					/>
 				)}
-				{/* The claims stand over the pane itself while no surface of it holds them. */}
-				<ModelClaimFrame frame="pane" />
 			</div>
 		</ModelWalkthroughContext>
 	);

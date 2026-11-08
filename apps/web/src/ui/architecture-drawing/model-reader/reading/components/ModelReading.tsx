@@ -155,7 +155,7 @@ function ReadingSections(props: {
 	readonly onTypeAhead: (text: string) => void;
 }): JSX.Element {
 	const { reader, folds, onTypeAhead } = props;
-	const { model, location, structure, tree, branches, choices, walk } = reader;
+	const { model, location, structure, tree, branches, choices, walk, claimed } = reader;
 	const { folded, onFold } = folds;
 	const { flows } = structure.depicted;
 	const presenting = reader.walkthrough !== null;
@@ -175,6 +175,7 @@ function ReadingSections(props: {
 					tree={tree}
 					open={branches.open}
 					scope={location.grammar === "architecture" && !presenting ? structure.opened : null}
+					claimed={claimed}
 					onToggle={branches.toggle}
 					onOpen={choices.chooseModule}
 					onTypeAhead={onTypeAhead}
@@ -194,6 +195,7 @@ function ReadingSections(props: {
 						collections={collections}
 						flow={presenting ? null : location.flow}
 						grammar={location.grammar}
+						claimed={claimed}
 						onChoose={choices.chooseFlow}
 					/>
 				</ModelColumn.Section>
@@ -206,7 +208,7 @@ function ReadingSections(props: {
 					folded={folded.has("walkthroughs")}
 					onFold={onFold}
 				>
-					<ModelWalkthroughs walkthroughs={model.walkthroughs} />
+					<ModelWalkthroughs walkthroughs={model.walkthroughs} claimed={claimed} />
 				</ModelColumn.Section>
 			)}
 		</>

@@ -238,7 +238,7 @@ test("current model readings refresh after external edits and reconnect with exp
 	const claimId = claim.body.claim.id;
 	const claimVisible = (): Promise<boolean> =>
 		browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-claim"][data-claim-id="${claimId}"]') !== null`,
+			`document.querySelector('[data-module-row="Shop#Gateway"] [data-slot="claim-mark"]') !== null`,
 		);
 	await pollUntil(claimVisible, Boolean, "the claim before the connection drops", WAIT);
 	const working = (): Promise<boolean> =>
@@ -247,7 +247,7 @@ test("current model readings refresh after external edits and reconnect with exp
 	await server.restart({
 		whileStopped: async () => {
 			await pollUntil(stale, Boolean, "the disconnected reading notice", WAIT);
-			// Losing the stream says nothing about ownership, so its last known card stays.
+			// Losing the stream says nothing about ownership, so its last known mark stays.
 			expect(await claimVisible()).toBe(true);
 			expect(await details()).toContain("Repaired external description");
 			const released = await releaseArchitectureClaim(vault, {

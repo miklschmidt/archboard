@@ -11,12 +11,6 @@ const ABOUT_PAGE = "relative z-0 overflow-x-hidden overflow-y-auto [container:ab
 const ABOUT_COLUMNS =
 	"mx-auto grid max-w-[1320px] grid-cols-1 gap-x-12 px-6 pt-8 pb-16 wrap-break-word @min-[1040px]/about:grid-cols-[176px_minmax(0,1fr)] @min-[1040px]/about:px-10";
 
-/**
- * Claims stand below the measured title row. The narrow outline comes first, so the bar never
- * scrolls through the card. The frame adds the ordinary gap above the claim itself.
- */
-const ABOUT_CLAIMS = "top-(--claim-top)";
-
 /** Where the name of the subject stands in those columns. */
 const ABOUT_TITLE =
 	"flex min-w-0 flex-col gap-3 pb-10 @min-[1040px]/about:col-start-2 @min-[1040px]/about:row-start-1";
@@ -160,7 +154,6 @@ function AboutSectionFrame(props: {
 }
 
 export {
-	ABOUT_CLAIMS,
 	ABOUT_COLUMNS,
 	ABOUT_PAGE,
 	ABOUT_SHEET,

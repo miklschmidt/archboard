@@ -148,15 +148,12 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 	});
 	if (!editClaim.body.success) throw new Error(JSON.stringify(editClaim.body));
 	const draftClaimId = editClaim.body.claim.id;
-	await pollUntil(
-		() =>
-			browser.eval<string | null>(
-				`document.querySelector('[data-slot="model-claim"][data-claim-id="${draftClaimId}"]')?.textContent ?? null`,
-			),
-		(text) => text?.includes("Queued delivery") === true,
-		"the claim naming its draft state",
-		WAIT,
-	);
+	// The reading of the draft marks the rows that the draft's claim holds.
+	const draftRowMarked = (): Promise<boolean> =>
+		browser.eval<boolean>(
+			`document.querySelector('[data-module-row="Shop#Gateway"] [data-slot="claim-mark"]') !== null`,
+		);
+	await pollUntil(draftRowMarked, Boolean, "the mark of the draft's claimed module", WAIT);
 	const parallelClaim = await request<ArchitectureClaimResult>("/api/architecture/claims", {
 		method: "POST",
 		body: {
@@ -178,15 +175,16 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 		"concurrent subject claims in the repository activity",
 		WAIT,
 	);
-	// Each claim has a card of its own over the picture.
-	const claimCardIds = (): Promise<string[]> =>
-		browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="model-claim"]')].map(node => node.getAttribute('data-claim-id'))`,
+	// The model's mark in the switcher says what each concurrent claim is for.
+	const modelMark = (): Promise<string> =>
+		browser.eval<string>(
+			`document.querySelector('[data-slot="repository-switcher"] [data-slot="claim-mark"]')?.getAttribute('title') ?? ''`,
 		);
 	await pollUntil(
-		claimCardIds,
-		(ids) => ids.includes(draftClaimId) && ids.includes(parallelId),
-		"one card for each concurrent subject claim",
+		modelMark,
+		(words) =>
+			words.includes("Refining queued delivery") && words.includes("Explaining the handler"),
+		"the purpose of each concurrent claim on the model's mark",
 		WAIT,
 	);
 	await request("/api/architecture/claims/release", {
@@ -203,11 +201,13 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 		WAIT,
 	);
 	await pollUntil(
-		claimCardIds,
-		(ids) => ids.includes(draftClaimId) && !ids.includes(parallelId),
-		"the card of the claim that remains",
+		modelMark,
+		(words) =>
+			words.includes("Refining queued delivery") && !words.includes("Explaining the handler"),
+		"the purpose of the claim that remains",
 		WAIT,
 	);
+	expect(await draftRowMarked()).toBe(true);
 	const edited = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
 		method: "POST",
 		body: {

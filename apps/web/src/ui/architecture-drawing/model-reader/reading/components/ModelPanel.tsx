@@ -5,7 +5,9 @@
 
 import { RiCloseLine } from "@remixicon/react";
 import {
+	createContext,
 	useCallback,
+	useContext,
 	useLayoutEffect,
 	useRef,
 	useState,
@@ -18,6 +20,7 @@ import {
 } from "react";
 import { SIDEBAR_MS } from "@archboard/timing";
 import { cn, IconButton } from "@archboard/ui-kit/components";
+import { ClaimBadge } from "#ui/shell/components/ActivityLamp.tsx";
 import { SectionLabel } from "#ui/shell/components/SectionLabel.tsx";
 import { GROUP_LINE, rowTone, type RowState } from "#ui/shell/rules/row-tone.ts";
 import { sectionRuns } from "#ui/architecture-drawing/model-reader/reading/rules/section-runs.ts";
@@ -26,6 +29,12 @@ import { sectionRuns } from "#ui/architecture-drawing/model-reader/reading/rules
 const PANEL_STYLE: CSSProperties = {
 	"--sidebar-subject-in-ms": `${SIDEBAR_MS.subjectIn}ms`,
 };
+
+/** No agent claims the subject. */
+const NO_CLAIMS: readonly string[] = [];
+
+/** The purposes of the claims that hold the subject of the panel, which its head shows. */
+const SubjectClaims = createContext<readonly string[]>(NO_CLAIMS);
 
 /** How many rows of a list the panel shows before it offers the rest. */
 const ROWS_SHOWN = 8;
@@ -194,16 +203,22 @@ function Scroll(props: {
 
 /**
  * What the panel says of one subject. A caller keys it by the subject, so a new one arrives with a
- * fade.
+ * fade. While agents claim the subject, its {@link Head} says so.
  * @param props What it holds.
+ * @param props.claims The purposes of the claims that hold the subject, each once.
  * @param props.children What it says.
  * @returns The subject.
  */
-function Subject(props: { readonly children: ReactNode }): JSX.Element {
+function Subject(props: {
+	readonly claims: readonly string[];
+	readonly children: ReactNode;
+}): JSX.Element {
 	return (
-		<div data-slot="model-panel-subject" className="flex flex-col gap-5">
-			{props.children}
-		</div>
+		<SubjectClaims value={props.claims}>
+			<div data-slot="model-panel-subject" className="flex flex-col gap-5">
+				{props.children}
+			</div>
+		</SubjectClaims>
 	);
 }
 
@@ -229,7 +244,8 @@ function Body(props: {
 
 /**
  * Whose panel this is: the chip of its kind, when it has one, before its name, and under the name
- * one line that says what it is, as the site's mock panel heads a module.
+ * one line that says what it is, as the site's mock panel heads a module. While agents claim the
+ * subject, the line ends with the claim's badge.
  * @param props The mark, the name and the line.
  * @param props.mark The chip of its kind.
  * @param props.title The name.
@@ -241,14 +257,17 @@ function Head(props: {
 	readonly title: ReactNode;
 	readonly children?: ReactNode;
 }): JSX.Element {
+	const claims = useContext(SubjectClaims);
+	const claimed = claims.length > 0;
 	return (
 		<header className="flex items-start gap-2.5 pr-8">
 			{props.mark}
 			<div className="flex min-w-0 flex-col gap-0.5">
 				<h3 className="title-name text-balance [overflow-wrap:anywhere]">{props.title}</h3>
-				{props.children !== undefined && (
-					<div className="text-body text-muted-foreground flex min-w-0 flex-wrap gap-x-2">
+				{(props.children !== undefined || claimed) && (
+					<div className="text-body text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-2">
 						{props.children}
+						{claimed && <ClaimBadge purposes={claims} />}
 					</div>
 				)}
 			</div>

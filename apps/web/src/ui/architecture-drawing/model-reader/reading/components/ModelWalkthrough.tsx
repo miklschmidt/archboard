@@ -13,7 +13,6 @@ import {
 	type SemanticPresentationProps,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticPresentation.tsx";
 import { PictureOverlay } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx";
-import { ModelClaimFrame } from "#ui/architecture-drawing/model-reader/reading/components/ModelClaims.tsx";
 import { projectModel, type Model } from "@archboard/model/content";
 import { useAcceptedScene } from "#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts";
 import { usePictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
@@ -149,7 +148,6 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 				/>
 				{!available && <UnavailableBeat status={unavailable} />}
 				<PictureOverlay overlay={props.overlay} clearOfSidebar={false} />
-				<ModelClaimFrame frame="walkthrough" />
 			</div>
 			{index >= 0 && (
 				<SemanticPresentation

@@ -1,7 +1,12 @@
 import { useCallback, useMemo, useRef, type JSX } from "react";
 
+import { ClaimMark } from "#ui/shell/components/ActivityLamp.tsx";
 import { Tree } from "#ui/shell/components/Tree.tsx";
 import { useRevealedRow } from "#ui/architecture-drawing/model-reader/reading/hooks/use-revealed-row.ts";
+import {
+	claimsOn,
+	type ClaimedSubjects,
+} from "#ui/architecture-drawing/model-reader/rules/claimed-subjects.ts";
 import {
 	treeRows,
 	type ModuleBranch,
@@ -15,6 +20,8 @@ interface ModelTreeProps {
 	readonly open: ReadonlySet<string>;
 	/** The module the pane has open: the one row the tree marks. A selection on the picture marks no row. */
 	readonly scope: string | null;
+	/** What the agents claim, which marks the row of each claimed module. */
+	readonly claimed: ClaimedSubjects;
 	readonly onToggle: (id: string) => void;
 	readonly onOpen: (id: string, beside: boolean) => void;
 	/** A printable key typed in the tree, handed to Find. */
@@ -89,6 +96,7 @@ function BranchRow(
 	const holds = branch.children.length > 0;
 	const expanded = holds ? props.open.has(branch.id) : undefined;
 	const dataset = useMemo(() => ({ "data-module-row": branch.end }), [branch.end]);
+	const claims = claimsOn(props.claimed, branch.steps);
 	return (
 		<>
 			<Tree.Row
@@ -105,6 +113,11 @@ function BranchRow(
 					text={branch.name}
 					title={branch.path === undefined ? branch.name : `${branch.name}\n${branch.path}`}
 				/>
+				{claims.length > 0 && (
+					<Tree.Facts>
+						<ClaimMark purposes={claims} />
+					</Tree.Facts>
+				)}
 			</Tree.Row>
 			{expanded === true && (
 				<Tree.Group depth={depth}>

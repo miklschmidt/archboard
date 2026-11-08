@@ -8,7 +8,6 @@ import type { Model } from "@archboard/model/content";
 import { ModelSwitch } from "#ui/architecture-drawing/model-reader/reading/components/ModelSwitch.tsx";
 import { ModelStateFact } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateTimeline.tsx";
 import { KindIcon } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
-import { useAboutClaimClearance } from "#ui/architecture-drawing/model-reader/reading/hooks/use-about-claim-clearance.ts";
 import {
 	ABOUT_COLUMNS,
 	ABOUT_PAGE,
@@ -134,7 +133,6 @@ function openAt(page: HTMLElement, place: AboutPlace): void {
 function ModelAboutFrame(props: ModelAboutFrameProps): JSX.Element {
 	const { sections, place, reducedMotion } = props;
 	const [page, setPage] = useState<HTMLElement | null>(null);
-	useAboutClaimClearance(page, sections.length > 1);
 	const attach = useCallback(
 		(element: HTMLElement | null): void => {
 			if (element !== null) openAt(element, place);
@@ -180,7 +178,7 @@ function AboutTitle(props: ModelAboutFrameProps): JSX.Element {
 	const { head } = props;
 	return (
 		<header data-slot="model-about-title" className={ABOUT_TITLE}>
-			<div data-slot="model-about-head" className="flex min-w-0 items-start justify-between gap-6">
+			<div className="flex min-w-0 items-start justify-between gap-6">
 				<h2 className="title-figure min-w-0 [overflow-wrap:anywhere] uppercase">{head.name}</h2>
 				<div className="flex shrink-0 items-center gap-2 pt-2">{props.tools}</div>
 			</div>

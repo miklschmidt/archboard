@@ -41,12 +41,6 @@ function cameraHandover(): CameraHandover {
 	};
 }
 
-/** A surface of a pane that the claims of its reading can stand over, the pane itself the last. */
-type ClaimFrame = "walkthrough" | "about" | "picture" | "pane";
-
-/** The place that each surface on screen holds for the claims, by the surface. */
-type ClaimFrames = Readonly<Record<ClaimFrame, HTMLElement | null>>;
-
 /** Ordinary pane presentation, independent of asynchronous architecture reads. */
 const ModelPaneContext = createContext<{
 	selection: ModelSelection;
@@ -54,9 +48,6 @@ const ModelPaneContext = createContext<{
 	/** Where the reading puts what it says in the pane's header. */
 	head: HTMLElement | null;
 	attachHead: (element: HTMLElement | null) => void;
-	claimFrames: ClaimFrames;
-	/** Hold a place for the claims on a surface, until the returned release. */
-	holdClaimFrame: (frame: ClaimFrame, element: HTMLElement) => () => void;
 } | null>(null);
 
 /** The captured presentation owns its start action and whether it replaces ordinary reading. */
@@ -72,11 +63,4 @@ const ModelWalkthroughContext = createContext<{
 	narration?: WalkthroughNarration | undefined;
 } | null>(null);
 
-export {
-	ModelPaneContext,
-	ModelWalkthroughContext,
-	cameraHandover,
-	type CameraHandover,
-	type ClaimFrame,
-	type ClaimFrames,
-};
+export { ModelPaneContext, ModelWalkthroughContext, cameraHandover, type CameraHandover };

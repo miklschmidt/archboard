@@ -11,6 +11,7 @@ import { Popover } from "@archboard/ui-kit/components";
 import { RepositoryChooser, RepositorySwitcher } from "#ui/shell/components/RepositorySwitcher.tsx";
 import { WorkingNow, type WorkingEntry } from "#ui/shell/components/WorkingNow.tsx";
 import { useKept } from "#ui/shell/hooks/use-kept.ts";
+import { claimPurposes } from "#ui/shell/rules/claims.ts";
 import { paneLetter } from "#ui/shell/rules/pane-letters.ts";
 import type { PaneMark } from "#ui/shell/rules/repository-choices.ts";
 import { sameData } from "#ui/shell/rules/same-data.ts";
@@ -68,6 +69,21 @@ function workingEntries(view: ShellView, panes: readonly PaneMark[]): WorkingEnt
 			return { activity, name, repository, named, onScreen: letters };
 		});
 	});
+}
+
+/** No agent claims the model. */
+const NO_CLAIMS: readonly string[] = [];
+
+/**
+ * What the agents that claim the focused pane's model are doing.
+ * @param view The shell view.
+ * @param panes The panes, marked.
+ * @returns The purpose of each claim, each once.
+ */
+function focusedClaims(view: ShellView, panes: readonly PaneMark[]): readonly string[] {
+	const focused = panes.find((pane) => pane.active)?.repository ?? null;
+	const shell = view.repositories.find((entry) => entry.repository.name === focused);
+	return shell === undefined ? NO_CLAIMS : claimPurposes(shell);
 }
 
 /**
@@ -146,7 +162,12 @@ function Navigator(props: NavigatorProps): JSX.Element {
 			>
 				{!nothingListed && (
 					<Popover open={choosing} onOpenChange={setChoosing}>
-						<RepositorySwitcher ref={switcher} panes={panes} open={choosing} />
+						<RepositorySwitcher
+							ref={switcher}
+							panes={panes}
+							claims={focusedClaims(view, panes)}
+							open={choosing}
+						/>
 						<Popover.Content
 							align="start"
 							data-slot="repository-dropdown"

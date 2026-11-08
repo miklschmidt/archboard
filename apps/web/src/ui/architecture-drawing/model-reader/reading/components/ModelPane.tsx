@@ -1,14 +1,9 @@
 import {
 	cameraHandover,
 	ModelPaneContext,
-	type ClaimFrame,
-	type ClaimFrames,
 } from "#ui/architecture-drawing/model-reader/state/presentation.ts";
-import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
+import { useMemo, useState, type JSX, type ReactNode } from "react";
 import { useSubjectSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
-
-/** No surface holds a place for the claims. */
-const NO_CLAIM_FRAMES: ClaimFrames = { walkthrough: null, about: null, picture: null, pane: null };
 
 /**
  * One pane owns ordinary selection across asynchronous reads.
@@ -34,15 +29,9 @@ function ModelPane(props: {
 	}
 	const [handover] = useState(cameraHandover);
 	const [head, attachHead] = useState<HTMLElement | null>(null);
-	const [claimFrames, setClaimFrames] = useState(NO_CLAIM_FRAMES);
-	const holdClaimFrame = useCallback((frame: ClaimFrame, element: HTMLElement) => {
-		setClaimFrames((now) => ({ ...now, [frame]: element }));
-		return (): void =>
-			setClaimFrames((now) => (now[frame] === element ? { ...now, [frame]: null } : now));
-	}, []);
 	const value = useMemo(
-		() => ({ selection, handover, head, attachHead, claimFrames, holdClaimFrame }),
-		[selection, handover, head, claimFrames, holdClaimFrame],
+		() => ({ selection, handover, head, attachHead }),
+		[selection, handover, head],
 	);
 	return <ModelPaneContext value={value}>{props.children}</ModelPaneContext>;
 }

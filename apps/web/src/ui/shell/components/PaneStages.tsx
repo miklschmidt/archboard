@@ -2,10 +2,9 @@ import { Notices } from "#ui/shell/components/Notices.tsx";
 import type { ShellNotice } from "#ui/shell/rules/contracts.ts";
 // The centre: one or two panes side by side. Each pane draws one header row,
 // and the shell hands it what the shell owns of that row: the pane's letter
-// while there are two, the pane's own controls, and under the row the claim
-// banner while an agent claims the model. The same element is the fullscreen
-// root: presenting a pane hides the others rather than remounting anything,
-// so a pane's session never restarts.
+// while there are two, and the pane's own controls. The same element is the
+// fullscreen root: presenting a pane hides the others rather than remounting
+// anything, so a pane's session never restarts.
 
 import { useMemo, type JSX, type ReactNode } from "react";
 
@@ -188,7 +187,6 @@ function PaneStage(props: PaneStageProps): JSX.Element {
 			controls: (
 				<PaneControls pane={pane} letter={letter} paneCount={paneCount} actions={actions} />
 			),
-			notice: null,
 			shared: paneCount > 1,
 			active,
 			column: active ? column : null,

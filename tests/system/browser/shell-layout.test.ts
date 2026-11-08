@@ -93,7 +93,8 @@ const READ_PANE_LETTERS = `(() => {
 /**
  * What the left column says an agent is doing on the one model: the latest
  * doing line under "Working now", at the top of the agent's card, and whether
- * the model's row carries the lamp.
+ * the model's row carries a mark of the agent: the lamp of its write, or the claim
+ * mark while the claim that it wrote under has not yet ended.
  */
 const READ_ACTIVITY = `(() => {
 	const nav = document.querySelector('${NAVIGATOR}');
@@ -103,7 +104,7 @@ const READ_ACTIVITY = `(() => {
 	const own = line ? [...line.childNodes].filter(child => child.nodeType === 3)
 		.map(child => child.textContent).join('').trim() : null;
 	const row = nav?.querySelector('[role="treeitem"][aria-selected="true"]');
-	return { entries: entries.length, doing: own, lamp: !!row?.querySelector('[data-slot="agent-activity"]') };
+	return { entries: entries.length, doing: own, lamp: !!row?.querySelector('[data-slot="agent-activity"], [data-slot="claim-mark"]') };
 })()`;
 
 test(
