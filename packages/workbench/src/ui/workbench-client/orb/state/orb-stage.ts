@@ -58,6 +58,7 @@ import { VOICE_MS } from "@archboard/timing";
 import { flightAt, type Spot } from "#ui/workbench-client/orb/rules/orb-flight.ts";
 import { SIZE } from "#ui/workbench-client/orb/clients/orb-painter.ts";
 import {
+	PAGE_FRAMES,
 	isDark,
 	isDrawn,
 	isLaunched,
@@ -67,6 +68,7 @@ import {
 	placeInLayer,
 	spotIn,
 	spotOf,
+	type OrbFrames,
 } from "#ui/workbench-client/orb/clients/orb-screen.ts";
 
 /**
@@ -85,21 +87,6 @@ interface OrbWish {
 	readonly shown: boolean;
 	/** Whether a change of home may be flown. */
 	readonly fly: boolean;
-}
-
-/** What a stage asks of the page's frames. */
-interface OrbFrames {
-	/**
-	 * Run something on the next frame.
-	 * @param callback What to run, with the frame's time in milliseconds.
-	 * @returns The request, to take back.
-	 */
-	readonly request: (callback: (time: number) => void) => number;
-	/**
-	 * Take back a request.
-	 * @param request The request.
-	 */
-	readonly cancel: (request: number) => void;
 }
 
 /** The stage the orb is drawn on. */
@@ -126,7 +113,12 @@ interface OrbStage {
 	 */
 	readonly offered: (home: OrbHome) => boolean;
 	/**
-	 * Hear about every socket offered or withdrawn.
+	 * Where the lit orb is wanted.
+	 * @returns The home, or null while voice is off and the orb is dark.
+	 */
+	readonly wanted: () => OrbHome | null;
+	/**
+	 * Hear about every socket offered or withdrawn, and every change of where the lit orb is wanted.
 	 * @param listener Called after each.
 	 * @returns How to stop hearing.
 	 */
@@ -186,23 +178,6 @@ const HOMES_FOR: Readonly<Record<OrbHome, readonly OrbHome[]>> = {
 	dock: ["dock", "box"],
 	box: ["box", "dock"],
 	narrate: ["narrate", "box", "dock"],
-};
-
-/** The page's own frames. */
-const PAGE_FRAMES: OrbFrames = {
-	/**
-	 * The next frame of the page.
-	 * @param callback What to run.
-	 * @returns The request.
-	 */
-	request: (callback) => requestAnimationFrame(callback),
-	/**
-	 * Take back a frame.
-	 * @param request The request.
-	 */
-	cancel: (request) => {
-		cancelAnimationFrame(request);
-	},
 };
 
 /**
@@ -567,7 +542,12 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 		 */
 		offered: (home) => socketOf(state, home) !== undefined,
 		/**
-		 * Hear about every socket offered or withdrawn.
+		 * Where the lit orb is wanted.
+		 * @returns The home, or null while the orb is dark.
+		 */
+		wanted: () => (state.wish.shown ? state.wish.home : null),
+		/**
+		 * Hear about every socket offered or withdrawn, and every change of where the lit orb is wanted.
 		 * @param listener Called after each.
 		 * @returns How to stop hearing.
 		 */
@@ -582,8 +562,10 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 		 * @param wish Where, whether lit, and whether it may fly.
 		 */
 		wish: (wish) => {
+			const moved = wish.home !== state.wish.home || wish.shown !== state.wish.shown;
 			state.wish = wish;
 			reconcile();
+			if (moved) notify();
 		},
 		/**
 		 * Launch from the key that was pressed, the home's from now: the dark orb moves into it first.

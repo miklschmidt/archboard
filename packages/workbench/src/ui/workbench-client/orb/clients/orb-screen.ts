@@ -1,6 +1,6 @@
 // Where the orb is on the page, for the stage that flies it: what the page paints, whether an
 // element is on screen to be left from or met, where the middle of a box is, how the holder is
-// drawn in the air, and how much of the orb shows.
+// drawn in the air, how much of the orb shows, and the page's frames a flight runs on.
 
 import type { Spot } from "#ui/workbench-client/orb/rules/orb-flight.ts";
 import { SIZE } from "#ui/workbench-client/orb/clients/orb-painter.ts";
@@ -108,4 +108,48 @@ function isLaunched(holder: HTMLElement): boolean {
 	return holder.dataset["launched"] !== undefined;
 }
 
-export { isDark, isDrawn, isLaunched, isOnScreen, isSeen, painted, placeInLayer, spotIn, spotOf };
+/** What a stage asks of the page's frames. */
+interface OrbFrames {
+	/**
+	 * Run something on the next frame.
+	 * @param callback What to run, with the frame's time in milliseconds.
+	 * @returns The request, to take back.
+	 */
+	readonly request: (callback: (time: number) => void) => number;
+	/**
+	 * Take back a request.
+	 * @param request The request.
+	 */
+	readonly cancel: (request: number) => void;
+}
+
+/** The page's own frames. */
+const PAGE_FRAMES: OrbFrames = {
+	/**
+	 * The next frame of the page.
+	 * @param callback What to run.
+	 * @returns The request.
+	 */
+	request: (callback) => requestAnimationFrame(callback),
+	/**
+	 * Take back a frame.
+	 * @param request The request.
+	 */
+	cancel: (request) => {
+		cancelAnimationFrame(request);
+	},
+};
+
+export {
+	PAGE_FRAMES,
+	isDark,
+	isDrawn,
+	isLaunched,
+	isOnScreen,
+	isSeen,
+	painted,
+	placeInLayer,
+	spotIn,
+	spotOf,
+	type OrbFrames,
+};

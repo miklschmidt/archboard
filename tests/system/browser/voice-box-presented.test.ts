@@ -35,7 +35,8 @@ import {
 // stage lays it, low over the picture, as it floats while nothing is presented. The column keeps the
 // key that narrates, which says why it cannot while a voice is on. The key's gold circle is a home of
 // the one orb: the dark orb waits there while voice is off, Narrate launches it out of the key into
-// the box, and a voice that ends in the box sends it home to the key. A fullscreen presentation has no
+// the box, the key is the hang-up key while the orb is in the box, and a voice that ends there sends
+// the orb home to the key. A fullscreen presentation has no
 // dock to take the voice back, so the box keeps it there whatever the person wants of subtitles,
 // which decide only whether there are words, and the bar holds the key that ends it. A fullscreen
 // page paints only the element presented, so on no frame may a lit orb be outside it.
@@ -50,8 +51,11 @@ interface Presented {
 	readonly orbInBox: boolean;
 	/** Whether a walkthrough's column is on the page. */
 	readonly presented: boolean;
-	/** The column's key that narrates: `offered`, `held` while it cannot, or null without one. */
-	readonly narrate: "offered" | "held" | null;
+	/**
+	 * The column's key that narrates: `offered`, `held` while it cannot, `hang-up` while the orb is in
+	 * the voice box and the key ends the voice, or null without one.
+	 */
+	readonly narrate: "offered" | "held" | "hang-up" | null;
 	/** What the presentation bar's voice key is, `talk` or `live`, or null outside a presentation. */
 	readonly bar: string | null;
 	/** Whether the box's words show: `true` or `false`, or null with no box. */
@@ -76,7 +80,9 @@ const PRESENTED = `(() => {
 		box: where,
 		orbInBox: !!voice && !!holder && voice.contains(holder),
 		presented: column !== null,
-		narrate: !narrate ? null : narrate.getAttribute('aria-disabled') === 'true' ? 'held' : 'offered',
+		narrate: !narrate ? null
+			: narrate.getAttribute('data-hang-up') === 'true' ? 'hang-up'
+			: narrate.getAttribute('aria-disabled') === 'true' ? 'held' : 'offered',
 		bar: key?.getAttribute('data-voice-key') ?? null,
 		words: voice?.querySelector('[data-slot="voice-subtitles"]')?.getAttribute('data-showing') ?? null,
 		seat: !seat ? null : seat.hasAttribute('data-occupied') ? 'occupied' : 'empty',
@@ -167,7 +173,7 @@ test("a presented walkthrough leaves the voice box low over its picture, in the 
 	);
 
 	// Presenting while the voice box floats over the picture: the steps stand in the column, and the
-	// box stays over the picture with the orb in it. The column's key says why it cannot narrate.
+	// box stays over the picture with the orb in it. The column's key is the hang-up key.
 	await startModelWalkthrough(browser, model.walkthroughs[0]!.id);
 	const over = await pollUntil(
 		() => presentedNow(browser),
@@ -175,7 +181,7 @@ test("a presented walkthrough leaves the voice box low over its picture, in the 
 		"the voice box to stay over the picture of the presented walkthrough",
 		WAIT,
 	);
-	expect(over.narrate).toBe("held");
+	expect(over.narrate).toBe("hang-up");
 	const there = await pollUntil(
 		() => voiceWhere(browser),
 		(where) => where.box && where.home === "box" && where.off < 1 && where.opacity === 1,
@@ -274,7 +280,7 @@ const SEAT_AT = `(() => {
 	return [box.x + box.width / 2, box.y + box.height / 2];
 })()`;
 
-test("Narrate launches the orb out of its key into the voice box, and a voice that ends there sends it home to the key", async () => {
+test("Narrate launches the orb out of its key into the voice box, and hanging up there sends it home to the key", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { server } = await startVoiceServer(resources, "voice-narrate-vault");
 	const model = await seedCanonicalModel(server.vault, "pipeline", TOUR);
@@ -313,16 +319,16 @@ test("Narrate launches the orb out of its key into the voice box, and a voice th
 	expect(await presentedNow(browser)).toMatchObject({
 		box: "over",
 		seat: "empty",
-		narrate: "held",
+		narrate: "hang-up",
 	});
 	const launch = (await seenSoFar(browser)).filter((frame) => frame.air && frame.at !== null);
 	// It was flown, and it left from the key's circle.
 	expect(launch.length).toBeGreaterThan(0);
 	expect(apart(launch[0]!.at!, seat)).toBeLessThan(2);
 
-	// The voice ends: the orb flies out of the box, and rests in the key's circle once voice is off.
+	// The key hangs up: the orb flies out of the box, and rests in the key's circle once voice is off.
 	await browser.eval(WATCH);
-	await talk(browser);
+	await browser.run(["click", NARRATE]);
 	const home = await pollUntil(
 		() => voiceWhere(browser),
 		(where) => where.home === "narrate" && where.off < 1 && where.opacity === 0,

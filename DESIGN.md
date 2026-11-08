@@ -848,8 +848,12 @@ circle is drawn only while the orb is there. The circle lifts 1px when the key i
 sinks 1px when it is pressed, as the gold button does. Then come "Narrate" and a line of muted
 ink that says what it does. Pressing the key sends the orb out of the circle into the voice box
 over the picture. While the orb is away, the key keeps the round room it had, and the room is
-empty. While a narration cannot start, as while a voice is on, the key's words are dimmed and
-the line says why. The key is never taken out. The voice itself is not in the column: the voice
+empty. While the orb is in the voice box, the key is the red hang-up key: a red disc with a
+white handset grows into the empty seat as the orb leaves it, and the words say "Hang up" and
+"End the voice." Pressing it ends the voice. As the voice ends, the disc shrinks away and the
+words change back before the orb lands in the seat. While a narration cannot start otherwise, as
+while the voice is in the dock, the key's words are dimmed and the line says why. The key is
+never taken out. The voice itself is not in the column: the voice
 box stays low over the picture.
 
 Under the key on the right stand the column's three keys. They are quiet keys, 32px high:

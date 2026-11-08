@@ -9,7 +9,7 @@
 // waits in a home and not out of sight, fades where it is and moves to the home it is wanted in
 // only once it is out of sight, and is lit where it is wanted and not flown there; a socket says
 // whether the orb rests in it, which is how the stylesheet draws a seat only for an orb that is
-// there; a surface can ask whether a home is on the page; and while the page is fullscreen, which
+// there; a surface can ask whether a home is on the page, and hear where the lit orb is wanted; and while the page is fullscreen, which
 // paints nothing but the element presented, a flight crosses inside that element and a home
 // outside it is not on screen. The third home, a Narrate key, has its own owner (narrate-home).
 //
@@ -50,6 +50,18 @@ test("the orb rests in the home it is wanted in, and it is the one holder in eit
 	expect(stage.holder.dataset["shown"]).toBe("true");
 	stage.wish({ home: "dock", shown: true, fly: false });
 	expect(whereIs(stage)).toBe("dock");
+});
+
+test("a surface hears where the lit orb is wanted, and nothing while it is dark", () => {
+	const { stage } = homes();
+	const heard: (OrbHome | null)[] = [];
+	stage.subscribe(() => heard.push(stage.wanted()));
+	expect(stage.wanted()).toBeNull();
+	stage.wish({ home: "box", shown: true, fly: false });
+	stage.wish({ home: "box", shown: true, fly: true });
+	stage.wish({ home: "narrate", shown: true, fly: true });
+	stage.wish({ home: "narrate", shown: false, fly: true });
+	expect(heard).toEqual(["box", "narrate", null]);
 });
 
 test("a dark orb fades where it is, and only once it is out of sight waits in the home it is wanted in", () => {

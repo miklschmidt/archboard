@@ -327,9 +327,11 @@ pill with a gold circle and a microphone in it. The keys, previous, next and lea
 it on the right. The gold circle is a home of the one voice orb (TASK-590.09). While voice is
 off, the dark orb waits in it, and the circle is drawn only while the orb is there. Narrate
 launches the orb out of the circle, lit, into the voice box, or into the dock while subtitles
-are off. While the orb is away, the key keeps an empty seat. A voice that ends in the box sends
-the orb back into the circle, where it fades, and the gold circle comes back. While a voice is
-on, the key is dimmed and says why. The voice box is not in the column: it stays low over the
+are off. While the orb is in the voice box, the key is the red hang-up key (TASK-590.16): a red
+disc with a handset grows into the seat the orb left, and a press ends the voice. A voice that
+ends in the box sends the orb back into the circle: the red disc shrinks away first, the orb
+fades in the seat, and the gold circle comes back. While the voice is in the dock, the key is
+dimmed and says why. The voice box is not in the column: it stays low over the
 picture, in the middle of it, as it floats while nothing is presented. The foot keeps its place
 whichever step is shown, so nothing in the column moves. A fullscreen presentation has no dock. So the voice box carries the voice there, whatever the
 person wants of subtitles, and the bar holds one key that starts and ends voice. DESIGN.md
@@ -339,8 +341,8 @@ describes the column.
 theme](assets/walkthrough-box.png)
 
 Rendered captures at 1920×1080, cropped to the picture and the column. Left, the dark theme
-while the voice speaks. Right, the light theme. The orb is in the voice box, so the Narrate key
-keeps an empty seat.
+while the voice speaks. Right, the light theme. The orb is in the voice box. These captures
+predate the hang-up key, which now fills the Narrate key's empty seat.
 
 The camera fits the subjects of the step to the picture beside the column.
 The subjects include the parts at both ends of each relationship
