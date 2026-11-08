@@ -138,21 +138,30 @@ function Body(props: {
 }
 
 /**
- * Whose panel this is: its name, then one line that says what it is.
- * @param props The name and the line.
+ * Whose panel this is: the chip of its kind, when it has one, before its name, and under the name
+ * one line that says what it is, as the site's mock panel heads a module.
+ * @param props The mark, the name and the line.
+ * @param props.mark The chip of its kind.
  * @param props.title The name.
  * @param props.children The line.
  * @returns The head.
  */
-function Head(props: { readonly title: ReactNode; readonly children?: ReactNode }): JSX.Element {
+function Head(props: {
+	readonly mark?: ReactNode;
+	readonly title: ReactNode;
+	readonly children?: ReactNode;
+}): JSX.Element {
 	return (
-		<header className="flex flex-col gap-1 pr-8">
-			<h3 className="title-name text-balance [overflow-wrap:anywhere]">{props.title}</h3>
-			{props.children !== undefined && (
-				<div className="text-body text-muted-foreground flex min-w-0 flex-wrap gap-x-2">
-					{props.children}
-				</div>
-			)}
+		<header className="flex items-center gap-2.5 pr-8">
+			{props.mark}
+			<div className="flex min-w-0 flex-col gap-1">
+				<h3 className="title-name text-balance [overflow-wrap:anywhere]">{props.title}</h3>
+				{props.children !== undefined && (
+					<div className="text-body text-muted-foreground flex min-w-0 flex-wrap gap-x-2">
+						{props.children}
+					</div>
+				)}
+			</div>
 		</header>
 	);
 }
@@ -175,17 +184,19 @@ function Section(props: {
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
-		<section data-slot={props.slot} aria-label={props.title} className="flex flex-col gap-1">
-			<div className="flex items-center justify-between gap-2">
-				<h4 className="text-body text-muted-foreground flex items-baseline gap-2 font-semibold">
+		<section data-slot={props.slot} aria-label={props.title} className="flex flex-col gap-2">
+			<div className="flex min-h-6 items-center justify-between gap-2">
+				<h4 className="text-body text-foreground flex items-baseline gap-2 font-semibold">
 					{props.title}
 					{props.count !== undefined && (
-						<span className="text-technical font-mono font-normal">{props.count}</span>
+						<span className="text-technical text-muted-foreground font-mono font-normal">
+							{props.count}
+						</span>
 					)}
 				</h4>
 				{props.action}
 			</div>
-			<ul className="-mx-2 flex flex-col">{props.children}</ul>
+			<ul className="flex flex-col gap-0.5">{props.children}</ul>
 		</section>
 	);
 }
@@ -216,7 +227,7 @@ function Rows<Item>(props: {
 						type="button"
 						data-slot="model-panel-more"
 						onClick={showAll}
-						className="text-body text-muted-foreground hover:text-foreground px-2 py-1"
+						className="text-body text-muted-foreground hover:text-foreground rounded-control px-2 py-1"
 					>
 						{items.length - shown.length} more
 					</button>
@@ -233,6 +244,7 @@ function Rows<Item>(props: {
  * @param props.detail What it says of that.
  * @param props.stacked Whether the detail stands under the name.
  * @param props.action What else can be done with what it names, at its end.
+ * @param props.foot A mark along the foot of the row, such as a meter.
  * @returns The row.
  */
 function Row({
@@ -240,12 +252,14 @@ function Row({
 	detail,
 	stacked = false,
 	action,
+	foot,
 	...button
 }: ComponentProps<"button"> & {
 	readonly name: ReactNode;
 	readonly detail?: ReactNode;
 	readonly stacked?: boolean;
 	readonly action?: ReactNode;
+	readonly foot?: ReactNode;
 }): JSX.Element {
 	return (
 		<li className="flex items-center">
@@ -253,8 +267,11 @@ function Row({
 				type="button"
 				{...button}
 				className={cn(
-					"hover:bg-muted/60 aria-pressed:bg-sidebar-accent aria-[current=location]:bg-sidebar-accent rounded-control flex min-h-7 min-w-0 flex-1 gap-x-2 px-2 py-1 text-left",
+					// A row is a plate on the panel, as the site's inspector lists its parts; the row on
+					// screen rises as a raised face.
+					"bg-background hover:bg-face aria-pressed:bg-face aria-pressed:shadow-raised aria-[current=location]:bg-face aria-[current=location]:shadow-raised rounded-control flex min-h-7 min-w-0 flex-1 gap-x-2 px-2 py-1 text-left transition-colors",
 					stacked ? "flex-col" : "items-baseline",
+					foot !== undefined && "relative overflow-hidden",
 				)}
 			>
 				<span
@@ -273,6 +290,7 @@ function Row({
 				>
 					{detail}
 				</span>
+				{foot}
 			</button>
 			{action}
 		</li>

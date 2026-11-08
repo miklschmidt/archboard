@@ -1,6 +1,5 @@
 import { useCallback, useContext, type RefObject } from "react";
 import type { Model } from "@archboard/model/content";
-import type { Destination } from "#ui/architecture-drawing/model-reader/reading/components/ModelColumn.tsx";
 import type { useFlowReadings } from "#ui/architecture-drawing/model-reader/hooks/use-flow-readings.ts";
 import type { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import { usePaneChrome } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts";
@@ -20,7 +19,6 @@ interface ReaderChoiceInputs {
 	readonly area: RefObject<HTMLElement | null>;
 	readonly selectMany: (ids: readonly string[]) => void;
 	readonly onOpen: (next: string | null) => void;
-	readonly onDestination: (destination: Destination) => void;
 }
 
 /**
@@ -29,8 +27,7 @@ interface ReaderChoiceInputs {
  * @returns A choice of a module, a flow, or something found, and the way to show each of them.
  */
 function useReaderChoices(inputs: ReaderChoiceInputs) {
-	const { location, flows, model, opened, frames, area, selectMany, onOpen, onDestination } =
-		inputs;
+	const { location, flows, model, opened, frames, area, selectMany, onOpen } = inputs;
 	const { open, selectBookmark, selectLegacyAddress } = location;
 	const { openFlow, fitting } = flows;
 	const { openBeside } = usePaneChrome();
@@ -83,31 +80,18 @@ function useReaderChoices(inputs: ReaderChoiceInputs) {
 		},
 		[model.modules, openBeside, modelId, showHere],
 	);
-	const findFlow = useCallback(
-		(id: string, beside: boolean): void => {
-			onDestination("flows");
-			chooseFlow(id, beside);
-		},
-		[onDestination, chooseFlow],
-	);
-	const findWalkthrough = useCallback(
-		(id: string): void => {
-			onDestination("walkthroughs");
-			start?.(id);
-		},
-		[onDestination, start],
-	);
+	const findWalkthrough = useCallback((id: string): void => start?.(id), [start]);
 	const chooseFind = useCallback(
 		(hit: FindHit, beside: boolean): void => {
 			if (hit.kind === "module") findModule(hit.id, beside);
-			else if (hit.kind === "flow") findFlow(hit.id, beside);
+			else if (hit.kind === "flow") chooseFlow(hit.id, beside);
 			else if (hit.kind === "walkthrough") findWalkthrough(hit.id);
 			else if (hit.kind === "bookmark") selectBookmark(hit.id);
 			else selectLegacyAddress(hit.id);
 		},
-		[findModule, findFlow, findWalkthrough, selectBookmark, selectLegacyAddress],
+		[findModule, chooseFlow, findWalkthrough, selectBookmark, selectLegacyAddress],
 	);
-	return { chooseModule, chooseFlow, chooseFind, findFlow, findModule, findWalkthrough, showHere };
+	return { chooseModule, chooseFlow, chooseFind, findModule, findWalkthrough, showHere };
 }
 
 export { useReaderChoices };

@@ -83,7 +83,6 @@ interface ModelDiagramProps {
 	/** Whether this picture took over from a flight that already put the camera in place. */
 	cut?: boolean | undefined;
 	reducedMotion: boolean;
-	reserve?: number;
 	onPresentation?: ((picture: { key: string; arrived: boolean } | null) => void) | undefined;
 	selected: ReadonlySet<string>;
 	warnings?: ReadonlySet<string>;
@@ -110,8 +109,6 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	const { scene, camera, selected, onSelect, onSelectMany, onOpen, reducedMotion } = props;
 	const { picture: drawing, projection, model } = scene;
 	const presenting = scene.presentation !== undefined;
-	const { reserve: reserveBottom } = camera;
-	useLayoutEffect(() => reserveBottom(props.reserve ?? 0), [reserveBottom, props.reserve]);
 	const [surface, setSurface] = useState<HTMLDivElement | null>(null);
 	useGradientsWhileShown(surface);
 	const attachViewport = useCallback(

@@ -101,8 +101,8 @@ test("canonical narration follows the captured walkthrough in its own pane", asy
 	expect(first[0]).toContain("The services");
 	await pollUntil(
 		() => voiceNow(browser),
-		(voice) => voice.box?.place === "foot" && voice.box.pane === "Pane A",
-		"the voice in the narrative foot",
+		(voice) => voice.box?.over === true && voice.box.pane === "Pane A",
+		"the voice low over the presented picture",
 		WAIT,
 	);
 	expect(

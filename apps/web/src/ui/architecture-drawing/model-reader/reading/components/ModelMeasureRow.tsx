@@ -1,5 +1,14 @@
-import { useMemo, type CSSProperties, type JSX } from "react";
-import { Badge, cn } from "@archboard/ui-kit/components";
+import {
+	useCallback,
+	useMemo,
+	type CSSProperties,
+	type JSX,
+	type KeyboardEvent,
+	type MouseEvent,
+} from "react";
+import { cn } from "@archboard/ui-kit/components";
+import type { LocalityAnswer } from "@archboard/code-intel/history";
+import { KindChip } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutTable.tsx";
 import {
 	isHistoryMeasure,
 	measureOf,
@@ -8,9 +17,8 @@ import {
 	type MeasureRow,
 } from "#ui/architecture-drawing/model-reader/reading/rules/module-measures.ts";
 import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
-import type { LocalityAnswer } from "@archboard/code-intel/history";
 
-/** Why the lens did not read a module, as a row and the foot of the list say it. */
+/** Why the lens did not read a module, as a row and the foot of the table say it. */
 const NOT_READ: Readonly<Record<LocalityAnswer["skipped"][number]["reason"], string>> = {
 	unbound: "no code binding",
 	"drill-down": "another module holds its history",
@@ -19,124 +27,146 @@ const NOT_READ: Readonly<Record<LocalityAnswer["skipped"][number]["reason"], str
 	"ref-not-checked-out": "its ref is not checked out",
 };
 
-/** How wide a count column is, and how many there are. The heads and the rows take this one track. */
-const COUNT_COLUMNS = "grid grid-cols-[repeat(var(--measure-columns),30px)]";
-
 /** A count of none and a dash, at the floor of a mark in the dark theme: Lc 37 on the well. */
 const QUIET_INK = "text-muted-foreground/80";
 
-/** The room the bar has: the row less the count columns and the room around them. */
-const BAR_ROOM = "(100% - var(--measure-columns) * 30px - 26px)";
-
-/** A bar is a slab in the colour of its kind: a lit top edge and a front edge in shade. */
-const BAR_SLAB =
-	"shadow-[inset_0_1px_0_color-mix(in_oklch,var(--kind)_70%,white),0_2px_0_color-mix(in_oklch,var(--kind)_60%,black)]";
+/** A row's cells, with a line of the rule between it and the row above. */
+const CELL =
+	"h-9 px-3 [tr+tr>&]:shadow-[inset_0_1px_0_color-mix(in_oklch,var(--border)_55%,transparent)]";
 
 /**
- * A row's counts, each in its own column, and the bar of the sorted count under the name. Every
- * measure keeps its column on every row, so the eye runs down one edge, and the sorted count stands
- * on a slab. An empty cell is a module with no such measure, and a dash is a module the lens did
- * not read, so neither looks like a count of none.
- * @param props The row, the measures on show, what it is sorted by, the most of that measure and how
- * kinds look.
- * @param props.row The row.
- * @param props.measures The measures on show, in the order of the columns.
- * @param props.sorted What it is sorted by.
- * @param props.most The most of that measure in the list.
- * @param props.look How the kinds of the model look.
- * @returns The cells.
+ * The bar of a sorted count, as the site draws it: a gold wash from the right edge of its cell, as
+ * long as the count is against the most in the table, and an edge of gold as strong.
  */
-function ModelMeasureCells(props: {
+const SORTED_BAR =
+	"bg-[linear-gradient(to_left,color-mix(in_oklch,var(--primary-mark)_16%,transparent)_calc(var(--share)*100%),transparent_0)] shadow-[inset_-2px_0_0_color-mix(in_oklch,var(--primary-mark)_calc(var(--share)*90%),transparent)]";
+
+/** Inputs for one row of the table. */
+interface ModelMeasureRowProps {
 	readonly row: MeasureRow;
+	/** The measures of the table, in the order of its columns. */
 	readonly measures: readonly Measure[];
+	/** What the table is sorted by. */
 	readonly sorted: MeasureKey;
+	/** The most of that measure in the table, which a bar is drawn against. */
 	readonly most: number;
 	readonly look: KindLook;
-}): JSX.Element {
-	const { row, measures, sorted, most, look } = props;
-	return (
-		<>
-			<SortedBar count={measureOf(row, sorted) ?? 0} most={most} color={look.nodeColor(row.kind)} />
-			<span data-slot="model-measure-cells" className={COUNT_COLUMNS}>
-				{measures.map(({ key }) => (
-					<Cell key={key} row={row} measure={key} sorted={key === sorted} />
-				))}
-			</span>
-		</>
-	);
+	/** Whether the module is the one selected on the picture. */
+	readonly lit: boolean;
+	/** Whether the row holds the table's one tab stop. */
+	readonly stop: boolean;
+	readonly onChoose: (row: MeasureRow, beside: boolean) => void;
+	readonly onFocusRow: (id: string) => void;
+	readonly onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
 }
 
 /**
- * The length of the sorted count, under the name. It draws that one count and no other, in the
- * colour of the module's kind, so it adds nothing up and judges nothing (ADR 0044).
- * @param props The count, the most of its measure and the colour.
- * @param props.count The count.
- * @param props.most The most of its measure in the list.
- * @param props.color The colour of the module's kind, as a CSS colour.
- * @returns The bar, or nothing for a count of none.
+ * One module of the table: its kind and name, then each count in its own column. The name is the
+ * row's one button, and it covers the whole row, so a press anywhere on the row selects the module
+ * on its picture, beside the reading with Alt. An empty cell is a module with no such measure, and
+ * a dash is a module the lens did not read, so neither looks like a count of none.
+ * @param props The row and what choosing it does.
+ * @returns The row.
  */
-function SortedBar(props: {
-	readonly count: number;
-	readonly most: number;
-	readonly color: string;
-}): JSX.Element | null {
-	const { count, most, color } = props;
-	const style = useMemo<CSSProperties>(
-		() => ({ "--kind": color, width: `calc(${BAR_ROOM} * ${count / most})` }),
-		[color, count, most],
+function ModelMeasureRow(props: ModelMeasureRowProps): JSX.Element {
+	const { row, measures, sorted, most, look, lit, stop, onChoose, onFocusRow, onKeyDown } = props;
+	const choose = useCallback(
+		(event: MouseEvent<HTMLButtonElement>): void => onChoose(row, event.altKey),
+		[onChoose, row],
 	);
-	if (count === 0) return null;
+	const focus = useCallback((): void => onFocusRow(row.id), [onFocusRow, row.id]);
 	return (
-		<span
-			aria-hidden="true"
-			data-slot="model-measure-bar"
-			style={style}
+		<tr
+			data-measure-row={row.id}
+			data-row-id={row.id}
 			className={cn(
-				"rounded-chip absolute top-0.5 bottom-1 left-1 -z-10 min-w-0.5 bg-(color:--kind)/55 dark:bg-(color:--kind)/70",
-				BAR_SLAB,
+				"group/row relative transition-colors",
+				lit ? "bg-face shadow-[inset_0_-2px_0_var(--primary)]" : "hover:bg-face/50",
 			)}
-		/>
+		>
+			<th scope="row" className={cn(CELL, "text-left font-normal")}>
+				<span className="flex min-w-0 items-center gap-2.5">
+					<KindChip kind={row.kind} look={look} />
+					<button
+						type="button"
+						tabIndex={stop ? 0 : -1}
+						aria-current={lit ? "true" : undefined}
+						title={row.title}
+						onClick={choose}
+						onFocus={focus}
+						onKeyDown={onKeyDown}
+						className="text-control focus-visible:after:ring-ring after:rounded-control min-w-0 truncate text-left outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset"
+					>
+						{row.name}
+					</button>
+				</span>
+			</th>
+			{measures.map(({ key }) => (
+				<Cell key={key} row={row} measure={key} sorted={key === sorted} most={most} />
+			))}
+		</tr>
 	);
 }
 
 /**
- * One count of a row.
- * @param props The row, the measure and whether the row is sorted by it.
+ * One count of a row, or the cell that stands where a module has none.
+ * @param props The row, the measure, whether the table is sorted by it and the most of it.
  * @param props.row The row.
  * @param props.measure The measure.
- * @param props.sorted Whether the row is sorted by it.
+ * @param props.sorted Whether the table is sorted by it.
+ * @param props.most The most of the measure in the table.
  * @returns The cell.
  */
 function Cell(props: {
 	readonly row: MeasureRow;
 	readonly measure: MeasureKey;
 	readonly sorted: boolean;
+	readonly most: number;
 }): JSX.Element {
-	const { row, measure, sorted } = props;
-	const count = measureOf(row, measure);
-	if (count === undefined) return <EmptyCell row={row} measure={measure} />;
-	if (sorted)
-		return (
-			<span className="flex justify-end">
-				<Badge
-					variant="count"
-					size="technical"
-					data-slot="model-measure-sorted"
-					data-measure={measure}
-					data-count={count}
-				>
-					{count}
-				</Badge>
-			</span>
-		);
+	const count = measureOf(props.row, props.measure);
+	if (count === undefined) return <EmptyCell row={props.row} measure={props.measure} />;
+	return <CountCell {...props} count={count} />;
+}
+
+/** The ink of a count: quieter for none, full for the sorted column, and prose ink for the rest. */
+const COUNT_INK = { none: QUIET_INK, sorted: "text-foreground", other: "text-body-foreground" };
+
+/**
+ * A count. The sorted count stands on its bar, as long as it is against the most in the table.
+ * @param props The measure, its count, whether the table is sorted by it and the most of it.
+ * @param props.measure The measure.
+ * @param props.count The count.
+ * @param props.sorted Whether the table is sorted by it.
+ * @param props.most The most of the measure in the table.
+ * @returns The cell.
+ */
+function CountCell(props: {
+	readonly measure: MeasureKey;
+	readonly count: number;
+	readonly sorted: boolean;
+	readonly most: number;
+}): JSX.Element {
+	const { measure, count, sorted, most } = props;
+	const share = useMemo<CSSProperties | undefined>(
+		() => (sorted ? { "--share": most === 0 ? 0 : count / most } : undefined),
+		[sorted, count, most],
+	);
+	const ink = count === 0 ? "none" : sorted ? "sorted" : "other";
 	return (
-		<span
+		<td
 			data-measure={measure}
 			data-count={count}
-			className={cn("pr-1 text-right", count === 0 ? QUIET_INK : "text-foreground/85")}
+			data-sorted={sorted ? "" : undefined}
+			style={share}
+			className={cn(
+				CELL,
+				"text-technical text-right font-mono tabular-nums",
+				sorted && SORTED_BAR,
+				COUNT_INK[ink],
+			)}
 		>
 			{count}
-		</span>
+		</td>
 	);
 }
 
@@ -150,32 +180,22 @@ function Cell(props: {
  */
 function EmptyCell(props: { readonly row: MeasureRow; readonly measure: MeasureKey }): JSX.Element {
 	const { history } = props.row;
-	if (!isHistoryMeasure(props.measure) || history?.kind !== "skipped") return <span />;
+	if (!isHistoryMeasure(props.measure) || history?.kind !== "skipped")
+		return (
+			<td className={CELL}>
+				<span className="sr-only">No count</span>
+			</td>
+		);
 	return (
-		<span
+		<td
 			data-not-read={history.reason}
 			title={`Not read: ${NOT_READ[history.reason]}`}
-			className={cn("pr-1 text-right", QUIET_INK)}
+			className={cn(CELL, "text-technical text-right font-mono", QUIET_INK)}
 		>
-			–
-		</span>
+			<span aria-hidden="true">–</span>
+			<span className="sr-only">Not read: {NOT_READ[history.reason]}</span>
+		</td>
 	);
 }
 
-/**
- * What a row says to assistive technology, because a bare number in a column says nothing.
- * @param row The row.
- * @param measures The measures on show.
- * @returns Its name and each count with what it counts.
- */
-function measureRowLabel(row: MeasureRow, measures: readonly Measure[]): string {
-	const counts = measures.flatMap(({ key, label }) => {
-		const count = measureOf(row, key);
-		return count === undefined ? [] : [`${label} ${count}`];
-	});
-	const { history } = row;
-	const skipped = history?.kind === "skipped" ? [`Not read: ${NOT_READ[history.reason]}`] : [];
-	return [row.name, ...counts, ...skipped].join(", ");
-}
-
-export { COUNT_COLUMNS, ModelMeasureCells, NOT_READ, measureRowLabel };
+export { ModelMeasureRow, NOT_READ };

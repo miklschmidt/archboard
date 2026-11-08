@@ -68,9 +68,19 @@ const ENDABLE: ReadonlySet<VoiceStage> = new Set(["connecting", "listening", "sp
  * @returns The action, or undefined while a press does nothing.
  */
 function voicePress(voice: AgentVoiceView, actions: AgentActions): (() => void) | undefined {
-	if (voice.busy) return undefined;
-	if (voice.stage === "idle") return actions.talk;
-	return ENDABLE.has(voice.stage) ? actions.endVoice : undefined;
+	if (voice.stage === "idle") return voice.busy ? undefined : actions.talk;
+	return voiceEnd(voice, actions);
 }
 
-export { CIRCLE_NAMES, ENDABLE, VOICE_WORDS, circleState, voicePress, type CircleState };
+/**
+ * What a press of a key that only ends voice does: end it once it connects, and nothing while a
+ * control is on the wire, before it connects or while it ends.
+ * @param voice The voice.
+ * @param actions The actions.
+ * @returns The action, or undefined while a press does nothing.
+ */
+function voiceEnd(voice: AgentVoiceView, actions: AgentActions): (() => void) | undefined {
+	return !voice.busy && ENDABLE.has(voice.stage) ? actions.endVoice : undefined;
+}
+
+export { CIRCLE_NAMES, ENDABLE, VOICE_WORDS, circleState, voiceEnd, voicePress, type CircleState };

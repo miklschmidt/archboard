@@ -34,6 +34,7 @@ function emptyPaneStatus(paneId: string): PaneStatus {
 		paneId,
 		clientId: "",
 		connected: false,
+		reconnecting: false,
 		registered: false,
 		model: null,
 		paneKey: null,

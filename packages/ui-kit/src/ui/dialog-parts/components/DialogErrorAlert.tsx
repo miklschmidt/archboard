@@ -22,7 +22,7 @@ function DialogErrorAlert(props: DialogErrorAlertProps): JSX.Element | null {
 		return null;
 	}
 	return (
-		<Alert variant="destructive" className="rounded-sm">
+		<Alert variant="destructive">
 			<RiErrorWarningLine />
 			<AlertTitle>{error.title}</AlertTitle>
 			<AlertDescription>{error.message}</AlertDescription>

@@ -34,7 +34,7 @@ function IconAction(props: IconActionProps): JSX.Element {
 			<Tooltip.Trigger
 				className={cn(
 					buttonVariants({ variant: props.variant ?? "ghost", size: "icon-xs" }),
-					"relative rounded-sm after:absolute after:-inset-1",
+					"relative after:absolute after:-inset-1",
 					props.disabled === true && "pointer-events-none opacity-50",
 					props.className,
 				)}

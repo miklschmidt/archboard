@@ -27,7 +27,6 @@ import {
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
-const TAB_TOPS = `[...document.querySelectorAll('[data-destination]')].map(tab => tab.offsetTop)`;
 
 /** A flow for the proposal to change, because most changes in a proposal are steps. */
 const REQUESTS = {
@@ -220,7 +219,8 @@ test("proposal comparison draws removed definitions from its coherent base and e
 			`document.querySelector('[data-slot="model-interface-unchanged"]') !== null`,
 		),
 	).toBe(true);
-	expect(new Set(await browser.eval<number[]>(TAB_TOPS)).size).toBe(1);
+	const first = `document.querySelector('[data-slot="model-sections"] [data-column-section]')?.dataset.columnSection`;
+	expect(await browser.eval<string | undefined>(first)).toBe("changes");
 	for (const [index, id] of rows.entries()) {
 		await browser.run(index === 0 ? ["click", '[data-slot="model-change-next"]'] : ["press", "n"]);
 		await standsOn(browser, id, `${index + 1} of ${rows.length}`);

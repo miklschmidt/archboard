@@ -21,6 +21,11 @@ interface ModelTreeProps {
 	readonly onOpen: (id: string, beside: boolean) => void;
 	/** A printable key typed in the tree, handed to Find. */
 	readonly onTypeAhead: (text: string) => void;
+	/**
+	 * Whether the column keeps the lit row in view. A proposal's column follows its changes
+	 * instead, because the walk opens the module of each change.
+	 */
+	readonly follows: boolean;
 }
 
 /**
@@ -51,12 +56,12 @@ function litRow(rows: readonly ModuleRow[], picked: string | null, opened: strin
  * @returns The tree.
  */
 function ModelTree(props: ModelTreeProps): JSX.Element {
-	const { tree, open, scope, selected, onToggle, onOpen, onTypeAhead } = props;
+	const { tree, open, scope, selected, onToggle, onOpen, onTypeAhead, follows } = props;
 	const list = useRef<HTMLDivElement>(null);
 	const rows = useMemo(() => treeRows(tree, open), [tree, open]);
 	const opened = rowOf(tree, scope);
 	const { lit, depth } = litRow(rows, rowOf(tree, selected), opened);
-	useRevealedRow(list, lit, depth);
+	useRevealedRow(list, follows ? lit : null, depth);
 	const toggle = useCallback((row: ModuleRow): void => onToggle(row.id), [onToggle]);
 	const openRow = useCallback(
 		(row: ModuleRow, beside: boolean): void => onOpen(row.module.end, beside),

@@ -124,6 +124,23 @@ function whenChecked(checkedAt: string): string {
 }
 
 /**
+ * When the pass ran, which says how old the news is.
+ * @param props When the pass ran.
+ * @param props.checkedAt When, as the server wrote it.
+ * @returns The line.
+ */
+function CheckedAt(props: { readonly checkedAt: string }): JSX.Element {
+	return (
+		<p className="text-muted-foreground text-body">
+			Code check at{" "}
+			<time dateTime={props.checkedAt} className="text-technical font-mono">
+				{whenChecked(props.checkedAt)}
+			</time>
+		</p>
+	);
+}
+
+/**
  * The findings of the last code check on the selected subject.
  * @param props What the check said, or null when it said nothing about it.
  * @param props.code The findings and when the pass ran.
@@ -144,14 +161,9 @@ function CodeBlock(props: { readonly code: CodeStanding | null }): JSX.Element |
 					<Finding key={`${finding.code}|${finding.path}|${finding.message}`} finding={finding} />
 				))}
 			</ul>
-			<p className="text-muted-foreground text-body">
-				Code check at{" "}
-				<time dateTime={code.checkedAt} className="text-technical font-mono">
-					{whenChecked(code.checkedAt)}
-				</time>
-			</p>
+			<CheckedAt checkedAt={code.checkedAt} />
 		</SidebarSection>
 	);
 }
 
-export { CodeBlock, type CodeStanding };
+export { CheckedAt, CodeBlock, type CodeEvidence, type CodeFinding, type CodeStanding };

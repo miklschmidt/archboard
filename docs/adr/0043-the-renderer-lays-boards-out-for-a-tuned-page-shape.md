@@ -78,3 +78,13 @@ the stage is 1471 by 1040, and the reference pane is 1143 wide and about 816 hig
 fit recorded before this date is against the wider pane. `LANDING_ROOM` in the core
 follows the same width, so a picture lands in a room of 1063 by 955. The core keeps the
 navigator's width in `crates/archboard-scene/src/paint/design.rs`, beside this module.
+
+## Amendment of 2026-11-07: the navigator is 280 px wide
+
+TASK-590.12 narrowed the navigator from 448 px to 280 px, the width of the sidebar beside a
+picture. The owner asked for a sidebar of the usual width. The column has no tabs now: it lists
+modules, flows and walkthroughs as sections of one list, and History and Measures open in
+dialogs of their own. The rules above stand. The numbers follow the shell: the stage is 1639 by
+1040, and the reference pane is 1311 wide and about 936 high. A fit recorded from 2026-10-31 to
+this date is against the pane of 1143 px. `LANDING_ROOM` in the core follows the same width, so
+a picture lands in a room of 1231 by 955.

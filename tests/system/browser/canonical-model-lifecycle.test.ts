@@ -18,7 +18,12 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { initializeSource, selectComparison, selectReading } from "./support/canonical-model.ts";
+import {
+	historyClosed,
+	initializeSource,
+	selectComparison,
+	selectReading,
+} from "./support/canonical-model.ts";
 import { openAbout, openDiagram, refreshModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
@@ -103,6 +108,7 @@ async function chooseState(
 		WAIT,
 	);
 	await browser.run(["click", `[data-state-id="${id}"]`]);
+	await historyClosed(browser);
 	await stateIs(browser, id, lifecycle);
 }
 

@@ -19,6 +19,11 @@ renders and gives it to the page. The talk's format does not change, so a talk
 that was kept before this amendment renders with the orb too. The sections
 below say so. Everything else stands.
 
+Amended by TASK-590.05 (2026-11-07): the user wants the voice box of a presented
+walkthrough to stay low over the picture, where it floats while nothing is
+presented, and the steps to stand in a column beside the picture. The replay
+draws the voice box there too. Everything else stands.
+
 Amended by TASK-469 (2026-10-12): `semantic record` and `semantic replay` take
 `--layout track|blocks`, so a video can draw the layout of the renders beside
 it. Like `--theme`, the layout is pass 2's input, and the talk keeps it.
@@ -178,8 +183,7 @@ the vault policy only from the talk, through the board-reads port
 engine and the level of the voice on each frame.
 
 The page draws the voice as the shell draws a live voice in a presented
-walkthrough: the voice box of `src/ui/workbench` at the foot of the walkthrough
-box. The voice of a talk is live from its first frame to its last. A recording
+walkthrough: the voice box of `src/ui/workbench`, low over the picture. The voice of a talk is live from its first frame to its last. A recording
 has no dock, so the page hosts the one orb itself and keeps it in the box. The
 box is drawn from the first step on, because before it the talk shows the whole
 board. The orb is in its socket from the first frame that shows the box, and it
@@ -405,11 +409,10 @@ This reverses these parts of ADR 0035:
   the vault policy during pass 1 goes unnoticed.
 - The replay page and the recording page must lay out the same frame. The
   replay mounts the recording's own `RecordingStage` so that the pane and its
-  walkthrough box stand where they stood. Their voice differs: the recording
-  page captures no picture and nobody sees it, so it lays only the words, and
-  the replay draws the voice box in the walkthrough box's pill. The pill has one
-  height whatever it holds, so the camera frames each step the same way on both
-  pages.
+  walkthrough's column stand where they stood. Their voice differs: the
+  recording page captures no picture and nobody sees it, so it lays only the
+  words, and the replay draws the voice box. Both lie over the picture and take
+  no room from it, so the camera frames each step the same way on both pages.
 
 ## Canonical walkthrough recordings
 

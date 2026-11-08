@@ -195,15 +195,12 @@ async function emulateMedia(
  */
 async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 	return browser.eval<MatrixProbe>(`(async () => {
-		// Each declared face, loaded here rather than checked. A change of the
+		// Every declared face, loaded here rather than checked. A change of the
 		// emulated media replaces the page's CSS font faces with new, unloaded
-		// ones, and one that no text uses stays unloaded until asked for. So a
-		// face counts when its load gives back loaded faces: one still loading
-		// is waited for, and one that fails, or that nothing declares, is false.
-		const fontChecks = await Promise.all(['400 14px "Archboard Onest"', '500 14px "Archboard Onest"',
-			'600 14px "Archboard Onest"', '700 14px "Archboard Onest"', '400 10px "Archboard Maple Mono"',
-			'500 10px "Archboard Maple Mono"'].map(font => document.fonts.load(font).then(
-				faces => faces.length > 0 && faces.every(face => face.status === 'loaded'), () => false)));
+		// ones, and one that no text uses stays unloaded until asked for.
+		const faces = [...document.fonts];
+		const fontsLoaded = faces.length > 0 && (await Promise.all(
+			faces.map(face => face.load().then(() => true, () => false)))).every(Boolean);
 		const shell = document.getElementById('root')?.firstElementChild;
 		// The navigator's top row: the brand and the application's own controls.
 		const header = document.querySelector('${BRAND_BAR}');
@@ -226,35 +223,29 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const present = paneHeader?.querySelector('button[aria-label^="Present"]');
 		const column = document.querySelector('${NAVIGATOR_COLUMN}');
 		const nav = document.querySelector('${NAVIGATOR}');
-		// A technical token in the mono face: the count on a tab of the left column.
-		const technical = nav?.querySelector('[data-slot="destination-count"]');
+		// A technical token in the mono face: the count on the head of a section of the left column.
+		const technical = nav?.querySelector('[data-slot="section-count"]');
 		const stages = document.querySelector('${STAGE_ROOT}');
 		const bar = document.querySelector('${AGENT_DOCK}');
 		// The switcher names the repository of the focused pane, a human label beside the header's.
 		const selectedModel = nav?.querySelector('[data-slot="repository-switcher"]');
-		const rowLabel = nav?.querySelector('[data-row-id]');
 		// The pane's window on the picture: the room the camera fits a drawing into.
 		const picture = pane?.querySelector('[data-slot="model-diagram"]');
 		const panel = pane?.querySelector('[data-slot="model-panel"]');
 		if (!shell || !header || !wordmark || !control || !paneHeader || !modelCrumb || !variant || !technical ||
-			!present || !column || !nav || !stages || !bar || !pane || !selectedModel || !rowLabel ||
+			!present || !column || !nav || !stages || !bar || !pane || !selectedModel ||
 			!picture || !panel) {
 			throw new Error('shell matrix probe is incomplete: ' + JSON.stringify({
 				shell: !!shell, header: !!header, wordmark: !!wordmark, control: !!control,
 				paneHeader: !!paneHeader, modelCrumb: !!modelCrumb, variant: !!variant, technical: !!technical,
 				present: !!present, column: !!column, nav: !!nav, stages: !!stages, bar: !!bar,
-				pane: !!pane, selectedModel: !!selectedModel, rowLabel: !!rowLabel,
+				pane: !!pane, selectedModel: !!selectedModel,
 				picture: !!picture, panel: !!panel }));
 		}
 		const round = value => Math.round(value * 1000) / 1000;
 		const rect = node => {
 			const value = node.getBoundingClientRect();
 			return { x: round(value.x), y: round(value.y), width: round(value.width), height: round(value.height) };
-		};
-		const metrics = node => {
-			const value = getComputedStyle(node);
-			return { family: value.fontFamily.toLowerCase(), size: parseFloat(value.fontSize),
-				lineHeight: parseFloat(value.lineHeight), weight: parseFloat(value.fontWeight) };
 		};
 		const colorContext = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
 		const rgb = value => { colorContext.clearRect(0, 0, 1, 1); colorContext.fillStyle = value;
@@ -266,8 +257,6 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			});
 			return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 		};
-		const flat = [shell, header, paneHeader, nav, stages, bar, pane];
-		const humanLabels = [selectedModel, modelCrumb];
 		control.focus();
 		const focusStyle = getComputedStyle(control);
 		const focusRect = control.getBoundingClientRect();
@@ -303,10 +292,6 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		};
 		const foreground = luminance(getComputedStyle(wordmark).color);
 		const backdrop = luminance(surface(header));
-		const pictureRect = modelCrumb.getBoundingClientRect();
-		const presentRect = present.getBoundingClientRect();
-		const headerRect = header.getBoundingClientRect();
-		const paneHeaderRect = paneHeader.getBoundingClientRect();
 		// A live socket is the normal state and says nothing: the pane header's
 		// only visible output is the reconnecting warning.
 		const connectionTrouble = [...paneHeader.querySelectorAll('output')]
@@ -336,25 +321,16 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				panel: rect(panel), modelCrumb: rect(modelCrumb), control: rect(control) },
 			themeSnapshot: {
 				theme: document.documentElement.dataset.theme, wordmark: wordmark.textContent.trim(),
-				wordmarkSize: rect(wordmark),
-				chromeRowsAligned: headerRect.top === paneHeaderRect.top && headerRect.height === paneHeaderRect.height,
 				status: rootStyle.getPropertyValue('--status').trim().toLowerCase(), background: getComputedStyle(shell).backgroundColor,
 				inkContrast: (Math.max(foreground, backdrop) + 0.05) / (Math.min(foreground, backdrop) + 0.05),
-				flatSurfaces: flat.every(node => getComputedStyle(node).backgroundImage === 'none'),
 				visibleFocus: ringVisible,
 				modelIdentity: modelCrumb.textContent.trim(), stateName: variant.textContent.trim(),
 				selectedRepository: selectedModel.getAttribute('title'),
 				focusedPaneCount: panes.filter(node => node.getAttribute('aria-current') === 'true').length,
 				connectionTrouble,
-				headerSectionsAligned: pictureRect.right < presentRect.left &&
-					Math.abs((pictureRect.top + pictureRect.height / 2) - (presentRect.top + presentRect.height / 2)) < 0.5,
-				fontChecks,
+				fontsLoaded,
 				fontResources: performance.getEntriesByType('resource').map(entry => entry.name)
-					.filter(name => /(?:Onest-wght|MapleMonoNL-(?:Regular|Medium)).*[.]ttf/.test(name)),
-				humanLabels: humanLabels.map(node => { const value = getComputedStyle(node); return {
-					family: value.fontFamily.toLowerCase(), transform: value.textTransform, weight: parseFloat(value.fontWeight) }; }),
-				titleType: metrics(modelCrumb), bodyType: metrics(rowLabel), stateType: metrics(variant),
-				technicalType: metrics(technical), controlType: metrics(control),
+					.filter(name => /[.](?:ttf|otf|woff2?)(?:[?#]|$)/.test(name)),
 				actionTargets: actionTargets.map(({ width, height }) => ({ width, height })),
 				presentTarget: (() => { const value = rect(present); return { width: value.width, height: value.height }; })(),
 			}

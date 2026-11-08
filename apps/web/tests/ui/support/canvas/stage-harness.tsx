@@ -9,6 +9,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
+import { OrbStageProvider } from "@archboard/workbench/voice";
 import {
 	type PaneChrome,
 	PaneChromeContext,
@@ -82,7 +83,8 @@ interface Mounted {
 const PANE_VAULT = "/work/archboard/.archboard/vault";
 
 /**
- * The stage inside a cache with this product's read defaults, in one vault.
+ * The stage inside a cache with this product's read defaults, in one vault, on the orb stage the
+ * shell gives every pane, which a presented walkthrough's Narrate key offers a socket on.
  * @param children The stage.
  * @returns The providers around it.
  */
@@ -91,7 +93,11 @@ function Cache(children: ReactNode): JSX.Element {
 	return createElement(
 		QueryClientProvider,
 		{ client },
-		createElement(PaneVaultContext, { value: PANE_VAULT }, children),
+		createElement(
+			OrbStageProvider,
+			null,
+			createElement(PaneVaultContext, { value: PANE_VAULT }, children),
+		),
 	);
 }
 

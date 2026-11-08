@@ -41,7 +41,7 @@ class ControlledSocket extends EventTarget {
 	}
 }
 
-test("a reconnect becomes connected only after its unchanged pane is registered again", async () => {
+test("a reconnect becomes connected only after its unchanged pane is registered again, and only a pane that had the server reconnects", async () => {
 	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
 	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
 	const statuses: PaneStatus[] = [];
@@ -109,6 +109,7 @@ test("a reconnect becomes connected only after its unchanged pane is registered 
 		const first = ControlledSocket.created.at(-1)!;
 		first.open();
 		expect(statuses.at(-1)!.connected).toBe(false);
+		expect(statuses.some((status) => status.reconnecting)).toBe(false);
 		await received.promise;
 		answer.resolve(Response.json({ success: true, registered: true, paneCount: 1 }));
 		await accepted.promise;
@@ -122,11 +123,13 @@ test("a reconnect becomes connected only after its unchanged pane is registered 
 		ControlledSocket.created.at(-1)!.open();
 		expect(statuses.at(-1)!.connected).toBe(false);
 		expect(statuses.at(-1)!.registered).toBe(false);
+		expect(statuses.at(-1)!.reconnecting).toBe(true);
 		await received.promise;
 		answer.resolve(Response.json({ success: true, registered: true, paneCount: 1 }));
 		await accepted.promise;
 		expect(statuses.at(-1)!.connected).toBe(true);
 		expect(statuses.at(-1)!.registered).toBe(true);
+		expect(statuses.at(-1)!.reconnecting).toBe(false);
 		expect(reports).toHaveLength(2);
 		expect(reports[1]).toBe(reports[0]);
 	} finally {

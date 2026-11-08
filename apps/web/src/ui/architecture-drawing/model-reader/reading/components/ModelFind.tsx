@@ -131,7 +131,7 @@ function ModelFind(props: ModelFindProps): JSX.Element {
 				<Dialog.Content
 					showCloseButton={false}
 					finalFocus={returnsFocus}
-					className="top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0"
+					className="top-1/3 translate-y-0 overflow-hidden p-0"
 				>
 					<Dialog.Header className="sr-only">
 						<Dialog.Title>Find in this architecture</Dialog.Title>

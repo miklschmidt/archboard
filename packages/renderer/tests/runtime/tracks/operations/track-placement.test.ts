@@ -112,15 +112,26 @@ function dropsStraight(svg: string, id: string): boolean {
 
 // Reduced from a document of this repository, names replaced: a wrap stood a
 // card with no line of its own to either end in the column between a card
-// and the card its line drops to, and the line stepped around it.
+// and the card its line drops to, and the line stepped around it. The card over
+// the first keeps the drawing taller than the reference pane, so the wrap that
+// lowers n1 between n3 and n6 wins over one that fits whole.
 test("a wrapped card stands aside from a line that drops straight past it", async () => {
-	const content = orderedFixture(wrappedBlocker);
+	const content = orderedFixture({
+		nodes: [
+			{ id: "n7", name: "delta river", kind: "module", responsibility: "river kettle summit" },
+			...wrappedBlocker.nodes,
+		],
+		edges: [{ id: "e7", from: "n7", to: "n0", kind: "call" }, ...wrappedBlocker.edges],
+	});
 	const drawing = await renderArchitecture({
 		content,
 		theme: "light",
 		policy: wrapPolicy,
 		layout: "track",
 	});
+	const [above, wrapped, below] = ["n3", "n1", "n6"].map((id) => drawing.atlas.nodes[id]!);
+	expect(wrapped!.y).toBeGreaterThan(above!.y);
+	expect(wrapped!.y).toBeLessThan(below!.y);
 	expect(dropsStraight(drawing.svg, "e6")).toBe(true);
 });
 

@@ -1,6 +1,7 @@
 import { useMemo, type JSX } from "react";
 import type { Model, VariantContent } from "@archboard/model/content";
 import { ContainerInterface } from "#ui/architecture-drawing/canvas/presentation/components/ContainerInterface.tsx";
+import { ModelInterfaceCompare } from "#ui/architecture-drawing/model-reader/reading/components/ModelInterfaceCompare.tsx";
 import type { ModuleInterface } from "#ui/architecture-drawing/model-reader/rules/selected-subject.ts";
 import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
@@ -15,7 +16,8 @@ interface ModelInterfaceProps {
 /**
  * The complete model defines interfaces before a reading narrows its content.
  * @param props The module and its complete interface facts.
- * @returns Entry points, hidden parts, callers, and explicit boundary connections.
+ * @returns The two states of a changed interface under a comparison, then entry points, hidden
+ * parts, callers, and explicit boundary connections.
  */
 function ModelInterface(props: ModelInterfaceProps): JSX.Element | null {
 	const { inspection, complete } = props;
@@ -27,6 +29,7 @@ function ModelInterface(props: ModelInterfaceProps): JSX.Element | null {
 			className="flex flex-col gap-6"
 			aria-label="Module interface"
 		>
+			<ModelInterfaceCompare model={props.model} module={inspection.container} />
 			<div className="-mx-4 -my-4">
 				<ContainerInterface
 					content={complete}

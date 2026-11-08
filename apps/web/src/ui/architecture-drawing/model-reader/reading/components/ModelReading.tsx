@@ -1,3 +1,4 @@
+import { RiBarChart2Line, RiHistoryLine } from "@remixicon/react";
 import { Activity, useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
@@ -6,7 +7,7 @@ import { ModelBreadcrumbs } from "#ui/architecture-drawing/model-reader/reading/
 import { ModelChanges } from "#ui/architecture-drawing/model-reader/reading/components/ModelChanges.tsx";
 import {
 	ModelColumn,
-	type Destination,
+	type ColumnSection,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelColumn.tsx";
 import { ModelFind } from "#ui/architecture-drawing/model-reader/reading/components/ModelFind.tsx";
 import { ModelFlows } from "#ui/architecture-drawing/model-reader/reading/components/ModelFlows.tsx";
@@ -15,19 +16,14 @@ import {
 	ModelHeading,
 	ModelStateChip,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelHeading.tsx";
-import { ModelMeasures } from "#ui/architecture-drawing/model-reader/reading/components/ModelMeasures.tsx";
+import { ModelHistoryDialog } from "#ui/architecture-drawing/model-reader/reading/components/ModelHistoryDialog.tsx";
+import { ModelMeasuresDialog } from "#ui/architecture-drawing/model-reader/reading/components/ModelMeasuresDialog.tsx";
 import { ModelReadingSurface } from "#ui/architecture-drawing/model-reader/reading/components/ModelReadingSurface.tsx";
-import { ModelRecords } from "#ui/architecture-drawing/model-reader/reading/components/ModelRecords.tsx";
 import { ModelTree } from "#ui/architecture-drawing/model-reader/reading/components/ModelTree.tsx";
 import { ModelWalkthroughs } from "#ui/architecture-drawing/model-reader/reading/components/ModelWalkthroughs.tsx";
-import type { ChangeWalk } from "#ui/architecture-drawing/model-reader/hooks/use-change-walk.ts";
 import { useChangeKeys } from "#ui/architecture-drawing/model-reader/reading/hooks/use-reader-keys.ts";
 import { useReader, type Reader } from "#ui/architecture-drawing/model-reader/hooks/use-reader.ts";
 import { flowCollections } from "#ui/architecture-drawing/model-reader/rules/flow-reading.ts";
-import {
-	MEASURE_VIEW,
-	type MeasureView,
-} from "#ui/architecture-drawing/model-reader/reading/rules/module-measures.ts";
 import type { InterfaceRow } from "#ui/architecture-drawing/model-reader/rules/interface-changes.ts";
 import { changeStepOf } from "#ui/architecture-drawing/model-reader/rules/reader-keys.ts";
 
@@ -50,17 +46,6 @@ interface ModelReadingProps {
 	paneId: string;
 	reducedMotion: boolean;
 }
-
-/** What every reading offers, and what a reading with a record adds. */
-const READING: readonly Destination[] = ["modules", "flows", "walkthroughs", "measures"];
-const RECORDED: readonly Destination[] = [
-	"modules",
-	"flows",
-	"walkthroughs",
-	"history",
-	"measures",
-];
-const REVIEWED: readonly Destination[] = [...RECORDED, "changes"];
 
 /**
  * Whether a reading keeps a record: a migration candidate has none of its own.
@@ -104,26 +89,30 @@ function endingOf(reader: Reader): string | undefined {
 	return nameIn(structure.depicted.flows, flow);
 }
 
-/**
- * What a reading offers in the left column.
- * @param model The reading.
- * @param walk Its changes.
- * @returns The destinations.
- */
-function offeredBy(model: Content, walk: ChangeWalk): readonly Destination[] {
-	if (walk.reviewing) return REVIEWED;
-	return keepsRecord(model) ? RECORDED : READING;
+/** Every section of the column stands open until the reader folds it. */
+const NONE_FOLDED: ReadonlySet<ColumnSection> = new Set();
+
+/** How a section of the column folds. */
+interface SectionFolds {
+	readonly folded: ReadonlySet<ColumnSection>;
+	readonly onFold: (section: ColumnSection) => void;
 }
 
 /**
- * What a proposal changes, in the left column. An interface change selects its module the way a
- * count of the interface line does, and this list stands beside About, so it brings the picture back.
- * @param props The reader.
+ * What a proposal changes, at the top of the column. An interface change selects its module the
+ * way a count of the interface line does, and this list stands beside About, so it brings the
+ * picture back.
+ * @param props The reader and how its sections fold.
  * @param props.reader The reader.
- * @returns The list, once the base of the comparison is read.
+ * @param props.folds How the sections fold.
+ * @returns The section, once the base of the comparison is read.
  */
-function ReadingChanges(props: { readonly reader: Reader }): JSX.Element | null {
-	const { walk, choices, selection, onDiagram } = props.reader;
+function ReadingChanges(props: {
+	readonly reader: Reader;
+	readonly folds: SectionFolds;
+}): JSX.Element | null {
+	const { reader, folds } = props;
+	const { walk, choices, selection, onDiagram } = reader;
 	const { showHere } = choices;
 	const showModule = useCallback(
 		(row: InterfaceRow): void => {
@@ -134,32 +123,110 @@ function ReadingChanges(props: { readonly reader: Reader }): JSX.Element | null 
 	);
 	if (walk.list === null) return null;
 	return (
-		<ModelColumn.List value="changes">
+		<ModelColumn.Section
+			section="changes"
+			label="Changes"
+			count={walk.count}
+			folded={folds.folded.has("changes")}
+			onFold={folds.onFold}
+		>
 			<ModelChanges.Interfaces
 				rows={walk.list.interfaces}
 				selected={soleOf(selection.ids)}
 				onShow={showModule}
 			/>
 			<ModelChanges.List list={walk.list} place={walk.place} onShow={walk.show} />
-		</ModelColumn.List>
+		</ModelColumn.Section>
 	);
 }
 
 /**
- * The left column of a reading: Find and the destinations.
+ * The sections of the column: a proposal's changes, then the modules, the flows and the
+ * walkthroughs of the whole model. A section with nothing to list is left out.
+ * @param props The reader, how its sections fold and what a key typed in the tree does.
+ * @param props.reader The reader.
+ * @param props.folds How the sections fold.
+ * @param props.onTypeAhead A printable key typed in the tree, handed to Find.
+ * @returns The sections.
+ */
+function ReadingSections(props: {
+	readonly reader: Reader;
+	readonly folds: SectionFolds;
+	readonly onTypeAhead: (text: string) => void;
+}): JSX.Element {
+	const { reader, folds, onTypeAhead } = props;
+	const { model, location, structure, tree, branches, choices, walk } = reader;
+	const { folded, onFold } = folds;
+	const { flows } = structure.depicted;
+	const { reference } = reader.comparison;
+	const collections = useMemo(() => flowCollections(model, reference), [model, reference]);
+	return (
+		<>
+			<ReadingChanges reader={reader} folds={folds} />
+			<ModelColumn.Section
+				section="modules"
+				label="Modules"
+				count={tree.owner.size}
+				folded={folded.has("modules")}
+				onFold={onFold}
+			>
+				<ModelTree
+					tree={tree}
+					open={branches.open}
+					scope={structure.opened}
+					selected={soleOf(reader.selection.ids)}
+					onToggle={branches.toggle}
+					onOpen={choices.chooseModule}
+					onTypeAhead={onTypeAhead}
+					follows={!walk.reviewing}
+				/>
+			</ModelColumn.Section>
+			{flows.length > 0 && (
+				<ModelColumn.Section
+					section="flows"
+					label="Flows"
+					count={flows.length}
+					folded={folded.has("flows")}
+					onFold={onFold}
+				>
+					<ModelFlows
+						flows={flows}
+						collections={collections}
+						flow={location.flow}
+						grammar={location.grammar}
+						onChoose={choices.chooseFlow}
+					/>
+				</ModelColumn.Section>
+			)}
+			{model.walkthroughs.length > 0 && (
+				<ModelColumn.Section
+					section="walkthroughs"
+					label="Walkthroughs"
+					count={model.walkthroughs.length}
+					folded={folded.has("walkthroughs")}
+					onFold={onFold}
+				>
+					<ModelWalkthroughs walkthroughs={model.walkthroughs} />
+				</ModelColumn.Section>
+			)}
+		</>
+	);
+}
+
+/**
+ * The left column of a reading: Find, the keys of History and Measures, and one list of sections.
+ * A reading with no record of its own, a migration candidate, has no History.
  * @param props The reader.
  * @param props.reader The reader.
- * @returns The parts of the column.
+ * @returns The parts of the column, and the dialogs its keys open.
  */
 function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 	const { reader } = props;
-	const { model, location, structure, tree, branches, choices, walk } = reader;
-	const { opened, depicted } = structure;
-	const { shown } = reader.accepted;
+	const { model, location, choices, walk } = reader;
 	const [finding, setFinding] = useState(false);
 	const [query, setQuery] = useState("");
-	// The reader's sort and what it shows stay while the list is away: a closed tab draws nothing.
-	const [measureView, setMeasureView] = useState<MeasureView>(MEASURE_VIEW);
+	const [measuring, setMeasuring] = useState(false);
+	const [folded, setFolded] = useState(NONE_FOLDED);
 	const { reviewing, step } = walk;
 	const typeAhead = useCallback(
 		(text: string): void => {
@@ -173,9 +240,16 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 		},
 		[reviewing, step],
 	);
+	const onFold = useCallback((section: ColumnSection): void => {
+		setFolded((now) => {
+			const next = new Set(now);
+			if (!next.delete(section)) next.add(section);
+			return next;
+		});
+	}, []);
+	const folds = useMemo(() => ({ folded, onFold }), [folded, onFold]);
+	const openMeasures = useCallback((): void => setMeasuring(true), []);
 	const records = keepsRecord(model);
-	const { reference } = reader.comparison;
-	const collections = useMemo(() => flowCollections(model, reference), [model, reference]);
 	return (
 		<>
 			<ModelColumn.Find>
@@ -188,64 +262,44 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 					onChoose={choices.chooseFind}
 				/>
 			</ModelColumn.Find>
-			<ModelColumn.Destinations
-				destination={reader.destination}
-				onDestination={reader.onDestination}
-				flows={depicted.flows.length}
-				walkthroughs={model.walkthroughs.length}
-				changes={reviewing ? String(walk.count) : undefined}
-				offered={offeredBy(model, walk)}
-			>
-				<ModelColumn.List value="modules">
-					<ModelTree
-						tree={tree}
-						open={branches.open}
-						scope={opened}
-						selected={soleOf(reader.selection.ids)}
-						onToggle={branches.toggle}
-						onOpen={choices.chooseModule}
-						onTypeAhead={typeAhead}
-					/>
-				</ModelColumn.List>
-				<ModelColumn.List value="flows">
-					<ModelFlows
-						flows={depicted.flows}
-						collections={collections}
-						flow={location.flow}
-						grammar={location.grammar}
-						onChoose={choices.chooseFlow}
-					/>
-				</ModelColumn.List>
-				<ModelColumn.List value="walkthroughs">
-					<ModelWalkthroughs walkthroughs={model.walkthroughs} />
-				</ModelColumn.List>
-				<ModelColumn.List value="measures">
-					<ModelMeasures
-						vault={reader.vault}
-						model={shown.model}
-						projection={shown.projection}
-						selected={soleOf(reader.selection.ids)}
-						view={measureView}
-						onView={setMeasureView}
-						onChoose={choices.findModule}
-					/>
-				</ModelColumn.List>
-				<ReadingChanges reader={reader} />
-				{records && (
-					<ModelColumn.List value="history">
-						<ModelRecords
-							vault={reader.vault}
-							checkpoint={location.checkpoint}
-							state={location.state}
-							selected={model.selectedState}
-							against={location.against}
-							onCompare={location.compareAgainst}
-							onState={location.selectState}
-							onSelect={location.selectCheckpoint}
+			<ModelColumn.Lists>
+				<ModelColumn.Keys>
+					{records && (
+						<ModelColumn.Key
+							dialog="history"
+							label="History"
+							icon={RiHistoryLine}
+							open={reader.history}
+							onOpen={reader.openHistory}
 						/>
-					</ModelColumn.List>
-				)}
-			</ModelColumn.Destinations>
+					)}
+					<ModelColumn.Key
+						dialog="measures"
+						label="Measures"
+						icon={RiBarChart2Line}
+						open={measuring}
+						onOpen={openMeasures}
+					/>
+				</ModelColumn.Keys>
+				<ModelColumn.Sections>
+					<ReadingSections reader={reader} folds={folds} onTypeAhead={typeAhead} />
+				</ModelColumn.Sections>
+			</ModelColumn.Lists>
+			{records && (
+				<ModelHistoryDialog
+					open={reader.history}
+					onOpenChange={reader.onHistory}
+					vault={reader.vault}
+					checkpoint={location.checkpoint}
+					state={location.state}
+					selected={model.selectedState}
+					against={location.against}
+					onCompare={location.compareAgainst}
+					onState={location.selectState}
+					onSelect={location.selectCheckpoint}
+				/>
+			)}
+			<ModelMeasuresDialog reader={reader} open={measuring} onOpenChange={setMeasuring} />
 		</>
 	);
 }

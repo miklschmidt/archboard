@@ -40,7 +40,7 @@ function SelectTrigger({
 			data-slot="select-trigger"
 			data-size={size}
 			className={cn(
-				"group/select-trigger border-input bg-card shadow-raised hover:bg-secondary active:shadow-pressed data-popup-open:bg-secondary data-popup-open:shadow-pressed focus-visible:border-ring focus-visible:ring-ring aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 text-control rounded-control flex w-fit items-center justify-between gap-1.5 border py-1 pr-1.5 pl-2.5 font-medium whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none aria-invalid:ring-3 data-[size=default]:h-8 data-[size=sm]:h-7 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				"group/select-trigger quiet-key data-popup-open:shadow-pressed focus-visible:border-ring focus-visible:ring-ring aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 text-control rounded-control flex w-fit items-center justify-between gap-1.5 py-1 pr-1.5 pl-2.5 font-medium whitespace-nowrap outline-none select-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none aria-invalid:ring-3 data-[size=default]:h-8 data-[size=sm]:h-7 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 				className,
 			)}
 			{...props}
@@ -83,7 +83,7 @@ function SelectContent({
 					data-slot="select-content"
 					data-align-trigger={alignItemWithTrigger}
 					className={cn(
-						"bg-popover text-popover-foreground border-border shadow-float menu-motion rounded-panel relative isolate z-50 max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto border p-1",
+						"bg-popover text-popover-foreground border-border shadow-float menu-motion rounded-table relative isolate z-50 max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto border p-1.5",
 						className,
 					)}
 					{...props}

@@ -145,7 +145,7 @@ function AboutSectionFrame(props: {
 			data-about-section={props.section.key}
 			className="flex min-w-0 scroll-mt-16 flex-col gap-4 last:min-h-[calc(100cqh-6rem)] @min-[1040px]/about:scroll-mt-8"
 		>
-			<h3 id={heading} tabIndex={-1} className="text-subtitle font-semibold outline-none">
+			<h3 id={heading} tabIndex={-1} className="text-section outline-none">
 				{props.section.label}
 			</h3>
 			{props.children}

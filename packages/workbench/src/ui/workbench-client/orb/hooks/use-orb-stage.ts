@@ -1,5 +1,5 @@
-// The orb's stage, as a component reads it, and the one move a surface makes on
-// it: saying where the orb is wanted.
+// The orb's stage, as a component reads it, and the move a surface makes on it: saying where
+// the orb is wanted.
 
 import { createContext, useContext, useLayoutEffect, useSyncExternalStore } from "react";
 

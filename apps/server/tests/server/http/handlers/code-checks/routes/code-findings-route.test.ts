@@ -1,5 +1,5 @@
-// A pane reads what the last code pass found and never starts one (ADR 0046,
-// TASK-367.24). Each pass that finishes leaves its findings in the server's
+// A pane reads what the last code pass found, and the route it reads never
+// starts one (ADR 0046, TASK-367.24). Each pass that finishes leaves its findings in the server's
 // memory, beside the version of each document it read; `GET
 // /api/vault/code-findings` answers from that memory alone. A later pass
 // replaces the readings of the documents it read and keeps the others, and a pass

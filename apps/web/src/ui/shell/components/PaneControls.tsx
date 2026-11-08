@@ -2,7 +2,7 @@
 // stage places: its letter while two panes share the centre, and at the
 // header's end what can be done with this pane — move its model to another
 // repository, present it, open a second pane beside it, close it — with its
-// trouble when its socket is down. Each
+// trouble when it lost the server it had. Each
 // control acts on the pane whose header it sits in, never on "the active
 // pane", so what a click does is where the click is.
 
@@ -51,13 +51,13 @@ interface PaneControlsProps {
 /**
  * Move this pane's model to another repository, present this pane, open a
  * second pane beside it while it is alone, close it while it is not, and say so
- * when its socket is down.
+ * when it lost the server it had. The first connection says nothing.
  * @param props The pane, its letter, how many panes there are and the actions.
  * @returns The controls.
  */
 function PaneControls(props: PaneControlsProps): JSX.Element {
 	const { pane, letter, paneCount, actions } = props;
-	const { paneId, connected } = pane.status;
+	const { paneId, reconnecting } = pane.status;
 	const handleAdd = useCallback(() => actions.addPane(), [actions]);
 	const handleClose = useCallback(() => actions.closePane(paneId), [actions, paneId]);
 	const handlePresent = useCallback(
@@ -67,7 +67,7 @@ function PaneControls(props: PaneControlsProps): JSX.Element {
 	const alone = paneCount < 2;
 	return (
 		<span className="flex shrink-0 items-center gap-1">
-			{!connected && (
+			{reconnecting && (
 				<output className="text-body text-foreground mr-1 flex items-center gap-1.5 font-medium">
 					<StatusDot tone="warning" />
 					Reconnecting

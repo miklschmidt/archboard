@@ -16,20 +16,20 @@
 // orb and the keys, so it hides little that they did not, and in a pane too narrow for
 // it the words give way and the orb and the keys stay.
 //
-// At the foot of a presented walkthrough's box (TASK-392) it has no skin of its own: the box's
-// pill is its skin, and it is drawn in it, and it fades where it stands. The pill is as wide as the
-// words above it, so the words take the width the orb and the keys leave, a little farther from the
-// orb than they stand in the capsule. A fullscreen
-// presentation has no dock to take the voice back, so the box carries it there whatever the
-// person wants of subtitles, and the subtitles control then decides only whether there are words.
-// A recording is drawn with this same box at the foot of the same walkthrough box
-// (apps/web/src/ui/walkthroughs/replay/clients): the orb follows the recorded voice, and the keys are drawn as here,
-// with nobody to press them.
+// A presented walkthrough leaves the box where it is, low over the picture, because the steps
+// stand in a column beside it. The column's Narrate key is the orb's third home: a narration
+// started there launches the orb out of the key's gold circle into this box, and a voice that ends
+// here sends the orb back to the key while the box is still up. A fullscreen presentation has no
+// dock to take the voice back, so the box carries it there whatever the person wants of
+// subtitles, and the subtitles control then
+// decides only whether there are words. A recording is drawn with this same box over the same
+// picture (apps/web/src/ui/walkthroughs/replay): the orb follows the recorded voice, and the keys
+// are drawn as here, with nobody to press them.
 //
 // The box comes with the voice and leaves with it. It stays mounted while it leaves,
 // so it eases away with the orb's flight out of it, and it takes no input while it
 // does: it is inert. The dock tells the stage that flies the orb where it goes
-// (`state/orb/orb-stage.ts`), by the rule the box asks too (useVoiceBoxed), once the box has
+// (`orb/state/orb-stage.ts`), by the rule the box asks too (useVoiceBoxed), once the box has
 // offered the stage its socket.
 
 import type { CSSProperties, JSX } from "react";
@@ -74,17 +74,8 @@ const CAP_KEY = cn(
 /** A key that is on, and so is down: the voice is muted. */
 const CAP_KEY_ON = "bg-muted text-foreground shadow-pressed";
 
-/**
- * Where the box is drawn: free over the picture, in a skin of its own, or in the pill at the foot of a
- * presented walkthrough's box, in that pill's.
- */
-type VoiceBoxPlace = "free" | "foot";
-
-/** How each place draws the box's own surface. */
-const SKINS: Readonly<Record<VoiceBoxPlace, string>> = {
-	free: "bg-card border-border shadow-float relative max-w-full rounded-full border",
-	foot: "relative h-full min-w-0 flex-1 rounded-full",
-};
+/** The box's own surface: a capsule of the card's plane, floating over the picture. */
+const SKIN = "bg-card border-border shadow-float relative max-w-full rounded-full border";
 
 /** Inputs for the voice box. */
 interface VoiceBoxProps {
@@ -97,13 +88,11 @@ interface VoiceBoxProps {
 	readonly reducedMotion: boolean;
 	/** Whether the box is wanted. It stays on the page for as long as it takes to leave. */
 	readonly shown: boolean;
-	/** Where it is drawn. */
-	readonly place: VoiceBoxPlace;
 }
 
 /**
  * The voice box, while it is wanted and while it leaves.
- * @param props The voice, the actions, what was said, the motion preference, whether it is wanted and where.
+ * @param props The voice, the actions, what was said, the motion preference and whether it is wanted.
  * @returns The box, or null when it is not on the page.
  */
 function VoiceBox(props: VoiceBoxProps): JSX.Element | null {
@@ -113,7 +102,7 @@ function VoiceBox(props: VoiceBoxProps): JSX.Element | null {
 
 /**
  * The box itself.
- * @param props The voice, the actions, what was said, the motion preference, whether it is wanted and where.
+ * @param props The voice, the actions, what was said, the motion preference and whether it is wanted.
  * @returns The box.
  */
 function Box(props: VoiceBoxProps): JSX.Element {
@@ -122,27 +111,23 @@ function Box(props: VoiceBoxProps): JSX.Element {
 		<section
 			aria-label="Voice"
 			data-slot="voice-box"
-			data-place={props.place}
 			data-lit-by-orb=""
 			data-voice-state={state}
 			data-leaving={props.shown ? undefined : ""}
 			data-still={props.reducedMotion ? "" : undefined}
 			inert={!props.shown}
 			style={BOX_STYLE}
-			className={cn("pointer-events-none isolate flex items-stretch", SKINS[props.place])}
+			className={cn("pointer-events-none isolate flex items-stretch", SKIN)}
 		>
 			<OrbSlot home="box" className="relative m-1.5 size-16 shrink-0 self-center" />
 			<div
 				data-slot="voice-words"
-				className={cn(
-					"mr-3 grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] items-center self-center",
-					props.place === "foot" ? "ml-3" : "ml-1.5",
-				)}
+				className="mr-3 ml-1.5 grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] items-center self-center"
 			>
 				<SubtitleWords
 					transcript={props.transcript}
 					reducedMotion={props.reducedMotion}
-					className={cn("col-start-1 row-start-1 max-w-full", props.place === "foot" && "w-full")}
+					className="col-start-1 row-start-1 max-w-full"
 				/>
 				<VoiceWord state={state} />
 			</div>

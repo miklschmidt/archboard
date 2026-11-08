@@ -16,6 +16,10 @@
      --sidebar-accent  the reading tone: the chosen row of a list, raised off
                    it as a plate.
    --highlight is the fine highlight on the top edge of a plane.
+   --face is the face of a control or of a chosen tab raised out of a well,
+   and --face-hover the same face under the pointer. --body-foreground is the
+   ink of prose in a panel, a step under --foreground, as the site's body ink
+   is.
 
    The accent. One warm gold, from the picks (the wayfinding band and the
    streaming title wall). It marks four things and nothing else:
@@ -27,8 +31,9 @@
      4. the decisions, loops and terminals of a flowchart, each built as a
         primary action's piece of gold is, so they read as the flow's own
         pieces among the neutral cards of its steps.
-   --primary is the gold as a flat fill. --primary-mark is the gold as a mark:
-   a 2px bar or underline, a ring, an icon, the edge of something chosen.
+   --primary is the gold as a flat fill, and the 2px foot of a chosen tab, row or
+   key. --primary-mark is the gold as a mark: a ring, an icon, the edge of
+   something chosen, the underline of a link.
    --primary-text is the accent as text. On graphite it is the gold. On chalk
    it is the ink: a gold dark enough to reach APCA Lc 60 there reads as brown, so
    text on chalk stays ink and a gold mark beside or under it (a bar, an
@@ -174,6 +179,9 @@
 	--sidebar-ring: oklch(0.62 0.13 78);
 	--raised: oklch(0.986 0.003 88);
 	--highlight: oklch(1 0 0 / 0.85);
+	--face: oklch(1 0 0);
+	--face-hover: oklch(0.978 0.004 88);
+	--body-foreground: oklch(0.3 0.008 75);
 	--slab-face: oklch(0.915 0.005 85);
 	--slab-edge: oklch(0.76 0.006 85);
 	--slab-deep: oklch(0.8 0.006 85);
@@ -250,7 +258,7 @@
 	--secondary: oklch(0.255 0.007 75);
 	--secondary-foreground: oklch(0.955 0.006 90);
 	--muted: oklch(0.255 0.007 75);
-	--muted-foreground: oklch(0.72 0.01 80);
+	--muted-foreground: oklch(0.78 0.008 85);
 	--accent: oklch(0.255 0.007 75);
 	--accent-foreground: oklch(0.955 0.006 90);
 	--destructive: oklch(0.704 0.191 22.216);
@@ -286,6 +294,9 @@
 	--sidebar-ring: oklch(0.831 0.134 84.5);
 	--raised: oklch(0.205 0.007 75);
 	--highlight: oklch(1 0.01 85 / 0.09);
+	--face: oklch(0.255 0.008 78);
+	--face-hover: oklch(0.31 0.007 75);
+	--body-foreground: oklch(0.86 0.008 85);
 	--slab-face: oklch(0.31 0.007 75);
 	--slab-edge: oklch(0.215 0.006 75);
 	--slab-deep: oklch(0.06 0.004 75);

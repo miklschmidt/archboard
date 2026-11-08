@@ -12,7 +12,9 @@
 // that ends voice. Turning subtitles off flies the orb back and the key becomes the circle.
 // The dock asks the orb's stage whether the box is there, so it never gives the voice up
 // to a box that no pane draws. While the dock is off screen, as in a fullscreen presentation,
-// the box carries the voice whatever the person wants of subtitles.
+// the box carries the voice whatever the person wants of subtitles. When a voice in the box ends
+// while a presented walkthrough's Narrate key is on the page, the dock sends the orb home to the
+// key while it is still lit, and the orb fades there.
 //
 // Both layouts hold the same parts, which the grid places (app.css, [data-part]).
 // The page lists them in the order the eye reads them in each layout, so the
@@ -29,6 +31,7 @@ import { SHELL_CLOCK_MS, VOICE_MS } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/components";
 import { useClock } from "@archboard/ui-kit/time";
 import { useOrbOffered, useOrbPlacement } from "#ui/workbench-client/orb/hooks/use-orb-stage.ts";
+import type { OrbHome } from "#ui/workbench-client/orb/state/orb-stage.ts";
 import { SubtitlesToggle } from "#ui/workbench-client/subtitles/components/SubtitlesToggle.tsx";
 import { useVoiceBoxed } from "#ui/workbench-client/subtitles/hooks/use-voice-boxed.ts";
 import { useDockMotion } from "#ui/workbench-client/dock/hooks/use-dock-motion.ts";
@@ -83,6 +86,19 @@ interface AgentDockProps {
 }
 
 /**
+ * Where the dock wants the orb: in the voice box while the box carries the voice, and in the dock
+ * otherwise. As a boxed voice ends with a Narrate key on the page, the orb goes home to the key
+ * while it is still lit, and so flies out of the box while the box is still up.
+ * @param boxed Whether the voice box carries the voice.
+ * @param endingByKey Whether the voice is ending and a Narrate key is on the page.
+ * @returns The home.
+ */
+function orbHome(boxed: boolean, endingByKey: boolean): OrbHome {
+	if (!boxed) return "dock";
+	return endingByKey ? "narrate" : "box";
+}
+
+/**
  * The steps the dock lists: the running turn's plan, none once it has ended.
  * @param view The agent view.
  * @returns The steps.
@@ -112,9 +128,11 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 	const { voice } = view;
 	const now = useDockClock(view);
 	const status = agentStatus(view, now);
-	const on = useCircleState(voice) !== "off";
+	const state = useCircleState(voice);
+	const on = state !== "off";
 	// The voice is in the box over the picture, or at the head of the dock: the dock's layout is live in the second.
 	const boxed = useVoiceBoxed(on, useOrbOffered("box"), props.dockless);
+	const narrateKey = useOrbOffered("narrate");
 	const live = on && !boxed;
 	const steps = dockSteps(view);
 	const dock = useRef<HTMLElement>(null);
@@ -122,7 +140,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 	// After the dock's motion, not before: the orb leaves from where it was seen, and the motion
 	// has just put the dock's circle back under it, where the layout it turned to has not.
 	useOrbPlacement({
-		home: boxed ? "box" : "dock",
+		home: orbHome(boxed, state === "ending" && narrateKey),
 		shown: on,
 		reducedMotion: props.reducedMotion,
 	});
@@ -399,7 +417,7 @@ function LiveControls(props: {
 /** The conversation's key beside Talk, shut, and pressed in with a gold mark under it. */
 const KEY = "size-8 shrink-0 rounded-control! [&_svg]:size-4";
 const KEY_OPEN =
-	"bg-muted text-foreground shadow-pressed before:bg-primary-mark before:absolute before:inset-x-2 before:bottom-[3px] before:h-0.5 before:rounded-full";
+	"bg-muted text-foreground shadow-pressed before:bg-primary before:absolute before:inset-x-2 before:bottom-[3px] before:h-0.5 before:rounded-full";
 /** The conversation's icon in the voice line, lit while it is open. */
 const ICON_OPEN = "bg-sidebar-accent text-foreground";
 const SHUT = "text-muted-foreground";

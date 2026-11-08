@@ -26,6 +26,13 @@ Where things are written down:
 - Skills: `skills/` holds only the shippable Archboard skills. Tracked symlinks in `.claude/skills/`
   and `.agents/skills/` expose them, beside the third-party skills tracked there.
 
+## Judge the look by looking
+
+You judge how the interface looks by using it. Click through the running app in both themes
+with `bunx agent-browser`, take screenshots, and read the images. Tests hold product behavior and
+external contracts, such as focus, the WCAG target minimum and fonts that load offline. They leave
+styles, fonts and pixel sizes free, so that a redesign changes no test.
+
 ## Track inputs and required artifacts
 
 Track authored inputs, including the canonical model in `.archboard/vault`.
@@ -36,7 +43,7 @@ Keep these exceptions tracked:
 
 - Archboard SVG and PNG files embedded in repository documents. Keep their render recipes. `archboard check embeds` discovers only Git-tracked files.
 - Published documentation assets that readers need from the checkout. These include README diagrams, thumbnails, the social card, and `docs/readme/assets.json`. Follow [the asset guide](docs/agents/readme-assets.md) for updates. Large clips and videos remain external attachments.
-- Exact historical fixtures, including `examples/web-shop/history.import.json`. They preserve readings and baselines that current inputs cannot reproduce. Follow [the fixture procedure](docs/agents/readme-assets.md#canonical-fixtures) when updating them.
+- Exact historical fixtures, including `examples/web-shop/history.import.json`. They preserve readings and baselines that current inputs cannot reproduce. To update them, follow [the fixture procedure](docs/agents/readme-assets.md#canonical-fixtures).
 - Dependency lockfiles: `bun.lock`, `Cargo.lock`, and `flake.lock`. They preserve the selected dependency versions for later installs.
 - `bun.nix`, which the flake's release output (`nix build .#release`) installs its npm packages from. It is tracked because a flake reads only Git-tracked files. Update it with `bun2nix > bun.nix` inside `nix develop`. If it does not match `bun.lock`, the `bun-nix` gate task fails.
 

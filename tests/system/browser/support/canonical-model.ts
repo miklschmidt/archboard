@@ -18,11 +18,24 @@ function initializeSource(root: string): void {
 	fixtureGit(root, "remote", "add", "origin", "https://github.com/acme/shop.git");
 }
 
-/** Open History with every state's checkpoints on screen, as a reader's chevrons do. */
+/** Open the History dialog with every state's checkpoints on screen, as a reader's folds do. */
 async function unfoldedHistory(browser: AgentBrowserSession): Promise<void> {
 	await openDestination(browser, "history").catch(() => undefined);
 	await browser.eval(
-		`document.querySelectorAll('[data-slot="model-history"] [aria-expanded="false"] svg').forEach((chevron) => chevron.dispatchEvent(new MouseEvent('click', { bubbles: true })))`,
+		`document.querySelectorAll('[data-slot="model-history"] [aria-expanded="false"]').forEach((fold) => fold.click())`,
+	);
+}
+
+/** Wait for the History dialog to go, as a choice in it closes it, so the page takes clicks again. */
+async function historyClosed(browser: AgentBrowserSession): Promise<void> {
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-history-dialog"]') === null`,
+			),
+		Boolean,
+		"the History dialog to close on the choice",
+		WAIT,
 	);
 }
 
@@ -52,6 +65,7 @@ async function selectReading(browser: AgentBrowserSession, id: string): Promise<
 		"the selected architecture reading",
 		WAIT,
 	);
+	await historyClosed(browser);
 }
 
 /**
@@ -85,7 +99,7 @@ async function selectComparison(browser: AgentBrowserSession, id: string): Promi
 }
 
 /**
- * Compare the picture with a saved checkpoint, from its row in History.
+ * Compare the picture with a saved checkpoint, from its row in the History dialog.
  * @param browser The page.
  * @param id The checkpoint.
  */
@@ -101,6 +115,7 @@ async function compareCheckpoint(browser: AgentBrowserSession, id: string): Prom
 		WAIT,
 	);
 	await browser.run(["click", compare]);
+	await historyClosed(browser);
 }
 
 /**
@@ -151,6 +166,7 @@ async function selectState(browser: AgentBrowserSession, id: string): Promise<vo
 		WAIT,
 	);
 	await browser.run(["click", `[data-state-id="${id}"]`]);
+	await historyClosed(browser);
 	await openAbout(browser);
 	await pollUntil(
 		() =>
@@ -165,6 +181,7 @@ async function selectState(browser: AgentBrowserSession, id: string): Promise<vo
 
 export {
 	compareCheckpoint,
+	historyClosed,
 	fixtureGit,
 	initializeSource,
 	selectComparison,

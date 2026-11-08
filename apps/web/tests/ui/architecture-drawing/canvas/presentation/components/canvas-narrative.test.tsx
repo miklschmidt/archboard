@@ -127,18 +127,14 @@ function serving(content: Record<string, unknown> = CONTENT): void {
 	server.reply = { status: 200, body: { ...drawing(1), views: [VIEW] } };
 }
 
-// The harness measures every element at 800×600, the caption included, so the
-// caption keeps the most it may of the viewport clear: half of 600, which leaves
-// 800×300 to fit into, less the margin.
+// The harness measures every element at 800×600. A presented walkthrough stands in a column
+// beside the picture and keeps nothing of the viewport clear, so a step fits into all of it.
 
-/** The whole picture, fitted above the caption. */
-const WHOLE_ABOVE_CAPTION = { x: 232, y: 24, scale: 0.84 };
-
-/** `n1` and the line it starts, fitted above the caption: 120×40 at the origin, at half again its drawn size. */
-const N1_ABOVE_CAPTION = { x: 310, y: 120, scale: 1.5 };
-
-/** The whole picture, fitted to the whole viewport, as the reader had it before presenting. */
+/** The whole picture, fitted to the whole viewport: what an opening step shows, and what the reader had before presenting. */
 const WHOLE_PICTURE = { x: 32, y: 24, scale: 1.84 };
+
+/** `n1` and the line it starts, 120×40 at the origin, at half again its drawn size, in the middle of the viewport. */
+const N1_IN_VIEW = { x: 310, y: 270, scale: 1.5 };
 
 /**
  * Whether two cameras are the same, to within rounding.
@@ -174,7 +170,7 @@ test("choosing a walkthrough presents its first step, in the frame, with where i
 	const steps = [...document.querySelectorAll("[data-slot='semantic-presentation-step']")];
 	expect(steps).toHaveLength(4);
 	expect(steps[0]?.getAttribute("aria-current")).toBe("step");
-	// The pane is the picture and its caption while it lasts: the sidebar steps aside.
+	// The pane is the picture and the walkthrough's column while it lasts: the sidebar steps aside.
 	expect(part("semantic-reading-area").hasAttribute("data-walkthrough")).toBe(true);
 	expect(part("canvas-stage").getAttribute("data-presentation-step")).toBe("0");
 });
@@ -220,7 +216,7 @@ test("steps change only when the reader asks: keys, the controls, or a step chos
 	expect(current()).toBe("The lease");
 });
 
-test("a step lights what it is about, lets the rest recede, and brings it into view above the caption", async () => {
+test("a step lights what it is about, lets the rest recede, and brings it into view", async () => {
 	serving();
 	mountStage(null, { reducedMotion: true });
 	await presenting();
@@ -228,13 +224,13 @@ test("a step lights what it is about, lets the rest recede, and brings it into v
 	await settle();
 	expect(marked()).toEqual(["n1"]);
 	expect(unveiled()).toEqual(["n1", "e1"]);
-	expectCamera(cameraNow(), N1_ABOVE_CAPTION);
+	expectCamera(cameraNow(), N1_IN_VIEW);
 
 	// An opening step is about the architecture rather than a part of it, so it
 	// shows all of it and lets nothing recede.
 	goTo(0);
 	await settle();
-	expectCamera(cameraNow(), WHOLE_ABOVE_CAPTION);
+	expectCamera(cameraNow(), WHOLE_PICTURE);
 	expect(marked()).toEqual([]);
 	expect(unveiled()).toEqual([]);
 });
@@ -255,7 +251,7 @@ test("a step told through a view keeps the last step's framing until that view's
 	await presenting();
 	goTo(1);
 	await settle();
-	expectCamera(cameraNow(), N1_ABOVE_CAPTION);
+	expectCamera(cameraNow(), N1_IN_VIEW);
 	expect(unveiled()).toEqual(["n1", "e1"]);
 
 	// The view's picture is still being drawn. Worked out against the picture on
@@ -265,7 +261,7 @@ test("a step told through a view keeps the last step's framing until that view's
 	goTo(2);
 	await settle();
 	expect(renderCalls().at(-1)).toContain(`view=${VIEW.id}`);
-	expectCamera(cameraNow(), N1_ABOVE_CAPTION);
+	expectCamera(cameraNow(), N1_IN_VIEW);
 	expect(unveiled()).toEqual(["n1", "e1"]);
 });
 
@@ -280,7 +276,7 @@ test("a step about something this reading does not draw says so, on a line every
 	// The notice takes no row of its own, so the box keeps its height from step to step.
 	expect(wordRows()).toEqual(rows);
 	expect(marked()).toEqual([]);
-	expectCamera(cameraNow(), WHOLE_ABOVE_CAPTION);
+	expectCamera(cameraNow(), WHOLE_PICTURE);
 });
 
 /**
@@ -440,7 +436,7 @@ test("a relationship this reading does not draw brings none of its ends with it"
 	mountStage(null, { reducedMotion: true });
 	await presenting();
 	expect(marked()).toEqual([]);
-	expectCamera(cameraNow(), WHOLE_ABOVE_CAPTION);
+	expectCamera(cameraNow(), WHOLE_PICTURE);
 });
 
 test("a reader who asked for reduced motion arrives at a step at once", async () => {
@@ -450,7 +446,7 @@ test("a reader who asked for reduced motion arrives at a step at once", async ()
 	goTo(1);
 	await settle();
 	expect(surface().hasAttribute("data-camera-motion")).toBe(false);
-	expectCamera(cameraNow(), N1_ABOVE_CAPTION);
+	expectCamera(cameraNow(), N1_IN_VIEW);
 });
 
 test("a reader who did not ask for reduced motion is glided to the step, and it lands where the fit says", async () => {
@@ -468,7 +464,7 @@ test("a reader who did not ask for reduced motion is glided to the step, and it 
 		frames.run(PRESENTATION_MS.step + 200);
 		await settle();
 		expect(surface().hasAttribute("data-camera-motion")).toBe(false);
-		expectCamera(cameraNow(), N1_ABOVE_CAPTION);
+		expectCamera(cameraNow(), N1_IN_VIEW);
 	} finally {
 		frames.restore();
 	}

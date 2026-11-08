@@ -398,8 +398,11 @@ test("behavioral addresses restore exact flows and recover missing definitions w
 		"a behavioral reading without any authored flow",
 		WAIT,
 	);
-	await openDestination(browser, "flows");
-	expect(await browser.eval<number>(`document.querySelectorAll('[data-flow-id]').length`)).toBe(0);
+	// A model with no flow lists no Flows section.
+	await openDestination(browser, "modules");
+	expect(
+		await browser.eval<boolean>(`document.querySelector('[data-column-section="flows"]') === null`),
+	).toBe(true);
 	expect(await drawnSubjects(browser)).toEqual([]);
 	await browser.run(["open", exact]);
 	await pollUntil(

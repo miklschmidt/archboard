@@ -3,6 +3,7 @@ import { afterAll, afterEach, expect, mock, test } from "bun:test";
 import { createElement, type ComponentProps } from "react";
 import { projectModel, type Model } from "@archboard/model/content";
 import { SHOP } from "#tests/ui/support/model-reader/scene.ts";
+import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -119,6 +120,7 @@ test("a removed module reads its change partners and references from its retaine
 				selection,
 				code: null,
 				pathOf: noPath,
+				look: kindLookOf(model.policy, new Map()),
 				onCodeTargetNotice: nothing,
 				onOpen: nothing,
 				onReveal: nothing,

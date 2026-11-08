@@ -155,33 +155,6 @@ interface PictureCamera {
 	 * @returns False when the stage has not been laid out yet, and nothing moved.
 	 */
 	readonly glide: (to: FitTarget | Camera, duration: number, handledAfter?: boolean) => boolean;
-	/**
-	 * Keep the bottom of the viewport clear of what a fit shows, for something
-	 * laid over it there.
-	 * @param bottom How many pixels to keep clear; zero for none.
-	 */
-	readonly reserve: (bottom: number) => void;
-}
-
-/**
- * The most of a viewport's height a reserve may keep clear: past this, what the
- * reserve is for would be crowding out the picture it is laid over. Half is what
- * the box of a presented walkthrough may need, in a pane as narrow as one of two,
- * for the longest words a step has had.
- */
-const MOST_RESERVED = 0.5;
-
-/**
- * The part of a viewport a fit may use, once the reserve at its bottom is kept clear.
- * @param size The viewport's size, or null.
- * @param bottom The reserve.
- * @returns The usable size, or null before the viewport has one.
- */
-function usable(size: Size | null, bottom: number): Size | null {
-	if (size === null || bottom <= 0) {
-		return size;
-	}
-	return { width: size.width, height: size.height - Math.min(bottom, size.height * MOST_RESERVED) };
 }
 
 /**
@@ -272,9 +245,7 @@ function usePictureCamera(reducedMotion = false): PictureCamera {
 	const [store] = useState(createCameraStore);
 	const { read, write } = store;
 	const [viewport, setViewport] = useState<HTMLElement | null>(null);
-	const [measured, setRoom] = useState<Size | null>(null);
-	const [bottom, setBottom] = useState(0);
-	const room = useMemo(() => usable(measured, bottom), [measured, bottom]);
+	const [room, setRoom] = useState<Size | null>(null);
 	const flight = useCameraGlide();
 	// The timer that brings a camera moved by hand to rest, while it runs.
 	const resting = useRef<number | null>(null);
@@ -400,10 +371,7 @@ function usePictureCamera(reducedMotion = false): PictureCamera {
 		[settle, motion, restLater],
 	);
 
-	const measure = useCallback(
-		(): Size | null => usable(sizeOf(viewport), bottom),
-		[viewport, bottom],
-	);
+	const measure = useCallback((): Size | null => sizeOf(viewport), [viewport]);
 
 	const zoomCentre = useCallback(
 		(direction: number): void => {
@@ -467,10 +435,6 @@ function usePictureCamera(reducedMotion = false): PictureCamera {
 		},
 		[viewport, measure, flight, motion, read, write],
 	);
-
-	const reserve = useCallback((pixels: number): void => {
-		setBottom(Math.max(0, Math.round(pixels)));
-	}, []);
 
 	// The wheel is listened for natively because a zoom has to stop the page
 	// from scrolling, and React's own wheel listener is passive.
@@ -536,7 +500,6 @@ function usePictureCamera(reducedMotion = false): PictureCamera {
 			handled,
 			followPicture,
 			glide,
-			reserve,
 		}),
 		[
 			store,
@@ -552,7 +515,6 @@ function usePictureCamera(reducedMotion = false): PictureCamera {
 			handled,
 			followPicture,
 			glide,
-			reserve,
 		],
 	);
 }

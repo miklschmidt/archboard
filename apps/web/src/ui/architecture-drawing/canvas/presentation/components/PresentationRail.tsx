@@ -1,15 +1,18 @@
-// The rail along the top of a presented walkthrough's box: one segment for each step, and a way to
-// its step in each. It says where the reader is in the walkthrough at a glance, and it is how a step
-// is chosen out of order.
+// The rail along the top of a presented walkthrough's column: one segment for each step, and a way
+// to its step in each. It says where the reader is in the walkthrough at a glance, and it is how a
+// step is chosen out of order.
 //
 // The step shown is marked by one piece of gold that is as wide as a segment and travels along the
 // rail to the new step, with a paler wake that arrives a little after it, so a long jump is
-// followed across the rail and a short one is a step. The segments themselves only name their
-// steps, in a tone that is 3:1 against the box, because they are controls. Only a transform moves;
-// the stylesheet (app.css, `semantic-presentation-rail`) does it.
+// followed across the rail and a short one is a step. The segments before it are gold too, so the
+// rail fills up to the step shown, as the site's walkthrough player does. The segments after it
+// are in a tone that keeps the contrast of a mark against the column, because they are controls.
+// Only a transform moves the gold piece; the stylesheet (app.css, `semantic-presentation-rail`)
+// does it.
 
 import { useCallback, useMemo, type CSSProperties, type JSX } from "react";
 
+import { cn } from "@archboard/ui-kit/components";
 import { KeyTip } from "#ui/architecture-drawing/canvas/presentation/components/PresentationKeys.tsx";
 import type { VariantContent } from "@archboard/model/content";
 
@@ -23,6 +26,8 @@ interface StepSegmentProps {
 	readonly heading: string;
 	/** Whether it is the step shown. */
 	readonly current: boolean;
+	/** Whether the step comes before the one shown, so its segment is filled. */
+	readonly done: boolean;
 	/**
 	 * Show a step.
 	 * @param index The step.
@@ -52,7 +57,14 @@ function StepSegment(props: StepSegmentProps): JSX.Element {
 				onClick={go}
 				className="hit-area group flex h-5 min-w-0 flex-1 items-center outline-none"
 			>
-				<span className="bg-muted-foreground/70 group-hover:bg-muted-foreground group-focus-visible:ring-ring block h-1 w-full rounded-full transition-colors duration-150 group-focus-visible:ring-2 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-(--card) motion-reduce:transition-none" />
+				<span
+					className={cn(
+						"group-focus-visible:ring-ring block h-1 w-full rounded-full transition-colors duration-150 group-focus-visible:ring-2 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-(--sidebar) motion-reduce:transition-none",
+						props.done
+							? "bg-primary-mark"
+							: "bg-muted-foreground/70 group-hover:bg-muted-foreground",
+					)}
+				/>
 			</button>
 		</KeyTip>
 	);
@@ -95,6 +107,7 @@ function PresentationRail(props: PresentationRailProps): JSX.Element {
 					index={at}
 					heading={beat.heading}
 					current={at === props.index}
+					done={at < props.index}
 					onGo={props.onGo}
 				/>
 			))}

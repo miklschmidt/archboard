@@ -32,6 +32,7 @@ import {
 	NAME_GAP,
 	ROW_GUTTER,
 	ROW_HEIGHT,
+	stuckTop,
 } from "#ui/shell/rules/tree-grid.ts";
 import type { TextRange } from "#ui/shell/rules/text-match.ts";
 
@@ -186,7 +187,8 @@ interface TreeRowProps {
 }
 
 /**
- * Where a row sits, and where it sticks while it is open.
+ * Where a row sits, and where it sticks while it is open: under the rows that hold it, and under
+ * the head of the section of the column that holds the tree (`--stuck-top`).
  * @param depth The row's depth.
  * @param expanded Whether it holds drawn rows.
  * @param flat Whether it keeps no room for a disclosure.
@@ -195,7 +197,7 @@ interface TreeRowProps {
 function rowPlace(depth: number, expanded: boolean | undefined, flat: boolean): CSSProperties {
 	const left = (flat ? FLAT_INSET : disclosureX(depth)) - ROW_GUTTER;
 	const place: CSSProperties = { paddingLeft: left, paddingRight: FACTS_INSET - ROW_GUTTER };
-	return expanded === true ? { ...place, top: depth * ROW_HEIGHT } : place;
+	return expanded === true ? { ...place, top: stuckTop(depth * ROW_HEIGHT) } : place;
 }
 
 /**
@@ -208,7 +210,11 @@ function rowClass(props: TreeRowProps): string {
 		"group/row bg-tray-sink focus-visible:ring-ring rounded-control relative isolate flex min-h-7 w-full min-w-0 items-center py-1 outline-none select-none focus-visible:ring-1 focus-visible:ring-inset",
 		// Square corners, so nothing that scrolls beneath shows at the corners of a stuck row.
 		props.expanded === true && "sticky z-10 rounded-none",
-		props.selected ? "bg-tray-tab shadow-raised" : "hover:bg-tray-tab/50",
+		// A chosen row rises out of the well as a raised face. The row of what is open carries
+		// the site's gold underline inside its face.
+		props.selected ? "bg-face shadow-raised" : "hover:bg-face/50",
+		props.current === true &&
+			(props.selected ? "shadow-chosen" : "shadow-[inset_0_-2px_0_var(--primary)]"),
 		props.disabled === true && "text-muted-foreground",
 	);
 }
@@ -289,8 +295,15 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 	);
 }
 
-/** A section's label stands over the words of its rows. */
-const SECTION_STYLE = { paddingLeft: FLAT_INSET, paddingRight: FACTS_INSET } as const;
+/**
+ * A section's label stands where the name of a row of depth zero starts, and sticks under the head
+ * of a column section.
+ */
+const SECTION_STYLE: CSSProperties = {
+	paddingLeft: disclosureX(0) + DISCLOSURE_WIDTH + NAME_GAP,
+	paddingRight: FACTS_INSET,
+	top: stuckTop(0),
+};
 
 /**
  * What a row holds, under the guide that runs down from it.
@@ -313,7 +326,8 @@ function TreeGroup(props: { readonly depth: number; readonly children: ReactNode
 
 /**
  * Rows that belong together without one row that holds them. The name is not a row, so it adds
- * no stop to the keys of the tree, and it stays above its rows while the column scrolls.
+ * no stop to the keys of the tree, and it stays above its rows while the column scrolls. It lies
+ * on the floor of the well, under the head of the column's section, with no rule round it.
  * @param props The section's name and its rows.
  * @param props.label The name.
  * @param props.children The rows.
@@ -331,7 +345,7 @@ function TreeSection(props: { readonly label: string; readonly children: ReactNo
 			<div
 				aria-hidden="true"
 				style={SECTION_STYLE}
-				className="bg-sidebar border-border text-body text-muted-foreground sticky top-0 z-10 -mx-1 truncate border-y py-1 font-semibold group-first/section:-mt-1"
+				className="bg-tray-sink text-body text-muted-foreground sticky z-10 -mx-1 truncate py-1 font-medium group-first/section:-mt-1"
 			>
 				{props.label}
 			</div>

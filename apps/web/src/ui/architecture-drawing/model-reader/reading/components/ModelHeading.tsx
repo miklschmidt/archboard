@@ -110,7 +110,7 @@ function savedLabel(model: Model, checkpoint: string): string {
 }
 
 /**
- * The state of the reading, which opens the History destination.
+ * The state of the reading, which opens the History dialog.
  * @param props The reading and what the chip does.
  * @param props.model The reading.
  * @param props.state The requested state.

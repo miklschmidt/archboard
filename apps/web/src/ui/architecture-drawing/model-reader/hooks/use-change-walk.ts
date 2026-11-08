@@ -38,8 +38,6 @@ interface ChangeWalkInputs {
 	readonly opened: string | null;
 	/** The selected identities. */
 	readonly selected: ReadonlySet<string>;
-	/** Bring the list into the column. */
-	readonly onList: () => void;
 	/** Bring the picture back, for a reader on About. */
 	readonly onDiagram: () => void;
 }
@@ -137,7 +135,7 @@ function useChangeTargets(inputs: ChangeWalkInputs): (target: ChangeTarget) => v
  * @returns The list, the place in it, and the moves.
  */
 function useChangeWalk(inputs: ChangeWalkInputs) {
-	const { model, reference, selected, onList, onDiagram } = inputs;
+	const { model, reference, selected, onDiagram } = inputs;
 	const reviewing = reviewsChanges(model);
 	const { list, loaded, place, leave } = useChangePlace(model, reviewing ? reference : undefined);
 	const go = useChangeTargets(inputs);
@@ -154,11 +152,10 @@ function useChangeWalk(inputs: ChangeWalkInputs) {
 		(direction: ChangeStep): boolean => {
 			const change = changeAfter(list, now, direction);
 			if (change === undefined) return false;
-			onList();
 			show(change);
 			return true;
 		},
-		[list, now, onList, show],
+		[list, now, show],
 	);
 	return {
 		reviewing,

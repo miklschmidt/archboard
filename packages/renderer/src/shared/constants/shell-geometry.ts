@@ -28,13 +28,12 @@ interface Size {
 const SHELL_VIEWPORT: Size = { width: 1920, height: 1080 };
 
 /**
- * The navigator column: the brand bar at its top, the destinations, and the agent dock at its foot.
- * The width comes from what it holds. Five tabs with three-digit counts need 445 px on one row, and
- * the `Measures` table needs 184 px for a name beside its seven count columns. A name of that width
- * fits 99 percent of the names of this repository's model. The core keeps the same number
- * (`NAVIGATOR_WIDTH` in `crates/archboard-scene/src/paint/design.rs`).
+ * The navigator column: the brand bar at its top, the keys of History and Measures, one list of
+ * modules, flows and walkthroughs, and the agent dock at its foot. It is a sidebar of the usual
+ * width, because History and Measures open in dialogs of their own and a list needs no more. The
+ * core keeps the same number (`NAVIGATOR_WIDTH` in `crates/archboard-scene/src/paint/design.rs`).
  */
-const NAVIGATOR_WIDTH = 448;
+const NAVIGATOR_WIDTH = 280;
 
 /**
  * The line between the navigator and the panes: the handle that drags the

@@ -16,11 +16,10 @@ from Shop, on the renderer core before commit `4b970e501`. Measure again before 
 The left column lists where to go. The middle shows it. The right column explains what is selected or open, and
 what the marks of the picture mean.
 
-- Left column, 448 px (TASK-559.36): a repository switcher that shows the pane letter and opens a dropdown, the
-  destinations
-  `Modules`, `Flows`, `Walkthroughs`, `History` and `Measures` on one row, and Talk. `Flows` and `Walkthroughs` list
-  the whole model and show its count, so a list here never changes under a reader. A proposal read against its base
-  adds `Changes` to that row with its count, and the tabs of the model drop their counts to make room.
+- Left column, 280 px (TASK-590.12): a repository switcher that shows the pane letter and opens a dropdown, the
+  keys `History` and `Measures`, which open dialogs, one list with the sections `Modules`, `Flows` and
+  `Walkthroughs`, and Talk. The sections list the whole model and show its count, so a list here never changes under
+  a reader. A proposal read against its base puts a `Changes` section with its count first.
 - Header: crumbs, the open module's code path, the state chip, the comparison control, the walk of a proposal's
   changes with the reader's position, `Clear focus` while a focus stands, and `Diagram | About`. A flow or a walkthrough
   stands beside the crumbs after a dot, not on them: the crumbs state containment, the open module gives the way
@@ -37,8 +36,8 @@ what the marks of the picture mean.
 - Context: the right panel is where the flows and walkthroughs of what a reader looks at stand (TASK-559.22), under
   the description or the subject's own details. With nothing selected they are those that touch the open module, and
   with a selection those that touch the selected subjects. At the roots with nothing selected the panel lists neither,
-  because everything touches the roots and the left column holds it all. A row opens its flow or walkthrough and brings
-  the left column to its tab. A list shows four rows, then how many more.
+  because everything touches the roots and the left column holds it all. A row opens its flow or walkthrough, which its
+  section of the left column then lights. A list shows four rows, then how many more.
 - Interface measures: the reason for this redesign is to find code smells the way A Philosophy of Software Design
   does, so this line matters most. For a module with parts, open or selected, an `Interface` section under its head
   counts entries (entry points), callers and pass-through entry points (TASK-559.22, ADR 0044).
@@ -216,7 +215,7 @@ A proposal opens against its base. If it has `predecessorCheckpoint`, the base i
 One control stands in the header on every reading that can compare. It says what the
 picture is compared with, and it is the way out. It offers `No comparison`, `Current`, the draft's own base as
 `Its base`, and the other drafts by summary. A draft with no comparison looks like a plain draft: no marks, no
-`Changes` tab. A checkpoint is not a choice in the control, because 50 rows that differ by a time and a hash are
+`Changes` section. A checkpoint is not a choice in the control, because 50 rows that differ by a time and a hash are
 no choice. A base that came from `Compare` stands in the control only while it is compared with. `compare: false`
 reaches the browser as `againstX=after`, which no person reads.
 
@@ -228,7 +227,7 @@ as a count of the interface line, and its parent opens if it must. A module that
 reaches it on the drawing of the comparison. A proposal with no interface change says so in one quiet line. The rows
 are facts, so they wear no standing, score or warning, and they are no steps of the walk. A module whose counts moved
 with no interface change, such as one outgoing relationship more, has no row here, because the list below names what
-changed. A proposal opens on the Changes tab. `N` and `P` walk the list, and visible `Previous` and `Next` controls show
+changed. A proposal's column starts with its Changes section. `N` and `P` walk the list, and visible `Previous` and `Next` controls show
 those keys. A change to a step opens that flow's sequence, and a beat opens its presentation. Reparenting shows
 old and new parents by name in the row and in the panel. Removed subjects stay reachable, because the drawing of
 the comparison holds them. A removed beat or walkthrough has no presentation to open, so the panel names it and

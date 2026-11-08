@@ -130,7 +130,7 @@ function Notice(props: NoticeProps): JSX.Element {
 	return (
 		<Alert
 			variant={notice.tone}
-			className="bg-popover text-popover-foreground w-full rounded-xl border p-4 shadow-lg"
+			className="bg-popover text-popover-foreground rounded-table shadow-float w-full border p-4"
 		>
 			{notice.tone === "destructive" ? <RiErrorWarningLine /> : <RiInformationLine />}
 			<Alert.Title className="pr-6">{notice.title}</Alert.Title>

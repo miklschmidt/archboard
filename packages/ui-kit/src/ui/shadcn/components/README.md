@@ -88,5 +88,13 @@ correctness check rather than a style rule.
 - `tabs.tsx`: the `underline` and `edge` variants beside the official ones.
 - `select.tsx` and `dropdown-menu.tsx`: their classes draw the shell's raised
   trigger and its `menu-motion` popover in place of the registry's animation.
+- Every file: corners and floating surfaces follow the site's ladder
+  (`site/DESIGN.md`, "Shapes") in place of the registry's derived radius scale,
+  which `app.css` clears. Controls and the items of a menu take `rounded-control`
+  (4px), a popover, a select's and a menu's popup and the card tooltip
+  `rounded-table` (10px) with a Rule border and `shadow-float`, and the dialog
+  `rounded-window` (12px) with the window's ring in `shadow-dialog` and no
+  border. A label tooltip is a plate of the popover plane, not the inverted
+  surface, and a field is a well on the Well Floor.
 - `toggle-group.tsx`: CSS custom properties in `style` are
   typed by `css-custom-properties.d.ts` instead of `as React.CSSProperties`.

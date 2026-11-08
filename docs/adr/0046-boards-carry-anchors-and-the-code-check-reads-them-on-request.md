@@ -927,6 +927,9 @@ A finding quotes a symbol, a path and a line. It never quotes other text from a
 file. A file can hold a secret, and the Archboard server answers any request
 from this machine with no authentication.
 
+The amendment of 2026-11-07 makes one exception: the source excerpt of a
+remembered piece of evidence.
+
 ### Exit status
 
 The exit status follows `archboard check`. If the plain check has a diagnostic
@@ -1468,3 +1471,76 @@ its own line, so those calls have no relationship of their own. A warning for
 each one asks for an import map. Removing the finding hides what the model leaves
 out. Information keeps the fact and stays out of the exit status. The model holds
 153 such findings after the repair.
+
+## Amendment of 2026-11-07: the source excerpt of remembered evidence
+
+TASK-590.06 makes one exception to the rule that a finding quotes no other text
+of a file. The owner asked for it on 2026-11-07.
+
+The shell shows a code finding beside its source, with line numbers and the
+evidence line marked. A path and a line alone do not show a reader what the
+code does at that place. So `GET /api/code/source-lines` answers the source
+excerpt of one piece of evidence: the evidence line, with up to 3 lines before
+it and 3 lines after it. `CodeSourceLinesSchema` of
+`@archboard/code-intel/code-check` is its answer.
+
+A file can still hold a secret, and the server still has no authentication.
+So the route keeps these limits:
+
+- It answers only a place that a piece of evidence of the vault's remembered
+  findings names, by its repository, path and line. It never starts a pass.
+  So it reads only a file that a code pass of that vault read. After a
+  restart, the server reads no file until somebody runs the code check again.
+- It reads only a file inside a registered checkout that Git does not ignore.
+  It resolves the path through `packages/code-binding/src/runtime`, as the
+  code check and the code opener do. So the path stays inside its checkout
+  before and after symbolic links resolve. Git must list the file where its
+  links lead.
+- It never quotes a file whose values the check does not read: Terraform
+  state, variable files, the `.terraform` directory, an env file and a file
+  that holds a Kubernetes Secret. An env file is `.env`, `.env.<name>`,
+  `.envrc` or `<name>.env`. The check reads only the names in an env file and
+  in a Secret, so their values stay unquoted.
+- It reads no file larger than 1 MiB, and it cuts each line after 240
+  characters.
+- Only a page of the server's own origin reads it. The route uses the
+  `settings-read` kind of the browser origin guard (`createBrowserOriginGuard`
+  of `@archboard/code-opener/browser-origin`), as `GET /api/repositories`
+  does. The guard refuses a request without the browser headers that prove
+  that origin. It protects against a foreign page in a browser. It does not
+  authenticate a local process, which can read the file without the server.
+
+A place outside these limits gets the status 404, with the code
+`EVIDENCE_NOT_REMEMBERED`, `SOURCE_UNAVAILABLE` or `SOURCE_REFUSED`. The route
+reads the file as the checkout holds it now. An edit after the pass can make
+these lines differ from the code that the pass read. A pass that read a draft
+at another ref can do that too.
+
+The route quotes the other text near the evidence line, also a key that
+somebody wrote into the code. These limits do not prevent that.
+
+## Amendment of 2026-11-08: the code view of Measures starts a pass
+
+TASK-590.13 narrows the rule of TASK-367.24 that a pane never starts a pass.
+The owner asked for it on 2026-11-08, after the code view of Measures said only
+that no code check had read the reading.
+
+When the code view of Measures opens on a reading, and no remembered pass read
+that version of the reading, the page asks `GET /api/vault/code-check` for one
+pass. It names a draft by its state, and Current by no state, as
+`archboard check code` does. The view says that it is checking. When the pass
+ends, the page reads the remembered findings again and shows them. A refused or
+failed pass shows the server's words and a key that tries again.
+
+The limits of TASK-367.24 still hold everywhere else:
+
+- Only the open code view starts a pass. The panes, the warning count and the
+  inspector read the remembered findings, and the route they read on a timer
+  never starts one.
+- A page starts one pass for one version of one reading. The page keeps the
+  outcome for as long as it is open. A pass that ends without a matching
+  reading is not started again until somebody presses the key.
+- Closing the view does not cancel the pass. What it finds is remembered,
+  and the view shows it when it opens again. A page that goes away cancels it,
+  as any caller that hangs up does.
+- A migration preview is not in the vault, so the view starts no pass for it.

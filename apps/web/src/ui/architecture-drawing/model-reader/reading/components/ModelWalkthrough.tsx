@@ -6,11 +6,13 @@ import {
 	useState,
 	type ComponentProps,
 	type JSX,
+	type ReactNode,
 } from "react";
 import {
 	SemanticPresentation,
 	type SemanticPresentationProps,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticPresentation.tsx";
+import { PictureOverlay } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx";
 import { projectModel, type Model } from "@archboard/model/content";
 import { useAcceptedScene } from "#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts";
 import { usePictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
@@ -41,7 +43,8 @@ interface WalkthroughProps {
 	/** The step a presentation opens at, counted from zero. */
 	beat?: number | undefined;
 	onReading?: (reading: PaneReading | null) => void;
-	overlay?: SemanticPresentationProps["overlay"];
+	/** What the shell lays over the picture, such as the voice and its words. */
+	overlay?: ReactNode;
 	narration?: SemanticPresentationProps["narration"];
 }
 
@@ -66,7 +69,6 @@ function ModelWalkthrough(props: WalkthroughProps): JSX.Element {
  */
 function NarrativePresentation(props: WalkthroughProps & { playback: Playback }): JSX.Element {
 	const { model, playback } = props;
-	const [reserve, setReserve] = useState(0);
 	const [picture, setPicture] = useState<Picture>(null);
 	const { caption, position, reading, key, unavailable } = useWalkthroughBeat(
 		model,
@@ -134,17 +136,19 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 			data-revision={model.revision.digest}
 			data-scope={reading.scope ?? ""}
 			data-grammar={reading.grammar}
-			className="relative flex min-h-0 flex-1 flex-col"
+			className="flex min-h-0 flex-1"
 		>
-			<BeatStage
-				accepted={accepted}
-				selection={selection}
-				reducedMotion={props.reducedMotion}
-				reserve={index < 0 ? 0 : reserve}
-				onPresentation={setPicture}
-				onOpen={ignore}
-			/>
-			{!available && <UnavailableBeat status={unavailable} />}
+			<div className="relative flex min-w-0 flex-1 flex-col">
+				<BeatStage
+					accepted={accepted}
+					selection={selection}
+					reducedMotion={props.reducedMotion}
+					onPresentation={setPicture}
+					onOpen={ignore}
+				/>
+				{!available && <UnavailableBeat status={unavailable} />}
+				<PictureOverlay overlay={props.overlay} clearOfSidebar={false} />
+			</div>
 			{index >= 0 && (
 				<SemanticPresentation
 					walkthrough={caption}
@@ -152,8 +156,6 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 					missing={NO_MISSING_SUBJECTS}
 					onGo={position.goTo}
 					onLeave={props.onLeave}
-					reserve={setReserve}
-					overlay={props.overlay}
 					narration={drawnNarration(props.narration, presentation, available)}
 				/>
 			)}
@@ -167,7 +169,6 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
  * @param props.accepted The beat on screen and the beat on its way.
  * @param props.selection The beat's selection.
  * @param props.reducedMotion Whether the person asked for no motion.
- * @param props.reserve The height the caption keeps clear.
  * @param props.onPresentation Told whether the beat has arrived.
  * @param props.onOpen Ignored: a presentation stays on its beats.
  * @returns The diagram, once a beat is drawn, and any failure to draw one.
@@ -177,7 +178,6 @@ function BeatStage(
 		accepted: ReturnType<typeof useAcceptedScene>;
 		selection: ReturnType<typeof useModelSelection>;
 		reducedMotion: boolean;
-		reserve: number;
 	},
 ): JSX.Element {
 	const { accepted, selection, reducedMotion } = props;
@@ -197,7 +197,6 @@ function BeatStage(
 						onSelectMany={selection.selectMany}
 						onOpen={props.onOpen}
 						reducedMotion={reducedMotion}
-						reserve={props.reserve}
 						onPresentation={props.onPresentation}
 					/>
 				)}

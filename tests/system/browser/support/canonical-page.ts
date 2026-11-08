@@ -337,15 +337,29 @@ async function refreshModel(browser: AgentBrowserSession): Promise<void> {
 
 export { refreshModel };
 
-/** Open a destination of the left column, which speaks for the focused pane. */
+/** What the left column opens in a dialog through a key. The rest are sections of its list. */
+const COLUMN_DIALOGS: ReadonlySet<string> = new Set(["history", "measures"]);
+
+/**
+ * Reach what the left column offers for the focused pane: `history` and `measures` open their
+ * dialog through its key, which a dialog already open leaves alone, and a section of the list,
+ * such as `flows`, needs only to be there.
+ */
 async function openDestination(browser: AgentBrowserSession, destination: string): Promise<void> {
-	const tab = `[data-destination="${destination}"]`;
+	const dialog = COLUMN_DIALOGS.has(destination);
+	const target = dialog
+		? `[data-column-dialog="${destination}"]`
+		: `[data-column-section="${destination}"]`;
 	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('${tab}') !== null`),
+		() => browser.eval<boolean>(`document.querySelector('${target}') !== null`),
 		Boolean,
-		`the ${destination} destination`,
+		`the ${destination} of the column`,
 	);
-	await browser.run(["click", tab]);
+	if (!dialog) return;
+	const open = await browser.eval<boolean>(
+		`document.querySelector('${target}')?.getAttribute('aria-expanded') === 'true'`,
+	);
+	if (!open) await browser.run(["click", target]);
 }
 
 export { openDestination };

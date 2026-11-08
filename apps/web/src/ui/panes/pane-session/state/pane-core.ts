@@ -158,6 +158,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 */
 	function setConnected(connected: boolean): void {
 		status.connected = connected;
+		if (connected) status.contacted = true;
 		ports.setConnected(connected);
 		publishStatus();
 	}

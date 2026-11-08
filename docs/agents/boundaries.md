@@ -399,8 +399,11 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
 `shared/api/` are safe for the browser, with no Node import: the canvas imports them. The 3 files of
 `runtime/api/` are Node-bound and run only in Bun.
 
-- `./code-check` is the answer of the code check and the answer of the route that remembers it:
-  `CodeCheckAnswer` and `RememberedFindings`, with their schemas. The schema is in
+- `./code-check` is the answer of the code check, the answer of the route that remembers it, and
+  the source excerpt of one remembered piece of evidence: `CodeCheckAnswer` and
+  `RememberedFindings` with their schemas, and `CodeSourceLinesSchema`. The owner raised the
+  ceiling of `code-intel` from 11 to 12 on 2026-11-07 for this schema, the contract of
+  `GET /api/code/source-lines` (ADR 0046, amendment of 2026-11-07). The schema is in
   `shared/protocol/code-check.ts`. `./history` is the answers of the locality and footprint routes,
   the start of a period and `HistoryRefusalCode`, the codes a history reading refuses with, from
   `shared/protocol/`. It also gives the label of a commit's

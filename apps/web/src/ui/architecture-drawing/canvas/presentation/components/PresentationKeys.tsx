@@ -1,6 +1,6 @@
-// The keys of a presented walkthrough's box: the previous step, the next one, and leaving. They
-// are one row of the box's own keys, beside the words, and a recording draws none of them, because
-// nobody can press anything in the video.
+// The keys of a presented walkthrough's column: the previous step, the next one, and leaving. They
+// are one row at the foot of the column, under the voice's place, and a recording draws none of
+// them, because nobody can press anything in the video.
 //
 // A key that has nowhere to go, the previous one on the first step and the next one on the last, is
 // dimmed and does nothing, but it stays a key: a disabled button cannot hold keyboard focus, and

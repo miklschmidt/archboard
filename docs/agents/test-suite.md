@@ -101,6 +101,7 @@ The three Rust stages take turns on the lock of Cargo's build directory.
 `check:model` runs `archboard check` on this checkout's vault: the semantics, the code check against the bound source, and the embeds.
 Any warning or error fails it.
 It starts a server from this checkout's source on a free port and stops it after the check, because a running server checks with the source that it read at its start.
+That server must answer within the CLI's start window, so `check:model` runs alone after `check:first`, before the test lanes.
 The code check's rust-analyzer builds in `target/rust-analyzer`, so it never waits on that lock.
 `lint:all` includes `lint:core`, clippy over the crates and their tests, and
 `lint:core-docs`, rustdoc over every doc comment of the crates, and
@@ -480,7 +481,7 @@ voice box carry that same session. From the keyboard, the bar's key ends it,
 releases the browser's media and keeps its focus. Talk on the same key then
 starts a second session that the voice box carries, and Space ends it.
 Narrating the walkthrough starts a third session on a fresh coordinator. Its
-words are in the voice box at the foot of the presented walkthrough. Four
+words are in the voice box low over the presented walkthrough's picture. Four
 things reach the voice model as one `appendSpeech` line each: the first step, a
 step taken by hand, a part picked by hand mid-step, and leaving with Escape. No
 coordinator turn starts. The pick names the part and not its id, and the pane
@@ -834,7 +835,7 @@ Ordinary readers keep their drawing surface while local layout runs and show pro
 Captured walkthroughs retain their existing picture-readiness contract.
 
 The canonical sidebar reuses the existing shell layout owner.
-`shell-layout.test.ts` retains the 12-cell render matrix, shared geometry, typography, focus, control sizes, pane layout, and activity assertions.
+`shell-layout.test.ts` retains the 12-cell render matrix, focus, target minimums, offline fonts, pane letters, and activity assertions.
 Its underline probe now inspects the actual sidebar tab row.
 Its control probe excludes hidden disclosure content through browser visibility.
 Canonical selection, navigation, comparison, and walkthrough owners cover the sidebar transition.
@@ -851,8 +852,8 @@ Unit owners hold its rules: `module-tree.test.ts`, `reader-keys.test.ts`, `searc
 `reader-context.test.ts` owns what the right column adds through a real browser: the lists that follow the open module or the selection, the rows that open a flow or a walkthrough, the interface line, whose counts select on the module's own picture and whose heading opens About at its Interface section, the door that opens at one click and lists its endpoints on hover, and the engine under the legend.
 `reader-expand.test.ts` owns a door's second action through a real browser: the control expands the door into the picture, the address keeps it across a reload and Back, and a tab, a panel row or a key takes it back. Unit owners hold its rules: `model-projection.test.ts` and `expansion.test.ts`.
 `reader-trace.test.ts` owns a trace in the reader: each further hop lights more faintly, across the doors, and goes with the pick.
-`reader-measures.test.ts` owns where to look across the model: a selection reads the code history with no button, and `Measures` lists every module, sorts it from the keyboard and selects a module on its picture.
-`module-measures.test.ts` owns the one order of each measure and how a reading stands with history, and `model-measures.test.tsx` owns what the list says in each state of a read.
+`reader-measures.test.ts` owns where to look across the model: a selection reads the code history with no button, and the `Measures` dialog lists every module, sorts it from a column head, walks it from the keyboard and selects a module on its picture. It also pages through the code findings.
+`module-measures.test.ts` owns the one order of each measure and how a reading stands with history. `model-measures.test.tsx` owns the views of the dialog and what a table says in each state of a read. `model-code-evidence.test.tsx` owns the pager of the findings and the source lines round a finding's evidence.
 `relevance.test.ts` owns which flows and walkthroughs touch a subject, and `use-accepted-scene.test.tsx` owns that one engine's drawing never answers for the other.
 
 `canonical-model-groups.test.ts` replaces the legacy board group browser fixture.

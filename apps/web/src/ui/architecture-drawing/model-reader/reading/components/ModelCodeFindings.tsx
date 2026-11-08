@@ -1,7 +1,15 @@
-import { useCallback, useMemo, useState, type JSX } from "react";
+import { RiLoader4Line } from "@remixicon/react";
+import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
+import { Button } from "@archboard/ui-kit/components";
+import { CodeFindingsView } from "#ui/architecture-drawing/model-reader/reading/components/CodeFindingsView.tsx";
+import type { CodeCheckProgress } from "#ui/architecture-drawing/model-reader/reading/hooks/use-code-check.ts";
 import type { ModelCodeReading } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
+import type { FindingEnds } from "#ui/architecture-drawing/model-reader/reading/rules/finding-route.ts";
 import { WarningCount } from "#ui/architecture-drawing/canvas/presentation/components/CodeWarnings.tsx";
-import { CodeBlock } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorCode.tsx";
+import {
+	CheckedAt,
+	CodeBlock,
+} from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorCode.tsx";
 
 /**
  * Keep the existing warning control available for canonical readings.
@@ -78,4 +86,105 @@ function ModelCodeDetails(props: {
 	return <CodeBlock code={code} />;
 }
 
-export { ModelCodeWarnings, ModelCodeDetails };
+/** Inputs for the findings of the reading on screen. */
+interface ModelCodeEvidenceProps {
+	readonly vault: string;
+	/** The pass that read the reading on screen, or null when none did. */
+	readonly reading: ModelCodeReading | null;
+	/** How the pass this view started stands, while no remembered pass read the reading. */
+	readonly check: CodeCheckProgress;
+	readonly ends: FindingEnds;
+	/** Select a finding's subject on the picture, or let go of the selection for a model finding. */
+	readonly onShow: (id: string | null) => void;
+}
+
+/**
+ * Where the map and the code disagree: the findings of the pass that read the reading on screen,
+ * warnings first, each beside the source line it rests on (ADR 0046). While no remembered pass
+ * read the reading, the view says how the pass it started stands.
+ * @param props The pass, the pass this view started and what choosing a finding selects.
+ * @returns The findings, or what stands in their place.
+ */
+function ModelCodeEvidence(props: ModelCodeEvidenceProps): JSX.Element {
+	const { reading, check } = props;
+	if (reading === null) return <CheckStanding check={check} />;
+	if (reading.findings.length === 0)
+		return (
+			<Quiet slot="code-evidence-clear">
+				<p>The last code check found nothing here.</p>
+				<CheckedAt checkedAt={reading.checkedAt} />
+			</Quiet>
+		);
+	return (
+		<CodeFindingsView
+			key={`${reading.revision.digest}:${reading.checkedAt}`}
+			vault={props.vault}
+			reading={reading}
+			ends={props.ends}
+			onShow={props.onShow}
+		/>
+	);
+}
+
+/**
+ * How the pass over the reading on screen stands, in its place.
+ * @param props The pass.
+ * @param props.check How it stands.
+ * @returns The words, with a key that tries again where the pass did not read the reading.
+ */
+function CheckStanding(props: { readonly check: CodeCheckProgress }): JSX.Element {
+	const { check } = props;
+	if (check.status === "checking")
+		return (
+			<Quiet slot="code-evidence-checking">
+				<output aria-live="polite" className="flex items-center gap-2">
+					<RiLoader4Line aria-hidden="true" className="size-4 shrink-0 animate-spin" />
+					Checking this reading against its code…
+				</output>
+			</Quiet>
+		);
+	if (check.status === "unavailable")
+		return (
+			<Quiet slot="code-evidence-none">
+				<p>The code check reads the vault, and a migration preview is not in it yet.</p>
+			</Quiet>
+		);
+	return (
+		<Quiet slot="code-evidence-failed">
+			<p role="alert">
+				{check.status === "failed"
+					? `The code check failed: ${check.error}`
+					: "The code check ran, but it did not read this version of the reading."}
+			</p>
+			<Button
+				variant="outline"
+				size="sm"
+				data-slot="code-evidence-retry"
+				className="mt-2 self-start"
+				onClick={check.retry}
+			>
+				Try again
+			</Button>
+		</Quiet>
+	);
+}
+
+/**
+ * The words that stand where no finding does.
+ * @param props What they say.
+ * @param props.slot What names them.
+ * @param props.children The words.
+ * @returns The words, on the floor of the panel.
+ */
+function Quiet(props: { readonly slot: string; readonly children: ReactNode }): JSX.Element {
+	return (
+		<div
+			data-slot={props.slot}
+			className="text-body text-muted-foreground bg-tray-sink shadow-well rounded-panel flex flex-col gap-1 p-4 [&_code]:font-mono"
+		>
+			{props.children}
+		</div>
+	);
+}
+
+export { ModelCodeDetails, ModelCodeEvidence, ModelCodeWarnings };

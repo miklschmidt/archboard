@@ -1,10 +1,3 @@
-type ShellMetrics = {
-	family: string;
-	size: number;
-	lineHeight: number;
-	weight: number;
-};
-
 type Rect = {
 	left: number;
 	top: number;
@@ -34,13 +27,9 @@ type ThemeSnapshot = {
 	theme: "light" | "dark";
 	/** The wordmark's visible text, set in the display face. */
 	wordmark: string;
-	wordmarkSize: { width: number; height: number };
-	/** The brand bar and the pane header share one top edge and one height. */
-	chromeRowsAligned: boolean;
 	status: string;
 	background: string;
 	inkContrast: number;
-	flatSurfaces: boolean;
 	visibleFocus: boolean;
 	modelIdentity: string;
 	/** The name of the variant the header says is shown. */
@@ -50,17 +39,10 @@ type ThemeSnapshot = {
 	focusedPaneCount: number;
 	/** Visible connection warnings in the pane header; none while the socket is up. */
 	connectionTrouble: number;
-	/** The model's name sits before the pane's controls, centred on one line with them. */
-	headerSectionsAligned: boolean;
-	fontChecks: boolean[];
+	/** Whether every font face the page declares loaded. */
+	fontsLoaded: boolean;
+	/** The font files the page fetched. */
 	fontResources: string[];
-	humanLabels: Array<{ family: string; transform: string; weight: number }>;
-	/** A section heading in the pane's sidebar: the body size, semibold, never uppercase. */
-	titleType: ShellMetrics;
-	bodyType: ShellMetrics;
-	stateType: ShellMetrics;
-	technicalType: ShellMetrics;
-	controlType: ShellMetrics;
 	actionTargets: Array<{ width: number; height: number }>;
 	presentTarget: { width: number; height: number };
 };
@@ -73,20 +55,9 @@ type PaneLetters = {
 };
 
 type NoticeLayout = {
-	parentIsPanes: boolean;
-	insidePanes: boolean;
-	width: number;
-	copyType: ShellMetrics;
 	actionHeight: number;
 	dismissHeight: number;
-	flat: boolean;
 	text: string;
 };
 
-export {
-	type ShellMetrics,
-	type DesktopShell,
-	type ThemeSnapshot,
-	type PaneLetters,
-	type NoticeLayout,
-};
+export { type DesktopShell, type ThemeSnapshot, type PaneLetters, type NoticeLayout };

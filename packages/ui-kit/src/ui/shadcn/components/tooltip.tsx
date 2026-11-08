@@ -16,23 +16,31 @@ function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
 }
 
 /**
- * Archboard: how a tooltip looks. A label is a few words on the inverted
- * surface; a card is a small panel on the popover surface, for a tip that
- * explains a part of the picture in sentences.
+ * Archboard: the arrow of a tooltip, a corner of the tooltip's own plane with
+ * its hairline on the two sides that face out.
+ */
+const ARROW =
+	"bg-popover fill-popover border-border data-[side=bottom]:border-t data-[side=bottom]:border-l data-[side=left]:border-t data-[side=left]:border-r data-[side=right]:border-b data-[side=right]:border-l data-[side=top]:border-r data-[side=top]:border-b";
+
+/**
+ * Archboard: how a tooltip looks, as the site lays a label over its picture.
+ * A label is a few words on a plate of the popover plane, with 6px corners;
+ * a card is the site's card, with 10px corners, for a tip that explains a
+ * part of the picture in sentences. Both float with a hairline edge.
  */
 const LOOKS = {
 	label: {
-		popup: "bg-foreground text-background shadow-float max-w-xs rounded-md px-3 py-1.5",
-		arrow: "bg-foreground fill-foreground",
+		popup:
+			"bg-popover text-popover-foreground border-border rounded-panel shadow-float max-w-xs border px-2.5 py-1.5",
+		arrow: ARROW,
 		arrowPadding: 5,
 	},
 	card: {
 		// Clear of the card's rounded corner when the card is pushed against an edge of the screen.
 		arrowPadding: 14,
 		popup:
-			"bg-popover text-popover-foreground border-border max-h-(--available-height) max-w-[min(24rem,calc(var(--available-width)-1rem))] rounded-lg border px-3.5 py-3 shadow-float",
-		arrow:
-			"bg-popover fill-popover border-border data-[side=bottom]:border-t data-[side=bottom]:border-l data-[side=left]:border-t data-[side=left]:border-r data-[side=right]:border-b data-[side=right]:border-l data-[side=top]:border-r data-[side=top]:border-b",
+			"bg-popover text-popover-foreground border-border max-h-(--available-height) max-w-[min(24rem,calc(var(--available-width)-1rem))] rounded-table border px-3.5 py-3 shadow-float",
+		arrow: ARROW,
 	},
 } as const;
 
@@ -76,7 +84,7 @@ function TooltipContent({
 						LOOKS[look].popup,
 						// Archboard: a word longer than the tooltip breaks rather than
 						// running out past its edge.
-						"data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 text-body z-50 inline-flex w-fit origin-(--transform-origin) items-center gap-1.5 [overflow-wrap:anywhere] has-data-[slot=kbd]:pr-1.5 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-sm",
+						"data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 text-body **:data-[slot=kbd]:rounded-chip z-50 inline-flex w-fit origin-(--transform-origin) items-center gap-1.5 [overflow-wrap:anywhere] has-data-[slot=kbd]:pr-1.5 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50",
 						className,
 					)}
 					{...props}

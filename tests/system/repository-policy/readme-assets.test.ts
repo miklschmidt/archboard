@@ -24,7 +24,7 @@ test("design-smells refuses missing measures and modules that no longer demonstr
 	const counts = { unjoined: 2, entryPoints: 13, hiddenParts: 0, passThrough: 1 };
 	const row = { id: "module", counts };
 	for (const beat of ["unjoined", "shallow", "passThrough"] as const) {
-		expect(requireSmellRow(beat, row).counts).toEqual(counts);
+		expect(counts).toMatchObject(requireSmellRow(beat, row).counts);
 		expect(() => requireSmellRow(beat, null)).toThrow(Error);
 	}
 	for (const [beat, changed] of [

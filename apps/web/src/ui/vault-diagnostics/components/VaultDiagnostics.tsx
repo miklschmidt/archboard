@@ -81,7 +81,7 @@ function DiagnosticsBell(props: { count: number; failed: boolean }): JSX.Element
 	const { count, failed } = props;
 	return (
 		<Dialog.Trigger
-			className="hover:bg-accent focus-visible:ring-ring relative inline-flex size-8 items-center justify-center rounded-md outline-none focus-visible:ring-2"
+			className="hover:bg-accent focus-visible:ring-ring rounded-control relative inline-flex size-8 items-center justify-center outline-none focus-visible:ring-2"
 			aria-label={count > 0 ? `Vault diagnostics: ${count} issues` : "Vault diagnostics"}
 		>
 			<RiNotification3Line className="size-4" />

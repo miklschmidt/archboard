@@ -315,32 +315,37 @@ goes at once.
 A presented walkthrough steps the sidebar aside. While it lasts the control in the
 header is held and says so, and it does not show or hide the sidebar.
 
-A presented walkthrough (TASK-250, TASK-392) is the picture and one plate laid over its
-foot, with the sidebar stepped aside. The plate is as wide as the pane less the margin it
-keeps at its foot. It has a rail of steps along its top, with one piece of gold that travels to
-the step shown. Under the rail, the words stand in a column in the middle. The column is left
-aligned and 64rem wide at most. It holds the step's heading in the `presentation` type role,
-its words in the `reading` role, and the name of the walkthrough under those. The step's
-number is set as a drawing's sheet number is, to the left of the column. The keys, previous,
-next and leave, are to its right.
+A presented walkthrough (TASK-250, TASK-392, TASK-590.05) is the picture and a column beside it,
+with the sidebar stepped aside. The column stands where the right panel stands, 400px wide at
+most, as the site's walkthrough player sets it. A rail of steps runs along its top. It fills with
+gold up to the step shown, and one piece of gold travels to that step. Under the rail is the step's number, set as a drawing's
+sheet number is. Beside the number are the step's heading in the `presentation` type role, its
+words in the `reading` role, and the name of the walkthrough under those.
 
-Under the words, as wide as they are, is a pill for the voice. While voice is off, the pill
-holds the key that narrates the walkthrough. While voice is live, it holds the voice box, with
-its orb, its words, mute and the subtitles control. The box keeps one height whatever the voice
-is doing and whichever step is shown, so the picture does not move with either. A fullscreen
-presentation has no dock. So the voice box carries the voice there, whatever the person wants
-of subtitles, and the bar holds one key that starts and ends voice. DESIGN.md describes the
-plate.
+The key that narrates the walkthrough stands at the foot of the column, as wide as the column: a
+pill with a gold circle and a microphone in it. The keys, previous, next and leave, stand under
+it on the right. The gold circle is a home of the one voice orb (TASK-590.09). While voice is
+off, the dark orb waits in it, and the circle is drawn only while the orb is there. Narrate
+launches the orb out of the circle, lit, into the voice box, or into the dock while subtitles
+are off. While the orb is in the voice box, the key is the red hang-up key (TASK-590.16): a red
+disc with a handset grows into the seat the orb left, and a press ends the voice. A voice that
+ends in the box sends the orb back into the circle: the red disc shrinks away first, the orb
+fades in the seat, and the gold circle comes back. While the voice is in the dock, the key is
+dimmed and says why. The voice box is not in the column: it stays low over the
+picture, in the middle of it, as it floats while nothing is presented. The foot keeps its place
+whichever step is shown, so nothing in the column moves. A fullscreen presentation has no dock. So the voice box carries the voice there, whatever the
+person wants of subtitles, and the bar holds one key that starts and ends voice. DESIGN.md
+describes the column.
 
-![The walkthrough box, idle and while the voice speaks, in the dark and the light
+![A presented walkthrough with the voice box over its picture, in the dark and the light
 theme](assets/walkthrough-box.png)
 
-Rendered captures at 1920×1080, cropped to the box. In each theme, the upper capture shows
-the box while voice is off, with the key that narrates. The lower capture shows the box while
-the voice speaks. The dark theme is above the light one.
+Rendered captures at 1920×1080, cropped to the picture and the column. Left, the dark theme
+while the voice speaks. Right, the light theme. The orb is in the voice box. These captures
+predate the hang-up key, which now fills the Narrate key's empty seat.
 
-The camera keeps the subjects of the step clear
-of the plate. The subjects include the parts at both ends of each relationship
+The camera fits the subjects of the step to the picture beside the column.
+The subjects include the parts at both ends of each relationship
 or step that the step names. If the step names messages of a flow, the camera
 shows their rows, and the one row before them, from the top of the picture.
 The row before them stays because it usually says why they happen. The camera
@@ -458,22 +463,23 @@ columns for groups and code leave the table of parts.
 
 ## The left column
 
-Revised 2026-10-30 (TASK-559.05). The left column replaces the tree of boards.
-[The reader redesign](reader-redesign.md) records why. The column is 448 px wide
-(TASK-559.36), because five tabs and the table of `Measures` need that room, and
-lists where to go. The picture shows the place, and the right side explains
+Revised 2026-10-30 (TASK-559.05) and 2026-11-07 (TASK-590.12). The left column
+replaces the tree of boards. [The reader redesign](reader-redesign.md) records why.
+The column is 280 px wide, a sidebar of the usual width, and lists where to go. It
+has no tabs: History and Measures open in dialogs, because a column is too narrow
+for them at any width. The picture shows the place, and the right side explains
 what is selected or open. From the top, the column holds the wordmark, Find, the
-repository switcher, the destinations and the agent dock. The column is the same
-object as the picture: its list lies in a well, the open tab is the piece raised
-on the edge of that well, and a count is a low slab. DESIGN.md holds the recipe.
+repository switcher, the keys of History and Measures, one list and the agent dock.
+The column is the same object as the picture: its list lies in a well, and a count
+is a low slab. DESIGN.md holds the recipe.
 
-![The left column at 1920×1080: Find, the repository switcher, the destinations
-with the Modules tree open on a module, and Talk at the
+![The left column at 1920×1080: Find, the repository switcher, the keys of History
+and Measures, the list with the Modules section open on a module, and Talk at the
 foot](assets/operator-shell-navigator.png)
 
 - **The reader of the focused pane fills the column.** The shell owns the frame
-  and holds no model knowledge. The reader of the focused pane puts Find and the
-  destinations in the frame, so the column changes when focus changes. The other
+  and holds no model knowledge. The reader of the focused pane puts Find, its keys
+  and its list in the frame, so the column changes when focus changes. The other
   pane keeps its own path in its header.
 - **Find** reaches anything a reading can open: modules by name, code path or
   words, flows, walkthroughs, bookmarks and former addresses. An exact name or
@@ -481,7 +487,7 @@ foot](assets/operator-shell-navigator.png)
   Alt and Enter opens beside, and Escape clears the field and then leaves it.
 - **The repository switcher** names the repository of the focused pane. While
   two panes are open, it also shows the pane letter. Its list opens in the
-  column, in place of the destinations. A chevron on a row lists the checkouts
+  column, over the reader's list. A chevron on a row lists the checkouts
   of that repository, and the field finds a repository or a checkout by name or
   path, so the list stays usable with hundreds of checkouts. Enter opens the
   first row, and Alt opens it beside. Escape clears the field and then closes the
@@ -493,11 +499,14 @@ foot](assets/operator-shell-navigator.png)
   `<name> is not here`. The agent dock returns with the first pane, because a
   conversation needs a pane. The start rule is in
   [the reader redesign](reader-redesign.md#start-and-states).
-- **The destinations** are `Modules`, `Flows`, `Walkthroughs`, `History` and
-  `Measures`, on one row. `Flows` and `Walkthroughs` show a count of the whole model. A retained original
-  has no `History`, so its four tabs keep one row. A reading that fails offers
-  `History` alone, so the reader can go on to a reading that opens. A proposal
-  read against its base adds `Changes` on a second row, and opens on it.
+- **The keys** are `History` and `Measures`, over the list. Each opens its
+  dialog. A retained original keeps no record, so it has `Measures` alone. A
+  reading that fails has `History` alone, and no list, so the reader can go on to
+  a reading that opens.
+- **The list** has a section for each thing the model lists: `Modules`, `Flows`
+  and `Walkthroughs`. A proposal read against its base puts `Changes` first. Each
+  section's head says its count of the whole model, stays at the top while its
+  rows scroll, and folds the section. A section with nothing to list is left out.
 - **`Modules` is a tree of the containment forest.** It opens the path to the
   open scope and the branches that the reader opened. The ancestors of the open
   row stick to the top while the column scrolls. Siblings sort by code path.
@@ -509,26 +518,29 @@ foot](assets/operator-shell-navigator.png)
 - **`Changes` lists every change of a proposal under the owner that holds it.**
   A module owns its outgoing relationships, a flow its steps and a walkthrough
   its beats. Rows take the column's grid, and each marker is the standing mark
-  of the picture. The tab shows the count, then the position, such as `12 of 49`.
-  The end of its row holds the walk: `Previous` and `Next`, each with its key cap,
-  because a key that nobody can see does not count. `N` and `P` do the same from
-  anywhere but a text field, and they bring the list back from another tab.
-- **`History` lists proposals first, then states, with their checkpoints folded.**
-  Its rows load only when it opens, and a click carries the picture to that
-  record. The comparison choice lives here. The state chip in the header opens
-  `History`. A row whose name another state shares shows its identity in its
-  facts, and the state chip adds the identity too, so a reader can tell which
-  draft they open.
-- **`Measures` lists every module with its counts, sorted by one of them.** It
-  answers where to look across the model. [The reader
+  of the picture. Its head shows the count, and the pane's header shows the
+  position, such as `12 of 49`, with the walk: `Previous` and `Next`, each with
+  its key cap, because a key that nobody can see does not count. `N` and `P` do
+  the same from anywhere but a text field, and the list keeps the change in view.
+  While a proposal is read, the column follows its changes and not the tree.
+- **The History dialog shows the current state on a card, then every other state
+  on one rail: proposals, earlier states and shelved ones, with their checkpoints
+  folded.** It is drawn after the history of the site. Its rows load only when it
+  opens, and a click carries the picture to that record and closes the dialog. A
+  saved checkpoint offers `Compare`. The state chip in the header opens it too. A
+  state whose name another state shares shows its identity in its facts, and the
+  state chip adds the identity too, so a reader can tell which draft they open.
+- **The Measures dialog lists every module with its counts, sorted by one of
+  them.** It answers where to look across the model. [The reader
   redesign](reader-redesign.md#the-rule-of-the-screen) says what a row holds.
 - **One grid.** Every row is four columns placed by its depth alone: the
   disclosure, the marker, the name and the facts. Each depth moves a row 16 px to
   the right. A row is 28 px high. One row is lit, the row of the open scope, as a
   raised plate with a gold front edge. A row under the pointer takes half that
-  tone and no gold, so it never looks selected. A row of `Measures` has no depth,
+  tone and no gold, so it never looks selected. A row of a flat list has no depth,
   so it keeps no room for a disclosure.
-- **Each tree is one tab stop** with the keys of a tree. Right opens a closed
+- **Each tree is one tab stop** with the keys of a tree, and each section head is
+  one more. Right opens a closed
   row, then steps in. Left closes an open row, then steps out. Enter opens the
   row, Alt and Enter opens it beside, and typing goes on to Find.
 - **Every move has a key that needs no tree**, so a presented pane keeps them.
@@ -541,7 +553,7 @@ foot](assets/operator-shell-navigator.png)
 The header of a pane holds the crumbs, the code path of the open module, the state
 chip and `Diagram | About`. `Bookmarks`, `Former addresses`, `Refresh` and the
 comparison menu are not in the first surface. Find reaches bookmarks and former
-addresses, and `History` holds the comparison. `Refresh` appears only when a read
+addresses, and the History dialog holds the comparison with a saved checkpoint. `Refresh` appears only when a read
 failed or the live feed is not healthy, because the feed keeps a reading current.
 A retained original is the exception, because no live feed serves it. Its header
 keeps its state, bookmarks, former addresses and `Refresh`.
@@ -606,10 +618,12 @@ that they show is now the dock at the foot of the left column.
   and takes the capsule away, and turning them on flies it out again: only one orb
   is ever on the page, and nothing that looks like it waits where it left or where
   it will land. Voice starting lights the orb in the capsule and does not launch it
-  from the Talk key. While a walkthrough is presented the voice is at the foot of its box, and in a
-  fullscreen presentation, which has no dock, it stays in a box whatever the person wants of
-  subtitles. A recording draws the same voice box at the foot of its walkthrough box, with an
-  orb that the recorded voice moves.
+  from the Talk key. Narrate is the exception: it launches the orb out of the gold circle of its
+  key, where the dark orb waits, and a voice that ends in the capsule sends the orb back there.
+  While a walkthrough is presented the capsule stays over the picture, and in
+  a fullscreen presentation, which has no dock, it stays whatever the person wants of
+  subtitles. A recording draws the same voice box over its picture, with an orb that the
+  recorded voice moves.
   DESIGN.md describes the dock and the box.
 - Session details (account, model, context used, thread, the voice coordinator's
   model and what the voice was told) are one menu away, not on screen. The voice

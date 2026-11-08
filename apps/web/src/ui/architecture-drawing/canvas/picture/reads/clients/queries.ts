@@ -8,7 +8,11 @@ import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { MODEL_CACHE_MS } from "@archboard/timing";
-import { type SemanticRenderRequest } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
+import {
+	runCodeCheck,
+	type CodeCheckReading,
+	type SemanticRenderRequest,
+} from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import {
 	sameModelAsked,
 	readKeys,
@@ -167,10 +171,10 @@ function vaultCheckQuery(vault: string) {
  * What the last code pass found on each model it read (ADR 0046, TASK-367.24).
  *
  * One cache entry for the whole tab, whichever panes read it, re-read on the
- * vault check's timer: a pass runs when an agent asks for one, and nothing
- * announces that it ran. The route answers from the server's memory and never
- * starts a pass, so the timer costs a read of memory and never a reading of
- * code. An answer that did not change keeps its reference, so a pane draws its
+ * vault check's timer: a pass runs when an agent asks for one or the code view
+ * of Measures opens on a reading no pass read, and nothing announces that it
+ * ran. The route answers from the server's memory and never starts a pass, so
+ * the timer costs a read of memory and never a reading of code. An answer that did not change keeps its reference, so a pane draws its
  * marks again only when the findings move.
  *
  * A failed read leaves the marks as they were and is tried again on the next
@@ -192,6 +196,35 @@ function codeFindingsQuery(vault: string) {
 		refetchInterval: MODEL_CACHE_MS.vaultCheck,
 		refetchOnWindowFocus: true,
 		refetchOnReconnect: true,
+		retry: false,
+	});
+}
+
+/**
+ * One code pass over one version of a reading, which the code view of Measures starts when no
+ * remembered pass read it (ADR 0046, amendment of 2026-11-08). It settles once the findings have
+ * been read again, so the view goes from checking to the findings in one step. It never goes stale
+ * and the cache keeps it, so a page starts one pass for a version of a reading however often the
+ * view opens, and a pass that failed is tried again only when somebody asks.
+ * @param vault The vault.
+ * @param reading The reading and its version.
+ * @returns The query options.
+ */
+function codeCheckQuery(vault: string, reading: CodeCheckReading) {
+	return queryOptions({
+		queryKey: readKeys.codeCheck(vault, reading),
+		/**
+		 * Run the pass, then read what it found.
+		 * @param context The query context, whose client reads the findings again.
+		 * @returns True once both are done.
+		 */
+		queryFn: async (context): Promise<true> => {
+			await runCodeCheck(vault, reading);
+			await context.client.invalidateQueries({ queryKey: readKeys.codeFindings(vault) });
+			return true;
+		},
+		staleTime: Number.POSITIVE_INFINITY,
+		gcTime: Number.POSITIVE_INFINITY,
 		retry: false,
 	});
 }
@@ -225,6 +258,7 @@ function iconQuery(name: string) {
 }
 
 export {
+	codeCheckQuery,
 	codeFindingsQuery,
 	iconQuery,
 	retainedDocumentQuery,

@@ -2,9 +2,11 @@
 // `GET /api/vault/code-check[?variant=<draft> | ?every-draft=true][&plan=<file>]...`
 // (ADR 0046).
 //
-// `archboard check code` and `archboard check all` ask it. It reads code and
-// Git, which takes seconds, so it runs only on a request and never inside
-// `/api/vault/check`, which every open canvas reads. It runs as
+// `archboard check code` and `archboard check all` ask it, and so does the code view
+// of Measures when it opens on a reading that no remembered pass read (ADR 0046,
+// amendment of 2026-11-08). It reads code and Git, which takes seconds, so it runs
+// only on a request and never inside `/api/vault/check`, which every open canvas
+// reads. It runs as
 // checkout work, the admission the code opener uses: a caller that hangs up
 // cancels it, and a stop cancels it and waits for it to settle, so a stop
 // never refuses because of it. A pass changes nothing, so the route is a GET.
@@ -19,19 +21,30 @@
 // registered checkout, one the check never reads or one that is not a plan
 // JSON refuses the check, as `PLAN_REFUSED`, before the pass starts.
 //
-// A pane never starts a pass (TASK-367.24). Each pass that finishes leaves its
-// findings in the server's memory, and `GET /api/vault/code-findings` answers
-// from that memory alone, so the panes that read it on a timer never cost a
-// reading of code. A pass the caller cancelled, or a refusal, leaves the memory
+// Only the code view of Measures starts a pass from a page; the panes read (TASK-367.24).
+// Each pass that finishes leaves its findings in the server's memory, and
+// `GET /api/vault/code-findings` answers from that memory alone, so the panes that
+// read it on a timer never cost a reading of code. A pass the caller cancelled, or a refusal, leaves the memory
 // as it was.
+//
+// `GET /api/code/source-lines?repo=<repo>&path=<path>&line=<line>` answers the
+// source excerpt of one piece of evidence that the memory holds for the vault
+// (TASK-590.06): the evidence line with up to 3 lines on each side. It is the
+// one route that quotes text of a file (ADR 0046, amendment of 2026-11-07), so
+// only a page of Archboard's own origin reads it, and it reads only a place
+// that the memory names. A place that no remembered finding names, or whose
+// file or line is gone or never quoted, is a 404.
 
 import type { Express, Request, Response } from "express";
+import { z } from "zod";
+import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import { createCodeCheck } from "@archboard/code-intel/code-check-run";
 import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import {
 	createCodeFindingsMemory,
 	type CodeFindingsMemory,
 } from "#server/http/handlers/code-checks/state/code-findings-memory.ts";
+import { readSourceLines } from "#server/http/handlers/code-checks/operations/source-lines.ts";
 import { checkoutWork } from "#server/wiring/server-owners.ts";
 import { errorMessage } from "@archboard/diagnostics/errno";
 
@@ -127,9 +140,63 @@ async function answerCodeCheck(
 	}
 }
 
+/** The place a source excerpt is asked for, as a piece of evidence names it. */
+const SourcePlaceQuerySchema = z.object({
+	repo: z.string().min(1),
+	path: z.string().min(1),
+	line: z
+		.string()
+		.regex(/^[1-9][0-9]{0,8}$/u)
+		.transform(Number),
+});
+
 /**
- * Mount `GET /api/vault/code-check`, and `GET /api/vault/code-findings`, which
- * answers what the finished passes found from memory and never starts one.
+ * Answer one request for the source excerpt of a remembered piece of evidence.
+ * @param dependencies How checkout work runs, and what the passes found.
+ * @param request The request.
+ * @param response Its response.
+ */
+async function answerSourceLines(
+	dependencies: CodeCheckRouteDependencies,
+	request: Request,
+	response: Response,
+): Promise<void> {
+	const place = SourcePlaceQuerySchema.safeParse(request.query);
+	if (!place.success) {
+		response
+			.status(400)
+			.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(place.error) });
+		return;
+	}
+	const vault = vaultOfRequest(request);
+	try {
+		const outcome = await dependencies.runCheckout(
+			request,
+			response,
+			"GET /api/code/source-lines",
+			(signal) =>
+				readSourceLines({
+					vault,
+					place: place.data,
+					findings: dependencies.memory.recall(vault),
+					signal,
+				}),
+		);
+		if (callerGone(request, response)) return;
+		if (outcome.ok) response.json({ success: true, ...outcome.answer });
+		else response.status(404).json({ success: false, code: outcome.code, error: outcome.error });
+	} catch (error) {
+		if (!callerGone(request, response)) {
+			response.status(500).json({ success: false, error: errorMessage(error) });
+		}
+	}
+}
+
+/**
+ * Mount `GET /api/vault/code-check`, `GET /api/vault/code-findings`, which
+ * answers what the finished passes found from memory and never starts one, and
+ * `GET /api/code/source-lines`, which quotes the source of one remembered piece
+ * of evidence.
  * @param app The application.
  * @param overrides Dependencies a test replaces.
  */
@@ -163,6 +230,14 @@ function mountCodeCheckRoute(
 	app.get("/api/vault/code-findings", requireVault, (request, response) => {
 		response.json({ success: true, ...dependencies.memory.recall(vaultOfRequest(request)) });
 	});
+	app.get(
+		"/api/code/source-lines",
+		createBrowserOriginGuard("settings-read"),
+		requireVault,
+		(request, response) => {
+			void answerSourceLines(dependencies, request, response);
+		},
+	);
 }
 
 export { type CodeCheckRouteDependencies, mountCodeCheckRoute };

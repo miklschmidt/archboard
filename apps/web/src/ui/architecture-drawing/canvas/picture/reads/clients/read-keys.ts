@@ -11,6 +11,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { DEFAULT_LAYOUT_ENGINE } from "@archboard/model/render-reply";
 import {
 	comparisonKey,
+	type CodeCheckReading,
 	type SemanticRenderRequest,
 } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 
@@ -31,6 +32,15 @@ const readKeys = {
 	 * @returns Its cache key.
 	 */
 	codeFindings: (vault: string) => ["code-findings", vault] as const,
+	/**
+	 * The code pass a page started over one version of one reading. It has a root of its own, so
+	 * that reading the findings again after it does not start it again.
+	 * @param vault The vault.
+	 * @param reading The reading: its model, its state, and the digest of its version.
+	 * @returns Its cache key.
+	 */
+	codeCheck: (vault: string, reading: CodeCheckReading) =>
+		["code-check", vault, reading.model, reading.state, reading.revision] as const,
 	/** Every vault's legacy boards. */
 	allModels: [SEMANTIC_KEY, "models"] as const,
 	/**

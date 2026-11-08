@@ -295,13 +295,15 @@ mod tests {
 
     #[test]
     fn readable_landing_precedes_the_legacy_room_limit() {
+        // Taller than the room limit, and its words read where it lands.
         let readable = Placed {
             width: 1000.0,
             height: 1580.0,
             ..fan(Point { x: 400.0, y: 0.0 }, None)
         };
+        // Within the room limit, and too wide for its words to read where it lands.
         let unreadable = Placed {
-            width: 2000.0,
+            width: LANDING_ROOM.0 / NEAR_SCALE + 100.0,
             height: 1000.0,
             ..readable.clone()
         };

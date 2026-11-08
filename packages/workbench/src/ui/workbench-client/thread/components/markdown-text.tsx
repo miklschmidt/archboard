@@ -63,7 +63,7 @@ const CodeHeader: FC<CodeHeaderProps> = ({ language, code }) => {
 	};
 
 	return (
-		<div className="aui-code-header-root border-border/50 bg-muted/50 mt-3 flex items-center justify-between rounded-t-xl border border-b-0 px-3.5 py-1.5 text-xs">
+		<div className="aui-code-header-root border-border/50 bg-muted/50 rounded-t-panel mt-3 flex items-center justify-between border border-b-0 px-3.5 py-1.5 text-xs">
 			<span className="aui-code-header-language text-muted-foreground font-medium lowercase">
 				{language}
 			</span>
@@ -193,7 +193,7 @@ const defaultComponents = memoizeMarkdownComponents({
 	th: ({ className, ...props }) => (
 		<th
 			className={cn(
-				"aui-md-th bg-muted px-3 py-1.5 text-start font-medium first:rounded-ss-lg last:rounded-se-lg [[align=center]]:text-center [[align=right]]:text-right",
+				"aui-md-th bg-muted first:rounded-ss-panel last:rounded-se-panel px-3 py-1.5 text-start font-medium [[align=center]]:text-center [[align=right]]:text-right",
 				className,
 			)}
 			{...props}
@@ -211,7 +211,7 @@ const defaultComponents = memoizeMarkdownComponents({
 	tr: ({ className, ...props }) => (
 		<tr
 			className={cn(
-				"aui-md-tr m-0 border-b p-0 first:border-t [&:last-child>td:first-child]:rounded-es-lg [&:last-child>td:last-child]:rounded-ee-lg",
+				"aui-md-tr [&:last-child>td:first-child]:rounded-es-panel [&:last-child>td:last-child]:rounded-ee-panel m-0 border-b p-0 first:border-t",
 				className,
 			)}
 			{...props}
@@ -229,7 +229,7 @@ const defaultComponents = memoizeMarkdownComponents({
 	pre: ({ className, ...props }) => (
 		<pre
 			className={cn(
-				"aui-md-pre border-border/50 bg-muted/30 overflow-x-auto rounded-t-none rounded-b-xl border border-t-0 p-3.5 text-[13px] leading-relaxed",
+				"aui-md-pre border-border/50 bg-muted/30 rounded-b-panel overflow-x-auto rounded-t-none border border-t-0 p-3.5 text-[13px] leading-relaxed",
 				className,
 			)}
 			{...props}
@@ -241,7 +241,7 @@ const defaultComponents = memoizeMarkdownComponents({
 			<code
 				className={cn(
 					!isCodeBlock &&
-						"aui-md-inline-code bg-muted rounded-md px-1.5 py-0.5 font-mono text-[0.85em]",
+						"aui-md-inline-code bg-muted rounded-chip px-1.5 py-0.5 font-mono text-[0.85em]",
 					className,
 				)}
 				{...props}

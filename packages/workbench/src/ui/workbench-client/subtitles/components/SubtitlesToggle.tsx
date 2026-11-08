@@ -130,7 +130,7 @@ function SubtitlesToggle(props: SubtitlesToggleProps): JSX.Element {
 				data-slot="voice-subtitles-toggle"
 				className={cn(
 					buttonVariants({ variant: face.variant, size: "icon-xs" }),
-					"relative rounded-sm after:absolute after:-inset-1",
+					"relative after:absolute after:-inset-1",
 					face.tone,
 					props.className,
 				)}

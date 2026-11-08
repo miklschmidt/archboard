@@ -66,8 +66,9 @@
 	   name; a drawn board keeps its own. technical: identifiers, paths, versions,
 	   counts and times, always in the mono face. body: prose and row labels, and a
 	   section heading in semibold. control: buttons, tabs, fields. title: region and
-	   dialog titles. presentation, figure, reading and subtitle belong to the
-	   picture's frame, not the chrome (below). */
+	   dialog titles. presentation, figure and reading belong to the picture's
+	   frame, not the chrome, and section heads a section of the About page
+	   (below). */
 	--text-technical: 11px;
 	--text-technical--line-height: 14px;
 	--text-body: 12px;
@@ -91,12 +92,13 @@
 	--text-name--font-weight: 650;
 	/* presentation: a presented walkthrough's step heading, part of the picture's
 	   frame rather than of the chrome. reading: the step's words under it, read
-	   at the length of a paragraph, and the summary under the board's name on its
+	   at the length of a paragraph, the words the voice says, as the site sets a
+	   walkthrough's narration, and the summary under the board's name on its
 	   About page. figure: the step's number, in the display face (the
 	   `title-figure` utility), set as a drawing's sheet number is, and the
 	   board's name at the head of its About page. */
-	--text-presentation: 28px;
-	--text-presentation--line-height: 34px;
+	--text-presentation: 22px;
+	--text-presentation--line-height: 28px;
 	--text-presentation--letter-spacing: -0.01em;
 	--text-presentation--font-weight: 600;
 	--text-reading: 16px;
@@ -106,13 +108,10 @@
 	--text-figure--line-height: 44px;
 	--text-figure--letter-spacing: 0.02em;
 	--text-figure--font-weight: 650;
-	/* subtitle (TASK-292): what the voice is saying, laid over the picture. Like
-	   the presentation heading it belongs to the picture's frame, not the chrome,
-	   and is read at a glance while the eyes are on the diagram. A section heading
-	   of the About page uses it in semibold. */
-	--text-subtitle: 20px;
-	--text-subtitle--line-height: 28px;
-	--text-subtitle--font-weight: 500;
+	/* section: the heading of a section of the About page. */
+	--text-section: 20px;
+	--text-section--line-height: 28px;
+	--text-section--font-weight: 600;
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -153,6 +152,15 @@
 	--color-slab-face: var(--slab-face);
 	--color-tray-sink: var(--tray-sink);
 	--color-tray-tab: var(--tray-tab);
+	/* The face of a control, or of a chosen tab raised out of a trough, and that face
+	   under the pointer. The floor of code. The ink of prose in a panel. */
+	--color-face: var(--face);
+	--color-face-hover: var(--face-hover);
+	--color-body-foreground: var(--body-foreground);
+	/* The comparison's three states, as marks and chips. */
+	--color-standing-added: var(--standing-added);
+	--color-standing-changed: var(--standing-changed);
+	--color-standing-removed: var(--standing-removed);
 	--color-popover-foreground: var(--popover-foreground);
 	--color-popover: var(--popover);
 	--color-card-foreground: var(--card-foreground);
@@ -176,11 +184,19 @@
 	--spacing-chrome: var(--shell-chrome-height);
 	--spacing-band: 36px;
 	--spacing-row: 28px;
-	/* Shape. chip: a key cap or a pane letter. control: buttons, fields, rows.
-	   panel: a card on a page, a menu, a popover. */
+	/* Shape, the site's ladder (site/DESIGN.md, "Shapes"), and no other corner:
+	   Tailwind's own sizes are cleared. chip: a chip, a key cap, a pane letter or
+	   inline code. control: buttons, fields, rows, a tab, the item of a menu.
+	   panel: a trough, a plate, a card set in a panel, an alert, a label tip, a
+	   code block. table: what floats alone, as the site's cards do: a menu, a
+	   popover, a tip that explains, a notice. window: a dialog, as the site's
+	   mock window. */
+	--radius-*: initial;
 	--radius-chip: 2px;
-	--radius-control: 3px;
-	--radius-panel: 4px;
+	--radius-control: 4px;
+	--radius-panel: 6px;
+	--radius-table: 10px;
+	--radius-window: 12px;
 	/* Depth: the elevation scale below (`--elevation-*`), one shadow utility
 	   per plane (`shadow-well`, `shadow-raised`, `shadow-float` and the rest).
 	   The chrome that casts an edge shadow onto the picture is `relative z-30`, so
@@ -197,17 +213,13 @@
 	--shadow-card: var(--elevation-card);
 	--shadow-float: var(--elevation-float);
 	--shadow-dialog: var(--elevation-dialog);
+	--shadow-trough: var(--elevation-trough);
+	--shadow-chosen: var(--elevation-chosen);
 	--shadow-primary: var(--elevation-primary);
+	--shadow-primary-hover: var(--elevation-primary-hover);
 	--shadow-primary-pressed: var(--elevation-primary-pressed);
 	/* Motion. Controls move in 120ms; the chrome is quick. */
 	--default-transition-duration: 120ms;
-	--radius-sm: calc(var(--radius) * 0.6);
-	--radius-md: calc(var(--radius) * 0.8);
-	--radius-lg: var(--radius);
-	--radius-xl: calc(var(--radius) * 1.4);
-	--radius-2xl: calc(var(--radius) * 1.8);
-	--radius-3xl: calc(var(--radius) * 2.2);
-	--radius-4xl: calc(var(--radius) * 2.6);
 }
 
 /* Desktop icon buttons are 28px visual inside a 32px hit area: the
@@ -350,25 +362,20 @@
 	background-position: 4px 4px;
 }
 
-:root {
-	/* The navigator's width and the chrome row's height,
-	   --shell-navigator-width and --shell-chrome-height, are set on the shell
-	   root from the renderer's shell-geometry: geometry is not the palette's. */
-	/* Small corners: controls about 3px, dialogs about 4px. */
-	--radius: 0.3rem;
-}
-
-/* Depth. The shell is built as planes stacked over the picture, not as lines
-   on one sheet. Light comes from above. A plane says how high it sits with
-   its tone, a fine highlight on its top edge (--highlight, theme.css) and the
-   shadow it casts. Every shadow is soft, has an offset and is tinted toward
-   the warm neutrals; none is a grey-black blur. From the bottom up:
+/* Depth, in the language of the site (site/DESIGN.md, "Elevation & Depth"). The shell is
+   built as planes stacked over the picture, not as lines on one sheet. Light comes from
+   above. A raised plane carries all three of a lit top edge (--highlight, theme.css), a
+   1px or 2px contact line under it and a soft warm shadow beyond, or it carries none. A
+   recessed trough takes the opposite: an inner shadow under its top edge and a lit lip
+   along its foot. The only zero-blur offset shadows are the contact lines. Dark takes
+   the site's values; chalk takes the same construction in a warm umber. From the bottom up:
      ground   the picture. Nothing is drawn into it to make depth; the shell
               sits around it and over it. Only still shadows fall on it:
               nothing over it is blurred, filtered or animated, because every
               repaint over the picture slows down dragging it.
-     well     a field sunk into a surface (--elevation-well): an inner shadow
-              under its top edge.
+     well     a recessed trough (--elevation-well): a field, the trough that holds
+              tabs or a switch, a count cell, a code block. --elevation-trough is
+              the same piece by its other name.
      sink     the well that a column's list lies in (--elevation-sink), cut as
               the picture cuts a container: one inner shadow from the whole of
               its top edge and a lit lip along its foot.
@@ -382,20 +389,25 @@
               column casts one up over the list that scrolls under it
               (--elevation-edge-up).
      raised   a control, a key cap or the chosen row of a list, standing on
-              a surface (--elevation-raised): a highlight on top, a seat
-              below. Pressed, a control sinks: its shadow moves inside
-              (--elevation-pressed).
-     card     a card on a page (--elevation-card).
+              a surface (--elevation-raised): a lit top edge, a contact line and
+              a short shadow. Pressed, a control sinks into a trough
+              (--elevation-pressed). --elevation-chosen is a raised face with a
+              2px gold underline inside it: the chosen tab of a trough.
+     card     a card on a page (--elevation-card), as the site's float.
      float    what floats over the picture or the chrome (--elevation-float):
               the floating sidebar, menus, popovers, tips, a list of matches.
-     dialog   a dialog over everything (--elevation-dialog).
-   A primary action is seated by --elevation-primary and sinks into
-   --elevation-primary-pressed (`primary-finish` below).
+     dialog   a dialog over everything (--elevation-dialog), as the site's mock
+              window: a stronger hairline ring inside its edge in place of a
+              border, a contact line and a long, deep shadow.
+   A primary action is seated by --elevation-primary, lifts into
+   --elevation-primary-hover and sinks into --elevation-primary-pressed
+   (`primary-finish` below).
    A one-pixel --border stays where it still does work: it draws the edge of a
    control or a card, and it divides regions that share one plane. */
 :root {
-	/* Depth on chalk: shadows in a warm umber, highlights in white. */
-	--elevation-well: inset 0 1px 2px oklch(0.33 0.035 65 / 0.1);
+	/* Depth on chalk: the site's construction in a warm umber, highlights in white. */
+	--elevation-well: inset 0 2px 4px oklch(0.33 0.035 65 / 0.12), inset 0 -1px 0 var(--highlight);
+	--elevation-trough: var(--elevation-well);
 	/* The left column is the picture's own object, so its depth reads the picture's
 	   tokens, which hold both themes. */
 	--elevation-sink: inset 0 9px 9px -8px var(--slab-shadow), inset 0 -1px 0 var(--tray-lip);
@@ -403,80 +415,84 @@
 		inset 0 1px 0 color-mix(in oklch, var(--slab-glint) 16%, transparent), 0 2px 0 var(--slab-edge),
 		0 3px 4px -1px var(--slab-shadow);
 	--elevation-edge-down:
-		0 1px 2px oklch(0.33 0.035 65 / 0.07), 0 8px 18px -8px oklch(0.33 0.035 65 / 0.2);
+		0 1px 0 oklch(0.33 0.035 65 / 0.08), 0 10px 24px -12px oklch(0.33 0.035 65 / 0.22);
 	--elevation-edge-side:
-		-1px 0 2px oklch(0.33 0.035 65 / 0.05), -8px 0 18px -8px oklch(0.33 0.035 65 / 0.16),
-		1px 0 2px oklch(0.33 0.035 65 / 0.05), 8px 0 18px -8px oklch(0.33 0.035 65 / 0.16);
+		-1px 0 0 oklch(0.33 0.035 65 / 0.05), -10px 0 24px -12px oklch(0.33 0.035 65 / 0.18),
+		1px 0 0 oklch(0.33 0.035 65 / 0.05), 10px 0 24px -12px oklch(0.33 0.035 65 / 0.18);
 	--elevation-edge-up:
-		0 -1px 2px oklch(0.33 0.035 65 / 0.05), 0 -8px 18px -10px oklch(0.33 0.035 65 / 0.18);
+		0 -1px 0 oklch(0.33 0.035 65 / 0.06), 0 -10px 24px -12px oklch(0.33 0.035 65 / 0.2);
 	--elevation-raised:
-		inset 0 1px 0 var(--highlight), inset 0 -1px 0 oklch(0.33 0.035 65 / 0.05),
-		0 1px 1px oklch(0.33 0.035 65 / 0.07), 0 1px 3px -1px oklch(0.33 0.035 65 / 0.12);
-	--elevation-pressed: inset 0 1px 2px oklch(0.33 0.035 65 / 0.16);
+		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.33 0.035 65 / 0.16),
+		0 2px 6px -1px oklch(0.33 0.035 65 / 0.16);
+	--elevation-pressed: var(--elevation-well);
+	--elevation-chosen: var(--elevation-raised), inset 0 -2px 0 var(--primary);
 	--elevation-card:
-		inset 0 1px 0 var(--highlight), 0 1px 2px oklch(0.33 0.035 65 / 0.06),
-		0 4px 12px -4px oklch(0.33 0.035 65 / 0.11);
-	--elevation-float:
-		inset 0 1px 0 var(--highlight), 0 1px 2px oklch(0.33 0.035 65 / 0.07),
-		0 8px 20px -6px oklch(0.33 0.035 65 / 0.14), 0 22px 48px -14px oklch(0.33 0.035 65 / 0.18);
+		inset 0 1px 0 var(--highlight), 0 1px 1px oklch(0.33 0.035 65 / 0.1),
+		0 12px 24px -8px oklch(0.33 0.035 65 / 0.14), 0 32px 64px -24px oklch(0.33 0.035 65 / 0.16);
+	--elevation-float: var(--elevation-card);
 	--elevation-dialog:
-		inset 0 1px 0 var(--highlight), 0 2px 4px oklch(0.33 0.035 65 / 0.08),
-		0 14px 32px -8px oklch(0.33 0.035 65 / 0.18), 0 36px 80px -16px oklch(0.33 0.035 65 / 0.26);
+		inset 0 1px 0 var(--highlight), inset 0 0 0 1px oklch(0.33 0.035 65 / 0.2),
+		0 2px 0 oklch(0.33 0.035 65 / 0.08), 0 40px 80px -24px oklch(0.33 0.035 65 / 0.24),
+		0 100px 160px -40px oklch(0.33 0.035 65 / 0.26);
 	--elevation-primary:
-		inset 0 1px 0 oklch(1 0.04 95 / 0.6), inset 0 -1px 0 oklch(0.5 0.11 70 / 0.16),
-		0 1px 2px oklch(0.42 0.09 70 / 0.26), 0 2px 6px -2px oklch(0.42 0.09 70 / 0.32);
-	--elevation-primary-pressed: inset 0 1px 3px oklch(0.42 0.1 70 / 0.4);
+		inset 0 1px 0 oklch(1 0.04 95 / 0.6), 0 1px 0 oklch(0.42 0.09 70 / 0.3),
+		0 6px 16px -6px oklch(0.55 0.12 75 / 0.45);
+	--elevation-primary-hover:
+		inset 0 1px 0 oklch(1 0.04 95 / 0.65), 0 2px 0 oklch(0.42 0.09 70 / 0.3),
+		0 12px 28px -8px oklch(0.6 0.13 78 / 0.5);
+	--elevation-primary-pressed: inset 0 2px 3px oklch(0.45 0.1 70 / 0.45);
 }
 
 :root[data-theme="dark"] {
-	/* Depth on graphite: shadows in a warm near-black, highlights faint. */
-	--elevation-well: inset 0 1px 2px oklch(0.06 0.01 70 / 0.5);
+	/* Depth on graphite: the site's own values. */
+	--elevation-well: inset 0 2px 4px oklch(0.04 0.004 75 / 0.6), inset 0 -1px 0 var(--highlight);
 	--elevation-edge-down:
-		0 1px 2px oklch(0.05 0.01 70 / 0.45), 0 12px 28px -10px oklch(0.05 0.01 70 / 0.8);
+		inset 0 -1px 0 var(--highlight), 0 10px 24px -12px oklch(0.04 0.006 75 / 0.8);
 	--elevation-edge-side:
-		-1px 0 2px oklch(0.05 0.01 70 / 0.35), -12px 0 28px -10px oklch(0.05 0.01 70 / 0.7),
-		1px 0 2px oklch(0.05 0.01 70 / 0.35), 12px 0 28px -10px oklch(0.05 0.01 70 / 0.7);
+		-1px 0 0 oklch(0.06 0.004 75 / 0.6), -12px 0 28px -10px oklch(0.04 0.006 75 / 0.7),
+		1px 0 0 oklch(0.06 0.004 75 / 0.6), 12px 0 28px -10px oklch(0.04 0.006 75 / 0.7);
 	--elevation-edge-up:
-		0 -1px 2px oklch(0.05 0.01 70 / 0.4), 0 -10px 24px -10px oklch(0.05 0.01 70 / 0.7);
+		inset 0 1px 0 var(--highlight), 0 -10px 24px -14px oklch(0.04 0.006 75 / 0.9);
 	--elevation-raised:
-		inset 0 1px 0 var(--highlight), 0 1px 2px oklch(0.06 0.01 70 / 0.55),
-		0 2px 4px -2px oklch(0.06 0.01 70 / 0.4);
-	--elevation-pressed: inset 0 1px 3px oklch(0.04 0.01 70 / 0.6);
+		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.06 0.004 75 / 0.7),
+		0 2px 6px -1px oklch(0.06 0.006 75 / 0.5);
 	--elevation-card:
-		inset 0 1px 0 var(--highlight), 0 1px 2px oklch(0.06 0.01 70 / 0.45),
-		0 6px 16px -6px oklch(0.06 0.01 70 / 0.55);
-	--elevation-float:
-		inset 0 1px 0 var(--highlight), 0 2px 4px oklch(0.06 0.01 70 / 0.4),
-		0 12px 28px -8px oklch(0.06 0.01 70 / 0.55), 0 28px 60px -16px oklch(0.06 0.01 70 / 0.6);
+		inset 0 1px 0 var(--highlight), 0 1px 1px oklch(0.06 0.004 75 / 0.6),
+		0 12px 24px -8px oklch(0.06 0.006 75 / 0.6), 0 32px 64px -24px oklch(0.06 0.006 75 / 0.7);
 	--elevation-dialog:
-		inset 0 1px 0 var(--highlight), 0 2px 6px oklch(0.06 0.01 70 / 0.45),
-		0 18px 40px -10px oklch(0.06 0.01 70 / 0.6), 0 40px 96px -20px oklch(0.06 0.01 70 / 0.7);
+		inset 0 1px 0 oklch(1 0.01 85 / 0.12), inset 0 0 0 1px oklch(1 0.01 85 / 0.15),
+		0 2px 0 oklch(0.06 0.004 75 / 0.6), 0 40px 80px -24px oklch(0.03 0.004 75 / 0.85),
+		0 100px 160px -40px oklch(0.03 0.004 75 / 0.9);
 	--elevation-primary:
-		inset 0 1px 0 oklch(1 0.05 95 / 0.55), inset 0 -1px 0 oklch(0.45 0.1 70 / 0.28),
-		0 1px 2px oklch(0.05 0.01 70 / 0.6), 0 4px 10px -3px oklch(0.05 0.01 70 / 0.55);
-	--elevation-primary-pressed: inset 0 1px 3px oklch(0.4 0.1 70 / 0.55);
+		inset 0 1px 0 oklch(1 0.02 90 / 0.55), 0 1px 0 oklch(0.06 0.004 75 / 0.8),
+		0 6px 16px -6px oklch(0.55 0.12 75 / 0.55);
+	--elevation-primary-hover:
+		inset 0 1px 0 oklch(1 0.02 90 / 0.6), 0 2px 0 oklch(0.06 0.004 75 / 0.8),
+		0 12px 28px -8px oklch(0.6 0.13 78 / 0.6);
+	--elevation-primary-pressed: inset 0 2px 3px oklch(0.45 0.1 70 / 0.6);
 }
 
 /* The finish of a region's one primary action (theme.css, "The accent"): a
    piece of gold with a subtle top-to-bottom gradient, a highlight along its
-   top edge, a darker rim and a shadow that seats it. Hovered, it brightens.
-   Pressed, the gradient turns over and the shadow moves inside; the control
-   sinks a pixel with the `active:translate-y-px` its site gives it. A site
-   that has a disabled look of its own sets it with `disabled:` utilities. */
+   top edge, a darker rim, a contact line and a warm glow. Hovered, it lifts a
+   pixel and its glow grows. Pressed, it sinks a pixel, the gradient turns over
+   and the shadow moves inside. A site that has a disabled look of its own sets
+   it with `disabled:` utilities. */
 @utility primary-finish {
 	color: var(--primary-foreground);
 	border-color: var(--primary-edge);
 	background-color: var(--primary-bottom);
 	background-image: linear-gradient(180deg, var(--primary-top), var(--primary-bottom));
 	@apply shadow-primary;
+	transition-property: translate, box-shadow, background-image;
+	transition-duration: 160ms;
+	transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 	&:hover:not(:disabled) {
-		background-image: linear-gradient(
-			180deg,
-			color-mix(in oklch, var(--primary-top), white 16%),
-			color-mix(in oklch, var(--primary-bottom), white 9%)
-		);
+		translate: 0 -1px;
+		@apply shadow-primary-hover;
 	}
 	&:active:not(:disabled) {
+		translate: 0 1px;
 		background-image: linear-gradient(
 			180deg,
 			color-mix(in oklch, var(--primary-bottom), black 4%),
@@ -484,6 +500,58 @@
 		);
 		@apply shadow-primary-pressed;
 	}
+}
+
+/* The quiet key: a raised face beside a gold one, as on the site. Its edge is the
+   site's hairline ring. Hovered it lifts a pixel onto a lighter face, and pressed it
+   sinks into a trough. */
+@utility quiet-key {
+	color: var(--foreground);
+	background-color: var(--face);
+	box-shadow:
+		var(--elevation-raised),
+		inset 0 0 0 1px var(--border);
+	transition-property: translate, background-color, box-shadow, color;
+	transition-duration: 160ms;
+	transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+	&:hover:not(:disabled, [aria-disabled="true"]) {
+		background-color: var(--face-hover);
+		translate: 0 -1px;
+	}
+	&:active:not(:disabled, [aria-disabled="true"]),
+	&[aria-expanded="true"],
+	&[aria-pressed="true"] {
+		translate: 0 0;
+		box-shadow:
+			var(--elevation-pressed),
+			inset 0 0 0 1px var(--border);
+	}
+}
+
+/* A trough: a recessed well that holds the choices of a switch or a row of tabs. The
+   chosen one rises out of it as a raised face with a 2px gold underline inside it
+   (`chosen-face`). */
+@utility trough {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 3px;
+	border-radius: var(--radius-panel);
+	background-color: var(--tray-sink);
+	box-shadow: var(--elevation-trough);
+}
+@utility chosen-face {
+	color: var(--foreground);
+	background-color: var(--face);
+	box-shadow: var(--elevation-chosen);
+}
+
+/* A plate: a plane of the ground's tone with a hairline ring, as the site lays a
+   reply or a list on its chrome. */
+@utility plate {
+	border-radius: var(--radius-panel);
+	background-color: var(--background);
+	box-shadow: inset 0 0 0 1px var(--border);
 }
 
 /* A popover that a person opened, a select or a menu. It grows a little from its
@@ -760,13 +828,13 @@
 	transition-delay: 0ms;
 }
 
-/* The one voice orb: its holder is in a socket at rest, in the dock's plate or the
-   voice box, and in the air over the page while it flies. It fades in once the circle
-   has formed and out as it dims, as the canvas did before it had two homes. The holder
-   carries the plate the orb sits on (a ring, a disc and a seat of light, the same as the
-   dock's circle), so the plate flies with the orb and the shadow does not change as it
-   moves. In the dock the plate is the voice button's own, so the holder does not draw
-   it there. */
+/* The one voice orb: its holder is in a socket at rest, in the dock's plate, the
+   voice box or the Narrate key's gold circle, and in the air over the page while it
+   flies. It fades in once the circle has formed and out as it dims, as the canvas did
+   before it had more than one home. The holder carries the plate the orb sits on (a
+   ring, a disc and a seat of light, the same as the dock's circle), so the plate flies
+   with the orb and the shadow does not change as it moves. In the dock the plate is the
+   voice button's own, so the holder does not draw it there. */
 [data-slot="voice-orb-socket"] > [data-slot="voice-orb-holder"] {
 	position: absolute;
 	top: 50%;
@@ -800,6 +868,90 @@
 }
 [data-slot="voice-orb-holder"] > canvas {
 	position: relative;
+}
+/* An orb launched out of the Narrate key is lit from the start of its flight: its fade in has no
+   wait (orb-stage.ts, data-launched). */
+[data-slot="voice-orb-holder"][data-shown="true"][data-launched] {
+	transition-delay: 0ms;
+}
+
+/* The Narrate key's gold circle is the orb's third home (PresentationFoot.tsx). The orb waits in
+   it, dark, while voice is off, and every key that can narrate draws its gold disc and microphone.
+   While voice is on a key is held, and draws the disc only while the orb is in the socket. When the
+   orb leaves, the disc goes in a blink as the orb fades in over it, and the key keeps the room it
+   had. When the orb lands there again, the disc is drawn at once under the orb, and shows as the
+   orb fades. The disc's other transitions are the gold finish's. */
+[data-slot="narrate-seat"] > [data-part="disc"] {
+	transition-property: translate, box-shadow, background-image, opacity;
+	transition-duration: 160ms, 160ms, 160ms, 0s;
+}
+[aria-disabled] > [data-slot="narrate-seat"]:not(:has(> [data-occupied])) > [data-part="disc"],
+[data-hang-up="true"]
+	> [data-slot="narrate-seat"]:not(:has(> [data-occupied]))
+	> [data-part="disc"] {
+	opacity: 0;
+	transition-duration: 160ms, 160ms, 160ms, var(--voice-seat-out-ms, 90ms);
+}
+
+/* While the orb is in the voice box, the Narrate key is the hang-up key (PresentationFoot.tsx). Its
+   red disc grows into the seat once the orb has left it, so the two pass each other, and its words
+   take the place of Narrate's. As the voice ends the orb is wished back into the seat: the disc
+   shrinks away and the words change back long before the orb lands, so the orb lands in an empty
+   seat and the gold disc shows as it fades. A red a step darker than the destructive colour keeps
+   the white handset legible on it in both themes. */
+[data-slot="narrate-seat"] > [data-part="hang-up"] {
+	color: white;
+	background-color: color-mix(in oklch, var(--destructive) 86%, black);
+	background-image: linear-gradient(
+		180deg,
+		color-mix(in oklch, var(--destructive) 92%, white),
+		color-mix(in oklch, var(--destructive) 86%, black)
+	);
+	box-shadow:
+		inset 0 1px 0 oklch(1 0 0 / 0.3),
+		0 1px 0 oklch(0.06 0.004 75 / 0.5),
+		0 10px 24px -10px color-mix(in oklch, var(--destructive) 70%, transparent);
+	opacity: 0;
+	scale: 0.5;
+	transition:
+		opacity 140ms ease-in,
+		scale 160ms ease-in,
+		translate 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-hang-up="true"]
+	> [data-slot="narrate-seat"]:not(:has(> [data-occupied]))
+	> [data-part="hang-up"] {
+	opacity: 1;
+	scale: 1;
+	transition:
+		opacity 200ms cubic-bezier(0.16, 1, 0.3, 1),
+		scale 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
+		translate 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-hang-up="true"]:hover:not([aria-disabled])
+	> [data-slot="narrate-seat"]
+	> [data-part="hang-up"] {
+	translate: 0 -1px;
+}
+[data-hang-up="true"]:active:not([aria-disabled])
+	> [data-slot="narrate-seat"]
+	> [data-part="hang-up"] {
+	translate: 0 1px;
+}
+[data-slot="semantic-presentation-narrate"]
+	:is([data-part="narrate-words"], [data-part="hang-up-words"]) {
+	transition: opacity 160ms ease-out;
+}
+[data-slot="semantic-presentation-narrate"]:not([data-hang-up="true"]) [data-part="hang-up-words"],
+[data-slot="semantic-presentation-narrate"][data-hang-up="true"] [data-part="narrate-words"] {
+	opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+	[data-slot="narrate-seat"] > [data-part="hang-up"],
+	[data-slot="semantic-presentation-narrate"]
+		:is([data-part="narrate-words"], [data-part="hang-up-words"]) {
+		transition: none;
+	}
 }
 
 /* The voice box: the subtitles' glass with the voice in it, over the picture. It rises
@@ -848,9 +1000,9 @@
 	opacity: 0.2;
 }
 
-/* A presented walkthrough's box arrives once, rising a few pixels as it fades in, as its own
-   layer and not as the picture's: a transition, so that nothing is replayed by a step. It leaves
-   at once, with the walkthrough, because the picture is already gliding back. */
+/* A presented walkthrough's column arrives once, moving in a few pixels from the side as it fades
+   in, as its own layer and not as the picture's: a transition, so that nothing is replayed by a
+   step. It leaves at once, with the walkthrough, because the picture is already gliding back. */
 [data-slot="semantic-presentation"] {
 	transition:
 		opacity var(--presentation-box-in-ms, 220ms) cubic-bezier(0.16, 1, 0.3, 1),
@@ -859,7 +1011,7 @@
 @starting-style {
 	[data-slot="semantic-presentation"] {
 		opacity: 0;
-		transform: translateY(10px);
+		transform: translateX(12px);
 	}
 }
 @media (prefers-reduced-motion: reduce) {
@@ -961,46 +1113,13 @@
    begins on a frame is drawn a few milliseconds ahead of the clock on that frame, because the
    compositor starts it before the clock can hold it, and then the same talk would not render to
    the same frames twice. So in a recording page and in the replay of a kept talk the box arrives
-   where it stands and cuts from step to step, as it does with reduced motion, and the voice box in
-   its pill and the orb in that are there at once. The picture's glide, the orb's own drawing and
-   the fade of each word are driven by the clock and still move. */
+   where it stands and cuts from step to step, as it does with reduced motion, and the voice box
+   over the picture and the orb in it are there at once. The picture's glide, the orb's own drawing
+   and the fade of each word are driven by the clock and still move. */
 [data-recording] [data-slot="semantic-presentation-frame"],
-[data-recording] [data-slot="semantic-presentation-frame"] * {
+[data-recording] [data-slot="semantic-presentation-frame"] *,
+[data-recording] [data-slot="voice-box"] {
 	transition: none !important;
-}
-
-/* The voice box at the foot of a presented walkthrough's box (TASK-392): the pill it is
-   drawn in is its skin, and the pill stays, so the box fades in and out where it stands and
-   does not rise. Under it, while voice is off, is the key that narrates, which gives way once
-   the box is there and returns as it leaves, at the pace the box does. */
-[data-slot="voice-box"][data-place="foot"],
-[data-slot="voice-box"][data-place="foot"][data-leaving] {
-	transform: none;
-}
-@starting-style {
-	[data-slot="voice-box"][data-place="foot"] {
-		transform: none;
-	}
-}
-[data-slot="semantic-presentation-narrate"] {
-	transition:
-		opacity var(--voice-box-out-ms, 240ms) ease-in,
-		visibility 0s;
-}
-[data-slot="semantic-presentation-foot"]:has([data-slot="voice-box"]:not([data-leaving]))
-	> [data-slot="semantic-presentation-narrate"] {
-	opacity: 0;
-	visibility: hidden;
-	transition:
-		opacity var(--voice-box-in-ms, 360ms) ease-out,
-		visibility 0s linear var(--voice-box-in-ms, 360ms);
-}
-@media (prefers-reduced-motion: reduce) {
-	[data-slot="semantic-presentation-narrate"],
-	[data-slot="semantic-presentation-foot"]:has([data-slot="voice-box"]:not([data-leaving]))
-		> [data-slot="semantic-presentation-narrate"] {
-		transition: none;
-	}
 }
 
 /* The keys at the box's right end stand a margin in from its edge, and from each other, as
@@ -1175,75 +1294,6 @@
 	transition-timing-function: ease-in;
 }
 
-/* The left column's tabs stand on the top edge of its well, as a container's name
-   stands on the picture (ADR 0044). The open tab is the lighter piece raised on that
-   edge, with the well's own corners. Its side turns into the edge in a crisp concave
-   curve in place of reaching it, the top edge runs on under it, and one line goes round
-   the tab and the well. The rules stand outside any layer, so they replace the
-   registry's trigger. */
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"] {
-	--foot: 5px;
-	flex: none;
-	gap: 6px;
-	height: 32px;
-	padding: 0 4px;
-	border: 1px solid transparent;
-	border-bottom: 0;
-	border-radius: 5px 5px 0 0;
-	background: none;
-	color: var(--muted-foreground);
-	font-size: var(--text-control);
-	line-height: var(--text-control--line-height);
-	font-weight: 500;
-	transition: color 120ms ease-out;
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"]:hover {
-	color: var(--foreground);
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"]:focus-visible {
-	box-shadow: inset 0 0 0 2px var(--ring);
-	outline: none;
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active] {
-	z-index: 1;
-	border-color: var(--border);
-	background-color: var(--tray-tab);
-	box-shadow:
-		inset 0 1px 0 var(--highlight),
-		0 -3px 6px -3px var(--slab-shadow);
-	color: var(--foreground);
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"]::before,
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"]::after {
-	content: none;
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::before,
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::after {
-	content: "";
-	position: absolute;
-	inset: auto;
-	bottom: 0;
-	width: calc(var(--foot) + 1px);
-	height: var(--foot);
-	opacity: 1;
-	pointer-events: none;
-	--curve:
-		transparent var(--foot), var(--border) var(--foot), var(--border) calc(var(--foot) + 1px),
-		var(--tray-tab) calc(var(--foot) + 1.5px);
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::before {
-	right: 100%;
-	background:
-		radial-gradient(circle at 0 0, var(--curve)),
-		linear-gradient(to left, var(--tray-tab) 1px, transparent 1px);
-}
-[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::after {
-	left: 100%;
-	background:
-		radial-gradient(circle at 100% 0, var(--curve)),
-		linear-gradient(to right, var(--tray-tab) 1px, transparent 1px);
-}
-
 /* The sidebar's scroll areas are quiet: a thin bar in the theme's own tone, in
    place of the system's full-width one. */
 [data-slot="semantic-sidebar-panel"],
@@ -1355,4 +1405,22 @@ html[data-theme-switching] *::after {
 		transition-duration: 0.001ms !important;
 		scroll-behavior: auto !important;
 	}
+}
+
+/* The colours of a source excerpt (code-highlighter.ts): shiki's theme names these variables in
+   place of colours, so a theme switch recolours the code without highlighting it again. Each is a
+   colour of the palette mixed a quarter of the way to the foreground, which darkens it on the
+   light ground and lightens it on the dark one, so the code reads in both themes. */
+:root {
+	--code-foreground: var(--body-foreground);
+	--code-background: transparent;
+	--code-token-keyword: color-mix(in oklch, var(--semantic-violet) 74%, var(--foreground));
+	--code-token-string: color-mix(in oklch, var(--semantic-emerald) 70%, var(--foreground));
+	--code-token-string-expression: var(--code-token-string);
+	--code-token-constant: color-mix(in oklch, var(--semantic-orange) 74%, var(--foreground));
+	--code-token-function: color-mix(in oklch, var(--semantic-blue) 74%, var(--foreground));
+	--code-token-parameter: color-mix(in oklch, var(--semantic-rose) 74%, var(--foreground));
+	--code-token-link: var(--code-token-function);
+	--code-token-comment: var(--muted-foreground);
+	--code-token-punctuation: var(--muted-foreground);
 }

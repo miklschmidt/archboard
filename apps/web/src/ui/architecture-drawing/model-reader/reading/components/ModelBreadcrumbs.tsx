@@ -95,10 +95,12 @@ function Crumb(props: {
 			aria-current={props.current ? "page" : undefined}
 			disabled={props.current}
 			onClick={open}
+			// A crumb is a way through the model, set as the site sets its nav links: medium, not the
+			// semibold of a button's words.
 			className={
 				props.current
-					? "min-w-0 shrink-0 px-1.5 disabled:opacity-100"
-					: "min-w-12 shrink truncate px-1.5"
+					? "min-w-0 shrink-0 px-1.5 font-medium disabled:opacity-100"
+					: "min-w-12 shrink truncate px-1.5 font-medium"
 			}
 		>
 			<span className="truncate">{props.name}</span>

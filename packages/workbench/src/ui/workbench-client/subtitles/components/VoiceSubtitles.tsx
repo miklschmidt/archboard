@@ -11,10 +11,12 @@
 // person is working with, and it is hidden from assistive technology, because the same words are
 // already being spoken and the transcript panel is the accessible record of them.
 //
+// The words are set as the site sets a walkthrough's narration under its heading: the reading
+// size, 16px, in the ink of prose.
+//
 // `SubtitleWords` is the paragraph alone, which the voice box carries inside its own glass, in the
-// shell and in the replay of a kept talk. `VoiceSubtitles` is the paragraph in glass of its own, or
-// bare in the pill of a presented walkthrough's box, for the page that records a talk, which nobody
-// sees.
+// shell and in the replay of a kept talk. `VoiceSubtitles` is the paragraph in glass of its own, for
+// a pane without the voice box and for the page that records a talk, which nobody sees.
 
 import type { CSSProperties, JSX } from "react";
 
@@ -39,9 +41,6 @@ const SUBTITLE_STYLE: CSSProperties = {
 const GLASS =
 	"bg-card/96 border-border rounded-panel pointer-events-none border px-5 py-2.5 shadow-float";
 
-/** What sets the words in the pill of a presented walkthrough's box, which is their glass. */
-const BARE = "pointer-events-none mx-6 self-center";
-
 /** Inputs for the words. */
 interface SubtitleWordsProps {
 	/** The voice session's transcript, oldest first. */
@@ -60,8 +59,6 @@ interface VoiceSubtitlesProps {
 	readonly enabled: boolean;
 	/** Whether the person asked for reduced motion, which cuts the fades. */
 	readonly reducedMotion: boolean;
-	/** Whether the words are drawn without glass, in a pill that is theirs, at the foot of a presented walkthrough's box. */
-	readonly bare?: boolean;
 }
 
 /**
@@ -85,7 +82,7 @@ function SubtitleWords(props: SubtitleWordsProps): JSX.Element {
 			aria-hidden="true"
 			style={SUBTITLE_STYLE}
 			className={cn(
-				"text-subtitle text-foreground box-content h-[56px] w-[46ch] overflow-hidden text-left",
+				"text-reading text-body-foreground box-content h-[48px] w-[46ch] overflow-hidden text-left",
 				props.className,
 			)}
 		>
@@ -111,8 +108,8 @@ function SubtitleWords(props: SubtitleWordsProps): JSX.Element {
 }
 
 /**
- * The subtitle on screen, in glass of its own or bare in a pill that gives it one, or nothing.
- * @param props The transcript, whether subtitles are wanted, motion, and whether it is drawn bare.
+ * The subtitle on screen, in glass of its own, or nothing.
+ * @param props The transcript, whether subtitles are wanted, and motion.
  * @returns The subtitle, or null while they are off.
  */
 function VoiceSubtitles(props: VoiceSubtitlesProps): JSX.Element | null {
@@ -120,7 +117,7 @@ function VoiceSubtitles(props: VoiceSubtitlesProps): JSX.Element | null {
 		<SubtitleWords
 			transcript={props.transcript}
 			reducedMotion={props.reducedMotion}
-			className={props.bare === true ? BARE : GLASS}
+			className={GLASS}
 		/>
 	) : null;
 }

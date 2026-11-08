@@ -198,7 +198,7 @@ Each behavior keeps its existing public boundary and one state owner.
   They name the reading that they belong to. Its state, checkpoint, and revision must match the inspected architecture.
   Remembered code findings also match the model identity, state, and exact revision.
   The existing warning control, diagram marks, and evidence panel show only that matching pass.
-  A selection of a bound canonical module reads the model's local Git history, and so does `Measures` when it opens (ADR 0045).
+  A selection of a bound canonical module reads the model's local Git history, and so does the `What changes together` view of `Measures` when it opens (ADR 0045).
   One answer holds every module, so a later selection reads nothing, and neither does a timer, a focus change, or a reconnect.
   The response must match the inspected model, state, checkpoint, and revision. A new revision reads again, and `Refresh` reads a moved HEAD.
   The read takes no signal, because a selection that moves on must not stop a read that the next selection joins.
@@ -241,7 +241,7 @@ Each behavior keeps its existing public boundary and one state owner.
   Reconnect and repository changes refresh discovery through the existing catalogue owner.
 - Define freshness, cancellation, retry, and unavailable states for each resource.
   Preserve healthy exact checkpoints when mutable architecture changes.
-  Retained checkpoint rows load when a person opens History or compares with a saved reading, and completions keep them fresh after that.
+  If a person opens the History dialog or compares with a saved reading, the retained checkpoint rows load, and completions keep them fresh after that.
   A canonical drawing is kept under a digest of the exact render request, whose whole-model part holds only containment and relationship ends.
   An edit that the drawing does not read keeps its entry. The browser keeps a bounded number of drawings for one renderer build.
   A retained reading with a live comparison base refreshes its comparison metadata through the same reader.
@@ -256,7 +256,12 @@ Canonical recordings use their captured model and the same canonical walkthrough
 
 The left column draws its depth from the picture's tokens. `column-well` in `app.css` is the well of a list, and a row's tone is `bg-tray-sink`, so a stuck row hides what scrolls under it.
 A shelf or a foot of a list stands proud of the floor, so it sets its own z-index above the well's shadow.
-The `edge` variant of `Tabs.List` stands on the top edge of that well. `app.css` holds its piece, outside any layer, so it replaces the registry's trigger.
+The column has no tabs. `ModelColumn` puts the keys of History and Measures over the well, and one list of sections in it. A section's head sticks at the top of the well and sets `--stuck-top`. `stuckTop` in `ui/shell/rules/tree-grid.ts` puts what sticks in a tree under that head.
+Each section keeps its row on screen in view with `useRevealedRow`: the tree its lit module, Flows the flow on screen and Walkthroughs the one that plays. It leaves a list alone while the pointer or the focus is in it.
+`app.css` holds the site's physical vocabulary as utilities, so reach for them before you write a shadow.
+`quiet-key` is the raised key that stands beside a gold one, and `Button` takes it as its `outline` variant.
+`trough` and `chosen-face` build a switch or a row of tabs, as `ModelSwitch` does.
+`plate` is a ringed plane in the ground's tone.
 A count is `Badge` with `variant="count"` and `size="technical"`.
 
 Every dropdown is `Select` or `DropdownMenu` from the ui-kit, and both ease with the `menu-motion` utility. The kit reads no timing, because it stands in the lowest layer, and a popover stands in a portal outside the shell root. So `applyShellDurations` puts `COLUMN_MS.popoverIn` and `popoverOut` on the root element when the page starts.
@@ -344,8 +349,8 @@ It holds its width under About, which lies over it, so the picture keeps its cam
 `ModelPanelSubject` says what the selection is, and `selectedSubject` decides which subject that is for the panel and for About.
 A row of the panel is an action. Long lists and evidence live on `ModelAbout`, which names the open scope or the selected subject.
 `ModelPanelContext` stands under what the panel says, in the same scroll, and `contextOf` decides what it lists.
-A row opens its flow or walkthrough through the same choice as Find, so the left column follows it.
-The left tabs list the whole model, and only the panel follows what a reader looks at.
+A row opens its flow or walkthrough through the same choice as Find, and its section of the left column lights it.
+The left column lists the whole model, and only the panel follows what a reader looks at.
 `ModelLegend` ends the panel, under the actions and outside the keyed subject, so a selection neither moves nor redraws it.
 It owns the marks, and `Filter` puts a visibility switch on each line type that a reader can hide.
 `model-reader/reading/rules/legend-rows.ts` derives its rows from the whole reading, in the policy's order, so that a hidden kind and what left the picture with it keep their rows.
@@ -396,17 +401,20 @@ A fresh selected set represents another pick, including a repeated choice of the
 The list of parts on About labels comparison context with its standing, including removed reference modules.
 
 The shell owns the left column's frame and holds no model knowledge.
-The reader of the focused pane portals Find, the destinations, and its lists into the column slots from `usePaneChrome`.
+The reader of the focused pane portals Find, its keys and its list into the column slots from `usePaneChrome`.
 The pane header slot takes the crumbs, the code path, the state chip, and `Diagram | About`.
 `useReader` gathers the reading, places, moves, and choices that the column, the header, and the surface read.
 `React.Activity` keeps the reading mounted while a walkthrough plays, so the column stays and the picture keeps its camera.
-A live `architecture_snapshot` has no `states`, so `History` and the timeline of About read `architectureRecordQuery`, which loads only when one of them opens.
-`ModelMeasures` is the `Measures` destination. It draws the accepted scene, and `model-reader/reading/rules/module-measures.ts` joins each module's interface, which needs no server, with what the one locality answer says of it.
+A live `architecture_snapshot` has no `states`, so the History dialog and the timeline of About read `architectureRecordQuery`, which loads only when one of them opens.
+The History dialog is `ModelHistoryDialog`. Its open state is in `useReader`, because the key in the column and the state chip of the header both open it.
+`ModelMeasuresDialog` is the `Measures` dialog, which the key in the column opens. Its content selector shows one of three views, and only the open view reads.
+`ModelCodeEvidence` pages through the findings of the matching code pass and selects the subject of each finding.
+`ModelCodeSource` reads the lines round a finding's evidence through `sourceLinesQuery`. A 404 or a failure says that the source is unavailable.
+`ModelMeasures` draws one table of the accepted scene. `model-reader/reading/rules/module-measures.ts` joins each module's interface, which needs no server, with what the one locality answer says of it.
 That rule also holds the one order of each measure, and each measure's name and what it counts.
-`ModelMeasureRow` draws a row's cells on one track of seven columns, so the heads and the rows line up.
-`ModelChoiceList` puts them in `Tree.Facts`, and `flat` gives a table's row no room for a disclosure.
-A row selects through `findModule`, the path of Find and of a count in the interface line.
-A closed tab draws nothing, so `ReadingColumn` keeps the sort.
+`MeasureHead` sorts from the head of each column, and `ModelMeasureRow` draws one row of a native table.
+A row closes the dialog and then selects through `findModule`, the path of Find and of a count in the interface line.
+The dialog keeps its view and the sort of each table while it is closed.
 
 Find reads the complete selected model, including modules outside the visible scope.
 It searches names, code paths, responsibilities, descriptions, and code symbols without another server read.

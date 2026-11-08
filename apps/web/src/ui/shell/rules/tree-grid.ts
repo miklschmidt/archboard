@@ -10,6 +10,17 @@
 /** A row of one line, and how far an open row sticks below the one that holds it. */
 const ROW_HEIGHT = 28;
 
+/**
+ * Where something sticks that stands this far under the top of its scroll. A section of the
+ * reader's column puts its head over its rows and sets `--stuck-top` to the head's height, so what
+ * sticks in a tree there stands under that head.
+ * @param below How far under the top of the scroll, in pixels.
+ * @returns The CSS length.
+ */
+function stuckTop(below: number): string {
+	return `calc(var(--stuck-top, 0px) + ${below}px)`;
+}
+
 /** The disclosure column: a chevron, or the space one would take. */
 const DISCLOSURE_WIDTH = 16;
 
@@ -86,4 +97,5 @@ export {
 	guideX,
 	markerX,
 	nameX,
+	stuckTop,
 };

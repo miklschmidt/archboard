@@ -1,6 +1,7 @@
 import { useCallback, type JSX } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ArchitectureClaim, ArchitectureModelRead } from "@archboard/model/contract";
+import { RiLockUnlockLine } from "@remixicon/react";
 import { Button } from "@archboard/ui-kit/components";
 import { takeBackClaim } from "#ui/architecture-drawing/model-reader/access/clients/claims.ts";
 import {
@@ -56,7 +57,9 @@ interface ModelClaimProps extends ModelClaimsProps {
 
 /**
  * Taking back a claim changes runtime ownership, never authored architecture. The writer stays
- * out: it is an identity such as a thread's, which says nothing to a reader.
+ * out: it is an identity such as a thread's, which says nothing to a reader. The claim is the
+ * site's claim card: a live ring round it, the facts as terms, and Take back control as its one
+ * primary action.
  * @param props The exact claim identity and its current subject names.
  * @returns The state, subjects, purpose, time, and take-back control.
  */
@@ -82,34 +85,73 @@ function ModelClaim(props: ModelClaimProps): JSX.Element {
 			data-slot="model-claim"
 			data-claim-id={claim.id}
 			data-target-state={claim.target.state ?? ""}
-			className="border-border bg-status-subtle text-status-foreground text-body flex shrink-0 items-center gap-3 border-b px-4 py-2"
+			className="bg-background shrink-0 px-3 pt-3"
 		>
-			<div className="min-w-0 flex-1">
-				<p className="truncate">
-					<span className="font-semibold">{claimedStateName(claim, model)}</span> ·{" "}
-					{claimedSubjects(claim, model)}
-				</p>
-				<p className="truncate">{claim.reason}</p>
+			<div className="bg-sidebar rounded-panel text-body flex items-center gap-5 px-4 py-2.5 shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--status)_40%,transparent)]">
+				<ClaimHead since={claim.since} />
+				<dl className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5">
+					<ClaimFact label="State">{claimedStateName(claim, model)}</ClaimFact>
+					<ClaimFact label="Doing">{claim.reason}</ClaimFact>
+					<ClaimFact label="Subjects">{claimedSubjects(claim, model)}</ClaimFact>
+				</dl>
+				{takeBack.isError && (
+					<span role="alert" className="text-destructive text-body">
+						{takeBack.error.message}
+					</span>
+				)}
+				<Button
+					size="sm"
+					data-slot="model-take-back"
+					onClick={release}
+					disabled={takeBack.isPending}
+					aria-busy={takeBack.isPending}
+				>
+					<RiLockUnlockLine aria-hidden="true" />
+					{takeBack.isPending ? "Taking back control…" : "Take back control"}
+				</Button>
 			</div>
-			<time dateTime={claim.since} className="text-technical shrink-0">
-				Since {clockTime(claim.since)}
-			</time>
-			{takeBack.isError && (
-				<span role="alert" className="text-destructive text-body">
-					{takeBack.error.message}
-				</span>
-			)}
-			<Button
-				variant="outline"
-				size="sm"
-				data-slot="model-take-back"
-				onClick={release}
-				disabled={takeBack.isPending}
-				aria-busy={takeBack.isPending}
-			>
-				{takeBack.isPending ? "Taking back control…" : "Take back control"}
-			</Button>
 		</div>
+	);
+}
+
+/**
+ * That an agent holds the subjects, with the live dot, and since when.
+ * @param props When the claim began.
+ * @param props.since The ISO time the claim began.
+ * @returns The head.
+ */
+function ClaimHead(props: { readonly since: string }): JSX.Element {
+	return (
+		<div className="flex shrink-0 flex-col gap-0.5">
+			<span className="text-control text-foreground flex items-center gap-2 font-semibold">
+				<span
+					aria-hidden="true"
+					className="bg-status size-1.5 rounded-full shadow-[0_0_0_3px_color-mix(in_oklch,var(--status)_25%,transparent)]"
+				/>
+				Claimed
+			</span>
+			<time dateTime={props.since} className="text-technical text-muted-foreground font-mono">
+				since {clockTime(props.since)}
+			</time>
+		</div>
+	);
+}
+
+/**
+ * One fact of a claim, as a term and its words.
+ * @param props The term and its words.
+ * @param props.label The term.
+ * @param props.children The words.
+ * @returns The fact.
+ */
+function ClaimFact(props: { readonly label: string; readonly children: string }): JSX.Element {
+	return (
+		<>
+			<dt className="text-muted-foreground">{props.label}</dt>
+			<dd className="text-foreground truncate" title={props.children}>
+				{props.children}
+			</dd>
+		</>
 	);
 }
 

@@ -115,7 +115,6 @@ function box(setup: Partial<BoxSetup> = {}): JSX.Element {
 					transcript={transcript}
 					reducedMotion={reducedMotion}
 					shown={shown}
-					place="free"
 				/>
 			</Tooltip.Provider>
 		</OrbStageProvider>

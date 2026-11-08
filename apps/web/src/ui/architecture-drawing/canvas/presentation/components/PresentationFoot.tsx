@@ -1,152 +1,157 @@
-// The foot of a presented walkthrough's box: where the voice is in it.
+// The foot of a presented walkthrough's column: the key that has the walkthrough narrated, and
+// that hangs the voice up while the orb is in the voice box.
 //
-// It is a pill, as high as the voice box that floats over a picture when nothing is presented, and
-// it is there for as long as the shell has a voice to offer. So the box keeps one height whether
-// voice is off, starting, speaking or over, and the picture does not move with it. While voice is off
-// it holds the one key that starts it for this walkthrough, Narrate, and the key is a circle where
-// the orb will be lit, so the orb takes the key's place and the pill does not change shape. While a
-// voice is live and the shell has a place for it here, what the shell lays over the picture is drawn
-// inside the pill instead, and it is told where it is drawn (use-overlay-place) so it draws itself
-// to fit; the key then gives way to it (app.css, `semantic-presentation-foot`). The pill is as wide
-// as the words above it. Keyboard focus is not left on a key that gives way: pressing Narrate hands
-// it to the pill, from where Tab goes on to the voice box's keys.
+// It is there for as long as the shell has a voice to offer. It is a pill as wide as the column,
+// sunk into it, with a gold circle at its start where the microphone is. The gold circle is a home
+// of the shell's one voice orb (OrbSlot): while voice is off the orb waits there, dark. Pressing
+// the key asks the orb's stage to launch from it, so the orb that voice lights leaves the circle,
+// lit, and flies to the voice box low over the picture (SemanticStagePresentation, `overlayOver`),
+// or to the agent dock while subtitles are off. While voice is on the key stays where it is, and
+// it draws its gold disc and microphone only while the orb is in it (app.css, `narrate-seat`): the
+// key the orb left keeps the room it had.
+//
+// While the lit orb is wanted in the voice box, the key is the red hang-up key: a red disc with a
+// handset comes into the seat the orb left, and the words say Hang up. A press ends the voice. As
+// the voice ends, the dock wishes the orb back into the seat, so the red disc and its words go
+// while the orb flies home, and the gold disc is back once it lands. While the orb is in the dock,
+// or the voice starts or ends, the key is held: its words are dimmed and say why it cannot narrate.
 
-import { RiMicLine } from "@remixicon/react";
-import { useCallback, useRef, type CSSProperties, type JSX, type ReactNode } from "react";
+import { RiMicLine, RiPhoneFill } from "@remixicon/react";
+import { useCallback, type CSSProperties, type JSX, type MouseEvent } from "react";
 
 import { VOICE_MS } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/components";
-import { OverlayPlaceContext } from "#ui/architecture-drawing/canvas/picture/hooks/use-overlay-place.ts";
+import { OrbSlot, useNarrateKey } from "@archboard/workbench/voice";
 import type { WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
-
-/** The paces the stylesheet crossfades the key and the voice box by (app.css, `semantic-presentation-narrate`). */
-const FOOT_STYLE: CSSProperties = {
-	"--voice-box-in-ms": `${VOICE_MS.boxIn}ms`,
-	"--voice-box-out-ms": `${VOICE_MS.boxOut}ms`,
-};
 
 /** What the key says while a narration can start. */
 const NARRATE_HINT = "Hear this walkthrough read aloud.";
 
-/** The circle where the orb will be lit: the plate the orb stands on, with the microphone on it. */
-const SEAT = cn(
-	"border-border bg-card text-muted-foreground shadow-raised m-1.5 grid size-16 shrink-0 place-items-center",
-	"dark:border-input dark:bg-input/30 rounded-full border transition-[border-color,color,box-shadow]",
-	"group-hover/narrate:border-primary-mark group-hover/narrate:text-primary-mark",
-	"group-active/narrate:shadow-pressed",
+/** What the key says while it hangs the voice up. */
+const HANG_UP_HINT = "End the voice.";
+
+/** The room of the gold circle: the seat the orb waits in, and the socket that holds it. */
+const SEAT = "pointer-events-none relative m-1.5 size-16 shrink-0";
+
+/**
+ * The circle with the microphone on it. It is the gold of the primary action, as the site's
+ * Narrate key is, and it lifts and sinks with the key that holds it.
+ */
+const DISC = "primary-finish absolute inset-0 grid place-items-center rounded-full";
+
+/** The red circle with the handset, laid down for hanging up, while the orb is in the voice box. */
+const HANG_UP_DISC = "absolute inset-0 grid place-items-center rounded-full";
+
+/** How fast the gold disc goes once the orb leaves it (app.css, `narrate-seat`). */
+const SEAT_STYLE: CSSProperties = { "--voice-seat-out-ms": `${VOICE_MS.seatOut}ms` };
+
+/** How the circle answers the pointer on a key that can narrate. */
+const LIFT = cn(
+	"group-hover/narrate:shadow-primary-hover group-hover/narrate:-translate-y-px",
+	"group-active/narrate:shadow-primary-pressed group-active/narrate:translate-y-px",
 );
 
 /** Inputs for the key that has the walkthrough narrated. */
-interface NarrateKeyProps {
-	/** The walkthrough's id. */
-	readonly walkthrough: string;
-	/** What the shell offers. */
-	readonly narration: WalkthroughNarration;
-	/** Called once a narration has been asked for. */
-	readonly onAsked: () => void;
-}
-
-/**
- * The key that has the walkthrough narrated, from its first step. It stays where it is while a
- * narration cannot start, so nothing around it moves: it is dimmed, and says why where it says what it
- * does.
- * @param props The walkthrough, the narration and what to do once one is asked for.
- * @returns The key, which fills the pill.
- */
-function NarrateKey(props: NarrateKeyProps): JSX.Element {
-	const { walkthrough, narration, onAsked } = props;
-	const { held, start } = narration;
-	// A narration starts on the first step whatever the reader had reached; the server opens it
-	// once voice is starting, so the voice is handed the step it arrived on.
-	const narrate = useCallback((): void => {
-		start(walkthrough);
-		onAsked();
-	}, [start, walkthrough, onAsked]);
-	const dimmed = held !== null;
-	return (
-		<button
-			type="button"
-			data-slot="semantic-presentation-narrate"
-			aria-disabled={dimmed ? true : undefined}
-			onClick={dimmed ? undefined : narrate}
-			className={cn(
-				"group/narrate focus-visible:ring-ring absolute inset-0 flex items-center gap-3 rounded-full pr-6 text-left outline-none focus-visible:ring-2",
-				dimmed ? "cursor-default opacity-60" : "cursor-pointer",
-			)}
-		>
-			<span aria-hidden="true" className={cn(SEAT, dimmed && "group-hover/narrate:border-border")}>
-				<RiMicLine className="size-5" />
-			</span>
-			<span className="flex min-w-0 flex-col">
-				<span className="text-control font-medium">Narrate</span>
-				<span className="text-body text-muted-foreground truncate">{held ?? NARRATE_HINT}</span>
-			</span>
-		</button>
-	);
-}
-
-/** Inputs for the foot. */
 interface PresentationFootProps {
 	/** The walkthrough's id. */
 	readonly walkthrough: string;
 	/** Narrating the walkthrough aloud, when the shell can. */
 	readonly narration?: WalkthroughNarration | undefined;
-	/** What the shell lays over the picture, such as a voice and its subtitles; drawn here, in the pill. */
-	readonly overlay?: ReactNode;
-	/** What places the pill in the box. */
-	readonly className?: string;
 }
 
-/** What names the pill while it holds the key that narrates. */
-const NARRATION_GROUP = { role: "group", "aria-label": "Narration" } as const;
-
 /**
- * What the shell lays over the picture, drawn in the pill and told that it is. It takes no pointer
- * input of its own, so that a press reaches the key under it while there is nothing to press.
- * @param props What is laid.
- * @param props.overlay What the shell lays over the picture, or nothing.
- * @returns The layer, or null where nothing is laid.
+ * The key that has the walkthrough narrated, from its first step, and that hangs the voice up
+ * while the orb is in the voice box. It stays where it is while a narration cannot start, so
+ * nothing around it moves: its words are dimmed, and say why where they say what it does.
+ * @param props The walkthrough and the narration.
+ * @param props.walkthrough The walkthrough's id.
+ * @param props.narration What the shell offers.
+ * @returns The key.
  */
-function LaidInPill(props: { readonly overlay: ReactNode }): JSX.Element | null {
-	if (props.overlay === null || props.overlay === undefined) return null;
+function NarrateKey(props: {
+	readonly walkthrough: string;
+	readonly narration: WalkthroughNarration;
+}): JSX.Element {
+	const { walkthrough } = props;
+	const { held, start } = props.narration;
+	const { launch, hangingUp, end } = useNarrateKey();
+	// A narration starts on the first step whatever the reader had reached; the server opens it
+	// once voice is starting, so the voice is handed the step it arrived on. The orb that voice
+	// lights is launched out of this key.
+	const narrate = useCallback(
+		(event: MouseEvent<HTMLButtonElement>): void => {
+			launch(event.currentTarget);
+			start(walkthrough);
+		},
+		[launch, start, walkthrough],
+	);
+	const press = hangingUp ? end : held === null ? narrate : undefined;
 	return (
-		<div className="pointer-events-none absolute inset-0 flex">
-			<OverlayPlaceContext.Provider value="foot">{props.overlay}</OverlayPlaceContext.Provider>
-		</div>
+		<button
+			type="button"
+			data-slot="semantic-presentation-narrate"
+			data-hang-up={hangingUp}
+			aria-disabled={press === undefined ? true : undefined}
+			onClick={press}
+			className="group/narrate bg-tray-sink shadow-well focus-visible:ring-ring flex shrink-0 cursor-pointer items-center gap-3 rounded-full pr-6 text-left outline-none focus-visible:ring-2 aria-disabled:cursor-default"
+		>
+			<span aria-hidden="true" data-slot="narrate-seat" style={SEAT_STYLE} className={SEAT}>
+				<span data-part="disc" className={cn(DISC, held === null && LIFT)}>
+					<RiMicLine className="size-5" />
+				</span>
+				<span data-part="hang-up" className={HANG_UP_DISC}>
+					<RiPhoneFill className="size-5 rotate-[135deg]" />
+				</span>
+				<OrbSlot home="narrate" className="absolute inset-0" />
+			</span>
+			<NarrateWords held={held} hangingUp={hangingUp} />
+		</button>
 	);
 }
 
 /**
- * The foot of the box.
- * @param props The walkthrough, the narration, what the shell lays over the picture and what places the pill.
- * @returns The pill, or null where the shell has no voice to offer.
+ * What the key says: Narrate, and what it does, or why it cannot now, dimmed; or Hang up while
+ * it ends the voice. The two sets of words stand in one cell and change places as the discs do.
+ * @param props Why a narration cannot start, and whether the key hangs up.
+ * @param props.held The words, or null while one can.
+ * @param props.hangingUp Whether the key ends the voice.
+ * @returns The words.
+ */
+function NarrateWords(props: {
+	readonly held: string | null;
+	readonly hangingUp: boolean;
+}): JSX.Element {
+	const { held, hangingUp } = props;
+	return (
+		<span className="grid min-w-0 [&>*]:col-start-1 [&>*]:row-start-1">
+			<span
+				data-part="narrate-words"
+				aria-hidden={hangingUp ? true : undefined}
+				className={cn("flex min-w-0 flex-col", held !== null && "opacity-60")}
+			>
+				<span className="text-control font-medium">Narrate</span>
+				<span className="text-body text-muted-foreground truncate">{held ?? NARRATE_HINT}</span>
+			</span>
+			<span
+				data-part="hang-up-words"
+				aria-hidden={hangingUp ? undefined : true}
+				className="flex min-w-0 flex-col"
+			>
+				<span className="text-control font-medium">Hang up</span>
+				<span className="text-body text-muted-foreground truncate">{HANG_UP_HINT}</span>
+			</span>
+		</span>
+	);
+}
+
+/**
+ * The foot of the column.
+ * @param props The walkthrough and the narration.
+ * @returns The key, or null where the shell has no voice to offer.
  */
 function PresentationFoot(props: PresentationFootProps): JSX.Element | null {
-	const { narration, overlay } = props;
-	const foot = useRef<HTMLDivElement>(null);
-	// The key that was pressed is about to give way to the voice box, so it hands over keyboard focus.
-	const handOver = useCallback((): void => {
-		foot.current?.focus({ preventScroll: true });
-	}, []);
-	if (narration === undefined && (overlay === null || overlay === undefined)) return null;
-	return (
-		<div
-			ref={foot}
-			tabIndex={-1}
-			{...(narration === undefined ? undefined : NARRATION_GROUP)}
-			data-slot="semantic-presentation-foot"
-			style={FOOT_STYLE}
-			className={cn(
-				"border-border bg-sidebar shadow-well focus-visible:ring-ring relative isolate flex h-[78px] shrink-0 rounded-full border outline-none focus-visible:ring-2",
-				props.className,
-			)}
-		>
-			{narration !== undefined && (
-				<NarrateKey walkthrough={props.walkthrough} narration={narration} onAsked={handOver} />
-			)}
-			<LaidInPill overlay={overlay} />
-		</div>
-	);
+	if (props.narration === undefined) return null;
+	return <NarrateKey walkthrough={props.walkthrough} narration={props.narration} />;
 }
 
 export { PresentationFoot };

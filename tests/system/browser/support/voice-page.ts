@@ -42,8 +42,8 @@ interface VoiceNow {
 	readonly lit: boolean;
 	/** The voice box while it is on the page and not leaving, or null. */
 	readonly box: {
-		/** `free` over the picture, or `foot` in a presented walkthrough's box. */
-		readonly place: string | null;
+		/** Whether the box floats low over the picture, where the stage lays it. */
+		readonly over: boolean;
 		/** The voice's state, as the box shows it. */
 		readonly state: string | null;
 		/** The label of the pane section the box is drawn in. */
@@ -80,7 +80,7 @@ function voiceNow(browser: AgentBrowserSession): Promise<VoiceNow> {
 			orb: socket?.getAttribute('data-home') ?? null,
 			lit: holder?.getAttribute('data-shown') === 'true',
 			box: box ? {
-				place: box.getAttribute('data-place'),
+				over: box.closest('[data-slot="semantic-stage-overlay"]') !== null,
 				state: box.getAttribute('data-voice-state'),
 				pane: box.closest('${PANE_SECTIONS}')?.getAttribute('aria-label') ?? null,
 				presented: !!presented && presented.contains(box) && !!holder && presented.contains(holder),
