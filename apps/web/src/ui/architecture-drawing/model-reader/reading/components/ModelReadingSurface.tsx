@@ -184,11 +184,16 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 	const { flow, reference } = projection;
 	const { grammar, selectGrammar } = location;
 	const { claimed } = reader;
+	// The badge names what the panel's head names: the selection, or else the open module and the
+	// flow on screen.
 	const claims = useMemo(() => {
-		if (!selecting) return NO_CLAIMS;
+		if (!selecting) {
+			const shown = [scope, flow?.id].filter((id): id is string => typeof id === "string");
+			return shown.length === 0 ? NO_CLAIMS : claimsOn(claimed, shown);
+		}
 		const subject = selectedSubject({ model, projection, ids });
 		return claimsOn(claimed, subject.kind === "flow" ? [...ids, subject.flow.id] : ids);
-	}, [selecting, claimed, model, projection, ids]);
+	}, [selecting, claimed, model, projection, ids, scope, flow]);
 	const flowHead = useMemo(
 		() =>
 			flow === null ? undefined : (

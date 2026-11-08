@@ -272,6 +272,17 @@ test("a claim is a status mark on its rows, its model and a selected subject, an
 		WAIT,
 	);
 	expect(await browser.eval<boolean>(`document.querySelector('${BADGE}') === null`)).toBe(true);
+	// With nothing selected, the head names the open flow, and the badge says that it is claimed.
+	await browser.run(["open", `${server.base}/?modelA=Shop&grammarA=sequence&flowA=Shop%23Request`]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="semantic-selection-clear"]') === null && document.querySelector('${BADGE}') !== null`,
+			),
+		Boolean,
+		"the claim badge on the open claimed flow",
+		WAIT,
+	);
 	await browser.run(["open", `${server.base}/?modelA=Shop&subjectA=Shop%23Behavior`]);
 	await pollUntil(
 		() =>
