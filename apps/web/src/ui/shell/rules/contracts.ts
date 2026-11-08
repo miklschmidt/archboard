@@ -65,8 +65,8 @@ interface RecoveryPresentation {
 /** A fullscreen presentation of one pane. */
 type ShellPresentation = LivePresentation | RecoveryPresentation;
 
-/** The settings surfaces the header's menu reaches. */
-type SettingsSurface = "opener";
+/** The tabs of the settings dialog: how pictures are drawn, and which editor opens code. */
+type SettingsSurface = "picture" | "opener";
 
 /** One repository and the canonical model of its chosen checkout (ADR 0050). */
 interface ShellRepository {

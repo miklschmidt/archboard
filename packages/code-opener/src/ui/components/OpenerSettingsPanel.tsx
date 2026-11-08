@@ -1,5 +1,5 @@
-// The opener settings dialog over the real `OpenerSettingsReply`. The form
-// mounts once the reply has arrived, so its draft starts from what is saved.
+// The opener settings over the real `OpenerSettingsReply`, as a panel that a host dialog
+// holds. The form mounts once the reply has arrived, so its draft starts from what is saved.
 
 import { useCallback, useEffect, useRef, useState, type JSX, type RefObject } from "react";
 
@@ -9,7 +9,7 @@ import type {
 	CustomCommandDraft,
 	CustomCommandIssues,
 	OpenerChoice,
-	OpenerSettingsDialogProps,
+	OpenerSettingsPanelProps,
 } from "#ui/state/opener-settings-contracts.ts";
 import {
 	choiceOfSelection,
@@ -108,32 +108,23 @@ function userHasMoved(form: HTMLElement | null): boolean {
 	return inDialog && !placedByDialog;
 }
 
-/**
- * The dialog's initial focus when the form is already mounted at open: the
- * opener choice group's tab stop.
- * @returns That radio, or null to let the dialog choose.
- */
-function chosenOpenerFocus(): HTMLElement | null {
-	return document.querySelector<HTMLElement>(`[role="dialog"] :is(${FIRST_CONTROL})`);
-}
-
 /** What one attempt found: the issues to show, or none. */
 type AttemptIssues = CustomCommandIssues | null;
 
 /** Inputs for the form, which needs the reply to have arrived. */
 interface OpenerSettingsFormProps {
 	settings: OpenerSettingsReply;
-	dialog: OpenerSettingsDialogProps;
+	panel: OpenerSettingsPanelProps;
 }
 
 /**
  * The opener form: the choice, the custom fields, the test, and the actions.
- * @param props The settings reply and the dialog's props.
+ * @param props The settings reply and the panel's props.
  * @returns The form body and footer.
  */
 function OpenerSettingsForm(props: OpenerSettingsFormProps): JSX.Element {
-	const { settings, dialog } = props;
-	const { busy } = dialog;
+	const { settings, panel } = props;
+	const { busy } = panel;
 	const [choice, setChoice] = useState<OpenerChoice>(() => choiceOfSelection(settings.selection));
 	const [draft, setDraft] = useState<CustomCommandDraft>(() =>
 		draftOfSelection(settings.selection),
@@ -146,16 +137,16 @@ function OpenerSettingsForm(props: OpenerSettingsFormProps): JSX.Element {
 		const result = selectionOfChoice(choice, draft);
 		setIssues(result.ok ? null : result.issues);
 		if (result.ok) {
-			dialog.onSave(result.selection);
+			panel.onSave(result.selection);
 		}
-	}, [choice, dialog, draft]);
+	}, [choice, panel, draft]);
 	const handleTest = useCallback(() => {
 		const result = selectionOfChoice(choice, draft);
 		setIssues(result.ok ? null : result.issues);
 		if (result.ok && repository !== null) {
-			dialog.onTest({ selection: result.selection, repository });
+			panel.onTest({ selection: result.selection, repository });
 		}
-	}, [choice, dialog, draft, repository]);
+	}, [choice, panel, draft, repository]);
 	return (
 		<div ref={root} className="contents">
 			<EffectiveOpener settings={settings} />
@@ -175,13 +166,15 @@ function OpenerSettingsForm(props: OpenerSettingsFormProps): JSX.Element {
 				disabled={anyBusy}
 				onChange={setRepository}
 			/>
-			<TestResultAlert result={dialog.testResult} />
-			<Dialog.Error error={dialog.error} />
+			<TestResultAlert result={panel.testResult} />
+			<Dialog.Error error={panel.error} />
 			<Dialog.Busy busy={busy.test} text="Testing the opener…" />
 			<Dialog.Busy busy={busy.save} text="Saving the opener…" />
 			<Dialog.Busy busy={busy.reset} text="Restoring the platform default…" />
-			<Dialog.Footer>
-				<Button variant="ghost" size="sm" disabled={anyBusy} onClick={dialog.onReset}>
+			{/* The keys stay at the foot of the dialog while the form scrolls behind them. The offset
+				reaches past the bottom padding of the scrolling panel, to the edge of the dialog. */}
+			<Dialog.Footer className="bg-card sticky -bottom-5">
+				<Button variant="ghost" size="sm" disabled={anyBusy} onClick={panel.onReset}>
 					Reset
 				</Button>
 				<Button
@@ -202,41 +195,33 @@ function OpenerSettingsForm(props: OpenerSettingsFormProps): JSX.Element {
 }
 
 /**
- * The opener settings dialog.
+ * The opener settings: what the saved opener is, the form, and its keys. A host dialog holds
+ * them, and their Close key closes it.
  * @param props The reply, the state and the callbacks.
- * @returns The dialog.
+ * @returns The panel.
  */
-function OpenerSettingsDialog(props: OpenerSettingsDialogProps): JSX.Element {
+function OpenerSettingsPanel(props: OpenerSettingsPanelProps): JSX.Element {
 	const { settings } = props;
 	return (
-		<Dialog open={props.open} onOpenChange={props.onOpenChange}>
-			<Dialog.Content
-				className="sm:max-w-lg"
-				initialFocus={chosenOpenerFocus}
-				finalFocus={props.finalFocus}
-			>
-				<Dialog.Header>
-					<Dialog.Title>Opener settings</Dialog.Title>
-					<Dialog.Description>
-						Which editor opens a module's code on this machine. Test it before you save.
-					</Dialog.Description>
-				</Dialog.Header>
-				{settings ? (
-					// Keyed by the saved selection: a reset or a save the host reloads
-					// starts the form again from what is now saved.
-					<OpenerSettingsForm
-						key={JSON.stringify(settings.selection)}
-						settings={settings}
-						dialog={props}
-					/>
-				) : (
-					<p aria-live="polite" className="text-muted-foreground text-body">
-						Reading opener settings…
-					</p>
-				)}
-			</Dialog.Content>
-		</Dialog>
+		<div data-slot="opener-settings" className="flex flex-col gap-4">
+			<p className="text-body text-muted-foreground">
+				Which editor opens a module's code on this machine. Test it before you save.
+			</p>
+			{settings ? (
+				// Keyed by the saved selection: a reset or a save the host reloads
+				// starts the form again from what is now saved.
+				<OpenerSettingsForm
+					key={JSON.stringify(settings.selection)}
+					settings={settings}
+					panel={props}
+				/>
+			) : (
+				<p aria-live="polite" className="text-muted-foreground text-body">
+					Reading opener settings…
+				</p>
+			)}
+		</div>
 	);
 }
 
-export { OpenerSettingsDialog };
+export { OpenerSettingsPanel };

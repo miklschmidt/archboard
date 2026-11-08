@@ -3,7 +3,7 @@
 import { useCallback, useId, type ChangeEvent, type JSX } from "react";
 
 import { LINE_TOKEN, PATH_TOKEN } from "#shared/schemas/opener-settings.ts";
-import { Dialog, Field, Input, InputGroup } from "@archboard/ui-kit/components";
+import { Field, Input, InputGroup } from "@archboard/ui-kit/components";
 import type {
 	CustomCommandDraft,
 	CustomCommandIssues,
@@ -71,11 +71,12 @@ function CustomCommandFields(props: CustomCommandFieldsProps): JSX.Element {
 						spellCheck={false}
 					/>
 					<InputGroup.Addon align="block-end">
-						<InputGroup.Text>
+						{/* Block, and the tokens inline, so they flow inside the sentence. */}
+						<InputGroup.Text className="block">
 							One argument per line. Exactly one must hold{" "}
-							<Dialog.Technical>{PATH_TOKEN}</Dialog.Technical>, which becomes the file to open.{" "}
-							<Dialog.Technical>{LINE_TOKEN}</Dialog.Technical> becomes the line where the bound
-							symbol is defined, or 1.
+							<code className="text-technical font-mono">{PATH_TOKEN}</code>, which becomes the file
+							to open. <code className="text-technical font-mono">{LINE_TOKEN}</code> becomes the
+							line where the bound symbol is defined, or 1.
 						</InputGroup.Text>
 					</InputGroup.Addon>
 				</InputGroup>

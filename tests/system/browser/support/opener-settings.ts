@@ -81,9 +81,8 @@ export const draftSelection = {
 /** WCAG 2.5.8 target size floor. */
 export const MIN_TARGET = 24;
 
-/** The opener dialog by its accessible name. */
-const OPENER_DIALOG = `[...document.querySelectorAll('[role="dialog"]')].find(node =>
-	[...node.querySelectorAll('[data-slot="dialog-title"]')].some(title => title.textContent?.trim() === 'Opener settings'))`;
+/** The Settings dialog while it shows the code opener. */
+const OPENER_DIALOG = `document.querySelector('[role="dialog"][data-slot="settings-dialog"]:has([data-slot="opener-settings"])')`;
 
 /** The accessible name of a control: its label, its aria-label, or its words. */
 const CONTROL_NAME = `node => {
@@ -105,7 +104,7 @@ export async function dialogSnapshot(browser: AgentBrowserSession): Promise<Dial
 		const dialog = ${OPENER_DIALOG};
 		if (!dialog) return null;
 		const title = dialog.querySelector('[data-slot="dialog-title"]');
-		const description = dialog.querySelector('[data-slot="dialog-description"]');
+		const description = dialog.querySelector('[data-slot="opener-settings"] > p');
 		const loading = [...dialog.querySelectorAll('p')].find(node => /Reading opener settings/.test(node.textContent));
 		const radios = [...dialog.querySelectorAll('[role="radio"]')];
 		const choiceOf = radio => {

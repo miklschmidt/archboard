@@ -10,8 +10,6 @@ import {
 	ModelCodeDetails,
 	ModelCodeWarnings,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
-import { ModelEngine } from "#ui/architecture-drawing/model-reader/reading/components/ModelEngine.tsx";
-import { ModelHoverLight } from "#ui/architecture-drawing/model-reader/reading/components/ModelHoverLight.tsx";
 import { ModelFlowHead } from "#ui/architecture-drawing/model-reader/reading/components/ModelFlowHead.tsx";
 import { ModelInterfaceLine } from "#ui/architecture-drawing/model-reader/reading/components/ModelInterfaceLine.tsx";
 import { ModelLegend } from "#ui/architecture-drawing/model-reader/reading/components/ModelLegend.tsx";
@@ -90,33 +88,25 @@ function useBehavioralIds(reader: Reader): ReadonlySet<string> {
 }
 
 /**
- * What the marks of the picture on screen mean, and what lays out a picture of the structure.
+ * What the marks of the picture on screen mean.
  * @param props The reader.
  * @param props.reader The reader.
- * @returns The legend and the engine.
+ * @returns The legend.
  */
 function ReadingLegend(props: { readonly reader: Reader }): JSX.Element {
 	const { accepted, location, selection } = props.reader;
 	const { shown, scene } = accepted;
 	const picture = scene?.picture.legend ?? null;
 	return (
-		<>
-			<ModelLegend
-				model={shown.model}
-				projection={shown.projection}
-				picture={picture}
-				filters={location.grammar === "architecture" ? location.filters : NO_FILTERS}
-				onToggle={location.toggleFilter}
-				onShowAll={location.showAllKinds}
-				selection={selection}
-			/>
-			{scene?.layout !== undefined && (
-				<>
-					<ModelEngine />
-					<ModelHoverLight />
-				</>
-			)}
-		</>
+		<ModelLegend
+			model={shown.model}
+			projection={shown.projection}
+			picture={picture}
+			filters={location.grammar === "architecture" ? location.filters : NO_FILTERS}
+			onToggle={location.toggleFilter}
+			onShowAll={location.showAllKinds}
+			selection={selection}
+		/>
 	);
 }
 

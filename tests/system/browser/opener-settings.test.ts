@@ -98,9 +98,9 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 	);
 	expect(loading).toMatchObject({
 		count: 1,
-		name: "Opener settings",
+		name: "Settings",
 		tag: "DIV",
-		title: "Opener settings",
+		title: "Settings",
 		description: "Reading opener settings…",
 		rootContainsDialog: false,
 		portalAtBody: true,
@@ -112,7 +112,7 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 			timeoutMs: 10_000,
 		},
 	);
-	expect(loadingTree).toContain('dialog "Opener settings"');
+	expect(loadingTree).toContain('dialog "Settings"');
 	expect(loadingTree).toContain('button "Close"');
 	await browser.run(["press", "Escape"]);
 	await assertDialogClosedAndFocusReturned(browser);
@@ -138,9 +138,9 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 	);
 	expect(initial).toMatchObject({
 		count: 1,
-		name: "Opener settings",
+		name: "Settings",
 		tag: "DIV",
-		title: "Opener settings",
+		title: "Settings",
 		current: "Custom command",
 		effective: "/opt/acme/bin/editor --reuse-window {path} --wait",
 		availability: "Available",
@@ -164,17 +164,19 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 		{ method: "GET", path: "/api/settings/opener", body: null },
 	]);
 
-	// The dialog opens on its first field, the opener choice group at its tab
-	// stop (TASK-150.08); from there Tab reaches every control in reading order
-	// and stays inside the dialog. The wrap past the last control is the dialog
-	// primitive's own.
+	// The chosen Code opener tab keeps the focus, as a tab of the WAI-ARIA tabs
+	// pattern does. From there Tab reaches the opener choice group at its checked
+	// choice, then every control of the opener in reading order, and stays inside
+	// the dialog. The wrap past the last control is the
+	// dialog primitive's own.
 	await pollUntil(
 		() => focusedControl(browser),
-		(value) => value.focus === "Platform default" && value.focusInside,
-		"the opener choice group to hold the dialog's initial focus",
+		(value) => value.focus?.startsWith("Code opener") === true && value.focusInside,
+		"the chosen tab to keep the focus",
 		{ timeoutMs: 5_000 },
 	);
 	const focusOrder = [
+		"Custom command",
 		"Executable",
 		"Arguments",
 		"Test with repository",
@@ -203,7 +205,7 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 	const modalTree = await browser.run(["snapshot", "--interactive", "--compact"], {
 		timeoutMs: 10_000,
 	});
-	expect(modalTree).toContain('heading "Opener settings"');
+	expect(modalTree).toContain('heading "Settings"');
 	expect(modalTree).toContain('button "Save"');
 	expect(modalTree).not.toContain('button "Settings"');
 
@@ -212,7 +214,7 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 		{ timeoutMs: 10_000 },
 	);
 	for (const contract of [
-		'dialog "Opener settings"',
+		'dialog "Settings"',
 		'radio "Custom command Available" [checked=true',
 		'textbox "Executable"',
 		'textbox "Arguments"',

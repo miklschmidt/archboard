@@ -1,11 +1,12 @@
 // The owner of what the right column adds to a reading: the flows and walkthroughs that touch what
-// a reader looks at, the interface measures, the door that opens at one click, and the engine under
-// the legend.
+// a reader looks at, the interface measures and the door that opens at one click. It also owns the
+// layout engine, which the Settings dialog chooses for every picture.
 
 import { expect, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
+import { pressSettings } from "./support/shell-dom.ts";
 import { openDiagram, pick, settledOn } from "./support/canonical-page.ts";
 import { WAIT, drawn, openReader } from "./support/reader-page.ts";
 
@@ -279,8 +280,6 @@ test("the right column follows what a reader looks at, and the left column holds
 		"the flow on screen in the list",
 		WAIT,
 	);
-	// No engine lays out a flow, so nothing offers one.
-	expect(await browser.eval<boolean>(`document.querySelector('${SWITCH}') === null`)).toBe(true);
 	await browser.run(["press", "Backspace"]);
 	await settledOn(browser, "Shop#Gateway");
 	await drawn(browser);
@@ -351,7 +350,9 @@ test("the right column follows what a reader looks at, and the left column holds
 	);
 	await drawn(browser);
 	const blocks = await geometry(browser);
+	await pressSettings(browser);
 	await browser.run(["click", `${SWITCH} [data-choice="track"]`]);
+	await browser.run(["press", "Escape"]);
 	await pollUntil(
 		() => geometry(browser),
 		(now) => now !== blocks,
@@ -364,10 +365,12 @@ test("the right column follows what a reader looks at, and the left column holds
 	await browser.run(["reload"]);
 	await drawn(browser);
 	expect(await geometry(browser)).toBe(tracks);
+	await pressSettings(browser);
 	expect(
 		await browser.eval<string | null>(
 			`document.querySelector('${SWITCH} [data-choice="track"]').getAttribute('aria-pressed')`,
 		),
 	).toBe("true");
+	await browser.run(["press", "Escape"]);
 	expect(await browser.run(["errors"])).toBe("");
 }, 60_000);

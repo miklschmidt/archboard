@@ -72,7 +72,7 @@ import { AnswerFilesContext } from "@archboard/workbench/agent";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { AgentDockSlot, AgentPanelSlot } from "#ui/application/components/AgentSurfaceSlots.tsx";
 import { PresentationVoiceKey } from "#ui/application/components/PresentationVoiceKey.tsx";
-import { SettingsHosts } from "#ui/application/components/SettingsHosts.tsx";
+import { SettingsDialog } from "#ui/application/components/SettingsDialog.tsx";
 import { StartShell } from "#ui/application/components/StartShell.tsx";
 import { Shell } from "#ui/shell/components/Shell.tsx";
 import { searchOfRepository } from "#ui/panes/reading-routing/rules/search.ts";
@@ -514,7 +514,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 									onAgentPanelClose={agent.panel.closePanel}
 									attachStage={fullscreen.attachStage}
 								/>
-								<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
+								<SettingsDialog surface={settings} notices={notices} onClose={closeSettings} />
 							</Tooltip.Provider>
 						</AnswerFilesContext>
 					</VoiceSurfaceProvider>

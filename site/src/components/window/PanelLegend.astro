@@ -1,6 +1,5 @@
 ---
-// The foot of the mock shell's right panel: the legend of the shop's picture and the picture's
-// two settings, as the shell shows them.
+// The foot of the mock shell's right panel: the legend of the shop's picture, as the shell shows it.
 import Icon from "../Icon.astro";
 import KindChip from "../KindChip.astro";
 import type { Kind } from "../../lib/icons";
@@ -16,10 +15,6 @@ const lines = [
 	["HTTP", "var(--sky)"],
 	["Data", "var(--emerald)"],
 	["Illustrated traffic", "var(--neutral)"],
-] as const;
-const settings = [
-	["Layout engine", "Blocks", "Tracks"],
-	["Dim on hover", "On", "Off"],
 ] as const;
 ---
 
@@ -45,17 +40,6 @@ const settings = [
 	</ul>
 	<p class="tags"><span class="tag payments">Payments</span><span class="tag fulfilment">Fulfilment</span></p>
 </div>
-{
-	settings.map(([name, on, off]) => (
-		<p class="setting">
-			{name}
-			<span class="toggle">
-				<span class="is-on">{on}</span>
-				<span>{off}</span>
-			</span>
-		</p>
-	))
-}
 
 <style>
 	.legend {
@@ -117,30 +101,5 @@ const settings = [
 	}
 	.fulfilment {
 		background: var(--teal);
-	}
-	.setting {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 8px 16px;
-		color: var(--ink-muted);
-	}
-	.toggle {
-		display: flex;
-		padding: 2px;
-		border-radius: 4px;
-		background: var(--well);
-		box-shadow: var(--shadow-well);
-	}
-	.toggle span {
-		padding: 3px 10px;
-		border-radius: 3px;
-	}
-	.toggle .is-on {
-		color: var(--ink);
-		background: var(--raised);
-		box-shadow:
-			var(--shadow-raised),
-			inset 0 -2px 0 var(--gold-mark);
 	}
 </style>

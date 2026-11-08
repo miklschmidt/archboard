@@ -344,7 +344,7 @@ The file app.css holds the values for both themes and gives each one a
 - **well** (`--elevation-well`, an inner shadow with a lit line along the foot): a field sunk into a surface, a trough, a count cell and a pressed key. `--elevation-trough` is the same piece under its other name.
 - **sink** (`--elevation-sink`, built from `--slab-shadow` and `--tray-lip`): the well that a column's list lies in. One inner shadow falls from the whole of its top edge, and a lit lip runs along its foot, as on a container of the picture. The `column-well` utility holds the recipe.
 - **slab** (`--elevation-slab`, built from `--slab-glint`, `--slab-edge` and `--slab-shadow`): a number that lies on a surface, as a small part of the picture does: a lit top edge, a front edge 2px thick and a short shadow.
-- **No edge shadow.** The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane. It casts no shadow and draws no line where it meets the picture: the tone step is the edge. The chrome holds the picture on every side: an 8px strip of chrome runs under it, and beside it while the right panel hides. The picture's four corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility. A presented picture fills its pane with square corners. A tray at the foot of a column is one tone step lighter, with no line and no shadow.
+- **No edge shadow.** The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane. It casts no shadow and draws no line where it meets the picture: the tone step is the edge. The chrome holds the picture on every side: an 8px strip of chrome runs under it, and beside it while the right panel hides. The picture's four corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility. A presented picture fills its pane with square corners. While the picture has keyboard focus, a 2px Ring line runs inside its edge and follows the rounded corners. A tray at the foot of a column is one tone step lighter, with no line and no shadow.
 - **raised** (`--elevation-raised`, a white highlight on top, a 1px contact line and a short soft shadow): a quiet key, a key cap, the voice circle and the chosen row of a list.
 - **pressed** (`--elevation-pressed`, the same value as well): a raised control while somebody presses it.
 - **chosen** (`--elevation-chosen`, raised and a 2px line of Wayfinding Gold inside the foot): the chosen tab of a trough. It is also the chosen row of the tree that is the row of what is open.
@@ -610,7 +610,7 @@ A module with code history has a `Changes with` section. It lists the modules wh
 
 The legend is a tray at the foot of the panel (Tray Chalk, with no line over it), and it needs
 no click. A long subject and its lists scroll above it, and the whole legend stays on screen.
-Only the engine row stands under it, so a selection never moves it. A heading row holds `Legend` and, at the start of the
+Nothing stands under it, so a selection never moves it. A heading row holds `Legend` and, at the start of the
 second column, the key `Filter`. Under it stand the kinds in two columns, the line types in two
 columns and the groups, with 12px between them and no rule. A row is 24px high, and every mark stands in
 a box 22px wide, so the names start on one line. A section with nothing to show is absent.
@@ -649,6 +649,10 @@ picture back. A module that the state lacks says `Not in this state`, and its ro
 on the drawing of the comparison. These rows wear no standing mark, score or warning color.
 With no interface change, one quiet line in place of the rows says so. The change list follows
 under the rule, with a section for each owner. `N` and `P` walk only that list.
+
+### Settings dialog
+
+The gear in the header opens `Settings`, a dialog 720px wide at most. It stands 8% of the window from the top, so the tabs stay in place when a tab of another height opens. A content selector at its head holds two tabs. `Picture` holds the settings of this browser for every picture: the layout engine and whether a part under the pointer dims the rest. Each is a row with its name, one line of Body in muted ink that says what it does, and a switch at the end. `Code opener` holds the editor that opens a module's code on this machine. A tab taller than the window scrolls under the tabs, and the footer of the opener, with `Reset`, `Test`, `Close` and `Save`, stays at the foot of the dialog. A notice about the opener opens the dialog on `Code opener`.
 
 ### History dialog
 

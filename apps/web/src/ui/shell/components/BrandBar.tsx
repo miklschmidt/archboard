@@ -28,13 +28,13 @@ interface ActionsProps {
 }
 
 /**
- * The settings: where the server opens code.
+ * The settings: how pictures are drawn, and which editor opens code.
  * @param props The actions.
  * @returns The gear.
  */
 function SettingsButton(props: ActionsProps): JSX.Element {
 	const { actions } = props;
-	const handleClick = useCallback(() => actions.openSettings("opener"), [actions]);
+	const handleClick = useCallback(() => actions.openSettings("picture"), [actions]);
 	return (
 		<IconButton id={SETTINGS_TRIGGER_ID} label="Settings" onClick={handleClick}>
 			<RiSettings3Line />
