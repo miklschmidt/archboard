@@ -4,7 +4,7 @@ title: The containment rule leaves out a container bound to a runner
 status: In Progress
 assignee: []
 created_date: '2026-11-08T23:29:00Z'
-updated_date: '2026-11-08T23:39:00Z'
+updated_date: '2026-11-08T23:41:00Z'
 labels:
   - bug
   - model
@@ -41,4 +41,8 @@ Review affects the model module (vKEsyHFk/vKEsyHFk#DmbKboxU). The module ownersh
 Review fix: compose recognition now requires a supported compose filename and a nonempty service address. Regression cases for a YAML configuration key, an unsupported compose filename, and an empty service address failed before the fix. All 60 structure tests pass after the fix.
 
 Review fix: Terraform module calls, nested module instances, resource instance keys, and explicit directory paths with dots now receive the infrastructure exception. Six regression cases failed before this fix. All 70 structure tests pass after it. ConfigMap, Secret, and Terraform data addresses retain the syntax-based exception required by the task. A nested code container still receives its own warning. The guidance now explains that source evidence stays with check code. A directory code symbol such as order_service.start remains indistinguishable from a Terraform address without reading files or adding binding metadata; binding the code file removes that ambiguity.
+
+Review fix: the Kubernetes Kind/name form now accepts digits in custom kinds, as the manifest reader does. The Workload2/api regression failed before this correction. The exception still uses the object address within a multi-document YAML file and needs no document index, as the manifest reader addresses objects by kind and name.
+
+Final review validation: all 71 structure tests pass. TypeScript passes with nix develop --command bunx tsc --noEmit -p tsconfig.json. The requested type-aware lint command passes with zero warnings. The repository semantic inspection exits 0. With the final branch source on port 13899, relay main exits 0 and intake-calls-billing exits 1 with only RELATIONSHIP_UNDRAWN at warning severity. Both runs also report four informational EMBED_RENDERER_CHANGED notices for existing example diagrams. Both relay checkouts are clean on main. The standards review has no remaining finding. The spec review corrected compose filename recognition, Terraform module and instance forms, explicit directory paths with dots, and Kubernetes kinds with digits. Skipping every source part is consistent with the runner join across repositories; the runner does not own a code directory in its own repository either. The remaining syntax ambiguity is documented in authoring guidance. Task status stays In Progress for the parent task owner.
 <!-- SECTION:NOTES:END -->

@@ -30,6 +30,7 @@ A runner is an infrastructure declaration that runs code.
 Bind a deployed service to its runner.
 Draw the code that it runs as parts.
 This lets a call through infrastructure reach those parts.
+
 An infrastructure binding names a declaration, not a source directory.
 Its parts can bind code in any directory or repository.
 The containment check reports neither warning for that container.

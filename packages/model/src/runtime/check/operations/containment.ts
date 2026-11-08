@@ -67,7 +67,7 @@ function namesInfrastructure(binding: Binding): boolean {
 	if (/\.ya?ml$/u.test(path)) {
 		const compose = /^(docker-)?compose(\.override)?\.ya?ml$/u.test(posix.basename(path));
 		return (
-			/^[A-Z][A-Za-z]*\/[^/]+$/u.test(symbol) || (compose && /^services\.[\w.-]+$/u.test(symbol))
+			/^[A-Z][A-Za-z0-9]*\/[^/]+$/u.test(symbol) || (compose && /^services\.[\w.-]+$/u.test(symbol))
 		);
 	}
 	return namesTerraform(binding, symbol);

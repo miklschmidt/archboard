@@ -347,6 +347,7 @@ describe("container containment", () => {
 		["a data source", at("infra/main.tf", "data.aws_iam_policy_document.api")],
 		["a Kubernetes ConfigMap", at("deploy/objects.yaml", "ConfigMap/api")],
 		["a Kubernetes Secret", at("deploy/objects.yaml", "Secret/api")],
+		["a Kubernetes custom kind with a digit", at("deploy/objects.yaml", "Workload2/api")],
 	])("leaves source containment to the parts of %s", (_case, binding) => {
 		expect(containment(shaped({ binding }, ["api/a.ts", "api/b.ts"]))).toEqual([]);
 	});
