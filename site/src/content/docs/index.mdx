@@ -4,7 +4,6 @@ description: Install Archboard, map a repository with your agent, and hold the m
 ---
 
 import LinkCards from "../../components/docs/LinkCards.astro";
-import Aside from "../../components/docs/Aside.astro";
 
 Archboard keeps a model of your architecture next to your code. Your agent writes the model through the CLI. Archboard draws it, checks it against the code, and shows how a change moves it.
 
@@ -39,24 +38,64 @@ Archboard keeps a model of your architecture next to your code. Your agent write
 	]}
 />
 
-```bash title="Try it"
+## Try it
+
+```bash title="In a repository you want to map"
 npm install --global archboard
-cd ~/Projects/payments-api
 archboard init
 archboard check
 ```
 
-```ts title="services/intake/src/accept.ts" {3-4} ins={6}
-export async function acceptParcel(request: Request, deps: Deps) {
-	const body = await request.json();
-	const catalogUrl = process.env.CATALOG_URL ?? "";
-	const jobsUrl = process.env.DISPATCH_JOBS_URL ?? "";
-	// The route code decides the lane.
-	const billingUrl = process.env.BILLING_URL ?? "";
-}
-```
+`init` makes the vault and installs the skills. Then ask your agent to map the repository. [A first map in one session](first-map/) gives the prompts.
 
-<Aside type="caution" title="Do not pipe the check">
-	A pipeline's exit status is the status of its last command. `archboard check | tee log` hides a
-	failing check.
-</Aside>
+## See it work
+
+The relay example is a parcel desk of four services. Its code and its model are in one repository, and its Kubernetes manifests are in another. Clone it to run the gate on your machine, or read its pull requests:
+
+<LinkCards
+	cards={[
+		{
+			path: "https://github.com/miklschmidt/archboard-relay-example/pull/1",
+			title: "A change with no plan",
+			text: "Intake calls Billing. The check fails, with an annotation on the line.",
+			icon: "alert",
+		},
+		{
+			path: "https://github.com/miklschmidt/archboard-relay-example/pull/2",
+			title: "The same change with a plan",
+			text: "The comment shows the proposal, the pictures before and after, and the footprint.",
+			icon: "branch",
+		},
+	]}
+/>
+
+## Look something up
+
+<LinkCards
+	cards={[
+		{
+			path: "reference/cli",
+			title: "CLI reference",
+			text: "Every command, its options, its exit codes and its examples.",
+			icon: "terminal",
+		},
+		{
+			path: "reference/findings",
+			title: "Check findings",
+			text: "What each finding code means, and how to fix it.",
+			icon: "search",
+		},
+		{
+			path: "reference/schemas",
+			title: "Schemas",
+			text: "The JSON that the commands read and write.",
+			icon: "fileCode",
+		},
+		{
+			path: "reference/actions",
+			title: "GitHub Actions",
+			text: "Every input and output of the check and pull-request Actions.",
+			icon: "code",
+		},
+	]}
+/>
