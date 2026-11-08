@@ -80,11 +80,6 @@ on:
       - actions/**
       - .github/workflows/site.yml
 
-concurrency:
-  group: site-${{ github.ref }}
-  # A newer pull request build replaces an older one. A deploy from main always finishes.
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 permissions:
   contents: read
 
@@ -94,6 +89,9 @@ jobs:
     name: Build ${{ matrix.release || 'the site' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: site-build-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}-${{ matrix.release }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     strategy:
       matrix:
         release: ${{ fromJSON((inputs.release && format('["", "{0}"]', inputs.release)) || '[""]') }}
@@ -163,15 +161,51 @@ jobs:
           path: site/dist
           if-no-files-found: error
 
-  # Attach a release's docs to its GitHub release, then put every version of the docs into the site.
-  assemble:
-    name: Assemble every version of the docs
+  # Attach docs before joining the deploy queue. GitHub can replace a pending deploy, but a
+  # later run cannot replace the only run that keeps a release's docs.
+  release-docs:
+    name: Attach the release's docs
     needs: build
-    if: github.event_name != 'pull_request'
+    if: inputs.release != ''
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Fetch the release's docs
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-docs
+          path: release-docs
+
+      - name: Attach the docs to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE: ${{ inputs.release }}
+        run: gh release upload "$RELEASE" release-docs/docs.tar.gz --clobber
+
+  # Hold the same queue slot while fetching, assembling and deploying. A later deploy always
+  # reads every release whose attachment completed before it joined this queue.
+  assemble:
+    name: Assemble and deploy every version of the docs
+    needs: [build, release-docs]
+    if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: site-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout code
@@ -189,20 +223,6 @@ jobs:
         with:
           name: site
           path: site/dist
-
-      - name: Fetch the release's docs
-        if: inputs.release
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: release-docs
-          path: release-docs
-
-      - name: Attach the docs to the release
-        if: inputs.release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE: ${{ inputs.release }}
-        run: gh release upload "$RELEASE" release-docs/docs.tar.gz --clobber
 
       # A release from before versioned docs has no docs.tar.gz, and it has no docs.
       - name: Fetch every release's docs
@@ -229,20 +249,6 @@ jobs:
         with:
           path: site/dist
 
-  deploy:
-    name: Deploy to GitHub Pages
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    needs: assemble
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
