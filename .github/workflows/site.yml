@@ -208,13 +208,14 @@ jobs:
       - name: Fetch every release's docs
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          for tag in $(gh release list --limit 1000 --exclude-drafts --exclude-pre-releases --json tagName --jq '.[].tagName'); do
-            if gh release download "$tag" --pattern docs.tar.gz --dir "releases/$tag" 2> /dev/null; then
-              mkdir -p "versions/${tag#v}"
-              tar -xzf "releases/$tag/docs.tar.gz" -C "versions/${tag#v}"
-            fi
+          tags=$(gh api --paginate "repos/$GH_REPO/releases" --jq '.[] | select(.draft == false and .prerelease == false) | select(any(.assets[]; .name == "docs.tar.gz")) | .tag_name')
+          for tag in $tags; do
+            gh release download "$tag" --pattern docs.tar.gz --dir "releases/$tag"
+            mkdir -p "versions/${tag#v}"
+            tar -xzf "releases/$tag/docs.tar.gz" -C "versions/${tag#v}"
           done
 
       - name: Put the versions together

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T15:10:00Z'
-updated_date: '2026-11-08T15:30:00Z'
+updated_date: '2026-11-08T15:31:00Z'
 labels: []
 dependencies: []
 ordinal: 1061000
@@ -51,4 +51,6 @@ Built and checked locally (2026-11-08): a release build with DOCS_VERSION=0.3.0 
 Review scope: 8076b638c...579024abc in docs/versioned-docs. The architecture read resolves to this checkout. The fixes preserve ADR 0077 and its module boundaries, so they need no new architecture proposal.
 
 Review fix: quote the YAML version tokens so formatting preserves them. Fill guide pins from DOCS_VERSION for release builds and reject tokens that formatting splits. A 0.3.0 build shows scalar 0.3.0 pins and @v0.3.0 Action refs. A malformed-token probe fails the guide guard.
+
+Review fix: discover published releases through the paginated GitHub API and select only releases with docs.tar.gz. List and download failures now stop assembly. Shell probes reproduce the old silent success and show nonzero exits for both failures after the fix. An empty release list still succeeds.
 <!-- SECTION:NOTES:END -->
