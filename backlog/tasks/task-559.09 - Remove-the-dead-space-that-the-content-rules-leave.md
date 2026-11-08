@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T16:45:00Z'
-updated_date: '2026-11-08T13:39:00Z'
+updated_date: '2026-11-08T14:37:00Z'
 labels:
   - renderer
 dependencies:
@@ -58,4 +58,6 @@ AC2 evidence: bun run benchmark passes 220 of 220 with its drawing assertions an
 Owner review fixes (fix/blocks-dead-space, 2026-11-08). A door on a side wall that reached past a corner stood over a door above or below the frame; it now steps outward until it clears them (ring test). A fan junction keeps 36 px from every arrowhead at its shared end, also at a source where a two-way line draws one; contraction keeps the same room. A label that finds no spot wraps onto a narrow plate (about 120 px, never narrower than its longest word) before it stands beside its line or its line goes a longer way; this removed the skills detour in the model reading. Two lines that meet one card wall side by side and cross just beside it trade ports when that removes a crossing and passes the finish guards. The renderer lessons are in skills/archboard-renderer.
 
 Corpus of 107 readings against main: crossings 4376 to 4140, route length 1493.2k to 1388.5k, page area 190.3 M to 167.5 M, blank space 39.9 M to 27.1 M, fit 0.6 or more 69 to 98, bends 227.4 to 216.9; routes through cards and labels off runs stay 0; no card overlaps another in any reading. Near-port crossings 20 to 3. Layout of all readings takes 13.8 s (main 10.4 s, this branch before the wrap 19.4 s). Wrapping changes the winning placement of some readings: Model reading, Pane connections and Codex session now land larger with more crossings, because the ranking weighs room over crossings; a trace showed the same placements compete. bun run benchmark passes 220 of 220.
+
+Final head after the review fix that lets trunk words wrap too: crossings 4168 (main 4376), route length 1385.9k (1493.2k), page area 166.8 M (190.3 M), blank space 26.9 M (39.9 M), fit 0.6 or more 98 (69), junctions closer than 26 px to an arrowhead 0 (19), near-port crossings 3 (32), overlapping cards 0. These replace the figures in the note above. Sol approved in round 2, and CI passes on the PR.
 <!-- SECTION:NOTES:END -->
