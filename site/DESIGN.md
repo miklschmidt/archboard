@@ -413,6 +413,11 @@ Edges are inset hairline rings, never borders. The only borders are the CSS tria
 
 - **Style:** A sticky 64px bar, transparent at the top. After 8px of scroll it takes Chrome, a bottom hairline and a soft shadow. The left holds the mark at 24px and the wordmark. The centre holds five section links at 0.9375rem and 500 in Muted Ink, which brighten to Ink with a faint wash on hover. The right holds the GitHub link and the small gold button. A skip link slides in on focus. Below 860px the links hide.
 
+### Version switch
+
+- **Style:** In the docs bar, left of the search: the version in mono at 0.8125rem in Muted Ink, with a chevron, in a hairline ring at the bar's 34px height. It opens a Raised menu of every version in mono, newest first, with main last. A Muted tag says `latest` or `unreleased`, and a gold mark at the left edge marks the version that the reader is in. Without the list of versions, as in a local build, the switch stays hidden.
+- **Note:** On main and on an older release, a Plane panel with a gold mark at its left edge sits above the title. It says which version the page describes and links to the latest release. Versions are set in mono.
+
 ### Footer
 
 - **Style:** Chrome with a top hairline. It holds the wordmark, the licence note and two link columns in Muted Ink. The column titles are 0.875rem at 600 in Ink and sit over lists, not over headings.

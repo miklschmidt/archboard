@@ -7,6 +7,7 @@ import arrowUpRight from "remixicon/icons/Arrows/arrow-right-up-line.svg?raw";
 import back from "remixicon/icons/Arrows/arrow-go-back-line.svg?raw";
 import branch from "remixicon/icons/Development/git-branch-line.svg?raw";
 import check from "remixicon/icons/System/check-line.svg?raw";
+import chevronDown from "remixicon/icons/Arrows/arrow-down-s-line.svg?raw";
 import chevronLeft from "remixicon/icons/Arrows/arrow-left-s-line.svg?raw";
 import chevronRight from "remixicon/icons/Arrows/arrow-right-s-line.svg?raw";
 import code from "remixicon/icons/Development/code-s-slash-line.svg?raw";
@@ -54,6 +55,7 @@ export const icons = {
 	back,
 	branch,
 	check,
+	chevronDown,
 	chevronLeft,
 	chevronRight,
 	code,

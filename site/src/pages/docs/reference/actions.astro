@@ -5,19 +5,20 @@ import { Code } from "astro-expressive-code/components";
 import Docs from "../../../layouts/Docs.astro";
 import { docsHref } from "../../../lib/docs-nav";
 import { inlineCode, reference } from "../../../lib/reference";
+import { docsRef } from "../../../lib/docs-version";
 
 const usage: Record<string, string> = {
 	check: `- uses: actions/checkout@v5
-- uses: miklschmidt/archboard/actions/check@main
+- uses: miklschmidt/archboard/actions/check@${docsRef}
   with:
-    version: 0.2.0
+    version: ${reference.version}
     fail-on: warning`,
 	"pull-request": `- uses: actions/checkout@v5
   with:
     fetch-depth: 0
-- uses: miklschmidt/archboard/actions/pull-request@main
+- uses: miklschmidt/archboard/actions/pull-request@${docsRef}
   with:
-    version: 0.2.0
+    version: ${reference.version}
     out-of-plan: warn`,
 };
 const guide: Record<string, { path: string; label: string }> = {
@@ -35,7 +36,7 @@ const headings = reference.actions.map((action) => ({ depth: 2, slug: action.slu
 	source="actions/README.md"
 >
 	<p>
-		Use an Action by its path in this repository. The examples use <code>@main</code>. Pin the
+		Use an Action by its path in this repository. The examples use <code>@{docsRef}</code>. Pin the
 		Action to a commit SHA, as you pin any third-party Action, because the <code>pull-request</code> Action holds
 		a token that can comment. Pin <code>version</code> to the CLI release that your team runs, the way
 		you pin a compiler. Both
@@ -56,7 +57,7 @@ const headings = reference.actions.map((action) => ({ depth: 2, slug: action.slu
 						The guide: <a href={docsHref(guide[action.slug]?.path ?? "")}>{guide[action.slug]?.label}</a>.
 					</p>
 				)}
-				<Code code={usage[action.slug] ?? `- uses: ${action.uses}@main`} lang="yaml" title={action.uses} />
+				<Code code={usage[action.slug] ?? `- uses: ${action.uses}@${docsRef}`} lang="yaml" title={action.uses} />
 				<h3 class="sub-head">Inputs</h3>
 				<table>
 					<thead>

@@ -5,6 +5,7 @@ import { Code } from "astro-expressive-code/components";
 import Docs from "../../../../layouts/Docs.astro";
 import { cliGroups, docsHref } from "../../../../lib/docs-nav";
 import { commandAnchor, commandsUnder, inlineCode, reference } from "../../../../lib/reference";
+import { docsVersion, isRelease } from "../../../../lib/docs-version";
 
 const headings = [
 	{ depth: 2, slug: "output", text: "What a command prints" },
@@ -34,8 +35,17 @@ if (loose.length > 0) {
 	source="site/scripts/reference.ts"
 >
 	<p>
-		This reference comes from the CLI on the main branch, which is version <code>{reference.version}</code> or
-		newer, so a release on npm can lack an option that it lists. Each command finds its
+		{
+			isRelease ? (
+				<>This reference comes from the CLI of release <code>{docsVersion}</code>.</>
+			) : (
+				<>
+					This reference comes from the CLI on the main branch, after release{" "}
+					<code>{reference.version}</code>, so a release on npm can lack an option that it lists.
+				</>
+			)
+		}{" "}
+		Each command finds its
 		vault the way Git finds its repository: from the working directory, or from the directory that
 		<code>-C</code> names. Commands that need the server start it on loopback when nothing answers.
 	</p>

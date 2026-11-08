@@ -5,7 +5,19 @@ name: Site
 # orb's code, the renderer core, its painter and the architecture models that it paints, and the
 # CLI and the GitHub Actions that the docs' reference describes),
 # and deploys to GitHub Pages from main.
+#
+# The deploy holds every version of the docs (ADR 0077): main at /docs/next/, each release at
+# /docs/<version>/, and the newest release at /docs/. The release workflow calls this workflow with
+# the release's tag: it builds that tag's docs too and attaches them to the GitHub release, where
+# every later deploy finds them.
 on:
+  workflow_call:
+    inputs:
+      release:
+        description: A release tag, such as v0.3.0, whose docs to build and attach to its GitHub release.
+        type: string
+        required: false
+        default: ""
   workflow_dispatch:
   push:
     branches: [main]
@@ -77,10 +89,14 @@ permissions:
   contents: read
 
 jobs:
+  # The site of this commit, and the docs of a release's tag when the release workflow calls.
   build:
-    name: Build the site
+    name: Build ${{ matrix.release || 'the site' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      matrix:
+        release: ${{ fromJSON((inputs.release && format('["", "{0}"]', inputs.release)) || '[""]') }}
     defaults:
       run:
         working-directory: site
@@ -88,6 +104,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ matrix.release }}
 
       - name: Set up Node.js and Bun
         uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
@@ -117,11 +135,95 @@ jobs:
       - name: Install the site's dependencies
         run: nix develop --command bun install --frozen-lockfile
 
+      # A release's docs say which release they describe, and link to its tag.
       - name: Type-check and build
-        run: nix develop --command bun run build
+        env:
+          RELEASE: ${{ matrix.release }}
+        run: |
+          if [ -n "$RELEASE" ]; then export DOCS_VERSION="${RELEASE#v}" DOCS_REF="$RELEASE"; fi
+          nix develop --command bun run build
+
+      - name: Pack a release's docs
+        if: matrix.release != ''
+        run: tar -czf docs.tar.gz -C dist docs assets
+
+      - name: Keep a release's docs
+        if: matrix.release != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-docs
+          path: site/docs.tar.gz
+          if-no-files-found: error
+
+      - name: Keep the site
+        if: matrix.release == '' && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: site
+          path: site/dist
+          if-no-files-found: error
+
+  # Attach a release's docs to its GitHub release, then put every version of the docs into the site.
+  assemble:
+    name: Assemble every version of the docs
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Bun
+        uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          version-file: package.json
+          node-version: "26"
+          run-install: false
+
+      - name: Fetch the site
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: site
+          path: site/dist
+
+      - name: Fetch the release's docs
+        if: inputs.release
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-docs
+          path: release-docs
+
+      - name: Attach the docs to the release
+        if: inputs.release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE: ${{ inputs.release }}
+        run: gh release upload "$RELEASE" release-docs/docs.tar.gz --clobber
+
+      # A release from before versioned docs has no docs.tar.gz, and it has no docs.
+      - name: Fetch every release's docs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for tag in $(gh release list --limit 1000 --exclude-drafts --exclude-pre-releases --json tagName --jq '.[].tagName'); do
+            if gh release download "$tag" --pattern docs.tar.gz --dir "releases/$tag" 2> /dev/null; then
+              mkdir -p "versions/${tag#v}"
+              tar -xzf "releases/$tag/docs.tar.gz" -C "versions/${tag#v}"
+            fi
+          done
+
+      - name: Put the versions together
+        run: bun site/scripts/versions.ts --releases versions
+
+      - name: Check the links of every version
+        run: bun site/scripts/links.ts
 
       - name: Upload the Pages artifact
-        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site/dist
@@ -129,7 +231,7 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    needs: build
+    needs: assemble
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

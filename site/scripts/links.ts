@@ -2,12 +2,12 @@
 // page does not have. It also fails on a guide's `{reference.…}` expression that shows as text. The guides link each Action input and each finding code to its row in the
 // reference, so a renamed input or code breaks a link here instead of leaving a guide outdated.
 //
-// Run from the repository root, after the build:
-//   bun site/scripts/links.ts
+// Run from the repository root, after the build or after `versions.ts`:
+//   bun site/scripts/links.ts [dist]
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 
-const DIST = join(import.meta.dir, "../dist");
+const DIST = process.argv[2] ?? join(import.meta.dir, "../dist");
 /** The path that the site is served under, as `astro.config.mjs` reads it. */
 const BASE = `${(process.env.SITE_BASE ?? "/archboard").replace(/\/$/u, "")}/`;
 

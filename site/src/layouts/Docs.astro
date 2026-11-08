@@ -10,7 +10,8 @@ import Pager from "../components/docs/Pager.astro";
 import Search from "../components/docs/Search.astro";
 import Footer from "../components/Footer.astro";
 import Icon from "../components/Icon.astro";
-import { docsNav } from "../lib/docs-nav";
+import { docsHref, docsNav } from "../lib/docs-nav";
+import { docsRef, docsVersion, isRelease } from "../lib/docs-version";
 import { links } from "../lib/links";
 import { inlineCode } from "../lib/reference";
 import "../styles/docs.css";
@@ -35,7 +36,11 @@ const group = docsNav.find((entry) => entry.pages.some((page) => page.path === p
 const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 ---
 
-<Base title={`${plainTitle} · Archboard docs`} description={plainDescription}>
+<Base
+	title={`${plainTitle} · Archboard docs`}
+	description={plainDescription}
+	docs={{ root: docsHref(""), version: docsVersion }}
+>
 	<DocsNav path={path} />
 	<div class="docs">
 		<aside class="docs-sidebar" data-sidebar aria-label="Docs pages">
@@ -50,6 +55,7 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
 					<span class="ink" set:html={inlineCode(title)} />
 				</button>
 			</div>
+			<p class="version-note" data-version-note hidden></p>
 			<article class="docs-article" data-pagefind-body>
 				<header class="docs-head">
 					<h1 class="display docs-title" data-pagefind-meta="title" set:html={inlineCode(title)} />
@@ -74,9 +80,9 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
 				</div>
 			</article>
 			<footer class="docs-foot" data-pagefind-ignore>
-				<a class="edit" href={`${links.repository}/blob/main/${source}`}>
+				<a class="edit" href={`${links.repository}/blob/${docsRef}/${source}`}>
 					<Icon name="fileCode" size={16} />
-					Edit this page on GitHub
+					{isRelease ? `The source of this page at ${docsRef}` : "Edit this page on GitHub"}
 				</a>
 				<Pager path={path} />
 			</footer>
