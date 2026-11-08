@@ -5,7 +5,7 @@ import type { RemixiconComponentType } from "@remixicon/react";
 import { useCallback, useId, type JSX, type ReactNode } from "react";
 
 /** The page that scrolls, and that its sections are measured against. */
-const ABOUT_PAGE = "overflow-x-hidden overflow-y-auto [container:about/size]";
+const ABOUT_PAGE = "relative z-0 overflow-x-hidden overflow-y-auto [container:about/size]";
 
 /** The column of the page, with the outline beside the sections while there is room. */
 const ABOUT_COLUMNS =
