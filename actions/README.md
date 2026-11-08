@@ -1,6 +1,6 @@
 # Archboard GitHub Actions
 
-Two composite actions run `@archboard/cli` on a pull request. They need no build step:
+Two composite actions run the `archboard` CLI from npm on a pull request. They need no build step:
 Node 22.18 or later runs their TypeScript as it is.
 
 | Action                                       | What it does                                                                                          |

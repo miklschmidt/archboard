@@ -8,11 +8,11 @@ author: Mikkel Schmidt
 
 inputs:
   version:
-    description: The version of `@archboard/cli` to install, such as `0.2.0`, or `latest`. `cli` replaces it.
+    description: The version of `archboard` to install, such as `0.2.0`, or `latest`. `cli` replaces it.
     default: latest
   cli:
     description: >-
-      A CLI to run instead of installing `@archboard/cli`: a path to its executable, relative to the
+      A CLI to run instead of installing `archboard`: a path to its executable, relative to the
       workspace. Archboard's own repository gives `./bin/archboard`, built from the commit under
       review. Leave it out to install `version`.
     default: ""
@@ -64,7 +64,7 @@ runs:
       shell: bash
       env:
         ARCHBOARD_VERSION: ${{ inputs.version }}
-      run: npm install --global "@archboard/cli@${ARCHBOARD_VERSION}"
+      run: npm install --global "archboard@${ARCHBOARD_VERSION}"
     - name: Report on the pull request
       shell: bash
       env:
