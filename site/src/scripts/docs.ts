@@ -250,7 +250,28 @@ function mountSearch(): void {
 	}
 }
 
+/**
+ * Name each code block that scrolls sideways. Expressive Code makes such a block a focusable
+ * region, and a region needs a name that tells it apart from the others on the page.
+ */
+function nameCodeRegions(): void {
+	const blocks = [...document.querySelectorAll<HTMLPreElement>(".expressive-code pre")];
+	const name = (pre: HTMLPreElement, index: number): string => {
+		const title = pre.closest("figure")?.querySelector("figcaption .title")?.textContent?.trim();
+		return `${title === undefined || title === "" ? "" : `${title}, `}code example ${String(index + 1)}`;
+	};
+	const label = (): void => {
+		for (const [index, pre] of blocks.entries()) {
+			if (pre.getAttribute("role") === "region") pre.setAttribute("aria-label", name(pre, index));
+			else pre.removeAttribute("aria-label");
+		}
+	};
+	new MutationObserver(label).observe(document.body, { subtree: true, attributeFilter: ["role"] });
+	label();
+}
+
 followSections();
+nameCodeRegions();
 copyHeadingLinks();
 keepSidebar();
 mountDrawer();

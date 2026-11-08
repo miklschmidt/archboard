@@ -123,7 +123,7 @@ const headings = [
 		cliGroups.map((group) => (
 			<>
 				<h3 class="group-head">
-					<a href={docsHref(`reference/cli/${group.slug}`)}>{group.title}</a>
+					<a href={docsHref(`reference/cli/${group.slug}`)} set:html={inlineCode(group.title)} />
 				</h3>
 				<table class="index">
 					<tbody>

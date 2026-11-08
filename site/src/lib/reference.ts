@@ -88,12 +88,15 @@ export interface ActionEntry {
 
 export interface Reference {
 	readonly version: string;
-	/** Numbers that the guides state: the release port and the job summary limits. */
+	/** Numbers that the guides state: the release port, the job summary limits, the usage exit and
+	 * the first TypeScript that serves itself. */
 	readonly facts: {
 		readonly releasePort: number;
 		readonly summaryRows: number;
 		readonly summaryDetails: number;
 		readonly annotationsPerLevel: number;
+		readonly usageExit: number;
+		readonly nativeTypescript: number;
 	};
 	readonly exitCodes: typeof EXIT_CODES;
 	readonly environment: typeof ENVIRONMENT;
@@ -140,10 +143,10 @@ export function sharedOf(command: CommandEntry): SharedEntry[] {
 }
 
 /**
- * The one-line synopsis of a command: its name, its positionals, then each option, with the
- * optional ones in brackets.
+ * The synopsis of a command, as the groups that a line may not break inside: its name, its
+ * positionals, then each option, with the optional ones in brackets.
  */
-export function synopsis(command: CommandEntry): string {
+export function synopsis(command: CommandEntry): string[] {
 	const words = [`archboard ${command.name}`];
 	const visible = command.parameters;
 	for (const parameter of visible) {
@@ -167,7 +170,7 @@ export function synopsis(command: CommandEntry): string {
 		const word = `${option.spellings[0]}${value}`;
 		words.push(option.required ? word : `[${word}]`);
 	}
-	return words.join(" ");
+	return words;
 }
 
 /** A block of a description: a paragraph, a list, or a short head over the block after it. */

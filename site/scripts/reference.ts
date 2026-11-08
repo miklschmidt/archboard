@@ -15,6 +15,7 @@ import {
 	CHECK_SEMANTICS_HELP,
 } from "../../apps/cli/src/cli/commands/vault/operations/check-help.ts";
 import { EMBED_CODES } from "../../apps/cli/src/cli/commands/vault/protocol/embeds-answer.ts";
+import { CodeCheckAnswerSchema } from "../../packages/code-intel/src/shared/api/code-check.ts";
 import {
 	SCHEMA_NAMES,
 	jsonSchema,
@@ -24,6 +25,8 @@ import {
 	SHARED_OPTION_KEYS,
 } from "../../apps/cli/src/cli/contract/protocol/shared-options.ts";
 import { ENVIRONMENT, EXIT_CODES } from "../../apps/cli/src/cli/routing/protocol/conventions.ts";
+import { CliUsageError } from "../../apps/cli/src/cli/contract/protocol/contract.ts";
+import { FIRST_NATIVE_TYPESCRIPT } from "../../packages/code-intel/src/runtime/language-servers/operations/server-command.ts";
 import { RELEASE_PORT } from "../../packages/workspace/src/runtime/services/source-checkout.ts";
 import { DETAILED_FINDINGS, TABLE_ROWS } from "../../actions/check/summary.ts";
 import { ANNOTATION_LIMIT_PER_LEVEL } from "../../actions/shared/workflow-commands.ts";
@@ -203,7 +206,7 @@ function catalog(check: "code" | "embeds" | "semantics", help: string) {
 			.map((code) => code.trim());
 		const valid =
 			severity === "skip"
-				? codes.every((code) => /^[a-z]+(-[a-z]+)+$/.test(code))
+				? codes.every((code) => /^[a-z]+(-[a-z]+)*$/.test(code))
 				: codes.every((code) => /^[A-Z]+(_[A-Z]+)+$/.test(code));
 		if (!match || !valid) {
 			throw new Error(
@@ -233,6 +236,13 @@ const unlisted = EMBED_CODES.filter(
 );
 if (unlisted.length > 0) {
 	throw new Error(`The help of "archboard check embeds" lists no ${unlisted.join(", ")}`);
+}
+// The same for every reason the code check can skip a subject for.
+const unlistedSkips = CodeCheckAnswerSchema.shape.skipped.element.shape.reason.options.filter(
+	(reason) => !findings.some((entry) => entry.severity === "skip" && entry.codes.includes(reason)),
+);
+if (unlistedSkips.length > 0) {
+	throw new Error(`The help of "archboard check code" lists no skip ${unlistedSkips.join(", ")}`);
 }
 
 /** The GitHub Actions of this repository, read from their metadata. */
@@ -286,6 +296,10 @@ const facts = {
 	summaryDetails: DETAILED_FINDINGS,
 	/** The annotations of each level that GitHub shows for one step. */
 	annotationsPerLevel: ANNOTATION_LIMIT_PER_LEVEL,
+	/** The exit of a usage error, such as a group command run without its subcommand. */
+	usageExit: new CliUsageError("").exitCode,
+	/** The first TypeScript whose own `tsc` serves the code check, so it needs no other server. */
+	nativeTypescript: FIRST_NATIVE_TYPESCRIPT,
 };
 
 mkdirSync(OUT, { recursive: true });

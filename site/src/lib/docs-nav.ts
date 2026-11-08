@@ -26,7 +26,7 @@ export const cliGroups = [
 	{
 		slug: "model",
 		label: "model",
-		title: "The model commands",
+		title: "The `model` commands",
 		description:
 			"Read, write, compare, render and keep the canonical architecture model of a vault.",
 		commands: ["model"],
@@ -34,7 +34,7 @@ export const cliGroups = [
 	{
 		slug: "check",
 		label: "check",
-		title: "The check commands",
+		title: "The `check` commands",
 		description:
 			"Hold the model to its vocabulary, its code and the pictures that embed it. Exit 1 means a finding remains.",
 		commands: ["check"],
@@ -50,7 +50,7 @@ export const cliGroups = [
 	{
 		slug: "browser",
 		label: "browser",
-		title: "The browser commands",
+		title: "The `browser` commands",
 		description:
 			"Show a reading to the person in the browser, and inspect the panes that are open.",
 		commands: ["browser"],

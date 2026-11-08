@@ -89,9 +89,9 @@ The example's `npm run setup` does steps 1 and 2 for you, and `npm run gate:brea
 
 <Aside type="caution" title="An unregistered repository is skipped, not failed">
 	A binding into a repository that this machine has not registered is skipped as
-	`repository-unregistered`. A skip never fails the check, so a check without the infrastructure
-	checkout passes. Read the skipped list, or fail your own gate on it, as the example's `npm run
-	gate:self-test` does.
+	[`repository-unregistered`](../reference/findings/#repository-unregistered). A skip never fails
+	the check, so a check without the infrastructure checkout passes. Read the skipped list, or fail
+	your own gate on it, as the example's `npm run gate:self-test` does.
 </Aside>
 
 ## In CI

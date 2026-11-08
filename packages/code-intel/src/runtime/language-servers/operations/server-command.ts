@@ -328,4 +328,4 @@ function languageServerOf(
 	};
 }
 
-export { type LanguageServer, defaultTypescriptServer, languageServerOf };
+export { FIRST_NATIVE_TYPESCRIPT, type LanguageServer, defaultTypescriptServer, languageServerOf };

@@ -7,6 +7,7 @@ import Aside from "../../components/docs/Aside.astro";
 import LinkCards from "../../components/docs/LinkCards.astro";
 import Clip from "../../components/docs/Clip.astro";
 import Exit from "../../components/docs/Exit.astro";
+import reference from "../../generated/reference.json";
 
 A rule in `AGENTS.md` is a request. An agent can ignore it. A check that fails the build is a fact that the agent must deal with. `archboard check` is deterministic: the same model and the same code give the same answer, with an exit code that CI understands.
 
@@ -125,7 +126,7 @@ jobs:
           version: 0.2.0
 ```
 
-The code check resolves a name only through a language server, and only resolved evidence makes a warning. So install the dependencies first. `npm ci` installs the checkout's own TypeScript, which serves from version 7. Before 7, the check also needs `typescript-language-server` in the dev dependencies. Install the server of each other language that `.archboard/language-servers.json` names, as `pip install pyright` does for Python. Without a server, a call that needs resolved evidence stays information, and the gate passes.
+The code check resolves a name only through a language server, and only resolved evidence makes a warning. So install the dependencies first. `npm ci` installs the checkout's own TypeScript, which serves from version {reference.facts.nativeTypescript}. Before {reference.facts.nativeTypescript}, the check also needs `typescript-language-server` in the dev dependencies. Install the server of each other language that `.archboard/language-servers.json` names, as `pip install pyright` does for Python. Without a server, a call that needs resolved evidence stays information, and the gate passes.
 
 Pin [`version`](../reference/actions/#check-version) to the release that your team runs, as you pin your compiler. The examples use `@main`. Pin the Action itself to a commit SHA of `miklschmidt/archboard`, as you pin any third-party Action. The [Actions reference](../reference/actions/) lists every input: [`fail-on: never`](../reference/actions/#check-fail-on) reports without failing, and [`allow-codes`](../reference/actions/#check-allow-codes) keeps chosen findings visible without failing on them.
 
@@ -145,8 +146,9 @@ architecture:
 
 <Aside type="note" title="Bindings into other repositories">
 	A binding into a repository that the CI machine has not registered is skipped as
-	`repository-unregistered`, and a skip never fails the check. Check out each repository that your
-	bindings name, and register it. [Application and infrastructure](../platform/) shows how.
+	[`repository-unregistered`](../reference/findings/#repository-unregistered), and a skip never
+	fails the check. Check out each repository that your bindings name, and register it. [Application
+	and infrastructure](../platform/) shows how.
 </Aside>
 
 ## In an agent's loop

@@ -92,6 +92,12 @@ html:has(.docs) {
 	line-height: 0.92;
 	max-width: 16ch;
 }
+/* A title that names a command sets that name in mono, in the title's colour and case. */
+.docs-title code {
+	font-size: 0.8em;
+	text-transform: none;
+	letter-spacing: 0;
+}
 .docs-lead {
 	max-width: 36em;
 	font-size: clamp(1.0625rem, 1.4vw, 1.1875rem);

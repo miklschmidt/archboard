@@ -29,11 +29,13 @@ interface Props {
 const { title, description, path, headings, source } = Astro.props;
 // The description marks code in backticks: the lead sets it as code, and the meta tags take plain text.
 const plainDescription = description.replaceAll("`", "");
+// A title can name a command in backticks too, such as "The `check` commands".
+const plainTitle = title.replaceAll("`", "");
 const group = docsNav.find((entry) => entry.pages.some((page) => page.path === path));
 const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 ---
 
-<Base title={`${title} · Archboard docs`} description={plainDescription}>
+<Base title={`${plainTitle} · Archboard docs`} description={plainDescription}>
 	<DocsNav path={path} />
 	<div class="docs">
 		<aside class="docs-sidebar" data-sidebar aria-label="Docs pages">
@@ -45,12 +47,12 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
 					<Icon name="stack" size={16} />
 					<span>{group?.title ?? "Docs"}</span>
 					<Icon name="chevronRight" size={14} />
-					<span class="ink">{title}</span>
+					<span class="ink" set:html={inlineCode(title)} />
 				</button>
 			</div>
 			<article class="docs-article" data-pagefind-body>
 				<header class="docs-head">
-					<h1 class="display docs-title" data-pagefind-meta="title">{title}</h1>
+					<h1 class="display docs-title" data-pagefind-meta="title" set:html={inlineCode(title)} />
 					<p class="docs-lead" set:html={inlineCode(description)} />
 				</header>
 				{

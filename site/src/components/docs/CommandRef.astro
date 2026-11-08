@@ -32,6 +32,14 @@ const exits = [
 	...command.outcomes.map((outcome) => ({ exit: outcome.exit, what: outcome.id, text: outcome.description })),
 ];
 const blocks = descriptionBlocks(command.description);
+/** The synopsis, one span for each group, so a narrow line wraps between groups, never inside. */
+const synopsisHtml = synopsis(command)
+	.map((group, index) => {
+		const kind = index === 0 ? "program" : group.includes("--") ? "flag" : "argument";
+		const text = group.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+		return `<span class="group ${kind}">${text}</span>`;
+	})
+	.join(" ");
 /** The schema of the intent that the command reads, such as `model-edit` for `model edit`. */
 const schema = reference.schemas.find((entry) => entry.name === command.name.replaceAll(" ", "-"));
 ---
@@ -54,7 +62,7 @@ const schema = reference.schemas.find((entry) => entry.name === command.name.rep
 					</>
 				) : (
 					<>
-						<code>archboard {command.name}</code> needs a subcommand. Without one, it refuses with exit <code>2</code>.
+						<code>archboard {command.name}</code> needs a subcommand. Without one, it refuses with exit <code>{reference.facts.usageExit}</code>.
 					</>
 				)}
 			</p>
@@ -64,7 +72,7 @@ const schema = reference.schemas.find((entry) => entry.name === command.name.rep
 					{traits(command).map((trait) => <li>{trait}</li>)}
 				</ul>
 				<SubHead id={`${anchor}-synopsis`}>Synopsis</SubHead>
-				<Code code={synopsis(command)} lang="sh" frame="none" wrap />
+				<pre class="synopsis" tabindex="0"><code set:html={synopsisHtml} /></pre>
 			</>
 		)
 	}
@@ -252,6 +260,28 @@ const schema = reference.schemas.find((entry) => entry.name === command.name.rep
 </section>
 
 <style>
+	.synopsis {
+		margin: 0;
+		padding: 14px 18px;
+		border-radius: 6px;
+		background: var(--code-bed);
+		box-shadow: inset 0 0 0 1px var(--rule);
+		font-size: 0.8125rem;
+		line-height: 1.75;
+		white-space: pre-wrap;
+	}
+	.synopsis :global(.group) {
+		white-space: nowrap;
+	}
+	.synopsis :global(.program) {
+		color: var(--syntax-program);
+	}
+	.synopsis :global(.flag) {
+		color: var(--syntax-flag);
+	}
+	.synopsis :global(.argument) {
+		color: var(--syntax-argument);
+	}
 	.command {
 		margin-top: 0;
 		padding-top: 72px;
