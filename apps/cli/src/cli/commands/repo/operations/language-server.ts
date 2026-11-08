@@ -303,7 +303,7 @@ function storedCommand(
 	const relative = path.relative(root, absolute);
 	const outside =
 		relative === "" || path.isAbsolute(relative) || relative.split(path.sep)[0] === "..";
-	return outside ? absolute : relative.split(path.sep).join("/");
+	return outside ? absolute : `./${relative.split(path.sep).join("/")}`;
 }
 
 /**

@@ -17,6 +17,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { passServers } from "@archboard/workspace/checkouts";
 
 const IDENTITY = "github.com/test/orders";
 const cwd = process.cwd();
@@ -103,7 +104,7 @@ test("repo language-server writes the repository file of an unregistered checkou
 	).toBe(0);
 	const servers = {
 		c: { command: "clangd", args: ["--background-index"] },
-		rust: { command: "scripts/rust-analyzer" },
+		rust: { command: "./scripts/rust-analyzer" },
 	};
 	expect(named(repositoryFile)).toEqual(servers);
 	const shown = await run(join(checkout, "src"), ["repo", "language-server"]);
@@ -129,6 +130,14 @@ test("--repo writes the file of the repository's chosen checkout, and --global w
 	).toBe(0);
 	expect(named(globalFile)).toEqual({ python: { command: join(checkout, "bin", "pyright") } });
 	expect(named(repositoryFile)).toEqual({ go: { command: "gopls" } });
+});
+
+test("a wrapper in the checkout root stays a path instead of a PATH name", async () => {
+	const set = await run(checkout, ["repo", "language-server", "rust", "./rust-server"]);
+	expect(set.exited).toBe(0);
+	expect(passServers()(checkout, "rust")).toMatchObject({
+		command: join(checkout, "rust-server"),
+	});
 });
 
 test.each([
