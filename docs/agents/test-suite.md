@@ -459,7 +459,9 @@ It also proves that a hidden metadata edit preserves the mounted scene while the
 It covers pinned history, stable selection through renames, relationship transfer, parent changes, and removal without replacement selection.
 `canonical-model-claims.test.ts` proves that a claim through the public writer is status.
 The claim marks its module, flow and walkthrough rows, and the model in the repository switcher and its list.
-The right panel shows the Claimed badge only while the selected subject is claimed.
+The right panel shows the Claimed badge while a selected subject is claimed.
+With no selection, it marks a claimed open module or flow.
+A claimed module scope never marks an unclaimed flow above it.
 A mark names the purpose and not the writer, holds no control, and moves neither the picture nor the focus.
 No take-back control exists. The marks leave when the agent releases the claim, and the revision stays the same.
 

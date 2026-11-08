@@ -690,7 +690,12 @@ On chalk, a still rim of 1px in Status Foreground keeps the dot visible througho
 
 A claimed model carries the mark in the repository switcher, after its name, and on the corner of its icon in the list of repositories. In the left column, each row of a module, a flow or a walkthrough that a claim holds carries the mark at the end of the row, before a count. A claim marks the rows only in a reading of the state that it names. A retained checkpoint marks nothing.
 
-While a claim holds the selected subject, the line under the name in the head of the right panel ends with the `Claimed` badge. The badge is the dot and the word in a chip with an edge of 1px in the Rule tone. It is 18px high, so the line keeps its height. Nothing shows while the selection is not claimed, and every mark leaves when the claim ends.
+The right panel shows `Claimed` while a claim holds a selected subject.
+With no selection, the badge follows the open flow, or the open module in an architecture reading.
+A retained module scope never marks an unclaimed flow.
+The badge contains the dot and the word, with a 1px edge in the Rule tone.
+It is 18px high, so the line keeps its height.
+Every mark leaves when the claim ends.
 
 ### Explanation reply
 

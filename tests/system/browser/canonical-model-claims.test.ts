@@ -298,6 +298,49 @@ test("a claim is a status mark on its rows, its model and a selected subject, an
 		body: { vault, claim: flowClaim.body.claim.id, writer: "Agent Ada" },
 	});
 	if (!flowReleased.body.success) throw new Error(flowReleased.body.error);
+
+	// A flow replaces the retained module scope in the head. Only that flow's claim belongs there.
+	const moduleClaim = await request<ArchitectureClaimResult>("/api/architecture/claims", {
+		method: "POST",
+		body: {
+			vault,
+			target: { model: model.body.manifest.id, state: model.body.manifest.current.id },
+			writer: "Agent Ada",
+			reason: "Explain the gateway",
+			subjects: ["Shop#Gateway"],
+		},
+	});
+	if (!moduleClaim.body.success) throw new Error(moduleClaim.body.error);
+	await browser.run([
+		"open",
+		`${server.base}/?modelA=Shop&scopeA=Shop%23Gateway&grammarA=sequence&flowA=Shop%23Request`,
+	]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-flow-home"]') !== null && document.querySelector('${ROWS.gateway} [data-slot="claim-mark"]') !== null`,
+			),
+		Boolean,
+		"the unclaimed flow above a retained claimed module scope",
+		WAIT,
+	);
+	expect(await browser.eval<boolean>(`document.querySelector('${BADGE}') === null`)).toBe(true);
+	// Returning to the module with no selection shows its own claim.
+	await browser.run(["open", `${server.base}/?modelA=Shop&scopeA=Shop%23Gateway`]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-panel-scope"]') !== null && document.querySelector('[data-slot="model-flow-home"]') === null && document.querySelector('${BADGE}') !== null`,
+			),
+		Boolean,
+		"the claim badge on the open claimed module",
+		WAIT,
+	);
+	const moduleReleased = await request<ArchitectureClaimList>("/api/architecture/claims/release", {
+		method: "POST",
+		body: { vault, claim: moduleClaim.body.claim.id, writer: "Agent Ada" },
+	});
+	if (!moduleReleased.body.success) throw new Error(moduleReleased.body.error);
 }, 30_000);
 
 /**

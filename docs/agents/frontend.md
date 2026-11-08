@@ -392,6 +392,8 @@ A claim is status, and no surface offers an action on it.
 `useClaimedSubjects` reads the claims of a live reading for the state that it shows, and `useReader` hands them on as `claimed`.
 The module tree, Flows and Walkthroughs mark each claimed row with `ClaimMark`.
 `ModelPanel.Subject` holds the claims of the selection, and its `Head` shows `ClaimBadge` while they hold it.
+With no selection, the badge follows the open flow or module that the head names.
+In a flow reading, a claim on the retained module scope never marks the flow.
 The shell marks the claimed model in the repository switcher and its list from the agent activity that it already holds.
 A mark takes no click and no focus, so a claim that starts or ends moves nothing.
 A cached reading is stale only when a read failed or the stream was lost. An event being applied is healthy and shows nothing.

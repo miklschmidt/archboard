@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T21:25:00Z'
-updated_date: '2026-11-08T22:11:00Z'
+updated_date: '2026-11-08T22:35:00Z'
 labels:
   - frontend
 dependencies: []
@@ -41,6 +41,8 @@ The claim card dates from when a person could draw on the canvas. Take back cont
 7. Update PRODUCT.md, DESIGN.md, README.md, CONTEXT.md, frontend.md, test-suite.md, the site and the vault. Judge both themes with screenshots and audit the site.
 
 Review fixes: keep the Claimed badge tied to the selected subjects in mixed selections and flow readings. Correct any remaining reader take-back refusal. Use focused browser and model owners, both-theme inspection, and the site audit. These fixes keep the same owners, interfaces, and relationships, so no architecture proposal is needed.
+
+PR #74 review: reproduce a claim on the retained scope of an unclaimed flow. Make the empty-selection badge follow the flow before the module. Cover open module claims in the existing browser owner and align the reader guidance.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -55,6 +57,10 @@ Left open: the README take-back clip (README.md:243) and its recipe scripts/read
 Review of 2ceca8bcf..d160f8feb: fixed remaining release refusal guidance, missing badges on mixed selections and flow collections, and a claimed flow marking an unclaimed participant. The claim mark now reuses ActivityLamp inside a still Status Foreground rim on chalk. Existing panel heads and subject classification own these cases. No module or relationship changes. Browser owners claims, viewer, proposals, shell-layout and reader-context pass. Focused unit owners: 15 pass. Backend claim/news owner: 5 pass. Lint and both TypeScript projects pass. Both themes and reduced motion inspected with agent-browser on port 3489. Site paintings and diagrams regenerated, and the site build passes with no Astro warnings. Diagram changes contained only allocated sample identities and were restored. The README clip and recipe remain deferred as requested.
 
 Final review validation: the expanded claims browser owner passes in 3.2 seconds, including a selected flow collection. The final lint and TypeScript runs pass. Architecture semantics pass with no diagnostics. The architecture code pass has no warnings, with existing informational findings and skipped evidence: 82 unknown exposures, nine unbound subjects and one text-only checkout. Site demos include all four walkthrough beats, each grammar, each evidence tab, proposal choices and claim release. Headless Chromium leaves the WebGL hero blank, which limits that visual inspection. The existing frontend build reports large bundle chunks. These evidence limits and the deferred README media remain outside this review. All private browsers and servers stopped. The final simplification pass retained the existing panel head, subject classification and activity lamp owners.
+
+Review of a185b0379..11fadf922: a claim on a retained module scope marked an unclaimed flow. The new browser assertion failed on the original code. The badge now reads the flow identity before the module identity, as the existing panel head does. Model reading (vKEsyHFk/yejBBUFY#n2ONtqdt) keeps its existing ownership and interfaces, so no architecture proposal is needed.
+
+PR #74 review evidence: the new claims assertion failed before the fix and passed after it. All six requested browser owners pass through run-browser-lane.ts. The install, build, lint:all, both TypeScript projects, formatting, site build and architecture semantics pass. Browser inspection covered both themes, empty architecture, missing line and group sections, hidden lines, Show all, the pressed Filter state and keyboard focus. Site paintings and diagrams were regenerated. Only newly allocated subject identities differed in the tracked diagrams, so those files were restored. The site audit covered the window mock, drill-down, all grammar and evidence tabs, proposal choices, claim release and four walkthrough beats. Headless Chromium limits inspection of the WebGL hero. The existing bundle-size warning stays outside this review. Evidence is in /tmp/archboard-review74. The final simplification pass keeps the existing owners and uses one subject identity for the empty-selection badge.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
