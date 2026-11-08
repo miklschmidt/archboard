@@ -5,7 +5,7 @@
 	--docs-measure: 1320px;
 	--docs-text: 44em;
 	/* Paragraphs keep to 60 to 80 characters a line, while tables and code use the whole column. */
-	--docs-prose: 39em;
+	--docs-prose: 35em;
 }
 
 /* A page changes with the browser's own view transition: the words slide in a little, and the bar
