@@ -67,7 +67,7 @@ function writeTour(vault: string, name: string, subject: string): void {
  * What the reader shows beside the picture and in the left column.
  * @param browser The page.
  * @returns The rows of each list, the counts of the flows and walkthroughs sections of the left
- * column, and where the legend ends.
+ * column, and whether the legend ends the panel.
  */
 function column(browser: AgentBrowserSession) {
 	return browser.eval<{
@@ -75,7 +75,7 @@ function column(browser: AgentBrowserSession) {
 		walkthroughs: string[];
 		counts: string[];
 		more: number;
-		legendFits: boolean;
+		legendLast: boolean;
 	}>(`(() => {
 		const rows = (slot) => [...document.querySelectorAll('[data-slot="' + slot + '"] [data-context-row]')].map((row) => row.getAttribute('data-context-row'));
 		return {
@@ -83,7 +83,7 @@ function column(browser: AgentBrowserSession) {
 			walkthroughs: rows('model-panel-walkthroughs'),
 			counts: ['flows', 'walkthroughs'].map((section) => document.querySelector('[data-column-section="' + section + '"] [data-slot="section-count"]')?.textContent),
 			more: document.querySelectorAll('[data-slot="model-panel-more"]').length,
-			legendFits: document.querySelector('[data-slot="model-legend"]').getBoundingClientRect().bottom <= window.innerHeight,
+			legendLast: document.querySelector('[data-slot="model-panel-scroll"]').lastElementChild.contains(document.querySelector('[data-slot="model-legend"]')),
 		};
 	})()`);
 }
@@ -244,7 +244,7 @@ test("the right column follows what a reader looks at, and the left column holds
 	await browser.run(["click", '[data-module-row="Shop#Gateway"]']);
 	await settledOn(browser, "Shop#Gateway");
 	await lists(browser, { flows: GATEWAY_FLOWS.slice(0, 4), walkthroughs: ["Shop#Handle"] });
-	expect(await column(browser)).toMatchObject({ counts, more: 1, legendFits: true });
+	expect(await column(browser)).toMatchObject({ counts, more: 1, legendLast: true });
 	await browser.run(["click", '[data-slot="model-panel-more"]']);
 	await lists(browser, { flows: GATEWAY_FLOWS, walkthroughs: ["Shop#Handle"] });
 

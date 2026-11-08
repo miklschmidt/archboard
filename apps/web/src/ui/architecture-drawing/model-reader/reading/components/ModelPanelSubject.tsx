@@ -5,7 +5,7 @@ import {
 	kindNames,
 	moduleName,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelConnections.tsx";
-import { KindChip } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutTable.tsx";
+import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import { ModelChangesWith } from "#ui/architecture-drawing/model-reader/reading/components/ModelChangesWith.tsx";
 import { ModelCodeDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
 import { ModelCollectionDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCollectionDetails.tsx";
@@ -138,7 +138,7 @@ function ModelPanelSubject(props: ModelPanelSubjectProps): JSX.Element {
 			) : (
 				<OtherSubject {...props} subject={subject} />
 			)}
-			<div className="px-4 pb-4 empty:hidden">
+			<div className="empty:hidden">
 				<ModelHiddenSelection
 					projection={props.projection}
 					selected={props.selection.ids}
@@ -217,7 +217,7 @@ function OtherSubject(
 					model={model}
 					reference={projection.reference}
 					selected={ids}
-					title="Selected subjects"
+					title={`${ids.size} selected`}
 					slot="model-selected-subjects"
 				/>
 			)}

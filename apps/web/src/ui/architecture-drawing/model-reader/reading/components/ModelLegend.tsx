@@ -10,17 +10,16 @@ import {
 } from "react";
 import type { Model, ModelFilters, projectModel } from "@archboard/model/content";
 import { Button, cn } from "@archboard/ui-kit/components";
+import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import {
 	EmphasisSample,
 	RelationshipSample,
 	TrafficSample,
-	TypeSample,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx";
 import { iconQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
-import type {
-	AppliedAppearance,
-	PictureLegend,
-} from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
+import type { PictureLegend } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
+import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
+import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
 import {
 	groupRows,
@@ -34,17 +33,20 @@ import {
 } from "#ui/architecture-drawing/model-reader/reading/rules/legend-rows.ts";
 import { paletteTag } from "#ui/architecture-drawing/canvas/picture/rules/palette.ts";
 
-/** How wide every line's sample is, and the box of every mark, so that the names start on one line. */
-const SAMPLE_WIDTH = 22;
-
-/** The size of a kind's chip and its icon, as wide as the ink of a line's sample. */
-const CHIP = "size-5 [&>svg]:size-3.5";
+/**
+ * How wide every line's sample is, and the box of every mark: as wide as a kind's chip, so that the
+ * names start on one line.
+ */
+const SAMPLE_WIDTH = 24;
 
 /**
- * The two columns that the head, the kinds and the line types stand in. The foot over the legend
- * lies on the same columns: a key there takes half its line less half this gap.
+ * The two columns that the kinds and the line types stand in, and the second column, where the head
+ * stands its keys. The foot under the panel lies on the same columns.
  */
 const CELLS = "grid grid-cols-2 gap-x-2";
+/** The line rows while no picture stands. */
+const NO_LINES: readonly LegendLine[] = [];
+const SECOND_CELL = "w-[calc(50%-0.25rem)]";
 
 /** A key held pressed in. */
 const PRESSED = "bg-muted dark:bg-muted text-foreground shadow-pressed";
@@ -55,6 +57,8 @@ interface ModelLegendProps {
 	readonly projection: ReturnType<typeof projectModel>;
 	/** What the picture draws, or null while it draws nothing that a legend explains. */
 	readonly picture: PictureLegend | null;
+	/** How the vault's kinds look, with the icons the picture draws them with. */
+	readonly look: KindLook;
 	readonly filters: Pick<ModelFilters, "hideKinds">;
 	readonly onToggle: (field: "hideKinds", id: string) => void;
 	/** Draw every kind of line again. */
@@ -63,156 +67,189 @@ interface ModelLegendProps {
 }
 
 /**
- * What the marks of a picture mean, at the foot of the right panel with no click: its kinds, its
- * line types and its groups. Filter puts the control that hides a line type on each row, in room
- * that the row always keeps, and a group's tag selects the group's parts.
+ * What the marks of a picture mean, as the last section of the right panel, under every subject,
+ * with no click: its kinds, its line types and its groups. Filter puts the switch that hides a line
+ * type on each row, in room that the row always keeps, and a group's tag selects the group's parts.
  * @param props The reading and its visibility choices.
- * @returns The legend, or nothing while no picture stands.
+ * @returns The section, or nothing while no picture stands.
  */
 function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 	const { model, projection, picture, selection } = props;
 	const [filtering, setFiltering] = useState(false);
 	const toggle = useCallback((): void => setFiltering((on) => !on), []);
-	if (picture === null) return null;
-	const reading = { model, projection, picture, hideKinds: props.filters.hideKinds };
-	const lines = lineRows(reading);
-	return (
-		<section
-			aria-label="Legend"
-			data-slot="model-legend"
-			className="relative flex shrink-0 flex-col gap-2 px-4 pt-4 pb-4"
-		>
-			<LegendHead
-				hidden={lines.filter((line) => line.hidden).length}
-				filterable={lines.some((line) => line.hideable)}
+	const { hideKinds } = props.filters;
+	const lines = useMemo(
+		() => (picture === null ? NO_LINES : lineRows({ model, projection, picture, hideKinds })),
+		[model, projection, picture, hideKinds],
+	);
+	const hidden = lines.filter((line) => line.hidden).length;
+	const filterable = lines.some((line) => line.hideable);
+	const { onShowAll } = props;
+	const keys = useMemo(
+		() => (
+			<LegendKeys
+				hidden={hidden}
+				filterable={filterable}
 				filtering={filtering}
 				onFilter={toggle}
-				onShowAll={props.onShowAll}
+				onShowAll={onShowAll}
 			/>
-			<div className="flex flex-col gap-3">
-				<Kinds model={model} rows={kindRows(reading)} />
-				<Lines
-					lines={lines}
-					marks={markRows(projection)}
-					filtering={filtering}
-					onToggle={props.onToggle}
-				/>
-				<Groups groups={groupRows(model, projection)} selection={selection} />
-			</div>
-		</section>
+		),
+		[hidden, filterable, filtering, toggle, onShowAll],
+	);
+	if (picture === null) return null;
+	const reading = { model, projection, picture, hideKinds };
+	return (
+		<ModelPanel.Section title="Legend" slot="model-legend" action={keys}>
+			<Kinds model={model} look={props.look} rows={kindRows(reading)} />
+			<Lines
+				lines={lines}
+				marks={markRows(projection)}
+				filtering={filtering}
+				onToggle={props.onToggle}
+			/>
+			<Groups groups={groupRows(model, projection)} selection={selection} />
+		</ModelPanel.Section>
 	);
 }
 
 /**
- * The legend's name, the key that shows which line types a reader can hide, and the way back from
- * what a reader hid. Both stand in the second column and grow into its free room, so neither moves
- * the other's words.
- * @param props What the controls say and do.
+ * The key that shows which line types a reader can hide, and the way back from what a reader hid.
+ * Both stand in the second column of the legend: Filter at its start, where it grows into the free
+ * room, and Show all at its end, so neither moves the other's words.
+ * @param props What the keys say and do.
  * @param props.hidden How many kinds of this reading the picture leaves out.
  * @param props.filterable Whether the reading has a line type to hide.
- * @param props.filtering Whether each line type shows its control.
- * @param props.onFilter Show or put away those controls.
+ * @param props.filtering Whether each line type shows its switch.
+ * @param props.onFilter Show or put away those switches.
  * @param props.onShowAll Draw every kind of line again.
- * @returns The head.
+ * @returns The keys, or nothing for a reading with no line type to hide.
  */
-function LegendHead(props: {
+function LegendKeys(props: {
 	readonly hidden: number;
 	readonly filterable: boolean;
 	readonly filtering: boolean;
 	readonly onFilter: () => void;
 	readonly onShowAll: () => void;
-}): JSX.Element {
+}): JSX.Element | null {
 	const { hidden, filtering } = props;
+	if (!props.filterable) return null;
 	return (
-		<header className={`${CELLS} min-h-6 items-center`}>
-			<h3 className="text-body font-semibold">Legend</h3>
-			{props.filterable && (
-				<div className="flex items-center justify-between gap-2">
-					<Button
-						data-slot="model-legend-filter"
-						variant="outline"
-						size="xs"
-						aria-pressed={filtering}
-						title={filtering ? "Put the switches away" : "Choose which lines to draw"}
-						onClick={props.onFilter}
-						className={cn("relative", filtering && PRESSED)}
-					>
-						<RiFilterLine aria-hidden="true" />
-						Filter
-						{hidden > 0 && (
-							<span data-slot="model-legend-hidden" className="text-technical font-mono">
-								{hidden}
-								<span className="sr-only"> hidden</span>
-							</span>
-						)}
-					</Button>
-					{hidden > 0 && (
-						<Button
-							data-slot="model-legend-show-all"
-							variant="ghost"
-							size="xs"
-							onClick={props.onShowAll}
-							className="-mr-1.5 px-1.5"
-						>
-							Show all
-						</Button>
-					)}
-				</div>
+		<div className={cn(SECOND_CELL, "flex shrink-0 items-center justify-between gap-2")}>
+			<Button
+				data-slot="model-legend-filter"
+				variant="outline"
+				size="xs"
+				aria-pressed={filtering}
+				title={filtering ? "Put the switches away" : "Choose which lines to draw"}
+				onClick={props.onFilter}
+				className={cn("relative", filtering && PRESSED)}
+			>
+				<RiFilterLine aria-hidden="true" />
+				Filter
+				{hidden > 0 && (
+					<span data-slot="model-legend-hidden" className="text-technical font-mono">
+						{hidden}
+						<span className="sr-only"> hidden</span>
+					</span>
+				)}
+			</Button>
+			{hidden > 0 && (
+				<Button
+					data-slot="model-legend-show-all"
+					variant="ghost"
+					size="xs"
+					onClick={props.onShowAll}
+					className="-mr-2 px-2"
+				>
+					Show all
+				</Button>
 			)}
-		</header>
+		</div>
 	);
 }
 
 /**
- * The kinds of part in the reading.
+ * One list of the legend, which stands 12px from the list before it.
+ * @param props The list.
+ * @param props.label What it lists.
+ * @param props.slot Where a test finds it.
+ * @param props.className How its entries stand.
+ * @param props.children Its entries.
+ * @returns The list, as one entry of the legend's section.
+ */
+function LegendList(props: {
+	readonly label: string;
+	readonly slot: string;
+	readonly className: string;
+	readonly children: ReactNode;
+}): JSX.Element {
+	return (
+		<li className="not-first:pt-2">
+			<ul aria-label={props.label} data-slot={props.slot} className={props.className}>
+				{props.children}
+			</ul>
+		</li>
+	);
+}
+
+/**
+ * The kinds of part in the reading, each with the chip that the head of the panel puts before a
+ * module's name.
  * @param props The kinds.
  * @param props.model The reading, whose policy names the icon of a kind that the picture leaves out.
+ * @param props.look How the vault's kinds look.
  * @param props.rows One row for each.
  * @returns Their list, or nothing when there are none.
  */
 function Kinds(props: {
 	readonly model: Model;
+	readonly look: KindLook;
 	readonly rows: readonly LegendRow[];
 }): JSX.Element | null {
-	const { model, rows } = props;
+	const { model, look, rows } = props;
 	if (rows.length === 0) return null;
 	return (
-		<ul aria-label="Kinds" data-slot="model-legend-kinds" className={CELLS}>
+		<LegendList label="Kinds" slot="model-legend-kinds" className={CELLS}>
 			{rows.map(({ item, dimmed }) => (
 				<Cell key={item.typeKind}>
 					<Mark name={item.typeName} dimmed={dimmed}>
-						{dimmed ? (
-							<PolicySample item={item} icon={model.policy.nodeKinds[item.typeKind]?.icon} />
-						) : (
-							<TypeSample appearance={item} className={CHIP} />
-						)}
+						<LegendChip
+							look={look}
+							kind={item.typeKind}
+							icon={dimmed ? model.policy.nodeKinds[item.typeKind]?.icon : undefined}
+						/>
 					</Mark>
 				</Cell>
 			))}
-		</ul>
+		</LegendList>
 	);
 }
 
 /**
- * The chip of a kind that the picture does not draw now, with the icon that the policy names, so
- * that its row reads the same as when the picture draws the kind.
+ * The chip of a kind. A kind that the picture does not draw now takes the icon that the policy
+ * names, so that its row reads the same as when the picture draws the kind.
  * @param props The kind.
- * @param props.item How it looks.
- * @param props.icon The icon's name, when the vault's policy names the kind.
- * @returns The chip, which is plain until the icon arrives.
+ * @param props.look How the vault's kinds look.
+ * @param props.kind The kind.
+ * @param props.icon The policy's icon for it, when the picture does not draw it.
+ * @returns The chip.
  */
-function PolicySample(props: {
-	readonly item: AppliedAppearance;
+function LegendChip(props: {
+	readonly look: KindLook;
+	readonly kind: string;
 	readonly icon: string | undefined;
 }): JSX.Element {
-	const { item, icon } = props;
-	const paths = useQuery({ ...iconQuery(icon ?? ""), enabled: icon !== undefined }).data ?? [];
-	const iconSvg = paths.map((d) => `<path d="${d}"/>`).join("");
-	const appearance = useMemo(
-		() => ({ ...item, iconSvg: `<svg viewBox="0 0 24 24" aria-hidden="true">${iconSvg}</svg>` }),
-		[item, iconSvg],
+	const { icon } = props;
+	const paths = useQuery({ ...iconQuery(icon ?? ""), enabled: icon !== undefined }).data;
+	const markup = useMemo(
+		() =>
+			paths === undefined
+				? undefined
+				: `<svg viewBox="0 0 24 24" aria-hidden="true">${paths.map((d) => `<path d="${d}"/>`).join("")}</svg>`,
+		[paths],
 	);
-	return <TypeSample appearance={appearance} className={CHIP} />;
+	return <KindChip look={props.look} kind={props.kind} icon={markup} />;
 }
 
 /** Inputs for the line types. */
@@ -233,7 +270,7 @@ function Lines(props: LinesProps): JSX.Element | null {
 	const { lines, marks, filtering, onToggle } = props;
 	if (lines.length === 0) return null;
 	return (
-		<ul aria-label="Line types" data-slot="model-legend-lines" className={CELLS}>
+		<LegendList label="Line types" slot="model-legend-lines" className={CELLS}>
 			{lines.map((line) => (
 				<LineCell key={line.item.typeKind} line={line} filtering={filtering} onToggle={onToggle} />
 			))}
@@ -248,7 +285,7 @@ function Lines(props: LinesProps): JSX.Element | null {
 					</Mark>
 				</Cell>
 			))}
-		</ul>
+		</LegendList>
 	);
 }
 
@@ -259,7 +296,7 @@ function Lines(props: LinesProps): JSX.Element | null {
  * @returns The entry.
  */
 function Cell(props: { readonly children: ReactNode }): JSX.Element {
-	return <li className="flex min-h-6 min-w-0 items-center gap-2">{props.children}</li>;
+	return <li className="flex min-h-7 min-w-0 items-center gap-2">{props.children}</li>;
 }
 
 /**
@@ -280,7 +317,7 @@ function Mark(props: {
 		<>
 			<span
 				aria-hidden="true"
-				className={cn("flex w-5.5 shrink-0 justify-center", dimmed && "opacity-40")}
+				className={cn("flex w-6 shrink-0 justify-center", dimmed && "opacity-40")}
 			>
 				{props.children}
 			</span>
@@ -389,15 +426,15 @@ function Groups(props: {
 	const { groups, selection } = props;
 	if (groups.length === 0) return null;
 	return (
-		<ul
-			aria-label="Groups"
-			data-slot="model-legend-groups"
+		<LegendList
+			label="Groups"
+			slot="model-legend-groups"
 			className="flex flex-wrap gap-x-2 gap-y-2.5"
 		>
 			{groups.map((group) => (
 				<GroupTag key={group.id} group={group} selection={selection} />
 			))}
-		</ul>
+		</LegendList>
 	);
 }
 

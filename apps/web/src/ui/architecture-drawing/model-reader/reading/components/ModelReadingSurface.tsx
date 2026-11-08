@@ -42,7 +42,10 @@ import type { Reader } from "#ui/architecture-drawing/model-reader/hooks/use-rea
 import { useSubjectMenu } from "#ui/architecture-drawing/model-reader/reading/hooks/use-subject-menu.ts";
 import { useShowSubject } from "#ui/architecture-drawing/model-reader/reading/hooks/use-show-subject.ts";
 import { useSceneAppearances } from "#ui/architecture-drawing/model-reader/reading/hooks/use-scene-appearances.ts";
-import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
+import {
+	kindLookOf,
+	type KindLook,
+} from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import {
 	flowSubjects,
 	collectionSubjects,
@@ -89,11 +92,12 @@ function useBehavioralIds(reader: Reader): ReadonlySet<string> {
 
 /**
  * What the marks of the picture on screen mean.
- * @param props The reader.
+ * @param props The reader and how kinds look.
  * @param props.reader The reader.
+ * @param props.look How the vault's kinds look.
  * @returns The legend.
  */
-function ReadingLegend(props: { readonly reader: Reader }): JSX.Element {
+function ReadingLegend(props: { readonly reader: Reader; readonly look: KindLook }): JSX.Element {
 	const { accepted, location, selection } = props.reader;
 	const { shown, scene } = accepted;
 	const picture = scene?.picture.legend ?? null;
@@ -102,6 +106,7 @@ function ReadingLegend(props: { readonly reader: Reader }): JSX.Element {
 			model={shown.model}
 			projection={shown.projection}
 			picture={picture}
+			look={props.look}
 			filters={location.grammar === "architecture" ? location.filters : NO_FILTERS}
 			onToggle={location.toggleFilter}
 			onShowAll={location.showAllKinds}
@@ -146,10 +151,10 @@ interface ReadingPanelProps {
 }
 
 /**
- * The column beside the picture: what is selected, or else what is open, and what touches it,
- * over the legend and the engine. Only the engine stands under the legend, so a selection never
- * moves a group tag out from under the pointer. The foot and the legend lie on the same two
- * columns.
+ * The column beside the picture: what is selected, or else what is open, and what touches it, then
+ * the legend, which ends the scroll under every subject, so a reader finds it in one place and a new
+ * subject neither redraws it nor takes a group's tag from under the pointer. The foot under them
+ * holds what can be done.
  * @param props The surface and what the panel explains.
  * @returns The panel.
  */
@@ -164,10 +169,12 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 	useHistoryOnSelection(reader.vault, model, ids);
 	const held = useMemo(() => ({ ...selection, ids }), [selection, ids]);
 	const selecting = ids.size > 0;
+	const key = [scope, ...ids].join();
 	const pathOf = useCallback((id: string) => tree.owner.get(id)?.path, [tree]);
 	const head = scopeHead({ model, scope, tree, projection });
 	const appearances = useSceneAppearances(accepted.scene);
 	const look = useMemo(() => kindLookOf(model.policy, appearances), [model.policy, appearances]);
+	const legend = useMemo(() => <ReadingLegend reader={reader} look={look} />, [reader, look]);
 	const context = <ReadingContext reader={reader} selected={ids} />;
 	const { flow, reference } = projection;
 	const { grammar, selectGrammar } = location;
@@ -209,35 +216,37 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 	};
 	return (
 		<ModelPanel onClose={selecting ? selection.clear : undefined} covered={reader.page === "about"}>
-			<ModelPanel.Subject key={[scope, ...ids].join()}>
-				{selecting ? (
-					<ModelPanelSubject {...subject} />
-				) : (
-					<ModelPanelScope
-						name={head.name}
-						kind={head.kind}
-						path={head.path}
-						look={look}
-						description={head.description ?? head.lead}
-						flowHead={flowHead}
-					>
-						<ModelInterfaceLine
-							{...line}
-							inspection={projection.inspection}
-							projection={projection}
-						/>
-						<ModelPanelExpanded
-							model={model}
-							projection={projection}
-							selection={held}
-							onToggle={reader.onToggle}
-						/>
-						<ModelCodeDetails reading={code.reading} selected={ids} scope={scope} />
-						<ModelStateStanding model={model} onOpen={openAbout} />
-						{context}
-					</ModelPanelScope>
-				)}
-			</ModelPanel.Subject>
+			<ModelPanel.Scroll subject={key} under={legend}>
+				<ModelPanel.Subject key={key}>
+					{selecting ? (
+						<ModelPanelSubject {...subject} />
+					) : (
+						<ModelPanelScope
+							name={head.name}
+							kind={head.kind}
+							path={head.path}
+							look={look}
+							description={head.description ?? head.lead}
+							flowHead={flowHead}
+						>
+							<ModelInterfaceLine
+								{...line}
+								inspection={projection.inspection}
+								projection={projection}
+							/>
+							<ModelPanelExpanded
+								model={model}
+								projection={projection}
+								selection={held}
+								onToggle={reader.onToggle}
+							/>
+							<ModelCodeDetails reading={code.reading} selected={ids} scope={scope} />
+							<ModelStateStanding model={model} onOpen={openAbout} />
+							{context}
+						</ModelPanelScope>
+					)}
+				</ModelPanel.Subject>
+			</ModelPanel.Scroll>
 			<ModelPanel.Foot>
 				<ModelCodeWarnings reading={code.reading} onSelect={onShow} quiet />
 				{selecting ? (
@@ -248,7 +257,6 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 					<ReadingExplain {...props.actions} />
 				)}
 			</ModelPanel.Foot>
-			<ReadingLegend reader={reader} />
 		</ModelPanel>
 	);
 }

@@ -92,7 +92,7 @@ function seedReading(vault: string): void {
 function wordsAt(browser: AgentBrowserSession): Promise<string> {
 	return browser.eval<string>(`(() => {
 		const legend = document.querySelector('${LEGEND}');
-		const words = [...legend.querySelectorAll('h3, svg, li [title]')].filter((word) => word.closest('[role="switch"]') === null);
+		const words = [...legend.querySelectorAll('h4, svg, li [title]')].filter((word) => word.closest('[role="switch"]') === null);
 		return JSON.stringify(words.map((word) => {
 			const { x, y } = word.getBoundingClientRect();
 			return [word.textContent, x, y];

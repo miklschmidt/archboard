@@ -3,11 +3,9 @@
 // its subject on the diagram.
 
 import { RiFocus3Line } from "@remixicon/react";
-import { useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
+import type { JSX, ReactNode } from "react";
 
 import { cn, IconButton } from "@archboard/ui-kit/components";
-import { KindIcon } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
-import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
 /**
  * The names of a list's columns, over the columns of its rows: as wide as a row's cells, short of
@@ -52,27 +50,6 @@ function ShowOnDiagram(props: { readonly name: string; readonly onShow: () => vo
 	);
 }
 
-/**
- * A kind's chip: its icon in its colour.
- * @param props The kind, and how kinds look.
- * @param props.kind The kind.
- * @param props.look How the vault's kinds look.
- * @returns The chip.
- */
-function KindChip(props: { readonly kind: string; readonly look: KindLook }): JSX.Element {
-	const { kind, look } = props;
-	const ink = useMemo<CSSProperties>(() => ({ "--kind": look.nodeColor(kind) }), [look, kind]);
-	return (
-		<span
-			aria-hidden="true"
-			className="rounded-control inline-flex size-6 shrink-0 items-center justify-center border border-(color:--kind)/45 bg-(color:--kind)/14 text-(color:--kind)"
-			style={ink}
-		>
-			<KindIcon look={look} kind={kind} className="size-4" />
-		</span>
-	);
-}
-
 const ModelAboutTable = { Head: TableHead, Show: ShowOnDiagram };
 
-export { KindChip, ModelAboutTable };
+export { ModelAboutTable };

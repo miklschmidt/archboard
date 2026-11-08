@@ -8,7 +8,7 @@ import {
 } from "react";
 import { cn } from "@archboard/ui-kit/components";
 import type { LocalityAnswer } from "@archboard/code-intel/history";
-import { KindChip } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutTable.tsx";
+import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import {
 	isHistoryMeasure,
 	measureOf,
