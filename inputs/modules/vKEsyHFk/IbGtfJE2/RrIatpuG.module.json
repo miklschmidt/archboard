@@ -3,12 +3,12 @@
   "name": "Grading",
   "kind": "module",
   "responsibility": "Grades the ungraded runs in chunks with a blinded workspace, through the Codex or the Claude grader, and asks again for the runs whose answer fell short",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/IbGtfJE2#RrIatpuG",
-  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
-  "outgoing": [],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/grading"
-  }
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#RrIatpuG",
+  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
+  "outgoing": []
 }
