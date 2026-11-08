@@ -45,7 +45,7 @@ inputs:
       the step fails only when an error or a warning with another code remains.
     default: ""
   node-version:
-    description: The Node.js version to run the CLI with. The CLI needs 22.18 or later.
+    description: The Node.js version to run the CLI with. The CLI needs `22.18` or later.
     default: "22"
 
 outputs:

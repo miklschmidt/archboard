@@ -1,5 +1,5 @@
 // Fail the build on a dead internal link: a page that `dist` does not hold, or an anchor that the
-// page does not have. The guides link each Action input and each finding code to its row in the
+// page does not have. It also fails on a guide's `{reference.…}` expression that shows as text. The guides link each Action input and each finding code to its row in the
 // reference, so a renamed input or code breaks a link here instead of leaving a guide outdated.
 //
 // Run from the repository root, after the build:
@@ -42,6 +42,9 @@ function idsOf(file: string): Set<string> {
 
 const dead: string[] = [];
 for (const page of pages(DIST)) {
+	// A guide's expression that MDX printed as text, such as one inside a link it made from a URL.
+	const unrendered = /\{reference\.[\w.]+\}/u.exec(readFileSync(page, "utf8"));
+	if (unrendered !== null) dead.push(`${relative(DIST, page)}: ${unrendered[0]} (not rendered)`);
 	const url = new URL(`${BASE}${relative(DIST, page).replace(/index\.html$/u, "")}`, "http://site");
 	for (const match of readFileSync(page, "utf8").matchAll(/\shref="([^"]*)"/gu)) {
 		const href = (match[1] ?? "").replaceAll("&amp;", "&");

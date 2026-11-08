@@ -25,7 +25,7 @@ inputs:
       vault that binds modules in other repositories needs them to read their footprint.
     default: ""
   node-version:
-    description: The Node.js version to run the CLI with. The CLI needs 22.18 or later.
+    description: The Node.js version to run the CLI with. The CLI needs `22.18` or later.
     default: "22"
   state:
     description: >-

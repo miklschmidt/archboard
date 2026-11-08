@@ -13,11 +13,14 @@ export interface DocsGroup {
 	readonly pages: readonly DocsPage[];
 }
 
-/** The CLI's top-level commands, by the reference page that describes them. */
+/**
+ * The CLI's top-level commands, by the reference page that describes them. A label marks each
+ * command in backticks, which the sidebar and the pager set in mono.
+ */
 export const cliGroups = [
 	{
 		slug: "setup",
-		label: "init and repo",
+		label: "`init` and `repo`",
 		title: "Setup and checkouts",
 		description:
 			"Set a repository up for Archboard, and tell this machine where each repository's checkout is.",
@@ -25,7 +28,7 @@ export const cliGroups = [
 	},
 	{
 		slug: "model",
-		label: "model",
+		label: "`model`",
 		title: "The `model` commands",
 		description:
 			"Read, write, compare, render and keep the canonical architecture model of a vault.",
@@ -33,7 +36,7 @@ export const cliGroups = [
 	},
 	{
 		slug: "check",
-		label: "check",
+		label: "`check`",
 		title: "The `check` commands",
 		description:
 			"Hold the model to its vocabulary, its code and the pictures that embed it. A check fails while a finding remains.",
@@ -41,7 +44,7 @@ export const cliGroups = [
 	},
 	{
 		slug: "server",
-		label: "start, stop and status",
+		label: "`start`, `stop` and `status`",
 		title: "The server commands",
 		description:
 			"Start, stop and inspect the local Archboard server that the other commands talk to.",
@@ -49,7 +52,7 @@ export const cliGroups = [
 	},
 	{
 		slug: "browser",
-		label: "browser",
+		label: "`browser`",
 		title: "The `browser` commands",
 		description:
 			"Show a reading to the person in the browser, and inspect the panes that are open.",
@@ -104,8 +107,8 @@ export function neighbours(path: string): {
 	return { previous: docsPages[index - 1], next: docsPages[index + 1] };
 }
 
-/** Whether a page's label names commands, such as `init and repo`, which sets it in mono. */
-export function namesCommands(path: string): boolean {
+/** Whether a page is a page of CLI commands, which the sidebar nests under the CLI overview. */
+export function isCliGroup(path: string): boolean {
 	return path.startsWith("reference/cli/");
 }
 

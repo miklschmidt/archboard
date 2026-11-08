@@ -12,7 +12,7 @@ import { paneWords } from "@archboard/server-lifecycle/panes";
 import { findVault } from "@archboard/workspace/vault";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
 import { PaneRefSchema } from "#cli/contract/protocol/schemas.ts";
-import { serverBrowserRefusals } from "#cli/contract/protocol/refusals.ts";
+import { serverBrowserRefusals, serverRefusal } from "#cli/contract/protocol/refusals.ts";
 import { stagedTokens } from "#cli/commands/pane/rules/staged-tokens.ts";
 
 const usage = "browser needs a subcommand: panes, open, close, or show.";
@@ -307,7 +307,8 @@ const panesContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: [],
-	refusals: serverBrowserRefusals,
+	// With no pane open, it reports that none is, so it needs no browser.
+	refusals: [serverRefusal],
 	relationships: [
 		{ method: "GET", path: "/api/panes", cardinality: "one", description: "Read the panes" },
 	],

@@ -86,7 +86,7 @@ archboard start
 archboard status
 ```
 
-A release server listens on <code>http://archboard.localhost:{reference.facts.releasePort}</code>. Chrome and Firefox send every `*.localhost` name to this machine with no setup. The CLI connects to <code>127.0.0.1:{reference.facts.releasePort}</code>. Set `ARCHBOARD_NO_AUTOSTART=1` to stop the autostart.
+A release server listens on <code>{`http://archboard.localhost:${reference.facts.releasePort}`}</code>. Chrome and Firefox send every `*.localhost` name to this machine with no setup. The CLI connects to <code>127.0.0.1:{reference.facts.releasePort}</code>. Set `ARCHBOARD_NO_AUTOSTART=1` to stop the autostart.
 
 <Aside type="caution" title="Keep the server on loopback">
 	The server has no authentication. Do not expose its port beyond this machine.

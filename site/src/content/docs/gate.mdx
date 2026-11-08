@@ -48,7 +48,7 @@ archboard check embeds
 
 ## Read a failure
 
-A warning names its code, the file of the module in the vault, the module and what to do. Each piece of evidence follows on its own line, with its kind, whether it is resolved, and its file and line:
+A warning of the code check names its code, the file of the module in the vault, the module and what to do. Each piece of evidence follows on its own line, with its kind, whether it is resolved, and its file and line:
 
 ```text title="stderr"
 warning: RELATIONSHIP_UNDRAWN: ZvzEpjXR.module.json: module "Rate card": The code of "Accept parcel" reaches "Rate card". No relationship joins these modules. Add the relationship between the parts that make and answer the call. If this dependency is unintended, change the code.
@@ -99,7 +99,7 @@ For this setup, replace `archboard check` in `.githooks/pre-push` with `./node_m
 
 The check Action installs the CLI, runs `archboard check`, and turns each finding into an annotation on the pull request's diff. It fails the job on a warning or a diagnostic:
 
-```yaml title=".github/workflows/architecture.yml"
+```yaml title=".github/workflows/architecture.yml" ins={19,21,24}
 name: architecture
 on:
   pull_request:

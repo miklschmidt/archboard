@@ -42,7 +42,7 @@ git commit -m "docs(architecture): add the Archboard vault"
 
 Ask the agent for the parts that a newcomer needs first, not for every file. Paste this prompt into your agent:
 
-```text title="Ask your agent"
+```text title="Ask your agent" wrap
 Map this repository with Archboard. Start with the five to nine root modules that a new
 engineer must know: what each one is responsible for, and the relationships between them.
 Bind each module to the directory or the symbol that implements it, and mark systems that
@@ -85,7 +85,7 @@ A flow is one request, job or event, told in order. Pick three that the team arg
 - The request that the system answers most often.
 - The job that wakes someone at night when it fails.
 
-```text title="Ask your agent"
+```text title="Ask your agent" wrap
 Add a flow for what happens when a customer pays, from the first request to the receipt.
 Back every message with the line of source that sends it, then read the source again for
 retries, fixed counts and calls that a module makes to itself.
@@ -101,7 +101,7 @@ archboard model render --flow "Pay for an order" --grammar sequence --out docs/a
 
 A newcomer's walkthrough starts with two modules and adds a few at each beat, until the whole path is on screen. It stops where things go wrong and ends on the sentence worth remembering.
 
-```text title="Ask your agent"
+```text title="Ask your agent" wrap
 I am new here. Make an Archboard walkthrough of what happens when a customer pays, in five
 or six beats. Start with two modules and add a few at each beat. Stop at the place where it
 fails most often, and end on the one thing I must remember.

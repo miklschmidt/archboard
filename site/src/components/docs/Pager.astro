@@ -1,7 +1,8 @@
 ---
 // The page before and the page after, in reading order.
 import Icon from "../Icon.astro";
-import { docsHref, namesCommands, neighbours } from "../../lib/docs-nav";
+import { docsHref, neighbours } from "../../lib/docs-nav";
+import { inlineCode } from "../../lib/reference";
 
 interface Props {
 	readonly path: string;
@@ -17,7 +18,7 @@ const { previous, next } = neighbours(Astro.props.path);
 				<span class="caption">Previous</span>
 				<span class="title">
 					<Icon name="chevronLeft" size={18} />
-					<span class:list={{ code: namesCommands(previous.path) }}>{previous.label}</span>
+					<span set:html={inlineCode(previous.label)} />
 				</span>
 			</a>
 		) : (
@@ -29,7 +30,7 @@ const { previous, next } = neighbours(Astro.props.path);
 			<a class="turn forward" href={docsHref(next.path)} rel="next">
 				<span class="caption">Next</span>
 				<span class="title">
-					<span class:list={{ code: namesCommands(next.path) }}>{next.label}</span>
+					<span set:html={inlineCode(next.label)} />
 					<Icon name="chevronRight" size={18} />
 				</span>
 			</a>
@@ -38,11 +39,6 @@ const { previous, next } = neighbours(Astro.props.path);
 </nav>
 
 <style>
-	/* A label that names commands is code, as in the sidebar. */
-	.code {
-		font-family: var(--font-mono);
-		font-size: 0.9em;
-	}
 	.pager {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));

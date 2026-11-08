@@ -13,6 +13,16 @@ const headings = [
 	{ depth: 2, slug: "environment", text: "Environment" },
 	{ depth: 2, slug: "commands", text: "Every command" },
 ];
+// A top-level command that no group page names would have no page, so the build refuses it.
+const grouped = new Set<string>(cliGroups.flatMap((group) => group.commands));
+const loose = reference.commands.filter(
+	(command) => !command.name.includes(" ") && !grouped.has(command.name),
+);
+if (loose.length > 0) {
+	throw new Error(
+		`No page of cliGroups in docs-nav.ts names ${loose.map((command) => command.name).join(", ")}`,
+	);
+}
 
 ---
 
@@ -24,7 +34,7 @@ const headings = [
 	source="site/scripts/reference.ts"
 >
 	<p>
-		This reference comes from the CLI on the main branch, which is version {reference.version} or
+		This reference comes from the CLI on the main branch, which is version <code>{reference.version}</code> or
 		newer, so a release on npm can lack an option that it lists. Each command finds its
 		vault the way Git finds its repository: from the working directory, or from the directory that
 		<code>-C</code> names. Commands that need the server start it on loopback when nothing answers.

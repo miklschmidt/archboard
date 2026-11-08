@@ -17,7 +17,7 @@ import {
 	recoverArchitectureModelOnServer,
 } from "#cli/server-access/clients/architecture-model.ts";
 import { statedInvocation } from "@archboard/server-lifecycle/server-client";
-import { defineCommand } from "#cli/contract/protocol/contract.ts";
+import { defineCommand, type OutputPolicy } from "#cli/contract/protocol/contract.ts";
 import { serverRefusal, doingRefusal } from "#cli/contract/protocol/refusals.ts";
 import { statedJson } from "#cli/commands/model/operations/input.ts";
 
@@ -42,6 +42,21 @@ function presented<
 				}),
 	};
 }
+/**
+ * The one JSON answer of a model operation.
+ * @param description What the answer holds.
+ * @returns The output of the command.
+ */
+function jsonAnswer(description: string): OutputPolicy<unknown> {
+	return {
+		cases: [{ id: "json", when: {}, mode: "json", description }],
+		/**
+		 * Select the structured result.
+		 * @returns The JSON result case.
+		 */
+		select: () => "json",
+	};
+}
 const modelClaimContract = defineCommand({
 	path: ["model", "claim"],
 	shared: ["url", "directory"],
@@ -61,21 +76,9 @@ const modelClaimContract = defineCommand({
 	],
 	input: { ingress: z.object({ input: z.string().optional() }) },
 	result: ArchitectureClaimResultSchema,
-	output: {
-		cases: [
-			{
-				id: "json",
-				when: {},
-				mode: "json",
-				description: "The shared operation result or recovery diagnostics",
-			},
-		],
-		/**
-		 * Select the structured result.
-		 * @returns The JSON result case.
-		 */
-		select: () => "json",
-	},
+	output: jsonAnswer(
+		"The claim: its identity, its subjects and when it ends. A refusal carries diagnostics that say what to do.",
+	),
 	prerequisites: ["server"],
 	effects: ["local-read", "server-state-write"],
 	refusals: [serverRefusal],
@@ -114,6 +117,9 @@ const modelClaimContract = defineCommand({
 const modelEditContract = defineCommand({
 	...modelClaimContract,
 	path: ["model", "edit"],
+	output: jsonAnswer(
+		"The edit: the subjects it changed, the model revision before and after, and the checkpoint it made. A refusal carries diagnostics that say what to do.",
+	),
 	shared: ["url", "directory", "doing"],
 	summary: "Edit canonical modules and independent flow behavior durably",
 	description: [
@@ -164,6 +170,7 @@ const modelEditContract = defineCommand({
 const modelReleaseContract = defineCommand({
 	...modelClaimContract,
 	path: ["model", "release"],
+	output: jsonAnswer("The claims that remain. A refusal carries diagnostics that say what to do."),
 	summary: "Release a canonical subject claim",
 	description:
 		"Reads `claim` and `writer` from JSON. Only the writer that holds a claim can release it.",
@@ -195,6 +202,9 @@ const modelReleaseContract = defineCommand({
 const modelClaimsContract = defineCommand({
 	...modelClaimContract,
 	path: ["model", "claims"],
+	output: jsonAnswer(
+		"The active claims of this checkout. A refusal carries diagnostics that say what to do.",
+	),
 	summary: "Read canonical subject claims",
 	description:
 		"Returns the active claims of this checkout, including their writer, reason and start time.",
@@ -225,6 +235,9 @@ const modelClaimsContract = defineCommand({
 const modelRecoverContract = defineCommand({
 	...modelClaimsContract,
 	path: ["model", "recover"],
+	output: jsonAnswer(
+		"The operation that it finished, when one was pending. A refusal carries diagnostics that say what to do.",
+	),
 	summary: "Recover the checkout's durable canonical edit",
 	description:
 		"Resumes the recorded operation without creating another intent. Foreign inputs and a changed branch block replay. Keep those bytes and restore the logged context before retrying.",

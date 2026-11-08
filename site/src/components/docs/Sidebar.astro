@@ -2,7 +2,8 @@
 // Every page of the docs, in reading order. The current page rises out of the list as a raised
 // face with a gold marker. The page script moves that mark when the reader goes to another page,
 // because the sidebar persists across page changes to keep its scroll.
-import { docsHref, docsNav, namesCommands } from "../../lib/docs-nav";
+import { docsHref, docsNav, isCliGroup } from "../../lib/docs-nav";
+import { inlineCode } from "../../lib/reference";
 
 interface Props {
 	/** The current page's path under /docs/. */
@@ -24,9 +25,9 @@ const { path } = Astro.props;
 								href={docsHref(page.path)}
 								data-docs-link={page.path}
 								aria-current={page.path === path ? "page" : undefined}
-								class:list={{ nested: namesCommands(page.path) }}
+								class:list={{ nested: isCliGroup(page.path) }}
 							>
-								{page.label}
+								<span set:html={inlineCode(page.label)} />
 							</a>
 						</li>
 					))}
@@ -73,8 +74,6 @@ const { path } = Astro.props;
 	}
 	a.nested {
 		padding-left: 38px;
-		font-family: var(--font-mono);
-		font-size: 0.8125rem;
 	}
 	a::before {
 		content: "";

@@ -31,6 +31,9 @@ on:
       - packages/workbench/src/ui/workbench-client/orb/rules/**
       - packages/workbench/src/ui/workbench-client/orb/state/**
       - packages/timing/**
+      # The reference reads the CLI's contracts and the facts that these packages hold.
+      - packages/code-intel/**
+      - packages/workspace/**
       - apps/cli/**
       - actions/**
       - .github/workflows/site.yml
@@ -58,6 +61,9 @@ on:
       - packages/workbench/src/ui/workbench-client/orb/rules/**
       - packages/workbench/src/ui/workbench-client/orb/state/**
       - packages/timing/**
+      # The reference reads the CLI's contracts and the facts that these packages hold.
+      - packages/code-intel/**
+      - packages/workspace/**
       - apps/cli/**
       - actions/**
       - .github/workflows/site.yml

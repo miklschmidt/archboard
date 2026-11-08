@@ -85,11 +85,20 @@ const CodeCheckRequestSchema = CodeCheckInputSchema.extend(FixInputSchema.shape)
 	"--every-draft reads every draft, and --state one name: use one of them",
 );
 
-const noSuchDraftRefusal = {
-	code: "NO_SUCH_DRAFT",
+const stateNotFoundRefusal = {
+	code: "STATE_NOT_FOUND",
 	exit: 2,
 	stream: "stderr" as const,
-	description: "--state names no draft on any model. The refusal names the drafts that exist.",
+	description:
+		"--state names no state of the model. Name one by its identity or exact name. `archboard model proposals` lists the drafts.",
+};
+
+const stateAmbiguousRefusal = {
+	code: "STATE_AMBIGUOUS",
+	exit: 2,
+	stream: "stderr" as const,
+	description:
+		"--state names several states of the model. Name one by its identity, which `archboard model proposals` lists.",
 };
 
 const planRefusal = {
@@ -413,7 +422,7 @@ const checkAllContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal, noSuchDraftRefusal, planRefusal],
+	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal],
 	relationships: [semanticsRoute, codeRoute, ...embedsRelationships],
 	/**
 	 * Run every check.
@@ -507,7 +516,7 @@ const checkCodeContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal, noSuchDraftRefusal, planRefusal],
+	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal],
 	relationships: [codeRoute],
 	/**
 	 * Run the code check.

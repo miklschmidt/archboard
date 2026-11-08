@@ -56,13 +56,14 @@ To change what a generated page says, edit its source in the CLI or the Action. 
 The site's `prebuild` and `predev` run the script. The script throws when an example runs another command, when the embeds help misses a code or the code help misses a skip reason, or when a description has a paragraph over 120 words or 6 sentences.
 Write a description in the format that `CommandContract.description` documents: paragraphs, colon heads over lists, and code in backticks.
 
-Hand-written pages quote behavior: `site/src/content/docs/*.mdx`, `actions/README.md`, `INSTALL.md` and `README.md`.
+Hand-written pages quote behavior: `site/src/content/docs/*.mdx`, the prose of the pages in `site/src/pages/docs/`, `actions/README.md`, `INSTALL.md` and `README.md`.
+A new top-level command needs a page in `cliGroups` of `site/src/lib/docs-nav.ts`. The build refuses a command that no page names.
 Search them for each changed command, flag, code and exit status, and correct every statement and example that the change makes false.
 
 The build guards the guides with two more scripts:
 
 - `site/scripts/guides.ts` refuses an `archboard` command or flag in code that the CLI lacks, and a `with:` key that an Action lacks. It also refuses a code span that names an Action input or output, or a finding code, without a link to its row in the reference.
-- `site/scripts/links.ts` refuses a dead internal link or anchor in `dist`. So a renamed input or code breaks the build at each guide that links it.
+- `site/scripts/links.ts` refuses a dead internal link or anchor in `dist`, and a guide's `{reference.…}` expression that shows as text. So a renamed input or code breaks the build at each guide that links it.
 
 A guide reads a number of the program from `reference.facts`, which `reference.ts` imports from the source, such as the release port. Add a fact there when a guide states a new one.
 Follow `site/DESIGN.md` for anything a reader sees.

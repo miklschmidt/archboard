@@ -80,7 +80,7 @@ const server = Bun.serve({
 		if (pathname === "/api/vault/check") return Response.json({ success: true, ...plain });
 		if (pathname === "/api/vault/code-check" && refuseDraft) {
 			return Response.json(
-				{ success: false, code: "NO_SUCH_DRAFT", error: "No such draft." },
+				{ success: false, code: "STATE_NOT_FOUND", error: "No such state." },
 				{ status: 422 },
 			);
 		}
