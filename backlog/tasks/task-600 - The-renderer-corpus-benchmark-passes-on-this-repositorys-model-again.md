@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T23:49:00Z'
-updated_date: '2026-11-08T01:22:00Z'
+updated_date: '2026-11-08T01:38:00Z'
 labels:
   - renderer
 dependencies: []
@@ -64,4 +64,8 @@ Owner review: Canonical architecture had a wide empty band at its top. With the 
 On #66 the root failed 'arcs side by side': crossings 20.04 px apart formed two clusters, and a crest over two crossings runs 3 px past them, so it stood 3 px from the next hop. Clusters now count that margin (`routes/clusters.rs`), and the three crossers hop the line one each. This changes only the root.
 Against #66, 16 of 110 pictures change, 94 are byte-identical. Root 4209x3931 (hops only). 0T9enjhi#1VHRyajb (Canonical architecture) 2321x1816 -> 2787x1537. 0T9enjhi#Bd4GPG6d 2044x1510 -> 1907x1330. 0T9enjhi#ZRq51Ecz 1514x1179 -> 1514x1215. 0T9enjhi#Zeo3aQWz 2104x1513 -> 2050x1342. 0T9enjhi#cNaEpWjJ 2772x1742 -> 2710x1372. 6E6hL0Zk#9G6CmNgt 1988x1113 -> 2015x1089. 9ncuT5DP#Fg9dkGj3 1685x874 -> 1470x1083 (its frame now holds one column instead of a 2x2 grid). 9ncuT5DP#u2LFaG7R 2020x923 -> 1892x982. IbGtfJE2#8O4XNZOZ 1777x1235 -> 1756x1160. Oi6SBIAM#UvFpXmwp 1888x1554 -> 1798x1346. SMjRfwN3#ZAj4RMzN 1594x1500 -> 1546x1171. UOXNWLhR#ZSU6h9hV (Camera and pointer) 2093x1811 -> 2087x1347. XppR9owz#dHZeNcMs 1169x987 -> 1116x952. vKEsyHFk#OHywsFXm 2238x1402 -> 2193x1332. yejBBUFY#n2ONtqdt 2053x1340 -> 1990x1156. In total the changed pictures cover 8.5% less area. 9G6CmNgt changes under the loop and label rules although its picture on #66 shows neither defect: the guard also refuses candidates during the search, which then ends on another placement.
 Checks on the stack: benchmark 220/220, root 1.97 s; renderer package tests 829/829; archboard-layout tests pass; clippy for wasm32, rustdoc and cargo fmt clean. Rendering all 110 readings takes 11.0 s, 21.5 s on #66 alone.
+
+Review on gpt-6.1-sol at xhigh, in three scopes. The dense grid speed-up, and the hop clusters with the arc reader: no findings. Blocks guard, labels and contraction: three findings, fixed in 2c8a347f3, fa2b25e0d, 9146019c1 and 796aa4691. Contraction missed the join where two branches turn onto their shared last stretch at one point from opposite sides, and it kept only the first card where one run carries joins toward two cards. Both now keep the junction room, and unit tests in `compact/tests.rs` cover them. `route_labels/mod.rs` had grown to 606 lines, over the 600-line limit of the Rust source policy test. Reusing the route path brings it to 592.
+After the review, one more picture changes against #66: vKEsyHFk#cPOdAA3f (Archboard server) 1889x1115 -> 1815x1046, with the same placement. So 17 of 110 pictures change and 93 are byte-identical.
+Checks after the review: benchmark 220/220, root 1.96 s; renderer package tests 829/829; archboard-layout tests pass; repository lane 170/170; clippy for wasm32, rustdoc and cargo fmt clean.
 <!-- SECTION:NOTES:END -->
