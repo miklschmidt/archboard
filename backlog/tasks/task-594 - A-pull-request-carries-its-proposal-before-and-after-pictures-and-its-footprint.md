@@ -50,6 +50,8 @@ Final review validation: all 32 Action tests pass under Node 22.18.0. Both TypeS
 Review standards fix: the new Action tests assert annotation structure, diagnostic codes, source paths and report identity instead of full prose. Pure plan tests move to their own owner so the entry owner remains below 500 lines as publication regressions are added. All 39 focused tests pass.
 
 Review fix: publication now reads the current PR head after rendering and after each asset fetch, including retries. The comment writer reads it after listing comments. Regressions preserve the published asset commit and comment when the head moves at either boundary. Publication remains inside vKEsyHFk#mAh7CmuS, so the model needs no change.
+
+Review fix: an unreadable current PR head now blocks picture and comment publication. The Action keeps its report in the job summary and names the retry action. A 503 regression proves that no render or API write occurs. Final validation passes: 42 Action tests, repository lint, formatting, both TypeScript projects, and the site build with zero errors, warnings or hints. Semantic inspection has no diagnostics. Code inspection exits 0 with 193 informational findings and 92 skips. The embeds check has no findings. TASK-592 AC 2 and TASK-597 AC 2 and 3 remain open.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

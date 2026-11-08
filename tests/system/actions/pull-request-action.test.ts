@@ -116,6 +116,7 @@ describe("the entry", () => {
 	let movedTo: string | undefined;
 	let moveOnRead: number | undefined;
 	let headReads = 0;
+	let refuseHead = false;
 
 	/**
 	 * Run git in the checkout.
@@ -152,6 +153,7 @@ describe("the entry", () => {
 				requests.push(`${request.method} ${url.pathname}`);
 				if (url.pathname.endsWith("/pulls/7")) {
 					headReads += 1;
+					if (refuseHead) return new Response("unavailable", { status: 503 });
 					return Response.json({
 						body: "",
 						labels: labels.map((name) => ({ name })),
@@ -407,6 +409,21 @@ describe("the entry", () => {
 		} finally {
 			movedTo = undefined;
 			moveOnRead = undefined;
+		}
+	});
+
+	test("an unreadable current head permits neither picture nor comment publication", async () => {
+		const before = comments.map((one) => one.body);
+		const sent = requests.length;
+		refuseHead = true;
+		try {
+			const result = await step();
+			expect(result.exitCode).toBe(0);
+			expect(result.commands).not.toContain("model render");
+			expect(comments.map((one) => one.body)).toEqual(before);
+			expect(requests.slice(sent).filter((one) => !one.startsWith("GET"))).toHaveLength(0);
+		} finally {
+			refuseHead = false;
 		}
 	});
 

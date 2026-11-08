@@ -130,7 +130,9 @@ async function publicationProblem(
 	headSha: string,
 ): Promise<string | undefined> {
 	const now = (await readPullRequest(access, number))?.headSha;
-	if (now === undefined) return undefined;
+	if (now === undefined) {
+		return "The current pull request head could not be read. This run publishes neither pictures nor comment. Run the Action again when GitHub answers.";
+	}
 	return now === headSha
 		? undefined
 		: `The pull request moved on to ${now.slice(0, 7)}, so this run of an older head publishes neither pictures nor comment.`;
