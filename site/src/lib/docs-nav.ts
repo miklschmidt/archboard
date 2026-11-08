@@ -95,7 +95,10 @@ export const docsPages: readonly DocsPage[] = docsNav.flatMap((group) => group.p
  * @param path The page's path under /docs/.
  * @returns The neighbours, when there are any.
  */
-export function neighbours(path: string): { previous?: DocsPage; next?: DocsPage } {
+export function neighbours(path: string): {
+	previous?: DocsPage | undefined;
+	next?: DocsPage | undefined;
+} {
 	const index = docsPages.findIndex((page) => page.path === path);
 	if (index < 0) return {};
 	return { previous: docsPages[index - 1], next: docsPages[index + 1] };

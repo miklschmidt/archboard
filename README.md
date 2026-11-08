@@ -109,7 +109,7 @@ Warnings mark the affected modules and relationships in the canvas. The Right pa
 
 <p align="center"><sub>A small example checkout with real analysis results. The terminal replays the command and summarizes its answer. The live browser selects the warning, and the source excerpt shows the missing call.</sub></p>
 
-Archboard reads TypeScript, Python, C#, Swift, Rust, Go, C, C++, and Objective-C. It also reads Terraform and OpenTofu, Kubernetes manifests, Docker Compose, and Nix flakes. Where application code and infrastructure declare both ends of a connection, it can follow the evidence across a network hop. The report names analysis that it skips. A language server resolves names for an editor. [Configure one](INSTALL.md#language-servers-for-the-code-check) for stronger evidence in Python, Swift, Rust, Go, C#, C, C++, or Objective-C.
+Archboard reads TypeScript, Python, C#, Swift, Rust, Go, C, C++, and Objective-C. It also reads Terraform and OpenTofu, Kubernetes manifests, Docker Compose, and Nix flakes. Where application code and infrastructure declare both ends of a connection, it can follow the evidence across a network hop, also when the two live in separate repositories. Both ends must declare it: the code reads a value by name, and the manifest or Terraform sets that name to another module's address. With one end alone, the finding is information and never fails the check. The report names analysis that it skips, such as a repository that this machine has not registered. The [relay example](https://github.com/miklschmidt/archboard-relay-example) shows a hop between a TypeScript service and a Kubernetes ConfigMap in another repository, and [INSTALL.md](INSTALL.md#application-and-infrastructure-checkouts) states every limit. A language server resolves names for an editor. [Configure one](INSTALL.md#language-servers-for-the-code-check) for stronger evidence in Python, Swift, Rust, Go, C#, C, C++, or Objective-C.
 
 ### See what a module exposes before you change it
 
@@ -384,7 +384,23 @@ Describe this repository with canonical modules, their responsibilities, and the
 Bind each implemented module to its code and add a short walkthrough for a new team member.
 ```
 
-See [INSTALL.md](INSTALL.md) for how a command finds its vault, code bindings and the configuration.
+See [INSTALL.md](INSTALL.md) for how a command finds its vault, code bindings and the configuration. [The docs](https://miklschmidt.github.io/archboard/docs/) cover the CLI command by command, the schemas, and [a first map in one session](https://miklschmidt.github.io/archboard/docs/first-map/).
+
+**Make the check a gate**. `archboard check` exits 1 while the map and the code disagree, so run it where you run `tsc` or `ruff`: in a pre-push hook, in CI and in your agent's loop. In GitHub Actions, the check Action puts each finding on the pull request's diff:
+
+```yaml
+- uses: miklschmidt/archboard/actions/check@main
+  with:
+    version: 0.1.0
+```
+
+Give the check's words back to the agent before you review its work:
+
+```bash
+archboard check > /dev/null 2> check.log || codex exec "archboard check failed. Fix the code or the model. The findings: $(cat check.log)"
+```
+
+[The gate guide](https://miklschmidt.github.io/archboard/docs/gate/) has the hook, the Claude Code Stop hook and the loop, and [Architecture on pull requests](https://miklschmidt.github.io/archboard/docs/pull-requests/) has the Action that posts the plan with pictures before and after.
 
 ## Prompts to try
 

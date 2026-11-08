@@ -35,7 +35,7 @@ const blocks = descriptionBlocks(command.description);
 <section class="command" aria-labelledby={anchor}>
 	<h2 id={anchor} class="heading command-name">
 		<span>{command.name}</span>
-		<a class="heading-link" href={`#${anchor}`} aria-label="Link to this command" data-heading-link>#</a>
+		<a class="heading-link" href={`#${anchor}`} aria-label="Link to this command" data-heading-link data-pagefind-ignore>#</a>
 	</h2>
 	<p class="command-summary">{command.summary}</p>
 	{

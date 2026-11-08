@@ -46,7 +46,7 @@ const inline = (text: string) =>
 			<section class="schema" aria-labelledby={entry.name}>
 				<h2 id={entry.name} class="heading">
 					{entry.title}
-					<a class="heading-link" href={`#${entry.name}`} aria-label="Link to this schema" data-heading-link>#</a>
+					<a class="heading-link" href={`#${entry.name}`} aria-label="Link to this schema" data-heading-link data-pagefind-ignore>#</a>
 				</h2>
 				<p set:html={inline(uses[entry.name] ?? "")} />
 				<div class="schema-bar">

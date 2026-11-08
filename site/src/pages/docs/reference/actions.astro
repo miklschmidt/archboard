@@ -1,0 +1,124 @@
+---
+// The GitHub Actions of the repository, from their action.yml: what each does, its inputs and its
+// outputs, and a workflow that uses it.
+import { Code } from "astro-expressive-code/components";
+import Docs from "../../../layouts/Docs.astro";
+import { docsHref } from "../../../lib/docs-nav";
+import { inlineCode, reference } from "../../../lib/reference";
+
+const usage: Record<string, string> = {
+	check: `- uses: actions/checkout@v5
+- uses: miklschmidt/archboard/actions/check@main
+  with:
+    version: 0.1.0
+    fail-on: warning`,
+	"pull-request": `- uses: actions/checkout@v5
+  with:
+    fetch-depth: 0
+- uses: miklschmidt/archboard/actions/pull-request@main
+  with:
+    version: 0.1.0
+    out-of-plan: warn`,
+};
+const guide: Record<string, { path: string; label: string }> = {
+	check: { path: "gate", label: "The check as a gate" },
+	"pull-request": { path: "pull-requests", label: "Architecture on pull requests" },
+};
+const headings = reference.actions.map((action) => ({ depth: 2, slug: action.slug, text: action.name }));
+---
+
+<Docs
+	title="GitHub Actions"
+	description="The inputs and outputs of the two Actions that run archboard check and report the architecture of a pull request. Both install the published CLI and run only its commands."
+	path="reference/actions"
+	headings={headings}
+	source="actions/README.md"
+>
+	<p>
+		Use an Action by its path in this repository, at a branch, a tag or a commit. Pin
+		<code>version</code> to the CLI release that your team runs, the way you pin a compiler. Both
+		Actions set up Node.js, install <code>@archboard/cli</code> with npm, and stop the Archboard server
+		when they finish.
+	</p>
+	{
+		reference.actions.map((action) => (
+			<section aria-labelledby={action.slug}>
+				<h2 id={action.slug} class="heading">
+					{action.name}
+					<a class="heading-link" href={`#${action.slug}`} aria-label="Link to this Action" data-heading-link data-pagefind-ignore>#</a>
+				</h2>
+				<p set:html={inlineCode(action.description)} />
+				{guide[action.slug] && (
+					<p>
+						The guide: <a href={docsHref(guide[action.slug]?.path ?? "")}>{guide[action.slug]?.label}</a>.
+					</p>
+				)}
+				<Code code={usage[action.slug] ?? `- uses: ${action.uses}@main`} lang="yaml" title={action.uses} />
+				<h3 class="sub-head">Inputs</h3>
+				<table>
+					<thead>
+						<tr>
+							<th scope="col">Input</th>
+							<th scope="col">What it does</th>
+						</tr>
+					</thead>
+					<tbody>
+						{action.inputs.map((input) => (
+							<tr>
+								<td>
+									<code>{input.name}</code>
+								</td>
+								<td>
+									<span set:html={inlineCode(input.description)} />
+									{input.default !== null && input.default !== "" && (
+										<span class="detail">
+											Default <code>{input.default}</code>.
+										</span>
+									)}
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+				{action.outputs.length > 0 && (
+					<>
+						<h3 class="sub-head">Outputs</h3>
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">Output</th>
+									<th scope="col">What it holds</th>
+								</tr>
+							</thead>
+							<tbody>
+								{action.outputs.map((output) => (
+									<tr>
+										<td>
+											<code>{output.name}</code>
+										</td>
+										<td set:html={inlineCode(output.description)} />
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</>
+				)}
+			</section>
+		))
+	}
+</Docs>
+
+<style>
+	section + section {
+		margin-top: 0;
+	}
+	.detail {
+		display: block;
+		margin-top: 4px;
+		font-size: 0.875rem;
+		color: var(--ink-muted);
+	}
+	td:first-child {
+		width: 32%;
+	}
+</style>

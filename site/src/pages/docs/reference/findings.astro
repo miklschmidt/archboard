@@ -49,7 +49,7 @@ const label = { warning: "Warning, fails", error: "Error, fails", information: "
 			<>
 				<h2 id={group.slug} class="heading">
 					{group.title}
-					<a class="heading-link" href={`#${group.slug}`} aria-label="Link to this section" data-heading-link>#</a>
+					<a class="heading-link" href={`#${group.slug}`} aria-label="Link to this section" data-heading-link data-pagefind-ignore>#</a>
 				</h2>
 				<p>{group.text}</p>
 				<div class="codes">
@@ -69,7 +69,7 @@ const label = { warning: "Warning, fails", error: "Error, fails", information: "
 		))
 	}
 	<h2 id="embeds" class="heading">
-		Embeds check<a class="heading-link" href="#embeds" aria-label="Link to this section" data-heading-link>#</a>
+		Embeds check<a class="heading-link" href="#embeds" aria-label="Link to this section" data-heading-link data-pagefind-ignore>#</a>
 	</h2>
 	<p>
 		The embeds check finds each SVG and PNG that Git tracks and that carries a render recipe. It draws

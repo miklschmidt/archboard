@@ -1,0 +1,176 @@
+---
+title: Architecture on pull requests
+description: Put each finding on the diff with an excerpt of the code and the manifest, and give the reviewer the plan, the pictures before and after, and the modules that changed outside the plan.
+---
+
+import Aside from "../../components/docs/Aside.astro";
+import Steps from "../../components/docs/Steps.astro";
+import LinkCards from "../../components/docs/LinkCards.astro";
+
+A plain diff is the wrong level for an architectural change. A reviewer sees forty changed lines and not that Intake now calls Billing. Two GitHub Actions put the architecture on the pull request. Both run only commands of the published CLI.
+
+| Action                                       | What the reviewer gets                                                          | Permissions                               |
+| -------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------- |
+| `miklschmidt/archboard/actions/check`        | Each finding as an annotation on the changed line, and a job summary            | `contents: read`                          |
+| `miklschmidt/archboard/actions/pull-request` | One comment with the proposal, the pictures before and after, and the footprint | `contents: write`, `pull-requests: write` |
+
+## Findings on the diff
+
+The check Action turns each finding into a GitHub annotation on the file and line of its evidence. A finding that crosses a network hop has evidence in two files, so the annotation appears on both: the line of code that reads the address, and the line of the manifest that sets it. Each annotation names both ends with an excerpt of each, so the reviewer reads the whole connection at either end.
+
+```yaml title=".github/workflows/architecture.yml"
+name: architecture
+on: pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: miklschmidt/archboard/actions/check@main
+        with:
+          version: 0.1.0
+```
+
+The annotation of the relay example's hop reads like this:
+
+```text title="Annotation on services/intake/src/accept.ts"
+RELATIONSHIP_UNDRAWN: Rate card
+The code of "Accept parcel" reaches "Rate card". No relationship joins these modules.
+
+configured-path, resolved: services/intake/src/accept.ts:51
+  50 |   const billingUrl = trimUrl(process.env.BILLING_URL ?? "");
+  51 |   await deps.fetch(`${billingUrl}/surcharges?routeCode=...`);
+
+configured-path, resolved: deploy/kubernetes/peer-endpoints.yaml:13
+  12 |   DISPATCH_JOBS_URL: http://dispatch-jobs.harbor.svc.cluster.local:9324
+  13 |   BILLING_URL: http://billing.harbor.svc.cluster.local:8080
+```
+
+The job summary lists every finding with the same excerpts, the skipped subjects, and a link from each code to [its explanation](../reference/findings/). GitHub shows at most ten annotations of each level for one step, so the summary is the complete list.
+
+<Aside type="note" title="See it on a real pull request">
+	[Pull request #1 of the relay
+	example](https://github.com/miklschmidt/archboard-relay-example/pull/1) makes Intake call Billing
+	with no plan. Its check fails, and the annotation sits on `accept.ts`.
+</Aside>
+
+### Decide what blocks
+
+| Input              | Effect                                                                       |
+| ------------------ | ---------------------------------------------------------------------------- |
+| `fail-on: warning` | The default. The job fails while a warning or a semantic diagnostic remains. |
+| `fail-on: never`   | The findings show, and the job never fails on them.                          |
+| `allow-codes`      | These codes show and never fail the job, such as `CALLER_UNDRAWN`.           |
+
+A check that cannot run fails the job in every case: a usage error, a refusal or an unreachable server.
+
+## The plan on the pull request
+
+An agent that plans a change first writes it as a proposal: the architecture after the change, beside the current one. The pull-request Action finds that proposal and posts one comment. It updates the same comment on each push.
+
+<Steps>
+
+1. **The proposal.** Its name and summary, and what it adds, removes and changes.
+2. **Before and after.** The current architecture at the base commit, and the proposal at the head commit, as SVG in the reader's light or dark theme.
+3. **The footprint.** The modules whose code the pull request changed, in three groups: planned and changed, changed outside the plan, and planned but unchanged.
+4. **The map.** A link to the full-size picture and to the vault at the head commit.
+
+</Steps>
+
+```yaml title=".github/workflows/pull-request.yml"
+name: pull-request
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: miklschmidt/archboard/actions/pull-request@main
+        with:
+          version: 0.1.0
+          out-of-plan: warn
+```
+
+`fetch-depth: 0` is required, because the Action reads the base and the head from Git history. The `labeled` and `unlabeled` events let the override label below take effect at once.
+
+### How it finds the proposal
+
+The Action takes the first of these that it finds:
+
+<Steps>
+
+1. The `state` input, by identity or name.
+2. The marker that the `archboard-pr` skill writes into the pull request's description:
+
+   ```html
+   <!-- archboard-pr model="Wkx6de6D" state="<proposal-id>" -->
+   ```
+
+3. The only draft proposal of the model.
+
+</Steps>
+
+With none, the comment shows the architecture before and after and the changed modules, and judges nothing against a plan.
+
+### Changes outside the plan
+
+The footprint's middle group is the interesting one: modules whose code changed although the plan did not name them. `out-of-plan` says what happens then.
+
+| `out-of-plan` | Effect                                                                                                                       |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `warn`        | The default. An annotation and a line in the comment.                                                                        |
+| `fail`        | The job fails. The label `archboard: out of plan` lets the pull request through, and the comment says that the label did it. |
+| `off`         | The footprint shows, and nothing is judged.                                                                                  |
+
+Change the label with `override-label`. A pull request with no proposal has no plan, so nothing in it is out of plan.
+
+### Where the pictures live
+
+GitHub shows an image in a comment only from an address on the web. The Action commits the SVGs to an orphan branch, `archboard-assets`, under `pr-<number>/<head commit>/`, and links them from there. It removes the folders of older commits of the same pull request. A pull request from a fork gets a read-only token, so its comment comes without pictures and says why.
+
+<Aside type="caution" title="Private repositories">
+	An image on `raw.githubusercontent.com` of a private repository needs the reader's sign-in, and
+	GitHub does not always pass it to a comment. The comment then shows the links in place of the
+	pictures.
+</Aside>
+
+## Explain the change in the description
+
+The comment states facts. The `archboard-pr` skill, which `archboard init` installs, has your agent write the description around them: the problem, the resulting behavior, the evidence and the merge danger. Ask for it when you open the pull request:
+
+```text title="Ask your agent"
+Open a pull request for this branch. Use the archboard-pr skill: plan the change as a proposal,
+adopt it on this branch once the code matches, and explain the architecture in the description.
+```
+
+## Next
+
+<LinkCards
+	cards={[
+		{
+			path: "reference/actions",
+			title: "GitHub Actions reference",
+			text: "Every input and output of both Actions.",
+			icon: "code",
+		},
+		{
+			path: "platform",
+			title: "Application and infrastructure",
+			text: "Check out a second repository so a hop reads on both sides.",
+			icon: "server",
+		},
+	]}
+/>

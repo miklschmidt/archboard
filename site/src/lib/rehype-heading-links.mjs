@@ -24,6 +24,7 @@ export function rehypeHeadingLinks() {
 					href: `#${node.properties.id}`,
 					ariaLabel: "Link to this section",
 					dataHeadingLink: "",
+					dataPagefindIgnore: "",
 				},
 				children: [{ type: "text", value: "#" }],
 			});
