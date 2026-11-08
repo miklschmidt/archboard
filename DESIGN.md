@@ -472,6 +472,8 @@ along the line on both grounds.
 
 **The Plain Row Rule.** A list in either side column is rows on the column's ground. No plate, card or rule stands under its rows. A row rises as a Control Face only while it is lit, and never with gold.
 
+**The Quiet Scrollbar Rule.** Every scrollbar of the shell and the site is thin. Its track is transparent, so the plane under it shows through. Its thumb is Muted Ink mixed with transparency: 70% on chalk and 50% on graphite. So it keeps 3:1 against every plane of its theme, the WCAG minimum for a control, and it needs no hover state. One rule in app.css sets it for every element, and `site/src/styles/global.css` holds the same rule for the site. No component styles or hides its own scrollbar, and the rule changes nothing about what scrolls.
+
 **The Lit Plane Rule.** A raised plane carries a lit top edge, a contact line and a soft shadow, or it carries none. A contact line is 1px or 2px. No larger hard offset shadow appears in the shell.
 
 **The Chosen Rises Rule.** In a trough, the chosen choice rises out of it as a Control Face in full ink with `shadow-chosen`. That shadow is the raised one with a 2px underline of Wayfinding Gold inside the foot.

@@ -1296,16 +1296,6 @@
 	transition-timing-function: ease-in;
 }
 
-/* The sidebar's scroll areas are quiet: a thin bar in the theme's own tone, in
-   place of the system's full-width one. */
-[data-slot="semantic-sidebar-panel"],
-[data-slot="semantic-sidebar-panel"] *,
-[data-slot="navigator-column"] *,
-[data-slot="model-panel"] * {
-	scrollbar-width: thin;
-	scrollbar-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent) transparent;
-}
-
 /* Base UI keeps the tab panel that is leaving until its transitions end. The
    fade belongs to the panel that arrives, so one that leaves is gone at once,
    and two panels are never drawn in one frame. */
@@ -1336,8 +1326,12 @@
 }
 
 @layer base {
+	/* Every scrollbar is slim and quiet (DESIGN.md, the Quiet Scrollbar Rule). It is
+	   thin, its track is transparent so the surface shows through, and its thumb is
+	   muted ink that the root sets for each theme below. */
 	* {
 		@apply border-border outline-ring/50;
+		scrollbar-width: thin;
 	}
 	/* Whatever answers a click says so under the pointer. */
 	:is(
@@ -1360,13 +1354,18 @@
 	):not(:disabled, [aria-disabled="true"]) {
 		cursor: pointer;
 	}
+	/* Every element inherits the scrollbar's colors. The thumb keeps 3:1 against
+	   each surface of its theme, the WCAG minimum for a control, so chalk takes a
+	   stronger mix than graphite. */
 	html {
 		@apply font-sans;
 		font-synthesis: none;
 		color-scheme: light;
+		scrollbar-color: color-mix(in oklch, var(--muted-foreground) 70%, transparent) transparent;
 	}
 	html[data-theme="dark"] {
 		color-scheme: dark;
+		scrollbar-color: color-mix(in oklch, var(--muted-foreground) 50%, transparent) transparent;
 	}
 	html,
 	body,

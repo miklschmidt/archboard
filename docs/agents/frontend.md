@@ -265,6 +265,8 @@ A count is `Badge` with `variant="count"` and `size="technical"`.
 
 Every dropdown is `Select` or `DropdownMenu` from the ui-kit, and both ease with the `menu-motion` utility. The kit reads no timing, because it stands in the lowest layer, and a popover stands in a portal outside the shell root. So `applyShellDurations` puts `COLUMN_MS.popoverIn` and `popoverOut` on the root element when the page starts.
 
+Every scrollbar takes its look from one rule in the base layer of `app.css`, the Quiet Scrollbar Rule in DESIGN.md. Do not style or hide a scrollbar in a component. `scrollbar-gutter` stays free, because it reserves room and changes no look.
+
 The remaining stack stays as it is. Use the existing shadcn/Base UI primitives,
 Remix icons, Tailwind theme tokens and Bun validation. Other Platform libraries,
 font utilities, logging APIs and referenced skills are not implied dependencies.
