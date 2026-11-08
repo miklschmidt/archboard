@@ -49,10 +49,11 @@ Bind each module to the directory or the symbol that implements it, and mark sys
 we do not own as external. Then run archboard check and fix what it finds.
 ```
 
-Open the map while the agent works. Every pane shows what the agent claims and why:
+Open the map while the agent works. `archboard status` prints the address of the local server as `url`. Open it in your browser and pick the repository. Every pane shows what the agent claims and why, and once a pane is open, the agent can move it to what it talks about:
 
 ```bash
-archboard browser show
+archboard status
+archboard browser show --module "<module>"
 ```
 
 Read the map with the person who knows the system. Three questions find most mistakes:
@@ -106,10 +107,11 @@ or six beats. Start with two modules and add a few at each beat. Stop at the pla
 fails most often, and end on the one thing I must remember.
 ```
 
-Open it in the browser and press Narrate to hear the Codex voice tell each beat. To keep a video, retain a checkpoint and record it:
+Open it in the browser and press Narrate to hear the Codex voice tell each beat. To keep a video, retain a checkpoint that holds the walkthrough, then record from it. The `--expect-revision` value is the `revision.digest` of `archboard model read`, and the answer of `model retain` names the new checkpoint:
 
 ```bash
-archboard model checkpoints
+archboard model retain --operation-id keep-pay-walkthrough --writer agent \
+  --expect-revision <revision-digest> --doing "keeping the payment walkthrough"
 archboard model record --checkpoint <checkpoint-id> --walkthrough "How a customer pays" --out pay.mp4
 ```
 

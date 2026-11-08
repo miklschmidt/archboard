@@ -50,7 +50,7 @@ Evidence:
       14 |
 ```
 
-The job summary lists up to 100 findings, evidence for the first 30 errors and warnings, and the skipped subjects. Each code links to [its explanation](../reference/findings/). GitHub shows at most ten annotations of each level for one step. The Action saves the complete JSON report at its `report-path` output. Upload that file as an artifact to keep the complete list for review.
+The job summary lists up to 100 findings, evidence for the first 30 errors and warnings, and the skipped subjects. Each code links to [its explanation](../reference/findings/). GitHub shows at most ten annotations of each level for one step. The Action saves the complete JSON report at its `report` output. Upload that file as an artifact to keep the complete list for review.
 
 <Aside type="note" title="See it on a real pull request">
 	[Pull request #1 of the relay
@@ -85,7 +85,7 @@ An agent that plans a change first writes it as a proposal: the architecture aft
 name: pull-request
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
 
 permissions:
   contents: write
@@ -104,7 +104,7 @@ jobs:
           out-of-plan: warn
 ```
 
-`fetch-depth: 0` is required, because the Action reads the base and the head from Git history. The `labeled` and `unlabeled` events let the override label below take effect at once.
+`fetch-depth: 0` is required, because the Action reads the base and the head from Git history. The `labeled` and `unlabeled` events let the override label below take effect at once, and `edited` runs the Action again when the marker in the description changes.
 
 ### How it finds the proposal
 
@@ -131,13 +131,13 @@ The plan is what the proposal changes against the current architecture at the ba
 
 The footprint's middle group is the interesting one: modules whose code changed although the plan did not name them. `out-of-plan` says what happens then.
 
-| `out-of-plan` | Effect                                                                                                                       |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `warn`        | The default. An annotation and a line in the comment.                                                                        |
-| `fail`        | The job fails. The label `archboard: out of plan` lets the pull request through, and the comment says that the label did it. |
-| `off`         | The footprint shows, and nothing is judged.                                                                                  |
+| `out-of-plan` | Effect                                                                                                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `warn`        | The default. An annotation and a line in the comment.                                                                                                                           |
+| `fail`        | The job fails, and it also fails when the plan cannot be checked. The label `archboard: out of plan` lets the pull request through, and the comment says that the label did it. |
+| `off`         | The footprint shows, and nothing is judged.                                                                                                                                     |
 
-Change the label with `override-label`. A pull request with no proposal has no plan, so nothing in it is out of plan.
+Change the label with `override-label`. A pull request with no proposal has no plan, so nothing in it is out of plan. Removing the marker from the description therefore turns the plan check off for that pull request.
 
 ### Where the pictures live
 

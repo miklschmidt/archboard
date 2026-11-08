@@ -35,8 +35,10 @@ const headings = reference.actions.map((action) => ({ depth: 2, slug: action.slu
 	source="actions/README.md"
 >
 	<p>
-		Use an Action by its path in this repository, at a branch, a tag or a commit. Pin
-		<code>version</code> to the CLI release that your team runs, the way you pin a compiler. Both
+		Use an Action by its path in this repository. The examples use <code>@main</code>. Pin the
+		Action to a commit SHA, as you pin any third-party Action, because the pull-request Action holds
+		a token that can write. Pin <code>version</code> to the CLI release that your team runs, the way
+		you pin a compiler. Both
 		Actions set up Node.js, install <code>@archboard/cli</code> with npm, and stop the Archboard server
 		when they finish.
 	</p>

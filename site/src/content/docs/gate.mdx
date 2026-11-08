@@ -118,7 +118,7 @@ jobs:
           version: 0.1.0
 ```
 
-Pin `version` to the release that your team runs, as you pin your compiler. The [Actions reference](../reference/actions/) lists every input: `fail-on: never` reports without failing, and `allow-codes` keeps chosen findings visible without failing on them.
+Pin `version` to the release that your team runs, as you pin your compiler. The examples use `@main`. Pin the Action itself to a commit SHA of `miklschmidt/archboard`, as you pin any third-party Action. The [Actions reference](../reference/actions/) lists every input: `fail-on: never` reports without failing, and `allow-codes` keeps chosen findings visible without failing on them.
 
 Any other CI runs the same command. The exit code is the gate:
 

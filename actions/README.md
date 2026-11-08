@@ -8,7 +8,8 @@ Node 22.18 or later runs their TypeScript as it is.
 | `miklschmidt/archboard/actions/check`        | Runs `archboard check` as a gate, and puts each finding on the pull request's diff.                   |
 | `miklschmidt/archboard/actions/pull-request` | Comments on the pull request with its proposal, the architecture before and after, and its footprint. |
 
-Pin the action to a tag or a commit SHA, as in `miklschmidt/archboard/actions/check@<ref>`.
+The examples use `@main`. Pin each action to a commit SHA of this repository, as you pin any
+third-party action, because the pull-request action holds a token that can write.
 
 ## The check as a gate
 
@@ -26,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: miklschmidt/archboard/actions/check@<ref>
+      - uses: miklschmidt/archboard/actions/check@main
 ```
 
 The action annotates each finding on the diff. A semantic diagnostic is an error, a code or embeds
@@ -38,7 +39,7 @@ annotated at the vault file it names. The job summary lists the counts, up to 10
 to the findings reference, evidence for the first 30 errors and warnings, and what the check did not read.
 
 GitHub shows 10 annotations of each level in a step. The summary names omitted entries.
-The complete JSON report is at the `report-path` output. Upload that file as an artifact to keep it for review.
+The complete JSON report is at the `report` output. Upload that file as an artifact to keep it for review.
 
 | Input               | Default   | Meaning                                                                                                  |
 | ------------------- | --------- | -------------------------------------------------------------------------------------------------------- |
@@ -59,7 +60,7 @@ and its row in the summary, marked allowed. With `fail-on: warning`, the step fa
 error or a warning with another code remains.
 
 ```yaml
-- uses: miklschmidt/archboard/actions/check@<ref>
+- uses: miklschmidt/archboard/actions/check@main
   with:
     allow-codes: |
       RELATIONSHIP_UNDRAWN
@@ -82,7 +83,7 @@ steps:
       repository: my-org/infrastructure
       path: infrastructure
       token: ${{ secrets.INFRASTRUCTURE_READ_TOKEN }}
-  - uses: miklschmidt/archboard/actions/check@<ref>
+  - uses: miklschmidt/archboard/actions/check@main
     with:
       working-directory: app
       repos: infrastructure
@@ -115,7 +116,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: miklschmidt/archboard/actions/pull-request@<ref>
+      - uses: miklschmidt/archboard/actions/pull-request@main
         with:
           out-of-plan: fail
 ```
