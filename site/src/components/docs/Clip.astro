@@ -27,24 +27,36 @@ const { src, still, alt, width, height } = Astro.props;
 </figure>
 
 <script>
+	import { whileVisible } from "../../scripts/reveal";
+
 	for (const clip of document.querySelectorAll<HTMLElement>("[data-clip]")) {
 		const image = clip.querySelector<HTMLImageElement>("[data-clip-image]");
 		const toggle = clip.querySelector<HTMLButtonElement>("[data-clip-toggle]");
 		const { src, still } = clip.dataset;
 		if (!image || !toggle || !src || !still) continue;
-		const set = (playing: boolean): void => {
-			// The reader's choice wins over the reduced-motion source from here on.
-			clip.querySelector("source")?.remove();
-			image.src = playing ? src : still;
+		const motion = matchMedia("(prefers-reduced-motion: reduce)");
+		let playing = !motion.matches;
+		let visible = false;
+		// Script applies the preference and the reader's choice as well as offscreen pausing.
+		clip.querySelector("source")?.remove();
+		const update = (): void => {
+			const next = playing && visible ? src : still;
+			if (image.getAttribute("src") !== next) image.src = next;
 			toggle.textContent = playing ? "Pause" : "Play";
 		};
-		let playing = !matchMedia("(prefers-reduced-motion: reduce)").matches;
 		// The label says what the button does next, so it needs no pressed state.
-		toggle.textContent = playing ? "Pause" : "Play";
 		toggle.hidden = false;
 		toggle.addEventListener("click", () => {
 			playing = !playing;
-			set(playing);
+			update();
+		});
+		whileVisible(clip, (onScreen) => {
+			visible = onScreen;
+			update();
+		});
+		motion.addEventListener("change", () => {
+			if (motion.matches) playing = false;
+			update();
 		});
 	}
 </script>
