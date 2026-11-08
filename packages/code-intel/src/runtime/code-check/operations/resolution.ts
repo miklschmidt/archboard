@@ -41,6 +41,7 @@ import type { Checkout, ReadCheckout } from "#runtime/code-check/operations/chec
 import { codeSiteOf } from "#runtime/code-facts/operations/definition-site.ts";
 import { type Definition, type Reference } from "#runtime/code-facts/operations/facts.ts";
 import { type FactsPass } from "#runtime/code-facts/services/reader.ts";
+import type { Language } from "#runtime/language-servers/operations/languages.ts";
 import { languageServerOf } from "#runtime/language-servers/operations/server-command.ts";
 import {
 	openLanguageServers,
@@ -49,8 +50,7 @@ import {
 	type UnavailableServer,
 } from "#runtime/language-servers/services/session.ts";
 import type { CheckTiming, CodeCheckSkip } from "#shared/protocol/code-check.ts";
-import type { z } from "zod";
-import { configureCommand, type LanguageServersSchema } from "@archboard/workspace/checkouts";
+import { passServers } from "@archboard/workspace/checkouts";
 
 /** Where a server says a use is defined, as the pass reads the checkout. */
 type UseResolution =
@@ -174,6 +174,30 @@ interface PassResolution {
 }
 
 /**
+ * A word as a shell reads it: as it stands when it has only characters a shell
+ * leaves alone, and in single quotes otherwise.
+ * @param word The word.
+ * @returns The word, quoted when it needs it.
+ */
+function shellWord(word: string): string {
+	return /^[\w@%+=:,./-]+$/u.test(word) ? word : `'${word.replaceAll("'", "'\\''")}'`;
+}
+
+/**
+ * The command that names the server of a language for a repository, as a
+ * person types it. `<command>` is the program that the agent chooses. A
+ * repository identity can hold a space when a checkout has no remote and is
+ * named by its directory, so it is quoted for a shell.
+ * @param language The language.
+ * @param repo The repository identity, when the command must name it.
+ * @returns The command.
+ */
+function configureCommand(language: Language, repo?: string): string {
+	const checkout = repo === undefined ? "" : ` --repo ${shellWord(repo)}`;
+	return `archboard repo language-server ${language} <command>${checkout}`;
+}
+
+/**
  * The skips of what the servers could not answer.
  * @param unavailable Each language and why.
  * @param checkouts Each repository's checkout, to name the repository of a root.
@@ -204,30 +228,25 @@ function serverSkips(
 }
 
 /**
- * Open the resolution of one pass.
- * @param servers The servers configured for each repository's checkout.
+ * Open the resolution of one pass. It reads each language server file once
+ * (`passServers`), so a change during the pass applies to the next one.
  * @param signal The pass's signal.
  * @param facts The pass's code facts, which say whether a site declares or defines.
  * @param checkouts Each repository's checkout, which says where its servers run.
  * @param serverOf The server of a language in a checkout, where an owner fixes
- * it; by default the registration's own (`languageServerOf`).
+ * it; by default the checkout's files decide (`languageServerOf`).
  * @returns The resolution.
  */
 function openResolution(
-	servers: ReadonlyMap<string, z.infer<typeof LanguageServersSchema>>,
 	signal: AbortSignal,
 	facts: FactsPass,
 	checkouts: ReadonlyMap<string, Checkout>,
 	serverOf?: ServerOf,
 ): PassResolution {
-	const byRoot = new Map(
-		[...checkouts].flatMap(([repo, checkout]) =>
-			checkout.status === "read" ? [[checkout.root, servers.get(repo) ?? {}] as const] : [],
-		),
-	);
+	const named = passServers();
 	const session = openLanguageServers({
 		servers:
-			serverOf ?? ((language, root) => languageServerOf(language, root, byRoot.get(root) ?? {})),
+			serverOf ?? ((language, root) => languageServerOf(language, root, named(root, language))),
 		signal,
 	});
 	return {

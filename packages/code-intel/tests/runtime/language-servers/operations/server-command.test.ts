@@ -1,6 +1,7 @@
-// Which command starts the server of a language in a checkout (TASK-433):
-// a language with no configured server has none, a configured one runs
-// exactly its command and arguments, and TypeScript runs a configured server, else the
+// Which command starts the server of a language in a checkout (TASK-433,
+// TASK-599): a language that no file names has none, a named one runs exactly
+// its command and arguments, a file that cannot be read gives its problem, and
+// TypeScript runs a named server, else the
 // native `tsc` of the checkout's own TypeScript 7 or later, else
 // typescript-language-server for the checkout's TypeScript before 7 (TASK-579.13),
 // else Archboard's where Archboard has a TypeScript (a checkout, not a release).
@@ -62,12 +63,12 @@ function checkoutWith(
 
 /**
  * An executable stand-in for typescript-language-server in a directory.
- * @param directory The directory.
+ * @param parent The directory.
  * @returns The program.
  */
-function wrapperIn(directory: string): string {
-	mkdirSync(directory, { recursive: true });
-	const program = join(directory, "typescript-language-server");
+function wrapperIn(parent: string): string {
+	mkdirSync(parent, { recursive: true });
+	const program = join(parent, "typescript-language-server");
 	writeFileSync(program, "#!/bin/sh\n");
 	chmodSync(program, 0o755);
 	return program;
@@ -129,7 +130,7 @@ function checkoutLinkedOut(link: "package" | "program") {
  * @returns Its program, or the reason it has none.
  */
 function typescriptProgram(root: string): string {
-	const server = languageServerOf("typescript", root, {});
+	const server = languageServerOf("typescript", root, undefined);
 	return server.status === "command" ? (server.argv[0] ?? "") : server.detail;
 }
 
@@ -137,7 +138,7 @@ test("TypeScript runs the native tsc of the checkout's own TypeScript 7 or later
 	// No typescript-language-server on the PATH, so a TypeScript before 7 has no server of its own.
 	withPath(directory(), () => {
 		const own = checkoutWith("7.1.0");
-		expect(languageServerOf("typescript", own.root, {})).toEqual({
+		expect(languageServerOf("typescript", own.root, undefined)).toEqual({
 			status: "command",
 			argv: [own.program, "--lsp", "--stdio"],
 			initializationOptions: { tsserver: { useSyntaxServer: "never" } },
@@ -159,10 +160,10 @@ test("TypeScript runs the native tsc of the checkout's own TypeScript 7 or later
 	});
 });
 
-test("a configured TypeScript server wins over the checkout's own TypeScript 7", () => {
+test("a named TypeScript server wins over the checkout's own TypeScript 7", () => {
 	const own = checkoutWith("7.1.0");
 	expect(
-		languageServerOf("typescript", own.root, { typescript: { command: "bun", args: ["--stdio"] } }),
+		languageServerOf("typescript", own.root, { command: "bun", args: ["--stdio"], file: "f" }),
 	).toEqual({
 		status: "command",
 		argv: [Bun.which("bun") ?? "", "--stdio"],
@@ -170,7 +171,9 @@ test("a configured TypeScript server wins over the checkout's own TypeScript 7",
 	});
 	expect(
 		languageServerOf("typescript", own.root, {
-			typescript: { command: "archboard-no-such-server", args: [] },
+			command: "archboard-no-such-server",
+			args: [],
+			file: "f",
 		}),
 	).toMatchObject({ status: "missing" });
 });
@@ -231,14 +234,28 @@ test("a checkout's TypeScript before 7 with no typescript-language-server falls 
 	});
 });
 
-test("a language with no configured server has none, and a configured one runs exactly its command and arguments", () => {
+test("a language that no file names has none, a named one runs exactly its command and arguments, and a file that cannot be read gives its problem", () => {
 	for (const language of ["python", "csharp", "swift", "c"] as const) {
-		expect(languageServerOf(language, "/checkout", {}).status).toBe("missing");
+		expect(languageServerOf(language, "/checkout", undefined).status).toBe("missing");
 	}
 	expect(
-		languageServerOf("c", "/checkout", { c: { command: "bun", args: ["--background-index"] } }),
+		languageServerOf("c", "/checkout", {
+			command: "bun",
+			args: ["--background-index"],
+			file: "f",
+		}),
 	).toEqual({ status: "command", argv: [Bun.which("bun") ?? "", "--background-index"] });
 	expect(
-		languageServerOf("c", "/checkout", { c: { command: "archboard-no-such-server", args: [] } }),
+		languageServerOf("c", "/checkout", {
+			command: "archboard-no-such-server",
+			args: [],
+			file: "f",
+		}),
 	).toMatchObject({ status: "missing" });
+	for (const language of ["c", "typescript"] as const) {
+		expect(languageServerOf(language, "/checkout", { problem: "f is not valid" })).toEqual({
+			status: "missing",
+			detail: "f is not valid",
+		});
+	}
 });

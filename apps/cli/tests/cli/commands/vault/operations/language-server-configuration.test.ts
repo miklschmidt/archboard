@@ -1,11 +1,11 @@
 // What `archboard repo language-server` writes and what the code check reads
-// are one contract (ADR 0046, TASK-433). The command that a
+// are one contract (ADR 0046, TASK-599). The command that a
 // `language-server-missing` skip names, read by a shell, is one the CLI accepts
 // for that checkout and language, even when the repository identity holds a
-// space. A pass reads the registry file again, so a server that already runs sees
-// a configuration that was written after it started. A configuration belongs to the
-// checkout it was written for, and a stored command that is not a name or an
-// absolute path never reaches a pass.
+// space. A pass reads the files again, so a server that already runs sees a
+// server that was named after it started. The repository file wins over the
+// global one, and a path that the CLI keeps from the checkout root is the
+// program the check starts.
 
 import { afterAll, beforeAll, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -16,6 +16,9 @@ import type * as CodeCheck from "@archboard/code-intel/code-check-run";
 
 /** A repository with no remote is named by its directory, here with a space. */
 const IDENTITY = "my project";
+/** A program on no PATH, which the repository file can name. */
+const ABSENT = "archboard-no-such-clangd";
+/** A program of no machine, which only the global file can name. */
 const NEVER = "/nonexistent/clangd";
 const cwd = process.cwd();
 const caller = {
@@ -41,21 +44,6 @@ function git(directory: string, ...args: string[]): void {
 	if (done.exitCode !== 0) throw new Error(done.stderr.toString());
 }
 
-/**
- * Write the registry as a person who edited the file would.
- * @param servers What the entry of the checkout holds.
- */
-function writeRegistry(servers: unknown): void {
-	const entry = {
-		repo: IDENTITY,
-		root: checkout,
-		source: "declared",
-		addedAt: "2026-10-07",
-		servers,
-	};
-	writeFileSync(registry, JSON.stringify([entry]));
-}
-
 beforeAll(async () => {
 	scratch = realpathSync(mkdtempSync(join(tmpdir(), "archboard-language-server-configuration-")));
 	checkout = join(scratch, "a", IDENTITY);
@@ -63,6 +51,10 @@ beforeAll(async () => {
 	vault = join(scratch, "vault");
 	process.env["ARCHBOARD_REPOS"] = registry;
 	mkdirSync(join(checkout, "src"), { recursive: true });
+	writeFileSync(
+		registry,
+		JSON.stringify([{ repo: IDENTITY, root: checkout, source: "declared", addedAt: "2026-10-07" }]),
+	);
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
 	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
 	git(checkout, "init", "-q");
@@ -148,17 +140,6 @@ async function run(directory: string, argv: string[]) {
 }
 
 /**
- * The servers `repo list` shows for a checkout.
- * @param root The checkout.
- * @returns Them, or undefined when it shows none.
- */
-async function listed(root = checkout): Promise<unknown> {
-	const { stdout } = await run(scratch, ["repo", "list"]);
-	const parsed = JSON.parse(stdout) as { repos: { root: string; servers?: unknown }[] };
-	return parsed.repos.find((entry) => entry.root === root)?.servers;
-}
-
-/**
  * The `language-server-missing` skips of one pass over the vault.
  * @returns Them.
  */
@@ -175,39 +156,31 @@ async function missingSkips() {
 }
 
 test("the command a language-server-missing skip names is one the CLI accepts, and the next pass reads what it wrote", async () => {
-	// A person edited the file: a relative command is no server, so it never reaches a pass.
-	writeRegistry({ c: { command: "./clangd", args: [] } });
-	expect(await listed()).toBeUndefined();
 	const [skip, ...others] = await missingSkips();
 	expect(others).toEqual([]);
 	expect(skip?.repo).toBe(IDENTITY);
 	const named = /`(archboard [^`]*)`/u.exec(skip?.detail ?? "")?.[1];
 	expect(named).toContain("language-server c");
 	// Read as a shell reads it, with the program the agent chose.
-	const words = Bun.spawnSync(["sh", "-c", `printf '%s\\0' ${named?.replace("<command>", NEVER)}`])
+	const words = Bun.spawnSync(["sh", "-c", `printf '%s\\0' ${named?.replace("<command>", ABSENT)}`])
 		.stdout.toString()
 		.split("\0")
 		.slice(1, -1);
 	expect((await run(scratch, words)).exited).toBe(0);
-	expect(await listed()).toEqual({ c: { command: NEVER, args: [] } });
 	// The same process asks again, as a server that started before the command ran.
 	const [again, ...rest] = await missingSkips();
 	expect(rest).toEqual([]);
-	expect(again?.detail).toContain(NEVER);
+	expect(again?.detail).toContain(ABSENT);
 });
 
-test("a configuration belongs to the checkout it was written for", async () => {
-	writeRegistry({ c: { command: NEVER, args: [] } });
-	const other = join(scratch, "b", IDENTITY);
-	mkdirSync(other, { recursive: true });
-	git(other, "init", "-q");
-	// The same repository, cloned twice: only the registered clone is configured.
-	const refused = await run(other, ["repo", "language-server", "c", "--remove"]);
-	expect(refused.exited).toBe(2);
-	expect(await listed()).toEqual({ c: { command: NEVER, args: [] } });
-	// A registration at another root is another place, where nobody configured a server,
-	// and the checkout that was configured keeps its servers.
-	await run(other, ["repo", "add", "."]);
-	expect(await listed(other)).toBeUndefined();
-	expect(await listed()).toEqual({ c: { command: NEVER, args: [] } });
+test("the repository file wins over the global one, and a path the CLI keeps from the checkout root is the program the check starts", async () => {
+	expect((await run(checkout, ["repo", "language-server", "c", "--remove"])).exited).toBe(0);
+	expect((await run(scratch, ["repo", "language-server", "c", NEVER, "--global"])).exited).toBe(0);
+	expect((await missingSkips())[0]?.detail).toContain(NEVER);
+	expect(
+		(await run(join(checkout, "src"), ["repo", "language-server", "c", "../bin/clangd"])).exited,
+	).toBe(0);
+	const [skip] = await missingSkips();
+	expect(skip?.detail).toContain(join(checkout, "bin", "clangd"));
+	expect(skip?.detail).not.toContain(NEVER);
 });

@@ -15,7 +15,15 @@ test("a leading -C reaches the command on either side of --url", () => {
 		const environment: Record<string, string | undefined> = {};
 		const bootstrap = applyCliBootstrap(argv, environment);
 		expect(argv).toEqual(["check", "-C", "/work/.archboard/vault"]);
-		expect(bootstrap).toEqual({ url: "http://127.0.0.1:4317", help: false });
+		expect(bootstrap).toEqual({ url: "http://127.0.0.1:4317", help: false, text: false });
 		expect(environment["ARCHBOARD_URL"]).toBe("http://127.0.0.1:4317");
 	}
+});
+
+test("--text asks for text wherever it is written before --, and stays an argument after it", () => {
+	const argv = ["--text", "model", "read", "--text", "--", "--text"];
+	const bootstrap = applyCliBootstrap(argv, {});
+	expect(argv).toEqual(["model", "read", "--", "--text"]);
+	expect(bootstrap.text).toBe(true);
+	expect(applyCliBootstrap(["model", "read"], {}).text).toBe(false);
 });

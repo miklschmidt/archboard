@@ -121,8 +121,8 @@ jobs:
       - name: Install archboard with npm and run it
         run: bun scripts/release/smoke.ts --installer npm --name archboard
 
-      - name: Install @archboard/cli with Bun and run it
-        run: bun scripts/release/smoke.ts --installer bun --name @archboard/cli
+      - name: Install archboard with Bun and run it
+        run: bun scripts/release/smoke.ts --installer bun --name archboard
 
   # The environment `npm` holds the job until its required reviewer approves the run. npm trusts
   # only this job, through OIDC (trusted publishing), so the repository stores no npm token, and

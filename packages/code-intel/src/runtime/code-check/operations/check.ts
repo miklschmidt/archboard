@@ -502,7 +502,7 @@ function timedFacts(facts: FactsPass) {
  * reads and every language server it started.
  * @param plans The Terraform or OpenTofu plans an agent named (`--plan`).
  * @param serverOf The server of a language in a checkout, where an owner fixes
- * it; by default each checkout's registration decides (ADR 0046).
+ * it; by default each checkout's language server files decide (ADR 0046).
  * @param revisions Authoritative immutable trees for a historical candidate.
  * @returns The findings and what the pass did not read.
  */
@@ -533,12 +533,7 @@ async function checkCode(
 	const refs = await readRefCodes(refReadsOf(claims, bound, snapshot), checkouts, signal);
 	const reading = timedFacts(routedFacts(refs, codeFacts.pass(signal, plans)));
 	const facts = reading.facts;
-	const servers = new Map(
-		snapshot.entries.flatMap((entry) =>
-			entry.servers === undefined ? [] : [[entry.repo, entry.servers] as const],
-		),
-	);
-	const resolution = openResolution(servers, signal, facts, checkouts, serverOf);
+	const resolution = openResolution(signal, facts, checkouts, serverOf);
 	const withoutServer = new Set<RefCode>();
 	const pass: Pass = {
 		snapshot,

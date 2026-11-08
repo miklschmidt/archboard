@@ -81,7 +81,8 @@ function document(vault: string, name: string, variants: readonly FixtureVariant
  * Register checkouts in an owner's own registry.
  * @param scratch The scratch directory that holds `repos.json`.
  * @param checkouts Each repository and its checkout.
- * @param servers The language servers configured for every checkout.
+ * @param servers The language servers that every checkout's
+ * `.archboard/language-servers.json` names, as a repository commits them.
  */
 function register(
 	scratch: string,
@@ -95,10 +96,27 @@ function register(
 				root,
 				source: "declared",
 				addedAt: "2026-10-06T00:00:00.000Z",
-				servers,
 			})),
 		),
 	});
+	if (Object.keys(servers).length === 0) return;
+	for (const root of Object.values(checkouts)) {
+		write(root, { ".archboard/language-servers.json": JSON.stringify(servers) });
+	}
 }
 
-export { type FixtureVariant, document, git, register, write };
+/**
+ * A script in a checkout that runs this Bun, as a repository commits a wrapper
+ * for its server: a server is a program on the PATH or a script in the checkout.
+ * @param root The checkout.
+ * @returns The command that names it, a path from the checkout root.
+ */
+function bunScript(root: string): string {
+	mkdirSync(join(root, "bin"), { recursive: true });
+	writeFileSync(join(root, "bin", "bun"), `#!/bin/sh\nexec '${process.execPath}' "$@"\n`, {
+		mode: 0o755,
+	});
+	return "./bin/bun";
+}
+
+export { type FixtureVariant, bunScript, document, git, register, write };

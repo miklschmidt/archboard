@@ -17,7 +17,13 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CodeCheckOutcome } from "#runtime/code-check/operations/check.ts";
-import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import {
+	bunScript,
+	document,
+	git,
+	register,
+	write,
+} from "#tests/runtime/support/code-check/fixture.ts";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
@@ -90,10 +96,11 @@ beforeAll(async () => {
 	const shop = checkout(SHOP, { ...CODE, "compile_commands.json": JSON.stringify(database) });
 	const bare = checkout(BARE, CODE);
 	// Both checkouts configure the stand-in, as `repo language-server c` would.
+	bunScript(bare);
 	register(
 		scratch,
 		{ [SHOP]: shop, [BARE]: bare },
-		{ c: { command: process.execPath, args: [STAND_IN, join(state, "answers.json")] } },
+		{ c: { command: bunScript(shop), args: [STAND_IN, join(state, "answers.json")] } },
 	);
 	mkdirSync(state);
 	// What clangd answers in `shop`: `audit_check` is defined in audit.c, and

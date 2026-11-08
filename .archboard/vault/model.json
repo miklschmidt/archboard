@@ -3,29 +3,21 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "XgrNvwDY",
-    "name": "A compiled npm release runs Archboard, and one Installation module tells it from a checkout",
-    "summary": "Archboard also runs as a compiled executable that npm installs and a release workflow publishes, so one Installation module decides checkout or release and names every location, and a release differs from a checkout only in how it starts its server, restarts, loads its core, finds Codex and TypeScript and addresses its server.",
+    "id": "6KbyNVXO",
+    "name": "Language server files states which file wins",
+    "summary": "The responsibility of Language server files said the repository's file comes first in a phrase that read as cut off. It now says that the repository file wins for each language.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "backlog/tasks/task-579.01 - One-installation-module-decides-checkout-or-release-and-names-every-location.md"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/agents/releasing.md"
+        "path": "backlog/tasks/task-599 - A-repository-configures-its-language-servers-in-a-committed-file.md"
       }
     ],
-    "predecessor": "5fVvhgsV",
-    "baseline": "efa1d96e536b07d17a6da0da58ad3b85a7aae783",
-    "createdAt": "2026-11-07T10:11:34.837Z",
-    "adoptedAt": "2026-11-07T10:16:28.522Z",
-    "reason": "The branch merges PR 46 with main: Archboard installs from npm as one compiled executable for each platform, the flake's nix build .#release builds the packages, and one Installation module tells a release from a checkout. The owner authorized this adoption. It carries b2zJw510 onto current 5fVvhgsV.",
-    "previousCurrent": "5fVvhgsV"
+    "predecessor": "y017ReIz",
+    "baseline": "ce1c521e6e3f0e3333094d2c9fba2822a2cb4e79",
+    "createdAt": "2026-11-08T01:47:40.732Z",
+    "adoptedAt": "2026-11-08T01:47:58.895Z",
+    "reason": "A wording fix that the review of PR 67 asked for, adopted on its branch with the change it describes.",
+    "previousCurrent": "y017ReIz"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",

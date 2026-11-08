@@ -1,4 +1,4 @@
-// Every relative link in a skill that `install-skill` ships names a tracked file of that
+// Every relative link in a skill that `archboard init` installs names a tracked file of that
 // skill's package and, when it names a heading, a heading of that file. An agent in another
 // repository follows these links in its installed copy, and the skills CLI copies only what
 // Git tracks, so a file that exists here but is not tracked does not count.
@@ -8,24 +8,16 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { z } from "zod";
 
 import { anchorsOf } from "@archboard/skills/citations";
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
-/** The skills `archboard install-skill` ships, as the real command reports them. */
-const BUNDLED_SKILLS = z
-	.object({ skills: z.array(z.object({ skill: z.string() })) })
-	.parse(
-		JSON.parse(
-			execFileSync(path.join(repository, "bin/archboard"), ["install-skill", "--print-source"], {
-				cwd: repository,
-				encoding: "utf8",
-			}),
-		),
-	)
-	.skills.map(({ skill }) => skill);
+/**
+ * The skills that `archboard init` installs, as BUNDLED_SKILLS in
+ * apps/cli/src/cli/commands/init/rules/setup-choices.ts names them. A test may not import the app.
+ */
+const BUNDLED_SKILLS = ["archboard", "archboard-pr"] as const;
 
 /** A markdown link's target: `](target)` or `](<target>)`, with an optional title. */
 const LINK = /\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/gu;

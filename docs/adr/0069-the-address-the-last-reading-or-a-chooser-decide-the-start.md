@@ -53,5 +53,5 @@ pane session, for one state that lasts until the first choice.
 - A reader's open moves a pane into a repository with no model or a legacy model,
   so that the pane can state what the repository lacks. An agent's show stays
   refused, because an agent must read the refusal.
-- `archboard install-skill` registers the repository that it sets up, so that the
+- `archboard init` (named `install-skill` until TASK-601) registers the repository that it sets up, so that the
   command the empty start shows makes a row appear.

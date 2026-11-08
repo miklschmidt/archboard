@@ -48,8 +48,8 @@ Install the package once:
 npm install --global archboard
 ```
 
-With Bun, run `bun add --global @archboard/cli` instead. Both names install the
-same program. The package manager installs only the package of your platform,
+With Bun, run `bun add --global archboard` instead. `@archboard/cli` is the same
+program under a second name. The package manager installs only the package of your platform,
 with the Codex binary that archboard is pinned to. The install puts `archboard`
 on your `PATH`, so skip section 2. Then set up a repository as section 3 says.
 
@@ -146,19 +146,84 @@ has no such command.
 
 ## 3. Set up a repository
 
-Install the skills with the [skills CLI](https://skills.sh):
+Run `archboard init` in the repository that you want to diagram:
+
+```bash
+cd ~/Projects/payments-api
+archboard init
+```
+
+The command does these things:
+
+1. It installs two skills of the installation with the
+   [skills CLI](https://skills.sh): `archboard`, which writes and reads
+   canonical models, and `archboard-pr`, which gives a pull request an
+   architecture explainer. It installs them for your user, so they work in
+   every repository. Codex gets them, and Claude Code gets them when `claude`
+   is on the `PATH`. A package runner starts the skills CLI. At a terminal,
+   `init` asks which runner to use: `bun`, `pnpm` or `npx`, whichever the
+   `PATH` has, or Skip. Without a terminal, `init` uses the first one of these
+   on the `PATH`. If you skip, or if the `PATH` has none of them, `init` tells
+   you the command that installs the skills later.
+2. If the repository has no `.archboard/vault`, it makes the vault as
+   `archboard model init` does. The model name is the name of the repository
+   directory.
+3. It registers the checkout, so that a browser lists it.
+4. It removes the block that earlier versions wrote into `CLAUDE.md` and
+   `AGENTS.md` between `<!-- archboard:begin -->` and `<!-- archboard:end -->`.
+   It says which files it changed and changes nothing else in them.
+5. It gives the setup of the language servers to an agent, because the right
+   server and the way to install it depend on the repository. At a terminal,
+   `init` asks whether Claude Code or Codex sets them up, whichever the `PATH`
+   has, and starts that agent in the repository with a prompt. The agent shows
+   you its plan and waits for your consent before it changes anything. If you
+   skip, `init` prints the prompt.
+
+Without a terminal, `init` assumes that an agent runs it. The JSON answer of
+`init` ends with `next`, the prompt for the agent. The setup is not finished until
+that agent sets up the language servers.
+
+The repository is the nearest parent directory that holds `.git`, or the
+directory that `--repo <dir>` names. `init` creates no `CLAUDE.md` or
+`AGENTS.md` and adds nothing to them. A command finds the vault from the
+repository (see section 4), and such a file holds paths of your machine. If Git
+ignores the vault, `init` warns you. To share architecture with the source code,
+commit the vault with your code.
+
+Making a vault needs no server. Existing vaults keep their inputs. If a vault
+contains legacy boards, it needs explicit migration. Setup honors the configured
+Git identity and signer. If signing fails, repair that configuration before
+retrying. Keep signing enabled.
+
+The skills read the JSON Schemas of the model files from the archboard CLI on
+your `PATH`, with `archboard model schema`. So the schemas always match the
+installed program.
+
+### Set up the language servers
+
+The agent that `init` starts or prompts does these steps. You can also do them
+yourself, so that `archboard check code` can resolve names to their definitions:
+
+1. Find the languages that the repository uses.
+2. For each language that has no default server, install a server. [The section
+   on language servers](#language-servers-for-the-code-check) names the program
+   for each language. A repository on TypeScript 7 or later needs no entry for
+   TypeScript.
+3. In the checkout, run `archboard repo language-server <language> <command>`
+   for each of them.
+4. Commit `.archboard/language-servers.json` with the vault. Then every machine
+   and every CI run uses the same servers.
+
+### Set up a repository without init
+
+Install the skills from GitHub with the skills CLI:
 
 ```bash
 npx skills add miklschmidt/archboard -g
 ```
 
-The skills CLI copies two skills from this repository on GitHub: `archboard`,
-which writes and reads canonical models, and `archboard-pr`, which gives a pull
-request an architecture explainer. It asks which agents to install them for.
-With `-g`, it installs them for your user, so they work in every repository.
-`npx skills update -g` updates them. The skills read the JSON Schemas of the
-model files from the archboard CLI on your `PATH`, with `archboard model schema`.
-So the schemas always match the installed program.
+The skills CLI asks which agents to install them for. `npx skills update -g`
+updates them.
 
 The first time an agent works in a Git checkout that has no `.archboard/vault`,
 the agent makes the vault with `archboard model init`. You can also run it
@@ -178,66 +243,7 @@ The command does these things:
    installer. The new model has no implemented current state.
 4. It registers the checkout, so that a browser lists it.
 
-It needs no server. Existing vaults keep their inputs. If a vault contains
-legacy boards, it needs explicit migration. Commit the vault with your code.
-Setup honors the configured Git identity and signer. If signing fails, repair
-that configuration before retrying. Keep signing enabled.
-
-### Install the skills from a clone or offline
-
-`archboard install-skill` installs the skills from the installation itself, a
-release package or a checkout, with no network. It also sets the repository up.
-Run it from the repository that you want to diagram:
-
-```bash
-cd ~/Projects/payments-api
-archboard install-skill --agent claude-code
-```
-
-Use `--agent claude-code` for Claude Code. Without it, the installer sets up
-Codex. The installer does these things:
-
-1. It links two skills from a skills directory to the `skills/` directory of
-   the installation: `archboard` and `archboard-pr`. The
-   default directory is `~/.agents/skills`, which Codex reads. With
-   `--agent claude-code` it is `~/.claude/skills`. Each link replaces an earlier
-   copy or a link to another place, and the installer names what it replaced.
-   An upgrade of a release, or a `git pull` in a clone,
-   updates the linked skills.
-   If `--dir` names a directory inside the repository, the installer copies the
-   skills there instead, because the repository carries them to other machines.
-   If a target in that directory is a symlink, the installer stops and changes
-   nothing.
-2. If the repository has no `.archboard/vault`, the installer makes the vault
-   as `archboard model init` does. The model name is the name of the repository
-   directory.
-3. It removes the block that earlier versions of the installer wrote into
-   `CLAUDE.md` and `AGENTS.md` between `<!-- archboard:begin -->` and
-   `<!-- archboard:end -->`. It says which files it changed and changes nothing
-   else in them.
-
-The repository is the nearest parent directory that holds `.git`. The installer
-creates no `CLAUDE.md` or `AGENTS.md` and adds nothing to them. A command finds
-the vault from the repository (see section 4), and such a file holds paths of
-your machine.
-
-The installer prints what it did, and a JSON receipt. If Git ignores the vault,
-the installer warns you.
-To share architecture with the source code, include the authored vault files in the repository.
-
-These options change what the installer does:
-
-| Option                | Effect                                                                   |
-| --------------------- | ------------------------------------------------------------------------ |
-| `--agent claude-code` | Install for Claude Code, in `~/.claude/skills`.                          |
-| `--agent codex`       | Install for Codex, in `~/.agents/skills`. This is the default.           |
-| `--target claude`     | The same as `--agent claude-code`. `--target agents` is the default.     |
-| `--dir <skills-root>` | Install into `<skills-root>/archboard` and `<skills-root>/archboard-pr`. |
-| `--repo <dir>`        | Set up this repository instead of the current one.                       |
-| `--no-setup`          | Install the skills only. Leave the repository alone.                     |
-| `--print-source`      | Show the skill directories to install, and install nothing.              |
-
-Use one of `--agent`, `--target` and `--dir` at most.
+Then set up the language servers as the section above says.
 
 ## 4. How a command finds its vault
 
@@ -323,7 +329,7 @@ The server needs no vault to start, and one server serves every vault. The
 navigator in the browser lists each repository that this machine knows and that
 has a vault. A command that runs in a checkout makes its repository known. So
 does `archboard repo add`, and so do `archboard model init` and
-`archboard install-skill`. A page opens
+`archboard init`. A page opens
 what its address names, or else the last reading of this browser. A machine with
 one repository that holds a model opens it. Any other page shows a repository
 chooser. If this machine knows no repository with a vault, the page says so and
@@ -342,6 +348,10 @@ archboard model config
 archboard check semantics
 ```
 
+Each command answers in JSON, which an agent reads. To read an answer yourself,
+add `--text` anywhere before a `--`, as in `archboard --text model read`. The
+answer then shows the same fields as coloured text. Help prints text without it.
+
 A new model returns an empty planning state without a current designation.
 For an existing empty vault without a manifest, initialize it explicitly:
 
@@ -352,6 +362,7 @@ archboard model init --name Payments --operation-id initialize-payments --writer
 For a vault outside a source repository, run `model archive-init` before authoring or retention.
 Follow [the consumer skill](skills/archboard/SKILL.md) for claims, proposal creation, comparison, and explicit adoption.
 Use `check code --state <proposal-id>` for source evidence.
+Make sure that `archboard check code` reports no `language-server-missing` for the languages of the repository.
 Use `check embeds` for tracked rendered artifacts.
 
 ## Migrate an existing vault
@@ -471,7 +482,7 @@ GitHub. It uses the commit, then the branch, then the default branch.
 
 ## Language servers for the code check
 
-`archboard check code` reads the registered checkouts and matches the names that the code uses. A match by name only is a _candidate_. A language server (a program that knows where code defines a name) resolves a candidate that joins two parts to its definition. It also resolves the use that an anchor names, such as `ledger.post()` through a value. Evidence that a server resolved can make a warning. A candidate never does.
+`archboard check code` reads the checkouts that the bindings name and matches the names that the code uses. A match by name only is a _candidate_. A language server (a program that knows where code defines a name) resolves a candidate that joins two parts to its definition. It also resolves the use that an anchor names, such as `ledger.post()` through a value. Evidence that a server resolved can make a warning. A candidate never does.
 
 A language server reads a checkout the way your editor does. For most languages, that runs code of the checkout:
 
@@ -482,19 +493,19 @@ A language server reads a checkout the way your editor does. For most languages,
 - rust-analyzer runs `cargo metadata`, the build scripts and the procedural macros of the Cargo workspace, and `cargo check` after it loads.
 - gopls runs the go command to load the packages of the workspace. The go command can download modules, and the Go toolchain that a `go.mod` names. For a package that uses cgo, it runs the C compiler.
 
-So archboard starts such a language server only for a checkout where you, or the agent that works in that repository, configured it. Then the Archboard server runs the language server as your editor does. It uses the command and arguments that you configured. It uses the environment of the Archboard server, which is the environment of the command that started it (see [section 5](#5-start-the-archboard-server-and-sign-in-to-codex)). The check adds no flag, no variable and no rewritten file.
+So archboard starts such a language server only where a file names it: the `.archboard/language-servers.json` of the checkout, or the global `language-servers.json` of your machine (see [the other languages](#the-other-languages)). A repository already comes with commands to run, such as its build and its tests, so the check needs no trust step for a server that the repository names. Then the Archboard server runs the language server as your editor does. It uses the command and arguments that the file names. It uses the environment of the Archboard server, which is the environment of the command that started it (see [section 5](#5-start-the-archboard-server-and-sign-in-to-codex)). The check adds no flag, no variable and no rewritten file.
 
-A configured server runs the code of that repository. Configure one only for a repository that you work in.
+A named server runs the code of that repository. Read the `.archboard/language-servers.json` of a checkout before you run `archboard check code` on a repository that you do not trust.
 
 ### TypeScript
 
-TypeScript has a default server. A server that you configure wins (see [the other languages](#the-other-languages)). Without one, the check reads the `typescript` package in `node_modules/typescript` at the root of the checkout. The package must be inside the checkout once its links resolve. Then the check uses the first of these that applies:
+TypeScript has a default server. A server that a file names wins (see [the other languages](#the-other-languages)). Without one, the check reads the `typescript` package in `node_modules/typescript` at the root of the checkout. The package must be inside the checkout once its links resolve. Then the check uses the first of these that applies:
 
 1. If the package is version 7 or later and has the native program for your machine, `@typescript/typescript-<platform>-<arch>`, beside it or inside it, the check runs `tsc --lsp --stdio`. TypeScript 7 is the first version that has a language server.
 2. If the package is a TypeScript before version 7, which has no `--lsp`, the check runs `typescript-language-server --stdio`. It is the language server that wraps the `tsserver` of TypeScript. The check looks for it in `node_modules/.bin` of the checkout first, and then on the `PATH` of the Archboard server. It tells the server to run the `lib/tsserver.js` of the checkout's TypeScript. To get one, run `npm install --save-dev typescript-language-server` in the repository, or `npm install --global typescript-language-server`.
 3. When you run archboard from a clone, the check runs the `tsc` of the `typescript` package that archboard installs. An archboard release ships no TypeScript, so it skips this step.
 
-If none applies, the check says `language-server-missing` for TypeScript. The detail names the checkout's TypeScript version and the command that configures a server. The check does not look in the parent directories of the checkout. In a monorepo, the check reads the root only. A package that installs another version than the root uses the version at the root.
+If none applies, the check says `language-server-missing` for TypeScript. The detail names the checkout's TypeScript version and the command that names a server. The check does not look in the parent directories of the checkout. In a monorepo, the check reads the root only. A package that installs another version than the root uses the version at the root.
 
 The check names the server that it used. Each `time: language server typescript` line, and each `language-server` entry of `timings` in the JSON answer, gives the program (`program`). For a server that the check chose, it also gives the TypeScript version and whether that TypeScript is the checkout's or archboard's (`typescript`). Use it when the check and the compiler of the repository disagree.
 
@@ -502,25 +513,59 @@ The default server runs code of the checkout, because the checkout installed tha
 
 ### The other languages
 
-Python, C, C++, Objective-C, C#, Swift, Rust and Go have no default server. To configure one, follow these steps:
+Python, C, C++, Objective-C, C#, Swift, Rust and Go have no default server. A checkout names the server of a language in its own file, `.archboard/language-servers.json`, at the root of the checkout. To name one, follow these steps:
 
 1. Install the server.
-2. If you did not register the checkout yet, run `archboard repo add` (see [Code bindings](#code-bindings)).
-3. Run this command in the repository:
+2. Run this command in the repository. The checkout need not be registered:
 
 ```bash
 archboard repo language-server <language> <command> [--arg=<argument>]...
 ```
 
-The language is `typescript`, `python`, `csharp`, `swift`, `c`, `rust` or `go`. The language `c` covers C, C++ and Objective-C. The command is a program on the `PATH` of the Archboard server, or the absolute path of a program. Write an argument that starts with `-` as `--arg=<argument>`.
+3. Commit `.archboard/language-servers.json`. Then every machine and every CI run that has the checkout uses the server, with no setup of its own.
 
-`--repo <identity>` names another repository, and the command then configures its chosen checkout. Without it, the command configures the known checkout that holds the working directory. `--remove` removes the server of the language. `archboard repo list` shows the configured servers of each checkout. `archboard repo forget` removes them with the checkout.
+The language is `typescript`, `python`, `csharp`, `swift`, `c`, `rust` or `go`. The language `c` covers C, C++ and Objective-C. Write an argument that starts with `-` as `--arg=<argument>`. The command writes a file like this one, which you can also write by hand:
 
-The configuration stays on your machine. It is in `repos.json` with the checkout. If you register the same directory again, the configuration stays. Another checkout of the same repository has its own configuration. The check reads the configuration of the checkout it reads. That is the chosen checkout, or for the vault's own repository the checkout that holds the vault. That checkout has a configuration only if it is registered.
+```json
+{
+	"rust": { "command": "scripts/rust-analyzer" },
+	"python": { "command": "pyright-langserver", "args": ["--stdio"] }
+}
+```
 
-The Archboard server reads `repos.json` again each time that the check runs. So a running Archboard server uses a configuration that you wrote after it started. The Archboard server looks up a command that is a name on its own `PATH`. That `PATH` is the `PATH` of the command that started it. If that `PATH` lacks the command, give the absolute path of the command. Or run `archboard stop` and run a command again.
+The file has one key for each language. Each value has a `command` and, if the server needs any, `args`. A language or a field that this list does not name, a command that is empty, or text that is not JSON makes the whole file invalid.
 
-If a checkout has no configured server for a language, the check says `language-server-missing` once for the checkout and the language. If the Archboard server cannot find the configured command, the check says the same. The answer names the command that configures one, and the uses stay candidates.
+Every machine and CI run that has the checkout reads the repository file, and nothing is known of their environments. So a command in the repository file is a program on the `PATH` of the Archboard server, or a path inside the checkout that starts at the checkout root. A command with a `/` that is not absolute is such a path. A path that leaves the checkout, absolute or relative, makes the file invalid. So a repository can commit a wrapper script that starts its server through its own tools, and the server then matches the repository on every machine. This repository does that for Rust: `scripts/rust-analyzer` runs the `rust-analyzer` of the flake through `nix develop`. Other repositories use a command such as `nix` with the arguments `develop --command rust-analyzer`, or the equivalent for `devenv shell` or `devbox run`.
+
+`--repo <identity>` names another repository, and the command then writes the file of its chosen checkout. Without it, the command writes the file of the checkout that holds the working directory. `--remove` removes the language from the file, and the command deletes a file that is left with no server. A command that you type as a path is read from the working directory. The repository file keeps a path inside the checkout as a path from the checkout root, written with `/`. The command refuses a path outside the checkout. Install the server through the repository's own environment, such as its Nix flake, devenv, devbox or package manager, so that it is on the `PATH`, or commit a wrapper script. Only a program of this machine alone goes in the global file, with `--global`.
+
+Run the command with no language to see both files. It shows the file of the checkout, the global file, and the servers that each names. The answer is JSON with `repo`, `root`, `repository` and `global`. Each of the last two has `file`, `servers` and, when the file is invalid, `problem`.
+
+#### One server for every repository
+
+The global file is `language-servers.json` in the state directory, beside `repos.json`. `ARCHBOARD_REPOS` moves both. It names a server for each language that the repository file leaves out. The repository file wins for each language. Write the global file with `--global`, and run it anywhere. It cannot be used with `--repo`:
+
+```bash
+archboard repo language-server c clangd --global
+```
+
+The global file belongs to this machine, so its command is a name on the `PATH` or an absolute path. It has no checkout to read a relative path from. The command stores a path that you type as an absolute path.
+
+#### What the check does
+
+For each language, the check uses the first of these that applies:
+
+1. The server that the checkout's `.archboard/language-servers.json` names.
+2. The server that the global `language-servers.json` names.
+3. For TypeScript only, the default rule above.
+
+If neither file names a server for another language, the check says `language-server-missing` once for the checkout and the language. The detail says that neither the checkout's `.archboard/language-servers.json` nor the global `language-servers.json` names a server, and gives the command that names one. If the Archboard server cannot find the named command, the check says the same. The uses stay candidates.
+
+A file that the check cannot read decides every language that it could name. The check then says `language-server-missing` with the path of the file and the problem. An invalid repository file blocks every language of that checkout, TypeScript included. An invalid global file blocks each language that the repository file leaves out. `archboard repo language-server` refuses to change an invalid file and exits with 1. Fix the file or delete it, and run the command again.
+
+A check reads the global file once, and the file of each checkout once, when it first asks about that checkout. A running Archboard server uses a file that you wrote after it started, in the next check. The Archboard server looks up a command that is a name on its own `PATH`. That `PATH` is the `PATH` of the command that started it. If that `PATH` lacks the command, commit a wrapper script that starts it through the repository's environment. For a program of this machine alone, give its absolute path in the global file. Or run `archboard stop` and run a command again.
+
+The registry holds no servers. `archboard repo list` and `archboard repo forget` do not mention them, and a `servers` field in a `repos.json` from an earlier version is ignored. To keep a server that you configured earlier, run `archboard repo language-server` again in the checkout.
 
 The code check's output starts with the elapsed time of each step: code facts, each language server and the history lens. JSON carries the same times in `code.timings`, in milliseconds. Code facts time measures file reading and parsing. Each language server time includes its startup, index, questions and cleanup, but excludes idle time between questions. The code and history checks run together, so their times overlap.
 
@@ -530,7 +575,7 @@ If a server cannot answer about a project yet, the check says `language-server-u
 
 #### Python
 
-Install pyright or basedpyright, for example with `npm install -g pyright` or `pipx install basedpyright`. Then run `archboard repo language-server python pyright-langserver --arg=--stdio`. For basedpyright, run `archboard repo language-server python basedpyright-langserver --arg=--stdio`.
+Install pyright or basedpyright, for example with `npm install -g pyright` or `pipx install basedpyright`. Then name it with `archboard repo language-server python pyright-langserver --arg=--stdio`. For basedpyright, run `archboard repo language-server python basedpyright-langserver --arg=--stdio`.
 
 pyright reads `pyrightconfig.json`, or `[tool.pyright]` in the `pyproject.toml`, at the root of the checkout. The check tells pyright the interpreter of a virtual environment in `.venv` or `venv` at the root, as the Python extension of an editor does. Then imports of installed packages resolve. That interpreter runs, and so do the startup hooks of the packages that are installed in it.
 
@@ -538,7 +583,7 @@ A virtual environment outside the checkout, such as one that Poetry or Hatch kee
 
 #### C, C++ and Objective-C
 
-Install clangd, for example with `apt install clangd`, `brew install llvm` or `nix profile install nixpkgs#clang-tools`. Then run `archboard repo language-server c clangd`. The check reads `.c`, `.h`, `.cc`, `.cpp`, `.cxx`, `.hh`, `.hpp`, `.hxx` and `.m` files. It reads `.mm` files only as text.
+Install clangd, for example with `apt install clangd`, `brew install llvm` or `nix profile install nixpkgs#clang-tools`. Then name it with `archboard repo language-server c clangd`. The check reads `.c`, `.h`, `.cc`, `.cpp`, `.cxx`, `.hh`, `.hpp`, `.hxx` and `.m` files. It reads `.mm` files only as text.
 
 clangd needs the `compile_commands.json` of the checkout. That file gives the flags of each file: its include directories, its defines and its language. Without it, clangd guesses, and a guess is no better than a candidate. Generate the file once:
 
@@ -562,7 +607,7 @@ The check has no time limit. It waits for the index and the answers until they f
 
 #### C#
 
-Install csharp-ls with `dotnet tool install --global csharp-ls`. Then run `archboard repo language-server csharp csharp-ls`. csharp-ls needs the .NET SDK that it was built for on the `PATH` of the Archboard server. csharp-ls 0.28 needs .NET 10.
+Install csharp-ls with `dotnet tool install --global csharp-ls`. Then name it with `archboard repo language-server csharp csharp-ls`. csharp-ls needs the .NET SDK that it was built for on the `PATH` of the Archboard server. csharp-ls 0.28 needs .NET 10.
 
 The check tells csharp-ls to load the `.sln` or `.slnx` file that is nearest the root of the checkout. With no solution, csharp-ls loads every `.csproj` file. The check never asks it to build or to restore packages.
 
@@ -570,11 +615,11 @@ But csharp-ls runs the MSBuild targets of a project up to the compiler, to load 
 
 If Git lists no `.sln`, `.slnx` or `.csproj` file in the checkout, the check starts no server. It says `language-server-unready` once for the checkout.
 
-The Roslyn language server is not supported. It loads nothing until the client opens a solution with a message of its own, and by default it restores packages from the network. If you configure it, it answers nothing, and the uses stay candidates. This was measured with csharp-ls 0.28.0 and roslyn-ls 5.11.0.
+The Roslyn language server is not supported. It loads nothing until the client opens a solution with a message of its own, and by default it restores packages from the network. If a file names it, it answers nothing, and the uses stay candidates. This was measured with csharp-ls 0.28.0 and roslyn-ls 5.11.0.
 
 #### Swift
 
-Run `archboard repo language-server swift sourcekit-lsp`. sourcekit-lsp evaluates `Package.swift`, which runs code of the checkout.
+Name it with `archboard repo language-server swift sourcekit-lsp`. sourcekit-lsp evaluates `Package.swift`, which runs code of the checkout.
 
 sourcekit-lsp builds a package itself on the first run to prepare its background index. Background indexing is on by default in Swift 6.1 and later. The check passes no option that changes it, and a package can set its own options in `.sourcekit-lsp/config.json`.
 
@@ -584,7 +629,7 @@ If no `Package.swift` holds the file, the check says `language-server-unready` o
 
 #### Rust
 
-Install rust-analyzer, for example with `rustup component add rust-analyzer rust-src` or `nix profile install nixpkgs#rust-analyzer`. rust-analyzer also needs `cargo` on the `PATH` of the Archboard server, and the source of the standard library. With rustup, the `rust-src` component gives that source. On Nix, set `RUST_SRC_PATH` in the environment of the Archboard server. This repository's `nix develop` shell gives all three. Then run `archboard repo language-server rust rust-analyzer`.
+Install rust-analyzer, for example with `rustup component add rust-analyzer rust-src` or `nix profile install nixpkgs#rust-analyzer`. rust-analyzer also needs `cargo` on the `PATH` of the Archboard server, and the source of the standard library. With rustup, the `rust-src` component gives that source. On Nix, set `RUST_SRC_PATH` in the environment of the Archboard server. This repository's `nix develop` shell gives all three. Then name it with `archboard repo language-server rust rust-analyzer`.
 
 The check reads `.rs` files and each `Cargo.toml`. It starts rust-analyzer in the nearest directory above the file whose `Cargo.toml` declares a `[workspace]`, else in the directory of the nearest `Cargo.toml`. So one server answers for every member of a workspace. The check opens the file and waits until rust-analyzer ends its `rustAnalyzer/cachePriming` progress, which it begins after it loads the workspace, its build scripts and its procedural macros. Then it asks for definitions.
 
@@ -594,7 +639,7 @@ If no `Cargo.toml` holds the file, the check says `language-server-unready` once
 
 #### Go
 
-Install gopls, for example with `go install golang.org/x/tools/gopls@latest` or `nix profile install nixpkgs#gopls`. gopls also needs the `go` command on the `PATH` of the Archboard server. This repository's `nix develop` shell gives both. Then run `archboard repo language-server go gopls`.
+Install gopls, for example with `go install golang.org/x/tools/gopls@latest` or `nix profile install nixpkgs#gopls`. gopls also needs the `go` command on the `PATH` of the Archboard server. This repository's `nix develop` shell gives both. Then name it with `archboard repo language-server go gopls`.
 
 The check reads `.go` files and each `go.mod`. A Go package is the `.go` files directly in one directory. An import path leads to a package through the module path that a `go.mod` of the checkout declares, so the modules of a `go.work` and a local `replace` resolve too. The check starts gopls in the nearest directory above the file that holds a `go.work`, else in the directory of the nearest `go.mod`. So one server answers for every module of a workspace. The check opens the file and asks for definitions. gopls answers after it loads the packages of the workspace.
 
@@ -717,10 +762,9 @@ archboard restart
 the server on the new source. If the build fails, the server stays stopped.
 `archboard status` reports a server that runs older source.
 
-Run `npx skills update -g` to update skills that the skills CLI installed. Skills
-that `archboard install-skill` linked follow the installation. If a repository
-holds a copy of the skills, run `archboard install-skill --dir <that directory>`
-again to update it.
+The skills CLI installs copies of the skills. If `archboard init` installed
+them, run `archboard init` again after an update, so that they match the new
+version. If you installed them from GitHub, run `npx skills update -g`.
 
 There is no uninstall command. To remove archboard, delete these things:
 
@@ -728,9 +772,8 @@ There is no uninstall command. To remove archboard, delete these things:
   `~/.agents/skills/archboard-pr`.
 - The `archboard` link on your `PATH`, or the package of a release, for example
   with `npm uninstall --global archboard`.
-- The state directory. It holds the Codex sign-in, `repos.json` (with the
-  configured language servers of each checkout), the opener configuration, the
-  server process files, the log and the kept talks of recordings.
+- The state directory. It holds the Codex sign-in, `repos.json`, the global
+  `language-servers.json`, the opener configuration, the server process files, the log and the kept talks of recordings.
 
 Keep the vault and its archive until you no longer need their architecture or recovery evidence.
 

@@ -17,7 +17,13 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CodeCheckOutcome } from "#runtime/code-check/operations/check.ts";
-import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import {
+	bunScript,
+	document,
+	git,
+	register,
+	write,
+} from "#tests/runtime/support/code-check/fixture.ts";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
@@ -122,7 +128,7 @@ beforeAll(async () => {
 	git(scratch, shop, "add", "-A");
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the code");
 	// A configured server that fails after starting.
-	const fails = { command: process.execPath, args: ["-e", "process.exit(7)"] };
+	const fails = { command: bunScript(shop), args: ["-e", "process.exit(7)"] };
 	register(scratch, { [SHOP]: shop }, { swift: fails });
 	document(vault, "Shop", [
 		{

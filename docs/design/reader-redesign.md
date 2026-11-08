@@ -257,7 +257,7 @@ Each repository state has one line and one way on:
 
 | State                          | The pane or page says     | The way on                                                                   |
 | ------------------------------ | ------------------------- | ---------------------------------------------------------------------------- |
-| No repository                  | `No repository yet`       | The command `archboard install-skill`, and a row appears in about 2 s        |
+| No repository                  | `No repository yet`       | The command `archboard init`, and a row appears in about 2 s                 |
 | Repository not on this machine | `<name> is not here`      | The chooser and `archboard repo add`                                         |
 | No choice                      | `No repository open`      | The chooser                                                                  |
 | No model                       | `No model yet`            | `Ask the agent to write it` fills the composer                               |

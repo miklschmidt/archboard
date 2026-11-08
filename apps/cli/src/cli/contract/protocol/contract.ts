@@ -1,3 +1,4 @@
+import type { styleText } from "node:util";
 import type { z } from "zod";
 import { vaultRefusals } from "#cli/contract/protocol/refusals.ts";
 import type { AnsweredVault } from "#cli/contract/protocol/schemas.ts";
@@ -109,6 +110,20 @@ interface RestRelationship {
 
 type OutputMode = "json" | "text" | "raw" | "file-receipt";
 
+/**
+ * Who reads an answer: an agent reads JSON, and a person who passes the global
+ * `--text` reads text (TASK-602).
+ */
+type Answer = "json" | "text";
+
+/**
+ * Colours text where its stream shows colour, and returns it unchanged elsewhere.
+ * @param format - The style, as `styleText` names it.
+ * @param text - The text.
+ * @returns The text, styled where colour shows.
+ */
+type Paint = (format: Parameters<typeof styleText>[0], text: string) => string;
+
 interface OutputCondition {
 	key?: string;
 	present?: boolean;
@@ -178,6 +193,13 @@ interface CommandContext {
 	 * otherwise.
 	 */
 	readonly checkout: string | null;
+	/**
+	 * Who reads the answer. For a person, the result renders as text, field by
+	 * field, and a command may answer with its own text instead.
+	 */
+	readonly answer: Answer;
+	/** Colours a part of a command's own text, where standard output shows colour. */
+	readonly paint: Paint;
 }
 
 interface CommandContract<Shape extends z.ZodRawShape, Result> {
@@ -499,6 +521,8 @@ export {
 	type RefusalContract,
 	type RestRelationship,
 	type OutputMode,
+	type Answer,
+	type Paint,
 	type OutputCondition,
 	type OutputCase,
 	type OutputPolicy,

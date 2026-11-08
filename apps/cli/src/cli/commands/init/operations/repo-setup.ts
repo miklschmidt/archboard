@@ -1,18 +1,28 @@
-// Installing the skills is only half of setting a repository up. The other half
-// is its vault: `<root>/.archboard/vault`, where a command run in the repository
+// `archboard init` sets a repository up. Its middle step is the vault: `<root>/.archboard/vault`, where a command run in the repository
 // finds it (ADR 0049). Nothing else is written into the repository. Earlier
 // versions also wrote a block into the repository's CLAUDE.md or AGENTS.md,
 // between markers, that held paths of the machine that ran the installer. A
 // rerun removes that block and touches nothing else in the file.
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 import { CliUsageError } from "#cli/contract/protocol/contract.ts";
 import type { CommandContext } from "#cli/contract/protocol/contract.ts";
-import { expandHome } from "#cli/commands/install-skill/operations/skill-destination.ts";
 import { findVaultOf } from "#cli/routing/operations/addressed-vault.ts";
 import { makeVault, refusalLines } from "#cli/commands/model/operations/initialize.ts";
+
+/**
+ * Expands a leading `~` to the home directory, the one shell convenience a path option gets.
+ * @param input - The path as typed.
+ * @returns The path with the home directory spelled out.
+ */
+function expandHome(input: string): string {
+	if (input === "~") return os.homedir();
+	if (input.startsWith(`~${path.sep}`)) return path.join(os.homedir(), input.slice(2));
+	return input;
+}
 
 /** The agent documents an earlier version wrote its block into. */
 const AGENT_DOCUMENTS = ["CLAUDE.md", "AGENTS.md"] as const;

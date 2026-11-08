@@ -239,7 +239,7 @@ const paneCloseContract = defineCommand({
 	},
 });
 
-const PanesInputSchema = z.object({ tokens, text: z.boolean().default(false) });
+const PanesInputSchema = z.object({ tokens });
 const PanesResultSchema = z.looseObject({
 	success: z.literal(true),
 	paneCount: z.number().int().nonnegative(),
@@ -269,17 +269,8 @@ const panesContract = defineCommand({
 		"through, and what the user has picked out. View state only: never model content. Each " +
 		"pane names its repository and checkout, and own says whether it shows the vault that a " +
 		"command run in this directory finds. It needs no vault: where none is found, no pane is own.",
-	examples: ["archboard browser panes", "archboard browser panes --text"],
-	parameters: [
-		{
-			kind: "option",
-			key: "text",
-			spellings: ["--text"],
-			value: "none",
-			description: "Print the human-readable read-out",
-		},
-		stagedTokens("panes-token"),
-	],
+	examples: ["archboard browser panes", "archboard --text browser panes"],
+	parameters: [stagedTokens("panes-token")],
 	input: {
 		ingress: PanesInputSchema,
 		stages: [
@@ -296,26 +287,17 @@ const panesContract = defineCommand({
 		cases: [
 			{
 				id: "json",
-				when: { key: "text", present: false },
+				when: {},
 				mode: "json",
 				description: "The panes report",
 				presentation: ["result"],
 			},
-			{
-				id: "text",
-				when: { key: "text", present: true },
-				mode: "text",
-				description: "The read-out, as a user reads it",
-				presentation: ["result"],
-			},
 		],
 		/**
-		 * Text when `--text` was given, the report otherwise.
-		 * @param input The parsed input.
-		 * @param input.text Whether `--text` was given.
-		 * @returns The output case's id.
+		 * Selects the only output case.
+		 * @returns The json case id.
 		 */
-		select: (input: { text: boolean }) => (input.text ? "text" : "json"),
+		select: () => "json",
 	},
 	prerequisites: ["server"],
 	effects: [],
@@ -333,7 +315,7 @@ const panesContract = defineCommand({
 		await context.require("server", "Reading the panes");
 		context.parse(stagedNoFlags, input.tokens);
 		const report = PanesResultSchema.parse(await getPanes(await callerVault()));
-		return { result: input.text ? report.text : report };
+		return { result: context.answer === "text" ? report.text : report };
 	},
 });
 

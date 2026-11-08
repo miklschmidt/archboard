@@ -975,7 +975,7 @@ Configure and publish destination history explicitly when needed.
 
 Initialize an empty vault with `archboard model init --name <name> --operation-id <id> --writer <writer> --doing <intent>`.
 In a Git checkout without a vault, the same command first makes `<root>/.archboard/vault` and registers the checkout.
-`install-skill` uses that same operation for new vaults.
+`archboard init` uses that same operation for new vaults.
 The model starts with an allocated stable ID, no Current, and no fixed levels.
 After an interrupted response, retry the exact operation identity. A different intent needs another operation identity.
 Occupied vaults refuse. Legacy vaults require [migration](legacy-migration.md).
