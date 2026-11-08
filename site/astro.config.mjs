@@ -2,6 +2,10 @@
 // override the origin and base path for another host.
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "astro/config";
+import mdx from "@astrojs/mdx";
+import { rehypeHeadingIds, unified } from "@astrojs/markdown-remark";
+import expressiveCode from "astro-expressive-code";
+import { rehypeHeadingLinks } from "./src/lib/rehype-heading-links.mjs";
 import { coreSourceHash } from "../packages/renderer/src/runtime/store/core-sources.ts";
 
 const repository = fileURLToPath(new URL("..", import.meta.url));
@@ -19,6 +23,9 @@ export default defineConfig({
 	compressHTML: false,
 	devToolbar: { enabled: false },
 	build: { assets: "assets" },
+	// The docs: MDX pages, code blocks from ec.config.mjs, and a link on each section's head.
+	integrations: [expressiveCode(), mdx()],
+	markdown: { processor: unified({ rehypePlugins: [rehypeHeadingIds, rehypeHeadingLinks] }) },
 	vite: {
 		// The fonts and the README's drawings live in the repository, outside the site.
 		server: { fs: { allow: [repository] } },

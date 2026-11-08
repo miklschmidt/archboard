@@ -2,7 +2,8 @@ name: Site
 
 # The marketing site in site/ builds on every pull request that changes it or the repository
 # files it imports or draws from (the README drawings, the social card, the fonts, the voice
-# orb's code, and the renderer core, its painter and the architecture models that it paints),
+# orb's code, the renderer core, its painter and the architecture models that it paints, and the
+# CLI and the GitHub Actions that the docs' reference describes),
 # and deploys to GitHub Pages from main.
 on:
   workflow_dispatch:
@@ -30,6 +31,8 @@ on:
       - packages/workbench/src/ui/workbench-client/orb/rules/**
       - packages/workbench/src/ui/workbench-client/orb/state/**
       - packages/timing/**
+      - apps/cli/**
+      - actions/**
       - .github/workflows/site.yml
   pull_request:
     branches: [main]
@@ -55,6 +58,8 @@ on:
       - packages/workbench/src/ui/workbench-client/orb/rules/**
       - packages/workbench/src/ui/workbench-client/orb/state/**
       - packages/timing/**
+      - apps/cli/**
+      - actions/**
       - .github/workflows/site.yml
 
 concurrency:
@@ -102,6 +107,11 @@ jobs:
       - name: Paint the hero's drawing
         working-directory: .
         run: nix develop --command bun site/scripts/paint.ts
+
+      # The docs' reference comes from the CLI's own command registry, schemas and checks.
+      - name: Write the docs' reference
+        working-directory: .
+        run: nix develop --command bun site/scripts/reference.ts
 
       - name: Install the site's dependencies
         run: nix develop --command bun install --frozen-lockfile

@@ -1,0 +1,226 @@
+---
+title: The check as a gate
+description: Run archboard check where you already run tsc, ruff and your tests. It exits 1 while the map and the code disagree, in a Git hook, in CI and in an agent's loop.
+---
+
+import Aside from "../../components/docs/Aside.astro";
+import LinkCards from "../../components/docs/LinkCards.astro";
+
+A rule in `AGENTS.md` is a request. An agent can ignore it. A check that fails the build is a fact that the agent must deal with. `archboard check` is deterministic: the same model and the same code give the same answer, with an exit code that CI understands.
+
+<figure class="figure">
+	<img
+		src="https://raw.githubusercontent.com/miklschmidt/archboard-relay-example/main/docs/clips/gate.gif"
+		alt="A terminal in the relay example. npm run check passes with exit 0. npm run gate:break makes Intake read BILLING_URL. npm run check fails with exit 1 and a RELATIONSHIP_UNDRAWN warning with evidence in accept.ts and in peer-endpoints.yaml. npm run gate:restore, and the check passes again."
+		width="1400"
+		height="760"
+		loading="lazy"
+	/>
+	<figcaption>
+		The [relay example](https://github.com/miklschmidt/archboard-relay-example): the check passes,
+		fails on a call that the model does not draw, and passes again. A real recording of the
+		published CLI.
+	</figcaption>
+</figure>
+
+## What passes and what fails
+
+`archboard check` runs three checks in order: semantics, code, then embeds. It exits 1 while one of them has something that you must fix.
+
+| Outcome                    | Exit | Example                                                                  |
+| -------------------------- | ---- | ------------------------------------------------------------------------ |
+| Nothing to report          | `0`  | A model that matches its code                                            |
+| Information only           | `0`  | A relationship whose evidence is a candidate, matched by name only       |
+| A code warning             | `1`  | `RELATIONSHIP_UNDRAWN`: code calls a module that the model does not join |
+| A semantic diagnostic      | `1`  | `RELATIONSHIP_ON_CONTAINER`: a line that ends on a module with parts     |
+| An outdated picture        | `1`  | `EMBED_OUTDATED`: a tracked SVG that no longer matches the model         |
+| No vault, or a usage error | `2`  | `VAULT_NOT_FOUND` in a checkout without `.archboard/vault`               |
+| No server                  | `3`  | The server did not answer and could not start                            |
+
+Information and skips print on standard error and never change the exit status. [Check findings](../reference/findings/) lists every code. Each check also runs alone:
+
+```bash
+archboard check semantics
+archboard check code
+archboard check embeds
+```
+
+## Read a failure
+
+A warning names its code, the file of the module in the vault, the module and what to do. Each piece of evidence follows on its own line, with its kind, whether it is resolved, and its file and line:
+
+```text title="stderr"
+warning: RELATIONSHIP_UNDRAWN: 8xjCeoCM.module.json: module "Rate card": The code of "Accept parcel" reaches "Rate card". No relationship joins these modules. Add the relationship between the parts that make and answer the call. If this dependency is unintended, change the code.
+  configured-path, resolved, services/intake/src/accept.ts:51
+  configured-path, resolved, deploy/kubernetes/peer-endpoints.yaml:13
+```
+
+There are two fixes, and the finding says both. If the call is intended, the agent draws the relationship. If it is not, the agent changes the code. Either way the next check passes. The JSON answer on standard output carries the same findings for a script.
+
+<Aside type="caution" title="Do not pipe the check">
+	A pipeline exits with the status of its last command, so `archboard check | tee check.log` hides a failing check. Redirect the streams instead: `archboard check > check.json 2> check.log`.
+</Aside>
+
+## In a Git hook
+
+A pre-push hook keeps a failing map off the remote. Save this as `.githooks/pre-push` and make it executable:
+
+```sh title=".githooks/pre-push"
+#!/bin/sh
+# Block the push while the architecture check fails.
+# Skip it once with: git push --no-verify
+archboard check > /dev/null
+```
+
+Point Git at the directory once per clone:
+
+```bash
+chmod +x .githooks/pre-push
+git config core.hooksPath .githooks
+```
+
+In a Node.js repository, pin the CLI as a dev dependency and let `npm install` set the hook path for every clone:
+
+```json title="package.json" ins={3,6}
+{
+	"scripts": {
+		"prepare": "test -e .git && git config core.hooksPath .githooks || true"
+	},
+	"devDependencies": {
+		"archboard": "0.1.0"
+	}
+}
+```
+
+The hook then runs the pinned program from `node_modules/.bin`, the same one that CI runs. A pre-commit hook works the same way, but a full check on every commit is slow on a large repository. Push is the better moment.
+
+## In CI
+
+The check Action installs the CLI, runs `archboard check`, and turns each finding into an annotation on the pull request's diff. It fails the job on a warning or a diagnostic:
+
+```yaml title=".github/workflows/architecture.yml"
+name: architecture
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: miklschmidt/archboard/actions/check@main
+        with:
+          version: 0.1.0
+```
+
+Pin `version` to the release that your team runs, as you pin your compiler. The [Actions reference](../reference/actions/) lists every input: `fail-on: never` reports without failing, and `allow-codes` keeps chosen findings visible without failing on them.
+
+Any other CI runs the same command. The exit code is the gate:
+
+```yaml title=".gitlab-ci.yml"
+architecture:
+  image: node:22
+  script:
+    - npm install --global archboard@0.1.0
+    - archboard check > check.json
+  artifacts:
+    when: always
+    paths: [check.json]
+```
+
+<Aside type="note" title="Bindings into other repositories">
+	A binding into a repository that the CI machine has not registered is skipped as
+	`repository-unregistered`, and a skip never fails the check. Check out each repository that your
+	bindings name, and register it. [Application and infrastructure](../platform/) shows how.
+</Aside>
+
+## In an agent's loop
+
+Give the check's words back to the agent before a person reviews the work. The agent then fixes the map or the code while it still holds the context. Three ways work today.
+
+### Claude Code: a Stop hook
+
+A Stop hook runs when Claude Code wants to finish. Exit code 2 sends the hook's standard error back to Claude, and Claude goes on working:
+
+```json title=".claude/settings.json"
+{
+	"hooks": {
+		"Stop": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "archboard check > /dev/null 2> /tmp/archboard-check.log || { cat /tmp/archboard-check.log >&2; exit 2; }"
+					}
+				]
+			}
+		]
+	}
+}
+```
+
+### Any agent: a loop in the shell
+
+Run the agent, run the check, and give the findings back until the check passes or the rounds run out:
+
+```bash title="agent-loop.sh"
+#!/usr/bin/env bash
+# Ask the agent for a change, then hold it to the architecture check.
+set -u
+task="$1"
+codex exec "$task"
+for round in 1 2 3; do
+  if archboard check > /dev/null 2> check.log; then
+    echo "archboard check passed after round $round"
+    exit 0
+  fi
+  codex exec "archboard check failed. Fix the code or the Archboard model so that it passes. Do not hide a finding. The findings:
+$(cat check.log)"
+done
+echo "archboard check still fails after 3 rounds" >&2
+exit 1
+```
+
+### In the instructions of the repository
+
+Tell the agent where the gate is, so it runs the check before it says it is done:
+
+```markdown title="AGENTS.md"
+Run `archboard check` before you finish. It exits 1 while the architecture model and the code
+disagree. Fix the code or the model. Never silence a finding.
+```
+
+An instruction alone is a request, so keep the hook or the loop as the gate.
+
+## Keep the pictures current
+
+Pictures in your README and ADRs are embeds: SVG or PNG files that Archboard drew and Git tracks. The embeds check fails when one no longer matches the model. Draw them again and commit them:
+
+```bash
+archboard check embeds --fix
+git add docs/architecture
+```
+
+## Next
+
+<LinkCards
+	cards={[
+		{
+			path: "pull-requests",
+			title: "Architecture on pull requests",
+			text: "Findings on the diff, and the plan before and after.",
+			icon: "branch",
+		},
+		{
+			path: "platform",
+			title: "Application and infrastructure",
+			text: "Check bindings that cross into another repository.",
+			icon: "server",
+		},
+	]}
+/>

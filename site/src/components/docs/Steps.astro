@@ -1,0 +1,67 @@
+---
+// A procedure: an ordered list whose numbers stand in raised squares, joined by a thin line, so
+// a reader sees how far the steps go. Write the steps as an ordered Markdown list inside it.
+---
+
+<div class="steps"><slot /></div>
+
+<style>
+	.steps {
+		margin-top: 1.6em;
+	}
+	.steps :global(> ol) {
+		counter-reset: step;
+		padding-left: 0;
+	}
+	.steps :global(> ol > li) {
+		position: relative;
+		list-style: none;
+		padding: 0 0 28px 52px;
+		counter-increment: step;
+	}
+	.steps :global(> ol > li + li) {
+		margin-top: 0;
+	}
+	.steps :global(> ol > li::before) {
+		content: counter(step);
+		position: absolute;
+		left: 0;
+		top: -2px;
+		display: grid;
+		place-items: center;
+		width: 30px;
+		height: 30px;
+		border-radius: var(--radius-control);
+		background: var(--raised);
+		color: var(--gold-mark);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		font-weight: 500;
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule);
+	}
+	.steps :global(> ol > li::after) {
+		content: "";
+		position: absolute;
+		left: 14.5px;
+		top: 36px;
+		bottom: 6px;
+		width: 1px;
+		background: var(--rule-strong);
+	}
+	.steps :global(> ol > li:last-child) {
+		padding-bottom: 0;
+	}
+	.steps :global(> ol > li:last-child::after) {
+		display: none;
+	}
+	.steps :global(> ol > li > :first-child) {
+		margin-top: 0;
+		color: var(--ink);
+		font-weight: 500;
+	}
+	.steps :global(> ol > li > * + *) {
+		margin-top: 0.9em;
+	}
+</style>

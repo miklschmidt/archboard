@@ -1,0 +1,107 @@
+---
+// The JSON Schemas of the model files and of the requests that write them, as trees a person can
+// read. Each comes from the same validation that the CLI runs.
+import { Code } from "astro-expressive-code/components";
+import Docs from "../../../layouts/Docs.astro";
+import Icon from "../../../components/Icon.astro";
+import SchemaNode from "../../../components/docs/SchemaNode.astro";
+import { reference, type JsonSchema } from "../../../lib/reference";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+/** Where each schema is used, in a reader's words. */
+const uses: Record<string, string> = {
+	"model-manifest": "The manifest of a model: `model.json` in the vault. It names the model and its current state, and holds no modules.",
+	module: "One module definition: a `<id>.module.json` file in the vault, with its parts, relationships and binding.",
+	flows: "One flow collection: a `<id>.flows.json` file in the vault, with its flows and their steps.",
+	"model-initialize": "The request that `archboard model init` sends to make an empty planning model.",
+	"model-edit": "The request that `archboard model edit --input` reads: one complete revision, a claim and a batch of changes.",
+	"model-import": "The portable installation that `archboard model import` reads, with its retained history.",
+	"model-migrate": "The request that moves a legacy vault to canonical models.",
+	"vault-config": "The vocabulary of a vault: `.archboard/config.yaml`, with its module kinds, relationship kinds and the evidence each kind accepts.",
+};
+
+const headings = reference.schemas.map((entry) => ({ depth: 2, slug: entry.name, text: entry.title }));
+const defsOf = (schema: JsonSchema): Record<string, JsonSchema> =>
+	(schema["$defs"] as Record<string, JsonSchema> | undefined) ?? {};
+const inline = (text: string) =>
+	text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replace(/`([^`]+)`/g, "<code>$1</code>");
+---
+
+<Docs
+	title="Schemas"
+	description="The JSON Schemas of the files in a vault and of the requests that change them, rendered from the validation that the CLI runs."
+	path="reference/schemas"
+	headings={headings}
+	source="apps/cli/src/cli/commands/model/operations/schema.ts"
+>
+	<p>
+		An agent reads these schemas from the CLI on its <code>PATH</code>, so they always match the
+		installed program. A valid shape is not yet valid architecture: a write also checks names,
+		identities, the claim and the complete revision.
+	</p>
+	<Code code={`archboard model schema\narchboard model schema model-edit > model-edit.schema.json`} lang="sh" frame="terminal" />
+	{
+		reference.schemas.map((entry) => (
+			<section class="schema" aria-labelledby={entry.name}>
+				<h2 id={entry.name} class="heading">
+					{entry.title}
+					<a class="heading-link" href={`#${entry.name}`} aria-label="Link to this schema" data-heading-link>#</a>
+				</h2>
+				<p set:html={inline(uses[entry.name] ?? "")} />
+				<div class="schema-bar">
+					<code class="schema-command">archboard model schema {entry.name}</code>
+					<a class="schema-file" href={`${base}/docs/reference/schemas/${entry.name}.json`}>
+						<Icon name="fileCode" size={15} />
+						{entry.name}.json
+					</a>
+				</div>
+				<div class="schema-tree">
+					<SchemaNode name={null} schema={entry.schema} depth={0} defs={defsOf(entry.schema)} />
+				</div>
+			</section>
+		))
+	}
+</Docs>
+
+<style>
+	.schema-bar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+	}
+	.schema-file {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		height: 30px;
+		padding: 0 10px;
+		border-radius: var(--radius-control);
+		background: var(--raised);
+		color: var(--ink) !important;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		text-decoration: none;
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule);
+		transition: background-color 160ms var(--ease-out);
+	}
+	.schema-file:hover {
+		background: var(--slab);
+	}
+	.schema-tree {
+		margin-top: 18px;
+		padding: 8px 20px 12px 4px;
+		border-radius: var(--radius-table);
+		background: var(--plane);
+		box-shadow:
+			0 0 0 1px var(--rule-strong),
+			var(--shadow-raised);
+	}
+	.schema + .schema {
+		margin-top: 0;
+	}
+</style>

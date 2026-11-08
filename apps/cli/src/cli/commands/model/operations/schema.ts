@@ -111,4 +111,4 @@ const modelSchemaContract = defineCommand({
 	},
 });
 
-export { jsonSchema, modelSchemaContract };
+export { SCHEMA_NAMES, jsonSchema, modelSchemaContract };

@@ -1,0 +1,313 @@
+---
+// One command of the CLI, from its contract: what it does, how to call it, its options, its
+// examples and what each exit code means.
+import { Code } from "astro-expressive-code/components";
+import {
+	commandAnchor,
+	descriptionBlocks,
+	inlineCode,
+	sharedOf,
+	synopsis,
+	traits,
+	type CommandEntry,
+	type OptionEntry,
+} from "../../lib/reference";
+
+interface Props {
+	readonly command: CommandEntry;
+}
+
+const { command } = Astro.props;
+const anchor = commandAnchor(command.name);
+const positionals = command.parameters.filter((parameter) => parameter.kind === "positional");
+const options = command.parameters.filter(
+	(parameter): parameter is OptionEntry => parameter.kind === "option",
+);
+const shared = sharedOf(command);
+const exits = [
+	{ exit: 0, what: "Success", text: command.output.map((entry) => entry.description).join(". ") },
+	...command.outcomes.map((outcome) => ({ exit: outcome.exit, what: outcome.id, text: outcome.description })),
+	...command.refusals.map((refusal) => ({ exit: refusal.exit, what: refusal.code, text: refusal.description })),
+];
+const blocks = descriptionBlocks(command.description);
+---
+
+<section class="command" aria-labelledby={anchor}>
+	<h2 id={anchor} class="heading command-name">
+		<span>{command.name}</span>
+		<a class="heading-link" href={`#${anchor}`} aria-label="Link to this command" data-heading-link>#</a>
+	</h2>
+	<p class="command-summary">{command.summary}</p>
+	{
+		command.router ? (
+			<p>
+				{command.router.runs ? (
+					<>
+						Without a subcommand, <code>archboard {command.name}</code> runs{" "}
+						<a href={`#${commandAnchor(command.router.runs)}`}>
+							<code>archboard {command.router.runs}</code>
+						</a>
+						, and the options before the subcommand go to it.
+					</>
+				) : (
+					<>
+						<code>archboard {command.name}</code> needs a subcommand. Without one, it refuses with exit 2.
+					</>
+				)}
+			</p>
+		) : (
+			<>
+				<ul class="traits" aria-label="What it needs and does">
+					{traits(command).map((trait) => <li>{trait}</li>)}
+				</ul>
+				<Code code={synopsis(command)} lang="sh" frame="none" wrap />
+			</>
+		)
+	}
+	{!command.router && (<div class="command-text">
+		{
+			blocks.map((block) =>
+				block.kind === "paragraph" ? (
+					<p set:html={inlineCode(block.text)} />
+				) : block.kind === "head" ? (
+					<p class="block-head">{block.text}</p>
+				) : (
+					<ul>
+						{block.items.map((item) => (
+							<li set:html={inlineCode(item)} />
+						))}
+					</ul>
+				),
+			)
+		}
+	</div>)}
+	{
+		!command.router && (positionals.length > 0 || options.length > 0 || shared.length > 0) && (
+			<table class="params">
+				<thead>
+					<tr>
+						<th scope="col">Argument</th>
+						<th scope="col">What it does</th>
+					</tr>
+				</thead>
+				<tbody>
+					{positionals.map((parameter) => (
+						<tr>
+							<td>
+								<code>{`<${parameter.name}>`}</code>
+								{parameter.required && <span class="mark">required</span>}
+								{parameter.repeatable && <span class="mark">repeatable</span>}
+							</td>
+							<td set:html={inlineCode(parameter.description)} />
+						</tr>
+					))}
+					{options.map((option) => (
+						<tr>
+							<td>
+								<code>
+									{option.spellings.join(", ")}
+									{option.value === "required" && ` <${option.placeholder ?? "value"}>`}
+									{option.value === "optional" && ` [${option.placeholder ?? "value"}]`}
+								</code>
+								{option.required && <span class="mark">required</span>}
+								{option.repeatable && <span class="mark">repeatable</span>}
+							</td>
+							<td>
+								<span set:html={inlineCode(option.description)} />
+								{option.requiredWhen && (
+									<span class="detail" set:html={inlineCode(`Required when ${option.requiredWhen}.`)} />
+								)}
+								{option.choices && (
+									<span class="detail">
+										One of{" "}
+										{option.choices.map((choice, index) => (
+											<>
+												{index > 0 && ", "}
+												<code>{choice}</code>
+											</>
+										))}
+										.
+									</span>
+								)}
+								{option.default && (
+									<span class="detail">
+										Default <code>{option.default}</code>.
+									</span>
+								)}
+							</td>
+						</tr>
+					))}
+					{shared.map((option) => (
+						<tr class="shared">
+							<td>
+								<code>
+									{option.spellings.join(", ")} {`<${option.placeholder ?? "value"}>`}
+								</code>
+								{option.key === "doing" && <span class="mark">required</span>}
+							</td>
+							<td>
+								<span set:html={inlineCode(option.description)} />
+								{option.default && (
+									<span class="detail">
+										Default <code>{option.default}</code>.
+									</span>
+								)}
+							</td>
+						</tr>
+					))}
+				</tbody>
+			</table>
+		)
+	}
+	{
+		command.examples.length > 0 && (
+			<div class="examples">
+				<p class="block-head">Examples</p>
+				<Code code={command.examples.join("\n")} lang="sh" frame="terminal" />
+			</div>
+		)
+	}
+	{!command.router && (<table class="exits">
+		<thead>
+			<tr>
+				<th scope="col">Exit</th>
+				<th scope="col">When</th>
+			</tr>
+		</thead>
+		<tbody>
+			{
+				exits.map((row) => (
+					<tr>
+						<td class="exit">
+							<span class:list={["exit-code", { ok: row.exit === 0 }]}>{row.exit}</span>
+						</td>
+						<td>
+							<span class="when">{row.what}</span>
+							<span class="detail" set:html={inlineCode(row.text)} />
+						</td>
+					</tr>
+				))
+			}
+		</tbody>
+	</table>)}
+</section>
+
+<style>
+	.command {
+		margin-top: 0;
+		padding-top: 72px;
+	}
+	.command + .command {
+		margin-top: 72px;
+		box-shadow: inset 0 1px 0 var(--rule);
+	}
+	.command > :global(* + *) {
+		margin-top: 18px;
+	}
+	.command-name {
+		margin: 0;
+		font-family: var(--font-body);
+		font-size: 1.625rem;
+		font-weight: 600;
+		letter-spacing: -0.015em;
+		color: var(--ink);
+		text-transform: none;
+	}
+	.command-name span::before {
+		content: "archboard ";
+		color: var(--ink-muted);
+		font-weight: 500;
+	}
+	.command-summary {
+		font-size: 1.0625rem;
+		color: var(--ink);
+	}
+	.traits {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		padding: 0;
+	}
+	.traits li {
+		display: inline-flex;
+		align-items: center;
+		height: 22px;
+		padding: 0 8px;
+		border-radius: var(--radius-chip);
+		background: var(--card);
+		color: var(--ink-muted);
+		font-size: 0.75rem;
+		font-weight: 600;
+		list-style: none;
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+	.traits li::before {
+		display: none;
+	}
+	.traits li + li {
+		margin-top: 0;
+	}
+	.command-text > :global(* + *) {
+		margin-top: 0.9em;
+	}
+	.block-head {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.block-head + :global(ul) {
+		margin-top: 0.5em;
+	}
+	.command table {
+		width: 100%;
+	}
+	.command td:first-child {
+		width: 38%;
+	}
+	.command td .detail {
+		display: block;
+		margin-top: 4px;
+		font-size: 0.875rem;
+		color: var(--ink-muted);
+	}
+	.mark {
+		display: inline-block;
+		margin: 4px 0 0 6px;
+		padding: 0 6px;
+		border-radius: var(--radius-chip);
+		background: var(--well);
+		color: var(--ink-muted);
+		font-size: 0.6875rem;
+		font-weight: 600;
+		line-height: 18px;
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+	.shared code {
+		color: var(--ink-muted);
+	}
+	.exits td.exit {
+		width: 64px;
+	}
+	.exit-code {
+		display: inline-grid;
+		place-items: center;
+		min-width: 26px;
+		height: 24px;
+		border-radius: var(--radius-control);
+		background: var(--well);
+		color: var(--ink);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		box-shadow:
+			var(--shadow-well),
+			inset 0 0 0 1px var(--rule);
+	}
+	.exit-code.ok {
+		color: var(--added);
+	}
+	.when {
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--ink);
+	}
+</style>

@@ -1,0 +1,87 @@
+---
+// A few ways onward from a page, each a card with an icon, a name and one line about it.
+import Icon from "../Icon.astro";
+import type { IconName } from "../../lib/icons";
+import { docsHref } from "../../lib/docs-nav";
+
+interface Props {
+	readonly cards: readonly { path: string; title: string; text: string; icon: IconName }[];
+}
+
+const { cards } = Astro.props;
+---
+
+<div class="cards">
+	{
+		cards.map((card) => (
+			<a class="card" href={card.path.startsWith("http") ? card.path : docsHref(card.path)}>
+				<span class="icon-box">
+					<Icon name={card.icon} size={18} />
+				</span>
+				<span class="card-title">{card.title}</span>
+				<span class="card-text">{card.text}</span>
+			</a>
+		))
+	}
+</div>
+
+<style>
+	.cards {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 14px;
+		margin-top: 1.6em;
+	}
+	.card {
+		display: grid;
+		grid-template-columns: 36px minmax(0, 1fr);
+		grid-template-rows: auto auto;
+		column-gap: 14px;
+		row-gap: 4px;
+		padding: 18px 20px;
+		border-radius: var(--radius-table);
+		background: var(--plane);
+		text-decoration: none;
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule);
+		transition:
+			transform 160ms var(--ease-out),
+			background-color 160ms var(--ease-out),
+			box-shadow 160ms var(--ease-out);
+	}
+	.card:hover {
+		background: var(--card);
+		transform: translateY(-1px);
+		box-shadow:
+			var(--shadow-float),
+			inset 0 0 0 1px var(--rule);
+	}
+	.icon-box {
+		grid-row: 1 / span 2;
+		display: grid;
+		place-items: center;
+		width: 36px;
+		height: 36px;
+		border-radius: var(--radius-panel);
+		background: var(--well);
+		color: var(--gold-mark);
+		box-shadow:
+			var(--shadow-well),
+			inset 0 0 0 1px var(--rule);
+	}
+	.card-title {
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.card-text {
+		font-size: 0.875rem;
+		line-height: 1.5;
+		color: var(--ink-muted);
+	}
+	@media (max-width: 640px) {
+		.cards {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>

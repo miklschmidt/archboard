@@ -1,0 +1,121 @@
+---
+title: Install and set up
+description: Put the archboard CLI on your machine, set a repository up with archboard init, and make sure that the server answers.
+---
+
+import Aside from "../../components/docs/Aside.astro";
+import Steps from "../../components/docs/Steps.astro";
+import InstallCommands from "../../components/InstallCommands.astro";
+
+## What you need
+
+- Linux on x64 or arm64, or macOS on Apple silicon.
+- Node.js 22.18 or later, and Git.
+- A Codex sign-in for the agent dock, voice, narration and recordings. The map, the checks and the pictures work without it.
+- Chromium or Chrome only for PNG pictures and recordings. SVG pictures need no browser.
+
+## Install the CLI
+
+The package is `archboard` on npm. `@archboard/cli` is the same program under a second name. Pick your package manager:
+
+<InstallCommands id="docs-install" then={["archboard --version"]} />
+
+The package manager installs only the build for your platform. The install puts `archboard` on your `PATH`.
+
+## Set up a repository
+
+Run `archboard init` in the repository that you want to map:
+
+```bash
+cd ~/Projects/payments-api
+archboard init
+```
+
+<Steps>
+
+1. **It installs the skills.** `archboard` writes and reads models. `archboard-pr` gives a pull request an architecture explainer. Codex gets them, and Claude Code gets them when `claude` is on the `PATH`.
+2. **It makes the vault.** The vault is `.archboard/vault` at the root of the checkout. The model takes the name of the repository directory.
+3. **It registers the checkout.** The browser then lists it, and bindings into this repository resolve here.
+4. **It hands the language servers to an agent.** At a terminal, `init` asks whether Claude Code or Codex sets them up. The agent shows its plan and waits for your consent. Without a terminal, the JSON answer ends with `next`, the prompt for the agent.
+
+</Steps>
+
+Commit the vault with your code. A reviewer then reads a change to the architecture in the same diff as the change to the code.
+
+```bash
+git add .archboard
+git commit -m "docs(architecture): add the Archboard vault"
+```
+
+<Aside type="note" title="No CLAUDE.md or AGENTS.md entry">
+	`init` adds nothing to `CLAUDE.md` or `AGENTS.md`. A command finds the vault from the repository, the way Git finds its own directory. A block that an earlier version wrote between `<!-- archboard:begin -->` and `<!-- archboard:end -->` is removed.
+</Aside>
+
+## Set up the language servers
+
+A language server knows where code defines a name. With one, `archboard check code` resolves a name to its definition, and only resolved evidence can make a warning. A match by name only stays information.
+
+<Steps>
+
+1. Find the languages that the repository uses.
+2. Install a server for each language that has no default. TypeScript 7 and later needs none.
+3. In the checkout, register each server:
+
+   ```bash
+   archboard repo language-server python pyright-langserver --arg=--stdio
+   ```
+
+4. Commit `.archboard/language-servers.json` with the vault. Every machine and every CI run then uses the same servers.
+
+</Steps>
+
+<Aside type="caution" title="A language server runs the repository's code">
+	Read the `.archboard/language-servers.json` of a checkout before you run `archboard check code` on
+	a repository that you do not trust. pyright, rust-analyzer, gopls and the others run code of the
+	checkout, as your editor does.
+</Aside>
+
+## Start the server
+
+Every command that needs the server starts it when nothing answers. To start it yourself, run:
+
+```bash
+archboard start
+archboard status
+```
+
+A release server listens on `http://archboard.localhost:4242`. Chrome and Firefox send every `*.localhost` name to this machine with no setup. The CLI connects to `127.0.0.1:4242`. Set `ARCHBOARD_NO_AUTOSTART=1` to stop the autostart.
+
+<Aside type="caution" title="Keep the server on loopback">
+	The server has no authentication. Do not expose its port beyond this machine.
+</Aside>
+
+## Make sure that it works
+
+```bash
+archboard model read
+archboard check
+```
+
+`model read` prints the model as JSON. A new vault holds an empty planning model, which is a model with no current state yet. `archboard check` exits 0 on a new vault.
+
+## Find the vault from another directory
+
+A command finds its vault the way Git finds its repository. Inside a checkout, the vault is `.archboard/vault` at the checkout root. `-C <dir>` starts the search in another directory:
+
+```bash
+archboard -C ~/Projects/payments-api model read
+```
+
+If the root has no vault, the command refuses with `VAULT_NOT_FOUND` and exit code 2. The refusal names each known vault whose models bind this repository.
+
+## Update and remove
+
+Run the install command again, then restart the server so that it runs the new version. Until then, every command warns that the server runs another version.
+
+```bash
+npm install --global archboard@latest
+archboard restart
+```
+
+[INSTALL.md](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md) covers builds from a clone, Nix, every language server, recordings, machine state and macOS.

@@ -1,0 +1,112 @@
+---
+// Every page of the docs, in reading order. The current page rises out of the list as a raised
+// face with a gold marker. The page script moves that mark when the reader goes to another page,
+// because the sidebar persists across page changes to keep its scroll.
+import { docsHref, docsNav } from "../../lib/docs-nav";
+
+interface Props {
+	/** The current page's path under /docs/. */
+	readonly path: string;
+}
+
+const { path } = Astro.props;
+---
+
+<nav class="sidebar-nav" aria-label="Docs pages">
+	{
+		docsNav.map((group) => (
+			<div class="group">
+				<p class="group-title">{group.title}</p>
+				<ul>
+					{group.pages.map((page) => (
+						<li>
+							<a
+								href={docsHref(page.path)}
+								data-docs-link={page.path}
+								aria-current={page.path === path ? "page" : undefined}
+								class:list={{ nested: page.path.startsWith("reference/cli/") }}
+							>
+								{page.label}
+							</a>
+						</li>
+					))}
+				</ul>
+			</div>
+		))
+	}
+</nav>
+
+<style>
+	.sidebar-nav {
+		display: flex;
+		flex-direction: column;
+		gap: 28px;
+	}
+	.group-title {
+		margin: 0 0 10px 12px;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	a {
+		position: relative;
+		display: flex;
+		align-items: center;
+		min-height: 34px;
+		padding: 6px 12px 6px 24px;
+		border-radius: var(--radius-control);
+		font-size: 0.9375rem;
+		line-height: 1.35;
+		color: var(--ink-muted);
+		text-decoration: none;
+		transition:
+			color 160ms var(--ease-out),
+			background-color 160ms var(--ease-out);
+	}
+	a.nested {
+		padding-left: 38px;
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+	}
+	a::before {
+		content: "";
+		position: absolute;
+		left: 10px;
+		width: 6px;
+		height: 6px;
+		border-radius: 1px;
+		background: var(--gold-mark);
+		box-shadow: 0 0 10px oklch(0.86 0.125 86 / 0.6);
+		opacity: 0;
+		transform: scale(0.4);
+		transition:
+			opacity 200ms var(--ease-out),
+			transform 260ms var(--ease-out);
+	}
+	a.nested::before {
+		left: 24px;
+	}
+	a:hover {
+		color: var(--ink);
+		background: oklch(1 0.01 85 / 0.05);
+	}
+	a[aria-current="page"] {
+		color: var(--ink);
+		background: var(--raised);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule);
+	}
+	a[aria-current="page"]::before {
+		opacity: 1;
+		transform: none;
+	}
+</style>

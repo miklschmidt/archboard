@@ -1,0 +1,59 @@
+---
+// A note beside the words: a plane with an icon and a short head. A caution keeps the product's
+// orange, because it warns.
+import Icon from "../Icon.astro";
+
+interface Props {
+	readonly type?: "note" | "tip" | "caution";
+	readonly title?: string;
+}
+
+const { type = "note", title } = Astro.props;
+const icon = type === "caution" ? "alert" : type === "tip" ? "flashlight" : "fileText";
+const head = title ?? (type === "caution" ? "Caution" : type === "tip" ? "Tip" : "Note");
+---
+
+<aside class:list={["aside", type]} aria-label={head}>
+	<p class="aside-head">
+		<Icon name={icon} size={17} />
+		{head}
+	</p>
+	<div class="aside-body"><slot /></div>
+</aside>
+
+<style>
+	.aside {
+		margin-top: 1.6em;
+		padding: 16px 20px 18px;
+		border-radius: var(--radius-table);
+		background: var(--plane);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule);
+	}
+	.aside + :global(*) {
+		margin-top: 1.6em;
+	}
+	.aside-head {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		font-size: 0.9375rem;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.aside-head :global(svg) {
+		color: var(--gold-mark);
+	}
+	.caution .aside-head :global(svg) {
+		color: var(--changed);
+	}
+	.aside-body {
+		margin-top: 8px;
+		font-size: 0.9375rem;
+		line-height: 1.6;
+	}
+	.aside-body :global(> * + *) {
+		margin-top: 0.8em;
+	}
+</style>

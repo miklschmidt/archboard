@@ -34,6 +34,7 @@ const image = new URL(socialCard, Astro.site);
 		<meta property="og:url" content={canonical} />
 		<meta property="og:image" content={image} />
 		<meta name="twitter:card" content="summary_large_image" />
+		<slot name="head" />
 		<script is:inline>
 			document.documentElement.classList.add("js");
 			// If the page script never observes the reveals, show every part rather than leave it hidden.
