@@ -68,6 +68,34 @@ function examplesOf(name: string, examples: readonly string[]): string[] {
 	return [...examples];
 }
 
+/** The most words and sentences that one paragraph or list item of a description holds. */
+const WALL = { words: 120, sentences: 6 };
+
+/**
+ * A command's description, refused when one of its paragraphs or list items is a wall of text.
+ * The description follows the format of the terminal help (`help-style.ts`): a blank line starts
+ * a paragraph, and a line that starts with `-` or `1.` is a list item.
+ * @param name The command.
+ * @param description The description.
+ * @returns The description.
+ */
+function descriptionOf(name: string, description: string): string {
+	const parts = description
+		.split(/\n\s*\n|\n(?=\s*(?:[-*]|\d+\.)\s)/u)
+		.map((part) => part.replaceAll(/\s+/gu, " ").trim());
+	const walls = parts.filter(
+		(part) =>
+			part.split(" ").length > WALL.words ||
+			(part.match(/[.!?](?:\s|$)/gu) ?? []).length > WALL.sentences,
+	);
+	if (walls.length > 0) {
+		throw new Error(
+			`The description of "archboard ${name}" has a wall of text, more than ${String(WALL.words)} words or ${String(WALL.sentences)} sentences: split it into paragraphs or a list. It starts: ${walls.map((wall) => wall.slice(0, 80)).join("; ")}`,
+		);
+	}
+	return description;
+}
+
 const commands = registry.map(({ name, parent, bare, contract }) => ({
 	name,
 	parent: parent ?? null,
@@ -78,7 +106,7 @@ const commands = registry.map(({ name, parent, bare, contract }) => ({
 			: { runs: null }
 		: null,
 	summary: contract.summary,
-	description: contract.description,
+	description: descriptionOf(name, contract.description),
 	examples: examplesOf(name, contract.examples),
 	parameters: contract.parameters
 		.filter((parameter) => !parameter.hidden)

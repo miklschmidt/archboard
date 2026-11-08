@@ -53,7 +53,8 @@ Sync it in the same change when the change alters one of these:
 
 Generated pages come from the program: `site/scripts/reference.ts` reads the CLI contracts, the help of each check, the JSON Schemas and each `actions/*/action.yml`.
 To change what a generated page says, edit its source in the CLI or the Action. The page only lays out that data.
-The site's `prebuild` and `predev` run the script, and the script throws when an example runs another command or when the embeds help misses a code.
+The site's `prebuild` and `predev` run the script. The script throws when an example runs another command, when the embeds help misses a code, or when a description has a paragraph over 120 words or 6 sentences.
+Write a description in the format that `CommandContract.description` documents: paragraphs, colon heads over lists, and code in backticks.
 
 Hand-written pages quote behavior: `site/src/content/docs/*.mdx`, `actions/README.md`, `INSTALL.md` and `README.md`.
 Search them for each changed command, flag, code and exit status, and correct every statement and example that the change makes false.

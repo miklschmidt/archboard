@@ -85,10 +85,7 @@ const modelInitContract = defineCommand({
 	description: [
 		"Creates one canonical model through the existing signed installation and recovery workflow. Existing models and legacy boards are never replaced.",
 		"",
-		"In a Git checkout that has no vault, it first:",
-		"- Makes `<root>/.archboard/vault` with the default vocabulary.",
-		"- Registers the checkout.",
-		"- Needs no server.",
+		"In a Git checkout that has no vault, it needs no server. It first makes `<root>/.archboard/vault` with the default vocabulary, and registers the checkout.",
 	].join("\n"),
 	examples: [
 		"archboard model init --name Shop --operation-id initialize-shop --writer agent --doing 'Initialize architecture'",

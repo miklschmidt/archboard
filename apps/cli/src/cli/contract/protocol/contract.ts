@@ -205,6 +205,14 @@ interface CommandContext {
 interface CommandContract<Shape extends z.ZodRawShape, Result> {
 	path: readonly [string, ...string[]];
 	summary: string;
+	/**
+	 * What the command does, for the terminal help and the docs site's CLI reference. Write it in
+	 * the format of `routing/rules/help-style.ts`: a blank line starts a paragraph, a line that
+	 * ends with a colon heads the list below it, a line that starts with `-` or `1.` is a list
+	 * item, and code is in backticks: commands, flags, paths, file names, environment variables
+	 * and JSON fields. Keep each paragraph and list item to 120 words and 6 sentences; the docs
+	 * build refuses a longer one.
+	 */
 	description: string;
 	examples: readonly string[];
 	parameters: readonly TokenParameter[];

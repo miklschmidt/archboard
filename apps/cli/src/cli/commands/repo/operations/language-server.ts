@@ -73,7 +73,7 @@ const repoLanguageServerContract = defineCommand({
 		"Without one, the check runs:",
 		"- The native `tsc --lsp --stdio` of the checkout's own TypeScript 7 or later.",
 		"- `typescript-language-server` for the checkout's TypeScript before 7.",
-		"- Then, in a checkout of Archboard, Archboard's own TypeScript.",
+		"- Otherwise, when Archboard runs from a source checkout and not a release, Archboard's own TypeScript.",
 		"",
 		"Without a language, the command shows both files. The checkout is the working directory's, unless `--repo` names a repository, which means its chosen checkout.",
 	].join("\n"),
