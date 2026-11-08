@@ -8,6 +8,7 @@ Amended on 2026-11-08 (TASK-559.09). The dense placement of [ADR 0064](0064-bloc
 Each such card takes the wall where the way of every line, times what the page's room costs, is least.
 A card therefore joins a row along the page before it takes a column of its own beside the frame.
 It also joins that row before it stands across the frame from what it joins.
+A card beside the frame that reaches past a corner steps outward until it clears the cards above and below the frame.
 A page's room costs its area plus a charge for scale.
 That charge is the room that the smallest box of the pane's shape round the page needs past the landing room.
 The same room cost ranks dense placements before routing and finished drawings after it.

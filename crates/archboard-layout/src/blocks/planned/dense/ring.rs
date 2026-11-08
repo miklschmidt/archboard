@@ -114,6 +114,25 @@ fn shut_wall(frame: &Rect, at: Point) -> Option<(usize, f64)> {
     }
 }
 
+/// Move a door beside the frame outward, by `outward` times what it takes, until it meets
+/// none of the doors above and below the frame. Those stand first, and a door beside the
+/// frame that reaches past its corner would stand over one.
+fn stand_clear<'a>(bx: &mut Rect, level: impl Iterator<Item = &'a Rect> + Clone, outward: f64) {
+    let meets = |one: &Rect, other: &Rect| {
+        one.x < other.x + other.width
+            && other.x < one.x + one.width
+            && one.y < other.y + other.height
+            && other.y < one.y + one.height
+    };
+    while let Some(other) = level.clone().find(|other| meets(bx, other)) {
+        bx.x = if outward < 0.0 {
+            other.x - STEP - bx.width
+        } else {
+            other.x + other.width + STEP
+        };
+    }
+}
+
 /// What a ring reads.
 pub(super) struct Ring<'a> {
     pub graph: &'a Node,
@@ -328,12 +347,17 @@ impl Ring<'_> {
                     Wall::Left => (origin.x - gap - node.w(), origin.y + along),
                     Wall::Right => (origin.x + size.x + gap, origin.y + along),
                 };
-                boxes[at] = Some(Rect {
+                let mut bx = Rect {
                     x,
                     y,
                     width: node.w(),
                     height: node.h(),
-                });
+                };
+                if !wall.level() {
+                    let outward = if wall == Wall::Left { -1.0 } else { 1.0 };
+                    stand_clear(&mut bx, boxes.iter().flatten(), outward);
+                }
+                boxes[at] = Some(bx);
             }
         }
         let placed = || boxes.iter().flatten();
@@ -487,6 +511,59 @@ mod tests {
             let beside =
                 door.bx.y < page.frame.y + set.size.y && door.bx.y + door.bx.height > page.frame.y;
             assert!(!beside, "{} stands beside the frame", door.id);
+        }
+    }
+
+    /// The owner's Layout timing and Module interface: more doors answer one part by the
+    /// frame's corner than the wall beside it holds. Those that do not fit take another
+    /// wall, and no door stands over another.
+    #[test]
+    fn a_wall_holds_only_the_doors_beside_the_frame_so_no_door_meets_another() {
+        let answers = (0..5).map(|at| {
+            serde_json::json!({"id": format!("answer{at}"),
+            "sources": ["part"], "targets": [format!("door{at}")]})
+        });
+        let graph: Node = serde_json::from_value(serde_json::json!({
+            "id": "root",
+            "children": (0..5).map(|at| serde_json::json!(
+                {"id": format!("door{at}"), "width": 340, "height": 113})).collect::<Vec<_>>(),
+            "edges": answers.collect::<Vec<_>>(),
+        }))
+        .expect("a node");
+        let set = Set {
+            size: Point { x: 1000.0, y: 300.0 },
+            parts: vec![Rect {
+                x: 850.0,
+                y: 100.0,
+                width: 200.0,
+                height: 100.0,
+            }],
+        };
+        let ring = Ring {
+            graph: &graph,
+            frames: Vec::new(),
+            boxes: vec![Rect {
+                x: 0.0,
+                y: 0.0,
+                width: 1000.0,
+                height: 300.0,
+            }],
+            set: &set,
+            ids: vec!["part"],
+            extra: 0.0,
+            sides: true,
+        };
+        let doors: Vec<&Node> = graph.kids().iter().collect();
+        let page = ring.stand(&doors);
+        for (index, one) in page.doors.iter().enumerate() {
+            for other in &page.doors[index + 1..] {
+                let (a, b) = (one.bx, other.bx);
+                let meet = a.x < b.x + b.width
+                    && b.x < a.x + a.width
+                    && a.y < b.y + b.height
+                    && b.y < a.y + a.height;
+                assert!(!meet, "{} stands over {}", one.id, other.id);
+            }
         }
     }
 }
