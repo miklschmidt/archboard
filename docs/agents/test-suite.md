@@ -351,6 +351,14 @@ statement. Keep queries scoped to the mounted container, or obtain document-boun
 query helpers after registration. Existing stage tests use `act` and
 `fireEvent` without introducing another DOM lifecycle owner.
 
+Inside `waitFor`, assert on a count, a string or a boolean, never on an element
+that the wait expects to go away. A failed check writes the value it received
+into its message, and Bun writes a Happy DOM element with all of React's fibers.
+That message is about 100 MB, and each failed check takes most of a second to
+write it. A wait of this kind took 8 seconds a case on CI. Write
+`expect(document.querySelectorAll(selector)).toHaveLength(0)`, not
+`expect(document.querySelector(selector)).toBeNull()`.
+
 The `renderToStaticMarkup` owners elsewhere in `apps/web/tests/ui/` do not need a DOM.
 Do not add a shared harness or migrate unrelated owners solely to change their
 test setup.

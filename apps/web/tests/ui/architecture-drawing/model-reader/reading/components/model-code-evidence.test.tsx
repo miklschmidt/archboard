@@ -33,10 +33,10 @@ type Props = ComponentProps<typeof ModelCodeEvidence>;
 type Reading = NonNullable<Props["reading"]>;
 
 /**
- * The ceiling of every wait in this file. Testing Library gives a wait one second, but a page that
- * shares the machine with the other test files reads its lines and imports its grammar seconds late
- * (the grammar alone takes 0.3 s on a quiet machine). A passing run never reaches the ceiling, which
- * stays below Bun's own 15 s for a case.
+ * The ceiling of every wait in this file. Testing Library gives a wait one second, but the first
+ * excerpt in a language waits while the highlighter compiles that language's grammar: 0.3 s on a
+ * quiet machine, and near 2 s on a machine that the other test files share. A passing run never
+ * reaches the ceiling, which stays below Bun's own 15 s for a case.
  */
 const TEST_READ_WAIT_MS = 10_000;
 
@@ -251,10 +251,14 @@ function rows(): Element[] {
  * Wait until every excerpt on the page has its lines or has none. The cache tells the page that a
  * read has ended in a task of its own, so a test that is over before then leaves an update outside
  * act, in the report of the test that follows.
+ *
+ * The check counts the excerpts that still read. A failed check writes what it received into its
+ * message, and Bun writes a Happy DOM element with all of React's fibers: about 100 MB and most of a
+ * second for each failed check, and seconds on a loaded machine.
  */
 async function excerptsRead(): Promise<void> {
 	await waitFor(() =>
-		expect(document.querySelector('output[data-slot="code-source-state"]')).toBeNull(),
+		expect(document.querySelectorAll('output[data-slot="code-source-state"]')).toHaveLength(0),
 	);
 }
 
