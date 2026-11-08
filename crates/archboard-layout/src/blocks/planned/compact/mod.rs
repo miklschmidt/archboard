@@ -433,6 +433,41 @@ mod tests {
     }
 
     #[test]
+    fn branches_that_join_from_opposite_sides_keep_a_junctions_room() {
+        let line = |id: &str, from: f64| PlacedLine {
+            id: id.into(),
+            points: vec![
+                Point { x: from, y: 100.0 },
+                Point { x: from, y: 300.0 },
+                Point { x: 400.0, y: 300.0 },
+                Point { x: 400.0, y: 500.0 },
+            ],
+            label: None,
+        };
+        let shape = Shape::new(Placed {
+            width: 1000.0,
+            height: 1000.0,
+            cards: vec![
+                card("left", 0.0, 0.0),
+                card("right", 600.0, 0.0),
+                card("target", 300.0, 500.0),
+            ],
+            frames: Vec::new(),
+            regions: Vec::new(),
+            edges: vec![line("left", 100.0), line("right", 700.0)],
+            titles: Vec::new(),
+            routed: None,
+        });
+        let drawn = drawing(&shape, 8.0).expect("room to take out");
+        assert!(super::super::junctions::readable(
+            &drawn.edges[0].points,
+            &drawn.edges[1].points,
+            true,
+        ));
+        assert!(drawn.cards[2].bx.y < 500.0);
+    }
+
+    #[test]
     fn alignment_cannot_chain_small_gaps_into_a_large_cost() {
         let mut cards = Vec::new();
         for row in 0..3 {

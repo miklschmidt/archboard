@@ -104,7 +104,7 @@ fn joined_card(drawing: &Placed, line: usize) -> Option<usize> {
         let [.., before, last] = other else {
             return false;
         };
-        let between = |a: f64, b: f64, c: f64| a.min(c) < b && b < a.max(c);
+        let between = |a: f64, b: f64, c: f64| a.min(c) <= b && b <= a.max(c);
         last == end
             && (before.x == turn.x && turn.x == end.x && between(before.y, turn.y, end.y)
                 || before.y == turn.y && turn.y == end.y && between(before.x, turn.x, end.x))
