@@ -1,6 +1,6 @@
 import type { styleText } from "node:util";
 import type { z } from "zod";
-import { vaultRefusals } from "#cli/contract/protocol/refusals.ts";
+import { checkoutVaultRefusals, vaultRefusals } from "#cli/contract/protocol/refusals.ts";
 import type { AnsweredVault } from "#cli/contract/protocol/schemas.ts";
 
 class CliUsageError extends Error {
@@ -499,7 +499,8 @@ function namesItsVault<Shape extends z.ZodRawShape, Result>(
 		return contract;
 	}
 	const declared = new Set(contract.refusals.map((refusal) => refusal.code));
-	const added = vaultRefusals.filter((refusal) => !declared.has(refusal.code));
+	const refusals = contract.runsWithoutVault === true ? checkoutVaultRefusals : vaultRefusals;
+	const added = refusals.filter((refusal) => !declared.has(refusal.code));
 	return { ...contract, refusals: [...contract.refusals, ...added] };
 }
 

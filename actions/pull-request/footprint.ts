@@ -48,19 +48,26 @@ function readFootprint(
 	if (result.exitCode !== 0 || answer === undefined) {
 		return { note: `The footprint could not be read: ${firstLine(result.stderr)}` };
 	}
-	const skipped = [
-		...(answer.skipped ?? []).map(
-			(part) => `${part.subject.name} (${part.reason ?? "unavailable"})`,
-		),
+	return { buckets: planBuckets(answer, plan), note: unreadNote(answer, plan) };
+}
+
+/**
+ * Name the modules whose code the footprint could not read.
+ * @param answer The footprint.
+ * @param plan The proposal's plan.
+ * @returns A sentence, or undefined when it read them all.
+ */
+function unreadNote(answer: FootprintReading, plan: ProposalPlan): string | undefined {
+	const skipped = answer.skipped ?? [];
+	const skippedIds = new Set(skipped.map((part) => part.subject.id));
+	const unread = [
+		...skipped.map((part) => `${part.subject.name} (${part.reason ?? "unavailable"})`),
 		// The head binds no code to a module the proposal removes, so its code is read nowhere.
 		...[...plan.named]
-			.filter(([id]) => plan.baseOnlyBindings.has(id))
+			.filter(([id]) => plan.baseOnlyBindings.has(id) && !skippedIds.has(id))
 			.map(([, name]) => `${name} (no binding at the head)`),
 	];
-	return {
-		buckets: planBuckets(answer, plan),
-		note: skipped.length === 0 ? undefined : `The footprint did not read: ${skipped.join(", ")}.`,
-	};
+	return unread.length === 0 ? undefined : `The footprint did not read: ${unread.join(", ")}.`;
 }
 
 export { readFootprint };
