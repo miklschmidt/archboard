@@ -415,6 +415,10 @@ pub(super) fn append(
         .iter()
         .any(|old| super::port_spacing::conflicts(model, edge, &line.points, old))
     {
+        let alternatives = super::port_spacing::alternatives(model, shape, line);
+        if alternatives.is_empty() {
+            return None;
+        }
         let corridors = shape.without_labels();
         let probe = super::channel::Probe::new(
             model,
@@ -423,15 +427,13 @@ pub(super) fn append(
             &corridors,
             corridors.scopes[&topology.routes[edge].scope].bounds,
         );
-        return super::port_spacing::alternatives(model, shape, line)
-            .iter()
-            .find_map(|candidate| {
-                probe
-                    .refusal(&candidate.points)
-                    .is_none()
-                    .then(|| append_guarded(model, shape, candidate))
-                    .flatten()
-            });
+        return alternatives.iter().find_map(|candidate| {
+            probe
+                .refusal(&candidate.points)
+                .is_none()
+                .then(|| append_guarded(model, shape, candidate))
+                .flatten()
+        });
     }
     append_reserved(model, topology, shape, line)
 }

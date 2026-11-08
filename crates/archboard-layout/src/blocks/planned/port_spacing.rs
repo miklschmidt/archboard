@@ -54,7 +54,8 @@ fn conflicts_at(
 ) -> bool {
     // The ends' geometry is cheaper than the lookup of the other line, so it goes first.
     let near = [true, false].map(|os| {
-        opposite_offset(end(points, source), end(&old.points, os)).is_some_and(|by| by.abs() < APART)
+        opposite_offset(end(points, source), end(&old.points, os))
+            .is_some_and(|by| by.abs() < APART)
     });
     if near == [false, false] {
         return false;

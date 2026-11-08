@@ -106,24 +106,56 @@ pub(super) fn readable(a: &[Point], b: &[Point], start: bool, target: bool) -> b
 }
 
 pub(super) fn ordered(a: &[Point], b: &[Point], sharing: bool) -> bool {
+    let run = |at: usize| Envelope::new(&b[at..at + 2]);
+    ordered_by(a, b, Envelope::new(b), run, sharing)
+}
+
+/// The envelope of each run of a route, which `ordered_runs` reads for the route that a
+/// guard compares many candidates with.
+pub(super) fn runs(points: &[Point]) -> Vec<Envelope> {
+    points.windows(2).map(Envelope::new).collect()
+}
+
+/// `ordered` for a route `b` whose envelope and run envelopes are known.
+pub(super) fn ordered_runs(
+    a: &[Point],
+    b: &[Point],
+    (around, runs): (Envelope, &[Envelope]),
+    sharing: bool,
+) -> bool {
+    ordered_by(a, b, around, |at| runs[at], sharing)
+}
+
+fn ordered_by(
+    a: &[Point],
+    b: &[Point],
+    around: Envelope,
+    run: impl Fn(usize) -> Envelope + Copy,
+    sharing: bool,
+) -> bool {
     // Runs twelve or more apart neither cross, share ink nor run close beside each other, so
     // only the runs of one route that come near the other route are compared.
-    let around = Envelope::new(b);
-    let near = || a.windows(2).filter(move |p| !Envelope::new(p).apart(around));
+    let near = || {
+        a.windows(2)
+            .map(|p| (p, Envelope::new(p)))
+            .filter(move |&(_, at)| !at.apart(around))
+    };
+    let beside = move |at: Envelope| {
+        b.windows(2)
+            .enumerate()
+            .filter(move |&(index, _)| !run(index).apart(at))
+            .map(|(_, q)| q)
+    };
     let shared: Vec<_> = if sharing {
         near()
-            .flat_map(|p| b.windows(2).filter_map(move |q| shared_ends(p, q)))
+            .flat_map(|(p, at)| beside(at).filter_map(move |q| shared_ends(p, q)))
             .flatten()
             .collect()
     } else {
         Vec::new()
     };
-    near().all(|p| {
-        let run = Envelope::new(p);
-        b.windows(2).all(|q| {
-            if Envelope::new(q).apart(run) {
-                return true;
-            }
+    near().all(|(p, at)| {
+        beside(at).all(|q| {
             let ph = p[0].y == p[1].y;
             let qh = q[0].y == q[1].y;
             if ph == qh {

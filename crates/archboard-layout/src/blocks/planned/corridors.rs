@@ -23,14 +23,20 @@ pub(super) fn joins(
     let reached = |(low, high): (f64, f64), from: f64, to: f64| {
         if to < from { to >= low } else { to <= high }
     };
-    let (leave, enter) = (obstacles.reach(false, a.y, a.x), obstacles.reach(false, b.y, b.x));
+    let (leave, enter) = (
+        obstacles.reach(false, a.y, a.x),
+        obstacles.reach(false, b.y, b.x),
+    );
     for &x in &xs {
         let path = [a, Point { x, y: a.y }, Point { x, y: b.y }, b];
         if reached(leave, a.x, x) && reached(enter, b.x, x) && obstacles.clear(&path[1..3]) {
             visit(&path);
         }
     }
-    let (leave, enter) = (obstacles.reach(true, a.x, a.y), obstacles.reach(true, b.x, b.y));
+    let (leave, enter) = (
+        obstacles.reach(true, a.x, a.y),
+        obstacles.reach(true, b.x, b.y),
+    );
     for &y in &ys {
         let path = [a, Point { x: a.x, y }, Point { x: b.x, y }, b];
         if reached(leave, a.y, y) && reached(enter, b.y, y) && obstacles.clear(&path[1..3]) {

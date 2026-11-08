@@ -49,6 +49,9 @@ pub(super) struct Probe<'a, 'g> {
     fixed: Rc<FixedGeometry>,
     labels: super::clearance::Clearance,
     junctions: Option<Vec<Junction<'a>>>,
+    /// The line that refused the last candidate. Candidates of one search share their ends,
+    /// so it most likely refuses the next one too, and it is tested first.
+    blocker: std::cell::Cell<usize>,
 }
 impl<'a, 'g> Probe<'a, 'g> {
     pub(super) fn new(
@@ -108,8 +111,9 @@ impl<'a, 'g> Probe<'a, 'g> {
                 .routes
                 .iter()
                 .filter(|line| line.id != model.edges[index].id)
-                .map(|line| Junction::new(model, topology, index, line))
+                .map(|line| Junction::new(model, topology, index, line).map(Junction::indexed))
                 .collect(),
+            blocker: std::cell::Cell::new(0),
         }
     }
     pub(super) fn refusal(&self, points: &[Point]) -> Option<&'static str> {
@@ -132,11 +136,18 @@ impl<'a, 'g> Probe<'a, 'g> {
         }
         // Most candidates fall here, so test them before the box indexes.
         let bounds = super::junctions::Envelope::new(points);
-        if !self
-            .junctions
-            .as_ref()
-            .is_some_and(|pairs| pairs.iter().all(|pair| pair.clear(points, bounds)))
+        let Some(pairs) = self.junctions.as_ref() else {
+            return Some("junction");
+        };
+        let first = self.blocker.get();
+        let refuses = |pair: &Junction<'_>| !pair.clear(points, bounds);
+        if pairs.get(first).is_some_and(refuses) {
+            return Some("junction");
+        }
+        if let Some(at) =
+            (pairs.iter().enumerate()).position(|(at, pair)| at != first && refuses(pair))
         {
+            self.blocker.set(at);
             return Some("junction");
         }
         if !self.fixed.cards.clear(points) {
@@ -191,6 +202,8 @@ pub(super) fn label_run(points: &[Point], label: Rect) -> bool {
 struct Junction<'a> {
     line: &'a PlacedLine,
     bounds: super::junctions::Envelope,
+    /// The envelope of each run of the line, when a guard compares it with many candidates.
+    runs: Vec<super::junctions::Envelope>,
     shared: bool,
     /// Whether the two share their source, and their target.
     ends: [bool; 2],
@@ -212,6 +225,7 @@ impl<'a> Junction<'a> {
         Some(Self {
             line,
             bounds: super::junctions::Envelope::new(&line.points),
+            runs: Vec::new(),
             shared: topology.memberships[index]
                 .iter()
                 .flatten()
@@ -234,7 +248,23 @@ impl<'a> Junction<'a> {
                     self.arrows[0],
                     self.arrows[1],
                 ))
-                && super::junctions::ordered(points, &self.line.points, self.shared))
+                && if self.runs.is_empty() {
+                    super::junctions::ordered(points, &self.line.points, self.shared)
+                } else {
+                    super::junctions::ordered_runs(
+                        points,
+                        &self.line.points,
+                        (self.bounds, &self.runs),
+                        self.shared,
+                    )
+                })
+    }
+    /// The junction with its line's runs indexed, for a guard that compares many candidates.
+    fn indexed(self) -> Self {
+        Self {
+            runs: super::junctions::runs(&self.line.points),
+            ..self
+        }
     }
 }
 pub(super) fn shared_junction(
