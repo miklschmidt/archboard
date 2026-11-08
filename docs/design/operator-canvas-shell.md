@@ -122,10 +122,11 @@ text, and long lists stay in About.
   a warning to walk through, and says nothing when it found none.
 - **The legend stands at the foot of the panel and needs no click.** It replaces the
   button at the picture's lower left and `Filters`, and it lists the kinds, line types
-  and groups of the reading. A mark explains, and `Filter` puts a switch on each line type that a reader
-  can hide. A kind that a reader hid stays in the legend, dimmed, and the heading row
-  says how many are hidden. A mixed line has a row and no switch, because it is no kind
-  of relationship. Groups close the legend as bright tags with no switch, and a press
+  and groups of the reading. A mark explains, and each line type that a reader can hide
+  is a row that switches its lines, with an eye at its end. A kind that a reader hid
+  stays in the legend, dimmed, with a struck eye, and `Show all` brings every type back.
+  A mixed line and the marks of lines stand under the types with no switch, because a
+  reader cannot hide them. Groups close the legend as bright tags with no switch, and a press
   on a tag selects the group's parts. A reading with no groups has no group section.
   The layout engine switch is not in the panel. It is in the `Picture` tab of the Settings dialog.
 - **About holds every long list and names its subject.** The end of its title row

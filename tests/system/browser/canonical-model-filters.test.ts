@@ -11,30 +11,14 @@ import {
 	createAgentBrowser,
 	pollUntil,
 	registerServerBase,
-	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { pick } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
-const FILTER = '[data-slot="model-legend-filter"]';
-
-async function filtering(browser: AgentBrowserSession): Promise<boolean> {
-	return browser.eval<boolean>(
-		`document.querySelector('${FILTER}')?.getAttribute('aria-pressed') === 'true' && document.querySelector('[data-filter-kind="call"]') !== null`,
-	);
-}
-
-async function openFilters(browser: AgentBrowserSession): Promise<void> {
-	await browser.run(["click", FILTER]);
-	await pollUntil(() => filtering(browser), Boolean, "the opened filter controls", WAIT);
-}
-
-async function closeFilters(browser: AgentBrowserSession): Promise<void> {
-	await browser.run(["click", FILTER]);
-	await pollUntil(async () => !(await filtering(browser)), Boolean, "the put away filters", WAIT);
-}
+/** The switch that draws the lines of the `call` kind or leaves them out. */
+const CALLS = '[data-filter-kind="call"]';
 
 test("reading filters preserve selection and authored meaning with an explicit reveal action", async () => {
 	await using resources = new AsyncDisposableStack();
@@ -72,16 +56,14 @@ test("reading filters preserve selection and authored meaning with an explicit r
 		})()`),
 	).toEqual({ tags: 1, switches: 0 });
 	await pick(browser, "Shop#Dispatch");
-	await openFilters(browser);
-	await browser.run(["click", '[data-filter-kind="call"]']);
-	await closeFilters(browser);
+	await browser.run(["click", CALLS]);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-hidden-selection"]')?.getAttribute('data-count') === '1' && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"]') === null && document.querySelector('[data-slot="model-legend-hidden"]') !== null`,
+				`document.querySelector('[data-slot="model-hidden-selection"]')?.getAttribute('data-count') === '1' && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"]') === null && document.querySelector('${CALLS}')?.getAttribute('aria-checked') === 'false'`,
 			),
 		Boolean,
-		"the hidden selected connection, and the count of what is hidden",
+		"the hidden selected connection, and the switch that hid it",
 		WAIT,
 	);
 	expect(
@@ -109,13 +91,11 @@ test("reading filters preserve selection and authored meaning with an explicit r
 		"the revealed selection",
 		WAIT,
 	);
-	await openFilters(browser);
 	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-filter-kind="call"]')?.getAttribute('aria-checked') === 'true'`,
+		await browser.eval<string | null>(
+			`document.querySelector('${CALLS}').getAttribute('aria-checked')`,
 		),
-	).toBe(true);
-	await closeFilters(browser);
+	).toBe("true");
 	await browser.eval("window.history.back()");
 	await pollUntil(
 		() =>
@@ -128,16 +108,9 @@ test("reading filters preserve selection and authored meaning with an explicit r
 	);
 	await browser.run(["reload"]);
 	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('${FILTER}') !== null`),
-		Boolean,
-		"restored filter controls",
-		WAIT,
-	);
-	await openFilters(browser);
-	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-filter-kind="call"]')?.getAttribute('aria-checked') === 'false' && document.querySelector('[data-slot="model-diagram"] svg') !== null`,
+				`document.querySelector('${CALLS}')?.getAttribute('aria-checked') === 'false' && document.querySelector('[data-slot="model-diagram"] svg') !== null`,
 			),
 		Boolean,
 		"restored filters",

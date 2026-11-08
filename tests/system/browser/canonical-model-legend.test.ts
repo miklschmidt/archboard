@@ -1,5 +1,6 @@
-// The owner of the legend's workflow: its rows stay where they stand while a reader filters, and a
-// group's tag selects what the picture draws of that group, from the pointer and from the keyboard.
+// The owner of the legend's workflow: each line type is its own switch, its rows stay where they
+// stand while a reader hides and shows lines, and a group's tag selects what the picture draws of
+// that group, from the pointer and from the keyboard.
 
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
@@ -20,8 +21,6 @@ import { serverPath } from "./support/navigator-support.ts";
 const WAIT = { timeoutMs: 10_000 } as const;
 
 const LEGEND = '[data-slot="model-legend"]';
-const FILTER = '[data-slot="model-legend-filter"]';
-const COUNT = '[data-slot="model-legend-hidden"]';
 const PUBLIC = '[data-group-id="public"]';
 const BILLING = '[data-group-id="billing"]';
 
@@ -88,14 +87,11 @@ function seedReading(vault: string): void {
 	);
 }
 
-/**
- * Where every word and mark of the legend stands. The switches and the Filter key are left out: a
- * key sinks when it is pressed, and that is the key moving, not the legend.
- */
+/** Where every word and mark of the legend stands, the eyes of the switches among them. */
 function wordsAt(browser: AgentBrowserSession): Promise<string> {
 	return browser.eval<string>(`(() => {
 		const legend = document.querySelector('${LEGEND}');
-		const words = [...legend.querySelectorAll('h4, svg, li [title]')].filter((word) => word.closest('[role="switch"], ${FILTER}') === null);
+		const words = [...legend.querySelectorAll('h4, svg, li [title]')];
 		return JSON.stringify(words.map((word) => {
 			const { x, y } = word.getBoundingClientRect();
 			return [word.textContent, Math.round(x), Math.round(y)];
@@ -115,6 +111,13 @@ function selectedParts(browser: AgentBrowserSession): Promise<string[]> {
 	);
 }
 
+/** The switch of each line type in the legend, with whether the picture draws that type. */
+function switches(browser: AgentBrowserSession): Promise<string[]> {
+	return browser.eval<string[]>(
+		`[...document.querySelectorAll('${LEGEND} [role="switch"]')].map((one) => \`\${one.getAttribute('aria-label')}: \${one.getAttribute('aria-checked')}\`)`,
+	);
+}
+
 function pressed(browser: AgentBrowserSession, tag: string): Promise<string | null> {
 	return browser.eval<string | null>(
 		`document.querySelector('${tag}')?.getAttribute('aria-pressed') ?? null`,
@@ -128,7 +131,7 @@ async function clickAt(browser: AgentBrowserSession, at: { x: number; y: number 
 	await browser.run(["mouse", "up"]);
 }
 
-test("the legend's words stay put while a reader filters, and a group's tag selects its parts", async () => {
+test("each line type is its own switch, the legend's words stay put while a reader hides lines, and a group's tag selects its parts", async () => {
 	await using resources = new AsyncDisposableStack();
 	const vault = vaultIn(join(browserTestRoots().ownerRoot, "legend-model"));
 	seedReading(vault);
@@ -146,16 +149,17 @@ test("the legend's words stay put while a reader filters, and a group's tag sele
 		WAIT,
 	);
 	const rest = await wordsAt(browser);
-
-	await browser.run(["click", FILTER]);
-	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('[data-filter-kind="event"]') !== null`),
-		Boolean,
-		"the switches",
-		WAIT,
-	);
-	expect(await pressed(browser, FILTER)).toBe("true");
-	expect(await wordsAt(browser)).toBe(rest);
+	expect(await switches(browser)).toEqual([
+		"Show Calls lines: true",
+		"Show Data lines: true",
+		"Show Event lines: true",
+	]);
+	expect(
+		await browser.eval<string[]>(
+			`[...document.querySelectorAll('[data-slot="model-legend-marks"] li [title]')].map((name) => name.textContent)`,
+		),
+		"the mixed line and the marks of lines, which no reader hides, stand apart",
+	).toEqual(["Mixed kinds", "More emphasis", "Illustrated traffic"]);
 
 	await browser.run(["click", '[data-filter-kind="event"]']);
 	await pollUntil(
@@ -174,19 +178,20 @@ test("the legend's words stay put while a reader filters, and a group's tag sele
 		WAIT,
 	);
 	expect(await browser.eval<boolean>(`document.querySelector('${BILLING}').disabled`)).toBe(true);
-	await browser.run(["click", '[data-filter-kind="call"]']);
+	await browser.run(["focus", '[data-filter-kind="call"]']);
+	await browser.run(["press", "Space"]);
 	await pollUntil(
 		async () => !(await drawn(browser, "Shop#Worker")),
 		Boolean,
-		"the second door gone",
+		"the second door gone, hidden from the keyboard",
 		WAIT,
 	);
+	expect(await switches(browser)).toEqual([
+		"Show Calls lines: false",
+		"Show Data lines: true",
+		"Show Event lines: false",
+	]);
 	expect(await wordsAt(browser)).toBe(rest);
-	expect(
-		await browser.eval<number>(
-			`Number.parseInt(document.querySelector('${COUNT}').textContent, 10)`,
-		),
-	).toBe(2);
 
 	await browser.run(["click", '[data-slot="model-legend-show-all"]']);
 	await pollUntil(
@@ -198,7 +203,6 @@ test("the legend's words stay put while a reader filters, and a group's tag sele
 	expect(
 		await browser.eval<boolean>(`new URLSearchParams(location.search).has('hideKindsA')`),
 	).toBe(false);
-	await browser.run(["click", FILTER]);
 	expect(await wordsAt(browser)).toBe(rest);
 
 	const tag = await browser.eval<{ x: number; y: number }>(`(() => {

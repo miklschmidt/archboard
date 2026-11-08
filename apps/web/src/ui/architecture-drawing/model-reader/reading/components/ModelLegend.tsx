@@ -1,13 +1,6 @@
-import { RiEyeLine, RiEyeOffLine, RiFilterLine } from "@remixicon/react";
+import { RiEyeLine, RiEyeOffLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
-import {
-	useCallback,
-	useMemo,
-	useState,
-	type CSSProperties,
-	type JSX,
-	type ReactNode,
-} from "react";
+import { useCallback, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 import type { Model, ModelFilters, projectModel } from "@archboard/model/content";
 import { Button, cn } from "@archboard/ui-kit/components";
 import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
@@ -32,6 +25,7 @@ import {
 	type LegendRow,
 } from "#ui/architecture-drawing/model-reader/reading/rules/legend-rows.ts";
 import { paletteTag } from "#ui/architecture-drawing/canvas/picture/rules/palette.ts";
+import { rowTone } from "#ui/shell/rules/row-tone.ts";
 
 /**
  * How wide every line's sample is, and the box of every mark: as wide as a kind's chip, so that the
@@ -40,16 +34,10 @@ import { paletteTag } from "#ui/architecture-drawing/canvas/picture/rules/palett
 const SAMPLE_WIDTH = 24;
 
 /**
- * The two columns that the kinds and the line types stand in. The foot under the panel lies on the
- * same columns.
+ * The two columns that the kinds and the marks of lines stand in. The foot under the panel lies on
+ * the same columns.
  */
 const CELLS = "grid grid-cols-2 gap-x-2";
-/** The line rows while no picture stands. */
-const NO_LINES: readonly LegendLine[] = [];
-
-/** The legend's Filter key looks like the panel's other keys, such as Trace back (`TraceToggle`). */
-const PANEL_KEY =
-	"text-body border-border hover:bg-sidebar-accent/50 aria-pressed:border-primary-mark aria-pressed:bg-primary-subtle rounded-control flex h-6 shrink-0 items-center gap-1.5 border px-2 transition-colors";
 
 /** Inputs for the legend. */
 interface ModelLegendProps {
@@ -68,46 +56,24 @@ interface ModelLegendProps {
 
 /**
  * What the marks of a picture mean, as the last section of the right panel, under every subject,
- * with no click: its kinds, its line types and its groups. Filter puts the switch that hides a line
- * type on each row, in room that the row always keeps, and a group's tag selects the group's parts.
+ * with no click: its kinds, its line types and its groups. Each line type that a reader can hide
+ * is its own switch, and a group's tag selects the group's parts.
  * @param props The reading and its visibility choices.
  * @returns The section, or nothing while no picture stands.
  */
 function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 	const { model, projection, picture, selection } = props;
-	const [filtering, setFiltering] = useState(false);
-	const toggle = useCallback((): void => setFiltering((on) => !on), []);
 	const { hideKinds } = props.filters;
-	const lines = useMemo(
-		() => (picture === null ? NO_LINES : lineRows({ model, projection, picture, hideKinds })),
-		[model, projection, picture, hideKinds],
-	);
-	const hidden = lines.filter((line) => line.hidden).length;
-	const filterable = lines.some((line) => line.hideable);
-	const { onShowAll } = props;
-	const keys = useMemo(
-		() => (
-			<LegendKeys
-				hidden={hidden}
-				filterable={filterable}
-				filtering={filtering}
-				onFilter={toggle}
-				onShowAll={onShowAll}
-			/>
-		),
-		[hidden, filterable, filtering, toggle, onShowAll],
-	);
 	if (picture === null) return null;
 	const reading = { model, projection, picture, hideKinds };
 	return (
 		<div data-slot="model-legend" className="flex flex-col gap-5">
 			<Kinds model={model} look={props.look} rows={kindRows(reading)} />
 			<Lines
-				lines={lines}
+				lines={lineRows(reading)}
 				marks={markRows(projection)}
-				filtering={filtering}
 				onToggle={props.onToggle}
-				keys={keys}
+				onShowAll={props.onShowAll}
 			/>
 			<Groups groups={groupRows(model, projection)} selection={selection} />
 		</div>
@@ -115,71 +81,11 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 }
 
 /**
- * The key that shows which line types a reader can hide, and the way back from what a reader hid.
- * Both stand in the second column of the legend: Filter at its start, where it grows into the free
- * room, and Show all at its end, so neither moves the other's words.
- * @param props What the keys say and do.
- * @param props.hidden How many kinds of this reading the picture leaves out.
- * @param props.filterable Whether the reading has a line type to hide.
- * @param props.filtering Whether each line type shows its switch.
- * @param props.onFilter Show or put away those switches.
- * @param props.onShowAll Draw every kind of line again.
- * @returns The keys, or nothing for a reading with no line type to hide.
- */
-function LegendKeys(props: {
-	readonly hidden: number;
-	readonly filterable: boolean;
-	readonly filtering: boolean;
-	readonly onFilter: () => void;
-	readonly onShowAll: () => void;
-}): JSX.Element | null {
-	const { hidden, filtering } = props;
-	if (!props.filterable) return null;
-	return (
-		<div className="flex shrink-0 items-center gap-1">
-			{hidden > 0 && (
-				<Button
-					data-slot="model-legend-show-all"
-					variant="ghost"
-					size="xs"
-					onClick={props.onShowAll}
-					className="px-2"
-				>
-					Show all
-				</Button>
-			)}
-			<button
-				type="button"
-				data-slot="model-legend-filter"
-				aria-pressed={filtering}
-				title={filtering ? "Put the switches away" : "Choose which lines to draw"}
-				onClick={props.onFilter}
-				className={PANEL_KEY}
-			>
-				<RiFilterLine aria-hidden="true" className="text-muted-foreground size-3.5" />
-				Filter
-				{hidden > 0 && (
-					<span
-						data-slot="model-legend-hidden"
-						className="text-technical text-muted-foreground font-mono"
-					>
-						{hidden}
-						<span className="sr-only"> hidden</span>
-					</span>
-				)}
-			</button>
-		</div>
-	);
-}
-
-/**
- * One part of the legend, under its own label in the panel's label style, with its keys at the
- * right end of the label's row.
+ * One part of the legend, under its own label in the panel's label style.
  * @param props The list.
  * @param props.label What it lists.
  * @param props.slot Where a test finds it.
  * @param props.className How its entries stand.
- * @param props.action The keys that change what it lists, if any.
  * @param props.children Its entries.
  * @returns The list, as a section of the panel.
  */
@@ -187,11 +93,10 @@ function LegendList(props: {
 	readonly label: string;
 	readonly slot: string;
 	readonly className: string;
-	readonly action?: ReactNode;
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
-		<ModelPanel.Section title={props.label} slot={`${props.slot}-section`} action={props.action}>
+		<ModelPanel.Section title={props.label} slot={`${props.slot}-section`}>
 			<li>
 				<ul data-slot={props.slot} className={props.className}>
 					{props.children}
@@ -264,45 +169,81 @@ function LegendChip(props: {
 interface LinesProps {
 	readonly lines: readonly LegendLine[];
 	readonly marks: readonly LegendMark[];
-	/** Whether each line type shows the control that hides it. */
-	readonly filtering: boolean;
 	readonly onToggle: ModelLegendProps["onToggle"];
-	/** The keys that hide line types, and bring them back. */
-	readonly keys: ReactNode;
+	readonly onShowAll: () => void;
 }
 
 /**
- * The line types of the reading, then the marks that its lines wear beside their kinds.
+ * The line types of the reading, one to a row, each row the switch that draws its lines or leaves
+ * them out. Under them, in two columns and with no switch, stand what no reader hides: a mixed
+ * line, which is no kind of relationship, and the marks that lines wear beside their kinds.
  * @param props The line types and how to change their visibility.
  * @returns Their list, or nothing when the reading has no line.
  */
 function Lines(props: LinesProps): JSX.Element | null {
-	const { lines, marks, filtering, onToggle, keys } = props;
+	const { lines, marks, onToggle, onShowAll } = props;
+	const hidden = lines.some((line) => line.hidden);
+	const action = useMemo(
+		() =>
+			hidden ? (
+				<Button
+					data-slot="model-legend-show-all"
+					variant="ghost"
+					size="xs"
+					onClick={onShowAll}
+					className="px-2"
+				>
+					Show all
+				</Button>
+			) : undefined,
+		[hidden, onShowAll],
+	);
 	if (lines.length === 0) return null;
+	const types = lines.filter((line) => line.hideable);
+	const mixed = lines.filter((line) => !line.hideable);
 	return (
-		<LegendList label="Relationships" slot="model-legend-lines" className={CELLS} action={keys}>
-			{lines.map((line) => (
-				<LineCell key={line.item.typeKind} line={line} filtering={filtering} onToggle={onToggle} />
-			))}
-			{marks.map(({ mark, word, dimmed }) => (
-				<Cell key={mark}>
-					<Mark name={word} dimmed={dimmed}>
-						{mark === "emphasis" ? (
-							<EmphasisSample width={SAMPLE_WIDTH} />
-						) : (
-							<TrafficSample width={SAMPLE_WIDTH} />
-						)}
-					</Mark>
-				</Cell>
-			))}
-		</LegendList>
+		<ModelPanel.Section title="Relationships" slot="model-legend-lines-section" action={action}>
+			{types.length > 0 && (
+				<li>
+					<ul data-slot="model-legend-lines" className="flex flex-col">
+						{types.map((line) => (
+							<LineSwitch key={line.item.typeKind} line={line} onToggle={onToggle} />
+						))}
+					</ul>
+				</li>
+			)}
+			{mixed.length + marks.length > 0 && (
+				<li>
+					<ul data-slot="model-legend-marks" className={cn(CELLS, types.length > 0 && "mt-1")}>
+						{mixed.map(({ item, dimmed }) => (
+							<Cell key={item.typeKind}>
+								<Mark name={item.typeName} dimmed={dimmed}>
+									<RelationshipSample appearance={item} width={SAMPLE_WIDTH} />
+								</Mark>
+							</Cell>
+						))}
+						{marks.map(({ mark, word, dimmed }) => (
+							<Cell key={mark}>
+								<Mark name={word} dimmed={dimmed}>
+									{mark === "emphasis" ? (
+										<EmphasisSample width={SAMPLE_WIDTH} />
+									) : (
+										<TrafficSample width={SAMPLE_WIDTH} />
+									)}
+								</Mark>
+							</Cell>
+						))}
+					</ul>
+				</li>
+			)}
+		</ModelPanel.Section>
 	);
 }
 
 /**
- * One entry: a mark and what it means, then the control that changes the reading, if it has one.
+ * One entry: a mark and what it means.
  * @param props The entry.
- * @param props.children Its mark and control.
+ * @param props.children Its mark.
  * @returns The entry.
  */
 function Cell(props: { readonly children: ReactNode }): JSX.Element {
@@ -334,7 +275,7 @@ function Mark(props: {
 			<span
 				title={props.name}
 				className={cn(
-					"text-control min-w-0 flex-1 truncate font-normal",
+					"text-control min-w-0 flex-1 truncate text-left font-normal",
 					dimmed && "text-muted-foreground",
 				)}
 			>
@@ -345,80 +286,47 @@ function Mark(props: {
 }
 
 /**
- * A line type, whether the picture draws it or leaves it out. Its row keeps the room of its switch
- * while the switch is put away, so that Filter moves no word.
+ * A line type that a reader can hide. The whole row is its switch, a row of the panel like any
+ * other, and the eye at its end says whether the picture draws the type's lines.
  * @param props The line type and how to change its visibility.
  * @param props.line The line type.
- * @param props.filtering Whether it shows the control that hides it.
  * @param props.onToggle Change its visibility.
  * @returns The entry.
  */
-function LineCell(props: {
+function LineSwitch(props: {
 	readonly line: LegendLine;
-	readonly filtering: boolean;
 	readonly onToggle: ModelLegendProps["onToggle"];
 }): JSX.Element {
-	const { line, filtering, onToggle } = props;
-	const { item, hidden, hideable, dimmed } = line;
+	const { line, onToggle } = props;
+	const { item, hidden, dimmed } = line;
 	const toggle = useCallback(
 		(): void => onToggle("hideKinds", item.typeKind),
 		[onToggle, item.typeKind],
 	);
+	const Eye = hidden ? RiEyeOffLine : RiEyeLine;
 	return (
-		<Cell>
-			<Mark name={item.typeName} dimmed={dimmed}>
-				<RelationshipSample appearance={item} width={SAMPLE_WIDTH} />
-			</Mark>
-			{hideable && (
-				<span className="size-6 shrink-0">
-					{filtering && (
-						<Visibility
-							shown={!hidden}
-							name={`${item.typeName} lines`}
-							kind={item.typeKind}
-							onToggle={toggle}
-						/>
-					)}
-				</span>
-			)}
-		</Cell>
-	);
-}
-
-/**
- * The control that says whether the picture draws a kind, apart from the mark that explains it.
- * @param props What it controls.
- * @param props.shown Whether the picture draws it.
- * @param props.name What it is called.
- * @param props.kind The relationship kind it controls.
- * @param props.onToggle Change it.
- * @returns A switch.
- */
-function Visibility(props: {
-	readonly shown: boolean;
-	readonly name: string;
-	readonly kind: string;
-	readonly onToggle: () => void;
-}): JSX.Element {
-	const { shown } = props;
-	return (
-		<Button
-			variant="ghost"
-			size="icon-xs"
-			role="switch"
-			aria-checked={shown}
-			aria-label={`Show ${props.name}`}
-			title={`${shown ? "Hide" : "Show"} ${props.name}`}
-			data-filter-kind={props.kind}
-			onClick={props.onToggle}
-			className="text-muted-foreground aria-checked:text-foreground"
-		>
-			{shown ? (
-				<RiEyeLine aria-hidden="true" className="size-4" />
-			) : (
-				<RiEyeOffLine aria-hidden="true" className="size-4" />
-			)}
-		</Button>
+		<li className="flex">
+			<button
+				type="button"
+				role="switch"
+				aria-checked={!hidden}
+				aria-label={`Show ${item.typeName} lines`}
+				data-filter-kind={item.typeKind}
+				onClick={toggle}
+				className={cn(
+					rowTone({ lit: false }),
+					"group -mx-2 flex min-w-0 flex-1 items-center gap-2 px-2 transition-colors",
+				)}
+			>
+				<Mark name={item.typeName} dimmed={dimmed}>
+					<RelationshipSample appearance={item} width={SAMPLE_WIDTH} />
+				</Mark>
+				<Eye
+					aria-hidden="true"
+					className="text-muted-foreground group-hover:text-foreground mx-1 size-4 shrink-0"
+				/>
+			</button>
+		</li>
 	);
 }
 

@@ -626,21 +626,31 @@ and a long subject scrolls it down with its lists, so a reader finds it in one p
 outside the subject, so a new subject neither redraws it nor moves it, and a press on a group's
 tag keeps the tag where it stood and the keyboard on it. It has three parts, each under the
 label of any other section of the panel, 20px apart as the panel's sections are: `Legend` over
-the kinds in two columns, `Relationships` over the line types in two columns, and `Groups` over
-the tags. Only a line type can be hidden, so the key `Filter` stands at the right end of the
-`Relationships` row, 24px high and drawn as `Trace back` is. Four pixels part a label from its
-rows. There is no rule and no plate. A row is 28px high, and every mark stands in a box 24px wide, as wide as a
-kind's chip, so the names start on one line. A kind wears the kind chip of the panel's head (see
-Chips). A section with nothing to show is absent.
+the kinds in two columns, `Relationships` over the line types and the marks of lines, and
+`Groups` over the tags. Four pixels part a label from its rows. There is no rule and no plate. A
+row is 28px high, and every mark stands in a box 24px wide, as wide as a kind's chip, so the
+names start on one line. A kind wears the kind chip of the panel's head (see Chips). A section
+with nothing to show is absent.
+
+A reader can hide a line type and nothing else, so each line type stands on a row of its own,
+and the row is its switch. It is a row of the panel like any other, with the tone of a row
+under the pointer, 8px past the column on each side, and the ring of the keyboard's focus. Its
+sample and its name stand at the start, and an eye at its end says whether the picture draws
+the type's lines: an open eye while it does, and a struck eye while a reader hid them. A click,
+Space or Enter turns it, and the eye and the dim change in place. There is no mode to enter and
+no key to find first, because a control that only appears on request reads as missing. Under
+the line types, 4px apart and in two columns, stand what no reader hides, with no switch: a
+mixed line, which is no kind of relationship, then `More emphasis` and `Illustrated traffic`,
+the marks that lines wear beside their kinds. A row with an eye can be hidden, and a mark in the
+two columns cannot. While a line type of the reading is hidden, a ghost key `Show all` stands
+at the right end of the `Relationships` row and brings every type back in one press. It needs
+no count, because every hidden type stays in the list.
 
 The rows come from the whole reading, not from what the picture draws now, and each list keeps
 the order of the policy. So hiding a kind moves no row, and the legend keeps its height. A line
-type that a reader hid stays, dimmed. So does a part kind, a mixed line or a line's mark that
-left the picture with it. A chip that the picture does not draw takes the icon that the policy
-names. `Filter` is a key with a thin edge, a funnel and the count of hidden kinds in mono. While
-the switches show it is pressed, with the gold rim and face of a pressed `Trace back`. `Show all`
-stands just before it while a kind is hidden. A line type keeps the room of its switch at all times, and a mixed
-line has no switch, because it is no kind of relationship.
+type that a reader hid stays, dimmed, with its struck eye. So does a part kind, a mixed line or a
+line's mark that left the picture with it. A chip that the picture does not draw takes the icon
+that the policy names.
 
 A group is a tag with its name inside, and the tags wrap. A tag is one bright piece in
 both themes, cut from the dark value of its palette color (`--bright-<name>`): a gradient

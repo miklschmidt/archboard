@@ -61,7 +61,7 @@ Use these controls:
 - Hold Space while dragging, or use the middle mouse button, to pan.
 - Select Focus to show selected subjects with their containment paths, including selected ancestors and descendants.
 - Select Clear focus to restore the underlying scope.
-- Use Filter in the Legend to hide relationship kinds.
+- Press a line type under Relationships in the Legend to hide or show its relationships.
 - Use Reveal selection in the right panel to reveal hidden selections.
 
 Focus and filters survive reload and history navigation.

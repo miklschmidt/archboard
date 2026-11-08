@@ -353,7 +353,7 @@ A row of the panel is an action. Long lists and evidence live on `ModelAbout`, w
 A row opens its flow or walkthrough through the same choice as Find, and its section of the left column lights it.
 The left column lists the whole model, and only the panel follows what a reader looks at.
 `ModelPanel.Scroll` holds the keyed subject and, under it, `ModelLegend`, which ends the scroll outside the subject, so a selection neither redraws it nor moves a group's tag from under the pointer. The keys of `ModelPanel.Foot` stand under the scroll.
-It owns the marks, and `Filter` puts a visibility switch on each line type that a reader can hide.
+It owns the marks. Each line type that a reader can hide is a row that switches its lines, and the marks that no reader hides stand under the types with no switch.
 `model-reader/reading/rules/legend-rows.ts` derives its rows from the whole reading, in the policy's order, so that a hidden kind and what left the picture with it keep their rows.
 A group's tag takes `--tag` from `paletteTag`, and the `group-tag` utility in `app.css` holds its one recipe.
 A tag selects what the picture draws of its group through the ordinary selection, and it reads as on from that selection, with no state of its own.
