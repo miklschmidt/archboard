@@ -2,7 +2,7 @@
 // One field of a JSON Schema and everything under it: its type, whether it is required, its limits
 // and its fields. An object or a list of objects opens to its fields, and a choice lists each
 // shape it accepts. Deep levels start closed, so a long schema reads from the top down.
-import type { JsonSchema } from "../../lib/reference";
+import { inlineCode, type JsonSchema } from "../../lib/reference";
 
 interface Props {
 	readonly name: string | null;
@@ -166,7 +166,7 @@ const open = depth < 1;
 			</div>
 		)
 	}
-	{description && <p class="field-text">{description}</p>}
+	{description && <p class="field-text" set:html={inlineCode(description)} />}
 	{repeats && <p class="field-limits">The same shape as the field that holds it, one level up.</p>}
 	{
 		(limits.length > 0 || pattern) && (
@@ -345,7 +345,7 @@ const open = depth < 1;
 	}
 	summary:hover {
 		color: var(--ink);
-		background: oklch(1 0.01 85 / 0.05);
+		background: var(--wash);
 	}
 	.shape {
 		padding-left: 16px;

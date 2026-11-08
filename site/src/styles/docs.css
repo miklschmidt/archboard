@@ -5,7 +5,7 @@
 	--docs-measure: 1320px;
 	--docs-text: 44em;
 	/* Paragraphs keep to 60 to 80 characters a line, while tables and code use the whole column. */
-	--docs-prose: 35em;
+	--docs-prose: 36em;
 }
 
 /* A page changes with the browser's own view transition: the words slide in a little, and the bar
@@ -160,7 +160,7 @@ html:has(.docs) {
 	color: var(--ink-body);
 }
 .drawer::backdrop {
-	background: oklch(0.08 0.004 75 / 0.62);
+	background: var(--scrim);
 	backdrop-filter: blur(3px);
 }
 .drawer[open] {
@@ -179,7 +179,7 @@ html:has(.docs) {
 	background: var(--chrome);
 	box-shadow:
 		inset -1px 0 0 var(--rule),
-		24px 0 48px -16px oklch(0.04 0.006 75 / 0.8);
+		24px 0 48px -16px var(--cast);
 }
 .drawer-head {
 	display: flex;
@@ -316,9 +316,9 @@ html:has(.docs) {
 	margin-top: 0;
 }
 
+/* The page's scroll padding already clears the bar, so a heading adds no margin of its own. */
 .heading {
 	position: relative;
-	scroll-margin-top: 96px;
 }
 .heading-link {
 	display: inline-grid;
@@ -345,7 +345,7 @@ html:has(.docs) {
 	padding: 2px 6px;
 	border-radius: var(--radius-chip);
 	background: var(--added);
-	color: oklch(0.2 0.03 150);
+	color: var(--added-ink);
 	font-family: var(--font-body);
 	font-size: 0.75rem;
 	font-weight: 600;
@@ -404,6 +404,14 @@ html:has(.docs) {
 	white-space: normal;
 	overflow-wrap: anywhere;
 	box-shadow: inset 0 0 0 1px var(--rule);
+}
+/* From a tablet up, a code chip stays whole on one line. A phone may break a long one. */
+@media (min-width: 768px) {
+	.prose :not(pre) > code,
+	.docs-lead code {
+		white-space: nowrap;
+		overflow-wrap: normal;
+	}
 }
 .prose h2 code,
 .prose h3 code {
@@ -587,4 +595,9 @@ html:has(.docs) {
 	:root .expressive-code pre > code {
 		padding-block-start: calc(2.5rem + 10px);
 	}
+}
+
+/* A code frame whose title is a file, a path or a code sets that title in the monospace face. */
+.expressive-code .code-title .header .title {
+	font-family: var(--font-mono);
 }

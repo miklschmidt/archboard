@@ -23,12 +23,14 @@ import {
 	SHARED_OPTIONS,
 	SHARED_OPTION_KEYS,
 } from "../../apps/cli/src/cli/contract/protocol/shared-options.ts";
+import { RELEASE_PORT } from "../../packages/workspace/src/runtime/services/source-checkout.ts";
+import { DETAILED_FINDINGS, TABLE_ROWS } from "../../actions/check/summary.ts";
 
 const ROOT = join(import.meta.dir, "../..");
 const OUT = join(import.meta.dir, "../src/generated");
 
 /** The port a release listens on. A checkout's own port would leak into the docs otherwise. */
-const RELEASE_URL = "http://127.0.0.1:4242";
+const RELEASE_URL = `http://127.0.0.1:${String(RELEASE_PORT)}`;
 
 /** A default that names this checkout's server is the release's server in the docs. */
 function releaseDefault(value: string | undefined): string | undefined {
@@ -247,10 +249,13 @@ function actions() {
 					default: input.default === undefined ? null : String(input.default),
 					required: input.required === true,
 				})),
-				outputs: Object.entries(meta.outputs ?? {}).map(([name, output]) => ({
-					name,
-					description: output.description ?? "",
-				})),
+				outputs: Object.entries(meta.outputs ?? {}).map(([name, output]) => {
+					// An input and an output share the anchor `<action>-<name>` in the reference.
+					if (meta.inputs?.[name] !== undefined) {
+						throw new Error(`The Action ${entry.name} has an input and an output named ${name}`);
+					}
+					return { name, description: output.description ?? "" };
+				}),
 			};
 		});
 }
@@ -259,10 +264,20 @@ const version = (
 	JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { version: string }
 ).version;
 
+/** Numbers that the guides state, so that a guide reads them here and never copies them. */
+const facts = {
+	/** The port of a release server. */
+	releasePort: RELEASE_PORT,
+	/** The findings that the job summary of the check Action lists. */
+	summaryRows: TABLE_ROWS,
+	/** The errors and warnings whose evidence that summary shows. */
+	summaryDetails: DETAILED_FINDINGS,
+};
+
 mkdirSync(OUT, { recursive: true });
 writeFileSync(
 	join(OUT, "reference.json"),
-	`${JSON.stringify({ version, shared, commands, schemas, findings, actions: actions() }, null, "\t")}\n`,
+	`${JSON.stringify({ version, facts, shared, commands, schemas, findings, actions: actions() }, null, "\t")}\n`,
 );
 console.log(
 	`reference: ${commands.length} commands, ${schemas.length} schemas, ${findings.length} findings and skips`,

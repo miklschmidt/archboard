@@ -58,6 +58,13 @@ Write a description in the format that `CommandContract.description` documents: 
 
 Hand-written pages quote behavior: `site/src/content/docs/*.mdx`, `actions/README.md`, `INSTALL.md` and `README.md`.
 Search them for each changed command, flag, code and exit status, and correct every statement and example that the change makes false.
+
+The build guards the guides with two more scripts:
+
+- `site/scripts/guides.ts` refuses an `archboard` command or flag in code that the CLI lacks, and a `with:` key that an Action lacks. It also refuses a code span that names an Action input or output, or a finding code, without a link to its row in the reference.
+- `site/scripts/links.ts` refuses a dead internal link or anchor in `dist`. So a renamed input or code breaks the build at each guide that links it.
+
+A guide reads a number of the program from `reference.facts`, which `reference.ts` imports from the source, such as the release port. Add a fact there when a guide states a new one.
 Follow `site/DESIGN.md` for anything a reader sees.
 
 Run `nix develop -c bun run build` in `site/`, then read each changed page in the running site with `bunx agent-browser`.

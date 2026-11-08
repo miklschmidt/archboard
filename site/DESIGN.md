@@ -313,7 +313,7 @@ The mock window and the demo panels set smaller type (10.5px to 13px) because th
 
 **The Head Leads Rule.** A heading starts its region. No label, kicker, eyebrow or tag sits above a heading. The owner bans them. A line of words beside a belt, such as "The code check reads", labels the belt and sits level with it, not over a heading.
 
-**The Mono Is Data Rule.** Mono sets commands, paths, counts and code. It never sets a heading or a label for a control.
+**The Mono Is Data Rule.** Mono sets commands, paths, counts and code, wherever they appear: in prose, a lead, a callout head, a code frame's title, and a heading that names a command. It never sets the words of a heading or a label for a control.
 
 ## Layout
 

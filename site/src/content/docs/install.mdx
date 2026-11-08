@@ -1,16 +1,17 @@
 ---
 title: Install and set up
-description: Put the archboard CLI on your machine, set a repository up with `archboard init`, and make sure that the server answers.
+description: Put the `archboard` CLI on your machine, set a repository up with `archboard init`, and make sure that the server answers.
 ---
 
 import Aside from "../../components/docs/Aside.astro";
 import Steps from "../../components/docs/Steps.astro";
 import InstallCommands from "../../components/InstallCommands.astro";
+import reference from "../../generated/reference.json";
 
 ## What you need
 
-- Linux on x64 or arm64, or macOS on Apple silicon.
-- Node.js 22.18 or later, and Git.
+- Linux on x64 or arm64, or macOS on Apple silicon. Under Windows, use WSL 2.
+- Git, and npm or Bun to install the package.
 - A Codex sign-in for the agent dock, voice, narration and recordings. The map, the checks and the pictures work without it.
 - Chromium or Chrome only for PNG pictures and recordings. SVG pictures need no browser.
 
@@ -65,7 +66,7 @@ A language server knows where code defines a name. With one, `archboard check co
    archboard repo language-server python pyright-langserver --arg=--stdio
    ```
 
-4. Commit `.archboard/language-servers.json` with the vault. Every machine and every CI run then uses the same servers.
+4. Commit `.archboard/language-servers.json` with the vault. Every machine and every CI run then uses the same servers. Each machine still needs the server programs: install them in CI as [The check as a gate](../gate/#in-ci) shows.
 
 </Steps>
 
@@ -84,7 +85,7 @@ archboard start
 archboard status
 ```
 
-A release server listens on `http://archboard.localhost:4242`. Chrome and Firefox send every `*.localhost` name to this machine with no setup. The CLI connects to `127.0.0.1:4242`. Set `ARCHBOARD_NO_AUTOSTART=1` to stop the autostart.
+A release server listens on <code>http://archboard.localhost:{reference.facts.releasePort}</code>. Chrome and Firefox send every `*.localhost` name to this machine with no setup. The CLI connects to <code>127.0.0.1:{reference.facts.releasePort}</code>. Set `ARCHBOARD_NO_AUTOSTART=1` to stop the autostart.
 
 <Aside type="caution" title="Keep the server on loopback">
 	The server has no authentication. Do not expose its port beyond this machine.

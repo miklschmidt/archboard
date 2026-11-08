@@ -2,6 +2,7 @@
 // One command of the CLI, from its contract: what it does, how to call it, its options, its
 // examples and what each exit code means.
 import { Code } from "astro-expressive-code/components";
+import SubHead from "./SubHead.astro";
 import {
 	commandAnchor,
 	descriptionBlocks,
@@ -33,7 +34,7 @@ const blocks = descriptionBlocks(command.description);
 ---
 
 <section class="command" aria-labelledby={anchor}>
-	<h2 id={anchor} class="heading command-name">
+	<h2 id={anchor} class="heading command-name" data-pagefind-weight="10">
 		<span>{command.name}</span>
 		<a class="heading-link" href={`#${anchor}`} aria-label="Link to this command" data-heading-link data-pagefind-ignore>#</a>
 	</h2>
@@ -87,6 +88,11 @@ const blocks = descriptionBlocks(command.description);
 			)
 		}
 	</div>)}
+	{
+		!command.router && (positionals.length > 0 || options.length > 0 || shared.length > 0) && (
+			<SubHead id={`${anchor}-arguments`}>Arguments</SubHead>
+		)
+	}
 	{
 		!command.router && (positionals.length > 0 || options.length > 0 || shared.length > 0) && (
 			<table class="params">
@@ -168,11 +174,12 @@ const blocks = descriptionBlocks(command.description);
 	{
 		command.examples.length > 0 && (
 			<div class="examples">
-				<p class="block-head">Examples</p>
+				<SubHead id={`${anchor}-examples`}>Examples</SubHead>
 				<Code code={command.examples.join("\n")} lang="sh" frame="terminal" />
 			</div>
 		)
 	}
+	{!command.router && <SubHead id={`${anchor}-exit-codes`}>Exit codes</SubHead>}
 	{!command.router && (<table class="exits">
 		<thead>
 			<tr>
@@ -210,12 +217,13 @@ const blocks = descriptionBlocks(command.description);
 	.command > :global(* + *) {
 		margin-top: 18px;
 	}
+	/* A command's name is code, so it sets in mono at the heading's place in the hierarchy. */
 	.command-name {
 		margin: 0;
-		font-family: var(--font-body);
-		font-size: 1.625rem;
+		font-family: var(--font-mono);
+		font-size: 1.375rem;
 		font-weight: 600;
-		letter-spacing: -0.015em;
+		letter-spacing: -0.01em;
 		color: var(--ink);
 		text-transform: none;
 	}

@@ -90,6 +90,14 @@
 	--sky-text: color-mix(in oklch, var(--sky) 85%, var(--ink));
 	--violet-text: color-mix(in oklch, var(--violet) 65%, var(--ink));
 
+	/* Washes and glows that the docs' chrome shares. */
+	--wash: oklch(1 0.01 85 / 0.05);
+	--gold-wash: oklch(0.86 0.125 86 / 0.06);
+	--gold-glow: oklch(0.86 0.125 86 / 0.6);
+	--scrim: oklch(0.08 0.004 75 / 0.62);
+	--cast: oklch(0.04 0.006 75 / 0.8);
+	--added-ink: oklch(0.2 0.03 150);
+
 	/* Depth: a lit top edge, a contact shadow and a warm soft shadow below. */
 	--shadow-raised:
 		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.06 0.004 75 / 0.7),

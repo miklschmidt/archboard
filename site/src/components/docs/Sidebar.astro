@@ -84,7 +84,7 @@ const { path } = Astro.props;
 		height: 6px;
 		border-radius: 1px;
 		background: var(--gold-mark);
-		box-shadow: 0 0 10px oklch(0.86 0.125 86 / 0.6);
+		box-shadow: 0 0 10px var(--gold-glow);
 		opacity: 0;
 		transform: scale(0.4);
 		transition:
@@ -96,7 +96,7 @@ const { path } = Astro.props;
 	}
 	a:hover {
 		color: var(--ink);
-		background: oklch(1 0.01 85 / 0.05);
+		background: var(--wash);
 	}
 	a[aria-current="page"] {
 		color: var(--ink);

@@ -10,8 +10,10 @@ function followSections(): void {
 		.map((slug) => document.getElementById(slug))
 		.filter((heading): heading is HTMLElement => heading !== null);
 	const mark = (): void => {
-		// The current section is the last whose head has passed a line under the bar.
-		const line = 120;
+		// The current section is the last whose head has passed a line just under where a link to
+		// a section puts its head: the page's scroll padding.
+		const padding = Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop);
+		const line = (Number.isNaN(padding) ? 96 : padding) + 24;
 		let current = headings[0];
 		for (const heading of headings) {
 			if (heading.getBoundingClientRect().top - line <= 0) current = heading;
@@ -122,7 +124,9 @@ function mountSearch(): void {
 	const load = (): Promise<Pagefind | null> => {
 		pagefind ??= import(/* @vite-ignore */ `${base}/pagefind/pagefind.js`).then(
 			async (module: Pagefind) => {
-				await module.options({ excerptLength: 18 });
+				// A name that a page repeats often must not outrank the page whose heading is that name,
+				// so how often a term occurs counts for little next to where it occurs.
+				await module.options({ excerptLength: 18, ranking: { termFrequency: 0.2 } });
 				return module;
 			},
 			() => null,
@@ -189,7 +193,8 @@ function mountSearch(): void {
 		list.replaceChildren(
 			...pages.flatMap((page) => {
 				const name = page.meta.title ?? page.url;
-				const sections = (page.sub_results ?? []).filter((sub) => sub.url !== page.url).slice(0, 3);
+				// Two sections of a page at most, so the next pages that match stay in view.
+				const sections = (page.sub_results ?? []).filter((sub) => sub.url !== page.url).slice(0, 2);
 				return sections.length > 0
 					? sections.map((sub) => result(name, sub.title, sub.url, sub.excerpt))
 					: [result("Page", name, page.url, page.excerpt)];

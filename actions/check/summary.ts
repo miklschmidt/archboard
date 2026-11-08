@@ -8,7 +8,9 @@ import { countFindings, findingDocsUrl } from "./findings.ts";
 import type { CheckReading, Finding } from "./findings.ts";
 import type { Outcome } from "./outcome.ts";
 
+/** The findings that the summary lists; the report file holds the rest. */
 const TABLE_ROWS = 100;
+/** The errors and warnings whose evidence the summary shows. */
 const DETAILED_FINDINGS = 30;
 const SKIPPED_NAMES = 5;
 
@@ -174,4 +176,4 @@ function checkSummary(reading: {
 	].join("\n");
 }
 
-export { checkSummary };
+export { checkSummary, DETAILED_FINDINGS, TABLE_ROWS };

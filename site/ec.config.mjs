@@ -6,6 +6,30 @@ import { defineEcConfig } from "astro-expressive-code";
 import { pluginCollapsibleSections } from "@expressive-code/plugin-collapsible-sections";
 import { pluginLineNumbers } from "@expressive-code/plugin-line-numbers";
 
+/** A title that names a file, a path, a stream or a finding code, which the reader reads verbatim. */
+const CODE_TITLE =
+	/^(?:[\w.@~-]*[./][\w./@~-]*|std(?:out|err)|[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+(?::.*)?)$/u;
+
+/**
+ * Marks a frame whose title is code, so the title sets in the monospace face like other code. A
+ * title in words, such as "Ask your agent", keeps the body face.
+ * @returns The plugin.
+ */
+function pluginCodeTitles() {
+	return {
+		name: "code-titles",
+		hooks: {
+			postprocessRenderedBlock: ({ codeBlock, renderData }) => {
+				const title = codeBlock.props.title;
+				if (typeof title !== "string" || !CODE_TITLE.test(title)) return;
+				const properties = renderData.blockAst.properties;
+				const classes = properties.className ?? [];
+				properties.className = [...(Array.isArray(classes) ? classes : [classes]), "code-title"];
+			},
+		},
+	};
+}
+
 const ink = "#f2f0ea";
 const body = "#d3cfc6";
 const muted = "#bdb8ad";
@@ -93,7 +117,7 @@ const archboardNight = {
 
 export default defineEcConfig({
 	themes: [archboardNight],
-	plugins: [pluginLineNumbers(), pluginCollapsibleSections()],
+	plugins: [pluginLineNumbers(), pluginCollapsibleSections(), pluginCodeTitles()],
 	defaultProps: {
 		showLineNumbers: false,
 		wrap: false,

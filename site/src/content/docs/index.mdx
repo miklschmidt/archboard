@@ -10,30 +10,27 @@ Archboard keeps a model of your architecture next to your code. Your agent write
 ## Start here
 
 <LinkCards
+	ordered
 	cards={[
 		{
 			path: "install",
 			title: "Install and set up",
-			text: "Install the CLI and run archboard init in a repository.",
-			icon: "terminal",
+			text: "Install the CLI and run `archboard init` in a repository.",
 		},
 		{
 			path: "first-map",
 			title: "A first map in one session",
 			text: "A first map, three flows and a walkthrough for a newcomer.",
-			icon: "route",
 		},
 		{
 			path: "gate",
 			title: "The check as a gate",
 			text: "Fail CI, a Git hook or an agent loop when the map and the code disagree.",
-			icon: "lock",
 		},
 		{
 			path: "pull-requests",
 			title: "Architecture on pull requests",
 			text: "Findings on the diff, and the plan before and after.",
-			icon: "branch",
 		},
 	]}
 />
@@ -58,13 +55,11 @@ The relay example is a parcel desk of four services. Its code and its model are 
 			path: "https://github.com/miklschmidt/archboard-relay-example/pull/1",
 			title: "A change with no plan",
 			text: "Intake calls Billing. The check fails, with an annotation on the line.",
-			icon: "alert",
 		},
 		{
 			path: "https://github.com/miklschmidt/archboard-relay-example/pull/2",
 			title: "The same change with a plan",
 			text: "The comment shows the proposal, the pictures before and after, and the footprint.",
-			icon: "branch",
 		},
 	]}
 />
@@ -77,25 +72,21 @@ The relay example is a parcel desk of four services. Its code and its model are 
 			path: "reference/cli",
 			title: "CLI reference",
 			text: "Every command, its options, its exit codes and its examples.",
-			icon: "terminal",
 		},
 		{
 			path: "reference/findings",
 			title: "Check findings",
 			text: "What each finding code means, and how to fix it.",
-			icon: "search",
 		},
 		{
 			path: "reference/schemas",
 			title: "Schemas",
 			text: "The JSON that the commands read and write.",
-			icon: "fileCode",
 		},
 		{
 			path: "reference/actions",
 			title: "GitHub Actions",
 			text: "Every input and output of the check and pull-request Actions.",
-			icon: "code",
 		},
 	]}
 />

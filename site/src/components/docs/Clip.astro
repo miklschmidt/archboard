@@ -1,0 +1,80 @@
+---
+// A recorded terminal clip that a reader can stop. A reader who asks for reduced motion sees the
+// still. Pause swaps the clip for the still, and Play swaps it back. Without script the clip plays
+// and the button stays hidden.
+interface Props {
+	/** The animated clip. */
+	readonly src: string;
+	/** One frame that tells the whole story, shown under reduced motion and on pause. */
+	readonly still: string;
+	readonly alt: string;
+	readonly width: number;
+	readonly height: number;
+}
+
+const { src, still, alt, width, height } = Astro.props;
+---
+
+<figure class="figure clip" data-clip data-src={src} data-still={still}>
+	<div class="frame">
+		<picture>
+			<source media="(prefers-reduced-motion: reduce)" srcset={still} />
+			<img src={src} alt={alt} width={width} height={height} loading="lazy" data-clip-image />
+		</picture>
+		<button type="button" class="toggle" data-clip-toggle aria-pressed="false" hidden>Pause</button>
+	</div>
+	<figcaption><slot /></figcaption>
+</figure>
+
+<script>
+	for (const clip of document.querySelectorAll<HTMLElement>("[data-clip]")) {
+		const image = clip.querySelector<HTMLImageElement>("[data-clip-image]");
+		const toggle = clip.querySelector<HTMLButtonElement>("[data-clip-toggle]");
+		const { src, still } = clip.dataset;
+		if (!image || !toggle || !src || !still) continue;
+		const set = (playing: boolean): void => {
+			// The reader's choice wins over the reduced-motion source from here on.
+			clip.querySelector("source")?.remove();
+			image.src = playing ? src : still;
+			toggle.textContent = playing ? "Pause" : "Play";
+			toggle.setAttribute("aria-pressed", String(!playing));
+		};
+		let playing = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+		toggle.textContent = playing ? "Pause" : "Play";
+		toggle.setAttribute("aria-pressed", String(!playing));
+		toggle.hidden = false;
+		toggle.addEventListener("click", () => {
+			playing = !playing;
+			set(playing);
+		});
+	}
+</script>
+
+<style>
+	.frame {
+		position: relative;
+	}
+	.toggle {
+		position: absolute;
+		right: 12px;
+		bottom: 12px;
+		min-width: 64px;
+		min-height: 32px;
+		padding: 0 12px;
+		border-radius: var(--radius-chip);
+		background: var(--raised);
+		color: var(--ink);
+		font-size: 0.8125rem;
+		font-weight: 600;
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule-strong);
+		cursor: pointer;
+	}
+	.toggle:hover {
+		background: var(--slab);
+	}
+	.toggle[hidden] {
+		display: none;
+	}
+</style>

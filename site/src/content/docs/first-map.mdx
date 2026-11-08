@@ -125,8 +125,8 @@ archboard check
 
 For each finding code that appears, decide one of three things, and write it down:
 
-- **Fail CI.** The team wants a pull request blocked when this appears. `RELATIONSHIP_UNDRAWN` and `BINDING_PATH_MISSING` are the usual first choices.
-- **Show, do not fail.** The team wants to see it on the pull request but not to block on it. List these codes in the gate's `allow-codes`.
+- **Fail CI.** The team wants a pull request blocked when this appears. [`RELATIONSHIP_UNDRAWN`](../reference/findings/#relationship-undrawn) and [`BINDING_PATH_MISSING`](../reference/findings/#binding-path-missing) are the usual first choices.
+- **Show, do not fail.** The team wants to see it on the pull request but not to block on it. List these codes in the gate's [`allow-codes`](../reference/actions/#check-allow-codes).
 - **Fix the map.** The finding is right and the map is wrong. Fix it now.
 
 Copy this record into the pull request that adds the vault, or into your notes:

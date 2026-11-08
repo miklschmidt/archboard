@@ -6,6 +6,7 @@ description: Put each finding on the diff with an excerpt of the code and the ma
 import Aside from "../../components/docs/Aside.astro";
 import Steps from "../../components/docs/Steps.astro";
 import LinkCards from "../../components/docs/LinkCards.astro";
+import reference from "../../generated/reference.json";
 
 A plain diff is the wrong level for an architectural change. A reviewer sees forty changed lines and not that Intake now calls Billing. Two GitHub Actions put the architecture on the pull request. Both run only commands of the published CLI.
 
@@ -52,7 +53,7 @@ Evidence:
       14 |
 ```
 
-The job summary lists up to 100 findings, evidence for the first 30 errors and warnings, and the skipped subjects. Each code links to [its explanation](../reference/findings/). GitHub shows at most ten annotations of each level for one step. The Action saves the complete JSON report at its `report` output. Upload that file as an artifact to keep the complete list for review.
+The job summary lists up to {reference.facts.summaryRows} findings, evidence for the first {reference.facts.summaryDetails} errors and warnings, and the skipped subjects. Each code links to [its explanation](../reference/findings/). GitHub shows at most ten annotations of each level for one step. The Action saves the complete JSON report at its [`report`](../reference/actions/#check-report) output. Upload that file as an artifact to keep the complete list for review.
 
 <Aside type="note" title="See it on a real pull request">
 	[Pull request #1 of the relay
@@ -62,11 +63,11 @@ The job summary lists up to 100 findings, evidence for the first 30 errors and w
 
 ### Decide what blocks
 
-| Input              | Effect                                                                       |
-| ------------------ | ---------------------------------------------------------------------------- |
-| `fail-on: warning` | The default. The job fails while a warning or a semantic diagnostic remains. |
-| `fail-on: never`   | The findings show, and the job never fails on them.                          |
-| `allow-codes`      | These codes show and never fail the job, such as `CALLER_UNDRAWN`.           |
+| Input                                                     | Effect                                                                                                      |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| [`fail-on: warning`](../reference/actions/#check-fail-on) | The default. The job fails while a warning or a semantic diagnostic remains.                                |
+| [`fail-on: never`](../reference/actions/#check-fail-on)   | The findings show, and the job never fails on them.                                                         |
+| [`allow-codes`](../reference/actions/#check-allow-codes)  | These codes show and never fail the job, such as [`CALLER_UNDRAWN`](../reference/findings/#caller-undrawn). |
 
 A check that cannot run fails the job in every case: a usage error, a refusal or an unreachable server.
 
@@ -120,7 +121,7 @@ The Action takes the first of these that it finds:
 
 <Steps>
 
-1. The `state` input, by identity or name.
+1. The [`state`](../reference/actions/#pull-request-state) input, by identity or name.
 2. The marker that the `archboard-pr` skill writes into the pull request's description:
 
    ```html
@@ -137,15 +138,15 @@ The plan is what the proposal changes against the current architecture at the ba
 
 ### Changes outside the plan
 
-The footprint's middle group is the interesting one: modules whose code changed although the plan did not name them. `out-of-plan` says what happens then.
+The footprint's middle group is the interesting one: modules whose code changed although the plan did not name them. [`out-of-plan`](../reference/actions/#pull-request-out-of-plan) says what happens then.
 
-| `out-of-plan` | Effect                                                                                                                                                                                                                                                                                                                                                      |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `warn`        | The default. An annotation and a line in the comment.                                                                                                                                                                                                                                                                                                       |
-| `fail`        | The job fails. It also fails when the plan cannot be checked: the proposals or the footprint cannot be read, the pull request names a proposal that the model does not have, or the model has several drafts and the pull request names none. The label `archboard: out of plan` lets the pull request through, and the comment says that the label did it. |
-| `off`         | The footprint shows, and nothing is judged.                                                                                                                                                                                                                                                                                                                 |
+| [`out-of-plan`](../reference/actions/#pull-request-out-of-plan) | Effect                                                                                                                                                                                                                                                                                                                                                      |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `warn`                                                          | The default. An annotation and a line in the comment.                                                                                                                                                                                                                                                                                                       |
+| `fail`                                                          | The job fails. It also fails when the plan cannot be checked: the proposals or the footprint cannot be read, the pull request names a proposal that the model does not have, or the model has several drafts and the pull request names none. The label `archboard: out of plan` lets the pull request through, and the comment says that the label did it. |
+| `off`                                                           | The footprint shows, and nothing is judged.                                                                                                                                                                                                                                                                                                                 |
 
-Change the label with `override-label`. A pull request with no proposal has no plan, so nothing in it is out of plan. When the model has one draft, the Action takes it without a marker, so removing the marker does not stop the judgement. Set `out-of-plan: off` for that. When the model has several drafts and the pull request names none, the plan cannot be checked.
+Change the label with [`override-label`](../reference/actions/#pull-request-override-label). A pull request with no proposal has no plan, so nothing in it is out of plan. When the model has one draft, the Action takes it without a marker, so removing the marker does not stop the judgement. Set [`out-of-plan: off`](../reference/actions/#pull-request-out-of-plan) for that. When the model has several drafts and the pull request names none, the plan cannot be checked.
 
 ### Where the pictures live
 
@@ -176,13 +177,11 @@ adopt it on this branch once the code matches, and explain the architecture in t
 			path: "reference/actions",
 			title: "GitHub Actions reference",
 			text: "Every input and output of both Actions.",
-			icon: "code",
 		},
 		{
 			path: "platform",
 			title: "Application and infrastructure",
 			text: "Check out a second repository so a hop reads on both sides.",
-			icon: "server",
 		},
 	]}
 />

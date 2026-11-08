@@ -5,38 +5,36 @@ description: Run `archboard check` where you already run `tsc`, `ruff` and your 
 
 import Aside from "../../components/docs/Aside.astro";
 import LinkCards from "../../components/docs/LinkCards.astro";
+import Clip from "../../components/docs/Clip.astro";
 
 A rule in `AGENTS.md` is a request. An agent can ignore it. A check that fails the build is a fact that the agent must deal with. `archboard check` is deterministic: the same model and the same code give the same answer, with an exit code that CI understands.
 
-<figure class="figure">
-	<img
-		src="https://raw.githubusercontent.com/miklschmidt/archboard-relay-example/main/docs/clips/gate.gif"
-		alt="A terminal in the relay example. npm run check passes with exit 0. npm run gate:break makes Intake read BILLING_URL. npm run check fails with exit 1 and a RELATIONSHIP_UNDRAWN warning with evidence in accept.ts and in peer-endpoints.yaml. npm run gate:restore, and the check passes again."
-		width="1400"
-		height="760"
-		loading="lazy"
-	/>
-	<figcaption>
-		The [relay example](https://github.com/miklschmidt/archboard-relay-example): the check passes,
-		fails on a call that the model does not draw, and passes again. A real recording of the
-		published CLI.
-	</figcaption>
-</figure>
+<Clip
+	src="https://raw.githubusercontent.com/miklschmidt/archboard-relay-example/main/docs/clips/gate.gif"
+	still="https://raw.githubusercontent.com/miklschmidt/archboard-relay-example/main/docs/clips/gate.png"
+	alt="A terminal in the relay example. archboard check passes with exit 0. npm run gate:break makes Intake read BILLING_URL and call Billing. archboard check then fails with exit 1 and a RELATIONSHIP_UNDRAWN warning, with evidence in services/intake/src/accept.ts line 51 and deploy/kubernetes/peer-endpoints.yaml line 13. npm run gate:restore, and the check passes again."
+	width={1320}
+	height={800}
+>
+	The [relay example](https://github.com/miklschmidt/archboard-relay-example): the check passes,
+	fails on a call that the model does not draw, and passes again. A real recording of the published
+	CLI.
+</Clip>
 
 ## What passes and what fails
 
 `archboard check` runs three checks in order: semantics, code, then embeds. It exits 1 while one of them has something that you must fix.
 
-| Outcome                       | Exit                            | Example                                                                  |
-| ----------------------------- | ------------------------------- | ------------------------------------------------------------------------ |
-| Nothing to report             | `0`                             | A model that matches its code                                            |
-| Information only              | `0`                             | A relationship whose evidence is a candidate, matched by name only       |
-| A code warning                | `1`                             | `RELATIONSHIP_UNDRAWN`: code calls a module that the model does not join |
-| A semantic diagnostic         | `1`                             | `RELATIONSHIP_ON_CONTAINER`: a line that ends on a module with parts     |
-| An outdated picture           | `1`                             | `EMBED_OUTDATED`: a tracked SVG that no longer matches the model         |
-| No vault in the checkout      | `0`, or `1` when an embed warns | Only the embeds check runs, and a skip says that the others did not      |
-| A usage error, or no checkout | `2`                             | `VAULT_NOT_FOUND` outside any Git checkout, with no vault above it       |
-| No server                     | `3`                             | The server did not answer and could not start                            |
+| Outcome                       | Exit                            | Example                                                                                                                  |
+| ----------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Nothing to report             | `0`                             | A model that matches its code                                                                                            |
+| Information only              | `0`                             | A relationship whose evidence is a candidate, matched by name only                                                       |
+| A code warning                | `1`                             | [`RELATIONSHIP_UNDRAWN`](../reference/findings/#relationship-undrawn): code calls a module that the model does not join  |
+| A semantic diagnostic         | `1`                             | [`RELATIONSHIP_ON_CONTAINER`](../reference/findings/#relationship-on-container): a line that ends on a module with parts |
+| An outdated picture           | `1`                             | [`EMBED_OUTDATED`](../reference/findings/#embed-outdated): a tracked SVG that no longer matches the model                |
+| No vault in the checkout      | `0`, or `1` when an embed warns | Only the embeds check runs, and a skip says that the others did not                                                      |
+| A usage error, or no checkout | `2`                             | `VAULT_NOT_FOUND` outside any Git checkout, with no vault above it                                                       |
+| No server                     | `3`                             | The server did not answer and could not start                                                                            |
 
 Information and skips print on standard error and never change the exit status. [Check findings](../reference/findings/) lists every code. Each check also runs alone:
 
@@ -66,7 +64,7 @@ There are two fixes, and the finding says both. If the call is intended, the age
 
 A pre-push hook keeps a failing map off the remote. Save this as `.githooks/pre-push` and make it executable:
 
-```sh title=".githooks/pre-push"
+```sh title=".githooks/pre-push" frame="code"
 #!/bin/sh
 # Block the push while the architecture check fails.
 # Skip it once with: git push --no-verify
@@ -114,12 +112,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # The checkout's own TypeScript is the default TypeScript server.
+      - run: npm ci
+      # A server for each other language in .archboard/language-servers.json.
+      - run: pip install pyright
       - uses: miklschmidt/archboard/actions/check@main
         with:
           version: 0.1.0
 ```
 
-Pin `version` to the release that your team runs, as you pin your compiler. The examples use `@main`. Pin the Action itself to a commit SHA of `miklschmidt/archboard`, as you pin any third-party Action. The [Actions reference](../reference/actions/) lists every input: `fail-on: never` reports without failing, and `allow-codes` keeps chosen findings visible without failing on them.
+The code check resolves a name only through a language server, and only resolved evidence makes a warning. So install the dependencies first. `npm ci` installs the checkout's own TypeScript, which serves from version 7. Before 7, the check also needs `typescript-language-server` in the dev dependencies. Install the server of each other language that `.archboard/language-servers.json` names, as `pip install pyright` does for Python. Without a server, a call that needs resolved evidence stays information, and the gate passes.
+
+Pin [`version`](../reference/actions/#check-version) to the release that your team runs, as you pin your compiler. The examples use `@main`. Pin the Action itself to a commit SHA of `miklschmidt/archboard`, as you pin any third-party Action. The [Actions reference](../reference/actions/) lists every input: [`fail-on: never`](../reference/actions/#check-fail-on) reports without failing, and [`allow-codes`](../reference/actions/#check-allow-codes) keeps chosen findings visible without failing on them.
 
 Any other CI runs the same command. The exit code is the gate:
 
@@ -127,6 +134,7 @@ Any other CI runs the same command. The exit code is the gate:
 architecture:
   image: node:22
   script:
+    - npm ci
     - npm install --global archboard@0.1.0
     - archboard check > check.json
   artifacts:
@@ -169,7 +177,7 @@ A Stop hook runs when Claude Code wants to finish. Exit code 2 sends the hook's 
 
 Run the agent, run the check, and give the findings back until the check passes or the rounds run out:
 
-```bash title="agent-loop.sh"
+```bash title="agent-loop.sh" frame="code"
 #!/usr/bin/env bash
 # Ask the agent for a change, then hold it to the architecture check.
 set -u
@@ -218,13 +226,11 @@ git add docs/architecture
 			path: "pull-requests",
 			title: "Architecture on pull requests",
 			text: "Findings on the diff, and the plan before and after.",
-			icon: "branch",
 		},
 		{
 			path: "platform",
 			title: "Application and infrastructure",
 			text: "Check bindings that cross into another repository.",
-			icon: "server",
 		},
 	]}
 />
