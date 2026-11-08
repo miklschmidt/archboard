@@ -3,29 +3,25 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "XgrNvwDY",
-    "name": "A compiled npm release runs Archboard, and one Installation module tells it from a checkout",
-    "summary": "Archboard also runs as a compiled executable that npm installs and a release workflow publishes, so one Installation module decides checkout or release and names every location, and a release differs from a checkout only in how it starts its server, restarts, loads its core, finds Codex and TypeScript and addresses its server.",
+    "id": "8XM5Moq9",
+    "name": "The release workflow stages each package, and the owner approves it on npm",
+    "summary": "The publish job stages every package with npm stage publish, because its trusted publisher allows only staging, so a release is public only after the owner approves each staged version on npm with 2FA, and the GitHub environment npm no longer waits for a reviewer.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "backlog/tasks/task-579.01 - One-installation-module-decides-checkout-or-release-and-names-every-location.md"
+        "path": "docs/agents/releasing.md"
       },
       {
         "repo": "github.com/miklschmidt/archboard",
         "path": "docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/agents/releasing.md"
       }
     ],
-    "predecessor": "5fVvhgsV",
-    "baseline": "efa1d96e536b07d17a6da0da58ad3b85a7aae783",
-    "createdAt": "2026-11-07T10:11:34.837Z",
-    "adoptedAt": "2026-11-07T10:16:28.522Z",
-    "reason": "The branch merges PR 46 with main: Archboard installs from npm as one compiled executable for each platform, the flake's nix build .#release builds the packages, and one Installation module tells a release from a checkout. The owner authorized this adoption. It carries b2zJw510 onto current 5fVvhgsV.",
-    "previousCurrent": "5fVvhgsV"
+    "predecessor": "6KbyNVXO",
+    "baseline": "3171540da026614c83ee5ffae94904b3bae19c5b",
+    "createdAt": "2026-11-08T02:25:44.068Z",
+    "adoptedAt": "2026-11-08T02:26:07.544Z",
+    "reason": "The branch ci/staged-publish implements it: the publish job of the release workflow runs npm stage publish on each tarball, the trusted publisher of each package allows only staging, and the owner approves each staged version on npm with 2FA. The owner authorized this adoption.",
+    "previousCurrent": "6KbyNVXO"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
