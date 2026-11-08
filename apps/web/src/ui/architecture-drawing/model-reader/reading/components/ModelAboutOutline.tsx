@@ -12,12 +12,10 @@ const ABOUT_COLUMNS =
 	"mx-auto grid max-w-[1320px] grid-cols-1 gap-x-12 px-6 pt-8 pb-16 wrap-break-word @min-[1040px]/about:grid-cols-[176px_minmax(0,1fr)] @min-[1040px]/about:px-10";
 
 /**
- * Where the claims of the reading stand over the page: under the line of the name and its tools,
- * which ends 68px down, after the 32px that the columns leave over it and the 36px of the tools.
- * The bar of the outline, which stays over a narrow page, is less high, so the claims leave both
- * in reach.
+ * Claims stand below the measured title row. The narrow outline comes first, so the bar never
+ * scrolls through the card. The frame adds the ordinary gap above the claim itself.
  */
-const ABOUT_CLAIMS = "top-17";
+const ABOUT_CLAIMS = "top-(--claim-top)";
 
 /** Where the name of the subject stands in those columns. */
 const ABOUT_TITLE =

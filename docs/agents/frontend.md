@@ -390,6 +390,7 @@ Every notice about a reading lies over the picture in `model-notices`, so no fai
 The claims of a current reading have one owner, `ModelClaimsOver`, which the header's `ModelControls` mounts for every answer.
 Each surface lends it a place through the pane context with `ModelClaimFrame`: the picture among its notices, About, and a walkthrough that plays.
 The owner portals the claims into the place of the surface on top.
+About measures its title row to place the claim below wrapped names and tools. Its narrow section bar stands before that row.
 The pane itself lends the last place, under the header. If no surface lends a place, the claims stand there. A failed first read is such a state.
 A hidden surface gives its place up, because a hidden `Activity` detaches its refs. So a claim that starts or ends moves nothing, and Take back control stays in reach in every state of the pane.
 A cached reading is stale only when a read failed or the stream was lost. An event being applied is healthy and shows nothing.

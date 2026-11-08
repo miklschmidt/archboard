@@ -194,12 +194,29 @@ test("a claim stays in reach over About, a walkthrough and a model that cannot b
 		"the claim over About",
 		WAIT,
 	);
-	// The card leaves the tools on the line of About's title in reach.
-	expect(
-		await browser.eval<boolean>(
-			`[...document.querySelectorAll('[data-slot="model-about-title"] button')].every(tool => { const box = tool.getBoundingClientRect(); return tool.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)); })`,
-		),
-	).toBe(true);
+	// Both the title tools and the narrow section bar stay usable beside the card.
+	expect(await aboutControlsReachable(browser)).toBe(true);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await browser.run(["click", 'button[aria-label="Open a second pane"]']);
+	await pollUntil(
+		() => claimFrames(browser, overAbout),
+		(frames) => frames.length === 2 && frames.includes("picture") && frames.includes("about"),
+		"the claim in two panes with separate surfaces",
+		WAIT,
+	);
+	expect(await aboutControlsReachable(browser)).toBe(true);
+	// Scrolling cannot carry the section bar through the card or hide its take-back.
+	await browser.eval(
+		`document.querySelector('[data-slot="model-about-title"]').parentElement.parentElement.scrollTop = 320`,
+	);
+	expect(await aboutControlsReachable(browser)).toBe(true);
+	await browser.run(["click", 'button[aria-label="Close pane B"]']);
+	await pollUntil(
+		() => claimFrames(browser, overAbout),
+		(frames) => frames.length === 1 && frames[0] === "about",
+		"the claim to remain over About after the other pane closes",
+		WAIT,
+	);
 	await takeBack(overAbout);
 
 	const overWalkthrough = await claimFor("Narrate the gateway");
@@ -242,6 +259,26 @@ test("a claim stays in reach over About, a walkthrough and a model that cannot b
  */
 function claimFrames(browser: AgentBrowserSession, claim: string): Promise<string[]> {
 	return browser.eval<string[]>(
-		`[...document.querySelectorAll('[data-slot="model-claim"][data-claim-id="${claim}"]')].map(card => card.closest('[data-slot="model-claims-frame"]')?.getAttribute('data-frame') ?? 'none')`,
+		`[...document.querySelectorAll('[data-slot="model-claim"][data-claim-id="${claim}"]')].map(card => card.checkVisibility() ? card.closest('[data-slot="model-claims-frame"]')?.getAttribute('data-frame') ?? 'none' : 'hidden')`,
 	);
+}
+
+/** Whether the visible About controls receive pointer input, including a clipped outline entry. */
+function aboutControlsReachable(browser: AgentBrowserSession): Promise<boolean> {
+	return browser.eval<boolean>(`(() => {
+		const about = document.querySelector('[data-slot="model-about"]');
+		const controls = [...about.querySelectorAll('[data-slot="model-about-title"] button, [data-slot="about-outline-entry"], [data-slot="model-take-back"]')];
+		const reachable = (control, box = control.getBoundingClientRect()) => {
+			const clip = (control.closest('nav') ?? about).getBoundingClientRect();
+			const left = Math.max(box.left, clip.left), right = Math.min(box.right, clip.right);
+			const top = Math.max(box.top, clip.top), bottom = Math.min(box.bottom, clip.bottom);
+			if (left >= right || top >= bottom) return true;
+			return control.contains(document.elementFromPoint((left + right) / 2, (top + bottom) / 2));
+		};
+		const heading = about.querySelector('h2');
+		const text = document.createRange();
+		text.selectNodeContents(heading);
+		return controls.length > 0 && controls.every(control => reachable(control)) &&
+			[...text.getClientRects()].every(box => reachable(heading, box));
+	})()`);
 }
