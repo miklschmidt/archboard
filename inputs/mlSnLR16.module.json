@@ -118,11 +118,11 @@
     {
       "order": 71000,
       "kind": "render",
-      "label": "the settings dialog's opener tab, when the person opens it",
+      "label": "the opener settings dialog, when the person opens it",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/SettingsDialog.tsx",
+        "path": "apps/web/src/ui/application/components/SettingsHosts.tsx",
         "symbol": "OpenerSettings"
       },
       "id": "vKEsyHFk/yejBBUFY#wEaLH20o",

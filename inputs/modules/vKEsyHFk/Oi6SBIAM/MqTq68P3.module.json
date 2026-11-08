@@ -138,7 +138,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "frontendState"
+        "symbol": "staleFrontend"
       },
       "id": "vKEsyHFk#4gRaPRO3",
       "to": "vKEsyHFk#apyQZjM7"
