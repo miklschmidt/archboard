@@ -126,7 +126,7 @@ text, and long lists stay in About.
   says how many are hidden. A mixed line has a row and no switch, because it is no kind
   of relationship. Groups close the legend as bright tags with no switch, and a press
   on a tag selects the group's parts. A reading with no groups has no group section.
-  The layout engine switch stands under the legend on a structural reading.
+  The layout engine switch is not in the panel. It is in the `Picture` tab of the Settings dialog.
 - **About holds every long list and names its subject.** The end of its title row
   reads `Open scope`. While something is selected, it offers `Open scope` and
   `Selected subject`. About opens on the selection when there is one. On the scope,
