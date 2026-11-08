@@ -95,7 +95,10 @@ interface ProposalPlan {
 	readonly comparison: string[];
 	/** The bound modules it names, by stable identity. Names alone can be ambiguous. */
 	readonly named: ReadonlyMap<string, string>;
-	/** Bindings that the base holds and the proposal no longer does. */
+	/**
+	 * Modules bound at the base that the proposal no longer binds, such as a module it removes.
+	 * Nothing at the head shows their code, so they are never listed as planned but unchanged.
+	 */
 	readonly baseOnlyBindings: ReadonlySet<string>;
 }
 
@@ -252,10 +255,11 @@ function proposalPlan(baseModel: ModelReading, headModel: ModelReading): Proposa
  * Set the modules that a footprint changed against the plan.
  * @param footprint The answer of `model footprint`. For a draft it sorts the changed modules into
  * named and not named, else it lists them in one list.
- * @param named The modules that the plan names.
+ * @param plan The plan.
  * @returns The three buckets.
  */
-function planBuckets(footprint: FootprintReading, named: ReadonlyMap<string, string>): Buckets {
+function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
+	const { named, baseOnlyBindings } = plan;
 	const parts = [
 		...(footprint.changed ?? []),
 		...(footprint.namedAndChanged ?? []),
@@ -273,7 +277,7 @@ function planBuckets(footprint: FootprintReading, named: ReadonlyMap<string, str
 			.map(([, name]) => name)
 			.toSorted(),
 		plannedUnchanged: [...named]
-			.filter(([id]) => !changed.has(id) && !unread.has(id))
+			.filter(([id]) => !changed.has(id) && !unread.has(id) && !baseOnlyBindings.has(id))
 			.map(([, name]) => name)
 			.toSorted(),
 		changed: [...changed.values()].toSorted(),

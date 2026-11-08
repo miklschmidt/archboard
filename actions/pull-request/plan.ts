@@ -90,7 +90,8 @@ function parseOutOfPlanMode(value: string): OutOfPlanMode {
 /**
  * - `off`: the configuration asks for no judgement.
  * - `no-proposal`: the pull request carries no proposal, so no change is outside a plan.
- * - `unjudged`: the footprint could not be read.
+ * - `unjudged`: the plan or the footprint could not be read. In fail mode the step fails, unless
+ *   the override label lets the pull request through, because a gate that cannot judge must not pass.
  * - `in-plan`: every changed module is in the plan.
  * - `warn`, `fail`: modules changed outside the plan, and the mode says how loudly.
  * - `overridden`: modules changed outside the plan, and the override label lets the pull request through.
@@ -144,11 +145,11 @@ function statusWithoutJudgement(facts: PlanFacts): OutOfPlanStatus | undefined {
  */
 function decideOutOfPlan(facts: PlanFacts): OutOfPlanDecision {
 	const unjudged = statusWithoutJudgement(facts);
-	if (unjudged !== undefined) return { status: unjudged, failed: false };
+	const blocks = facts.mode === "fail" && !facts.labels.includes(facts.overrideLabel);
+	if (unjudged !== undefined)
+		return { status: unjudged, failed: unjudged === "unjudged" && blocks };
 	if (facts.mode === "warn") return { status: "warn", failed: false };
-	return facts.labels.includes(facts.overrideLabel)
-		? { status: "overridden", failed: false }
-		: { status: "fail", failed: true };
+	return blocks ? { status: "fail", failed: true } : { status: "overridden", failed: false };
 }
 
 export {

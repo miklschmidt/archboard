@@ -196,16 +196,20 @@ function execute(request: Request): number {
 		findings,
 		checkSummary({ answer, findings, outcome, locations, allowed }),
 	);
-	run(cli, ["stop"], { cwd: directory });
 	return outcome.failed ? 1 : 0;
 }
 
 /**
- * Run the check from the action's inputs.
+ * Run the check from the action's inputs, and stop the server it started, whatever happens.
  * @returns The exit status of this step.
  */
 function main(): number {
-	return execute(readRequest());
+	const request = readRequest();
+	try {
+		return execute(request);
+	} finally {
+		run(request.cli, ["stop"], { cwd: request.directory });
+	}
 }
 
 /**

@@ -182,7 +182,7 @@ function buildReport(
 	const footprint =
 		note !== undefined
 			? { note: "The footprint was not judged because the proposal could not be compared." }
-			: readFootprint(context, trees, choice.state, plan);
+			: readFootprint(context, trees.headDir, choice.state, plan);
 	const pictures = makePictures(context, trees, choice.state);
 	return {
 		baseSha: context.baseSha,

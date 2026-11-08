@@ -82,7 +82,7 @@ describe("the plan of a proposal", () => {
 	});
 
 	test("sets the changed modules of the footprint against that plan, for a draft or an adopted proposal", () => {
-		const named = proposalPlan(base, head).named;
+		const plan = proposalPlan(base, head);
 		const expected = {
 			plannedAndChanged: ["Intake"],
 			outsidePlan: ["Catalog"],
@@ -90,12 +90,12 @@ describe("the plan of a proposal", () => {
 			changed: ["Catalog", "Intake"],
 		};
 		expect(
-			planBuckets({ namedAndChanged: part("Intake"), changedNotNamed: part("Catalog") }, named),
+			planBuckets({ namedAndChanged: part("Intake"), changedNotNamed: part("Catalog") }, plan),
 		).toEqual(expected);
 		const footprint = {
 			changed: [...part("Intake"), ...part("Catalog")],
 		};
-		expect(planBuckets(footprint, named)).toEqual({
+		expect(planBuckets(footprint, plan)).toEqual({
 			plannedAndChanged: ["Intake"],
 			outsidePlan: ["Catalog"],
 			plannedUnchanged: ["Billing"],
@@ -115,7 +115,7 @@ describe("the plan of a proposal", () => {
 				changed: [...part("Zulu", "z"), ...part("API", "unplanned"), ...part("Billing", "billing")],
 				skipped: part("Gone", "removed"),
 			},
-			named,
+			{ comparison: [], named, baseOnlyBindings: new Set() },
 		);
 		expect(buckets).toEqual({
 			plannedAndChanged: ["Billing"],
@@ -151,6 +151,18 @@ describe("changes outside the plan", () => {
 			status: "overridden",
 			failed: false,
 		});
+	});
+
+	test("fail mode fails when the plan cannot be checked, unless the label lets it through", () => {
+		const unread = { ...base, footprintRead: false, outside: [] };
+		expect(decideOutOfPlan({ ...unread, mode: "fail" })).toEqual({
+			status: "unjudged",
+			failed: true,
+		});
+		expect(decideOutOfPlan({ ...unread, mode: "fail", labels: [base.overrideLabel] }).failed).toBe(
+			false,
+		);
+		expect(decideOutOfPlan({ ...unread, mode: "warn" }).failed).toBe(false);
 	});
 
 	test("warn mode never fails, and with no proposal nothing is out of plan", () => {
@@ -288,12 +300,10 @@ describe("the entry", () => {
 		const cli = writeStandIn(folder);
 		writeFileSync(
 			cli,
-			readFileSync(cli, "utf8")
-				.replace("#!/bin/sh", '#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$FAKE_DIR/commands.log"')
-				.replace(
-					'footprint) cat "$FAKE_DIR/footprint.json" ;;',
-					'footprint) case "$dir" in */base) cat "$FAKE_DIR/footprint-base.json" ;; *) cat "$FAKE_DIR/footprint.json" ;; esac ;;',
-				),
+			readFileSync(cli, "utf8").replace(
+				"#!/bin/sh",
+				'#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$FAKE_DIR/commands.log"',
+			),
 		);
 		const result = await runEntryAsync(entry, {
 			ARCHBOARD_BIN: cli,
@@ -350,14 +360,14 @@ describe("the entry", () => {
 		expect(readFileSync(join(root, "work/a.txt"), "utf8")).toBe("b");
 	});
 
-	test("a refused model read leaves the plan unjudged rather than treating the refusal as an empty model", async () => {
+	test("a refused model read leaves the plan unjudged, and fail mode fails on it", async () => {
 		const result = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" }, false, {
 			"read-base": JSON.stringify({ success: false, code: "INVALID_MODEL" }),
 		});
-		expect(result.exitCode).toBe(0);
+		expect(result.exitCode).toBe(1);
 		expect(result.stdout).toContain("::warning title=Archboard plan::");
-		expect(result.stdout).not.toContain("::error title=Archboard plan::");
 		expect(comments[0]?.body).not.toContain("**Planned and changed**");
+		expect(comments[0]?.body).toContain("could not be checked, so this check fails");
 	});
 
 	test("the footprint counts from the base branch, which every checkout has, and reports unread modules", async () => {
@@ -372,7 +382,7 @@ describe("the entry", () => {
 		expect(comments[0]?.body).toContain("Infrastructure (base-unresolved)");
 	});
 
-	test("an adopted proposal keeps changed code for a module that only the base vault holds", async () => {
+	test("an adopted proposal never lists a module it removed as planned but unchanged", async () => {
 		const head = JSON.parse(fixture("read-head.json"));
 		head.modules = head.modules.filter((module: { id: string }) => module.id !== "Shop/a#n4");
 		const proposals = JSON.parse(fixture("proposals.json"));
@@ -381,14 +391,11 @@ describe("the entry", () => {
 			proposals: JSON.stringify(proposals),
 			"read-head": JSON.stringify(head),
 			footprint: JSON.stringify({ changed: part("Checkout API", "Shop/a#n1"), skipped: [] }),
-			"footprint-base": JSON.stringify({ changed: part("Payments", "Shop/a#n4"), skipped: [] }),
 		});
 		expect(result.exitCode).toBe(0);
-		expect(result.commands).toMatch(/\/base model footprint --base origin\/main\n/u);
-		expect(result.commands).not.toContain("--head");
+		expect(result.commands.match(/model footprint/gu)).toHaveLength(1);
 		const body = comments[0]?.body ?? "";
-		const [planned, rest] = body.split("**Changed outside the plan**");
-		expect(planned).toContain("- Payments");
-		expect(rest).not.toContain("- Payments");
+		expect(body).toContain("- Checkout API");
+		expect(body).not.toContain("- Payments");
 	});
 });

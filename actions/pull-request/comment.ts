@@ -199,7 +199,9 @@ function outOfPlanSection(report: PullRequestReport): string[] {
 	const by: Record<OutOfPlanDecision["status"], string> = {
 		off: "",
 		"no-proposal": "No proposal, so the changes are not judged against a plan.",
-		unjudged: "The footprint could not be read, so the plan was not checked.",
+		unjudged: report.outOfPlan.failed
+			? `The plan could not be checked, so this check fails. Add the label ${label} to let this pull request through.`
+			: "The plan could not be checked.",
 		"in-plan": "Every module the footprint found changed is in the plan.",
 		warn: `${outside} changed outside the plan. The action warns only; set \`out-of-plan: fail\` to make it fail.`,
 		fail: `${outside} changed outside the plan, so this check fails. Update the proposal to name them, or add the label ${label} to let this pull request through.`,
