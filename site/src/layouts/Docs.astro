@@ -12,10 +12,12 @@ import Footer from "../components/Footer.astro";
 import Icon from "../components/Icon.astro";
 import { docsNav } from "../lib/docs-nav";
 import { links } from "../lib/links";
+import { inlineCode } from "../lib/reference";
 import "../styles/docs.css";
 
 interface Props {
 	readonly title: string;
+	/** One or two sentences, with code in backticks. */
 	readonly description: string;
 	/** The page's path under /docs/. */
 	readonly path: string;
@@ -25,11 +27,13 @@ interface Props {
 }
 
 const { title, description, path, headings, source } = Astro.props;
+// The description marks code in backticks: the lead sets it as code, and the meta tags take plain text.
+const plainDescription = description.replaceAll("`", "");
 const group = docsNav.find((entry) => entry.pages.some((page) => page.path === path));
 const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 ---
 
-<Base title={`${title} · Archboard docs`} description={description}>
+<Base title={`${title} · Archboard docs`} description={plainDescription}>
 	<DocsNav path={path} />
 	<div class="docs">
 		<aside class="docs-sidebar" data-sidebar>
@@ -47,7 +51,7 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
 			<article class="docs-article" data-pagefind-body>
 				<header class="docs-head">
 					<h1 class="display docs-title" data-pagefind-meta="title">{title}</h1>
-					<p class="docs-lead">{description}</p>
+					<p class="docs-lead" set:html={inlineCode(description)} />
 				</header>
 				{
 					tocHeadings.length > 2 && (

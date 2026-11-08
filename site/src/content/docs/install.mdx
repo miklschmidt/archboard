@@ -1,6 +1,6 @@
 ---
 title: Install and set up
-description: Put the archboard CLI on your machine, set a repository up with archboard init, and make sure that the server answers.
+description: Put the archboard CLI on your machine, set a repository up with `archboard init`, and make sure that the server answers.
 ---
 
 import Aside from "../../components/docs/Aside.astro";
@@ -47,7 +47,7 @@ git add .archboard
 git commit -m "docs(architecture): add the Archboard vault"
 ```
 
-<Aside type="note" title="No CLAUDE.md or AGENTS.md entry">
+<Aside type="note" title="No `CLAUDE.md` or `AGENTS.md` entry">
 	`init` adds nothing to `CLAUDE.md` or `AGENTS.md`. A command finds the vault from the repository, the way Git finds its own directory. A block that an earlier version wrote between `<!-- archboard:begin -->` and `<!-- archboard:end -->` is removed.
 </Aside>
 

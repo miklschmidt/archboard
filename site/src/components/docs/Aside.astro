@@ -2,9 +2,11 @@
 // A note beside the words: a plane with an icon and a short head. A caution keeps the product's
 // orange, because it warns.
 import Icon from "../Icon.astro";
+import { inlineCode } from "../../lib/reference";
 
 interface Props {
 	readonly type?: "note" | "tip" | "caution";
+	/** A short head, with code in backticks. */
 	readonly title?: string;
 }
 
@@ -13,10 +15,10 @@ const icon = type === "caution" ? "alert" : type === "tip" ? "flashlight" : "fil
 const head = title ?? (type === "caution" ? "Caution" : type === "tip" ? "Tip" : "Note");
 ---
 
-<aside class:list={["aside", type]} aria-label={head}>
+<aside class:list={["aside", type]} aria-label={head.replaceAll("`", "")}>
 	<p class="aside-head">
 		<Icon name={icon} size={17} />
-		{head}
+		<span set:html={inlineCode(head)} />
 	</p>
 	<div class="aside-body"><slot /></div>
 </aside>

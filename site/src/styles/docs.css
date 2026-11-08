@@ -391,7 +391,8 @@ html:has(.docs) {
 	color: var(--gold-mark);
 }
 
-.prose :not(pre) > code {
+.prose :not(pre) > code,
+.docs-lead code {
 	padding: 0.12em 0.4em;
 	border-radius: var(--radius-chip);
 	background: var(--card);
