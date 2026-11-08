@@ -47,26 +47,20 @@ function readFootprint(
 		"model",
 		"footprint",
 		"--base",
-		footprintBase(context),
+		context.baseSha,
 		...(state === undefined ? [] : ["--state", state.id]),
 	]);
 	const answer: FootprintReading | undefined = parseJson(result.stdout);
 	if (result.exitCode !== 0 || answer === undefined) {
 		return { note: `The footprint could not be read: ${firstLine(result.stderr)}` };
 	}
-	return { buckets: planBuckets(answer, plan.named) };
-}
-
-/**
- * The ref that the footprint counts from. Every registered repository reads the same --base, and
- * only this one holds the pull request's commits. The base branch's remote ref exists in each
- * checkout that CI fetched in full. Without --head, each checkout counts up to its own HEAD: this
- * one's is the head commit.
- * @param context The run.
- * @returns The base branch's remote ref, else the base commit.
- */
-function footprintBase(context: Context): string {
-	return context.baseRef === undefined ? context.baseSha : `origin/${context.baseRef}`;
+	const skipped = (answer.skipped ?? []).map(
+		(part) => `${part.subject.name} (${part.reason ?? "unavailable"})`,
+	);
+	return {
+		buckets: planBuckets(answer, plan.named),
+		note: skipped.length === 0 ? undefined : `The footprint did not read: ${skipped.join(", ")}.`,
+	};
 }
 
 /** The plan of a pull request with no proposal. */

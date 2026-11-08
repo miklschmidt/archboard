@@ -257,7 +257,7 @@ describe("the entry", () => {
 	 * @param answers Answers to replace in the stand-in CLI.
 	 * @returns The step's exit status and output.
 	 */
-	function step(
+	async function step(
 		inputs: Record<string, string> = {},
 		fork = false,
 		answers: Readonly<Record<string, string>> = {},
@@ -273,14 +273,22 @@ describe("the entry", () => {
 				pull_request: {
 					number: 7,
 					body: "",
-					base: { sha: baseSha, repo: repository("owner/name") },
+					base: { sha: baseSha, ref: "main", repo: repository("owner/name") },
 					head: { sha: headSha, repo: repository(fork ? "someone/name" : "owner/name") },
 					labels: [],
 				},
 			}),
 		);
-		return runEntryAsync(entry, {
-			ARCHBOARD_BIN: writeStandIn(folder),
+		const cli = writeStandIn(folder);
+		writeFileSync(
+			cli,
+			readFileSync(cli, "utf8").replace(
+				"#!/bin/sh",
+				'#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$FAKE_DIR/commands.log"',
+			),
+		);
+		const result = await runEntryAsync(entry, {
+			ARCHBOARD_BIN: cli,
 			FAKE_DIR: folder,
 			GITHUB_WORKSPACE: checkout,
 			GITHUB_EVENT_PATH: event,
@@ -291,6 +299,7 @@ describe("the entry", () => {
 			ARCHBOARD_INPUT_GITHUB_TOKEN: "token",
 			...inputs,
 		});
+		return { ...result, commands: readFileSync(join(folder, "commands.log"), "utf8") };
 	}
 
 	test("warns about a change outside the plan, posts the comment and publishes the pictures", async () => {
@@ -341,5 +350,18 @@ describe("the entry", () => {
 		expect(result.stdout).toContain("::warning title=Archboard plan::");
 		expect(result.stdout).not.toContain("::error title=Archboard plan::");
 		expect(comments[0]?.body).not.toContain("**Planned and changed**");
+	});
+
+	test("the footprint keeps the pull request's base when its target branch advances, and reports unread modules", async () => {
+		git("update-ref", "refs/remotes/origin/main", headSha);
+		const footprint = JSON.parse(fixture("footprint.json"));
+		footprint.skipped = [
+			{ subject: { id: "Shop/a#infra", name: "Infrastructure" }, reason: "base-unresolved" },
+		];
+		const result = await step({}, false, { footprint: JSON.stringify(footprint) });
+		expect(result.exitCode).toBe(0);
+		expect(result.commands).toContain(`model footprint --base ${baseSha}`);
+		expect(result.commands).not.toContain("model footprint --base origin/main");
+		expect(comments[0]?.body).toContain("Infrastructure (base-unresolved)");
 	});
 });

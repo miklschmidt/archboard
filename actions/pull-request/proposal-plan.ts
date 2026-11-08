@@ -77,7 +77,7 @@ interface FootprintReading {
 	readonly changedNotNamed?: readonly FootprintPart[] | undefined;
 	readonly changed?: readonly FootprintPart[] | undefined;
 	/** The parts it could not read, such as a part in a repository this machine has not registered. */
-	readonly skipped?: readonly FootprintPart[] | undefined;
+	readonly skipped?: readonly (FootprintPart & { readonly reason?: string })[] | undefined;
 }
 
 /** The module names of each bucket. */

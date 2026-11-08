@@ -159,9 +159,15 @@ function picturesSection(report: PullRequestReport): string[] {
  * @returns The Markdown lines.
  */
 function footprintSection(report: PullRequestReport): string[] {
-	const heading = ["### Footprint", ""];
+	const heading = [
+		"### Footprint",
+		"",
+		...(report.footprintNote === undefined ? [] : [report.footprintNote, ""]),
+	];
 	if (report.buckets === undefined)
-		return [...heading, report.footprintNote ?? "The footprint was not read.", ""];
+		return report.footprintNote === undefined
+			? [...heading, "The footprint was not read.", ""]
+			: heading;
 	if (report.choice.state === undefined) {
 		return [...heading, ...bucket("Modules changed by this pull request", report.buckets.changed)];
 	}
@@ -194,7 +200,7 @@ function outOfPlanSection(report: PullRequestReport): string[] {
 		off: "",
 		"no-proposal": "No proposal, so the changes are not judged against a plan.",
 		unjudged: "The footprint could not be read, so the plan was not checked.",
-		"in-plan": "Every module this pull request changes is in the plan.",
+		"in-plan": "Every module the footprint found changed is in the plan.",
 		warn: `${outside} changed outside the plan. The action warns only; set \`out-of-plan: fail\` to make it fail.`,
 		fail: `${outside} changed outside the plan, so this check fails. Update the proposal to name them, or add the label ${label} to let this pull request through.`,
 		overridden: `${outside} changed outside the plan. The label ${label} lets this pull request through.`,
