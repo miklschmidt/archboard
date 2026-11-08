@@ -292,7 +292,7 @@ describe("the entry", () => {
 				.replace("#!/bin/sh", '#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$FAKE_DIR/commands.log"')
 				.replace(
 					'footprint) cat "$FAKE_DIR/footprint.json" ;;',
-					'footprint) case "$*" in *--head*) cat "$FAKE_DIR/footprint-base.json" ;; *) cat "$FAKE_DIR/footprint.json" ;; esac ;;',
+					'footprint) case "$dir" in */base) cat "$FAKE_DIR/footprint-base.json" ;; *) cat "$FAKE_DIR/footprint.json" ;; esac ;;',
 				),
 		);
 		const result = await runEntryAsync(entry, {
@@ -360,16 +360,15 @@ describe("the entry", () => {
 		expect(comments[0]?.body).not.toContain("**Planned and changed**");
 	});
 
-	test("the footprint keeps the pull request's base when its target branch advances, and reports unread modules", async () => {
-		git("update-ref", "refs/remotes/origin/main", headSha);
+	test("the footprint counts from the base branch, which every checkout has, and reports unread modules", async () => {
 		const footprint = JSON.parse(fixture("footprint.json"));
 		footprint.skipped = [
 			{ subject: { id: "Shop/a#infra", name: "Infrastructure" }, reason: "base-unresolved" },
 		];
 		const result = await step({}, false, { footprint: JSON.stringify(footprint) });
 		expect(result.exitCode).toBe(0);
-		expect(result.commands).toContain(`model footprint --base ${baseSha}`);
-		expect(result.commands).not.toContain("model footprint --base origin/main");
+		expect(result.commands).toContain("model footprint --base origin/main");
+		expect(result.commands).not.toContain(baseSha);
 		expect(comments[0]?.body).toContain("Infrastructure (base-unresolved)");
 	});
 
@@ -385,7 +384,8 @@ describe("the entry", () => {
 			"footprint-base": JSON.stringify({ changed: part("Payments", "Shop/a#n4"), skipped: [] }),
 		});
 		expect(result.exitCode).toBe(0);
-		expect(result.commands).toContain(`model footprint --base ${baseSha} --head ${headSha}`);
+		expect(result.commands).toMatch(/\/base model footprint --base origin\/main\n/u);
+		expect(result.commands).not.toContain("--head");
 		const body = comments[0]?.body ?? "";
 		const [planned, rest] = body.split("**Changed outside the plan**");
 		expect(planned).toContain("- Payments");

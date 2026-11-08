@@ -1,5 +1,11 @@
-// Read the PR's source footprint through the CLI. An adopted proposal no longer holds removed
-// bindings, so those bindings are read from the base vault over the same immutable commit range.
+// Read the pull request's source footprint through the CLI. An adopted proposal no longer holds
+// removed bindings, so those bindings are read from the base vault over the same commit range.
+//
+// Every registered repository reads the same --base, and only this one holds the pull request's
+// commits, so --base is the base branch's remote ref, which each checkout that CI fetched in full
+// has. The CLI counts from the merge base of that ref and HEAD, so a base branch that moves on
+// leaves the range alone. There is no --head, so each checkout counts up to its own HEAD: this
+// one's is the head commit.
 
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
 import { archboard, firstLine } from "./context.ts";
@@ -17,10 +23,19 @@ interface FootprintResult {
 }
 
 /**
- * Run the footprint over the pull request's immutable base with the given selection.
+ * The ref that the footprint counts from.
+ * @param context The run.
+ * @returns The base branch's remote ref, else the base commit.
+ */
+function footprintBase(context: Context): string {
+	return context.baseRef === undefined ? context.baseSha : `origin/${context.baseRef}`;
+}
+
+/**
+ * Run the footprint from the pull request's base with the given selection.
  * @param context The run.
  * @param directory The vault to read.
- * @param selection The selected state or source head.
+ * @param selection The selected state, if any.
  * @returns The reading, or why it could not be read.
  */
 function footprintAt(
@@ -32,7 +47,7 @@ function footprintAt(
 		"model",
 		"footprint",
 		"--base",
-		context.baseSha,
+		footprintBase(context),
 		...selection,
 	]);
 	const answer: FootprintReading | undefined = parseJson(result.stdout);
@@ -87,9 +102,7 @@ function readFootprint(
 	);
 	if (head.answer === undefined) return { note: head.note };
 	const base =
-		plan.baseOnlyBindings.size === 0
-			? { answer: {} }
-			: footprintAt(context, trees.baseDir, ["--head", context.headSha]);
+		plan.baseOnlyBindings.size === 0 ? { answer: {} } : footprintAt(context, trees.baseDir, []);
 	if (base.answer === undefined) return { note: base.note };
 	const answer = includeRemoved(head.answer, base.answer, plan.baseOnlyBindings);
 	const skipped = answer.skipped.map(

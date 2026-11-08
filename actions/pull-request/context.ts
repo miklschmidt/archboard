@@ -17,6 +17,8 @@ import { input, parseJson, run } from "../shared/process.ts";
 interface PullFacts {
 	readonly number: number;
 	readonly baseSha: string;
+	/** The branch the pull request merges into, such as `main`. */
+	readonly baseRef: string | undefined;
 	readonly headSha: string;
 	readonly labels: readonly string[];
 	readonly body: string;
@@ -51,6 +53,7 @@ interface PullRequestEvent {
 		readonly body?: string | null;
 		readonly base: {
 			readonly sha: string;
+			readonly ref?: string;
 			readonly repo?: { readonly full_name?: string };
 		};
 		readonly head: { readonly sha: string; readonly repo?: { readonly full_name?: string } | null };
@@ -78,6 +81,7 @@ function readEvent(): PullFacts {
 	return {
 		number: pull.number,
 		baseSha: pull.base.sha,
+		baseRef: pull.base.ref,
 		headSha: pull.head.sha,
 		labels: (pull.labels ?? []).map((label) => label.name),
 		body: pull.body ?? "",
