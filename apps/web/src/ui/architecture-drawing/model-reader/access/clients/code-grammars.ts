@@ -71,6 +71,11 @@ const GRAMMARS = {
 	go: () => import("shiki/langs/go.mjs"),
 	/**
 	 * Import a grammar.
+	 * @returns The grammar of Nix.
+	 */
+	nix: () => import("shiki/langs/nix.mjs"),
+	/**
+	 * Import a grammar.
 	 * @returns The grammar of Terraform and HCL.
 	 */
 	terraform: () => import("shiki/langs/terraform.mjs"),

@@ -25,6 +25,8 @@ const { readRetainedFrom, retainedReads } =
 	await import("#ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts");
 const { fetchCodeFindings } =
 	await import("#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts");
+const { codeTokensQuery } =
+	await import("#ui/architecture-drawing/model-reader/access/clients/code-highlighter.ts");
 
 type Props = ComponentProps<typeof ModelCodeEvidence>;
 type Reading = NonNullable<Props["reading"]>;
@@ -358,6 +360,15 @@ test.each([404, 500])(
 		expect(document.querySelector("mark")).toBeNull();
 	},
 );
+
+test.each([
+	["flake.nix", "let value = 1; in value"],
+	["main.tofu", 'resource "example" "main" {}'],
+])("the excerpt highlights %s evidence that the code check reads", async (path, source) => {
+	const tokens = await cacheClient().fetchQuery(codeTokensQuery(path, [source]));
+	expect(tokens).not.toBeNull();
+	expect(tokens?.flat().map((token) => token.content).join("")).toBe(source);
+});
 
 /** The reading on screen, by the names a code pass gives it. */
 const MODEL = {
