@@ -63,15 +63,18 @@ function ColumnKeys(props: { readonly children: ReactNode }): JSX.Element {
 }
 
 /**
- * One list in a well, with a section for each thing the model lists, each a
+ * One list on the column's chrome, with a section for each thing the model lists, each a
  * {@link ColumnSectionList}.
  * @param props The sections.
  * @param props.children The sections.
- * @returns The well.
+ * @returns The list.
  */
 function ColumnSections(props: { readonly children: ReactNode }): JSX.Element {
 	return (
-		<div data-slot="column-well" className="column-well flex-1">
+		<div
+			data-slot="column-list"
+			className="relative isolate flex min-h-0 flex-1 flex-col overflow-hidden"
+		>
 			<div data-slot="model-sections" className="min-h-0 flex-1 overflow-y-auto">
 				{props.children}
 			</div>
@@ -124,7 +127,7 @@ interface ColumnSectionProps {
 }
 
 /**
- * One section of the list: a head that stays at the top of the well while its rows scroll under
+ * One section of the list: a head that stays at the top of the list while its rows scroll under
  * it, and folds them away, and the rows. The head's label stands at the column's inset and its fold
  * chevron at its end, so no chevron of the head stands over a row's chevron, and the rows keep the
  * room of the column.
@@ -137,7 +140,7 @@ function ColumnSectionList(props: ColumnSectionProps): JSX.Element {
 	const fold = useCallback((): void => onFold(section), [onFold, section]);
 	return (
 		<section data-column-section={section} aria-label={label} className="flex flex-col">
-			<h2 className="bg-tray-sink sticky top-0 z-[11] m-0">
+			<h2 className="bg-sidebar sticky top-0 z-[11] m-0">
 				<button
 					type="button"
 					aria-expanded={!folded}

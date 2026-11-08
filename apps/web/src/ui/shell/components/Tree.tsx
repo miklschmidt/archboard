@@ -220,8 +220,8 @@ function rowPlace(props: TreeRowProps): CSSProperties {
 
 /**
  * The classes of a row: the tone that every row of a side column shares. A row lets the rails of
- * the rows that hold it show through, and only a row that sticks while it is open lays the floor of
- * the well under itself, so what scrolls beneath it is covered.
+ * the rows that hold it show through, and only a row that sticks while it is open lays the chrome
+ * under itself, so what scrolls beneath it is covered.
  * @param props The row.
  * @returns The classes.
  */
@@ -231,7 +231,7 @@ function rowClass(props: TreeRowProps): string {
 		rowTone({ lit: props.selected, disabled: props.disabled }),
 		// Square corners, so nothing that scrolls beneath shows at the corners of a stuck row.
 		props.expanded === true && "sticky z-10 rounded-none",
-		props.expanded === true && !props.selected && "bg-tray-sink",
+		props.expanded === true && !props.selected && "bg-sidebar",
 	);
 }
 
@@ -368,7 +368,7 @@ function TreeSection(props: { readonly label: string; readonly children: ReactNo
 				style={SECTION_STYLE}
 				className={cn(
 					GROUP_LINE,
-					"bg-tray-sink sticky z-10 -mx-1 flex h-7 items-center group-first/section:-mt-1",
+					"bg-sidebar sticky z-10 -mx-1 flex h-7 items-center group-first/section:-mt-1",
 				)}
 			>
 				<span className="truncate">{props.label}</span>

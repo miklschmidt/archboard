@@ -190,9 +190,9 @@ function Navigator(props: NavigatorProps): JSX.Element {
 				{props.foot === undefined && working}
 			</nav>
 			{props.foot !== undefined && (
-				// The well's floor runs on under the foot, and the agent's card lies in it: what agents
-				// work on now at its top, then the dock.
-				<div data-slot="navigator-foot" className="bg-tray-sink shrink-0 p-2">
+				// The agent's card stands on the chrome under the list, 8px from the window's foot as
+				// the picture is: what agents work on now at its top, then the dock.
+				<div data-slot="navigator-foot" className="bg-sidebar shrink-0 p-2">
 					<div
 						data-slot="agent-card"
 						className="bg-raised shadow-tray rounded-window flex flex-col overflow-clip"

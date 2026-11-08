@@ -254,9 +254,8 @@ Its picture provider uses the local renderer.
 No provider falls back to a live legacy board HTTP route.
 Canonical recordings use their captured model and the same canonical walkthrough components as ordinary playback.
 
-The left column draws its depth from the picture's tokens. `column-well` in `app.css` is the well of a list. A row of either side column takes its tone from `rowTone` in `ui/shell/rules/row-tone.ts`, and a section of either column takes its label from `SectionLabel`. A tree row lets the rails show through, and a row that sticks while it is open lays `bg-tray-sink` under itself, so it hides what scrolls under it.
-A shelf or a foot of a list stands proud of the floor, so it sets its own z-index above the well's shadow.
-The column has no tabs. `ModelColumn` puts the keys of History and Measures over the well, and one list of sections in it. A section's head sticks at the top of the well and sets `--stuck-top`. `stuckTop` in `ui/shell/rules/tree-grid.ts` puts what sticks in a tree under that head.
+The left column's list lies on the chrome, as the right panel's lists do. A row of either side column takes its tone from `rowTone` in `ui/shell/rules/row-tone.ts`, and a section of either column takes its label from `SectionLabel`. A tree row lets the rails show through, and a row that sticks while it is open lays `bg-sidebar` under itself, so it hides what scrolls under it.
+The column has no tabs. `ModelColumn` puts the keys of History and Measures over one list of sections. A section's head sticks at the top of the list and sets `--stuck-top`. `stuckTop` in `ui/shell/rules/tree-grid.ts` puts what sticks in a tree under that head.
 Each section keeps its row on screen in view with `useRevealedRow`: the tree its lit module, Flows the flow on screen and Walkthroughs the one that plays. It leaves a list alone while the pointer or the focus is in it.
 `app.css` holds the site's physical vocabulary as utilities, so reach for them before you write a shadow.
 `quiet-key` is the raised key that stands beside a gold one, and `Button` takes it as its `outline` variant.

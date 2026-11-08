@@ -260,7 +260,7 @@ function RepositoryChooser(props: RepositoryChooserProps): JSX.Element {
 				autoComplete="off"
 				className="text-control placeholder:text-muted-foreground border-input bg-tray-sink shadow-well focus-visible:border-ring rounded-control h-8 w-full shrink-0 border px-2.5 outline-none [&::-webkit-search-cancel-button]:hidden"
 			/>
-			<div className="column-well flex-1">
+			<div className="relative isolate flex min-h-0 flex-1 flex-col overflow-hidden">
 				<div ref={list} id={listId} className="min-h-0 flex-1 overflow-y-auto">
 					{query !== "" && rows.length === 0 && (
 						<p className="text-body text-muted-foreground px-4 py-3">Nothing matches “{query}”.</p>

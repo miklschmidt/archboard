@@ -200,7 +200,6 @@
 	/* Depth: the elevation scale below (`--elevation-*`), one shadow utility
 	   per plane (`shadow-well`, `shadow-raised`, `shadow-float` and the rest). */
 	--shadow-well: var(--elevation-well);
-	--shadow-sink: var(--elevation-sink);
 	--shadow-slab: var(--elevation-slab);
 	--shadow-tray: var(--elevation-tray);
 	--shadow-raised: var(--elevation-raised);
@@ -371,9 +370,6 @@
      well     a recessed trough (--elevation-well): a field, the trough that holds
               tabs or a switch, a count cell, a code block. --elevation-trough is
               the same piece by its other name.
-     sink     the well that a column's list lies in (--elevation-sink), cut as
-              the picture cuts a container: one inner shadow from the whole of
-              its top edge and a lit lip along its foot.
      slab     a number that lies on a surface (--elevation-slab), built
               as the picture builds a small part: a lit top edge, a front edge
               along its foot and a short shadow.
@@ -406,7 +402,6 @@
 	--elevation-trough: var(--elevation-well);
 	/* The left column is the picture's own object, so its depth reads the picture's
 	   tokens, which hold both themes. */
-	--elevation-sink: inset 0 9px 9px -8px var(--slab-shadow), inset 0 -1px 0 var(--tray-lip);
 	--elevation-slab:
 		inset 0 1px 0 color-mix(in oklch, var(--slab-glint) 16%, transparent), 0 2px 0 var(--slab-edge),
 		0 3px 4px -1px var(--slab-shadow);
@@ -564,36 +559,6 @@
 		transform: scale(0.98);
 		transition-duration: var(--popover-out-ms, 110ms);
 		transition-timing-function: ease-in;
-	}
-}
-
-/* The well that a column's list lies in, cut as the picture cuts a container: a floor
-   a step under the chrome, one thin line round it, an inner shadow down from the whole
-   of its top edge and a lit lip along its foot. The shadow is a layer over the list, so
-   what scrolls in the well passes under it. What stands proud of the floor, such as the
-   shelf of a list, stands over that layer. */
-/* Over the agent's card the left column's well runs to the foot of the window, so it has no
-   lit lip at its foot. */
-[data-slot="navigator-column"]:has(> [data-slot="navigator-foot"]) .column-well::after {
-	box-shadow: inset 0 9px 9px -8px var(--slab-shadow);
-}
-
-@utility column-well {
-	position: relative;
-	isolation: isolate;
-	display: flex;
-	flex-direction: column;
-	min-height: 0;
-	overflow: hidden;
-	background-color: var(--tray-sink);
-	&::after {
-		content: "";
-		position: absolute;
-		inset: 0;
-		z-index: 15;
-		pointer-events: none;
-		border-radius: inherit;
-		box-shadow: var(--shadow-sink);
 	}
 }
 
