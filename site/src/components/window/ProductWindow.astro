@@ -39,9 +39,20 @@ const shop = drawings.webShop;
 			</div>
 			<div class="left">
 				<Navigator />
-				<div class="dock">
-					<p class="dock-title"><Icon name="terminal" size={13} /> Agent</p>
-					<DockLines />
+				<div class="dock-well">
+					<div class="dock">
+						<div class="working">
+							<p class="working-head">Working now <span>1</span></p>
+							<p class="working-row">
+								<span class="dot"></span>
+								<span class="working-name">Shop</span>
+								<span class="mono when">now</span>
+							</p>
+							<p class="working-doing">mapping the shop</p>
+						</div>
+						<p class="dock-title"><Icon name="terminal" size={13} /> Agent</p>
+						<DockLines />
+					</div>
 				</div>
 			</div>
 			<div class="picture" data-picture>
@@ -273,19 +284,62 @@ const shop = drawings.webShop;
 		min-height: 0;
 		background: var(--chrome);
 	}
+	/* The well of the column runs on under the agent's card, which lies in it, as in the shell. */
+	.dock-well {
+		padding: 8px;
+		background: var(--well);
+	}
 	.dock {
 		display: flex;
 		flex-direction: column;
-		margin: 10px;
 		padding: 12px;
 		height: 318px;
-		border-radius: 6px;
+		border-radius: 12px;
 		background: oklch(0.205 0.007 75);
 		box-shadow:
 			inset 0 1px 0 var(--highlight),
-			0 -10px 24px -14px oklch(0.04 0.006 75 / 0.9),
-			inset 0 0 0 1px var(--rule);
+			0 -10px 24px -14px oklch(0.04 0.006 75 / 0.9);
 		overflow: hidden;
+	}
+	/* While the agent holds its claim, Working now stands at the top of its card, as in the shell. */
+	.working {
+		display: none;
+		padding-bottom: 14px;
+		font-size: 12.5px;
+	}
+	:global(.window[data-claimed]) .working {
+		display: block;
+	}
+	.working-head {
+		color: var(--ink-muted);
+		margin-bottom: 8px;
+	}
+	.working-head span {
+		margin-left: 4px;
+		color: var(--ink);
+	}
+	.working-row {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		color: var(--ink);
+	}
+	.working-row .dot {
+		width: 6px;
+		height: 6px;
+		color: var(--live);
+	}
+	.working-name {
+		flex: 1;
+		font-weight: 600;
+	}
+	.when {
+		font-size: 11px;
+		color: var(--ink-muted);
+	}
+	.working-doing {
+		padding-left: 16px;
+		color: var(--ink-muted);
 	}
 	.dock-title {
 		display: flex;

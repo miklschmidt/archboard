@@ -1,8 +1,7 @@
 ---
 // The left column of the mock shell: the repository switcher, the keys of History and Measures,
 // and one list with a section for modules, flows and walkthroughs. The rows and counts are the
-// example shop's, as the shell lists them at its root with Checkout API selected. While the agent
-// holds its claim, Working now shows it, as the shell does.
+// example shop's, as the shell lists them at its root with Checkout API selected.
 import Icon from "../Icon.astro";
 
 interface Row {
@@ -81,15 +80,6 @@ const selected = "Checkout API";
 			))
 		}
 	</div>
-	<div class="working">
-		<p class="working-head">Working now <span>1</span></p>
-		<p class="working-row">
-			<span class="dot"></span>
-			<span class="working-name">Shop</span>
-			<span class="mono when">now</span>
-		</p>
-		<p class="working-doing">mapping the shop</p>
-	</div>
 </aside>
 
 <style>
@@ -135,7 +125,8 @@ const selected = "Checkout API";
 		min-height: 0;
 		overflow: hidden;
 		background: var(--well);
-		box-shadow: var(--shadow-well);
+		/* The well runs on under the agent's card, so it has no lip at its foot. */
+		box-shadow: inset 0 2px 4px oklch(0.04 0.004 75 / 0.6);
 		padding: 2px 4px;
 	}
 	.section + .section {
@@ -193,48 +184,5 @@ const selected = "Checkout API";
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-	}
-	/* Working now stands in the shell only while an agent holds a claim. */
-	.working {
-		display: none;
-		margin-top: -8px;
-		padding: 12px 16px 4px 46px;
-		font-size: 12.5px;
-	}
-	:global(.window[data-claimed]) .working {
-		display: block;
-	}
-	.working-head {
-		color: var(--ink-muted);
-		margin-bottom: 8px;
-	}
-	.working-head span {
-		margin-left: 4px;
-		color: var(--ink);
-	}
-	.working-row {
-		position: relative;
-		display: flex;
-		align-items: baseline;
-		color: var(--ink);
-	}
-	.working-row .dot {
-		position: absolute;
-		left: -16px;
-		top: 6px;
-		width: 6px;
-		height: 6px;
-		color: var(--live);
-	}
-	.working-name {
-		flex: 1;
-		font-weight: 600;
-	}
-	.when {
-		font-size: 11px;
-		color: var(--ink-muted);
-	}
-	.working-doing {
-		color: var(--ink-muted);
 	}
 </style>
