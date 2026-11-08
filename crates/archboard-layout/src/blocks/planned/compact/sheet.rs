@@ -43,7 +43,7 @@ pub(super) enum Kind {
 }
 
 /// Something that holds room on one axis, and the slab across that axis where it holds it.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub(super) struct Piece {
     /// What moves it.
     pub(super) mover: usize,
@@ -52,8 +52,8 @@ pub(super) struct Piece {
     pub(super) high: f64,
     pub(super) from: f64,
     pub(super) to: f64,
-    /// For a run where a line joins another just before the card they enter, that card's mover.
-    pub(super) joins: Option<usize>,
+    /// For a run where lines join before their target cards, those cards' movers.
+    pub(super) joins: Vec<usize>,
 }
 
 /// A stretch of one line that stands still on this axis: the place of its points in the line.
@@ -153,7 +153,7 @@ impl Sheet {
             high,
             from,
             to,
-            joins: None,
+            joins: Vec::new(),
         });
     }
 
@@ -192,7 +192,11 @@ impl Sheet {
             // The run that turns onto the last stretch, where a joining line meets the other.
             if run.points.end + 1 == drawing.edges[run.line].points.len() {
                 let joins = &mut self.pieces[piece].joins;
-                *joins = joins.or(joined[run.line]);
+                if let Some(card) = joined[run.line]
+                    && !joins.contains(&card)
+                {
+                    joins.push(card);
+                }
             }
             self.lines[run.line][run.points].fill(self.pieces[piece].mover);
             last = Some(piece);
