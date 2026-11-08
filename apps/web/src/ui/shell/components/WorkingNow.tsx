@@ -106,7 +106,7 @@ function WorkingNow(props: WorkingNowProps): JSX.Element | null {
 		<section
 			aria-label="Working now"
 			data-slot="working-now"
-			className="border-border flex max-h-[45%] shrink-0 flex-col border-t"
+			className="flex max-h-[45%] shrink-0 flex-col"
 		>
 			<h2
 				style={HEADING_STYLE}

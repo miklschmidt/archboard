@@ -74,7 +74,7 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 				<FocusAvailability missing={request.projection.missingFocus} />
 			)}
 			<div className="flex min-h-0 min-w-0 flex-1">
-				<div ref={area} className="relative flex min-h-0 min-w-0 flex-1">
+				<div ref={area} className="picture-corners relative flex min-h-0 min-w-0 flex-1">
 					<Suspense fallback={null}>
 						{scene !== null && (
 							<ModelDiagram

@@ -77,7 +77,7 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 		<section
 			aria-label="Legend"
 			data-slot="model-legend"
-			className="border-border bg-raised shadow-edge-up relative flex shrink-0 flex-col gap-2 border-t px-4 pt-3 pb-4"
+			className="bg-raised relative flex shrink-0 flex-col gap-2 px-4 pt-3 pb-4"
 		>
 			<LegendHead
 				hidden={lines.filter((line) => line.hidden).length}
@@ -86,7 +86,7 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 				onFilter={toggle}
 				onShowAll={props.onShowAll}
 			/>
-			<div className="divide-border flex flex-col divide-y *:py-2 *:first:pt-0 *:last:pb-0">
+			<div className="flex flex-col gap-3">
 				<Kinds model={model} rows={kindRows(reading)} />
 				<Lines
 					lines={lines}

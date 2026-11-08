@@ -14,7 +14,7 @@ function ModelHoverLight(): JSX.Element {
 	return (
 		<div
 			data-slot="model-hover-light"
-			className="border-border flex shrink-0 items-center justify-between gap-2 border-t px-4 py-2"
+			className="flex shrink-0 items-center justify-between gap-2 px-4 py-2"
 		>
 			<span className="text-body text-muted-foreground">Dim on hover</span>
 			<ModelSwitch

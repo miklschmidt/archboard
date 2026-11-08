@@ -66,7 +66,7 @@ function AgentPanel(props: AgentPanelProps): JSX.Element {
 			aria-label="Conversation"
 			className="bg-sidebar flex h-full w-full min-w-0 flex-col"
 		>
-			<header className="border-border bg-sidebar h-chrome shadow-edge-down relative z-30 flex shrink-0 items-center gap-1 border-b pr-1.5 pl-4">
+			<header className="bg-sidebar h-chrome relative z-30 flex shrink-0 items-center gap-1 pr-1.5 pl-4">
 				<h2 className="text-control min-w-0 flex-1 truncate font-semibold">
 					{details ? "Session" : "Conversation"}
 				</h2>
@@ -102,10 +102,7 @@ function PanelFooter(props: {
 }): JSX.Element {
 	const running = props.view.conversation.turns.some((turn) => turn.outcome === "running");
 	return (
-		<div
-			data-slot="agent-panel-footer"
-			className="border-border bg-raised shadow-edge-up relative shrink-0 border-t px-4 py-3"
-		>
+		<div data-slot="agent-panel-footer" className="bg-raised relative shrink-0 px-4 py-3">
 			<AgentComposer draft={props.draft} running={running} onSend={props.actions.send} />
 		</div>
 	);

@@ -74,7 +74,7 @@ function ModelPanelRoot(props: ModelPanelProps): JSX.Element {
 			data-slot="model-panel"
 			style={PANEL_STYLE}
 			className={cn(
-				"border-border bg-sidebar shadow-edge-side relative z-30 flex min-h-0 w-[min(360px,46%)] shrink-0 flex-col border-l in-data-presenting:hidden",
+				"bg-sidebar relative z-30 flex min-h-0 w-[min(360px,46%)] shrink-0 flex-col in-data-presenting:hidden",
 				props.covered && "invisible",
 				onClose === undefined && "@max-[900px]/reading:hidden",
 			)}
@@ -307,7 +307,7 @@ function Foot(props: { readonly children: ReactNode }): JSX.Element {
 	return (
 		<footer
 			data-slot="model-panel-foot"
-			className="border-border flex shrink-0 flex-wrap items-center gap-1.5 border-t py-3 pr-3 pl-4"
+			className="flex shrink-0 flex-wrap items-center gap-1.5 py-3 pr-3 pl-4"
 		>
 			{props.children}
 		</footer>

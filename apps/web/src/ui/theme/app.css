@@ -198,16 +198,10 @@
 	--radius-table: 10px;
 	--radius-window: 12px;
 	/* Depth: the elevation scale below (`--elevation-*`), one shadow utility
-	   per plane (`shadow-well`, `shadow-raised`, `shadow-float` and the rest).
-	   The chrome that casts an edge shadow onto the picture is `relative z-30`, so
-	   its shadow lies over the picture and the About page (z-20) and under
-	   menus and dialogs (z-50). */
+	   per plane (`shadow-well`, `shadow-raised`, `shadow-float` and the rest). */
 	--shadow-well: var(--elevation-well);
 	--shadow-sink: var(--elevation-sink);
 	--shadow-slab: var(--elevation-slab);
-	--shadow-edge-down: var(--elevation-edge-down);
-	--shadow-edge-side: var(--elevation-edge-side);
-	--shadow-edge-up: var(--elevation-edge-up);
 	--shadow-raised: var(--elevation-raised);
 	--shadow-pressed: var(--elevation-pressed);
 	--shadow-card: var(--elevation-card);
@@ -382,12 +376,12 @@
      slab     a number that lies on a surface (--elevation-slab), built
               as the picture builds a small part: a lit top edge, a front edge
               along its foot and a short shadow.
-     chrome   the navigator, a pane's header, the sidebar and the
-              conversation's header stand on the ground and cast a short
-              shadow onto what lies beside or under them
-              (--elevation-edge-down, -edge-side). A tray at the foot of a
-              column casts one up over the list that scrolls under it
-              (--elevation-edge-up).
+     chrome   the navigator, a pane's header, the right panel and the
+              conversation are one flat plane round the picture. They cast
+              no shadow onto it: the tone step is the edge, and the picture's
+              top corners are rounded against the chrome (`picture-corners`).
+              A tray at the foot of a column is a step lighter, with no line
+              and no shadow.
      raised   a control, a key cap or the chosen row of a list, standing on
               a surface (--elevation-raised): a lit top edge, a contact line and
               a short shadow. Pressed, a control sinks into a trough
@@ -414,13 +408,6 @@
 	--elevation-slab:
 		inset 0 1px 0 color-mix(in oklch, var(--slab-glint) 16%, transparent), 0 2px 0 var(--slab-edge),
 		0 3px 4px -1px var(--slab-shadow);
-	--elevation-edge-down:
-		0 1px 0 oklch(0.33 0.035 65 / 0.08), 0 10px 24px -12px oklch(0.33 0.035 65 / 0.22);
-	--elevation-edge-side:
-		-1px 0 0 oklch(0.33 0.035 65 / 0.05), -10px 0 24px -12px oklch(0.33 0.035 65 / 0.18),
-		1px 0 0 oklch(0.33 0.035 65 / 0.05), 10px 0 24px -12px oklch(0.33 0.035 65 / 0.18);
-	--elevation-edge-up:
-		0 -1px 0 oklch(0.33 0.035 65 / 0.06), 0 -10px 24px -12px oklch(0.33 0.035 65 / 0.2);
 	--elevation-raised:
 		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.33 0.035 65 / 0.16),
 		0 2px 6px -1px oklch(0.33 0.035 65 / 0.16);
@@ -446,13 +433,6 @@
 :root[data-theme="dark"] {
 	/* Depth on graphite: the site's own values. */
 	--elevation-well: inset 0 2px 4px oklch(0.04 0.004 75 / 0.6), inset 0 -1px 0 var(--highlight);
-	--elevation-edge-down:
-		inset 0 -1px 0 var(--highlight), 0 10px 24px -12px oklch(0.04 0.006 75 / 0.8);
-	--elevation-edge-side:
-		-1px 0 0 oklch(0.06 0.004 75 / 0.6), -12px 0 28px -10px oklch(0.04 0.006 75 / 0.7),
-		1px 0 0 oklch(0.06 0.004 75 / 0.6), 12px 0 28px -10px oklch(0.04 0.006 75 / 0.7);
-	--elevation-edge-up:
-		inset 0 1px 0 var(--highlight), 0 -10px 24px -14px oklch(0.04 0.006 75 / 0.9);
 	--elevation-raised:
 		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.06 0.004 75 / 0.7),
 		0 2px 6px -1px oklch(0.06 0.006 75 / 0.5);
@@ -591,7 +571,6 @@
 	flex-direction: column;
 	min-height: 0;
 	overflow: hidden;
-	border-top: 1px solid var(--border);
 	background-color: var(--tray-sink);
 	&::after {
 		content: "";
@@ -601,6 +580,42 @@
 		pointer-events: none;
 		border-radius: inherit;
 		box-shadow: var(--shadow-sink);
+	}
+}
+
+/* The picture's top corners, rounded against the chrome round it: a piece of chrome in each
+   corner, cut by a quarter circle, so the picture keeps its size and nothing in it is clipped.
+   A presented picture has no chrome over it, so its corners stay square. */
+@utility picture-corners {
+	&::before,
+	&::after {
+		content: "";
+		position: absolute;
+		top: 0;
+		z-index: 10;
+		width: var(--radius-window);
+		height: var(--radius-window);
+		pointer-events: none;
+	}
+	&::before {
+		left: 0;
+		background: radial-gradient(
+			circle at 100% 100%,
+			transparent calc(var(--radius-window) - 0.5px),
+			var(--sidebar) var(--radius-window)
+		);
+	}
+	&::after {
+		right: 0;
+		background: radial-gradient(
+			circle at 0 100%,
+			transparent calc(var(--radius-window) - 0.5px),
+			var(--sidebar) var(--radius-window)
+		);
+	}
+	[data-presenting] &::before,
+	[data-presenting] &::after {
+		display: none;
 	}
 }
 

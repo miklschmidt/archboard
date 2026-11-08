@@ -185,13 +185,19 @@ function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 				onResize={handleResize}
 				inert={!open}
 				style={COLUMN_STYLE}
-				className="shadow-edge-side relative z-20 flex h-full justify-end"
+				className="relative z-20 flex h-full justify-end"
 			>
 				<ConversationSlide open={open} moving={slide.moving} width={width}>
 					{props.conversation}
 				</ConversationSlide>
 			</Resizable.Panel>
-			<Resizable.Handle withHandle disabled={!open} aria-label="Conversation width" />
+			{/* Closed, the handle takes the chrome's tone, so no line stands beside the picture. */}
+			<Resizable.Handle
+				withHandle
+				disabled={!open}
+				aria-label="Conversation width"
+				className="data-[separator=disabled]:bg-sidebar"
+			/>
 			<Resizable.Panel
 				id="centre"
 				minSize={CENTRE_MIN_WIDTH}

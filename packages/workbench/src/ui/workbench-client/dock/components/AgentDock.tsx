@@ -161,7 +161,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 			data-agent-tone={status.tone}
 			aria-label="Agent"
 			style={DOCK_STYLE}
-			className="border-border bg-raised shadow-edge-up relative shrink-0 border-t px-4 py-3"
+			className="bg-raised relative shrink-0 px-4 py-3"
 		>
 			{slots.head}
 			<VoiceControl

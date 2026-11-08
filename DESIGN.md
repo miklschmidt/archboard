@@ -209,8 +209,9 @@ nothing in the shell paints on it.
 
 The shell is dense desktop chrome at 1920×1080. It uses 13px controls, 28px
 rows and small corners. Its neutrals are warm graphite and chalk, tinted toward
-the hue of the gold. Depth comes from planes, not from lines. The chrome stands
-on the picture and casts a short, warm, still shadow onto it. Controls stand on
+the hue of the gold. Depth comes from planes, not from lines. The chrome is one
+flat plane round the picture. It casts no shadow onto it, and the picture's top
+corners are rounded against it. Controls stand on
 the chrome with a highlight on their top edge. Menus and dialogs float above
 everything. One warm yellow-gold marks what is chosen. It also marks the one
 primary action of a region, and that action is drawn as a physical piece of
@@ -224,7 +225,7 @@ underline.
 
 **Key Characteristics:**
 
-- The picture is the ground. The shell sits around it and over it.
+- The picture is the ground. The shell sits around it as one plane, and the picture's top corners are rounded against the shell.
 - Planes stack under a light from above. Each plane has a tone step, a highlight on its top edge and a warm shadow with an offset.
 - Keys are physical. A gold key and a quiet key lift on hover and sink on press, and a chosen tab rises out of its trough.
 - One gold has three uses: what is chosen, the one primary action, and the voice and the brand mark. On the picture, the palette's yellow is that gold, on purpose.
@@ -343,7 +344,7 @@ The file app.css holds the values for both themes and gives each one a
 - **well** (`--elevation-well`, an inner shadow with a lit line along the foot): a field sunk into a surface, a trough, a count cell and a pressed key. `--elevation-trough` is the same piece under its other name.
 - **sink** (`--elevation-sink`, built from `--slab-shadow` and `--tray-lip`): the well that a column's list lies in. One inner shadow falls from the whole of its top edge, and a lit lip runs along its foot, as on a container of the picture. The `column-well` utility holds the recipe.
 - **slab** (`--elevation-slab`, built from `--slab-glint`, `--slab-edge` and `--slab-shadow`): a number that lies on a surface, as a small part of the picture does: a lit top edge, a front edge 2px thick and a short shadow.
-- **edge-down, edge-side and edge-up** (`--elevation-edge-*`): the chrome casts these onto what is under it or beside it. On chalk, each is a 1px contact line and a soft shadow with a 10px offset and a 24px blur. On graphite, a header and a tray swap the contact line for a lit line inside their edge. The soft shadow of a column has a 12px offset there. A tray casts edge-up over the list that scrolls under it.
+- **No edge shadow.** The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane. It casts no shadow and draws no line where it meets the picture: the tone step is the edge. The picture's top corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility, and a presented picture keeps square corners. A tray at the foot of a column is one tone step lighter, with no line and no shadow.
 - **raised** (`--elevation-raised`, a white highlight on top, a 1px contact line and a short soft shadow): a quiet key, a key cap, the voice circle and the chosen row of a list.
 - **pressed** (`--elevation-pressed`, the same value as well): a raised control while somebody presses it.
 - **chosen** (`--elevation-chosen`, raised and a 2px line of Wayfinding Gold inside the foot): the chosen tab of a trough. It is also the chosen row of the tree that is the row of what is open.
@@ -535,7 +536,7 @@ The words of a chip keep APCA Lc 60: white on the chalk orange, near black on th
 
 ### Navigation
 
-- **Style:** the list lies in a well cut into the chrome, as a container is cut into the picture: the Well Floor, one thin line round it, an inner shadow from the whole of its top edge and a lit lip along its foot. The `column-well` utility holds the recipe. Nothing in the column is divided by a rule. A row is 28px at least, and a model or folder row 36px. Rails and elbows draw its levels. The chosen row rises out of the well as a Control Face with `shadow-raised`, and a row under the pointer takes Control Face at 50%. The row of what is open has a 2px line of Wayfinding Gold inside its foot, and a row that is both takes `shadow-chosen`. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
+- **Style:** the list lies in a well cut into the chrome, as a container is cut into the picture: the Well Floor, an inner shadow from the whole of its top edge and a lit lip along its foot. The `column-well` utility holds the recipe. Nothing in the column is divided by a rule. A row is 28px at least, and a model or folder row 36px. Rails and elbows draw its levels. The chosen row rises out of the well as a Control Face with `shadow-raised`, and a row under the pointer takes Control Face at 50%. The row of what is open has a 2px line of Wayfinding Gold inside its foot, and a row that is both takes `shadow-chosen`. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
 
 The left column has no tabs. Two quiet keys stand over the well, side by side and as wide as the room: `History` and `Measures`, each with its icon in muted ink. Each opens its dialog, and stays pressed in while the dialog is open. A migration candidate keeps no record, so it has `Measures` alone. A reading that failed has `History` alone, and no list.
 
@@ -577,7 +578,7 @@ Beside the plate, the source of the evidence stands on the Well Floor with 6px c
 ### Right panel
 
 The right panel is a permanent column beside the picture on every Diagram reading, on
-Chrome Chalk with a rule down its inner edge and `shadow-edge-side`. With nothing
+Chrome Chalk, on the chrome's plane, with no line or shadow on its inner edge. With nothing
 selected, it says the open module's name and description, or at the roots the model's
 name and the summary of its state. A flow reading says the flow. With a selection, it
 explains the selected thing, and a click on a card lights the card and fills the panel at
@@ -607,11 +608,11 @@ With one module selected, the head of `Sends to` and the head of `Receives from`
 
 A module with code history has a `Changes with` section. It lists the modules whose code changes in the same commits as its own, the strongest first. A row names the partner. Under the name, one line holds a short mark that joins the pair. An `Unjoined` tint chip follows it when no relationship joins them. The commits that they share stand next in mono, and the degree stands at the end in full ink. The mark is a solid line in muted ink for a joined pair and a dashed line in Changed Orange for an unjoined one. A meter of 2px runs along the foot of the row, as long as the degree. It fades from clear to Gold Mark for a joined pair and to Changed Orange for an unjoined one.
 
-The legend is a tray at the foot of the panel (Tray Chalk and `shadow-edge-up`), and it needs
+The legend is a tray at the foot of the panel (Tray Chalk, with no line over it), and it needs
 no click. A long subject and its lists scroll above it, and the whole legend stays on screen.
 Only the engine row stands under it, so a selection never moves it. A heading row holds `Legend` and, at the start of the
-second column, the key `Filter`. Under it stand the kinds in two columns, a thin rule, the line
-types in two columns, a thin rule, and the groups. A row is 24px high, and every mark stands in
+second column, the key `Filter`. Under it stand the kinds in two columns, the line types in two
+columns and the groups, with 12px between them and no rule. A row is 24px high, and every mark stands in
 a box 22px wide, so the names start on one line. A section with nothing to show is absent.
 
 The rows come from the whole reading, not from what the picture draws now, and each list keeps
@@ -669,7 +670,7 @@ The head of the card holds a live dot, `Claimed` in Control semibold and the tim
 
 ### Explanation reply
 
-An explanation of the selection stands at the foot of its pane. The foot is Chrome Chalk with `shadow-edge-up`, a Rule line on its top edge, 12px of padding and 20rem of height at most. The reply lies on a plate inside it.
+An explanation of the selection stands at the foot of its pane. The foot is Chrome Chalk with 12px of padding and 20rem of height at most. The reply lies on a plate inside it.
 
 The head of the plate is 40px high. It holds the status of Codex in Body semibold, with the OpenAI mark in Gold Mark before it. The status is accent text, which is gold on graphite and Ink on chalk. After the status come what the answer is about, in muted ink and cut short, and the retry and cancel keys when they apply. A ghost key closes the reply. The words are Body in Body Ink, 48rem wide at most, and they scroll under the head.
 
@@ -758,8 +759,8 @@ Three Well Floor cells, Entries, Hidden and Callers, hold the counts in the mono
 
 ### Agent dock
 
-The agent dock is a tray at the foot of the navigator. It uses Tray Chalk and
-`shadow-edge-up`. While voice is off it is calm. Two quiet keys of one height (32px, 4px corners) stand in a row at its foot: Talk, as wide as the room, and
+The agent dock is a tray at the foot of the navigator. It uses Tray Chalk, with no
+line over it. While voice is off it is calm. Two quiet keys of one height (32px, 4px corners) stand in a row at its foot: Talk, as wide as the room, and
 a key to the conversation, an icon alone. The conversation's key is pressed in,
 with a gold mark under it, while the conversation is open, and has a gold dot
 while words wait unread. When the agent is on something, its state, what it is
@@ -812,8 +813,8 @@ ink, what it is on at 400. The voice's word is in the accent text while the circ
 lit, which is gold on graphite and ink on chalk (the Ink On Chalk Rule), and in muted
 ink while it is muted or ending. The clock is 12px mono.
 
-The composer is in the conversation pane, on a tray at its foot (Tray Chalk and
-`shadow-edge-up`), with its gold Send. It grows upward as a message grows, and
+The composer is in the conversation pane, on a tray at its foot (Tray Chalk, with no
+line over it), with its gold Send. It grows upward as a message grows, and
 takes the room from the conversation.
 
 ### Walkthrough box
