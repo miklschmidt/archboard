@@ -336,7 +336,7 @@ A feature is a grid of prose beside a demonstration, centered vertically. The de
 
 Inside components the rhythm steps in 4px, 8px, 12px, 16px and 24px. Panels pad 18px to 24px. Trays pad 6px. Prose lines stay near 36em, leads near 38em, and notes under a demonstration run up to 52em.
 
-Responsive behaviour is simple and observed. At 1000px the pipeline and the quick start stack. At 960px features and the walkthrough player stack. At 900px section heads, tab bars and the share bento stack. The bento is one grid. The document tile spans both rows at the left, and the embed and question tiles share the right. Each tile's visual takes the height that its row gives it. At 860px the nav links hide and the FAQ goes to one column. At 760px the hero window shows only its canvas, laid out at 760 by 600 and scaled to the column. A copy of the agent's lines appears beneath it. The comparison table becomes one block per row that names every tool. The footer drops to two columns. At 420px the GitHub label hides. The review looked at 1440 by 900 and 390 by 844.
+Responsive behaviour is simple and observed. At 1000px the hero's install commands drop under its buttons, and the pipeline and the quick start stack. At 960px features and the walkthrough player stack. At 900px section heads, tab bars and the share bento stack. The bento is one grid. The document tile spans both rows at the left, and the embed and question tiles share the right. Each tile's visual takes the height that its row gives it. At 860px the nav links hide and the FAQ goes to one column. At 760px the hero window shows only its canvas, laid out at 760 by 600 and scaled to the column. A copy of the agent's lines appears beneath it. The comparison table becomes one block per row that names every tool. The footer drops to two columns. At 420px the GitHub label hides. The review looked at 1440 by 900 and 390 by 844.
 
 ## Elevation & Depth
 
@@ -375,7 +375,7 @@ Edges are inset hairline rings, never borders. The only borders are the CSS tria
 - **Primary (gold):** A physical piece of gold. A vertical gradient from Gold Button Face top to bottom with Gold Ink text, edge ring, lit top edge, contact line and warm glow. Hover lifts 1px and deepens the glow. Press sinks 1px with an inset shade. One gold button leads a region: the nav, the hero, the closing, and the action inside a demonstration (Open Inventory service, Take back control, Narrate, Talk).
 - **Quiet:** A raised plane with Ink text, the Raised shadow and a hairline ring. Hover moves to Slab and lifts 1px. Press shows the Well shadow. It always pairs with a gold button ("View on GitHub").
 - **Copy button:** 32px high, a raised face at 0.8125rem. It says "Copied" in Added Green for 1.8s.
-- **Install commands:** A tray of Chrome holds a trough of package manager tabs (npm, pnpm, yarn, bun), the copy button and a code block with the install and `archboard init`. The hero and the quick start each hold one, and a pick in one shows the same package manager in both. The copy button copies the commands of the picked tab.
+- **Install commands:** A tray of Chrome holds a trough of package manager tabs (npm, pnpm, yarn, bun), the copy button and a code block with the install and `archboard init`. The hero holds one beside its subline and buttons, the quick start holds the other, and a pick in one shows the same package manager in both. The copy button copies the commands of the picked tab.
 - **Focus:** Every focusable element shows a 2px Lamp Gold outline with 3px offset. Transitions run 160ms with the ease-out curve.
 
 ### Tabs and segments
@@ -480,7 +480,7 @@ A tray holds a conversation with the Codex voice about the example shop, from `s
 - **Do** run every new loop only while visible, and give it a still state for reduced motion.
 - **Do** give each demonstration its own form, and keep the composition left-aligned.
 - **Do** label mock interface data as an example.
-- **Do** make bold claims that a command backs, and name the command. Put planning first wherever the page compares jobs. State the platform, license and model-provider limits before the install step. Put the renderer's implementation under the outcome it explains.
+- **Do** make bold claims that a command backs, and name the command. Put planning first wherever the page compares jobs. State the platform and model-provider limits beside the install step. The license stands in the questions and the footer. Put the renderer's implementation under the outcome it explains.
 
 ### Don't:
 
