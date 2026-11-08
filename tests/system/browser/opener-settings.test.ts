@@ -264,6 +264,10 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 
 	await fillArguments(browser, draftSelection.argv);
 	await fillLabel(browser, "Executable", draftSelection.executable);
+	await browser.run(["click", '[data-settings-tab="picture"]']);
+	await browser.run(["click", '[data-settings-tab="opener"]']);
+	expect((await dialogSnapshot(browser))?.executable).toBe(draftSelection.executable);
+	expect((await dialogSnapshot(browser))?.arguments).toEqual([...draftSelection.argv]);
 	await browser.run(["press", "Escape"]);
 	await assertDialogClosedAndFocusReturned(browser);
 	expect((await requests(browser)).some((request) => request.method === "PUT")).toBe(false);

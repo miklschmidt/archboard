@@ -80,6 +80,7 @@ function SettingsDialog(props: SettingsDialogProps): JSX.Element | null {
 function OpenSettings(props: SettingsDialogProps & { surface: SettingsSurface }): JSX.Element {
 	const { notices, onClose } = props;
 	const [tab, setTab] = useState<SettingsSurface>(props.surface);
+	const [keepOpenerMounted, setKeepOpenerMounted] = useState(props.surface === "opener");
 	const onSuccess = useCallback(
 		(message: string): void =>
 			notices.raise(infoNotice("opener-settings", "Opener settings", message)),
@@ -97,7 +98,10 @@ function OpenSettings(props: SettingsDialogProps & { surface: SettingsSurface })
 	);
 	const changeTab = useCallback((value: unknown): void => {
 		const next = TABS.find((one) => one.value === value);
-		if (next !== undefined) setTab(next.value);
+		if (next !== undefined) {
+			setTab(next.value);
+			if (next.value === "opener") setKeepOpenerMounted(true);
+		}
 	}, []);
 	return (
 		<Dialog open onOpenChange={change}>
@@ -132,7 +136,12 @@ function OpenSettings(props: SettingsDialogProps & { surface: SettingsSurface })
 					<Tabs.Content value="picture" tabIndex={-1} className={PANEL}>
 						<PictureSettings />
 					</Tabs.Content>
-					<Tabs.Content value="opener" tabIndex={-1} className={PANEL}>
+					<Tabs.Content
+						value="opener"
+						keepMounted={keepOpenerMounted}
+						tabIndex={-1}
+						className={PANEL}
+					>
 						<OpenerSettings onSuccess={onSuccess} onFailure={onFailure} onClose={onClose} />
 					</Tabs.Content>
 				</Tabs>
