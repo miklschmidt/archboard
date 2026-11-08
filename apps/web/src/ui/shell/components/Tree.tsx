@@ -210,11 +210,8 @@ function rowClass(props: TreeRowProps): string {
 		"group/row bg-tray-sink focus-visible:ring-ring rounded-control relative isolate flex min-h-7 w-full min-w-0 items-center py-1 outline-none select-none focus-visible:ring-1 focus-visible:ring-inset",
 		// Square corners, so nothing that scrolls beneath shows at the corners of a stuck row.
 		props.expanded === true && "sticky z-10 rounded-none",
-		// A chosen row rises out of the well as a raised face. The row of what is open carries
-		// the site's gold underline inside that face.
-		props.selected
-			? cn("bg-face", props.current === true ? "shadow-chosen" : "shadow-raised")
-			: "hover:bg-face/50",
+		// A chosen row rises out of the well as a raised face, with no gold.
+		props.selected ? "bg-face shadow-raised" : "hover:bg-face/50",
 		props.disabled === true && "text-muted-foreground",
 	);
 }
