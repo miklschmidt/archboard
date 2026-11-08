@@ -22,7 +22,8 @@ export default defineConfig({
 	// Compression drops the space between a line of text and an element on the next line.
 	compressHTML: false,
 	devToolbar: { enabled: false },
-	build: { assets: "assets" },
+	// Inline stylesheets keep a page from waiting on a CSS request before its first paint.
+	build: { assets: "assets", inlineStylesheets: "always" },
 	// The docs: MDX pages, code blocks from ec.config.mjs, and a link on each section's head.
 	integrations: [expressiveCode(), mdx()],
 	markdown: { processor: unified({ rehypePlugins: [rehypeHeadingIds, rehypeHeadingLinks] }) },

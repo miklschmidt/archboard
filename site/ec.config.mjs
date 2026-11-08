@@ -131,6 +131,8 @@ export default defineEcConfig({
 		extractFileNameFromCode: true,
 	},
 	useStyleReset: true,
+	// Its styles go into each page, so a page waits on no stylesheet before its first paint.
+	emitExternalStylesheet: false,
 	styleOverrides: {
 		borderRadius: "6px",
 		borderColor: "var(--rule)",
