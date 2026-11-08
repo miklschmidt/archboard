@@ -3,25 +3,21 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "0lFlN04l",
-    "name": "archboard init sets a repository up and hands its language servers to an agent",
-    "summary": "install-skill becomes init: the skills CLI installs the skills for Codex and, when it is installed, Claude Code, and the language servers go to an agent that confirms its plan with the user, because their setup depends on the repository.",
+    "id": "y017ReIz",
+    "name": "A global --text prints every CLI answer as coloured text for a person",
+    "summary": "The CLI answers in JSON for agents. With --text anywhere before --, the same answer prints as coloured text that names each field in words, so that a person can read it.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "backlog/tasks/task-601 - `archboard-init`-installs-the-skills-with-the-skills-CLI-and-hands-language-server-setup-to-an-agent.md"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
+        "path": "backlog/tasks/task-602 - A-global-text-flag-renders-every-CLI-answer-as-coloured-human-readable-text.md"
       }
     ],
-    "predecessor": "lOtqXMAp",
-    "baseline": "4ae2b27c306e674fef3dd13e702deb4cbfab2e96",
-    "createdAt": "2026-11-08T00:26:22.171Z",
-    "adoptedAt": "2026-11-08T00:34:23.422Z",
-    "reason": "Implemented on the TASK-601 branch: archboard init installs the skills with the skills CLI, sets the repository up and hands its language servers to an agent, and the skill evaluation registers its checkout instead of running the installer. The owner asked for the implementing PR, which authorizes this adoption on its branch.",
-    "previousCurrent": "lOtqXMAp"
+    "predecessor": "0lFlN04l",
+    "baseline": "bea0348f109c8999c855897412044369d7d325d0",
+    "createdAt": "2026-11-08T01:13:35.717Z",
+    "adoptedAt": "2026-11-08T01:14:44.575Z",
+    "reason": "Implemented on the PR branch of TASK-599 and TASK-601 at the owner's request: a global --text prints every CLI answer as coloured text for a person, and repo list and browser panes keep their own read-outs. The owner asked for this work in the open PR, which authorizes this adoption on its branch.",
+    "previousCurrent": "0lFlN04l"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
