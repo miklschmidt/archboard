@@ -254,7 +254,7 @@ Its picture provider uses the local renderer.
 No provider falls back to a live legacy board HTTP route.
 Canonical recordings use their captured model and the same canonical walkthrough components as ordinary playback.
 
-The left column draws its depth from the picture's tokens. `column-well` in `app.css` is the well of a list, and a row's tone is `bg-tray-sink`, so a stuck row hides what scrolls under it.
+The left column draws its depth from the picture's tokens. `column-well` in `app.css` is the well of a list. A row of either side column takes its tone from `rowTone` in `ui/shell/rules/row-tone.ts`, and a section of either column takes its label from `SectionLabel`. A tree row lets the rails show through, and a row that sticks while it is open lays `bg-tray-sink` under itself, so it hides what scrolls under it.
 A shelf or a foot of a list stands proud of the floor, so it sets its own z-index above the well's shadow.
 The column has no tabs. `ModelColumn` puts the keys of History and Measures over the well, and one list of sections in it. A section's head sticks at the top of the well and sets `--stuck-top`. `stuckTop` in `ui/shell/rules/tree-grid.ts` puts what sticks in a tree under that head.
 Each section keeps its row on screen in view with `useRevealedRow`: the tree its lit module, Flows the flow on screen and Walkthroughs the one that plays. It leaves a list alone while the pointer or the focus is in it.
@@ -351,7 +351,7 @@ A row of the panel is an action. Long lists and evidence live on `ModelAbout`, w
 `ModelPanelContext` stands under what the panel says, in the same scroll, and `contextOf` decides what it lists.
 A row opens its flow or walkthrough through the same choice as Find, and its section of the left column lights it.
 The left column lists the whole model, and only the panel follows what a reader looks at.
-`ModelLegend` ends the panel, under the actions and outside the keyed subject, so a selection neither moves nor redraws it.
+`ModelPanel.Scroll` holds the keyed subject and, under it, `ModelLegend`, which ends the scroll outside the subject, so a selection neither redraws it nor moves a group's tag from under the pointer. The keys of `ModelPanel.Foot` stand under the scroll.
 It owns the marks, and `Filter` puts a visibility switch on each line type that a reader can hide.
 `model-reader/reading/rules/legend-rows.ts` derives its rows from the whole reading, in the policy's order, so that a hidden kind and what left the picture with it keep their rows.
 A group's tag takes `--tag` from `paletteTag`, and the `group-tag` utility in `app.css` holds its one recipe.
