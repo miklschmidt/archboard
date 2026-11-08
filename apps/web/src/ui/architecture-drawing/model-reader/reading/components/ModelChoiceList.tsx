@@ -1,6 +1,7 @@
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import { Tree } from "#ui/shell/components/Tree.tsx";
+import { sectionRuns } from "#ui/architecture-drawing/model-reader/reading/rules/section-runs.ts";
 
 /** One thing a list offers. */
 interface Choice {
@@ -53,25 +54,6 @@ function ModelChoiceList<Entry extends Choice>(props: ModelChoiceListProps<Entry
 }
 
 /**
- * Neighbours that stand in one section.
- * @param entries The entries, in their order.
- * @param sectionOf The section of an entry.
- * @returns Each run of neighbours with its section.
- */
-function sectionRuns<Entry>(
-	entries: readonly Entry[],
-	sectionOf: (entry: Entry) => string,
-): readonly { readonly label: string; readonly entries: readonly Entry[] }[] {
-	return entries.reduce<{ label: string; entries: Entry[] }[]>((runs, entry) => {
-		const label = sectionOf(entry);
-		const last = runs.at(-1);
-		if (last?.label === label) last.entries.push(entry);
-		else runs.push({ label, entries: [entry] });
-		return runs;
-	}, []);
-}
-
-/**
  * The rows of some entries, in their sections when the list has sections.
  * @param props The entries and their list.
  * @returns The rows.
@@ -82,16 +64,16 @@ function ChoiceRows<Entry extends Choice>(props: ModelChoiceListProps<Entry>): J
 		return (
 			<>
 				{entries.map((entry) => (
-					<ChoiceRow key={entry.id} {...props} entry={entry} />
+					<ChoiceRow key={entry.id} {...props} entry={entry} depth={0} />
 				))}
 			</>
 		);
 	return (
 		<>
 			{sectionRuns(entries, sectionOf).map((run) => (
-				<Tree.Section key={run.entries[0]!.id} label={run.label}>
+				<Tree.Section key={run.key} label={run.label}>
 					{run.entries.map((entry) => (
-						<ChoiceRow key={entry.id} {...props} entry={entry} />
+						<ChoiceRow key={entry.id} {...props} entry={entry} depth={1} />
 					))}
 				</Tree.Section>
 			))}
@@ -100,12 +82,12 @@ function ChoiceRows<Entry extends Choice>(props: ModelChoiceListProps<Entry>): J
 }
 
 /**
- * One entry.
- * @param props The entry and its list.
+ * One entry, one step under the name of its section when it stands in one.
+ * @param props The entry, its depth and its list.
  * @returns The row.
  */
 function ChoiceRow<Entry extends Choice>(
-	props: ModelChoiceListProps<Entry> & { readonly entry: Entry },
+	props: ModelChoiceListProps<Entry> & { readonly entry: Entry; readonly depth: number },
 ): JSX.Element {
 	const { entry, onChoose } = props;
 	const selected = entry.id === props.lit;
@@ -114,7 +96,7 @@ function ChoiceRow<Entry extends Choice>(
 	return (
 		<Tree.Row
 			id={entry.id}
-			depth={0}
+			depth={props.depth}
 			selected={selected}
 			current={selected}
 			dataset={dataset}
