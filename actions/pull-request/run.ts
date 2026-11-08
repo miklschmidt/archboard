@@ -1,12 +1,14 @@
 // The entry of the pull request action. It draws the architecture at the base and at the head of
 // the pull request, reads the proposal and its footprint, keeps one comment on the pull request
 // up to date, and fails the step when the configuration says changes outside the plan block.
-// Only existing CLI commands do the architecture work: `model proposals`, `model compare`,
-// `model footprint` and `model render`. Node runs this file as it is.
+// Only existing CLI commands do the architecture work: `model proposals`, `model read`,
+// `model compare`, `model footprint` and `model render`. Node runs this file as it is.
 
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
 import { appendFileSync, rmSync } from "node:fs";
 import { join, relative } from "node:path";
+import { adoptedBuckets, adoptedPlan } from "./adopted.ts";
+import type { AdoptedPlan, ModelReading } from "./adopted.ts";
 import { pullRequestComment } from "./comment.ts";
 import type { PullRequestReport } from "./comment.ts";
 import { addWorktree, archboard, firstLine, readContext } from "./context.ts";
@@ -79,17 +81,19 @@ function compareProposal(
  * @param context The run.
  * @param headDir The vault at the head.
  * @param state The proposal, if the pull request carries one.
+ * @param adopted The plan of a proposal that the head adopted, which the footprint cannot read.
  * @returns The buckets, or the reason there are none.
  */
 function readFootprint(
 	context: Context,
 	headDir: string,
 	state: ModelState | undefined,
+	adopted: AdoptedPlan | undefined,
 ): { buckets?: Buckets; note?: string } {
 	// Every registered repository reads the same --base, and only this one holds the pull request's
 	// commits. The base branch's remote ref exists in each checkout that CI fetched in full. Without
 	// --head, each checkout counts up to its own HEAD: this one's is the head commit.
-	const base = context.baseRef === "" ? context.baseSha : `origin/${context.baseRef}`;
+	const base = context.baseRef === undefined ? context.baseSha : `origin/${context.baseRef}`;
 	const args = ["model", "footprint", "--base", base];
 	const result = archboard(context, headDir, [
 		...args,
@@ -99,7 +103,32 @@ function readFootprint(
 	if (result.exitCode !== 0 || answer === undefined) {
 		return { note: `The footprint could not be read: ${firstLine(result.stderr)}` };
 	}
-	return { buckets: readBuckets(answer) };
+	return {
+		buckets: adopted === undefined ? readBuckets(answer) : adoptedBuckets(answer, adopted.named),
+	};
+}
+
+/**
+ * The plan of a proposal that is no draft at the head, such as one that the branch adopted. It is
+ * what the state changes against the base's Current.
+ * @param context The run.
+ * @param trees Where the base's and the head's vaults are.
+ * @param state The proposal, if the pull request carries one.
+ * @returns The plan, or undefined for a draft, for no proposal, or when a model cannot be read.
+ */
+function readAdoptedPlan(
+	context: Context,
+	trees: Trees,
+	state: ModelState | undefined,
+): AdoptedPlan | undefined {
+	if (state === undefined || state.lifecycle === "draft") return undefined;
+	const base: ModelReading | undefined = parseJson(
+		archboard(context, trees.baseDir, ["model", "read"]).stdout,
+	);
+	const head: ModelReading | undefined = parseJson(
+		archboard(context, trees.headDir, ["model", "read", "--state", state.id]).stdout,
+	);
+	return base === undefined || head === undefined ? undefined : adoptedPlan(base, head);
 }
 
 /**
@@ -207,15 +236,16 @@ function buildReport(
 	proposals: ProposalsReading,
 ): PullRequestReport {
 	const pick = pickProposal(context, proposals.states ?? []);
-	const compared = compareIfProposed(context, trees, pick);
-	const footprint = readFootprint(context, trees.headDir, pick.choice.state);
+	const adopted = readAdoptedPlan(context, trees, pick.choice.state);
+	const compared = adopted ?? compareIfProposed(context, trees, pick);
+	const footprint = readFootprint(context, trees.headDir, pick.choice.state, adopted);
 	const pictures = makePictures(context, trees, pick.choice.state);
 	return {
 		baseSha: context.baseSha,
 		headSha: context.headSha,
 		choice: pick.choice,
 		comparison: compared.comparison,
-		comparisonNote: compared.note,
+		comparisonNote: "note" in compared ? compared.note : undefined,
 		buckets: footprint.buckets,
 		footprintNote: footprint.note,
 		before: pictures.before,

@@ -18,7 +18,7 @@ interface PullFacts {
 	readonly number: number;
 	readonly baseSha: string;
 	/** The branch the pull request merges into, such as `main`. */
-	readonly baseRef: string;
+	readonly baseRef: string | undefined;
 	readonly headSha: string;
 	readonly labels: readonly string[];
 	readonly body: string;
@@ -81,7 +81,7 @@ function readEvent(): PullFacts {
 	return {
 		number: pull.number,
 		baseSha: pull.base.sha,
-		baseRef: pull.base.ref ?? "",
+		baseRef: pull.base.ref,
 		headSha: pull.head.sha,
 		labels: (pull.labels ?? []).map((label) => label.name),
 		body: pull.body ?? "",

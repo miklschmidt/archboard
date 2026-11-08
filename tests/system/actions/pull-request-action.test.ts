@@ -6,6 +6,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { adoptedBuckets, adoptedPlan } from "../../../actions/pull-request/adopted.ts";
 import { pullRequestComment } from "../../../actions/pull-request/comment.ts";
 import type { PullRequestReport } from "../../../actions/pull-request/comment.ts";
 import {
@@ -51,6 +52,36 @@ describe("the proposal of a pull request", () => {
 	test("is none when drafts are several and unnamed, or when the name matches no state", () => {
 		expect(chooseState("", undefined, states)).toEqual({ source: "several-drafts" });
 		expect(chooseState("Nope", undefined, states)).toMatchObject({ source: "unknown" });
+	});
+});
+
+describe("the plan of a proposal that the branch adopted", () => {
+	const intake = { id: "m#intake", name: "Intake", binding: { path: "intake" }, outgoing: [] };
+	const billing = { id: "m#billing", name: "Billing", binding: { path: "billing" } };
+	const docs = { id: "m#docs", name: "Docs" };
+	const base = { modules: [intake, billing, docs], relationships: [] };
+	const head = {
+		modules: [{ ...intake, outgoing: [{ id: "m#quote" }], file: "x.module.json" }, billing, docs],
+		relationships: [{ id: "m#quote", from: "m#intake", to: "m#billing", kind: "http" }],
+	};
+
+	test("names both ends of a new relationship, and only modules bound to code", () => {
+		const plan = adoptedPlan(base, head);
+		expect(plan.comparison).toEqual(["relationships: 1 added"]);
+		expect([...plan.named].toSorted()).toEqual(["Billing", "Intake"]);
+	});
+
+	test("sets the changed modules of the footprint against that plan", () => {
+		const footprint = {
+			proposal: null,
+			changed: [{ subject: { name: "Intake" } }, { subject: { name: "Catalog" } }],
+		};
+		expect(adoptedBuckets(footprint, adoptedPlan(base, head).named)).toEqual({
+			plannedAndChanged: ["Intake"],
+			outsidePlan: ["Catalog"],
+			plannedUnchanged: ["Billing"],
+			changed: ["Intake", "Catalog"],
+		});
 	});
 });
 
