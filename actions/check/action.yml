@@ -1,0 +1,84 @@
+name: Archboard check
+description: >-
+  Run `archboard check` on a repository's architecture model. The step fails on a semantic
+  diagnostic or a warning, puts each finding on the pull request's diff as an annotation with
+  excerpts of the code and the manifest it rests on, and writes the findings to the job summary.
+author: Mikkel Schmidt
+
+inputs:
+  version:
+    description: The version of @archboard/cli to install, such as `0.1.0`, or `latest`.
+    default: latest
+  working-directory:
+    description: The directory, relative to the workspace, that holds the checkout whose vault is checked.
+    default: "."
+  checks:
+    description: Which checks to run. One of `all`, `semantics`, `code` or `embeds`.
+    default: all
+  args:
+    description: >-
+      Extra arguments for `archboard check`, such as `--every-draft` or `--state "Queued fulfilment"`.
+      Quotes group words. No shell runs them.
+    default: ""
+  repos:
+    description: >-
+      Paths of more checkouts, one per line and relative to the workspace, to register before the
+      check. A platform setup that keeps its infrastructure in another repository lists that checkout
+      here, so a network hop can be read on both sides.
+    default: ""
+  fail-on:
+    description: >-
+      `warning` fails the step when the check exits 1, which means a semantic diagnostic or a
+      warning remains. `never` reports findings and never fails on them. A check that cannot run
+      (usage error, refusal, server unreachable) always fails the step.
+    default: warning
+  allow-codes:
+    description: >-
+      Finding or diagnostic codes, separated by newlines or commas, that are shown and never block.
+      They still get annotations and appear in the job summary, marked allowed. With `fail-on: warning`
+      the step fails only when an error or a warning with another code remains.
+    default: ""
+  node-version:
+    description: The Node.js version to run the CLI with. The CLI needs 22.18 or later.
+    default: "22"
+
+outputs:
+  exit-code:
+    description: The exit status of `archboard check`. 0 passed, 1 findings remain, 2 or more could not run.
+    value: ${{ steps.check.outputs.exit-code }}
+  errors:
+    description: The number of semantic diagnostics.
+    value: ${{ steps.check.outputs.errors }}
+  warnings:
+    description: The number of warnings of the code check and the embeds check.
+    value: ${{ steps.check.outputs.warnings }}
+  information:
+    description: The number of information findings, which never fail the check.
+    value: ${{ steps.check.outputs.information }}
+  report:
+    description: The path of the saved JSON answer of `archboard check`.
+    value: ${{ steps.check.outputs.report }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+      with:
+        node-version: ${{ inputs.node-version }}
+    - name: Install the archboard CLI
+      shell: bash
+      env:
+        ARCHBOARD_VERSION: ${{ inputs.version }}
+      run: npm install --global "@archboard/cli@${ARCHBOARD_VERSION}"
+    - name: Run archboard check
+      id: check
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        ARCHBOARD_INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        ARCHBOARD_INPUT_CHECKS: ${{ inputs.checks }}
+        ARCHBOARD_INPUT_ARGS: ${{ inputs.args }}
+        ARCHBOARD_INPUT_REPOS: ${{ inputs.repos }}
+        ARCHBOARD_INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        ARCHBOARD_INPUT_ALLOW_CODES: ${{ inputs.allow-codes }}
+      run: node "${ACTION_PATH}/run.ts"

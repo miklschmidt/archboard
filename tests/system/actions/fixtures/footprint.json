@@ -1,0 +1,37 @@
+{
+	"success": true,
+	"base": "base",
+	"head": "head",
+	"against": { "id": "cur", "name": "Synchronous checkout" },
+	"repositories": [],
+	"commits": [],
+	"skipped": [],
+	"proposal": { "id": "p1", "name": "Queued fulfilment" },
+	"namedAndChanged": [
+		{
+			"subject": { "kind": "node", "id": "Shop/a#n1", "name": "Checkout API" },
+			"repo": "github.com/test/app",
+			"path": "src/checkout.ts",
+			"commits": ["c1"],
+			"named": [{ "by": "part", "status": "changed" }]
+		}
+	],
+	"changedNotNamed": [
+		{
+			"subject": { "kind": "node", "id": "Shop/a#n2", "name": "Stock API" },
+			"repo": "github.com/test/app",
+			"path": "src/stock.ts",
+			"commits": ["c1"],
+			"named": []
+		}
+	],
+	"namedNotChanged": [
+		{
+			"subject": { "kind": "node", "id": "Shop/a#n3", "name": "Fulfilment worker" },
+			"repo": "github.com/test/app",
+			"path": "src/worker.ts",
+			"commits": [],
+			"named": [{ "by": "part", "status": "added" }]
+		}
+	]
+}

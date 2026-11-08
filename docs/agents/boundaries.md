@@ -19,6 +19,7 @@ crates/<crate>/    # a Rust crate of the root Cargo workspace (ADR 0059)
 crates/vendor/     # third-party crates the core builds in, no workspace members (crates/vendor/README.md)
 tests/system/      # repository, process, browser and full-product tests across owners
 scripts/, tools/   # repository scripts and the Oxlint plugin
+actions/           # the composite GitHub Actions users run in CI (actions/README.md); TypeScript that Node runs as it is
 vite.config.ts     # the build host of the browser app
 ```
 

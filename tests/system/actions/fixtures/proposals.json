@@ -1,0 +1,14 @@
+{
+	"success": true,
+	"manifest": { "id": "Shop", "name": "Shop" },
+	"states": [
+		{ "id": "cur", "name": "Synchronous checkout", "lifecycle": "current" },
+		{
+			"id": "p1",
+			"name": "Queued fulfilment",
+			"summary": "Answer the shopper once the payment has started.",
+			"lifecycle": "draft"
+		}
+	],
+	"vault": { "path": "__HEADDIR__/.archboard/vault", "origin": "working-directory" }
+}

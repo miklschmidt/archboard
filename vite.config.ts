@@ -120,6 +120,7 @@ const analysisCache = {
 		"tests/**",
 		"scripts/**",
 		"tools/**",
+		"actions/**",
 		"docs/**/*.ts",
 		"docs/**/*.tsx",
 		"*.json",
@@ -300,7 +301,7 @@ export default defineConfig({
 			"lint:policy": {
 				dependsOn: ["contracts", "core"],
 				command:
-					"bun scripts/lint.ts --type-aware --threads 1 --deny-warnings --max-warnings 0 --report-unused-disable-directives-severity error --config .oxlintrc.jsonc packages apps scripts tools vite.config.ts",
+					"bun scripts/lint.ts --type-aware --threads 1 --deny-warnings --max-warnings 0 --report-unused-disable-directives-severity error --config .oxlintrc.jsonc packages apps scripts tools actions vite.config.ts",
 				cache: analysisCache,
 			},
 			"lint:css": {
@@ -409,6 +410,7 @@ export default defineConfig({
 					"tests/system/process-contracts",
 					"tests/system/code-targets",
 					"tests/system/models",
+					"tests/system/actions",
 				].join(" "),
 				cache: browserTestCache,
 			},

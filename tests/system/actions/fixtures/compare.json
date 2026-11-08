@@ -1,0 +1,12 @@
+{
+	"success": true,
+	"comparison": {
+		"reason": "explicit",
+		"subjects": [
+			{ "id": "m1", "subjectKind": "module", "kind": "added", "fields": [] },
+			{ "id": "m2", "subjectKind": "module", "kind": "changed", "fields": [] },
+			{ "id": "m3", "subjectKind": "module", "kind": "unchanged", "fields": [] },
+			{ "id": "r1", "subjectKind": "relationship", "kind": "removed", "fields": [] }
+		]
+	}
+}
