@@ -7,7 +7,7 @@
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
 import { appendFileSync, existsSync, rmSync } from "node:fs";
 import { join, relative } from "node:path";
-import { pullRequestComment } from "./comment.ts";
+import { planProblem, pullRequestComment } from "./comment.ts";
 import type { PullRequestReport } from "./comment.ts";
 import { addWorktree, archboard, firstLine, readContext } from "./context.ts";
 import type { Context } from "./context.ts";
@@ -27,6 +27,8 @@ import { annotationLine } from "../shared/workflow-commands.ts";
 /** What `model proposals` says that this action reads. */
 interface ProposalsReading {
 	readonly success?: boolean;
+	readonly code?: string;
+	readonly error?: string;
 	readonly states?: readonly ModelState[];
 	readonly vault?: { readonly path: string };
 }
@@ -94,15 +96,30 @@ function annotatePlan(report: PullRequestReport): void {
 }
 
 /**
+ * Why the plan could not be checked, first reason first.
+ * @param report The report.
+ * @returns A sentence.
+ */
+function uncheckedReason(report: PullRequestReport): string {
+	return (
+		planProblem(report.choice) ??
+		report.comparisonNote ??
+		report.footprintNote ??
+		"The plan could not be checked."
+	);
+}
+
+/**
  * Make an unavailable plan check visible in the workflow log.
  * @param report The report.
  */
 function annotateUnavailable(report: PullRequestReport): void {
 	const { status, failed } = report.outOfPlan;
 	if (status !== "unjudged" && status !== "unjudged-overridden") return;
-	const text = report.comparisonNote ?? report.footprintNote ?? "The plan could not be checked.";
 	const level = failed ? "error" : "warning";
-	process.stdout.write(`${annotationLine(level, { title: "Archboard plan" }, text)}\n`);
+	process.stdout.write(
+		`${annotationLine(level, { title: "Archboard plan" }, uncheckedReason(report))}\n`,
+	);
 }
 
 /**
@@ -137,12 +154,13 @@ function registerCheckouts(context: Context): string | undefined {
  * @returns The decision.
  */
 function judge(context: Context, choice: StateChoice, buckets: Buckets | undefined) {
-	// A proposal that the pull request names and the model lacks is a plan that cannot be read.
-	const unknown = choice.source === "unknown";
+	// A proposal that the pull request names and the model lacks, several drafts and no name, or
+	// proposals that cannot be read: each is a plan that cannot be checked.
+	const unchecked = planProblem(choice) !== undefined;
 	return decideOutOfPlan({
 		mode: context.mode,
-		hasProposal: choice.state !== undefined || unknown,
-		judgeable: buckets !== undefined && !unknown,
+		hasProposal: choice.state !== undefined || unchecked,
+		judgeable: buckets !== undefined && !unchecked,
 		outside: buckets?.outsidePlan ?? [],
 		labels: context.labels,
 		overrideLabel: context.overrideLabel,
@@ -235,25 +253,36 @@ function cleanUp(context: Context): void {
 }
 
 /**
- * Say that the proposals at the head could not be read. In fail mode that fails the step, as any
- * plan that cannot be checked does.
+ * The report of a pull request whose proposals at the head could not be read. It replaces an
+ * earlier comment, so a report of an older head never stands for this one, and in fail mode it
+ * fails the step, as any plan that cannot be checked does.
  * @param context The run.
- * @param reason What the CLI said.
- * @returns The exit status of this step.
+ * @param reason Why the proposals could not be read.
+ * @returns The report.
  */
-function proposalsUnread(context: Context, reason: string): number {
-	const decision = decideOutOfPlan({
-		mode: context.mode,
-		hasProposal: true,
-		judgeable: false,
-		outside: [],
-		labels: context.labels,
+function unreadableReport(context: Context, reason: string): PullRequestReport {
+	const choice = { source: "unreadable", named: reason } as const;
+	return {
+		baseSha: context.baseSha,
+		headSha: context.headSha,
+		choice,
+		comparison: [],
+		picturesNote: "No picture was drawn, because the proposals could not be read.",
+		outOfPlan: judge(context, choice, undefined),
 		overrideLabel: context.overrideLabel,
-	});
-	const text = `The proposals at the head could not be read, so the plan was not checked: ${reason}`;
-	const level = decision.failed ? "error" : "warning";
-	process.stdout.write(`${annotationLine(level, { title: "Archboard plan" }, text)}\n`);
-	return decision.failed ? 1 : 0;
+	};
+}
+
+/**
+ * Why `model proposals` gave no usable answer: the refusal it printed, else its first line on
+ * standard error.
+ * @param answer The answer, when it printed one.
+ * @param stderr What it wrote on standard error.
+ * @returns The reason.
+ */
+function refusalOf(answer: ProposalsReading | undefined, stderr: string): string {
+	if (answer?.code === undefined) return firstLine(stderr);
+	return answer.error === undefined ? answer.code : `${answer.code}: ${answer.error}`;
 }
 
 /**
@@ -272,10 +301,10 @@ async function reportOn(context: Context, trees: Trees): Promise<number> {
 	}
 	const result = archboard(context, trees.headDir, ["model", "proposals"]);
 	const answer: ProposalsReading | undefined = parseJson(result.stdout);
-	if (result.exitCode !== 0 || answer === undefined || answer.success === false) {
-		return proposalsUnread(context, firstLine(result.stderr));
-	}
-	const report = buildReport(context, trees, answer);
+	const report =
+		result.exitCode !== 0 || answer === undefined || answer.success === false
+			? unreadableReport(context, refusalOf(answer, result.stderr))
+			: buildReport(context, trees, answer);
 	annotatePlan(report);
 	writeSummary(report);
 	await postComment(context, report);

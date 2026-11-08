@@ -45,6 +45,7 @@ const SOURCE_WORDS: Readonly<Record<StateSource, string>> = {
 	none: "none",
 	"several-drafts": "none",
 	unknown: "none",
+	unreadable: "none",
 };
 
 /**
@@ -111,13 +112,30 @@ function proposalSection(report: PullRequestReport): string[] {
  * @returns A sentence.
  */
 function noProposalText(choice: StateChoice): string {
+	return (
+		planProblem(choice) ??
+		"The pull request carries no proposal. The changed modules are listed without a plan."
+	);
+}
+
+/**
+ * Why the plan cannot be checked, when the choice of proposal is the reason: the pull request
+ * names a proposal the model lacks, the model has several drafts and the pull request names none,
+ * or the proposals could not be read.
+ * @param choice The choice of proposal.
+ * @returns A sentence, or undefined when the choice is no reason.
+ */
+function planProblem(choice: StateChoice): string | undefined {
+	if (choice.source === "unreadable") {
+		return `The proposals at the head commit could not be read, so the plan was not checked: ${choice.named ?? "no reason given"}.`;
+	}
 	if (choice.source === "unknown") {
 		return `The pull request names the proposal "${choice.named ?? ""}", and the model at the head commit has no state by that identity or name.`;
 	}
 	if (choice.source === "several-drafts") {
 		return "The model has several draft proposals and the pull request names none. Name one with the `archboard-pr` marker in the description, or with the action's `state` input.";
 	}
-	return "The pull request carries no proposal. The changed modules are listed without a plan.";
+	return undefined;
 }
 
 /**
@@ -246,4 +264,4 @@ function pullRequestComment(report: PullRequestReport): string {
 	].join("\n");
 }
 
-export { pullRequestComment, type PictureLinks, type PullRequestReport };
+export { planProblem, pullRequestComment, type PictureLinks, type PullRequestReport };

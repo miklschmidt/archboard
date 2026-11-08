@@ -81,6 +81,17 @@ describe("the plan of a proposal", () => {
 		expect([...plan.named.values()].toSorted()).toEqual(["Billing", "Intake"]);
 	});
 
+	test("names the ends of a changed relationship before and after", () => {
+		const catalog = { id: "m#catalog", name: "Catalog", binding: { path: "catalog" } };
+		const line = { id: "m#quote", from: "m#intake", to: "m#billing", kind: "http" };
+		const moved = proposalPlan(
+			{ modules: [intake, billing, catalog], relationships: [line] },
+			{ modules: [intake, billing, catalog], relationships: [{ ...line, to: "m#catalog" }] },
+		);
+		expect(moved.comparison).toEqual(["relationships: 1 changed"]);
+		expect([...moved.named.values()].toSorted()).toEqual(["Billing", "Catalog", "Intake"]);
+	});
+
 	test("sets the changed modules of the footprint against that plan, for a draft or an adopted proposal", () => {
 		const plan = proposalPlan(base, head);
 		const expected = {
@@ -379,10 +390,27 @@ describe("the entry", () => {
 		});
 		expect(refused.exitCode).toBe(1);
 		expect(refused.stdout).toContain("::error title=Archboard plan::The proposals at the head");
+		expect(comments.at(-1)?.body).toContain(
+			"could not be read, so the plan was not checked: INVALID_MODEL",
+		);
+		expect(comments.at(-1)?.body).toContain("could not be checked, so this check fails");
 		const silent = await step({}, false, { proposals: "" });
 		expect(silent.exitCode).toBe(0);
 		expect(silent.stdout).toContain("::warning title=Archboard plan::The proposals at the head");
 		expect(silent.stdout).not.toContain("holds no Archboard vault");
+	});
+
+	test("several drafts and no name fail the step in fail mode", async () => {
+		const proposals = JSON.parse(fixture("proposals.json"));
+		proposals.states = [
+			{ id: "p1", name: "Queued fulfilment", lifecycle: "draft" },
+			{ id: "p2", name: "Nightly batch", lifecycle: "draft" },
+		];
+		const result = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" }, false, {
+			proposals: JSON.stringify(proposals),
+		});
+		expect(result.exitCode).toBe(1);
+		expect(result.stdout).toContain("::error title=Archboard plan::The model has several draft");
 	});
 
 	test("a proposal that the pull request names and the model lacks fails the step in fail mode", async () => {

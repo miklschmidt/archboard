@@ -150,22 +150,23 @@ function whole(subject: Subject): unknown {
  * @param before The subjects at the base.
  * @param after The subjects at the head.
  * @param fields What of a subject to compare.
- * @returns Each subject that was added, removed or changed, with its outcome.
+ * @returns Each subject that was added, removed or changed, with its outcome, and for a changed
+ * subject its version at the base.
  */
 function outcomes<T extends Subject>(
 	before: readonly T[],
 	after: readonly T[],
 	fields: (subject: T) => unknown,
-): { subject: T; outcome: Outcome }[] {
+): { subject: T; outcome: Outcome; previous?: T }[] {
 	const old = new Map(before.map((subject) => [subject.id, subject]));
 	const now = new Set(after.map((subject) => subject.id));
 	return [
-		...after.flatMap((subject): { subject: T; outcome: Outcome }[] => {
+		...after.flatMap((subject): { subject: T; outcome: Outcome; previous?: T }[] => {
 			const previous = old.get(subject.id);
 			if (previous === undefined) return [{ subject, outcome: "added" }];
 			return JSON.stringify(fields(previous)) === JSON.stringify(fields(subject))
 				? []
-				: [{ subject, outcome: "changed" }];
+				: [{ subject, outcome: "changed", previous }];
 		}),
 		...before
 			.filter((subject) => !now.has(subject.id))
@@ -225,7 +226,13 @@ function proposalPlan(baseModel: ModelReading, headModel: ModelReading): Proposa
 	const steps = outcomes(base.steps, head.steps, whole);
 	const ids = new Set([
 		...modules.map((one) => one.subject.id),
-		...[...relationships, ...steps].flatMap((one) => [one.subject.from, one.subject.to]),
+		// A changed relationship or step names its ends before and after, so a line that moves from
+		// B to C plans the change at B too.
+		...[...relationships, ...steps].flatMap((one) => [
+			one.subject.from,
+			one.subject.to,
+			...(one.previous === undefined ? [] : [one.previous.from, one.previous.to]),
+		]),
 	]);
 	const bound = new Map(
 		[...base.modules, ...head.modules]

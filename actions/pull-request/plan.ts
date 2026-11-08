@@ -12,7 +12,18 @@ interface ModelState {
 }
 
 /** Where the proposal came from, or why there is none. */
-type StateSource = "input" | "pr-body" | "only-draft" | "none" | "several-drafts" | "unknown";
+/**
+ * Where the proposal came from, or why there is none. `unreadable`: the proposals at the head
+ * could not be read, which the entry finds before it chooses.
+ */
+type StateSource =
+	| "input"
+	| "pr-body"
+	| "only-draft"
+	| "none"
+	| "several-drafts"
+	| "unknown"
+	| "unreadable";
 
 /** The proposal a pull request carries. */
 interface StateChoice {
