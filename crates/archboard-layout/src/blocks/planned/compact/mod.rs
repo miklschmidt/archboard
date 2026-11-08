@@ -10,7 +10,7 @@ use crate::{
     track::chains::LANE,
 };
 
-use super::shape::Shape;
+use super::{junctions::JOIN_ROOM, shape::Shape};
 
 mod sheet;
 
@@ -116,11 +116,15 @@ impl Found {
         });
     }
 
-    /// The second keeps its order past the first, with its room or the room it has.
+    /// The second keeps its order past the first, with its room or the room it has. A line
+    /// joining another before a card keeps the room of a junction from that card.
     fn keep(&mut self, first: &Piece, second: &Piece) {
         let gap = second.low - first.high;
-        let least = room(first.kind, second.kind, self.reach).min(gap) - gap;
-        self.push(first, second, least);
+        let mut least = room(first.kind, second.kind, self.reach);
+        if first.joins == Some(second.mover) || second.joins == Some(first.mover) {
+            least = least.max(JOIN_ROOM);
+        }
+        self.push(first, second, least.min(gap) - gap);
     }
 
     /// A run stays on a card's wall, clear of its corners.
@@ -397,6 +401,35 @@ mod tests {
         };
         assert_eq!(gap(2, 3), CARD_GAP);
         assert!(gap(0, 1) >= 3.0 * 2.0 * 8.0);
+    }
+
+    // Canonical architecture: a line that joined another just above the card
+    // they enter came out of contraction with too little room for the junction,
+    // so the guard refused every tight drawing and the loose one stood.
+    #[test]
+    fn a_line_joining_another_before_their_card_keeps_a_junctions_room() {
+        let line = |id: &str, points: &[(f64, f64)]| PlacedLine {
+            id: id.into(),
+            points: points.iter().map(|&(x, y)| Point { x, y }).collect(),
+            label: None,
+        };
+        let shape = Shape::new(Placed {
+            width: 1000.0,
+            height: 1000.0,
+            cards: vec![card("source", 300.0, 20.0), card("target", 300.0, 500.0)],
+            frames: Vec::new(),
+            regions: Vec::new(),
+            edges: vec![
+                line("straight", &[(400.0, 120.0), (400.0, 500.0)]),
+                line("joining", &[(200.0, 300.0), (400.0, 300.0), (400.0, 500.0)]),
+            ],
+            titles: Vec::new(),
+            routed: None,
+        });
+        let drawn = drawing(&shape, 8.0).expect("room to take out");
+        let join = drawn.edges[1].points[1].y;
+        assert!(drawn.cards[1].bx.y - join >= JOIN_ROOM);
+        assert!(drawn.cards[1].bx.y < 500.0);
     }
 
     #[test]

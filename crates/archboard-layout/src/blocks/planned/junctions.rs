@@ -88,7 +88,7 @@ fn common_prefix(a: &[Point], b: &[Point]) -> f64 {
 
 /// How far before the box it enters a target fan joins at the nearest: the arrow
 /// and the bend behind it, then a bend and as long a straight again for the join.
-const JOIN_ROOM: f64 = APPROACH_STRAIGHT + 3.0 * BEND_RADIUS;
+pub(super) const JOIN_ROOM: f64 = APPROACH_STRAIGHT + 3.0 * BEND_RADIUS;
 
 /// A target fan joins a visible run before the box it enters, so its junction
 /// never sits beside the arrowhead. Where one branch runs wholly along the other,
@@ -131,9 +131,10 @@ pub(super) fn ordered(a: &[Point], b: &[Point], sharing: bool) -> bool {
     })
 }
 
-/// Crossings use straight room on both paths, clear of bends and arrow approaches.
+/// Crossings use straight room on both paths, clear of bends and arrow approaches. Contraction
+/// stands a crossing exactly that far from a bend, so floating noise must not refuse it.
 fn clear_crossing(h: &[Point], v: &[Point]) -> bool {
-    let room = 16.0;
+    let room = 16.0 - 1e-6;
     v[0].x >= h[0].x.min(h[1].x) + room
         && v[0].x <= h[0].x.max(h[1].x) - room
         && h[0].y >= v[0].y.min(v[1].y) + room
