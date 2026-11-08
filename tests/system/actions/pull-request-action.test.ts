@@ -252,16 +252,34 @@ describe("the entry", () => {
 		expect(published.stdout.toString()).toStartWith("<svg>");
 	});
 
-	test("equal pictures at the base and the head become one picture, close up on the changed code", async () => {
-		const result = await step({ FAKE_PICTURE: "same" });
-		expect(result.exitCode).toBe(0);
-		expect(result.commands).toContain("--focus Shop/a#n1 --focus Shop/a#n2");
-		const body = comments[0]?.body ?? "";
-		expect(body).toContain("### Where the code changed");
-		expect(body).toContain(`pr-7/${headSha}/focus-light.svg`);
-		expect(body).not.toContain("before-light.svg");
-		expect(body).toMatch(/\[Open the map, full size\]\([^)]*after-light\.svg\)/);
-	});
+	test.each([
+		{ proposal: true, changes: true },
+		{ proposal: false, changes: true },
+		{ proposal: false, changes: false },
+	])(
+		"equal pictures show one image with proposal=$proposal and changes=$changes",
+		async ({ proposal, changes }) => {
+			const proposals = JSON.parse(fixture("proposals.json"));
+			if (!proposal) proposals.states = [proposals.states[0]];
+			const result = await step({ FAKE_PICTURE: "same" }, false, {
+				proposals: JSON.stringify(proposals),
+				footprint: changes
+					? fixture("footprint.json")
+					: JSON.stringify({ changed: [], skipped: [] }),
+			});
+			expect(result.exitCode).toBe(0);
+			expect(result.commands.includes("--focus Shop/a#n1 --focus Shop/a#n2")).toBe(changes);
+			expect(result.commands.includes("model render --state p1")).toBe(proposal);
+			const body = comments[0]?.body ?? "";
+			expect(body.match(/<img\b/gu)).toHaveLength(1);
+			const side = changes ? "focus" : "after";
+			for (const theme of ["light", "dark"]) {
+				expect(body).toContain(`pr-7/${headSha}/${side}-${theme}.svg`);
+				expect(body).not.toContain(`before-${theme}.svg`);
+			}
+			expect(body).toMatch(/\]\([^)]*after-light\.svg\)/);
+		},
+	);
 
 	test("fail mode fails, the override label lets the pull request through, and the comment is updated", async () => {
 		const failing = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" });
