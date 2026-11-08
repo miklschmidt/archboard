@@ -46,6 +46,16 @@ pub(crate) struct Label {
     pub width: Option<f64>,
     #[serde(default)]
     pub height: Option<f64>,
+    /// The same words on a narrower plate, for a route with no spot for the wide one.
+    #[serde(default)]
+    pub narrow: Option<Plate>,
+}
+
+/// A label plate's size.
+#[derive(Clone, Copy, Debug, Deserialize)]
+pub(crate) struct Plate {
+    pub width: f64,
+    pub height: f64,
 }
 
 impl Node {

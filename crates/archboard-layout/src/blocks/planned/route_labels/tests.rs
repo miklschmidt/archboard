@@ -216,3 +216,23 @@ fn a_drawing_knows_when_words_stand_on_their_own_line() {
     shape.labels.insert(edge, words(60.0));
     assert!(!own::words_clear(&model, &shape));
 }
+
+#[test]
+fn words_too_wide_for_their_route_take_their_narrow_plate() {
+    let graph = |narrow: serde_json::Value| -> Node {
+        serde_json::from_value(json!({"id":"root","children":[
+            {"id":"a","width":100,"height":60},{"id":"b","width":100,"height":60}],"edges":[
+            {"id":"ab","sources":["a"],"targets":["b"],
+             "labels":[{"width":190,"height":31,"narrow":narrow}]}]}))
+        .unwrap()
+    };
+    let route: &[(f64, f64)] = &[(100.0, 500.0), (280.0, 500.0)];
+    let wide = graph(serde_json::Value::Null);
+    let mut shape = drawing(&[("ab", route)]);
+    assert_eq!(arrange(&Model::new(&wide).unwrap(), &mut shape), None);
+    let both = graph(json!({"width":106,"height":46}));
+    let mut shape = drawing(&[("ab", route)]);
+    arrange(&Model::new(&both).unwrap(), &mut shape).expect("the narrow plate fits");
+    let plate = shape.labels[&0];
+    assert_eq!((plate.width, plate.height), (106.0, 46.0));
+}

@@ -13,7 +13,7 @@ use std::rc::Rc;
 use archboard_flows::content::{Step, every_step};
 use archboard_layout::{Engine, LineLook, Measured, Node, Standings, draw, shown_drawing};
 use archboard_scene::drawing::Painted;
-use archboard_scene::measure::{CardWords, measure_label, measure_node};
+use archboard_scene::measure::{CardWords, measure_label, measure_node, narrow_label};
 use archboard_scene::request::{ArchitecturePicture, PaintRequest, Picture, Standing};
 
 use crate::appearance::{line_appearance, line_look, node_appearances, tags_of};
@@ -52,13 +52,17 @@ fn measured(laid: &Reading, policy: &Policy, steps: &HashSet<&str>) -> Measured 
             )
         })
         .collect();
-    let labels = laid
-        .edges
-        .iter()
-        .filter_map(|edge| {
+    let words = || {
+        laid.edges.iter().filter_map(|edge| {
             let words = edge.label.as_deref().filter(|words| !words.is_empty())?;
-            Some((edge.id.clone(), measure_label(words)))
+            Some((edge.id.clone(), words))
         })
+    };
+    let labels = words()
+        .map(|(id, words)| (id, measure_label(words)))
+        .collect();
+    let narrow_labels = words()
+        .filter_map(|(id, words)| Some((id, narrow_label(words)?)))
         .collect();
     let lines = laid
         .edges
@@ -73,6 +77,7 @@ fn measured(laid: &Reading, policy: &Policy, steps: &HashSet<&str>) -> Measured 
     Measured {
         nodes,
         labels,
+        narrow_labels,
         lines,
         held_kinds: BTreeMap::new(),
     }

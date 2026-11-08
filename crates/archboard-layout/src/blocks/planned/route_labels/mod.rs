@@ -249,7 +249,18 @@ impl<'a> Slots<'a> {
         path: &[Point],
     ) -> Option<(Rect, bool)> {
         let own = Own::new(edge, path);
-        spot_on(model, own, path, self.shape, &self.strokes, &self.labels)
+        let spot = |narrow| {
+            spot_on(
+                model,
+                own,
+                path,
+                self.shape,
+                &self.strokes,
+                &self.labels,
+                narrow,
+            )
+        };
+        spot(false).or_else(|| spot(true))
     }
     /// A spot that may stand beside the route's other stretches, for a route with no better.
     pub(super) fn any_slot(
@@ -265,6 +276,8 @@ impl<'a> Slots<'a> {
 /// Where a route's words stand: clear of the route's other stretches, or as a fallback beside
 /// them when the route leaves no such spot, because a line keeps its words. Words never stand
 /// over another stretch of their own line, where a reader takes them for a different line's.
+/// Words wrap onto their narrow plate before they stand beside their line or the line takes a
+/// longer way round.
 fn slot_index(
     model: &Model<'_>,
     edge: usize,
@@ -273,13 +286,31 @@ fn slot_index(
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Option<(Rect, bool)> {
-    spot_on(model, Own::new(edge, path), path, shape, index, labels).or_else(|| {
-        let beside = Own {
-            beside: true,
+    [false, true].into_iter().find_map(|beside| {
+        let own = Own {
+            beside,
             ..Own::new(edge, path)
         };
-        let (at, _) = spot_on(model, beside, path, shape, index, labels)?;
-        Some((at, true))
+        let spot = |narrow| spot_on(model, own, path, shape, index, labels, narrow);
+        let (at, fallback) = spot(false).or_else(|| spot(true))?;
+        Some((at, fallback || beside))
+    })
+}
+
+/// The size of a label's plate, or of its narrow plate where its words wrap narrower.
+fn plate(model: &Model<'_>, edge: usize, narrow: bool) -> Option<Rect> {
+    let label = model.edges[edge].label()?;
+    let (width, height) = if narrow {
+        let plate = label.narrow?;
+        (plate.width, plate.height)
+    } else {
+        (label.width.unwrap_or(0.0), label.height.unwrap_or(0.0))
+    };
+    Some(Rect {
+        x: 0.0,
+        y: 0.0,
+        width,
+        height,
     })
 }
 
@@ -290,15 +321,10 @@ fn spot_on(
     shape: &Shape,
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
+    narrow: bool,
 ) -> Option<(Rect, bool)> {
     let edge = own.edge;
-    let label = model.edges[edge].label()?;
-    let size = Rect {
-        x: 0.0,
-        y: 0.0,
-        width: label.width.unwrap_or(0.0),
-        height: label.height.unwrap_or(0.0),
-    };
+    let size = plate(model, edge, narrow)?;
     if let Some(&part_first) = shape.trunk.get(&edge) {
         let spans = index.private(edge, &from_part(path, part_first));
         return nearest(&spans, size, shape, own, index, labels).map(|at| (at, false));

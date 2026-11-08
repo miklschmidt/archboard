@@ -22,7 +22,7 @@ pub use cards::{CardWords, measure_node};
 pub(crate) use cards::{DOOR_FAR, tab_far, tab_runs, tag_end, tag_top};
 pub use far::{FarCard, FarWords, far_scale_for, far_words};
 pub use flow_frame::measure_flow_frame;
-pub use labels::{measure_label, message_lines, note_lines};
+pub use labels::{measure_label, message_lines, narrow_label, note_lines};
 
 /// The face a font names: Onest at 400, 500 or 700, or Maple Mono NL at 400 or
 /// 500. A weight the files do not hold is the regular face.

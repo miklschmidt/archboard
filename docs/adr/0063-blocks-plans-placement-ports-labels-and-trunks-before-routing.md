@@ -52,6 +52,8 @@ Words remain horizontal on horizontal or vertical runs.
 A stack of separate label plates uses a vertical run long enough to carry every plate.
 The label never covers shared ink, crosses a frame wall, or lies under a foreign line.
 It never lies over another stretch of its own route either.
+Each label has a second, narrower plate where its words wrap narrower, and that plate holds its longest word whole.
+Where the wide plate finds no spot, the words wrap onto the narrow plate before the label stands beside the route's other stretches or the line takes a longer way.
 When a route leaves no spot clear of its other stretches, the label can stand closer beside them, but not over them.
 A route never gains a bend to reach a label slot.
 

@@ -73,13 +73,18 @@ fn edges_of(
                 height: 0.0,
             })),
         };
+        // A plate as wide as the narrow one carries the narrow plate's lines.
         let label = measured
             .labels
             .get(&edge.id)
             .zip(route.and_then(|route| route.label))
-            .map(|(words, bounds)| PlacedLabel {
-                bounds,
-                measured: words.clone(),
+            .map(|(wide, bounds)| {
+                let narrow = measured.narrow_labels.get(&edge.id);
+                let words = narrow.filter(|narrow| (narrow.width - bounds.width).abs() < 1e-6);
+                PlacedLabel {
+                    bounds,
+                    measured: words.unwrap_or(wide).clone(),
+                }
             });
         DrawingEdge {
             edge: edge.facts(),

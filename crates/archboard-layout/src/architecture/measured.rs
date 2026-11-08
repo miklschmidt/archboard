@@ -15,6 +15,9 @@ pub struct Measured {
     pub nodes: IndexMap<String, MeasuredNode<NodeFacts>>,
     /// Each relationship's label, by relationship id, for those that have words.
     pub labels: IndexMap<String, MeasuredLabel>,
+    /// The same words on a narrower plate, by relationship id, for labels that wrap narrower:
+    /// a route takes it only where the wide plate finds no spot.
+    pub narrow_labels: IndexMap<String, MeasuredLabel>,
     /// How each line is drawn, by relationship id.
     pub lines: BTreeMap<String, LineLook>,
     /// The variant's own relationship kinds before removed comparison context changes an overview's majority kind.
