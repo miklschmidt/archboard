@@ -99,18 +99,31 @@ function commitAndPush(push: AssetPush, clone: string, fetched: boolean): Proces
 /**
  * Publish the pictures. A branch moved by another run is fetched again, up to a few times.
  * @param push What to push.
+ * @param beforePush Refuse publication if this run no longer reports the current head.
  * @returns undefined when the pictures are on the branch, else why they are not.
  */
-function pushAssets(push: AssetPush): string | undefined {
+async function pushAssets(
+	push: AssetPush,
+	beforePush: () => Promise<string | undefined>,
+): Promise<string | undefined> {
 	const clone = mkdtempSync(join(tmpdir(), "archboard-assets-"));
 	try {
 		git(push, clone, ["init", "-q", "-b", push.branch]);
 		git(push, clone, ["remote", "add", "origin", `${push.server}/${push.repository}.git`]);
-		let last: ProcessResult = { exitCode: 1, stdout: "", stderr: "" };
-		for (let attempt = 0; attempt < ATTEMPTS && last.exitCode !== 0; attempt += 1) {
-			last = commitAndPush(push, clone, checkoutBranch(push, clone));
-		}
-		return last.exitCode === 0 ? undefined : reasonOf(push, last);
+		/**
+		 * Fetch the branch and make sure that this head can still publish before each attempt.
+		 * @param remaining The number of attempts left.
+		 * @returns Why publication stopped, or undefined on success.
+		 */
+		const attemptPush = async (remaining: number): Promise<string | undefined> => {
+			const fetched = checkoutBranch(push, clone);
+			const problem = await beforePush();
+			if (problem !== undefined) return problem;
+			const result = commitAndPush(push, clone, fetched);
+			if (result.exitCode === 0) return undefined;
+			return remaining === 1 ? reasonOf(push, result) : attemptPush(remaining - 1);
+		};
+		return await attemptPush(ATTEMPTS);
 	} finally {
 		rmSync(clone, { recursive: true, force: true });
 	}

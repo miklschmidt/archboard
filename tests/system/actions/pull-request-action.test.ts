@@ -114,6 +114,8 @@ describe("the entry", () => {
 	let headSha = "";
 	/** The pull request's head on GitHub, when a later push moved it past the run's. */
 	let movedTo: string | undefined;
+	let moveOnRead: number | undefined;
+	let headReads = 0;
 
 	/**
 	 * Run git in the checkout.
@@ -127,6 +129,9 @@ describe("the entry", () => {
 		);
 		return result.stdout.toString().trim();
 	}
+
+	const publishedHead = () =>
+		Bun.spawnSync(["git", `--git-dir=${bare}`, "rev-parse", "archboard-assets"]).stdout.toString();
 
 	beforeAll(() => {
 		Bun.spawnSync(["git", "init", "-q", "-b", "main", checkout]);
@@ -145,12 +150,17 @@ describe("the entry", () => {
 			async fetch(request) {
 				const url = new URL(request.url);
 				requests.push(`${request.method} ${url.pathname}`);
-				if (url.pathname.endsWith("/pulls/7"))
+				if (url.pathname.endsWith("/pulls/7")) {
+					headReads += 1;
 					return Response.json({
 						body: "",
 						labels: labels.map((name) => ({ name })),
-						head: { sha: movedTo ?? headSha },
+						head: {
+							sha:
+								moveOnRead !== undefined && headReads < moveOnRead ? headSha : (movedTo ?? headSha),
+						},
 					});
+				}
 				if (request.method === "GET") return Response.json(comments);
 				const body = ((await request.json()) as { body: string }).body;
 				const existing = comments.find((one) => url.pathname.endsWith(`/${String(one.id)}`));
@@ -174,6 +184,7 @@ describe("the entry", () => {
 		fork = false,
 		answers: Readonly<Record<string, string>> = {},
 	) {
+		headReads = 0;
 		const folder = scratch();
 		for (const name of new Set([
 			"proposals",
@@ -352,13 +363,50 @@ describe("the entry", () => {
 		movedTo = "f".repeat(40);
 		try {
 			const result = await step();
-			expect(result.stdout).toContain("::notice::");
+			expect(result.stdout).toContain("::warning title=Archboard::");
 			expect(result.stdout).toContain(movedTo.slice(0, 7));
 			expect(comments.map((one) => one.body)).toEqual(before);
 			expect(requests.slice(sent).filter((one) => !one.startsWith("GET"))).toHaveLength(0);
 			expect(result.commands).not.toContain("model render");
 		} finally {
 			movedTo = undefined;
+		}
+	});
+
+	test("a newer head during rendering preserves the published pictures and comment", async () => {
+		await step();
+		const before = publishedHead();
+		const bodies = comments.map((one) => one.body);
+		const current = headSha;
+		headSha = baseSha;
+		movedTo = current;
+		moveOnRead = 3;
+		try {
+			const result = await step();
+			expect(result.exitCode).toBe(0);
+			expect(result.commands).toContain("model render");
+			expect(publishedHead()).toBe(before);
+			expect(comments.map((one) => one.body)).toEqual(bodies);
+		} finally {
+			headSha = current;
+			movedTo = undefined;
+			moveOnRead = undefined;
+		}
+	});
+
+	test("a newer head while comments are listed prevents the comment write", async () => {
+		const before = comments.map((one) => one.body);
+		const sent = requests.length;
+		movedTo = "f".repeat(40);
+		moveOnRead = 4;
+		try {
+			const result = await step();
+			expect(result.exitCode).toBe(0);
+			expect(comments.map((one) => one.body)).toEqual(before);
+			expect(requests.slice(sent).filter((one) => !one.startsWith("GET"))).toHaveLength(0);
+		} finally {
+			movedTo = undefined;
+			moveOnRead = undefined;
 		}
 	});
 

@@ -12,7 +12,7 @@ import type { PullRequestReport } from "./comment.ts";
 import { addWorktree, archboard, firstLine, readContext } from "./context.ts";
 import type { Context } from "./context.ts";
 import { readFootprint } from "./footprint.ts";
-import { readPullRequest, upsertComment } from "./github.ts";
+import { publicationProblem, upsertComment } from "./github.ts";
 import { folderUrl } from "./links.ts";
 import { parseBodyMarker } from "./marker.ts";
 import { makePictures } from "./pictures.ts";
@@ -215,11 +215,9 @@ async function buildReport(
 			? { note: "The footprint was not judged because the proposal could not be compared." }
 			: readFootprint(context, trees.headDir, choice.state, plan);
 	// The pictures replace those of older heads, so a run of an older head never pushes them.
-	const newer = await newerHead(context);
+	const problem = await publicationProblem(context.access, context.number, context.headSha);
 	const pictures =
-		newer === undefined
-			? makePictures(context, trees, choice.state)
-			: { note: supersededText(newer) };
+		problem === undefined ? await makePictures(context, trees, choice.state) : { note: problem };
 	return {
 		baseSha: context.baseSha,
 		headSha: context.headSha,
@@ -239,38 +237,18 @@ async function buildReport(
 }
 
 /**
- * The pull request's head now, when a later push moved it past this run's head. Overlapping runs
- * finish in any order, and only the run of the current head publishes.
- * @param context The run.
- * @returns The newer head, or undefined.
- */
-async function newerHead(context: Context): Promise<string | undefined> {
-	const now = (await readPullRequest(context.access, context.number))?.headSha;
-	return now === undefined || now === context.headSha ? undefined : now;
-}
-
-/**
- * Why a run of an older head publishes nothing.
- * @param newer The pull request's head now.
- * @returns A sentence.
- */
-function supersededText(newer: string): string {
-	return `The pull request moved on to ${newer.slice(0, 7)}, so this run of an older head publishes neither pictures nor comment.`;
-}
-
-/**
  * Post the comment, unless a later push moved the pull request on, and say so when it cannot be
  * posted.
  * @param context The run.
  * @param report The report.
  */
 async function postComment(context: Context, report: PullRequestReport): Promise<void> {
-	const newer = await newerHead(context);
-	if (newer !== undefined) {
-		process.stdout.write(`::notice::${supersededText(newer)}\n`);
-		return;
-	}
-	const result = await upsertComment(context.access, context.number, pullRequestComment(report));
+	const result = await upsertComment(
+		context.access,
+		context.number,
+		pullRequestComment(report),
+		context.headSha,
+	);
 	if ("failure" in result) warnUnposted(result.failure);
 }
 
@@ -362,8 +340,13 @@ async function reportNoVault(context: Context): Promise<void> {
 	);
 	const comment = noVaultComment(context.headSha);
 	writeSummary(comment);
-	if ((await newerHead(context)) !== undefined) return;
-	const result = await upsertComment(context.access, context.number, comment, false);
+	const result = await upsertComment(
+		context.access,
+		context.number,
+		comment,
+		context.headSha,
+		false,
+	);
 	if ("failure" in result) warnUnposted(result.failure);
 }
 

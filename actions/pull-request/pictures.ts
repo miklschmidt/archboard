@@ -8,6 +8,7 @@ import { pushAssets } from "./assets.ts";
 import type { PictureLinks } from "./comment.ts";
 import { archboard } from "./context.ts";
 import type { Context } from "./context.ts";
+import { publicationProblem } from "./github.ts";
 import { rawUrl } from "./links.ts";
 import type { ModelState } from "./plan.ts";
 
@@ -140,18 +141,25 @@ function notPushed(context: Context, failure: string): string {
  * @param state The proposal for the after picture.
  * @returns The links, or why there are none.
  */
-function makePictures(context: Context, trees: Trees, state: ModelState | undefined): Pictures {
+async function makePictures(
+	context: Context,
+	trees: Trees,
+	state: ModelState | undefined,
+): Promise<Pictures> {
 	const drawn = drawPictures(context, { ...trees, state });
 	if (Object.keys(drawn).length === 0) return { note: "No picture could be drawn." };
-	const failure = pushAssets({
-		server: context.hosting.server,
-		repository: context.hosting.repository,
-		token: context.access.token,
-		branch: context.branch,
-		folder: assetFolder(context),
-		pullRequestFolder: `pr-${String(context.number)}`,
-		files: drawn,
-	});
+	const failure = await pushAssets(
+		{
+			server: context.hosting.server,
+			repository: context.hosting.repository,
+			token: context.access.token,
+			branch: context.branch,
+			folder: assetFolder(context),
+			pullRequestFolder: `pr-${String(context.number)}`,
+			files: drawn,
+		},
+		() => publicationProblem(context.access, context.number, context.headSha),
+	);
 	if (failure !== undefined) return { note: notPushed(context, failure) };
 	const before = linksOf(context, "before", drawn);
 	return {

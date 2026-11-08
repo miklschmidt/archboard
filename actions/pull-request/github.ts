@@ -118,6 +118,25 @@ function factsOf(pull: object): PullRequestFacts {
 }
 
 /**
+ * Why this run must not publish pictures or a comment.
+ * @param access How to reach the API.
+ * @param number The pull request's number.
+ * @param headSha The commit this run reports.
+ * @returns A reason, or undefined when this run still reports the current head.
+ */
+async function publicationProblem(
+	access: ApiAccess,
+	number: number,
+	headSha: string,
+): Promise<string | undefined> {
+	const now = (await readPullRequest(access, number))?.headSha;
+	if (now === undefined) return undefined;
+	return now === headSha
+		? undefined
+		: `The pull request moved on to ${now.slice(0, 7)}, so this run of an older head publishes neither pictures nor comment.`;
+}
+
+/**
  * Whether a value from the API is a comment.
  * @param value The value.
  * @returns True when it has a numeric id.
@@ -162,6 +181,7 @@ type PostResult =
  * @param access How to reach the API.
  * @param number The pull request's number.
  * @param body The comment's Markdown, which carries the marker.
+ * @param headSha The commit this run reports.
  * @param create False to only update an earlier comment, and create none.
  * @returns What happened. A refusal, such as the read-only token of a fork, says why.
  */
@@ -169,12 +189,15 @@ async function upsertComment(
 	access: ApiAccess,
 	number: number,
 	body: string,
+	headSha: string,
 	create = true,
 ): Promise<PostResult> {
 	const comments = await listComments(access, number, 1);
 	if (comments === undefined)
 		return { failure: "the token cannot read the pull request's comments" };
 	const existing = findStickyComment(comments);
+	const problem = await publicationProblem(access, number, headSha);
+	if (problem !== undefined) return { failure: problem };
 	if (existing === undefined) {
 		if (!create) return { posted: "none" };
 		const answer = await call(access, "POST", `/issues/${String(number)}/comments`, { body });
@@ -196,4 +219,4 @@ function posted(answer: ApiAnswer, done: "created" | "updated"): PostResult {
 		: { failure: `GitHub answered ${String(answer.status)} to the comment` };
 }
 
-export { readPullRequest, upsertComment, type ApiAccess, type PostResult };
+export { publicationProblem, readPullRequest, upsertComment, type ApiAccess, type PostResult };

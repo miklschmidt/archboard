@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-07T12:42:00Z'
-updated_date: '2026-11-08T13:38:00Z'
+updated_date: '2026-11-08T13:44:00Z'
 labels: []
 dependencies:
   - TASK-591
@@ -48,6 +48,8 @@ Review fixes: footprint buckets match stable module identities and sort their la
 Final review validation: all 32 Action tests pass under Node 22.18.0. Both TypeScript projects, focused Action and test lint, and repository formatting pass. The docs site builds with no errors, warnings or hints. Semantic inspection returns no diagnostics. Code inspection exits 0 with existing informational findings and skipped evidence. The embeds check returns no findings. No push or merge occurs in this review.
 
 Review standards fix: the new Action tests assert annotation structure, diagnostic codes, source paths and report identity instead of full prose. Pure plan tests move to their own owner so the entry owner remains below 500 lines as publication regressions are added. All 39 focused tests pass.
+
+Review fix: publication now reads the current PR head after rendering and after each asset fetch, including retries. The comment writer reads it after listing comments. Regressions preserve the published asset commit and comment when the head moves at either boundary. Publication remains inside vKEsyHFk#mAh7CmuS, so the model needs no change.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
