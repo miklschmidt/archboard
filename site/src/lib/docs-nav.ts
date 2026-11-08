@@ -36,7 +36,7 @@ export const cliGroups = [
 		label: "check",
 		title: "The `check` commands",
 		description:
-			"Hold the model to its vocabulary, its code and the pictures that embed it. Exit 1 means a finding remains.",
+			"Hold the model to its vocabulary, its code and the pictures that embed it. A check fails while a finding remains.",
 		commands: ["check"],
 	},
 	{

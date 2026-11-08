@@ -231,7 +231,15 @@ const schema = reference.schemas.find((entry) => entry.name === command.name.rep
 			}
 		</tbody>
 	</table>)}
-	{!command.router && command.refusals.length > 0 && <SubHead id={`${anchor}-refusals`}>Refusals</SubHead>}
+	{!command.router && <SubHead id={`${anchor}-refusals`}>Refusals</SubHead>}
+	{
+		!command.router && command.refusals.length === 0 && (
+			<p>
+				It has no refusals of its own. <a href={`${docsHref("reference/cli")}#exit-codes`}>The exit codes</a> of
+				every command apply.
+			</p>
+		)
+	}
 	{
 		!command.router && command.refusals.length > 0 && (
 			<table class="exits">
