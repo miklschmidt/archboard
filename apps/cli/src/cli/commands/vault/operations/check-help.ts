@@ -90,6 +90,19 @@ const CHECK_EMBEDS_HELP = [
 	"The result lists every inspected artifact, source vault, finding, and completed repair. An interrupted repair reports every file already rewritten.",
 	"A recipe never substitutes another model by name. The check writes no architecture content.",
 	"Exit 1 means a warning remains. Information never changes the exit status.",
+	"",
+	"Warnings:",
+	"- EMBED_OUTDATED: the model says something new since the picture was drawn. Draw it again with --fix, then commit it.",
+	"- EMBED_SOURCE_MISSING: the model, the state or the view that the recipe names is gone, or what it names draws nothing now. Draw the picture from a reading that exists, or remove it.",
+	"- EMBED_VAULT_FETCH_FAILED: no checkout on this machine holds the vault that the recipe names, fetching it failed and no copy is cached, so the picture was not checked. Register a checkout of that repository with `repo add`.",
+	"- EMBED_RECIPE_UNREADABLE: the file carries a recipe that cannot be read, so nothing can draw it again. Draw the picture again from the model, or remove it.",
+	"",
+	"Information, which never changes the exit status:",
+	"- EMBED_RENDERER_CHANGED: only the picture differs, because the renderer draws the same model differently. The model says nothing new.",
+	"- EMBED_VAULT_UNAVAILABLE: the vault that the recipe names cannot be read, so the picture was not checked: it is in no repository, its checkout holds none, its identity names no remote, the commit fetched or cached holds none, or the server refuses it.",
+	"- EMBED_VAULT_CACHED: fetching the vault failed, and the check read the newest cached copy, which can be behind the default branch. Every finding against it is information, and --fix draws nothing from it.",
+	"",
+	"A finding about a file of another repository is information, whatever its code: that repository draws the file again only after the vault's change merges.",
 ].join("\n");
 /** The description of explicit artifact repair. */
 const FIX_HELP =

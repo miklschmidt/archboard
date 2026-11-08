@@ -61,7 +61,7 @@ export interface SchemaEntry {
 
 export interface FindingEntry {
 	readonly code: string;
-	readonly check: "code" | "semantics";
+	readonly check: "code" | "embeds" | "semantics";
 	readonly severity: "warning" | "error" | "information" | "skip";
 	readonly text: string;
 }

@@ -460,7 +460,8 @@ html:has(.docs) {
 .prose tbody:first-child tr:first-child td {
 	box-shadow: none;
 }
-.prose td:first-child code {
+/* A value in a cell reads as one piece: `pull-requests: write` never breaks at its hyphen. */
+.prose td code {
 	white-space: nowrap;
 }
 @media (max-width: 640px) {

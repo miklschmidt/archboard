@@ -11,8 +11,10 @@ import { join } from "node:path";
 import { cliContractRegistry } from "../../apps/cli/src/cli/routing/operations/run.ts";
 import {
 	CHECK_CODE_HELP,
+	CHECK_EMBEDS_HELP,
 	CHECK_SEMANTICS_HELP,
 } from "../../apps/cli/src/cli/commands/vault/operations/check-help.ts";
+import { EMBED_CODES } from "../../apps/cli/src/cli/commands/vault/protocol/embeds-answer.ts";
 import {
 	SCHEMA_NAMES,
 	jsonSchema,
@@ -148,7 +150,7 @@ function severityOf(heading: string): "warning" | "error" | "information" | "ski
  * @param help The help text.
  * @returns Each code with its severity and its explanation.
  */
-function catalog(check: "code" | "semantics", help: string) {
+function catalog(check: "code" | "embeds" | "semantics", help: string) {
 	const entries: { code: string; check: string; severity: string; text: string }[] = [];
 	let severity: ReturnType<typeof severityOf> = null;
 	for (const line of help.split("\n")) {
@@ -173,7 +175,14 @@ function catalog(check: "code" | "semantics", help: string) {
 const findings = [
 	...catalog("semantics", CHECK_SEMANTICS_HELP),
 	...catalog("code", CHECK_CODE_HELP),
+	...catalog("embeds", CHECK_EMBEDS_HELP),
 ];
+
+// Every code the embeds check can report must be in its help, so the docs list it.
+const unlisted = EMBED_CODES.filter((code) => !findings.some((entry) => entry.code === code));
+if (unlisted.length > 0) {
+	throw new Error(`The help of "archboard check embeds" lists no ${unlisted.join(", ")}`);
+}
 
 /** The GitHub Actions of this repository, read from their metadata. */
 function actions() {

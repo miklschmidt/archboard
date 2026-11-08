@@ -24,11 +24,14 @@ const groups: { slug: string; title: string; text: string; entries: FindingEntry
 		text: "A skip is something the check did not read, with the reason. A skip never fails the check, and it is listed so that an unread subject never looks clean.",
 		entries: reference.findings.filter((entry) => entry.severity === "skip"),
 	},
+	{
+		slug: "embeds",
+		title: "Embeds check",
+		text: "The embeds check finds each SVG and PNG that Git tracks and that carries a render recipe. It draws the recipe again and compares the result with the file. A warning fails the check. Information never does.",
+		entries: reference.findings.filter((entry) => entry.check === "embeds"),
+	},
 ];
-const headings = [
-	...groups.map((group) => ({ depth: 2, slug: group.slug, text: group.title })),
-	{ depth: 2, slug: "embeds", text: "Embeds check" },
-];
+const headings = groups.map((group) => ({ depth: 2, slug: group.slug, text: group.title }));
 const label = { warning: "Warning, fails", error: "Error, fails", information: "Information", skip: "Skip" };
 ---
 
@@ -68,26 +71,6 @@ const label = { warning: "Warning, fails", error: "Error, fails", information: "
 			</>
 		))
 	}
-	<h2 id="embeds" class="heading">
-		Embeds check<a class="heading-link" href="#embeds" aria-label="Link to this section" data-heading-link data-pagefind-ignore>#</a>
-	</h2>
-	<p>
-		The embeds check finds each SVG and PNG that Git tracks and that carries a render recipe. It draws
-		the recipe again and compares the result with the file.
-	</p>
-	<div class="codes">
-		<div class="code-row" id="embed-outdated">
-			<div class="code-head">
-				<a class="code-name" href="#embed-outdated"><code>EMBED_OUTDATED</code></a>
-				<span class="severity warning">Warning, fails</span>
-			</div>
-			<p>
-				The model changed since the picture was drawn. Run <code>archboard check embeds --fix</code> to draw
-				it again, then commit it. A picture that changed only because the renderer changed is
-				information.
-			</p>
-		</div>
-	</div>
 	<Aside type="tip" title="Keep a finding visible without failing">
 		The check Action takes <code>allow-codes</code>. A listed code still shows on the pull request, and
 		it never fails the step.
