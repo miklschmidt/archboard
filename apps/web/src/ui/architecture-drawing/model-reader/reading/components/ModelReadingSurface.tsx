@@ -188,8 +188,8 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 	// flow on screen.
 	const claims = useMemo(() => {
 		if (!selecting) {
-			const shown = [scope, flow?.id].filter((id): id is string => typeof id === "string");
-			return shown.length === 0 ? NO_CLAIMS : claimsOn(claimed, shown);
+			const named = [scope, flow?.id].filter((id): id is string => typeof id === "string");
+			return named.length === 0 ? NO_CLAIMS : claimsOn(claimed, named);
 		}
 		const subject = selectedSubject({ model, projection, ids });
 		return claimsOn(claimed, subject.kind === "flow" ? [...ids, subject.flow.id] : ids);
