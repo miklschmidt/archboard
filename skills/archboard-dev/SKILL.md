@@ -1,9 +1,9 @@
 ---
 name: archboard-dev
 description: >-
-  Keep Archboard's canonical architecture model and consumer guidance aligned
-  with product changes. Use when planning, implementing, or closing work in
-  this repository.
+  Keep Archboard's canonical architecture model, consumer guidance and docs
+  site aligned with product changes. Use when planning, implementing, or
+  closing work in this repository.
 metadata:
   internal: true
 ---
@@ -40,6 +40,27 @@ Reserve the complete repository gate for integration acceptance or an explicit r
 
 Follow consumer completion, retention, publication, and recovery recipes for adoption, shelving, and shared evidence.
 Commit affected authored inputs with the work.
+
+## Keep the docs in sync
+
+The docs site in `site/` describes the shipped CLI and the GitHub Actions.
+Sync it in the same change when the change alters one of these:
+
+- A command, option, example, output, exit code or refusal of the CLI.
+- A finding or skip reason of a check, or a model schema.
+- An input or the behavior of a GitHub Action.
+- The install or release steps.
+
+Generated pages come from the program: `site/scripts/reference.ts` reads the CLI contracts, the help of each check, the JSON Schemas and each `actions/*/action.yml`.
+To change what a generated page says, edit its source in the CLI or the Action. The page only lays out that data.
+The site's `prebuild` and `predev` run the script, and the script throws when an example runs another command or when the embeds help misses a code.
+
+Hand-written pages quote behavior: `site/src/content/docs/*.mdx`, `actions/README.md`, `INSTALL.md` and `README.md`.
+Search them for each changed command, flag, code and exit status, and correct every statement and example that the change makes false.
+Follow `site/DESIGN.md` for anything a reader sees.
+
+Run `nix develop -c bun run build` in `site/`, then read each changed page in the running site with `bunx agent-browser`.
+Finish when the build passes and no page describes behavior that the change replaced.
 
 ## Maintain consumer guidance
 
