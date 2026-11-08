@@ -95,7 +95,7 @@ function wordsAt(browser: AgentBrowserSession): Promise<string> {
 		const words = [...legend.querySelectorAll('h4, svg, li [title]')].filter((word) => word.closest('[role="switch"]') === null);
 		return JSON.stringify(words.map((word) => {
 			const { x, y } = word.getBoundingClientRect();
-			return [word.textContent, x, y];
+			return [word.textContent, Math.round(x), Math.round(y)];
 		}));
 	})()`);
 }
