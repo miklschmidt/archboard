@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T23:49:00Z'
-updated_date: '2026-11-07T23:50:00Z'
+updated_date: '2026-11-08T01:22:00Z'
 labels:
   - renderer
 dependencies: []
@@ -28,9 +28,11 @@ The opt-in benchmark (`bun run benchmark`, `packages/renderer/tests/runtime/bloc
 - [x] #2 A label never lies over another stretch of its own route, also when it falls back to a spot beside them, and unit tests cover a hairpin with room beside and one without
 - [x] #3 The arc reader of the corpus checks reads two flat-topped arcs on one line, with a straight run between them, as two arcs, and a test covers it
 - [x] #4 `bun run benchmark` passes all 220 cases, and the root's first layout stays well inside its 3 s local limit
-- [x] #5 Only the pictures that had the defect change, and every other corpus picture is byte-identical to main
-- [x] #6 ADR 0063 states both rules
-- [ ] #7 The owner accepts the two changed pictures by eye
+- [x] #5 Contraction keeps the room a join needs before its card and stands a crossing at exactly its least room, so it takes the unused room out of Canonical architecture again, and a unit test covers the join
+- [x] #6 Crossings that a crest would crowd form one cluster, and a unit test covers it
+- [x] #7 Against #66, the notes list every corpus picture that changes, with its size, and every other picture is byte-identical
+- [x] #8 ADR 0063 states the loop rule, the label rule and the join room that contraction keeps
+- [ ] #9 The owner accepts the changed pictures by eye
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -41,6 +43,9 @@ The opt-in benchmark (`bun run benchmark`, `packages/renderer/tests/runtime/bloc
 3. Read two flat-topped arcs on one line as two arcs in `drawn-crossings.ts`: a curve that ends an arc starts none.
 4. Cut the root's first layout: weigh the pairs of parts that pull together once per grid search, and settle each dense grid once for every room.
 5. Compare every corpus picture with main, look at the changed ones, and run the benchmark, the renderer tests, clippy and the type check.
+
+6. On the owner's review: keep the join room and exact crossings through contraction, so Canonical architecture loses its empty top band.
+7. Stack the branch on #66, and fix what its narrower navigator exposes in the corpus: crossings that a crest would crowd join one cluster.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -53,4 +58,10 @@ Speed: callgrind put 55% of the root in `dense::grid::Grid::cost`, which compare
 Measured against main in this worktree, rendering all 110 Blocks readings: 108 byte-identical, Camera and pointer and Canonical architecture changed. Root 2938 -> 1743 ms, Commands 267 -> 107 ms, Canonical architecture 381 -> 614 ms (its labels search further), all readings 12.9 -> 12.2 s.
 Canonical architecture now takes another placement: three columns in the frame instead of two, 2880x1660 instead of 2321x1816, 13% more area. Camera and pointer grew 54 px taller.
 Checks: benchmark 220/220 in five runs, root 1.83-1.87 s at load 4.3; renderer package tests 829/829; archboard-layout tests 144/144; clippy for wasm32, rustdoc, cargo fmt, tsc, lint:tests and fmt clean.
+
+Stacked on #66 (feat/shell-lit-table). Its narrower navigator changes the landing room, so 30 pictures differ from main before this branch.
+Owner review: Canonical architecture had a wide empty band at its top. With the loop guard its tight rooms (96, 144) no longer route, so it drew at room 192, and contraction failed at every tight clearance, so the extra room stayed. Two guard rules refused the contracted drawing. Contraction kept only the 21 px approach between a card and the stretch where a line joins another line just before that card, but `junctions::readable` needs 36 px. And contraction stands a crossing exactly 16 px from a bend, which floating noise made `clear_crossing` refuse. Contraction now keeps `JOIN_ROOM` for such a stretch (`compact/sheet.rs` `joined_card`, `Piece::joins`), and the crossing rule allows 1e-6 of noise. Canonical architecture is 2787x1537 now, 2880x1660 before this fix, 2321x1816 on #66.
+On #66 the root failed 'arcs side by side': crossings 20.04 px apart formed two clusters, and a crest over two crossings runs 3 px past them, so it stood 3 px from the next hop. Clusters now count that margin (`routes/clusters.rs`), and the three crossers hop the line one each. This changes only the root.
+Against #66, 16 of 110 pictures change, 94 are byte-identical. Root 4209x3931 (hops only). 0T9enjhi#1VHRyajb (Canonical architecture) 2321x1816 -> 2787x1537. 0T9enjhi#Bd4GPG6d 2044x1510 -> 1907x1330. 0T9enjhi#ZRq51Ecz 1514x1179 -> 1514x1215. 0T9enjhi#Zeo3aQWz 2104x1513 -> 2050x1342. 0T9enjhi#cNaEpWjJ 2772x1742 -> 2710x1372. 6E6hL0Zk#9G6CmNgt 1988x1113 -> 2015x1089. 9ncuT5DP#Fg9dkGj3 1685x874 -> 1470x1083 (its frame now holds one column instead of a 2x2 grid). 9ncuT5DP#u2LFaG7R 2020x923 -> 1892x982. IbGtfJE2#8O4XNZOZ 1777x1235 -> 1756x1160. Oi6SBIAM#UvFpXmwp 1888x1554 -> 1798x1346. SMjRfwN3#ZAj4RMzN 1594x1500 -> 1546x1171. UOXNWLhR#ZSU6h9hV (Camera and pointer) 2093x1811 -> 2087x1347. XppR9owz#dHZeNcMs 1169x987 -> 1116x952. vKEsyHFk#OHywsFXm 2238x1402 -> 2193x1332. yejBBUFY#n2ONtqdt 2053x1340 -> 1990x1156. In total the changed pictures cover 8.5% less area. 9G6CmNgt changes under the loop and label rules although its picture on #66 shows neither defect: the guard also refuses candidates during the search, which then ends on another placement.
+Checks on the stack: benchmark 220/220, root 1.97 s; renderer package tests 829/829; archboard-layout tests pass; clippy for wasm32, rustdoc and cargo fmt clean. Rendering all 110 readings takes 11.0 s, 21.5 s on #66 alone.
 <!-- SECTION:NOTES:END -->
