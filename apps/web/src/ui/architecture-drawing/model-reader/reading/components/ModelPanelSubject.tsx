@@ -197,7 +197,10 @@ function OtherSubject(
 		<ModelPanel.Body slot="model-panel-other">
 			{warnings}
 			{subject.kind === "collection" && (
-				<ModelCollectionDetails {...subject} onOpenFlow={props.onRevealFlow} />
+				<>
+					<ModelPanel.Head title={subject.collection.name}>Flow collection</ModelPanel.Head>
+					<ModelCollectionDetails {...subject} onOpenFlow={props.onRevealFlow} bare />
+				</>
 			)}
 			{subject.kind === "flow" && (
 				<>
@@ -213,13 +216,15 @@ function OtherSubject(
 				</>
 			)}
 			{subject.kind === "subjects" && (
-				<SelectedSubjects
-					model={model}
-					reference={projection.reference}
-					selected={ids}
-					title={`${ids.size} selected`}
-					slot="model-selected-subjects"
-				/>
+				<>
+					<ModelPanel.Head title={`${ids.size} selected`} />
+					<SelectedSubjects
+						model={model}
+						reference={projection.reference}
+						selected={ids}
+						slot="model-selected-subjects"
+					/>
+				</>
 			)}
 			{props.context}
 		</ModelPanel.Body>

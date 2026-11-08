@@ -198,6 +198,28 @@ test("a claim is a status mark on its rows, its model and a selected subject, an
 		WAIT,
 	);
 	expect(badge).toEqual({ text: words, title: words });
+	// A mixed selection still names its claim, and removing its claimed member clears the badge.
+	await pick(browser, "Shop#Worker", { toggle: true });
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-selected-subjects"]') !== null && document.querySelector('${BADGE}') !== null`,
+			),
+		Boolean,
+		"the claim badge on a mixed selection",
+		WAIT,
+	);
+	await pick(browser, "Shop#Gateway", { toggle: true });
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id') === 'Shop#Worker' && document.querySelector('${BADGE}') === null`,
+			),
+		Boolean,
+		"no claim badge after the claimed member leaves the selection",
+		WAIT,
+	);
+	await pick(browser, "Shop#Gateway");
 
 	// The agent ends the claim, and every mark leaves with it.
 	const released = await request<ArchitectureClaimList>("/api/architecture/claims/release", {
