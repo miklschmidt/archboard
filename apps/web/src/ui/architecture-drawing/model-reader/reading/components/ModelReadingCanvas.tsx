@@ -6,6 +6,7 @@ import {
 	type ReactNode,
 	type RefObject,
 } from "react";
+import { cn } from "@archboard/ui-kit/components";
 import {
 	ModelDestinationNotice,
 	ModelUnavailableReading,
@@ -73,8 +74,16 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 			{request.grammar === "architecture" && (
 				<FocusAvailability missing={request.projection.missingFocus} />
 			)}
-			<div className="flex min-h-0 min-w-0 flex-1">
-				<div ref={area} className="picture-corners relative flex min-h-0 min-w-0 flex-1">
+			<div className="bg-sidebar flex min-h-0 min-w-0 flex-1">
+				{/* A strip of chrome under the picture, and beside it while the right panel hides
+				    (ModelPanel), so the chrome holds the picture on every side. */}
+				<div
+					ref={area}
+					className={cn(
+						"picture-corners bg-background relative mb-2 flex min-h-0 min-w-0 flex-1 in-data-presenting:m-0",
+						selection.ids.size === 0 && "@max-[900px]/reading:mr-2",
+					)}
+				>
 					<Suspense fallback={null}>
 						{scene !== null && (
 							<ModelDiagram

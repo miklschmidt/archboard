@@ -210,8 +210,8 @@ nothing in the shell paints on it.
 The shell is dense desktop chrome at 1920×1080. It uses 13px controls, 28px
 rows and small corners. Its neutrals are warm graphite and chalk, tinted toward
 the hue of the gold. Depth comes from planes, not from lines. The chrome is one
-flat plane round the picture. It casts no shadow onto it, and the picture's top
-corners are rounded against it. Controls stand on
+flat plane round the picture. It holds the picture on every side and casts no shadow onto
+it, and the picture's corners are rounded against it. Controls stand on
 the chrome with a highlight on their top edge. Menus and dialogs float above
 everything. One warm yellow-gold marks what is chosen. It also marks the one
 primary action of a region, and that action is drawn as a physical piece of
@@ -225,7 +225,7 @@ underline.
 
 **Key Characteristics:**
 
-- The picture is the ground. The shell sits around it as one plane, and the picture's top corners are rounded against the shell.
+- The picture is the ground. The shell holds it on every side as one plane, and the picture's corners are rounded against the shell.
 - Planes stack under a light from above. Each plane has a tone step, a highlight on its top edge and a warm shadow with an offset.
 - Keys are physical. A gold key and a quiet key lift on hover and sink on press, and a chosen tab rises out of its trough.
 - One gold has three uses: what is chosen, the one primary action, and the voice and the brand mark. On the picture, the palette's yellow is that gold, on purpose.
@@ -344,7 +344,7 @@ The file app.css holds the values for both themes and gives each one a
 - **well** (`--elevation-well`, an inner shadow with a lit line along the foot): a field sunk into a surface, a trough, a count cell and a pressed key. `--elevation-trough` is the same piece under its other name.
 - **sink** (`--elevation-sink`, built from `--slab-shadow` and `--tray-lip`): the well that a column's list lies in. One inner shadow falls from the whole of its top edge, and a lit lip runs along its foot, as on a container of the picture. The `column-well` utility holds the recipe.
 - **slab** (`--elevation-slab`, built from `--slab-glint`, `--slab-edge` and `--slab-shadow`): a number that lies on a surface, as a small part of the picture does: a lit top edge, a front edge 2px thick and a short shadow.
-- **No edge shadow.** The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane. It casts no shadow and draws no line where it meets the picture: the tone step is the edge. The picture's top corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility, and a presented picture keeps square corners. A tray at the foot of a column is one tone step lighter, with no line and no shadow.
+- **No edge shadow.** The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane. It casts no shadow and draws no line where it meets the picture: the tone step is the edge. The chrome holds the picture on every side: an 8px strip of chrome runs under it, and beside it while the right panel hides. The picture's four corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility. A presented picture fills its pane with square corners. A tray at the foot of a column is one tone step lighter, with no line and no shadow.
 - **raised** (`--elevation-raised`, a white highlight on top, a 1px contact line and a short soft shadow): a quiet key, a key cap, the voice circle and the chosen row of a list.
 - **pressed** (`--elevation-pressed`, the same value as well): a raised control while somebody presses it.
 - **chosen** (`--elevation-chosen`, raised and a 2px line of Wayfinding Gold inside the foot): the chosen tab of a trough. It is also the chosen row of the tree that is the row of what is open.

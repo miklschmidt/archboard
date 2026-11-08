@@ -379,7 +379,7 @@
      chrome   the navigator, a pane's header, the right panel and the
               conversation are one flat plane round the picture. They cast
               no shadow onto it: the tone step is the edge, and the picture's
-              top corners are rounded against the chrome (`picture-corners`).
+              corners are rounded against the chrome (`picture-corners`).
               A tray at the foot of a column is a step lighter, with no line
               and no shadow.
      raised   a control, a key cap or the chosen row of a list, standing on
@@ -583,38 +583,30 @@
 	}
 }
 
-/* The picture's top corners, rounded against the chrome round it: a piece of chrome in each
-   corner, cut by a quarter circle, so the picture keeps its size and nothing in it is clipped.
-   A presented picture has no chrome over it, so its corners stay square. */
+/* The picture is a sheet held by the chrome on every side: its four corners are rounded
+   against it. One layer over the picture paints a piece of chrome in each corner, cut by a
+   quarter circle, so the picture keeps its size and nothing in it is clipped. A presented
+   picture has no chrome round it, so its corners stay square. */
 @utility picture-corners {
-	&::before,
-	&::after {
+	&::before {
+		--corner: var(--radius-window);
+		--cut: transparent calc(var(--corner) - 0.5px), var(--sidebar) var(--corner);
 		content: "";
 		position: absolute;
-		top: 0;
+		inset: 0;
 		z-index: 10;
-		width: var(--radius-window);
-		height: var(--radius-window);
 		pointer-events: none;
+		background:
+			radial-gradient(circle at 100% 100%, var(--cut)) top left / var(--corner) var(--corner)
+				no-repeat,
+			radial-gradient(circle at 0 100%, var(--cut)) top right / var(--corner) var(--corner)
+				no-repeat,
+			radial-gradient(circle at 100% 0, var(--cut)) bottom left / var(--corner) var(--corner)
+				no-repeat,
+			radial-gradient(circle at 0 0, var(--cut)) bottom right / var(--corner) var(--corner)
+				no-repeat;
 	}
-	&::before {
-		left: 0;
-		background: radial-gradient(
-			circle at 100% 100%,
-			transparent calc(var(--radius-window) - 0.5px),
-			var(--sidebar) var(--radius-window)
-		);
-	}
-	&::after {
-		right: 0;
-		background: radial-gradient(
-			circle at 0 100%,
-			transparent calc(var(--radius-window) - 0.5px),
-			var(--sidebar) var(--radius-window)
-		);
-	}
-	[data-presenting] &::before,
-	[data-presenting] &::after {
+	[data-presenting] &::before {
 		display: none;
 	}
 }
