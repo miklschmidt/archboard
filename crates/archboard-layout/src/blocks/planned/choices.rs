@@ -117,7 +117,11 @@ fn select<'a>(
 #[derive(Default)]
 struct Pool {
     homes: std::collections::BTreeSet<(u64, u64, u64, u64, u64, u64)>,
-    families: std::collections::BTreeMap<(bool, u64), usize>,
+    /// How many candidates each family keeps: the routes whose longest run shares one line,
+    /// and that leave their source and target walls the same ways. A route that leaves
+    /// another wall keeps its own place, so ports that later fail together do not crowd out
+    /// a route from another wall.
+    families: std::collections::BTreeMap<([Side; 2], bool, u64), usize>,
 }
 impl Pool {
     fn keep(
@@ -163,6 +167,7 @@ impl Pool {
         }
         let horizontal = longest[0].y == longest[1].y;
         let family = (
+            walls(&points),
             horizontal,
             (if horizontal {
                 longest[0].y
@@ -182,6 +187,36 @@ impl Pool {
             label,
         })
     }
+}
+
+/// The way a line leaves a wall: right, left, down or up the page.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum Side {
+    Right,
+    Left,
+    Down,
+    Up,
+}
+
+fn side(at: Point, next: Point) -> Side {
+    if next.x > at.x {
+        Side::Right
+    } else if next.x < at.x {
+        Side::Left
+    } else if next.y > at.y {
+        Side::Down
+    } else {
+        Side::Up
+    }
+}
+
+/// The ways a route leaves its source wall and its target wall.
+fn walls(points: &[Point]) -> [Side; 2] {
+    let last = points.len() - 1;
+    [
+        side(points[0], points[1]),
+        side(points[last], points[last - 1]),
+    ]
 }
 
 fn obstacles(model: &Model<'_>, topology: &Topology, edge: usize, shape: &Shape) -> Vec<Rect> {
@@ -331,4 +366,66 @@ fn shifted(guide: &[Point], index: usize, horizontal: bool, offset: f64) -> Vec<
         }
     }
     clean(points)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        blocks::assembly::{Placed, PlacedCard},
+        graph::Node,
+    };
+
+    /// Eight routes from the source's right wall share their longest run, so its family is
+    /// full. A route along that run from the source's bottom wall still keeps a place, because
+    /// the right wall's ports can all fail together while the router places other lines.
+    #[test]
+    fn a_route_from_another_wall_keeps_its_place_beside_a_full_family() {
+        let graph: Node = serde_json::from_value(serde_json::json!({"id": "root",
+            "children": [{"id": "a", "width": 160, "height": 80},
+                {"id": "b", "width": 200, "height": 80}],
+            "edges": [{"id": "ab", "sources": ["a"], "targets": ["b"]}]}))
+        .expect("a node");
+        let card = |id: &str, x: f64, y: f64| PlacedCard {
+            id: id.into(),
+            bx: Rect {
+                x,
+                y,
+                width: if id == "a" { 160.0 } else { 200.0 },
+                height: 80.0,
+            },
+            depth: 0,
+            header: None,
+        };
+        let drawing = Placed {
+            width: 1200.0,
+            height: 700.0,
+            cards: vec![card("a", 100.0, 100.0), card("b", 900.0, 400.0)],
+            frames: Vec::new(),
+            regions: Vec::new(),
+            edges: Vec::new(),
+            titles: Vec::new(),
+            routed: None,
+        };
+        let model = Model::new(&graph).expect("a model");
+        let topology = Topology::new(&model);
+        let shape = super::super::fixed::placement(&model, drawing).expect("a shape");
+        let bounds = shape.scopes[&topology.routes[0].scope].bounds;
+        let probe = super::super::channel::Probe::new(&model, &topology, 0, &shape, bounds);
+        let path = |points: &[(f64, f64)]| -> Vec<Point> {
+            points.iter().map(|&(x, y)| Point { x, y }).collect()
+        };
+        let mut pool = Pool::default();
+        let mut keep = |points: Vec<Point>| pool.keep(&model, 0, |_| Ok(None), &probe, points);
+        for at in 0..8 {
+            let y = 108.0 + 8.0 * f64::from(at);
+            let right = path(&[(260.0, y), (300.0, y), (300.0, 440.0), (900.0, 440.0)]);
+            assert!(
+                keep(right).is_some(),
+                "the right wall's route {at} has no place"
+            );
+        }
+        let bottom = path(&[(180.0, 180.0), (180.0, 440.0), (900.0, 440.0)]);
+        assert!(keep(bottom).is_some());
+    }
 }
