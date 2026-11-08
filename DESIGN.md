@@ -685,6 +685,8 @@ A state that saved readings has a quiet chip under its words: a chevron, how man
 
 A claim is status. The shell marks what an agent claims and offers no action on it. The mark is the lamp of Working now: a dot of 6px in Live Lime that pulses while the claim lasts. Under reduced motion it stands still. It takes no click and no focus, and it moves nothing. On hover and to assistive technology it says `Claimed by an agent:` and the agent's purpose. It never names the writer, because the writer is an identity such as a thread's.
 
+On chalk, a still rim of 1px in Status Foreground keeps the dot visible throughout its pulse. Graphite needs no rim.
+
 A claimed model carries the mark in the repository switcher, after its name, and on the corner of its icon in the list of repositories. In the left column, each row of a module, a flow or a walkthrough that a claim holds carries the mark at the end of the row, before a count. A claim marks the rows only in a reading of the state that it names. A retained checkpoint marks nothing.
 
 While a claim holds the selected subject, the line under the name in the head of the right panel ends with the `Claimed` badge. The badge is the dot and the word in a chip with an edge of 1px in the Rule tone. It is 18px high, so the line keeps its height. Nothing shows while the selection is not claimed, and every mark leaves when the claim ends.

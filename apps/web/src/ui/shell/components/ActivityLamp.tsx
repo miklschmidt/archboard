@@ -78,8 +78,12 @@ function ClaimMark(props: ClaimMarkProps): JSX.Element {
 		<span
 			data-slot="claim-mark"
 			title={words}
-			className={cn("shrink-0 rounded-full", LAMP_CLASSES.claimed, props.className)}
+			className={cn(
+				"ring-status-foreground flex size-1.5 shrink-0 rounded-full ring-1 dark:ring-0",
+				props.className,
+			)}
 		>
+			<ActivityLamp state="claimed" />
 			<span className="sr-only">{words}</span>
 		</span>
 	);

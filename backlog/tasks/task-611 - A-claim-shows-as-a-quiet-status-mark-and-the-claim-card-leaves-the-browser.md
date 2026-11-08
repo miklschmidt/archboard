@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T21:25:00Z'
-updated_date: '2026-11-08T21:54:00Z'
+updated_date: '2026-11-08T22:08:00Z'
 labels:
   - frontend
 dependencies: []
@@ -39,6 +39,8 @@ The claim card dates from when a person could draw on the canvas. Take back cont
 5. Show a Claimed badge in the right panel head while a selected subject is claimed.
 6. Rework the claims browser owner and the claim parts of the viewer and proposals owners. Run them focused.
 7. Update PRODUCT.md, DESIGN.md, README.md, CONTEXT.md, frontend.md, test-suite.md, the site and the vault. Judge both themes with screenshots and audit the site.
+
+Review fixes: keep the Claimed badge tied to the selected subjects in mixed selections and flow readings. Correct any remaining reader take-back refusal. Use focused browser and model owners, both-theme inspection, and the site audit. These fixes keep the same owners, interfaces, and relationships, so no architecture proposal is needed.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -49,6 +51,8 @@ Vault: Model access (vKEsyHFk/yejBBUFY#AIp6YN1P) now reads claims and applies li
 Verification: lint:all, type-check, site build (astro check) and scripts/check-model.ts pass. bun test --parallel over apps/web/tests/ui/shell and apps/web/tests/ui/architecture-drawing: 505 pass. Browser lane, focused: canonical-model-claims (1), canonical-model-viewer (3), canonical-model-proposals (1) and shell-layout (1) pass. The look was judged with agent-browser screenshots in both themes and under reduced motion. The site audit covered the hero, the claim demo before and after release, and phone width.
 
 Left open: the README take-back clip (README.md:243) and its recipe scripts/readme-assets/take-back.ts still show and click the removed control, so the recipe fails until the clip is filmed again. The refusal messages in packages/model/src/runtime/canonical/edit/operations/claims.ts:117 and :347 still tell agents to ask for a take-back.
+
+Review of 2ceca8bcf..d160f8feb: fixed remaining release refusal guidance, missing badges on mixed selections and flow collections, and a claimed flow marking an unclaimed participant. The claim mark now reuses ActivityLamp inside a still Status Foreground rim on chalk. Existing panel heads and subject classification own these cases. No module or relationship changes. Browser owners claims, viewer, proposals, shell-layout and reader-context pass. Focused unit owners: 15 pass. Backend claim/news owner: 5 pass. Lint and both TypeScript projects pass. Both themes and reduced motion inspected with agent-browser on port 3489. Site paintings and diagrams regenerated, and the site build passes with no Astro warnings. Diagram changes contained only allocated sample identities and were restored. The README clip and recipe remain deferred as requested.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
