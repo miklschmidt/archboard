@@ -12,7 +12,8 @@ GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
 const { QueryClient, QueryClientProvider, focusManager, onlineManager } =
 	await import("@tanstack/react-query");
-const { act, cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
+const { act, cleanup, configure, fireEvent, getConfig, render, waitFor } =
+	await import("@testing-library/react");
 const { ModelCodeEvidence } =
 	await import("#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx");
 const { useModelCodeFindings } =
@@ -31,7 +32,17 @@ const { codeTokensQuery } =
 type Props = ComponentProps<typeof ModelCodeEvidence>;
 type Reading = NonNullable<Props["reading"]>;
 
+/**
+ * The ceiling of every wait in this file. Testing Library gives a wait one second, but a page that
+ * shares the machine with the other test files reads its lines and imports its grammar seconds late
+ * (the grammar alone takes 0.3 s on a quiet machine). A passing run never reaches the ceiling, which
+ * stays below Bun's own 15 s for a case.
+ */
+const TEST_READ_WAIT_MS = 10_000;
+
 const realFetch = globalThis.fetch;
+const waitCeiling = getConfig().asyncUtilTimeout;
+configure({ asyncUtilTimeout: TEST_READ_WAIT_MS });
 const observer = Object.getOwnPropertyDescriptor(globalThis, "IntersectionObserver")!;
 const clients: InstanceType<typeof QueryClient>[] = [];
 const VAULT = "/work/shop/.archboard/vault";
@@ -54,6 +65,7 @@ afterEach(() => {
 	onlineManager.setOnline(true);
 });
 afterAll(async () => {
+	configure({ asyncUtilTimeout: waitCeiling });
 	await Bun.sleep(1);
 	await GlobalRegistrator.unregister();
 });
@@ -223,6 +235,17 @@ function rows(): Element[] {
 }
 
 /**
+ * Wait until every excerpt on the page has its lines or has none. The cache tells the page that a
+ * read has ended in a task of its own, so a test that is over before then leaves an update outside
+ * act, in the report of the test that follows.
+ */
+async function excerptsRead(): Promise<void> {
+	await waitFor(() =>
+		expect(document.querySelector('output[data-slot="code-source-state"]')).toBeNull(),
+	);
+}
+
+/**
  * The passes a page asked for.
  * @param asked The addresses it asked for.
  * @returns The addresses of the code check.
@@ -259,6 +282,7 @@ test("a page starts with the layout its browser remembers", async () => {
 test("cards show every finding beside its code, warnings first, and a card's key selects its subject", async () => {
 	answering(() => Response.json({ error: "no" }, { status: 404 }));
 	const shown = mount();
+	await excerptsRead();
 	expect(codes("code-finding")).toEqual([
 		"RELATIONSHIP_UNDRAWN",
 		"BINDING_SYMBOL_MISSING",
@@ -278,6 +302,7 @@ test("cards show every finding beside its code, warnings first, and a card's key
 test("the list walks its rows with the keys, and each finding chosen selects its subject", async () => {
 	answering(() => Response.json({ error: "no" }, { status: 404 }));
 	const shown = mount();
+	await excerptsRead();
 	await lay("list");
 	expect(codes("code-finding-row")).toEqual([
 		"RELATIONSHIP_UNDRAWN",
@@ -302,6 +327,7 @@ test("the list walks its rows with the keys, and each finding chosen selects its
 test("the switch is remembered, and a page without storage still switches", async () => {
 	answering(() => Response.json({ error: "no" }, { status: 404 }));
 	mount();
+	await excerptsRead();
 	expect(document.querySelector('[data-slot="code-evidence"]')?.getAttribute("data-layout")).toBe(
 		"cards",
 	);
@@ -313,6 +339,7 @@ test("the switch is remembered, and a page without storage still switches", asyn
 	try {
 		chooseCodeFindingsLayout("cards");
 		mount();
+		await excerptsRead();
 		await lay("list");
 		expect(document.querySelector('[data-slot="code-evidence"]')?.getAttribute("data-layout")).toBe(
 			"list",
@@ -472,6 +499,7 @@ test("the code view starts one pass when no pass read the reading, and then show
 		finish();
 	});
 	await waitFor(() => expect(codes("code-finding")).toHaveLength(3));
+	await excerptsRead();
 	expect(checksIn(asked)).toHaveLength(1);
 });
 
