@@ -27,7 +27,7 @@ const groups: { slug: string; title: string; text: string; entries: FindingEntry
 	{
 		slug: "embeds",
 		title: "Embeds check",
-		text: "The embeds check finds each SVG and PNG that Git tracks and that carries a render recipe. It draws the recipe again and compares the result with the file. A warning fails the check. Information never does.",
+		text: "The embeds check finds each SVG and PNG that Git tracks and that carries a render recipe. It draws the recipe again and compares the result with the file. A warning fails the check. Information never does. A finding about a file of another repository is information, whatever its code, because that repository draws the file again only after the vault's change merges.",
 		entries: reference.findings.filter((entry) => entry.check === "embeds"),
 	},
 ];
@@ -57,11 +57,15 @@ const label = { warning: "Warning, fails", error: "Error, fails", information: "
 				<p>{group.text}</p>
 				<div class="codes">
 					{group.entries.map((entry) => (
-						<div class="code-row" id={findingAnchor(entry.code)}>
+						<div class="code-row" id={findingAnchor(entry.codes[0] ?? "")}>
 							<div class="code-head">
-								<a class="code-name" href={`#${findingAnchor(entry.code)}`}>
-									<code>{entry.code}</code>
-								</a>
+								<span class="code-names">
+									{entry.codes.map((code, at) => (
+										<a class="code-name" href={`#${findingAnchor(code)}`} id={at === 0 ? undefined : findingAnchor(code)}>
+											<code>{code}</code>
+										</a>
+									))}
+								</span>
 								<span class:list={["severity", entry.severity]}>{label[entry.severity]}</span>
 							</div>
 							<p set:html={inlineCode(entry.text)} />
@@ -103,6 +107,11 @@ const label = { warning: "Warning, fails", error: "Error, fails", information: "
 		align-items: center;
 		justify-content: space-between;
 		gap: 8px 16px;
+	}
+	.code-names {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 10px;
 	}
 	.code-name {
 		text-decoration: none;

@@ -60,7 +60,8 @@ export interface SchemaEntry {
 }
 
 export interface FindingEntry {
-	readonly code: string;
+	/** The codes that share this explanation, usually one. */
+	readonly codes: readonly string[];
 	readonly check: "code" | "embeds" | "semantics";
 	readonly severity: "warning" | "error" | "information" | "skip";
 	readonly text: string;

@@ -34,7 +34,8 @@ A rule in `AGENTS.md` is a request. An agent can ignore it. A check that fails t
 | A code warning             | `1`  | `RELATIONSHIP_UNDRAWN`: code calls a module that the model does not join |
 | A semantic diagnostic      | `1`  | `RELATIONSHIP_ON_CONTAINER`: a line that ends on a module with parts     |
 | An outdated picture        | `1`  | `EMBED_OUTDATED`: a tracked SVG that no longer matches the model         |
-| No vault, or a usage error | `2`  | `VAULT_NOT_FOUND` in a checkout without `.archboard/vault`               |
+| No vault in the checkout   | `0`  | Only the embeds check runs, and a skip says that the others did not      |
+| A usage error, or no vault | `2`  | `VAULT_NOT_FOUND` outside any Git checkout, with no vault above it       |
 | No server                  | `3`  | The server did not answer and could not start                            |
 
 Information and skips print on standard error and never change the exit status. [Check findings](../reference/findings/) lists every code. Each check also runs alone:

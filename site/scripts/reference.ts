@@ -145,13 +145,14 @@ function severityOf(heading: string): "warning" | "error" | "information" | "ski
 }
 
 /**
- * The findings and skip reasons a check's help lists, one entry for each code it names.
+ * The findings and skip reasons a check's help lists: one entry for each line, which names one
+ * code or several codes that share the explanation.
  * @param check The check whose help it is.
  * @param help The help text.
- * @returns Each code with its severity and its explanation.
+ * @returns The codes of each line, with their severity and their explanation as a sentence.
  */
 function catalog(check: "code" | "embeds" | "semantics", help: string) {
-	const entries: { code: string; check: string; severity: string; text: string }[] = [];
+	const entries: { codes: string[]; check: string; severity: string; text: string }[] = [];
 	let severity: ReturnType<typeof severityOf> = null;
 	for (const line of help.split("\n")) {
 		if (!line.startsWith("- ")) {
@@ -167,7 +168,13 @@ function catalog(check: "code" | "embeds" | "semantics", help: string) {
 				? codes.every((code) => /^[a-z]+(-[a-z]+)+$/.test(code))
 				: codes.every((code) => /^[A-Z]+(_[A-Z]+)+$/.test(code));
 		if (!valid) continue;
-		for (const code of codes) entries.push({ code, check, severity, text: match[2] });
+		const text = match[2];
+		entries.push({
+			codes,
+			check,
+			severity,
+			text: `${text.charAt(0).toUpperCase()}${text.slice(1)}`,
+		});
 	}
 	return entries;
 }
@@ -179,7 +186,9 @@ const findings = [
 ];
 
 // Every code the embeds check can report must be in its help, so the docs list it.
-const unlisted = EMBED_CODES.filter((code) => !findings.some((entry) => entry.code === code));
+const unlisted = EMBED_CODES.filter(
+	(code) => !findings.some((entry) => entry.codes.includes(code)),
+);
 if (unlisted.length > 0) {
 	throw new Error(`The help of "archboard check embeds" lists no ${unlisted.join(", ")}`);
 }
