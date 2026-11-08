@@ -58,24 +58,30 @@ function reasonOf(push: AssetPush, result: ProcessResult): string {
  * Put the commit on top of the branch: fetch it when it exists, else start it with no parent.
  * @param push What to push.
  * @param clone The clone's directory.
+ * @returns Whether the clone now holds the branch as the remote has it.
  */
-function checkoutBranch(push: AssetPush, clone: string): void {
+function checkoutBranch(push: AssetPush, clone: string): boolean {
 	const fetched = git(push, clone, ["fetch", "--depth=1", "origin", push.branch]);
-	if (fetched.exitCode === 0) git(push, clone, ["checkout", "-q", "-B", push.branch, "FETCH_HEAD"]);
+	if (fetched.exitCode !== 0) return false;
+	return git(push, clone, ["checkout", "-q", "-B", push.branch, "FETCH_HEAD"]).exitCode === 0;
 }
 
 /**
  * Write the files, commit them and push.
  * @param push What to push.
  * @param clone The clone's directory.
+ * @param fetched Whether the clone holds the branch as the remote has it.
  * @returns The push's result.
  */
-function commitAndPush(push: AssetPush, clone: string): ProcessResult {
+function commitAndPush(push: AssetPush, clone: string, fetched: boolean): ProcessResult {
 	rmSync(join(clone, push.pullRequestFolder), { recursive: true, force: true });
 	mkdirSync(join(clone, push.folder), { recursive: true });
 	for (const [name, source] of Object.entries(push.files))
 		cpSync(source, join(clone, push.folder, name));
 	git(push, clone, ["add", "--all"]);
+	// A run again at the same head draws the same pictures, and they are on the branch already.
+	const status = git(push, clone, ["status", "--porcelain"]);
+	if (fetched && status.exitCode === 0 && status.stdout.trim() === "") return status;
 	const commit = git(push, clone, [
 		"-c",
 		"user.name=github-actions[bot]",
@@ -102,8 +108,7 @@ function pushAssets(push: AssetPush): string | undefined {
 		git(push, clone, ["remote", "add", "origin", `${push.server}/${push.repository}.git`]);
 		let last: ProcessResult = { exitCode: 1, stdout: "", stderr: "" };
 		for (let attempt = 0; attempt < ATTEMPTS && last.exitCode !== 0; attempt += 1) {
-			checkoutBranch(push, clone);
-			last = commitAndPush(push, clone);
+			last = commitAndPush(push, clone, checkoutBranch(push, clone));
 		}
 		return last.exitCode === 0 ? undefined : reasonOf(push, last);
 	} finally {

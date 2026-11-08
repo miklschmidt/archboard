@@ -257,6 +257,8 @@ describe("the entry", () => {
 		expect(overridden.exitCode).toBe(0);
 		expect(comments).toHaveLength(1);
 		expect(comments[0]?.body).toContain("lets this pull request through");
+		// The same head again: its pictures are on the branch already, and the comment still shows them.
+		expect(comments[0]?.body).toContain(`pr-7/${headSha}/after-light.svg`);
 		expect(requests.filter((one) => one.startsWith("PATCH"))).not.toHaveLength(0);
 		labels = [];
 	});
