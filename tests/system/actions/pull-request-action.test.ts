@@ -4,7 +4,7 @@
 // bare repository for the pictures branch.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pullRequestComment } from "../../../actions/pull-request/comment.ts";
 import type { PullRequestReport } from "../../../actions/pull-request/comment.ts";
@@ -127,7 +127,7 @@ describe("the plan of a proposal", () => {
 			decideOutOfPlan({
 				mode: "fail",
 				hasProposal: true,
-				footprintRead: true,
+				judgeable: true,
 				outside: buckets.outsidePlan,
 				labels: [],
 				overrideLabel: "override",
@@ -139,7 +139,7 @@ describe("the plan of a proposal", () => {
 describe("changes outside the plan", () => {
 	const base = {
 		hasProposal: true,
-		footprintRead: true,
+		judgeable: true,
 		outside: ["Stock API"],
 		labels: [] as string[],
 		overrideLabel: "archboard: out of plan",
@@ -154,14 +154,15 @@ describe("changes outside the plan", () => {
 	});
 
 	test("fail mode fails when the plan cannot be checked, unless the label lets it through", () => {
-		const unread = { ...base, footprintRead: false, outside: [] };
+		const unread = { ...base, judgeable: false, outside: [] };
 		expect(decideOutOfPlan({ ...unread, mode: "fail" })).toEqual({
 			status: "unjudged",
 			failed: true,
 		});
-		expect(decideOutOfPlan({ ...unread, mode: "fail", labels: [base.overrideLabel] }).failed).toBe(
-			false,
-		);
+		expect(decideOutOfPlan({ ...unread, mode: "fail", labels: [base.overrideLabel] })).toEqual({
+			status: "unjudged-overridden",
+			failed: false,
+		});
 		expect(decideOutOfPlan({ ...unread, mode: "warn" }).failed).toBe(false);
 	});
 
@@ -237,6 +238,8 @@ describe("the entry", () => {
 	beforeAll(() => {
 		Bun.spawnSync(["git", "init", "-q", "-b", "main", checkout]);
 		writeFileSync(join(checkout, "a.txt"), "a");
+		mkdirSync(join(checkout, ".archboard/vault"), { recursive: true });
+		writeFileSync(join(checkout, ".archboard/vault/model.json"), "{}");
 		git("add", ".");
 		git("commit", "-q", "-m", "base");
 		baseSha = git("rev-parse", "HEAD");
@@ -365,9 +368,30 @@ describe("the entry", () => {
 			"read-base": JSON.stringify({ success: false, code: "INVALID_MODEL" }),
 		});
 		expect(result.exitCode).toBe(1);
-		expect(result.stdout).toContain("::warning title=Archboard plan::");
+		expect(result.stdout).toContain("::error title=Archboard plan::");
 		expect(comments[0]?.body).not.toContain("**Planned and changed**");
 		expect(comments[0]?.body).toContain("could not be checked, so this check fails");
+	});
+
+	test("proposals that cannot be read fail the step in fail mode, whether the CLI refuses or prints nothing", async () => {
+		const refused = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" }, false, {
+			proposals: JSON.stringify({ success: false, code: "INVALID_MODEL" }),
+		});
+		expect(refused.exitCode).toBe(1);
+		expect(refused.stdout).toContain("::error title=Archboard plan::The proposals at the head");
+		const silent = await step({}, false, { proposals: "" });
+		expect(silent.exitCode).toBe(0);
+		expect(silent.stdout).toContain("::warning title=Archboard plan::The proposals at the head");
+		expect(silent.stdout).not.toContain("holds no Archboard vault");
+	});
+
+	test("a proposal that the pull request names and the model lacks fails the step in fail mode", async () => {
+		const result = await step({
+			ARCHBOARD_INPUT_OUT_OF_PLAN: "fail",
+			ARCHBOARD_INPUT_STATE: "missing",
+		});
+		expect(result.exitCode).toBe(1);
+		expect(comments.at(-1)?.body).toContain("could not be checked, so this check fails");
 	});
 
 	test("the footprint counts from the base branch, which every checkout has, and reports unread modules", async () => {

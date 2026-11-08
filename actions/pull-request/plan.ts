@@ -90,8 +90,10 @@ function parseOutOfPlanMode(value: string): OutOfPlanMode {
 /**
  * - `off`: the configuration asks for no judgement.
  * - `no-proposal`: the pull request carries no proposal, so no change is outside a plan.
- * - `unjudged`: the plan or the footprint could not be read. In fail mode the step fails, unless
- *   the override label lets the pull request through, because a gate that cannot judge must not pass.
+ * - `unjudged`: the proposals, the plan or the footprint could not be read, or the pull request
+ *   names a proposal that the model does not have. In fail mode the step fails, because a gate
+ *   that cannot judge must not pass.
+ * - `unjudged-overridden`: the same, and the override label lets the pull request through.
  * - `in-plan`: every changed module is in the plan.
  * - `warn`, `fail`: modules changed outside the plan, and the mode says how loudly.
  * - `overridden`: modules changed outside the plan, and the override label lets the pull request through.
@@ -100,6 +102,7 @@ type OutOfPlanStatus =
 	| "off"
 	| "no-proposal"
 	| "unjudged"
+	| "unjudged-overridden"
 	| "in-plan"
 	| "warn"
 	| "fail"
@@ -116,9 +119,10 @@ interface OutOfPlanDecision {
 interface PlanFacts {
 	/** The `out-of-plan` input. */
 	readonly mode: OutOfPlanMode;
+	/** Whether the pull request carries a proposal or names one. */
 	readonly hasProposal: boolean;
-	/** Whether the footprint could be read. */
-	readonly footprintRead: boolean;
+	/** Whether the proposal, its plan and the footprint could all be read. */
+	readonly judgeable: boolean;
 	/** The names of the modules that changed outside the plan. */
 	readonly outside: readonly string[];
 	readonly labels: readonly string[];
@@ -134,8 +138,24 @@ interface PlanFacts {
 function statusWithoutJudgement(facts: PlanFacts): OutOfPlanStatus | undefined {
 	if (facts.mode === "off") return "off";
 	if (!facts.hasProposal) return "no-proposal";
-	if (!facts.footprintRead) return "unjudged";
+	if (!facts.judgeable) return "unjudged";
 	return facts.outside.length === 0 ? "in-plan" : undefined;
+}
+
+/** The status that the override label turns each blocking status into. */
+const OVERRIDDEN = { fail: "overridden", unjudged: "unjudged-overridden" } as const;
+
+/**
+ * The status that blocks the pull request in fail mode: modules changed outside the plan, or a
+ * plan that cannot be checked.
+ * @param facts What the pull request carries.
+ * @returns The status, or undefined when nothing blocks.
+ */
+function blockingStatus(facts: PlanFacts): keyof typeof OVERRIDDEN | undefined {
+	if (facts.mode !== "fail") return undefined;
+	const status = statusWithoutJudgement(facts);
+	if (status === undefined) return "fail";
+	return status === "unjudged" ? "unjudged" : undefined;
 }
 
 /**
@@ -144,12 +164,13 @@ function statusWithoutJudgement(facts: PlanFacts): OutOfPlanStatus | undefined {
  * @returns The status and whether the step fails.
  */
 function decideOutOfPlan(facts: PlanFacts): OutOfPlanDecision {
-	const unjudged = statusWithoutJudgement(facts);
-	const blocks = facts.mode === "fail" && !facts.labels.includes(facts.overrideLabel);
-	if (unjudged !== undefined)
-		return { status: unjudged, failed: unjudged === "unjudged" && blocks };
-	if (facts.mode === "warn") return { status: "warn", failed: false };
-	return blocks ? { status: "fail", failed: true } : { status: "overridden", failed: false };
+	const blocking = blockingStatus(facts);
+	if (blocking === undefined) {
+		return { status: statusWithoutJudgement(facts) ?? "warn", failed: false };
+	}
+	return facts.labels.includes(facts.overrideLabel)
+		? { status: OVERRIDDEN[blocking], failed: false }
+		: { status: blocking, failed: true };
 }
 
 export {

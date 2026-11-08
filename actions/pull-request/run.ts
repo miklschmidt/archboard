@@ -5,7 +5,7 @@
 // `model footprint` and `model render`. Node runs this file as it is.
 
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
-import { appendFileSync, rmSync } from "node:fs";
+import { appendFileSync, existsSync, rmSync } from "node:fs";
 import { join, relative } from "node:path";
 import { pullRequestComment } from "./comment.ts";
 import type { PullRequestReport } from "./comment.ts";
@@ -18,7 +18,7 @@ import { parseBodyMarker } from "./marker.ts";
 import { makePictures } from "./pictures.ts";
 import type { Trees } from "./pictures.ts";
 import { chooseState, decideOutOfPlan } from "./plan.ts";
-import type { ModelState } from "./plan.ts";
+import type { ModelState, StateChoice } from "./plan.ts";
 import { proposalPlan } from "./proposal-plan.ts";
 import type { Buckets, ModelReading, ProposalPlan } from "./proposal-plan.ts";
 import { input, parseJson, run } from "../shared/process.ts";
@@ -26,6 +26,7 @@ import { annotationLine } from "../shared/workflow-commands.ts";
 
 /** What `model proposals` says that this action reads. */
 interface ProposalsReading {
+	readonly success?: boolean;
 	readonly states?: readonly ModelState[];
 	readonly vault?: { readonly path: string };
 }
@@ -97,9 +98,11 @@ function annotatePlan(report: PullRequestReport): void {
  * @param report The report.
  */
 function annotateUnavailable(report: PullRequestReport): void {
-	if (report.outOfPlan.status !== "unjudged") return;
+	const { status, failed } = report.outOfPlan;
+	if (status !== "unjudged" && status !== "unjudged-overridden") return;
 	const text = report.comparisonNote ?? report.footprintNote ?? "The plan could not be checked.";
-	process.stdout.write(`${annotationLine("warning", { title: "Archboard plan" }, text)}\n`);
+	const level = failed ? "error" : "warning";
+	process.stdout.write(`${annotationLine(level, { title: "Archboard plan" }, text)}\n`);
 }
 
 /**
@@ -129,15 +132,17 @@ function registerCheckouts(context: Context): string | undefined {
 /**
  * Judge the footprint against the plan.
  * @param context The run.
- * @param state The proposal, if any.
+ * @param choice The proposal, or why there is none.
  * @param buckets The footprint, if it was read.
  * @returns The decision.
  */
-function judge(context: Context, state: ModelState | undefined, buckets: Buckets | undefined) {
+function judge(context: Context, choice: StateChoice, buckets: Buckets | undefined) {
+	// A proposal that the pull request names and the model lacks is a plan that cannot be read.
+	const unknown = choice.source === "unknown";
 	return decideOutOfPlan({
 		mode: context.mode,
-		hasProposal: state !== undefined,
-		footprintRead: buckets !== undefined,
+		hasProposal: choice.state !== undefined || unknown,
+		judgeable: buckets !== undefined && !unknown,
 		outside: buckets?.outsidePlan ?? [],
 		labels: context.labels,
 		overrideLabel: context.overrideLabel,
@@ -195,7 +200,7 @@ function buildReport(
 		before: pictures.before,
 		after: pictures.after,
 		picturesNote: pictures.note,
-		outOfPlan: judge(context, choice.state, footprint.buckets),
+		outOfPlan: judge(context, choice, footprint.buckets),
 		overrideLabel: context.overrideLabel,
 		mapUrl: pictures.after?.light,
 		vaultUrl: vaultAddress(context, trees, proposals.vault?.path),
@@ -230,20 +235,45 @@ function cleanUp(context: Context): void {
 }
 
 /**
+ * Say that the proposals at the head could not be read. In fail mode that fails the step, as any
+ * plan that cannot be checked does.
+ * @param context The run.
+ * @param reason What the CLI said.
+ * @returns The exit status of this step.
+ */
+function proposalsUnread(context: Context, reason: string): number {
+	const decision = decideOutOfPlan({
+		mode: context.mode,
+		hasProposal: true,
+		judgeable: false,
+		outside: [],
+		labels: context.labels,
+		overrideLabel: context.overrideLabel,
+	});
+	const text = `The proposals at the head could not be read, so the plan was not checked: ${reason}`;
+	const level = decision.failed ? "error" : "warning";
+	process.stdout.write(`${annotationLine(level, { title: "Archboard plan" }, text)}\n`);
+	return decision.failed ? 1 : 0;
+}
+
+/**
  * Report on the pull request, with the commits checked out.
  * @param context The run.
  * @param trees Where the base's and the head's vaults are.
  * @returns The exit status of this step.
  */
 async function reportOn(context: Context, trees: Trees): Promise<number> {
-	const answer: ProposalsReading | undefined = parseJson(
-		archboard(context, trees.headDir, ["model", "proposals"]).stdout,
-	);
-	if (answer === undefined) {
+	// A checkout uses only the vault at its root, so without one there is nothing to report.
+	if (!existsSync(join(trees.headRoot, ".archboard", "vault"))) {
 		process.stdout.write(
 			"::notice::The head commit holds no Archboard vault, so there is nothing to report.\n",
 		);
 		return 0;
+	}
+	const result = archboard(context, trees.headDir, ["model", "proposals"]);
+	const answer: ProposalsReading | undefined = parseJson(result.stdout);
+	if (result.exitCode !== 0 || answer === undefined || answer.success === false) {
+		return proposalsUnread(context, firstLine(result.stderr));
 	}
 	const report = buildReport(context, trees, answer);
 	annotatePlan(report);

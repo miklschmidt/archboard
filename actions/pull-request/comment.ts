@@ -202,6 +202,7 @@ function outOfPlanSection(report: PullRequestReport): string[] {
 		unjudged: report.outOfPlan.failed
 			? `The plan could not be checked, so this check fails. Add the label ${label} to let this pull request through.`
 			: "The plan could not be checked.",
+		"unjudged-overridden": `The plan could not be checked. The label ${label} lets this pull request through.`,
 		"in-plan": "Every module the footprint found changed is in the plan.",
 		warn: `${outside} changed outside the plan. The action warns only; set \`out-of-plan: fail\` to make it fail.`,
 		fail: `${outside} changed outside the plan, so this check fails. Update the proposal to name them, or add the label ${label} to let this pull request through.`,
