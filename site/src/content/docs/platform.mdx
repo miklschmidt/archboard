@@ -10,7 +10,7 @@ Platform teams often keep Kubernetes manifests, Helm charts and Terraform apart 
 
 ## How the check follows a hop
 
-The code of a service reads an address from its environment. The infrastructure that runs the service sets that value to another service's address. The check joins the two halves into configured-path evidence:
+The code of a service reads an address from its environment. The infrastructure that runs the service sets that value to another service's address. The check joins the two halves into `configured-path` evidence:
 
 <Steps>
 
@@ -24,7 +24,7 @@ When all three hold, the check knows that one module reaches the other across th
 
 ## The relay example
 
-[archboard-relay-example](https://github.com/miklschmidt/archboard-relay-example) is a small parcel desk with four services. Its TypeScript and its model live in one repository. Its Kubernetes manifests and its OpenTofu queue live in [archboard-relay-example-infra](https://github.com/miklschmidt/archboard-relay-example-infra). The model says that Intake never calls Billing.
+[`archboard-relay-example`](https://github.com/miklschmidt/archboard-relay-example) is a small parcel desk with four services. Its TypeScript and its model live in one repository. Its Kubernetes manifests and its OpenTofu queue live in [`archboard-relay-example-infra`](https://github.com/miklschmidt/archboard-relay-example-infra). The model says that Intake never calls Billing.
 
 The platform gives every workload the address of every peer through one ConfigMap:
 
@@ -133,4 +133,4 @@ The code check reads files. It never runs the system, so it follows a hop only w
 
 ## A model for several repositories
 
-A model in one repository can bind into any number of others, as the relay example does. When no repository owns the whole system, keep the model in a repository of its own, such as a platform repository, and run the check there with every other checkout registered. [INSTALL.md](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md#4-how-a-command-finds-its-vault) describes how a command finds that vault.
+A model in one repository can bind into any number of others, as the relay example does. When no repository owns the whole system, keep the model in a repository of its own, such as a platform repository, and run the check there with every other checkout registered. [`INSTALL.md`](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md#4-how-a-command-finds-its-vault) describes how a command finds that vault.

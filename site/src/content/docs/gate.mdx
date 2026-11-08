@@ -62,7 +62,7 @@ There are two fixes, and the finding says both. If the call is intended, the age
 
 ## In a Git hook
 
-A pre-push hook keeps a failing map off the remote. Save this as `.githooks/pre-push` and make it executable:
+A `pre-push` hook keeps a failing map off the remote. Save this as `.githooks/pre-push` and make it executable:
 
 ```sh title=".githooks/pre-push" frame="code"
 #!/bin/sh
@@ -91,7 +91,7 @@ In a Node.js repository, pin the CLI as a dev dependency and let `npm install` s
 }
 ```
 
-For this setup, replace `archboard check` in `.githooks/pre-push` with `./node_modules/.bin/archboard check`. The hook then runs the pinned program, the same one that CI runs. A pre-commit hook works the same way, but a full check on every commit is slow on a large repository. Push is the better moment.
+For this setup, replace `archboard check` in `.githooks/pre-push` with `./node_modules/.bin/archboard check`. The hook then runs the pinned program, the same one that CI runs. A `pre-commit` hook works the same way, but a full check on every commit is slow on a large repository. Push is the better moment.
 
 ## In CI
 

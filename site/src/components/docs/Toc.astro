@@ -4,6 +4,8 @@ export interface TocHeading {
 	readonly depth: number;
 	readonly slug: string;
 	readonly text: string;
+	/** The heading names a command, so the outline sets it in mono, as the heading. */
+	readonly code?: boolean;
 }
 
 interface Props {
@@ -19,7 +21,7 @@ const headings = Astro.props.headings.filter((heading) => heading.depth === 2 ||
 			<p class="toc-title">On this page</p>
 			<ul>
 				{headings.map((heading) => (
-					<li class:list={{ deep: heading.depth === 3 }}>
+					<li class:list={{ deep: heading.depth === 3, code: heading.code === true }}>
 						<a href={`#${heading.slug}`} data-toc-link={heading.slug}>
 							{heading.text}
 						</a>
@@ -57,6 +59,10 @@ const headings = Astro.props.headings.filter((heading) => heading.depth === 2 ||
 	}
 	.deep a {
 		padding-left: 30px;
+	}
+	.code a {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
 	}
 	a::before {
 		content: "";
