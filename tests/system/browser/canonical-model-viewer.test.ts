@@ -196,6 +196,12 @@ test("canonical subject claims show their purpose, not their writer, and let the
 	await browser.eval(
 		`document.querySelector('[data-slot="model-diagram"] svg').setAttribute('data-test-scene', 'kept')`,
 	);
+	// A claim floats over the reading as a toast, so it never changes the room of the picture.
+	const pictureRoom = (): Promise<string> =>
+		browser.eval<string>(
+			`JSON.stringify(document.querySelector('[data-slot="model-diagram"]').getBoundingClientRect())`,
+		);
+	const room = await pictureRoom();
 	const claimed = await request<ArchitectureClaimResult>("/api/architecture/claims", {
 		method: "POST",
 		body: {
@@ -219,6 +225,31 @@ test("canonical subject claims show their purpose, not their writer, and let the
 	expect(notice).not.toContain("Agent Ada");
 	expect(notice).toContain("Explain gateway responsibility");
 	expect(notice).toContain("Gateway");
+	expect(await pictureRoom()).toBe(room);
+	// The toast leaves the focus where the reader had it.
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-claim"]').contains(document.activeElement)`,
+		),
+	).toBe(false);
+	// A second pane of the same vault shows the claim in the same toast, which stays while the
+	// first pane still shows it.
+	const stages = (): Promise<number> =>
+		browser.eval<number>(
+			`document.querySelectorAll('[data-slot="architecture-model-stage"]').length`,
+		);
+	const claimToasts = (): Promise<number> =>
+		browser.eval<number>(
+			`document.querySelectorAll('[data-slot="model-claim"][data-claim-id="${claim}"]').length`,
+		);
+	await request("/api/panes/open", { method: "POST", body: {} });
+	await pollUntil(stages, (count) => count === 2, "the second pane to read the vault", WAIT);
+	expect(await claimToasts()).toBe(1);
+	await request("/api/panes/close", { method: "POST", body: { pane: "focused" } });
+	await pollUntil(stages, (count) => count === 1, "the second pane to close", WAIT);
+	// A toast that the closed pane took away would be gone once the stack finishes its exit.
+	await browser.run(["wait", "500"]);
+	expect(await claimToasts()).toBe(1);
 	await browser.run(["click", '[data-slot="model-take-back"]']);
 	await pollUntil(claimVisible, (visible) => !visible, "the claim to end", WAIT);
 	const claims = await request<ArchitectureClaimList>("/api/architecture/claims");

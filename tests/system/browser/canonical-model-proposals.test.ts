@@ -178,6 +178,17 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 		"concurrent subject claims in the repository activity",
 		WAIT,
 	);
+	// Each claim floats in a toast of its own, and the stack keeps both in reach.
+	const claimToastIds = (): Promise<string[]> =>
+		browser.eval<string[]>(
+			`[...document.querySelectorAll('[data-slot="model-claim"]')].map(node => node.getAttribute('data-claim-id'))`,
+		);
+	await pollUntil(
+		claimToastIds,
+		(ids) => ids.includes(draftClaimId) && ids.includes(parallelId),
+		"one toast for each concurrent subject claim",
+		WAIT,
+	);
 	await request("/api/architecture/claims/release", {
 		method: "POST",
 		body: { vault, claim: parallelId, writer: "parallel-agent" },
@@ -189,6 +200,12 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 			),
 		(ids) => ids.includes(draftClaimId) && !ids.includes(parallelId),
 		"the remaining writer after one subject claim ends",
+		WAIT,
+	);
+	await pollUntil(
+		claimToastIds,
+		(ids) => ids.includes(draftClaimId) && !ids.includes(parallelId),
+		"the toast of the claim that remains",
 		WAIT,
 	);
 	const edited = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
