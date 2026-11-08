@@ -460,14 +460,20 @@ describe("the entry", () => {
 	});
 
 	test("a head without a vault replaces the earlier comment and creates none", async () => {
+		await step();
+		const count = comments.length;
 		git("rm", "-q", "-r", ".archboard");
 		git("commit", "-q", "-m", "no vault");
 		headSha = git("rev-parse", "HEAD");
-		const count = comments.length;
-		const result = await step();
-		expect(result.exitCode).toBe(0);
-		expect(result.stdout).toContain("::notice::The head commit holds no Archboard vault");
+		const updated = await step();
+		expect(updated.exitCode).toBe(0);
+		expect(updated.stdout).toContain("::notice::The head commit holds no Archboard vault");
 		expect(comments).toHaveLength(count);
-		expect(comments[0]?.body).toContain(`${headSha.slice(0, 7)} holds no Archboard vault`);
+		const sticky = comments.find((one) => one.body.includes(COMMENT_MARKER));
+		expect(sticky?.body).toContain(`${headSha.slice(0, 7)} holds no Archboard vault`);
+		comments.length = 0;
+		const silent = await step();
+		expect(silent.exitCode).toBe(0);
+		expect(comments).toHaveLength(0);
 	});
 });

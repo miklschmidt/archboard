@@ -240,10 +240,16 @@ function buildReport(
  */
 async function postComment(context: Context, report: PullRequestReport): Promise<void> {
 	const result = await upsertComment(context.access, context.number, pullRequestComment(report));
-	if ("failure" in result) {
-		const text = `The comment was not posted: ${result.failure}. The report is in the job summary.`;
-		process.stdout.write(`${annotationLine("warning", { title: "Archboard" }, text)}\n`);
-	}
+	if ("failure" in result) warnUnposted(result.failure);
+}
+
+/**
+ * Say that GitHub refused the comment.
+ * @param failure Why.
+ */
+function warnUnposted(failure: string): void {
+	const text = `The comment was not posted: ${failure}. The report is in the job summary.`;
+	process.stdout.write(`${annotationLine("warning", { title: "Archboard" }, text)}\n`);
 }
 
 /**
@@ -302,7 +308,7 @@ function refusalOf(answer: ProposalsReading | undefined, stderr: string): string
 function diagnosticDetail(diagnostic: ProposalsDiagnostic | undefined): string {
 	if (diagnostic?.message === undefined) return "";
 	const where = [diagnostic.code, diagnostic.file].filter(Boolean).join(" in ");
-	return ` (${where === "" ? "" : `${where}: `}${firstLine(diagnostic.message)})`;
+	return ` (${where === "" ? "" : `${where}: `}${withoutPeriod(firstLine(diagnostic.message))})`;
 }
 
 /**
@@ -315,6 +321,24 @@ function withoutPeriod(text: string): string {
 }
 
 /**
+ * Say that the head holds no vault, and replace an earlier comment so that its report of an older
+ * head never stands for this one.
+ * @param context The run.
+ */
+async function reportNoVault(context: Context): Promise<void> {
+	process.stdout.write(
+		"::notice::The head commit holds no Archboard vault, so there is nothing to report.\n",
+	);
+	const result = await upsertComment(
+		context.access,
+		context.number,
+		noVaultComment(context.headSha),
+		false,
+	);
+	if ("failure" in result) warnUnposted(result.failure);
+}
+
+/**
  * Report on the pull request, with the commits checked out.
  * @param context The run.
  * @param trees Where the base's and the head's vaults are.
@@ -323,10 +347,7 @@ function withoutPeriod(text: string): string {
 async function reportOn(context: Context, trees: Trees): Promise<number> {
 	// A checkout uses only the vault at its root, so without one there is nothing to report.
 	if (!existsSync(join(trees.headRoot, ".archboard", "vault"))) {
-		process.stdout.write(
-			"::notice::The head commit holds no Archboard vault, so there is nothing to report.\n",
-		);
-		await upsertComment(context.access, context.number, noVaultComment(context.headSha), false);
+		await reportNoVault(context);
 		return 0;
 	}
 	const result = archboard(context, trees.headDir, ["model", "proposals"]);

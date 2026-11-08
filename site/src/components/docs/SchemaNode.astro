@@ -109,7 +109,10 @@ function shapeName(target: JsonSchema, others: readonly JsonSchema[]): string {
 		const keys = Object.keys(own);
 		const elsewhere = new Set(others.flatMap((other) => Object.keys(fieldsOf(other) ?? {})));
 		const only = keys.filter((key) => !elsewhere.has(key));
-		if (only.length > 0) return `object with ${only.slice(0, 2).join(" and ")}`;
+		if (only.length > 0) {
+			const more = only.length > 2 ? ` and ${String(only.length - 2)} more` : "";
+			return `object with ${only.slice(0, 2).join(only.length > 2 ? ", " : " and ")}${more}`;
+		}
 		const lacks = [...elsewhere].filter((key) => !keys.includes(key));
 		if (lacks.length > 0) return `object without ${lacks.slice(0, 3).join(" or ")}`;
 	}
