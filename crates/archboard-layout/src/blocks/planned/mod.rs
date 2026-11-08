@@ -121,38 +121,12 @@ pub(super) fn route_candidates(
     Ok(best.ok_or(failure))
 }
 
-/// Past this many lines a dense placement costs too much for a second room or a
-/// second refusal: each refusal costs as much as a route.
+/// Past this many lines a reading starts with more room between its cells.
 const AMPLE_LINES: usize = 40;
 
-/// How many dense placements a reading of some lines routes, the most promising
-/// first: one route of a large reading costs as much as the budget of a drawing. A
-/// reading that opens a frame routes a second, because what a placement promises before
-/// it is routed misses the crossings that its doors bring.
-fn dense_routes(lines: usize, framed: bool) -> usize {
-    match (lines, framed) {
-        (0..=15, _) => 6,
-        (_, true) => 2,
-        (_, false) => 1,
-    }
-}
-
-/// How many placements past that budget a room can refuse at most.
-const MOST_REFUSALS: usize = 4;
-
-/// How many placements past that budget a room refuses at first. A refusal stops early, and
-/// the placements of the ranks cost far more than a few of them.
-fn dense_refusals(lines: usize) -> usize {
-    if lines <= AMPLE_LINES {
-        MOST_REFUSALS
-    } else {
-        1
-    }
-}
-
-/// The room a dense placement of some lines adds to its gaps, tightest first:
-/// each refusal costs a whole route, so a crowded reading starts wider. Lines
-/// between frames all cross the band between them, so several frames need more.
+/// The room a dense placement of some lines adds to its gaps, tightest first: a crowded
+/// reading starts wider. Lines between frames all cross the band between them, so several
+/// frames need more.
 fn dense_rooms(lines: usize, frames: usize) -> &'static [f64] {
     match (lines, frames) {
         (0..=15, 0..=1) => &[0.0, 48.0],
@@ -168,57 +142,39 @@ fn dense_rooms(lines: usize, frames: usize) -> &'static [f64] {
 /// The rooms a reading goes on to while its own rooms draw nothing.
 const WIDER_ROOMS: [f64; 7] = [144.0, 192.0, 288.0, 384.0, 480.0, 640.0, 800.0];
 
-/// The best dense drawing of a reading, if one passes every guard. A wider room
-/// runs only while no drawing lands readably, and past some lines only while none is drawn.
+/// The best dense drawing of a reading, if one passes every guard. Every placement at every
+/// room of the reading is routed, because what a placement promises before it is routed
+/// misses the crossings, detours and labels of its lines. A wider room runs only while no
+/// drawing passes, because even a drawing with more room than it needs reads far better
+/// than a Graphviz placement.
 pub(super) fn dense_drawing(graph: &crate::graph::Node) -> Option<crate::blocks::assembly::Placed> {
     let grids = dense::Grids::of(graph)?;
     let mut best = None;
-    let lines = relationships(graph);
-    let rooms = dense_rooms(lines, dense::frames(graph));
-    let refusals = dense_refusals(lines);
+    let rooms = dense_rooms(relationships(graph), dense::frames(graph));
     for &room in rooms {
-        dense_room(graph, &grids, room, lines, refusals, &mut best);
-        if best
-            .as_ref()
-            .is_some_and(|one| !one.0.0 || lines > AMPLE_LINES)
-        {
-            break;
-        }
+        dense_room(graph, &grids, room, &mut best);
     }
-    for (room, refusals) in rescues(rooms, refusals) {
+    let widest = rooms.last().copied().unwrap_or_default();
+    for &room in WIDER_ROOMS.iter().filter(|&&room| room > widest) {
         if best.is_some() {
             break;
         }
-        dense_room(graph, &grids, room, lines, refusals, &mut best);
+        dense_room(graph, &grids, room, &mut best);
     }
     best.map(|(_, drawing)| drawing)
 }
 
-/// What a reading tries when its rooms drew nothing, because even a drawing with more
-/// room than it needs reads far better than a Graphviz placement: the wider rooms,
-/// then its own rooms again if it has more placements left to try there.
-fn rescues(rooms: &[f64], refusals: usize) -> impl Iterator<Item = (f64, usize)> + use<'_> {
-    let widest = rooms.last().copied().unwrap_or_default();
-    let wider = WIDER_ROOMS.iter().filter(move |&&room| room > widest);
-    let again = rooms.iter().filter(move |_| refusals < MOST_REFUSALS);
-    (wider.map(move |&room| (room, refusals))).chain(again.map(|&room| (room, MOST_REFUSALS)))
-}
-
-/// Route a reading's placements at one room, as many as a reading of its size affords.
+/// Route every placement of a reading at one room, and keep the best drawing so far.
 fn dense_room(
     graph: &crate::graph::Node,
     grids: &dense::Grids<'_>,
     room: f64,
-    lines: usize,
-    refusals: usize,
     best: &mut Option<(reading::Order, crate::blocks::assembly::Placed)>,
 ) {
-    let most = dense_routes(lines, grids.framed());
     let routed = dense::drawings(grids, room)
         .into_iter()
-        .take(most + refusals)
         .filter_map(|drawing| fixed::route(graph, drawing, &selection::ORDERS[..1]).ok());
-    for next in routed.take(most) {
+    for next in routed {
         let order = reading::order(&next);
         if best.as_ref().is_none_or(|one| order < one.0) {
             *best = Some((order, next));

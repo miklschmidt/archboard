@@ -78,7 +78,9 @@ pub(super) fn rank(lines: &[PlacedLine]) -> (usize, u64) {
 
 /// How a finished drawing ranks: whether its words read where it lands, whether it stays
 /// within the room limit, its long detours, then the work of tracing its lines, with its
-/// crowded approaches, times what its room costs.
+/// crowded approaches, times its area. A page whose words read pays for its area alone, not
+/// for the scale it lands at: a smaller scale costs a reader less than lines that cross and
+/// run the long way round.
 pub(super) type Order = (bool, bool, usize, f64);
 
 /// The scale that a landing must reach for its words to read (the first gate of the reader).
@@ -90,9 +92,11 @@ const LANDS_WHOLE: (f64, f64) = (2505.0, 1520.0);
 /// A line is a long detour past this much extra travel, and half again its direct way.
 const LONG_DETOUR: f64 = 300.0;
 
-/// What a page of this size costs a reader: its own area, which a page that lands whole
-/// shows as it is, and the room that the smallest box of the pane's shape round it needs
-/// past the landing room, which a larger page pays for in scale.
+/// What a page of this size costs before it is routed: its own area, which a page that lands
+/// whole shows as it is, and the room that the smallest box of the pane's shape round it
+/// needs past the landing room, which a larger page pays for in scale. A placement that
+/// promises the pane's shape lands larger, so the ring and the promise prefer it, and the
+/// order judges the routed page by its area.
 pub(super) fn room_cost(width: f64, height: f64) -> f64 {
     let pane = width.max(height * PANE_SHAPE);
     width * height + (pane * pane / PANE_SHAPE - LANDING_ROOM.0 * LANDING_ROOM.1).max(0.0)
@@ -133,7 +137,8 @@ pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
         drawing.width > LANDS_WHOLE.0 || drawing.height > LANDS_WHOLE.1,
         long_detours(routed),
         (1.0 + f64::from_bits(cost) + crowded as f64 * CROWDED_COST)
-            * room_cost(drawing.width, drawing.height),
+            * drawing.width
+            * drawing.height,
     )
 }
 
@@ -311,5 +316,29 @@ mod tests {
             ..readable.clone()
         };
         assert!(order(&readable) < order(&unreadable));
+    }
+
+    /// Two pages that both land where their words read: a wide one whose line is short, and
+    /// one of the pane's shape whose line is two fifths longer. The pane's shape saves the
+    /// wide page's scale, not its area, so the short line wins.
+    #[test]
+    fn a_readable_page_pays_its_area_not_the_panes_shape() {
+        let page = |width: f64, height: f64, length: f64| Placed {
+            width,
+            height,
+            cards: Vec::new(),
+            frames: Vec::new(),
+            regions: Vec::new(),
+            edges: vec![PlacedLine {
+                id: "line".into(),
+                points: vec![Point { x: 0.0, y: 0.0 }, Point { x: length, y: 0.0 }],
+                label: None,
+            }],
+            titles: Vec::new(),
+            routed: None,
+        };
+        let wide = page(2000.0, 900.0, 1000.0);
+        let pane = page(1500.0, 1150.0, 1400.0);
+        assert!(order(&wide) < order(&pane));
     }
 }

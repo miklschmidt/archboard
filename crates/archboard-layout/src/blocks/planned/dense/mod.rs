@@ -47,6 +47,10 @@ struct Way {
     sides: bool,
     /// Whether frames fill rows as wide as the widest frame, or else stand side by side.
     stacked: bool,
+    /// Whether doors that face one place stand round it, else only at and after it.
+    centred: bool,
+    /// Room between the frames' whole and the doors round it, before routing.
+    gap: f64,
 }
 
 /// A frame's parts set on their grid, in the frame's own coordinates.
@@ -401,6 +405,8 @@ impl<'a> Reading<'a> {
                 .collect(),
             extra: way.room,
             sides: way.sides,
+            centred: way.centred,
+            gap: way.gap,
         };
         let page = ring.stand(&self.doors);
         let mut drawing = Placed {
@@ -474,11 +480,6 @@ pub(super) struct Grids<'a> {
 }
 
 impl<'a> Grids<'a> {
-    /// Whether the reading opens a frame, so that cards stand round it as doors.
-    pub(super) fn framed(&self) -> bool {
-        self.reading.blocks.iter().any(|block| block.framed)
-    }
-
     /// The grids of a reading that takes a dense placement.
     pub(super) fn of(graph: &'a Node) -> Option<Self> {
         let reading = Reading::of(graph)?;
@@ -505,14 +506,20 @@ pub(super) fn drawings(grids: &Grids<'_>, room: f64) -> Vec<Placed> {
     } else {
         &[false]
     };
-    let ways = arrangements.iter().flat_map(|&stacked| {
-        [false, true].map(|sides| Way {
-            room,
-            sides,
-            stacked,
+    let ways: Vec<Way> = (arrangements.iter())
+        .flat_map(|&stacked| [false, true].map(|sides| (stacked, sides)))
+        .flat_map(|(stacked, sides)| {
+            [false, true].into_iter().flat_map(move |centred| {
+                [ring::RING_GAP, ring::LABEL_GAP].map(|gap| Way {
+                    room,
+                    sides,
+                    stacked,
+                    centred,
+                    gap,
+                })
+            })
         })
-    });
-    let ways: Vec<Way> = ways.collect();
+        .collect();
     let mut placed: Vec<(f64, Placed)> = (grids.by_columns.iter())
         .flat_map(|settled| {
             let sets: Vec<Set> = (reading.blocks.iter().zip(settled))

@@ -2,6 +2,9 @@
 //! make, each at the place along its wall that faces what it joins. A card takes
 //! the wall where the way of every line, times what the page's room costs, is
 //! least, so a card that would grow the page on its own takes a wall that holds it.
+//! A ring stands its doors one of two ways: at and after what they face, or round it.
+//! It keeps one of two rooms from the frame: its own, or room for labels side by side.
+//! The router judges each way, because which reads best shows only once lines are drawn.
 
 use rustc_hash::FxHashMap;
 
@@ -14,7 +17,10 @@ use crate::{
 use super::{super::reading::room_cost, Set};
 
 /// Room between a frame's wall and the cards round it, before routing.
-const RING_GAP: f64 = 112.0;
+pub(super) const RING_GAP: f64 = 112.0;
+/// Room between a frame's wall and the cards round it when the labels of several lines must
+/// pass between them side by side: the ring's room and a cell's room again.
+pub(super) const LABEL_GAP: f64 = RING_GAP + 96.0;
 /// Room between two cards side by side.
 const STEP: f64 = 40.0;
 /// The room outside the outermost cards, where a line may run round them.
@@ -114,6 +120,21 @@ fn shut_wall(frame: &Rect, at: Point) -> Option<(usize, f64)> {
     }
 }
 
+/// The value that half the weight lies at or below.
+fn weighted_median(values: &[(f64, f64)]) -> f64 {
+    let mut sorted = values.to_vec();
+    sorted.sort_by(|a, b| a.0.total_cmp(&b.0));
+    let half = sorted.iter().map(|(_, weight)| weight).sum::<f64>() / 2.0;
+    let mut counted = 0.0;
+    for &(value, weight) in &sorted {
+        counted += weight;
+        if counted >= half {
+            return value;
+        }
+    }
+    sorted.last().map_or(0.0, |last| last.0)
+}
+
 /// Move a door beside the frame outward until it meets none of the doors above and below the
 /// frame. Those stand first, and a door beside the frame that reaches past its corner would
 /// stand over one. A door above or below the frame stays where it stands.
@@ -149,6 +170,10 @@ pub(super) struct Ring<'a> {
     pub ids: Vec<&'a str>,
     pub extra: f64,
     pub sides: bool,
+    /// Whether doors that face one place stand round it, else only at and after it.
+    pub centred: bool,
+    /// Room between a frame's wall and the doors round it, before routing.
+    pub gap: f64,
 }
 
 /// The page a ring answers: where the frame stands, and every door.
@@ -308,11 +333,55 @@ impl Ring<'_> {
             .fold(None, |most: Option<f64>, depth| {
                 Some(most.map_or(depth, |one| one.max(depth)))
             })
-            .map_or(0.0, |depth| depth + RING_GAP + self.extra)
+            .map_or(0.0, |depth| depth + self.gap + self.extra)
+    }
+
+    /// Each door on one wall, along it, in the order of what it faces: where the way of its
+    /// lines from what they face, in all, is least. Doors that face one place stand round it,
+    /// before and after it.
+    fn line_up(&self, doors: &[Door<'_>], wall: Wall) -> Vec<(usize, f64)> {
+        if !self.centred {
+            return Self::forward(doors, wall);
+        }
+        let mut held: Vec<usize> = (0..doors.len())
+            .filter(|&at| doors[at].wall == Some(wall))
+            .collect();
+        let facing = |at: usize| doors[at].facing(wall);
+        held.sort_by(|&a, &b| facing(a).total_cmp(&facing(b)).then(a.cmp(&b)));
+        // Less the room of the doors before it, each door's wanted start never falls along
+        // the wall: a run of doors that want to fall stands together at its weighted median.
+        let mut before = 0.0;
+        let mut wanted = Vec::with_capacity(held.len());
+        let mut runs: Vec<(usize, f64)> = Vec::new();
+        for &at in &held {
+            let span = doors[at].span(wall);
+            wanted.push((facing(at) - span / 2.0 - before, doors[at].lines.max(1.0)));
+            before += span + STEP;
+            let mut first = wanted.len() - 1;
+            let mut place = wanted[first].0;
+            while let Some(&(start, last)) = runs.last()
+                && last > place
+            {
+                runs.pop();
+                first = start;
+                place = weighted_median(&wanted[first..]);
+            }
+            runs.push((first, place));
+        }
+        let mut placed = Vec::with_capacity(held.len());
+        let mut before = 0.0;
+        for (run, &(first, place)) in runs.iter().enumerate() {
+            let end = runs.get(run + 1).map_or(held.len(), |next| next.0);
+            for &at in &held[first..end] {
+                placed.push((at, place + before));
+                before += doors[at].span(wall) + STEP;
+            }
+        }
+        placed
     }
 
     /// Each door on one wall, along it: as near what it faces as its neighbours let it.
-    fn line_up(doors: &[Door<'_>], wall: Wall) -> Vec<(usize, f64)> {
+    fn forward(doors: &[Door<'_>], wall: Wall) -> Vec<(usize, f64)> {
         let mut held: Vec<(usize, f64)> = doors
             .iter()
             .enumerate()
@@ -333,7 +402,7 @@ impl Ring<'_> {
 
     /// Every door with a wall stood round the frame, and the page they make.
     fn arrange(&self, doors: &[Door<'_>]) -> Arrangement {
-        let gap = RING_GAP + self.extra;
+        let gap = self.gap + self.extra;
         let size = self.set.size;
         let origin = Point {
             x: self.band(doors, Wall::Left),
@@ -342,7 +411,7 @@ impl Ring<'_> {
         let mut boxes = vec![None; doors.len()];
         let mut drift = 0.0;
         for wall in WALLS {
-            for (at, along) in Self::line_up(doors, wall) {
+            for (at, along) in self.line_up(doors, wall) {
                 let door = &doors[at];
                 let node = door.node;
                 drift += door.lines * (along + door.span(wall) / 2.0 - door.facing(wall)).abs();
@@ -427,148 +496,4 @@ impl Ring<'_> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_frame_between_a_part_and_a_wall_adds_the_way_round_it() {
-        let graph: Node = serde_json::from_value(serde_json::json!({"id":"root"})).expect("a node");
-        let set = Set {
-            size: Point {
-                x: 1000.0,
-                y: 1000.0,
-            },
-            parts: Vec::new(),
-        };
-        let frame = |y: f64| Rect {
-            x: 0.0,
-            y,
-            width: 1000.0,
-            height: 400.0,
-        };
-        let ring = Ring {
-            graph: &graph,
-            frames: Vec::new(),
-            boxes: vec![frame(0.0), frame(600.0)],
-            set: &set,
-            ids: Vec::new(),
-            extra: 0.0,
-            sides: true,
-        };
-        let inside_upper = Point { x: 300.0, y: 200.0 };
-        assert_eq!(ring.round_frames(inside_upper), [0.0, 600.0, 0.0, 0.0]);
-    }
-
-    /// Four wide doors each answer one of a row of parts along the frame's foot, and each
-    /// part calls the next. Three doors fill the wall below the frame. The fourth takes a
-    /// wall along the page's width, not a column of its own beside the frame.
-    #[test]
-    fn a_door_takes_a_wall_along_the_page_before_a_column_of_its_own() {
-        let answers = (0..4).map(|at| {
-            serde_json::json!({"id": format!("answer{at}"),
-            "sources": [format!("part{at}")], "targets": [format!("door{at}")]})
-        });
-        let calls = (0..3).map(|at| {
-            serde_json::json!({"id": format!("call{at}"),
-            "sources": [format!("part{at}")], "targets": [format!("part{}", at + 1)]})
-        });
-        let graph: Node = serde_json::from_value(serde_json::json!({
-            "id": "root",
-            "children": (0..4).map(|at| serde_json::json!(
-                {"id": format!("door{at}"), "width": 300, "height": 34})).collect::<Vec<_>>(),
-            "edges": answers.chain(calls).collect::<Vec<_>>(),
-        }))
-        .expect("a node");
-        let set = Set {
-            size: Point {
-                x: 1000.0,
-                y: 600.0,
-            },
-            parts: (0..4)
-                .map(|at| Rect {
-                    x: 20.0 + 250.0 * f64::from(at),
-                    y: 450.0,
-                    width: 200.0,
-                    height: 100.0,
-                })
-                .collect(),
-        };
-        let ring = Ring {
-            graph: &graph,
-            frames: Vec::new(),
-            boxes: vec![Rect {
-                x: 0.0,
-                y: 0.0,
-                width: 1000.0,
-                height: 600.0,
-            }],
-            set: &set,
-            ids: vec!["part0", "part1", "part2", "part3"],
-            extra: 0.0,
-            sides: true,
-        };
-        let doors: Vec<&Node> = graph.kids().iter().collect();
-        let page = ring.stand(&doors);
-        for door in &page.doors {
-            let beside =
-                door.bx.y < page.frame.y + set.size.y && door.bx.y + door.bx.height > page.frame.y;
-            assert!(!beside, "{} stands beside the frame", door.id);
-        }
-    }
-
-    /// The owner's Layout timing and Module interface: more doors answer one part by the
-    /// frame's corner than the wall beside it holds. Those that do not fit take another
-    /// wall, and no door stands over another.
-    #[test]
-    fn a_wall_holds_only_the_doors_beside_the_frame_so_no_door_meets_another() {
-        let answers = (0..5).map(|at| {
-            serde_json::json!({"id": format!("answer{at}"),
-            "sources": ["part"], "targets": [format!("door{at}")]})
-        });
-        let graph: Node = serde_json::from_value(serde_json::json!({
-            "id": "root",
-            "children": (0..5).map(|at| serde_json::json!(
-                {"id": format!("door{at}"), "width": 340, "height": 113})).collect::<Vec<_>>(),
-            "edges": answers.collect::<Vec<_>>(),
-        }))
-        .expect("a node");
-        let set = Set {
-            size: Point {
-                x: 1000.0,
-                y: 300.0,
-            },
-            parts: vec![Rect {
-                x: 850.0,
-                y: 100.0,
-                width: 200.0,
-                height: 100.0,
-            }],
-        };
-        let ring = Ring {
-            graph: &graph,
-            frames: Vec::new(),
-            boxes: vec![Rect {
-                x: 0.0,
-                y: 0.0,
-                width: 1000.0,
-                height: 300.0,
-            }],
-            set: &set,
-            ids: vec!["part"],
-            extra: 0.0,
-            sides: true,
-        };
-        let doors: Vec<&Node> = graph.kids().iter().collect();
-        let page = ring.stand(&doors);
-        for (index, one) in page.doors.iter().enumerate() {
-            for other in &page.doors[index + 1..] {
-                let (a, b) = (one.bx, other.bx);
-                let meet = a.x < b.x + b.width
-                    && b.x < a.x + a.width
-                    && a.y < b.y + b.height
-                    && b.y < a.y + a.height;
-                assert!(!meet, "{} stands over {}", one.id, other.id);
-            }
-        }
-    }
-}
+mod tests;
