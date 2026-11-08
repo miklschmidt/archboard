@@ -76,6 +76,8 @@ function parse(text: string): unknown {
 interface PullRequestFacts {
 	readonly body: string;
 	readonly labels: readonly string[];
+	/** The pull request's head commit now, which a later push moves past this run's. */
+	readonly headSha?: string | undefined;
 }
 
 /**
@@ -90,11 +92,29 @@ async function readPullRequest(
 ): Promise<PullRequestFacts | undefined> {
 	const answer = await call(access, "GET", `/pulls/${String(number)}`);
 	if (!answer.ok || typeof answer.body !== "object" || answer.body === null) return undefined;
-	const { body, labels } = answer.body as {
+	return factsOf(answer.body);
+}
+
+/**
+ * The facts of a pull request that the API returned.
+ * @param pull The pull request object.
+ * @returns The facts.
+ */
+function factsOf(pull: object): PullRequestFacts {
+	const {
+		body,
+		labels = [],
+		head,
+	} = pull as {
 		body?: string | null;
 		labels?: readonly { name?: string }[];
+		head?: { sha?: string };
 	};
-	return { body: body ?? "", labels: (labels ?? []).flatMap((label) => label.name ?? []) };
+	return {
+		body: body ?? "",
+		labels: labels.flatMap((label) => label.name ?? []),
+		headSha: head?.sha,
+	};
 }
 
 /**

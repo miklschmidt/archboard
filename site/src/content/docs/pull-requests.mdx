@@ -91,6 +91,10 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: archboard-report-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   report:
     runs-on: ubuntu-latest
@@ -104,7 +108,7 @@ jobs:
           out-of-plan: warn
 ```
 
-`fetch-depth: 0` is required, because the Action reads the base and the head from Git history. The `labeled` and `unlabeled` events let the override label below take effect at once, and `edited` runs the Action again when the marker in the description changes.
+`fetch-depth: 0` is required, because the Action reads the base and the head from Git history. The `concurrency` group cancels the run of an older push. A run that still finishes after a newer push publishes nothing. The `labeled` and `unlabeled` events let the override label below take effect at once, and `edited` runs the Action again when the marker in the description changes.
 
 ### How it finds the proposal
 

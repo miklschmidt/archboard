@@ -12,7 +12,7 @@ import type { PullRequestReport } from "./comment.ts";
 import { addWorktree, archboard, firstLine, readContext } from "./context.ts";
 import type { Context } from "./context.ts";
 import { readFootprint } from "./footprint.ts";
-import { upsertComment } from "./github.ts";
+import { readPullRequest, upsertComment } from "./github.ts";
 import { folderUrl } from "./links.ts";
 import { parseBodyMarker } from "./marker.ts";
 import { makePictures } from "./pictures.ts";
@@ -132,11 +132,11 @@ function annotateUnavailable(report: PullRequestReport): void {
 
 /**
  * Write the comment to the job summary, where it stays when the comment cannot be posted.
- * @param report The report.
+ * @param markdown The comment.
  */
-function writeSummary(report: PullRequestReport): void {
+function writeSummary(markdown: string): void {
 	const summary = input("GITHUB_STEP_SUMMARY", "");
-	if (summary !== "") appendFileSync(summary, `${pullRequestComment(report)}\n`);
+	if (summary !== "") appendFileSync(summary, `${markdown}\n`);
 }
 
 /**
@@ -199,11 +199,11 @@ function vaultAddress(
  * @param proposals What `model proposals` said at the head.
  * @returns The report.
  */
-function buildReport(
+async function buildReport(
 	context: Context,
 	trees: Trees,
 	proposals: ProposalsReading,
-): PullRequestReport {
+): Promise<PullRequestReport> {
 	const choice = chooseState(
 		context.stateInput,
 		parseBodyMarker(context.body),
@@ -214,7 +214,12 @@ function buildReport(
 		note !== undefined
 			? { note: "The footprint was not judged because the proposal could not be compared." }
 			: readFootprint(context, trees.headDir, choice.state, plan);
-	const pictures = makePictures(context, trees, choice.state);
+	// The pictures replace those of older heads, so a run of an older head never pushes them.
+	const newer = await newerHead(context);
+	const pictures =
+		newer === undefined
+			? makePictures(context, trees, choice.state)
+			: { note: supersededText(newer) };
 	return {
 		baseSha: context.baseSha,
 		headSha: context.headSha,
@@ -234,11 +239,37 @@ function buildReport(
 }
 
 /**
- * Post the comment, and say so when it cannot be posted.
+ * The pull request's head now, when a later push moved it past this run's head. Overlapping runs
+ * finish in any order, and only the run of the current head publishes.
+ * @param context The run.
+ * @returns The newer head, or undefined.
+ */
+async function newerHead(context: Context): Promise<string | undefined> {
+	const now = (await readPullRequest(context.access, context.number))?.headSha;
+	return now === undefined || now === context.headSha ? undefined : now;
+}
+
+/**
+ * Why a run of an older head publishes nothing.
+ * @param newer The pull request's head now.
+ * @returns A sentence.
+ */
+function supersededText(newer: string): string {
+	return `The pull request moved on to ${newer.slice(0, 7)}, so this run of an older head publishes neither pictures nor comment.`;
+}
+
+/**
+ * Post the comment, unless a later push moved the pull request on, and say so when it cannot be
+ * posted.
  * @param context The run.
  * @param report The report.
  */
 async function postComment(context: Context, report: PullRequestReport): Promise<void> {
+	const newer = await newerHead(context);
+	if (newer !== undefined) {
+		process.stdout.write(`::notice::${supersededText(newer)}\n`);
+		return;
+	}
 	const result = await upsertComment(context.access, context.number, pullRequestComment(report));
 	if ("failure" in result) warnUnposted(result.failure);
 }
@@ -329,12 +360,10 @@ async function reportNoVault(context: Context): Promise<void> {
 	process.stdout.write(
 		"::notice::The head commit holds no Archboard vault, so there is nothing to report.\n",
 	);
-	const result = await upsertComment(
-		context.access,
-		context.number,
-		noVaultComment(context.headSha),
-		false,
-	);
+	const comment = noVaultComment(context.headSha);
+	writeSummary(comment);
+	if ((await newerHead(context)) !== undefined) return;
+	const result = await upsertComment(context.access, context.number, comment, false);
 	if ("failure" in result) warnUnposted(result.failure);
 }
 
@@ -355,9 +384,9 @@ async function reportOn(context: Context, trees: Trees): Promise<number> {
 	const report =
 		result.exitCode !== 0 || answer === undefined || answer.success === false
 			? unreadableReport(context, refusalOf(answer, result.stderr))
-			: buildReport(context, trees, answer);
+			: await buildReport(context, trees, answer);
 	annotatePlan(report);
-	writeSummary(report);
+	writeSummary(pullRequestComment(report));
 	await postComment(context, report);
 	return report.outOfPlan.failed ? 1 : 0;
 }

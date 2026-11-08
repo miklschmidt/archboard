@@ -232,6 +232,8 @@ describe("the entry", () => {
 	let server: ReturnType<typeof Bun.serve>;
 	let baseSha = "";
 	let headSha = "";
+	/** The pull request's head on GitHub, when a later push moved it past the run's. */
+	let movedTo: string | undefined;
 
 	/**
 	 * Run git in the checkout.
@@ -264,7 +266,11 @@ describe("the entry", () => {
 				const url = new URL(request.url);
 				requests.push(`${request.method} ${url.pathname}`);
 				if (url.pathname.endsWith("/pulls/7"))
-					return Response.json({ body: "", labels: labels.map((name) => ({ name })) });
+					return Response.json({
+						body: "",
+						labels: labels.map((name) => ({ name })),
+						head: { sha: movedTo ?? headSha },
+					});
 				if (request.method === "GET") return Response.json(comments);
 				const body = ((await request.json()) as { body: string }).body;
 				const existing = comments.find((one) => url.pathname.endsWith(`/${String(one.id)}`));
@@ -459,6 +465,22 @@ describe("the entry", () => {
 		expect(body).toContain("The footprint did not read: Payments (no binding at the head).");
 	});
 
+	test("a run of an older head publishes neither pictures nor comment", async () => {
+		expect((await step()).commands).toContain("model render");
+		const before = comments.map((one) => one.body);
+		const sent = requests.length;
+		movedTo = "f".repeat(40);
+		try {
+			const result = await step();
+			expect(result.stdout).toContain("::notice::The pull request moved on to fffffff");
+			expect(comments.map((one) => one.body)).toEqual(before);
+			expect(requests.slice(sent).filter((one) => !one.startsWith("GET"))).toHaveLength(0);
+			expect(result.commands).not.toContain("model render");
+		} finally {
+			movedTo = undefined;
+		}
+	});
+
 	test("a head without a vault replaces the earlier comment and creates none", async () => {
 		await step();
 		const count = comments.length;
@@ -472,8 +494,7 @@ describe("the entry", () => {
 		const sticky = comments.find((one) => one.body.includes(COMMENT_MARKER));
 		expect(sticky?.body).toContain(`${headSha.slice(0, 7)} holds no Archboard vault`);
 		comments.length = 0;
-		const silent = await step();
-		expect(silent.exitCode).toBe(0);
+		expect((await step()).exitCode).toBe(0);
 		expect(comments).toHaveLength(0);
 	});
 });

@@ -110,6 +110,9 @@ on:
 permissions:
   contents: write # pushes the pictures to the archboard-assets branch
   pull-requests: write # posts the comment
+concurrency: # a newer push cancels the report of an older one
+  group: archboard-report-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
   report:
     runs-on: ubuntu-latest
