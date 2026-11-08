@@ -624,11 +624,12 @@ The legend is the last section of the panel, under every subject, and it needs n
 ends the scroll. While the subject is short it stands at the foot of the scroll, over the keys,
 and a long subject scrolls it down with its lists, so a reader finds it in one place. It lives
 outside the subject, so a new subject neither redraws it nor moves it, and a press on a group's
-tag keeps the tag where it stood and the keyboard on it. Its heading row is the label of any
-other section of the panel, `Legend`, with the key `Filter`, 24px high as the keys of the other
-headings, at the start of the second column. Four pixels part it from the rows. Under it stand
-the kinds in two columns, the line types in two columns and the groups, with 12px between them,
-no rule and no plate. A row is 28px high, and every mark stands in a box 24px wide, as wide as a
+tag keeps the tag where it stood and the keyboard on it. It has three parts, each under the
+label of any other section of the panel, 20px apart as the panel's sections are: `Legend` over
+the kinds in two columns, `Relationships` over the line types in two columns, and `Groups` over
+the tags. Only a line type can be hidden, so the key `Filter` stands at the right end of the
+`Relationships` row, 24px high and drawn as `Trace back` is. Four pixels part a label from its
+rows. There is no rule and no plate. A row is 28px high, and every mark stands in a box 24px wide, as wide as a
 kind's chip, so the names start on one line. A kind wears the kind chip of the panel's head (see
 Chips). A section with nothing to show is absent.
 
@@ -636,9 +637,9 @@ The rows come from the whole reading, not from what the picture draws now, and e
 the order of the policy. So hiding a kind moves no row, and the legend keeps its height. A line
 type that a reader hid stays, dimmed. So does a part kind, a mixed line or a line's mark that
 left the picture with it. A chip that the picture does not draw takes the icon that the policy
-names. `Filter` is a quiet key with a funnel and the count of hidden kinds in mono, and it
-grows into the free room of its column. While the switches show it is pressed in. `Show all` stands at the end of the
-row while a kind is hidden. A line type keeps the room of its switch at all times, and a mixed
+names. `Filter` is a key with a thin edge, a funnel and the count of hidden kinds in mono. While
+the switches show it is pressed, with the gold rim and face of a pressed `Trace back`. `Show all`
+stands just before it while a kind is hidden. A line type keeps the room of its switch at all times, and a mixed
 line has no switch, because it is no kind of relationship.
 
 A group is a tag with its name inside, and the tags wrap. A tag is one bright piece in

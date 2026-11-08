@@ -40,13 +40,12 @@ import { paletteTag } from "#ui/architecture-drawing/canvas/picture/rules/palett
 const SAMPLE_WIDTH = 24;
 
 /**
- * The two columns that the kinds and the line types stand in, and the second column, where the head
- * stands its keys. The foot under the panel lies on the same columns.
+ * The two columns that the kinds and the line types stand in. The foot under the panel lies on the
+ * same columns.
  */
 const CELLS = "grid grid-cols-2 gap-x-2";
 /** The line rows while no picture stands. */
 const NO_LINES: readonly LegendLine[] = [];
-const SECOND_CELL = "w-[calc(50%-0.25rem)]";
 
 /** The legend's Filter key looks like the panel's other keys, such as Trace back (`TraceToggle`). */
 const PANEL_KEY =
@@ -101,16 +100,17 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 	if (picture === null) return null;
 	const reading = { model, projection, picture, hideKinds };
 	return (
-		<ModelPanel.Section title="Legend" slot="model-legend" action={keys}>
+		<div data-slot="model-legend" className="flex flex-col gap-5">
 			<Kinds model={model} look={props.look} rows={kindRows(reading)} />
 			<Lines
 				lines={lines}
 				marks={markRows(projection)}
 				filtering={filtering}
 				onToggle={props.onToggle}
+				keys={keys}
 			/>
 			<Groups groups={groupRows(model, projection)} selection={selection} />
-		</ModelPanel.Section>
+		</div>
 	);
 }
 
@@ -136,7 +136,18 @@ function LegendKeys(props: {
 	const { hidden, filtering } = props;
 	if (!props.filterable) return null;
 	return (
-		<div className={cn(SECOND_CELL, "flex shrink-0 items-center justify-between gap-2")}>
+		<div className="flex shrink-0 items-center gap-1">
+			{hidden > 0 && (
+				<Button
+					data-slot="model-legend-show-all"
+					variant="ghost"
+					size="xs"
+					onClick={props.onShowAll}
+					className="px-2"
+				>
+					Show all
+				</Button>
+			)}
 			<button
 				type="button"
 				data-slot="model-legend-filter"
@@ -157,42 +168,36 @@ function LegendKeys(props: {
 					</span>
 				)}
 			</button>
-			{hidden > 0 && (
-				<Button
-					data-slot="model-legend-show-all"
-					variant="ghost"
-					size="xs"
-					onClick={props.onShowAll}
-					className="-mr-2 px-2"
-				>
-					Show all
-				</Button>
-			)}
 		</div>
 	);
 }
 
 /**
- * One list of the legend, which stands 12px from the list before it.
+ * One part of the legend, under its own label in the panel's label style, with its keys at the
+ * right end of the label's row.
  * @param props The list.
  * @param props.label What it lists.
  * @param props.slot Where a test finds it.
  * @param props.className How its entries stand.
+ * @param props.action The keys that change what it lists, if any.
  * @param props.children Its entries.
- * @returns The list, as one entry of the legend's section.
+ * @returns The list, as a section of the panel.
  */
 function LegendList(props: {
 	readonly label: string;
 	readonly slot: string;
 	readonly className: string;
+	readonly action?: ReactNode;
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
-		<li className="not-first:pt-2">
-			<ul aria-label={props.label} data-slot={props.slot} className={props.className}>
-				{props.children}
-			</ul>
-		</li>
+		<ModelPanel.Section title={props.label} slot={`${props.slot}-section`} action={props.action}>
+			<li>
+				<ul data-slot={props.slot} className={props.className}>
+					{props.children}
+				</ul>
+			</li>
+		</ModelPanel.Section>
 	);
 }
 
@@ -213,7 +218,7 @@ function Kinds(props: {
 	const { model, look, rows } = props;
 	if (rows.length === 0) return null;
 	return (
-		<LegendList label="Kinds" slot="model-legend-kinds" className={CELLS}>
+		<LegendList label="Legend" slot="model-legend-kinds" className={CELLS}>
 			{rows.map(({ item, dimmed }) => (
 				<Cell key={item.typeKind}>
 					<Mark name={item.typeName} dimmed={dimmed}>
@@ -262,6 +267,8 @@ interface LinesProps {
 	/** Whether each line type shows the control that hides it. */
 	readonly filtering: boolean;
 	readonly onToggle: ModelLegendProps["onToggle"];
+	/** The keys that hide line types, and bring them back. */
+	readonly keys: ReactNode;
 }
 
 /**
@@ -270,10 +277,10 @@ interface LinesProps {
  * @returns Their list, or nothing when the reading has no line.
  */
 function Lines(props: LinesProps): JSX.Element | null {
-	const { lines, marks, filtering, onToggle } = props;
+	const { lines, marks, filtering, onToggle, keys } = props;
 	if (lines.length === 0) return null;
 	return (
-		<LegendList label="Line types" slot="model-legend-lines" className={CELLS}>
+		<LegendList label="Relationships" slot="model-legend-lines" className={CELLS} action={keys}>
 			{lines.map((line) => (
 				<LineCell key={line.item.typeKind} line={line} filtering={filtering} onToggle={onToggle} />
 			))}
