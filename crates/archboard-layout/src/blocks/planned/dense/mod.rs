@@ -474,6 +474,11 @@ pub(super) struct Grids<'a> {
 }
 
 impl<'a> Grids<'a> {
+    /// Whether the reading opens a frame, so that cards stand round it as doors.
+    pub(super) fn framed(&self) -> bool {
+        self.reading.blocks.iter().any(|block| block.framed)
+    }
+
     /// The grids of a reading that takes a dense placement.
     pub(super) fn of(graph: &'a Node) -> Option<Self> {
         let reading = Reading::of(graph)?;

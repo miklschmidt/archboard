@@ -4,6 +4,15 @@ status: accepted
 
 # Blocks keeps legacy placement and plans its routes
 
+Amended on 2026-11-08 (TASK-559.09). The dense placement of [ADR 0064](0064-blocks-is-the-default-layout-engine.md) stands the cards outside an open frame round its walls.
+Each such card takes the wall where the way of every line, times what the page's room costs, is least.
+A card therefore joins a row along the page before it takes a column of its own beside the frame.
+It also joins that row before it stands across the frame from what it joins.
+A page's room costs its area plus a charge for scale.
+That charge is the room that the smallest box of the pane's shape round the page needs past the landing room.
+The same room cost ranks dense placements before routing and finished drawings after it.
+A reading that opens a frame routes its two most promising dense placements, because the promise before routing misses the crossings that its doors bring.
+
 TASK-554 proposes this decision on 2026-10-28 and revises it on 2026-10-29.
 The owner selected the hybrid direction after three iterations failed to improve the six reference pictures with planner-owned placement.
 The legacy placer composes the boards better, while planned routing supplies explicit ownership, complete geometry guards, and bounded search.
@@ -28,7 +37,8 @@ No unchecked route reaches the painter.
 
 After selecting routes, the planner closes the space that nothing uses while preserving card sizes, route topology, and clearance around bends and boundaries.
 A line that joins another before the card they enter keeps the room the guard asks of that junction.
-TASK-559.37 replaced the bands, which had to stand empty across the whole page, with a contraction in which each piece moves on its own and keeps its order against what shares its slab.
+TASK-559.37 replaced the bands, which had to stand empty across the whole page, with a contraction.
+In it, each piece moves on its own and keeps its order against what shares its slab.
 It places labels again on those shorter runs and applies the same complete geometry guard.
 A rejected contraction retains the original geometry through that guard.
 
@@ -40,7 +50,7 @@ Words remain horizontal on horizontal or vertical runs.
 A stack of separate label plates uses a vertical run long enough to carry every plate.
 The label never covers shared ink, crosses a frame wall, or lies under a foreign line.
 It never lies over another stretch of its own route either.
-When a route leaves no spot clear of its other stretches, the label may stand closer beside them, but not over them.
+When a route leaves no spot clear of its other stretches, the label can stand closer beside them, but not over them.
 A route never gains a bend to reach a label slot.
 
 The complete geometry guard protects cards, headers, captions, walls, labels, endpoints, and fan ownership before emission.

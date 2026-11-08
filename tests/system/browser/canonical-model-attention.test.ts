@@ -68,7 +68,8 @@ interface SharedStretch {
 }
 
 /**
- * A place on the stretch that the most lines of a trunk share.
+ * A place on the stretch that the most lines of a trunk share, as far from the cards at the
+ * ends of a route as that stretch lets it be, so that the pointer rests on the lines alone.
  * @param browser The page.
  * @returns Where it is, and how many lines' routes run through it, or none while a line is still being drawn on.
  */
@@ -78,9 +79,11 @@ function sharedStretch(browser: AgentBrowserSession): Promise<SharedStretch> {
 			` const inked = (line) => [...line.querySelectorAll(":scope > path:not(.ab-halo)")];` +
 			` const edges = [...root.querySelectorAll("g[data-semantic-kind='edge']")];` +
 			` const under = (point) => edges.filter((line) => inked(line).some((path) => path.isPointInStroke(point)));` +
-			` const route = inked(edges[0])[0];` +
-			` const places = Array.from({ length: 41 }, (_, step) => route.getPointAtLength(route.getTotalLength() * step / 40));` +
-			` const middle = places.reduce((best, place) => under(place).length > under(best).length ? place : best);` +
+			` const places = edges.flatMap((line) => { const route = inked(line)[0];` +
+			`   return Array.from({ length: 39 }, (_, step) => ({` +
+			`     at: route.getPointAtLength(route.getTotalLength() * (step + 1) / 40), inset: Math.min(step + 1, 39 - step) })); });` +
+			` const score = (place) => under(place.at).length * 100 + place.inset;` +
+			` const middle = places.reduce((best, place) => score(place) > score(best) ? place : best).at;` +
 			` const lines = under(middle);` +
 			` const drawing = [...root.querySelectorAll("g[data-semantic-kind='edge'] path[stroke-dashoffset]")]` +
 			`   .some((path) => Number(path.getAttribute("stroke-dashoffset")) > 0.01);` +
@@ -100,7 +103,7 @@ function litLines(browser: AgentBrowserSession): Promise<number> {
 	);
 }
 
-/** Blocks draws five unlabeled routes out of one module with a shared lane. */
+/** Blocks draws five unlabeled routes out of one module, and several of them share a lane. */
 const FAN = ["North", "South", "East", "West", "Central"];
 
 test("attention lights canonical connections without hiding labels or cutting shared routes, and a shared stretch lights all its lines", async () => {

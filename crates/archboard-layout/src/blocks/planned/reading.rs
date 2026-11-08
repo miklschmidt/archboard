@@ -78,7 +78,7 @@ pub(super) fn rank(lines: &[PlacedLine]) -> (usize, u64) {
 
 /// How a finished drawing ranks: whether its words read where it lands, whether it stays
 /// within the room limit, its long detours, then the work of tracing its lines, with its
-/// crowded approaches, times the room it takes.
+/// crowded approaches, times what its room costs.
 pub(super) type Order = (bool, bool, usize, f64);
 
 /// The scale that a landing must reach for its words to read (the first gate of the reader).
@@ -90,16 +90,18 @@ const LANDS_WHOLE: (f64, f64) = (2505.0, 1520.0);
 /// A line is a long detour past this much extra travel, and half again its direct way.
 const LONG_DETOUR: f64 = 300.0;
 
-/// The smallest box of the pane's shape that holds a drawing.
-fn room_taken(drawing: &crate::blocks::assembly::Placed) -> f64 {
-    let width = drawing.width.max(drawing.height * PANE_SHAPE);
-    width * (width / PANE_SHAPE)
+/// What a page of this size costs a reader: its own area, which a page that lands whole
+/// shows as it is, and the room that the smallest box of the pane's shape round it needs
+/// past the landing room, which a larger page pays for in scale.
+pub(super) fn room_cost(width: f64, height: f64) -> f64 {
+    let pane = width.max(height * PANE_SHAPE);
+    width * height + (pane * pane / PANE_SHAPE - LANDING_ROOM.0 * LANDING_ROOM.1).max(0.0)
 }
 
 /// What a dense placement promises before it is routed: the straight way of
-/// its lines times the room it takes, so a long thin page pays for its shape.
+/// its lines times what its room costs, so a long thin page pays for its shape.
 pub(super) fn promise(drawing: &crate::blocks::assembly::Placed, reach: f64) -> f64 {
-    (1.0 + reach) * room_taken(drawing)
+    (1.0 + reach) * room_cost(drawing.width, drawing.height)
 }
 
 fn long_detours(lines: &[PlacedLine]) -> usize {
@@ -130,7 +132,8 @@ pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
         drawing.width * NEAR_SCALE > LANDING_ROOM.0 || drawing.height * NEAR_SCALE > LANDING_ROOM.1,
         drawing.width > LANDS_WHOLE.0 || drawing.height > LANDS_WHOLE.1,
         long_detours(routed),
-        (1.0 + f64::from_bits(cost) + crowded as f64 * CROWDED_COST) * room_taken(drawing),
+        (1.0 + f64::from_bits(cost) + crowded as f64 * CROWDED_COST)
+            * room_cost(drawing.width, drawing.height),
     )
 }
 

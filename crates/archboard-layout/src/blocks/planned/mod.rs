@@ -125,9 +125,15 @@ pub(super) fn route_candidates(
 const AMPLE_LINES: usize = 40;
 
 /// How many dense placements a reading of some lines routes, the most promising
-/// first: one route of a large reading costs as much as the budget of a drawing.
-fn dense_routes(lines: usize) -> usize {
-    if lines <= 15 { 6 } else { 1 }
+/// first: one route of a large reading costs as much as the budget of a drawing. A
+/// reading that opens a frame routes a second, because what a placement promises before
+/// it is routed misses the crossings that its doors bring.
+fn dense_routes(lines: usize, framed: bool) -> usize {
+    match (lines, framed) {
+        (0..=15, _) => 6,
+        (_, true) => 2,
+        (_, false) => 1,
+    }
 }
 
 /// How many placements past that budget a room can refuse at most.
@@ -206,7 +212,7 @@ fn dense_room(
     refusals: usize,
     best: &mut Option<(reading::Order, crate::blocks::assembly::Placed)>,
 ) {
-    let most = dense_routes(lines);
+    let most = dense_routes(lines, grids.framed());
     let routed = dense::drawings(grids, room)
         .into_iter()
         .take(most + refusals)
