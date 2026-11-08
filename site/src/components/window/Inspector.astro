@@ -15,15 +15,17 @@ const interfaceCounts = [
 
 <aside class="inspector" aria-hidden="true" data-inspector>
 	<div class="subject">
-		<div class="head">
-			<KindChip kind="service" size={24} />
-			<div class="title">
-				<p class="name">Checkout API</p>
-				<p class="kind">Service</p>
+		<div class="identity">
+			<div class="head">
+				<KindChip kind="service" size={24} />
+				<div class="title">
+					<p class="name">Checkout API</p>
+					<p class="kind">Service</p>
+				</div>
+				<Icon name="close" size={16} />
 			</div>
-			<Icon name="close" size={16} />
+			<p class="summary">Takes an order, charges it and confirms it</p>
 		</div>
-		<p class="summary">Takes an order, charges it and confirms it</p>
 		<div class="block">
 			<p class="label">Interface <span class="small">Open in About</span></p>
 			<dl class="counts">
@@ -69,8 +71,13 @@ const interfaceCounts = [
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
+		gap: 20px;
 		padding: 16px;
+	}
+	.identity {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
 	}
 	.head {
 		display: flex;
@@ -80,6 +87,9 @@ const interfaceCounts = [
 	}
 	.title {
 		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
 	}
 	.name {
 		font-family: var(--font-display);
@@ -131,6 +141,9 @@ const interfaceCounts = [
 		background: var(--well);
 		box-shadow: var(--shadow-well);
 		color: var(--ink-body);
+	}
+	.counts div:last-child:nth-child(odd) {
+		grid-column: 1 / -1;
 	}
 	.counts div.none {
 		color: var(--ink-faint);
