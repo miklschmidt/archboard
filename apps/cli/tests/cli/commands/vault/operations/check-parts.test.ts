@@ -9,7 +9,9 @@
 // Only the Archboard server is a stand-in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
-import { resolve } from "node:path";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/model/policy";
@@ -481,4 +483,30 @@ test("a skip that holds for a whole language says once which language and why, a
 	} finally {
 		answered = codeCheck;
 	}
+});
+
+test("check embeds passes on a checkout with no embed, and every command that ran it fails on an embed nobody can draw again", async () => {
+	plain = clean;
+	answered = codeCheck;
+	const checkout = dirname(dirname(vault.path));
+	const git = (...args: string[]) =>
+		expect(spawnSync("git", args, { cwd: checkout }).status).toBe(0);
+	git("init", "-q");
+	expect((await run(["check", "embeds"])).exited).toBe(0);
+	// An SVG whose recipe element holds no recipe is an embed, and a warning.
+	mkdirSync(join(checkout, "docs"));
+	writeFileSync(
+		join(checkout, "docs", "broken.svg"),
+		'<svg xmlns="http://www.w3.org/2000/svg"><metadata><archboard:render-recipe>?</archboard:render-recipe></metadata></svg>',
+	);
+	git("add", ".");
+	const failed = await run(["check", "embeds"]);
+	expect(failed.exited).toBe(1);
+	expect(JSON.parse(failed.stdout).embeds.findings).toMatchObject([
+		{ severity: "warning", code: "EMBED_RECIPE_UNREADABLE", file: "docs/broken.svg" },
+	]);
+	for (const argv of [["check"], ["check", "all"]]) expect((await run(argv)).exited).toBe(1);
+	// The embed is not part of the semantics check or the code check.
+	expect((await run(["check", "code"])).exited).toBe(0);
+	expect((await run(["check", "semantics"])).exited).toBe(0);
 });
