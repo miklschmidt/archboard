@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T13:12:00Z'
-updated_date: '2026-11-08T13:21:00Z'
+updated_date: '2026-11-08T13:52:00Z'
 labels:
   - frontend
   - design
@@ -28,6 +28,7 @@ The shell divides its column and right panel into sections with one-pixel lines,
 - [ ] #3 The picture has rounded corners where the chrome meets it, in both themes, and a presented walkthrough keeps a square picture
 - [ ] #4 DESIGN.md and the app.css depth notes describe the new frame
 - [ ] #5 The marketing site mock of the shell follows the new frame
+- [ ] #6 The chrome holds the picture on every side with a strip about as wide as the column margin, no line draws the picture edge, and keyboard focus on the picture shows as a ring that follows its rounded corners
 <!-- AC:END -->
 
 ## Implementation Plan
