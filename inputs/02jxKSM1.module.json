@@ -2,7 +2,7 @@
   "order": 62000,
   "name": "Release",
   "kind": "package",
-  "responsibility": "Builds the npm packages of one release from a checkout, proves them by installing them, and publishes them",
+  "responsibility": "Builds the npm packages of one release from a checkout, proves them by installing them, and stages them on npm, where the owner approves them",
   "description": "A release is one compiled executable for each of linux-x64, linux-arm64 and darwin-arm64, in platform packages, with a shell launcher in the packages archboard and @archboard/cli (ADR 0076). Every package takes the version of the root package.json, which release-please sets from the Conventional Commits on main, and has no install script. An Intel Mac and Windows have no package. The workspace packages stay private, because the executable carries them.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
