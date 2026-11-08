@@ -146,19 +146,84 @@ has no such command.
 
 ## 3. Set up a repository
 
-Install the skills with the [skills CLI](https://skills.sh):
+Run `archboard init` in the repository that you want to diagram:
+
+```bash
+cd ~/Projects/payments-api
+archboard init
+```
+
+The command does these things:
+
+1. It installs two skills of the installation with the
+   [skills CLI](https://skills.sh): `archboard`, which writes and reads
+   canonical models, and `archboard-pr`, which gives a pull request an
+   architecture explainer. It installs them for your user, so they work in
+   every repository. Codex gets them, and Claude Code gets them when `claude`
+   is on the `PATH`. A package runner starts the skills CLI. At a terminal,
+   `init` asks which runner to use: `bun`, `pnpm` or `npx`, whichever the
+   `PATH` has, or Skip. Without a terminal, `init` uses the first one of these
+   on the `PATH`. If you skip, or if the `PATH` has none of them, `init` tells
+   you the command that installs the skills later.
+2. If the repository has no `.archboard/vault`, it makes the vault as
+   `archboard model init` does. The model name is the name of the repository
+   directory.
+3. It registers the checkout, so that a browser lists it.
+4. It removes the block that earlier versions wrote into `CLAUDE.md` and
+   `AGENTS.md` between `<!-- archboard:begin -->` and `<!-- archboard:end -->`.
+   It says which files it changed and changes nothing else in them.
+5. It gives the setup of the language servers to an agent, because the right
+   server and the way to install it depend on the repository. At a terminal,
+   `init` asks whether Claude Code or Codex sets them up, whichever the `PATH`
+   has, and starts that agent in the repository with a prompt. The agent shows
+   you its plan and waits for your consent before it changes anything. If you
+   skip, `init` prints the prompt.
+
+Without a terminal, `init` assumes that an agent runs it. The JSON answer of
+`init` ends with `next`, the prompt for the agent. The setup is not finished until
+that agent sets up the language servers.
+
+The repository is the nearest parent directory that holds `.git`, or the
+directory that `--repo <dir>` names. `init` creates no `CLAUDE.md` or
+`AGENTS.md` and adds nothing to them. A command finds the vault from the
+repository (see section 4), and such a file holds paths of your machine. If Git
+ignores the vault, `init` warns you. To share architecture with the source code,
+commit the vault with your code.
+
+Making a vault needs no server. Existing vaults keep their inputs. If a vault
+contains legacy boards, it needs explicit migration. Setup honors the configured
+Git identity and signer. If signing fails, repair that configuration before
+retrying. Keep signing enabled.
+
+The skills read the JSON Schemas of the model files from the archboard CLI on
+your `PATH`, with `archboard model schema`. So the schemas always match the
+installed program.
+
+### Set up the language servers
+
+The agent that `init` starts or prompts does these steps. You can also do them
+yourself, so that `archboard check code` can resolve names to their definitions:
+
+1. Find the languages that the repository uses.
+2. For each language that has no default server, install a server. [The section
+   on language servers](#language-servers-for-the-code-check) names the program
+   for each language. A repository on TypeScript 7 or later needs no entry for
+   TypeScript.
+3. In the checkout, run `archboard repo language-server <language> <command>`
+   for each of them.
+4. Commit `.archboard/language-servers.json` with the vault. Then every machine
+   and every CI run uses the same servers.
+
+### Set up a repository without init
+
+Install the skills from GitHub with the skills CLI:
 
 ```bash
 npx skills add miklschmidt/archboard -g
 ```
 
-The skills CLI copies two skills from this repository on GitHub: `archboard`,
-which writes and reads canonical models, and `archboard-pr`, which gives a pull
-request an architecture explainer. It asks which agents to install them for.
-With `-g`, it installs them for your user, so they work in every repository.
-`npx skills update -g` updates them. The skills read the JSON Schemas of the
-model files from the archboard CLI on your `PATH`, with `archboard model schema`.
-So the schemas always match the installed program.
+The skills CLI asks which agents to install them for. `npx skills update -g`
+updates them.
 
 The first time an agent works in a Git checkout that has no `.archboard/vault`,
 the agent makes the vault with `archboard model init`. You can also run it
@@ -178,79 +243,7 @@ The command does these things:
    installer. The new model has no implemented current state.
 4. It registers the checkout, so that a browser lists it.
 
-It needs no server. Existing vaults keep their inputs. If a vault contains
-legacy boards, it needs explicit migration. Commit the vault with your code.
-Setup honors the configured Git identity and signer. If signing fails, repair
-that configuration before retrying. Keep signing enabled.
-
-Then name the language servers of the repository, so that `archboard check code`
-can resolve names to their definitions:
-
-1. Find the languages that the repository uses.
-2. For each language that has no default server, install a server. [The section
-   on language servers](#language-servers-for-the-code-check) names the program
-   for each language. A repository on TypeScript 7 or later needs no entry for
-   TypeScript.
-3. In the checkout, run `archboard repo language-server <language> <command>`
-   for each of them.
-4. Commit `.archboard/language-servers.json` with the vault. Then every machine
-   and every CI run uses the same servers.
-
-### Install the skills from a clone or offline
-
-`archboard install-skill` installs the skills from the installation itself, a
-release package or a checkout, with no network. It also sets the repository up.
-Run it from the repository that you want to diagram:
-
-```bash
-cd ~/Projects/payments-api
-archboard install-skill --agent claude-code
-```
-
-Use `--agent claude-code` for Claude Code. Without it, the installer sets up
-Codex. The installer does these things:
-
-1. It links two skills from a skills directory to the `skills/` directory of
-   the installation: `archboard` and `archboard-pr`. The
-   default directory is `~/.agents/skills`, which Codex reads. With
-   `--agent claude-code` it is `~/.claude/skills`. Each link replaces an earlier
-   copy or a link to another place, and the installer names what it replaced.
-   An upgrade of a release, or a `git pull` in a clone,
-   updates the linked skills.
-   If `--dir` names a directory inside the repository, the installer copies the
-   skills there instead, because the repository carries them to other machines.
-   If a target in that directory is a symlink, the installer stops and changes
-   nothing.
-2. If the repository has no `.archboard/vault`, the installer makes the vault
-   as `archboard model init` does. The model name is the name of the repository
-   directory.
-3. It removes the block that earlier versions of the installer wrote into
-   `CLAUDE.md` and `AGENTS.md` between `<!-- archboard:begin -->` and
-   `<!-- archboard:end -->`. It says which files it changed and changes nothing
-   else in them.
-
-The repository is the nearest parent directory that holds `.git`. The installer
-creates no `CLAUDE.md` or `AGENTS.md` and adds nothing to them. A command finds
-the vault from the repository (see section 4), and such a file holds paths of
-your machine.
-
-The installer prints what it did, and a JSON receipt. If Git ignores the vault,
-the installer warns you.
-To share architecture with the source code, include the authored vault files in the repository.
-
-These options change what the installer does:
-
-| Option                | Effect                                                                   |
-| --------------------- | ------------------------------------------------------------------------ |
-| `--agent claude-code` | Install for Claude Code, in `~/.claude/skills`.                          |
-| `--agent codex`       | Install for Codex, in `~/.agents/skills`. This is the default.           |
-| `--target claude`     | The same as `--agent claude-code`. `--target agents` is the default.     |
-| `--dir <skills-root>` | Install into `<skills-root>/archboard` and `<skills-root>/archboard-pr`. |
-| `--repo <dir>`        | Set up this repository instead of the current one.                       |
-| `--no-setup`          | Install the skills only. Leave the repository alone.                     |
-| `--print-source`      | Show the skill directories to install, and install nothing.              |
-
-Use one of `--agent`, `--target` and `--dir` at most.
+Then set up the language servers as the section above says.
 
 ## 4. How a command finds its vault
 
@@ -336,7 +329,7 @@ The server needs no vault to start, and one server serves every vault. The
 navigator in the browser lists each repository that this machine knows and that
 has a vault. A command that runs in a checkout makes its repository known. So
 does `archboard repo add`, and so do `archboard model init` and
-`archboard install-skill`. A page opens
+`archboard init`. A page opens
 what its address names, or else the last reading of this browser. A machine with
 one repository that holds a model opens it. Any other page shows a repository
 chooser. If this machine knows no repository with a vault, the page says so and
@@ -765,10 +758,9 @@ archboard restart
 the server on the new source. If the build fails, the server stays stopped.
 `archboard status` reports a server that runs older source.
 
-Run `npx skills update -g` to update skills that the skills CLI installed. Skills
-that `archboard install-skill` linked follow the installation. If a repository
-holds a copy of the skills, run `archboard install-skill --dir <that directory>`
-again to update it.
+The skills CLI installs copies of the skills. If `archboard init` installed
+them, run `archboard init` again after an update, so that they match the new
+version. If you installed them from GitHub, run `npx skills update -g`.
 
 There is no uninstall command. To remove archboard, delete these things:
 

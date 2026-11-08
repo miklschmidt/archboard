@@ -371,13 +371,13 @@ archboard start
 
 The copy is the vault of `~/archboard-example`. Use your configured Git identity and signer for this example. The import restores its architecture history and registers the repository. The synthetic origin identifies local references and is never fetched. Open <http://archboard.localhost:4242/?modelA=Shop> to explore the modules, proposals, history, and walkthroughs. The example has no source code, so the code check and the Git measures need your own repository.
 
-**Use it on your own code**. Install the skills for your agent:
+**Use it on your own code**. Run this command in the repository that you want mapped:
 
 ```bash
-npx skills add miklschmidt/archboard -g
+archboard init
 ```
 
-The [skills CLI](https://skills.sh) asks which agents to install the skills for. The first time your agent works in a repository, it makes the vault there: an empty canonical model in `.archboard/vault`. Existing architecture requires explicit migration. Commit authored inputs with your code. Commands find the vault from the working directory or `-C <dir>`. Then ask your agent, in the repository you want mapped:
+It installs the skills with the [skills CLI](https://skills.sh): for Codex, and for Claude Code when `claude` is on the `PATH`. It makes the vault, an empty canonical model in `.archboard/vault`, and registers the repository. Then it starts Claude Code or Codex to set up the language servers, and the agent shows you its plan before it changes anything. Existing architecture requires explicit migration. Commit authored inputs with your code. Commands find the vault from the working directory or `-C <dir>`. Then ask your agent:
 
 ```text
 Describe this repository with canonical modules, their responsibilities, and their relationships.
@@ -421,7 +421,7 @@ No. Measures states how many entries a module has, what it hides, and what chang
 <details><summary><b>Which agents does it work with?</b></summary>
 <br>
 
-Any agent that can run a CLI can author the architecture model. `npx skills add miklschmidt/archboard -g` installs the skills for Claude Code, Codex and the other agents that the skills CLI supports. The agent in the browser, the voice, narration and recordings run on Codex. Archboard runs Codex as its own private app-server with its own sign-in.
+Any agent that can run a CLI can author the architecture model. `archboard init` installs the skills for Codex, and for Claude Code when `claude` is on the `PATH`. For the other agents that the skills CLI supports, run `npx skills add miklschmidt/archboard -g`. The agent in the browser, the voice, narration and recordings run on Codex. Archboard runs Codex as its own private app-server with its own sign-in.
 </details>
 
 <details><summary><b>Why is a narration silent with my Bluetooth headset?</b></summary>

@@ -567,7 +567,7 @@ interface.
 - The skill ships as its tracked files and nothing else, so a copy that the skills CLI makes from GitHub is complete.
   The skill reads its JSON Schemas from the installed CLI with `archboard model schema`
   (`apps/cli/src/cli/commands/model/operations/schema.ts`), which renders them from the Zod authorities of `model`. The CLI's
-  `install-skill` keeps which skills it ships and how it links or copies them.
+  `init` keeps which skills it ships and installs them with the skills CLI.
 - `./evaluation` is `runEvaluationCommand`, the whole command line of `bun run eval:skill`
   (`runtime/evaluation/operations/command.ts`): `check`, `run`, `grade`, `pin` and `report`. `scripts/evaluate-skill.ts`
   passes it the arguments and the checkout. The evaluation is human-run and never part of the gate: real Codex authors
@@ -783,7 +783,7 @@ Never import the server there: the CLI reaches it by spawning the `serverCommand
 The server process of a release is the one place that loads the server's entry by its URL, and it
 is a process of its own. Nothing imports the app.
 The root `generate:cli-contract` script, the system tests and the skill evaluation spawn it by
-path, and `archboard install-skill --print-source` is how a test learns which skills it ships.
+path.
 
 - `src/cli/` owns command contracts, dispatch, discovery, server clients, and file receipts.
   `routing/` resolves the command table, the bootstrap, the session, and the explicit vault, and
@@ -792,9 +792,9 @@ path, and `archboard install-skill --print-source` is how a test learns which sk
   `contract/rules/` projects those contracts into Commander parsing and help.
   `contract/operations/` runs one contract and presents its result.
   `commands/<command>/` holds each command family: `model`, `vault`, `pane`, `repo`,
-  `install-skill`, `server-control` and `contract-artifacts`.
+  `init`, `server-control` and `contract-artifacts`.
   `commands/model/` owns model commands, including claims, edits, inspection, migration, history, rendering, and schemas.
-  `commands/model/operations/initialize.ts` makes every new vault: `model init` in a checkout without a vault and `install-skill` call its `makeVault`.
+  `commands/model/operations/initialize.ts` makes every new vault: `model init` in a checkout without a vault and `init` call its `makeVault`.
   `commands/model/rules/` puts the shared interface derivations into the answers and words of `model inspect` and `model compare`.
   `commands/contract-artifacts/` generates the command proof from the shipped contracts.
   `server-access/clients/` calls the public canonical HTTP routes through the gated server client.

@@ -27,7 +27,7 @@ type InitializationIntent = z.infer<typeof ArchitectureInitializationRequestSche
  * vocabulary in `.archboard/config.yaml` and an empty planning model, through the canonical
  * installer. A repository outside Git first gets the private archive that its history needs.
  * Then the repository is registered, so that a browser lists it. `model init` in a checkout
- * without a vault and `install-skill` both make a vault here, so every new vault is made one way.
+ * without a vault and `init` both make a vault here, so every new vault is made one way.
  * @param repo The checkout root, or the directory that holds an untracked vault.
  * @param intent The initialization intent.
  * @param context Where the line that names the new vault goes.

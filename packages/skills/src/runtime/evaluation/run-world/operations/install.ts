@@ -1,10 +1,9 @@
 // Installing the skill an author will read, and checking that it is really
-// there. `archboard install-skill` lays the skills root and leaves the
-// repository's vault as it is; the arm's own package is then put in place of
-// what it installed. The baseline's package is the frozen one pins.json names;
-// the candidate's is the copy the batch kept when it started, never the checkout
-// at the run's own time, so every candidate run and the grader read one text
-// however long the batch runs.
+// there. The world registers its checkout, as `archboard init` does, and gets
+// the arm's package in its agents' skills root, with no network. The baseline's
+// package is the frozen one pins.json names; the candidate's is the copy the
+// batch kept when it started, never the checkout at the run's own time, so
+// every candidate run and the grader read one text however long the batch runs.
 
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -63,8 +62,7 @@ function swapInPackage(installed: string, source: string): void {
 }
 
 /**
- * Installs the skill for one arm and verifies the install independently of
- * the installer's own report.
+ * Installs the skill for one arm and verifies the install independently.
  * @param arm Which skill version.
  * @param cli How to reach the CLI in the run's environment.
  * @param paths The run.
@@ -77,14 +75,9 @@ async function installSkill(
 	paths: RunPaths,
 	source: string,
 ): Promise<InstallRecord> {
-	await archboardOk(cli, ["install-skill", "--agent", "codex", "--repo", paths.flask]);
-	const skillsRoot = path.join(paths.home, ".agents", "skills");
-	const skillRoot = path.join(skillsRoot, "archboard");
-	// The world holds the arm's package alone: the other skills the installer ships are read
-	// from the checkout at the run's own time and are not under evaluation.
-	for (const other of fs.readdirSync(skillsRoot).filter((name) => name !== "archboard")) {
-		fs.rmSync(path.join(skillsRoot, other), { recursive: true, force: true });
-	}
+	await archboardOk(cli, ["repo", "add", paths.flask]);
+	const skillRoot = path.join(paths.home, ".agents", "skills", "archboard");
+	fs.mkdirSync(path.dirname(skillRoot), { recursive: true });
 	swapInPackage(skillRoot, source);
 	if (!fs.existsSync(path.join(skillRoot, "SKILL.md")))
 		throw new Error("installed skill lacks SKILL.md");

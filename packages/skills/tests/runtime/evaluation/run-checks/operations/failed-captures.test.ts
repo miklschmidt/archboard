@@ -133,7 +133,7 @@ describe("failed runs keep grader capture evidence", () => {
 				path.join(fake, "apps/cli/src/bin.ts"),
 				`
 				const args = process.argv.slice(2);
-				if (args[0] === "install-skill") {
+				if (args[0] === "repo" && args[1] === "add") {
 					console.error("setup failed"); process.exit(71);
 				}
 				if (args.includes("--state")) {

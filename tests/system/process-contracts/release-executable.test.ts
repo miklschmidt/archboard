@@ -3,7 +3,6 @@
 // no Bun on PATH, starts its server, authors and renders a model, checks its code and stops.
 import { afterAll, expect, test } from "bun:test";
 import {
-	existsSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
@@ -117,7 +116,10 @@ test.skipIf(!RELEASED.has(platform))(
 			};
 			expect(health.mode).toBe("release");
 
-			answer([archboard, "install-skill", "--dir", path.join(scratch, "skills")], inRepo);
+			// The PATH has no package runner, so init skips the skills and sets the repository up.
+			expect(answer([archboard, "init"], inRepo)["skills"]).toMatchObject({
+				skipped: expect.stringContaining("Neither bun, pnpm nor npx is on the PATH"),
+			});
 			const empty = answer([archboard, "model", "read"], inRepo) as {
 				manifest: { id: string };
 				revision: unknown;
@@ -206,7 +208,6 @@ test.skipIf(!RELEASED.has(platform))(
 			const stopped = run([archboard, "stop"], inRepo);
 			expect(stopped.exitCode, stopped.output).toBe(0);
 		}
-		expect(existsSync(path.join(scratch, "skills", "archboard"))).toBe(true);
 	},
 	120_000,
 );
