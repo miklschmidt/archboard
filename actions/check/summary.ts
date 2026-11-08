@@ -1,6 +1,5 @@
-// The job summary of a check, in Markdown: the counts, a table of the findings, and for each
-// error and warning the evidence it rests on with fenced excerpts, then what the check did not
-// read. Pure.
+// The job summary of a check, in Markdown: the counts, a bounded table of findings and evidence
+// with fenced excerpts, the counts omitted from each list, then what the check did not read. Pure.
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
 
 import { excerptText, evidenceDetails } from "./evidence.ts";
@@ -148,9 +147,9 @@ function checkSummary(reading: {
 }): string {
 	const { answer, findings, outcome, locations, allowed } = reading;
 	const counts = countFindings(findings);
-	const detailed = findings
-		.filter((finding) => finding.level !== "information")
-		.slice(0, DETAILED_FINDINGS);
+	const errorsAndWarnings = findings.filter((finding) => finding.level !== "information");
+	const detailed = errorsAndWarnings.slice(0, DETAILED_FINDINGS);
+	const omittedDetails = errorsAndWarnings.length - detailed.length;
 	return [
 		"## Archboard check",
 		"",
@@ -164,6 +163,13 @@ function checkSummary(reading: {
 		...(detailed.length === 0
 			? []
 			: ["### Evidence", "", ...detailed.flatMap((finding) => findingDetail(finding, locations))]),
+		...(omittedDetails === 0
+			? []
+			: [
+					"",
+					`${String(omittedDetails)} more errors and warnings have evidence in the report file.`,
+					"",
+				]),
 		...(answer === undefined ? [] : skippedSection(answer)),
 	].join("\n");
 }

@@ -222,7 +222,7 @@ function reportOutcome(
 ): void {
 	if (dropped > 0) {
 		process.stdout.write(
-			`::notice::GitHub shows 10 annotations of each level. ${String(dropped)} more are in the job summary.\n`,
+			`::notice::GitHub shows 10 annotations of each level. ${String(dropped)} annotations were omitted; the saved JSON report contains all findings.\n`,
 		);
 	}
 	if (outcome.failed) {

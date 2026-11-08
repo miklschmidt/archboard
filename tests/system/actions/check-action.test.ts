@@ -184,6 +184,23 @@ describe("the entry", () => {
 		expect(result.outputs).toContain("warnings=0");
 	});
 
+	test("a bounded summary exposes how many findings and evidence entries it omits", () => {
+		const crowded = {
+			...answer,
+			code: {
+				...answer.code,
+				findings: Array.from({ length: 105 }, () => answer.code?.findings[0]),
+			},
+		};
+		const result = step(1, {}, crowded);
+		expect(result.exitCode).toBe(1);
+		expect(result.summary.match(/\| warning \|/gu)).toHaveLength(100);
+		expect(result.summary.match(/^#### /gmu)).toHaveLength(30);
+		// Counts remain visible after the table and evidence reach their respective bounds.
+		expect(result.summary).toMatch(/\b5\b/u);
+		expect(result.summary).toMatch(/\b75\b/u);
+	});
+
 	test("fail-on never reports findings and passes, but a check that cannot run still fails", () => {
 		expect(step(1, { ARCHBOARD_INPUT_FAIL_ON: "never" }).exitCode).toBe(0);
 		expect(step(3, { ARCHBOARD_INPUT_FAIL_ON: "never" }).exitCode).toBe(1);
