@@ -229,6 +229,11 @@ test("every move of the left column has a keyboard route, also in a presented pa
 			`document.querySelector('[data-flow-id="Shop#Request"]')?.getAttribute('aria-current') ?? null`,
 		),
 	).toBe("location");
+	expect(
+		await browser.eval<number>(
+			`document.querySelectorAll('[data-slot="model-tree"] [aria-current="location"], [data-slot="model-tree"] [aria-selected="true"]').length`,
+		),
+	).toBe(0);
 
 	// A flow says what it belongs to, in the panel, and no crumb claims it.
 	expect(
@@ -255,6 +260,11 @@ test("every move of the left column has a keyboard route, also in a presented pa
 		"the structure again",
 		WAIT,
 	);
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="model-tree"] [aria-current="location"]')?.getAttribute('data-module-row') ?? null`,
+		),
+	).toBe("Shop#Handler");
 
 	// A second pane opens the repository in front of the reader, and the column follows focus.
 	const repository = await browser.eval<string | null>(

@@ -101,9 +101,9 @@ text, and long lists stay in About.
 - **With nothing selected, it says what is open.** It shows the open module's name
   and description, or at the roots the model's name and the summary of its state,
   because a model has no description of its own. A flow reading shows the flow.
-- **A click answers at once.** The card and the tree row light, and the panel names
-  the subject. Nothing moves, so a double click on a card lands on the card and
-  opens it.
+- **A click answers at once.** The card lights, and the panel names the subject.
+  The navigator keeps its marker on the open reading. Nothing moves, so a double
+  click on a card lands on the card and opens it.
 - **With a selection, it says what the subject is, how it stands, and what it
   touches.** A module shows its name, kind, code path and responsibility, its warnings
   and standing, then `Sends to` and `Receives from`. A door lists its real endpoints,
@@ -513,6 +513,7 @@ foot](assets/operator-shell-navigator.png)
   row stick to the top while the column scrolls. Siblings sort by code path.
   Unbound modules come last, and ties use authored order. A chain of modules with
   one part each folds into one row, and the crumbs show each step.
+  Only the open reading has a marker: its module, flow, or walkthrough.
 - **`Flows` and `Walkthroughs` stay open while the reader walks them.** They list
   the whole model, and the right panel lists what touches the reading. A flow is
   chosen first, and `Sequence` or `Flowchart` second.

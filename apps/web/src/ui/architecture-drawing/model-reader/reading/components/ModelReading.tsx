@@ -158,6 +158,7 @@ function ReadingSections(props: {
 	const { model, location, structure, tree, branches, choices, walk } = reader;
 	const { folded, onFold } = folds;
 	const { flows } = structure.depicted;
+	const presenting = reader.walkthrough !== null;
 	const { reference } = reader.comparison;
 	const collections = useMemo(() => flowCollections(model, reference), [model, reference]);
 	return (
@@ -173,7 +174,7 @@ function ReadingSections(props: {
 				<ModelTree
 					tree={tree}
 					open={branches.open}
-					scope={structure.opened}
+					scope={location.grammar === "architecture" && !presenting ? structure.opened : null}
 					onToggle={branches.toggle}
 					onOpen={choices.chooseModule}
 					onTypeAhead={onTypeAhead}
@@ -191,7 +192,7 @@ function ReadingSections(props: {
 					<ModelFlows
 						flows={flows}
 						collections={collections}
-						flow={location.flow}
+						flow={presenting ? null : location.flow}
 						grammar={location.grammar}
 						onChoose={choices.chooseFlow}
 					/>

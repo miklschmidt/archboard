@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T13:12:00Z'
-updated_date: '2026-11-08T15:43:00Z'
+updated_date: '2026-11-08T15:44:00Z'
 labels:
   - frontend
   - design
@@ -53,6 +53,8 @@ The shell divides its column and right panel into sections with one-pixel lines,
 Verified in the running app (port 4467) at 1440x900 in both themes: chrome strip and rounded corners round the picture and About; no focus frame with one pane, quiet neutral edge on the active pane with two; agent card in the well with Working now; claim card at the top centre naming Checkout API, Orders DB; tree marks only Checkout API while Place order is selected; right panel head and foot. Full gate: every lane passes; the browser lane passes 49 of 49 files after the reconciliation owner scrolls the blocked ancestor into view.
 
 Review of a2af63695..cd031b68f found that a lost event connection hides an active claim. Keep cached claims mounted until ownership changes, and extend the existing reconnect owner. The Browser module vKEsyHFk/vKEsyHFk#6nZjwK9W keeps its existing reader, Query, and event ownership. These presentation fixes change no architecture contract, so no proposal is needed.
+
+Review also found that a flow or walkthrough leaves the previous module marked in the navigator. Mark only the active reading, and extend the reader-column browser owner to cover the flow and the return to structure.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
