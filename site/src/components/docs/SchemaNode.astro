@@ -171,8 +171,7 @@ const open = depth < 1;
 	{
 		(limits.length > 0 || pattern) && (
 			<p class="field-limits">
-				{limits.join(", ")}
-				{limits.length > 0 && pattern && ", "}
+				{`${limits.join(", ")}${limits.length > 0 && pattern ? "," : ""}`}
 				{pattern && (
 					<>
 						matches <code class="pattern">{pattern}</code>

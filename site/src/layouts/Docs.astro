@@ -36,7 +36,7 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
 <Base title={`${title} · Archboard docs`} description={plainDescription}>
 	<DocsNav path={path} />
 	<div class="docs">
-		<aside class="docs-sidebar" data-sidebar>
+		<aside class="docs-sidebar" data-sidebar aria-label="Docs pages">
 			<Sidebar path={path} />
 		</aside>
 		<main id="main" class="docs-main">
@@ -59,7 +59,7 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
 							<summary>On this page</summary>
 							<ul>
 								{tocHeadings.map((heading) => (
-									<li class:list={{ deep: heading.depth === 3 }}>
+									<li class:list={{ deep: heading.depth === 3, code: heading.code === true }}>
 										<a href={`#${heading.slug}`}>{heading.text}</a>
 									</li>
 								))}
@@ -79,7 +79,7 @@ const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.
 				<Pager path={path} />
 			</footer>
 		</main>
-		<aside class="docs-toc">
+		<aside class="docs-toc" aria-label="On this page">
 			<Toc headings={headings} />
 		</aside>
 	</div>

@@ -19,7 +19,11 @@ const EXIT_CODES = [
 			"A usage error or a refused operation: a claim held, revoked or missing, a revision that moved, or no vault found. Read the model again and retry.",
 	},
 	{ exit: 3, meaning: "The Archboard server did not answer and could not start." },
-	{ exit: 4, meaning: "The command needs a browser pane, and none is open." },
+	{
+		exit: 4,
+		meaning:
+			"Something local that the command needs is missing: an open browser pane, or Chromium or `ffmpeg` to record a walkthrough.",
+	},
 ] as const;
 
 /** The environment variables that the CLI reads, and the one that it refuses. */

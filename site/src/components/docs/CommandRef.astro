@@ -3,6 +3,7 @@
 // examples and what each exit code means.
 import { Code } from "astro-expressive-code/components";
 import SubHead from "./SubHead.astro";
+import { docsHref } from "../../lib/docs-nav";
 import {
 	commandAnchor,
 	descriptionBlocks,
@@ -12,6 +13,7 @@ import {
 	traits,
 	type CommandEntry,
 	type OptionEntry,
+	reference,
 } from "../../lib/reference";
 
 interface Props {
@@ -30,6 +32,8 @@ const exits = [
 	...command.outcomes.map((outcome) => ({ exit: outcome.exit, what: outcome.id, text: outcome.description })),
 ];
 const blocks = descriptionBlocks(command.description);
+/** The schema of the intent that the command reads, such as `model-edit` for `model edit`. */
+const schema = reference.schemas.find((entry) => entry.name === command.name.replaceAll(" ", "-"));
 ---
 
 <section class="command" aria-labelledby={anchor}>
@@ -46,8 +50,7 @@ const blocks = descriptionBlocks(command.description);
 						Without a subcommand, <code>archboard {command.name}</code> runs{" "}
 						<a href={`#${commandAnchor(command.router.runs)}`}>
 							<code>archboard {command.router.runs}</code>
-						</a>
-						, and the options before the subcommand go to it.
+						</a>{", and the options before the subcommand go to it."}
 					</>
 				) : (
 					<>
@@ -87,6 +90,11 @@ const blocks = descriptionBlocks(command.description);
 				),
 			)
 		}
+		{schema && (
+			<p>
+				The input follows <a href={`${docsHref("reference/schemas")}#${schema.name}`}>the <code>{schema.name}</code> schema</a>.
+			</p>
+		)}
 	</div>)}
 	{
 		!command.router && (positionals.length > 0 || options.length > 0 || shared.length > 0) && (
@@ -113,16 +121,10 @@ const blocks = descriptionBlocks(command.description);
 							<td>
 								<span set:html={inlineCode(parameter.description)} />
 								{parameter.choices && (
-									<span class="detail">
-										One of{" "}
-										{parameter.choices.map((choice, index) => (
-											<>
-												{index > 0 && ", "}
-												<code>{choice}</code>
-											</>
-										))}
-										.
-									</span>
+									<span
+										class="detail"
+										set:html={inlineCode(`One of ${parameter.choices.map((choice) => `\`${choice}\``).join(", ")}.`)}
+									/>
 								)}
 							</td>
 						</tr>
@@ -144,16 +146,10 @@ const blocks = descriptionBlocks(command.description);
 									<span class="detail" set:html={inlineCode(`Required when ${option.requiredWhen}.`)} />
 								)}
 								{option.choices && (
-									<span class="detail">
-										One of{" "}
-										{option.choices.map((choice, index) => (
-											<>
-												{index > 0 && ", "}
-												<code>{choice}</code>
-											</>
-										))}
-										.
-									</span>
+									<span
+										class="detail"
+										set:html={inlineCode(`One of ${option.choices.map((choice) => `\`${choice}\``).join(", ")}.`)}
+									/>
 								)}
 								{option.default && (
 									<span class="detail">

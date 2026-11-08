@@ -239,6 +239,10 @@ html:has(.docs) {
 	color: var(--ink-muted);
 	text-decoration: none;
 }
+.inline-toc li.code a {
+	font-family: var(--font-mono);
+	font-size: 0.8125rem;
+}
 
 @media (max-width: 1240px) {
 	.docs {
@@ -591,11 +595,18 @@ html:has(.docs) {
 	text-decoration: none;
 }
 
-/* A touch screen shows the copy button all the time, at the top right of the code. The code starts
-   below it, so the button never covers the first lines of a long command. */
+/* A touch screen shows the copy button all the time. In a frame with a title bar, the button sits in
+   that bar. In a bare frame, the code starts below it. Either way, it never covers a command. */
 @media (hover: none) {
-	:root .expressive-code pre > code {
+	:root .expressive-code .frame:not(.has-title, .is-terminal) pre > code {
 		padding-block-start: calc(2.5rem + 10px);
+	}
+	:root .expressive-code .frame:is(.has-title, .is-terminal) .copy {
+		inset-block-start: 3px;
+	}
+	:root .expressive-code .frame:is(.has-title, .is-terminal) .copy button {
+		width: 28px;
+		height: 28px;
 	}
 }
 

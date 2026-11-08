@@ -138,12 +138,13 @@ function checkExits(file: string, prose: string): void {
 
 /**
  * Refuse a value of an Action input that its `action.yml` does not name: the input's default, or a
- * value in backticks in its description.
+ * value in backticks in its description. Refuse a line that calls another value the default.
  * @param file The guide.
  * @param target The link to the input's row, such as `../reference/actions/#check-fail-on`.
  * @param value The value that the guide gives the input.
+ * @param line The line that gives it. A line that calls the value the default must be right.
  */
-function checkValue(file: string, target: string, value: string): void {
+function checkValue(file: string, target: string, value: string, line: string): void {
 	const anchor = /reference\/actions\/#(.+)$/u.exec(target)?.[1];
 	const input = reference.actions
 		.flatMap((action) =>
@@ -153,6 +154,10 @@ function checkValue(file: string, target: string, value: string): void {
 	if (input === undefined) return;
 	if (value !== input.default && !input.description.includes(`\`${value}\``)) {
 		problems.push(`${file}: the input ${input.name} takes no value \`${value}\` in its action.yml`);
+	} else if (value !== input.default && /\bThe default\b/u.test(line)) {
+		problems.push(
+			`${file}: calls \`${value}\` the default of ${input.name}, which is \`${input.default}\``,
+		);
 	}
 }
 
@@ -172,7 +177,7 @@ function checkValueTables(file: string, prose: string): void {
 		const head = /^\[`[\w-]+`\]\(([^)\s]*reference\/actions\/#[^)\s]+)\)$/u.exec(first)?.[1];
 		if (head !== undefined) target = head;
 		else if (target !== undefined && /^`[^`]+`$/u.test(first))
-			checkValue(file, target, first.slice(1, -1));
+			checkValue(file, target, first.slice(1, -1), line);
 	}
 }
 
@@ -198,7 +203,11 @@ function checkMentions(file: string, prose: string): void {
 			);
 		}
 		const value = /^[\w-]+:\s*(.+)$/u.exec(span)?.[1];
-		if (value !== undefined) checkValue(file, target, value);
+		if (value !== undefined) {
+			const start = prose.lastIndexOf("\n", match.index) + 1;
+			const end = prose.indexOf("\n", match.index);
+			checkValue(file, target, value, prose.slice(start, end === -1 ? undefined : end));
+		}
 		if (findings.has(span) && !target.includes("reference/findings/#")) {
 			problems.push(
 				`${file}: \`${span}\` names a finding; link it to reference/findings/#${span.toLowerCase().replaceAll("_", "-")}`,
