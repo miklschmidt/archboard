@@ -9,7 +9,7 @@ import {
 	resolvePane,
 } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
-import { frontendState } from "@archboard/server-lifecycle/server-host";
+import { staleFrontend } from "@archboard/server-lifecycle/server-host";
 import { browserUrl } from "@archboard/workspace/source-checkout";
 import { PANE_MS } from "@archboard/timing";
 import {
@@ -60,10 +60,10 @@ function noBrowserBody(what: string): Record<string, unknown> {
 
 // ─── Panes ────────────────────────────────────────────────────
 //
-// What the human is currently looking at: which pane holds which model, where
-// it sits on the display, how much of the model is on screen, and what is picked
-// in it. View state, never contents — see panes.ts for why that line is
-// worth holding.
+// What the human is currently looking at: which pane holds which model and
+// where it sits on the display. View state, never contents — see panes.ts for
+// why that line is worth holding. What is picked in a pane is its reading, which
+// the semantic-context route takes.
 //
 // This is pushed by the browser and read back off the server,
 // so reading it costs a map lookup and never a browser round-trip.
@@ -123,12 +123,14 @@ function registrationOf(reported: z.infer<typeof PaneSchema>, vault: string): Pa
 /**
  * A pane says what it is showing, and hears back whether it is out of date.
  *
- * This is the pulse a browser already has. A pane posts here when it connects,
- * on every change, and on every scroll, resize and zoom, so a tab that was
- * opened before somebody rebuilt the frontend finds out at its next
- * interaction. The alternative on offer was for the tab to discover it by
- * having a command time out on it ten seconds later, which is what used to
- * happen and what TASK-056 is about.
+ * A pane posts here when its socket opens, when its element mounts, and when
+ * its model or the options the shell gives it change, and it skips a report
+ * equal to its last one. Scrolling, zooming and selecting change none of that,
+ * so the reading a pane publishes at every selection and navigation answers the
+ * same staleness rule, and a tab opened before somebody rebuilt the frontend
+ * finds out at its next interaction either way (TASK-056, TASK-608).
+ * The alternative was for the tab to discover it by having a command time out
+ * on it ten seconds later.
  * @param req The request.
  * @param res Its response.
  */
@@ -138,8 +140,7 @@ function postPaneRoute(req: Request, res: Response): void {
 		res.status(400).json({ success: false, error: paneTelemetryRefusal(parsed.error) });
 		return;
 	}
-	const frontend = frontendState(parsed.data.build);
-	const staleFrontend = frontend.stale ? frontend : undefined;
+	const stale = staleFrontend(parsed.data.build);
 	const vault = vaultOfRequest(req);
 	const registration = registrationOf(parsed.data, vault);
 	// A pane exists exactly as long as the socket that owns it. A report arriving
@@ -156,7 +157,7 @@ function postPaneRoute(req: Request, res: Response): void {
 			success: true,
 			registered: false,
 			paneCount: addressablePanes([...panes.values()]).length,
-			staleFrontend,
+			staleFrontend: stale,
 		});
 		return;
 	}
@@ -169,7 +170,7 @@ function postPaneRoute(req: Request, res: Response): void {
 			registered: false,
 			code: "PANE_MOVED",
 			paneCount: addressablePanes([...panes.values()]).length,
-			staleFrontend,
+			staleFrontend: stale,
 		});
 		return;
 	}
@@ -178,7 +179,7 @@ function postPaneRoute(req: Request, res: Response): void {
 		success: true,
 		registered: true,
 		paneCount: addressablePanes([...panes.values()]).length,
-		staleFrontend,
+		staleFrontend: stale,
 	});
 }
 

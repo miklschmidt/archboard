@@ -3,6 +3,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/model/pane-context";
+
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import { createRequester } from "./support/http.ts";
@@ -11,8 +13,7 @@ import { openPaneSession } from "./support/pane-session.ts";
 const repoRoot = resolve(import.meta.dir, "../../..");
 const indexFile = join(repoRoot, "dist/frontend/index.html");
 
-interface Registration {
-	registered: boolean;
+interface StaleAnswer {
 	staleFrontend?: {
 		stale: boolean;
 		current: string;
@@ -21,8 +22,12 @@ interface Registration {
 	};
 }
 
+interface Registration extends StaleAnswer {
+	registered: boolean;
+}
+
 describe.serial("frontend staleness", () => {
-	test("reports only an outdated built bundle", async () => {
+	test("reports only an outdated built bundle, to a pane report and to a reading", async () => {
 		await using resources = new AsyncDisposableStack();
 		const distExisted = existsSync(join(repoRoot, "dist"));
 		const frontendExisted = existsSync(dirname(indexFile));
@@ -80,6 +85,29 @@ describe.serial("frontend staleness", () => {
 				})
 			).body;
 
+		// A reading goes out at every selection and navigation, and a pane report far
+		// less often, so the reading's answer is where a tab hears at its next
+		// interaction that the frontend was rebuilt (TASK-608).
+		let sequence = 0;
+		const read = async () =>
+			(
+				await request<StaleAnswer>(SEMANTIC_PANE_CONTEXT_ROUTE, {
+					method: "POST",
+					doing: false,
+					body: {
+						paneId: pane.clientId,
+						clientId: pane.clientId,
+						model: null,
+						variant: null,
+						view: null,
+						selection: [],
+						version: null,
+						at: new Date().toISOString(),
+						sequence: sequence++,
+					},
+				})
+			).body;
+
 		const old = await register("/assets/index-fromlastweek.js");
 		expect(old.registered).toBeTrue();
 		expect(old.staleFrontend).toMatchObject({
@@ -90,10 +118,13 @@ describe.serial("frontend staleness", () => {
 		expect(old.staleFrontend?.message).toContain("index-fromlastweek.js");
 		expect(old.staleFrontend?.message).toContain(expectedBuild!);
 		expect(old.staleFrontend?.message).toMatch(/Reload the tab/);
+		expect((await read()).staleFrontend).toEqual(old.staleFrontend);
 		expect((await register(expectedBuild)).staleFrontend).toBeUndefined();
+		expect((await read()).staleFrontend).toBeUndefined();
 		expect((await register("/src/main.tsx")).staleFrontend).toBeUndefined();
 		const unnamed = await register();
 		expect(unnamed.registered).toBeTrue();
 		expect(unnamed.staleFrontend).toBeUndefined();
+		expect((await read()).staleFrontend).toBeUndefined();
 	}, 20_000);
 });

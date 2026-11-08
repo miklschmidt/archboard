@@ -187,4 +187,17 @@ function frontendState(loadedBuild: string | null | undefined): FrontendState {
 	};
 }
 
-export { type SourceState, sourceState, frontendBuild, frontendState };
+/**
+ * What to tell a tab about the bundle it loaded, when there is anything to tell.
+ *
+ * The one rule behind every answer a tab hears it from: the pane report, and the
+ * reading it publishes at every selection and navigation.
+ * @param loadedBuild The entry script the tab says it loaded.
+ * @returns The state of a stale tab, or undefined for any other tab.
+ */
+function staleFrontend(loadedBuild: string | null | undefined): FrontendState | undefined {
+	const state = frontendState(loadedBuild);
+	return state.stale ? state : undefined;
+}
+
+export { type SourceState, sourceState, frontendBuild, frontendState, staleFrontend };

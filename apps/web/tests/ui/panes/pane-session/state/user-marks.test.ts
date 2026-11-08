@@ -70,6 +70,8 @@ function watched() {
 			sent.push(body);
 			return Promise.resolve({ kept: true });
 		},
+		/** The build is not what this one is about. */
+		noteBuild: (): void => {},
 	});
 	return { publisher, sent };
 }
