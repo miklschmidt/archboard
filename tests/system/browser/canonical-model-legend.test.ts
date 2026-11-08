@@ -88,11 +88,14 @@ function seedReading(vault: string): void {
 	);
 }
 
-/** Where every word and mark of the legend stands. */
+/**
+ * Where every word and mark of the legend stands. The switches and the Filter key are left out: a
+ * key sinks when it is pressed, and that is the key moving, not the legend.
+ */
 function wordsAt(browser: AgentBrowserSession): Promise<string> {
 	return browser.eval<string>(`(() => {
 		const legend = document.querySelector('${LEGEND}');
-		const words = [...legend.querySelectorAll('h4, svg, li [title]')].filter((word) => word.closest('[role="switch"]') === null);
+		const words = [...legend.querySelectorAll('h4, svg, li [title]')].filter((word) => word.closest('[role="switch"], ${FILTER}') === null);
 		return JSON.stringify(words.map((word) => {
 			const { x, y } = word.getBoundingClientRect();
 			return [word.textContent, Math.round(x), Math.round(y)];
