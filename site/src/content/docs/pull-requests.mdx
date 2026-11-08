@@ -16,7 +16,7 @@ A plain diff is the wrong level for an architectural change. A reviewer sees for
 
 ## Findings on the diff
 
-The check Action turns each finding into a GitHub annotation on the file and line of its evidence. A finding that crosses a network hop has evidence in two files, so the annotation appears on both: the line of code that reads the address, and the line of the manifest that sets it. Each annotation names both ends with an excerpt of each, so the reviewer reads the whole connection at either end.
+The check Action turns each finding into a GitHub annotation on the file and line of its evidence. A finding that crosses a network hop has evidence in two files: the line of code that reads the address, and the line of the manifest that sets it. Each end in the pull request's repository gets an annotation. GitHub cannot put an annotation on a file of another repository, so every annotation names both ends with an excerpt of each, and the reviewer reads the whole connection from one place.
 
 ```yaml title=".github/workflows/architecture.yml"
 name: architecture
@@ -35,19 +35,19 @@ jobs:
           version: 0.1.0
 ```
 
-The annotation of the relay example's hop reads like this:
+In the relay example, the code is in one repository and the manifest is in another. The annotation on `services/intake/src/accept.ts` line 51 reads:
 
-```text title="Annotation on services/intake/src/accept.ts"
-RELATIONSHIP_UNDRAWN: Rate card
-The code of "Accept parcel" reaches "Rate card". No relationship joins these modules.
-
-configured-path, resolved: services/intake/src/accept.ts:51
-  50 |   const billingUrl = trimUrl(process.env.BILLING_URL ?? "");
-  51 |   await deps.fetch(`${billingUrl}/surcharges?routeCode=...`);
-
-configured-path, resolved: deploy/kubernetes/peer-endpoints.yaml:13
-  12 |   DISPATCH_JOBS_URL: http://dispatch-jobs.harbor.svc.cluster.local:9324
-  13 |   BILLING_URL: http://billing.harbor.svc.cluster.local:8080
+```text title="RELATIONSHIP_UNDRAWN: Rate card"
+The code of "Accept parcel" reaches "Rate card". No relationship joins these modules. Add the relationship between the parts that make and answer the call. If this dependency is unintended, change the code.
+Evidence:
+- configured-path, resolved: services/intake/src/accept.ts:51 in github.com/miklschmidt/archboard-relay-example (BILLING_URL)
+      50 |   // gate:break start
+    > 51 |   const billingUrl = trimUrl(process.env.BILLING_URL ?? "");
+      52 |   await deps.fetch(`${billingUrl}/surcharges?routeCode=${encodeURIComponent(routeBody.routeCode)}`);
+- configured-path, resolved: deploy/kubernetes/peer-endpoints.yaml:13 in github.com/miklschmidt/archboard-relay-example-infra (BILLING_URL)
+      12 |   DISPATCH_JOBS_URL: http://dispatch-jobs.harbor.svc.cluster.local:9324
+    > 13 |   BILLING_URL: http://billing.harbor.svc.cluster.local:8080
+      14 |
 ```
 
 The job summary lists every finding with the same excerpts, the skipped subjects, and a link from each code to [its explanation](../reference/findings/). GitHub shows at most ten annotations of each level for one step, so the summary is the complete list.
@@ -55,7 +55,7 @@ The job summary lists every finding with the same excerpts, the skipped subjects
 <Aside type="note" title="See it on a real pull request">
 	[Pull request #1 of the relay
 	example](https://github.com/miklschmidt/archboard-relay-example/pull/1) makes Intake call Billing
-	with no plan. Its check fails, and the annotation sits on `accept.ts`.
+	with no plan. Its check fails, and the annotation sits on line 51 of `accept.ts`.
 </Aside>
 
 ### Decide what blocks
@@ -70,7 +70,7 @@ A check that cannot run fails the job in every case: a usage error, a refusal or
 
 ## The plan on the pull request
 
-An agent that plans a change first writes it as a proposal: the architecture after the change, beside the current one. The pull-request Action finds that proposal and posts one comment. It updates the same comment on each push.
+An agent that plans a change first writes it as a proposal: the architecture after the change, beside the current one. The pull-request Action finds that proposal and posts one comment. It updates the same comment on each push. [Pull request #2 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/2) makes the same call to Billing with a plan, and its comment shows each part below.
 
 <Steps>
 
@@ -116,7 +116,7 @@ The Action takes the first of these that it finds:
 2. The marker that the `archboard-pr` skill writes into the pull request's description:
 
    ```html
-   <!-- archboard-pr model="Wkx6de6D" state="<proposal-id>" -->
+   <!-- archboard-pr model="rpmPjlm0" state="zu80HRHt" -->
    ```
 
 3. The only draft proposal of the model.
@@ -124,6 +124,8 @@ The Action takes the first of these that it finds:
 </Steps>
 
 With none, the comment shows the architecture before and after and the changed modules, and judges nothing against a plan.
+
+The skill adopts the proposal on the branch once the code matches it, so at the head the proposal is often the current architecture. The Action then reads the plan as the difference between the current architecture at the base and the proposal at the head.
 
 ### Changes outside the plan
 
