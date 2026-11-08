@@ -32,8 +32,8 @@ jobs:
 The action annotates each finding on the diff. A semantic diagnostic is an error, a code or embeds
 warning is a warning, and information is a notice. A finding that rests on code or configuration
 carries each end of its evidence with the excerpt of the line and one line around it. When a finding
-crosses a network hop, the code that reads an address and the manifest that sets it, it is
-annotated at both places and each annotation carries both ends. A finding with no evidence is
+crosses a network hop, each annotation carries the code and manifest evidence.
+It annotates both places when they belong to the checked repository. A finding with no evidence is
 annotated at the vault file it names. The job summary lists the counts, every finding with a link
 to its entry in the findings reference, the evidence of each error and warning, and what the check
 did not read.
@@ -88,9 +88,8 @@ steps:
       repos: infrastructure
 ```
 
-An annotation lands on the pull request's diff when the file is in the repository the pull request
-changes. For the other checkout the annotation shows on the run, and the message still carries the
-excerpt.
+The action annotates only files in the repository that the pull request changes.
+The message and job summary also carry excerpts from the other checkout.
 
 ## The pull request report
 
