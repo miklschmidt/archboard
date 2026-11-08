@@ -150,7 +150,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 						<Popover.Content
 							align="start"
 							data-slot="repository-dropdown"
-							className="max-h-[60vh] w-(--anchor-width) gap-0 p-0 pt-2"
+							className="bg-sidebar max-h-[60vh] w-(--anchor-width) gap-0 p-0 pt-2"
 						>
 							<RepositoryChooser
 								repositories={view.repositories}

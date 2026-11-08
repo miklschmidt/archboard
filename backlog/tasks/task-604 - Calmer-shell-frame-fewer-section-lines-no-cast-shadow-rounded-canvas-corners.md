@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T13:12:00Z'
-updated_date: '2026-11-08T19:25:00Z'
+updated_date: '2026-11-08T21:26:00Z'
 labels:
   - frontend
   - design
@@ -65,10 +65,14 @@ Review of 545f27fbe..a552e0c27: inspect shared rows, section labels, legend move
 Review completed for 545f27fbe..a552e0c27. Fixed the stale gold rule in DESIGN.md, replaced wrapper assertions with visible legend reachability, and rounded observed legend coordinates after a 0.0015-pixel animation difference failed the stability test. Validation passed: fresh install/build, lint:all, type-check, formatting, 11 code-evidence tests, and canonical-model-legend, canonical-model-viewer, shell-layout, reader-column, reader-context, canonical-model-walkthroughs, and canonical-model-selection through the browser adapter. Inspected the app with agent-browser on port 4397 in both themes, one and two panes, two levels of expansion, and an overflowing subject. Focused axe rules found no panel or navigator violations. Site paint, diagram rendering, and build passed. Audited the site sections and demo states on port 4398, including completed talk and window playback. Regenerated diagram differences contain only allocated sample IDs and were restored. Architecture semantics passed. Existing Browser ownership stays accurate, so no model change is needed.
 
 Review of 00557c0dc..5fd18e4e2 follows the later owner specification: both side lists and the agent card surround use the shell tone, and panes have no separator. Inspect the open repository chooser, remove stale depth notes, and run the requested browser owners and site audit. Browser ownership remains vKEsyHFk/vKEsyHFk#6nZjwK9W. These surface changes alter no module responsibility or interface, so no architecture proposal is needed.
+
+Review of 00557c0dc..5fd18e4e2 completed. Standards: two findings fixed, stale CSS depth notes and the component catalog that retained the deleted sink shadow. Spec: one finding fixed, the open repository chooser used the popover tone while its sticky row used the shell tone. The smallest fix sets bg-sidebar on the existing popup owner. No new utility, state, or architecture proposal is needed. Fresh installation and build ran inside nix develop. lint:all, both TypeScript projects, formatting, architecture semantics, and nine tests across five browser files passed. Browser files: shell-layout, reader-column, canonical-model-viewer, canonical-model-claims, and workspace-address. Manual browser work used app port 4491 and site port 4492. Both themes keep opaque sticky heads and rows, an 8px card surround, equal pane widths, hidden presentation siblings, and focus recovery. The site paint, diagram generation, and build passed. Every section and demo was inspected, including completed Talk playback and all four walkthrough steps. Regenerated SVG differences contain only allocated sample identities, so existing drawings remain. The frontend build retains its existing chunk-size advisory. No unfixed review findings remain.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
 The shell is one flat chrome plane that frames the picture and the About page on every side, with an 8px strip and 12px rounded corners, no cast shadow and no hairline. The left column's well runs to its foot, and the agent's card lies in it with the tray tone and depth, holding Working now. One pane draws no focus frame; two panes mark the active picture with a quiet neutral edge. A claim is a card at the top centre of the picture that names its subjects. The module tree marks only where the reader is. The right panel's subject block and foot are polished onto one grid. DESIGN.md, the depth notes and the marketing site's mock follow. Follow-up: refresh the README assets once the UI polish settles; they still show the old frame and the old claim banner.
+
+The later shell review puts the repository chooser on the chrome and removes stale well guidance. The requested browser owners, both themes, pane presentation, and the site audit pass.
 <!-- SECTION:FINAL_SUMMARY:END -->
