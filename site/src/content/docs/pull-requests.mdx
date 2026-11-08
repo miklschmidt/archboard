@@ -16,7 +16,9 @@ A plain diff is the wrong level for an architectural change. A reviewer sees for
 
 ## Findings on the diff
 
-The check Action turns each finding into a GitHub annotation on the file and line of its evidence. A finding that crosses a network hop has evidence in two files: the line of code that reads the address, and the line of the manifest that sets it. Each end in the pull request's repository gets an annotation. GitHub cannot put an annotation on a file of another repository, so every annotation names both ends with an excerpt of each, and the reviewer reads the whole connection from one place.
+The check Action turns each finding into a GitHub annotation on the file and line of its evidence. A finding that crosses a network hop has evidence in two files: the line of code that reads the address, and the line of the manifest that sets it. Each end in the pull request's repository gets an annotation.
+
+GitHub cannot put an annotation on a file of another repository, so every annotation names both ends with an excerpt of each, and the reviewer reads the whole connection from one place.
 
 ```yaml title=".github/workflows/architecture.yml"
 name: architecture
@@ -70,7 +72,9 @@ A check that cannot run fails the job in every case: a usage error, a refusal or
 
 ## The plan on the pull request
 
-An agent that plans a change first writes it as a proposal: the architecture after the change, beside the current one. The pull-request Action finds that proposal and posts one comment. It updates the same comment on each push. When a push removes the vault, the comment says so. [Pull request #2 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/2) makes the same call to Billing with a plan, and its comment shows each part below.
+An agent that plans a change first writes it as a proposal: the architecture after the change, beside the current one. The pull-request Action finds that proposal and posts one comment. It updates the same comment on each push. When a push removes the vault, the comment says so.
+
+[Pull request #2 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/2) makes the same call to Billing with a plan, and its comment shows each part below.
 
 <Steps>
 
@@ -145,7 +149,9 @@ Change the label with `override-label`. A pull request with no proposal has no p
 
 ### Where the pictures live
 
-GitHub shows an image in a comment only from an address on the web. The Action commits the SVGs to an orphan branch, `archboard-assets`, under `pr-<number>/<head commit>/`, and links them from there. It removes the folders of older commits of the same pull request. A pull request from a fork gets a read-only token, so the Action cannot publish the pictures. It still posts the comment when the token allows it, without pictures, and the comment says why. When GitHub refuses the comment too, the report is in the job summary.
+GitHub shows an image in a comment only from an address on the web. The Action commits the SVGs to an orphan branch, `archboard-assets`, under `pr-<number>/<head commit>/`, and links them from there. It removes the folders of older commits of the same pull request.
+
+A pull request from a fork gets a read-only token, so the Action cannot publish the pictures. It still posts the comment when the token allows it, without pictures, and the comment says why. When GitHub refuses the comment too, the report is in the job summary.
 
 <Aside type="caution" title="Private repositories">
 	An image on `raw.githubusercontent.com` of a private repository needs the reader's sign-in, and
