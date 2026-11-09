@@ -1,0 +1,629 @@
+/* The docs: the same lit room as the site, set for reading. The sidebar and the sections of the
+   page stand still at the sides, and the page's words take the middle at a reading measure. */
+
+:root {
+	--docs-measure: 1320px;
+	--docs-text: 44em;
+	/* Paragraphs keep to 60 to 80 characters a line, while tables and code use the whole column. */
+	--docs-prose: 36em;
+}
+
+/* A page changes with the browser's own view transition: the words slide in a little, and the bar
+   and the sidebar stay where they are. A browser without it changes the page at once. */
+@view-transition {
+	navigation: auto;
+}
+.docs-bar {
+	view-transition-name: docs-bar;
+}
+.docs-sidebar {
+	view-transition-name: docs-sidebar;
+}
+.docs-article {
+	view-transition-name: docs-article;
+}
+::view-transition-old(docs-article) {
+	animation: 140ms var(--ease-out) both docs-leave;
+}
+::view-transition-new(docs-article) {
+	animation: 320ms var(--ease-out) both docs-enter;
+}
+@keyframes docs-leave {
+	to {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+}
+@keyframes docs-enter {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	@view-transition {
+		navigation: none;
+	}
+}
+
+html:has(.docs) {
+	scroll-padding-top: 96px;
+}
+
+.docs {
+	display: grid;
+	grid-template-columns: 248px minmax(0, 1fr) 216px;
+	gap: 56px;
+	max-width: calc(var(--docs-measure) + var(--gutter) * 2);
+	margin-inline: auto;
+	padding: 0 var(--gutter) 120px;
+}
+
+.docs-sidebar,
+.docs-toc {
+	position: sticky;
+	top: 64px;
+	align-self: start;
+	max-height: calc(100vh - 64px);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	padding: 40px 4px 40px 0;
+}
+.docs-toc {
+	padding-left: 4px;
+}
+
+.docs-main {
+	min-width: 0;
+	padding-top: 56px;
+}
+
+.docs-head {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	padding-bottom: 36px;
+	margin-bottom: 40px;
+	box-shadow: inset 0 -1px 0 var(--rule);
+}
+.docs-title {
+	font-size: clamp(2.6rem, 5.4vw, 4rem);
+	line-height: 0.92;
+	max-width: 16ch;
+}
+/* A title that names a command sets that name in mono, in the title's colour and case. */
+.docs-title code {
+	font-size: 0.8em;
+	text-transform: none;
+	letter-spacing: 0;
+}
+.docs-lead {
+	max-width: 36em;
+	font-size: clamp(1.0625rem, 1.4vw, 1.1875rem);
+	line-height: 1.6;
+	color: var(--ink-body);
+	text-wrap: pretty;
+}
+
+.docs-foot {
+	display: flex;
+	flex-direction: column;
+	gap: 28px;
+	margin-top: 88px;
+	padding-top: 28px;
+	box-shadow: inset 0 1px 0 var(--rule);
+}
+.edit {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	align-self: flex-start;
+	font-size: 0.875rem;
+	color: var(--ink-muted);
+	text-decoration: none;
+	transition: color 160ms var(--ease-out);
+}
+.edit:hover {
+	color: var(--ink);
+}
+
+.mobile-bar {
+	display: none;
+}
+.mobile-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	max-width: 100%;
+	height: 36px;
+	padding: 0 12px;
+	border: 0;
+	border-radius: var(--radius-control);
+	background: var(--raised);
+	color: var(--ink-muted);
+	font-size: 0.875rem;
+	font-weight: 500;
+	box-shadow:
+		var(--shadow-raised),
+		inset 0 0 0 1px var(--rule);
+	cursor: pointer;
+}
+.mobile-button span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.drawer {
+	width: min(340px, calc(100vw - 48px));
+	max-width: none;
+	height: 100vh;
+	max-height: none;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--ink-body);
+}
+.drawer::backdrop {
+	background: var(--scrim);
+	backdrop-filter: blur(3px);
+}
+.drawer[open] {
+	animation: drawer-in 240ms var(--ease-out);
+}
+@keyframes drawer-in {
+	from {
+		transform: translateX(-24px);
+		opacity: 0;
+	}
+}
+.drawer-panel {
+	height: 100%;
+	overflow-y: auto;
+	padding: 16px 16px 40px;
+	background: var(--chrome);
+	box-shadow:
+		inset -1px 0 0 var(--rule),
+		24px 0 48px -16px var(--cast);
+}
+.drawer-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 24px;
+	padding-left: 12px;
+	font-weight: 600;
+}
+
+.inline-toc {
+	display: none;
+	margin-bottom: 40px;
+	padding: 4px;
+	border-radius: var(--radius-table);
+	background: var(--chrome);
+	box-shadow:
+		var(--shadow-raised),
+		inset 0 0 0 1px var(--rule);
+}
+.inline-toc summary {
+	display: flex;
+	align-items: center;
+	height: 40px;
+	padding: 0 14px;
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: var(--ink);
+	cursor: pointer;
+	list-style: none;
+}
+.inline-toc summary::-webkit-details-marker {
+	display: none;
+}
+.inline-toc summary::after {
+	content: "+";
+	margin-left: auto;
+	color: var(--gold-mark);
+	font-weight: 600;
+}
+.inline-toc[open] summary::after {
+	content: "−";
+}
+.inline-toc ul {
+	list-style: none;
+	margin: 0;
+	padding: 6px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.inline-toc li.deep {
+	padding-left: 16px;
+}
+.inline-toc a {
+	font-size: 0.9375rem;
+	color: var(--ink-muted);
+	text-decoration: none;
+}
+.inline-toc li.code a {
+	font-family: var(--font-mono);
+	font-size: 0.8125rem;
+}
+
+@media (max-width: 1240px) {
+	.docs {
+		grid-template-columns: 232px minmax(0, 1fr);
+		gap: 48px;
+	}
+	.docs-toc {
+		display: none;
+	}
+	.inline-toc {
+		display: block;
+	}
+}
+@media (max-width: 900px) {
+	.docs {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.docs-sidebar {
+		display: none;
+	}
+	.docs-main {
+		padding-top: 20px;
+	}
+	.mobile-bar {
+		display: block;
+		margin-bottom: 32px;
+	}
+}
+
+/* The page's words. Section heads are the display capitals at the claim size; everything inside a
+   section is plain sans, and commands, paths and counts are mono. */
+.prose {
+	max-width: var(--docs-text);
+	color: var(--ink-body);
+}
+.prose > * + * {
+	margin-top: 1.15em;
+}
+.prose p,
+.prose li {
+	max-width: var(--docs-prose);
+	text-wrap: pretty;
+}
+.prose h2 {
+	margin-top: 88px;
+	font-family: var(--font-display);
+	font-size: clamp(1.9rem, 3vw, 2.5rem);
+	font-weight: 720;
+	line-height: 0.98;
+	letter-spacing: 0.005em;
+	text-transform: uppercase;
+	color: var(--ink);
+	text-wrap: balance;
+}
+.prose h3 {
+	margin-top: 52px;
+	font-size: 1.25rem;
+	font-weight: 600;
+	line-height: 1.3;
+	letter-spacing: -0.012em;
+	color: var(--ink);
+}
+.prose h4 {
+	margin-top: 36px;
+	font-size: 1.0625rem;
+	font-weight: 600;
+	color: var(--ink);
+}
+.prose h2 + *,
+.prose h3 + *,
+.prose h4 + * {
+	margin-top: 18px;
+}
+.prose > :first-child {
+	margin-top: 0;
+}
+
+/* The page's scroll padding already clears the bar, so a heading adds no margin of its own. */
+.heading {
+	position: relative;
+}
+.heading-link {
+	display: inline-grid;
+	place-items: center;
+	/* A target of at least 24 by 24 pixels (WCAG 2.5.8). */
+	min-width: 24px;
+	min-height: 24px;
+	margin-left: 0.25em;
+	font-family: var(--font-mono);
+	font-size: 0.6em;
+	font-weight: 500;
+	color: var(--gold-mark);
+	text-decoration: none;
+	vertical-align: middle;
+	opacity: 0;
+	transition: opacity 160ms var(--ease-out);
+}
+.heading:hover .heading-link,
+.heading-link:focus-visible {
+	opacity: 1;
+}
+.heading-link.is-copied::after {
+	content: "copied";
+	position: absolute;
+	margin-left: 2.4em;
+	padding: 2px 6px;
+	border-radius: var(--radius-chip);
+	background: var(--added);
+	color: var(--added-ink);
+	font-family: var(--font-body);
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0;
+	text-transform: none;
+	white-space: nowrap;
+}
+
+.prose a {
+	color: var(--ink);
+	font-weight: 500;
+}
+.prose strong {
+	color: var(--ink);
+	font-weight: 600;
+}
+
+.prose ul,
+.prose ol {
+	padding-left: 1.4em;
+}
+.prose li + li {
+	margin-top: 0.45em;
+}
+.prose li > ul,
+.prose li > ol {
+	margin-top: 0.45em;
+}
+.prose ul > li {
+	position: relative;
+	list-style: none;
+}
+.prose ul > li::before {
+	content: "";
+	position: absolute;
+	left: -1.15em;
+	top: 0.66em;
+	width: 6px;
+	height: 6px;
+	border-radius: 1px;
+	background: var(--gold-mark);
+}
+.prose ol > li::marker {
+	font-family: var(--font-mono);
+	font-size: 0.875em;
+	color: var(--gold-mark);
+}
+
+.prose :not(pre) > code,
+.docs-lead code {
+	padding: 0.12em 0.4em;
+	border-radius: var(--radius-chip);
+	background: var(--card);
+	color: var(--ink);
+	font-size: 0.82em;
+	white-space: normal;
+	overflow-wrap: anywhere;
+	box-shadow: inset 0 0 0 1px var(--rule);
+}
+/* From a tablet up, a code chip stays whole on one line. A phone may break a long one. */
+@media (min-width: 768px) {
+	.prose :not(pre) > code,
+	.docs-lead code {
+		white-space: nowrap;
+		overflow-wrap: normal;
+	}
+}
+.prose h2 code,
+.prose h3 code {
+	font-size: 0.8em;
+	text-transform: none;
+}
+
+.prose kbd {
+	padding: 0.1em 0.45em;
+	border-radius: var(--radius-control);
+	background: var(--raised);
+	color: var(--ink);
+	font-family: var(--font-body);
+	font-size: 0.82em;
+	box-shadow:
+		var(--shadow-raised),
+		inset 0 0 0 1px var(--rule);
+}
+
+/* A data table: the head on the well, rows divided by a faint line, figures in mono. */
+.prose table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	border-radius: var(--radius-table);
+	background: var(--plane);
+	font-size: 0.9375rem;
+	line-height: 1.5;
+	/* The edge sits outside the cells, so the head's face never covers it. */
+	box-shadow:
+		0 0 0 1px var(--rule-strong),
+		var(--shadow-raised);
+}
+.prose th {
+	padding: 11px 16px;
+	background: var(--card);
+	box-shadow:
+		inset 0 1px 0 var(--highlight),
+		inset 0 -1px 0 var(--rule-strong);
+	color: var(--ink);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	text-align: left;
+	white-space: nowrap;
+}
+.prose th:first-child {
+	border-top-left-radius: var(--radius-table);
+}
+.prose th:last-child {
+	border-top-right-radius: var(--radius-table);
+}
+.prose td {
+	padding: 10px 16px;
+	vertical-align: top;
+	box-shadow: inset 0 1px 0 var(--rule);
+}
+.prose thead + tbody tr:first-child td,
+.prose tbody:first-child tr:first-child td {
+	box-shadow: none;
+}
+/* A value in a cell reads as one piece: `pull-requests: write` never breaks at its hyphen. */
+.prose td code {
+	white-space: nowrap;
+}
+@media (max-width: 640px) {
+	.prose table {
+		display: block;
+		overflow-x: auto;
+	}
+}
+
+.prose hr {
+	height: 1px;
+	margin: 56px 0;
+	border: 0;
+	background: var(--rule);
+}
+
+.prose img,
+.prose video {
+	border-radius: var(--radius-panel);
+	box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+/* Expressive Code frames sit in the prose's rhythm. */
+.prose .expressive-code {
+	margin-top: 1.4em;
+	margin-bottom: 0.2em;
+}
+.prose .expressive-code + p {
+	margin-top: 1.4em;
+}
+
+/* Terms: each word in the display's voice at the body size, with its meaning beside it. */
+.prose .terms {
+	display: grid;
+	grid-template-columns: minmax(0, 11em) minmax(0, 1fr);
+	margin-top: 22px;
+	border-radius: var(--radius-table);
+	background: var(--plane);
+	box-shadow:
+		0 0 0 1px var(--rule-strong),
+		var(--shadow-raised);
+}
+.prose .terms dt,
+.prose .terms dd {
+	margin: 0;
+	padding: 14px 18px;
+	box-shadow: inset 0 1px 0 var(--rule);
+}
+.prose .terms dt:first-of-type,
+.prose .terms dt:first-of-type + dd {
+	box-shadow: none;
+}
+.prose .terms dt {
+	font-weight: 600;
+	color: var(--ink);
+}
+.prose .terms dd {
+	font-size: 0.9688rem;
+	line-height: 1.55;
+}
+@media (max-width: 640px) {
+	.prose .terms {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.prose .terms dd {
+		padding-top: 0;
+		box-shadow: none;
+	}
+}
+
+/* A drawing of Archboard's on a plane, with its caption under it. */
+.prose .figure {
+	margin-top: 1.8em;
+	padding: 6px;
+	border-radius: var(--radius-table);
+	background: var(--chrome);
+	box-shadow:
+		var(--shadow-table),
+		inset 0 0 0 1px var(--rule);
+}
+.prose .figure img,
+.prose .figure video {
+	width: 100%;
+	border-radius: var(--radius-panel);
+	background: var(--plane);
+	box-shadow: none;
+}
+.prose .figure figcaption {
+	padding: 10px 8px 4px;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	color: var(--ink-muted);
+}
+
+/* An index of commands: the name links to its section. */
+.prose table.index {
+	width: 100%;
+}
+.prose table.index td:first-child {
+	width: 34%;
+}
+.prose table.index a {
+	text-decoration: none;
+}
+.prose table.index a code {
+	color: var(--ink);
+	transition: background-color 160ms var(--ease-out);
+}
+.prose table.index a:hover code {
+	background: var(--slab);
+}
+.prose .group-head a {
+	text-decoration: none;
+}
+
+/* A touch screen shows the copy button all the time. In a frame with a title bar, the button sits in
+   that bar. In a bare frame, the code starts below it. Either way, it never covers a command. */
+@media (hover: none) {
+	:root .expressive-code .frame:not(.has-title, .is-terminal) pre > code {
+		padding-block-start: calc(2.5rem + 10px);
+	}
+	:root .expressive-code .frame:is(.has-title, .is-terminal) .copy {
+		inset-block-start: 3px;
+	}
+	:root .expressive-code .frame:is(.has-title, .is-terminal) .copy button {
+		width: 28px;
+		height: 28px;
+	}
+}
+
+/* Expressive Code reverts every style inside a frame, so its copy button takes the site's focus
+   ring here. */
+.expressive-code .copy button:focus-visible {
+	outline: 2px solid var(--gold-mark);
+	outline-offset: 3px;
+}
+
+/* A code frame whose title is a file, a path or a code sets that title in the monospace face. */
+.expressive-code .code-title .header .title {
+	font-family: var(--font-mono);
+}

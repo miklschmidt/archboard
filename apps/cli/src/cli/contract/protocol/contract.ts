@@ -1,6 +1,6 @@
 import type { styleText } from "node:util";
 import type { z } from "zod";
-import { vaultRefusals } from "#cli/contract/protocol/refusals.ts";
+import { checkoutVaultRefusals, vaultRefusals } from "#cli/contract/protocol/refusals.ts";
 import type { AnsweredVault } from "#cli/contract/protocol/schemas.ts";
 
 class CliUsageError extends Error {
@@ -205,6 +205,14 @@ interface CommandContext {
 interface CommandContract<Shape extends z.ZodRawShape, Result> {
 	path: readonly [string, ...string[]];
 	summary: string;
+	/**
+	 * What the command does, for the terminal help and the docs site's CLI reference. Write it in
+	 * the format of `routing/rules/help-style.ts`: a blank line starts a paragraph, a line that
+	 * ends with a colon heads the list below it, a line that starts with `-` or `1.` is a list
+	 * item, and code is in backticks: commands, flags, paths, file names, environment variables
+	 * and JSON fields. Keep each paragraph and list item to 120 words and 6 sentences; the docs
+	 * build refuses a longer one.
+	 */
 	description: string;
 	examples: readonly string[];
 	parameters: readonly TokenParameter[];
@@ -499,7 +507,8 @@ function namesItsVault<Shape extends z.ZodRawShape, Result>(
 		return contract;
 	}
 	const declared = new Set(contract.refusals.map((refusal) => refusal.code));
-	const added = vaultRefusals.filter((refusal) => !declared.has(refusal.code));
+	const refusals = contract.runsWithoutVault === true ? checkoutVaultRefusals : vaultRefusals;
+	const added = refusals.filter((refusal) => !declared.has(refusal.code));
 	return { ...contract, refusals: [...contract.refusals, ...added] };
 }
 

@@ -103,6 +103,7 @@ A revert restores direct dispatch, but it drops any request still in the queue. 
 ```
 
 Omit unavailable optional comment fields.
+The Archboard pull-request GitHub Action reads `state` from this marker and posts one text comment with the proposal, vault link and footprint.
 For an external vault, add its portable repository identity as `vault`.
 For temporary evidence, use `<!-- archboard-pr temporary -->` so later editors regenerate it from source.
 

@@ -1,0 +1,194 @@
+---
+title: Concepts
+description: The words that the CLI, the checks and these docs use, each in one or two sentences. Learn them once and every command reads plainly.
+---
+
+import shop from "../../../../docs/readme/web-shop-dark.svg?url";
+
+An agent states what an architecture is through the CLI. Archboard stores that statement as files in your repository, draws it for the people who read it, and holds it to the code. The picture below is one such model, the example web shop, as Archboard draws it.
+
+<figure class="figure">
+	<img
+		src={shop}
+		alt="The current shop model shows its storefront, checkout API, inventory service, storage, and external providers. Module scopes keep implementation details inside their owners."
+		loading="lazy"
+	/>
+	<figcaption>
+		The example shop's current architecture, drawn by `archboard model render`.
+	</figcaption>
+</figure>
+
+## The model
+
+<dl class="terms">
+	<dt>Vault</dt>
+	<dd>
+		The directory that holds one model, `.archboard/vault` at the root of a checkout. It is
+		versioned with the repository, so a reviewer reads a change to it in the same diff as the code.
+	</dd>
+	<dt>Model</dt>
+	<dd>
+		The one architecture that a vault holds: its modules, relationships, flows, walkthroughs and
+		active proposals. Every picture is a reading of it.
+	</dd>
+	<dt>Module</dt>
+	<dd>
+		One architectural responsibility with a stable identity. A module can hold other modules, which
+		are its parts when you open it. Containment has no fixed levels.
+	</dd>
+	<dt>Relationship</dt>
+	<dd>
+		A directed connection that one module owns and that names another module as its target. It has a
+		kind, such as `http` or `queue`, from the vault's vocabulary.
+	</dd>
+	<dt>Qualified identity</dt>
+	<dd>
+		The stable identity of a module, relationship, flow or step, such as `Shop#Gateway`. A rename
+		keeps it, and a former name still finds it.
+	</dd>
+	<dt>Reading</dt>
+	<dd>
+		A selection of what to draw: the state, the scope, the open modules, the focus, the filters and
+		the grammar. A reading copies nothing, so nobody authors one first.
+	</dd>
+</dl>
+
+## Flows
+
+<dl class="terms">
+	<dt>Flow</dt>
+	<dd>
+		One request, job or event told as an ordered exchange between modules. Its summary says what the
+		exchange does and why it matters.
+	</dd>
+	<dt>Step</dt>
+	<dd>
+		One thing that happens in a flow: a message with a kind (`sync`, `return`, `async` or `self`), a
+		decision with alternatives, or a loop.
+	</dd>
+	<dt>Grammar</dt>
+	<dd>
+		How a reading draws: `architecture` draws modules and relationships, `sequence` and `flowchart`
+		draw one flow.
+	</dd>
+</dl>
+
+## States and proposals
+
+<dl class="terms">
+	<dt>State</dt>
+	<dd>
+		One identified architecture of the whole model. It is current, a draft, historical or shelved,
+		and it keeps its identity through each change of lifecycle.
+	</dd>
+	<dt>Current</dt>
+	<dd>
+		The state that describes the architecture that exists. A model has at most one. A planning model
+		has none yet.
+	</dd>
+	<dt>Proposal</dt>
+	<dd>
+		A draft state: a change that nobody has built yet, stored as changes against the state that it
+		follows.
+	</dd>
+	<dt>Comparison</dt>
+	<dd>
+		The differences between two states, by the identities of their subjects. Interface changes come
+		first, because a change to an interface costs every caller.
+	</dd>
+	<dt>Adoption</dt>
+	<dd>
+		Making a proposal the current state, with the reason. The old current state stays as history. A
+		Git merge never adopts a proposal.
+	</dd>
+	<dt>Checkpoint</dt>
+	<dd>
+		An exact retained copy of the model's inputs, held in Git. A walkthrough or a recording that you
+		share points at one.
+	</dd>
+	<dt>Claim</dt>
+	<dd>
+		A writer's visible hold on the subjects that it changes. Every pane shows who holds it and why,
+		and a person can take it back.
+	</dd>
+</dl>
+
+## Code and evidence
+
+<dl class="terms">
+	<dt>Binding</dt>
+	<dd>
+		Where a module's code is: a repository identity, a path and an optional symbol. It never stores
+		an absolute path, so it resolves on every machine.
+	</dd>
+	<dt>Repository identity</dt>
+	<dd>
+		The name a binding uses for a repository. It comes from the checkout's `origin` remote, such as
+		`github.com/acme/payments`. `archboard repo add` tells this machine where a checkout of it is.
+	</dd>
+	<dt>Anchor</dt>
+	<dd>
+		The one place in code that an author cites as proof of a relationship or a flow step. The code
+		check holds it to the code.
+	</dd>
+	<dt>Evidence</dt>
+	<dd>
+		What a piece of code or infrastructure proves about two modules: a call, a configured path, a
+		permission, an import, a build dependency or provisioning.
+	</dd>
+	<dt>Configured path</dt>
+	<dd>
+		Evidence across a network hop. Code reads an environment value, and the manifest, compose file
+		or Terraform that runs the code sets it to another module's address.
+	</dd>
+	<dt>Resolved and candidate</dt>
+	<dd>
+		Resolved evidence names its target for certain, through a language server or the code itself. A
+		candidate matches by name only, so a finding on it is information, never a warning.
+	</dd>
+</dl>
+
+## Checks and findings
+
+<dl class="terms">
+	<dt>Semantics check</dt>
+	<dd>
+		Reads the model against the vault's own vocabulary and rules. It reads no code. Its errors and
+		warnings are diagnostics.
+	</dd>
+	<dt>Code check</dt>
+	<dd>
+		Compares what a state claims with the code and infrastructure that its bindings and anchors
+		name. It reports findings with the evidence that they rest on.
+	</dd>
+	<dt>Embeds check</dt>
+	<dd>
+		Reads each picture that the repository tracks against the model that it draws, and says which
+		picture is outdated.
+	</dd>
+	<dt>Finding</dt>
+	<dd>
+		One thing that the code check reports about a module, relationship or step. A warning fails the
+		check. Information never does.
+	</dd>
+	<dt>Skip</dt>
+	<dd>
+		Something that a check did not read, with the reason, such as a language with no server. A
+		skipped subject never looks like a subject with nothing to report.
+	</dd>
+</dl>
+
+## Sharing
+
+<dl class="terms">
+	<dt>Embed</dt>
+	<dd>
+		An SVG or PNG that Archboard drew and that the repository tracks, for a README or an ADR. It
+		carries its render recipe, so `archboard check embeds --fix` draws it again.
+	</dd>
+	<dt>Walkthrough</dt>
+	<dd>
+		An ordered tour of readings, each beat with a title and a narrative. The Codex voice can narrate
+		it, and `model record` makes a video of it.
+	</dd>
+</dl>

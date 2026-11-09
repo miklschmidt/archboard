@@ -1,0 +1,97 @@
+---
+// The page before and the page after, in reading order.
+import Icon from "../Icon.astro";
+import { docsHref, neighbours } from "../../lib/docs-nav";
+import { inlineCode } from "../../lib/reference";
+
+interface Props {
+	readonly path: string;
+}
+
+const { previous, next } = neighbours(Astro.props.path);
+---
+
+<nav class="pager" aria-label="Previous and next page">
+	{
+		previous ? (
+			<a class="turn back" href={docsHref(previous.path)} rel="prev">
+				<span class="caption">Previous</span>
+				<span class="title">
+					<Icon name="chevronLeft" size={18} />
+					<span set:html={inlineCode(previous.label)} />
+				</span>
+			</a>
+		) : (
+			<span />
+		)
+	}
+	{
+		next && (
+			<a class="turn forward" href={docsHref(next.path)} rel="next">
+				<span class="caption">Next</span>
+				<span class="title">
+					<span set:html={inlineCode(next.label)} />
+					<Icon name="chevronRight" size={18} />
+				</span>
+			</a>
+		)
+	}
+</nav>
+
+<style>
+	.pager {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 16px;
+	}
+	.turn {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 16px 20px;
+		border-radius: var(--radius-table);
+		background: var(--plane);
+		text-decoration: none;
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule);
+		transition:
+			transform 160ms var(--ease-out),
+			background-color 160ms var(--ease-out),
+			box-shadow 160ms var(--ease-out);
+	}
+	.turn:hover {
+		background: var(--card);
+		transform: translateY(-1px);
+		box-shadow:
+			var(--shadow-float),
+			inset 0 0 0 1px var(--rule);
+	}
+	.forward {
+		align-items: flex-end;
+		text-align: right;
+	}
+	.title {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.title :global(svg) {
+		color: var(--gold-mark);
+		transition: transform 200ms var(--ease-out);
+	}
+	.forward:hover .title :global(svg) {
+		transform: translateX(3px);
+	}
+	.back:hover .title :global(svg) {
+		transform: translateX(-3px);
+	}
+	@media (max-width: 560px) {
+		.pager {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>

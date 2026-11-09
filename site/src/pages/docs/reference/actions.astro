@@ -1,0 +1,157 @@
+---
+// The GitHub Actions of the repository, from their action.yml: what each does, its inputs and its
+// outputs, and a workflow that uses it.
+import { Code } from "astro-expressive-code/components";
+import Docs from "../../../layouts/Docs.astro";
+import { docsHref } from "../../../lib/docs-nav";
+import { inlineCode, reference } from "../../../lib/reference";
+
+const usage: Record<string, string> = {
+	check: `- uses: actions/checkout@v5
+- uses: miklschmidt/archboard/actions/check@main
+  with:
+    version: 0.2.0
+    fail-on: warning`,
+	"pull-request": `- uses: actions/checkout@v5
+  with:
+    fetch-depth: 0
+- uses: miklschmidt/archboard/actions/pull-request@main
+  with:
+    version: 0.2.0
+    out-of-plan: warn`,
+};
+const guide: Record<string, { path: string; label: string }> = {
+	check: { path: "gate", label: "The check as a gate" },
+	"pull-request": { path: "pull-requests", label: "Architecture on pull requests" },
+};
+const headings = reference.actions.map((action) => ({ depth: 2, slug: action.slug, text: action.name }));
+---
+
+<Docs
+	title="GitHub Actions"
+	description="The inputs and outputs of the two Actions that run `archboard check` and report the architecture of a pull request. Both install the published CLI, or run the one that `cli` names, and run only its commands."
+	path="reference/actions"
+	headings={headings}
+	source="actions/README.md"
+>
+	<p>
+		Use an Action by its path in this repository. The examples use <code>@main</code>. Pin the
+		Action to a commit SHA, as you pin any third-party Action, because the <code>pull-request</code> Action holds
+		a token that can comment. Pin <code>version</code> to the CLI release that your team runs, the way
+		you pin a compiler. Both
+		Actions set up Node.js, install <code>archboard</code> with npm, and stop the Archboard server
+		when they finish. With <a href="#check-cli"><code>cli</code></a>, an Action runs that CLI instead of
+		installing one.
+	</p>
+	{
+		reference.actions.map((action) => (
+			<section aria-labelledby={action.slug}>
+				<h2 id={action.slug} class="heading">
+					{action.name}
+					<a class="heading-link" href={`#${action.slug}`} aria-label="Link to this Action" data-heading-link data-pagefind-ignore>#</a>
+				</h2>
+				<p set:html={inlineCode(action.description)} />
+				{guide[action.slug] && (
+					<p>
+						The guide: <a href={docsHref(guide[action.slug]?.path ?? "")}>{guide[action.slug]?.label}</a>.
+					</p>
+				)}
+				<Code code={usage[action.slug] ?? `- uses: ${action.uses}@main`} lang="yaml" title={action.uses} />
+				<h3 class="sub-head">Inputs</h3>
+				<table>
+					<thead>
+						<tr>
+							<th scope="col">Input</th>
+							<th scope="col">What it does</th>
+						</tr>
+					</thead>
+					<tbody>
+						{action.inputs.map((input) => (
+							<tr id={`${action.slug}-${input.name}`} class="input-row">
+								<td>
+									<a class="input-name" href={`#${action.slug}-${input.name}`}>
+										<code>{input.name}</code>
+									</a>
+									<span class="mark">{input.required ? "required" : "optional"}</span>
+								</td>
+								<td>
+									<span set:html={inlineCode(input.description)} />
+									<span class="detail">
+										{input.default === null || input.default === "" ? (
+											"No default: empty when you leave it out."
+										) : (
+											<>
+												Default <code>{input.default}</code>.
+											</>
+										)}
+									</span>
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+				{action.outputs.length > 0 && (
+					<>
+						<h3 class="sub-head">Outputs</h3>
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">Output</th>
+									<th scope="col">What it holds</th>
+								</tr>
+							</thead>
+							<tbody>
+								{action.outputs.map((output) => (
+									<tr id={`${action.slug}-${output.name}`} class="input-row">
+										<td>
+											<a class="input-name" href={`#${action.slug}-${output.name}`}>
+												<code>{output.name}</code>
+											</a>
+										</td>
+										<td set:html={inlineCode(output.description)} />
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</>
+				)}
+			</section>
+		))
+	}
+</Docs>
+
+<style>
+	section + section {
+		margin-top: 0;
+	}
+	.detail {
+		display: block;
+		margin-top: 4px;
+		font-size: 0.875rem;
+		color: var(--ink-muted);
+	}
+	td:first-child {
+		width: 32%;
+	}
+	.input-row {
+		transition: background-color 400ms var(--ease-out);
+	}
+	.input-row:target {
+		background: var(--highlight);
+	}
+	.input-name {
+		text-decoration: none;
+	}
+	.mark {
+		display: inline-block;
+		margin: 4px 0 0 6px;
+		padding: 0 6px;
+		border-radius: var(--radius-chip);
+		background: var(--well);
+		color: var(--ink-muted);
+		font-size: 0.6875rem;
+		font-weight: 600;
+		line-height: 18px;
+		box-shadow: inset 0 0 0 1px var(--rule);
+	}
+</style>

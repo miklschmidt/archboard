@@ -30,7 +30,7 @@ const modelRenderContract = defineCommand({
 	shared: ["url", "directory"],
 	summary: "Render a canonical architecture or behavioral reading",
 	description:
-		"Sequence and flowchart require an explicit flow identity or unique name. The complete flow includes every participant, independently of module scope and structural filters.",
+		"The `sequence` and `flowchart` grammars require an explicit flow identity or unique name. The complete flow includes every participant, independently of module scope and structural filters.",
 	examples: ["archboard model render --flow 'Shop#Checkout' --grammar sequence --out request.svg"],
 	parameters: [
 		...(
@@ -77,7 +77,7 @@ const modelRenderContract = defineCommand({
 			value: "required",
 			placeholder: "grammar",
 			choices: ArchitectureRenderRequestSchema.shape.grammar.removeDefault().options,
-			description: "Draw sequence or flowchart",
+			description: "Draw `sequence` or `flowchart`",
 		},
 		{
 			kind: "option",

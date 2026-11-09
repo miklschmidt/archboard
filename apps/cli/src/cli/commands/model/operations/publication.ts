@@ -190,7 +190,7 @@ const modelFetchContract = defineCommand({
 	path: ["model", "fetch"],
 	summary: "Fetch complete archive history for a missing reading",
 	description:
-		"Fetches the configured named archive ref and its complete ancestry, including shallow-clone dependencies. Current architecture, index and source HEAD remain unchanged.",
+		"Fetches the configured named archive ref and its complete ancestry, including shallow-clone dependencies. Current architecture, index and source `HEAD` remain unchanged.",
 	examples: [
 		"archboard model fetch <checkpoint> --remote archive --ref refs/heads/archboard-history -C /tmp/shop",
 	],

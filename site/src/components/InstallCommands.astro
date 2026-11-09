@@ -20,6 +20,14 @@ const managers = [
 	{ key: "bun", install: "bun add --global archboard" },
 ].map((manager) => ({ ...manager, commands: [manager.install, ...then] }));
 const [first] = managers;
+
+/** A command's words, coloured as the docs' code blocks colour a shell: program, flags, arguments. */
+function words(command: string): { text: string; kind: "program" | "flag" | "argument" }[] {
+	return command.split(" ").map((text, index) => ({
+		text,
+		kind: index === 0 ? "program" : text.startsWith("-") ? "flag" : "argument",
+	}));
+}
 ---
 
 <div class="install" data-install>
@@ -55,7 +63,9 @@ const [first] = managers;
 				data-commands={manager.commands.join("\n")}
 				hidden={index !== 0}
 			><code>{manager.commands.map((command) => (
-				<span class="line"><span class="ps" aria-hidden="true">$ </span>{command}</span>
+				<span class="line"><span class="ps" aria-hidden="true">$ </span>{words(command).map((word, index) => (
+					<>{index > 0 && " "}<span class={word.kind}>{word.text}</span></>
+				))}</span>
 			))}</code></pre>
 		))
 	}
@@ -126,6 +136,15 @@ const [first] = managers;
 	.line {
 		display: block;
 		white-space: pre;
+	}
+	.program {
+		color: var(--syntax-program);
+	}
+	.flag {
+		color: var(--syntax-flag);
+	}
+	.argument {
+		color: var(--syntax-argument);
 	}
 	.ps {
 		color: var(--gold-mark);

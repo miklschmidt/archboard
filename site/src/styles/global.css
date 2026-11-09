@@ -45,6 +45,11 @@
 	--raised: oklch(0.255 0.008 78);
 	--slab: oklch(0.31 0.007 75);
 	--well: oklch(0.14 0.005 75);
+	--code-bed: oklch(0.155 0.005 75);
+	/* The shell colours of archboard-night in ec.config.mjs, for code that Expressive Code does not draw. */
+	--syntax-program: #f2f0ea;
+	--syntax-flag: #8fd0f5;
+	--syntax-argument: #d3cfc6;
 	--highlight: oklch(1 0.01 85 / 0.09);
 	--rule: oklch(1 0.01 85 / 0.09);
 	--rule-strong: oklch(1 0.01 85 / 0.15);
@@ -89,6 +94,14 @@
 	--removed-text: color-mix(in oklch, var(--removed) 80%, var(--ink));
 	--sky-text: color-mix(in oklch, var(--sky) 85%, var(--ink));
 	--violet-text: color-mix(in oklch, var(--violet) 65%, var(--ink));
+
+	/* Washes and glows that the docs' chrome shares. */
+	--wash: oklch(1 0.01 85 / 0.05);
+	--gold-wash: oklch(0.86 0.125 86 / 0.06);
+	--gold-glow: oklch(0.86 0.125 86 / 0.6);
+	--scrim: oklch(0.08 0.004 75 / 0.62);
+	--cast: oklch(0.04 0.006 75 / 0.8);
+	--added-ink: oklch(0.2 0.03 150);
 
 	/* Depth: a lit top edge, a contact shadow and a warm soft shadow below. */
 	--shadow-raised:

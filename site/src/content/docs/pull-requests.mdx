@@ -1,0 +1,199 @@
+---
+title: Architecture on pull requests
+description: Put each finding on the diff with an excerpt of the code and the manifest, and give the reviewer the plan and the modules that changed outside the plan.
+---
+
+import Aside from "../../components/docs/Aside.astro";
+import Steps from "../../components/docs/Steps.astro";
+import LinkCards from "../../components/docs/LinkCards.astro";
+import reference from "../../generated/reference.json";
+
+export const report = Object.fromEntries(
+	reference.actions
+		.find((action) => action.slug === "pull-request")
+		.inputs.map((input) => [input.name, input.default]),
+);
+
+A plain diff is the wrong level for an architectural change. A reviewer sees forty changed lines and not that Intake now calls Billing. Two GitHub Actions put the architecture on the pull request. Both run only commands of the published CLI.
+
+| Action                                       | What the reviewer gets                                               | Permissions                              |
+| -------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------- |
+| `miklschmidt/archboard/actions/check`        | Each finding as an annotation on the changed line, and a job summary | `contents: read`                         |
+| `miklschmidt/archboard/actions/pull-request` | One text comment with the proposal, the footprint and the plan check | `contents: read`, `pull-requests: write` |
+
+## Findings on the diff
+
+The check Action turns each finding into a GitHub annotation on the file and line of its evidence. A finding that crosses a network hop has evidence in two files: the line of code that reads the address, and the line of the manifest that sets it. Each end in the pull request's repository gets an annotation.
+
+GitHub cannot put an annotation on a file of another repository, so every annotation names both ends with an excerpt of each, and the reviewer reads the whole connection from one place.
+
+```yaml title=".github/workflows/architecture.yml"
+name: architecture
+on: pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      # The checkout's own TypeScript is the default TypeScript server.
+      - run: npm ci
+      # A server for each other language in .archboard/language-servers.json.
+      - run: pip install pyright
+      - uses: miklschmidt/archboard/actions/check@main
+        with:
+          version: 0.2.0
+```
+
+The code check resolves a call only through a language server, so the job installs the dependencies and the servers first. [The gate in CI](../gate/#in-ci) says which servers to install. Without a server, the finding below stays information.
+
+In the relay example, the code is in one repository and the manifest is in another. The annotation on `services/intake/src/accept.ts` line 51 reads:
+
+```text title="RELATIONSHIP_UNDRAWN: Rate card"
+The code of "Accept parcel" reaches "Rate card". No relationship joins these modules. Add the relationship between the parts that make and answer the call. If this dependency is unintended, change the code.
+Evidence:
+- configured-path, resolved: services/intake/src/accept.ts:51 in github.com/miklschmidt/archboard-relay-example (BILLING_URL)
+      50 |   // gate:break start
+    > 51 |   const billingUrl = trimUrl(process.env.BILLING_URL ?? "");
+      52 |   await deps.fetch(`${billingUrl}/surcharges?routeCode=${encodeURIComponent(routeBody.routeCode)}`);
+- configured-path, resolved: deploy/kubernetes/peer-endpoints.yaml:13 in github.com/miklschmidt/archboard-relay-example-infra (BILLING_URL)
+      12 |   DISPATCH_JOBS_URL: http://dispatch-jobs.harbor.svc.cluster.local:9324
+    > 13 |   BILLING_URL: http://billing.harbor.svc.cluster.local:8080
+      14 |
+```
+
+The job summary lists up to {reference.facts.summaryRows} findings, evidence for the first {reference.facts.summaryDetails} errors and warnings, and the skipped subjects. Each code links to [its explanation](../reference/findings/). GitHub shows at most {reference.facts.annotationsPerLevel} annotations of each level for one step. The Action saves the complete JSON report at its [`report`](../reference/actions/#check-report) output. Upload that file as an artifact to keep the complete list for review.
+
+<Aside type="note" title="See it on a real pull request">
+	[Pull request #1 of the relay
+	example](https://github.com/miklschmidt/archboard-relay-example/pull/1) makes Intake call Billing
+	with no plan. Its check fails, and the annotation sits on line 51 of `accept.ts`.
+</Aside>
+
+### Decide what blocks
+
+| Input                                                     | Effect                                                                                                      |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| [`fail-on: warning`](../reference/actions/#check-fail-on) | The default. The job fails while a warning or a semantic diagnostic remains.                                |
+| [`fail-on: never`](../reference/actions/#check-fail-on)   | The findings show, and the job never fails on them.                                                         |
+| [`allow-codes`](../reference/actions/#check-allow-codes)  | These codes show and never fail the job, such as [`CALLER_UNDRAWN`](../reference/findings/#caller-undrawn). |
+
+A check that cannot run fails the job in every case: a usage error, a refusal or an unreachable server.
+
+## The plan on the pull request
+
+An agent that plans a change first writes it as a proposal: the architecture after the change, beside the current one. The pull-request Action finds that proposal and posts one comment. It updates the same comment on each push. When a push removes the vault, the comment says so.
+
+[Pull request #2 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/2) makes the same call to Billing with a plan, and its comment shows each part below.
+
+<Steps>
+
+1. **The proposal.** Its name and summary, and what it adds, removes and changes.
+2. **The vault.** A link to the vault at the head commit.
+3. **The footprint.** The modules whose code the pull request changed, in three groups: planned and changed, changed outside the plan, and planned but unchanged.
+4. **The plan check.** Whether any module changed outside the plan, and what that does to the job.
+
+</Steps>
+
+<Aside type="note" title="Planned: a pull request bot">
+	The comment is text. A paid pull request bot is planned. It will add the architecture before and
+	after as interactive diagrams.
+</Aside>
+
+```yaml title=".github/workflows/pull-request.yml" {4,10-12,20}
+name: pull-request
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: archboard-report-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: miklschmidt/archboard/actions/pull-request@main
+        with:
+          version: 0.2.0
+          out-of-plan: warn
+```
+
+`fetch-depth: 0` is required, because the Action reads the base and the head from Git history. The `concurrency` group cancels the run of an older push. A run that still finishes after a newer push posts nothing. The `labeled` and `unlabeled` events let the override label below take effect at once, and `edited` runs the Action again when the marker in the description changes.
+
+### How it finds the proposal
+
+The Action takes the first of these that it finds:
+
+<Steps>
+
+1. The [`state`](../reference/actions/#pull-request-state) input, by identity or name.
+2. The marker that the `archboard-pr` skill writes into the pull request's description:
+
+   ```html
+   <!-- archboard-pr model="rpmPjlm0" state="zu80HRHt" -->
+   ```
+
+3. The only draft proposal of the model.
+
+</Steps>
+
+With none, the comment lists the changed modules and judges nothing against a plan. [Pull request #1 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/1) has such a comment.
+
+The plan is what the proposal changes against the current architecture at the base: each module that it adds, removes or changes, and both ends of each relationship or flow step that it adds, removes or changes. This holds for a draft and for a proposal that the branch already adopted, as the skill does once the code matches it.
+
+### Changes outside the plan
+
+The footprint's middle group is the interesting one: modules whose code changed although the plan did not name them. [`out-of-plan`](../reference/actions/#pull-request-out-of-plan) says what happens then.
+
+| [`out-of-plan`](../reference/actions/#pull-request-out-of-plan) | Effect                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `warn`                                                          | The default. An annotation and a line in the comment.                                                                                                                                                                                                                                                                                                                      |
+| `fail`                                                          | The job fails. It also fails when the plan cannot be checked: the proposals or the footprint cannot be read, the pull request names a proposal that the model does not have, or the model has several drafts and the pull request names none. The label <code>{report["override-label"]}</code> lets the pull request through, and the comment says that the label did it. |
+| `off`                                                           | The footprint shows, and nothing is judged.                                                                                                                                                                                                                                                                                                                                |
+
+Change the label with [`override-label`](../reference/actions/#pull-request-override-label). A pull request with no proposal has no plan, so nothing in it is out of plan. When the model has one draft, the Action takes it without a marker, so removing the marker does not stop the judgement. Set [`out-of-plan: off`](../reference/actions/#pull-request-out-of-plan) for that. When the model has several drafts and the pull request names none, the plan cannot be checked.
+
+### When the comment cannot be posted
+
+A pull request from a fork gets a read-only token, so GitHub refuses the comment. The report is then in the job summary of the run. The same happens when the token lacks `pull-requests: write`.
+
+## Explain the change in the description
+
+The comment states facts. The `archboard-pr` skill, which `archboard init` installs, has your agent write the description around them: the problem, the resulting behavior, the evidence and the merge danger. Ask for it when you open the pull request:
+
+```text title="Ask your agent" wrap
+Open a pull request for this branch. Use the archboard-pr skill: plan the change as a proposal,
+adopt it on this branch once the code matches, and explain the architecture in the description.
+```
+
+## Next
+
+<LinkCards
+	cards={[
+		{
+			path: "reference/actions",
+			title: "GitHub Actions reference",
+			text: "Every input and output of both Actions.",
+		},
+		{
+			path: "platform",
+			title: "Application and infrastructure",
+			text: "Check out a second repository so a hop reads on both sides.",
+		},
+	]}
+/>

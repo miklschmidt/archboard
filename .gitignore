@@ -28,6 +28,8 @@ packages/renderer/src/shared/protocol/generated/
 
 # The site's paintings belong to the painter of the same build: `bun site/scripts/paint.ts` makes them.
 site/src/paintings/
+# The docs' reference is the CLI's own registry: `bun site/scripts/reference.ts` writes it.
+site/src/generated/
 
 # Environment files
 .env
@@ -71,3 +73,6 @@ site/src/paintings/
 # evals; everything here reproduces from them with
 # `bun run eval:skill`.
 .skill-evals/
+
+# The design hook of the site keeps its cache here.
+site/.impeccable/

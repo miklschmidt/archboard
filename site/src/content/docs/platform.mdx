@@ -1,0 +1,136 @@
+---
+title: Application and infrastructure
+description: Map services whose code lives in one repository and whose manifests and Terraform live in another, and let the code check follow a connection across the network hop.
+---
+
+import Aside from "../../components/docs/Aside.astro";
+import Steps from "../../components/docs/Steps.astro";
+
+Platform teams often keep Kubernetes manifests, Helm charts and Terraform apart from the services that they run. A question such as "which service talks to which" then crosses two repositories. One model can bind modules into both, and one `archboard check code` reads both.
+
+## How the check follows a hop
+
+The code of a service reads an address from its environment. The infrastructure that runs the service sets that value to another service's address. The check joins the two halves into `configured-path` evidence:
+
+<Steps>
+
+1. **The code end.** Bound code reads an environment value, such as `process.env.BILLING_URL` in TypeScript.
+2. **The infrastructure end.** The Kubernetes workload, the compose service or the Terraform resource that runs that code sets the value, directly or through a ConfigMap that it loads with `envFrom`.
+3. **The target.** The value is the address of another module's workload, such as the Kubernetes Service `billing`.
+
+</Steps>
+
+When all three hold, the check knows that one module reaches the other across the network, and it compares that with the relationships in the model.
+
+## The relay example
+
+[`archboard-relay-example`](https://github.com/miklschmidt/archboard-relay-example) is a small parcel desk with four services. Its TypeScript and its model live in one repository. Its Kubernetes manifests and its OpenTofu queue live in [`archboard-relay-example-infra`](https://github.com/miklschmidt/archboard-relay-example-infra). The model says that Intake never calls Billing.
+
+The platform gives every workload the address of every peer through one ConfigMap:
+
+```yaml title="deploy/kubernetes/peer-endpoints.yaml"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: peer-endpoints
+data:
+  CATALOG_URL: http://catalog.harbor.svc.cluster.local:8080
+  DISPATCH_JOBS_URL: http://dispatch-jobs.harbor.svc.cluster.local:9324
+  BILLING_URL: http://billing.harbor.svc.cluster.local:8080
+```
+
+A pull request in the application repository makes Intake read `BILLING_URL` and call it:
+
+```ts title="services/intake/src/accept.ts" ins={1-2}
+  const billingUrl = trimUrl(process.env.BILLING_URL ?? "");
+  await deps.fetch(`${billingUrl}/surcharges?routeCode=${encodeURIComponent(routeBody.routeCode)}`);
+  const queued = await deps.fetch(`${jobsUrl}/jobs`, {
+```
+
+The check fails, and its evidence names one line in each repository:
+
+```text title="stderr"
+warning: RELATIONSHIP_UNDRAWN: ZvzEpjXR.module.json: module "Rate card": The code of "Accept parcel" reaches "Rate card". No relationship joins these modules. Add the relationship between the parts that make and answer the call. If this dependency is unintended, change the code.
+  configured-path, resolved, services/intake/src/accept.ts:51
+  configured-path, resolved, deploy/kubernetes/peer-endpoints.yaml:13
+```
+
+## Register both checkouts
+
+A binding names a repository by its identity, which comes from the checkout's `origin` remote. The machine that runs the check must know where a checkout of each repository is. These steps run the relay example from a fresh machine:
+
+<Steps>
+
+1. Clone the application and the infrastructure side by side.
+
+   ```bash
+   git clone https://github.com/miklschmidt/archboard-relay-example
+   git clone https://github.com/miklschmidt/archboard-relay-example-infra
+   ```
+
+2. Register both checkouts. The first registered checkout of a repository becomes its chosen checkout, the one that the check reads.
+
+   ```bash
+   archboard repo add archboard-relay-example
+   archboard repo add archboard-relay-example-infra
+   archboard repo list
+   ```
+
+3. Run one code check from the repository that holds the vault. It reads both checkouts.
+
+   ```bash
+   cd archboard-relay-example
+   archboard check code
+   ```
+
+</Steps>
+
+The example's `npm run setup` does steps 1 and 2 for you, and `npm run gate:break` and `npm run gate:restore` add and remove the call to Billing. `archboard repo use <dir>` picks another checkout of a repository, such as a worktree with a branch of the infrastructure.
+
+<Aside type="caution" title="An unregistered repository is skipped, not failed">
+	A binding into a repository that this machine has not registered is skipped as
+	[`repository-unregistered`](../reference/findings/#repository-unregistered). A skip never fails
+	the check, so a check without the infrastructure checkout passes. Read the skipped list, or fail
+	your own gate on it, as the example's `npm run gate:self-test` does.
+</Aside>
+
+## In CI
+
+Check out the infrastructure beside the application, then give its path to the check Action. The Action registers it before it runs the check:
+
+```yaml title=".github/workflows/architecture.yml" {7-10,16-17}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: app
+      - uses: actions/checkout@v5
+        with:
+          repository: miklschmidt/archboard-relay-example-infra
+          path: platform
+      - uses: miklschmidt/archboard/actions/check@main
+        with:
+          version: 0.2.0
+          working-directory: app
+          repos: |
+            platform
+```
+
+A private infrastructure repository needs a token with read access in the second checkout's `token` input.
+
+## The limits of hop evidence
+
+The code check reads files. It never runs the system, so it follows a hop only where the files state both ends.
+
+- **Both ends must declare the connection.** The code must read the value by name, and the infrastructure must set that name to another module's address. An address that the code builds at run time, or reads from a secret store, leaves no evidence.
+- **One side alone is information.** When the infrastructure sets a value that the code never reads, or the code reads a name that nothing sets, a drawn relationship gets [`RELATIONSHIP_UNSUPPORTED`](../reference/findings/#relationship-unsupported) with `missing` naming the side that has no evidence. It never fails the check.
+- **A literal value on the workload counts for the workload.** A value written into a Deployment's own `env` is evidence for the whole Deployment, whether or not its code reads the name. A value that the workload loads from a ConfigMap with `envFrom` counts only when code reads that name. That is why the relay example uses a ConfigMap.
+- **A choice that the infrastructure leaves open is a candidate.** When several workloads can answer one address, the evidence is a candidate, and a finding on a candidate is information.
+- **The check names what it skipped.** A repository that this machine has not registered, a module inside a remote Terraform module, or code that did not parse is listed under `skipped` with the reason. A skipped subject never looks like a clean one.
+- **It never touches state or credentials.** The check never runs `terraform`, `tofu` or `kubectl`. It never reads Terraform state, a variable file or `.terraform`. For a remote Terraform module, pass the plan JSON of `tofu show -json` with `--plan`.
+
+## A model for several repositories
+
+A model in one repository can bind into any number of others, as the relay example does. When no repository owns the whole system, keep the model in a repository of its own, such as a platform repository, and run the check there with every other checkout registered. [`INSTALL.md`](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md#4-how-a-command-finds-its-vault) describes how a command finds that vault.

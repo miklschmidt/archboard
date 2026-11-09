@@ -1,0 +1,102 @@
+---
+// A docs page: the bar, the sidebar of every page, the page's words, and the sections of the page
+// beside them. Pages change with the browser's own cross-document view transition, so every page
+// is a plain page that works without script.
+import Base from "./Base.astro";
+import DocsNav from "../components/docs/DocsNav.astro";
+import Sidebar from "../components/docs/Sidebar.astro";
+import Toc, { type TocHeading } from "../components/docs/Toc.astro";
+import Pager from "../components/docs/Pager.astro";
+import Search from "../components/docs/Search.astro";
+import Footer from "../components/Footer.astro";
+import Icon from "../components/Icon.astro";
+import { docsNav } from "../lib/docs-nav";
+import { links } from "../lib/links";
+import { inlineCode } from "../lib/reference";
+import "../styles/docs.css";
+
+interface Props {
+	readonly title: string;
+	/** One or two sentences, with code in backticks. */
+	readonly description: string;
+	/** The page's path under /docs/. */
+	readonly path: string;
+	readonly headings: readonly TocHeading[];
+	/** The file to edit for this page, relative to the repository root. */
+	readonly source: string;
+}
+
+const { title, description, path, headings, source } = Astro.props;
+// The description marks code in backticks: the lead sets it as code, and the meta tags take plain text.
+const plainDescription = description.replaceAll("`", "");
+// A title can name a command in backticks too, such as "The `check` commands".
+const plainTitle = title.replaceAll("`", "");
+const group = docsNav.find((entry) => entry.pages.some((page) => page.path === path));
+const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+---
+
+<Base title={`${plainTitle} · Archboard docs`} description={plainDescription}>
+	<DocsNav path={path} />
+	<div class="docs">
+		<aside class="docs-sidebar" data-sidebar aria-label="Docs pages">
+			<Sidebar path={path} />
+		</aside>
+		<main id="main" class="docs-main">
+			<div class="mobile-bar">
+				<button type="button" class="mobile-button" data-drawer-open>
+					<Icon name="stack" size={16} />
+					<span>{group?.title ?? "Docs"}</span>
+					<Icon name="chevronRight" size={14} />
+					<span class="ink" set:html={inlineCode(title)} />
+				</button>
+			</div>
+			<article class="docs-article" data-pagefind-body>
+				<header class="docs-head">
+					<h1 class="display docs-title" data-pagefind-meta="title" set:html={inlineCode(title)} />
+					<p class="docs-lead" set:html={inlineCode(description)} />
+				</header>
+				{
+					tocHeadings.length > 2 && (
+						<details class="inline-toc" data-pagefind-ignore>
+							<summary>On this page</summary>
+							<ul>
+								{tocHeadings.map((heading) => (
+									<li class:list={{ deep: heading.depth === 3, code: heading.code === true }}>
+										<a href={`#${heading.slug}`}>{heading.text}</a>
+									</li>
+								))}
+							</ul>
+						</details>
+					)
+				}
+				<div class="prose">
+					<slot />
+				</div>
+			</article>
+			<footer class="docs-foot" data-pagefind-ignore>
+				<a class="edit" href={`${links.repository}/blob/main/${source}`}>
+					<Icon name="fileCode" size={16} />
+					Edit this page on GitHub
+				</a>
+				<Pager path={path} />
+			</footer>
+		</main>
+		<aside class="docs-toc" aria-label="On this page">
+			<Toc headings={headings} />
+		</aside>
+	</div>
+	<dialog class="drawer" data-drawer aria-label="Docs pages">
+		<div class="drawer-panel">
+			<div class="drawer-head">
+				<span class="ink">Docs</span>
+				<button type="button" class="mobile-button" data-drawer-close>Close</button>
+			</div>
+			<Sidebar path={path} />
+		</div>
+	</dialog>
+	<Search />
+	<Footer />
+	<script>
+		import "../scripts/docs";
+	</script>
+</Base>

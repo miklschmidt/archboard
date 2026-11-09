@@ -1,0 +1,92 @@
+---
+title: Archboard docs
+description: Install Archboard, map a repository with your agent, and hold the map to the code in CI and on every pull request.
+---
+
+import LinkCards from "../../components/docs/LinkCards.astro";
+
+Archboard keeps a model of your architecture next to your code. Your agent writes the model through the CLI. Archboard draws it, checks it against the code, and shows how a change moves it.
+
+## Start here
+
+<LinkCards
+	ordered
+	cards={[
+		{
+			path: "install",
+			title: "Install and set up",
+			text: "Install the CLI and run `archboard init` in a repository.",
+		},
+		{
+			path: "first-map",
+			title: "A first map in one session",
+			text: "A first map, three flows and a walkthrough for a newcomer.",
+		},
+		{
+			path: "gate",
+			title: "The check as a gate",
+			text: "Fail CI, a Git hook or an agent loop when the map and the code disagree.",
+		},
+		{
+			path: "pull-requests",
+			title: "Architecture on pull requests",
+			text: "Findings on the diff, and the plan against the changed code.",
+		},
+	]}
+/>
+
+## Try it
+
+```bash title="In a repository you want to map"
+npm install --global archboard
+archboard init
+archboard check
+```
+
+`init` makes the vault and installs the skills. Then ask your agent to map the repository. [A first map in one session](first-map/) gives the prompts.
+
+## See it work
+
+The relay example is a parcel desk of four services. Its code and its model are in one repository, and its Kubernetes manifests are in another. Clone it to run the gate on your machine, or read its pull requests:
+
+<LinkCards
+	cards={[
+		{
+			path: "https://github.com/miklschmidt/archboard-relay-example/pull/1",
+			title: "A change with no plan",
+			text: "Intake calls Billing. The check fails, with an annotation on the line.",
+		},
+		{
+			path: "https://github.com/miklschmidt/archboard-relay-example/pull/2",
+			title: "The same change with a plan",
+			text: "The comment shows the proposal, its changes and the footprint.",
+		},
+	]}
+/>
+
+## Look something up
+
+<LinkCards
+	cards={[
+		{
+			path: "reference/cli",
+			title: "CLI reference",
+			text: "Every command, its options, its exit codes and its examples.",
+		},
+		{
+			path: "reference/findings",
+			title: "Check findings",
+			text: "What each finding code means, and how to fix it.",
+		},
+		{
+			path: "reference/schemas",
+			title: "Schemas",
+			text: "The JSON that the commands read and write.",
+		},
+		{
+			path: "reference/actions",
+			title: "GitHub Actions",
+			text: "Every input and output of the `check` and `pull-request` Actions.",
+		},
+	]}
+/>

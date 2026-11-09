@@ -155,4 +155,14 @@ const EmbedsPartSchema = z.object({
 });
 type EmbedsPart = z.infer<typeof EmbedsPartSchema>;
 
-export { EmbedsPartSchema, type EmbedFinding, type EmbedFix, type EmbedsPart, type EmbedVault };
+/** Every code that the embeds check can report, the cached vault's included. */
+const EMBED_CODES = [...EMBED_FINDING_CODES, "EMBED_VAULT_CACHED"] as const;
+
+export {
+	EMBED_CODES,
+	EmbedsPartSchema,
+	type EmbedFinding,
+	type EmbedFix,
+	type EmbedsPart,
+	type EmbedVault,
+};

@@ -17,6 +17,7 @@ import {
 	CHECK_SEMANTICS_HELP,
 	FIX_HELP,
 } from "#cli/commands/vault/operations/check-help.ts";
+import { checkResult } from "#cli/commands/vault/operations/check-result.ts";
 import { checkEmbeds } from "#cli/commands/vault/embeds/operations/embeds-check.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { checkSemanticVaultOnServer } from "#cli/server-access/clients/vault-check.ts";
@@ -84,11 +85,20 @@ const CodeCheckRequestSchema = CodeCheckInputSchema.extend(FixInputSchema.shape)
 	"--every-draft reads every draft, and --state one name: use one of them",
 );
 
-const noSuchDraftRefusal = {
-	code: "NO_SUCH_DRAFT",
+const stateNotFoundRefusal = {
+	code: "STATE_NOT_FOUND",
 	exit: 2,
 	stream: "stderr" as const,
-	description: "--state names no draft on any model. The refusal names the drafts that exist.",
+	description:
+		"--state names no state of the model. Name one by its identity or exact name. `archboard model proposals` lists the drafts.",
+};
+
+const stateAmbiguousRefusal = {
+	code: "STATE_AMBIGUOUS",
+	exit: 2,
+	stream: "stderr" as const,
+	description:
+		"--state names several states of the model. Name one by its identity, which `archboard model proposals` lists.",
 };
 
 const planRefusal = {
@@ -96,7 +106,7 @@ const planRefusal = {
 	exit: 2,
 	stream: "stderr" as const,
 	description:
-		"--plan names a file outside the checkout that holds the vault and the chosen checkout of every other repository, Terraform state, a variable file or a file under .terraform, or a file that is not a plan JSON. The refusal names the plan and why.",
+		"--plan names a file outside the checkout that holds the vault and the chosen checkout of every other repository, Terraform state, a variable file or a file under `.terraform`, or a file that is not a plan JSON. The refusal names the plan and why.",
 };
 
 /**
@@ -293,7 +303,7 @@ const codeCheckParameters = [
 		occurrences: "append",
 		placeholder: "file",
 		description:
-			"Read this plan JSON, from terraform show -json or tofu show -json, for the root module of its directory. The check reads only its addresses and references, for the modules it does not read itself. The file must be in the checkout that holds the vault or in the chosen checkout of another repository",
+			"Read this plan JSON, from `terraform show -json` or `tofu show -json`, for the root module of its directory. The check reads only its addresses and references, for the modules it does not read itself. The file must be in the checkout that holds the vault or in the chosen checkout of another repository",
 	},
 ] as const;
 
@@ -315,34 +325,6 @@ const codeCheckStages = [
 		schema: CodeCheckRequestSchema,
 	},
 ];
-
-const checkOutput = {
-	cases: [
-		{
-			id: "json",
-			when: {},
-			mode: "json" as const,
-			description: "One part for each check that ran: semantics, code, embeds",
-			presentation: ["diagnostics", "result"] as const,
-		},
-	],
-	/**
-	 * Select JSON output.
-	 * @returns The output case.
-	 */
-	select: () => "json",
-} as const;
-
-const checkOutcomes = [
-	{
-		id: "issues",
-		exit: 1,
-		description:
-			"The semantics check has a diagnostic or a warning, or the code check or the embeds check a warning. Information never changes the exit status",
-		stream: "stdout-and-stderr",
-		presentation: ["diagnostics", "result"],
-	},
-] as const;
 
 const embedsRelationships = [
 	{
@@ -434,12 +416,14 @@ const checkAllContract = defineCommand({
 	parameters: [...codeCheckParameters, fixParameter],
 	input: { ingress: CodeCheckInputSchema.extend(FixInputSchema.shape), stages: codeCheckStages },
 	result: CheckAnswerSchema,
-	output: checkOutput,
+	...checkResult(
+		"One part for each check that ran: `semantics`, `code`, `embeds`",
+		"The `semantics` part has a diagnostic, or the `code` part or the `embeds` part a warning. Information never changes the exit status",
+	),
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal, noSuchDraftRefusal, planRefusal],
+	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal],
 	relationships: [semanticsRoute, codeRoute, ...embedsRelationships],
-	outcomes: checkOutcomes,
 	/**
 	 * Run every check.
 	 * @param input What the code check reads, and whether the embeds check fixes.
@@ -465,12 +449,14 @@ const checkEmbedsContract = defineCommand({
 	parameters: [fixParameter],
 	input: { ingress: FixInputSchema },
 	result: CheckAnswerSchema,
-	output: checkOutput,
+	...checkResult(
+		"One part, `embeds`: the artifacts it inspected, the source `vaults`, the `findings` and the repairs in `fixed`",
+		"The `embeds` part has a warning. Information never changes the exit status",
+	),
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
 	refusals: [serverRefusal],
 	relationships: embedsRelationships,
-	outcomes: checkOutcomes,
 	/**
 	 * Run the embeds check.
 	 * @param input Whether it fixes.
@@ -491,12 +477,14 @@ const checkSemanticsContract = defineCommand({
 	parameters: [],
 	input: { ingress: z.object({}) },
 	result: CheckAnswerSchema,
-	output: checkOutput,
+	...checkResult(
+		"One part, `semantics`: the vault policy, its `diagnostics` and the `timings`",
+		"The `semantics` part has a diagnostic: a warning or an error",
+	),
 	prerequisites: ["server"],
 	effects: ["read"],
 	refusals: [serverRefusal],
 	relationships: [semanticsRoute],
-	outcomes: checkOutcomes,
 	/**
 	 * Run the semantics check.
 	 * @param _input Nothing: the semantics check takes no option.
@@ -522,12 +510,14 @@ const checkCodeContract = defineCommand({
 	parameters: codeCheckParameters,
 	input: { ingress: CodeCheckInputSchema, stages: codeCheckStages },
 	result: CheckAnswerSchema,
-	output: checkOutput,
+	...checkResult(
+		"One part, `code`: the `findings`, the `skipped` reads and the `timings`",
+		"The `code` part has a warning. Information and skips never change the exit status",
+	),
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal, noSuchDraftRefusal, planRefusal],
+	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal],
 	relationships: [codeRoute],
-	outcomes: checkOutcomes,
 	/**
 	 * Run the code check.
 	 * @param input What the code check reads.
@@ -544,10 +534,7 @@ const semanticConfigContract = defineCommand({
 	summary: "Discover the configured vocabulary or its editor schema",
 	description:
 		"Prints the vault policy, source path and current diagnostics. --schema emits a JSON Schema generated from the canonical YAML validation schema, without requiring a running server.",
-	examples: [
-		"archboard semantic config",
-		"archboard semantic config --schema > config.schema.json",
-	],
+	examples: ["archboard model config", "archboard model config --schema > config.schema.json"],
 	parameters: [
 		{
 			kind: "option",

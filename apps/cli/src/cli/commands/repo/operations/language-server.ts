@@ -55,8 +55,28 @@ const repoLanguageServerContract = defineCommand({
 	path: ["repo", "language-server"],
 	shared: [],
 	summary: "Show, set or remove the language servers of a repository or of this machine",
-	description:
-		"A language server resolves what the code check can only match by name. A repository names its servers in .archboard/language-servers.json at the root of its checkout, so commit that file: every machine and every CI run that has the checkout then uses them, with no setup. The global language-servers.json beside the Archboard registry names a server for each language that the repository file leaves out. The check runs exactly the command and its arguments, with the environment and PATH that the Archboard server started with, so the server runs code of the repository as an editor does. In the repository file, a command with a / is a path from the checkout root, so the repository can commit a wrapper script that runs its server through nix, devenv or devbox. The language is typescript, python, csharp, swift, c (C, C++ and Objective-C), rust or go. Python, C, C++, Objective-C, C#, Swift, Rust and Go have no default server. A named TypeScript server wins; without one, the check runs the native tsc --lsp --stdio of the checkout's own TypeScript 7 or later, typescript-language-server for its TypeScript before 7, and in a checkout of Archboard then Archboard's own TypeScript. Without a language, the command shows both files. The checkout is the working directory's, unless --repo names a repository, which means its chosen checkout.",
+	description: [
+		"A language server resolves what the code check can only match by name. A repository names its servers in `.archboard/language-servers.json` at the root of its checkout.",
+		"",
+		"Commit that file. Every machine and every CI run that has the checkout then uses the servers, with no setup.",
+		"",
+		"The global `language-servers.json` beside the Archboard registry names a server for each language that the repository file leaves out.",
+		"",
+		"The check runs exactly the command and its arguments, with the environment and `PATH` that the Archboard server started with. So the server runs code of the repository as an editor does.",
+		"",
+		"In the repository file, a command with a `/` is a path from the checkout root. So the repository can commit a wrapper script that runs its server through `nix`, `devenv` or `devbox`.",
+		"",
+		"The language is `typescript`, `python`, `csharp`, `swift`, `c` (C, C++ and Objective-C), `rust` or `go`. Python, C, C++, Objective-C, C#, Swift, Rust and Go have no default server.",
+		"",
+		"A named TypeScript server wins.",
+		"",
+		"Without one, the check runs:",
+		"- The native `tsc --lsp --stdio` of the checkout's own TypeScript 7 or later.",
+		"- `typescript-language-server` for the checkout's TypeScript before 7.",
+		"- Otherwise, when Archboard runs from a source checkout and not a release, Archboard's own TypeScript.",
+		"",
+		"Without a language, the command shows both files. The checkout is the working directory's, unless `--repo` names a repository, which means its chosen checkout.",
+	].join("\n"),
 	examples: [
 		"archboard repo language-server",
 		"archboard repo language-server rust scripts/rust-analyzer",
@@ -72,14 +92,14 @@ const repoLanguageServerContract = defineCommand({
 			kind: "positional",
 			key: "language",
 			name: "language",
-			description: `One of ${CONFIGURABLE_LANGUAGES.join(", ")}; without it, the command shows both files`,
+			description: `One of ${CONFIGURABLE_LANGUAGES.map((language) => `\`${language}\``).join(", ")}; without it, the command shows both files`,
 		},
 		{
 			kind: "positional",
 			key: "command",
 			name: "command",
 			description:
-				"A program on the PATH, or a path to one; required with a language unless --remove is given",
+				"A program on the `PATH`, or a path to one; required with a language unless --remove is given",
 		},
 		{
 			kind: "option",
@@ -89,7 +109,7 @@ const repoLanguageServerContract = defineCommand({
 			occurrences: "append",
 			placeholder: "argument",
 			description:
-				"An argument after the command; write one that starts with - as --arg=<argument>",
+				"An argument after the command; write one that starts with `-` as `--arg=<argument>`",
 		},
 		{
 			kind: "option",

@@ -1,0 +1,61 @@
+{
+	"semantics": { "diagnostics": [] },
+	"code": {
+		"timings": [{ "check": "code-facts", "elapsedMs": 12.5 }],
+		"states": [{ "model": "Shop", "variant": "v1", "version": 4 }],
+		"findings": [
+			{
+				"severity": "warning",
+				"code": "RELATIONSHIP_UNSUPPORTED",
+				"model": "Shop",
+				"file": "modules/Shop/rel.module.json",
+				"subject": { "kind": "edge", "id": "Shop/a#r1", "name": "Storefront to Orders" },
+				"message": "No evidence in the bound code supports this relationship.",
+				"missing": "infrastructure",
+				"evidence": [
+					{
+						"kind": "configured-path",
+						"resolution": "resolved",
+						"repo": "github.com/test/app",
+						"path": "src/config.ts",
+						"line": 3,
+						"symbol": "ORDERS_URL"
+					},
+					{
+						"kind": "configured-path",
+						"resolution": "resolved",
+						"repo": "github.com/test/infra",
+						"path": "compose.yaml",
+						"line": 4,
+						"symbol": "ORDERS_URL"
+					}
+				]
+			},
+			{
+				"severity": "information",
+				"code": "EXPOSED_UNUSED",
+				"model": "Shop",
+				"file": "modules/Shop/orders.module.json",
+				"subject": { "kind": "node", "id": "Shop/a#n1", "name": "Orders" },
+				"message": "No file outside the module uses the names it exposes."
+			}
+		],
+		"skipped": [
+			{
+				"reason": "unbound",
+				"model": "Shop",
+				"variant": "v1",
+				"subject": { "kind": "node", "id": "Shop/a#n2", "name": "Storefront" }
+			}
+		],
+		"behind": []
+	},
+	"embeds": {
+		"checkout": "__WORKSPACE__/app",
+		"embeds": [],
+		"vaults": [],
+		"findings": [],
+		"fixed": []
+	},
+	"vault": { "path": "__WORKSPACE__/app/.archboard/vault", "origin": "working-directory" }
+}

@@ -12,7 +12,7 @@ import { paneWords } from "@archboard/server-lifecycle/panes";
 import { findVault } from "@archboard/workspace/vault";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
 import { PaneRefSchema } from "#cli/contract/protocol/schemas.ts";
-import { serverBrowserRefusals } from "#cli/contract/protocol/refusals.ts";
+import { serverBrowserRefusals, serverRefusal } from "#cli/contract/protocol/refusals.ts";
 import { stagedTokens } from "#cli/commands/pane/rules/staged-tokens.ts";
 
 const usage = "browser needs a subcommand: panes, open, close, or show.";
@@ -175,7 +175,7 @@ const paneCloseContract = defineCommand({
 			required: true,
 			route: "staged",
 			description:
-				"Which pane to close: left, right, top, bottom, focused, primary, a position or a pane id",
+				"Which pane to close: `left`, `right`, `top`, `bottom`, `focused`, `primary`, a position or a pane id",
 		},
 		stagedTokens("close-token"),
 	],
@@ -264,11 +264,17 @@ const panesContract = defineCommand({
 	path: ["browser", "panes"],
 	shared: ["url"],
 	summary: "What every pane is showing and reading",
-	description:
-		"Reports where each pane sits, which model and variant it shows, which view it is read " +
-		"through, and what the user has picked out. View state only: never model content. Each " +
-		"pane names its repository and checkout, and own says whether it shows the vault that a " +
-		"command run in this directory finds. It needs no vault: where none is found, no pane is own.",
+	description: [
+		"Reports, for each pane:",
+		"- Where it sits.",
+		"- Which model and variant it shows.",
+		"- Which view it is read through.",
+		"- What the user has picked out.",
+		"",
+		"This is view state only, never model content.",
+		"",
+		"Each pane names its repository and checkout, and `own` says whether it shows the vault that a command run in this directory finds. It needs no vault. Where none is found, no pane is `own`.",
+	].join("\n"),
 	examples: ["archboard browser panes", "archboard --text browser panes"],
 	parameters: [stagedTokens("panes-token")],
 	input: {
@@ -301,7 +307,8 @@ const panesContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: [],
-	refusals: serverBrowserRefusals,
+	// With no pane open, it reports that none is, so it needs no browser.
+	refusals: [serverRefusal],
 	relationships: [
 		{ method: "GET", path: "/api/panes", cardinality: "one", description: "Read the panes" },
 	],
@@ -400,7 +407,7 @@ const browserShowContract = defineCommand({
 			spellings: [key === "legacyAddress" ? "--legacy-address" : `--${key}`] as const,
 			value: "required" as const,
 			placeholder: "value",
-			description: `The explicit ${key} selector`,
+			description: `The explicit \`${key}\` selector`,
 		})),
 		{
 			kind: "option",
@@ -439,7 +446,7 @@ const browserShowContract = defineCommand({
 			value: "required" as const,
 			occurrences: "append" as const,
 			placeholder: "id",
-			description: `The ${key} identities`,
+			description: `The \`${key}\` identities`,
 		})),
 	],
 	input: {

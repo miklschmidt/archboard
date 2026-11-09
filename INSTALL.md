@@ -365,6 +365,97 @@ Use `check code --state <proposal-id>` for source evidence.
 Make sure that `archboard check code` reports no `language-server-missing` for the languages of the repository.
 Use `check embeds` for tracked rendered artifacts.
 
+## 7. Run the check as a gate
+
+Run `archboard check` where you run your compiler, your linter and your tests,
+as you run `tsc` or `ruff`. It exits 0 when the model and the code agree, and 1
+while a semantic diagnostic, a code warning or an outdated picture remains.
+Information never fails it. Exit 2 means a usage error or no vault, and exit 3
+means that the server did not start.
+
+In a pre-push hook, save this as `.githooks/pre-push`, make it executable, and
+run `git config core.hooksPath .githooks` once:
+
+```sh
+#!/bin/sh
+archboard check > /dev/null
+```
+
+In GitHub Actions, the check Action installs the CLI, runs the check and puts
+each finding on the diff of the pull request.
+[The gate guide](https://miklschmidt.github.io/archboard/docs/gate/) has the workflow, pinned to a release.
+
+In an agent's loop, give the check's output back to the agent before a person
+reviews the work. This loop gives the agent three rounds:
+
+```bash
+for round in 1 2 3; do
+  archboard check > /dev/null 2> check.log && break
+  codex exec "archboard check failed. Fix the code or the model so that it passes. The findings: $(cat check.log)"
+done
+```
+
+Do not pipe the check into another command. A pipeline exits with the status of
+its last command, so `archboard check | tee check.log` hides a failure.
+[The gate guide](https://miklschmidt.github.io/archboard/docs/gate/) covers the
+Claude Code Stop hook, other CI systems and the job summary.
+[Architecture on pull requests](https://miklschmidt.github.io/archboard/docs/pull-requests/)
+covers the Action that posts the plan, the pictures before and after and the footprint.
+
+## Application and infrastructure checkouts
+
+A platform team often keeps Kubernetes manifests and Terraform in a repository
+apart from the services. One model can bind modules into both, and one
+`archboard check code` reads both. The code check follows a connection across a
+network hop when the code reads an environment value by name and the
+infrastructure that runs the code sets that value to another module's address.
+
+The public relay example works this way. Its services and its model are in
+[archboard-relay-example](https://github.com/miklschmidt/archboard-relay-example),
+and its Kubernetes manifests and OpenTofu are in
+[archboard-relay-example-infra](https://github.com/miklschmidt/archboard-relay-example-infra).
+Install archboard, then run these commands:
+
+```bash
+git clone https://github.com/miklschmidt/archboard-relay-example
+git clone https://github.com/miklschmidt/archboard-relay-example-infra
+archboard repo add archboard-relay-example
+archboard repo add archboard-relay-example-infra
+cd archboard-relay-example
+archboard check code
+```
+
+The check exits 0. Make Intake read `BILLING_URL` with `npm ci` and
+`npm run gate:break`, and the check exits 1. Its warning names one line in each
+repository:
+
+```text
+warning: RELATIONSHIP_UNDRAWN: ... The code of "Accept parcel" reaches "Rate card". No relationship joins these modules. ...
+  configured-path, resolved, services/intake/src/accept.ts:51
+  configured-path, resolved, deploy/kubernetes/peer-endpoints.yaml:13
+```
+
+`npm run gate:restore` takes the call out again. In CI, check out the second
+repository beside the first and list its path in the check Action's `repos`
+input.
+
+Hop evidence has limits, because the check reads files and never runs the system:
+
+- Both ends must declare the connection. The code must read the value by name,
+  and the infrastructure must set that name to another module's address.
+- When only one side has evidence, a drawn relationship gets the information
+  `RELATIONSHIP_UNSUPPORTED`, and its `missing` field names the side without
+  evidence. Information never fails the check.
+- Where the infrastructure leaves a choice of target, the evidence is a
+  candidate, and a finding on a candidate is information.
+- The report names what it skipped, with the reason, under `skipped`. A binding
+  into a repository that this machine has not registered is skipped as
+  `repository-unregistered`, and a skip never fails the check. Register every
+  checkout that the bindings name.
+- The check never runs `terraform`, `tofu` or `kubectl`, and never reads state, a
+  variable file or `.terraform`. For a remote Terraform module, pass
+  `--plan` with the JSON of `tofu show -json`.
+
 ## Migrate an existing vault
 
 If `model read` returns `LEGACY_AUTHORITY`, use [legacy migration](skills/archboard/references/legacy-migration.md).

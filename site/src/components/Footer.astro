@@ -2,13 +2,16 @@
 import Mark from "./Mark.astro";
 import { links } from "../lib/links";
 
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
 const columns = [
 	{
 		title: "Product",
 		items: [
-			["Quick start", "#quick-start"],
-			["Compared", "#compare"],
-			["README", links.readme],
+			["Quick start", `${base}/#quick-start`],
+			["Compared", `${base}/#compare`],
+			["Docs", `${base}/docs/`],
+			["README.md", links.readme],
 			["INSTALL.md", links.install],
 		],
 	},
@@ -27,7 +30,7 @@ const columns = [
 <footer class="footer">
 	<div class="container footer-row">
 		<div class="about">
-			<a class="brand" href="#top" aria-label="archboard, back to the top">
+			<a class="brand" href={`${base}/`} aria-label="archboard, the home page">
 				<Mark size={22} id="footer-mark" />
 				<span class="wordmark" aria-hidden="true">archboard</span>
 			</a>
@@ -37,7 +40,7 @@ const columns = [
 				people and under US$1,000,000 in annual revenue that do not sell it as a hosted service. Each
 				version becomes MIT-licensed four years after its first publication.
 			</p>
-			<p class="caption">Archboard drew every diagram on this page.</p>
+			<p class="caption">Archboard drew every diagram on this site.</p>
 		</div>
 		{
 			columns.map((column) => (
@@ -46,7 +49,9 @@ const columns = [
 					<ul>
 						{column.items.map(([label, href]) => (
 							<li>
-								<a href={href}>{label}</a>
+								<a href={href} class:list={{ file: /\.[a-z]+$/u.test(label ?? "") }}>
+									{label}
+								</a>
 							</li>
 						))}
 					</ul>
@@ -107,6 +112,11 @@ const columns = [
 		font-size: 0.9375rem;
 		color: var(--ink-muted);
 		text-decoration: none;
+	}
+	/* A file name is code, so it sets in mono. */
+	.column a.file {
+		font-family: var(--font-mono);
+		font-size: 0.875rem;
 	}
 	.column a:hover {
 		color: var(--ink);

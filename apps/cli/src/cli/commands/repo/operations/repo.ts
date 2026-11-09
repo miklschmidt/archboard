@@ -89,8 +89,12 @@ const repoListContract = defineCommand({
 	path: ["repo", "list"],
 	shared: [],
 	summary: "List known repository checkouts and untracked vaults",
-	description:
-		"Reads the machine-local checkout registry: every known checkout with its repository identity, whether it is the chosen one for that identity and whether its directory exists, every untracked vault with its registry name, and the identities that have no chosen checkout.",
+	description: [
+		"Reads the machine-local checkout registry and lists:",
+		"- Every known checkout, with its repository identity, whether it is the chosen one for that identity, and whether its directory exists.",
+		"- Every untracked vault, with its registry name.",
+		"- The identities that have no chosen checkout.",
+	].join("\n"),
 	examples: ["archboard repo list"],
 	parameters: [
 		{
@@ -338,14 +342,16 @@ const repoAddContract = defineCommand({
 	description: [
 		"Registers a checkout, or an untracked vault, so that Archboard knows it. Every running server sees the change, so every tab lists it.",
 		"",
-		"A git checkout:",
-		"- The command derives the identity of the checkout from git: its origin remote, or with none the directory name of its main checkout. Every worktree has the identity of its main checkout.",
-		"- It records the local root of the checkout, with the worktrees that git lists for it.",
-		"- The first known checkout of a repository becomes the one read for it. Adding another never changes that, and repo use does.",
+		"A Git checkout:",
+		"- The command derives the identity of the checkout from `git`. That identity is its origin remote, or with none the directory name of its main checkout.",
+		"- Every worktree has the identity of its main checkout.",
+		"- It records the local root of the checkout, with the worktrees that `git` lists for it.",
+		"- The first known checkout of a repository becomes the one read for it. Adding another never changes that, and `repo use` does.",
 		"",
 		"An untracked vault:",
-		"- Outside any git checkout, a directory that holds .archboard/vault is registered as an untracked vault under its base name, made unique on this machine.",
-		"- A repository whose identity is the name of an untracked vault keeps it. The vault gets the next free name, which the answer's renamed gives.",
+		"- Outside any Git checkout, a directory that holds `.archboard/vault` is registered as an untracked vault under its base name, made unique on this machine.",
+		"- When a repository has the name of an untracked vault as its identity, the repository keeps that name.",
+		"- The vault then gets the next free name, and `renamed` in the answer gives that name.",
 	].join("\n"),
 	examples: ["archboard repo add ."],
 	parameters: dirParameters,
@@ -378,8 +384,13 @@ const repoUseContract = defineCommand({
 	path: ["repo", "use"],
 	shared: [],
 	summary: "Choose the checkout that this machine reads for its repository",
-	description:
-		"Makes the checkout the chosen one of its repository identity: the browser reads its vault, and a binding that another vault makes into that identity resolves there. Registers the checkout, with its worktrees, when it is unknown. An untracked vault has no repository identity and is refused. Every running server sees the change, so every pane that shows a model of the repository moves to this checkout with its model, and every tab lists it.",
+	description: [
+		"Makes the checkout the chosen one of its repository identity. The browser reads its vault, and a binding that another vault makes into that identity resolves there.",
+		"",
+		"Registers the checkout, with its worktrees, when it is unknown. An untracked vault has no repository identity and is refused.",
+		"",
+		"Every running server sees the change. So every pane that shows a model of the repository moves to this checkout with its model, and every tab lists it.",
+	].join("\n"),
 	examples: ["archboard repo use ../payments-worktree"],
 	parameters: dirParameters,
 	input: { ingress: RepoUseInputSchema },
@@ -430,8 +441,15 @@ const repoForgetContract = defineCommand({
 	path: ["repo", "forget"],
 	shared: [],
 	summary: "Forget a known checkout or untracked vault",
-	description:
-		"Removes the checkout or untracked vault at a directory from the machine-local registry. The directory need not exist. Forgetting the chosen checkout of a repository that has other known checkouts leaves it with no chosen checkout until repo use, and meanwhile its bindings resolve as unregistered, except from a vault inside one of its checkouts, which reads its own checkout. Every running server sees the change, so every tab lists it.",
+	description: [
+		"Removes the checkout or untracked vault at a directory from the machine-local registry. The directory need not exist.",
+		"",
+		"Forgetting the chosen checkout of a repository that has other known checkouts leaves the repository with no chosen checkout until `repo use`.",
+		"",
+		"Meanwhile its bindings resolve as unregistered, except from a vault inside one of its checkouts, which reads its own checkout.",
+		"",
+		"Every running server sees the change, so every tab lists it.",
+	].join("\n"),
 	examples: ["archboard repo forget ../payments-worktree"],
 	parameters: [
 		{

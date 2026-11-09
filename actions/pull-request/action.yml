@@ -1,0 +1,81 @@
+name: Archboard pull request
+description: >-
+  Comment on a pull request with its architecture as text: the proposal it carries, the footprint
+  of the change against the plan, and a link to the vault. Optionally warn or fail when modules
+  change outside the plan. Runs on `pull_request` events and needs a checkout with
+  `fetch-depth: 0`. The job needs `contents: read` and `pull-requests: write`.
+author: Mikkel Schmidt
+
+inputs:
+  version:
+    description: The version of `archboard` to install, such as `0.2.0`, or `latest`. `cli` replaces it.
+    default: latest
+  cli:
+    description: >-
+      A CLI to run instead of installing `archboard`: a path to its executable, relative to the
+      workspace. Archboard's own repository gives `./bin/archboard`, built from the commit under
+      review. Leave it out to install `version`.
+    default: ""
+  working-directory:
+    description: The directory, relative to the workspace, that holds the checkout whose vault is read.
+    default: "."
+  repos:
+    description: >-
+      Paths of more checkouts, one per line and relative to the workspace, to register first. A
+      vault that binds modules in other repositories needs them to read their footprint.
+    default: ""
+  node-version:
+    description: The Node.js version to run the CLI with. The CLI needs `22.18` or later.
+    default: "22"
+  state:
+    description: >-
+      The proposal of this pull request, by identity or name. Without it the action reads the
+      `archboard-pr` marker in the pull request description, then uses the only draft proposal the
+      model has, and otherwise reports the change without a plan.
+    default: ""
+  out-of-plan:
+    description: >-
+      What modules that changed outside the plan do. `warn` annotates and says so in the comment,
+      `fail` fails the step unless the pull request carries the override label, and `off` does not
+      judge. With no proposal there is no plan, so nothing is ever out of plan.
+    default: warn
+  override-label:
+    description: The label that lets a pull request through when `out-of-plan` is `fail`.
+    default: "archboard: out of plan"
+  github-token:
+    description: >-
+      The token that comments on the pull request. It needs `pull-requests: write`. The job also
+      needs `contents: read`.
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+      with:
+        node-version: ${{ inputs.node-version }}
+    - name: Install the archboard CLI
+      if: inputs.cli == ''
+      shell: bash
+      env:
+        ARCHBOARD_VERSION: ${{ inputs.version }}
+      run: npm install --global "archboard@${ARCHBOARD_VERSION}"
+    - name: Report on the pull request
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        ARCHBOARD_CLI: ${{ inputs.cli }}
+        ARCHBOARD_INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        ARCHBOARD_INPUT_REPOS: ${{ inputs.repos }}
+        ARCHBOARD_INPUT_STATE: ${{ inputs.state }}
+        ARCHBOARD_INPUT_OUT_OF_PLAN: ${{ inputs.out-of-plan }}
+        ARCHBOARD_INPUT_OVERRIDE_LABEL: ${{ inputs.override-label }}
+        ARCHBOARD_INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        if [ -n "$ARCHBOARD_CLI" ]; then
+          case "$ARCHBOARD_CLI" in
+          /*) export ARCHBOARD_BIN="$ARCHBOARD_CLI" ;;
+          *) export ARCHBOARD_BIN="$GITHUB_WORKSPACE/$ARCHBOARD_CLI" ;;
+          esac
+        fi
+        node "${ACTION_PATH}/run.ts"

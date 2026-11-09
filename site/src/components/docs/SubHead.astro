@@ -1,0 +1,33 @@
+---
+// A small head inside a reference entry, such as a command's examples, with its own address.
+interface Props {
+	readonly id: string;
+}
+
+const { id } = Astro.props;
+---
+
+<h3 class="sub-head" id={id}>
+	<a href={`#${id}`}><slot /></a>
+</h3>
+
+<style>
+	.sub-head {
+		margin-top: 22px;
+		line-height: 1.4;
+		letter-spacing: 0;
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.sub-head a {
+		color: inherit;
+		text-decoration: none;
+	}
+	.sub-head a:hover {
+		color: var(--gold-mark);
+	}
+	.sub-head:target {
+		color: var(--gold-mark);
+	}
+</style>

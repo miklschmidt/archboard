@@ -2,6 +2,10 @@
 // override the origin and base path for another host.
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "astro/config";
+import mdx from "@astrojs/mdx";
+import { rehypeHeadingIds, unified } from "@astrojs/markdown-remark";
+import expressiveCode from "astro-expressive-code";
+import { rehypeHeadingLinks } from "./src/lib/rehype-heading-links.ts";
 import { coreSourceHash } from "../packages/renderer/src/runtime/store/core-sources.ts";
 
 const repository = fileURLToPath(new URL("..", import.meta.url));
@@ -18,7 +22,11 @@ export default defineConfig({
 	// Compression drops the space between a line of text and an element on the next line.
 	compressHTML: false,
 	devToolbar: { enabled: false },
-	build: { assets: "assets" },
+	// Inline stylesheets keep a page from waiting on a CSS request before its first paint.
+	build: { assets: "assets", inlineStylesheets: "always" },
+	// The docs: MDX pages, code blocks from ec.config.mjs, and a link on each section's head.
+	integrations: [expressiveCode(), mdx()],
+	markdown: { processor: unified({ rehypePlugins: [rehypeHeadingIds, rehypeHeadingLinks] }) },
 	vite: {
 		// The fonts and the README's drawings live in the repository, outside the site.
 		server: { fs: { allow: [repository] } },

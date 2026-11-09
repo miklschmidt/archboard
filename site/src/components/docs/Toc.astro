@@ -1,0 +1,96 @@
+---
+// The sections of the page. The page script marks the section the reader is in.
+export interface TocHeading {
+	readonly depth: number;
+	readonly slug: string;
+	readonly text: string;
+	/** The heading names a command, so the outline sets it in mono, as the heading. */
+	readonly code?: boolean;
+}
+
+interface Props {
+	readonly headings: readonly TocHeading[];
+}
+
+const headings = Astro.props.headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+---
+
+{
+	headings.length > 0 && (
+		<nav class="toc" aria-label="On this page" data-toc>
+			<p class="toc-title">On this page</p>
+			<ul>
+				{headings.map((heading) => (
+					<li class:list={{ deep: heading.depth === 3, code: heading.code === true }}>
+						<a href={`#${heading.slug}`} data-toc-link={heading.slug}>
+							{heading.text}
+						</a>
+					</li>
+				))}
+			</ul>
+		</nav>
+	)
+}
+
+<style>
+	.toc-title {
+		margin: 0 0 12px;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	a {
+		position: relative;
+		display: block;
+		padding: 4px 0 4px 16px;
+		font-size: 0.8125rem;
+		line-height: 1.4;
+		color: var(--ink-muted);
+		text-decoration: none;
+		transition: color 160ms var(--ease-out);
+	}
+	.deep a {
+		padding-left: 30px;
+	}
+	.code a {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+	}
+	a::before {
+		content: "";
+		position: absolute;
+		left: 2px;
+		top: 0.82em;
+		width: 6px;
+		height: 6px;
+		border-radius: 1px;
+		background: var(--gold-mark);
+		box-shadow: 0 0 10px var(--gold-glow);
+		opacity: 0;
+		transform: scale(0.4);
+		transition:
+			opacity 200ms var(--ease-out),
+			transform 260ms var(--ease-out);
+	}
+	.deep a::before {
+		left: 16px;
+	}
+	a:hover {
+		color: var(--ink);
+	}
+	a.is-current {
+		color: var(--ink);
+	}
+	a.is-current::before {
+		opacity: 1;
+		transform: none;
+	}
+</style>

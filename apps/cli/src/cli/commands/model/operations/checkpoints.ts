@@ -84,8 +84,13 @@ const modelRetainContract = defineCommand({
 	path: ["model", "retain"],
 	shared: ["url", "directory", "doing"],
 	summary: "Retain exact current architecture or original migration inputs locally",
-	description:
-		"Uses configured Git identity and signing without changing current files, index or HEAD. Repeat the same operation identity and request to recover the same checkpoint. Required dependencies are complete checkpoint identities. Migration retention names --migration and --expected-plan. Use none for an absent plan. The expected source revision comes from model inventory.",
+	description: [
+		"Uses configured Git identity and signing without changing current files, index or `HEAD`.",
+		"",
+		"Repeat the same operation identity and request to recover the same checkpoint. Required dependencies are complete checkpoint identities.",
+		"",
+		"Migration retention names `--migration` and `--expected-plan`. Use `none` for an absent plan. The expected source revision comes from `model inventory`.",
+	].join("\n"),
 	examples: [
 		"archboard model retain --operation-id capture-1 --writer agent --expect-revision <digest> --doing 'retaining the reviewed reading' -C /tmp/shop",
 	],
@@ -104,7 +109,7 @@ const modelRetainContract = defineCommand({
 			spellings: ["--expected-plan"],
 			value: "required",
 			placeholder: "digest-or-none",
-			description: "The exact saved mapping revision, or none when no plan exists",
+			description: "The exact saved mapping revision, or `none` when no plan exists",
 		},
 		{
 			kind: "option",
@@ -131,7 +136,7 @@ const modelRetainContract = defineCommand({
 			value: "required",
 			placeholder: "digest",
 			required: true,
-			description: "The exact input digest returned by model read",
+			description: "The exact input digest returned by `model read`",
 		},
 		{
 			kind: "option",

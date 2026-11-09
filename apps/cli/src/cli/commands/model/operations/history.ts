@@ -12,26 +12,41 @@ import { historyLines, unreadLines } from "#cli/commands/model/operations/histor
 const WORDS = {
 	locality: {
 		summary: "Rank modules by how often their code changes, and find modules that change together",
-		description:
-			"Reads the selected state against the local Git history of every repository its modules bind. Answers which modules are hotspots, with the most commits in the period, and which pairs are coupled: they changed in the same commits, in at least 5 shared commits and 30% of their own. Names the modules it could not read and why. Source refs stay local and no source history is retained.",
+		description: [
+			"Reads the selected state against the local Git history of every repository its modules bind.",
+			"",
+			"It answers:",
+			"- Which modules are hotspots, with the most commits in the period.",
+			"- Which pairs are coupled: they changed in the same commits, in at least 5 shared commits and 30% of their own.",
+			"",
+			"It also names the modules it could not read and why. Source refs stay local and no source history is retained.",
+		].join("\n"),
 		options: {
 			state: "Read this draft by identity or name; current when absent",
 			checkpoint: "Read this exact retained checkpoint instead of a live state",
 			against: "Read the state beside this one, so the answer says what a plan joins",
 			since:
-				"Start the period at this date, or at a date and time with offset; a year before each HEAD when absent",
+				"Start the period at this date, or at a date and time with offset; a year before each `HEAD` when absent",
 		},
 	},
 	footprint: {
 		summary: "Compare a source branch with the architecture: which modules its commits changed",
-		description:
-			"Reads the commits between --base and HEAD in every repository the selected state binds, and answers which modules they changed. With a draft selected, it sets those against the draft: planned and changed, changed outside the plan, and planned but unchanged. A repository that cannot read the base or head is named, and the command exits 2. Source refs stay local and no source history is retained.",
+		description: [
+			"Reads the commits between `--base` and `HEAD` in every repository the selected state binds, and answers which modules they changed.",
+			"",
+			"With a draft selected, it sets those against the draft:",
+			"- Planned and changed.",
+			"- Changed outside the plan.",
+			"- Planned but unchanged.",
+			"",
+			"A repository that cannot read the base or head is named, and the command exits 2. Source refs stay local and no source history is retained.",
+		].join("\n"),
 		options: {
 			state: "Read this draft by identity or name; current when absent",
 			checkpoint: "Read this exact retained checkpoint instead of a live state",
 			against: "Read the draft beside this state; its base or current when absent",
-			base: "The Git ref the branch started from, such as main (required)",
-			head: "The Git ref the commits run up to; the HEAD of each checkout when absent",
+			base: "The Git ref the branch started from, such as `main` (required)",
+			head: "The Git ref the commits run up to; the `HEAD` of each checkout when absent",
 		},
 	},
 } as const;

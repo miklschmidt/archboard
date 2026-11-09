@@ -45,9 +45,10 @@ The six normal native lanes are:
 - `test:modules`: package-owned and app-owned product tests discovered under
   `packages/` and `apps/`, excluding the capacity and benchmark inventories.
   Bun runs one worker per core (`--parallel`), and each file gets a fresh global object;
-- `test:system`: system product owners under the five explicit non-browser
-  directories, with one Bun worker per core. Each file owns its servers, ports, homes and
-  registries, so files share only the machine;
+- `test:system`: system product owners under the six explicit non-browser directories, with one Bun
+  worker per core. Each file owns its servers, ports, homes and registries, so files share only the
+  machine. `tests/system/actions` runs the entries of the GitHub Actions against a stand-in
+  `archboard` and a stand-in GitHub API;
 - `test:solo`: the two owners that contention changes, one file at a time, on a free machine.
   Chromium's exact PNG bytes differ, and the real rust-analyzer can give no answer.
   The list is `soloTests` in `vite.config.ts`;
@@ -107,6 +108,7 @@ The code check's rust-analyzer builds in `target/rust-analyzer`, so it never wai
 `lint:core-docs`, rustdoc over every doc comment of the crates, and
 `format:core` checks their formatting with `cargo fmt`.
 `lint:all` includes `lint:css`, which applies the shared import boundaries to authored CSS.
+`lint:all` includes `lint:workflows`, which runs actionlint and its shellcheck over `.github/workflows`.
 The CSS fixtures and package graph own the refusal and dependency regressions.
 The hosted run includes opener persistence and the entire browser inventory.
 The workflow retains its full output as the `validation-log` artifact.

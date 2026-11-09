@@ -35,18 +35,23 @@ const initContract = defineCommand({
 	path: ["init"],
 	shared: [],
 	summary: "Set this repository up for Archboard and hand its language servers to an agent",
-	description:
-		"Installs the archboard and archboard-pr skills of this installation globally with the skills CLI (skills.sh), " +
-		"for Codex, and for Claude Code when claude is on the PATH. The skills CLI is " +
-		"started by bun, pnpm or npx: at a terminal init asks which of those on the PATH to use, or to skip; " +
-		"without a terminal it uses the first one found, in that order. Then it makes the repository's vault, " +
-		"<repo>/.archboard/vault, when it has none, and registers the checkout so that a browser lists it. " +
-		"A block that an earlier version wrote into CLAUDE.md or AGENTS.md is removed, and nothing else in the file changes. " +
-		"Last, the language servers: choosing and installing them depends on the repository, so an agent sets them up. " +
-		"At a terminal, init asks whether Claude Code or Codex, whichever is on the PATH, does it, and starts that agent " +
-		"in the repository with a prompt. The agent shows its plan and waits for your consent before it changes anything. " +
-		"Without a terminal, init assumes that an agent runs it, and its answer ends with that prompt in next: " +
-		"the setup is not finished until the agent sets up the language servers.",
+	description: [
+		"Installs the `archboard` and `archboard-pr` skills of this installation globally with the skills CLI (skills.sh). It installs them for Codex, and for Claude Code when `claude` is on the `PATH`.",
+		"",
+		"The skills CLI is started by `bun`, `pnpm` or `npx`:",
+		"- At a terminal, `init` asks which of those on the `PATH` to use, or to skip.",
+		"- Without a terminal, it uses the first one found, in that order.",
+		"",
+		"Then `init` makes the repository's vault, `<repo>/.archboard/vault`, when it has none. It registers the checkout so that a browser lists it.",
+		"",
+		"`init` removes a block that an earlier version wrote into `CLAUDE.md` or `AGENTS.md`. Nothing else in the file changes.",
+		"",
+		"Last, the language servers. Choosing and installing them depends on the repository, so an agent sets them up.",
+		"",
+		"What happens then depends on the terminal:",
+		"- At a terminal, `init` asks whether Claude Code or Codex, whichever is on the `PATH`, does it. It starts that agent in the repository with a prompt. The agent shows its plan and waits for your consent before it changes anything.",
+		"- Without a terminal, `init` assumes that an agent runs it. Its answer ends with that prompt in `next`. The setup is not finished until the agent sets up the language servers.",
+	].join("\n"),
 	examples: ["archboard init", "archboard init --repo ~/Projects/payments"],
 	parameters: [
 		{

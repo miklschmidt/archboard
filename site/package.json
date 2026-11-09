@@ -2,17 +2,25 @@
 	"name": "archboard-site",
 	"version": "0.0.0",
 	"private": true,
-	"description": "The marketing site of Archboard, published to GitHub Pages.",
+	"description": "The marketing site and the docs of Archboard, published to GitHub Pages.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"scripts": {
+		"predev": "bun scripts/reference.ts && bun scripts/guides.ts",
 		"dev": "astro dev",
-		"build": "astro check && astro build",
+		"prebuild": "bun scripts/reference.ts && bun test scripts && bun scripts/guides.ts",
+		"build": "astro check && astro build && pagefind --site dist && bun scripts/links.ts",
 		"preview": "astro preview",
 		"render": "scripts/render-diagrams.sh"
 	},
 	"dependencies": {
+		"@astrojs/markdown-remark": "7.3.5",
+		"@astrojs/mdx": "8.1.2",
+		"@expressive-code/plugin-collapsible-sections": "0.44.3",
+		"@expressive-code/plugin-line-numbers": "0.44.3",
 		"astro": "7.4.5",
+		"astro-expressive-code": "0.44.3",
+		"pagefind": "1.6.0",
 		"remixicon": "4.9.1"
 	},
 	"devDependencies": {

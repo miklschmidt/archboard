@@ -10,6 +10,13 @@
 				"files": ["apps/web/src/ui/theme/app.css"],
 				"createdAt": "2026-11-08T21:27:19.589Z",
 				"reason": "Repository DESIGN.md, Pane sidebar: the docked column animates width for 220ms while its fixed-width panel slides under the picture edge. This is intentional pane reflow."
+			},
+			{
+				"rule": "side-tab",
+				"value": "*",
+				"files": ["site/src/components/docs/SchemaNode.astro"],
+				"createdAt": "2026-11-08T19:29:50.686Z",
+				"reason": "Claude triage: SchemaNode.astro:342 is the zero-size CSS triangle of the disclosure caret (border-left plus transparent top and bottom borders), not a card border"
 			}
 		]
 	}

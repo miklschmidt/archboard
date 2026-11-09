@@ -110,7 +110,7 @@ const modelImportContract = defineCommand({
 	shared: ["url", "directory"],
 	summary: "Import verified canonical inputs and complete history",
 	description:
-		"Reads a complete request with bundle, expectedRevision, operationId, writer and doing. Installs into empty or identical authored inputs through the existing durable journal. Initialize private history first for an untracked vault.",
+		"Reads a complete request with `bundle`, `expectedRevision`, `operationId`, `writer` and `doing`. Installs into empty or identical authored inputs through the existing durable journal. Initialize private history first for an untracked vault.",
 	examples: ["archboard model import --input import-request.json -C /tmp/restored-model"],
 	parameters: [
 		{

@@ -9,10 +9,13 @@
 // Only the Archboard server is a stand-in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
-import { resolve } from "node:path";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/model/policy";
+import codeCheckFixture from "#tests/cli/commands/vault/fixtures/check-parts-code.json";
 import type { CliRegistryEntry } from "#cli/routing/protocol/route.ts";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
 
@@ -39,54 +42,7 @@ const warned: VaultCheck = {
 		},
 	],
 };
-const codeCheck: CodeCheckAnswer = {
-	timings: [
-		{ check: "code-facts", elapsedMs: 12.5 },
-		{
-			check: "language-server",
-			language: "typescript",
-			project: ".",
-			repo: "github.com/test/orders",
-			program: "tsc",
-			typescript: { version: "7.0.2", from: "checkout" },
-			elapsedMs: 42.5,
-		},
-		{ check: "history", elapsedMs: 8.5 },
-	],
-	states: [{ model: "Orders", variant: "v1", version: 4 }],
-	findings: [],
-	skipped: [{ reason: "no-current-variant", model: "Refunds" }],
-	behind: [
-		{
-			model: "Orders",
-			variant: "v1",
-			lastChange: {
-				kind: "commit",
-				commit: "a".repeat(40),
-				committedAt: "2026-10-01T00:00:00.000Z",
-			},
-			commits: [
-				{
-					repo: "github.com/test/orders",
-					commit: "b".repeat(40),
-					committedAt: "2026-10-02T00:00:00.000Z",
-					subject: "change the ledger",
-					files: 40,
-					large: true,
-				},
-			],
-			parts: [
-				{
-					subject: { kind: "node", id: "pL", name: "Ledger" },
-					repo: "github.com/test/orders",
-					path: "src/ledger.ts",
-					commits: ["b".repeat(40)],
-				},
-			],
-			skipped: [{ subject: { kind: "node", id: "pC", name: "Customer" }, reason: "unbound" }],
-		},
-	],
-};
+const codeCheck = CodeCheckAnswerSchema.parse(codeCheckFixture);
 
 const vault = makeStandInVault();
 let service = "";
@@ -124,7 +80,7 @@ const server = Bun.serve({
 		if (pathname === "/api/vault/check") return Response.json({ success: true, ...plain });
 		if (pathname === "/api/vault/code-check" && refuseDraft) {
 			return Response.json(
-				{ success: false, code: "NO_SUCH_DRAFT", error: "No such draft." },
+				{ success: false, code: "STATE_NOT_FOUND", error: "No such state." },
 				{ status: 422 },
 			);
 		}
@@ -481,4 +437,30 @@ test("a skip that holds for a whole language says once which language and why, a
 	} finally {
 		answered = codeCheck;
 	}
+});
+
+test("check embeds passes on a checkout with no embed, and every command that ran it fails on an embed nobody can draw again", async () => {
+	plain = clean;
+	answered = codeCheck;
+	const checkout = dirname(dirname(vault.path));
+	const git = (...args: string[]) =>
+		expect(spawnSync("git", args, { cwd: checkout }).status).toBe(0);
+	git("init", "-q");
+	expect((await run(["check", "embeds"])).exited).toBe(0);
+	// An SVG whose recipe element holds no recipe is an embed, and a warning.
+	mkdirSync(join(checkout, "docs"));
+	writeFileSync(
+		join(checkout, "docs", "broken.svg"),
+		'<svg xmlns="http://www.w3.org/2000/svg"><metadata><archboard:render-recipe>?</archboard:render-recipe></metadata></svg>',
+	);
+	git("add", ".");
+	const failed = await run(["check", "embeds"]);
+	expect(failed.exited).toBe(1);
+	expect(JSON.parse(failed.stdout).embeds.findings).toMatchObject([
+		{ severity: "warning", code: "EMBED_RECIPE_UNREADABLE", file: "docs/broken.svg" },
+	]);
+	for (const argv of [["check"], ["check", "all"]]) expect((await run(argv)).exited).toBe(1);
+	// The embed is not part of the semantics check or the code check.
+	expect((await run(["check", "code"])).exited).toBe(0);
+	expect((await run(["check", "semantics"])).exited).toBe(0);
 });

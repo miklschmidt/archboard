@@ -1,0 +1,81 @@
+{
+	"timings": [
+		{
+			"check": "code-facts",
+			"elapsedMs": 12.5
+		},
+		{
+			"check": "language-server",
+			"language": "typescript",
+			"project": ".",
+			"repo": "github.com/test/orders",
+			"program": "tsc",
+			"typescript": {
+				"version": "7.0.2",
+				"from": "checkout"
+			},
+			"elapsedMs": 42.5
+		},
+		{
+			"check": "history",
+			"elapsedMs": 8.5
+		}
+	],
+	"states": [
+		{
+			"model": "Orders",
+			"variant": "v1",
+			"version": 4
+		}
+	],
+	"findings": [],
+	"skipped": [
+		{
+			"reason": "no-current-variant",
+			"model": "Refunds"
+		}
+	],
+	"behind": [
+		{
+			"model": "Orders",
+			"variant": "v1",
+			"lastChange": {
+				"kind": "commit",
+				"commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				"committedAt": "2026-10-01T00:00:00.000Z"
+			},
+			"commits": [
+				{
+					"repo": "github.com/test/orders",
+					"commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+					"committedAt": "2026-10-02T00:00:00.000Z",
+					"subject": "change the ledger",
+					"files": 40,
+					"large": true
+				}
+			],
+			"parts": [
+				{
+					"subject": {
+						"kind": "node",
+						"id": "pL",
+						"name": "Ledger"
+					},
+					"repo": "github.com/test/orders",
+					"path": "src/ledger.ts",
+					"commits": ["bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]
+				}
+			],
+			"skipped": [
+				{
+					"subject": {
+						"kind": "node",
+						"id": "pC",
+						"name": "Customer"
+					},
+					"reason": "unbound"
+				}
+			]
+		}
+	]
+}

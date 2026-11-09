@@ -29,7 +29,7 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 		value: "required",
 		placeholder: "dir",
 		description:
-			"Find the vault from this directory instead of the working directory, the way git -C finds a " +
+			"Find the vault from this directory instead of the working directory, the way `git -C` finds a " +
 			"repository; other relative paths still resolve against the working directory",
 	},
 	doing: {

@@ -1,0 +1,155 @@
+---
+// The CLI as a whole: how a command finds its vault and its server, what it prints, the exit
+// codes, the shared options, and an index of every command.
+import { Code } from "astro-expressive-code/components";
+import Docs from "../../../../layouts/Docs.astro";
+import { cliGroups, docsHref } from "../../../../lib/docs-nav";
+import { commandAnchor, commandsUnder, inlineCode, reference } from "../../../../lib/reference";
+
+const headings = [
+	{ depth: 2, slug: "output", text: "What a command prints" },
+	{ depth: 2, slug: "exit-codes", text: "Exit codes" },
+	{ depth: 2, slug: "shared-options", text: "Shared options" },
+	{ depth: 2, slug: "environment", text: "Environment" },
+	{ depth: 2, slug: "commands", text: "Every command" },
+];
+// A top-level command that no group page names would have no page, so the build refuses it.
+const grouped = new Set<string>(cliGroups.flatMap((group) => group.commands));
+const loose = reference.commands.filter(
+	(command) => !command.name.includes(" ") && !grouped.has(command.name),
+);
+if (loose.length > 0) {
+	throw new Error(
+		`No page of cliGroups in docs-nav.ts names ${loose.map((command) => command.name).join(", ")}`,
+	);
+}
+
+---
+
+<Docs
+	title="CLI overview"
+	description="Every command that an agent or a person runs, generated from the CLI's own contracts. Start with how a command finds its vault and what it prints."
+	path="reference/cli"
+	headings={headings}
+	source="site/scripts/reference.ts"
+>
+	<p>
+		This reference comes from the CLI on the main branch, which is version <code>{reference.version}</code> or
+		newer, so a release on npm can lack an option that it lists. Each command finds its
+		vault the way Git finds its repository: from the working directory, or from the directory that
+		<code>-C</code> names. Commands that need the server start it on loopback when nothing answers.
+	</p>
+	<Code
+		code={`archboard [-C <dir>] [--url <url>] [--text] <command> [options]\narchboard help <command>`}
+		lang="sh"
+		frame="none"
+	/>
+
+	<h2 id="output" class="heading">
+		What a command prints<a class="heading-link" href="#output" aria-label="Link to this section" data-heading-link data-pagefind-ignore>#</a>
+	</h2>
+	<p>
+		A command prints its result as JSON on standard output, and its diagnostics as lines on
+		standard error. A script reads the JSON. A person reads the lines. With <code>--text</code>
+		anywhere before <code>--</code>, a command prints its result as coloured text instead of JSON.
+	</p>
+	<Code
+		code={`archboard check > check.json 2> check.log\necho "exit $?"`}
+		lang="sh"
+		frame="terminal"
+		title="Keep both streams"
+	/>
+
+	<h2 id="exit-codes" class="heading">
+		Exit codes<a class="heading-link" href="#exit-codes" aria-label="Link to this section" data-heading-link data-pagefind-ignore>#</a>
+	</h2>
+	<p>
+		Every command uses the same codes. A command's own page lists the refusals that it can give,
+		each with its code.
+	</p>
+	<table>
+		<thead>
+			<tr><th scope="col">Exit</th><th scope="col">Meaning</th></tr>
+		</thead>
+		<tbody>
+			{reference.exitCodes.map(({ exit, meaning }) => (
+				<tr>
+					<td><code>{exit}</code></td>
+					<td set:html={inlineCode(meaning)} />
+				</tr>
+			))}
+		</tbody>
+	</table>
+
+	<h2 id="shared-options" class="heading">
+		Shared options<a class="heading-link" href="#shared-options" aria-label="Link to this section" data-heading-link data-pagefind-ignore>#</a>
+	</h2>
+	<p>
+		These options ride on every request of one invocation. A command's help lists the ones that it
+		reads, and it refuses any other.
+	</p>
+	<table>
+		<thead>
+			<tr><th scope="col">Option</th><th scope="col">What it does</th></tr>
+		</thead>
+		<tbody>
+			{reference.shared.map((option) => (
+				<tr>
+					<td><code>{option.spellings.join(", ")} &lt;{option.placeholder}&gt;</code></td>
+					<td>
+						<span set:html={inlineCode(/[.!?]$/u.test(option.description) ? option.description : `${option.description}.`)} />
+						{option.default && <> Default <code>{option.default}</code>.</>}
+					</td>
+				</tr>
+			))}
+			<tr>
+				<td><code>--text</code></td>
+				<td>Print the result as coloured text for a person instead of JSON.</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<h2 id="environment" class="heading">
+		Environment<a class="heading-link" href="#environment" aria-label="Link to this section" data-heading-link data-pagefind-ignore>#</a>
+	</h2>
+	<table>
+		<thead>
+			<tr><th scope="col">Variable</th><th scope="col">What it does</th></tr>
+		</thead>
+		<tbody>
+			{reference.environment.map(({ name, meaning }) => (
+				<tr>
+					<td><code>{name}</code></td>
+					<td set:html={inlineCode(meaning)} />
+				</tr>
+			))}
+		</tbody>
+	</table>
+
+	<h2 id="commands" class="heading">
+		Every command<a class="heading-link" href="#commands" aria-label="Link to this section" data-heading-link data-pagefind-ignore>#</a>
+	</h2>
+	{
+		cliGroups.map((group) => (
+			<>
+				<h3 class="group-head">
+					<a href={docsHref(`reference/cli/${group.slug}`)} set:html={inlineCode(group.title)} />
+				</h3>
+				<table class="index">
+					<tbody>
+						{group.commands.flatMap((top) => commandsUnder(top)).map((command) => (
+							<tr>
+								<td>
+									<a href={`${docsHref(`reference/cli/${group.slug}`)}#${commandAnchor(command.name)}`}>
+										<code>{command.name}</code>
+									</a>
+								</td>
+								<td set:html={inlineCode(command.summary)} />
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</>
+		))
+	}
+</Docs>

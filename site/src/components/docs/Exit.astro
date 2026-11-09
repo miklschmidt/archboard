@@ -1,0 +1,27 @@
+---
+// An exit code that a guide states, read from the command's contract: the exit of a refusal or of
+// an outcome. A guide that names a refusal or an outcome that the command does not declare fails
+// the build, so a changed exit code reaches every guide that states it.
+import { reference } from "../../lib/reference";
+
+interface Props {
+	/** The command, such as `check all`. */
+	readonly command?: string;
+	/** A refusal code that the command declares, such as `SERVER_UNREACHABLE`. */
+	readonly refusal?: string;
+	/** An outcome that the command declares, such as `issues`. */
+	readonly outcome?: string;
+}
+
+const { command = "check all", refusal, outcome } = Astro.props;
+const entry = reference.commands.find((one) => one.name === command);
+const exit =
+	refusal === undefined
+		? entry?.outcomes.find((one) => one.id === outcome)?.exit
+		: entry?.refusals.find((one) => one.code === refusal)?.exit;
+if (exit === undefined) {
+	throw new Error(`"archboard ${command}" declares no ${refusal ?? `outcome ${outcome ?? ""}`}`);
+}
+---
+
+<code>{exit}</code>

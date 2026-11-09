@@ -1,0 +1,57 @@
+---
+// One group of CLI commands, each from its own contract.
+import Docs from "../../../../layouts/Docs.astro";
+import CommandRef from "../../../../components/docs/CommandRef.astro";
+import { cliGroups } from "../../../../lib/docs-nav";
+import { commandAnchor, commandsUnder, inlineCode } from "../../../../lib/reference";
+
+export function getStaticPaths() {
+	return cliGroups.map((group) => ({ params: { group: group.slug }, props: { group } }));
+}
+
+const { group } = Astro.props;
+const commands = group.commands.flatMap((top) => commandsUnder(top));
+const headings = commands.map((command) => ({
+	depth: 2,
+	slug: commandAnchor(command.name),
+	text: command.name,
+	code: true,
+}));
+---
+
+<Docs
+	title={group.title}
+	description={group.description}
+	path={`reference/cli/${group.slug}`}
+	headings={headings}
+	source="site/scripts/reference.ts"
+>
+	<p>
+		Every command below comes from the CLI's own contract on the main branch, so a release on npm
+		can lack an option that it lists. Run <code>archboard help &lt;command&gt;</code> for the same words at your
+		terminal.
+	</p>
+	<table class="index">
+		<thead>
+			<tr>
+				<th scope="col">Command</th>
+				<th scope="col">What it does</th>
+			</tr>
+		</thead>
+		<tbody>
+			{
+				commands.map((command) => (
+					<tr>
+						<td>
+							<a href={`#${commandAnchor(command.name)}`}>
+								<code>{command.name}</code>
+							</a>
+						</td>
+						<td set:html={inlineCode(command.summary)} />
+					</tr>
+				))
+			}
+		</tbody>
+	</table>
+	{commands.map((command) => <CommandRef command={command} />)}
+</Docs>
