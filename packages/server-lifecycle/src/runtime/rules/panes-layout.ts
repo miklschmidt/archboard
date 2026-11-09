@@ -51,7 +51,7 @@ interface PaneRegistration {
 	/** Where the pane sits in the page, in CSS pixels. */
 	rect: Rect;
 	/**
-	 * The entry script this tab loaded, e.g. `/assets/index-B1qk9.js`. Absent
+	 * The entry script this tab loaded, e.g. `./assets/index-B1qk9.js`. Absent
 	 * from a tab served by the vite dev server, and from any client that is not
 	 * a browser (TASK-056).
 	 */

@@ -1,6 +1,8 @@
 // The router itself: one code-based route at `/` whose search parameters are
 // the workspace. There is no generated route tree and no router plugin; the
-// tree is three lines of code because there is one page.
+// tree is three lines of code because there is one page. The route sits at the
+// base of the document, so the page works at the root of the Archboard server
+// and under any sub-path a static host serves the build at.
 //
 // The application is the route's component, so the panes mount once and a
 // change of search parameters re-renders them where they are. Nothing is
@@ -43,6 +45,8 @@ function createReadingRouter(component: () => JSX.Element | null) {
 	return createRouter({
 		routeTree: rootRoute.addChildren([indexRoute]),
 		history: createBrowserHistory(),
+		// The directory of the document's base: `/` at the root, `/docs/` for `/docs/`.
+		basepath: new URL(".", document.baseURI).pathname,
 		// A model key is a string, whatever it is spelled like.
 		parseSearch: parseWorkspaceSearchString,
 		stringifySearch: stringifyWorkspaceSearch,
