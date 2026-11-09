@@ -1,0 +1,93 @@
+{
+  "order": 24010,
+  "name": "Snapshot page",
+  "kind": "ui",
+  "responsibility": "Draws the model snapshot file that its address names, read-only and with no server, against the snapshot's comparison state",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/snapshot-reader"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#NmBYKAbQ",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "answer its reads from the snapshot, not the server",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/snapshot-reader/clients/snapshot-reads.ts",
+        "symbol": "readRetainedFrom"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5",
+      "id": "vKEsyHFk#bU2aVb0v"
+    },
+    {
+      "order": 20,
+      "kind": "call",
+      "label": "read the icons from the snapshot",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/snapshot-reader/clients/snapshot-reads.ts",
+        "symbol": "readIconsFrom"
+      },
+      "to": "vKEsyHFk#pEFBxTks",
+      "id": "vKEsyHFk#QhskaGRi"
+    },
+    {
+      "order": 30,
+      "kind": "dependency",
+      "label": "the file it reads",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/snapshot-reader/rules/snapshot-file.ts",
+        "symbol": "ModelSnapshotSchema"
+      },
+      "to": "vKEsyHFk#50jWlhsK",
+      "id": "vKEsyHFk#ZzDQGnhi"
+    },
+    {
+      "order": 40,
+      "kind": "call",
+      "label": "the state against its comparison state",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/snapshot-reader/components/SnapshotCanvas.tsx",
+        "symbol": "projectModel"
+      },
+      "to": "vKEsyHFk/yejBBUFY#IgYndyJd",
+      "id": "vKEsyHFk#8Tg0JN8S"
+    },
+    {
+      "order": 50,
+      "kind": "render",
+      "label": "draw the open scope",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/snapshot-reader/components/SnapshotCanvas.tsx",
+        "symbol": "ModelDiagram"
+      },
+      "to": "vKEsyHFk#lfwJNBMY",
+      "id": "vKEsyHFk#7odYs4pa"
+    },
+    {
+      "order": 60,
+      "kind": "call",
+      "label": "a model cache of its own, under the tab's defaults",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/snapshot-reader/components/SnapshotPage.tsx",
+        "symbol": "createModelQueryClient"
+      },
+      "to": "vKEsyHFk#dneK7oM5",
+      "id": "vKEsyHFk#zkyA3oUA"
+    }
+  ]
+}

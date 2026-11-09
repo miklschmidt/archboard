@@ -1,0 +1,41 @@
+{
+  "order": 510,
+  "name": "Snapshot page start",
+  "kind": "function",
+  "responsibility": "Starts the local renderer, follows the system's theme and mounts the snapshot page",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/snapshot.tsx"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#1G3pNNs4",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "start the local renderer",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/snapshot.tsx",
+        "symbol": "startBrowserRenderer"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#F90402mH",
+      "id": "vKEsyHFk#Gn3GzGoe"
+    },
+    {
+      "order": 20,
+      "kind": "render",
+      "label": "mount the snapshot page",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/snapshot.tsx",
+        "symbol": "SnapshotPage"
+      },
+      "to": "vKEsyHFk#NmBYKAbQ",
+      "id": "vKEsyHFk#tHMMOtuo"
+    }
+  ]
+}
