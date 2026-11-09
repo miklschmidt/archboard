@@ -104,11 +104,10 @@ export const processCommandHost = {
 			return;
 		}
 		fs.mkdirSync(path.dirname(artifact.path), { recursive: true });
-		if (artifact.encoding === "binary") {
-			fs.writeFileSync(artifact.path, artifact.content);
-			return;
-		}
-		fs.writeFileSync(artifact.path, artifact.content, "utf8");
+		writeFileAtomic(
+			artifact.path,
+			artifact.encoding === "binary" ? Buffer.from(artifact.content) : artifact.content,
+		);
 	},
 	/**
 	 * Writes the command's result to stdout.
