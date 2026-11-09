@@ -53,7 +53,7 @@ https://github.com/user-attachments/assets/58661d13-241f-4773-912c-8a8102d0796e
 <tr>
 <td width="33%" align="center"><a href="#zoom-from-the-system-into-a-service"><img src="docs/readme/idx-drill.webp" alt="Recursive navigation: open a module and inspect its children"></a><br><b><a href="#zoom-from-the-system-into-a-service">Explore nested modules</a></b></td>
 <td width="33%" align="center"><a href="#ask-your-architecture"><img src="docs/readme/idx-ask.webp" alt="Ask: the agent answers a question about a selected module"></a><br><b><a href="#ask-your-architecture">Ask your architecture</a></b></td>
-<td width="33%" align="center"><a href="#agents-work-in-plain-sight"><img src="docs/readme/idx-safety.webp" alt="A pane shows the writer and purpose of a claim on Checkout API"></a><br><b><a href="#agents-work-in-plain-sight">Agents in plain sight</a></b></td>
+<td width="33%" align="center"><a href="#agents-work-in-plain-sight"><img src="docs/readme/idx-claim.webp" alt="Claims: an agent works on Checkout API, and the Right panel says Claimed"></a><br><b><a href="#agents-work-in-plain-sight">Agents in plain sight</a></b></td>
 </tr>
 <tr>
 <td colspan="3" align="center"><a href="#pictures-for-docs-adrs-and-pull-requests"><img src="docs/readme/idx-docs.webp" width="33%" alt="Docs: a module reading rendered for a document"></a><br><b><a href="#pictures-for-docs-adrs-and-pull-requests">Pictures for your docs</a></b></td>
@@ -240,9 +240,9 @@ An agent claims the subjects it plans to change. The browser marks the claimed m
 
 Each write names its intent and the exact architecture revision that it read. If the architecture changed, the server refuses the stale write. Agents can claim different subjects without copying the model.
 
-<img src="https://github.com/user-attachments/assets/271b91e0-2439-4fcc-9e05-a4b6ee96a13b" width="100%" alt="An agent claims Checkout API. The reader presses Take back control. The next edit returns CLAIM_REVOKED, and the architecture stays unchanged.">
+<img src="https://github.com/user-attachments/assets/74875339-4be0-4ad1-9ddb-f6f635672bac" width="100%" alt="An agent claims Checkout API. A pulsing dot marks the repository menu and the Checkout API row. The reader selects Checkout API, and the Right panel says Claimed. The agent changes its responsibility and releases the claim, and the marks leave.">
 
-<p align="center"><sub>The actual CLI refusal leaves the authored revision unchanged. Every accepted write reaches disk before the server acknowledges it.</sub></p>
+<p align="center"><sub>The commands run against a live server, and the terminal summarizes their answers. The marks last as long as the claim.</sub></p>
 
 ## Pictures for docs, ADRs and pull requests
 

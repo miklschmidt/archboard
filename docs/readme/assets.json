@@ -298,11 +298,11 @@
 			"hash": "9d574337b044139f048a09dd312d9da984a712a06e56f35160e1ebb1bbbe4c49"
 		},
 		{
-			"name": "take-back",
+			"name": "claim",
 			"kind": "clip",
 			"codex": false,
-			"command": "bun run readme:assets take-back",
-			"files": ["docs/readme/idx-safety.webp"],
+			"command": "bun run readme:assets claim",
+			"files": ["docs/readme/idx-claim.webp"],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -317,7 +317,7 @@
 				"packages/renderer/assets",
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
-				"scripts/readme-assets/take-back.ts",
+				"scripts/readme-assets/claim.ts",
 				"scripts/readme-assets/stage/terminal.html",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
@@ -327,7 +327,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "25b5b1f40077a836f4a3e429383ed220db9c581d3f14bc0470bdff46a4d23b45"
+			"hash": "defa84273e3fe3db64be7888fe22a19b5188b6a7c92bb84cfc9787292270a7bc"
 		},
 		{
 			"name": "web-shop",

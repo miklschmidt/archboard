@@ -5,6 +5,8 @@ import { ask } from "./ask.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { banner } from "./banner.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
+import { claim } from "./claim.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { designSmells } from "./design-smells.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { drillDown } from "./drill-down.ts";
@@ -22,8 +24,6 @@ import { plan } from "./plan.ts";
 import type { Producer } from "./producer.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { diagramProducer } from "./svg.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
-import { takeBack } from "./take-back.ts";
 
 /** The producers, by asset name. */
 /** The programs and external systems of this repository, which the README draws as cards, and its packages as doors. */
@@ -83,7 +83,7 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 	}),
 	"drill-down": drillDown,
 	ask,
-	"take-back": takeBack,
+	claim,
 	"web-shop": diagramProducer({
 		name: "web-shop",
 		vault: "examples/web-shop",
