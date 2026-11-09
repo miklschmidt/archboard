@@ -303,6 +303,67 @@ describe("container containment", () => {
 		]);
 	});
 
+	test.each<[string, ReturnType<typeof at>]>([
+		["a YAML file bound without an address", at("deploy/web.yaml")],
+		["a symbol of a code file", at("src/shop.ts", "Shop/cart")],
+		["a code symbol in a directory", at("src/shop", "shop.cart")],
+		["a YAML configuration key", at("config/app.yaml", "services.web")],
+		["a compose filename the reader does not accept", at("compose.prod.yaml", "services.web")],
+		["an empty compose service address", at("compose.yaml", "services.")],
+	])("still holds the parts of %s", (_case, binding) => {
+		expect(containment(shaped({ binding }, ["lib/a.ts", "lib/b.ts"]))).toMatchObject([
+			{ code: "CONTAINER_PARTS_OUTSIDE", id: box },
+		]);
+	});
+
+	test.each([
+		"compose.yaml",
+		"compose.yml",
+		"docker-compose.yaml",
+		"docker-compose.yml",
+		"compose.override.yaml",
+		"compose.override.yml",
+		"docker-compose.override.yaml",
+		"docker-compose.override.yml",
+	])("recognizes a service in %s", (file) => {
+		expect(
+			containment(shaped({ binding: at(`deploy/${file}`, "services.web.api") }, ["a.ts", "b.ts"])),
+		).toEqual([]);
+	});
+
+	test.each<[string, ReturnType<typeof at>]>([
+		["a resource instance", at("infra/main.tf", "aws_lambda_function.api[0]")],
+		[
+			"an OpenTofu instance key with a dot",
+			at("infra/main.tofu", 'aws_lambda_function.api["a.b"]'),
+		],
+		["a module call", at("infra", "module.api")],
+		["a nested module instance", at("infra", 'module.app[0].module.api["a.b"]')],
+		[
+			"a resource inside module instances",
+			at("infra", 'module.app[0].module.api["a.b"].aws_lambda_function.api[0]'),
+		],
+		["an explicit directory with a dot", at("infra/prod.eu/", "aws_lambda_function.api")],
+		["a data source", at("infra/main.tf", "data.aws_iam_policy_document.api")],
+		["a Kubernetes ConfigMap", at("deploy/objects.yaml", "ConfigMap/api")],
+		["a Kubernetes Secret", at("deploy/objects.yaml", "Secret/api")],
+		["a Kubernetes custom kind with a digit", at("deploy/objects.yaml", "Workload2/api")],
+	])("leaves source containment to the parts of %s", (_case, binding) => {
+		expect(containment(shaped({ binding }, ["api/a.ts", "api/b.ts"]))).toEqual([]);
+	});
+
+	test("still checks code containers inside a runner, in any repository", () => {
+		const structure = model({
+			modules: [
+				part(box, { binding: at("deploy/web.yaml", "Deployment/web") }),
+				part(first, { parent: box, binding: at("src/api") }),
+				part(second, { parent: first, binding: at("lib/a.ts") }),
+				part(other, { parent: box, binding: { repo: "other", path: "src/api" } }),
+			],
+		});
+		expect(containment(structure)).toMatchObject([{ code: "CONTAINER_PARTS_OUTSIDE", id: first }]);
+	});
+
 	test("a part outside the container's directory makes its parts spread", () => {
 		const structure = shaped(
 			{ binding: at("src/shop") },
@@ -352,6 +413,29 @@ describe("container containment", () => {
 		[
 			"a model that binds no code",
 			model({ modules: [part(box), part(first, { parent: box }), part(other)] }),
+		],
+		[
+			"a Kubernetes workload that runs code from another repository",
+			model({
+				modules: [
+					part(box, {
+						binding: { repo: "infra", path: "deploy/web.yaml", symbol: "Deployment/web" },
+					}),
+					part(first, { parent: box, binding: at("services/web/src/a.ts") }),
+					part(other, { binding: at("services/api") }),
+				],
+			}),
+		],
+		[
+			"a compose service",
+			shaped({ binding: at("compose.yaml", "services.web") }, ["web/a.ts", "web/b.ts"]),
+		],
+		[
+			"a Terraform resource in its root module's directory",
+			shaped({ binding: at("infra", "module.api.aws_lambda_function.api") }, [
+				"api/a.ts",
+				"api/b.ts",
+			]),
 		],
 	])("stays quiet for %s", (_case, structure) => {
 		expect(containment(structure)).toEqual([]);

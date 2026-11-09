@@ -18,13 +18,36 @@ Tell the user which modules you combined and which code proved the match.
 ## Give each container a job
 
 A container is a module with parts.
-Bind it to the directory that holds all its parts.
+For a code container, bind it to the directory that holds all its parts.
 Its binding also owns code that no part binds. Code inspection includes calls into that code.
 `archboard check` reports:
 
 - `CONTAINER_UNBOUND`: Bound parts have no bound container.
 - `CONTAINER_PARTS_OUTSIDE`: A part binds code outside its container.
 - `suggestedBinding`: A directory contains all parts and no other module's code.
+
+A runner is an infrastructure declaration that runs code.
+Bind a deployed service to its runner.
+Draw the code that it runs as parts.
+This lets a call through infrastructure reach those parts.
+
+An infrastructure binding names a declaration, not a source directory.
+Its parts can bind code in any directory or repository.
+The containment check reports neither warning for that container.
+It still checks code containers inside it.
+
+The exception uses these stated paths and symbols:
+
+- Kubernetes: A YAML file with a `Kind/name` symbol, including objects such as ConfigMap and Secret.
+- Compose: `compose.yaml`, `compose.yml`, `docker-compose.yaml`, `docker-compose.yml`, or one of their `.override` files, with a service symbol such as `services.web`.
+- Terraform and OpenTofu: A `.tf` or `.tofu` file or root module directory with a resource, data, or module-call address.
+  Nested modules and instance keys, such as `module.api[0].aws_lambda_function.web["blue"]`, receive the exception too.
+
+If a directory name contains a dot, end its path with `/`.
+In a directory, a code symbol such as `order_service.start` has the same form as a Terraform address.
+Bind its code file to distinguish it.
+Recognition reads no files and does not prove that a declaration runs code.
+Use `check code` to inspect source evidence.
 
 If supplied, use `suggestedBinding`.
 Otherwise, read the source before changing containment.
