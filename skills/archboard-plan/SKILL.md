@@ -105,7 +105,10 @@ Done: each changed subject of the proposal has exactly one ticket, and each publ
      Archboard keeps that line in the proposal's history. It holds 140 characters at most, so put the full reason on the ticket.
      Add the same reason to the ticket. If the change moves a subject between slices, update both tickets.
    - If the change has no architectural meaning, such as a comment or a rename inside the module, the proposal stays as it is.
-     Record the reason on the ticket and in the merge commit. This deviation alone lets the branch merge while the gate fails.
+     Record the reason through a claimed `model edit` with `proposal:{"type":"edit"}`, `changes:[]`, and the reason in `--doing`.
+     This keeps the architecture unchanged and retains the reason in the proposal history.
+     Put the full reason on the ticket and in the merge commit.
+     This deviation alone lets the branch merge while the gate fails.
    - If the change alters an interface or a decision that the user confirmed, show the user the difference and the reason.
      Wait for the user's decision, and continue with the other tickets meanwhile.
 
@@ -125,7 +128,8 @@ Done: each changed subject of the proposal has exactly one ticket, and each publ
    Use the `archboard` proposal completion recipe, and commit the vault.
    If you open a pull request, load the `archboard-pr` skill for its body.
 
-Done: every ticket merged through a passing gate, and every deviation has its reason in the proposal history and on its ticket.
+Done: every ticket passed the gate or has a recorded exception for changes without architectural meaning.
+Every deviation has its reason in the proposal history and on its ticket.
 The proposal is adopted, or the user made another decision.
 
 ## Links
