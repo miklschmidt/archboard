@@ -47,6 +47,18 @@ function createReadingRouter(component: () => JSX.Element | null) {
 		history: createBrowserHistory(),
 		// The directory of the document's base: `/` at the root, `/docs/` for `/docs/`.
 		basepath: new URL(".", document.baseURI).pathname,
+		rewrite: {
+			/**
+			 * Accept the static host's explicit index document as the directory route.
+			 * @param context The router's rewrite input.
+			 * @param context.url The address after the base path is removed.
+			 * @returns The route address, with its search and hash intact.
+			 */
+			input: ({ url }) => {
+				if (url.pathname === "/index.html") url.pathname = "/";
+				return url;
+			},
+		},
 		// A model key is a string, whatever it is spelled like.
 		parseSearch: parseWorkspaceSearchString,
 		stringifySearch: stringifyWorkspaceSearch,
