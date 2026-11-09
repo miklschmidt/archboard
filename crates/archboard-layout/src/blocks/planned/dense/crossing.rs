@@ -191,7 +191,8 @@ impl Crossings {
         self.fresh_rows.clear();
         self.fresh_rows.resize(self.lines.len() * words, 0);
         self.middles.clear();
-        self.middles.extend(scene.boxes.iter().map(|&at| middle(at)));
+        self.middles
+            .extend(scene.boxes.iter().map(|&at| middle(at)));
         let mut twice = 0;
         for (one, &line) in self.lines.iter().enumerate() {
             let row = &self.rows[line * words..][..words];
@@ -199,7 +200,11 @@ impl Crossings {
                 .filter(|&&other| has(row, other))
                 .count();
         }
-        self.lines.iter().map(|&line| self.counts[line]).sum::<usize>() - twice
+        self.lines
+            .iter()
+            .map(|&line| self.counts[line])
+            .sum::<usize>()
+            - twice
     }
 
     /// How many lines that the move left the moved line at some place in its order crosses now.
@@ -207,7 +212,11 @@ impl Crossings {
         let words = self.words;
         let chord = &self.fresh[at];
         // `turn`, with the chord's own differences made once.
-        let (p, run, rise) = (chord.from, chord.to.0 - chord.from.0, chord.to.1 - chord.from.1);
+        let (p, run, rise) = (
+            chord.from,
+            chord.to.0 - chord.from.0,
+            chord.to.1 - chord.from.1,
+        );
         self.turns.clear();
         let turns = (self.middles.iter()).map(|r| side(run * (r.1 - p.1) - rise * (r.0 - p.0)));
         self.turns.extend(turns);

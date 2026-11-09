@@ -5,6 +5,8 @@
 //! leaves the first valley it finds. The search keeps the cheapest placement it met, which is
 //! never dearer than where it started.
 
+use std::cmp::Ordering;
+
 use crate::geometry::{Point, Rect};
 
 use super::{
@@ -183,7 +185,9 @@ impl<'p> Search<'p> {
         Search {
             total: weighed.total(),
             crossing: Crossings::new(&scene),
-            bounds: (0..scene.lines.len()).map(|line| Edges::line(&scene, line)).collect(),
+            bounds: (0..scene.lines.len())
+                .map(|line| Edges::line(&scene, line))
+                .collect(),
             touching: touching(&scene),
             grouped: grouped(&scene),
             stamp: vec![0; scene.lines.len()],
@@ -444,15 +448,15 @@ impl<'p> Search<'p> {
                     return None;
                 }
             }
-            if step < lines {
-                change.crossings.0 += self.crossing.count(step);
-            } else if step == lines {
-                change.crossings.0 += self.crossing.pairs();
-            } else {
-                let line = change.lines[change.fresh.len()];
-                let (sketch, cost) = self.scene.sketch(line);
-                costs[change.fresh.len()] = cost;
-                change.fresh.push((sketch, self.scene.chord(line), cost));
+            match step.cmp(&lines) {
+                Ordering::Less => change.crossings.0 += self.crossing.count(step),
+                Ordering::Equal => change.crossings.0 += self.crossing.pairs(),
+                Ordering::Greater => {
+                    let line = change.lines[change.fresh.len()];
+                    let (sketch, cost) = self.scene.sketch(line);
+                    costs[change.fresh.len()] = cost;
+                    change.fresh.push((sketch, self.scene.chord(line), cost));
+                }
             }
         }
         Some((self.delta(change, costs.into_iter()), drawn))
