@@ -225,15 +225,16 @@ fn dead_space(drawing: &crate::blocks::assembly::Placed) -> f64 {
     dead as f64 * GRAIN * GRAIN
 }
 
-/// A larger drawing needs a ten-percent gain after its route cost pays for
-/// the extra area. Compare every candidate with the first guarded drawing.
-/// A cheaper total must not hide a new long detour on an individual route.
+/// A drawing is worth placing when it costs no more than the first guarded drawing, counting
+/// the blank space of its page as `order` does, so a larger page pays for the room it leaves
+/// blank and not for its area. A cheaper total must not hide a new long detour on an
+/// individual route.
 pub(super) fn worth_placing(
     next: &crate::blocks::assembly::Placed,
     first: &crate::blocks::assembly::Placed,
     graph: &crate::graph::Node,
 ) -> bool {
-    let area = next.width * next.height / (first.width * first.height);
+    let cheaper = order(next).2 <= order(first).2;
     let (next, first) = (as_routed(next), as_routed(first));
     let grows_detour = next.edges.iter().any(|edge| {
         first
@@ -246,11 +247,7 @@ pub(super) fn worth_placing(
                 length > direct * 1.5 && length - direct > before - previous_direct + 300.0
             })
     });
-    !grows_detour
-        && !spreads_fan(next, first, graph)
-        && (area <= 1.0
-            || f64::from_bits(rank(&next.edges).1) * area * 1.1
-                < f64::from_bits(rank(&first.edges).1))
+    !grows_detour && !spreads_fan(next, first, graph) && cheaper
 }
 
 /// Actual travel and the direct orthogonal distance between a route's ends.

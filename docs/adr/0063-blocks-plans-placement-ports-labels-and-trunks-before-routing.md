@@ -38,7 +38,7 @@ A placement change must improve the reading and pass the reference gates.
 Small views compare guarded candidates by clear card approaches, crossings, bends, and route length.
 They also try placement without the provisional label boxes that final routing replaces.
 The original measured labels still constrain every final route.
-Extra area and long detours must not erase that gain.
+Extra blank space, priced as for dense readings, and long detours must not erase that gain.
 Dense scopes use a smaller wrap search, and Blocks omits the repeated side-exit hierarchy pass.
 
 The planner routes fixed measured geometry through four-wall ports, private lanes, and explicit source and target fans.
