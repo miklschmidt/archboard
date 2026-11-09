@@ -3,11 +3,11 @@ id: TASK-615
 title: >-
   The pull-request Action posts its architecture report as text, without
   pictures
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-09T00:11:00Z'
-updated_date: '2026-11-09T00:21:00Z'
+updated_date: '2026-11-09T01:03:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -44,4 +44,12 @@ Review finding: README.md still promised pictures from the pull-request Action. 
 Review finding: the shipped archboard-pr skill still promised pictures from the Action. Corrected the marker guidance to describe its text comment.
 
 Review validation passed inside nix develop: bun test tests/system/actions (40 tests), bunx vp run lint:all, bunx vp run types, bunx vp run format:check, and bunx vp run check:model. The site build passed with no diagnostics and 17 pages with working internal links. The skill-links owner passed (3 tests). The first model read hit an existing Codex state lock. Reading through the temporary server of check:model succeeded. Source inspection found that the module text matches the Action and that the remaining production helpers have callers. The model gate accepted the redrawn SVG embeds. No code change or further simplification was needed.
+
+Proof on the relay example after the rebase onto a10b738: the pull-request workflow passed on both pull requests and posted the text report. Pull request #1 lists Accept parcel under the modules changed with no proposal. Pull request #2 names the proposal Intake quotes the surcharge, Changes: relationships: 1 added, Accept parcel planned and changed, Rate card planned but unchanged. The archboard-assets branches and the unused app variable and secret were removed from both repositories.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The pull-request Action posts its architecture report as text: the proposal, a link to the vault at the head, the footprint and the plan check. It draws no pictures and pushes no archboard-assets branch, so the job needs only contents: read and pull-requests: write. GitHub's comment attachments could not replace the branch, because the upload refuses GITHUB_TOKEN and app installation tokens. The guide, the Actions reference, actions/README.md, the README and the archboard-pr skill describe the text report. Breaking: the assets-branch input is gone, and a workflow that still passes it gets an unknown-input warning.
+<!-- SECTION:FINAL_SUMMARY:END -->
