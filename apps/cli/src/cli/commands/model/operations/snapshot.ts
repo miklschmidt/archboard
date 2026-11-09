@@ -40,6 +40,36 @@ function comparisonSelection(comparison: NonNullable<Reading["comparison"]>) {
 }
 
 /**
+ * Match the separately read base to the comparison that the selected state records.
+ * @param reading The selected state and its comparison token.
+ * @param reference The separately read base.
+ * @returns Whether both reads describe one coherent comparison.
+ */
+function coherentComparison(reading: Reading, reference: Reading): boolean {
+	const comparison = reading.comparison;
+	if (comparison === undefined) return false;
+	return (
+		reference.manifest.id === reading.manifest.id &&
+		reference.revision.digest === comparison.revision.digest &&
+		sameBaseIdentity(reference, comparison)
+	);
+}
+
+/**
+ * Match state and checkpoint identities, which can share one input revision.
+ * @param reference The separately read base.
+ * @param comparison The base identity that the selected reading records.
+ * @returns Whether the base is the requested state and checkpoint.
+ */
+function sameBaseIdentity(
+	reference: Reading,
+	comparison: NonNullable<Reading["comparison"]>,
+): boolean {
+	if (reference.selectedState?.id !== comparison.against?.id) return false;
+	return comparison.checkpoint === undefined || reference.checkpoint?.id === comparison.checkpoint;
+}
+
+/**
  * Read the selected state, then the state it is compared against.
  * @param selection The selectors of `model read`.
  * @param selection.flow The selected flow, which only the selected state reads.
@@ -55,7 +85,22 @@ async function readStates({ flow, ...selection }: z.output<typeof SelectionSchem
 		undefined,
 		{ model: selection.model, ...comparisonSelection(reading.comparison) },
 	);
-	return comparisonReading.success ? { reading, comparisonReading } : comparisonReading;
+	if (!comparisonReading.success) return comparisonReading;
+	if (!coherentComparison(reading, comparisonReading))
+		return {
+			success: false as const,
+			code: "STALE_REVISION" as const,
+			error: "The comparison base changed between reads.",
+			diagnostics: [
+				{
+					code: "STALE_REVISION",
+					file: "model.json",
+					message: "The comparison reading does not match the selected state's comparison.",
+					recovery: "Run model snapshot again to read one coherent comparison.",
+				},
+			],
+		};
+	return { reading, comparisonReading };
 }
 
 /**
