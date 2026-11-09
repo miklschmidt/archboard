@@ -99,12 +99,18 @@ Done: each architectural change has exactly one owning ticket, and each publishe
 
    If the command exits 2, resolve its refusal or unread source before merging, then run the gate again.
    Exit status 1 means that a changed module outside the proposal fails the gate.
-   A directory-bound container passes when another changed module is bound inside it.
+   A module bound to a directory passes when another changed module is bound inside it.
+   For example, `Workspace` is bound to `libs/workspace` and `Installation` to `libs/workspace/src/installation.ts`.
+   A change to `installation.ts` changes both. `Workspace` passes, and `Installation` fails unless the proposal names it.
+   A change to `libs/workspace/README.md` changes only `Workspace`, so `Workspace` fails.
    Exit status 0 means that no module read by the footprint fails the gate.
-   Read `skipped` and inspect the branch diff for changes that the bindings do not cover.
-   Account for those changes in the ticket's slice or as deviations.
    Compare `namedAndChanged` with the ticket's slice.
    A changed module absent from this ticket's slice is a **deviation**, even if another ticket owns it.
+   Read `skipped` and `unboundFiles`. `unboundFiles` lists each changed file that no module is bound to. It never fails the gate.
+   For each listed file, do one of these:
+   - If the file belongs to a module of the slice, bind that module in the proposal so that its binding holds the file.
+   - If the file belongs to no module, such as a fixture, a document or a build file, write why on the ticket.
+   - If the file is a new part of the architecture, treat it as a deviation.
 
 4. For each deviation, find the reason, and then do one of these:
    - If the code is wrong, send the ticket back to its implementer.
@@ -121,7 +127,7 @@ Done: each architectural change has exactly one owning ticket, and each publishe
      Wait for the user's decision, and continue with the other tickets meanwhile.
 
    Run the gate again.
-   Merge only after accounting for skipped and unbound changes, with exit status 0 or recorded exceptions for exit status 1.
+   Merge only after accounting for `skipped` and `unboundFiles`, with exit status 0 or recorded exceptions for exit status 1.
 
 5. After the code review, read the footprint of the whole integration branch:
 
@@ -130,7 +136,7 @@ Done: each architectural change has exactly one owning ticket, and each publishe
    archboard check code --state <proposal-id>
    ```
 
-   Resolve any exit status 2, and account for skipped and unbound changes as before each ticket merge.
+   Resolve any exit status 2, and account for `skipped` and `unboundFiles` as before each ticket merge.
    Explain each module in `namedNotChanged`: unfinished work, a planned change that needed no code, or a change outside the symbol that its binding names.
    Fix each finding of the code check that the work caused.
 

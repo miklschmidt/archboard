@@ -10,15 +10,24 @@
 // whose bound declarations or paths they changed. Large commits are
 // kept and marked. With a proposal, the footprint sets the changed parts
 // against the parts the proposal names, in three lists, and a part the lens
-// skipped is in none of them.
+// skipped is in none of them. A changed file that no binding holds is in a
+// list of its own (TASK-621).
 
+import { realpathSync } from "node:fs";
+import { isAbsolute, relative, sep } from "node:path";
+import { bindingPathOf } from "@archboard/code-binding/bindings";
 import { snapshotCheckoutAccess, type CheckoutSnapshot } from "@archboard/code-binding/resolution";
 import {
 	attributeCommits,
 	type AttributedCommits,
 } from "#runtime/history-lens/operations/attribution.ts";
 import { markedCommit } from "#runtime/history-lens/operations/answer-commit.ts";
-import { walkCommits, type WalkedCommit } from "#runtime/history-lens/operations/commits.ts";
+import {
+	normalizeBoundPath,
+	walkCommits,
+	type WalkedCommit,
+} from "#runtime/history-lens/operations/commits.ts";
+import { unboundFiles } from "#runtime/history-lens/operations/unbound-files.ts";
 import { gitAnswer, type GitRunOptions } from "#runtime/history-lens/clients/git.ts";
 import { namedParts, type Named } from "#runtime/history-lens/operations/named-parts.ts";
 import { partReading, type ReadPart } from "#runtime/history-lens/operations/parts.ts";
@@ -30,6 +39,7 @@ import type {
 	FootprintRepository,
 	FootprintSkip,
 	NamedReason,
+	UnboundFile,
 } from "#shared/protocol/footprint.ts";
 import { nodesAtOwnRef } from "#runtime/history-lens/operations/own-ref.ts";
 import { compareVariants } from "@archboard/model/comparison";
@@ -74,6 +84,8 @@ interface RepositoryFootprint {
 	/** Parts of this repository the lens did not read, because its range was not. */
 	readonly skipped: readonly FootprintSkip[];
 	readonly commits: readonly BehindCommit[];
+	/** The changed files that no binding holds; none for a range read up to a pinned ref. */
+	readonly unbound: readonly UnboundFile[];
 }
 
 /** Where a checkout's range runs: the ref's commit, the merge base with the head, and the head. */
@@ -253,6 +265,7 @@ function unreadRepository(
 		changed: [],
 		unchanged: [],
 		commits: [],
+		unbound: [],
 		skipped: parts.map((part) => ({
 			subject: { kind: "node", id: part.node.id, name: part.node.name },
 			reason: unread.reason,
@@ -302,6 +315,7 @@ function mappedRepository(
 		commits: walked
 			.filter((commit) => used.has(commit.commit))
 			.map((commit) => markedCommit(repo, commit)),
+		unbound: [],
 	};
 }
 
@@ -314,6 +328,7 @@ function mappedRepository(
  * @param refs.base The ref the range starts from.
  * @param refs.head The ref it ends at, when the caller named one.
  * @param named Why the proposal names each part.
+ * @param scopes Where the files of the repository are bound, or undefined to list no unbound file.
  * @param options The caller's signal.
  * @returns What the checkout holds, or why its range was not read.
  */
@@ -322,13 +337,14 @@ async function readRepository(
 	parts: readonly ReadPart[],
 	refs: { readonly base: string; readonly head: string | undefined },
 	named: Named,
+	scopes: readonly string[] | undefined,
 	options: GitRunOptions,
 ): Promise<RepositoryFootprint> {
 	const root = parts[0]?.root ?? "";
 	const range = await rangeOf(root, refs.base, refs.head, options);
 	if ("reason" in range) return unreadRepository(repo, parts, named, range);
 	const walked = await walkCommits(root, [`${range.mergeBase}..${range.head}`], options);
-	return mappedRepository(
+	const mapped = mappedRepository(
 		repo,
 		parts,
 		named,
@@ -336,6 +352,56 @@ async function readRepository(
 		walked,
 		await attributeCommits(root, range.head, walked, parts, options),
 	);
+	if (scopes === undefined) return mapped;
+	return { ...mapped, unbound: unboundFiles(walked, scopes).map((file) => ({ repo, ...file })) };
+}
+
+/**
+ * A path as the operating system resolves it, else as given.
+ * @param path The path.
+ * @returns The real path.
+ */
+function realOf(path: string): string {
+	try {
+		return realpathSync.native(path);
+	} catch {
+		return path;
+	}
+}
+
+/**
+ * The vault's directory as a scope of a checkout, so that its files are never unbound.
+ * @param root The checkout.
+ * @param vault The vault directory.
+ * @returns The scope, or none when the vault is not inside the checkout.
+ */
+function vaultScope(root: string, vault: string): string[] {
+	const inside = relative(realOf(root), realOf(vault)).split(sep).join("/");
+	return inside === "" || inside.split("/")[0] === ".." || isAbsolute(inside) ? [] : [inside];
+}
+
+/**
+ * Where the files of one repository are bound: the scope of every binding there, a skipped
+ * part's too, and the vault's directory.
+ * @param nodes Every part.
+ * @param repo The repository.
+ * @param root Its checkout.
+ * @param vault The vault directory.
+ * @returns The normalized scopes.
+ */
+function scopesOf(
+	nodes: readonly SemanticNode[],
+	repo: string,
+	root: string,
+	vault: string,
+): string[] {
+	const paths = nodes.flatMap((node) =>
+		node.binding?.repo === repo ? [normalizeBoundPath(node.binding.path)] : [],
+	);
+	return [
+		...paths.flatMap((path) => (path === undefined ? [] : [bindingPathOf(path)])),
+		...vaultScope(root, vault),
+	];
 }
 
 /**
@@ -428,9 +494,19 @@ async function readFootprintEvidence(request: VariantFootprintRequest): Promise<
 	const nodes = await atOwnRefs(request, all, snapshot);
 	const named = namedBy(against, proposal, nodes);
 	const reading = partReading({ nodes }, snapshot, true);
+	// Only the range up to the head is the branch's own: a part pinned to another ref lists no file.
 	const repositories = await Promise.all(
 		byRepository(reading.read, head).map((group) =>
-			readRepository(group.repo, group.parts, { base, head: group.head }, named, { signal }),
+			readRepository(
+				group.repo,
+				group.parts,
+				{ base, head: group.head },
+				named,
+				group.head === head
+					? scopesOf(nodes, group.repo, group.parts[0]?.root ?? "", vault)
+					: undefined,
+				{ signal },
+			),
 		),
 	);
 	const changed = inOrder(
@@ -449,6 +525,7 @@ async function readFootprintEvidence(request: VariantFootprintRequest): Promise<
 			...reading.skipped.map((skip) => ({ ...skip, named: named.get(skip.subject.id) ?? [] })),
 			...repositories.flatMap((one) => one.skipped),
 		]),
+		unboundFiles: repositories.flatMap((one) => one.unbound),
 	};
 	if (proposal === undefined) return { ...common, proposal: null, changed };
 	const unchanged = inOrder(

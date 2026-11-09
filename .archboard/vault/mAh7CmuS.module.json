@@ -3,7 +3,7 @@
   "name": "Pull-request Action",
   "kind": "package",
   "responsibility": "Posts one comment on a pull request with its proposal, a link to the vault, and the modules whose code changed inside and outside the plan, as text",
-  "description": "A composite GitHub Action. It finds the proposal from its state input, the archboard-pr marker in the description, or the only draft. It reads the base and the head, and updates one sticky text comment on each push. The job needs only contents read and pull-requests write. The footprint compares the head with the base branch. With out-of-plan set to fail, a module changed outside the plan fails the job unless the override label is on the pull request.",
+  "description": "A composite GitHub Action. It finds the proposal from its state input, the archboard-pr marker in the description, or the only draft. It reads the base and the head, and updates one sticky text comment on each push. The job needs only contents read and pull-requests write. The footprint compares the head with the base branch. With out-of-plan set to fail, a module changed outside the plan fails the job unless the override label is on the pull request. Below the footprint, the comment lists the changed files that no module is bound to, and never judges them.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "actions/pull-request"

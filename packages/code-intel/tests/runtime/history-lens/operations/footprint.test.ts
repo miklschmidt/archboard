@@ -214,6 +214,7 @@ function subjectsOf(answer: FootprintAnswer, part: { commits: string[] }): strin
 const ids = (parts: readonly { subject: { id: string } }[]): string[] =>
 	parts.map((part) => part.subject.id);
 let branchPoint = "";
+let notes = "";
 
 beforeAll(async () => {
 	writeFileSync(globalConfig, "");
@@ -257,6 +258,11 @@ beforeAll(async () => {
 	git(shop, "checkout", "-q", "-b", "stack-two");
 	commit(shop, "change the ledger on the second layer", { "src/ledger.ts": "2\n" });
 	git(shop, "update-ref", "refs/remotes/origin/remote-only", git(shop, "rev-parse", "stack-two"));
+	// A file that a later commit renames into a bound directory, beside one that stays unbound.
+	git(shop, "checkout", "-q", "-b", "renames", "feature");
+	notes = commit(shop, "write notes", { "notes/draft.ts": "draft\n", "notes/todo.md": "todo\n" });
+	git(shop, "mv", "notes/draft.ts", "src/dir/draft.ts");
+	git(shop, "commit", "-q", "--no-gpg-sign", "-m", "move the draft into payments");
 	git(shop, "checkout", "-q", "feature");
 	lens = await import("#tests/runtime/support/history-lens/lens.ts");
 });
@@ -280,6 +286,20 @@ test("the parts whose bound files changed between the merge base and HEAD, with 
 	expect(answer.repositories).toContainEqual(
 		expect.objectContaining({ status: "read", repo: SHOP, mergeBase: branchPoint, commits: 6 }),
 	);
+});
+
+test("a changed file that no binding holds is listed with its commits, and a skipped part's binding still holds its files", async () => {
+	const answer = await footprint("main");
+	const generated = Array.from({ length: 30 }, (_, index) => `gen/${index}.ts`);
+	expect(answer.unboundFiles.map((file) => file.path).toSorted()).toEqual(generated.toSorted());
+	const large = answer.commits.find((one) => one.subject === "a large commit")?.commit;
+	expect(answer.unboundFiles.every((file) => file.repo === SHOP)).toBe(true);
+	expect(answer.unboundFiles.every((file) => file.commits.join() === large)).toBe(true);
+});
+
+test("a file renamed into a bound path is bound under its former name too", async () => {
+	const answer = await footprint("feature", undefined, "renames");
+	expect(answer.unboundFiles).toEqual([{ repo: SHOP, path: "notes/todo.md", commits: [notes] }]);
 });
 
 test("a large commit is kept and marked", async () => {

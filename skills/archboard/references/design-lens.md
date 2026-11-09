@@ -94,9 +94,11 @@ With a proposal, it reports:
 - `namedNotChanged`: Proposed modules without code changes. Identify unfinished work or explain why no code change is needed.
 
 Footprints retain large commits with `large` and list unread modules in `skipped`.
+`unboundFiles` lists each changed file that no module is bound to, because no module shows that change. The vault's files are not listed.
 Findings alone change no exit status.
 With a proposal, `--fail-outside` makes a gate: the command exits 1 when `changedNotNamed` has a module, and names it on standard error.
 A module bound to a directory fails the gate only when no other changed module is bound inside it.
+A file in `unboundFiles` never fails the gate.
 If a repository cannot read the requested base or head, the command names it and exits with status 2.
 Source refs stay local. The command retains no source history.
 

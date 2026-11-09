@@ -48,18 +48,21 @@ describe("the plan of a proposal", () => {
 			outsidePlan: ["Catalog"],
 			plannedUnchanged: ["Billing"],
 			changed: ["Catalog", "Intake"],
+			unbound: [],
 		};
 		expect(
 			planBuckets({ namedAndChanged: part("Intake"), changedNotNamed: part("Catalog") }, plan),
 		).toEqual(expected);
 		const footprint = {
 			changed: [...part("Intake"), ...part("Catalog")],
+			unboundFiles: [{ path: "docs/notes.md" }],
 		};
 		expect(planBuckets(footprint, plan)).toEqual({
 			plannedAndChanged: ["Intake"],
 			outsidePlan: ["Catalog"],
 			plannedUnchanged: ["Billing"],
 			changed: ["Catalog", "Intake"],
+			unbound: ["docs/notes.md"],
 		});
 	});
 
@@ -82,6 +85,7 @@ describe("the plan of a proposal", () => {
 			outsidePlan: ["API", "Zulu"],
 			plannedUnchanged: ["API", "Catalog"],
 			changed: ["API", "Billing", "Zulu"],
+			unbound: [],
 		});
 		expect(
 			decideOutOfPlan({

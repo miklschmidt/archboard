@@ -172,6 +172,26 @@ test("canonical locality and branch footprint retain source analysis without a l
 		"--fail-outside",
 	]);
 	expect(inside.status, inside.stderr).toBe(0);
+	// A file that no module is bound to is flagged and never fails the gate. The vault is not flagged.
+	mkdirSync(join(home, "docs"), { recursive: true });
+	writeFileSync(join(home, "docs/notes.md"), "Notes.\n");
+	for (const args of [
+		["add", "-A"],
+		["commit", "--quiet", "-m", "docs: notes, and the draft"],
+	]) {
+		const ran = Bun.spawnSync(["git", "-C", home, ...args]);
+		if (ran.exitCode !== 0) throw new Error(ran.stderr.toString());
+	}
+	const committed = Bun.spawnSync(["git", "-C", home, "diff", "--name-only", "HEAD~1", "HEAD"]);
+	expect(committed.stdout.toString()).toContain(".proposal.json");
+	const flagged = cli([...draft, "--fail-outside"]);
+	expect(flagged.status, flagged.stderr).toBe(0);
+	expect(answer(flagged.stdout)).toMatchObject({
+		unboundFiles: [expect.objectContaining({ path: "docs/notes.md" })],
+	});
+	expect(flagged.stderr).toContain(
+		"Not bound: 1 changed file that no module is bound to: docs/notes.md.",
+	);
 	expect(cli(["model", "footprint", "--base", "HEAD~1", "--fail-outside"]).status).toBe(2);
 	expect(
 		cli(["model", "footprint", "--base", "HEAD~1", "--state", "current", "--fail-outside"]).status,

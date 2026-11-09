@@ -12,6 +12,9 @@
 // skipped is in none of the three lists, and it is listed with the reason, so
 // a part that was not read never looks like a part that no commit changed.
 //
+// It also lists the changed files that no binding holds, because no part shows
+// their change.
+//
 // It is information: it carries no severity and changes no exit status. It is
 // derived on request and never stored.
 
@@ -112,6 +115,14 @@ const FootprintRepositorySchema = z.discriminatedUnion("status", [
 		.strict(),
 ]);
 
+/**
+ * A file that the commits changed and that no binding holds, so that no part
+ * shows the change (TASK-621). It lists the commits that changed it, newest first.
+ */
+const UnboundFileSchema = z
+	.object({ repo: z.string(), path: z.string(), commits: z.array(z.string()) })
+	.strict();
+
 /** What every footprint says, whether or not a proposal was named. */
 const footprintBase = {
 	model: z.string(),
@@ -131,6 +142,12 @@ const footprintBase = {
 	/** Every commit that changed a part it read, newest first. Large commits are kept and marked. */
 	commits: z.array(BehindCommitSchema),
 	skipped: z.array(FootprintSkipSchema),
+	/**
+	 * The changed files that no binding holds, in each repository read up to the
+	 * head. A file of the vault is never listed. A file in a repository that holds
+	 * no bound part is never read, so it is never listed either.
+	 */
+	unboundFiles: z.array(UnboundFileSchema),
 };
 
 /** A footprint with no proposal named: the parts the commits changed. */
@@ -155,6 +172,7 @@ const FootprintAnswerSchema = z.union([UnproposedFootprintSchema, ProposedFootpr
 type FootprintAnswer = z.infer<typeof FootprintAnswerSchema>;
 type FootprintPart = z.infer<typeof FootprintPartSchema>;
 type FootprintSkip = z.infer<typeof FootprintSkipSchema>;
+type UnboundFile = z.infer<typeof UnboundFileSchema>;
 type FootprintRepository = z.infer<typeof FootprintRepositorySchema>;
 type NamedReason = z.infer<typeof NamedReasonSchema>;
 
@@ -165,4 +183,5 @@ export {
 	type FootprintRepository,
 	type FootprintSkip,
 	type NamedReason,
+	type UnboundFile,
 };

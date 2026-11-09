@@ -63,6 +63,7 @@ describe("the sticky comment", () => {
 			outsidePlan: ["Stock API"],
 			plannedUnchanged: ["Fulfilment worker"],
 			changed: ["Checkout API", "Stock API"],
+			unbound: ["docs/notes.md"],
 		},
 		outOfPlan: { status: "fail", failed: true },
 		overrideLabel: "archboard: out of plan",
@@ -76,6 +77,8 @@ describe("the sticky comment", () => {
 		expect(text).toContain("Stock API");
 		expect(text).toContain("Fulfilment worker");
 		expect(text).toContain("`archboard: out of plan`");
+		expect(text).toContain("**Changed files that no module is bound to** (1)");
+		expect(text).toContain("- `docs/notes.md`");
 		expect(text).toContain("https://github.test/owner/name/tree/b/.archboard/vault");
 		expect(text).not.toContain("<img");
 	});

@@ -62,6 +62,19 @@ function bucket(title: string, names: readonly string[]): string[] {
 }
 
 /**
+ * The changed files that no module is bound to, when there are any.
+ * @param paths The files.
+ * @returns The Markdown lines, none when a module is bound to every changed file.
+ */
+function unboundBucket(paths: readonly string[]): string[] {
+	if (paths.length === 0) return [];
+	return bucket(
+		"Changed files that no module is bound to",
+		paths.map((path) => `\`${path}\``),
+	);
+}
+
+/**
  * The proposal's heading and what it says.
  * @param report The report.
  * @returns The Markdown lines.
@@ -128,13 +141,18 @@ function footprintSection(report: PullRequestReport): string[] {
 			? [...heading, "The footprint was not read.", ""]
 			: heading;
 	if (report.choice.state === undefined) {
-		return [...heading, ...bucket("Modules changed by this pull request", report.buckets.changed)];
+		return [
+			...heading,
+			...bucket("Modules changed by this pull request", report.buckets.changed),
+			...unboundBucket(report.buckets.unbound),
+		];
 	}
 	return [
 		...heading,
 		...bucket("Planned and changed", report.buckets.plannedAndChanged),
 		...bucket("Changed outside the plan", report.buckets.outsidePlan),
 		...bucket("Planned but unchanged", report.buckets.plannedUnchanged),
+		...unboundBucket(report.buckets.unbound),
 	];
 }
 

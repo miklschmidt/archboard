@@ -78,6 +78,8 @@ interface FootprintReading {
 	readonly changed?: readonly FootprintPart[] | undefined;
 	/** The parts it could not read, such as a part in a repository this machine has not registered. */
 	readonly skipped?: readonly (FootprintPart & { readonly reason?: string })[] | undefined;
+	/** The changed files that no module is bound to, so that no module shows their change. */
+	readonly unboundFiles?: readonly { readonly path: string }[] | undefined;
 }
 
 /** The module names of each bucket. */
@@ -87,6 +89,8 @@ interface Buckets {
 	readonly plannedUnchanged: readonly string[];
 	/** Every changed module, which the comment lists when there is no proposal. */
 	readonly changed: readonly string[];
+	/** The changed files that no module is bound to. They are listed, and never judged. */
+	readonly unbound: readonly string[];
 }
 
 /** The plan of a proposal. */
@@ -263,7 +267,7 @@ function proposalPlan(baseModel: ModelReading, headModel: ModelReading): Proposa
  * @param footprint The answer of `model footprint`. For a draft it sorts the changed modules into
  * named and not named, else it lists them in one list.
  * @param plan The plan.
- * @returns The three buckets.
+ * @returns The three buckets, every changed module, and the changed files that no module is bound to.
  */
 function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 	const { named, baseOnlyBindings } = plan;
@@ -288,6 +292,7 @@ function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 			.map(([, name]) => name)
 			.toSorted(),
 		changed: [...changed.values()].toSorted(),
+		unbound: (footprint.unboundFiles ?? []).map((file) => file.path),
 	};
 }
 
