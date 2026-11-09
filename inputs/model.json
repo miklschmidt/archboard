@@ -3,21 +3,21 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "iY0ACR2l",
-    "name": "The release workflow attaches each release's docs to its GitHub release",
-    "summary": "The release workflow builds the docs of the released tag and attaches them to the GitHub release, so every deploy of the docs site serves each release at its own address.",
+    "id": "WxPQKLMm",
+    "name": "Footprint gate and archboard-plan skill",
+    "summary": "model footprint --fail-outside fails a branch that changes a module outside its draft, and init installs the archboard-plan skill that runs this gate before each ticket merge.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0077-each-release-has-its-own-docs.md"
+        "path": "backlog/tasks/task-620 - The-archboard-plan-skill-carries-a-proposal-from-spec-to-implementation-and-footprint-can-fail-a-branch.md"
       }
     ],
-    "predecessor": "KNw6tcBa",
-    "baseline": "613dca71f639c87d85ea2d34ddcb09f57409b2d9",
-    "createdAt": "2026-11-09T01:21:15.810Z",
-    "adoptedAt": "2026-11-09T01:23:26.868Z",
-    "reason": "The release workflow calls the site workflow, which builds the tag's docs and attaches docs.tar.gz to the GitHub release (.github/workflows/release.yml, site.yml).",
-    "previousCurrent": "KNw6tcBa"
+    "predecessor": "iY0ACR2l",
+    "baseline": "1ba26715cc7bcc4f63db1f08d41dd01dc84c361f",
+    "createdAt": "2026-11-09T19:44:04.060Z",
+    "adoptedAt": "2026-11-09T19:51:46.689Z",
+    "reason": "model footprint --fail-outside and the archboard-plan skill are implemented on the TASK-620 branch.",
+    "previousCurrent": "iY0ACR2l"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
