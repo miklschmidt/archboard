@@ -5,7 +5,7 @@
   "current": {
     "id": "KNw6tcBa",
     "name": "Two GitHub Actions put the check and the plan on a pull request",
-    "summary": "A team runs archboard check in its own CI through the check Action, which turns each finding into an annotation on the diff, and the pull-request Action posts the plan, the pictures before and after, and the footprint in one comment.",
+    "summary": "A team runs archboard check in its own CI through the check Action, which turns each finding into an annotation on the diff, and the pull-request Action posts the plan and the footprint in one text comment.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
