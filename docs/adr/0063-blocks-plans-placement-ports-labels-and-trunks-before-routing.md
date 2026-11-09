@@ -13,11 +13,13 @@ It also adds three times how far the members of each group stand from the group'
 Simulated annealing from a fixed seed moves the parts between the cells of each frame's grid, and starts from the grid's greedy answer.
 A cell can stay empty, and a whole group can move one cell at a time.
 An exact dynamic program stands the cards outside the frames round them, at one gap from the frames.
+Either the top and bottom walls of that ring reach past the frames' corners, or its side walls do, so no two walls share a corner.
 These cards keep the order round the frames of the places where each would stand alone, so their own lines do not cross.
-The program also pays for the blank space of the page round them.
+The program also pays for the blank space of the box that these cards and the frames fill.
 It refuses a page that does not read where it lands while a page that reads holds the cards.
 Among the routes that pass the guards, the router prefers one that meets such a card on a side that faces the line's far end.
 Each grid width gives one placement, and a reading of several frames gives one more with the frames stacked.
+Each placement is priced again on its drawn frame, whose columns and rows are as wide as what they hold.
 Each placement also has a variant whose outside cards can stand one gap further out, because contraction takes that room back.
 A reading with more than 64 relationships searches every grid width briefly and goes on with the two cheapest only.
 Finished drawings rank first by whether the page reads where it lands, then by their long detours.
