@@ -3,25 +3,21 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "KNw6tcBa",
-    "name": "Two GitHub Actions put the check and the plan on a pull request",
-    "summary": "A team runs archboard check in its own CI through the check Action, which turns each finding into an annotation on the diff, and the pull-request Action posts the plan and the footprint in one text comment.",
+    "id": "iY0ACR2l",
+    "name": "The release workflow attaches each release's docs to its GitHub release",
+    "summary": "The release workflow builds the docs of the released tag and attaches them to the GitHub release, so every deploy of the docs site serves each release at its own address.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "actions/README.md"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "site/src/content/docs/pull-requests.mdx"
+        "path": "docs/adr/0077-each-release-has-its-own-docs.md"
       }
     ],
-    "predecessor": "8XM5Moq9",
-    "baseline": "659d160101e3903116e90a8d6afefc0d2cec9d90",
-    "createdAt": "2026-11-08T11:53:47.154Z",
-    "adoptedAt": "2026-11-08T11:54:52.050Z",
-    "reason": "The check and pull-request Actions are implemented in actions/ and tested in tests/system/actions.",
-    "previousCurrent": "8XM5Moq9"
+    "predecessor": "KNw6tcBa",
+    "baseline": "613dca71f639c87d85ea2d34ddcb09f57409b2d9",
+    "createdAt": "2026-11-09T01:21:15.810Z",
+    "adoptedAt": "2026-11-09T01:23:26.868Z",
+    "reason": "The release workflow calls the site workflow, which builds the tag's docs and attaches docs.tar.gz to the GitHub release (.github/workflows/release.yml, site.yml).",
+    "previousCurrent": "KNw6tcBa"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
