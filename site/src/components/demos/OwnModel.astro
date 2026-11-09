@@ -12,7 +12,7 @@ import ownSvg from "../../paintings/own.svg?url";
 		class="picture"
 		data-own-model
 		role="img"
-		aria-label="Archboard's own architecture: its programs, the browser, Agent CLI and server, around the architecture inputs, with the workspace packages and the Rust drawing engine each in one container. External systems include Codex, Claude CLI, headless Chromium, ffmpeg and the Git remotes."
+		aria-label="Archboard's own architecture: its programs, the browser, Agent CLI and server, around the architecture inputs, with the workspace packages and the Rust drawing engine each in one container. External systems include Codex, Claude CLI, headless Chromium, ffmpeg and the Git remotes. A legend below identifies module kinds, relationship kinds, emphasis and illustrated traffic."
 	>
 		<img src={ownSvg} width={own.width} height={own.height} alt="" loading="lazy" decoding="async" />
 		<canvas class="paint" aria-hidden="true"></canvas>
@@ -20,6 +20,7 @@ import ownSvg from "../../paintings/own.svg?url";
 	<figcaption class="caption">
 		Archboard's own model, from <code>.archboard/vault</code> in its repository, painted live by the
 		same painter the app uses.
+		<a href={ownSvg}>Open the full-size diagram and legend.</a>
 	</figcaption>
 </figure>
 
