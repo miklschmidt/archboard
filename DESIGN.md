@@ -560,6 +560,11 @@ Every tree row shares four columns: disclosure, marker, name and facts. Depth al
 places the columns, one 16px step per level. Flat rows reserve no disclosure space.
 `shell/rules/tree-grid.ts` holds the shared measurements.
 
+Each tree has one tab stop, and each section heading has one more. Right opens a
+closed branch, then enters it. Left closes an open branch, then moves to its parent.
+Up and Down walk the visible rows. Enter opens a row, and Alt+Enter opens it beside
+the reading. Typing in the tree moves to Find.
+
 ### Content selector
 
 A few large tabs choose what a region shows, as the site's evidence tabs do. They stand in one trough across the region, with 4px between them and 4px of room inside the trough. Each tab has the same width. It holds an icon of 18px and, beside the icon, a label in Title. Under the label, one line in Body and muted ink says what the tab shows. All of it starts at the top left, with 12px of room above and below and 16px at each side. A tab is in muted ink, and under the pointer it takes full ink and Control Face at 50%. The chosen tab rises as a Control Face in full ink with `shadow-chosen`, and its icon takes Gold Mark. The `selector` variant of `Tabs.List` draws all of it.
