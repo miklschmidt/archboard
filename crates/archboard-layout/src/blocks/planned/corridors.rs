@@ -106,11 +106,17 @@ fn coordinates(
 /// Coordinates in `f64::total_cmp` order without repeats. Each sorts by the integer that
 /// orders as `total_cmp` does, which compares faster, and equal keys are equal bits.
 fn ordered(values: &mut Vec<f64>) {
-    let key = |bits: i64| bits ^ (((bits >> 63) as u64) >> 1) as i64;
-    let mut keys: Vec<i64> = values.iter().map(|v| key(v.to_bits() as i64)).collect();
+    let key = |bits: i64| bits ^ ((bits >> 63).cast_unsigned() >> 1).cast_signed();
+    let mut keys: Vec<i64> = values
+        .iter()
+        .map(|v| key(v.to_bits().cast_signed()))
+        .collect();
     keys.sort_unstable();
     values.clear();
-    values.extend(keys.into_iter().map(|k| f64::from_bits(key(k) as u64)));
+    values.extend(
+        keys.into_iter()
+            .map(|k| f64::from_bits(key(k).cast_unsigned())),
+    );
     values.dedup();
 }
 
