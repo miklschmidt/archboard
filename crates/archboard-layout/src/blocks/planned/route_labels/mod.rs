@@ -328,7 +328,8 @@ fn search_window(a: f64, b: f64, across: f64, across_half: f64, horizontal: bool
     }
 }
 
-pub(super) fn arrange(model: &Model<'_>, shape: &mut Shape) -> Option<usize> {
+/// Place the words of every route of a shape, if each finds a spot.
+pub(super) fn arrange(model: &Model<'_>, shape: &mut Shape) -> Option<()> {
     let strokes = StrokeIndex::new(model, shape);
     shape.labels.clear();
     let indices: Vec<_> = shape
@@ -352,7 +353,7 @@ pub(super) fn seated(
     shape: &mut Shape,
     indices: &[usize],
     strokes: &StrokeIndex,
-) -> Option<usize> {
+) -> Option<()> {
     debug_assert!(shape.labels.is_empty());
     let mut labels = super::label_space::Labels::default();
     let mut order: Vec<_> = (0..shape.routes.len()).collect();
@@ -365,16 +366,31 @@ pub(super) fn seated(
         area(b).total_cmp(&area(a)).then(a.cmp(&b))
     });
     seed(shape, indices, &order, strokes, &mut labels);
-    let mut fallbacks = 0;
+    let mut moves = Moves {
+        count: 0,
+        searched: vec![None; indices.len()],
+    };
     for _ in 0..4 {
-        let (count, changed) = update(model, shape, indices, &order, strokes, &mut labels)?;
-        fallbacks = count;
+        let changed = update(
+            model,
+            shape,
+            (indices, &order),
+            strokes,
+            &mut labels,
+            &mut moves,
+        )?;
         if !changed {
-            return Some(fallbacks);
+            return Some(());
         }
     }
-    consistent(model, shape, indices, &order, strokes, &labels)?;
-    Some(fallbacks)
+    consistent(model, shape, indices, &order, strokes, &labels)
+}
+
+/// How many times a line's words moved while `seated` places them, and for each route how
+/// many had moved when its words last found their spot.
+struct Moves {
+    count: usize,
+    searched: Vec<Option<usize>>,
 }
 
 /// Whether every worded line, each with its index, has a spot for its words along its route
@@ -524,19 +540,21 @@ fn seed(
         }
     }
 }
+/// Find each line's words a spot again, and tell whether any moved. A line's spot depends on
+/// its own words and the other lines' words, so while no other words move, the line's words
+/// keep the spot they found last, and its search is not run again.
 fn update(
     model: &Model<'_>,
     shape: &mut Shape,
-    indices: &[usize],
-    order: &[usize],
+    (indices, order): (&[usize], &[usize]),
     strokes: &StrokeIndex,
     labels: &mut super::label_space::Labels,
-) -> Option<(usize, bool)> {
+    moves: &mut Moves,
+) -> Option<bool> {
     let mut changed = false;
-    let mut fallbacks = 0;
     for &index in order {
         let edge = indices[index];
-        if model.edges[edge].label().is_none() {
+        if model.edges[edge].label().is_none() || moves.searched[index] == Some(moves.count) {
             continue;
         }
         let old = shape.labels.remove(&edge);
@@ -546,23 +564,27 @@ fn update(
         {
             shape.labels.insert(edge, kept);
             labels.remember(edge, kept);
+            moves.searched[index] = Some(moves.count);
             continue;
         }
         // A plate that contraction carried with its run can fill the room it has exactly, so
         // that no search finds it, and it can stay where it stands.
-        let (label, fallback) =
-            slot_index(model, edge, shape, path, strokes, labels).or_else(|| {
+        let label = slot_index(model, edge, shape, path, strokes, labels)
+            .map(|(at, _)| at)
+            .or_else(|| {
                 let own = Own::new(edge, path);
                 old.filter(|&at| own.rides_one(at) && clear(shape, edge, at, strokes, labels))
-                    .map(|at| (at, true))
             })?;
-        changed |= old != Some(label);
+        if old != Some(label) {
+            changed = true;
+            moves.count += 1;
+        }
+        moves.searched[index] = Some(moves.count);
         shape.labels.insert(edge, label);
         labels.remember(edge, label);
         shape.routes[index].label = Some(label);
-        fallbacks += usize::from(fallback);
     }
-    Some((fallbacks, changed))
+    Some(changed)
 }
 
 #[cfg(test)]
