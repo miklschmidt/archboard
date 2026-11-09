@@ -165,21 +165,19 @@ impl Ring {
     }
 }
 
-/// What every place along the ring costs one door, `None` where it does not fit.
+/// What one door costs at each of its boxes along the ring, `None` where it does not fit.
 fn prices(
     scene: &mut Scene,
-    ring: &Ring,
-    (door, stood): (usize, Door),
+    (door, boxes): (usize, &[Option<Rect>]),
     doors: &[usize],
     fixed: &[Chord],
 ) -> Vec<Option<f64>> {
     let lines = own_lines(scene, door, doors);
     // Only the door moves, so what stands in each line's way stays.
     let in_the_way: Vec<InTheWay> = lines.iter().map(|&line| scene.in_the_way(line)).collect();
-    (0..ring.slots())
-        .map(|slot| {
-            let at = ring.place(slot, stood)?;
-            scene.boxes[door] = at;
+    (boxes.iter())
+        .map(|&at| {
+            scene.boxes[door] = at?;
             Some(
                 (lines.iter().zip(&in_the_way))
                     .map(|(&line, way)| {
@@ -297,23 +295,13 @@ fn line_up(
     Some((total, places))
 }
 
-/// The cheapest places of doors round a ring where only the places that some test allows count,
-/// for the four orders that start at a wall's first slot.
+/// The cheapest places of doors round a ring at what each place costs each door, for the four
+/// orders that start at a wall's first slot.
 fn cheapest(
     ring: &Ring,
     sizes: &[Door],
     costs: &[Vec<Option<f64>>],
-    allows: impl Fn(Rect) -> bool,
 ) -> Option<(f64, Vec<usize>, Vec<usize>)> {
-    let costs: Vec<Vec<Option<f64>>> = (costs.iter().enumerate())
-        .map(|(door, costs)| {
-            (costs.iter().enumerate())
-                .map(|(slot, &cost)| {
-                    cost.filter(|_| ring.place(slot, sizes[door]).is_some_and(&allows))
-                })
-                .collect()
-        })
-        .collect();
     let wanted: Vec<f64> = costs.iter().map(|costs| alone(costs)).collect();
     let slots = ring.slots();
     (0..4)
@@ -322,7 +310,7 @@ fn cheapest(
             let along = |door: usize| (wanted[door] - cut as f64).rem_euclid(slots as f64);
             let mut order: Vec<usize> = (0..sizes.len()).collect();
             order.sort_by(|&a, &b| along(a).total_cmp(&along(b)).then(a.cmp(&b)));
-            let (total, places) = line_up(ring, sizes, &costs, &order, cut)?;
+            let (total, places) = line_up(ring, sizes, costs, &order, cut)?;
             Some((total, order, places))
         })
         .min_by(|a, b| a.0.total_cmp(&b.0))
@@ -436,24 +424,49 @@ fn cheapest_page(
     sizes: &[Door],
     whole: Rect,
 ) -> Option<(usize, Vec<usize>, Vec<usize>)> {
-    (rings.iter().enumerate())
-        .flat_map(|(at, one)| pages.iter().map(move |holds| (at, one, holds)))
-        .filter_map(|(at, one, holds)| {
-            let (total, order, places) =
-                cheapest(&one.ring, sizes, &one.costs, |box_| within(box_, holds))?;
-            let stood = (order.iter().zip(&places))
-                .filter_map(|(&door, &slot)| one.ring.place(slot, sizes[door]));
+    let mut best: Option<(f64, usize, Vec<usize>, Vec<usize>)> = None;
+    for (at, one) in rings.iter().enumerate() {
+        // A page that allows the same places as one before it stands the doors alike, at the
+        // same cost, and an earlier page wins a tie.
+        let mut met: Vec<Vec<bool>> = Vec::new();
+        for holds in pages {
+            let allowed: Vec<bool> = (one.boxes.iter().flatten())
+                .map(|box_| box_.is_some_and(|box_| within(box_, holds)))
+                .collect();
+            if met.contains(&allowed) {
+                continue;
+            }
+            let costs: Vec<Vec<Option<f64>>> = (one.costs.iter())
+                .zip(allowed.chunks(one.ring.slots()))
+                .map(|(costs, allowed)| {
+                    (costs.iter().zip(allowed))
+                        .map(|(&cost, &allowed)| cost.filter(|_| allowed))
+                        .collect()
+                })
+                .collect();
+            met.push(allowed);
+            let Some((total, order, places)) = cheapest(&one.ring, sizes, &costs) else {
+                continue;
+            };
+            let stood =
+                (order.iter().zip(&places)).filter_map(|(&door, &slot)| one.boxes[door][slot]);
             let filled = bounds(whole, stood);
-            let dead = filled.width * filled.height / DEAD_SPACE;
-            Some((total + dead, at, order, places))
-        })
-        .min_by(|a, b| a.0.total_cmp(&b.0))
-        .map(|(_, at, order, places)| (at, order, places))
+            let total = total + filled.width * filled.height / DEAD_SPACE;
+            if best
+                .as_ref()
+                .is_none_or(|best| total.total_cmp(&best.0).is_lt())
+            {
+                best = Some((total, at, order, places));
+            }
+        }
+    }
+    best.map(|(_, at, order, places)| (at, order, places))
 }
 
-/// A ring with the price of each door at each of its places.
+/// A ring with each door's box at each of its places, where it fits, and its price there.
 struct Priced {
     ring: Ring,
+    boxes: Vec<Vec<Option<Rect>>>,
     costs: Vec<Vec<Option<f64>>>,
 }
 
@@ -482,10 +495,17 @@ fn priced(
     (doors, open, fixed): Standing<'_>,
     sizes: &[Door],
 ) -> Priced {
-    let costs = (doors.iter().zip(sizes))
-        .map(|(&door, &stood)| prices(scene, &ring, (door, stood), open, fixed))
+    let boxes: Vec<Vec<Option<Rect>>> = (sizes.iter())
+        .map(|&stood| {
+            (0..ring.slots())
+                .map(|slot| ring.place(slot, stood))
+                .collect()
+        })
         .collect();
-    Priced { ring, costs }
+    let costs = (doors.iter().zip(&boxes))
+        .map(|(&door, boxes)| prices(scene, (door, boxes), open, fixed))
+        .collect();
+    Priced { ring, boxes, costs }
 }
 
 /// Stand every door once, where the lines from a door to the doors still open weigh nothing.
@@ -547,7 +567,7 @@ fn stand_open(
         None => widened(scene, standing, &sizes, (whole, gap, level + widest + STEP)),
     };
     for (&door, &slot) in order.iter().zip(&places) {
-        if let Some(at) = ring.ring.place(slot, sizes[door]) {
+        if let Some(at) = ring.boxes[door][slot] {
             scene.boxes[doors[door]] = at;
         }
     }
@@ -573,7 +593,7 @@ fn widened(
             standing,
             sizes,
         );
-        if let Some((_, order, places)) = cheapest(&ring.ring, sizes, &ring.costs, |_| true) {
+        if let Some((_, order, places)) = cheapest(&ring.ring, sizes, &ring.costs) {
             return (ring, order, places);
         }
         reach += widest + STEP;
