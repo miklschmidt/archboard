@@ -56,6 +56,13 @@ impl Ends {
     fn crosses(&self, other: &Ends, turns: (i8, i8)) -> bool {
         turns.0 * turns.1 < 0 && self.near(other) && other.turn(self.from) * other.turn(self.to) < 0
     }
+
+    /// Whether the chord crosses another.
+    fn crossing(&self, other: &Ends) -> bool {
+        self.near(other)
+            && self.turn(other.from) * self.turn(other.to) < 0
+            && other.turn(self.from) * other.turn(self.to) < 0
+    }
 }
 
 fn middle(at: Rect) -> (f64, f64) {
@@ -79,6 +86,25 @@ fn set(row: &mut [u64], line: usize) {
     row[line / 64] |= 1 << (line % 64);
 }
 
+/// How many lines that a move left a moved chord crosses, each set in a row: from the chord's
+/// turn to the middle of every box, and each line's boxes and chord, apart from the moved lines.
+fn count(
+    chord: &Ends,
+    turns: &[i8],
+    (boxes, ends, moved): (&[(u32, u32)], &[Ends], &[u64]),
+    row: &mut [u64],
+) -> usize {
+    let mut count = 0;
+    for (other, (&(from, to), theirs)) in boxes.iter().zip(ends).enumerate() {
+        let turns = (turns[from as usize], turns[to as usize]);
+        if turns.0 * turns.1 < 0 && !has(moved, other) && chord.crosses(theirs, turns) {
+            set(row, other);
+            count += 1;
+        }
+    }
+    count
+}
+
 /// The crossings of every line of a scene, and of the lines that a move under weighing moved.
 ///
 /// Two lines that share a box never cross: one's chord ends on the other's end, so its turn to
@@ -87,6 +113,8 @@ fn set(row: &mut [u64], line: usize) {
 pub(super) struct Crossings {
     /// How many words each row takes.
     words: usize,
+    /// The boxes each line ends on, and its chord.
+    boxes: Vec<(u32, u32)>,
     ends: Vec<Ends>,
     rows: Vec<u64>,
     /// How many lines each line crosses.
@@ -112,7 +140,7 @@ impl Crossings {
         let mut counts = vec![0; count];
         for (one, chord) in ends.iter().enumerate() {
             for (two, other) in ends.iter().enumerate().skip(one + 1) {
-                if chord.crosses(other, (chord.turn(other.from), chord.turn(other.to))) {
+                if chord.crossing(other) {
                     set(&mut rows[one * words..][..words], two);
                     set(&mut rows[two * words..][..words], one);
                     counts[one] += 1;
@@ -120,8 +148,12 @@ impl Crossings {
                 }
             }
         }
+        let index = |at: usize| u32::try_from(at).expect("a box index fits 32 bits");
         Crossings {
             words,
+            boxes: (scene.lines.iter())
+                .map(|line| (index(line.from), index(line.to)))
+                .collect(),
             ends,
             rows,
             counts,
@@ -164,26 +196,15 @@ impl Crossings {
             let turns = (self.middles.iter()).map(|r| side(run * (r.1 - p.1) - rise * (r.0 - p.0)));
             self.turns.extend(turns);
             let row = &mut self.fresh_rows[at * words..][..words];
-            let mut count = 0;
-            for (other, ends) in scene.lines.iter().enumerate() {
-                let turns = (self.turns[ends.from], self.turns[ends.to]);
-                if turns.0 * turns.1 < 0
-                    && !has(&self.moved, other)
-                    && chord.crosses(&self.ends[other], turns)
-                {
-                    set(row, other);
-                    count += 1;
-                }
-            }
-            self.now.push(count);
+            let stayed = (&self.boxes[..], &self.ends[..], &self.moved[..]);
+            self.now.push(count(chord, &self.turns, stayed, row));
         }
         let mut made: usize = self.now.iter().sum();
         let mut twice = 0;
         for (one, &line) in self.lines.iter().enumerate() {
             for (two, &other) in self.lines.iter().enumerate().skip(one + 1) {
                 twice += usize::from(has(&self.rows[line * words..][..words], other));
-                let (chord, theirs) = (self.fresh[one], self.fresh[two]);
-                if chord.crosses(&theirs, (chord.turn(theirs.from), chord.turn(theirs.to))) {
+                if self.fresh[one].crossing(&self.fresh[two]) {
                     set(&mut self.fresh_rows[one * words..][..words], other);
                     set(&mut self.fresh_rows[two * words..][..words], line);
                     self.now[one] += 1;
