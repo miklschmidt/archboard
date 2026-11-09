@@ -7,9 +7,9 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/snapshot-reader"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
   "schemaVersion": 1,
   "id": "vKEsyHFk#NmBYKAbQ",
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
   "outgoing": [
     {
       "order": 10,
@@ -21,8 +21,8 @@
         "path": "apps/web/src/ui/snapshot-reader/clients/snapshot-reads.ts",
         "symbol": "readRetainedFrom"
       },
-      "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5",
-      "id": "vKEsyHFk#bU2aVb0v"
+      "id": "vKEsyHFk#bU2aVb0v",
+      "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
     },
     {
       "order": 20,
@@ -34,8 +34,8 @@
         "path": "apps/web/src/ui/snapshot-reader/clients/snapshot-reads.ts",
         "symbol": "readIconsFrom"
       },
-      "to": "vKEsyHFk#pEFBxTks",
-      "id": "vKEsyHFk#QhskaGRi"
+      "id": "vKEsyHFk#QhskaGRi",
+      "to": "vKEsyHFk#pEFBxTks"
     },
     {
       "order": 30,
@@ -47,8 +47,8 @@
         "path": "apps/web/src/ui/snapshot-reader/rules/snapshot-file.ts",
         "symbol": "ModelSnapshotSchema"
       },
-      "to": "vKEsyHFk#50jWlhsK",
-      "id": "vKEsyHFk#ZzDQGnhi"
+      "id": "vKEsyHFk#ZzDQGnhi",
+      "to": "vKEsyHFk#50jWlhsK"
     },
     {
       "order": 40,
@@ -60,8 +60,8 @@
         "path": "apps/web/src/ui/snapshot-reader/components/SnapshotCanvas.tsx",
         "symbol": "projectModel"
       },
-      "to": "vKEsyHFk/yejBBUFY#IgYndyJd",
-      "id": "vKEsyHFk#8Tg0JN8S"
+      "id": "vKEsyHFk#8Tg0JN8S",
+      "to": "vKEsyHFk/yejBBUFY#IgYndyJd"
     },
     {
       "order": 50,
@@ -73,8 +73,8 @@
         "path": "apps/web/src/ui/snapshot-reader/components/SnapshotCanvas.tsx",
         "symbol": "ModelDiagram"
       },
-      "to": "vKEsyHFk#lfwJNBMY",
-      "id": "vKEsyHFk#7odYs4pa"
+      "id": "vKEsyHFk#7odYs4pa",
+      "to": "vKEsyHFk#lfwJNBMY"
     },
     {
       "order": 60,
@@ -86,8 +86,34 @@
         "path": "apps/web/src/ui/snapshot-reader/components/SnapshotPage.tsx",
         "symbol": "createModelQueryClient"
       },
-      "to": "vKEsyHFk#dneK7oM5",
-      "id": "vKEsyHFk#zkyA3oUA"
+      "id": "vKEsyHFk#zkyA3oUA",
+      "to": "vKEsyHFk#dneK7oM5"
+    },
+    {
+      "order": 70,
+      "kind": "render",
+      "label": "gives the picture the snapshot as its vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/snapshot-reader/components/SnapshotCanvas.tsx",
+        "symbol": "PaneVaultContext"
+      },
+      "to": "vKEsyHFk/yejBBUFY#p5UCow7F",
+      "id": "vKEsyHFk#ElDA96hV"
+    },
+    {
+      "order": 80,
+      "kind": "call",
+      "label": "the picture's camera",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/snapshot-reader/components/SnapshotCanvas.tsx",
+        "symbol": "usePictureCamera"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+      "id": "vKEsyHFk#B3BiWa2O"
     }
   ]
 }
