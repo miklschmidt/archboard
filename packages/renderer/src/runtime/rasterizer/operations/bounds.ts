@@ -1,6 +1,8 @@
 // What one bitmap may be: the diagram's own page at a stated scale, inside
 // what a headless Chromium surface will draw in one piece.
 
+import { z } from "zod";
+
 /**
  * The longest side a capture may have, in bitmap pixels. Skia's surfaces and
  * Chromium's screenshot path both stop short of 2^14 on a side; a diagram
@@ -19,6 +21,9 @@ const RASTER_MAX_PIXELS = 80_000_000;
 /** The scales a caller may ask for; 1 is native and the default. */
 const RASTER_MIN_SCALE = 0.25;
 const RASTER_MAX_SCALE = 4;
+
+/** A scale a caller may ask for, as a number or its text. */
+const RasterScaleSchema = z.coerce.number().min(RASTER_MIN_SCALE).max(RASTER_MAX_SCALE);
 
 /** A rectangle of the diagram's page, in CSS pixels. */
 interface PageRegion {
@@ -140,9 +145,8 @@ function boundsRefusal(bounds: RasterBounds): string | null {
 }
 
 export {
-	RASTER_MAX_SCALE,
 	RASTER_MAX_SIDE_PX,
-	RASTER_MIN_SCALE,
+	RasterScaleSchema,
 	bitmapSizeOf,
 	boundsRefusal,
 	regionOf,

@@ -448,6 +448,7 @@ export {
 	QualifiedSubjectIdSchema,
 	ArchitectureManifestSchema,
 	ArchitectureModuleSchema,
+	ArchitectureModelSchema,
 	ArchitectureModelReadSchema,
 	type ArchitectureModelRead,
 	type ArchitectureModel,

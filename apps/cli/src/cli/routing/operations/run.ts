@@ -12,6 +12,7 @@ import {
 	modelImportContract,
 } from "#cli/commands/model/operations/portable.ts";
 import { modelRecordContract } from "#cli/commands/model/operations/record.ts";
+import { modelSnapshotContract } from "#cli/commands/model/operations/snapshot.ts";
 import { modelExplainContract } from "#cli/commands/model/operations/explain.ts";
 import { modelRenderContract } from "#cli/commands/model/operations/render.ts";
 import { modelArchiveInitContract } from "#cli/commands/model/operations/archive.ts";
@@ -132,6 +133,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 			),
 			render: child(
 				contract(modelRenderContract, "apps/cli/src/cli/commands/model/operations/render.ts"),
+			),
+			snapshot: child(
+				contract(modelSnapshotContract, "apps/cli/src/cli/commands/model/operations/snapshot.ts"),
 			),
 			locality: child(
 				contract(modelLocalityContract, "apps/cli/src/cli/commands/model/operations/history.ts"),

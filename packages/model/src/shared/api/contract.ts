@@ -6,6 +6,7 @@ export {
 	ArchitecturePublicationSchema,
 } from "#shared/canonical-contracts/schemas/model.ts";
 export type { ArchitectureModelRead } from "#shared/canonical-contracts/schemas/model.ts";
+export { ModelSnapshotSchema } from "#shared/canonical-contracts/schemas/model-snapshot.ts";
 export {
 	ArchitectureCheckpointRequestSchema,
 	ArchitectureCheckpointRetainSchema,
@@ -14,7 +15,6 @@ export {
 	ModuleNavigationReadSchema,
 	ArchitectureRetainedModuleSchema,
 } from "#shared/canonical-contracts/schemas/model.ts";
-export type { ArchitectureCheckpointRequest } from "#shared/canonical-contracts/schemas/model.ts";
 export {
 	ArchitectureModuleEditSchema,
 	ArchitectureRenderRequestSchema,
