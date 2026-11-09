@@ -24,6 +24,7 @@ use crate::{
 };
 
 use grid::{Grid, Item, Join};
+pub(super) use search::Grids;
 use search::Staged;
 
 /// Room between two cells before routing. Contraction takes back what the routes leave.
@@ -355,6 +356,8 @@ struct Stood {
     whole: Point,
     /// The doors' boxes round that whole.
     doors: Vec<Rect>,
+    /// What the scene of these cards costs.
+    cost: f64,
 }
 
 impl<'a> Reading<'a> {
@@ -409,6 +412,7 @@ impl<'a> Reading<'a> {
             places,
             whole,
             doors: doors.iter().map(|&door| scene.boxes[door]).collect(),
+            cost: scene.weigh().total(),
         }
     }
 
@@ -483,61 +487,6 @@ pub(super) fn frames(graph: &Node) -> usize {
     holders(graph).map_or(0, |held| held.len())
 }
 
-/// A reading whose frames have searched where their parts stand, for every width of grid they
-/// take and every way their frames stand together. Every room between cells starts from it.
-pub(super) struct Grids<'a> {
-    reading: Reading<'a>,
-    /// For each grid width and each way, whether the frames stack, and each frame's grid, the
-    /// cheapest first.
-    searched: Vec<(bool, Vec<Grid>)>,
-}
-
-/// How many moves a round of a crowded reading's search makes: every grid width scouts with a
-/// quarter of them, and only the cheapest widths go on with the rest.
-const CROWDED_MOVES: usize = 16_000;
-
-impl<'a> Grids<'a> {
-    /// The grids of a reading that takes a dense placement, searched at one room between cells.
-    /// A crowded reading routes only its few cheapest placements, so only those search on.
-    pub(super) fn of(graph: &'a Node, room: f64, crowded: Option<usize>) -> Option<Self> {
-        let reading = Reading::of(graph)?;
-        let widest = reading.blocks.iter().map(|block| block.items.len()).max();
-        let most = MOST_COLUMNS.min(widest.unwrap_or(0));
-        let arrangements: &[bool] = if reading.blocks.len() > 1 {
-            &[false, true]
-        } else {
-            &[false]
-        };
-        let scout = if crowded.is_some() {
-            CROWDED_MOVES / 4
-        } else {
-            usize::MAX
-        };
-        let mut searched: Vec<(f64, (usize, bool), Vec<Grid>)> = (1..=most)
-            .flat_map(|columns| arrangements.iter().map(move |&stacked| (columns, stacked)))
-            .map(|way| {
-                let (cost, grids) = reading.search(way, room, scout, None);
-                (cost, way, grids)
-            })
-            .collect();
-        searched.sort_by(|a, b| a.0.total_cmp(&b.0));
-        if let Some(tries) = crowded {
-            searched.truncate(tries);
-            for (cost, way, grids) in &mut searched {
-                (*cost, *grids) = reading.search(*way, room, CROWDED_MOVES, Some(grids));
-            }
-            searched.sort_by(|a, b| a.0.total_cmp(&b.0));
-        }
-        let searched = (searched.into_iter())
-            .map(|(_, (_, stacked), mut grids)| {
-                grids.iter_mut().for_each(Grid::compact);
-                (stacked, grids)
-            })
-            .collect();
-        Some(Self { reading, searched })
-    }
-}
-
 /// Every dense placement of a reading at one room, the cheapest first: for each grid width and
 /// each way its frames stand together, its doors within a page that reads and within one that
 /// reads once contraction takes back the room round the frames.
@@ -550,13 +499,13 @@ pub(super) fn drawings(grids: &Grids<'_>, room: f64) -> Vec<Placed> {
         x: strict.x + 2.0 * (ring::RING_GAP + room),
         y: strict.y + 2.0 * (ring::RING_GAP + room),
     };
-    let drawings: Vec<Placed> = (grids.searched.iter())
+    let drawings: Vec<Placed> = (grids.placements())
         .flat_map(|(stacked, settled)| {
             let sets: Vec<Set> = (reading.blocks.iter().zip(settled))
                 .map(|(block, grid)| block.set(grid, room))
                 .collect();
-            let one = reading.drawing(&sets, *stacked, room, strict);
-            let other = reading.drawing(&sets, *stacked, room, loose);
+            let one = reading.drawing(&sets, stacked, room, strict);
+            let other = reading.drawing(&sets, stacked, room, loose);
             let same = (one.cards.iter().zip(&other.cards)).all(|(a, b)| a.bx == b.bx);
             std::iter::once(one).chain((!same).then_some(other))
         })

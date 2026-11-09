@@ -10,10 +10,11 @@ use rustc_hash::FxHashMap;
 use crate::{
     constants::CONTAINER_INSET,
     geometry::{Point, Rect},
+    graph::Node,
 };
 
 use super::{
-    Block, CELL_GAP, Reading,
+    Block, CELL_GAP, MOST_COLUMNS, Reading, Set,
     anneal::{Lattice, Part, Search},
     grid::Grid,
     readable, ring,
@@ -26,6 +27,93 @@ const MOVES: usize = 300;
 /// How warm each round of the search starts, as a share of its first heat. A later round starts
 /// cooler, from where the round before it ended and the doors then stood.
 const ROUNDS: [f64; 3] = [1.0, 0.3, 0.1];
+
+/// One placement that a search found: what it costs, how many columns its grid started with,
+/// whether its frames stack, and each frame's grid.
+struct Searched {
+    cost: f64,
+    columns: usize,
+    stacked: bool,
+    grids: Vec<Grid>,
+}
+
+/// A reading whose frames have searched where their parts stand, for every width of grid they
+/// take and every way their frames stand together. Every room between cells starts from it.
+pub(in crate::blocks::planned) struct Grids<'a> {
+    pub(super) reading: Reading<'a>,
+    /// The placement of each search, the cheapest first.
+    searched: Vec<Searched>,
+}
+
+/// How many moves a round of a crowded reading's search makes: every grid width scouts with a
+/// quarter of them, and only the cheapest widths go on with the rest.
+const CROWDED_MOVES: usize = 16_000;
+
+impl<'a> Grids<'a> {
+    /// The grids of a reading that takes a dense placement, searched at one room between cells.
+    /// A crowded reading routes only its few cheapest placements, so only those search on.
+    pub(in crate::blocks::planned) fn of(
+        graph: &'a Node,
+        room: f64,
+        crowded: Option<usize>,
+    ) -> Option<Self> {
+        let reading = Reading::of(graph)?;
+        let widest = reading.blocks.iter().map(|block| block.items.len()).max();
+        let most = MOST_COLUMNS.min(widest.unwrap_or(0));
+        let arrangements = &[false, true][..reading.blocks.len().clamp(1, 2)];
+        let scout = crowded.map_or(usize::MAX, |_| CROWDED_MOVES / 4);
+        let mut searched: Vec<Searched> = (1..=most)
+            .flat_map(|columns| arrangements.iter().map(move |&stacked| (columns, stacked)))
+            .map(|(columns, stacked)| {
+                let (cost, grids) = reading.search((columns, stacked), room, scout, None);
+                Searched {
+                    cost,
+                    columns,
+                    stacked,
+                    grids,
+                }
+            })
+            .collect();
+        if let Some(tries) = crowded {
+            searched = reading.search_on(searched, tries, room);
+        }
+        for one in &mut searched {
+            reading.price(one, room);
+        }
+        searched.sort_by(|a, b| a.cost.total_cmp(&b.cost));
+        Some(Self { reading, searched })
+    }
+
+    /// Each searched placement: whether its frames stack, and each frame's grid.
+    pub(super) fn placements(&self) -> impl Iterator<Item = (bool, &[Grid])> {
+        self.searched
+            .iter()
+            .map(|one| (one.stacked, one.grids.as_slice()))
+    }
+}
+
+impl Reading<'_> {
+    /// The few cheapest of some searched placements, each searched on from where it stands.
+    fn search_on(&self, mut searched: Vec<Searched>, tries: usize, room: f64) -> Vec<Searched> {
+        searched.sort_by(|a, b| a.cost.total_cmp(&b.cost));
+        searched.truncate(tries);
+        for one in &mut searched {
+            let way = (one.columns, one.stacked);
+            (one.cost, one.grids) = self.search(way, room, CROWDED_MOVES, Some(&one.grids));
+        }
+        searched
+    }
+
+    /// Price a searched placement again as it is drawn: its rows and columns as wide as what
+    /// they hold and the labels between them, and the doors standing round that frame.
+    fn price(&self, searched: &mut Searched, room: f64) {
+        searched.grids.iter_mut().for_each(Grid::compact);
+        let sets: Vec<Set> = (self.blocks.iter().zip(&searched.grids))
+            .map(|(block, grid)| block.set(grid, room))
+            .collect();
+        searched.cost = self.stand(&sets, searched.stacked, room, readable()).cost;
+    }
+}
 
 /// A reading's scene, and the box of each of its doors in it.
 pub(super) struct Staged {
@@ -84,7 +172,7 @@ impl<'r> Stage<'r> {
     }
 
     /// Every line of a graph between two boxes of the scene.
-    fn lines(&mut self, graph: &crate::graph::Node) {
+    fn lines(&mut self, graph: &Node) {
         for edge in graph.edges.iter().flatten() {
             let (source, target) = (edge.source(), edge.target());
             if let (Some(from), Some(to)) = (self.end(source, target), self.end(target, source))
@@ -249,15 +337,15 @@ impl Reading<'_> {
 impl Block<'_> {
     /// One cell to the next in the search: the largest part and the room between cells.
     fn pitch(&self, room: f64) -> Point {
-        let largest = |of: fn(&crate::graph::Node) -> f64| {
+        let largest = |of: fn(&Node) -> f64| {
             self.items
                 .iter()
                 .map(|item| of(item.node))
                 .fold(0.0, f64::max)
         };
         Point {
-            x: largest(crate::graph::Node::w) + CELL_GAP + room,
-            y: largest(crate::graph::Node::h) + CELL_GAP + room,
+            x: largest(Node::w) + CELL_GAP + room,
+            y: largest(Node::h) + CELL_GAP + room,
         }
     }
 
