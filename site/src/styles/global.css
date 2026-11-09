@@ -125,13 +125,20 @@
 	box-sizing: border-box;
 }
 
+/* Every scrollbar is slim and quiet, as in the app (DESIGN.md, the Quiet Scrollbar Rule).
+   It is thin, and its track is transparent, so the plane shows through. Every element
+   inherits the thumb from the root: muted ink that keeps 3:1 against every plane. */
+* {
+	scrollbar-width: thin;
+}
+
 html {
 	background: var(--ground);
 	scroll-behavior: smooth;
 	scroll-padding-top: 88px;
 	-webkit-text-size-adjust: 100%;
 	text-size-adjust: 100%;
-	scrollbar-color: var(--slab) var(--ground);
+	scrollbar-color: color-mix(in oklch, var(--ink-muted) 50%, transparent) transparent;
 }
 
 body {
@@ -153,19 +160,6 @@ body {
 ::selection {
 	background: var(--gold);
 	color: var(--gold-ink);
-}
-
-::-webkit-scrollbar {
-	width: 12px;
-	height: 12px;
-}
-::-webkit-scrollbar-track {
-	background: var(--ground);
-}
-::-webkit-scrollbar-thumb {
-	background: var(--slab);
-	border: 3px solid var(--ground);
-	border-radius: 8px;
 }
 
 :focus-visible {
@@ -284,7 +278,11 @@ samp {
 	font-size: 0.9375rem;
 	line-height: 1.55;
 }
+/* A caption stands over the shadow of the picture above it: a transformed picture paints in a
+   layer of its own, and its long shadow would otherwise darken the words. */
 .caption {
+	position: relative;
+	z-index: 1;
 	font-size: 0.875rem;
 	line-height: 1.5;
 	color: var(--ink-muted);

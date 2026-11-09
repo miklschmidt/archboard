@@ -641,7 +641,7 @@ _Avoid_: description, why, message, comment, log, reason (that is the claim's)
 
 **Claim**:
 A writer's visible ownership of affected subjects, states and structure scopes while it works.
-It permits reading, and a human can take it back.
+It permits reading, and the browser shows it as a status mark that names its purpose.
 _Avoid_: lock, lease (that is the short installation hold)
 
 **Installation lease**:

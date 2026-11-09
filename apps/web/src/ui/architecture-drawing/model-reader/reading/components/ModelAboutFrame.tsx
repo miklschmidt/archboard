@@ -154,8 +154,8 @@ function ModelAboutFrame(props: ModelAboutFrameProps): JSX.Element {
 	return (
 		<div ref={attach} onScroll={keep} className={`${ABOUT_PAGE} min-h-0 flex-1`}>
 			<div className={ABOUT_COLUMNS}>
-				<AboutTitle {...props} />
 				{sections.length > 1 && <AboutOutline sections={sections} current={current} onGo={goTo} />}
+				<AboutTitle {...props} />
 				<div className={ABOUT_SHEET}>
 					{sections.map((entry) => (
 						<AboutSectionFrame key={entry.key} section={entry}>

@@ -7,7 +7,6 @@ import type {
 	ArchitectureCheckpointRetain,
 	ArchitectureModelRead,
 	ArchitectureClaimResult,
-	ArchitectureClaimList,
 } from "@archboard/model/contract";
 import type { listArchitectureCheckpoints } from "@archboard/model/store-read";
 import { createJsonRequester } from "../support/http.ts";
@@ -160,80 +159,6 @@ test("canonical modules open their authored details without writing architecture
 	await server.assertRunning();
 }, 30_000);
 
-test("canonical subject claims show their purpose, not their writer, and let the reader take back control", async () => {
-	await using resources = new AsyncDisposableStack();
-	const root = join(browserTestRoots().ownerRoot, "claimed-model");
-	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
-		recursive: true,
-	});
-	initializeSource(root);
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
-	resources.defer(() => server.dispose());
-	registerServerBase(server.base);
-	const request = createJsonRequester(server);
-	const model = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!model.body.success || !model.body.manifest.current) throw new Error("Missing fixture model");
-	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/`]);
-	await browser.run(["set", "viewport", "1920", "1080"]);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-connection') === 'live'`,
-			),
-		Boolean,
-		"the connected model reading before an agent claims it",
-		WAIT,
-	);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(`document.querySelector('[data-slot="model-diagram"] svg') !== null`),
-		Boolean,
-		"the scene before ownership changes",
-		WAIT,
-	);
-	await browser.eval(
-		`document.querySelector('[data-slot="model-diagram"] svg').setAttribute('data-test-scene', 'kept')`,
-	);
-	const claimed = await request<ArchitectureClaimResult>("/api/architecture/claims", {
-		method: "POST",
-		body: {
-			vault,
-			target: { model: model.body.manifest.id, state: model.body.manifest.current.id },
-			writer: "Agent Ada",
-			reason: "Explain gateway responsibility",
-			subjects: ["Shop#Gateway"],
-		},
-	});
-	if (!claimed.body.success) throw new Error(claimed.body.error);
-	const claim = claimed.body.claim.id;
-	const claimVisible = (): Promise<boolean> =>
-		browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-claim"][data-claim-id="${claim}"]') !== null`,
-		);
-	await pollUntil(claimVisible, Boolean, "the current subject claim", WAIT);
-	const notice = await browser.eval<string>(
-		`document.querySelector('[data-slot="model-claim"]').textContent`,
-	);
-	expect(notice).not.toContain("Agent Ada");
-	expect(notice).toContain("Explain gateway responsibility");
-	expect(notice).toContain("Gateway");
-	await browser.run(["click", '[data-slot="model-take-back"]']);
-	await pollUntil(claimVisible, (visible) => !visible, "the claim to end", WAIT);
-	const claims = await request<ArchitectureClaimList>("/api/architecture/claims");
-	if (!claims.body.success) throw new Error(claims.body.error);
-	expect(claims.body.claims).toEqual([]);
-	const after = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!after.body.success) throw new Error(after.body.error);
-	expect(after.body.revision).toEqual(model.body.revision);
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="model-diagram"] svg')?.getAttribute('data-test-scene') ?? null`,
-		),
-	).toBe("kept");
-}, 30_000);
-
 test("current model readings refresh after external edits and reconnect with explicit stale content", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "live-model");
@@ -311,12 +236,19 @@ test("current model readings refresh after external edits and reconnect with exp
 	});
 	if (!claim.body.success) throw new Error(claim.body.error);
 	const claimId = claim.body.claim.id;
+	const claimVisible = (): Promise<boolean> =>
+		browser.eval<boolean>(
+			`document.querySelector('[data-module-row="Shop#Gateway"] [data-slot="claim-mark"]') !== null`,
+		);
+	await pollUntil(claimVisible, Boolean, "the claim before the connection drops", WAIT);
 	const working = (): Promise<boolean> =>
 		browser.eval<boolean>(`document.querySelector('[data-slot="working-now"]') !== null`);
 	await pollUntil(working, Boolean, "activity before the connection drops", WAIT);
 	await server.restart({
 		whileStopped: async () => {
 			await pollUntil(stale, Boolean, "the disconnected reading notice", WAIT);
+			// Losing the stream says nothing about ownership, so its last known mark stays.
+			expect(await claimVisible()).toBe(true);
 			expect(await details()).toContain("Repaired external description");
 			const released = await releaseArchitectureClaim(vault, {
 				claim: claimId,
@@ -334,6 +266,7 @@ test("current model readings refresh after external edits and reconnect with exp
 		WAIT,
 	);
 	await pollUntil(stale, (value) => !value, "the reconnected reading to become current", WAIT);
+	await pollUntil(claimVisible, (visible) => !visible, "the released claim to leave", WAIT);
 	await pollUntil(working, (visible) => !visible, "the expired activity to leave the shell", WAIT);
 }, 40_000);
 

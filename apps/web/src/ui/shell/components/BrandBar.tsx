@@ -28,13 +28,13 @@ interface ActionsProps {
 }
 
 /**
- * The settings: where the server opens code.
+ * The settings: how pictures are drawn, and which editor opens code.
  * @param props The actions.
  * @returns The gear.
  */
 function SettingsButton(props: ActionsProps): JSX.Element {
 	const { actions } = props;
-	const handleClick = useCallback(() => actions.openSettings("opener"), [actions]);
+	const handleClick = useCallback(() => actions.openSettings("picture"), [actions]);
 	return (
 		<IconButton id={SETTINGS_TRIGGER_ID} label="Settings" onClick={handleClick}>
 			<RiSettings3Line />
@@ -77,10 +77,7 @@ function ThemeToggle(props: ThemeToggleProps): JSX.Element {
 function BrandBar(props: BrandBarProps): JSX.Element {
 	const { actions, attachFind } = props;
 	return (
-		<header
-			data-slot="brand-bar"
-			className="border-border h-chrome flex shrink-0 items-center gap-1 border-b pr-2 pl-5"
-		>
+		<header data-slot="brand-bar" className="h-chrome flex shrink-0 items-center gap-1 pr-2 pl-5">
 			<Brand />
 			<span className="flex-1" />
 			<div ref={attachFind} className="contents" />

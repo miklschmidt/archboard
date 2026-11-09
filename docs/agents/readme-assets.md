@@ -42,15 +42,15 @@ Refresh an asset when `readme:check` lists it after your change. Then:
 
 ## The assets
 
-| Asset                                                | What makes it                                                                                   | Codex |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----- |
-| `architecture`, `sequence`, `web-shop`               | `model render` in light and dark, with drawn glyphs; `architecture` keeps its exact recipe      | no    |
-| `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to a WebP to attach    | no    |
-| `code-evidence`, `module-interfaces`, `git-history`  | the real shell and CLI results from a generated checkout, encoded to a WebP with an index still | no    |
-| `design-smells`                                      | the Measures dialog over this checkout's vault and Git history, encoded to a WebP with a still  | no    |
-| `ask`                                                | the shell filmed while a Codex agent answers Explain selection from the Right panel             | yes   |
-| `explainer`, `pr-walkthrough`, `newcomer`            | `model record` at an exact checkpoint, narrated by the Codex voice; the MP4 is attached         | yes   |
-| `banner`                                             | `model render` of a web-shop proposal, laid as vector beside the lockup in Chromium             | no    |
+| Asset                                               | What makes it                                                                                   | Codex |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----- |
+| `architecture`, `sequence`, `web-shop`              | `model render` in light and dark, with drawn glyphs; `architecture` keeps its exact recipe      | no    |
+| `hero`, `plan`, `history`, `drill-down`, `claim`    | the real shell filmed in headless Chromium while the CLI writes, encoded to a WebP to attach    | no    |
+| `code-evidence`, `module-interfaces`, `git-history` | the real shell and CLI results from a generated checkout, encoded to a WebP with an index still | no    |
+| `design-smells`                                     | the Measures dialog over this checkout's vault and Git history, encoded to a WebP with a still  | no    |
+| `ask`                                               | the shell filmed while a Codex agent answers Explain selection from the Right panel             | yes   |
+| `explainer`, `pr-walkthrough`, `newcomer`           | `model record` at an exact checkpoint, narrated by the Codex voice; the MP4 is attached         | yes   |
+| `banner`                                            | `model render` of a web-shop proposal, laid as vector beside the lockup in Chromium             | no    |
 
 Most assets also write an index thumbnail (`idx-*.webp`), which stays in the
 repository. The manifest lists the files of each asset in the repository. The
@@ -84,9 +84,12 @@ worktree's source. It never uses the server that `archboard` reaches: port
 The hero's change is `scripts/readme-assets/hero-change.json`, written as an
 agent writes one. The hero prints how many subjects its proposal changes. The README's alt text
 for the hero names that number, so read it after each make. The terminal of the hero and of
-`take-back` names a short folder, `~/shop`, shows its input files by short names, and names a state
+`claim` names a short folder, `~/shop`, shows its input files by short names, and names a state
 by its name. Words that an agent writes there, such as the reason of a claim and the doing line of an
 edit, are about the change itself: `editModel` takes them as its `intent`.
+`claim` films the shell without presenting the pane, because the left column and the repository
+menu carry the claim's marks. Its edit changes the responsibility of Checkout API, which the Right
+panel's head shows.
 
 The three code and history demonstrations add a small checkout example to their
 copied vault. `scripts/readme-assets/evidence-fixture.ts` holds its source and fixed

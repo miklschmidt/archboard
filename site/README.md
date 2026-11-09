@@ -103,6 +103,22 @@ describes. The holder uses its Git repository for signed history. `model archive
 to vaults outside Git repositories. Copy the vault's files back into `site/model`.
 Run `bin/archboard stop`, then paint the hero again.
 
+## Audit the site
+
+The site shows real renderer output, and it mocks the shell in `src/components/window/` and in
+the demos in `src/components/demos/`. Nothing tests that the mocks still look like the shell, or
+that an overlay still lies on its drawing. If you change the renderer or the shell, audit the site:
+
+1. Paint the pictures and draw the diagrams again, as the sections above and below say.
+2. Run the site and the app on `examples/web-shop`, with `bunx agent-browser`.
+3. Go through every section of the site. Play each demo through to its end, and take a
+   screenshot of each state.
+4. Compare each mock with the same view of the running app, and with the reference images in
+   [the shell's design](../docs/design/operator-canvas-shell.md). Make each mock show the
+   controls, the labels and the layout that the shell shows now.
+5. Make sure that each highlight, ring and label over a drawing lies on the thing it marks.
+6. Commit the fixes and the new drawings with your change.
+
 ## Draw the diagrams again
 
 If a renderer change alters how a drawing looks, draw the site's drawings again and commit

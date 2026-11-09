@@ -6,22 +6,18 @@ interface HeaderPartProps {
 }
 
 /**
- * Every pane shares one header frame and the shell's notices.
+ * Every pane shares one header frame.
  * @param props The contents of the header row.
- * @returns The header followed by its pane notice.
+ * @returns The header.
  */
 function PaneHeaderRow(props: HeaderPartProps): JSX.Element {
-	const { notice } = usePaneChrome();
 	return (
-		<>
-			<header
-				data-slot="pane-header"
-				className="bg-sidebar h-chrome shadow-edge-down after:bg-border @container/pane-header relative z-30 flex shrink-0 items-center pr-2 pl-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px in-data-presenting:hidden"
-			>
-				{props.children}
-			</header>
-			{notice}
-		</>
+		<header
+			data-slot="pane-header"
+			className="bg-sidebar h-chrome @container/pane-header relative z-30 flex shrink-0 items-center pr-2 pl-4 in-data-presenting:hidden"
+		>
+			{props.children}
+		</header>
 	);
 }
 

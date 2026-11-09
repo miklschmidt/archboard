@@ -20,6 +20,7 @@ import {
 } from "react";
 
 import { Button, cn } from "@archboard/ui-kit/components";
+import { GROUP_LINE, rowTone } from "#ui/shell/rules/row-tone.ts";
 import { treeKey, type TreeKeyAction, type TreeKeyRow } from "#ui/shell/rules/tree-keys.ts";
 import {
 	DISCLOSURE_WIDTH,
@@ -187,35 +188,50 @@ interface TreeRowProps {
 }
 
 /**
- * Where a row sits, and where it sticks while it is open: under the rows that hold it, and under
- * the head of the section of the column that holds the tree (`--stuck-top`).
+ * The rails of the rows that hold a row of a depth, drawn into the floor of that row: a stuck row
+ * covers what scrolls beneath it, so it draws the rails that it covers, and they run unbroken.
  * @param depth The row's depth.
- * @param expanded Whether it holds drawn rows.
- * @param flat Whether it keeps no room for a disclosure.
- * @returns The style.
+ * @returns The style of its floor.
  */
-function rowPlace(depth: number, expanded: boolean | undefined, flat: boolean): CSSProperties {
-	const left = (flat ? FLAT_INSET : disclosureX(depth)) - ROW_GUTTER;
-	const place: CSSProperties = { paddingLeft: left, paddingRight: FACTS_INSET - ROW_GUTTER };
-	return expanded === true ? { ...place, top: stuckTop(depth * ROW_HEIGHT) } : place;
+function railsUnder(depth: number): CSSProperties {
+	const rails = Array.from({ length: depth }, (_, above) => guideX(above) - ROW_GUTTER);
+	return {
+		backgroundImage: rails.map(() => "linear-gradient(var(--border), var(--border))").join(", "),
+		backgroundPosition: rails.map((x) => `${x}px 0`).join(", "),
+		backgroundSize: rails.map(() => "1px 100%").join(", "),
+		backgroundRepeat: "no-repeat",
+	};
 }
 
 /**
- * The classes of a row.
+ * Where a row sits, and where it sticks while it is open: under the rows that hold it, and under
+ * the head of the section of the column that holds the tree (`--stuck-top`).
+ * @param props The row.
+ * @returns The style.
+ */
+function rowPlace(props: TreeRowProps): CSSProperties {
+	const { depth, expanded, flat } = props;
+	const left = (flat === true ? FLAT_INSET : disclosureX(depth)) - ROW_GUTTER;
+	const place: CSSProperties = { paddingLeft: left, paddingRight: FACTS_INSET - ROW_GUTTER };
+	if (expanded !== true) return place;
+	const stuck = { ...place, top: stuckTop(depth * ROW_HEIGHT) };
+	return props.selected ? stuck : { ...stuck, ...railsUnder(depth) };
+}
+
+/**
+ * The classes of a row: the tone that every row of a side column shares. A row lets the rails of
+ * the rows that hold it show through, and only a row that sticks while it is open lays the chrome
+ * under itself, so what scrolls beneath it is covered.
  * @param props The row.
  * @returns The classes.
  */
 function rowClass(props: TreeRowProps): string {
 	return cn(
-		"group/row bg-tray-sink focus-visible:ring-ring rounded-control relative isolate flex min-h-7 w-full min-w-0 items-center py-1 outline-none select-none focus-visible:ring-1 focus-visible:ring-inset",
+		"group/row relative isolate flex w-full min-w-0 items-center py-1 select-none",
+		rowTone({ lit: props.selected, disabled: props.disabled }),
 		// Square corners, so nothing that scrolls beneath shows at the corners of a stuck row.
 		props.expanded === true && "sticky z-10 rounded-none",
-		// A chosen row rises out of the well as a raised face. The row of what is open carries
-		// the site's gold underline inside its face.
-		props.selected ? "bg-face shadow-raised" : "hover:bg-face/50",
-		props.current === true &&
-			(props.selected ? "shadow-chosen" : "shadow-[inset_0_-2px_0_var(--primary)]"),
-		props.disabled === true && "text-muted-foreground",
+		props.expanded === true && !props.selected && "bg-sidebar",
 	);
 }
 
@@ -286,7 +302,7 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 			onFocus={focus}
 			onClick={click}
 			onKeyDown={frame.onKeyDown}
-			style={rowPlace(props.depth, props.expanded, props.flat === true)}
+			style={rowPlace(props)}
 			className={rowClass(props)}
 		>
 			{props.flat !== true && <Disclosure expanded={props.expanded} onToggle={props.onToggle} />}
@@ -296,14 +312,17 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 }
 
 /**
- * A section's label stands where the name of a row of depth zero starts, and sticks under the head
- * of a column section.
+ * The name of a section stands where the name of a row of depth zero starts, and sticks under the
+ * head of a column section.
  */
 const SECTION_STYLE: CSSProperties = {
 	paddingLeft: disclosureX(0) + DISCLOSURE_WIDTH + NAME_GAP,
 	paddingRight: FACTS_INSET,
 	top: stuckTop(0),
 };
+
+/** The guide of a section runs down from its name, as the guide of an open row of depth zero. */
+const SECTION_GUIDE_STYLE: CSSProperties = { left: guideX(0) - ROW_GUTTER };
 
 /**
  * What a row holds, under the guide that runs down from it.
@@ -325,10 +344,12 @@ function TreeGroup(props: { readonly depth: number; readonly children: ReactNode
 }
 
 /**
- * Rows that belong together without one row that holds them. The name is not a row, so it adds
- * no stop to the keys of the tree, and it stays above its rows while the column scrolls. It lies
- * on the floor of the well, under the head of the column's section, with no rule round it.
- * @param props The section's name and its rows.
+ * Rows that belong together without one row that holds them, such as the flows of a collection.
+ * Its name stands in full ink where the name of a row of depth zero stands, and its rows stand one
+ * step deeper under a guide, as the parts of an open module do, so the name reads as their parent.
+ * The name is not a row, so it adds no stop to the keys of the tree, and it stays above its rows
+ * while the column scrolls, under the head of the column's section.
+ * @param props The section's name and its rows, each of depth one.
  * @param props.label The name.
  * @param props.children The rows.
  * @returns The section.
@@ -345,11 +366,21 @@ function TreeSection(props: { readonly label: string; readonly children: ReactNo
 			<div
 				aria-hidden="true"
 				style={SECTION_STYLE}
-				className="bg-tray-sink text-body text-muted-foreground sticky z-10 -mx-1 truncate py-1 font-medium group-first/section:-mt-1"
+				className={cn(
+					GROUP_LINE,
+					"bg-sidebar sticky z-10 -mx-1 flex h-7 items-center group-first/section:-mt-1",
+				)}
 			>
-				{props.label}
+				<span className="truncate">{props.label}</span>
 			</div>
-			{props.children}
+			<div className="relative">
+				<span
+					aria-hidden="true"
+					style={SECTION_GUIDE_STYLE}
+					className="bg-border absolute inset-y-0 w-px"
+				/>
+				{props.children}
+			</div>
 		</div>
 	);
 }

@@ -1,5 +1,5 @@
-// The small marks the About page and the details panel share: a part kind's
-// icon and a relationship kind's chip.
+// The small marks the About page, the right panel and its legend share: a part
+// kind's icon and chip, and a relationship kind's chip.
 
 import { RiPuzzleLine } from "@remixicon/react";
 import { useMemo, type CSSProperties, type JSX } from "react";
@@ -21,6 +21,8 @@ function uncoloured(markup: string): string {
 interface KindIconProps {
 	readonly look: KindLook;
 	readonly kind: string;
+	/** Its markup, when the picture does not draw the kind and the caller holds the policy's icon. */
+	readonly icon?: string | undefined;
 	/** Its size and colour classes. */
 	readonly className?: string | undefined;
 	/** Its colour, when it is not the text's. */
@@ -35,7 +37,7 @@ interface KindIconProps {
  */
 function KindIcon(props: KindIconProps): JSX.Element {
 	const { look, kind } = props;
-	const icon = look.nodeIcon(kind);
+	const icon = look.nodeIcon(kind) ?? props.icon;
 	const markup = useMemo(
 		() => (icon === undefined ? undefined : { __html: uncoloured(icon) }),
 		[icon],
@@ -61,6 +63,34 @@ function KindIcon(props: KindIconProps): JSX.Element {
 			// The markup is the renderer's own, from icon path data the Archboard server serves.
 			dangerouslySetInnerHTML={markup}
 		/>
+	);
+}
+
+/** Inputs for a part kind's chip. */
+interface KindChipProps {
+	readonly look: KindLook;
+	readonly kind: string;
+	/** The icon, when the picture does not draw the kind. */
+	readonly icon?: string | undefined;
+}
+
+/**
+ * A part kind's chip: its icon in its colour, on a face and in an edge of that colour. The head of
+ * the right panel, its legend, the parts of About and the rows of Measures all draw this one chip.
+ * @param props The kind, and how kinds look.
+ * @returns The chip.
+ */
+function KindChip(props: KindChipProps): JSX.Element {
+	const { kind, look } = props;
+	const ink = useMemo<CSSProperties>(() => ({ "--kind": look.nodeColor(kind) }), [look, kind]);
+	return (
+		<span
+			aria-hidden="true"
+			className="rounded-control inline-flex size-6 shrink-0 items-center justify-center border border-(color:--kind)/45 bg-(color:--kind)/14 text-(color:--kind)"
+			style={ink}
+		>
+			<KindIcon look={look} kind={kind} icon={props.icon} className="size-4" />
+		</span>
 	);
 }
 
@@ -96,4 +126,4 @@ function RelationshipChip(props: RelationshipChipProps): JSX.Element {
 	);
 }
 
-export { KindIcon, RelationshipChip, uncoloured };
+export { KindChip, KindIcon, RelationshipChip, uncoloured };

@@ -42,7 +42,7 @@ function ModelExplanationResult(props: ResultProps): JSX.Element {
 			data-action-id={action.actionId}
 			data-status={action.status}
 			aria-label="Architecture explanation"
-			className="border-border bg-sidebar shadow-edge-up relative z-40 flex max-h-80 shrink-0 flex-col border-t p-3"
+			className="bg-sidebar relative z-40 flex max-h-80 shrink-0 flex-col p-3"
 		>
 			{/* The answer is the site's reply: a ringed plate, with the voice that answers named in
 			    the gold over what it says. */}

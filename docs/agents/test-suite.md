@@ -351,6 +351,14 @@ statement. Keep queries scoped to the mounted container, or obtain document-boun
 query helpers after registration. Existing stage tests use `act` and
 `fireEvent` without introducing another DOM lifecycle owner.
 
+Inside `waitFor`, assert on a count, a string or a boolean, never on an element
+that the wait expects to go away. A failed check writes the value it received
+into its message, and Bun writes a Happy DOM element with all of React's fibers.
+That message is about 100 MB, and each failed check takes most of a second to
+write it. A wait of this kind took 8 seconds a case on CI. Write
+`expect(document.querySelectorAll(selector)).toHaveLength(0)`, not
+`expect(document.querySelector(selector)).toBeNull()`.
+
 The `renderToStaticMarkup` owners elsewhere in `apps/web/tests/ui/` do not need a DOM.
 Do not add a shared harness or migrate unrelated owners solely to change their
 test setup.
@@ -449,8 +457,13 @@ It also proves that a hidden metadata edit preserves the mounted scene while the
 `canonical-model-modes.test.ts` covers explicit flow choices, complete behavioral diagrams, architecture restoration, and selection across modes.
 `canonical-model-structure.test.ts` covers current structural updates through real claims and the public writer.
 It covers pinned history, stable selection through renames, relationship transfer, parent changes, and removal without replacement selection.
-`canonical-model-viewer.test.ts` also proves visible subject claims and human take-back through the public writer.
-The next write receives `CLAIM_REVOKED`, and the architecture keeps every accepted edit.
+`canonical-model-claims.test.ts` proves that a claim through the public writer is status.
+The claim marks its module, flow and walkthrough rows, and the model in the repository switcher and its list.
+The right panel shows the Claimed badge while a selected subject is claimed.
+With no selection, it marks a claimed open module or flow.
+A claimed module scope never marks an unclaimed flow above it.
+A mark names the purpose and not the writer, holds no control, and moves neither the picture nor the focus.
+No take-back control exists. The marks leave when the agent releases the claim, and the revision stays the same.
 
 ### Controlled text workbench (TASK-143.03.13)
 
@@ -849,7 +862,8 @@ Existing canonical navigation, code, and reference owners cover containment and 
 Unit owners hold its rules: `module-tree.test.ts`, `reader-keys.test.ts`, `search.test.ts`, `tree-keys.test.ts`, and `repository-choices.test.ts`.
 `presentation-keys.test.ts` owns the steps of `[` and `]` in a presented walkthrough.
 
-`reader-context.test.ts` owns what the right column adds through a real browser: the lists that follow the open module or the selection, the rows that open a flow or a walkthrough, the interface line, whose counts select on the module's own picture and whose heading opens About at its Interface section, the door that opens at one click and lists its endpoints on hover, and the engine under the legend.
+`reader-context.test.ts` owns what the right column adds through a real browser: the lists that follow the open module or the selection, the rows that open a flow or a walkthrough, the interface line, whose counts select on the module's own picture and whose heading opens About at its Interface section, and the door that opens at one click and lists its endpoints on hover.
+It also owns the layout engine switch in the `Picture` tab of the Settings dialog.
 `reader-expand.test.ts` owns a door's second action through a real browser: the control expands the door into the picture, the address keeps it across a reload and Back, and a tab, a panel row or a key takes it back. Unit owners hold its rules: `model-projection.test.ts` and `expansion.test.ts`.
 `reader-trace.test.ts` owns a trace in the reader: each further hop lights more faintly, across the doors, and goes with the pick.
 `reader-measures.test.ts` owns where to look across the model: a selection reads the code history with no button, and the `Measures` dialog lists every module, sorts it from a column head, walks it from the keyboard and selects a module on its picture. It also pages through the code findings.

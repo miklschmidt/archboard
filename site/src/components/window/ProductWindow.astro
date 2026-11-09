@@ -20,21 +20,39 @@ const shop = drawings.webShop;
 			<div class="column-head">
 				<Mark size={18} id="window-mark" />
 				<span class="wordmark">archboard</span>
+				<span class="tools">
+					<Icon name="search" size={16} />
+					<Icon name="bell" size={16} />
+					<Icon name="settings" size={16} />
+					<Icon name="sun" size={16} />
+				</span>
 			</div>
 			<div class="pane-head">
 				<span class="crumb">Shop</span>
-				<span class="state"><span class="dot"></span> Current: Synchronous checkout</span>
-				<span class="claim" data-claim>
-					<span class="dot"></span> codex is mapping the shop
-				</span>
-				<span class="voice"><Icon name="voice" size={14} /> Codex</span>
+				<span class="field reading">Current</span>
+				<span class="field">No comparison <Icon name="chevronDown" size={15} /></span>
 			</div>
-			<div class="panel-head">Selection</div>
+			<div class="panel-head">
+				<span class="views"><span class="is-on">Diagram</span><span>About</span></span>
+				<Icon name="fullscreen" size={16} />
+				<Icon name="add" size={16} />
+			</div>
 			<div class="left">
 				<Navigator />
-				<div class="dock">
-					<p class="dock-title"><Icon name="terminal" size={13} /> Agent</p>
-					<DockLines />
+				<div class="dock-well">
+					<div class="dock">
+						<div class="working">
+							<p class="working-head">Working now <span>1</span></p>
+							<p class="working-row">
+								<span class="dot"></span>
+								<span class="working-name">Shop</span>
+								<span class="mono when">now</span>
+							</p>
+							<p class="working-doing">mapping the shop</p>
+						</div>
+						<p class="dock-title"><Icon name="terminal" size={13} /> Agent</p>
+						<DockLines />
+					</div>
 				</div>
 			</div>
 			<div class="picture" data-picture>
@@ -73,13 +91,13 @@ const shop = drawings.webShop;
 		scale: var(--scale);
 		transform-origin: 0 0;
 		display: grid;
-		grid-template-columns: 290px 1fr 290px;
+		grid-template-columns: 280px 1fr 360px;
 		grid-template-rows: 44px 1fr;
 		width: var(--window-width);
 		height: var(--window-height);
 		overflow: hidden;
 		border-radius: 12px;
-		background: var(--plane);
+		background: var(--chrome);
 		box-shadow:
 			inset 0 1px 0 oklch(1 0.01 85 / 0.12),
 			inset 0 0 0 1px var(--rule-strong),
@@ -97,15 +115,11 @@ const shop = drawings.webShop;
 		gap: 12px;
 		padding: 0 16px;
 		background: var(--chrome);
-		box-shadow: inset 0 -1px 0 var(--rule);
 		font-size: 12.5px;
 		position: relative;
 		z-index: 1;
 	}
 	.column-head {
-		box-shadow:
-			inset 0 -1px 0 var(--rule),
-			inset -1px 0 0 var(--rule);
 		gap: 9px;
 		align-items: center;
 	}
@@ -118,67 +132,57 @@ const shop = drawings.webShop;
 		color: var(--ink);
 		margin-top: 2px;
 	}
+	.tools {
+		display: flex;
+		gap: 14px;
+		margin-left: auto;
+		color: var(--ink);
+	}
 	.panel-head {
-		box-shadow:
-			inset 0 -1px 0 var(--rule),
-			inset 1px 0 0 var(--rule);
-		font-weight: 600;
+		justify-content: flex-end;
+		gap: 16px;
 		color: var(--ink);
 	}
 	.crumb {
-		font-weight: 650;
+		font-weight: 600;
 		color: var(--ink);
 		font-size: 13px;
 	}
-	.state,
-	.claim,
-	.voice {
+	.field,
+	.views {
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		height: 24px;
-		padding: 0 9px;
+		height: 28px;
+		padding: 0 10px;
 		border-radius: 3px;
-		font-size: 11.5px;
-		background: var(--card);
+		font-size: 13px;
+		color: var(--ink);
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	.reading {
+		justify-content: center;
+		width: 128px;
+		background: var(--raised);
 		box-shadow: var(--shadow-raised);
+	}
+	.views {
+		margin-right: auto;
+		padding: 2px;
+		gap: 0;
+	}
+	.views span {
+		padding: 3px 10px;
+		border-radius: 3px;
 		color: var(--ink-muted);
 	}
-	.state .dot {
-		color: var(--gold-mark);
-		width: 6px;
-		height: 6px;
-	}
-	.claim {
+	.views .is-on {
 		color: var(--ink);
-		background: color-mix(in srgb, var(--live) 14%, var(--card));
+		background: var(--raised);
 		box-shadow:
 			var(--shadow-raised),
-			inset 0 0 0 1px color-mix(in srgb, var(--live) 40%, transparent);
-		opacity: 0;
-		translate: 0 4px;
-		transition:
-			opacity 300ms var(--ease-out),
-			translate 300ms var(--ease-out);
-	}
-	.claim .dot {
-		color: var(--live);
-		width: 6px;
-		height: 6px;
-		box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 25%, transparent);
-		animation: live 1.6s var(--ease-in-out) infinite;
-	}
-	:global(.window[data-claimed]) .claim {
-		opacity: 1;
-		translate: 0 0;
-	}
-	@keyframes live {
-		50% {
-			box-shadow: 0 0 0 5px color-mix(in srgb, var(--live) 5%, transparent);
-		}
-	}
-	.voice {
-		margin-left: auto;
+			inset 0 -2px 0 var(--gold-mark);
 	}
 	.left {
 		display: grid;
@@ -186,21 +190,63 @@ const shop = drawings.webShop;
 		grid-template-rows: 1fr auto;
 		min-height: 0;
 		background: var(--chrome);
-		box-shadow: inset -1px 0 0 var(--rule);
+	}
+	/* The agent's card stands on the chrome under the column's list, as in the shell. */
+	.dock-well {
+		padding: 8px;
+		background: var(--chrome);
 	}
 	.dock {
 		display: flex;
 		flex-direction: column;
-		margin: 10px;
 		padding: 12px;
 		height: 318px;
-		border-radius: 6px;
+		border-radius: 12px;
 		background: oklch(0.205 0.007 75);
 		box-shadow:
 			inset 0 1px 0 var(--highlight),
-			0 -10px 24px -14px oklch(0.04 0.006 75 / 0.9),
-			inset 0 0 0 1px var(--rule);
+			0 -10px 24px -14px oklch(0.04 0.006 75 / 0.9);
 		overflow: hidden;
+	}
+	/* While the agent holds its claim, Working now stands at the top of its card, as in the shell. */
+	.working {
+		display: none;
+		padding-bottom: 14px;
+		font-size: 12.5px;
+	}
+	:global(.window[data-claimed]) .working {
+		display: block;
+	}
+	.working-head {
+		color: var(--ink-muted);
+		margin-bottom: 8px;
+	}
+	.working-head span {
+		margin-left: 4px;
+		color: var(--ink);
+	}
+	.working-row {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		color: var(--ink);
+	}
+	.working-row .dot {
+		width: 6px;
+		height: 6px;
+		color: var(--live);
+	}
+	.working-name {
+		flex: 1;
+		font-weight: 600;
+	}
+	.when {
+		font-size: 11px;
+		color: var(--ink-muted);
+	}
+	.working-doing {
+		padding-left: 16px;
+		color: var(--ink-muted);
 	}
 	.dock-title {
 		display: flex;
@@ -211,8 +257,14 @@ const shop = drawings.webShop;
 		font-weight: 600;
 		color: var(--ink);
 	}
+	/* The shell's chrome holds the picture on every side, with a strip under it, and the
+	   picture lies on it as a sheet with rounded corners. A layer over the drawing frames the
+	   sheet as the shell's --elevation-sheet does: a lit top edge, a faint ring and a short
+	   shadow under its foot. */
 	.picture {
 		position: relative;
+		margin-bottom: 8px;
+		border-radius: 12px;
 		display: grid;
 		place-items: center;
 		padding: 20px 16px;
@@ -221,6 +273,20 @@ const shop = drawings.webShop;
 		background:
 			radial-gradient(120% 80% at 50% 0%, oklch(0.23 0.012 80 / 0.6), transparent 60%),
 			var(--plane);
+		box-shadow:
+			0 1px 0 oklch(0.06 0.004 75 / 0.6),
+			0 3px 8px -3px oklch(0.06 0.006 75 / 0.55);
+	}
+	.picture::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		pointer-events: none;
+		border-radius: inherit;
+		box-shadow:
+			inset 0 1px 0 var(--highlight),
+			inset 0 0 0 1px oklch(1 0.01 85 / 0.035);
 	}
 	.drawing {
 		width: 100%;

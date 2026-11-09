@@ -77,9 +77,10 @@ state:
 - The proposed dependency diff is out of scope. Agent edits stay visible on the
   live board rather than accumulating behind a preview.
 - `Send`, `Stop` and a prompt input shipped once Archboard owned its Codex
-  session (ADR 0019). They drive the agent, never the board. A person has two
-  controls over a board: `Take back control`, and the pane's Move board
-  control, which moves the board to another repository (ADR 0051).
+  session (ADR 0019). They drive the agent, never the board. A person has one
+  control over a board: the pane's Move board control, which moves the board
+  to another repository (ADR 0051). An agent's claim shows as a status mark
+  and offers no control.
 - Illustrative or synthetic board miniatures are out of scope. A navigator
   preview must depict real current board content and remain supplemental to
   accessible board identity and state.
@@ -101,9 +102,9 @@ text, and long lists stay in About.
 - **With nothing selected, it says what is open.** It shows the open module's name
   and description, or at the roots the model's name and the summary of its state,
   because a model has no description of its own. A flow reading shows the flow.
-- **A click answers at once.** The card and the tree row light, and the panel names
-  the subject. Nothing moves, so a double click on a card lands on the card and
-  opens it.
+- **A click answers at once.** The card lights, and the panel names the subject.
+  The navigator keeps its marker on the open reading. Nothing moves, so a double
+  click on a card lands on the card and opens it.
 - **With a selection, it says what the subject is, how it stands, and what it
   touches.** A module shows its name, kind, code path and responsibility, its warnings
   and standing, then `Sends to` and `Receives from`. A door lists its real endpoints,
@@ -116,16 +117,18 @@ text, and long lists stay in About.
   put a group's tag out from under the pointer. Escape and the close control let the
   selection go, and the keyboard returns to the picture.
 - **Warnings sit on their subject.** The picture marks the warned subject, and the
-  panel and About give the check's words for a module, a line or a step. Only About
-  shows the count for the whole model.
+  panel and About give the check's words for a module, a line or a step. About shows
+  the count for the whole model. The panel's foot shows it only while the check found
+  a warning to walk through, and says nothing when it found none.
 - **The legend stands at the foot of the panel and needs no click.** It replaces the
   button at the picture's lower left and `Filters`, and it lists the kinds, line types
-  and groups of the reading. A mark explains, and `Filter` puts a switch on each line type that a reader
-  can hide. A kind that a reader hid stays in the legend, dimmed, and the heading row
-  says how many are hidden. A mixed line has a row and no switch, because it is no kind
-  of relationship. Groups close the legend as bright tags with no switch, and a press
+  and groups of the reading. A mark explains, and each line type that a reader can hide
+  is a row that switches its lines, with an eye at its end. A kind that a reader hid
+  stays in the legend, dimmed, with a struck eye, and `Show all` brings every type back.
+  A mixed line and the marks of lines stand under the types with no switch, because a
+  reader cannot hide them. Groups close the legend as bright tags with no switch, and a press
   on a tag selects the group's parts. A reading with no groups has no group section.
-  The layout engine switch stands under the legend on a structural reading.
+  The layout engine switch is not in the panel. It is in the `Picture` tab of the Settings dialog.
 - **About holds every long list and names its subject.** The end of its title row
   reads `Open scope`. While something is selected, it offers `Open scope` and
   `Selected subject`. About opens on the selection when there is one. On the scope,
@@ -512,6 +515,7 @@ foot](assets/operator-shell-navigator.png)
   row stick to the top while the column scrolls. Siblings sort by code path.
   Unbound modules come last, and ties use authored order. A chain of modules with
   one part each folds into one row, and the crumbs show each step.
+  Only the open reading has a marker: its module, flow, or walkthrough.
 - **`Flows` and `Walkthroughs` stay open while the reader walks them.** They list
   the whole model, and the right panel lists what touches the reading. A flow is
   chosen first, and `Sequence` or `Flowchart` second.

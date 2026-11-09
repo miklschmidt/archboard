@@ -41,14 +41,19 @@ async function subjectShown(browser: AgentBrowserSession): Promise<boolean> {
 	);
 }
 
-/** Whether the legend stands whole on screen, beside the picture, with no click. */
+/** Whether the reader can scroll the legend into view beside the picture, with no click. */
 async function legendInView(browser: AgentBrowserSession): Promise<boolean> {
 	return browser.eval<boolean>(`(() => {
 		const legend = document.querySelector('[data-slot="model-legend"]');
-		const box = legend?.getBoundingClientRect();
+		const scroll = document.querySelector('[data-slot="model-panel-scroll"]');
 		const picture = document.querySelector('[data-slot="model-diagram"]').getBoundingClientRect();
-		return box !== undefined && legend.querySelector('[data-slot="model-legend-kinds"] li') !== null
-			&& box.top >= 0 && box.bottom <= innerHeight && box.left >= picture.right;
+		if (legend === null) return false;
+		legend.scrollIntoView({ block: 'end' });
+		const bounds = legend.getBoundingClientRect();
+		const viewport = scroll.getBoundingClientRect();
+		return legend !== null && legend.querySelector('[data-slot="model-legend-kinds"] li') !== null
+			&& legend.checkVisibility() && bounds.top >= viewport.top && bounds.bottom <= viewport.bottom
+			&& bounds.left >= picture.right;
 	})()`);
 }
 

@@ -47,7 +47,11 @@ function ModelExplanationMenu(props: MenuProps): JSX.Element {
 				className={buttonVariants({ variant: "outline", size: "sm" })}
 			>
 				<RiOpenaiFill aria-hidden="true" />
-				Explain with Codex
+				<span>
+					Explain
+					{/* A place with little room keeps these words for assistive technology alone. */}
+					<span data-slot="explain-agent"> with Codex</span>
+				</span>
 				<RiArrowDownSLine aria-hidden="true" />
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Content align="end" className="w-72">

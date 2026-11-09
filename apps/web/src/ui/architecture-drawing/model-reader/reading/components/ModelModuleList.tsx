@@ -2,10 +2,8 @@ import { useCallback, useMemo, type CSSProperties, type JSX } from "react";
 import type { Model, projectModel } from "@archboard/model/content";
 import type { ChangeKind } from "@archboard/model/comparison";
 import { cn } from "@archboard/ui-kit/components";
-import {
-	KindChip,
-	ModelAboutTable,
-} from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutTable.tsx";
+import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
+import { ModelAboutTable } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutTable.tsx";
 import { ModelCodePath } from "#ui/architecture-drawing/model-reader/reading/components/ModelHeading.tsx";
 import { SemanticGroupChip } from "#ui/architecture-drawing/canvas/presentation/components/SemanticGroupChip.tsx";
 import { StandingSample } from "#ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx";

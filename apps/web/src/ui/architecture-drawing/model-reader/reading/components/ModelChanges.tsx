@@ -130,15 +130,7 @@ function ChangeRowOf(props: {
 		[change.id, change.standing],
 	);
 	return (
-		<Tree.Row
-			id={change.id}
-			depth={0}
-			flat
-			selected={lit}
-			current={lit}
-			dataset={dataset}
-			onOpen={open}
-		>
+		<Tree.Row id={change.id} depth={1} selected={lit} current={lit} dataset={dataset} onOpen={open}>
 			<Tree.Marker title={change.standing}>
 				<StandingSample standing={change.standing} />
 			</Tree.Marker>
@@ -202,7 +194,7 @@ function InterfaceChangeRow(props: {
 	return (
 		<Tree.Row
 			id={row.id}
-			depth={0}
+			depth={1}
 			selected={lit}
 			current={lit}
 			label={interfaceRowWords(row)}

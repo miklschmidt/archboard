@@ -112,13 +112,13 @@ Shipped capabilities include:
 - Exact checkpoints, explicit archive publication and fetch, and portable model export and import.
 - Dynamic walkthroughs, local Codex narration, and retained recording replay.
 - Local explanation actions. When a request starts, the action keeps the reading of that moment.
-- Subject claims, writer intent, human take-back, and durable recovery.
+- Subject claims as status marks, writer intent, and durable recovery.
 - Code bindings, source evidence, groups, traffic, and reproducible SVG and PNG exports.
 
 Every surface keeps these constraints:
 
 - Agents author architecture. The browser reads it and owns presentation.
-  A human can revoke an agent's claim.
+  The browser shows an agent's claim as status and offers no action on it.
   Cross-model ownership transfer is unavailable.
 - The renderer owns geometry.
   Correct saved meaning with incorrect placement requires a renderer repair.
@@ -174,8 +174,8 @@ rates. Future work must not invent any of these.
 3. Only real state. Every number, mark, state and preview shows what the
    product actually has. Unbuilt architecture stays proposed,
    and retained history states its actual coverage.
-4. Agents in plain sight. Claims show the agent, its purpose, and affected subjects.
-   A human can take back a claim.
+4. Agents in plain sight. A claim marks the claimed model and each claimed subject, with
+   the agent's purpose. The mark is status, so it asks nothing of the reader.
 
 ## Accessibility & Inclusion
 

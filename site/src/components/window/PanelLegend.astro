@@ -1,0 +1,123 @@
+---
+// The last section of the mock shell's right panel: the legend of the shop's picture, as the shell
+// shows it, with the kind chip of the panel's head.
+import Icon from "../Icon.astro";
+import KindChip from "../KindChip.astro";
+import type { Kind } from "../../lib/icons";
+
+const kinds: [Kind, string][] = [
+	["service", "Service"],
+	["datastore", "Data store"],
+	["cache", "Cache"],
+	["external", "External"],
+	["ui", "User interface"],
+];
+const lines = [
+	["HTTP", "var(--sky)"],
+	["Data", "var(--emerald)"],
+] as const;
+---
+
+<div class="legend">
+	<p class="head">Legend</p>
+	<ul class="grid">
+		{
+			kinds.map(([kind, name]) => (
+				<li>
+					<KindChip kind={kind} size={24} look="panel" /> {name}
+				</li>
+			))
+		}
+	</ul>
+	<p class="head">Relationships</p>
+	<ul class="lines">
+		{
+			lines.map(([name, color]) => (
+				<li>
+					<span class="line" style={`--c: ${color}`}></span> {name}
+					<Icon name="eye" size={16} class="eye" />
+				</li>
+			))
+		}
+	</ul>
+	<ul class="grid marks">
+		<li><span class="line" style="--c: var(--neutral)"></span> Illustrated traffic</li>
+	</ul>
+	<p class="head">Groups</p>
+	<p class="tags"><span class="tag payments">Payments</span><span class="tag fulfilment">Fulfilment</span></p>
+</div>
+
+<style>
+	/* The legend has three parts, each under the label of any section of the panel. A line type
+	   stands on a row of its own, and the row is its switch, with an eye at its end. The marks of
+	   lines, which no reader hides, stand under the types in two columns. A row is 28px, with no
+	   plate under it. */
+	.legend {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		color: var(--ink);
+	}
+	/* 20px part one part from the next, as the panel's sections are. */
+	.grid + .head,
+	.tags + .head {
+		margin-top: 16px;
+	}
+	.head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin: 0;
+		min-height: 24px;
+		font-size: 12.5px;
+		font-weight: 600;
+	}
+	.grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		column-gap: 8px;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.grid li,
+	.lines li {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 28px;
+		font-size: 13px;
+	}
+	.lines {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	/* The eye stands at the end of its own row, where a click on the row hides the type. */
+	.lines :global(.eye) {
+		margin: 0 4px 0 auto;
+		color: var(--ink-muted);
+	}
+	.line {
+		width: 24px;
+		height: 2px;
+		background: var(--c);
+	}
+	.tags {
+		display: flex;
+		gap: 8px;
+	}
+	.tag {
+		padding: 3px 8px;
+		border-radius: 3px;
+		font-size: 11px;
+		font-weight: 600;
+		color: var(--gold-ink);
+	}
+	.payments {
+		background: var(--violet);
+	}
+	.fulfilment {
+		background: var(--teal);
+	}
+</style>

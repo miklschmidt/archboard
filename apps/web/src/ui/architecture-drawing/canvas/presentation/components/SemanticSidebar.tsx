@@ -267,7 +267,7 @@ function Column(props: ColumnProps): JSX.Element {
 			style={COLUMN_STYLE}
 			className={cn(
 				"relative z-30 flex min-h-0 shrink-0 flex-col in-data-presenting:hidden in-data-walkthrough:hidden",
-				!floating && "shadow-edge-side overflow-hidden",
+				!floating && "overflow-hidden",
 			)}
 		>
 			<div
@@ -281,7 +281,7 @@ function Column(props: ColumnProps): JSX.Element {
 				style={PANEL_STYLE}
 				className={cn(
 					"border-border bg-sidebar absolute inset-y-0 right-0 flex min-h-0 flex-col border-l",
-					floating && "shadow-[var(--elevation-float),var(--elevation-edge-side)]",
+					floating && "shadow-float",
 				)}
 			>
 				{props.children}

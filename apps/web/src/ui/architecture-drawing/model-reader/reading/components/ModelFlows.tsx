@@ -3,6 +3,7 @@ import { useCallback, useRef, type JSX } from "react";
 import type { ModelFlow } from "@archboard/model/content";
 import { ModelChoiceList } from "#ui/architecture-drawing/model-reader/reading/components/ModelChoiceList.tsx";
 import { useRevealedRow } from "#ui/architecture-drawing/model-reader/reading/hooks/use-revealed-row.ts";
+import type { ClaimedSubjects } from "#ui/architecture-drawing/model-reader/rules/claimed-subjects.ts";
 
 /** Inputs for the flows. */
 interface ModelFlowsProps {
@@ -13,6 +14,8 @@ interface ModelFlowsProps {
 	/** The flow on screen. */
 	readonly flow: string | null;
 	readonly grammar: string;
+	/** What the agents claim. */
+	readonly claimed: ClaimedSubjects;
 	readonly onChoose: (id: string, beside: boolean) => void;
 }
 
@@ -23,7 +26,7 @@ interface ModelFlowsProps {
  * @returns The list.
  */
 function ModelFlows(props: ModelFlowsProps): JSX.Element {
-	const { flows, collections, flow, grammar, onChoose } = props;
+	const { flows, collections, flow, grammar, claimed, onChoose } = props;
 	const list = useRef<HTMLDivElement>(null);
 	const lit = grammar === "architecture" ? null : flow;
 	useRevealedRow(list, lit, 1);
@@ -42,6 +45,7 @@ function ModelFlows(props: ModelFlowsProps): JSX.Element {
 				entries={flows}
 				lit={lit}
 				attribute="data-flow-id"
+				claimed={claimed}
 				onChoose={choose}
 				sectionOf={collectionOf}
 			/>

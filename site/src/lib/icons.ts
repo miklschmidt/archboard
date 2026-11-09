@@ -28,7 +28,6 @@ import search from "remixicon/icons/System/search-line.svg?raw";
 import stack from "remixicon/icons/Business/stack-line.svg?raw";
 import subtract from "remixicon/icons/System/subtract-line.svg?raw";
 import terminal from "remixicon/icons/Development/terminal-box-line.svg?raw";
-import unlock from "remixicon/icons/System/lock-unlock-line.svg?raw";
 import box from "remixicon/icons/Others/box-3-line.svg?raw";
 import codeLine from "remixicon/icons/Development/code-line.svg?raw";
 import database from "remixicon/icons/Device/database-2-line.svg?raw";
@@ -37,6 +36,14 @@ import flashlight from "remixicon/icons/Weather/flashlight-line.svg?raw";
 import server from "remixicon/icons/Device/server-line.svg?raw";
 import store from "remixicon/icons/Buildings/store-2-line.svg?raw";
 import timer from "remixicon/icons/System/timer-line.svg?raw";
+import bell from "remixicon/icons/Media/notification-3-line.svg?raw";
+import chart from "remixicon/icons/Business/bar-chart-2-line.svg?raw";
+import chevronDown from "remixicon/icons/Arrows/arrow-down-s-line.svg?raw";
+import close from "remixicon/icons/System/close-line.svg?raw";
+import fullscreen from "remixicon/icons/Media/fullscreen-line.svg?raw";
+import openai from "remixicon/icons/Logos/openai-line.svg?raw";
+import settings from "remixicon/icons/System/settings-3-line.svg?raw";
+import sun from "remixicon/icons/Weather/sun-line.svg?raw";
 import voice from "remixicon/icons/Media/voiceprint-line.svg?raw";
 
 export const icons = {
@@ -68,7 +75,6 @@ export const icons = {
 	stack,
 	subtract,
 	terminal,
-	unlock,
 	voice,
 	box,
 	codeLine,
@@ -78,6 +84,14 @@ export const icons = {
 	server,
 	store,
 	timer,
+	bell,
+	chart,
+	chevronDown,
+	close,
+	fullscreen,
+	openai,
+	settings,
+	sun,
 };
 
 export type IconName = keyof typeof icons;

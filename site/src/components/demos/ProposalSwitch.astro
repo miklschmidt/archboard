@@ -20,7 +20,7 @@ const proposal = drawings.queued;
 			<li><span class="swatch removed"></span>Removed</li>
 		</ul>
 	</div>
-	<div class="stage">
+	<div class="stage" style={`aspect-ratio: ${proposal.width} / ${proposal.height}`}>
 		<img
 			class="view today"
 			aria-hidden="true"
@@ -132,7 +132,6 @@ const proposal = drawings.queued;
 		position: relative;
 		display: grid;
 		grid-template: minmax(0, 1fr) / minmax(0, 1fr);
-		aspect-ratio: 1481 / 860;
 		border-radius: 6px;
 		background: oklch(0.2 0.006 75);
 		box-shadow: inset 0 0 0 1px var(--rule);

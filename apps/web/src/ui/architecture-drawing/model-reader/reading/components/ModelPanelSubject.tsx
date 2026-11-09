@@ -5,7 +5,7 @@ import {
 	kindNames,
 	moduleName,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelConnections.tsx";
-import { KindChip } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutTable.tsx";
+import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import { ModelChangesWith } from "#ui/architecture-drawing/model-reader/reading/components/ModelChangesWith.tsx";
 import { ModelCodeDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
 import { ModelCollectionDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCollectionDetails.tsx";
@@ -90,12 +90,37 @@ function ModelPanelScope(props: {
 		);
 	return (
 		<ModelPanel.Body slot="model-panel-scope">
-			{props.flowHead ?? head}
-			{Boolean(props.description) && (
-				<p className="text-control font-normal whitespace-pre-wrap">{props.description}</p>
-			)}
+			<Identity>
+				{props.flowHead ?? head}
+				{Boolean(props.description) && <Summary>{props.description}</Summary>}
+			</Identity>
 			{props.children}
 		</ModelPanel.Body>
+	);
+}
+
+/**
+ * Whose panel this is and what it says of itself: the head and the words under it stand close, as
+ * one block, and the sections that follow stand a step further off.
+ * @param props What it holds.
+ * @param props.children The head, then the summary.
+ * @returns The block.
+ */
+function Identity(props: { readonly children: ReactNode }): JSX.Element {
+	return <div className="flex flex-col gap-2">{props.children}</div>;
+}
+
+/**
+ * What the subject says of itself, in the ink that a panel sets its prose in.
+ * @param props The words.
+ * @param props.children The words.
+ * @returns The paragraph.
+ */
+function Summary(props: { readonly children: ReactNode }): JSX.Element {
+	return (
+		<p className="text-control text-body-foreground font-normal whitespace-pre-wrap">
+			{props.children}
+		</p>
 	);
 }
 
@@ -113,7 +138,7 @@ function ModelPanelSubject(props: ModelPanelSubjectProps): JSX.Element {
 			) : (
 				<OtherSubject {...props} subject={subject} />
 			)}
-			<div className="px-4 pb-4 empty:hidden">
+			<div className="empty:hidden">
 				<ModelHiddenSelection
 					projection={props.projection}
 					selected={props.selection.ids}
@@ -172,7 +197,10 @@ function OtherSubject(
 		<ModelPanel.Body slot="model-panel-other">
 			{warnings}
 			{subject.kind === "collection" && (
-				<ModelCollectionDetails {...subject} onOpenFlow={props.onRevealFlow} />
+				<>
+					<ModelPanel.Head title={subject.collection.name}>Flow collection</ModelPanel.Head>
+					<ModelCollectionDetails {...subject} onOpenFlow={props.onRevealFlow} bare />
+				</>
 			)}
 			{subject.kind === "flow" && (
 				<>
@@ -188,13 +216,15 @@ function OtherSubject(
 				</>
 			)}
 			{subject.kind === "subjects" && (
-				<SelectedSubjects
-					model={model}
-					reference={projection.reference}
-					selected={ids}
-					title="Selected subjects"
-					slot="model-selected-subjects"
-				/>
+				<>
+					<ModelPanel.Head title={`${ids.size} selected`} />
+					<SelectedSubjects
+						model={model}
+						reference={projection.reference}
+						selected={ids}
+						slot="model-selected-subjects"
+					/>
+				</>
 			)}
 			{props.context}
 		</ModelPanel.Body>
@@ -247,17 +277,15 @@ function ModuleHead(
 ): JSX.Element {
 	const { module } = props;
 	return (
-		<>
+		<Identity>
 			<KindHead
 				look={props.look}
 				kind={module.kind}
 				title={module.name}
 				path={props.pathOf(module.id)}
 			/>
-			{module.responsibility && (
-				<p className="text-control font-normal whitespace-pre-wrap">{module.responsibility}</p>
-			)}
-		</>
+			{module.responsibility && <Summary>{module.responsibility}</Summary>}
+		</Identity>
 	);
 }
 

@@ -1,19 +1,25 @@
 ---
-// A module kind's chip, as the renderer draws it on a card: a tint of the kind's colour with the
-// kind's icon in the colour itself.
+// A module kind's chip. As the renderer draws it on a card, it is a tint of the kind's colour with
+// the kind's icon in the colour itself. As the shell's right panel draws it, in its head and its
+// legend, it is a face of the colour at 14% inside an edge of the colour at 45%.
 import Icon from "./Icon.astro";
 import { kinds, type Kind } from "../lib/icons";
 
 interface Props {
 	kind: Kind;
 	size?: number;
+	look?: "card" | "panel";
 }
 
-const { kind, size = 20 } = Astro.props;
+const { kind, size = 20, look: drawn = "card" } = Astro.props;
 const look = kinds[kind];
 ---
 
-<span class="kind-chip" style={`--c: var(--${look.color}); --s: ${size}px`} title={look.name}>
+<span
+	class:list={["kind-chip", { panel: drawn === "panel" }]}
+	style={`--c: var(--${look.color}); --s: ${size}px`}
+	title={look.name}
+>
 	<Icon name={look.icon} size={Math.round(size * 0.68)} />
 </span>
 
@@ -30,5 +36,12 @@ const look = kinds[kind];
 		box-shadow:
 			inset 0 1px 0 oklch(1 0 0 / 0.12),
 			0 1px 0 color-mix(in srgb, var(--c) 20%, oklch(0.215 0.006 75));
+	}
+	.kind-chip.panel {
+		box-sizing: border-box;
+		border: 1px solid color-mix(in oklch, var(--c) 45%, transparent);
+		border-radius: 4px;
+		background: color-mix(in oklch, var(--c) 14%, transparent);
+		box-shadow: none;
 	}
 </style>

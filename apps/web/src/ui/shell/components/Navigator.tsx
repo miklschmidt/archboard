@@ -11,6 +11,7 @@ import { Popover } from "@archboard/ui-kit/components";
 import { RepositoryChooser, RepositorySwitcher } from "#ui/shell/components/RepositorySwitcher.tsx";
 import { WorkingNow, type WorkingEntry } from "#ui/shell/components/WorkingNow.tsx";
 import { useKept } from "#ui/shell/hooks/use-kept.ts";
+import { claimPurposes } from "#ui/shell/rules/claims.ts";
 import { paneLetter } from "#ui/shell/rules/pane-letters.ts";
 import type { PaneMark } from "#ui/shell/rules/repository-choices.ts";
 import { sameData } from "#ui/shell/rules/same-data.ts";
@@ -68,6 +69,21 @@ function workingEntries(view: ShellView, panes: readonly PaneMark[]): WorkingEnt
 			return { activity, name, repository, named, onScreen: letters };
 		});
 	});
+}
+
+/** No agent claims the model. */
+const NO_CLAIMS: readonly string[] = [];
+
+/**
+ * What the agents that claim the focused pane's model are doing.
+ * @param view The shell view.
+ * @param panes The panes, marked.
+ * @returns The purpose of each claim, each once.
+ */
+function focusedClaims(view: ShellView, panes: readonly PaneMark[]): readonly string[] {
+	const focused = panes.find((pane) => pane.active)?.repository ?? null;
+	const shell = view.repositories.find((entry) => entry.repository.name === focused);
+	return shell === undefined ? NO_CLAIMS : claimPurposes(shell);
 }
 
 /**
@@ -132,10 +148,11 @@ function Navigator(props: NavigatorProps): JSX.Element {
 		},
 		[actions],
 	);
+	const working = <WorkingNow entries={workingEntries(view, panes)} onOpen={openPaneKey} />;
 	return (
 		<div
 			data-slot="navigator-column"
-			className="border-border bg-sidebar text-sidebar-foreground shadow-edge-side relative z-30 flex w-(--shell-navigator-width) shrink-0 flex-col border-r"
+			className="bg-sidebar text-sidebar-foreground relative z-30 flex w-(--shell-navigator-width) shrink-0 flex-col"
 		>
 			{props.head}
 			<nav
@@ -145,11 +162,16 @@ function Navigator(props: NavigatorProps): JSX.Element {
 			>
 				{!nothingListed && (
 					<Popover open={choosing} onOpenChange={setChoosing}>
-						<RepositorySwitcher ref={switcher} panes={panes} open={choosing} />
+						<RepositorySwitcher
+							ref={switcher}
+							panes={panes}
+							claims={focusedClaims(view, panes)}
+							open={choosing}
+						/>
 						<Popover.Content
 							align="start"
 							data-slot="repository-dropdown"
-							className="max-h-[60vh] w-(--anchor-width) gap-0 p-0 pt-2"
+							className="bg-sidebar max-h-[60vh] w-(--anchor-width) gap-0 p-0 pt-2"
 						>
 							<RepositoryChooser
 								repositories={view.repositories}
@@ -186,9 +208,21 @@ function Navigator(props: NavigatorProps): JSX.Element {
 						onLeave={leave}
 					/>
 				)}
-				<WorkingNow entries={workingEntries(view, panes)} onOpen={openPaneKey} />
+				{props.foot === undefined && working}
 			</nav>
-			{props.foot}
+			{props.foot !== undefined && (
+				// The agent's card stands on the chrome under the list, 8px from the window's foot as
+				// the picture is: what agents work on now at its top, then the dock.
+				<div data-slot="navigator-foot" className="bg-sidebar shrink-0 p-2">
+					<div
+						data-slot="agent-card"
+						className="bg-raised shadow-tray rounded-window flex flex-col overflow-clip"
+					>
+						{working}
+						{props.foot}
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

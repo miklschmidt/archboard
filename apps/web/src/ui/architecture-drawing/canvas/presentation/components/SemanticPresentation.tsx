@@ -108,7 +108,7 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 	return (
 		<div
 			data-slot="semantic-presentation-frame"
-			className="border-border bg-sidebar shadow-edge-side relative z-30 flex min-h-0 w-[min(400px,46%)] shrink-0 flex-col border-l"
+			className="bg-sidebar relative z-30 flex min-h-0 w-[min(400px,46%)] shrink-0 flex-col"
 		>
 			<section
 				ref={box}

@@ -5,7 +5,7 @@ import type { RemixiconComponentType } from "@remixicon/react";
 import { useCallback, useId, type JSX, type ReactNode } from "react";
 
 /** The page that scrolls, and that its sections are measured against. */
-const ABOUT_PAGE = "overflow-x-hidden overflow-y-auto [container:about/size]";
+const ABOUT_PAGE = "relative z-0 overflow-x-hidden overflow-y-auto [container:about/size]";
 
 /** The column of the page, with the outline beside the sections while there is room. */
 const ABOUT_COLUMNS =
@@ -71,7 +71,7 @@ function AboutOutline<Key extends string>(props: {
 			data-slot="about-outline"
 			className="bg-background border-border sticky top-0 z-10 -mx-6 mb-8 border-b @min-[1040px]/about:top-8 @min-[1040px]/about:col-start-1 @min-[1040px]/about:row-span-2 @min-[1040px]/about:row-start-1 @min-[1040px]/about:mx-0 @min-[1040px]/about:mb-0 @min-[1040px]/about:self-start @min-[1040px]/about:border-0"
 		>
-			<ol className="flex [scrollbar-width:thin] gap-1 overflow-x-auto px-5 py-1.5 @min-[1040px]/about:flex-col @min-[1040px]/about:overflow-visible @min-[1040px]/about:p-0">
+			<ol className="flex gap-1 overflow-x-auto px-5 py-1.5 @min-[1040px]/about:flex-col @min-[1040px]/about:overflow-visible @min-[1040px]/about:p-0">
 				{props.sections.map((section) => (
 					<OutlineEntry
 						key={section.key}

@@ -171,7 +171,6 @@ function besideAnother(active: boolean): PaneChrome {
 	return {
 		letter: null,
 		controls: null,
-		notice: null,
 		shared: false,
 		active,
 		column: null,

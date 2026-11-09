@@ -10,7 +10,7 @@ import { useCallback, useMemo, useState, type JSX } from "react";
 import { IconButton, shownRepository, Tooltip } from "@archboard/ui-kit/components";
 import { MODEL_CACHE_MS } from "@archboard/timing";
 import { RiFileCopyLine } from "@remixicon/react";
-import { SettingsHosts } from "#ui/application/components/SettingsHosts.tsx";
+import { SettingsDialog } from "#ui/application/components/SettingsDialog.tsx";
 import { ModelState } from "#ui/architecture-drawing/model-reader/reading/components/ModelState.tsx";
 import { Shell } from "#ui/shell/components/Shell.tsx";
 import { createStartActions } from "#ui/application/clients/start-actions.ts";
@@ -71,7 +71,7 @@ function StartShell(props: StartShellProps): JSX.Element {
 	return (
 		<Tooltip.Provider>
 			<Shell view={view} actions={actions} />
-			<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
+			<SettingsDialog surface={settings} notices={notices} onClose={closeSettings} />
 		</Tooltip.Provider>
 	);
 }

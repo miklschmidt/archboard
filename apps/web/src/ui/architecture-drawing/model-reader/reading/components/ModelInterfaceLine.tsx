@@ -64,13 +64,14 @@ function ModelInterfaceLine(props: ModelInterfaceLineProps): JSX.Element | null 
 }
 
 /**
- * The counts of one section, on one line.
+ * The counts of one section, one to a row, as a small table: what each counts at the start and the
+ * count at the end.
  * @param props The counts and what they do.
  * @param props.counts Every count of the module.
  * @param props.hidden Whether this section shows its hidden parts, or the rest.
  * @param props.module The module they belong to.
  * @param props.onShow Show subjects selected on the module's picture.
- * @returns The line.
+ * @returns The rows.
  */
 function Counts(props: {
 	readonly counts: readonly InterfaceCount[];
@@ -80,41 +81,24 @@ function Counts(props: {
 }): JSX.Element {
 	const { hidden, module, onShow } = props;
 	return (
-		<li className="grid grid-cols-2 gap-1">
+		<>
 			{props.counts
 				.filter(({ key }) => (key === "hiddenParts") === hidden)
 				.map((count) => (
 					<Count key={count.key} count={count} module={module} onShow={onShow} />
 				))}
-		</li>
-	);
-}
-
-/**
- * What a count counts, and the count in the mono face at the end of its well, as the site's
- * inspector sets it.
- * @param props The count.
- * @param props.count How many.
- * @param props.label What of.
- * @returns The words.
- */
-function CountWords(props: { readonly count: number; readonly label: string }): JSX.Element {
-	const { count, label } = props;
-	return (
-		<>
-			<span className="truncate">{`${label.charAt(0).toUpperCase()}${label.slice(1)}`}</span>
-			<span className="text-foreground font-mono text-[12px] leading-4">{count}</span>
 		</>
 	);
 }
 
 /**
- * One count, which shows what it counts. Nothing is there to show for a count of none.
+ * One count, a row that shows what it counts. Nothing is there to show for a count of none, so its
+ * row is off.
  * @param props The count and what it does.
  * @param props.count The count.
  * @param props.module The module it belongs to.
  * @param props.onShow Show subjects selected on the module's picture.
- * @returns The count.
+ * @returns The row.
  */
 function Count(props: {
 	readonly count: InterfaceCount;
@@ -123,18 +107,21 @@ function Count(props: {
 }): JSX.Element {
 	const { count, module, onShow } = props;
 	const show = useCallback((): void => onShow(count.subjects, module), [onShow, count, module]);
+	const detail = useMemo(
+		() => <span className="text-technical font-mono">{count.count}</span>,
+		[count.count],
+	);
+	const { label } = count;
 	return (
-		<button
-			type="button"
+		<ModelPanel.Row
 			data-measure={count.key}
 			data-count={count.count}
 			title={count.key === "hiddenParts" ? HIDDEN_MEANS : undefined}
 			disabled={count.subjects.length === 0}
 			onClick={show}
-			className="text-body text-muted-foreground bg-tray-sink shadow-well enabled:hover:text-foreground enabled:hover:bg-face/60 rounded-control flex min-w-0 items-baseline justify-between gap-2 px-2 py-1.5 text-left whitespace-nowrap disabled:opacity-70"
-		>
-			<CountWords count={count.count} label={count.label} />
-		</button>
+			name={`${label.charAt(0).toUpperCase()}${label.slice(1)}`}
+			detail={detail}
+		/>
 	);
 }
 

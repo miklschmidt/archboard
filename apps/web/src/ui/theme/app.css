@@ -87,8 +87,8 @@
 	/* name: the display face's one chrome size, for a name set as a title
 	   (the `title-name` utility adds the face, the capitals and the tracking). */
 	--text-name: 20px;
-	--text-name--line-height: 24px;
-	--text-name--letter-spacing: 0.07em;
+	--text-name--line-height: 22px;
+	--text-name--letter-spacing: 0.06em;
 	--text-name--font-weight: 650;
 	/* presentation: a presented walkthrough's step heading, part of the picture's
 	   frame rather than of the chrome. reading: the step's words under it, read
@@ -145,7 +145,7 @@
 	--color-primary-subtle: var(--primary-subtle);
 	/* The rim of a primary action's gold (`primary-finish`). */
 	--color-primary-edge: var(--primary-edge);
-	/* A plane raised over the chrome: the tray at the foot of a column. */
+	/* The agent dock: a card that stands on the left column's chrome. */
 	--color-raised: var(--raised);
 	/* The picture's own pieces, which the left column is built from: the face of a
 	   slab, the floor a well sinks to, and the lighter piece raised on a well's edge. */
@@ -198,16 +198,10 @@
 	--radius-table: 10px;
 	--radius-window: 12px;
 	/* Depth: the elevation scale below (`--elevation-*`), one shadow utility
-	   per plane (`shadow-well`, `shadow-raised`, `shadow-float` and the rest).
-	   The chrome that casts an edge shadow onto the picture is `relative z-30`, so
-	   its shadow lies over the picture and the About page (z-20) and under
-	   menus and dialogs (z-50). */
+	   per plane (`shadow-well`, `shadow-raised`, `shadow-float` and the rest). */
 	--shadow-well: var(--elevation-well);
-	--shadow-sink: var(--elevation-sink);
 	--shadow-slab: var(--elevation-slab);
-	--shadow-edge-down: var(--elevation-edge-down);
-	--shadow-edge-side: var(--elevation-edge-side);
-	--shadow-edge-up: var(--elevation-edge-up);
+	--shadow-tray: var(--elevation-tray);
 	--shadow-raised: var(--elevation-raised);
 	--shadow-pressed: var(--elevation-pressed);
 	--shadow-card: var(--elevation-card);
@@ -376,18 +370,17 @@
      well     a recessed trough (--elevation-well): a field, the trough that holds
               tabs or a switch, a count cell, a code block. --elevation-trough is
               the same piece by its other name.
-     sink     the well that a column's list lies in (--elevation-sink), cut as
-              the picture cuts a container: one inner shadow from the whole of
-              its top edge and a lit lip along its foot.
      slab     a number that lies on a surface (--elevation-slab), built
               as the picture builds a small part: a lit top edge, a front edge
               along its foot and a short shadow.
-     chrome   the navigator, a pane's header, the sidebar and the
-              conversation's header stand on the ground and cast a short
-              shadow onto what lies beside or under them
-              (--elevation-edge-down, -edge-side). A tray at the foot of a
-              column casts one up over the list that scrolls under it
-              (--elevation-edge-up).
+     chrome   the navigator, a pane's header, the right panel and the
+              conversation are one flat plane round the picture. They cast
+              no shadow. The picture lies on the chrome as a sheet with
+              rounded corners (`picture-corners`), framed by --elevation-sheet:
+              a lit top edge, a faint ring and a short shadow under its foot.
+              The legend and the composer lie on the chrome too. In the left
+              column the agent's card stands on the chrome (`--raised`), 8px
+              from the window's foot: Working now at its top, then the dock.
      raised   a control, a key cap or the chosen row of a list, standing on
               a surface (--elevation-raised): a lit top edge, a contact line and
               a short shadow. Pressed, a control sinks into a trough
@@ -408,22 +401,23 @@
 	/* Depth on chalk: the site's construction in a warm umber, highlights in white. */
 	--elevation-well: inset 0 2px 4px oklch(0.33 0.035 65 / 0.12), inset 0 -1px 0 var(--highlight);
 	--elevation-trough: var(--elevation-well);
-	/* The left column is the picture's own object, so its depth reads the picture's
-	   tokens, which hold both themes. */
-	--elevation-sink: inset 0 9px 9px -8px var(--slab-shadow), inset 0 -1px 0 var(--tray-lip);
+	/* Number badges use the picture's slab tokens, which hold both themes. */
 	--elevation-slab:
 		inset 0 1px 0 color-mix(in oklch, var(--slab-glint) 16%, transparent), 0 2px 0 var(--slab-edge),
 		0 3px 4px -1px var(--slab-shadow);
-	--elevation-edge-down:
-		0 1px 0 oklch(0.33 0.035 65 / 0.08), 0 10px 24px -12px oklch(0.33 0.035 65 / 0.22);
-	--elevation-edge-side:
-		-1px 0 0 oklch(0.33 0.035 65 / 0.05), -10px 0 24px -12px oklch(0.33 0.035 65 / 0.18),
-		1px 0 0 oklch(0.33 0.035 65 / 0.05), 10px 0 24px -12px oklch(0.33 0.035 65 / 0.18);
-	--elevation-edge-up:
-		0 -1px 0 oklch(0.33 0.035 65 / 0.06), 0 -10px 24px -12px oklch(0.33 0.035 65 / 0.2);
+	/* The agent's card on the left column's chrome: a lit top edge and a soft shadow
+	   that rises from it over the list. */
+	--elevation-tray:
+		inset 0 1px 0 var(--highlight), 0 -1px 0 oklch(0.33 0.035 65 / 0.06),
+		0 -10px 24px -12px oklch(0.33 0.035 65 / 0.2);
 	--elevation-raised:
 		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.33 0.035 65 / 0.16),
 		0 2px 6px -1px oklch(0.33 0.035 65 / 0.16);
+	/* The picture's sheet on the chrome: a lit top edge, a faint ring and a short shadow under
+	   its foot, held within the 8px of chrome below it. */
+	--elevation-sheet:
+		inset 0 1px 0 var(--highlight), inset 0 0 0 1px oklch(0.33 0.035 65 / 0.1),
+		0 1px 0 oklch(0.33 0.035 65 / 0.08), 0 3px 8px -3px oklch(0.33 0.035 65 / 0.16);
 	--elevation-pressed: var(--elevation-well);
 	--elevation-chosen: var(--elevation-raised), inset 0 -2px 0 var(--primary);
 	--elevation-card:
@@ -446,16 +440,13 @@
 :root[data-theme="dark"] {
 	/* Depth on graphite: the site's own values. */
 	--elevation-well: inset 0 2px 4px oklch(0.04 0.004 75 / 0.6), inset 0 -1px 0 var(--highlight);
-	--elevation-edge-down:
-		inset 0 -1px 0 var(--highlight), 0 10px 24px -12px oklch(0.04 0.006 75 / 0.8);
-	--elevation-edge-side:
-		-1px 0 0 oklch(0.06 0.004 75 / 0.6), -12px 0 28px -10px oklch(0.04 0.006 75 / 0.7),
-		1px 0 0 oklch(0.06 0.004 75 / 0.6), 12px 0 28px -10px oklch(0.04 0.006 75 / 0.7);
-	--elevation-edge-up:
-		inset 0 1px 0 var(--highlight), 0 -10px 24px -14px oklch(0.04 0.006 75 / 0.9);
+	--elevation-tray: inset 0 1px 0 var(--highlight), 0 -10px 24px -14px oklch(0.04 0.006 75 / 0.9);
 	--elevation-raised:
 		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.06 0.004 75 / 0.7),
 		0 2px 6px -1px oklch(0.06 0.006 75 / 0.5);
+	--elevation-sheet:
+		inset 0 1px 0 var(--highlight), inset 0 0 0 1px oklch(1 0.01 85 / 0.035),
+		0 1px 0 oklch(0.06 0.004 75 / 0.6), 0 3px 8px -3px oklch(0.06 0.006 75 / 0.55);
 	--elevation-card:
 		inset 0 1px 0 var(--highlight), 0 1px 1px oklch(0.06 0.004 75 / 0.6),
 		0 12px 24px -8px oklch(0.06 0.006 75 / 0.6), 0 32px 64px -24px oklch(0.06 0.006 75 / 0.7);
@@ -579,28 +570,52 @@
 	}
 }
 
-/* The well that a column's list lies in, cut as the picture cuts a container: a floor
-   a step under the chrome, one thin line round it, an inner shadow down from the whole
-   of its top edge and a lit lip along its foot. The shadow is a layer over the list, so
-   what scrolls in the well passes under it. What stands proud of the floor, such as the
-   shelf of a list, stands over that layer. */
-@utility column-well {
-	position: relative;
-	isolation: isolate;
-	display: flex;
-	flex-direction: column;
-	min-height: 0;
-	overflow: hidden;
-	border-top: 1px solid var(--border);
-	background-color: var(--tray-sink);
+/* The picture is a sheet held by the chrome on every side: its four corners are rounded
+   against it. One layer over the picture paints a piece of chrome in each corner, cut by a
+   quarter circle, so the picture keeps its size and nothing in it is clipped. A second layer
+   frames the sheet along the same radius (--elevation-sheet). While two panes share the
+   centre, that layer also draws a quiet edge round the active pane's picture: neutral ink,
+   never gold, so it stays below a chosen card on the picture. One pane alone has no such edge.
+   A presented picture has no chrome round it, so its corners stay square and unframed. */
+@utility picture-corners {
+	&::before {
+		--corner: var(--radius-window);
+		--cut: transparent calc(var(--corner) - 0.5px), var(--sidebar) var(--corner);
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: 10;
+		pointer-events: none;
+		background:
+			radial-gradient(circle at 100% 100%, var(--cut)) top left / var(--corner) var(--corner)
+				no-repeat,
+			radial-gradient(circle at 0 100%, var(--cut)) top right / var(--corner) var(--corner)
+				no-repeat,
+			radial-gradient(circle at 100% 0, var(--cut)) bottom left / var(--corner) var(--corner)
+				no-repeat,
+			radial-gradient(circle at 0 0, var(--cut)) bottom right / var(--corner) var(--corner)
+				no-repeat;
+	}
 	&::after {
 		content: "";
 		position: absolute;
 		inset: 0;
-		z-index: 15;
+		z-index: 10;
 		pointer-events: none;
-		border-radius: inherit;
-		box-shadow: var(--shadow-sink);
+		border-radius: var(--radius-window);
+		box-shadow: var(--elevation-sheet);
+	}
+	[data-presenting] &::before {
+		display: none;
+	}
+	[data-presenting] &::after {
+		border-radius: 0;
+		box-shadow: none;
+	}
+	[data-framed][data-active] &::after {
+		box-shadow:
+			var(--elevation-sheet),
+			inset 0 0 0 1px color-mix(in oklch, var(--foreground) 32%, transparent);
 	}
 }
 
@@ -1188,7 +1203,7 @@
 /* The dock is lit by what the agent is doing. While voice is on, a warm wash
    blooms from the voice circle and then breathes with it: --lit is the light
    the orb gives, 0 to 1, written by the orb on every frame. A quieter wash in
-   the status colour shows while the agent works. At rest the tray is plain:
+   the status colour shows while the agent works. At rest the dock is plain:
    nothing glows for a state the product is not in. Each wash has a layer of its
    own, so each fades out in its own colour. The bloom is a registered number so
    that it can be eased: the wash grows out of the circle and does not fade up
@@ -1294,16 +1309,6 @@
 	transition-timing-function: ease-in;
 }
 
-/* The sidebar's scroll areas are quiet: a thin bar in the theme's own tone, in
-   place of the system's full-width one. */
-[data-slot="semantic-sidebar-panel"],
-[data-slot="semantic-sidebar-panel"] *,
-[data-slot="navigator-column"] *,
-[data-slot="model-panel"] * {
-	scrollbar-width: thin;
-	scrollbar-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent) transparent;
-}
-
 /* Base UI keeps the tab panel that is leaving until its transitions end. The
    fade belongs to the panel that arrives, so one that leaves is gone at once,
    and two panels are never drawn in one frame. */
@@ -1334,8 +1339,12 @@
 }
 
 @layer base {
+	/* Every scrollbar is slim and quiet (DESIGN.md, the Quiet Scrollbar Rule). It is
+	   thin, its track is transparent so the surface shows through, and its thumb is
+	   muted ink that the root sets for each theme below. */
 	* {
 		@apply border-border outline-ring/50;
+		scrollbar-width: thin;
 	}
 	/* Whatever answers a click says so under the pointer. */
 	:is(
@@ -1358,13 +1367,18 @@
 	):not(:disabled, [aria-disabled="true"]) {
 		cursor: pointer;
 	}
+	/* Every element inherits the scrollbar's colors. The thumb keeps 3:1 against
+	   each surface of its theme, the WCAG minimum for a control, so chalk takes a
+	   stronger mix than graphite. */
 	html {
 		@apply font-sans;
 		font-synthesis: none;
 		color-scheme: light;
+		scrollbar-color: color-mix(in oklch, var(--muted-foreground) 70%, transparent) transparent;
 	}
 	html[data-theme="dark"] {
 		color-scheme: dark;
+		scrollbar-color: color-mix(in oklch, var(--muted-foreground) 50%, transparent) transparent;
 	}
 	html,
 	body,

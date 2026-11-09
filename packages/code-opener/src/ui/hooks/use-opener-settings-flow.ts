@@ -1,6 +1,6 @@
-// The opener settings flow: what the settings dialog runs against. The
-// dialog itself lives in `components/OpenerSettingsDialog.tsx`; this module owns reading,
-// testing, saving and resetting, as a store the dialog's host subscribes to.
+// The opener settings flow: what the opener panel runs against. The panel
+// itself lives in `components/OpenerSettingsPanel.tsx`; this module owns reading,
+// testing, saving and resetting, as a store the panel's host subscribes to.
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 

@@ -2,14 +2,12 @@ import { Notices } from "#ui/shell/components/Notices.tsx";
 import type { ShellNotice } from "#ui/shell/rules/contracts.ts";
 // The centre: one or two panes side by side. Each pane draws one header row,
 // and the shell hands it what the shell owns of that row: the pane's letter
-// while there are two, the pane's own controls, and under the row the claim
-// banner while an agent claims the model. The same element is the fullscreen
-// root: presenting a pane hides the others rather than remounting anything,
-// so a pane's session never restarts.
+// while there are two, and the pane's own controls. The same element is the
+// fullscreen root: presenting a pane hides the others rather than remounting
+// anything, so a pane's session never restarts.
 
 import { useMemo, type JSX, type ReactNode } from "react";
 
-import { Separator } from "@archboard/ui-kit/components";
 import {
 	type PaneChrome,
 	type PaneColumn,
@@ -99,8 +97,8 @@ function PresentationChrome(props: PresentationChromeProps): JSX.Element | null 
 }
 
 /**
- * One or two panes side by side with a shared one-pixel separator, under the
- * presentation bar while a pane is presented.
+ * One or two panes side by side, parted by the chrome alone, under the presentation bar while a
+ * pane is presented.
  * @param props The panes to mount, the presentation and the actions.
  * @returns The stage root.
  */
@@ -131,7 +129,6 @@ function PaneStages(props: PaneStagesProps): JSX.Element {
 						active={pane.status.paneId === activePaneId}
 						column={column}
 						framed={panes.length > 1 && presented === null}
-						first={index === 0 || presented !== null}
 						hidden={hiddenBy(presentation, pane.status.paneId)}
 						actions={actions}
 					/>
@@ -139,19 +136,6 @@ function PaneStages(props: PaneStagesProps): JSX.Element {
 			</div>
 		</div>
 	);
-}
-
-/**
- * The stage's classes: the inset gold ring is drawn only while two panes
- * share the centre, as a layer over the pane so the header, the picture and
- * the sidebar, each with a ground of its own, never cover it.
- * @param framed Whether the active stage should carry the ring.
- * @returns The class list.
- */
-function stageClass(framed: boolean): string {
-	return framed
-		? "relative flex min-h-0 min-w-0 flex-1 flex-col outline-none data-active:after:pointer-events-none data-active:after:absolute data-active:after:inset-0 data-active:after:z-30 data-active:after:ring-1 data-active:after:ring-primary-mark data-active:after:ring-inset"
-		: "relative flex min-h-0 min-w-0 flex-1 flex-col outline-none";
 }
 
 /**
@@ -180,19 +164,17 @@ interface PaneStageProps {
 	paneCount: number;
 	active: boolean;
 	column: PaneColumn;
-	/** Draw the focus ring on the active stage: only while two panes share the centre. */
+	/** Mark the active stage's picture with a quiet edge: only while two panes share the centre. */
 	framed: boolean;
-	first: boolean;
 	hidden: boolean;
 	actions: ShellActions;
 }
 
 /**
- * One pane, with the separator that divides it from the pane before, and the
- * shell's parts of its header. The pane itself is the application's. With two
- * panes, the active one carries a one-pixel inset gold ring and a filled
- * letter.
- * @param props The pane, its letter, whether it is first, framed, hidden and the actions.
+ * One pane, and the shell's parts of its header. The pane itself is the application's. With two
+ * panes, the active one's picture carries a quiet neutral edge and its letter
+ * is filled.
+ * @param props The pane, its letter, whether it is framed or hidden, and the actions.
  * @returns The mounted pane.
  */
 function PaneStage(props: PaneStageProps): JSX.Element {
@@ -205,7 +187,6 @@ function PaneStage(props: PaneStageProps): JSX.Element {
 			controls: (
 				<PaneControls pane={pane} letter={letter} paneCount={paneCount} actions={actions} />
 			),
-			notice: null,
 			shared: paneCount > 1,
 			active,
 			column: active ? column : null,
@@ -218,20 +199,19 @@ function PaneStage(props: PaneStageProps): JSX.Element {
 		[pane, letter, paneCount, active, actions, column, repository],
 	);
 	return (
-		<>
-			{!props.first && !props.hidden && <Separator orientation="vertical" />}
-			<section
-				aria-label={`Pane ${paneId}`}
-				aria-current={props.active ? "true" : undefined}
-				data-active={props.active ? "" : undefined}
-				hidden={props.hidden}
-				// Focus lands here when a presentation ends: programmatic only, no tab stop.
-				tabIndex={-1}
-				className={stageClass(props.framed)}
-			>
-				<PaneChromeContext.Provider value={chrome}>{pane.stage}</PaneChromeContext.Provider>
-			</section>
-		</>
+		<section
+			aria-label={`Pane ${paneId}`}
+			aria-current={props.active ? "true" : undefined}
+			data-active={props.active ? "" : undefined}
+			// The picture of the active stage draws a quiet edge while this is set (`picture-corners`).
+			data-framed={props.framed ? "" : undefined}
+			hidden={props.hidden}
+			// Focus lands here when a presentation ends: programmatic only, no tab stop.
+			tabIndex={-1}
+			className="relative flex min-h-0 min-w-0 flex-1 flex-col outline-none"
+		>
+			<PaneChromeContext.Provider value={chrome}>{pane.stage}</PaneChromeContext.Provider>
+		</section>
 	);
 }
 

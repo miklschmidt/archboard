@@ -16,11 +16,14 @@ import {
  * @param props The exact checked reading and temporary selection action.
  * @param props.reading The matching pass, or absence after an architecture change.
  * @param props.onSelect Pick the finding's subject without changing architecture.
+ * @param props.quiet Say nothing while the pass found no warning, because a count of none has no
+ * warning to walk and reads as noise where nothing is wrong.
  * @returns A count that cycles through the matching pass's warnings.
  */
 function ModelCodeWarnings(props: {
 	reading: ModelCodeReading | null;
 	onSelect: (id: string | null) => void;
+	quiet?: boolean;
 }): JSX.Element | null {
 	if (props.reading === null) return null;
 	return (
@@ -28,6 +31,7 @@ function ModelCodeWarnings(props: {
 			key={`${props.reading.revision.digest}:${props.reading.checkedAt}`}
 			reading={props.reading}
 			onSelect={props.onSelect}
+			quiet={props.quiet === true}
 		/>
 	);
 }
@@ -37,12 +41,14 @@ function ModelCodeWarnings(props: {
  * @param props The exact pass and the module selection action.
  * @param props.reading The matching findings.
  * @param props.onSelect Select a warned subject, or clear selection for a model finding.
+ * @param props.quiet Whether a pass with no warning shows no count.
  * @returns The existing accessible warning count.
  */
 function WarningSelection(props: {
 	reading: ModelCodeReading;
 	onSelect: (id: string | null) => void;
-}): JSX.Element {
+	quiet: boolean;
+}): JSX.Element | null {
 	const warnings = props.reading.findings.filter((finding) => finding.severity === "warning");
 	const [position, setPosition] = useState(-1);
 	const { onSelect } = props;
@@ -51,6 +57,7 @@ function WarningSelection(props: {
 		setPosition(index);
 		onSelect(warnings[index]?.subject?.id ?? null);
 	}, [position, warnings, onSelect]);
+	if (props.quiet && warnings.length === 0) return null;
 	return (
 		<WarningCount
 			count={warnings.length}

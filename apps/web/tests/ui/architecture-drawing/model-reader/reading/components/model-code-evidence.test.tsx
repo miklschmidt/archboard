@@ -12,7 +12,8 @@ GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
 const { QueryClient, QueryClientProvider, focusManager, onlineManager } =
 	await import("@tanstack/react-query");
-const { act, cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
+const { act, cleanup, configure, fireEvent, getConfig, render, waitFor } =
+	await import("@testing-library/react");
 const { ModelCodeEvidence } =
 	await import("#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx");
 const { useModelCodeFindings } =
@@ -31,7 +32,17 @@ const { codeTokensQuery } =
 type Props = ComponentProps<typeof ModelCodeEvidence>;
 type Reading = NonNullable<Props["reading"]>;
 
+/**
+ * The ceiling of every wait in this file. Testing Library gives a wait one second, but the first
+ * excerpt in a language waits while the highlighter compiles that language's grammar: 0.3 s on a
+ * quiet machine, and near 2 s on a machine that the other test files share. A passing run never
+ * reaches the ceiling, which stays below Bun's own 15 s for a case.
+ */
+const TEST_READ_WAIT_MS = 10_000;
+
 const realFetch = globalThis.fetch;
+const waitCeiling = getConfig().asyncUtilTimeout;
+configure({ asyncUtilTimeout: TEST_READ_WAIT_MS });
 const observer = Object.getOwnPropertyDescriptor(globalThis, "IntersectionObserver")!;
 const clients: InstanceType<typeof QueryClient>[] = [];
 const VAULT = "/work/shop/.archboard/vault";
@@ -54,6 +65,7 @@ afterEach(() => {
 	onlineManager.setOnline(true);
 });
 afterAll(async () => {
+	configure({ asyncUtilTimeout: waitCeiling });
 	await Bun.sleep(1);
 	await GlobalRegistrator.unregister();
 });
@@ -100,6 +112,15 @@ const READING: Reading = {
 			message: "The binding of Gateway names a symbol that its file does not define.",
 		},
 	],
+};
+
+/**
+ * The same pass with no evidence, so the page reads no source lines. A test of the layout alone has
+ * no excerpt to wait for, whatever the load on the machine.
+ */
+const UNEVIDENCED: Reading = {
+	...READING,
+	findings: READING.findings.map(({ evidence: _evidence, ...finding }) => finding),
 };
 
 const ENDS: Props["ends"] = {
@@ -154,9 +175,13 @@ function cacheClient(): InstanceType<typeof QueryClient> {
 /**
  * Mount the findings of the pass.
  * @param check How the pass the view started stands.
+ * @param reading The pass, the one with evidence unless a test needs another.
  * @returns The subjects that choosing a finding selected, in turn.
  */
-function mount(check: Props["check"] = { status: "checking" }): (string | null)[] {
+function mount(
+	check: Props["check"] = { status: "checking" },
+	reading: Reading = READING,
+): (string | null)[] {
 	const shown: (string | null)[] = [];
 	render(
 		createElement(
@@ -164,7 +189,7 @@ function mount(check: Props["check"] = { status: "checking" }): (string | null)[
 			{ client: cacheClient() },
 			createElement(ModelCodeEvidence, {
 				vault: VAULT,
-				reading: READING,
+				reading,
 				check,
 				ends: ENDS,
 				/**
@@ -223,6 +248,21 @@ function rows(): Element[] {
 }
 
 /**
+ * Wait until every excerpt on the page has its lines or has none. The cache tells the page that a
+ * read has ended in a task of its own, so a test that is over before then leaves an update outside
+ * act, in the report of the test that follows.
+ *
+ * The check counts the excerpts that still read. A failed check writes what it received into its
+ * message, and Bun writes a Happy DOM element with all of React's fibers: about 100 MB and most of a
+ * second for each failed check, and seconds on a loaded machine.
+ */
+async function excerptsRead(): Promise<void> {
+	await waitFor(() =>
+		expect(document.querySelectorAll('output[data-slot="code-source-state"]')).toHaveLength(0),
+	);
+}
+
+/**
  * The passes a page asked for.
  * @param asked The addresses it asked for.
  * @returns The addresses of the code check.
@@ -259,6 +299,7 @@ test("a page starts with the layout its browser remembers", async () => {
 test("cards show every finding beside its code, warnings first, and a card's key selects its subject", async () => {
 	answering(() => Response.json({ error: "no" }, { status: 404 }));
 	const shown = mount();
+	await excerptsRead();
 	expect(codes("code-finding")).toEqual([
 		"RELATIONSHIP_UNDRAWN",
 		"BINDING_SYMBOL_MISSING",
@@ -278,6 +319,7 @@ test("cards show every finding beside its code, warnings first, and a card's key
 test("the list walks its rows with the keys, and each finding chosen selects its subject", async () => {
 	answering(() => Response.json({ error: "no" }, { status: 404 }));
 	const shown = mount();
+	await excerptsRead();
 	await lay("list");
 	expect(codes("code-finding-row")).toEqual([
 		"RELATIONSHIP_UNDRAWN",
@@ -301,7 +343,7 @@ test("the list walks its rows with the keys, and each finding chosen selects its
 
 test("the switch is remembered, and a page without storage still switches", async () => {
 	answering(() => Response.json({ error: "no" }, { status: 404 }));
-	mount();
+	mount(undefined, UNEVIDENCED);
 	expect(document.querySelector('[data-slot="code-evidence"]')?.getAttribute("data-layout")).toBe(
 		"cards",
 	);
@@ -312,7 +354,7 @@ test("the switch is remembered, and a page without storage still switches", asyn
 	Object.defineProperty(globalThis, "localStorage", { configurable: true, get: storageOff });
 	try {
 		chooseCodeFindingsLayout("cards");
-		mount();
+		mount(undefined, UNEVIDENCED);
 		await lay("list");
 		expect(document.querySelector('[data-slot="code-evidence"]')?.getAttribute("data-layout")).toBe(
 			"list",
@@ -472,6 +514,7 @@ test("the code view starts one pass when no pass read the reading, and then show
 		finish();
 	});
 	await waitFor(() => expect(codes("code-finding")).toHaveLength(3));
+	await excerptsRead();
 	expect(checksIn(asked)).toHaveLength(1);
 });
 

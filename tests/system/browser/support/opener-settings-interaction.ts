@@ -49,8 +49,8 @@ async function fillLabel(
 }
 
 /**
- * Open the opener settings dialog the way a person does: the header's
- * Settings button.
+ * Open the opener settings the way a person does: the header's Settings
+ * button, then the Code opener tab of the Settings dialog.
  * @param browser The page.
  */
 async function openOpenerSettings(browser: AgentBrowserSession): Promise<void> {
@@ -62,9 +62,10 @@ async function openOpenerSettings(browser: AgentBrowserSession): Promise<void> {
 				`(() => { const dialog = document.querySelector('[role="dialog"]'); return dialog ? dialog.getAnimations().map(animation => animation.playState) : ['missing']; })()`,
 			),
 		(states) => states.every((state) => state === "finished"),
-		"the opener settings dialog to settle in place",
+		"the settings dialog to settle in place",
 		{ timeoutMs: 5_000 },
 	);
+	await browser.run(["click", '[data-settings-tab="opener"]']);
 }
 
 /**

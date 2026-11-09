@@ -38,7 +38,6 @@ beforeAll(() => {
 const SHARED: PaneChrome = {
 	letter: null,
 	controls: null,
-	notice: null,
 	shared: true,
 	active: true,
 	column: null,

@@ -1,47 +1,88 @@
 ---
-// The left column of the mock shell: the repository, the tabs of the model and its root modules.
-// The rows are the example shop's real root modules.
+// The left column of the mock shell: the repository switcher, the keys of History and Measures,
+// and one list with a section for modules, flows and walkthroughs. The rows and counts are the
+// example shop's, as the shell lists them at its root with Checkout API selected.
 import Icon from "../Icon.astro";
-import KindChip from "../KindChip.astro";
-import type { Kind } from "../../lib/icons";
 
-const modules: { name: string; kind: Kind; parts?: number }[] = [
-	{ name: "Storefront", kind: "ui" },
-	{ name: "Checkout API", kind: "service", parts: 3 },
-	{ name: "Inventory service", kind: "service", parts: 4 },
-	{ name: "Basket cache", kind: "cache" },
-	{ name: "Orders DB", kind: "datastore" },
-	{ name: "Payment provider", kind: "external" },
-	{ name: "Email provider", kind: "external" },
-	{ name: "Warehouse system", kind: "external" },
+interface Row {
+	name: string;
+	/** The row holds parts, so the shell gives it a chevron. */
+	branch?: boolean;
+	/** The line names the collection of the rows under it: it is no row. */
+	owner?: boolean;
+	/** The row stands one step deeper, under the line of its collection. */
+	child?: boolean;
+	count?: number;
+}
+const sections: { title: string; count: number; rows: Row[] }[] = [
+	{
+		title: "Modules",
+		count: 18,
+		rows: [
+			{ name: "Storefront" },
+			{ name: "Checkout API", branch: true },
+			{ name: "Orders DB" },
+			{ name: "Payment provider" },
+			{ name: "Email provider" },
+			{ name: "Basket cache" },
+			{ name: "Warehouse system" },
+			{ name: "Inventory service", branch: true },
+		],
+	},
+	{
+		title: "Flows",
+		count: 2,
+		rows: [
+			{ name: "Inventory service", owner: true },
+			{ name: "Reserve an order's items", child: true },
+			{ name: "Web shop", owner: true },
+			{ name: "Place an order", child: true },
+		],
+	},
+	{
+		title: "Walkthroughs",
+		count: 2,
+		rows: [
+			{ name: "How stock is reserved", count: 6 },
+			{ name: "How an order is placed today", count: 4 },
+		],
+	},
 ];
-const tabs = ["Modules", "Flows", "Walkthroughs", "History", "Measures"];
+const selected = "Checkout API";
 ---
 
 <aside class="navigator" aria-hidden="true">
-	<div class="find">
-		<Icon name="search" size={14} />
-		<span>Find a module</span>
-		<kbd>/</kbd>
+	<div class="switcher">
+		<span class="repo">example.invalid/web-shop</span>
+		<span class="dot claim-mark"></span>
+		<Icon name="chevronDown" size={16} />
 	</div>
-	<div class="repo">
-		<span class="repo-name">web-shop</span>
-		<span class="repo-branch"><Icon name="branch" size={12} /> main</span>
+	<div class="keys">
+		<span class="key"><Icon name="history" size={15} /> History</span>
+		<span class="key"><Icon name="chart" size={15} /> Measures</span>
 	</div>
-	<div class="tabs">
-		{tabs.map((tab, index) => <span class:list={["tab", { "is-on": index === 0 }]}>{tab}</span>)}
-	</div>
-	<ul class="rows">
+	<div class="well">
 		{
-			modules.map((module, index) => (
-				<li class:list={["row", { "is-on": index === 1 }]}>
-					<KindChip kind={module.kind} size={18} />
-					<span class="row-name">{module.name}</span>
-					{module.parts && <span class="row-parts">{module.parts}</span>}
-				</li>
+			sections.map((section) => (
+				<section class="section">
+					<p class="head">
+						<span class="title">{section.title}</span>
+						<span class="mono total">{section.count}</span>
+						<span class="end"><Icon name="chevronDown" size={15} /></span>
+					</p>
+					<ul class="rows">
+						{section.rows.map((row) => (
+							<li class:list={["row", { "is-on": row.name === selected, owner: row.owner, child: row.child }]}>
+								<span class="fold">{row.branch && <Icon name="chevronRight" size={15} />}</span>
+								<span class="name">{row.name}</span>
+								{row.count !== undefined && <span class="count">{row.count}</span>}
+							</li>
+						))}
+					</ul>
+				</section>
 			))
 		}
-	</ul>
+	</div>
 </aside>
 
 <style>
@@ -50,113 +91,146 @@ const tabs = ["Modules", "Flows", "Walkthroughs", "History", "Measures"];
 		flex-direction: column;
 		min-height: 0;
 		background: var(--chrome);
-		box-shadow: inset -1px 0 0 var(--rule);
-		padding: 12px 10px 0;
-		gap: 10px;
+		padding-top: 8px;
+		gap: 8px;
+		font-size: 13px;
 	}
-	.find {
+	.switcher,
+	.key {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		height: 30px;
-		padding: 0 10px;
+		height: 32px;
 		border-radius: 4px;
 		background: var(--well);
 		box-shadow: var(--shadow-well);
-		color: var(--ink-faint);
-		font-size: 12.5px;
+		color: var(--ink);
 	}
-	.find kbd {
-		margin-left: auto;
-		font-size: 10.5px;
-		padding: 1px 5px;
-		border-radius: 2px;
-		background: var(--card);
-		box-shadow: var(--shadow-raised);
-		color: var(--ink-muted);
+	.switcher {
+		gap: 8px;
+		margin: 0 8px;
+		padding: 0 10px;
 	}
 	.repo {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		padding: 2px 4px 0;
+		flex: 1;
 	}
-	.repo-name {
-		font-size: 13.5px;
+	/* While the agent claims the model, the switcher marks it with the lamp of Working now. */
+	.claim-mark {
+		width: 6px;
+		height: 6px;
+		color: var(--live);
+		opacity: 0;
+		transition: opacity 300ms var(--ease-out);
+	}
+	:global(.window[data-claimed]) .claim-mark {
+		opacity: 1;
+		animation: claimed 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	}
+	@keyframes claimed {
+		50% {
+			opacity: 0.5;
+		}
+	}
+	.keys {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+		margin: 0 8px;
+	}
+	.key {
+		justify-content: center;
+		gap: 6px;
+		font-weight: 600;
+		background: var(--raised);
+		box-shadow: var(--shadow-raised);
+	}
+	.well {
+		flex: 1;
+		min-height: 0;
+		overflow: hidden;
+		/* The list lies on the chrome, as the right panel's lists do. */
+		padding: 2px 4px;
+	}
+	.section + .section {
+		margin-top: 8px;
+	}
+	.head,
+	.row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		height: 28px;
+		padding: 0 8px;
+	}
+	/* A section's label stands at the column's inset in full ink, with its count beside it, and
+	   the chevron that folds it at the end of the head, where the rows' facts end. */
+	.head {
+		gap: 6px;
+		padding-right: 12px;
+		font-size: 12.5px;
 		font-weight: 600;
 		color: var(--ink);
 	}
-	.repo-branch {
+	.total {
+		font-size: 11px;
+		font-weight: 400;
+		color: var(--ink-muted);
+	}
+	.end {
 		display: inline-flex;
-		align-items: center;
-		gap: 4px;
+		margin-left: auto;
+		color: var(--ink-muted);
+	}
+	.count {
 		font-family: var(--font-mono);
 		font-size: 11px;
-		color: var(--ink-muted);
-	}
-	.tabs {
-		display: flex;
-		gap: 2px;
-		padding: 3px;
-		border-radius: 5px;
-		background: var(--well);
-		box-shadow: var(--shadow-well);
-	}
-	.tab {
-		flex: 1 1 auto;
-		padding: 0 3px;
-		text-align: center;
-		font-size: 10.5px;
-		font-weight: 500;
-		line-height: 24px;
-		border-radius: 3px;
-		color: var(--ink-muted);
-	}
-	.tab.is-on {
-		background: var(--raised);
 		color: var(--ink);
-		box-shadow:
-			var(--shadow-raised),
-			inset 0 -2px 0 var(--gold-mark);
+		padding: 0 5px;
+		border-radius: 2px;
+		background: var(--slab);
+		box-shadow: 0 1px 0 oklch(0.215 0.006 75);
 	}
 	.rows {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 1px;
 	}
 	.row {
-		display: flex;
-		align-items: center;
-		gap: 9px;
-		height: 30px;
-		padding: 0 8px;
 		border-radius: 3px;
-		font-size: 12.5px;
 		color: var(--ink-body);
+	}
+	/* The name of a collection is no row: it stands in full ink where a row's name stands, and
+	   its flows stand one step deeper under a rail. */
+	.row.owner {
+		color: var(--ink);
+		font-weight: 500;
+	}
+	.row.child {
+		position: relative;
+		padding-left: 24px;
+	}
+	.row.child::before {
+		content: "";
+		position: absolute;
+		left: 15px;
+		top: 0;
+		bottom: 0;
+		width: 1px;
+		background: var(--rule);
 	}
 	.row.is-on {
 		background: var(--raised);
 		color: var(--ink);
-		box-shadow:
-			var(--shadow-raised),
-			inset 2px 0 0 var(--gold-mark);
+		box-shadow: var(--shadow-raised);
 	}
-	.row-name {
+	.fold {
+		display: inline-flex;
+		width: 15px;
+		color: var(--ink-muted);
+	}
+	.name {
 		flex: 1;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-	}
-	.row-parts {
-		font-family: var(--font-mono);
-		font-size: 10.5px;
-		color: var(--ink-muted);
-		padding: 0 5px;
-		border-radius: 2px;
-		background: var(--slab);
-		box-shadow: 0 1px 0 oklch(0.215 0.006 75);
 	}
 </style>

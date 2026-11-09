@@ -1,3 +1,16 @@
 {
-	"buildPath": "comp"
+	"buildPath": "comp",
+	"detector": {
+		"ignoreRules": [],
+		"ignoreFiles": [],
+		"ignoreValues": [
+			{
+				"rule": "layout-transition",
+				"value": "*",
+				"files": ["apps/web/src/ui/theme/app.css"],
+				"createdAt": "2026-11-08T21:27:19.589Z",
+				"reason": "Repository DESIGN.md, Pane sidebar: the docked column animates width for 220ms while its fixed-width panel slides under the picture edge. This is intentional pane reflow."
+			}
+		]
+	}
 }

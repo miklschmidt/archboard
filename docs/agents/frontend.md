@@ -254,9 +254,8 @@ Its picture provider uses the local renderer.
 No provider falls back to a live legacy board HTTP route.
 Canonical recordings use their captured model and the same canonical walkthrough components as ordinary playback.
 
-The left column draws its depth from the picture's tokens. `column-well` in `app.css` is the well of a list, and a row's tone is `bg-tray-sink`, so a stuck row hides what scrolls under it.
-A shelf or a foot of a list stands proud of the floor, so it sets its own z-index above the well's shadow.
-The column has no tabs. `ModelColumn` puts the keys of History and Measures over the well, and one list of sections in it. A section's head sticks at the top of the well and sets `--stuck-top`. `stuckTop` in `ui/shell/rules/tree-grid.ts` puts what sticks in a tree under that head.
+The left column's list lies on the chrome, as the right panel's lists do. A row of either side column takes its tone from `rowTone` in `ui/shell/rules/row-tone.ts`, and a section of either column takes its label from `SectionLabel`. A tree row lets the rails show through, and a row that sticks while it is open lays `bg-sidebar` under itself, so it hides what scrolls under it.
+The column has no tabs. `ModelColumn` puts the keys of History and Measures over one list of sections. A section's head sticks at the top of the list and sets `--stuck-top`. `stuckTop` in `ui/shell/rules/tree-grid.ts` puts what sticks in a tree under that head.
 Each section keeps its row on screen in view with `useRevealedRow`: the tree its lit module, Flows the flow on screen and Walkthroughs the one that plays. It leaves a list alone while the pointer or the focus is in it.
 `app.css` holds the site's physical vocabulary as utilities, so reach for them before you write a shadow.
 `quiet-key` is the raised key that stands beside a gold one, and `Button` takes it as its `outline` variant.
@@ -265,6 +264,8 @@ Each section keeps its row on screen in view with `useRevealedRow`: the tree its
 A count is `Badge` with `variant="count"` and `size="technical"`.
 
 Every dropdown is `Select` or `DropdownMenu` from the ui-kit, and both ease with the `menu-motion` utility. The kit reads no timing, because it stands in the lowest layer, and a popover stands in a portal outside the shell root. So `applyShellDurations` puts `COLUMN_MS.popoverIn` and `popoverOut` on the root element when the page starts.
+
+Every scrollbar takes its look from one rule in the base layer of `app.css`, the Quiet Scrollbar Rule in DESIGN.md. Do not style or hide a scrollbar in a component. `scrollbar-gutter` stays free, because it reserves room and changes no look.
 
 The remaining stack stays as it is. Use the existing shadcn/Base UI primitives,
 Remix icons, Tailwind theme tokens and Bun validation. Other Platform libraries,
@@ -351,15 +352,15 @@ A row of the panel is an action. Long lists and evidence live on `ModelAbout`, w
 `ModelPanelContext` stands under what the panel says, in the same scroll, and `contextOf` decides what it lists.
 A row opens its flow or walkthrough through the same choice as Find, and its section of the left column lights it.
 The left column lists the whole model, and only the panel follows what a reader looks at.
-`ModelLegend` ends the panel, under the actions and outside the keyed subject, so a selection neither moves nor redraws it.
-It owns the marks, and `Filter` puts a visibility switch on each line type that a reader can hide.
+`ModelPanel.Scroll` holds the keyed subject and, under it, `ModelLegend`, which ends the scroll outside the subject, so a selection neither redraws it nor moves a group's tag from under the pointer. The keys of `ModelPanel.Foot` stand under the scroll.
+It owns the marks. Each line type that a reader can hide is a row that switches its lines, and the marks that no reader hides stand under the types with no switch.
 `model-reader/reading/rules/legend-rows.ts` derives its rows from the whole reading, in the policy's order, so that a hidden kind and what left the picture with it keep their rows.
 A group's tag takes `--tag` from `paletteTag`, and the `group-tag` utility in `app.css` holds its one recipe.
 A tag selects what the picture draws of its group through the ordinary selection, and it reads as on from that selection, with no state of its own.
-`ModelEngine` stands under the legend on a structural reading. `useAcceptedScene` reads the browser's engine and puts it on the request, so the scene key, the fit and the drawing key all name it.
+`PictureSettings`, in the `Picture` tab of the Settings dialog (`application/components/SettingsDialog.tsx`), holds the engine switch. `useAcceptedScene` reads the browser's engine and puts it on the request, so the scene key, the fit and the drawing key all name it.
 A switch is a destination like any other: the last picture stays until the other engine's drawing exists, and the selection holds.
 A flow request carries no engine, because the core lays out only architecture, so its stored drawing outlives a switch.
-`ModelHoverLight` stands under it. `canvas/picture/clients/hover-light.ts` remembers in this browser whether a part the pointer rests on dims the rest of the picture, and `useLighting` reads it. A pick, a trace and a row of the sidebar light the picture either way, because each one asks a question that only the light answers.
+The switch for hover light stands beside it. `canvas/picture/clients/hover-light.ts` remembers in this browser whether a part the pointer rests on dims the rest of the picture, and `useLighting` reads it. A pick, a trace and a row of the sidebar light the picture either way, because each one asks a question that only the light answers.
 `useDoorPick` turns a click on a door into a move to its module, and `ModelDoorTip` lists the door's endpoints on hover. Ctrl, a removed door and a presented step keep the ordinary pick.
 A click on the control that a door or a frame's tab wears goes to `onToggle` instead. The one rule is `toggled` in `model-reader/rules/expansion.ts`, and the pointer, the panel and the `E` key all reach it. A module expanded beside the scope keeps `sceneModel`, so the picture is carried, and `sceneFit` names it, so the camera lands whole.
 Only `useModelReading` and `useModelMoves` pass `controls: true` to `projectModel`, so an export and a presented step draw neither control. The core draws the control, and `app.css` adds only its hover.
@@ -387,6 +388,14 @@ A failed drawing or a failed read of a destination leaves the accepted scene whe
 The failure lies over the picture with Retry and Back, and with `No comparison` when a comparison can be what failed.
 Back is the browser's, so a reading opened directly has none.
 Every notice about a reading lies over the picture in `model-notices`, so no failure and no lost server moves it.
+A claim is status, and no surface offers an action on it.
+`useClaimedSubjects` reads the claims of a live reading for the state that it shows, and `useReader` hands them on as `claimed`.
+The module tree, Flows and Walkthroughs mark each claimed row with `ClaimMark`.
+`ModelPanel.Subject` holds the claims of the selection, and its `Head` shows `ClaimBadge` while they hold it.
+With no selection, the badge follows the open flow or module that the head names.
+In a flow reading, a claim on the retained module scope never marks the flow.
+The shell marks the claimed model in the repository switcher and its list from the agent activity that it already holds.
+A mark takes no click and no focus, so a claim that starts or ends moves nothing.
 A cached reading is stale only when a read failed or the stream was lost. An event being applied is healthy and shows nothing.
 A retained reading stays through a lost server. A refusal of that same reading removes it, because the server has then said that it is unavailable.
 A message about a wait appears after `PICTURE_MS.waitNotice` and names the destination.

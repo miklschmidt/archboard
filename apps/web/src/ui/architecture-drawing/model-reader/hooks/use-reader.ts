@@ -3,6 +3,7 @@ import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { Page } from "#ui/architecture-drawing/model-reader/reading/components/ModelHeading.tsx";
 import { useAcceptedScene } from "#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts";
 import { useChangeWalk } from "#ui/architecture-drawing/model-reader/hooks/use-change-walk.ts";
+import { useClaimedSubjects } from "#ui/architecture-drawing/model-reader/hooks/use-claimed-subjects.ts";
 import { useFlowReadings } from "#ui/architecture-drawing/model-reader/hooks/use-flow-readings.ts";
 import { useModelMoves } from "#ui/architecture-drawing/model-reader/hooks/use-model-moves.ts";
 import { useModelReading } from "#ui/architecture-drawing/model-reader/hooks/use-model-reading.ts";
@@ -151,6 +152,7 @@ function useReader(inputs: ReaderInputs) {
 		[request.projection, leave, setExpand],
 	);
 	const tree = useMemo(() => moduleTree(depicted), [depicted]);
+	const claimed = useClaimedSubjects(inputs.vault, model, location.checkpoint);
 	const branches = useModuleBranches(tree, opened);
 	const places = useReaderPage(opened, selection.ids.size > 0);
 	const history = useHistoryDialog();
@@ -208,6 +210,7 @@ function useReader(inputs: ReaderInputs) {
 		moves,
 		tree,
 		branches,
+		claimed,
 		walk,
 		choices,
 		presenting: playback?.active === true,

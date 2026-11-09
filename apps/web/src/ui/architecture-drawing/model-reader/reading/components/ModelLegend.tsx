@@ -1,26 +1,18 @@
-import { RiEyeLine, RiEyeOffLine, RiFilterLine } from "@remixicon/react";
+import { RiEyeLine, RiEyeOffLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
-import {
-	useCallback,
-	useMemo,
-	useState,
-	type CSSProperties,
-	type JSX,
-	type ReactNode,
-} from "react";
+import { useCallback, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 import type { Model, ModelFilters, projectModel } from "@archboard/model/content";
-import { Button, cn } from "@archboard/ui-kit/components";
+import { cn } from "@archboard/ui-kit/components";
+import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import {
 	EmphasisSample,
 	RelationshipSample,
 	TrafficSample,
-	TypeSample,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx";
 import { iconQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
-import type {
-	AppliedAppearance,
-	PictureLegend,
-} from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
+import type { PictureLegend } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
+import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
+import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
 import {
 	groupRows,
@@ -33,18 +25,22 @@ import {
 	type LegendRow,
 } from "#ui/architecture-drawing/model-reader/reading/rules/legend-rows.ts";
 import { paletteTag } from "#ui/architecture-drawing/canvas/picture/rules/palette.ts";
+import { rowTone } from "#ui/shell/rules/row-tone.ts";
 
-/** How wide every line's sample is, and the box of every mark, so that the names start on one line. */
-const SAMPLE_WIDTH = 22;
+/**
+ * How wide every line's sample is, and the box of every mark: as wide as a kind's chip, so that the
+ * names start on one line.
+ */
+const SAMPLE_WIDTH = 24;
 
-/** The size of a kind's chip and its icon, as wide as the ink of a line's sample. */
-const CHIP = "size-5 [&>svg]:size-3.5";
-
-/** The two columns that the head, the kinds and the line types stand in. */
-const CELLS = "grid grid-cols-2 gap-x-4";
-
-/** A key held pressed in. */
-const PRESSED = "bg-muted dark:bg-muted text-foreground shadow-pressed";
+/**
+ * The two columns that the kinds and the marks of lines stand in. The foot under the panel lies on
+ * the same columns.
+ */
+const CELLS = "grid grid-cols-2 gap-x-2";
+/** `Show all` looks like the panel's other keys on a label row, such as `Trace back` (`TraceToggle`). */
+const PANEL_KEY =
+	"text-body border-border hover:bg-sidebar-accent/50 rounded-control flex h-6 shrink-0 items-center border px-2 transition-colors";
 
 /** Inputs for the legend. */
 interface ModelLegendProps {
@@ -52,6 +48,8 @@ interface ModelLegendProps {
 	readonly projection: ReturnType<typeof projectModel>;
 	/** What the picture draws, or null while it draws nothing that a legend explains. */
 	readonly picture: PictureLegend | null;
+	/** How the vault's kinds look, with the icons the picture draws them with. */
+	readonly look: KindLook;
 	readonly filters: Pick<ModelFilters, "hideKinds">;
 	readonly onToggle: (field: "hideKinds", id: string) => void;
 	/** Draw every kind of line again. */
@@ -60,203 +58,198 @@ interface ModelLegendProps {
 }
 
 /**
- * What the marks of a picture mean, at the foot of the right panel with no click: its kinds, its
- * line types and its groups. Filter puts the control that hides a line type on each row, in room
- * that the row always keeps, and a group's tag selects the group's parts.
+ * What the marks of a picture mean, as the last section of the right panel, under every subject,
+ * with no click: its kinds, its line types and its groups. Each line type that a reader can hide
+ * is its own switch, and a group's tag selects the group's parts.
  * @param props The reading and its visibility choices.
- * @returns The legend, or nothing while no picture stands.
+ * @returns The section, or nothing while no picture stands.
  */
 function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 	const { model, projection, picture, selection } = props;
-	const [filtering, setFiltering] = useState(false);
-	const toggle = useCallback((): void => setFiltering((on) => !on), []);
+	const { hideKinds } = props.filters;
 	if (picture === null) return null;
-	const reading = { model, projection, picture, hideKinds: props.filters.hideKinds };
-	const lines = lineRows(reading);
+	const reading = { model, projection, picture, hideKinds };
 	return (
-		<section
-			aria-label="Legend"
-			data-slot="model-legend"
-			className="border-border bg-raised shadow-edge-up relative flex shrink-0 flex-col gap-2 border-t px-4 pt-3 pb-4"
-		>
-			<LegendHead
-				hidden={lines.filter((line) => line.hidden).length}
-				filterable={lines.some((line) => line.hideable)}
-				filtering={filtering}
-				onFilter={toggle}
+		<div data-slot="model-legend" className="flex flex-col gap-5">
+			<Kinds model={model} look={props.look} rows={kindRows(reading)} />
+			<Lines
+				lines={lineRows(reading)}
+				marks={markRows(projection)}
+				onToggle={props.onToggle}
 				onShowAll={props.onShowAll}
 			/>
-			<div className="divide-border flex flex-col divide-y *:py-2 *:first:pt-0 *:last:pb-0">
-				<Kinds model={model} rows={kindRows(reading)} />
-				<Lines
-					lines={lines}
-					marks={markRows(projection)}
-					filtering={filtering}
-					onToggle={props.onToggle}
-				/>
-				<Groups groups={groupRows(model, projection)} selection={selection} />
-			</div>
-		</section>
+			<Groups groups={groupRows(model, projection)} selection={selection} />
+		</div>
 	);
 }
 
 /**
- * The legend's name, the key that shows which line types a reader can hide, and the way back from
- * what a reader hid. Both stand in the second column and grow into its free room, so neither moves
- * the other's words.
- * @param props What the controls say and do.
- * @param props.hidden How many kinds of this reading the picture leaves out.
- * @param props.filterable Whether the reading has a line type to hide.
- * @param props.filtering Whether each line type shows its control.
- * @param props.onFilter Show or put away those controls.
- * @param props.onShowAll Draw every kind of line again.
- * @returns The head.
+ * One part of the legend, under its own label in the panel's label style.
+ * @param props The list.
+ * @param props.label What it lists.
+ * @param props.slot Where a test finds it.
+ * @param props.className How its entries stand.
+ * @param props.children Its entries.
+ * @returns The list, as a section of the panel.
  */
-function LegendHead(props: {
-	readonly hidden: number;
-	readonly filterable: boolean;
-	readonly filtering: boolean;
-	readonly onFilter: () => void;
-	readonly onShowAll: () => void;
+function LegendList(props: {
+	readonly label: string;
+	readonly slot: string;
+	readonly className: string;
+	readonly children: ReactNode;
 }): JSX.Element {
-	const { hidden, filtering } = props;
 	return (
-		<header className={`${CELLS} min-h-7 items-center`}>
-			<h3 className="text-title font-semibold">Legend</h3>
-			{props.filterable && (
-				<div className="flex items-center justify-between gap-2">
-					<Button
-						data-slot="model-legend-filter"
-						variant="outline"
-						size="sm"
-						aria-pressed={filtering}
-						title={filtering ? "Put the switches away" : "Choose which lines to draw"}
-						onClick={props.onFilter}
-						className={cn("relative", filtering && PRESSED)}
-					>
-						<RiFilterLine aria-hidden="true" />
-						Filter
-						{hidden > 0 && (
-							<span data-slot="model-legend-hidden" className="text-technical font-mono">
-								{hidden}
-								<span className="sr-only"> hidden</span>
-							</span>
-						)}
-					</Button>
-					{hidden > 0 && (
-						<Button
-							data-slot="model-legend-show-all"
-							variant="ghost"
-							size="sm"
-							onClick={props.onShowAll}
-							className="-mr-1.5 px-1.5"
-						>
-							Show all
-						</Button>
-					)}
-				</div>
-			)}
-		</header>
+		<ModelPanel.Section title={props.label} slot={`${props.slot}-section`}>
+			<li>
+				<ul data-slot={props.slot} className={props.className}>
+					{props.children}
+				</ul>
+			</li>
+		</ModelPanel.Section>
 	);
 }
 
 /**
- * The kinds of part in the reading.
+ * The kinds of part in the reading, each with the chip that the head of the panel puts before a
+ * module's name.
  * @param props The kinds.
  * @param props.model The reading, whose policy names the icon of a kind that the picture leaves out.
+ * @param props.look How the vault's kinds look.
  * @param props.rows One row for each.
  * @returns Their list, or nothing when there are none.
  */
 function Kinds(props: {
 	readonly model: Model;
+	readonly look: KindLook;
 	readonly rows: readonly LegendRow[];
 }): JSX.Element | null {
-	const { model, rows } = props;
+	const { model, look, rows } = props;
 	if (rows.length === 0) return null;
 	return (
-		<ul aria-label="Kinds" data-slot="model-legend-kinds" className={CELLS}>
+		<LegendList label="Legend" slot="model-legend-kinds" className={CELLS}>
 			{rows.map(({ item, dimmed }) => (
 				<Cell key={item.typeKind}>
 					<Mark name={item.typeName} dimmed={dimmed}>
-						{dimmed ? (
-							<PolicySample item={item} icon={model.policy.nodeKinds[item.typeKind]?.icon} />
-						) : (
-							<TypeSample appearance={item} className={CHIP} />
-						)}
+						<LegendChip
+							look={look}
+							kind={item.typeKind}
+							icon={dimmed ? model.policy.nodeKinds[item.typeKind]?.icon : undefined}
+						/>
 					</Mark>
 				</Cell>
 			))}
-		</ul>
+		</LegendList>
 	);
 }
 
 /**
- * The chip of a kind that the picture does not draw now, with the icon that the policy names, so
- * that its row reads the same as when the picture draws the kind.
+ * The chip of a kind. A kind that the picture does not draw now takes the icon that the policy
+ * names, so that its row reads the same as when the picture draws the kind.
  * @param props The kind.
- * @param props.item How it looks.
- * @param props.icon The icon's name, when the vault's policy names the kind.
- * @returns The chip, which is plain until the icon arrives.
+ * @param props.look How the vault's kinds look.
+ * @param props.kind The kind.
+ * @param props.icon The policy's icon for it, when the picture does not draw it.
+ * @returns The chip.
  */
-function PolicySample(props: {
-	readonly item: AppliedAppearance;
+function LegendChip(props: {
+	readonly look: KindLook;
+	readonly kind: string;
 	readonly icon: string | undefined;
 }): JSX.Element {
-	const { item, icon } = props;
-	const paths = useQuery({ ...iconQuery(icon ?? ""), enabled: icon !== undefined }).data ?? [];
-	const iconSvg = paths.map((d) => `<path d="${d}"/>`).join("");
-	const appearance = useMemo(
-		() => ({ ...item, iconSvg: `<svg viewBox="0 0 24 24" aria-hidden="true">${iconSvg}</svg>` }),
-		[item, iconSvg],
+	const { icon } = props;
+	const paths = useQuery({ ...iconQuery(icon ?? ""), enabled: icon !== undefined }).data;
+	const markup = useMemo(
+		() =>
+			paths === undefined
+				? undefined
+				: `<svg viewBox="0 0 24 24" aria-hidden="true">${paths.map((d) => `<path d="${d}"/>`).join("")}</svg>`,
+		[paths],
 	);
-	return <TypeSample appearance={appearance} className={CHIP} />;
+	return <KindChip look={props.look} kind={props.kind} icon={markup} />;
 }
 
 /** Inputs for the line types. */
 interface LinesProps {
 	readonly lines: readonly LegendLine[];
 	readonly marks: readonly LegendMark[];
-	/** Whether each line type shows the control that hides it. */
-	readonly filtering: boolean;
 	readonly onToggle: ModelLegendProps["onToggle"];
+	readonly onShowAll: () => void;
 }
 
 /**
- * The line types of the reading, then the marks that its lines wear beside their kinds.
+ * The line types of the reading, one to a row, each row the switch that draws its lines or leaves
+ * them out. Under them, in two columns and with no switch, stand what no reader hides: a mixed
+ * line, which is no kind of relationship, and the marks that lines wear beside their kinds.
  * @param props The line types and how to change their visibility.
  * @returns Their list, or nothing when the reading has no line.
  */
 function Lines(props: LinesProps): JSX.Element | null {
-	const { lines, marks, filtering, onToggle } = props;
+	const { lines, marks, onToggle, onShowAll } = props;
+	const hidden = lines.some((line) => line.hidden);
+	const action = useMemo(
+		() =>
+			hidden ? (
+				<button
+					type="button"
+					data-slot="model-legend-show-all"
+					onClick={onShowAll}
+					className={PANEL_KEY}
+				>
+					Show all
+				</button>
+			) : undefined,
+		[hidden, onShowAll],
+	);
 	if (lines.length === 0) return null;
+	const types = lines.filter((line) => line.hideable);
+	const mixed = lines.filter((line) => !line.hideable);
 	return (
-		<ul aria-label="Line types" data-slot="model-legend-lines" className={CELLS}>
-			{lines.map((line) => (
-				<LineCell key={line.item.typeKind} line={line} filtering={filtering} onToggle={onToggle} />
-			))}
-			{marks.map(({ mark, word, dimmed }) => (
-				<Cell key={mark}>
-					<Mark name={word} dimmed={dimmed}>
-						{mark === "emphasis" ? (
-							<EmphasisSample width={SAMPLE_WIDTH} />
-						) : (
-							<TrafficSample width={SAMPLE_WIDTH} />
-						)}
-					</Mark>
-				</Cell>
-			))}
-		</ul>
+		<ModelPanel.Section title="Relationships" slot="model-legend-lines-section" action={action}>
+			{types.length > 0 && (
+				<li>
+					<ul data-slot="model-legend-lines" className="flex flex-col">
+						{types.map((line) => (
+							<LineSwitch key={line.item.typeKind} line={line} onToggle={onToggle} />
+						))}
+					</ul>
+				</li>
+			)}
+			{mixed.length + marks.length > 0 && (
+				<li>
+					<ul data-slot="model-legend-marks" className={cn(CELLS, types.length > 0 && "mt-1")}>
+						{mixed.map(({ item, dimmed }) => (
+							<Cell key={item.typeKind}>
+								<Mark name={item.typeName} dimmed={dimmed}>
+									<RelationshipSample appearance={item} width={SAMPLE_WIDTH} />
+								</Mark>
+							</Cell>
+						))}
+						{marks.map(({ mark, word, dimmed }) => (
+							<Cell key={mark}>
+								<Mark name={word} dimmed={dimmed}>
+									{mark === "emphasis" ? (
+										<EmphasisSample width={SAMPLE_WIDTH} />
+									) : (
+										<TrafficSample width={SAMPLE_WIDTH} />
+									)}
+								</Mark>
+							</Cell>
+						))}
+					</ul>
+				</li>
+			)}
+		</ModelPanel.Section>
 	);
 }
 
 /**
- * One entry: a mark and what it means, then the control that changes the reading, if it has one.
+ * One entry: a mark and what it means.
  * @param props The entry.
- * @param props.children Its mark and control.
+ * @param props.children Its mark.
  * @returns The entry.
  */
 function Cell(props: { readonly children: ReactNode }): JSX.Element {
-	return <li className="flex min-h-6 min-w-0 items-center gap-2">{props.children}</li>;
+	return <li className="flex min-h-7 min-w-0 items-center gap-2">{props.children}</li>;
 }
 
 /**
@@ -277,14 +270,14 @@ function Mark(props: {
 		<>
 			<span
 				aria-hidden="true"
-				className={cn("flex w-5.5 shrink-0 justify-center", dimmed && "opacity-40")}
+				className={cn("flex w-6 shrink-0 justify-center", dimmed && "opacity-40")}
 			>
 				{props.children}
 			</span>
 			<span
 				title={props.name}
 				className={cn(
-					"text-control min-w-0 flex-1 truncate font-normal",
+					"text-control min-w-0 flex-1 truncate text-left font-normal",
 					dimmed && "text-muted-foreground",
 				)}
 			>
@@ -295,80 +288,47 @@ function Mark(props: {
 }
 
 /**
- * A line type, whether the picture draws it or leaves it out. Its row keeps the room of its switch
- * while the switch is put away, so that Filter moves no word.
+ * A line type that a reader can hide. The whole row is its switch, a row of the panel like any
+ * other, and the eye at its end says whether the picture draws the type's lines.
  * @param props The line type and how to change its visibility.
  * @param props.line The line type.
- * @param props.filtering Whether it shows the control that hides it.
  * @param props.onToggle Change its visibility.
  * @returns The entry.
  */
-function LineCell(props: {
+function LineSwitch(props: {
 	readonly line: LegendLine;
-	readonly filtering: boolean;
 	readonly onToggle: ModelLegendProps["onToggle"];
 }): JSX.Element {
-	const { line, filtering, onToggle } = props;
-	const { item, hidden, hideable, dimmed } = line;
+	const { line, onToggle } = props;
+	const { item, hidden, dimmed } = line;
 	const toggle = useCallback(
 		(): void => onToggle("hideKinds", item.typeKind),
 		[onToggle, item.typeKind],
 	);
+	const Eye = hidden ? RiEyeOffLine : RiEyeLine;
 	return (
-		<Cell>
-			<Mark name={item.typeName} dimmed={dimmed}>
-				<RelationshipSample appearance={item} width={SAMPLE_WIDTH} />
-			</Mark>
-			{hideable && (
-				<span className="size-6 shrink-0">
-					{filtering && (
-						<Visibility
-							shown={!hidden}
-							name={`${item.typeName} lines`}
-							kind={item.typeKind}
-							onToggle={toggle}
-						/>
-					)}
-				</span>
-			)}
-		</Cell>
-	);
-}
-
-/**
- * The control that says whether the picture draws a kind, apart from the mark that explains it.
- * @param props What it controls.
- * @param props.shown Whether the picture draws it.
- * @param props.name What it is called.
- * @param props.kind The relationship kind it controls.
- * @param props.onToggle Change it.
- * @returns A switch.
- */
-function Visibility(props: {
-	readonly shown: boolean;
-	readonly name: string;
-	readonly kind: string;
-	readonly onToggle: () => void;
-}): JSX.Element {
-	const { shown } = props;
-	return (
-		<Button
-			variant="ghost"
-			size="icon-xs"
-			role="switch"
-			aria-checked={shown}
-			aria-label={`Show ${props.name}`}
-			title={`${shown ? "Hide" : "Show"} ${props.name}`}
-			data-filter-kind={props.kind}
-			onClick={props.onToggle}
-			className="text-muted-foreground aria-checked:text-foreground"
-		>
-			{shown ? (
-				<RiEyeLine aria-hidden="true" className="size-4" />
-			) : (
-				<RiEyeOffLine aria-hidden="true" className="size-4" />
-			)}
-		</Button>
+		<li className="flex">
+			<button
+				type="button"
+				role="switch"
+				aria-checked={!hidden}
+				aria-label={`Show ${item.typeName} lines`}
+				data-filter-kind={item.typeKind}
+				onClick={toggle}
+				className={cn(
+					rowTone({ lit: false }),
+					"group -mx-2 flex min-w-0 flex-1 items-center gap-2 px-2 transition-colors",
+				)}
+			>
+				<Mark name={item.typeName} dimmed={dimmed}>
+					<RelationshipSample appearance={item} width={SAMPLE_WIDTH} />
+				</Mark>
+				<Eye
+					aria-hidden="true"
+					className="text-muted-foreground group-hover:text-foreground mx-1 size-4 shrink-0"
+				/>
+			</button>
+		</li>
 	);
 }
 
@@ -386,15 +346,15 @@ function Groups(props: {
 	const { groups, selection } = props;
 	if (groups.length === 0) return null;
 	return (
-		<ul
-			aria-label="Groups"
-			data-slot="model-legend-groups"
+		<LegendList
+			label="Groups"
+			slot="model-legend-groups"
 			className="flex flex-wrap gap-x-2 gap-y-2.5"
 		>
 			{groups.map((group) => (
 				<GroupTag key={group.id} group={group} selection={selection} />
 			))}
-		</ul>
+		</LegendList>
 	);
 }
 

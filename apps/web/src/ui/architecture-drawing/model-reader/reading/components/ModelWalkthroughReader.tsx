@@ -80,18 +80,20 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 	return (
 		<ModelWalkthroughContext value={context}>
 			{props.chrome}
-			{/* The reading hides itself, so the left column it owns stays while this plays. */}
-			<div className={context.active ? "hidden" : "contents"}>{props.children}</div>
-			{request !== null && model !== undefined && (
-				<CapturedWalkthrough
-					key={request.id}
-					{...props}
-					model={model}
-					request={request}
-					onLeave={leave}
-					onRestart={select}
-				/>
-			)}
+			<div className="relative flex min-h-0 flex-1 flex-col">
+				{/* The reading hides itself, so the left column it owns stays while this plays. */}
+				<div className={context.active ? "hidden" : "contents"}>{props.children}</div>
+				{request !== null && model !== undefined && (
+					<CapturedWalkthrough
+						key={request.id}
+						{...props}
+						model={model}
+						request={request}
+						onLeave={leave}
+						onRestart={select}
+					/>
+				)}
+			</div>
 		</ModelWalkthroughContext>
 	);
 }

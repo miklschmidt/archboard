@@ -148,7 +148,9 @@ interface PictureCamera {
 	/**
 	 * Glide to a fit or to a camera along a path that pulls back to cross a long
 	 * distance, and land there. Nobody moved the camera, so a fit stays free to
-	 * happen unless the glide is giving a person back the camera they had.
+	 * happen unless the glide is giving a person back the camera they had. A glide
+	 * to the camera already on screen goes nowhere: nothing flies, and nobody hears
+	 * a move.
 	 * @param to What to show, or the camera to return to.
 	 * @param duration How long, in milliseconds; zero lands at once.
 	 * @param handledAfter Whether the camera counts as the person's once it lands.
@@ -200,6 +202,16 @@ function sizeOf(element: HTMLElement | null): Size | null {
  */
 function sameSize(one: Size | null, other: Size | null): boolean {
 	return one?.width === other?.width && one?.height === other?.height;
+}
+
+/**
+ * Whether two cameras show the same view.
+ * @param one A camera.
+ * @param other Another camera.
+ * @returns True when they are at the same place and the same zoom.
+ */
+function sameCamera(one: Camera, other: Camera): boolean {
+	return one.x === other.x && one.y === other.y && one.scale === other.scale;
 }
 
 /**
@@ -416,8 +428,14 @@ function usePictureCamera(reducedMotion = false): PictureCamera {
 				return false;
 			}
 			motion.halt();
-			const from = flight.stop() ?? read().camera;
+			settle();
 			moved.current = handledAfter;
+			const from = read().camera;
+			// A surface that comes into sight where the last one stood can ask for the view it shows
+			// already. That glide moves nothing, and a move that it told of would close an open tip.
+			if (sameCamera(from, destination)) {
+				return true;
+			}
 			write({ camera: from, instant: true });
 			flight.start(from, destination, {
 				duration,
@@ -433,7 +451,7 @@ function usePictureCamera(reducedMotion = false): PictureCamera {
 			});
 			return true;
 		},
-		[viewport, measure, flight, motion, read, write],
+		[viewport, measure, flight, motion, settle, read, write],
 	);
 
 	// The wheel is listened for natively because a zoom has to stop the page

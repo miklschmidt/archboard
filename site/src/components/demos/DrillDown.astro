@@ -13,6 +13,7 @@ const centerX = ((box.x + box.width / 2) / outer.width) * 100;
 const centerY = ((box.y + box.height / 2) / outer.height) * 100;
 const scale = (0.92 * outer.width) / box.width;
 const vars = [
+	`--ratio: ${outer.width} / ${outer.height}`,
 	`--card-x: ${pct(box.x, outer.width)}`,
 	`--card-y: ${pct(box.y, outer.height)}`,
 	`--card-w: ${pct(box.width, outer.width)}`,
@@ -165,7 +166,8 @@ const vars = [
 	}
 	.stage {
 		position: relative;
-		aspect-ratio: 1002 / 691;
+		/* The ring's box is in the drawing's percentages, so the stage takes the drawing's shape. */
+		aspect-ratio: var(--ratio);
 		border-radius: 6px;
 		overflow: hidden;
 		background: oklch(0.2 0.006 75);
@@ -192,9 +194,8 @@ const vars = [
 		filter: blur(5px);
 		opacity: 0;
 	}
+	/* A block, so the image's full height is the layer's inner height and the drawing fits whole. */
 	.inner {
-		display: grid;
-		place-items: center;
 		padding: 3%;
 		opacity: 0;
 		transform: scale(0.42);

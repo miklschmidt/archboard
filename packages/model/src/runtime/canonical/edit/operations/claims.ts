@@ -114,7 +114,7 @@ function renewClaim(
 	)
 		throw new ArchiveError(
 			"CLAIM_HELD",
-			`Subjects are claimed by ${overlap.writer}. Wait for release or ask the reader to take the claim back.`,
+			`Subjects are claimed by ${overlap.writer}. Wait until the claim is released or reaches its deadline.`,
 			"claims",
 			request.subjects,
 		);
@@ -258,11 +258,7 @@ async function endClaim(
 			const state = claimState(vault);
 			const claim = state.claims.find((value) => value.id === id);
 			if (claim !== undefined && writer !== undefined && claim.writer !== writer)
-				throw new ArchiveError(
-					"CLAIM_HELD",
-					"Only the claim writer can release it. A reader can explicitly take it back.",
-					id,
-				);
+				throw new ArchiveError("CLAIM_HELD", "Only the claim writer can release it.", id);
 			writeState(vault, "claims.json", {
 				claims: state.claims.filter((value) => value.id !== id),
 				revoked: [...new Set([...state.revoked, id])],
@@ -344,7 +340,7 @@ function requireSubjectClaim(
 	if (competing !== undefined)
 		throw new ArchiveError(
 			"CLAIM_HELD",
-			`Affected subjects are claimed by ${competing.writer}. Wait for release or request human take-back.`,
+			`Affected subjects are claimed by ${competing.writer}. Wait until the claim is released or reaches its deadline.`,
 			"model.json",
 			subjects,
 		);

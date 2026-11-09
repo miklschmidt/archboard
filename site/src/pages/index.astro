@@ -21,7 +21,7 @@ import Measures from "../components/demos/Measures.astro";
 import OwnModel from "../components/demos/OwnModel.astro";
 import Pipeline from "../components/demos/Pipeline.astro";
 import ProposalSwitch from "../components/demos/ProposalSwitch.astro";
-import TakeBack from "../components/demos/TakeBack.astro";
+import ClaimMarks from "../components/demos/ClaimMarks.astro";
 import TalkRelay from "../components/demos/TalkRelay.astro";
 import WalkthroughPlayer from "../components/demos/WalkthroughPlayer.astro";
 import { links } from "../lib/links";
@@ -184,14 +184,15 @@ import { links } from "../lib/links";
 
 			<Feature title="Agents work in plain sight">
 				<p>
-					An agent claims the subjects it plans to change. Each pane shows the writer, the purpose, the
-					subjects and the start time.
+					An agent claims the subjects it plans to change. The shell marks the claimed model and each
+					claimed row with a pulsing dot, and the panel says Claimed on a selected subject. Each mark
+					names what the agent is doing.
 				</p>
 				<p>
-					Take back control ends the claim, and the server refuses the former intent. Every write names
-					the exact revision it read, so a stale write is refused too.
+					A claim is status, so it asks nothing of you. Every write names the exact revision it read,
+					so the server refuses a stale write.
 				</p>
-				<TakeBack slot="demo" />
+				<ClaimMarks slot="demo" />
 			</Feature>
 
 			<div class="sub-head" data-reveal>

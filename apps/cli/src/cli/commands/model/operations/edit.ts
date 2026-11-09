@@ -159,7 +159,7 @@ const modelReleaseContract = defineCommand({
 	path: ["model", "release"],
 	summary: "Release a canonical subject claim",
 	description:
-		"Reads claim and writer from JSON. A reader can take a claim back through the browser control.",
+		"Reads claim and writer from JSON. Only the writer that holds a claim can release it.",
 	examples: ["archboard model release --input release.json -C /tmp/shop"],
 	result: ArchitectureClaimListSchema,
 	relationships: [

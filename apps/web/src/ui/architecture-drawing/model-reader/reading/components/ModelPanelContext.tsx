@@ -34,15 +34,19 @@ function ModelPanelContext(props: ModelPanelContextProps): JSX.Element {
 		[model, depicted, opened, selected],
 	);
 	const collections = useMemo(() => flowCollections(model, reference), [model, reference]);
+	const collectionOf = useCallback(
+		(entry: { readonly id: string }): string => collections.get(entry.id) ?? "",
+		[collections],
+	);
 	return (
 		<>
-			<ContextList title="Flows" slot="model-panel-flows" entries={flows}>
+			<ContextList title="Flows" slot="model-panel-flows" entries={flows} groupOf={collectionOf}>
 				{(entry) => (
 					<ContextRow
 						key={entry.id}
 						id={entry.id}
 						name={entry.name}
-						detail={collections.get(entry.id)}
+						detail={undefined}
 						current={entry.id === props.flow}
 						onOpen={props.onFlow}
 					/>
@@ -80,6 +84,7 @@ function stepsOf(walkthrough: Model["walkthroughs"][number]): string {
  * @param props.title What it lists.
  * @param props.slot Where a test finds it.
  * @param props.entries What it lists.
+ * @param props.groupOf The group of an entry, when its entries belong to groups.
  * @param props.children One row.
  * @returns The list, or nothing.
  */
@@ -87,13 +92,14 @@ function ContextList<Entry>(props: {
 	readonly title: string;
 	readonly slot: string;
 	readonly entries: readonly Entry[];
+	readonly groupOf?: ((entry: Entry) => string) | undefined;
 	readonly children: (entry: Entry) => ReactNode;
 }): JSX.Element | null {
 	const { entries } = props;
 	if (entries.length === 0) return null;
 	return (
 		<ModelPanel.Section title={props.title} count={entries.length} slot={props.slot}>
-			<ModelPanel.Rows items={entries} limit={FEW_ROWS}>
+			<ModelPanel.Rows items={entries} limit={FEW_ROWS} groupOf={props.groupOf}>
 				{props.children}
 			</ModelPanel.Rows>
 		</ModelPanel.Section>

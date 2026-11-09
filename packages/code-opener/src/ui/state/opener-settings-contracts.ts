@@ -42,8 +42,7 @@ type CustomCommandCheck =
 	| { ok: false; issues: CustomCommandIssues };
 
 /** Inputs for the opener settings dialog. */
-interface OpenerSettingsDialogProps {
-	open: boolean;
+interface OpenerSettingsPanelProps {
 	/** The settings as the server answered, or null while they are being read. */
 	settings: OpenerSettingsReply | null;
 	busy: OpenerSettingsBusy;
@@ -53,9 +52,6 @@ interface OpenerSettingsDialogProps {
 	onSave: (selection: OpenerSelection) => void;
 	/** Restore the platform default; the host persists it. */
 	onReset: () => void;
-	onOpenChange: (open: boolean) => void;
-	/** Where focus returns when the dialog closes: the control that opened it. */
-	finalFocus?: () => HTMLElement | null;
 }
 
 export type {
@@ -63,6 +59,6 @@ export type {
 	CustomCommandDraft,
 	CustomCommandIssues,
 	OpenerChoice,
-	OpenerSettingsDialogProps,
+	OpenerSettingsPanelProps,
 	OpenerTestResult,
 };
