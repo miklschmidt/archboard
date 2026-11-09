@@ -263,13 +263,21 @@ pub(super) fn route_cost(path: &[Point]) -> f64 {
     length(path) + 120.0 * path.len().saturating_sub(2) as f64
 }
 
-pub(super) fn route_rank(model: &Model<'_>, bounds: Rect, path: &[Point]) -> (u64, u64) {
+/// How a route ranks among the routes of its line. A route that meets a door on a side that
+/// faces its far end comes before every route that does not, so a line meets a door from
+/// behind only when no other route passes the guards.
+pub(super) fn route_rank(
+    (model, shape, edge): (&Model<'_>, &Shape, usize),
+    bounds: Rect,
+    path: &[Point],
+) -> (bool, u64, u64) {
+    let behind = !super::ports::faces_far_end(model, shape, edge, path);
     let page = page_cost(bounds, path).to_bits();
     let route = route_cost(path).to_bits();
     if model.edges.len() <= super::REFINEMENT_LIMIT {
-        (route, page)
+        (behind, route, page)
     } else {
-        (page, route)
+        (behind, page, route)
     }
 }
 
@@ -380,7 +388,7 @@ fn candidates(
         if choices.is_empty() {
             return Err(blocked(model, &[edge]));
         }
-        choices.sort_by_cached_key(|line| route_rank(model, bounds, &line.points));
+        choices.sort_by_cached_key(|line| route_rank((model, shape, edge), bounds, &line.points));
         candidates.push(choices);
     }
     Ok(candidates)

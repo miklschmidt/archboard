@@ -127,9 +127,6 @@ impl<'a, 'g> Probe<'a, 'g> {
         ) {
             return Some(reason);
         }
-        if !super::ports::faces_far_end(model, shape, index, points) {
-            return Some("door side");
-        }
         if shape
             .labels
             .get(&index)
