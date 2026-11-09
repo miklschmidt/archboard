@@ -95,12 +95,49 @@ fn grouped(scene: &Scene) -> Vec<Vec<usize>> {
     grouped
 }
 
-/// Whether two boxes may share any area: false only where they stand more than a margin apart.
-fn near(a: Rect, b: Rect) -> bool {
-    a.x < b.x + b.width + MARGIN
-        && b.x < a.x + a.width + MARGIN
-        && a.y < b.y + b.height + MARGIN
-        && b.y < a.y + a.height + MARGIN
+/// A box by its edges.
+#[derive(Clone, Copy, Debug)]
+struct Edges {
+    left: f64,
+    top: f64,
+    right: f64,
+    bottom: f64,
+}
+
+impl Edges {
+    fn of(at: Rect) -> Edges {
+        Edges {
+            left: at.x,
+            top: at.y,
+            right: at.x + at.width,
+            bottom: at.y + at.height,
+        }
+    }
+
+    /// The box round a line's two ends, which its sketch stays within.
+    fn line(scene: &Scene, line: usize) -> Edges {
+        let Line { from, to, .. } = scene.lines[line];
+        Edges::of(scene.boxes[from]).round(Edges::of(scene.boxes[to]))
+    }
+
+    /// The box round two boxes.
+    fn round(self, other: Edges) -> Edges {
+        Edges {
+            left: self.left.min(other.left),
+            top: self.top.min(other.top),
+            right: self.right.max(other.right),
+            bottom: self.bottom.max(other.bottom),
+        }
+    }
+
+    /// Whether two boxes may share any area: false only where they stand more than a margin
+    /// apart.
+    fn near(&self, other: &Edges) -> bool {
+        self.left < other.right + MARGIN
+            && other.left < self.right + MARGIN
+            && self.top < other.bottom + MARGIN
+            && other.top < self.bottom + MARGIN
+    }
 }
 
 /// A placement under search.
@@ -113,8 +150,9 @@ pub(super) struct Search<'p> {
     occupant: Vec<Vec<Option<usize>>>,
     weighed: Weighed,
     total: f64,
-    /// Which lines cross which.
+    /// Which lines cross which, and the box round each line's two ends.
     crossing: Crossings,
+    ends: Vec<Edges>,
     /// The lines that end on each box, and the groups each box is in.
     touching: Vec<Vec<usize>>,
     grouped: Vec<Vec<usize>>,
@@ -145,6 +183,7 @@ impl<'p> Search<'p> {
         Search {
             total: weighed.total(),
             crossing: Crossings::new(&scene),
+            ends: (0..scene.lines.len()).map(|line| Edges::line(&scene, line)).collect(),
             touching: touching(&scene),
             grouped: grouped(&scene),
             stamp: vec![0; scene.lines.len()],
@@ -169,6 +208,9 @@ impl<'p> Search<'p> {
         self.weighed = self.scene.weigh();
         self.total = self.weighed.total();
         self.crossing = Crossings::new(&self.scene);
+        self.ends = (0..self.scene.lines.len())
+            .map(|line| Edges::line(&self.scene, line))
+            .collect();
     }
 
     fn random(&mut self) -> u64 {
@@ -297,25 +339,22 @@ impl<'p> Search<'p> {
         self.stamp[line] == self.stamps
     }
 
-    /// Whether a line's sketch may run through a moved part, where the part stood or stands now.
-    /// A sketch stays within the box round the line's two ends.
-    fn passes(&self, line: usize, old: &[(usize, usize, Rect)]) -> bool {
-        let Line { from, to, .. } = self.scene.lines[line];
-        let (a, b) = (self.scene.boxes[from], self.scene.boxes[to]);
-        let (x, y) = (a.x.min(b.x), a.y.min(b.y));
-        let round = Rect {
-            x,
-            y,
-            width: (a.x + a.width).max(b.x + b.width) - x,
-            height: (a.y + a.height).max(b.y + b.height) - y,
-        };
-        (old.iter()).any(|&(part, _, was)| near(round, was) || near(round, self.scene.boxes[part]))
-    }
-
     /// What each line that stayed adds or saves to go round the moved parts.
+    /// A line runs round a moved part only where the box round its ends comes near the part,
+    /// where the part stood or stands now.
     fn rounds(&self, old: &[(usize, usize, Rect)]) -> Vec<(usize, f64)> {
+        let parts = || {
+            (old.iter())
+                .flat_map(|&(part, _, was)| [Edges::of(was), Edges::of(self.scene.boxes[part])])
+        };
+        let Some(all) = parts().reduce(Edges::round) else {
+            return Vec::new();
+        };
         (0..self.scene.lines.len())
-            .filter(|&line| !self.moved(line) && self.passes(line, old))
+            .filter(|&line| {
+                let ends = &self.ends[line];
+                ends.near(&all) && !self.moved(line) && parts().any(|part| ends.near(&part))
+            })
             .filter_map(|line| {
                 let sketch = &self.weighed.sketches[line];
                 let added: f64 = (old.iter())
@@ -400,6 +439,7 @@ impl<'p> Search<'p> {
         self.crossing.keep();
         let weighed = &mut self.weighed;
         for (line, (sketch, chord, cost)) in change.lines.into_iter().zip(change.fresh) {
+            self.ends[line] = Edges::line(&self.scene, line);
             weighed.sketches[line] = sketch;
             weighed.chords[line] = chord;
             weighed.own[line] = cost;
