@@ -3,12 +3,12 @@
   "name": "Walkthrough video",
   "kind": "module",
   "responsibility": "Turns a walkthrough into a narrated video: records the talk in a live page, then draws it frame by frame and encodes it with the voice, or draws a kept talk again",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/SMjRfwN3#gTwVYQo9",
-  "parent": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
-  "outgoing": [],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/walkthrough/src/runtime"
-  }
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#gTwVYQo9",
+  "parent": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
+  "outgoing": []
 }
