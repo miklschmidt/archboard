@@ -152,7 +152,7 @@ pub(super) struct Search<'p> {
     total: f64,
     /// Which lines cross which, and the box round each line's two ends.
     crossing: Crossings,
-    ends: Vec<Edges>,
+    bounds: Vec<Edges>,
     /// The lines that end on each box, and the groups each box is in.
     touching: Vec<Vec<usize>>,
     grouped: Vec<Vec<usize>>,
@@ -183,7 +183,7 @@ impl<'p> Search<'p> {
         Search {
             total: weighed.total(),
             crossing: Crossings::new(&scene),
-            ends: (0..scene.lines.len()).map(|line| Edges::line(&scene, line)).collect(),
+            bounds: (0..scene.lines.len()).map(|line| Edges::line(&scene, line)).collect(),
             touching: touching(&scene),
             grouped: grouped(&scene),
             stamp: vec![0; scene.lines.len()],
@@ -208,7 +208,7 @@ impl<'p> Search<'p> {
         self.weighed = self.scene.weigh();
         self.total = self.weighed.total();
         self.crossing = Crossings::new(&self.scene);
-        self.ends = (0..self.scene.lines.len())
+        self.bounds = (0..self.scene.lines.len())
             .map(|line| Edges::line(&self.scene, line))
             .collect();
     }
@@ -340,6 +340,7 @@ impl<'p> Search<'p> {
     }
 
     /// What each line that stayed adds or saves to go round the moved parts.
+    ///
     /// A line runs round a moved part only where the box round its ends comes near the part,
     /// where the part stood or stands now.
     fn rounds(&self, old: &[(usize, usize, Rect)]) -> Vec<(usize, f64)> {
@@ -352,8 +353,8 @@ impl<'p> Search<'p> {
         };
         (0..self.scene.lines.len())
             .filter(|&line| {
-                let ends = &self.ends[line];
-                ends.near(&all) && !self.moved(line) && parts().any(|part| ends.near(&part))
+                let bounds = &self.bounds[line];
+                bounds.near(&all) && !self.moved(line) && parts().any(|part| bounds.near(&part))
             })
             .filter_map(|line| {
                 let sketch = &self.weighed.sketches[line];
@@ -439,7 +440,7 @@ impl<'p> Search<'p> {
         self.crossing.keep();
         let weighed = &mut self.weighed;
         for (line, (sketch, chord, cost)) in change.lines.into_iter().zip(change.fresh) {
-            self.ends[line] = Edges::line(&self.scene, line);
+            self.bounds[line] = Edges::line(&self.scene, line);
             weighed.sketches[line] = sketch;
             weighed.chords[line] = chord;
             weighed.own[line] = cost;
