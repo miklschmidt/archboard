@@ -64,10 +64,10 @@ Every diagram on the page is real output of the Archboard renderer, in the dark 
   agent's edit lands, the painter brings the picture in with the app's own entrance. The README's
   SVG of the same picture stands in without script, with reduced motion, or where the painter does
   not start.
-- The section about Archboard's own model paints the top reading of `.archboard/vault` live. The
-  whole picture fits the screen, and the painter brings it in with the app's own entrance once the
-  figure's foot is in view. The renderer's SVG of the same reading stands in without script or
-  where no painter draws.
+- The section about Archboard's own model paints the top reading of `.archboard/vault` live, with
+  the renderer's legend under it. The whole picture fits the screen, and the painter brings it in
+  with the app's own entrance once the figure's foot is in view. The renderer's SVG of the same
+  reading stands in without script or where no painter draws.
 - The fonts come from `packages/renderer/assets/fonts/`, the same files the renderer uses.
 - The voice orb is the product's own code, imported from `packages/workbench/src/ui/workbench-client/orb/clients/`
   and `packages/workbench/src/ui/workbench-client/orb/rules/`. The site points `@archboard/timing` at

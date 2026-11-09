@@ -10,7 +10,8 @@
 // of every line, from its source to its target.
 //
 // The model's figure shows the top reading of `.archboard/vault`, Archboard's own model, as the app
-// draws it, and the SVG of the same reading stands in where no painter draws.
+// draws it, with the renderer's legend under it. The SVG of the same reading stands in where no
+// painter draws.
 //
 // Run from the repository root, inside `nix develop`, after `bun run build:core`:
 //   bun site/scripts/paint.ts
@@ -382,12 +383,12 @@ async function hero() {
 }
 
 /**
- * Archboard's own model, as the app draws it.
+ * Archboard's own model, as the app draws it, with the legend that an exported picture carries.
  * @returns The painting, the SVG of the same reading and its size.
  */
 async function own() {
 	const { request } = await read(".archboard/vault", false);
-	const drawn = await renderArchitecture(request);
+	const drawn = await renderArchitecture({ ...request, frame: { legend: "horizontal" } });
 	return {
 		painting: drawn.painting,
 		svg: drawn.svg,
