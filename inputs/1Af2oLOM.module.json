@@ -21,9 +21,8 @@
         "path": "crates/vendor/graphviz-pure-geom/src/shapes.rs",
         "symbol": "NodeData"
       },
-      "id": "vKEsyHFk#GTrRDM2m",
-      "to": "vKEsyHFk#FLnwES7I"
+      "to": "vKEsyHFk#FLnwES7I",
+      "id": "vKEsyHFk#GTrRDM2m"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }

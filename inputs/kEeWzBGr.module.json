@@ -21,8 +21,8 @@
         "path": "crates/vendor/graphviz-pure-layout/src/sfdpgen/sfdpinit.rs",
         "symbol": "Graph"
       },
-      "id": "vKEsyHFk#iIhqiAPk",
-      "to": "vKEsyHFk#FLnwES7I"
+      "to": "vKEsyHFk#FLnwES7I",
+      "id": "vKEsyHFk#iIhqiAPk"
     },
     {
       "order": 91006,
@@ -34,9 +34,8 @@
         "path": "crates/vendor/graphviz-pure-layout/src/fdpgen/clusteredges.rs",
         "symbol": "proutespline"
       },
-      "id": "vKEsyHFk#HQ2GooJp",
-      "to": "vKEsyHFk#1Af2oLOM"
+      "to": "vKEsyHFk#1Af2oLOM",
+      "id": "vKEsyHFk#HQ2GooJp"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }

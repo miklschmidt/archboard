@@ -1,0 +1,28 @@
+{
+  "order": 5100,
+  "name": "Check Action",
+  "kind": "package",
+  "responsibility": "In a team's CI, installs the published CLI, runs archboard check, and turns each finding into an annotation on the diff and a job summary",
+  "description": "A composite GitHub Action that runs TypeScript directly on Node.js. It registers the extra checkouts named in its repos input, so a binding into an infrastructure repository reads in CI. A finding with configured-path evidence gets an annotation on each end in the checked repository. Each annotation includes the paths and excerpts of both ends, including an end in another repository. The fail-on and allow-codes inputs decide which findings fail the job. A check that cannot run fails the job in every case.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "actions/check"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#oGHp8YGI",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "installs the CLI from npm and runs archboard check",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "actions/check/run.ts",
+        "symbol": "execute"
+      },
+      "id": "vKEsyHFk#xZa3uuF9",
+      "to": "vKEsyHFk/XppR9owz#peyArgPx"
+    }
+  ]
+}

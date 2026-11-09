@@ -10,9 +10,6 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#eECDrhMc",
-  "formerNames": [
-    "SVG document"
-  ],
   "outgoing": [
     {
       "order": 100,
@@ -54,5 +51,7 @@
       "to": "vKEsyHFk#GqMdZbTF"
     }
   ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  "formerNames": [
+    "SVG document"
+  ]
 }

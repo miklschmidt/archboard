@@ -73,9 +73,8 @@
         "path": "crates/vendor/graphviz-pure/Cargo.toml",
         "symbol": "graphviz-pure-geom"
       },
-      "id": "vKEsyHFk#5iytjWV7",
-      "to": "vKEsyHFk#1Af2oLOM"
+      "to": "vKEsyHFk#1Af2oLOM",
+      "id": "vKEsyHFk#5iytjWV7"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }

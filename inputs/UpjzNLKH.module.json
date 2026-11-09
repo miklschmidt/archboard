@@ -48,9 +48,8 @@
       "kind": "dependency",
       "label": "the buffers its Vello renderer allocates for a frame",
       "emphasis": "normal",
-      "id": "vKEsyHFk#2yn8ZgXE",
-      "to": "vKEsyHFk#uoYBS8oN"
+      "to": "vKEsyHFk#uoYBS8oN",
+      "id": "vKEsyHFk#2yn8ZgXE"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }

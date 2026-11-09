@@ -3,9 +3,6 @@
   "name": "server-requests",
   "kind": "package",
   "responsibility": "Every browser call to the server, each naming its vault",
-  "groups": [
-    "packages"
-  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-requests"
@@ -19,5 +16,7 @@
     }
   ],
   "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "groups": [
+    "packages"
+  ]
 }

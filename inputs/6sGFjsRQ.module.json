@@ -20,8 +20,8 @@
         "path": "crates/archboard-renderer-wasm/src/render.rs",
         "symbol": "Renderer"
       },
-      "id": "vKEsyHFk#80dwcLyq",
-      "to": "vKEsyHFk/OjRLKb74#nmyK8UOO"
+      "to": "vKEsyHFk/OjRLKb74#nmyK8UOO",
+      "id": "vKEsyHFk#80dwcLyq"
     },
     {
       "order": 200,
@@ -33,8 +33,8 @@
         "path": "crates/archboard-renderer-wasm/src/layout.rs",
         "symbol": "lay_out_picture"
       },
-      "id": "vKEsyHFk#3LA3rFOo",
-      "to": "vKEsyHFk/OjRLKb74#mHYMkWdE"
+      "to": "vKEsyHFk/OjRLKb74#mHYMkWdE",
+      "id": "vKEsyHFk#3LA3rFOo"
     },
     {
       "order": 300,
@@ -46,9 +46,8 @@
         "path": "crates/archboard-renderer-wasm/src/layout.rs",
         "symbol": "InCore"
       },
-      "id": "vKEsyHFk#bSDPUhGh",
-      "to": "vKEsyHFk#dg6URhSn"
+      "to": "vKEsyHFk#dg6URhSn",
+      "id": "vKEsyHFk#bSDPUhGh"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }

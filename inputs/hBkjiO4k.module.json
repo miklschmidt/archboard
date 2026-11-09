@@ -21,9 +21,8 @@
         "path": "crates/vendor/graphviz-pure-parser/src/lib.rs",
         "symbol": "Graph"
       },
-      "id": "vKEsyHFk#Q6d5hgEY",
-      "to": "vKEsyHFk#FLnwES7I"
+      "to": "vKEsyHFk#FLnwES7I",
+      "id": "vKEsyHFk#Q6d5hgEY"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }

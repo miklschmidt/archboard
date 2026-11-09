@@ -3,9 +3,6 @@
   "name": "ui-kit",
   "kind": "package",
   "responsibility": "Composite presentation components the web app, the workbench and the code opener draw with",
-  "groups": [
-    "packages"
-  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/ui-kit"
@@ -19,5 +16,7 @@
     }
   ],
   "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "groups": [
+    "packages"
+  ]
 }
