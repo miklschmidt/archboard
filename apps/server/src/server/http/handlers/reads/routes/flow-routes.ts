@@ -73,6 +73,7 @@ async function flowPicture(model: Model, input: Reading, vault: string) {
 		grammar: input.grammar,
 		policy: model.policy,
 		theme: input.theme,
+		frame: input.legend === "none" ? undefined : { legend: input.legend },
 	});
 	return renderReceipt(model, input, vault, drawn, flow);
 }

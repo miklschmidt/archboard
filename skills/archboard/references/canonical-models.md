@@ -983,6 +983,7 @@ Occupied vaults refuse. Legacy vaults require [migration](legacy-migration.md).
 `model render --out picture.svg` draws structure by default.
 Choose `--module`, exact `--scope`, repeated `--focus`, or `--hide-kind` for the reading.
 Each relationship in that reading has a drawn line.
+The legend is drawn under the picture. Use `--legend vertical` to draw it beside the picture, or `--legend none` to leave it out.
 Use `--state` or `--checkpoint` for the architecture selection.
 For behavior, follow [flow rendering](#render-a-selected-flow).
 

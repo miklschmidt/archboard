@@ -80,6 +80,18 @@ function refused(result: CommandResult, rule: string): void {
 	expect(result.output).toContain(rule);
 }
 
+// One lint run per list: each run costs about a second on a hosted runner.
+function misplaced(root: string, files: readonly string[]): void {
+	const result = lint(root, "oxlint.json", ...files);
+	refused(result, "archboard(ui-concern-placement)");
+	for (const file of files) expect(result.output).toContain(file);
+}
+
+function placed(root: string, files: readonly string[]): void {
+	const result = lint(root, "oxlint.json", ...files);
+	expect(result.exitCode, result.output).toBe(0);
+}
+
 const HOOK =
 	'import { useState } from "react";\nexport function useThing() { return useState(0); }\n';
 const NAMED_IMPORT = 'import { useState } from "react";\nexport const value = useState;\n';
@@ -117,23 +129,18 @@ describe("the UI rules cover the ui area of a package", () => {
 
 	test("keeps hooks, components and names in the role folder that owns them", () => {
 		withProject({ "oxlint.json": UI_RULES_CONFIG }, fixtures, (root) => {
-			for (const file of [
+			misplaced(root, [
 				"packages/alpha/src/ui/state/use-thing.ts",
 				"packages/alpha/src/ui/api/actual-hook.ts",
 				"packages/alpha/src/ui/components/helper.ts",
 				"packages/alpha/src/ui/index.ts",
 				"packages/alpha/src/ui/rules/Widget.tsx",
-			]) {
-				refused(lint(root, "oxlint.json", file), "archboard(ui-concern-placement)");
-			}
-			for (const file of [
+			]);
+			placed(root, [
 				"packages/alpha/src/ui/hooks/use-thing.ts",
 				"packages/alpha/src/ui/api/thing.ts",
 				"packages/alpha/src/ui/rules/helper.ts",
-			]) {
-				const result = lint(root, "oxlint.json", file);
-				expect(result.exitCode, result.output).toBe(0);
-			}
+			]);
 		});
 	});
 });
@@ -207,21 +214,13 @@ describe("the UI rules cover the ui area and the browser entry of an app", () =>
 		// Catches an app ui with no placement policy: a hook in state, a lib or root folder, and
 		// markup in a rules file.
 		withProject({ "oxlint.json": UI_RULES_CONFIG }, fixtures, (root) => {
-			for (const file of [
+			misplaced(root, [
 				"apps/alpha/src/ui/state/use-thing.ts",
 				"apps/alpha/src/ui/lib/helper.ts",
 				"apps/alpha/src/ui/index.ts",
 				"apps/alpha/src/ui/rules/Widget.tsx",
-			]) {
-				refused(lint(root, "oxlint.json", file), "archboard(ui-concern-placement)");
-			}
-			for (const file of [
-				"apps/alpha/src/ui/hooks/use-thing.ts",
-				"apps/alpha/src/ui/api/thing.ts",
-			]) {
-				const result = lint(root, "oxlint.json", file);
-				expect(result.exitCode, result.output).toBe(0);
-			}
+			]);
+			placed(root, ["apps/alpha/src/ui/hooks/use-thing.ts", "apps/alpha/src/ui/api/thing.ts"]);
 		});
 	});
 
