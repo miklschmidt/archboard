@@ -10,6 +10,8 @@
 
 use crate::geometry::{Point, Rect};
 
+use super::ring::Ringed;
+
 /// One crossing costs as much as this much line, as the ranking of routed drawings weighs it.
 pub(super) const CROSSING: f64 = 300.0;
 /// One bend costs as much as this much line, as a route's cost weighs it.
@@ -315,9 +317,8 @@ pub(super) struct Scene {
     pub lines: Vec<Line>,
     /// The boxes of each group's members.
     pub groups: Vec<Vec<usize>>,
-    /// Where the door ring last stood this scene's doors, and the bits of what it stood them
-    /// from (`super::ring`).
-    pub ringed: Option<(Vec<u64>, Vec<Rect>)>,
+    /// What the door ring knows of this scene (`super::ring`).
+    pub ringed: Ringed,
 }
 
 impl Scene {

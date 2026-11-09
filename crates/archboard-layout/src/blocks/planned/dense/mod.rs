@@ -14,6 +14,7 @@ mod ring;
 mod room;
 mod search;
 mod sketch;
+mod stand;
 
 use std::cell::RefCell;
 
@@ -30,6 +31,7 @@ use grid::{Grid, Item, Join};
 pub(super) use room::Room;
 pub(super) use search::Grids;
 use search::Staged;
+use stand::Stood;
 
 /// Room between two cells before routing. Contraction takes back what the routes leave.
 const CELL_GAP: f64 = 96.0;
@@ -89,6 +91,10 @@ struct Reading<'a> {
     /// Where the cards stood for each way to stand them that the reading met, by the bits of
     /// what they stood from: a placement's price and its first drawing stand it alike.
     stood: RefCell<FxHashMap<Vec<u64>, Stood>>,
+    /// The latest scenes that ways to stand the cards built and no other page stood yet, by the
+    /// bits of what they stood from but the page, the oldest first: the same sets stand within
+    /// two pages, and the ring prices a door at a box that both give it once.
+    scenes: RefCell<Vec<(Vec<u64>, Staged)>>,
 }
 
 /// What a reading sets on grids: the frames it opens, each holding cards alone,
@@ -368,18 +374,6 @@ fn together(sizes: &[Point], stacked: bool, room: f64) -> (Vec<Point>, Point) {
     (places, size)
 }
 
-/// Where the cards of a reading stand: what one way to stand them answers.
-#[derive(Clone)]
-struct Stood {
-    /// Where each frame stands, and the frames' whole.
-    places: Vec<Point>,
-    whole: Point,
-    /// The doors' boxes round that whole.
-    doors: Vec<Rect>,
-    /// What the scene of these cards costs.
-    cost: f64,
-}
-
 impl<'a> Reading<'a> {
     fn of(graph: &'a Node) -> Option<Reading<'a>> {
         let blocks: Vec<Block<'a>> = holders(graph)?
@@ -396,66 +390,8 @@ impl<'a> Reading<'a> {
                 .filter(|node| framed && !node.has_children())
                 .collect(),
             stood: RefCell::default(),
+            scenes: RefCell::default(),
         })
-    }
-
-    /// Stand the frames of some sizes together, and the doors round them, for parts that stand
-    /// in their frames as some sets put them. A way to stand them that the reading met before
-    /// stands as it stood then.
-    fn stand(&self, sets: &[Set], stacked: bool, room: f64, page: Point) -> Stood {
-        let key: Vec<u64> = (sets.iter())
-            .flat_map(|set| {
-                let parts = set.parts.iter();
-                let sides = parts.flat_map(|part| [part.x, part.y, part.width, part.height]);
-                [set.size.x, set.size.y].into_iter().chain(sides)
-            })
-            .chain([room, page.x, page.y, f64::from(u8::from(stacked))])
-            .map(f64::to_bits)
-            .collect();
-        if let Some(stood) = self.stood.borrow().get(&key) {
-            return stood.clone();
-        }
-        let stood = self.stand_anew(sets, stacked, room, page);
-        self.stood.borrow_mut().insert(key, stood.clone());
-        stood
-    }
-
-    /// Stand the frames and the doors for parts that stand as some sets put them, as `stand`
-    /// does the first time.
-    fn stand_anew(&self, sets: &[Set], stacked: bool, room: f64, page: Point) -> Stood {
-        let sizes: Vec<Point> = sets.iter().map(|set| set.size).collect();
-        let (places, whole) = together(&sizes, stacked, room);
-        let parts: Vec<Rect> = (sets.iter().zip(&places))
-            .flat_map(|(set, at)| {
-                set.parts.iter().map(|part| Rect {
-                    x: at.x + part.x,
-                    y: at.y + part.y,
-                    ..*part
-                })
-            })
-            .collect();
-        let frames: Vec<Rect> = (places.iter().zip(&sizes))
-            .map(|(at, size)| Rect {
-                x: at.x,
-                y: at.y,
-                width: size.x,
-                height: size.y,
-            })
-            .collect();
-        let Staged { mut scene, doors } = self.scene(&parts, &frames);
-        let bounds = Rect {
-            x: 0.0,
-            y: 0.0,
-            width: whole.x,
-            height: whole.y,
-        };
-        ring::stand(&mut scene, &doors, bounds, ring::RING_GAP + room, page);
-        Stood {
-            places,
-            whole,
-            doors: doors.iter().map(|&door| scene.boxes[door]).collect(),
-            cost: scene.weigh().total(),
-        }
     }
 
     /// This reading's drawing, its frames in a row or a stack, with no routes yet.

@@ -231,33 +231,17 @@ pub(super) fn stand(scene: &mut Scene, doors: &[usize], whole: Rect, gap: f64, p
     if doors.is_empty() {
         return;
     }
-    // Where the doors stand follows from the rest of the scene alone, so a scene whose other
-    // boxes did not move since the ring last stood its doors stands them there again.
-    let bits = standing(scene, doors, (whole, gap, page));
-    if let Some((before, places)) = &scene.ringed
-        && *before == bits
-    {
-        for (&door, &at) in doors.iter().zip(places) {
-            scene.boxes[door] = at;
-        }
-        return;
+    // Where the doors stand and what they cost follow from the rest of the scene alone, so a
+    // scene whose other boxes did not move keeps what the ring knew of it.
+    let mut ringed = std::mem::take(&mut scene.ringed);
+    let bits = standing(scene, doors);
+    if ringed.scene != bits {
+        ringed = Ringed {
+            scene: bits,
+            known: vec![Known::default(); doors.len()],
+            stood: None,
+        };
     }
-    let known = &mut vec![Known::default(); doors.len()];
-    stand_open(scene, (doors, doors), (whole, gap, page), known);
-    let between = |line: &Line| doors.contains(&line.from) && doors.contains(&line.to);
-    if scene.lines.iter().any(between) {
-        stand_open(scene, (doors, &[]), (whole, gap, page), known);
-    }
-    scene.ringed = Some((bits, doors.iter().map(|&door| scene.boxes[door]).collect()));
-}
-
-/// The bits of all that the doors' places follow from: the scene but where the doors stand,
-/// the whole, the gap and the page.
-fn standing(scene: &Scene, doors: &[usize], (whole, gap, page): (Rect, f64, Point)) -> Vec<u64> {
-    let counts = [scene.boxes.len(), scene.frames.len(), scene.lines.len()];
-    let mut bits: Vec<u64> = (counts.iter().chain(doors))
-        .map(|&count| count as u64)
-        .collect();
     let around = [
         whole.x,
         whole.y,
@@ -267,7 +251,43 @@ fn standing(scene: &Scene, doors: &[usize], (whole, gap, page): (Rect, f64, Poin
         page.x,
         page.y,
     ];
-    bits.extend(around.map(f64::to_bits));
+    let around = around.map(f64::to_bits);
+    if let Some((before, places)) = &ringed.stood
+        && *before == around
+    {
+        for (&door, &at) in doors.iter().zip(places) {
+            scene.boxes[door] = at;
+        }
+    } else {
+        stand_open(scene, (doors, doors), (whole, gap, page), &mut ringed.known);
+        let between = |line: &Line| doors.contains(&line.from) && doors.contains(&line.to);
+        if scene.lines.iter().any(between) {
+            stand_open(scene, (doors, &[]), (whole, gap, page), &mut ringed.known);
+        }
+        ringed.stood = Some((
+            around,
+            doors.iter().map(|&door| scene.boxes[door]).collect(),
+        ));
+    }
+    scene.ringed = ringed;
+}
+
+/// What the ring knows of one scene: the bits of the scene but where the doors stand, what each
+/// door cost at each box it took, and where it last stood the doors, with the bits of the whole,
+/// the gap and the page it stood them for.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Ringed {
+    scene: Vec<u64>,
+    known: Vec<Known>,
+    stood: Option<([u64; 7], Vec<Rect>)>,
+}
+
+/// The bits of the scene but where the doors stand.
+fn standing(scene: &Scene, doors: &[usize]) -> Vec<u64> {
+    let counts = [scene.boxes.len(), scene.frames.len(), scene.lines.len()];
+    let mut bits: Vec<u64> = (counts.iter().chain(doors))
+        .map(|&count| count as u64)
+        .collect();
     for (at, one) in scene.boxes.iter().enumerate() {
         if !doors.contains(&at) {
             bits.extend([one.x, one.y].map(f64::to_bits));
