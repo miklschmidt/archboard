@@ -6,7 +6,7 @@
 // `scripts/guides.ts` refuses a version or an Action ref that a guide writes by hand, so a pin
 // never goes stale (ADR 0077).
 
-import type { Node, RemarkPlugin } from "@astrojs/markdown-remark";
+import type { RemarkPlugin } from "@astrojs/markdown-remark";
 
 /** What the tokens stand for. */
 interface VersionTokens {
@@ -15,17 +15,24 @@ interface VersionTokens {
 	readonly sha: string;
 }
 
-/** An mdast node, as far as this plugin reads and writes it. */
-type MdastNode = Node & { children?: MdastNode[]; value?: unknown };
+/** The tree accepted by Astro's remark plugin. */
+type MdastRoot = Parameters<Exclude<ReturnType<RemarkPlugin>, void>>[0];
+/** The root or any content node, with the upstream discriminated types. */
+type MdastNode = MdastRoot | MdastRoot["children"][number];
 
 /**
- * Visit each node of a tree.
+ * Fill version tokens in code nodes, leaving prose unchanged.
  * @param node An mdast node.
- * @param visit Called for each node.
+ * @param tokens What the tokens stand for.
  */
-function walk(node: MdastNode, visit: (node: MdastNode) => void): void {
-	visit(node);
-	for (const child of node.children ?? []) walk(child, visit);
+function fillVersions(node: MdastNode, tokens: VersionTokens): void {
+	if (node.type === "code" || node.type === "inlineCode") {
+		node.value = node.value
+			.replaceAll("{{version}}", tokens.version)
+			.replaceAll("{{ref}}", tokens.ref)
+			.replaceAll("{{sha}}", tokens.sha);
+	}
+	if ("children" in node) for (const child of node.children) fillVersions(child, tokens);
 }
 
 /**
@@ -33,15 +40,6 @@ function walk(node: MdastNode, visit: (node: MdastNode) => void): void {
  * @param tokens What the tokens stand for.
  * @returns The transformer.
  */
-export const remarkVersion: RemarkPlugin<[VersionTokens]> =
-	({ version, ref, sha }) =>
-	(tree) => {
-		walk(tree, (node) => {
-			if (node.type !== "code" && node.type !== "inlineCode") return;
-			if (typeof node.value !== "string") return;
-			node.value = node.value
-				.replaceAll("{{version}}", version)
-				.replaceAll("{{ref}}", ref)
-				.replaceAll("{{sha}}", sha);
-		});
-	};
+export const remarkVersion: RemarkPlugin<[VersionTokens]> = (tokens) => (tree) => {
+	fillVersions(tree, tokens);
+};
