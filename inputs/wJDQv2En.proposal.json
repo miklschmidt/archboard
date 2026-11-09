@@ -11,6 +11,12 @@
   "changes": [
     {
       "type": "assign",
+      "subject": "vKEsyHFk#mAh7CmuS",
+      "field": "description",
+      "value": "A composite GitHub Action. It finds the proposal from its state input, the archboard-pr marker in the description, or the only draft. It reads the base and the head, and updates one sticky text comment on each push. The job needs only contents read and pull-requests write. The footprint compares the head with the base branch. With out-of-plan set to fail, a module changed outside the plan fails the job unless the override label is on the pull request. Below the footprint, the comment lists the changed files that no module is bound to, and never judges them."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/HBlhIeSD#radK8osF",
       "field": "description",
       "value": "The history interface reads canonical states and their bound source declarations. Locality reports change frequency and coupling. Footprint compares explicit local refs and the selected proposal baseline, and lists each changed file that no binding holds, outside the vault. Missing source stays unavailable rather than being replaced with current code."
