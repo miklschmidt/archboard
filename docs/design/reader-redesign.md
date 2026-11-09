@@ -2,8 +2,8 @@
 
 Status: settled by the council of TASK-559, 2026-10-30. The owner still judges each slice by eye.
 
-This record replaces the reader and navigation parts of
-[operator-canvas-shell.md](operator-canvas-shell.md) where the two disagree. Task TASK-559 owns the work.
+This record explains why the reader and its navigation look the way they do. [DESIGN.md](../../DESIGN.md)
+describes the shell as built. Task TASK-559 owns the work.
 
 The owner rejected the reader of PR #19. Transitions were gone, navigation was janky, the right sidebar
 overwhelmed the reader, the start was wrong, and drawings held large dead areas. Two seats, Astra and Opus,

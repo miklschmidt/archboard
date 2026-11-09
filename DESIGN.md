@@ -286,6 +286,11 @@ every role and changes the values. The file theme.css holds both themes.
 
 **Label/Mono Font:** Maple Mono NL (served as Archboard Maple Mono), the one mono face of the shell and of every picture.
 
+The shell loads bundled fonts under unique family names, with no `local()` source.
+`font-synthesis: none` prevents the browser from inventing missing weights or styles.
+[The font inventory](packages/renderer/assets/fonts/README.md) records the exact files,
+licenses and supported weights.
+
 **Character:** Tall condensed capitals name the thing that a region is about.
 A plain, round sans carries every other word. A quiet mono sets identifiers,
 paths, versions, counts and times.
@@ -551,6 +556,15 @@ The left column has no tabs. Two quiet keys stand over the list, side by side an
 
 The column holds one list that scrolls, with a section for each thing the model lists: `Modules`, `Flows` and `Walkthroughs`, in that order. A proposal read against its base puts `Changes` first. A section with nothing to list is left out. The head of a section is one row of 28px on the chrome and one button. It holds the section's label, set as every section label of both side columns is (`SectionLabel`): the name in Body semibold and full ink, and the count of the whole model beside it in mono and muted ink. The label starts at the column's inset, 8px from its edge, and the chevron that folds the section stands at the end of the head, where the facts of the rows end. So no chevron of a head stands over the chevron of a row, and the rows keep the whole width of the column. The head stays at the top of the list while the rows of its section scroll under it, and the next head pushes it away. A click on the head, or Enter, folds the section, and the chevron turns. What sticks inside a section, the open rows of the tree and the name of a group of flows or changes, sticks under the head (`--stuck-top`). The name of such a group, a collection of flows or the module that holds changes, is a line in Control at weight 500 and full ink, where the name of a row of depth zero stands. Its rows stand one step deeper under a rail, as the parts of an open module do, so it reads as their parent and never as a row that is off. It is no row: it takes no key and does not answer the pointer. A pane's own tabs keep their underline of Wayfinding Gold.
 
+Every tree row shares four columns: disclosure, marker, name and facts. Depth alone
+places the columns, one 16px step per level. Flat rows reserve no disclosure space.
+`shell/rules/tree-grid.ts` holds the shared measurements.
+
+Each tree has one tab stop, and each section heading has one more. Right opens a
+closed branch, then enters it. Left closes an open branch, then moves to its parent.
+Up and Down walk the visible rows. Enter opens a row, and Alt+Enter opens it beside
+the reading. Typing in the tree moves to Find.
+
 ### Content selector
 
 A few large tabs choose what a region shows, as the site's evidence tabs do. They stand in one trough across the region, with 4px between them and 4px of room inside the trough. Each tab has the same width. It holds an icon of 18px and, beside the icon, a label in Title. Under the label, one line in Body and muted ink says what the tab shows. All of it starts at the top left, with 12px of room above and below and 16px at each side. A tab is in muted ink, and under the pointer it takes full ink and Control Face at 50%. The chosen tab rises as a Control Face in full ink with `shadow-chosen`, and its icon takes Gold Mark. The `selector` variant of `Tabs.List` draws all of it.
@@ -753,6 +767,10 @@ its top names what it describes, the open scope or the selected subject, and lea
 the other one. Its column is 1320px wide at most and centred. The column
 keeps 40px of room inside each side, or 24px on a page narrower than 1040px.
 
+Presenting a walkthrough from About shows its picture and steps. Leaving it returns
+to About at the same scroll position. Switching to Diagram and back also restores
+the position while the subject stays the same.
+
 The head of the page names the model in the Figure role, in capitals. Under the
 name, one Control line gives the model's level with its mark. Then it gives the
 variant on screen with its lifecycle mark, its name and where it stands in muted
@@ -768,6 +786,10 @@ page with a Rule under it. There the gold piece lies under the entry, and a bar 
 narrow for its entries scrolls sideways. A jump to a section scrolls the page
 smoothly, or at once with reduced motion.
 
+The outline appears only when the page has more than one section. Choosing a section
+gives its heading keyboard focus. The final section keeps enough height for any
+section to reach the top.
+
 A section heading is Subtitle in semibold, and 56px separate one section from the
 next. A walkthrough is a Page Card, 24px from the next one. Its head has the name
 in the Display role and the number of steps in Body in muted ink. Under them is the
@@ -779,6 +801,9 @@ its words are Control at weight 400 and 85% ink, 72 characters wide at most. Bes
 them, the labels View and Focus are Body in muted ink. A subject is a chip 24px
 high on Ground Chalk with a Rule edge and its kind's icon in its kind's colour. A
 picked chip takes Gold Tint and a Gold Mark edge.
+
+With more than three walkthroughs, each card starts folded to its heading. The step
+count opens and closes the list of steps.
 
 The parts and the relationships are lists on the page's own plane, not cards.
 A Rule divides one row from the next, and the names of the columns stand over the
@@ -853,6 +878,10 @@ lines are all 13px and are told apart by weight and ink: its state at 500 in mut
 ink, what it is on at 400. The voice's word is in the accent text while the circle is
 lit, which is gold on graphite and ink on chalk (the Ink On Chalk Rule), and in muted
 ink while it is muted or ending. The clock is 12px mono.
+
+The conversation shows work as rows that open to their evidence. A failed step
+opens its evidence by default. A finished run of more than three steps folds to
+one summary line only when no step failed.
 
 The composer is in the conversation pane, at its foot on the chrome (with no
 line over it), with its gold Send. It grows upward as a message grows, and

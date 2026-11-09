@@ -113,9 +113,9 @@ that an overlay still lies on its drawing. If you change the renderer or the she
 2. Run the site and the app on `examples/web-shop`, with `bunx agent-browser`.
 3. Go through every section of the site. Play each demo through to its end, and take a
    screenshot of each state.
-4. Compare each mock with the same view of the running app, and with the reference images in
-   [the shell's design](../docs/design/operator-canvas-shell.md). Make each mock show the
-   controls, the labels and the layout that the shell shows now.
+4. Compare each mock with the same view of the running app, and with
+   [the shell's design](../DESIGN.md). Make each mock show the controls, the labels and the
+   layout that the shell shows now.
 5. Make sure that each highlight, ring and label over a drawing lies on the thing it marks.
 6. Commit the fixes and the new drawings with your change.
 
