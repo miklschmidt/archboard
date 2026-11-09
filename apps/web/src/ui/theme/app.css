@@ -375,8 +375,9 @@
               along its foot and a short shadow.
      chrome   the navigator, a pane's header, the right panel and the
               conversation are one flat plane round the picture. They cast
-              no shadow onto it: the tone step is the edge, and the picture's
-              corners are rounded against the chrome (`picture-corners`).
+              no shadow. The picture lies on the chrome as a sheet with
+              rounded corners (`picture-corners`), framed by --elevation-sheet:
+              a lit top edge, a faint ring and a short shadow under its foot.
               The legend and the composer lie on the chrome too. In the left
               column the agent's card stands on the chrome (`--raised`), 8px
               from the window's foot: Working now at its top, then the dock.
@@ -412,6 +413,11 @@
 	--elevation-raised:
 		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.33 0.035 65 / 0.16),
 		0 2px 6px -1px oklch(0.33 0.035 65 / 0.16);
+	/* The picture's sheet on the chrome: a lit top edge, a faint ring and a short shadow under
+	   its foot, held within the 8px of chrome below it. */
+	--elevation-sheet:
+		inset 0 1px 0 var(--highlight), inset 0 0 0 1px oklch(0.33 0.035 65 / 0.1),
+		0 1px 0 oklch(0.33 0.035 65 / 0.08), 0 3px 8px -3px oklch(0.33 0.035 65 / 0.16);
 	--elevation-pressed: var(--elevation-well);
 	--elevation-chosen: var(--elevation-raised), inset 0 -2px 0 var(--primary);
 	--elevation-card:
@@ -438,6 +444,9 @@
 	--elevation-raised:
 		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.06 0.004 75 / 0.7),
 		0 2px 6px -1px oklch(0.06 0.006 75 / 0.5);
+	--elevation-sheet:
+		inset 0 1px 0 var(--highlight), inset 0 0 0 1px oklch(1 0.01 85 / 0.035),
+		0 1px 0 oklch(0.06 0.004 75 / 0.6), 0 3px 8px -3px oklch(0.06 0.006 75 / 0.55);
 	--elevation-card:
 		inset 0 1px 0 var(--highlight), 0 1px 1px oklch(0.06 0.004 75 / 0.6),
 		0 12px 24px -8px oklch(0.06 0.006 75 / 0.6), 0 32px 64px -24px oklch(0.06 0.006 75 / 0.7);
@@ -563,11 +572,11 @@
 
 /* The picture is a sheet held by the chrome on every side: its four corners are rounded
    against it. One layer over the picture paints a piece of chrome in each corner, cut by a
-   quarter circle, so the picture keeps its size and nothing in it is clipped. The tone step is
-   the picture's edge, so no line draws it. While two panes share the centre, a second layer
-   draws a quiet edge along the same radius round the active pane's picture: neutral ink, never
-   gold, so it stays below a chosen card on the picture. One pane alone has no such edge. A
-   presented picture has no chrome round it, so its corners stay square. */
+   quarter circle, so the picture keeps its size and nothing in it is clipped. A second layer
+   frames the sheet along the same radius (--elevation-sheet). While two panes share the
+   centre, that layer also draws a quiet edge round the active pane's picture: neutral ink,
+   never gold, so it stays below a chosen card on the picture. One pane alone has no such edge.
+   A presented picture has no chrome round it, so its corners stay square and unframed. */
 @utility picture-corners {
 	&::before {
 		--corner: var(--radius-window);
@@ -594,15 +603,19 @@
 		z-index: 10;
 		pointer-events: none;
 		border-radius: var(--radius-window);
+		box-shadow: var(--elevation-sheet);
 	}
 	[data-presenting] &::before {
 		display: none;
 	}
 	[data-presenting] &::after {
 		border-radius: 0;
+		box-shadow: none;
 	}
 	[data-framed][data-active] &::after {
-		box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--foreground) 32%, transparent);
+		box-shadow:
+			var(--elevation-sheet),
+			inset 0 0 0 1px color-mix(in oklch, var(--foreground) 32%, transparent);
 	}
 }
 

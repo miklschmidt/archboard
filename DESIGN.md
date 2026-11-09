@@ -206,15 +206,15 @@ and a few pieces of gold hardware. An agent drew the picture, and the architect
 reads it. Nothing in the shell competes with the picture for attention, and
 nothing in the shell paints on it.
 
-The shell is dense desktop chrome at 1920×1080. It uses 13px controls, 28px
-rows and small corners. Its neutrals are warm graphite and chalk, tinted toward
-the hue of the gold. Depth comes from planes, not from lines. The chrome is one
-flat plane round the picture. It holds the picture on every side and casts no shadow onto
-it, and the picture's corners are rounded against it. Controls stand on
-the chrome with a highlight on their top edge. Menus and dialogs float above
-everything. One warm yellow-gold marks what is chosen. It also marks the one
-primary action of a region, and that action is drawn as a physical piece of
-gold.
+The shell is dense desktop chrome at 1920×1080. It uses 13px controls, 28px rows
+and small corners. Its neutrals are warm graphite and chalk, tinted toward the
+hue of the gold. Depth comes from planes, not from lines. The chrome is one flat
+plane round the picture. It holds the picture on every side, and the picture
+lies on it as a sheet with rounded corners, a lit top edge and a short shadow
+under its foot. Controls stand on the chrome with a highlight on their top edge.
+Menus and dialogs float above everything. One warm yellow-gold marks what is
+chosen. It also marks the one primary action of a region, and that action is
+drawn as a physical piece of gold.
 
 The shell speaks the language of the site's lit table. In its dark theme it
 shares the values of the site. In its light theme it translates them to chalk.
@@ -224,7 +224,7 @@ underline.
 
 **Key Characteristics:**
 
-- The picture is the ground. The shell holds it on every side as one plane, and the picture's corners are rounded against the shell.
+- The picture is the ground. The shell holds it on every side as one plane, and the picture lies on the shell as a sheet with rounded corners and a subtle frame.
 - Planes stack under a light from above. Each plane has a tone step, a highlight on its top edge and a warm shadow with an offset.
 - Keys are physical. A gold key and a quiet key lift on hover and sink on press, and a chosen tab rises out of its trough.
 - One gold has three uses: what is chosen, the one primary action, and the voice and the brand mark. On the picture, the palette's yellow is that gold, on purpose.
@@ -345,7 +345,7 @@ The file app.css holds the values for both themes and gives each one a
 - **well** (`--elevation-well`, an inner shadow with a lit line along the foot): a field sunk into a surface, a trough, a count cell and a pressed key. `--elevation-trough` is the same piece under its other name.
 - **tray** (`--elevation-tray`): the agent's card under the left column's list. A lit top edge, and a soft shadow that rises from it.
 - **slab** (`--elevation-slab`, built from `--slab-glint`, `--slab-edge` and `--slab-shadow`): a number that lies on a surface, as a small part of the picture does: a lit top edge, a front edge 2px thick and a short shadow.
-- **No edge shadow.** The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane. It casts no shadow and draws no line where it meets the picture: the tone step is the edge. The chrome holds the picture on every side: an 8px strip of chrome runs under it, and beside it while the right panel hides. The picture's four corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility. A presented picture fills its pane with square corners. Two panes are parted by the chrome alone, with no line between them. While two panes share the centre, the active pane's picture carries a quiet edge of 1px in Ink at 32% that follows the rounded corners. It is never gold, so it stays below a chosen card, and one pane alone has no such edge. The composer and the keys at the foot of the right panel lie on the chrome, with no tone of their own, no line and no shadow. In the left column the agent's card stands on the chrome under the list, 8px from the window's foot as the picture is: Tray Chalk, 12px corners, 8px of chrome on every side, and the tray depth (`--elevation-tray`): a lit top edge and a soft shadow that rises from it over the list. Working now stands at its top while an agent works, and the dock under it.
+- **sheet** (`--elevation-sheet`): the picture and the About page. The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane, and it casts no shadow. The picture lies on it as a sheet, framed by a lit top edge, a faint ring of 1px and a short shadow under its foot that stays within the chrome below it. The chrome holds the picture on every side: an 8px strip of chrome runs under it, and beside it while the right panel hides. The picture's four corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility. A presented picture fills its pane with square corners. Two panes are parted by the chrome alone, with no line between them. While two panes share the centre, the active pane's picture carries a quiet edge of 1px in Ink at 32% that follows the rounded corners. It is never gold, so it stays below a chosen card, and one pane alone has no such edge. The composer and the keys at the foot of the right panel lie on the chrome, with no tone of their own, no line and no shadow. In the left column the agent's card stands on the chrome under the list, 8px from the window's foot as the picture is: Tray Chalk, 12px corners, 8px of chrome on every side, and the tray depth (`--elevation-tray`): a lit top edge and a soft shadow that rises from it over the list. Working now stands at its top while an agent works, and the dock under it.
 - **raised** (`--elevation-raised`, a white highlight on top, a 1px contact line and a short soft shadow): a quiet key, a key cap, the voice circle and the chosen row of a list.
 - **pressed** (`--elevation-pressed`, the same value as well): a raised control while somebody presses it.
 - **chosen** (`--elevation-chosen`, raised and a 2px line of Wayfinding Gold inside the foot): the chosen tab of a trough. An open tree row uses `shadow-raised` and carries no gold.

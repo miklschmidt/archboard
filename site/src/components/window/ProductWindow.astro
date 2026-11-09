@@ -258,7 +258,9 @@ const shop = drawings.webShop;
 		color: var(--ink);
 	}
 	/* The shell's chrome holds the picture on every side, with a strip under it, and the
-	   picture's corners are rounded against it. */
+	   picture lies on it as a sheet with rounded corners. A layer over the drawing frames the
+	   sheet as the shell's --elevation-sheet does: a lit top edge, a faint ring and a short
+	   shadow under its foot. */
 	.picture {
 		position: relative;
 		margin-bottom: 8px;
@@ -271,6 +273,20 @@ const shop = drawings.webShop;
 		background:
 			radial-gradient(120% 80% at 50% 0%, oklch(0.23 0.012 80 / 0.6), transparent 60%),
 			var(--plane);
+		box-shadow:
+			0 1px 0 oklch(0.06 0.004 75 / 0.6),
+			0 3px 8px -3px oklch(0.06 0.006 75 / 0.55);
+	}
+	.picture::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		pointer-events: none;
+		border-radius: inherit;
+		box-shadow:
+			inset 0 1px 0 var(--highlight),
+			inset 0 0 0 1px oklch(1 0.01 85 / 0.035);
 	}
 	.drawing {
 		width: 100%;
