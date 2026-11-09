@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { ModelSnapshotSchema } from "@archboard/model/contract";
@@ -27,6 +27,9 @@ beforeAll(async () => {
 		const result = Bun.spawnSync(["git", "-C", home, ...args]);
 		if (result.exitCode !== 0) throw new Error(result.stderr.toString());
 	}
+	const configurationFile = join(vault, ".archboard/config.yaml");
+	const configuration = readFileSync(configurationFile, "utf8");
+	writeFileSync(configurationFile, configuration.replace("RiServerLine", "RiAnchorLine"));
 	const current = readArchitectureModel(vault);
 	if (!current.success || !current.manifest.current) throw new Error(JSON.stringify(current));
 	const target = { model: current.manifest.id, state: current.manifest.current.id };
@@ -88,8 +91,41 @@ test("a snapshot holds a draft, its comparison state, the vault check and the po
 	expect(parsed.comparisonReading?.selectedState).toMatchObject({ lifecycle: "current" });
 	expect(parsed.comparisonReading?.comparison).toBeUndefined();
 	expect(parsed.comparisonReading?.revision).toEqual(parsed.reading.comparison?.revision);
-	for (const kind of Object.values(parsed.check.policy.nodeKinds))
-		expect(parsed.icons[kind.icon], kind.icon).not.toBeEmpty();
+	for (const policy of [
+		parsed.check.policy,
+		parsed.reading.policy,
+		parsed.comparisonReading!.policy,
+	])
+		for (const kind of Object.values(policy.nodeKinds))
+			expect(parsed.icons[kind.icon], kind.icon).not.toBeEmpty();
+});
+
+test("a retained state keeps its icons when the current policy names different icons", async () => {
+	const draft = await readArchitectureModel(vault, undefined, undefined, { state: "Queued" });
+	if (!draft.success || !draft.selectedState?.baseline) throw new Error(JSON.stringify(draft));
+	const file = join(vault, ".archboard/config.yaml");
+	const configuration = readFileSync(file, "utf8");
+	try {
+		writeFileSync(file, configuration.replace("RiAnchorLine", "RiRocketLine"));
+		const result = snapshot(
+			"--state",
+			draft.selectedState.baseline,
+			"--against",
+			"current",
+			"--out",
+			"retained.json",
+		);
+		expect(result.status, result.stderr).toBe(0);
+		const parsed = ModelSnapshotSchema.parse(
+			JSON.parse(readFileSync(join(holderOf(vault), "retained.json"), "utf8")),
+		);
+		expect(parsed.reading.policy.nodeKinds["service"]?.icon).toBe("RiAnchorLine");
+		expect(parsed.comparisonReading?.policy.nodeKinds["service"]?.icon).toBe("RiRocketLine");
+		expect(parsed.icons["RiAnchorLine"]).not.toBeEmpty();
+		expect(parsed.icons["RiRocketLine"]).not.toBeEmpty();
+	} finally {
+		writeFileSync(file, configuration);
+	}
 });
 
 test("a state that compares nothing has no comparison reading, and a refused read writes no file", () => {

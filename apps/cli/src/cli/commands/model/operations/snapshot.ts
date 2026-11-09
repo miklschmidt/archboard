@@ -168,7 +168,13 @@ const modelSnapshotContract = defineCommand({
 			...states,
 			// The file names no path of the machine that wrote it.
 			check: { ...check, configurationFile: relative(context.vault.path, check.configurationFile) },
-			icons: policyIconPaths(check.policy),
+			icons: {
+				...policyIconPaths(check.policy),
+				...policyIconPaths(states.reading.policy),
+				...(states.comparisonReading === null
+					? {}
+					: policyIconPaths(states.comparisonReading.policy)),
+			},
 		});
 		const file = context.resolvePath(out);
 		return {
