@@ -4,15 +4,26 @@ status: accepted
 
 # Blocks keeps legacy placement and plans its routes
 
-Amended on 2026-11-08 (TASK-559.09). The dense placement of [ADR 0064](0064-blocks-is-the-default-layout-engine.md) stands the cards outside an open frame round its walls.
-Each such card takes the wall where the way of every line, times what the page's room costs, is least.
-A card therefore joins a row along the page before it takes a column of its own beside the frame.
-It also joins that row before it stands across the frame from what it joins.
-A card beside the frame that reaches past a corner steps outward until it clears the cards above and below the frame.
-A page's room costs its area plus a charge for scale.
-That charge is the room that the smallest box of the pane's shape round the page needs past the landing room.
-The same room cost ranks dense placements before routing and finished drawings after it.
-A reading that opens a frame routes its two most promising dense placements, because the promise before routing misses the crossings that its doors bring.
+Amended on 2026-11-09. The dense placement of [ADR 0064](0064-blocks-is-the-default-layout-engine.md) states one cost and searches for the placement that costs least.
+That cost replaces the rules of the 2026-11-08 amendment (TASK-559.09), which chose each door's wall by the room the page costs.
+The cost sketches each line with at most one bend, between the sides of its two cards that face each other.
+It adds the sketch's length, 120 for each bend, the way round each card or foreign frame in the sketch's way, and 300 for each crossing.
+A line that runs up, against the reading direction, adds 150.
+It also adds three times how far the members of each group stand from the group's middle.
+Simulated annealing from a fixed seed moves the parts between the cells of each frame's grid, and starts from the grid's greedy answer.
+A cell can stay empty, and a whole group can move one cell at a time.
+An exact dynamic program stands the cards outside the frames round them, at one gap from the frames.
+These cards keep the order round the frames of the places where each would stand alone, so their own lines do not cross.
+The program also pays for the blank space of the page round them.
+It refuses a page that does not read where it lands while a page that reads holds the cards.
+Among the routes that pass the guards, the router prefers one that meets such a card on a side that faces the line's far end.
+Each grid width gives one placement, and a reading of several frames gives one more with the frames stacked.
+Each placement also has a variant whose outside cards can stand one gap further out, because contraction takes that room back.
+A reading with more than 64 relationships searches every grid width briefly and goes on with the two cheapest only.
+Finished drawings rank first by whether the page reads where it lands, then by their long detours.
+Then they rank by route cost plus crowded approaches plus blank space.
+Blank space is the area farther than 48 px from every card, line and label, and 96 px² of it costs as much as 1 px of line.
+The room cost, its charge for scale, and the promise before routing are gone.
 
 TASK-554 proposes this decision on 2026-10-28 and revises it on 2026-10-29.
 The owner selected the hybrid direction after three iterations failed to improve the six reference pictures with planner-owned placement.
