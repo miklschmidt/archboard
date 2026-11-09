@@ -5,7 +5,7 @@ import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 import { rehypeHeadingIds, unified } from "@astrojs/markdown-remark";
 import expressiveCode from "astro-expressive-code";
-import { rehypeHeadingLinks } from "./src/lib/rehype-heading-links.mjs";
+import { rehypeHeadingLinks } from "./src/lib/rehype-heading-links.ts";
 import { coreSourceHash } from "../packages/renderer/src/runtime/store/core-sources.ts";
 
 const repository = fileURLToPath(new URL("..", import.meta.url));
