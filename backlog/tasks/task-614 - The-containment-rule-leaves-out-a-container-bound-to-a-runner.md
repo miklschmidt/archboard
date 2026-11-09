@@ -4,7 +4,7 @@ title: The containment rule leaves out a container bound to a runner
 status: Done
 assignee: []
 created_date: '2026-11-08T23:29:00Z'
-updated_date: '2026-11-09T01:02:00Z'
+updated_date: '2026-11-09T01:11:00Z'
 labels:
   - bug
   - model
@@ -46,7 +46,7 @@ Review fix: the Kubernetes Kind/name form now accepts digits in custom kinds, as
 
 Final review validation: all 71 structure tests pass. TypeScript passes with nix develop --command bunx tsc --noEmit -p tsconfig.json. The requested type-aware lint command passes with zero warnings. The repository semantic inspection exits 0. With the final branch source on port 13899, relay main exits 0 and intake-calls-billing exits 1 with only RELATIONSHIP_UNDRAWN at warning severity. Both runs also report four informational EMBED_RENDERER_CHANGED notices for existing example diagrams. Both relay checkouts are clean on main. The standards review has no remaining finding. The spec review corrected compose filename recognition, Terraform module and instance forms, explicit directory paths with dots, and Kubernetes kinds with digits. Skipping every source part is consistent with the runner join across repositories; the runner does not own a code directory in its own repository either. The remaining syntax ambiguity is documented in authoring guidance. Task status stays In Progress for the parent task owner.
 
-Proof at d39822441: packages/model/tests/runtime/check/operations/structure.test.ts passes 71 of 71. It covers containers bound to Kubernetes workloads (including a custom kind with a digit and code from another repository), compose services in the accepted compose filenames, and Terraform or OpenTofu resource, module and instance addresses, and it keeps CONTAINER_PARTS_OUTSIDE for code containers, ConfigMaps, Secrets, other compose filenames and empty addresses. With ./bin/archboard of this branch, archboard check all exits 0 on relay main a10b738 (only EMBED_RENDERER_CHANGED information), and exits 1 on relay pull request #1 (intake-calls-billing) with one warning, RELATIONSHIP_UNDRAWN for Rate card, with evidence at services/intake/src/accept.ts:51 and deploy/kubernetes/peer-endpoints.yaml:13. skills/archboard/references/authoring.md says to bind a deployed service to its runner.
+Proof at d39822441: packages/model/tests/runtime/check/operations/structure.test.ts passes 71 of 71. Tests cover Kubernetes workloads, including a custom kind with a digit and code from another repository. They cover compose services in supported filenames, and Terraform or OpenTofu resource, module and instance addresses. ConfigMap and Secret bindings receive the exception. Code containers, unsupported compose filenames and empty addresses still get CONTAINER_PARTS_OUTSIDE. With ./bin/archboard of this branch, archboard check all exits 0 on relay main a10b738 (only EMBED_RENDERER_CHANGED information), and exits 1 on relay pull request #1 (intake-calls-billing) with one warning, RELATIONSHIP_UNDRAWN for Rate card, with evidence at services/intake/src/accept.ts:51 and deploy/kubernetes/peer-endpoints.yaml:13. skills/archboard/references/authoring.md says to bind a deployed service to its runner.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
