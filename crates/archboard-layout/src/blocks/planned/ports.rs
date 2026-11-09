@@ -3,7 +3,6 @@
 use super::model::Model;
 use super::shape::{CLEAR, Shape};
 use crate::geometry::{Point, Rect, Side};
-use crate::graph::DOOR;
 use crate::track::chains::LANE;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -44,7 +43,7 @@ fn choose_port(
     }
     let at = shape.wall(endpoint, side);
     let kinds = kinds_of(model, incidents);
-    let door = model.endpoints[endpoint].node.option(DOOR).is_some();
+    let door = model.endpoints[endpoint].door;
     // A door cannot widen for its incoming fan. Keep its ports inside the rounded corners
     // with the twelve-point line gap that the geometry guard requires.
     let (margin, spacing) = match (source, door) {
@@ -175,7 +174,7 @@ pub(super) fn faces_far_end(
     ]
     .into_iter()
     .all(|(at, far, attachment, next)| {
-        model.endpoints[at].node.option(DOOR).is_none()
+        !model.endpoints[at].door
             || facing(
                 shape.endpoints[&at],
                 center(shape.endpoints[&far]),
