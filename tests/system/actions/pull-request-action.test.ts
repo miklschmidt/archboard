@@ -3,7 +3,7 @@
 // on their own. The entry runs against a stand-in `archboard` and a stand-in GitHub API.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pullRequestComment } from "../../../actions/pull-request/comment.ts";
 import type { PullRequestReport } from "../../../actions/pull-request/comment.ts";
@@ -24,6 +24,15 @@ import { fixture, runEntryAsync, scratch, writeStandIn } from "./support.ts";
  */
 function part(name: string, id = `m#${name.toLowerCase()}`) {
 	return [{ subject: { id, name } }];
+}
+
+/**
+ * The workflow commands, such as annotations, that a step printed.
+ * @param stdout The step's output.
+ * @returns Its lines that start with `::`.
+ */
+function annotations(stdout: string): string[] {
+	return stdout.split("\n").filter((line) => line.startsWith("::"));
 }
 
 const states: ModelState[] = [
@@ -162,7 +171,7 @@ describe("the entry", () => {
 	 * Run the action as the pull request's workflow would.
 	 * @param inputs The inputs and the repository's server to override.
 	 * @param answers Answers to replace in the stand-in CLI.
-	 * @returns The step's exit status and output.
+	 * @returns The step's exit status and output, the CLI commands it ran, and its scratch folder.
 	 */
 	async function step(
 		inputs: Record<string, string> = {},
@@ -209,10 +218,11 @@ describe("the entry", () => {
 			GITHUB_SERVER_URL: "https://github.test",
 			GITHUB_API_URL: `http://127.0.0.1:${String(server.port)}`,
 			GITHUB_STEP_SUMMARY: join(folder, "summary.md"),
+			GITHUB_OUTPUT: join(folder, "output"),
 			ARCHBOARD_INPUT_GITHUB_TOKEN: "token",
 			...inputs,
 		});
-		return { ...result, commands: readFileSync(join(folder, "commands.log"), "utf8") };
+		return { ...result, commands: readFileSync(join(folder, "commands.log"), "utf8"), folder };
 	}
 
 	test("warns about a change outside the plan and posts a text comment with the vault link", async () => {
@@ -337,6 +347,25 @@ describe("the entry", () => {
 		expect(body).toContain("- Checkout API");
 		expect(body).not.toContain("- Payments");
 		expect(body).toContain("Payments");
+	});
+
+	test("a report file takes the comment's text, no comment is touched, and the plan check is the same", async () => {
+		const commented = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" });
+		const before = comments.map((one) => one.body);
+		const sent = requests.length;
+		const filed = await step({
+			ARCHBOARD_INPUT_OUT_OF_PLAN: "fail",
+			ARCHBOARD_INPUT_REPORT_FILE: "reports/architecture.md",
+		});
+		const file = join(checkout, "reports/architecture.md");
+		expect(readFileSync(file, "utf8")).toBe(before.at(-1) ?? "");
+		expect(readFileSync(join(filed.folder, "output"), "utf8")).toBe(`report=${file}\n`);
+		expect(existsSync(join(filed.folder, "summary.md"))).toBe(false);
+		expect(comments.map((one) => one.body)).toEqual(before);
+		expect(requests.slice(sent).filter((one) => one.includes("/comments"))).toHaveLength(0);
+		expect(commented.exitCode).toBe(1);
+		expect(filed.exitCode).toBe(commented.exitCode);
+		expect(annotations(filed.stdout)).toEqual(annotations(commented.stdout));
 	});
 
 	test("a run of an older head does not post its comment", async () => {

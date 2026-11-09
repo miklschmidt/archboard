@@ -172,6 +172,39 @@ Change the label with [`override-label`](../reference/actions/#pull-request-over
 
 A pull request from a fork gets a read-only token, so GitHub refuses the comment. The report is then in the job summary of the run. The same happens when the token lacks `pull-requests: write`.
 
+### Take the report as a file
+
+The [`report-file`](../reference/actions/#pull-request-report-file) input names a file that takes the report in place of the comment. The Action writes the Markdown that it would post to that file, with the hidden marker that identifies its comment. It posts and changes no comment and writes no job summary, so the job needs only `contents: read`. The plan check annotates the log and fails the step as it does without the input. The [`report`](../reference/actions/#pull-request-report) output names the file, and a later step puts the report where the team wants it. This workflow puts it in the job summary:
+
+```yaml title=".github/workflows/pull-request.yml" {17,20-24}
+name: pull-request
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: miklschmidt/archboard/actions/pull-request@{{sha}} # {{ref}}
+        id: architecture
+        with:
+          version: "{{version}}"
+          report-file: ${{ runner.temp }}/architecture.md
+      - if: always() && steps.architecture.outputs.report != ''
+        run: cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          REPORT: ${{ steps.architecture.outputs.report }}
+```
+
+`always()` runs the last step also when the plan check fails the Action's step.
+
 ## Explain the change in the description
 
 The comment states facts. The `archboard-pr` skill, which `archboard init` installs, has your agent write the description around them: the problem, the resulting behavior, the evidence and the merge danger. Ask for it when you open the pull request:

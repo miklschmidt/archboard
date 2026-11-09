@@ -1,12 +1,13 @@
 // The entry of the pull request action. It reads the architecture at the base and at the head of
 // the pull request, then the proposal, its plan and its footprint, keeps one text comment on the
-// pull request up to date, and fails the step when the configuration says changes outside the plan
-// block. Only existing CLI commands read the architecture: `model proposals`, `model read` and
-// `model footprint`. Node runs this file as it is.
+// pull request up to date, or writes the comment's text to the report file instead, and fails the
+// step when the configuration says changes outside the plan block. Only existing CLI commands read
+// the architecture: `model proposals`, `model read` and `model footprint`. Node runs this file as
+// it is.
 
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
-import { appendFileSync, existsSync, rmSync } from "node:fs";
-import { join, relative } from "node:path";
+import { appendFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import { noVaultComment, planProblem, pullRequestComment } from "./comment.ts";
 import type { PullRequestReport } from "./comment.ts";
 import { addWorktree, archboard, firstLine, readContext } from "./context.ts";
@@ -21,7 +22,7 @@ import type { ModelState, StateChoice } from "./plan.ts";
 import { proposalPlan } from "./proposal-plan.ts";
 import type { Buckets, ModelReading, ProposalPlan } from "./proposal-plan.ts";
 import { input, parseJson, run } from "../shared/process.ts";
-import { annotationLine } from "../shared/workflow-commands.ts";
+import { annotationLine, outputLines } from "../shared/workflow-commands.ts";
 
 /** A diagnostic of a refusal of `model proposals`. */
 interface ProposalsDiagnostic {
@@ -236,19 +237,25 @@ function buildReport(
 }
 
 /**
- * Post the comment, unless a later push moved the pull request on, and say so when it cannot be
- * posted.
+ * Hand the report over. With a report file, write the report there and name the file in the
+ * `report` output, and touch no comment. Otherwise write it to the job summary and post it as
+ * the comment, unless a later push moved the pull request on, and say so when it cannot be posted.
  * @param context The run.
- * @param report The report.
+ * @param markdown The comment's Markdown, which carries the marker.
+ * @param create False to only update an earlier comment, and create none.
  */
-async function postComment(context: Context, report: PullRequestReport): Promise<void> {
-	const result = await upsertComment(
-		context.access,
-		context.number,
-		pullRequestComment(report),
-		context.headSha,
+async function publish(context: Context, markdown: string, create: boolean): Promise<void> {
+	if (context.reportFile !== undefined) {
+		mkdirSync(dirname(context.reportFile), { recursive: true });
+		writeFileSync(context.reportFile, markdown);
+		const outputs = input("GITHUB_OUTPUT", "");
+		if (outputs !== "") appendFileSync(outputs, outputLines({ report: context.reportFile }));
+		return;
+	}
+	writeSummary(markdown);
+	reportPost(
+		await upsertComment(context.access, context.number, markdown, context.headSha, create),
 	);
-	reportPost(result);
 }
 
 /**
@@ -343,16 +350,7 @@ async function reportNoVault(context: Context): Promise<void> {
 	process.stdout.write(
 		"::notice::The head commit holds no Archboard vault, so there is nothing to report.\n",
 	);
-	const comment = noVaultComment(context.headSha);
-	writeSummary(comment);
-	const result = await upsertComment(
-		context.access,
-		context.number,
-		comment,
-		context.headSha,
-		false,
-	);
-	reportPost(result);
+	await publish(context, noVaultComment(context.headSha), false);
 }
 
 /**
@@ -374,8 +372,7 @@ async function reportOn(context: Context, trees: Trees): Promise<number> {
 			? unreadableReport(context, refusalOf(answer, result.stderr))
 			: buildReport(context, trees, answer);
 	annotatePlan(report);
-	writeSummary(pullRequestComment(report));
-	await postComment(context, report);
+	await publish(context, pullRequestComment(report), true);
 	return report.outOfPlan.failed ? 1 : 0;
 }
 
