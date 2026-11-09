@@ -1,6 +1,6 @@
 {
 	"name": "archboard",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"private": true,
 	"description": "Architecture planning tool for architects who work with coding agents: an agent states what an architecture is, the server draws it, and a person reads, compares and presents it.",
 	"homepage": "https://github.com/miklschmidt/archboard#readme",

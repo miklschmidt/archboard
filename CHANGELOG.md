@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/miklschmidt/archboard/compare/v0.2.0...v0.3.0) (2026-11-09)
+
+
+### Features
+
+* **shell:** the chrome frames the picture, the agent card and the claim marks ([#74](https://github.com/miklschmidt/archboard/issues/74)) ([f87168c](https://github.com/miklschmidt/archboard/commit/f87168c937576a227b5af24461b660eec128ade3))
+* **site:** each release has its own docs, and examples pin Actions to a release commit ([#78](https://github.com/miklschmidt/archboard/issues/78)) ([59b96b0](https://github.com/miklschmidt/archboard/commit/59b96b068290a6ffd603c12eb0e8a69d7938d3ee))
+
+
+### Bug Fixes
+
+* **model:** the containment rule leaves out a container bound to a runner ([#81](https://github.com/miklschmidt/archboard/issues/81)) ([dd49939](https://github.com/miklschmidt/archboard/commit/dd499395d4a515e4c74fef26c3fa753349ecc569))
+* **render:** a rendered or rasterized picture carries its legend unless asked to leave it out ([#80](https://github.com/miklschmidt/archboard/issues/80)) ([173c2bb](https://github.com/miklschmidt/archboard/commit/173c2bb1cc957a6fbee682afcc964ed7db6df198))
+
 ## [0.2.0](https://github.com/miklschmidt/archboard/compare/v0.1.0...v0.2.0) (2026-11-08)
 
 
