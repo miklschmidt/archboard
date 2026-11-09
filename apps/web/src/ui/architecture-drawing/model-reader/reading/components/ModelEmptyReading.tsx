@@ -80,21 +80,22 @@ function ModelPlanned(props: {
 					? `${model.manifest.name} has no proposal yet.`
 					: `${model.manifest.name} is a plan, and its proposals hold it.`}
 			</ModelState.Line>
-			{proposal === undefined ? (
-				<ModelState.Ask
-					label="Ask the agent to propose a design"
-					draft="Read this repository and propose its first architecture."
-				/>
-			) : (
-				<Button
-					size="sm"
-					data-slot="model-open-proposal"
-					onPointerDown={stopPropagation}
-					onClick={open}
-				>
-					Open {proposal.name}
-				</Button>
-			)}
+			{onOpenState !== undefined &&
+				(proposal === undefined ? (
+					<ModelState.Ask
+						label="Ask the agent to propose a design"
+						draft="Read this repository and propose its first architecture."
+					/>
+				) : (
+					<Button
+						size="sm"
+						data-slot="model-open-proposal"
+						onPointerDown={stopPropagation}
+						onClick={open}
+					>
+						Open {proposal.name}
+					</Button>
+				))}
 		</ModelState>
 	);
 }
