@@ -3,21 +3,15 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "WxPQKLMm",
-    "name": "Footprint gate and archboard-plan skill",
-    "summary": "model footprint --fail-outside fails a branch that changes a module outside its draft, and init installs the archboard-plan skill that runs this gate before each ticket merge.",
-    "documents": [
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "backlog/tasks/task-620 - The-archboard-plan-skill-carries-a-proposal-from-spec-to-implementation-and-footprint-can-fail-a-branch.md"
-      }
-    ],
-    "predecessor": "iY0ACR2l",
-    "baseline": "1ba26715cc7bcc4f63db1f08d41dd01dc84c361f",
-    "createdAt": "2026-11-09T19:44:04.060Z",
-    "adoptedAt": "2026-11-09T19:51:46.689Z",
-    "reason": "model footprint --fail-outside and the archboard-plan skill are implemented on the TASK-620 branch.",
-    "previousCurrent": "iY0ACR2l"
+    "id": "wJDQv2En",
+    "name": "Footprint lists unbound files",
+    "summary": "model footprint lists each changed file that no module is bound to, so that the gate and the pull-request comment flag it without failing.",
+    "predecessor": "WxPQKLMm",
+    "baseline": "6301e9902cf93fb6c89de90db7fe7aa909836e78",
+    "createdAt": "2026-11-09T21:59:58.026Z",
+    "adoptedAt": "2026-11-09T22:01:13.458Z",
+    "reason": "The footprint lists unbound files on the TASK-621 branch, in the CLI and the pull-request Action.",
+    "previousCurrent": "WxPQKLMm"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
