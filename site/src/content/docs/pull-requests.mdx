@@ -171,13 +171,13 @@ Change the label with [`override-label`](../reference/actions/#pull-request-over
 
 ### Before a pull request
 
-A branch can merge without a pull request, for example a ticket branch that merges into an integration branch. Run the same judgement there with the CLI:
+A branch can merge without a pull request, for example a ticket branch that merges into an integration branch. Run a similar judgement there with the CLI:
 
 ```bash
 archboard model footprint --base <integration-branch> --head <ticket-branch> --state <draft> --fail-outside
 ```
 
-It exits <Exit command="model footprint" outcome="outside" /> when the commits changed a module that the draft does not name, and names each module on standard error. A module bound to a directory counts only when no other changed module is bound inside it, because it changes with each of them. Without a draft, it refuses the option, because only a draft names modules. The `archboard-plan` skill runs this gate before each ticket merge.
+It exits <Exit command="model footprint" outcome="outside" /> when the commits changed a module that the draft does not name, and names each module on standard error. A module bound to a directory counts only when no other changed module is bound inside it, because it changes with each of them. The Action does not apply this exception. Without a draft, it refuses the option, because only a draft names modules. The `archboard-plan` skill runs this gate before each ticket merge.
 
 ### When the comment cannot be posted
 

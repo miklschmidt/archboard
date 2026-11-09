@@ -3,6 +3,7 @@
 // gate. The gate judges the module inside instead. Pure.
 
 import { posix } from "node:path";
+import { bindingPathOf } from "@archboard/code-binding/bindings";
 
 /** A part as the footprint lists it: where its binding is. */
 interface Bound {
@@ -11,16 +12,28 @@ interface Bound {
 }
 
 /**
- * Whether one binding's directory holds another binding.
+ * A binding path in one spelling: `/` between names, no `.` segment, no trailing slash.
+ * @param path The binding path as the footprint lists it.
+ * @returns The path, or the empty string for the repository root.
+ */
+function normalized(path: string): string {
+	const spelled = posix.normalize(path.replaceAll("\\", "/")).replace(/\/+$/u, "");
+	return spelled === "." ? "" : spelled;
+}
+
+/**
+ * Whether one binding's scope holds another binding strictly below it. A `.csproj` binding's
+ * scope is its project directory, as the footprint reads it.
  * @param outer The binding that may be a directory.
  * @param inner The other binding.
- * @returns True when `inner` is below `outer` in the same repository.
+ * @returns True when `inner` is below `outer`'s scope in the same repository.
  */
 function holds(outer: Bound, inner: Bound): boolean {
 	if (outer.repo !== inner.repo) return false;
-	const directory = posix.normalize(outer.path.replaceAll("\\", "/")).replace(/\/+$/u, "");
-	const path = posix.normalize(inner.path.replaceAll("\\", "/"));
-	return directory === "." || path.startsWith(`${directory}/`);
+	const scope = bindingPathOf(normalized(outer.path));
+	const path = normalized(inner.path);
+	if (path === scope) return false;
+	return scope === "" || path.startsWith(`${scope}/`);
 }
 
 /**
