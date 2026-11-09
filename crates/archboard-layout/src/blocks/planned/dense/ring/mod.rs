@@ -198,7 +198,7 @@ fn prices(
                 .map(|(&line, way)| {
                     let chord = scene.chord(line);
                     let crossings = fixed.iter().filter(|other| chord.crosses(other)).count();
-                    scene.sketch_among(line, way).1 + CROSSING * crossings as f64
+                    scene.cost_among(line, way) + CROSSING * crossings as f64
                 })
                 .sum();
             if alone {

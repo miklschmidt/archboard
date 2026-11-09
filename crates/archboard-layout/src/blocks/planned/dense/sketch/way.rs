@@ -189,16 +189,15 @@ impl Scene {
         }
     }
 
-    /// The cheapest sketch of a line among the boxes that stand in its way, solid boxes and
-    /// foreign frames, and what the line costs.
-    pub(in crate::blocks::planned::dense) fn sketch_among(
-        &self,
-        line: usize,
-        way: &InTheWay,
-    ) -> (Sketch, f64) {
+    /// What a line costs among the boxes that stand in its way, solid boxes and foreign frames:
+    /// what its cheapest sketch costs.
+    pub(in crate::blocks::planned::dense) fn cost_among(&self, line: usize, way: &InTheWay) -> f64 {
         let ways = self.ways(line);
         let solid = way.rounds(&ways);
         let frames = rounds(&ways, way.frames.iter().copied());
-        self.cheapest(line, ways, (solid, frames))
+        (self.costs(line, &ways, (solid, frames)).into_iter())
+            .flatten()
+            .min_by(f64::total_cmp)
+            .expect("a line has a way")
     }
 }

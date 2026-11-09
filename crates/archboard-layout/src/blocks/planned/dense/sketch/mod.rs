@@ -356,30 +356,44 @@ impl Scene {
     }
 
     /// The cheapest of a line's ways, and what the line costs, for what each way adds to go
-    /// round the solid boxes and the foreign frames in its way.
+    /// round the solid boxes and the foreign frames in its way. The first of two that cost the
+    /// same wins.
     fn cheapest(
         &self,
         line: usize,
         ways: [Option<Sketch>; 2],
-        (solid, frames): ([f64; 2], [f64; 2]),
+        rounds: ([f64; 2], [f64; 2]),
     ) -> (Sketch, f64) {
+        let costs = self.costs(line, &ways, rounds);
+        (ways.into_iter().zip(costs))
+            .filter_map(|(sketch, cost)| Some((sketch?, cost?)))
+            .min_by(|one, two| one.1.total_cmp(&two.1))
+            .expect("a line has a way")
+    }
+
+    /// What a line costs by each of its ways: the way's length, its bend, its way round the
+    /// solid boxes and the foreign frames in its way, and the line's climb against the reading.
+    fn costs(
+        &self,
+        line: usize,
+        ways: &[Option<Sketch>; 2],
+        (solid, frames): ([f64; 2], [f64; 2]),
+    ) -> [Option<f64>; 2] {
         let Line { from, to, .. } = self.lines[line];
         let against = if centre(self.boxes[to]).y < centre(self.boxes[from]).y - SHARED {
             AGAINST
         } else {
             0.0
         };
-        (ways.into_iter().zip(solid.into_iter().zip(frames)))
-            .filter_map(|(sketch, (solid, frames))| {
-                let sketch = sketch?;
-                let cost = sketch.length()
+        [0, 1].map(|at| {
+            let sketch = ways[at].as_ref()?;
+            Some(
+                sketch.length()
                     + if sketch.bent { BEND } else { 0.0 }
-                    + (solid + frames)
-                    + against;
-                Some((sketch, cost))
-            })
-            .min_by(|one, two| one.1.total_cmp(&two.1))
-            .expect("a line has a way")
+                    + (solid[at] + frames[at])
+                    + against,
+            )
+        })
     }
 
     /// The chord of a line where its boxes stand.
