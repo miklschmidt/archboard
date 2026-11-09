@@ -59,7 +59,7 @@ interface Installation {
 	readonly frontendDirectory: string;
 	/** The renderer core's build: the glue and the WebAssembly. */
 	readonly coreDirectory: string;
-	/** The directory that holds the `archboard` and `archboard-pr` skills. */
+	/** The directory that holds the `archboard`, `archboard-pr` and `archboard-plan` skills. */
 	readonly skillsDirectory: string;
 	/** The directory of the `archboard` executable, which a Codex child gets first on its PATH. */
 	readonly binDirectory: string;

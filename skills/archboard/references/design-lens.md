@@ -95,6 +95,7 @@ With a proposal, it reports:
 
 Footprints retain large commits with `large` and list unread modules in `skipped`.
 Findings alone change no exit status.
+With a proposal, `--fail-outside` makes a gate: the command exits 1 when `changedNotNamed` is not empty, and names those modules on standard error.
 If a repository cannot read the requested base or head, the command names it and exits with status 2.
 Source refs stay local. The command retains no source history.
 

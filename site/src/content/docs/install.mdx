@@ -35,7 +35,7 @@ archboard init
 
 <Steps>
 
-1. **It installs the skills.** `archboard` writes and reads models. `archboard-pr` gives a pull request an architecture explainer. Codex gets them, and Claude Code gets them when `claude` is on the `PATH`.
+1. **It installs the skills.** `archboard` writes and reads models. `archboard-pr` gives a pull request an architecture explainer. `archboard-plan` carries a proposal through the `to-spec`, `to-tickets` and `implement-spec` skills. Codex gets them, and Claude Code gets them when `claude` is on the `PATH`.
 2. **It makes the vault.** The vault is `.archboard/vault` at the root of the checkout. The model takes the name of the repository directory.
 3. **It registers the checkout.** The browser then lists it, and bindings into this repository resolve here.
 4. **It hands the language servers to an agent.** At a terminal, `init` asks whether Claude Code or Codex sets them up. The agent shows its plan and waits for your consent. Without a terminal, the JSON answer ends with `next`, the prompt for the agent.
@@ -127,6 +127,6 @@ archboard stop
 npm uninstall --global archboard
 ```
 
-Then delete the skill directories, such as `~/.agents/skills/archboard` and `~/.agents/skills/archboard-pr`, and the state directory. The state directory holds the Codex sign-in, the registry of checkouts and the logs. On Linux it is `~/.local/state/archboard`, and on macOS it is `~/Library/Application Support/archboard`. Keep each vault that you still need: it is in its repository, not in the state directory.
+Then delete the skill directories, such as `~/.agents/skills/archboard`, `~/.agents/skills/archboard-pr` and `~/.agents/skills/archboard-plan`, and the state directory. The state directory holds the Codex sign-in, the registry of checkouts and the logs. On Linux it is `~/.local/state/archboard`, and on macOS it is `~/Library/Application Support/archboard`. Keep each vault that you still need: it is in its repository, not in the state directory.
 
 [`INSTALL.md`](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md) covers builds from a clone, Nix, every language server, recordings, machine state and macOS.

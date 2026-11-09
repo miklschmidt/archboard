@@ -117,4 +117,4 @@ function historyLines(answer: Answer): string[] {
 	];
 }
 
-export { historyLines, unreadLines };
+export { historyLines, unreadLines, type Answer };

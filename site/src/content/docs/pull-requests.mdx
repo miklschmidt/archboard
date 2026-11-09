@@ -4,6 +4,7 @@ description: Put each finding on the diff with an excerpt of the code and the ma
 ---
 
 import Aside from "../../components/docs/Aside.astro";
+import Exit from "../../components/docs/Exit.astro";
 import Steps from "../../components/docs/Steps.astro";
 import LinkCards from "../../components/docs/LinkCards.astro";
 import reference from "../../generated/reference.json";
@@ -167,6 +168,16 @@ The footprint's middle group is the interesting one: modules whose code changed 
 | `off`                                                           | The footprint shows, and nothing is judged.                                                                                                                                                                                                                                                                                                                                |
 
 Change the label with [`override-label`](../reference/actions/#pull-request-override-label). A pull request with no proposal has no plan, so nothing in it is out of plan. When the model has one draft, the Action takes it without a marker, so removing the marker does not stop the judgement. Set [`out-of-plan: off`](../reference/actions/#pull-request-out-of-plan) for that. When the model has several drafts and the pull request names none, the plan cannot be checked.
+
+### Before a pull request
+
+A branch can merge without a pull request, for example a ticket branch that merges into an integration branch. Run the same judgement there with the CLI:
+
+```bash
+archboard model footprint --base <integration-branch> --head <ticket-branch> --state <draft> --fail-outside
+```
+
+It exits <Exit command="model footprint" outcome="outside" /> when the commits changed a module that the draft does not name, and names each module on standard error. Without `--state`, it refuses the option, because only a draft names modules. The `archboard-plan` skill runs this gate before each ticket merge.
 
 ### When the comment cannot be posted
 

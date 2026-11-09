@@ -74,6 +74,7 @@ function skillsCall(agents: readonly string[]): string[] {
 		"--skill",
 		"archboard",
 		"archboard-pr",
+		"archboard-plan",
 	];
 }
 

@@ -5,7 +5,7 @@
 // user's consent.
 
 /** The skills that an installation ships, each a directory of its skills directory. */
-const BUNDLED_SKILLS = ["archboard", "archboard-pr"] as const;
+const BUNDLED_SKILLS = ["archboard", "archboard-pr", "archboard-plan"] as const;
 
 /** The skills CLI (skills.sh), at the version that `init` was tested with. */
 const SKILLS_CLI = "skills@1.7.6";
