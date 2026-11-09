@@ -3,6 +3,9 @@
   "name": "process",
   "kind": "package",
   "responsibility": "Owns a child process group and ends it, and runs git in its own group",
+  "groups": [
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/process"
@@ -16,7 +19,5 @@
     }
   ],
   "outgoing": [],
-  "groups": [
-    "packages"
-  ]
+  "parent": "vKEsyHFk#EuaJBisP"
 }

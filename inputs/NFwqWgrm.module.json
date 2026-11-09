@@ -13,8 +13,9 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#NFwqWgrm",
-  "outgoing": [],
   "formerNames": [
     "Painter core"
-  ]
+  ],
+  "outgoing": [],
+  "parent": "vKEsyHFk#HgZPVIE2"
 }

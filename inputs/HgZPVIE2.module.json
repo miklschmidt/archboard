@@ -1,0 +1,13 @@
+{
+  "order": 5,
+  "name": "Drawing engine",
+  "kind": "module",
+  "responsibility": "Lays out, routes, paints and encodes architecture pictures in Rust, compiled to WebAssembly for the renderer and the browser",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#HgZPVIE2",
+  "outgoing": []
+}
