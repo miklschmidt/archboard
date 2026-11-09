@@ -1,10 +1,10 @@
 ---
 id: TASK-614
 title: The containment rule leaves out a container bound to a runner
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-08T23:29:00Z'
-updated_date: '2026-11-08T23:41:00Z'
+updated_date: '2026-11-09T01:02:00Z'
 labels:
   - bug
   - model
@@ -21,10 +21,10 @@ The containment rule (TASK-582.01, #49) warns CONTAINER_PARTS_OUTSIDE when a par
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A container bound to a Kubernetes object, a compose service, or a Terraform or OpenTofu resource address gets neither CONTAINER_UNBOUND nor CONTAINER_PARTS_OUTSIDE
-- [ ] #2 A container bound to a code file, a code symbol, or a YAML file without an address still gets CONTAINER_PARTS_OUTSIDE when a part is outside it
-- [ ] #3 archboard check all passes on the main branch of miklschmidt/archboard-relay-example, and still reports RELATIONSHIP_UNDRAWN on its pull request #1
-- [ ] #4 The consumer skill says that a deployed service binds its runner
+- [x] #1 A container bound to a Kubernetes object, a compose service, or a Terraform or OpenTofu resource address gets neither CONTAINER_UNBOUND nor CONTAINER_PARTS_OUTSIDE
+- [x] #2 A container bound to a code file, a code symbol, or a YAML file without an address still gets CONTAINER_PARTS_OUTSIDE when a part is outside it
+- [x] #3 archboard check all passes on the main branch of miklschmidt/archboard-relay-example, and still reports RELATIONSHIP_UNDRAWN on its pull request #1
+- [x] #4 The consumer skill says that a deployed service binds its runner
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -45,4 +45,12 @@ Review fix: Terraform module calls, nested module instances, resource instance k
 Review fix: the Kubernetes Kind/name form now accepts digits in custom kinds, as the manifest reader does. The Workload2/api regression failed before this correction. The exception still uses the object address within a multi-document YAML file and needs no document index, as the manifest reader addresses objects by kind and name.
 
 Final review validation: all 71 structure tests pass. TypeScript passes with nix develop --command bunx tsc --noEmit -p tsconfig.json. The requested type-aware lint command passes with zero warnings. The repository semantic inspection exits 0. With the final branch source on port 13899, relay main exits 0 and intake-calls-billing exits 1 with only RELATIONSHIP_UNDRAWN at warning severity. Both runs also report four informational EMBED_RENDERER_CHANGED notices for existing example diagrams. Both relay checkouts are clean on main. The standards review has no remaining finding. The spec review corrected compose filename recognition, Terraform module and instance forms, explicit directory paths with dots, and Kubernetes kinds with digits. Skipping every source part is consistent with the runner join across repositories; the runner does not own a code directory in its own repository either. The remaining syntax ambiguity is documented in authoring guidance. Task status stays In Progress for the parent task owner.
+
+Proof at d39822441: packages/model/tests/runtime/check/operations/structure.test.ts passes 71 of 71. It covers containers bound to Kubernetes workloads (including a custom kind with a digit and code from another repository), compose services in the accepted compose filenames, and Terraform or OpenTofu resource, module and instance addresses, and it keeps CONTAINER_PARTS_OUTSIDE for code containers, ConfigMaps, Secrets, other compose filenames and empty addresses. With ./bin/archboard of this branch, archboard check all exits 0 on relay main a10b738 (only EMBED_RENDERER_CHANGED information), and exits 1 on relay pull request #1 (intake-calls-billing) with one warning, RELATIONSHIP_UNDRAWN for Rate card, with evidence at services/intake/src/accept.ts:51 and deploy/kubernetes/peer-endpoints.yaml:13. skills/archboard/references/authoring.md says to bind a deployed service to its runner.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The containment rule now leaves out a container bound to a runner: a Kubernetes workload, a compose service or a Terraform or OpenTofu resource address. Such a container runs the code drawn inside it (ADR 0046), so its parts may live anywhere. Code containers still get CONTAINER_PARTS_OUTSIDE. The relay example passes archboard check on main again and still reports the undrawn call on its pull request #1. The published 0.2.0 lacks this fix, so the relay architecture check fails until the next release.
+<!-- SECTION:FINAL_SUMMARY:END -->
