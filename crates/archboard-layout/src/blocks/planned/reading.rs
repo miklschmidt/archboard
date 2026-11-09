@@ -4,7 +4,7 @@ use archboard_scene::paint::design::LANDING_ROOM;
 
 use crate::{
     blocks::assembly::PlacedLine,
-    geometry::Point,
+    geometry::{Point, Rect},
     track::{chains::LANE, score::crossings_of},
 };
 
@@ -76,27 +76,23 @@ pub(super) fn rank(lines: &[PlacedLine]) -> (usize, u64) {
     (approaches(lines), cost.to_bits())
 }
 
-/// How a finished drawing ranks: whether its words read where it lands, whether it stays
-/// within the room limit, its long detours, then the work of tracing its lines, with its
-/// crowded approaches, times its area. A page whose words read pays for its area alone, not
-/// for the scale it lands at: a smaller scale costs a reader less than lines that cross and
-/// run the long way round.
-pub(super) type Order = (bool, bool, usize, f64);
+/// How a finished drawing ranks: whether its words read where it lands, its long detours, then
+/// the work of tracing its lines, with its crowded approaches, and its dead space. Page shape
+/// counts only where the page lands too small for its words to read. A large page whose space
+/// its cards and lines use costs nothing for its size.
+pub(super) type Order = (bool, usize, f64);
 
 /// The scale that a landing must reach for its words to read (the first gate of the reader).
 const NEAR_SCALE: f64 = 0.6;
 /// The shape of the room a picture lands in, width over height.
 const PANE_SHAPE: f64 = LANDING_ROOM.0 / LANDING_ROOM.1;
-/// The largest page a reading settles for. Past it, a reading of few lines tries more room.
-const LANDS_WHOLE: (f64, f64) = (2505.0, 1520.0);
 /// A line is a long detour past this much extra travel, and half again its direct way.
 const LONG_DETOUR: f64 = 300.0;
 
 /// What a page of this size costs before it is routed: its own area, which a page that lands
 /// whole shows as it is, and the room that the smallest box of the pane's shape round it
 /// needs past the landing room, which a larger page pays for in scale. A placement that
-/// promises the pane's shape lands larger, so the ring and the promise prefer it, and the
-/// order judges the routed page by its area.
+/// promises the pane's shape lands larger, so the ring and the promise prefer it.
 pub(super) fn room_cost(width: f64, height: f64) -> f64 {
     let pane = width.max(height * PANE_SHAPE);
     width * height + (pane * pane / PANE_SHAPE - LANDING_ROOM.0 * LANDING_ROOM.1).max(0.0)
@@ -129,17 +125,121 @@ pub(super) fn drawn_rank(drawing: &crate::blocks::assembly::Placed) -> (usize, u
     rank(&as_routed(drawing).edges)
 }
 
+/// The largest page whose words still read where it lands.
+const READABLE: (f64, f64) = (LANDING_ROOM.0 / NEAR_SCALE, LANDING_ROOM.1 / NEAR_SCALE);
+
 pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
     let routed = &as_routed(drawing).edges;
     let (crowded, cost) = rank(routed);
     (
-        drawing.width * NEAR_SCALE > LANDING_ROOM.0 || drawing.height * NEAR_SCALE > LANDING_ROOM.1,
-        drawing.width > LANDS_WHOLE.0 || drawing.height > LANDS_WHOLE.1,
+        drawing.width > READABLE.0 || drawing.height > READABLE.1,
         long_detours(routed),
-        (1.0 + f64::from_bits(cost) + crowded as f64 * CROWDED_COST)
-            * drawing.width
-            * drawing.height,
+        f64::from_bits(cost) + crowded as f64 * CROWDED_COST + dead_space(drawing) / DEAD_SPACE,
     )
+}
+
+/// How far from every card, line and label a place stands before it is dead space.
+const REACH: f64 = 48.0;
+/// How much dead space costs as much as one unit of line: the band that a line inks.
+const DEAD_SPACE: f64 = 2.0 * REACH;
+/// How finely dead space is measured.
+const GRAIN: f64 = 8.0;
+
+/// A whole count or index of cells: the floor or the ceiling of a page coordinate over the grain.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "the floor or ceiling of a finite page coordinate that is not negative, over the grain"
+)]
+fn cells(value: f64) -> usize {
+    value as usize
+}
+
+/// A page on a grain of cells, each holding how many cells, side or corner, it stands from the
+/// nearest ink.
+struct Grain {
+    columns: usize,
+    rows: usize,
+    steps: Vec<u32>,
+}
+
+impl Grain {
+    fn new(width: f64, height: f64) -> Grain {
+        let columns = cells((width / GRAIN).ceil()) + 1;
+        let rows = cells((height / GRAIN).ceil()) + 1;
+        let far = u32::try_from(columns + rows).unwrap_or(u32::MAX);
+        Grain {
+            columns,
+            rows,
+            steps: vec![far; columns * rows],
+        }
+    }
+
+    /// Ink every cell of the box between two corners.
+    fn ink(&mut self, a: Point, b: Point) {
+        let cell = |value: f64, count: usize| cells(value.max(0.0) / GRAIN).min(count - 1);
+        let (left, right) = (
+            cell(a.x.min(b.x), self.columns),
+            cell(a.x.max(b.x), self.columns),
+        );
+        for row in cell(a.y.min(b.y), self.rows)..=cell(a.y.max(b.y), self.rows) {
+            let start = row * self.columns;
+            self.steps[start + left..=start + right].fill(0);
+        }
+    }
+
+    /// One sweep over the cells, forward or back, that gives each cell no more than one step
+    /// past a neighbour the sweep already passed.
+    fn sweep(&mut self, forward: bool) {
+        let passed: [(isize, isize); 4] = if forward {
+            [(-1, 0), (0, -1), (-1, -1), (1, -1)]
+        } else {
+            [(1, 0), (0, 1), (1, 1), (-1, 1)]
+        };
+        let count = self.steps.len();
+        for index in 0..count {
+            let at = if forward { index } else { count - 1 - index };
+            let (row, column) = (at / self.columns, at % self.columns);
+            let nearest = (passed.iter())
+                .filter_map(|&(dx, dy)| {
+                    let x = column
+                        .checked_add_signed(dx)
+                        .filter(|&x| x < self.columns)?;
+                    let y = row.checked_add_signed(dy).filter(|&y| y < self.rows)?;
+                    Some(self.steps[y * self.columns + x].saturating_add(1))
+                })
+                .fold(self.steps[at], u32::min);
+            self.steps[at] = nearest;
+        }
+    }
+}
+
+/// The area of a page that stands farther than `REACH` from every card, line and label. A reader
+/// pays for it as for the line that would fill it, which inks a band twice that reach wide.
+fn dead_space(drawing: &crate::blocks::assembly::Placed) -> f64 {
+    let mut grain = Grain::new(drawing.width, drawing.height);
+    let corners = |at: Rect| {
+        let far = Point {
+            x: at.x + at.width,
+            y: at.y + at.height,
+        };
+        (Point { x: at.x, y: at.y }, far)
+    };
+    let boxes = (drawing.cards.iter().map(|card| card.bx))
+        .chain(drawing.edges.iter().filter_map(|line| line.label));
+    for (near, far) in boxes.map(corners) {
+        grain.ink(near, far);
+    }
+    for pair in drawing.edges.iter().flat_map(|line| line.points.windows(2)) {
+        grain.ink(pair[0], pair[1]);
+    }
+    // Two sweeps give every cell its fewest steps, side or corner, to the nearest ink.
+    grain.sweep(true);
+    grain.sweep(false);
+    let dead = (grain.steps.iter())
+        .filter(|&&steps| f64::from(steps) > REACH / GRAIN)
+        .count();
+    dead as f64 * GRAIN * GRAIN
 }
 
 /// A larger drawing needs a ten-percent gain after its route cost pays for
@@ -229,10 +329,7 @@ fn fan_reading(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        blocks::assembly::{Placed, PlacedCard},
-        geometry::Rect,
-    };
+    use crate::blocks::assembly::{Placed, PlacedCard};
 
     const CARD: f64 = 100.0;
 
@@ -302,14 +399,14 @@ mod tests {
     }
 
     #[test]
-    fn readable_landing_precedes_the_legacy_room_limit() {
-        // Taller than the room limit, and its words read where it lands.
+    fn a_page_whose_words_read_ranks_first() {
+        // Taller than the old room limit, and its words read where it lands.
         let readable = Placed {
             width: 1000.0,
             height: 1580.0,
             ..fan(Point { x: 400.0, y: 0.0 }, None)
         };
-        // Within the room limit, and too wide for its words to read where it lands.
+        // Too wide for its words to read where it lands.
         let unreadable = Placed {
             width: LANDING_ROOM.0 / NEAR_SCALE + 100.0,
             height: 1000.0,
@@ -318,27 +415,46 @@ mod tests {
         assert!(order(&readable) < order(&unreadable));
     }
 
-    /// Two pages that both land where their words read: a wide one whose line is short, and
-    /// one of the pane's shape whose line is two fifths longer. The pane's shape saves the
-    /// wide page's scale, not its area, so the short line wins.
+    /// Three pages that land where their words read, each with one line of the same length. A
+    /// page twice as wide pays nothing for its area while a card fills it, and pays for the
+    /// blank space it leaves when nothing does.
     #[test]
-    fn a_readable_page_pays_its_area_not_the_panes_shape() {
-        let page = |width: f64, height: f64, length: f64| Placed {
+    fn a_readable_page_pays_its_blank_space_not_its_area() {
+        let page = |width: f64, cards: Vec<PlacedCard>| Placed {
             width,
-            height,
-            cards: Vec::new(),
+            height: 1000.0,
+            cards,
             frames: Vec::new(),
             regions: Vec::new(),
             edges: vec![PlacedLine {
                 id: "line".into(),
-                points: vec![Point { x: 0.0, y: 0.0 }, Point { x: length, y: 0.0 }],
+                points: vec![
+                    Point { x: 0.0, y: 500.0 },
+                    Point {
+                        x: 1000.0,
+                        y: 500.0,
+                    },
+                ],
                 label: None,
             }],
             titles: Vec::new(),
             routed: None,
         };
-        let wide = page(2000.0, 900.0, 1000.0);
-        let pane = page(1500.0, 1150.0, 1400.0);
-        assert!(order(&wide) < order(&pane));
+        let filler = PlacedCard {
+            id: "filler".into(),
+            bx: Rect {
+                x: 1000.0,
+                y: 0.0,
+                width: 1000.0,
+                height: 1000.0,
+            },
+            depth: 0,
+            header: None,
+        };
+        let small = page(1000.0, Vec::new());
+        let filled = page(2000.0, vec![filler]);
+        let blank = page(2000.0, Vec::new());
+        assert!(order(&filled) <= order(&small));
+        assert!(order(&small) < order(&blank));
     }
 }
