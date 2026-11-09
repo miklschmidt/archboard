@@ -2752,6 +2752,38 @@
 			"semantics": "discover configured vocabulary and visual policy; --schema emits canonical editor schema without contacting the server",
 			"ordering": "generate schema locally or request the shared checker",
 			"classification": "board"
+		},
+		{
+			"path": "model snapshot",
+			"introducedBy": "TASK-616",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "apps/cli/src/cli/commands/model/operations/snapshot.ts",
+			"stdout": "file receipt with --out",
+			"result": "the written file, its format version, the revision of the selected state and the revision of its comparison state or null",
+			"diagnostics": "refusals of either read on stderr",
+			"exits": [0, 1, 2, 3],
+			"prerequisites": ["server"],
+			"relationships": [
+				"GET /api/architecture/model",
+				"GET /api/architecture/model (the comparison state, when there is one)",
+				"GET /api/vault/check"
+			],
+			"semantics": "one portable JSON file that a reader can draw with no server: the reading of the state that --state, --against, --model and --flow select, the reading of its comparison state or null, the vault check of that state with a vault-relative configuration file, and the path data of every icon a picture under its policy can name; the file records its format version and the CLI version, matches ModelSnapshotSchema of @archboard/model/contract, and an unchanged vault gives the same bytes",
+			"ordering": "read the selected state, then its comparison state, then the vault check; validate the snapshot against its schema, then write the file",
+			"nextFields": ["file", "format", "revision", "comparisonRevision"],
+			"workflow": "necessary composition",
+			"effects": ["read", "local-write"],
+			"refusals": [
+				{
+					"code": "SERVER_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "STATE_NOT_FOUND",
+					"exit": 2
+				}
+			],
+			"classification": "board"
 		}
 	],
 	"workflows": [

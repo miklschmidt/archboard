@@ -7,8 +7,7 @@ import {
 import {
 	ArchitectureRasterReceiptSchema,
 	createSemanticRasterizer,
-	RASTER_MIN_SCALE,
-	RASTER_MAX_SCALE,
+	RasterScaleSchema,
 } from "@archboard/renderer/rasterizer";
 import { readRenderRecipe, embedRecipeInPng } from "@archboard/renderer/recipe";
 import { renderArchitectureFlowOnServer } from "#cli/server-access/clients/architecture-model.ts";
@@ -124,7 +123,7 @@ const modelRasterizeContract = defineCommand({
 		ingress: ArchitectureRenderRequestSchema.extend({
 			out: z.string(),
 			theme: z.enum(["light", "dark"]).default("dark"),
-			scale: z.coerce.number().min(RASTER_MIN_SCALE).max(RASTER_MAX_SCALE).default(1),
+			scale: RasterScaleSchema.default(1),
 			region: RegionSchema.optional(),
 		}),
 	},

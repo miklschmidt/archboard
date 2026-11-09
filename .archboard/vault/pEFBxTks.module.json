@@ -1,0 +1,28 @@
+{
+  "order": 980090,
+  "name": "Icon loading",
+  "kind": "function",
+  "responsibility": "Fetches the icons a policy names from the Archboard server, once each, before a picture is drawn",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/ui/state/diagram-icons.ts"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#hDWpDois",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#pEFBxTks",
+  "outgoing": [
+    {
+      "order": 980100,
+      "kind": "call",
+      "label": "the icons to fetch before drawing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/diagram-icons.ts",
+        "symbol": "loadDiagramIcons"
+      },
+      "id": "vKEsyHFk#YOV84Hm5",
+      "to": "vKEsyHFk#ZgACb0eW"
+    }
+  ]
+}

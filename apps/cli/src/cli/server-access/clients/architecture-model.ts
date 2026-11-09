@@ -27,7 +27,7 @@ import {
 	ArchitecturePublicationRequestSchema,
 	ArchitectureCheckpointRetainSchema,
 	ArchitectureCheckpointListSchema,
-	type ArchitectureCheckpointRequest,
+	type ArchitectureCheckpointRequestSchema,
 } from "@archboard/model/contract";
 import { isRecord } from "@archboard/diagnostics/unknown-record";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
@@ -83,7 +83,9 @@ function readArchitectureModelOnServer(
  * @param input The revision, dependencies and writer intent.
  * @returns The retained checkpoint or structured refusal.
  */
-function retainArchitectureCheckpointOnServer(input: ArchitectureCheckpointRequest) {
+function retainArchitectureCheckpointOnServer(
+	input: z.infer<typeof ArchitectureCheckpointRequestSchema>,
+) {
 	return architectureResult(ArchitectureCheckpointRetainSchema, "/api/architecture/checkpoints", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
