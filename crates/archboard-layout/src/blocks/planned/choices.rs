@@ -109,7 +109,7 @@ fn select<'a>(
         .flat_map(move |&beside| (0..count).map(move |at| (beside, at)))
         .filter_map(move |(beside, at)| {
             let words = |path: &[Point]| label_for(model, edge, path, &slots, beside);
-            pool.keep(model, edge, words, &probe, paths[at].clone())
+            pool.keep(model, edge, words, &probe, &paths[at])
         })
         .take(limit)
 }
@@ -130,12 +130,12 @@ impl Pool {
         edge: usize,
         words: impl Fn(&[Point]) -> Result<Option<Rect>, ()>,
         probe: &super::channel::Probe<'_, '_>,
-        points: Vec<Point>,
+        points: &[Point],
     ) -> Option<PlacedLine> {
-        if probe.refusal(&points).is_some() {
+        if probe.refusal(points).is_some() {
             return None;
         }
-        let label = words(&points).ok()?;
+        let label = words(points).ok()?;
         let longest = points
             .windows(2)
             .max_by(|a, b| length(a).total_cmp(&length(b)))
@@ -167,7 +167,7 @@ impl Pool {
         }
         let horizontal = longest[0].y == longest[1].y;
         let family = (
-            walls(&points),
+            walls(points),
             horizontal,
             (if horizontal {
                 longest[0].y
@@ -183,7 +183,7 @@ impl Pool {
         *members += 1;
         Some(PlacedLine {
             id: model.edges[edge].id.clone(),
-            points,
+            points: points.to_vec(),
             label,
         })
     }
@@ -416,7 +416,7 @@ mod tests {
             points.iter().map(|&(x, y)| Point { x, y }).collect()
         };
         let mut pool = Pool::default();
-        let mut keep = |points: Vec<Point>| pool.keep(&model, 0, |_| Ok(None), &probe, points);
+        let mut keep = |points: Vec<Point>| pool.keep(&model, 0, |_| Ok(None), &probe, &points);
         for at in 0..8 {
             let y = 108.0 + 8.0 * f64::from(at);
             let right = path(&[(260.0, y), (300.0, y), (300.0, 440.0), (900.0, 440.0)]);
