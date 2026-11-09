@@ -31,7 +31,7 @@ function normalized(path: string): string {
 function holds(outer: Bound, inner: Bound): boolean {
 	if (outer.repo !== inner.repo) return false;
 	const scope = bindingPathOf(normalized(outer.path));
-	const path = normalized(inner.path);
+	const path = bindingPathOf(normalized(inner.path));
 	if (path === scope) return false;
 	return scope === "" || path.startsWith(`${scope}/`);
 }

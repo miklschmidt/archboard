@@ -38,13 +38,24 @@ test("equivalent binding path spellings preserve directory containment", () => {
 });
 
 test("two bindings of one directory hold neither one", () => {
-	const directory = part("src");
-	const same = part("src/");
-	expect(outsideDraft([directory, same], [directory, same])).toEqual([directory, same]);
+	for (const [left, right] of [
+		["src", "src/"],
+		["", "./"],
+		["App/App.csproj", "./App/App.csproj"],
+		["App/App.csproj", "App/Other.csproj"],
+		["App", "App/App.csproj"],
+		["", "App.csproj"],
+		["App.csproj", "Other.csproj"],
+	] as const) {
+		const directory = part(left);
+		const same = part(right);
+		expect(outsideDraft([directory, same], [directory, same])).toEqual([directory, same]);
+	}
 });
 
 test("a project file holds the files of its project directory", () => {
 	const project = part("App/App.csproj");
 	expect(outsideDraft([project], [project, part("App/Orders/Order.cs")])).toEqual([]);
+	expect(outsideDraft([project], [project, part("App/Orders/Orders.csproj")])).toEqual([]);
 	expect(outsideDraft([project], [project, part("Other/Order.cs")])).toEqual([project]);
 });
