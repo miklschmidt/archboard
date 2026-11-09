@@ -27,15 +27,15 @@
     {
       "order": 20,
       "kind": "call",
-      "label": "read the icons from the snapshot",
+      "label": "start the local renderer with the snapshot's icons",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/snapshot-reader/clients/snapshot-reads.ts",
-        "symbol": "readIconsFrom"
+        "symbol": "startBrowserRenderer"
       },
       "id": "vKEsyHFk#QhskaGRi",
-      "to": "vKEsyHFk#pEFBxTks"
+      "to": "vKEsyHFk/UOXNWLhR#F90402mH"
     },
     {
       "order": 30,
@@ -99,8 +99,8 @@
         "path": "apps/web/src/ui/snapshot-reader/components/SnapshotCanvas.tsx",
         "symbol": "PaneVaultContext"
       },
-      "to": "vKEsyHFk/yejBBUFY#p5UCow7F",
-      "id": "vKEsyHFk#ElDA96hV"
+      "id": "vKEsyHFk#ElDA96hV",
+      "to": "vKEsyHFk/yejBBUFY#p5UCow7F"
     },
     {
       "order": 80,
@@ -112,8 +112,8 @@
         "path": "apps/web/src/ui/snapshot-reader/components/SnapshotCanvas.tsx",
         "symbol": "usePictureCamera"
       },
-      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
-      "id": "vKEsyHFk#B3BiWa2O"
+      "id": "vKEsyHFk#B3BiWa2O",
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
     }
   ]
 }
