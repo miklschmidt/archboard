@@ -879,6 +879,10 @@ ink, what it is on at 400. The voice's word is in the accent text while the circ
 lit, which is gold on graphite and ink on chalk (the Ink On Chalk Rule), and in muted
 ink while it is muted or ending. The clock is 12px mono.
 
+The conversation shows work as rows that open to their evidence. A failed step
+opens its evidence by default. A finished run of more than three steps folds to
+one summary line only when no step failed.
+
 The composer is in the conversation pane, at its foot on the chrome (with no
 line over it), with its gold Send. It grows upward as a message grows, and
 takes the room from the conversation.
