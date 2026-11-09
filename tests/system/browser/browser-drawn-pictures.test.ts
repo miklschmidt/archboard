@@ -267,9 +267,9 @@ test("a build served under a sub-path loads its assets there and draws a model",
 
 	const browser = resources.use(await createAgentBrowser());
 	const page = `${host.base}${SUB_PATH}`;
-	await browser.run(["open", `${page}?modelA=${model.manifest.id}`]);
+	await browser.run(["open", `${page}index.html?modelA=${model.manifest.id}`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
-	await drawn(browser, "the model to be drawn under the sub-path");
+	await drawn(browser, "the model to be drawn from the explicit index document");
 
 	// The entry, the engine worker, the core and the icons all came from the build's own
 	// directory, and nothing was asked of the root's assets.
@@ -286,6 +286,8 @@ test("a build served under a sub-path loads its assets there and draws a model",
 	).toBeTrue();
 	// The router keeps the page where the host serves it while it writes the workspace.
 	expect(new URL(await browser.eval<string>("location.href")).pathname).toBe(SUB_PATH);
+	await browser.run(["open", `${page}?modelA=${model.manifest.id}`]);
+	await drawn(browser, "the model to be drawn under the sub-path");
 
 	await server.assertRunning();
 }, 40_000);
