@@ -2,7 +2,7 @@
 use super::{
     fixed::{compatible, route_cost},
     model::Model,
-    selection::append,
+    selection::Fit,
     shape::Shape,
     topology::Topology,
 };
@@ -44,10 +44,11 @@ fn insert(
     locked: &[usize],
     work: &mut Work,
 ) -> Option<Shape> {
+    let fit = Fit::new(model, topology, shape, edge);
     if let Some(next) = paths[edge]
         .iter()
-        .find_map(|line| append(model, topology, shape, line))
-        .or_else(|| extra(model, topology, shape, edge, locked, work))
+        .find_map(|line| fit.append(line))
+        .or_else(|| extra(&fit, locked, work))
     {
         return Some(next);
     }
@@ -75,18 +76,12 @@ fn displace(
         .take(6)
         .find_map(|conflict| replace(model, topology, shape, paths, &held, work, conflict))
 }
-fn extra(
-    model: &Model<'_>,
-    topology: &Topology,
-    shape: &Shape,
-    edge: usize,
-    locked: &[usize],
-    work: &mut Work,
-) -> Option<Shape> {
+fn extra(fit: &Fit<'_, '_>, locked: &[usize], work: &mut Work) -> Option<Shape> {
     if locked.is_empty() || work.generated >= 4 {
         return None;
     }
     work.generated += 1;
+    let (model, topology, shape, edge) = (fit.model, fit.topology, fit.shape, fit.edge);
     super::choices::search(
         model,
         topology,
@@ -96,7 +91,7 @@ fn extra(
         None,
         super::fixed::Search::Ports,
     )
-    .find_map(|line| append(model, topology, shape, &line))
+    .find_map(|line| fit.append(&line))
 }
 fn conflicts<'a>(
     model: &Model<'_>,
@@ -144,7 +139,8 @@ fn replace(
     partial
         .routes
         .retain(|line| !conflict.bad.contains(&model.edge_index[line.id.as_str()]));
-    let partial = append(model, topology, &partial, conflict.line)?;
+    let edge = model.edge_index[conflict.line.id.as_str()];
+    let partial = Fit::new(model, topology, &partial, edge).append(conflict.line)?;
     conflict
         .bad
         .into_iter()

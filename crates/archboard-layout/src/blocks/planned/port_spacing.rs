@@ -127,12 +127,15 @@ fn offsets(
     offsets
 }
 
-/// Slide an endpoint run and keep its bends and remaining corridor.
-pub(super) fn alternatives(model: &Model<'_>, shape: &Shape, line: &PlacedLine) -> Vec<PlacedLine> {
-    let edge = model.edge_index[line.id.as_str()];
+/// The placed routes that end on one subject with either end of a line: the only routes
+/// that its ends can conflict with.
+pub(super) fn peers<'a>(
+    model: &Model<'_>,
+    routes: &'a [PlacedLine],
+    edge: usize,
+) -> Vec<&'a PlacedLine> {
     let (from, to) = model.ends[edge];
-    let peers: Vec<_> = shape
-        .routes
+    routes
         .iter()
         .filter(|old| {
             let (a, b) = model.ends[model.edge_index[old.id.as_str()]];
@@ -140,7 +143,17 @@ pub(super) fn alternatives(model: &Model<'_>, shape: &Shape, line: &PlacedLine) 
                 .iter()
                 .any(|&end| one_subject(model, end, from) || one_subject(model, end, to))
         })
-        .collect();
+        .collect()
+}
+
+/// Slide an endpoint run and keep its bends and remaining corridor, clear of the line's peers.
+pub(super) fn alternatives(
+    model: &Model<'_>,
+    shape: &Shape,
+    line: &PlacedLine,
+    peers: &[&PlacedLine],
+) -> Vec<PlacedLine> {
+    let edge = model.edge_index[line.id.as_str()];
     let mut paths = vec![line.points.clone()];
     for source in [true, false] {
         if !peers
@@ -150,7 +163,7 @@ pub(super) fn alternatives(model: &Model<'_>, shape: &Shape, line: &PlacedLine) 
             continue;
         }
         let mut shifted = Vec::new();
-        let offsets = offsets(model, shape, edge, &line.points, source, &peers);
+        let offsets = offsets(model, shape, edge, &line.points, source, peers);
         for points in &paths {
             for &offset in &offsets {
                 if let Some(path) = slide(model, shape, edge, points, source, offset) {

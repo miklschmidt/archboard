@@ -1,6 +1,12 @@
 //! Resolve corridor conflicts without revisiting independent route choices.
+use std::cell::OnceCell;
+
 use super::{
-    fixed::route_cost, model::Model, route_labels::own::words_clear, shape::Shape,
+    channel::{Junctions, Probe},
+    fixed::route_cost,
+    model::Model,
+    route_labels::own::words_clear,
+    shape::Shape,
     topology::Topology,
 };
 use crate::blocks::assembly::PlacedLine;
@@ -144,7 +150,7 @@ fn next(
         .then(|| fan_join(model, topology, shape, &paths[edge], edge))
         .flatten()
         .or_else(|| {
-            first_fit(model, topology, shape, &paths[edge]).map(|chosen| {
+            first_fit(&Fit::new(model, topology, shape, edge), &paths[edge]).map(|chosen| {
                 shorten(model, topology, shape, paths, edge, repairs, &chosen).unwrap_or(chosen)
             })
         })
@@ -156,15 +162,9 @@ fn next(
         .or_else(|| dynamic(model, topology, shape, edge, super::fixed::Search::Ports))
 }
 /// The first route that fits, or a later one when that first one stands words on their own line.
-fn first_fit(
-    model: &Model<'_>,
-    topology: &Topology,
-    shape: &Shape,
-    lines: &[PlacedLine],
-) -> Option<Shape> {
-    let mut fits = lines
-        .iter()
-        .filter_map(|line| append(model, topology, shape, line));
+fn first_fit(fit: &Fit<'_, '_>, lines: &[PlacedLine]) -> Option<Shape> {
+    let model = fit.model;
+    let mut fits = lines.iter().filter_map(|line| fit.append(line));
     let first = fits.next()?;
     if words_clear(model, &first) {
         return Some(first);
@@ -225,8 +225,9 @@ fn dynamic(
     edge: usize,
     search: super::fixed::Search,
 ) -> Option<Shape> {
+    let fit = Fit::new(model, topology, shape, edge);
     super::choices::search(model, topology, edge, shape, None, None, search)
-        .find_map(|line| append(model, topology, shape, &line))
+        .find_map(|line| fit.append(&line))
 }
 fn repair(
     model: &Model<'_>,
@@ -254,34 +255,27 @@ fn hierarchy(
     for line in &mut corridors.routes {
         line.label = None;
     }
+    let fit = Fit::new(model, topology, shape, edge);
     super::hierarchy::candidates(model, topology, edge, &corridors)
         .iter()
-        .find_map(|line| append(model, topology, shape, line))
-        .or_else(|| bounded(model, topology, shape, edge, windows))
+        .find_map(|line| fit.append(line))
+        .or_else(|| bounded(&fit, windows))
 }
-fn bounded(
-    model: &Model<'_>,
-    topology: &Topology,
-    shape: &Shape,
-    edge: usize,
-    windows: &mut usize,
-) -> Option<Shape> {
+fn bounded(fit: &Fit<'_, '_>, windows: &mut usize) -> Option<Shape> {
     if *windows >= 4 {
         return None;
     }
+    let (model, topology, shape, edge) = (fit.model, fit.topology, fit.shape, fit.edge);
     let (lines, used) =
         super::hierarchy::bounded_candidates(model, topology, edge, shape, 4 - *windows);
     *windows += used;
-    lines
-        .iter()
-        .find_map(|line| append(model, topology, shape, line))
-        .or_else(|| {
-            if *windows >= 4 {
-                return None;
-            }
-            let line = super::direct::route(model, topology, edge, shape, windows)?;
-            append(model, topology, shape, &line)
-        })
+    lines.iter().find_map(|line| fit.append(line)).or_else(|| {
+        if *windows >= 4 {
+            return None;
+        }
+        let line = super::direct::route(model, topology, edge, shape, windows)?;
+        fit.append(&line)
+    })
 }
 fn directed(mut points: Vec<crate::geometry::Point>, forward: bool) -> Vec<crate::geometry::Point> {
     if !forward {
@@ -333,30 +327,18 @@ fn fan_join(
             }
         }
     }
-    let corridors = shape.without_labels();
     joined.sort_by(|a, b| route_cost(a).total_cmp(&route_cost(b)));
     joined.dedup();
-    let probe = super::channel::Probe::new(
-        model,
-        topology,
-        edge,
-        &corridors,
-        corridors.scopes[&topology.routes[edge].scope].bounds,
-    );
+    let fit = Fit::new(model, topology, shape, edge);
     joined
         .into_iter()
-        .filter(|points| probe.refusal(points).is_none())
+        .filter(|points| fit.probe().refusal(points).is_none())
         .find_map(|points| {
-            append(
-                model,
-                topology,
-                shape,
-                &PlacedLine {
-                    id: model.edges[edge].id.clone(),
-                    points,
-                    label: None,
-                },
-            )
+            fit.append(&PlacedLine {
+                id: model.edges[edge].id.clone(),
+                points,
+                label: None,
+            })
         })
 }
 fn same_end(model: &Model<'_>, one: usize, other: usize, source: bool) -> bool {
@@ -403,65 +385,79 @@ fn crossing(
         && at.y <= v[0].y.max(v[1].y))
     .then_some(at)
 }
-pub(super) fn append(
-    model: &Model<'_>,
-    topology: &Topology,
-    shape: &Shape,
-    line: &PlacedLine,
-) -> Option<Shape> {
-    let edge = model.edge_index[line.id.as_str()];
-    if shape
-        .routes
-        .iter()
-        .any(|old| super::port_spacing::conflicts(model, edge, &line.points, old))
-    {
-        let alternatives = super::port_spacing::alternatives(model, shape, line);
-        if alternatives.is_empty() {
-            return None;
-        }
-        let corridors = shape.without_labels();
-        let probe = super::channel::Probe::new(
+
+/// The guards of one shape for the candidate routes of one line. Every candidate of the line
+/// meets the same placed routes, so each guard indexes them once, when a candidate first needs it.
+pub(super) struct Fit<'a, 'g> {
+    pub(super) model: &'a Model<'g>,
+    pub(super) topology: &'a Topology,
+    pub(super) shape: &'a Shape,
+    pub(super) edge: usize,
+    /// The placed routes that end on one subject with an end of the line.
+    peers: OnceCell<Vec<&'a PlacedLine>>,
+    /// The guard of the shape's corridors, without its words, which a fit places again.
+    probe: OnceCell<Probe<'a, 'g>>,
+    junctions: OnceCell<Junctions<'a>>,
+}
+impl<'a, 'g> Fit<'a, 'g> {
+    pub(super) fn new(
+        model: &'a Model<'g>,
+        topology: &'a Topology,
+        shape: &'a Shape,
+        edge: usize,
+    ) -> Self {
+        Self {
             model,
             topology,
+            shape,
             edge,
-            &corridors,
-            corridors.scopes[&topology.routes[edge].scope].bounds,
-        );
-        return alternatives.iter().find_map(|candidate| {
-            probe
-                .refusal(&candidate.points)
-                .is_none()
-                .then(|| append_guarded(model, shape, candidate))
-                .flatten()
-        });
+            peers: OnceCell::new(),
+            probe: OnceCell::new(),
+            junctions: OnceCell::new(),
+        }
     }
-    append_reserved(model, topology, shape, line)
-}
 
-fn append_reserved(
-    model: &Model<'_>,
-    topology: &Topology,
-    shape: &Shape,
-    line: &PlacedLine,
-) -> Option<Shape> {
-    let edge = model.edge_index[line.id.as_str()];
-    debug_assert!(
-        shape
-            .routes
+    pub(super) fn probe(&self) -> &Probe<'a, 'g> {
+        self.probe.get_or_init(|| {
+            let bounds = self.shape.scopes[&self.topology.routes[self.edge].scope].bounds;
+            Probe::bare(self.model, self.topology, self.edge, self.shape, bounds)
+        })
+    }
+
+    /// The shape with one more route of the line, and its words placed again, if every guard
+    /// passes. A route whose ends stand too close to a peer's slides them apart first.
+    pub(super) fn append(&self, line: &PlacedLine) -> Option<Shape> {
+        let (model, shape, edge) = (self.model, self.shape, self.edge);
+        debug_assert_eq!(model.edge_index[line.id.as_str()], edge);
+        let peers =
+            (self.peers).get_or_init(|| super::port_spacing::peers(model, &shape.routes, edge));
+        if peers
             .iter()
-            .all(|old| !super::port_spacing::conflicts(model, edge, &line.points, old))
-    );
-    if !shape
-        .routes
-        .iter()
-        .all(|old| super::channel::shared_junction(model, topology, edge, &line.points, old))
-    {
-        return None;
+            .any(|old| super::port_spacing::conflicts(model, edge, &line.points, old))
+        {
+            let alternatives = super::port_spacing::alternatives(model, shape, line, peers);
+            if alternatives.is_empty() {
+                return None;
+            }
+            let probe = self.probe();
+            return alternatives.iter().find_map(|candidate| {
+                probe
+                    .refusal(&candidate.points)
+                    .is_none()
+                    .then(|| guarded(model, shape, candidate))
+                    .flatten()
+            });
+        }
+        let junctions = (self.junctions)
+            .get_or_init(|| Junctions::new(model, self.topology, edge, &shape.routes));
+        if !junctions.clear(&line.points) {
+            return None;
+        }
+        guarded(model, shape, line)
     }
-    append_guarded(model, shape, line)
 }
 
-fn append_guarded(model: &Model<'_>, shape: &Shape, line: &PlacedLine) -> Option<Shape> {
+fn guarded(model: &Model<'_>, shape: &Shape, line: &PlacedLine) -> Option<Shape> {
     if !super::runs::accepts(model, &shape.routes, line) {
         return None;
     }

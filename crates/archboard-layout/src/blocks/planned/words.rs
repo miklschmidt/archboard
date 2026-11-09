@@ -12,7 +12,7 @@ use super::{
     fixed::{Search, choose, feasible, placement, settled},
     geometry::{clean, length},
     model::Model,
-    port_spacing::{alternatives, conflicts},
+    port_spacing::{alternatives, conflicts, peers},
     ports::Port,
     room::with_room,
     route_labels::{Slots, branches, from_part, seat},
@@ -320,7 +320,8 @@ fn spaced(model: &Model<'_>, shape: &Shape, edge: usize, line: &PlacedLine) -> V
         .iter()
         .any(|old| conflicts(model, edge, &line.points, old))
     {
-        let others = alternatives(model, shape, line);
+        let peers = peers(model, &shape.routes, edge);
+        let others = alternatives(model, shape, line, &peers);
         others.into_iter().map(|other| other.points).collect()
     } else {
         vec![line.points.clone()]
