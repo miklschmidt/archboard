@@ -125,26 +125,38 @@ pub(super) struct Chord {
     from: Point,
     to: Point,
     span: Rect,
+    /// The span's far sides, moved out by the room that keeps a touch apart.
+    outer: Point,
 }
 
 impl Chord {
     fn new(a: Rect, b: Rect) -> Chord {
         let (from, to) = (centre(a), centre(b));
+        let span = Rect {
+            x: from.x.min(to.x),
+            y: from.y.min(to.y),
+            width: (from.x - to.x).abs(),
+            height: (from.y - to.y).abs(),
+        };
         Chord {
             from,
             to,
-            span: Rect {
-                x: from.x.min(to.x),
-                y: from.y.min(to.y),
-                width: (from.x - to.x).abs(),
-                height: (from.y - to.y).abs(),
+            span,
+            outer: Point {
+                x: span.x + span.width + TOUCH,
+                y: span.y + span.height + TOUCH,
             },
         }
     }
 
     /// Whether two chords cross away from their ends. Chords along one line do not cross.
     pub(super) fn crosses(&self, other: &Chord) -> bool {
-        if !meets(self.span, other.span) {
+        // Their spans meet, edges apart.
+        let meets = self.span.x < other.outer.x
+            && other.span.x < self.outer.x
+            && self.span.y < other.outer.y
+            && other.span.y < self.outer.y;
+        if !meets {
             return false;
         }
         let turn = |p: Point, q: Point, r: Point| {
