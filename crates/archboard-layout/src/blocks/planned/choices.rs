@@ -104,12 +104,31 @@ fn select<'a>(
         &[false]
     };
     let count = paths.len();
+    // What the first pass found of each route. The second pass can only add a route that the
+    // guard passed and whose words found no spot clear of its other stretches: it finds any
+    // other route as the first pass did, refused or already in the pool.
+    let mut words_beside = vec![false; count];
     passes
         .iter()
         .flat_map(move |&beside| (0..count).map(move |at| (beside, at)))
         .filter_map(move |(beside, at)| {
-            let words = |path: &[Point]| label_for(model, edge, path, &slots, beside);
-            pool.keep(model, edge, words, &probe, &paths[at])
+            let points = &paths[at];
+            let label = if beside {
+                if !words_beside[at] {
+                    return None;
+                }
+                Some(slots.beside(model, edge, points)?.0)
+            } else {
+                if probe.refusal(points).is_some() {
+                    return None;
+                }
+                let Ok(label) = label_for(model, edge, points, &slots) else {
+                    words_beside[at] = true;
+                    return None;
+                };
+                label
+            };
+            pool.keep(model, edge, points, label)
         })
         .take(limit)
 }
@@ -124,18 +143,14 @@ struct Pool {
     families: std::collections::BTreeMap<([Side; 2], bool, u64), usize>,
 }
 impl Pool {
+    /// Keep a route that the guard passed, with its words, unless the pool holds its place.
     fn keep(
         &mut self,
         model: &Model<'_>,
         edge: usize,
-        words: impl Fn(&[Point]) -> Result<Option<Rect>, ()>,
-        probe: &super::channel::Probe<'_, '_>,
         points: &[Point],
+        label: Option<Rect>,
     ) -> Option<PlacedLine> {
-        if probe.refusal(points).is_some() {
-            return None;
-        }
-        let label = words(points).ok()?;
         let longest = points
             .windows(2)
             .max_by(|a, b| length(a).total_cmp(&length(b)))
@@ -338,21 +353,17 @@ fn connect(
     paths
 }
 
+/// The words of a route, at a spot clear of its other stretches. A line without words needs none.
 fn label_for(
     model: &Model<'_>,
     edge: usize,
     points: &[Point],
     slots: &super::route_labels::Slots<'_>,
-    beside: bool,
 ) -> Result<Option<Rect>, ()> {
     if model.edges[edge].label().is_none() {
         return Ok(None);
     }
-    let spot = if beside {
-        slots.any_slot(model, edge, points)
-    } else {
-        slots.slot(model, edge, points)
-    };
+    let spot = slots.slot(model, edge, points);
     spot.map(|(label, _)| Some(label)).ok_or(())
 }
 
@@ -416,7 +427,11 @@ mod tests {
             points.iter().map(|&(x, y)| Point { x, y }).collect()
         };
         let mut pool = Pool::default();
-        let mut keep = |points: Vec<Point>| pool.keep(&model, 0, |_| Ok(None), &probe, &points);
+        let mut keep = |points: Vec<Point>| {
+            (probe.refusal(&points).is_none())
+                .then(|| pool.keep(&model, 0, &points, None))
+                .flatten()
+        };
         for at in 0..8 {
             let y = 108.0 + 8.0 * f64::from(at);
             let right = path(&[(260.0, y), (300.0, y), (300.0, 440.0), (900.0, 440.0)]);

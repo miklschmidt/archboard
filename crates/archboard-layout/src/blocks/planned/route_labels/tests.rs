@@ -134,10 +134,8 @@ fn hairpin_slots(apart: f64) -> (Found, Found) {
     let path: Vec<Point> = route.iter().map(|&(x, y)| Point { x, y }).collect();
     let edge = model.edge_index["ab"];
     let slots = Slots::new(&model, &shape);
-    (
-        slots.slot(&model, edge, &path),
-        slots.any_slot(&model, edge, &path),
-    )
+    let clear = slots.slot(&model, edge, &path);
+    (clear, clear.or_else(|| slots.beside(&model, edge, &path)))
 }
 
 #[test]

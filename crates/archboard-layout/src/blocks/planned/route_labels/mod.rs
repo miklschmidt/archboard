@@ -97,28 +97,19 @@ impl<'a> Slots<'a> {
         edge: usize,
         path: &[Point],
     ) -> Option<(Rect, bool)> {
-        let own = Own::new(edge, path);
-        let spot = |narrow| {
-            spot_on(
-                model,
-                own,
-                path,
-                self.shape,
-                &self.strokes,
-                &self.labels,
-                narrow,
-            )
-        };
-        spot(false).or_else(|| spot(true))
+        let (shape, strokes, labels) = (self.shape, &self.strokes, &self.labels);
+        spot_for(model, edge, (shape, path), (strokes, labels), false)
     }
-    /// A spot that may stand beside the route's other stretches, for a route with no better.
-    pub(super) fn any_slot(
+    /// A spot that stands beside the route's other stretches, for a route whose words find no
+    /// spot clear of them. It is always a fallback.
+    pub(super) fn beside(
         &self,
         model: &Model<'_>,
         edge: usize,
         path: &[Point],
     ) -> Option<(Rect, bool)> {
-        slot_index(model, edge, self.shape, path, &self.strokes, &self.labels)
+        let (shape, strokes, labels) = (self.shape, &self.strokes, &self.labels);
+        spot_for(model, edge, (shape, path), (strokes, labels), true)
     }
 }
 
@@ -135,15 +126,27 @@ fn slot_index(
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Option<(Rect, bool)> {
-    [false, true].into_iter().find_map(|beside| {
-        let own = Own {
-            beside,
-            ..Own::new(edge, path)
-        };
-        let spot = |narrow| spot_on(model, own, path, shape, index, labels, narrow);
-        let (at, fallback) = spot(false).or_else(|| spot(true))?;
-        Some((at, fallback || beside))
-    })
+    [false, true]
+        .into_iter()
+        .find_map(|beside| spot_for(model, edge, (shape, path), (index, labels), beside))
+}
+
+/// The spot of `slot_index` that keeps the words clear of the route's other stretches, or
+/// that stands beside them when `beside` says so, and whether it is a fallback.
+fn spot_for(
+    model: &Model<'_>,
+    edge: usize,
+    (shape, path): (&Shape, &[Point]),
+    (index, labels): (&StrokeIndex, &super::label_space::Labels),
+    beside: bool,
+) -> Option<(Rect, bool)> {
+    let own = Own {
+        beside,
+        ..Own::new(edge, path)
+    };
+    let spot = |narrow| spot_on(model, own, path, shape, index, labels, narrow);
+    let (at, fallback) = spot(false).or_else(|| spot(true))?;
+    Some((at, fallback || beside))
 }
 
 /// The size of a label's plate, or of its narrow plate where its words wrap narrower.
