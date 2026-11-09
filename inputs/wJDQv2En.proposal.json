@@ -1,0 +1,25 @@
+{
+  "id": "wJDQv2En",
+  "name": "Footprint lists unbound files",
+  "summary": "model footprint lists each changed file that no module is bound to, so that the gate and the pull-request comment flag it without failing.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-09T21:59:58.026Z",
+  "predecessor": "WxPQKLMm",
+  "predecessorRevision": "029299b2a95e3fa9d65196fa72b678e3f51c17f5c298823c7c9c141c7846387d",
+  "baseline": "6301e9902cf93fb6c89de90db7fe7aa909836e78",
+  "changes": [
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#radK8osF",
+      "field": "description",
+      "value": "The history interface reads canonical states and their bound source declarations. Locality reports change frequency and coupling. Footprint compares explicit local refs and the selected proposal baseline, and lists each changed file that no binding holds, outside the vault. Missing source stays unavailable rather than being replaced with current code."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#MrE3v2T6",
+      "field": "description",
+      "value": "The command passes explicit local source refs and selected architecture to the existing history interface. Proposal comparisons use their identified baseline. With --fail-outside and a draft, it exits 1 when the commits changed a module that the draft does not name, so a ticket merge without a pull request has a gate like the out-of-plan fail mode of the pull-request Action. A module bound to a directory, or to a .csproj project, fails the gate only when no other changed module is bound inside it, because it changes with each of them; the Action does not apply this exception. Without a draft it refuses the option. It names the changed files that no module is bound to, and they never fail the gate."
+    }
+  ]
+}
