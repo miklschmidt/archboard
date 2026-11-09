@@ -1,9 +1,9 @@
 name: Archboard pull request
 description: >-
-  Comment on a pull request with its architecture: the proposal it carries, the architecture before
-  and after as SVG, the footprint of the change against the plan, and a link to the map. Optionally
-  warn or fail when modules change outside the plan. Runs on `pull_request` events and needs a
-  checkout with `fetch-depth: 0`.
+  Comment on a pull request with its architecture as text: the proposal it carries, the footprint
+  of the change against the plan, and a link to the vault. Optionally warn or fail when modules
+  change outside the plan. Runs on `pull_request` events and needs a checkout with
+  `fetch-depth: 0`. The job needs `contents: read` and `pull-requests: write`.
 author: Mikkel Schmidt
 
 inputs:
@@ -44,14 +44,9 @@ inputs:
     default: "archboard: out of plan"
   github-token:
     description: >-
-      The token that comments on the pull request and pushes the pictures to `assets-branch`. It
-      needs `pull-requests: write` and `contents: write`.
+      The token that comments on the pull request. It needs `pull-requests: write`. The job also
+      needs `contents: read`.
     default: ${{ github.token }}
-  assets-branch:
-    description: >-
-      The orphan branch that holds the pictures, under `pr-<number>/<head sha>/`. The action creates
-      it on the first run.
-    default: archboard-assets
 
 runs:
   using: composite
@@ -76,7 +71,6 @@ runs:
         ARCHBOARD_INPUT_OUT_OF_PLAN: ${{ inputs.out-of-plan }}
         ARCHBOARD_INPUT_OVERRIDE_LABEL: ${{ inputs.override-label }}
         ARCHBOARD_INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
-        ARCHBOARD_INPUT_ASSETS_BRANCH: ${{ inputs.assets-branch }}
       run: |
         if [ -n "$ARCHBOARD_CLI" ]; then
           case "$ARCHBOARD_CLI" in

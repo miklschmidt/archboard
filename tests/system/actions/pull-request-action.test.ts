@@ -1,7 +1,6 @@
 // The pull request action picks a proposal, reads its footprint, keeps one comment on the pull
 // request and fails the step when changes outside the plan are not let through. The decisions run
-// on their own. The entry runs against a stand-in `archboard`, a stand-in GitHub API and a local
-// bare repository for the pictures branch.
+// on their own. The entry runs against a stand-in `archboard` and a stand-in GitHub API.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -16,15 +15,6 @@ import {
 import { chooseState } from "../../../actions/pull-request/plan.ts";
 import type { ModelState } from "../../../actions/pull-request/plan.ts";
 import { fixture, runEntryAsync, scratch, writeStandIn } from "./support.ts";
-
-/**
- * A repository as the event names it.
- * @param full The repository's full name.
- * @returns The event's repository object.
- */
-function repository(full: string) {
-	return { full_name: full };
-}
 
 /**
  * One changed part, as a footprint lists it.
@@ -66,8 +56,6 @@ describe("the proposal of a pull request", () => {
 
 describe("the sticky comment", () => {
 	const report: PullRequestReport = {
-		baseSha: "a".repeat(40),
-		headSha: "b".repeat(40),
 		choice: { state: states[1], source: "input" },
 		comparison: ["modules: 1 added"],
 		buckets: {
@@ -75,11 +63,10 @@ describe("the sticky comment", () => {
 			outsidePlan: ["Stock API"],
 			plannedUnchanged: ["Fulfilment worker"],
 			changed: ["Checkout API", "Stock API"],
-			changedIds: ["m#checkout", "m#stock"],
 		},
 		outOfPlan: { status: "fail", failed: true },
 		overrideLabel: "archboard: out of plan",
-		picturesNote: "The pictures are not shown: no token.",
+		vaultUrl: "https://github.test/owner/name/tree/b/.archboard/vault",
 	};
 
 	test("starts with the marker, lists the buckets by module name and says how to override", () => {
@@ -89,6 +76,7 @@ describe("the sticky comment", () => {
 		expect(text).toContain("Stock API");
 		expect(text).toContain("Fulfilment worker");
 		expect(text).toContain("`archboard: out of plan`");
+		expect(text).toContain("https://github.test/owner/name/tree/b/.archboard/vault");
 		expect(text).not.toContain("<img");
 	});
 
@@ -106,7 +94,6 @@ describe("the entry", () => {
 	const entry = join(import.meta.dir, "../../../actions/pull-request/run.ts");
 	const root = scratch();
 	const checkout = join(root, "work");
-	const bare = join(root, "server/owner/name.git");
 	const comments: { id: number; body: string }[] = [];
 	const requests: string[] = [];
 	let labels: string[] = [];
@@ -132,9 +119,6 @@ describe("the entry", () => {
 		return result.stdout.toString().trim();
 	}
 
-	const publishedHead = () =>
-		Bun.spawnSync(["git", `--git-dir=${bare}`, "rev-parse", "archboard-assets"]).stdout.toString();
-
 	beforeAll(() => {
 		Bun.spawnSync(["git", "init", "-q", "-b", "main", checkout]);
 		writeFileSync(join(checkout, "a.txt"), "a");
@@ -146,7 +130,6 @@ describe("the entry", () => {
 		writeFileSync(join(checkout, "a.txt"), "b");
 		git("commit", "-q", "-am", "head");
 		headSha = git("rev-parse", "HEAD");
-		Bun.spawnSync(["git", "init", "-q", "--bare", bare]);
 		server = Bun.serve({
 			port: 0,
 			async fetch(request) {
@@ -178,13 +161,11 @@ describe("the entry", () => {
 	/**
 	 * Run the action as the pull request's workflow would.
 	 * @param inputs The inputs and the repository's server to override.
-	 * @param fork Whether the pull request comes from a fork.
 	 * @param answers Answers to replace in the stand-in CLI.
 	 * @returns The step's exit status and output.
 	 */
 	async function step(
 		inputs: Record<string, string> = {},
-		fork = false,
 		answers: Readonly<Record<string, string>> = {},
 	) {
 		headReads = 0;
@@ -205,8 +186,8 @@ describe("the entry", () => {
 				pull_request: {
 					number: 7,
 					body: "",
-					base: { sha: baseSha, ref: "main", repo: repository("owner/name") },
-					head: { sha: headSha, repo: repository(fork ? "someone/name" : "owner/name") },
+					base: { sha: baseSha, ref: "main" },
+					head: { sha: headSha },
 					labels: [],
 				},
 			}),
@@ -225,7 +206,7 @@ describe("the entry", () => {
 			GITHUB_WORKSPACE: checkout,
 			GITHUB_EVENT_PATH: event,
 			GITHUB_REPOSITORY: "owner/name",
-			GITHUB_SERVER_URL: `file://${join(root, "server")}`,
+			GITHUB_SERVER_URL: "https://github.test",
 			GITHUB_API_URL: `http://127.0.0.1:${String(server.port)}`,
 			GITHUB_STEP_SUMMARY: join(folder, "summary.md"),
 			ARCHBOARD_INPUT_GITHUB_TOKEN: "token",
@@ -234,52 +215,20 @@ describe("the entry", () => {
 		return { ...result, commands: readFileSync(join(folder, "commands.log"), "utf8") };
 	}
 
-	test("warns about a change outside the plan, posts the comment and publishes the pictures", async () => {
+	test("warns about a change outside the plan and posts a text comment with the vault link", async () => {
 		const result = await step();
 		expect(result.exitCode).toBe(0);
 		expect(result.stdout).toContain("::warning title=Archboard plan::");
 		expect(comments).toHaveLength(1);
-		expect(comments[0]?.body).toContain(COMMENT_MARKER);
-		expect(comments[0]?.body).toContain("Stock API");
-		expect(comments[0]?.body).toContain(`pr-7/${headSha}/before-light.svg`);
-		expect(comments[0]?.body).toContain(`pr-7/${headSha}/after-light.svg`);
-		const published = Bun.spawnSync([
-			"git",
-			`--git-dir=${bare}`,
-			"show",
-			`archboard-assets:pr-7/${headSha}/after-light.svg`,
-		]);
-		expect(published.stdout.toString()).toStartWith("<svg>");
+		const body = comments[0]?.body ?? "";
+		expect(body).toContain(COMMENT_MARKER);
+		expect(body).toContain("Stock API");
+		expect(body).toContain(`https://github.test/owner/name/tree/${headSha}/.archboard/vault`);
+		expect(body).not.toContain("<img");
+		expect(body).not.toContain(".svg");
+		expect(result.commands).not.toContain("model render");
+		expect(requests.every((one) => one.includes("/repos/owner/name/"))).toBe(true);
 	});
-
-	test.each([
-		{ proposal: true, changes: true },
-		{ proposal: false, changes: true },
-		{ proposal: false, changes: false },
-	])(
-		"equal pictures show one image with proposal=$proposal and changes=$changes",
-		async ({ proposal, changes }) => {
-			const proposals = JSON.parse(fixture("proposals.json"));
-			if (!proposal) proposals.states = [proposals.states[0]];
-			const result = await step({ FAKE_PICTURE: "same" }, false, {
-				proposals: JSON.stringify(proposals),
-				footprint: changes
-					? fixture("footprint.json")
-					: JSON.stringify({ changed: [], skipped: [] }),
-			});
-			expect(result.exitCode).toBe(0);
-			expect(result.commands.includes("--focus Shop/a#n1 --focus Shop/a#n2")).toBe(changes);
-			expect(result.commands.includes("model render --state p1")).toBe(proposal);
-			const body = comments[0]?.body ?? "";
-			expect(body.match(/<img\b/gu)).toHaveLength(1);
-			const side = changes ? "focus" : "after";
-			for (const theme of ["light", "dark"]) {
-				expect(body).toContain(`pr-7/${headSha}/${side}-${theme}.svg`);
-				expect(body).not.toContain(`before-${theme}.svg`);
-			}
-			expect(body).toMatch(/\]\([^)]*after-light\.svg\)/);
-		},
-	);
 
 	test("fail mode fails, the override label lets the pull request through, and the comment is updated", async () => {
 		const failing = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" });
@@ -289,28 +238,17 @@ describe("the entry", () => {
 		expect(overridden.exitCode).toBe(0);
 		expect(comments).toHaveLength(1);
 		expect(comments[0]?.body).toContain("lets this pull request through");
-		// The same head again: its pictures are on the branch already, and the comment still shows them.
-		expect(comments[0]?.body).toContain(`pr-7/${headSha}/after-light.svg`);
 		expect(requests.filter((one) => one.startsWith("PATCH"))).not.toHaveLength(0);
 		labels = [];
 	});
 
-	test("a pull request from a fork still gets its comment, without pictures, and says why", async () => {
-		comments.length = 0;
-		const result = await step(
-			{ GITHUB_SERVER_URL: `file://${join(root, "missing")}`, FAKE_PICTURE: "same" },
-			true,
-		);
-		expect(result.exitCode).toBe(0);
-		expect(comments[0]?.body).not.toContain("<img");
-		expect(comments[0]?.body).toContain("fork");
-		expect(readFileSync(join(root, "work/a.txt"), "utf8")).toBe("b");
-	});
-
 	test("a refused model read leaves the plan unjudged, and fail mode fails on it", async () => {
-		const result = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" }, false, {
-			"read-base": JSON.stringify({ success: false, code: "INVALID_MODEL" }),
-		});
+		const result = await step(
+			{ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" },
+			{
+				"read-base": JSON.stringify({ success: false, code: "INVALID_MODEL" }),
+			},
+		);
 		expect(result.exitCode).toBe(1);
 		expect(result.stdout).toContain("::error title=Archboard plan::");
 		expect(comments[0]?.body).not.toContain("**Planned and changed**");
@@ -318,23 +256,26 @@ describe("the entry", () => {
 	});
 
 	test("proposals that cannot be read fail the step in fail mode, whether the CLI refuses or prints nothing", async () => {
-		const refused = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" }, false, {
-			proposals: JSON.stringify({
-				success: false,
-				code: "MODEL_INVALID",
-				error: "The canonical model cannot be read coherently.",
-				diagnostics: [
-					{ code: "MALFORMED_JSON", file: "model.json", message: "Unexpected EOF\nat line 1" },
-				],
-			}),
-		});
+		const refused = await step(
+			{ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" },
+			{
+				proposals: JSON.stringify({
+					success: false,
+					code: "MODEL_INVALID",
+					error: "The canonical model cannot be read coherently.",
+					diagnostics: [
+						{ code: "MALFORMED_JSON", file: "model.json", message: "Unexpected EOF\nat line 1" },
+					],
+				}),
+			},
+		);
 		expect(refused.exitCode).toBe(1);
 		expect(refused.stdout).toContain("::error title=Archboard plan::");
 		expect(comments.at(-1)?.body).toContain("MODEL_INVALID");
 		expect(comments.at(-1)?.body).toContain(COMMENT_MARKER);
 		expect(comments.at(-1)?.body).toContain("MALFORMED_JSON");
 		expect(comments.at(-1)?.body).toContain("model.json");
-		const silent = await step({}, false, { proposals: "" });
+		const silent = await step({}, { proposals: "" });
 		expect(silent.exitCode).toBe(0);
 		expect(silent.stdout).toContain("::warning title=Archboard plan::");
 		expect(comments.at(-1)?.body).toContain(COMMENT_MARKER);
@@ -346,9 +287,12 @@ describe("the entry", () => {
 			{ id: "p1", name: "Queued fulfilment", lifecycle: "draft" },
 			{ id: "p2", name: "Nightly batch", lifecycle: "draft" },
 		];
-		const result = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" }, false, {
-			proposals: JSON.stringify(proposals),
-		});
+		const result = await step(
+			{ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" },
+			{
+				proposals: JSON.stringify(proposals),
+			},
+		);
 		expect(result.exitCode).toBe(1);
 		expect(result.stdout).toContain("::error title=Archboard plan::");
 	});
@@ -367,7 +311,7 @@ describe("the entry", () => {
 		footprint.skipped = [
 			{ subject: { id: "Shop/a#infra", name: "Infrastructure" }, reason: "base-unresolved" },
 		];
-		const result = await step({}, false, { footprint: JSON.stringify(footprint) });
+		const result = await step({}, { footprint: JSON.stringify(footprint) });
 		expect(result.exitCode).toBe(0);
 		expect(result.commands).toContain("model footprint --base origin/main");
 		expect(result.commands).not.toContain(baseSha);
@@ -379,11 +323,14 @@ describe("the entry", () => {
 		head.modules = head.modules.filter((module: { id: string }) => module.id !== "Shop/a#n4");
 		const proposals = JSON.parse(fixture("proposals.json"));
 		proposals.states = [{ id: "p1", name: "Queued fulfilment", lifecycle: "current" }];
-		const result = await step({ ARCHBOARD_INPUT_STATE: "p1" }, false, {
-			proposals: JSON.stringify(proposals),
-			"read-head": JSON.stringify(head),
-			footprint: JSON.stringify({ changed: part("Checkout API", "Shop/a#n1"), skipped: [] }),
-		});
+		const result = await step(
+			{ ARCHBOARD_INPUT_STATE: "p1" },
+			{
+				proposals: JSON.stringify(proposals),
+				"read-head": JSON.stringify(head),
+				footprint: JSON.stringify({ changed: part("Checkout API", "Shop/a#n1"), skipped: [] }),
+			},
+		);
 		expect(result.exitCode).toBe(0);
 		expect(result.commands.match(/model footprint/gu)).toHaveLength(1);
 		const body = comments[0]?.body ?? "";
@@ -392,41 +339,19 @@ describe("the entry", () => {
 		expect(body).toContain("Payments");
 	});
 
-	test("a run of an older head publishes neither pictures nor comment", async () => {
-		expect((await step()).commands).toContain("model render");
+	test("a run of an older head does not post its comment", async () => {
 		const before = comments.map((one) => one.body);
 		const sent = requests.length;
 		movedTo = "f".repeat(40);
 		try {
 			const result = await step();
+			expect(result.exitCode).toBe(0);
 			expect(result.stdout).toContain("::notice::The pull request moved on");
 			expect(result.stdout).toContain(movedTo.slice(0, 7));
 			expect(comments.map((one) => one.body)).toEqual(before);
 			expect(requests.slice(sent).filter((one) => !one.startsWith("GET"))).toHaveLength(0);
-			expect(result.commands).not.toContain("model render");
 		} finally {
 			movedTo = undefined;
-		}
-	});
-
-	test("a newer head during rendering preserves the published pictures and comment", async () => {
-		await step();
-		const before = publishedHead();
-		const bodies = comments.map((one) => one.body);
-		const current = headSha;
-		headSha = baseSha;
-		movedTo = current;
-		moveOnRead = 3;
-		try {
-			const result = await step({ FAKE_PICTURE: "same" });
-			expect(result.exitCode).toBe(0);
-			expect(result.commands).toContain("--focus");
-			expect(publishedHead()).toBe(before);
-			expect(comments.map((one) => one.body)).toEqual(bodies);
-		} finally {
-			headSha = current;
-			movedTo = undefined;
-			moveOnRead = undefined;
 		}
 	});
 
@@ -434,7 +359,7 @@ describe("the entry", () => {
 		const before = comments.map((one) => one.body);
 		const sent = requests.length;
 		movedTo = "f".repeat(40);
-		moveOnRead = 4;
+		moveOnRead = 2;
 		try {
 			const result = await step();
 			expect(result.exitCode).toBe(0);
@@ -446,14 +371,13 @@ describe("the entry", () => {
 		}
 	});
 
-	test("an unreadable current head permits neither picture nor comment publication", async () => {
+	test("an unreadable current head does not post the comment", async () => {
 		const before = comments.map((one) => one.body);
 		const sent = requests.length;
 		refuseHead = true;
 		try {
 			const result = await step();
 			expect(result.exitCode).toBe(0);
-			expect(result.commands).not.toContain("model render");
 			expect(comments.map((one) => one.body)).toEqual(before);
 			expect(requests.slice(sent).filter((one) => !one.startsWith("GET"))).toHaveLength(0);
 		} finally {

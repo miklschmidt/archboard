@@ -1,5 +1,5 @@
-// The plan of a pull request: what its proposal changes against the base's Current, which is also
-// what the pictures before and after show. The action compares the two readings itself, because
+// The plan of a pull request: what its proposal changes against the base's Current, which the
+// footprint is judged against. The action compares the two readings itself, because
 // the proposal is often adopted on the branch, as the archboard-pr skill does. Then `model
 // footprint` has no draft to set the changes against, and a fresh clone cannot read the state
 // that the adoption replaced, because that state lives only in the archive. The rule is that of
@@ -87,8 +87,6 @@ interface Buckets {
 	readonly plannedUnchanged: readonly string[];
 	/** Every changed module, which the comment lists when there is no proposal. */
 	readonly changed: readonly string[];
-	/** Every changed module by stable identity, which a picture can draw close up. */
-	readonly changedIds: readonly string[];
 }
 
 /** The plan of a proposal. */
@@ -290,7 +288,6 @@ function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 			.map(([, name]) => name)
 			.toSorted(),
 		changed: [...changed.values()].toSorted(),
-		changedIds: [...changed.keys()].toSorted(),
 	};
 }
 

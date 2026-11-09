@@ -1,8 +1,8 @@
-// The entry of the pull request action. It draws the architecture at the base and at the head of
-// the pull request, reads the proposal, its plan and its footprint, keeps one comment on the pull
-// request up to date, and fails the step when the configuration says changes outside the plan
-// block. Only existing CLI commands read the architecture: `model proposals`, `model read`,
-// `model footprint` and `model render`. Node runs this file as it is.
+// The entry of the pull request action. It reads the architecture at the base and at the head of
+// the pull request, then the proposal, its plan and its footprint, keeps one text comment on the
+// pull request up to date, and fails the step when the configuration says changes outside the plan
+// block. Only existing CLI commands read the architecture: `model proposals`, `model read` and
+// `model footprint`. Node runs this file as it is.
 
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
 import { appendFileSync, existsSync, rmSync } from "node:fs";
@@ -12,12 +12,10 @@ import type { PullRequestReport } from "./comment.ts";
 import { addWorktree, archboard, firstLine, readContext } from "./context.ts";
 import type { Context } from "./context.ts";
 import { readFootprint } from "./footprint.ts";
-import { publicationProblem, upsertComment } from "./github.ts";
+import { upsertComment } from "./github.ts";
 import type { PostResult } from "./github.ts";
 import { folderUrl } from "./links.ts";
 import { parseBodyMarker } from "./marker.ts";
-import { makePictures } from "./pictures.ts";
-import type { Trees } from "./pictures.ts";
 import { chooseState, decideOutOfPlan } from "./plan.ts";
 import type { ModelState, StateChoice } from "./plan.ts";
 import { proposalPlan } from "./proposal-plan.ts";
@@ -40,6 +38,16 @@ interface ProposalsReading {
 	readonly diagnostics?: readonly ProposalsDiagnostic[];
 	readonly states?: readonly ModelState[];
 	readonly vault?: { readonly path: string };
+}
+
+/** Where the base's and the head's vaults are. */
+interface Trees {
+	/** The vault at the base commit. */
+	readonly baseDir: string;
+	/** The vault at the head commit. */
+	readonly headDir: string;
+	/** The root of the checkout of the head commit. */
+	readonly headRoot: string;
 }
 
 /** The plan of a pull request with no proposal. */
@@ -67,7 +75,7 @@ function readModel(
 }
 
 /**
- * The plan of the proposal: what it changes against the base's Current, as the pictures show.
+ * The plan of the proposal: what it changes against the base's Current.
  * @param context The run.
  * @param trees Where the base's and the head's vaults are.
  * @param state The proposal, if the pull request carries one.
@@ -200,11 +208,11 @@ function vaultAddress(
  * @param proposals What `model proposals` said at the head.
  * @returns The report.
  */
-async function buildReport(
+function buildReport(
 	context: Context,
 	trees: Trees,
 	proposals: ProposalsReading,
-): Promise<PullRequestReport> {
+): PullRequestReport {
 	const choice = chooseState(
 		context.stateInput,
 		parseBodyMarker(context.body),
@@ -215,27 +223,14 @@ async function buildReport(
 		note !== undefined
 			? { note: "The footprint was not judged because the proposal could not be compared." }
 			: readFootprint(context, trees.headDir, choice.state, plan);
-	// The pictures replace those of older heads, so a run of an older head never pushes them.
-	const problem = await publicationProblem(context.access, context.number, context.headSha);
-	const pictures =
-		problem === undefined
-			? await makePictures(context, trees, choice.state, footprint.buckets?.changedIds)
-			: { note: problem };
 	return {
-		baseSha: context.baseSha,
-		headSha: context.headSha,
 		choice,
 		comparison: plan.comparison,
 		comparisonNote: note,
 		buckets: footprint.buckets,
 		footprintNote: footprint.note,
-		before: pictures.before,
-		after: pictures.after,
-		same: pictures.same,
-		picturesNote: pictures.note,
 		outOfPlan: judge(context, choice, footprint.buckets),
 		overrideLabel: context.overrideLabel,
-		mapUrl: pictures.map,
 		vaultUrl: vaultAddress(context, trees, proposals.vault?.path),
 	};
 }
@@ -299,11 +294,8 @@ function cleanUp(context: Context): void {
 function unreadableReport(context: Context, reason: string): PullRequestReport {
 	const choice = { source: "unreadable", reason } as const;
 	return {
-		baseSha: context.baseSha,
-		headSha: context.headSha,
 		choice,
 		comparison: [],
-		picturesNote: "No picture was drawn, because the proposals could not be read.",
 		outOfPlan: judge(context, choice, undefined),
 		overrideLabel: context.overrideLabel,
 	};
@@ -380,7 +372,7 @@ async function reportOn(context: Context, trees: Trees): Promise<number> {
 	const report =
 		result.exitCode !== 0 || answer === undefined || answer.success === false
 			? unreadableReport(context, refusalOf(answer, result.stderr))
-			: await buildReport(context, trees, answer);
+			: buildReport(context, trees, answer);
 	annotatePlan(report);
 	writeSummary(pullRequestComment(report));
 	await postComment(context, report);

@@ -48,7 +48,6 @@ describe("the plan of a proposal", () => {
 			outsidePlan: ["Catalog"],
 			plannedUnchanged: ["Billing"],
 			changed: ["Catalog", "Intake"],
-			changedIds: ["m#catalog", "m#intake"],
 		};
 		expect(
 			planBuckets({ namedAndChanged: part("Intake"), changedNotNamed: part("Catalog") }, plan),
@@ -61,7 +60,6 @@ describe("the plan of a proposal", () => {
 			outsidePlan: ["Catalog"],
 			plannedUnchanged: ["Billing"],
 			changed: ["Catalog", "Intake"],
-			changedIds: ["m#catalog", "m#intake"],
 		});
 	});
 
@@ -84,7 +82,6 @@ describe("the plan of a proposal", () => {
 			outsidePlan: ["API", "Zulu"],
 			plannedUnchanged: ["API", "Catalog"],
 			changed: ["API", "Billing", "Zulu"],
-			changedIds: ["billing", "unplanned", "z"],
 		});
 		expect(
 			decideOutOfPlan({

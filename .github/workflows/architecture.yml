@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
-      contents: write # pushes the pictures to the archboard-assets branch
+      contents: read
       pull-requests: write # posts the report comment
     steps:
       - name: Checkout code

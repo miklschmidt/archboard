@@ -1,6 +1,6 @@
 ---
 title: Architecture on pull requests
-description: Put each finding on the diff with an excerpt of the code and the manifest, and give the reviewer the plan, the pictures before and after, and the modules that changed outside the plan.
+description: Put each finding on the diff with an excerpt of the code and the manifest, and give the reviewer the plan and the modules that changed outside the plan.
 ---
 
 import Aside from "../../components/docs/Aside.astro";
@@ -16,10 +16,10 @@ export const report = Object.fromEntries(
 
 A plain diff is the wrong level for an architectural change. A reviewer sees forty changed lines and not that Intake now calls Billing. Two GitHub Actions put the architecture on the pull request. Both run only commands of the published CLI.
 
-| Action                                       | What the reviewer gets                                                          | Permissions                               |
-| -------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------- |
-| `miklschmidt/archboard/actions/check`        | Each finding as an annotation on the changed line, and a job summary            | `contents: read`                          |
-| `miklschmidt/archboard/actions/pull-request` | One comment with the proposal, the pictures before and after, and the footprint | `contents: write`, `pull-requests: write` |
+| Action                                       | What the reviewer gets                                               | Permissions                              |
+| -------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------- |
+| `miklschmidt/archboard/actions/check`        | Each finding as an annotation on the changed line, and a job summary | `contents: read`                         |
+| `miklschmidt/archboard/actions/pull-request` | One text comment with the proposal, the footprint and the plan check | `contents: read`, `pull-requests: write` |
 
 ## Findings on the diff
 
@@ -95,9 +95,9 @@ An agent that plans a change first writes it as a proposal: the architecture aft
 <Steps>
 
 1. **The proposal.** Its name and summary, and what it adds, removes and changes.
-2. **Before and after.** The current architecture at the base commit, and the proposal at the head commit, as SVG in the reader's light or dark theme. If the two pictures are the same, the comment shows one picture, close up on the modules whose code changed.
+2. **The vault.** A link to the vault at the head commit.
 3. **The footprint.** The modules whose code the pull request changed, in three groups: planned and changed, changed outside the plan, and planned but unchanged.
-4. **The map.** A link to the full-size picture and to the vault at the head commit.
+4. **The plan check.** Whether any module changed outside the plan, and what that does to the job.
 
 </Steps>
 
@@ -108,7 +108,7 @@ on:
     types: [opened, edited, synchronize, reopened, labeled, unlabeled]
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 concurrency:
@@ -128,7 +128,7 @@ jobs:
           out-of-plan: warn
 ```
 
-`fetch-depth: 0` is required, because the Action reads the base and the head from Git history. The `concurrency` group cancels the run of an older push. A run that still finishes after a newer push publishes nothing. The `labeled` and `unlabeled` events let the override label below take effect at once, and `edited` runs the Action again when the marker in the description changes.
+`fetch-depth: 0` is required, because the Action reads the base and the head from Git history. The `concurrency` group cancels the run of an older push. A run that still finishes after a newer push posts nothing. The `labeled` and `unlabeled` events let the override label below take effect at once, and `edited` runs the Action again when the marker in the description changes.
 
 ### How it finds the proposal
 
@@ -147,9 +147,9 @@ The Action takes the first of these that it finds:
 
 </Steps>
 
-With none, the comment shows the changed modules and judges nothing against a plan. If the pull request leaves the architecture as it was, one picture shows the current architecture, close up on the modules whose code changed. [Pull request #1 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/1) has such a comment.
+With none, the comment lists the changed modules and judges nothing against a plan. [Pull request #1 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/1) has such a comment.
 
-The plan is what the proposal changes against the current architecture at the base, as the pictures show: each module that it adds, removes or changes, and both ends of each relationship or flow step that it adds, removes or changes. This holds for a draft and for a proposal that the branch already adopted, as the skill does once the code matches it.
+The plan is what the proposal changes against the current architecture at the base: each module that it adds, removes or changes, and both ends of each relationship or flow step that it adds, removes or changes. This holds for a draft and for a proposal that the branch already adopted, as the skill does once the code matches it.
 
 ### Changes outside the plan
 
@@ -163,17 +163,9 @@ The footprint's middle group is the interesting one: modules whose code changed 
 
 Change the label with [`override-label`](../reference/actions/#pull-request-override-label). A pull request with no proposal has no plan, so nothing in it is out of plan. When the model has one draft, the Action takes it without a marker, so removing the marker does not stop the judgement. Set [`out-of-plan: off`](../reference/actions/#pull-request-out-of-plan) for that. When the model has several drafts and the pull request names none, the plan cannot be checked.
 
-### Where the pictures live
+### When the comment cannot be posted
 
-GitHub shows an image in a comment only from an address on the web. The Action commits the SVGs to an orphan branch, <code>{report["assets-branch"]}</code>, under `pr-<number>/<head commit>/`, and links them from there. It removes the folders of older commits of the same pull request.
-
-A pull request from a fork gets a read-only token, so the Action cannot publish the pictures. It still posts the comment when the token allows it, without pictures, and the comment says why. When GitHub refuses the comment too, the report is in the job summary.
-
-<Aside type="caution" title="Private repositories">
-	An image on `raw.githubusercontent.com` of a private repository needs the reader's sign-in, and
-	GitHub does not always pass it to a comment. The comment then shows the links in place of the
-	pictures.
-</Aside>
+A pull request from a fork gets a read-only token, so GitHub refuses the comment. The report is then in the job summary of the run. The same happens when the token lacks `pull-requests: write`.
 
 ## Explain the change in the description
 

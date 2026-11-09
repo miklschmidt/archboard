@@ -22,7 +22,6 @@ interface PullFacts {
 	readonly headSha: string;
 	readonly labels: readonly string[];
 	readonly body: string;
-	readonly fromFork: boolean;
 }
 
 /** What the workflow's inputs and environment say. */
@@ -31,7 +30,6 @@ interface Inputs {
 	readonly directory: string;
 	readonly hosting: Hosting;
 	readonly access: ApiAccess;
-	readonly branch: string;
 	readonly mode: OutOfPlanMode;
 	readonly overrideLabel: string;
 	readonly stateInput: string;
@@ -42,7 +40,7 @@ interface Inputs {
 interface Context extends PullFacts, Inputs {
 	/** The directory below the repository root that holds the vault. */
 	readonly subpath: string;
-	/** A directory of this run's own, for checkouts and pictures. */
+	/** A directory of this run's own, for checkouts. */
 	readonly scratch: string;
 }
 
@@ -51,12 +49,8 @@ interface PullRequestEvent {
 	readonly pull_request?: {
 		readonly number: number;
 		readonly body?: string | null;
-		readonly base: {
-			readonly sha: string;
-			readonly ref?: string;
-			readonly repo?: { readonly full_name?: string };
-		};
-		readonly head: { readonly sha: string; readonly repo?: { readonly full_name?: string } | null };
+		readonly base: { readonly sha: string; readonly ref?: string };
+		readonly head: { readonly sha: string };
 		readonly labels?: readonly { readonly name: string }[];
 	};
 }
@@ -85,7 +79,6 @@ function readEvent(): PullFacts {
 		headSha: pull.head.sha,
 		labels: (pull.labels ?? []).map((label) => label.name),
 		body: pull.body ?? "",
-		fromFork: pull.head.repo?.full_name !== pull.base.repo?.full_name,
 	};
 }
 
@@ -106,7 +99,6 @@ function readInputs(): Inputs {
 			token: input("ARCHBOARD_INPUT_GITHUB_TOKEN", ""),
 			repository,
 		},
-		branch: input("ARCHBOARD_INPUT_ASSETS_BRANCH", "archboard-assets"),
 		mode: parseOutOfPlanMode(input("ARCHBOARD_INPUT_OUT_OF_PLAN", "warn")),
 		overrideLabel: input("ARCHBOARD_INPUT_OVERRIDE_LABEL", "archboard: out of plan"),
 		stateInput: input("ARCHBOARD_INPUT_STATE", ""),

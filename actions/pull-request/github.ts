@@ -118,7 +118,7 @@ function factsOf(pull: object): PullRequestFacts {
 }
 
 /**
- * Why this run must not publish pictures or a comment.
+ * Why this run must not publish its comment.
  * @param access How to reach the API.
  * @param number The pull request's number.
  * @param headSha The commit this run reports.
@@ -131,11 +131,11 @@ async function publicationProblem(
 ): Promise<string | undefined> {
 	const now = (await readPullRequest(access, number))?.headSha;
 	if (now === undefined) {
-		return "The current pull request head could not be read. This run publishes neither pictures nor comment. Run the Action again when GitHub answers.";
+		return "The current pull request head could not be read. This run does not publish its comment. Run the Action again when GitHub answers.";
 	}
 	return now === headSha
 		? undefined
-		: `The pull request moved on to ${now.slice(0, 7)}, so this run of an older head publishes neither pictures nor comment.`;
+		: `The pull request moved on to ${now.slice(0, 7)}, so this run of an older head does not publish its comment.`;
 }
 
 /**
@@ -186,7 +186,7 @@ type PostResult =
  * @param body The comment's Markdown, which carries the marker.
  * @param headSha The commit this run reports.
  * @param create False to only update an earlier comment, and create none.
- * @returns What happened. A refusal, such as the read-only token of a fork, says why, and a run
+ * @returns What happened. A refusal, such as a token without `pull-requests: write`, says why, and a run
  * that must not publish, such as one of an older head, says why it stopped.
  */
 async function upsertComment(
@@ -223,4 +223,4 @@ function posted(answer: ApiAnswer, done: "created" | "updated"): PostResult {
 		: { failure: `GitHub answered ${String(answer.status)} to the comment` };
 }
 
-export { publicationProblem, readPullRequest, upsertComment, type ApiAccess, type PostResult };
+export { readPullRequest, upsertComment, type ApiAccess, type PostResult };

@@ -6,19 +6,8 @@ import { COMMENT_MARKER } from "./marker.ts";
 import type { OutOfPlanDecision, StateChoice, StateSource } from "./plan.ts";
 import type { Buckets } from "./proposal-plan.ts";
 
-/** One picture, in the themes it was drawn in, by the address it can be embedded from. */
-interface PictureLinks {
-	readonly light: string;
-	readonly dark?: string | undefined;
-}
-
-/** How the one picture of an unchanged architecture is drawn: whole, or close up on the code. */
-type PictureSameness = "whole" | "close-up";
-
 /** Everything the comment says. */
 interface PullRequestReport {
-	readonly baseSha: string;
-	readonly headSha: string;
 	readonly choice: StateChoice;
 	/** What the proposal changes, as phrases such as "modules: 2 added, 1 changed". */
 	readonly comparison: readonly string[];
@@ -27,16 +16,8 @@ interface PullRequestReport {
 	/** The footprint, or undefined when it could not be read. */
 	readonly buckets?: Buckets | undefined;
 	readonly footprintNote?: string | undefined;
-	readonly before?: PictureLinks | undefined;
-	readonly after?: PictureLinks | undefined;
-	/** The base and the head draw the same picture, so `after` is the only picture. */
-	readonly same?: PictureSameness | undefined;
-	/** Why the pictures are absent or incomplete. */
-	readonly picturesNote?: string | undefined;
 	readonly outOfPlan: OutOfPlanDecision;
 	readonly overrideLabel: string;
-	/** The full-size picture of the architecture after the change. */
-	readonly mapUrl?: string | undefined;
 	/** The vault folder on GitHub at the head commit. */
 	readonly vaultUrl?: string | undefined;
 }
@@ -52,18 +33,6 @@ const SOURCE_WORDS: Readonly<Record<StateSource, string>> = {
 	unknown: "none",
 	unreadable: "none",
 };
-
-/**
- * A picture that follows the reader's colour scheme.
- * @param alt What the picture shows.
- * @param links The picture's addresses.
- * @returns HTML for a Markdown comment.
- */
-function pictureHtml(alt: string, links: PictureLinks): string {
-	const image = `<img src="${links.light}" alt="${alt}">`;
-	if (links.dark === undefined) return image;
-	return `<picture><source media="(prefers-color-scheme: dark)" srcset="${links.dark}">${image}</picture>`;
-}
 
 /**
  * A list of module names.
@@ -144,79 +113,6 @@ function planProblem(choice: StateChoice): string | undefined {
 }
 
 /**
- * The one picture of an architecture that the pull request leaves as it was.
- * @param report The report.
- * @param picture The picture's addresses.
- * @returns The Markdown lines.
- */
-function samePictureSection(report: PullRequestReport, picture: PictureLinks): string[] {
-	const drawn =
-		report.choice.state === undefined
-			? "the current architecture"
-			: `proposal "${report.choice.state.name}"`;
-	const closeUp = report.same === "close-up";
-	return [
-		closeUp ? "### Where the code changed" : "### Architecture",
-		"",
-		`The architecture is the same at the base \`${report.baseSha.slice(0, 7)}\` and the head \`${report.headSha.slice(0, 7)}\`. ${
-			closeUp
-				? `The picture shows ${drawn} close up on the modules whose code changed.`
-				: `The picture shows ${drawn}.`
-		}`,
-		"",
-		pictureHtml(
-			closeUp ? "The modules whose code changed" : "Architecture of this pull request",
-			picture,
-		),
-		"",
-	];
-}
-
-/**
- * The pictures: one when the architecture is the same at the base and the head, else two.
- * @param report The report.
- * @returns The Markdown lines.
- */
-function picturesSection(report: PullRequestReport): string[] {
-	return report.same !== undefined && report.after !== undefined
-		? samePictureSection(report, report.after)
-		: beforeAndAfterSection(report);
-}
-
-/**
- * The before and after pictures, stacked.
- * @param report The report.
- * @returns The Markdown lines.
- */
-function beforeAndAfterSection(report: PullRequestReport): string[] {
-	const after =
-		report.choice.state === undefined
-			? "current architecture at the head"
-			: `proposal "${report.choice.state.name}" at the head`;
-	return [
-		"### Before and after",
-		"",
-		...(report.picturesNote === undefined ? [] : [`_${report.picturesNote}_`, ""]),
-		...(report.before === undefined
-			? []
-			: [
-					`**Before:** current architecture at the base \`${report.baseSha.slice(0, 7)}\``,
-					"",
-					pictureHtml("Architecture before this pull request", report.before),
-					"",
-				]),
-		...(report.after === undefined
-			? []
-			: [
-					`**After:** ${after} \`${report.headSha.slice(0, 7)}\``,
-					"",
-					pictureHtml("Architecture after this pull request", report.after),
-					"",
-				]),
-	];
-}
-
-/**
  * The footprint buckets, or why there are none.
  * @param report The report.
  * @returns The Markdown lines.
@@ -277,18 +173,14 @@ function outOfPlanSection(report: PullRequestReport): string[] {
 }
 
 /**
- * The links to the map.
+ * The link to the vault.
  * @param report The report.
  * @returns The Markdown lines.
  */
 function linksSection(report: PullRequestReport): string[] {
-	const links = [
-		...(report.mapUrl === undefined ? [] : [`[Open the map, full size](${report.mapUrl})`]),
-		...(report.vaultUrl === undefined
-			? []
-			: [`[Browse the vault at the head commit](${report.vaultUrl})`]),
-	];
-	return links.length === 0 ? [] : [links.join(" · "), ""];
+	return report.vaultUrl === undefined
+		? []
+		: [`[Browse the vault at the head commit](${report.vaultUrl})`, ""];
 }
 
 /**
@@ -302,7 +194,6 @@ function pullRequestComment(report: PullRequestReport): string {
 		"## Architecture",
 		"",
 		...proposalSection(report),
-		...picturesSection(report),
 		...linksSection(report),
 		...footprintSection(report),
 		...outOfPlanSection(report),
@@ -324,11 +215,4 @@ function noVaultComment(headSha: string): string {
 	].join("\n");
 }
 
-export {
-	noVaultComment,
-	planProblem,
-	pullRequestComment,
-	type PictureLinks,
-	type PictureSameness,
-	type PullRequestReport,
-};
+export { noVaultComment, planProblem, pullRequestComment, type PullRequestReport };
