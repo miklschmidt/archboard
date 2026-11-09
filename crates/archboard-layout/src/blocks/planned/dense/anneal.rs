@@ -394,16 +394,6 @@ impl<'p> Search<'p> {
         }
     }
 
-    /// Sketch the lines a made move moved, where they stand now.
-    fn sketch(&self, change: &mut Change) {
-        change.fresh = (change.lines.iter())
-            .map(|&line| {
-                let (sketch, cost) = self.scene.sketch(line);
-                (sketch, self.scene.chord(line), cost)
-            })
-            .collect();
-    }
-
     /// What a change adds to the total, where each line it moved costs as some costs say.
     fn delta(&self, change: &Change, costs: impl Iterator<Item = f64>) -> f64 {
         let weighed = &self.weighed;
@@ -430,10 +420,33 @@ impl<'p> Search<'p> {
         gap(a.x, a.width, b.x, b.width) + gap(a.y, a.height, b.y, b.height) - SLACK
     }
 
-    /// What a made move adds to the total, once its lines are sketched.
-    fn sketched(&self, change: &mut Change) -> f64 {
-        self.sketch(change);
-        self.delta(change, change.fresh.iter().map(|&(_, _, cost)| cost))
+    /// Sketch the lines a made move moved, one at a time, and tell what the move adds to the
+    /// total and the draw made for it, if any.
+    ///
+    /// A move that costs more stands when a draw falls below how much its rise weighs at the
+    /// heat. A line not yet sketched costs at least the gap between its boxes, so where even
+    /// that least rise weighs too much for the draw, the move loses it before the rest of its
+    /// lines are sketched: `None`. The margin holds against any rounding of the weight. The
+    /// draw is the one the search makes for that move anyway, so no walk of the search changes.
+    fn sketch(&mut self, change: &mut Change, heat: f64) -> Option<(f64, Option<f64>)> {
+        let mut costs: Vec<f64> = change.lines.iter().map(|&line| self.least(line)).collect();
+        change.fresh.clear();
+        let mut drawn = None;
+        loop {
+            let rise = self.delta(change, costs.iter().copied());
+            let Some(&line) = change.lines.get(change.fresh.len()) else {
+                return Some((rise, drawn));
+            };
+            if rise > 0.0 && heat > 0.0 {
+                let chance = *drawn.get_or_insert_with(|| self.chance());
+                if chance > (-rise / heat).exp() * (1.0 + 1e-9) + 1e-12 {
+                    return None;
+                }
+            }
+            let (sketch, cost) = self.scene.sketch(line);
+            costs[change.fresh.len()] = cost;
+            change.fresh.push((sketch, self.scene.chord(line), cost));
+        }
     }
 
     fn keep(&mut self, delta: f64, change: Change) {
@@ -466,8 +479,9 @@ impl<'p> Search<'p> {
             }
             let old = self.make(&moves);
             let mut change = self.change(&old);
-            let delta = self.sketched(&mut change);
+            let weighed = self.sketch(&mut change, 0.0);
             self.undo(&old);
+            let delta = weighed.map_or(0.0, |(delta, _)| delta);
             if delta > 0.0 {
                 rises.push(delta);
             }
@@ -491,21 +505,10 @@ impl<'p> Search<'p> {
             }
             let old = self.make(&proposed);
             let mut change = self.change(&old);
-            // A move that costs more stands when a draw falls below how much its rise weighs at
-            // this heat. Where even the least the move can cost weighs too much for the draw,
-            // the move is undone before its lines are sketched. The margin holds against any
-            // rounding of the weight.
-            let least = self.delta(&change, change.lines.iter().map(|&line| self.least(line)));
-            let mut drawn = None;
-            if least > 0.0 && heat > 0.0 {
-                let chance = self.chance();
-                if chance > (-least / heat).exp() * (1.0 + 1e-9) + 1e-12 {
-                    self.undo(&old);
-                    continue;
-                }
-                drawn = Some(chance);
-            }
-            let delta = self.sketched(&mut change);
+            let Some((delta, drawn)) = self.sketch(&mut change, heat) else {
+                self.undo(&old);
+                continue;
+            };
             if delta <= 0.0
                 || (heat > 0.0 && drawn.unwrap_or_else(|| self.chance()) < (-delta / heat).exp())
             {
