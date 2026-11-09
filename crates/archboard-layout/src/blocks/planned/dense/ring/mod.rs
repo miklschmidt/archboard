@@ -13,6 +13,8 @@
 //! pays for the room it adds, not for a whole band. A page that does not read where it lands is
 //! refused while one that reads holds the doors.
 
+use rustc_hash::FxHashMap;
+
 use crate::geometry::{Point, Rect};
 
 use line_up::cheapest;
@@ -167,28 +169,41 @@ impl Ring {
     }
 }
 
-/// What one door costs at each of its boxes along the ring, `None` where it does not fit.
+/// What one door costs at each of its boxes along the ring, `None` where it does not fit. A door
+/// whose lines end on no other door costs what its box alone sets, so a box that another ring
+/// gave it before costs what it cost then (`known`).
 fn prices(
     scene: &mut Scene,
     (door, boxes): (usize, &[Option<Rect>]),
-    doors: &[usize],
-    fixed: &[Chord],
+    (doors, open, fixed): Standing<'_>,
+    known: &mut FxHashMap<[u64; 2], f64>,
 ) -> Vec<Option<f64>> {
-    let lines = own_lines(scene, door, doors);
+    let lines = own_lines(scene, door, open);
+    let alone = (lines.iter()).all(|&line| {
+        let ends = scene.lines[line];
+        !doors.contains(&ends.from) || !doors.contains(&ends.to)
+    });
     // Only the door moves, so what stands in each line's way stays.
     let in_the_way: Vec<InTheWay> = lines.iter().map(|&line| scene.in_the_way(line)).collect();
     (boxes.iter())
         .map(|&at| {
-            scene.boxes[door] = at?;
-            Some(
-                (lines.iter().zip(&in_the_way))
-                    .map(|(&line, way)| {
-                        let chord = scene.chord(line);
-                        let crossings = fixed.iter().filter(|other| chord.crosses(other)).count();
-                        scene.sketch_among(line, way).1 + CROSSING * crossings as f64
-                    })
-                    .sum(),
-            )
+            let at = at?;
+            scene.boxes[door] = at;
+            let bits = [at.x, at.y].map(f64::to_bits);
+            if alone && let Some(&cost) = known.get(&bits) {
+                return Some(cost);
+            }
+            let cost = (lines.iter().zip(&in_the_way))
+                .map(|(&line, way)| {
+                    let chord = scene.chord(line);
+                    let crossings = fixed.iter().filter(|other| chord.crosses(other)).count();
+                    scene.sketch_among(line, way).1 + CROSSING * crossings as f64
+                })
+                .sum();
+            if alone {
+                known.insert(bits, cost);
+            }
+            Some(cost)
         })
         .collect()
 }
@@ -227,10 +242,11 @@ pub(super) fn stand(scene: &mut Scene, doors: &[usize], whole: Rect, gap: f64, p
         }
         return;
     }
-    stand_open(scene, (doors, doors), whole, gap, page);
+    let known = &mut vec![Known::default(); doors.len()];
+    stand_open(scene, (doors, doors), (whole, gap, page), known);
     let between = |line: &Line| doors.contains(&line.from) && doors.contains(&line.to);
     if scene.lines.iter().any(between) {
-        stand_open(scene, (doors, &[]), whole, gap, page);
+        stand_open(scene, (doors, &[]), (whole, gap, page), known);
     }
     scene.ringed = Some((bits, doors.iter().map(|&door| scene.boxes[door]).collect()));
 }
@@ -428,8 +444,8 @@ type Standing<'s> = (&'s [usize], &'s [usize], &'s [Chord]);
 fn priced(
     scene: &mut Scene,
     ring: Ring,
-    (doors, open, fixed): Standing<'_>,
-    sizes: &[Door],
+    (standing, sizes): (Standing<'_>, &[Door]),
+    known: &mut [Known],
 ) -> Priced {
     let boxes: Vec<Vec<Option<Rect>>> = (sizes.iter())
         .map(|&stood| {
@@ -438,11 +454,15 @@ fn priced(
                 .collect()
         })
         .collect();
-    let costs = (doors.iter().zip(&boxes))
-        .map(|(&door, boxes)| prices(scene, (door, boxes), open, fixed))
+    let costs = (standing.0.iter().zip(&boxes).zip(known))
+        .map(|((&door, boxes), known)| prices(scene, (door, boxes), standing, known))
         .collect();
     Priced { ring, boxes, costs }
 }
+
+/// What a door cost at each box it took on the rings of one stand, by the bits of the box's
+/// corner.
+type Known = FxHashMap<[u64; 2], f64>;
 
 /// Stand every door once, where the lines from a door to the doors still open weigh nothing.
 /// The doors stand on whichever ring and within whichever page costs least, with the box they
@@ -450,9 +470,8 @@ fn priced(
 fn stand_open(
     scene: &mut Scene,
     (doors, open): (&[usize], &[usize]),
-    whole: Rect,
-    gap: f64,
-    page: Point,
+    (whole, gap, page): (Rect, f64, Point),
+    known: &mut [Known],
 ) {
     let is_door = |at: usize| doors.contains(&at);
     let fixed: Vec<Chord> = (0..scene.lines.len())
@@ -478,14 +497,14 @@ fn stand_open(
         priced(
             scene,
             Ring::new(whole, gap, Point { x: level, y: 0.0 }),
-            standing,
-            &sizes,
+            (standing, &sizes),
+            known,
         ),
         priced(
             scene,
             Ring::new(whole, gap, Point { x: 0.0, y: upright }),
-            standing,
-            &sizes,
+            (standing, &sizes),
+            known,
         ),
     ];
     let found = pages(whole, page, band)
@@ -500,7 +519,12 @@ fn stand_open(
             (ring, order, places)
         }
         // No page that reads across holds the doors: the ring widens until they fit.
-        None => widened(scene, standing, &sizes, (whole, gap, level + widest + STEP)),
+        None => widened(
+            scene,
+            (standing, &sizes),
+            (whole, gap, level + widest + STEP),
+            known,
+        ),
     };
     for (&door, &slot) in order.iter().zip(&places) {
         if let Some(at) = ring.boxes[door][slot] {
@@ -516,9 +540,9 @@ fn stand_open(
 /// some reach, until it holds every door, and their order and places on it.
 fn widened(
     scene: &mut Scene,
-    standing: Standing<'_>,
-    sizes: &[Door],
+    (standing, sizes): (Standing<'_>, &[Door]),
     (whole, gap, from): (Rect, f64, f64),
+    known: &mut [Known],
 ) -> (Priced, Vec<usize>, Vec<usize>) {
     let widest = sizes.iter().map(|door| door.size.x).fold(0.0, f64::max);
     let mut reach = from;
@@ -526,8 +550,8 @@ fn widened(
         let ring = priced(
             scene,
             Ring::new(whole, gap, Point { x: reach, y: 0.0 }),
-            standing,
-            sizes,
+            (standing, sizes),
+            known,
         );
         if let Some((_, order, places)) = cheapest(&ring.ring, sizes, &ring.costs) {
             return (ring, order, places);
