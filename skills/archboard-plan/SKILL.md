@@ -131,7 +131,7 @@ Done: each architectural change has exactly one owning ticket, and each publishe
    ```
 
    Resolve any exit status 2, and account for skipped and unbound changes as before each ticket merge.
-   Explain each module in `namedNotChanged`: unfinished work, or a planned change that needed no code.
+   Explain each module in `namedNotChanged`: unfinished work, a planned change that needed no code, or a change outside the symbol that its binding names.
    Fix each finding of the code check that the work caused.
 
 6. If the user authorized the work that the spec describes, adopt the proposal on the integration branch.
