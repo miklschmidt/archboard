@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
-import { existsSync } from "node:fs";
+import fs, { existsSync } from "node:fs";
 import { z } from "zod";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
 import { runCommand } from "#cli/contract/operations/runner.ts";
@@ -168,6 +168,33 @@ describe("command-contract runner", () => {
 		expect(execution.error).toBeUndefined();
 		expect(JSON.parse(execution.stdout)).toEqual({ recipient: "Ada" });
 	});
+
+	test.each([
+		{ encoding: "utf8" as const, content: "replacement" },
+		{ encoding: "binary" as const, content: new Uint8Array([1, 2, 3]) },
+	])(
+		"a failed $encoding artifact replacement keeps the old file and emits no receipt",
+		async (artifact) => {
+			const path = temporaryPath("snapshot.json");
+			fs.writeFileSync(path, "original");
+			const write = fs.writeFileSync;
+			const failure = new Error("disk full");
+			const writer = spyOn(fs, "writeFileSync").mockImplementation((file) => {
+				write(file, "partial");
+				throw failure;
+			});
+			try {
+				const execution = await executePublic(
+					proofContract({ result: { success: true }, file: true, artifact: { path, ...artifact } }),
+				);
+				expect(execution.error).toBe(failure);
+				expect(execution.stdout).toBe("");
+				expect(fs.readFileSync(path, "utf8")).toBe("original");
+			} finally {
+				writer.mockRestore();
+			}
+		},
+	);
 
 	test("an invalid public result reaches neither stdout nor a file", async () => {
 		const path = temporaryPath("result.txt");
