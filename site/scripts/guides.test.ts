@@ -75,13 +75,33 @@ test("a deep checkout must precede the Action in its own job and directory", () 
 	).toEqual([]);
 });
 
+const actionVersion = (pin: string): string =>
+	code(
+		"yaml",
+		`steps:\n  - uses: miklschmidt/archboard/actions/check@{{sha}} # {{ref}}\n    with:\n      version: ${JSON.stringify(pin)}`,
+	);
+
 test("a CLI version written by hand is refused, with or without a range", () => {
 	const byHand = (source: string): boolean =>
 		problems(source).some((problem) => problem.includes("pins by hand"));
 	for (const pin of ["0.3.0", "^0.3.0", "~0.3.0", ">=0.3.0"]) {
 		expect(byHand(code("bash", `npm install --global archboard@${pin}`))).toBe(true);
-		expect(byHand(code("yaml", `with:\n  version: ${pin}`))).toBe(true);
+		expect(byHand(actionVersion(pin))).toBe(true);
 	}
 	expect(byHand(code("bash", "npm install --global archboard@{{version}}"))).toBe(false);
-	expect(byHand(code("yaml", "with:\n  version: {{version}}"))).toBe(false);
+	expect(byHand(actionVersion("{{version}}"))).toBe(false);
+});
+
+test("versions outside Archboard Action inputs are not CLI pins", () => {
+	for (const pin of ["3.9", "^3.9", "~3.9", ">=3.9"]) {
+		expect(problems(code("yaml", `version: ${JSON.stringify(pin)}`))).toEqual([]);
+		expect(
+			problems(
+				code(
+					"yaml",
+					`steps:\n  - uses: example/action@v1\n    with:\n      version: ${JSON.stringify(pin)}`,
+				),
+			),
+		).toEqual([]);
+	}
 });
