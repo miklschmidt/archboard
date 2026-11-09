@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-09T00:11:00Z'
-updated_date: '2026-11-09T00:19:00Z'
+updated_date: '2026-11-09T00:21:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -40,4 +40,8 @@ Review follow-up: correct the remaining picture promises in README.md and skills
 Removed pictures.ts, assets.ts, rawUrl, the assets-branch input and env, fromFork, changedIds and the report's before/after/same/picturesNote/mapUrl. github.ts keeps its head check (now private) so the comment write still refuses when a later push moved the pull request on. Tests: tests/system/actions (40 pass) cover the text comment, the vault link, no model render call, no non-comment API write, and the stale-head refusals. Gate evidence: vp run lint:all, types, format:check, check:model, test:repository pass; site bun run build and its link check pass. Redrew docs/readme/architecture-*.svg because the Pull-request Action module text in the vault changed. Left the Use Chrome for model rendering step in architecture.yml: the check Action's embeds check still renders.
 
 Review finding: README.md still promised pictures from the pull-request Action. Corrected it to describe the proposal, vault link and footprint as text.
+
+Review finding: the shipped archboard-pr skill still promised pictures from the Action. Corrected the marker guidance to describe its text comment.
+
+Review validation passed inside nix develop: bun test tests/system/actions (40 tests), bunx vp run lint:all, bunx vp run types, bunx vp run format:check, and bunx vp run check:model. The site build passed with no diagnostics and 17 pages with working internal links. The skill-links owner passed (3 tests). The first model read hit an existing Codex state lock. Reading through the temporary server of check:model succeeded. Source inspection found that the module text matches the Action and that the remaining production helpers have callers. The model gate accepted the redrawn SVG embeds. No code change or further simplification was needed.
 <!-- SECTION:NOTES:END -->
