@@ -17,7 +17,7 @@ use crate::geometry::{Point, Rect};
 
 use super::{
     super::reading::DEAD_SPACE,
-    sketch::{CROSSING, Chord, Line, Scene},
+    sketch::{CROSSING, Chord, InTheWay, Line, Scene},
 };
 
 /// Room between a frame's wall and the doors round it, before routing.
@@ -174,17 +174,18 @@ fn prices(
     fixed: &[Chord],
 ) -> Vec<Option<f64>> {
     let lines = own_lines(scene, door, doors);
+    // Only the door moves, so what stands in each line's way stays.
+    let in_the_way: Vec<InTheWay> = lines.iter().map(|&line| scene.in_the_way(line)).collect();
     (0..ring.slots())
         .map(|slot| {
             let at = ring.place(slot, stood)?;
             scene.boxes[door] = at;
             Some(
-                lines
-                    .iter()
-                    .map(|&line| {
+                (lines.iter().zip(&in_the_way))
+                    .map(|(&line, way)| {
                         let chord = scene.chord(line);
                         let crossings = fixed.iter().filter(|other| chord.crosses(other)).count();
-                        scene.sketch(line).1 + CROSSING * crossings as f64
+                        scene.sketch_among(line, way).1 + CROSSING * crossings as f64
                     })
                     .sum(),
             )
