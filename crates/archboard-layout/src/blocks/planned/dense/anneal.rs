@@ -9,7 +9,7 @@ use crate::geometry::{Point, Rect};
 
 use super::{
     crossing::Crossings,
-    sketch::{CROSSING, Chord, Scene, Sketch, Weighed},
+    sketch::{CROSSING, Chord, Line, Scene, Sketch, Weighed},
 };
 
 /// A frame's grid of cells, as the search sees it: every cell one pitch from the next.
@@ -52,6 +52,9 @@ const GROUP_MOVES: u64 = 20;
 const COOLING: f64 = 1e-3;
 /// How many moves sample the first heat.
 const SAMPLES: usize = 40;
+/// Room past a line's ends that the quick test of its way round a box keeps: more than the room
+/// of the exact test (`Sketch::round`) and any rounding of it.
+const MARGIN: f64 = 1.0;
 
 /// What a move changes, before it stands or is undone.
 struct Change {
@@ -88,6 +91,14 @@ fn grouped(scene: &Scene) -> Vec<Vec<usize>> {
         }
     }
     grouped
+}
+
+/// Whether two boxes may share any area: false only where they stand more than a margin apart.
+fn near(a: Rect, b: Rect) -> bool {
+    a.x < b.x + b.width + MARGIN
+        && b.x < a.x + a.width + MARGIN
+        && a.y < b.y + b.height + MARGIN
+        && b.y < a.y + a.height + MARGIN
 }
 
 /// A placement under search.
@@ -284,10 +295,25 @@ impl<'p> Search<'p> {
         self.stamp[line] == self.stamps
     }
 
+    /// Whether a line's sketch may run through a moved part, where the part stood or stands now.
+    /// A sketch stays within the box round the line's two ends.
+    fn passes(&self, line: usize, old: &[(usize, usize, Rect)]) -> bool {
+        let Line { from, to, .. } = self.scene.lines[line];
+        let (a, b) = (self.scene.boxes[from], self.scene.boxes[to]);
+        let (x, y) = (a.x.min(b.x), a.y.min(b.y));
+        let round = Rect {
+            x,
+            y,
+            width: (a.x + a.width).max(b.x + b.width) - x,
+            height: (a.y + a.height).max(b.y + b.height) - y,
+        };
+        (old.iter()).any(|&(part, _, was)| near(round, was) || near(round, self.scene.boxes[part]))
+    }
+
     /// What each line that stayed adds or saves to go round the moved parts.
     fn rounds(&self, old: &[(usize, usize, Rect)]) -> Vec<(usize, f64)> {
         (0..self.scene.lines.len())
-            .filter(|&line| !self.moved(line))
+            .filter(|&line| !self.moved(line) && self.passes(line, old))
             .filter_map(|line| {
                 let sketch = &self.weighed.sketches[line];
                 let added: f64 = (old.iter())
