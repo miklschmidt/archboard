@@ -8,7 +8,7 @@ import { rehypeHeadingIds, unified } from "@astrojs/markdown-remark";
 import expressiveCode from "astro-expressive-code";
 import { rehypeHeadingLinks } from "./src/lib/rehype-heading-links.ts";
 import { actionsPin, docsVersion, isRelease } from "./src/lib/docs-version.ts";
-import { remarkVersion } from "./src/lib/remark-version.mjs";
+import { remarkVersion } from "./src/lib/remark-version.ts";
 import { coreSourceHash } from "../packages/renderer/src/runtime/store/core-sources.ts";
 
 const repository = fileURLToPath(new URL("..", import.meta.url));

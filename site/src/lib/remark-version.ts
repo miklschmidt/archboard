@@ -6,27 +6,42 @@
 // `scripts/guides.ts` refuses a version or an Action ref that a guide writes by hand, so a pin
 // never goes stale (ADR 0077).
 
+import type { Node, RemarkPlugin } from "@astrojs/markdown-remark";
+
+/** What the tokens stand for. */
+interface VersionTokens {
+	readonly version: string;
+	readonly ref: string;
+	readonly sha: string;
+}
+
+/** An mdast node, as far as this plugin reads and writes it. */
+type MdastNode = Node & { children?: MdastNode[]; value?: unknown };
+
 /**
- * @param {any} node An mdast node.
- * @param {(node: any) => void} visit Called for each node.
+ * Visit each node of a tree.
+ * @param node An mdast node.
+ * @param visit Called for each node.
  */
-function walk(node, visit) {
+function walk(node: MdastNode, visit: (node: MdastNode) => void): void {
 	visit(node);
 	for (const child of node.children ?? []) walk(child, visit);
 }
 
 /**
  * The remark plugin.
- * @param {{ version: string, ref: string, sha: string }} options What the tokens stand for.
+ * @param tokens What the tokens stand for.
+ * @returns The transformer.
  */
-export function remarkVersion({ version, ref, sha }) {
-	return (/** @type {any} */ tree) => {
+export const remarkVersion: RemarkPlugin<[VersionTokens]> =
+	({ version, ref, sha }) =>
+	(tree) => {
 		walk(tree, (node) => {
 			if (node.type !== "code" && node.type !== "inlineCode") return;
+			if (typeof node.value !== "string") return;
 			node.value = node.value
 				.replaceAll("{{version}}", version)
 				.replaceAll("{{ref}}", ref)
 				.replaceAll("{{sha}}", sha);
 		});
 	};
-}
