@@ -5,9 +5,10 @@ import path from "node:path";
 // oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 import type { RuleContext } from "./rule-api.ts";
 
-/** The browser entry of the web app. It sits above `ui/` and counts as browser code. */
+/** The browser entries of the web app's pages. They sit above `ui/` and count as browser code. */
 const BROWSER_ENTRYPOINTS = new Set([
 	"apps/web/src/main.tsx",
+	"apps/web/src/snapshot.tsx",
 	"apps/workbench-example/src/main.tsx",
 ]);
 

@@ -61,7 +61,8 @@ the same run.
 For frontend concern placement, naming, and React ownership, read [frontend.md](frontend.md).
 
 The entries are `apps/cli/src/bin.ts`, `apps/server/src/server.ts`, `apps/web/src/main.tsx`,
-and the server and browser entries of `apps/workbench-example`.
+`apps/web/src/snapshot.tsx` (the snapshot page), and the server and browser entries of
+`apps/workbench-example`.
 Do not add implementation to them.
 
 ## Import rules
@@ -471,7 +472,8 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   are.
 - `ui/` holds the browser host. `state/` keeps what the page loads once (the core, the icons, whether the renderer has
   started) and `workers/` holds the browser layout worker. `api/browser.ts` starts the renderer with
-  `startBrowserRenderer()` and draws a legacy board with `drawLegacyBoardHere`. The worker is started inside the
+  `startBrowserRenderer()` and draws a legacy board with `drawLegacyBoardHere`. A page that carries the icons, as a
+  model snapshot does, hands them to `startBrowserRenderer({ icons })` and fetches none. The worker is started inside the
   package with `new Worker(new URL("../workers/layout-worker.ts", import.meta.url), { type: "module" })`, which Vite
   bundles into its own chunk. So there is no `./worker` subpath: no code outside the package runs the worker. The
   page fetches and compiles the core's WebAssembly, served beside its glue, and hands each worker the compiled module.

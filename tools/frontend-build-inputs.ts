@@ -10,6 +10,7 @@ const INPUT_FILES = [
 	"package.json",
 	"bun.lock",
 	"tools/frontend-build-inputs.ts",
+	"tools/snapshot-page-boundary.ts",
 	"Cargo.toml",
 	"Cargo.lock",
 	"scripts/build-core.ts",

@@ -995,6 +995,11 @@ If the base changes during export, reread and retry `STALE_REVISION`.
 `model rasterize --out picture.png` accepts the same selectors, plus `--scale` and `--region`.
 Both artifacts carry a recipe with model identity, reading, revision, and picture digest.
 
+`model snapshot --out model.snapshot.json` writes a state, its comparison state, the vault check and the icons to one file.
+It takes the selectors of `model read`.
+A static host can serve the browser build and the file together.
+Open `snapshot.html?snapshot=model.snapshot.json` there to read the picture with no Archboard server.
+
 Track exported pictures in Git when other files embed them.
 `check embeds` discovers only Git-tracked SVG and PNG files with render recipes.
 `check embeds --fix` redraws changed local sources when artifact replacement is authorized.

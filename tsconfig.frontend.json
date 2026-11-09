@@ -9,7 +9,8 @@
 		"packages/*/src/ui/**/*.tsx",
 		"apps/*/src/ui/**/*.ts",
 		"apps/*/src/ui/**/*.tsx",
-		"apps/*/src/main.tsx"
+		"apps/*/src/main.tsx",
+		"apps/web/src/snapshot.tsx"
 	],
 	"exclude": ["node_modules", "dist"]
 }

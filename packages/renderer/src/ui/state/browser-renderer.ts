@@ -27,7 +27,7 @@ import {
 import { installRendererHost } from "#shared/render/rules/host.ts";
 import { loadBrowserCore, type BrowserCore } from "#ui/clients/core.ts";
 import { warmPainter } from "#ui/clients/painter.ts";
-import { loadDiagramIcons, loadedIconPaths } from "#ui/state/diagram-icons.ts";
+import { loadDiagramIcons, loadedIconPaths, readIconsFrom } from "#ui/state/diagram-icons.ts";
 import {
 	createEnginePool,
 	workerCeiling,
@@ -84,8 +84,16 @@ const WARM_UP_GRAPH = JSON.stringify({
 	edges: [{ id: "a-b", sources: ["a"], targets: ["b"] }],
 });
 
-/** Make this page a renderer host. Once per page: later calls keep the first. */
-function startBrowserRenderer(): void {
+/**
+ * Make this page a renderer host. Once per page: later calls keep the first host.
+ * @param options What the page brings with it.
+ * @param options.icons The path data of each icon its pictures name, by name, when the page carries
+ * them, as a model snapshot does. The page then fetches no icon, and an icon the set lacks is missing.
+ */
+function startBrowserRenderer(
+	options: { readonly icons?: Readonly<Record<string, readonly string[]>> } = {},
+): void {
+	if (options.icons !== undefined) readIconsFrom(options.icons);
 	// A browser takes up to a second to compile the GPU's pipelines, so the page's painter
 	// starts as the page starts, ahead of its first picture.
 	warmPainter();

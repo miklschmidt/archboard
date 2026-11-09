@@ -1,5 +1,5 @@
 // The icons a picture drawn in this page names, fetched from the Archboard server
-// by name before drawing (TASK-247).
+// by name before drawing (TASK-247), or read from a model snapshot that carries them.
 //
 // A vault policy gives each node kind one Remix Icon, out of a set of three
 // thousand. The page fetches the few a policy names, once each, and the
@@ -22,6 +22,9 @@ const IconSchema = z.object({ paths: z.array(z.string()) });
 const loaded = new Map<string, readonly string[] | undefined>();
 const loading = new Map<string, Promise<void>>();
 
+/** The icons a snapshot carries, which the page reads in place of the server once it has them. */
+let carried: Readonly<Record<string, readonly string[]>> | null = null;
+
 /**
  * Fetch one icon, once.
  * @param name The icon's export name.
@@ -30,12 +33,22 @@ const loading = new Map<string, Promise<void>>();
 function loadIcon(name: string): Promise<void> {
 	const pending = loading.get(name);
 	if (pending !== undefined) return pending;
-	const load = fetchIcon(name).then((paths) => {
+	const load = readIcon(name).then((paths) => {
 		loaded.set(name, paths);
 		return undefined;
 	});
 	loading.set(name, load);
 	return load;
+}
+
+/**
+ * One icon's path data, from the snapshot the page reads or else from the Archboard server.
+ * @param name The icon's export name.
+ * @returns Its paths, or nothing when the source has no such icon.
+ */
+async function readIcon(name: string): Promise<readonly string[] | undefined> {
+	if (carried === null) return fetchIcon(name);
+	return Object.hasOwn(carried, name) ? carried[name] : undefined;
 }
 
 /**
@@ -50,6 +63,15 @@ async function fetchIcon(name: string): Promise<readonly string[] | undefined> {
 	} catch {
 		return undefined;
 	}
+}
+
+/**
+ * Read icons from a set of paths from now on, and fetch none. A snapshot carries every icon its
+ * policy names, so an icon the set lacks is missing. The renderer calls it as it starts.
+ * @param icons The paths of each icon, by name.
+ */
+function readIconsFrom(icons: Readonly<Record<string, readonly string[]>>): void {
+	carried = icons;
 }
 
 /**
@@ -70,4 +92,4 @@ function loadedIconPaths(name: string): readonly string[] | undefined {
 	return loaded.get(name);
 }
 
-export { loadDiagramIcons, loadedIconPaths };
+export { loadDiagramIcons, loadedIconPaths, readIconsFrom };

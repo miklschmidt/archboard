@@ -843,6 +843,10 @@ Canonical navigation, proposal, and walkthrough browser owners retain visible ar
 It also serves the build under a sub-path, as a static host serves a project, and draws a model there with every asset, worker, core and icon read from that path.
 Canonical drawings use the existing IndexedDB picture store and the public render schema for cached geometry.
 Their cache identity includes the renderer build and the exact prepared scene.
+`snapshot-page.test.ts` writes a snapshot of an example draft with `archboard model snapshot`, stops the server, and serves the build and the file from a static host under a sub-path.
+`snapshot.html` draws the draft against its comparison state, opens a module and steps back out, and follows the system's theme.
+The host records that the page asked for no API and opened no socket. The application page served beside it shows that the host records a request for the API.
+A file of another format version shows the versions that the page reads.
 
 `semantic-traffic.test.ts` uses canonical relationships and an independent sequence flow.
 It holds that traffic reaches the page only as painted motion, that reduced motion stills it, and that it comes back.

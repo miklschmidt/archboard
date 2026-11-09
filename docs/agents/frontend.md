@@ -254,6 +254,12 @@ Its picture provider uses the local renderer.
 No provider falls back to a live legacy board HTTP route.
 Canonical recordings use their captured model and the same canonical walkthrough components as ordinary playback.
 
+The snapshot page, `snapshot.html`, is a second entry of the build, `apps/web/src/snapshot.tsx`.
+It reads the file that its `snapshot` parameter names, resolved against the page, and talks to no server.
+`ui/snapshot-reader/` installs the same read provider with the snapshot's vault check and no code findings, and starts the renderer with the snapshot's icons.
+`SnapshotCanvas` draws the snapshot's reading against its comparison reading with `ModelDiagram`, and keeps only the open scope and the selection.
+Its theme follows the system's preference. `tools/snapshot-page-boundary.ts` fails the build when a chunk the page can load holds agent, workbench or voice code.
+
 The left column's list lies on the chrome, as the right panel's lists do. A row of either side column takes its tone from `rowTone` in `ui/shell/rules/row-tone.ts`, and a section of either column takes its label from `SectionLabel`. A tree row lets the rails show through, and a row that sticks while it is open lays `bg-sidebar` under itself, so it hides what scrolls under it.
 The column has no tabs. `ModelColumn` puts the keys of History and Measures over one list of sections. A section's head sticks at the top of the list and sets `--stuck-top`. `stuckTop` in `ui/shell/rules/tree-grid.ts` puts what sticks in a tree under that head.
 Each section keeps its row on screen in view with `useRevealedRow`: the tree its lit module, Flows the flow on screen and Walkthroughs the one that plays. It leaves a list alone while the pointer or the focus is in it.
