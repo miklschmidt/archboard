@@ -84,25 +84,8 @@ pub(super) type Order = (bool, usize, f64);
 
 /// The scale that a landing must reach for its words to read (the first gate of the reader).
 const NEAR_SCALE: f64 = 0.6;
-/// The shape of the room a picture lands in, width over height.
-const PANE_SHAPE: f64 = LANDING_ROOM.0 / LANDING_ROOM.1;
 /// A line is a long detour past this much extra travel, and half again its direct way.
 const LONG_DETOUR: f64 = 300.0;
-
-/// What a page of this size costs before it is routed: its own area, which a page that lands
-/// whole shows as it is, and the room that the smallest box of the pane's shape round it
-/// needs past the landing room, which a larger page pays for in scale. A placement that
-/// promises the pane's shape lands larger, so the ring and the promise prefer it.
-pub(super) fn room_cost(width: f64, height: f64) -> f64 {
-    let pane = width.max(height * PANE_SHAPE);
-    width * height + (pane * pane / PANE_SHAPE - LANDING_ROOM.0 * LANDING_ROOM.1).max(0.0)
-}
-
-/// What a dense placement promises before it is routed: the straight way of
-/// its lines times what its room costs, so a long thin page pays for its shape.
-pub(super) fn promise(drawing: &crate::blocks::assembly::Placed, reach: f64) -> f64 {
-    (1.0 + reach) * room_cost(drawing.width, drawing.height)
-}
 
 fn long_detours(lines: &[PlacedLine]) -> usize {
     lines
@@ -126,7 +109,7 @@ pub(super) fn drawn_rank(drawing: &crate::blocks::assembly::Placed) -> (usize, u
 }
 
 /// The largest page whose words still read where it lands.
-const READABLE: (f64, f64) = (LANDING_ROOM.0 / NEAR_SCALE, LANDING_ROOM.1 / NEAR_SCALE);
+pub(super) const READABLE: (f64, f64) = (LANDING_ROOM.0 / NEAR_SCALE, LANDING_ROOM.1 / NEAR_SCALE);
 
 pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
     let routed = &as_routed(drawing).edges;
@@ -141,7 +124,7 @@ pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
 /// How far from every card, line and label a place stands before it is dead space.
 const REACH: f64 = 48.0;
 /// How much dead space costs as much as one unit of line: the band that a line inks.
-const DEAD_SPACE: f64 = 2.0 * REACH;
+pub(super) const DEAD_SPACE: f64 = 2.0 * REACH;
 /// How finely dead space is measured.
 const GRAIN: f64 = 8.0;
 

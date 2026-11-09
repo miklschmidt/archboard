@@ -1,12 +1,18 @@
 //! A dense placement: the parts of each open frame on a grid below its edge tab,
-//! the frames in a row or a stack, and the cards outside them round that whole,
-//! each near what it joins. Inside a frame compactness comes before fewer bends.
+//! the frames in a row or a stack, and the cards outside them round that whole.
+//! One stated cost weighs a placement (`sketch`): the length of a quick sketch of every
+//! line, its bends, the way round what it runs through, its crossings, and how far
+//! apart the members of each group stand. A search moves the parts between cells
+//! (`anneal`), and an exact program stands the doors round the frames (`ring`).
 //! The planner routes this placement as it routes any other, so every guard
 //! still holds. The grid is only where routing starts: contraction then brings the
 //! cards of each row and column as near as what runs between them lets them stand.
 
+mod anneal;
 mod grid;
 mod ring;
+mod search;
+mod sketch;
 
 use rustc_hash::FxHashMap;
 
@@ -18,6 +24,7 @@ use crate::{
 };
 
 use grid::{Grid, Item, Join};
+use search::Staged;
 
 /// Room between two cells before routing. Contraction takes back what the routes leave.
 const CELL_GAP: f64 = 96.0;
@@ -38,19 +45,16 @@ const TALLEST: f64 = 1950.0;
 /// Room between two frames before routing. Contraction takes back what the routes leave.
 const FRAME_GAP: f64 = 112.0;
 
-/// How a reading's frames and doors stand, once each frame has set out its parts.
-#[derive(Clone, Copy, Debug)]
-struct Way {
-    /// Room added to every gap, when the tightest placement finds no route.
-    room: f64,
-    /// Whether doors can stand beside the frames as well as above and below them.
-    sides: bool,
-    /// Whether frames fill rows as wide as the widest frame, or else stand side by side.
-    stacked: bool,
-    /// Whether doors that face one place stand round it, else only at and after it.
-    centred: bool,
-    /// Room between the frames' whole and the doors round it, before routing.
-    gap: f64,
+/// The room outside the outermost cards, where a line may run round them.
+const PAGE_ROOM: f64 = 64.0;
+
+/// The most room that the frames and the doors round them can take for the page to read.
+fn readable() -> Point {
+    let (width, height) = super::reading::READABLE;
+    Point {
+        x: width - 2.0 * PAGE_ROOM,
+        y: height - 2.0 * PAGE_ROOM,
+    }
 }
 
 /// A frame's parts set on their grid, in the frame's own coordinates.
@@ -299,28 +303,28 @@ fn middle_of(cell: Rect, node: &Node) -> Rect {
 /// Where each frame stands in the whole that the doors stand round, and that whole's size. A row
 /// holds every frame. A stack holds rows as wide as its widest frame, and each frame takes the
 /// first row with room, so a small frame late in the order fills what a short row leaves.
-fn together(sets: &[Set], way: Way) -> (Vec<Point>, Point) {
-    let gap = FRAME_GAP + way.room;
-    let width = if way.stacked {
-        sets.iter().map(|set| set.size.x).fold(0.0, f64::max)
+fn together(sizes: &[Point], stacked: bool, room: f64) -> (Vec<Point>, Point) {
+    let gap = FRAME_GAP + room;
+    let width = if stacked {
+        sizes.iter().map(|size| size.x).fold(0.0, f64::max)
     } else {
         f64::INFINITY
     };
     let mut rows: Vec<Point> = Vec::new();
-    let seats: Vec<(usize, f64)> = sets
+    let seats: Vec<(usize, f64)> = sizes
         .iter()
-        .map(|set| {
+        .map(|size| {
             let row = rows
                 .iter()
-                .position(|row| row.x + gap + set.size.x <= width)
+                .position(|row| row.x + gap + size.x <= width)
                 .unwrap_or_else(|| {
                     rows.push(Point { x: -gap, y: 0.0 });
                     rows.len() - 1
                 });
             let x = rows[row].x + gap;
             rows[row] = Point {
-                x: x + set.size.x,
-                y: rows[row].y.max(set.size.y),
+                x: x + size.x,
+                y: rows[row].y.max(size.y),
             };
             (row, x)
         })
@@ -344,6 +348,15 @@ fn together(sets: &[Set], way: Way) -> (Vec<Point>, Point) {
     (places, size)
 }
 
+/// Where the cards of a reading stand: what one way to stand them answers.
+struct Stood {
+    /// Where each frame stands, and the frames' whole.
+    places: Vec<Point>,
+    whole: Point,
+    /// The doors' boxes round that whole.
+    doors: Vec<Rect>,
+}
+
 impl<'a> Reading<'a> {
     fn of(graph: &'a Node) -> Option<Reading<'a>> {
         let blocks: Vec<Block<'a>> = holders(graph)?
@@ -362,56 +375,66 @@ impl<'a> Reading<'a> {
         })
     }
 
-    /// This reading's drawing, set out one way, with no routes yet.
-    fn drawing(&self, sets: &[Set], way: Way) -> Placed {
-        let (places, size) = together(sets, way);
-        let held = || self.blocks.iter().zip(sets).zip(&places);
-        let whole = Set {
-            size,
-            parts: held()
-                .flat_map(|((_, set), at)| {
-                    set.parts.iter().map(|part| Rect {
-                        x: at.x + part.x,
-                        y: at.y + part.y,
-                        ..*part
-                    })
+    /// Stand the frames of some sizes together, and the doors round them, for parts that stand
+    /// in their frames as some sets put them.
+    fn stand(&self, sets: &[Set], stacked: bool, room: f64, page: Point) -> Stood {
+        let sizes: Vec<Point> = sets.iter().map(|set| set.size).collect();
+        let (places, whole) = together(&sizes, stacked, room);
+        let parts: Vec<Rect> = (sets.iter().zip(&places))
+            .flat_map(|(set, at)| {
+                set.parts.iter().map(|part| Rect {
+                    x: at.x + part.x,
+                    y: at.y + part.y,
+                    ..*part
                 })
-                .collect(),
+            })
+            .collect();
+        let frames: Vec<Rect> = (places.iter().zip(&sizes))
+            .map(|(at, size)| Rect {
+                x: at.x,
+                y: at.y,
+                width: size.x,
+                height: size.y,
+            })
+            .collect();
+        let Staged { mut scene, doors } = self.scene(&parts, &frames);
+        let bounds = Rect {
+            x: 0.0,
+            y: 0.0,
+            width: whole.x,
+            height: whole.y,
         };
-        let ring = ring::Ring {
-            graph: self.graph,
-            frames: held()
-                .map(|((block, _), at)| {
-                    let tab = Point {
-                        x: at.x + block.tab.x / 2.0,
-                        y: at.y + block.tab.y / 2.0,
-                    };
-                    (block.frame.id.as_str(), tab)
-                })
-                .collect(),
-            boxes: held()
-                .map(|((_, set), at)| Rect {
-                    x: at.x,
-                    y: at.y,
-                    width: set.size.x,
-                    height: set.size.y,
-                })
-                .collect(),
-            set: &whole,
-            ids: self
-                .blocks
-                .iter()
-                .flat_map(|block| block.items.iter().map(|item| item.node.id.as_str()))
-                .collect(),
-            extra: way.room,
-            sides: way.sides,
-            centred: way.centred,
-            gap: way.gap,
+        ring::stand(&mut scene, &doors, bounds, ring::RING_GAP + room, page);
+        Stood {
+            places,
+            whole,
+            doors: doors.iter().map(|&door| scene.boxes[door]).collect(),
+        }
+    }
+
+    /// This reading's drawing, its frames in a row or a stack, with no routes yet.
+    fn drawing(&self, sets: &[Set], stacked: bool, room: f64, page: Point) -> Placed {
+        let stood = self.stand(sets, stacked, room, page);
+        let boxes = || stood.doors.iter();
+        let low = Point {
+            x: boxes().map(|at| at.x).fold(0.0, f64::min),
+            y: boxes().map(|at| at.y).fold(0.0, f64::min),
         };
-        let page = ring.stand(&self.doors);
+        let high = Point {
+            x: boxes()
+                .map(|at| at.x + at.width)
+                .fold(stood.whole.x, f64::max),
+            y: boxes()
+                .map(|at| at.y + at.height)
+                .fold(stood.whole.y, f64::max),
+        };
+        let shift = Point {
+            x: PAGE_ROOM - low.x,
+            y: PAGE_ROOM - low.y,
+        };
         let mut drawing = Placed {
-            width: page.width,
-            height: page.height,
+            width: high.x - low.x + 2.0 * PAGE_ROOM,
+            height: high.y - low.y + 2.0 * PAGE_ROOM,
             cards: Vec::new(),
             frames: Vec::new(),
             regions: Vec::new(),
@@ -419,36 +442,25 @@ impl<'a> Reading<'a> {
             titles: Vec::new(),
             routed: None,
         };
-        for ((block, set), at) in held() {
+        for ((block, set), at) in self.blocks.iter().zip(sets).zip(&stood.places) {
             let at = Point {
-                x: page.frame.x + at.x,
-                y: page.frame.y + at.y,
+                x: shift.x + at.x,
+                y: shift.y + at.y,
             };
             block.stand(set, at, &mut drawing);
         }
-        drawing.cards.extend(page.doors);
+        let doors = self.doors.iter().zip(&stood.doors);
+        drawing.cards.extend(doors.map(|(door, at)| PlacedCard {
+            id: door.id.clone(),
+            bx: Rect {
+                x: at.x + shift.x,
+                y: at.y + shift.y,
+                ..*at
+            },
+            depth: 0,
+            header: None,
+        }));
         drawing
-    }
-
-    /// The straight way every line would take, to compare placements before routing.
-    fn reach(&self, drawing: &Placed) -> f64 {
-        let boxes: FxHashMap<&str, Rect> = drawing
-            .cards
-            .iter()
-            .chain(&drawing.frames)
-            .map(|card| (card.id.as_str(), card.bx))
-            .collect();
-        let centre = |id: &str| boxes.get(id).map_or(0.0, |at| at.x + at.width / 2.0);
-        let middle = |id: &str| boxes.get(id).map_or(0.0, |at| at.y + at.height / 2.0);
-        self.graph
-            .edges
-            .iter()
-            .flatten()
-            .map(|edge| {
-                (centre(edge.source()) - centre(edge.target())).abs()
-                    + (middle(edge.source()) - middle(edge.target())).abs()
-            })
-            .sum()
     }
 }
 
@@ -471,75 +483,84 @@ pub(super) fn frames(graph: &Node) -> usize {
     holders(graph).map_or(0, |held| held.len())
 }
 
-/// A reading whose frames have settled their parts on a grid of every width they take. A
-/// grid settles by its parts and lines alone, so every room between cells starts from it.
+/// A reading whose frames have searched where their parts stand, for every width of grid they
+/// take and every way their frames stand together. Every room between cells starts from it.
 pub(super) struct Grids<'a> {
     reading: Reading<'a>,
-    /// Each frame's grid, for one column, then two, and so on.
-    by_columns: Vec<Vec<Grid>>,
+    /// For each grid width and each way, whether the frames stack, and each frame's grid, the
+    /// cheapest first.
+    searched: Vec<(bool, Vec<Grid>)>,
 }
 
+/// How many moves a round of a crowded reading's search makes: every grid width scouts with a
+/// quarter of them, and only the cheapest widths go on with the rest.
+const CROWDED_MOVES: usize = 16_000;
+
 impl<'a> Grids<'a> {
-    /// The grids of a reading that takes a dense placement.
-    pub(super) fn of(graph: &'a Node) -> Option<Self> {
+    /// The grids of a reading that takes a dense placement, searched at one room between cells.
+    /// A crowded reading routes only its few cheapest placements, so only those search on.
+    pub(super) fn of(graph: &'a Node, room: f64, crowded: Option<usize>) -> Option<Self> {
         let reading = Reading::of(graph)?;
         let widest = reading.blocks.iter().map(|block| block.items.len()).max();
         let most = MOST_COLUMNS.min(widest.unwrap_or(0));
-        let by_columns = (1..=most)
-            .map(|columns| {
-                let blocks = reading.blocks.iter();
-                blocks.map(|block| block.settled(columns)).collect()
+        let arrangements: &[bool] = if reading.blocks.len() > 1 {
+            &[false, true]
+        } else {
+            &[false]
+        };
+        let scout = if crowded.is_some() {
+            CROWDED_MOVES / 4
+        } else {
+            usize::MAX
+        };
+        let mut searched: Vec<(f64, (usize, bool), Vec<Grid>)> = (1..=most)
+            .flat_map(|columns| arrangements.iter().map(move |&stacked| (columns, stacked)))
+            .map(|way| {
+                let (cost, grids) = reading.search(way, room, scout, None);
+                (cost, way, grids)
             })
             .collect();
-        Some(Self {
-            reading,
-            by_columns,
-        })
+        searched.sort_by(|a, b| a.0.total_cmp(&b.0));
+        if let Some(tries) = crowded {
+            searched.truncate(tries);
+            for (cost, way, grids) in &mut searched {
+                (*cost, *grids) = reading.search(*way, room, CROWDED_MOVES, Some(grids));
+            }
+            searched.sort_by(|a, b| a.0.total_cmp(&b.0));
+        }
+        let searched = (searched.into_iter())
+            .map(|(_, (_, stacked), mut grids)| {
+                grids.iter_mut().for_each(Grid::compact);
+                (stacked, grids)
+            })
+            .collect();
+        Some(Self { reading, searched })
     }
 }
 
-/// Every dense placement of a reading, the most promising first.
+/// Every dense placement of a reading at one room, the cheapest first: for each grid width and
+/// each way its frames stand together, its doors within a page that reads and within one that
+/// reads once contraction takes back the room round the frames.
 pub(super) fn drawings(grids: &Grids<'_>, room: f64) -> Vec<Placed> {
     let reading = &grids.reading;
-    let arrangements: &[bool] = if reading.blocks.len() > 1 {
-        &[false, true]
-    } else {
-        &[false]
+    // Contraction takes back room round the frames, so a placement up to a ring gap wider on
+    // each side than a page that reads can still read once it is routed.
+    let strict = readable();
+    let loose = Point {
+        x: strict.x + 2.0 * (ring::RING_GAP + room),
+        y: strict.y + 2.0 * (ring::RING_GAP + room),
     };
-    let ways: Vec<Way> = (arrangements.iter())
-        .flat_map(|&stacked| [false, true].map(|sides| (stacked, sides)))
-        .flat_map(|(stacked, sides)| {
-            [false, true].into_iter().flat_map(move |centred| {
-                [ring::RING_GAP, ring::LABEL_GAP].map(|gap| Way {
-                    room,
-                    sides,
-                    stacked,
-                    centred,
-                    gap,
-                })
-            })
-        })
-        .collect();
-    let mut placed: Vec<(f64, Placed)> = (grids.by_columns.iter())
-        .flat_map(|settled| {
+    let drawings: Vec<Placed> = (grids.searched.iter())
+        .flat_map(|(stacked, settled)| {
             let sets: Vec<Set> = (reading.blocks.iter().zip(settled))
                 .map(|(block, grid)| block.set(grid, room))
                 .collect();
-            ways.iter()
-                .map(move |&way| {
-                    let drawing = reading.drawing(&sets, way);
-                    (
-                        super::reading::promise(&drawing, reading.reach(&drawing)),
-                        drawing,
-                    )
-                })
-                .collect::<Vec<_>>()
+            let one = reading.drawing(&sets, *stacked, room, strict);
+            let other = reading.drawing(&sets, *stacked, room, loose);
+            let same = (one.cards.iter().zip(&other.cards)).all(|(a, b)| a.bx == b.bx);
+            std::iter::once(one).chain((!same).then_some(other))
         })
         .collect();
-    placed.sort_by(|a, b| a.0.total_cmp(&b.0));
-    // A reading whose doors never take a side gives the same placement both ways.
-    placed.dedup_by(|a, b| a.0.total_cmp(&b.0).is_eq());
-    let drawings: Vec<Placed> = placed.into_iter().map(|(_, drawing)| drawing).collect();
     let short = |drawing: &Placed| drawing.height <= TALLEST;
     if reading.blocks.len() == 1 && drawings.iter().any(short) {
         return drawings.into_iter().filter(short).collect();

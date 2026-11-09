@@ -1,5 +1,5 @@
 //! Which cell of a frame's grid each part stands in. A short search swaps parts
-//! while that shortens their lines.
+//! while that shortens their lines, which is where the wider search (`super::anneal`) starts.
 
 use crate::{
     geometry::Point,
@@ -50,11 +50,13 @@ pub(super) struct Join {
     pub label: f64,
 }
 
-/// The cell each part stands in, read left to right and top to bottom. The parts
-/// fill the first cells, so every row starts at the left edge and only the last
-/// row can run short.
+/// The cell each part stands in, read left to right and top to bottom. A grid starts with
+/// the parts in its first cells, so that only the last row runs short. A search can leave any
+/// cell empty.
+#[derive(Clone, Debug)]
 pub(super) struct Grid {
     pub columns: usize,
+    pub rows: usize,
     pub cells: Vec<usize>,
 }
 
@@ -112,13 +114,40 @@ impl Grid {
     pub(super) fn new(columns: usize, parts: usize) -> Grid {
         Grid {
             columns,
+            rows: parts.div_ceil(columns),
             cells: (0..parts).collect(),
         }
     }
 
     /// How many rows the grid holds.
     pub(super) fn rows(&self) -> usize {
-        self.cells.len().div_ceil(self.columns)
+        self.rows
+    }
+
+    /// Drop every row and column that no part stands in.
+    pub(super) fn compact(&mut self) {
+        let used = |of: &dyn Fn(usize) -> usize, count: usize| {
+            let mut next = 0;
+            let kept: Vec<Option<usize>> = (0..count)
+                .map(|at| {
+                    let used = self.cells.iter().any(|&cell| of(cell) == at);
+                    used.then(|| {
+                        next += 1;
+                        next - 1
+                    })
+                })
+                .collect();
+            (kept, next)
+        };
+        let columns = self.columns;
+        let (column, width) = used(&|cell| cell % columns, columns);
+        let (row, height) = used(&|cell| cell / columns, self.rows);
+        for cell in &mut self.cells {
+            let (x, y) = (*cell % columns, *cell / columns);
+            *cell = row[y].unwrap_or(0) * width + column[x].unwrap_or(0);
+        }
+        self.columns = width.max(1);
+        self.rows = height.max(1);
     }
 
     /// A cell's column and row.

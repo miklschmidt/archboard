@@ -142,15 +142,16 @@ fn dense_rooms(lines: usize, frames: usize) -> &'static [f64] {
 /// The rooms a reading goes on to while its own rooms draw nothing.
 const WIDER_ROOMS: [f64; 7] = [144.0, 192.0, 288.0, 384.0, 480.0, 640.0, 800.0];
 
-/// The best dense drawing of a reading, if one passes every guard. Every placement at every
-/// room of the reading is routed, because what a placement promises before it is routed
-/// misses the crossings, detours and labels of its lines. A wider room runs only while no
-/// drawing passes, because even a drawing with more room than it needs reads far better
-/// than a Graphviz placement.
+/// The best dense drawing of a reading, if one passes every guard. The search weighs a
+/// placement on a sketch of its lines, which misses the detours and labels that routing finds,
+/// so every placement at every room of the reading is routed, the cheapest first. A wider room
+/// runs only while no drawing passes, because even a drawing with more room than it needs
+/// reads far better than a Graphviz placement.
 pub(super) fn dense_drawing(graph: &crate::graph::Node) -> Option<crate::blocks::assembly::Placed> {
-    let grids = dense::Grids::of(graph)?;
-    let mut best = None;
     let rooms = dense_rooms(relationships(graph), dense::frames(graph));
+    let crowded = (relationships(graph) > PLACEMENT_REFINEMENT_LIMIT).then_some(CROWDED_TRIES);
+    let grids = dense::Grids::of(graph, rooms[0], crowded)?;
+    let mut best = None;
     for &room in rooms {
         dense_room(graph, &grids, room, &mut best);
     }
@@ -164,20 +165,30 @@ pub(super) fn dense_drawing(graph: &crate::graph::Node) -> Option<crate::blocks:
     best.map(|(_, drawing)| drawing)
 }
 
-/// Route every placement of a reading at one room, and keep the best drawing so far.
+/// How many placements a reading past the placement refinement limit searches to the end, and
+/// routes at each room.
+const CROWDED_TRIES: usize = 2;
+
+/// Route the placements of a reading at one room, the cheapest first, and keep the best drawing
+/// so far. A reading past the placement refinement limit keeps the first that routes, as its
+/// legacy placements do, because its routes cost more than its render budget.
 fn dense_room(
     graph: &crate::graph::Node,
     grids: &dense::Grids<'_>,
     room: f64,
     best: &mut Option<(reading::Order, crate::blocks::assembly::Placed)>,
 ) {
-    let routed = dense::drawings(grids, room)
-        .into_iter()
-        .filter_map(|drawing| fixed::route(graph, drawing, &selection::ORDERS[..1]).ok());
-    for next in routed {
+    let crowded = relationships(graph) > PLACEMENT_REFINEMENT_LIMIT;
+    for drawing in dense::drawings(grids, room) {
+        let Ok(next) = fixed::route(graph, drawing, &selection::ORDERS[..1]) else {
+            continue;
+        };
         let order = reading::order(&next);
         if best.as_ref().is_none_or(|one| order < one.0) {
             *best = Some((order, next));
+        }
+        if crowded {
+            return;
         }
     }
 }

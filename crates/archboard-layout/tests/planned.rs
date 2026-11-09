@@ -90,18 +90,18 @@ fn rows_of(placed: &Value) -> Vec<Vec<String>> {
     rows
 }
 
+/// A frame's parts stand on a grid that its rows share: every part stands in one of the columns
+/// that the widest row fills. An empty cell can stand anywhere on that grid.
 #[test]
-fn a_frames_parts_fill_a_shared_grid_from_its_first_cell_the_same_way_every_time() {
+fn a_frames_parts_stand_on_a_shared_grid_the_same_way_every_time() {
     let graph = frame_of(7);
     let placed = drawing(&graph);
     assert_eq!(placed, drawing(&graph));
     let rows = rows_of(&placed);
-    let columns = &rows[0];
+    let columns: BTreeSet<&String> = rows.iter().flatten().collect();
     assert_eq!(rows.iter().map(Vec::len).sum::<usize>(), 7);
     assert!(rows.len() > 1 && columns.len() > 1);
-    let (last, full) = rows.split_last().unwrap();
-    assert!(full.iter().all(|row| row == columns));
-    assert_eq!(last.as_slice(), &columns[..last.len()]);
+    assert_eq!(Some(columns.len()), rows.iter().map(Vec::len).max());
 }
 
 #[test]
