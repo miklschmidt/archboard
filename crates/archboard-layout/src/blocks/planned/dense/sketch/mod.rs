@@ -12,6 +12,8 @@ use crate::geometry::{Point, Rect};
 
 use super::ring::Ringed;
 
+pub(super) use way::InTheWay;
+
 /// One crossing costs as much as this much line, as the ranking of routed drawings weighs it.
 pub(super) const CROSSING: f64 = 300.0;
 /// One bend costs as much as this much line, as a route's cost weighs it.
@@ -249,6 +251,26 @@ fn ways(a: Rect, b: Rect) -> [Option<Sketch>; 2] {
 /// What each of a line's ways adds to go round some boxes, summed in the boxes' order. A box
 /// clear of the box round both ways adds nothing to either.
 fn rounds(ways: &[Option<Sketch>; 2], boxes: impl Iterator<Item = Rect>) -> [f64; 2] {
+    let (low, high) = around(ways);
+    let mut added = [0.0; 2];
+    for at in boxes {
+        let near = low.x < at.x + at.width + TOUCH
+            && at.x < high.x + TOUCH
+            && low.y < at.y + at.height + TOUCH
+            && at.y < high.y + TOUCH;
+        if near {
+            for (sum, way) in added.iter_mut().zip(ways) {
+                if let Some(way) = way {
+                    *sum += way.round(at);
+                }
+            }
+        }
+    }
+    added
+}
+
+/// The box round a line's ways, by its low and its high corner.
+fn around(ways: &[Option<Sketch>; 2]) -> (Point, Point) {
     let spans = ways.iter().flatten().map(|way| way.span);
     let (mut low, mut high) = (
         Point {
@@ -270,27 +292,7 @@ fn rounds(ways: &[Option<Sketch>; 2], boxes: impl Iterator<Item = Rect>) -> [f64
             y: high.y.max(span.y + span.height),
         };
     }
-    let mut added = [0.0; 2];
-    for at in boxes {
-        let near = low.x < at.x + at.width + TOUCH
-            && at.x < high.x + TOUCH
-            && low.y < at.y + at.height + TOUCH
-            && at.y < high.y + TOUCH;
-        if near {
-            for (sum, way) in added.iter_mut().zip(ways) {
-                if let Some(way) = way {
-                    *sum += way.round(at);
-                }
-            }
-        }
-    }
-    added
-}
-
-/// The solid boxes and the foreign frames that a line's sketches go round.
-pub(super) struct InTheWay {
-    solid: Vec<Rect>,
-    frames: Vec<Rect>,
+    (low, high)
 }
 
 /// One line of a scene, by the boxes it joins, from its source to its target.
@@ -334,28 +336,6 @@ impl Scene {
         self.sketch_past(line, solid, frames)
     }
 
-    /// The cheapest sketch of a line among the boxes that stand in its way, solid boxes and
-    /// foreign frames, and what the line costs.
-    pub(super) fn sketch_among(&self, line: usize, way: &InTheWay) -> (Sketch, f64) {
-        let solid = way.solid.iter().copied();
-        self.sketch_past(line, solid, way.frames.iter().copied())
-    }
-
-    /// The solid boxes and the foreign frames that a line can run through, in the scene's order.
-    /// They stay while only the line's own ends move.
-    pub(super) fn in_the_way(&self, line: usize) -> InTheWay {
-        let solid = (self.boxes.iter().enumerate())
-            .filter(|&(at, _)| self.blocks(line, at))
-            .map(|(_, &at)| at);
-        let frames = (self.frames.iter().enumerate())
-            .filter(|&(frame, _)| self.foreign(line, frame))
-            .map(|(_, &at)| at);
-        InTheWay {
-            solid: solid.collect(),
-            frames: frames.collect(),
-        }
-    }
-
     /// The cheapest sketch of a line past some solid boxes and foreign frames, each in the
     /// scene's order, and what the line costs.
     fn sketch_past(
@@ -364,15 +344,31 @@ impl Scene {
         solid: impl Iterator<Item = Rect>,
         frames: impl Iterator<Item = Rect>,
     ) -> (Sketch, f64) {
+        let ways = self.ways(line);
+        let (solid, frames) = (rounds(&ways, solid), rounds(&ways, frames));
+        self.cheapest(line, ways, (solid, frames))
+    }
+
+    /// The shortest ways of a line where its boxes stand.
+    fn ways(&self, line: usize) -> [Option<Sketch>; 2] {
         let Line { from, to, .. } = self.lines[line];
-        let (a, b) = (self.boxes[from], self.boxes[to]);
-        let against = if centre(b).y < centre(a).y - SHARED {
+        ways(self.boxes[from], self.boxes[to])
+    }
+
+    /// The cheapest of a line's ways, and what the line costs, for what each way adds to go
+    /// round the solid boxes and the foreign frames in its way.
+    fn cheapest(
+        &self,
+        line: usize,
+        ways: [Option<Sketch>; 2],
+        (solid, frames): ([f64; 2], [f64; 2]),
+    ) -> (Sketch, f64) {
+        let Line { from, to, .. } = self.lines[line];
+        let against = if centre(self.boxes[to]).y < centre(self.boxes[from]).y - SHARED {
             AGAINST
         } else {
             0.0
         };
-        let ways = ways(a, b);
-        let (solid, frames) = (rounds(&ways, solid), rounds(&ways, frames));
         (ways.into_iter().zip(solid.into_iter().zip(frames)))
             .filter_map(|(sketch, (solid, frames))| {
                 let sketch = sketch?;
@@ -467,6 +463,8 @@ impl Weighed {
             + self.spread.iter().sum::<f64>()
     }
 }
+
+mod way;
 
 #[cfg(test)]
 mod tests {
