@@ -11,7 +11,7 @@
 //   its row in the reference. The link makes a rename visible: `links.ts` fails on its anchor;
 // - a CLI version or an Action ref pinned by hand. A guide writes `{{version}}` and
 //   `@{{sha}} # {{ref}}`, and each version of the docs fills in its own
-//   (`src/lib/remark-version.mjs`, ADR 0077).
+//   (`src/lib/remark-version.ts`, ADR 0077).
 //
 // Run from the repository root, after `reference.ts`:
 //   bun site/scripts/guides.ts
@@ -335,8 +335,8 @@ function checkMentions(file: string, prose: string, problems: string[]): void {
 /** Pins that a guide writes by hand, which go stale with the next release. */
 const HAND_PINS = [
 	/\{\s+\{\s*(?:version|ref|sha)\s*\}\s*\}/u,
-	/version:\s*["']?\d+\.\d+/u,
-	/(?:^|[\s"'])(?:@archboard\/cli|archboard)@\d/u,
+	/version:\s*["']?(?:[\^~]|[<>]=?)?\d+\.\d+/u,
+	/(?:^|[\s"'])(?:@archboard\/cli|archboard)@(?:[\^~]|[<>]=?)?\d/u,
 	/"(?:@archboard\/cli|archboard)":\s*"[\^~]?\d/u,
 	/miklschmidt\/archboard\/actions\/[\w-]+@(?!\{\{sha\}\} # \{\{ref\}\})/u,
 ];
