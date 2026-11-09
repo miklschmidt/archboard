@@ -94,8 +94,13 @@ Done: each changed subject of the proposal has exactly one ticket, and each publ
    archboard model footprint --base <integration-branch> --head <ticket-branch> --state <proposal-id> --fail-outside
    ```
 
-   Exit status 1 means that the branch changed a module that the proposal does not name.
-   Exit status 0 means that the branch stayed inside the proposal. Then compare `namedAndChanged` with the ticket's slice.
+   If the command exits 2, resolve its refusal or unread source before merging, then run the gate again.
+   Exit status 1 means that a changed module outside the proposal fails the gate.
+   A directory-bound container passes when another changed module is bound inside it.
+   Exit status 0 means that no module read by the footprint fails the gate.
+   Read `skipped` and inspect the branch diff for changes that the bindings do not cover.
+   Account for those changes in the ticket's slice or as deviations.
+   Compare `namedAndChanged` with the ticket's slice.
    A module of another ticket's slice is a **deviation** too.
 
 4. For each deviation, find the reason, and then do one of these:
@@ -112,7 +117,8 @@ Done: each changed subject of the proposal has exactly one ticket, and each publ
    - If the change alters an interface or a decision that the user confirmed, show the user the difference and the reason.
      Wait for the user's decision, and continue with the other tickets meanwhile.
 
-   Run the gate again. When it exits 0, or names only deviations without architectural meaning, merge the branch.
+   Run the gate again.
+   Merge only after accounting for skipped and unbound changes, with exit status 0 or recorded exceptions for exit status 1.
 
 5. After the code review, read the footprint of the whole integration branch:
 
@@ -121,6 +127,7 @@ Done: each changed subject of the proposal has exactly one ticket, and each publ
    archboard check code --state <proposal-id>
    ```
 
+   Resolve any exit status 2, and account for skipped and unbound changes as before each ticket merge.
    Explain each module in `namedNotChanged`: unfinished work, or a planned change that needed no code.
    Fix each finding of the code check that the work caused.
 
