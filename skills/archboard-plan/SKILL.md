@@ -56,10 +56,13 @@ Done: the spec names the proposal, and the comparison lists every architectural 
    - In a wide refactor, the expand ticket owns the added subjects, and the contract ticket owns the removed subjects.
 
    If a tracer bullet has no flow in the proposal, add the flow to the proposal first.
+   Include both endpoint modules of each changed relationship or message in its ticket's slice.
+   The footprint names those modules even when their own definitions stay unchanged.
 
-3. Make sure that each changed subject of the comparison belongs to exactly one ticket.
-   If a subject belongs to no ticket, add it to a ticket or remove it from the proposal with the user's agreement.
-   If two tickets need the same subject, make one of them block the other, or move the subject into a prefactor ticket.
+3. Give each architectural change in the comparison exactly one owning ticket.
+   If a change has no ticket, add it to a ticket or remove it from the proposal with the user's agreement.
+   A module can appear in several slices when tickets own different changes or use it as an endpoint.
+   State each ticket's change to that module, and order overlapping code changes through blocking edges.
 
 4. When you quiz the user, add two lines to each ticket of the breakdown:
    - **Architecture**: the subjects or the flow that the ticket owns.
@@ -72,13 +75,13 @@ Done: the spec names the proposal, and the comparison lists every architectural 
 ## Architecture
 
 - Proposal: the proposal's name and stable ID.
-- Slice: the qualified IDs of the subjects that this ticket owns. If the ticket owns a flow, add the flow's ID.
+- Slice: the qualified IDs of the subjects and endpoint modules, with the change that this ticket owns. Include its flow's ID.
 - Link: the link to the slice.
-- Gate: before this ticket merges, `archboard model footprint --base <integration-branch> --head <ticket-branch> --state <proposal-id> --fail-outside` exits 0, and each module that it lists as changed is in this slice.
+- Gate: before this ticket merges, `archboard model footprint --base <integration-branch> --head <ticket-branch> --state <proposal-id> --fail-outside` exits 0. Each module in `namedAndChanged` is in this slice.
 
 </ticket-architecture-section>
 
-Done: each changed subject of the proposal has exactly one ticket, and each published ticket names its slice and its gate.
+Done: each architectural change has exactly one owning ticket, and each published ticket names its slice and its gate.
 
 ## With implement-spec
 
@@ -101,7 +104,7 @@ Done: each changed subject of the proposal has exactly one ticket, and each publ
    Read `skipped` and inspect the branch diff for changes that the bindings do not cover.
    Account for those changes in the ticket's slice or as deviations.
    Compare `namedAndChanged` with the ticket's slice.
-   A module of another ticket's slice is a **deviation** too.
+   A changed module absent from this ticket's slice is a **deviation**, even if another ticket owns it.
 
 4. For each deviation, find the reason, and then do one of these:
    - If the code is wrong, send the ticket back to its implementer.
