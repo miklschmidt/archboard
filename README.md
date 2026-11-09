@@ -18,7 +18,7 @@
 
 </div>
 
-<img alt="The CLI reads and claims the shop architecture, creates one proposal, releases its claim, and compares 41 changed subjects with current architecture. The browser shows the proposal with new modules in green and changed or removed relationships marked." src="https://github.com/user-attachments/assets/df41ed4d-1a7b-40ff-aba2-e1c58ec9eb0f" width="100%">
+<img alt="The CLI reads and claims the shop architecture, creates one proposal, releases its claim, and compares 41 changed subjects with current architecture. The browser shows the proposal with new modules in green and changed or removed relationships marked." src="https://github.com/user-attachments/assets/334bd8e3-722d-4635-8844-29a74f8dfb22" width="100%">
 
 <p align="center"><sub>Filmed live against a real Archboard server. The terminal on the left replays the commands an agent runs for this request, and each one ran against the server as shown. The pane on the right is the real browser. It shows the agent's claim, then the proposal when the agent opens it. Nothing here was dragged into place.</sub></p>
 
@@ -30,7 +30,7 @@ Plan the next step before anyone writes code. Ask for a change and see it drawn 
 
 **Hear what Archboard does**. A tour from a first map to a narrated video, told by the Codex voice over Archboard's own architecture. Turn the sound on.
 
-https://github.com/user-attachments/assets/58661d13-241f-4773-912c-8a8102d0796e
+https://github.com/user-attachments/assets/f8fd2553-df04-40f8-b174-a7500ec4c65a
 
 ## What you can do with it
 
@@ -70,7 +70,7 @@ These signs are hard to see in a file tree. They are easy to see in a model of t
 
 Open Measures in the left column. It lists every module and sorts by the measure that you choose. Use Show to select all modules, modules with parts, or modules with no parts. Sort from either end.
 
-<img src="https://github.com/user-attachments/assets/bfca8984-d995-4839-b718-9944614477cd" width="100%" alt="Measures lists the modules of Archboard's own model. In What changes together, sorted by Unjoined, Walkthrough recording comes near the top, and the Right panel shows the five modules that change with it. In What a module exposes, sorted by Entries, workspace has 9 entries and 0 hidden parts. Sorted by Pass-through, the About page of Command contract shows the entry that passes one call on to Contract execution.">
+<img src="https://github.com/user-attachments/assets/a6f8fd56-95c3-49f8-9c2f-f3dfeee5a2ab" width="100%" alt="Measures lists the modules of Archboard's own model. In What changes together, sorted by Unjoined, Walkthrough recording comes near the top, and the Right panel shows the five modules that change with it. In What a module exposes, sorted by Entries, workspace has 9 entries and 0 hidden parts. Sorted by Pass-through, the About page of Command contract shows the entry that passes one call on to Contract execution.">
 
 <p align="center"><sub>Archboard's own model, read from its own Git history. Every count comes from the model and the commits.</sub></p>
 
@@ -105,7 +105,7 @@ Give each module a link to its file or a named function, class, or value. A rela
 
 Warnings mark the affected modules and relationships in the canvas. The Right panel counts the whole model's warnings and steps through them. It also reaches warnings on modules outside the picture. Select a warned module to read the finding and its source location. Each piece of source evidence says whether analysis resolved it or matched it only by name.
 
-<img src="https://github.com/user-attachments/assets/7c9687a0-e98b-4806-b68f-c5b59419955e" width="100%" alt="The code check finds a resolved call from Place order to Save order that the example architecture leaves out. Selecting its warning shows the source evidence in the Right panel. The terminal shows the actual call in the source file.">
+<img src="https://github.com/user-attachments/assets/6d074d95-0fbd-4527-8395-ee9a28126b49" width="100%" alt="The code check finds a resolved call from Place order to Save order that the example architecture leaves out. Selecting its warning shows the source evidence in the Right panel. The terminal shows the actual call in the source file.">
 
 <p align="center"><sub>A small example checkout with real analysis results. The terminal replays the command and summarizes its answer. The live browser selects the warning, and the source excerpt shows the missing call.</sub></p>
 
@@ -117,7 +117,7 @@ A module's interface on the map is what its outside callers reach. Archboard sho
 
 Compare competing proposals side by side. The comparison lists interface changes before internal changes, so you can see which design asks more of its callers. The code check reports callers that reach parts the module does not expose. It identifies exposed names with no outside use in the checked code.
 
-<img src="https://github.com/user-attachments/assets/5059a685-c30d-4804-acf2-77e3a76627d4" width="100%" alt="Two proposals for the same checkout example. Selecting Orders in each shows its interface. Per job has three entries and no hidden parts. One entry has one entry and keeps two parts hidden.">
+<img src="https://github.com/user-attachments/assets/99e313e6-321e-413f-a46e-c60d6a680aca" width="100%" alt="Two proposals for the same checkout example. Selecting Orders in each shows its interface. Per job has three entries and no hidden parts. One entry has one entry and keeps two parts hidden.">
 
 <p align="center"><sub>The same six parts, with different boundaries. Orders exposes three entry points on the left. On the right, one entry point keeps two internal parts hidden. Both Right panels come from the live browser.</sub></p>
 
@@ -127,7 +127,7 @@ Git records changes to files. Archboard maps their commits onto the modules of y
 
 Set a branch's commits against its proposal. See which modules the commits changed, which modules the plan named, and where the two differ. Your agent can spot changes to mapped modules outside the plan before it adopts the proposal. Use `model locality` for source history and `model footprint --base <ref>` to compare branch changes with the selected architecture. Both are CLI reports for your agent.
 
-<img src="https://github.com/user-attachments/assets/dd1e157f-87b1-4511-9eac-1643708228fb" width="100%" alt="The Right panel shows the modules that change together. The terminal reports seven shared commits for Validate order and Save order. A branch comparison then lists planned changes, changes outside the plan, and planned parts with no code change.">
+<img src="https://github.com/user-attachments/assets/529523b2-530f-420f-95d7-471a6de5062a" width="100%" alt="The Right panel shows the modules that change together. The terminal reports seven shared commits for Validate order and Save order. A branch comparison then lists planned changes, changes outside the plan, and planned parts with no code change.">
 
 <p align="center"><sub>Fixed example commits make this demonstration repeatable. Validate order and Save order change together in seven commits. The branch also changes Validate order outside the proposal. The terminal summarizes real Git analysis beside the live architecture.</sub></p>
 
@@ -135,7 +135,7 @@ Set a branch's commits against its proposal. See which modules the commits chang
 
 See a change before anyone builds it. Ask your agent for one and you get a **proposal**: a proposed architecture, drawn against what exists. New modules arrive green, changed ones orange, and removed ones stay on the page as red ghosts. A call that moves is shown as one change, not as a deletion beside an addition.
 
-<img src="https://github.com/user-attachments/assets/2c1d7509-34d1-4fe7-b2af-549f07b0adcf" width="100%" alt="An independent planning draft opens in two panes. The left pane turns into the Nightly batch proposal. The right pane turns into the Live events proposal. Both are marked against their shared starting point.">
+<img src="https://github.com/user-attachments/assets/829a34f1-1636-45cc-b7c2-1ab42b21ac0c" width="100%" alt="An independent planning draft opens in two panes. The left pane turns into the Nightly batch proposal. The right pane turns into the Live events proposal. Both are marked against their shared starting point.">
 
 <p align="center"><sub>Two competing proposals for a recommendations service that does not exist yet, one per pane. Each header starts with its draft's name. Both compare against the same planning root, without adding the proposed service to current architecture.</sub></p>
 
@@ -152,7 +152,7 @@ off the request path, compare it with today, and show me both side by side.
 
 When a proposal ships, your agent adopts it as current architecture and records the decision. The preceding architecture remains available through an exact checkpoint. Shelving keeps a rejected proposal and its reason in retained history.
 
-<img src="https://github.com/user-attachments/assets/686b9b21-1638-4116-8db7-ec2ce4207446" width="100%" alt="The Shop example reopens exact checkpoints before and after adopting delivery tracking. The timeline names each retained state and the recorded decision.">
+<img src="https://github.com/user-attachments/assets/4c08fc31-bbe9-44c2-95c3-46c3254c8035" width="100%" alt="The Shop example reopens exact checkpoints before and after adopting delivery tracking. The timeline names each retained state and the recorded decision.">
 
 <p align="center"><sub>A disposable copy of the Shop example records a real proposal and adoption through the public CLI. The timeline strip is added for this README. Its date and reason come from the accepted checkpoint metadata.</sub></p>
 
@@ -179,7 +179,7 @@ gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this cha
 
 **A pull request, explained to its reviewers**: why the change exists, what it changed, and where to look closely. Turn the sound on.
 
-https://github.com/user-attachments/assets/ed43be33-baff-4415-adb5-d55edd8e845e
+https://github.com/user-attachments/assets/d5a3c08a-66c5-460d-9dad-b03a61e48b40
 
 <p align="center"><sub>Each video is an Archboard recording.</sub></p>
 
@@ -208,7 +208,7 @@ Add a sequence diagram of what happens when a shopper places an order, from the 
 
 Give the tour once, and every new hire can play it back. A newcomer's walkthrough starts with two modules and adds a few at each step until the whole path is on screen. It stops at the place where things go wrong and ends on the one sentence worth remembering.
 
-https://github.com/user-attachments/assets/a462e33a-303f-4252-853f-70589f062baf
+https://github.com/user-attachments/assets/c41c321c-2813-475f-8217-d96292dad8d8
 
 <p align="center"><sub>"How stock is reserved", six steps through the example shop. Turn the sound on.</sub></p>
 
@@ -222,7 +222,7 @@ Open a module to see its children and boundary connections. Open a child to cont
 
 Modules can link to source files, functions, or classes. **Open code** follows that binding. Explicit references connect modules across repository models without copying their definitions, and the Right panel opens them. The example shop has neither, so try them on your own code.
 
-<img src="https://github.com/user-attachments/assets/813b4b8e-20c2-442e-b586-a3e4d5e2dd63" width="100%" alt="The reader opens Inventory service, then Stock API, within the same Shop model. The Shop breadcrumb returns to the root modules.">
+<img src="https://github.com/user-attachments/assets/c5431327-d17f-4bb8-9ed2-945c2248e336" width="100%" alt="The reader opens Inventory service, then Stock API, within the same Shop model. The Shop breadcrumb returns to the root modules.">
 
 ## Ask your architecture
 
@@ -230,7 +230,7 @@ Select a module or relationship. Choose Explain with Codex in the Right panel, o
 
 The panel shows what Codex does. The answer arrives under the picture and in the conversation. Press Talk to ask the same question aloud.
 
-<img src="https://github.com/user-attachments/assets/87bb5028-4446-4ac5-90bf-52015493294c" width="100%" alt="The Timeout guard is selected. Explain with Codex in the Right panel asks the local agent about it. The panel shows what Codex does, and the answer arrives under the picture and in the conversation.">
+<img src="https://github.com/user-attachments/assets/a6c14d9f-99ee-437b-8872-493f9f4dc385" width="100%" alt="The Timeout guard is selected. Explain with Codex in the Right panel asks the local agent about it. The panel shows what Codex does, and the answer arrives under the picture and in the conversation.">
 
 <p align="center"><sub>A real answer from a Codex agent. The wait for the answer is sped up.</sub></p>
 
@@ -240,7 +240,7 @@ An agent claims the subjects it plans to change. The browser marks the claimed m
 
 Each write names its intent and the exact architecture revision that it read. If the architecture changed, the server refuses the stale write. Agents can claim different subjects without copying the model.
 
-<img src="https://github.com/user-attachments/assets/74875339-4be0-4ad1-9ddb-f6f635672bac" width="100%" alt="An agent claims Checkout API. A pulsing dot marks the repository menu and the Checkout API row. The reader selects Checkout API, and the Right panel says Claimed. The agent changes its responsibility and releases the claim, and the marks leave.">
+<img src="https://github.com/user-attachments/assets/8b4eacd0-a878-489f-a00b-e7bce1639c82" width="100%" alt="An agent claims Checkout API. A pulsing dot marks the repository menu and the Checkout API row. The reader selects Checkout API, and the Right panel says Claimed. The agent changes its responsibility and releases the claim, and the marks leave.">
 
 <p align="center"><sub>The commands run against a live server, and the terminal summarizes their answers. The marks last as long as the claim.</sub></p>
 
