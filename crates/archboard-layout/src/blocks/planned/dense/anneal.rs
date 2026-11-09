@@ -55,20 +55,22 @@ const SAMPLES: usize = 40;
 /// Room past a line's ends that the quick test of its way round a box keeps: more than the room
 /// of the exact test (`Sketch::round`) and any rounding of it.
 const MARGIN: f64 = 1.0;
+/// How much less than the gap between its boxes a line's least cost says: more than any
+/// rounding of the sketch's length.
+const SLACK: f64 = 1e-3;
 
 /// What a move changes, before it stands or is undone.
 struct Change {
-    /// Each line that ends on a moved part, with its new sketch, chord and cost.
-    lines: Vec<Fresh>,
+    /// Each line that ends on a moved part, and once they are sketched, each one's new sketch,
+    /// chord and cost.
+    lines: Vec<usize>,
+    fresh: Vec<(Sketch, Chord, f64)>,
     /// What every other line adds or saves to go round the moved parts.
     rounds: Vec<(usize, f64)>,
     /// How many crossings the move makes, and how many it ends.
     crossings: (usize, usize),
     groups: Vec<(usize, f64)>,
 }
-
-/// A moved line: its new sketch, chord and cost.
-type Fresh = (usize, Sketch, Chord, f64);
 
 /// The lines that end on each box of a scene.
 fn touching(scene: &Scene) -> Vec<Vec<usize>> {
@@ -337,41 +339,67 @@ impl<'p> Search<'p> {
             .collect()
     }
 
-    /// What a made move changes, and what it adds to the total.
-    fn change(&mut self, old: &[(usize, usize, Rect)]) -> (f64, Change) {
-        let fresh: Vec<Fresh> = (self.stamp_moved(old).into_iter())
-            .map(|line| {
+    /// What a made move changes, all but the new sketches of the lines it moved.
+    fn change(&mut self, old: &[(usize, usize, Rect)]) -> Change {
+        let lines = self.stamp_moved(old);
+        let rounds = self.rounds(old);
+        let crossings = self.crossing.weigh(&self.scene, lines.iter().copied());
+        let groups = self.regroup(old);
+        Change {
+            lines,
+            fresh: Vec::new(),
+            rounds,
+            crossings,
+            groups,
+        }
+    }
+
+    /// Sketch the lines a made move moved, where they stand now.
+    fn sketch(&self, change: &mut Change) {
+        change.fresh = (change.lines.iter())
+            .map(|&line| {
                 let (sketch, cost) = self.scene.sketch(line);
-                (line, sketch, self.scene.chord(line), cost)
+                (sketch, self.scene.chord(line), cost)
             })
             .collect();
-        let rounds = self.rounds(old);
-        let lines = fresh.iter().map(|&(line, ..)| line);
-        let (made, ended) = self.crossing.weigh(&self.scene, lines);
-        let groups = self.regroup(old);
+    }
+
+    /// What a change adds to the total, where each line it moved costs as some costs say.
+    fn delta(&self, change: &Change, costs: impl Iterator<Item = f64>) -> f64 {
         let weighed = &self.weighed;
-        let delta = fresh
-            .iter()
-            .map(|&(line, _, _, cost)| cost - weighed.own[line])
+        let (made, ended) = change.crossings;
+        (change.lines.iter().zip(costs))
+            .map(|(&line, cost)| cost - weighed.own[line])
             .sum::<f64>()
-            + rounds.iter().map(|&(_, added)| added).sum::<f64>()
+            + change.rounds.iter().map(|&(_, added)| added).sum::<f64>()
             + CROSSING * (made as f64 - ended as f64)
-            + (groups.iter())
+            + (change.groups.iter())
                 .map(|&(group, spread)| spread - weighed.spread[group])
-                .sum::<f64>();
-        let change = Change {
-            lines: fresh,
-            rounds,
-            crossings: (made, ended),
-            groups,
+                .sum::<f64>()
+    }
+
+    /// What a line costs at least where its boxes stand. Its sketch runs from one box to the
+    /// other, so it is no shorter than the gap between them, and a bend, a way round and a climb
+    /// only add to its length.
+    fn least(&self, line: usize) -> f64 {
+        let Line { from, to, .. } = self.scene.lines[line];
+        let (a, b) = (self.scene.boxes[from], self.scene.boxes[to]);
+        let gap = |a: f64, a_size: f64, b: f64, b_size: f64| {
+            (b - (a + a_size)).max(a - (b + b_size)).max(0.0)
         };
-        (delta, change)
+        gap(a.x, a.width, b.x, b.width) + gap(a.y, a.height, b.y, b.height) - SLACK
+    }
+
+    /// What a made move adds to the total, once its lines are sketched.
+    fn sketched(&self, change: &mut Change) -> f64 {
+        self.sketch(change);
+        self.delta(change, change.fresh.iter().map(|&(_, _, cost)| cost))
     }
 
     fn keep(&mut self, delta: f64, change: Change) {
         self.crossing.keep();
         let weighed = &mut self.weighed;
-        for (line, sketch, chord, cost) in change.lines {
+        for (line, (sketch, chord, cost)) in change.lines.into_iter().zip(change.fresh) {
             weighed.sketches[line] = sketch;
             weighed.chords[line] = chord;
             weighed.own[line] = cost;
@@ -396,7 +424,8 @@ impl<'p> Search<'p> {
                 continue;
             }
             let old = self.make(&moves);
-            let (delta, _) = self.change(&old);
+            let mut change = self.change(&old);
+            let delta = self.sketched(&mut change);
             self.undo(&old);
             if delta > 0.0 {
                 rises.push(delta);
@@ -420,8 +449,25 @@ impl<'p> Search<'p> {
                 continue;
             }
             let old = self.make(&proposed);
-            let (delta, change) = self.change(&old);
-            if delta <= 0.0 || (heat > 0.0 && self.chance() < (-delta / heat).exp()) {
+            let mut change = self.change(&old);
+            // A move that costs more stands when a draw falls below how much its rise weighs at
+            // this heat. Where even the least the move can cost weighs too much for the draw,
+            // the move is undone before its lines are sketched. The margin holds against any
+            // rounding of the weight.
+            let least = self.delta(&change, change.lines.iter().map(|&line| self.least(line)));
+            let mut drawn = None;
+            if least > 0.0 && heat > 0.0 {
+                let chance = self.chance();
+                if chance > (-least / heat).exp() * (1.0 + 1e-9) + 1e-12 {
+                    self.undo(&old);
+                    continue;
+                }
+                drawn = Some(chance);
+            }
+            let delta = self.sketched(&mut change);
+            if delta <= 0.0
+                || (heat > 0.0 && drawn.unwrap_or_else(|| self.chance()) < (-delta / heat).exp())
+            {
                 self.keep(delta, change);
                 if self.total < best.0 - 1e-6 {
                     best = (self.total, self.cells.clone());
