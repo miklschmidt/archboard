@@ -31,7 +31,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/XppR9owz#MrE3v2T6",
       "field": "description",
-      "value": "The command passes explicit local source refs and selected architecture to the existing history interface. Proposal comparisons use their identified baseline. With --fail-outside and a draft, it exits 1 when the commits changed a module that the draft does not name, so a ticket merge without a pull request has the same gate as the pull-request Action; without a draft it refuses the option."
+      "value": "The command passes explicit local source refs and selected architecture to the existing history interface. Proposal comparisons use their identified baseline. With --fail-outside and a draft, it exits 1 when the commits changed a module that the draft does not name, so a ticket merge without a pull request has the same gate as the pull-request Action. A module bound to a directory fails the gate only when no other changed module is bound inside it, because it changes with each of them. Without a draft it refuses the option."
     }
   ]
 }

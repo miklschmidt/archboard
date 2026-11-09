@@ -102,12 +102,14 @@ Done: each changed subject of the proposal has exactly one ticket, and each publ
    - If the code is wrong, send the ticket back to its implementer.
    - If the proposal is wrong or incomplete, edit the proposal so that it describes the code.
      Write the reason in the edit's `--doing` line, for example `--doing "Deviation in <ticket>: the worker reads the queue directly, because <reason>"`.
-     Archboard keeps that line in the proposal's history.
+     Archboard keeps that line in the proposal's history. It holds 140 characters at most, so put the full reason on the ticket.
      Add the same reason to the ticket. If the change moves a subject between slices, update both tickets.
+   - If the change has no architectural meaning, such as a comment or a rename inside the module, the proposal stays as it is.
+     Record the reason on the ticket and in the merge commit. This deviation alone lets the branch merge while the gate fails.
    - If the change alters an interface or a decision that the user confirmed, show the user the difference and the reason.
      Wait for the user's decision, and continue with the other tickets meanwhile.
 
-   Run the gate again. When it exits 0 and every deviation has a recorded reason, merge the branch.
+   Run the gate again. When it exits 0, or names only deviations without architectural meaning, merge the branch.
 
 5. After the code review, read the footprint of the whole integration branch:
 
@@ -142,4 +144,7 @@ Add these parameters to read a slice:
 - `againstA=<state-or-checkpoint>`: compare with another base than the default.
 
 Write each `#` of a qualified ID as `%23`, because a browser reads `#` as the start of a fragment.
+
+The browser reads the checkout that this machine chooses for the repository, and `archboard repo list` names it.
+If the proposal is in another checkout or worktree, run `archboard repo use <checkout>`, and tell the user that you changed the choice.
 Open each link once before you give it to the user, and make sure that it shows the proposal and the slice.

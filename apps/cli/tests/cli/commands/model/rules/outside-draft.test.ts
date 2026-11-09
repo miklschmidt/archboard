@@ -1,0 +1,30 @@
+// Which changed modules the footprint gate fails on. The system owner reads the real command.
+
+import { expect, test } from "bun:test";
+import { outsideDraft } from "#cli/commands/model/rules/outside-draft.ts";
+
+const repo = "github.com/acme/shop";
+const part = (path: string, other = repo) => ({ repo: other, path });
+
+test("a container of a changed module passes, and a changed module with nothing inside it fails", () => {
+	const packages = part("packages");
+	const workspace = part("packages/workspace/");
+	const installation = part("packages/workspace/src/installation.ts");
+	const vault = part(".archboard/vault");
+	const named = part("packages/cli/src/init.ts");
+	expect(
+		outsideDraft(
+			[packages, workspace, installation, vault],
+			[named, packages, workspace, installation, vault],
+		),
+	).toEqual([installation, vault]);
+});
+
+test("a directory holds only bindings of its own repository, and a root binding holds every one", () => {
+	const directory = part("src");
+	const elsewhere = part("src/gateway.ts", "github.com/acme/billing");
+	expect(outsideDraft([directory], [directory, elsewhere])).toEqual([directory]);
+	const root = part("");
+	expect(outsideDraft([root], [root, part("src/gateway.ts")])).toEqual([]);
+	expect(outsideDraft([root], [root])).toEqual([root]);
+});

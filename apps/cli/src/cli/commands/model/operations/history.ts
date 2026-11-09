@@ -6,6 +6,7 @@ import {
 import { architectureResult } from "#cli/server-access/clients/architecture-model.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
 import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { outsideDraft } from "#cli/commands/model/rules/outside-draft.ts";
 import {
 	type Answer,
 	historyLines,
@@ -43,7 +44,7 @@ const WORDS = {
 			"- Changed outside the plan.",
 			"- Planned but unchanged.",
 			"",
-			"With `--fail-outside`, it exits 1 when the commits changed a module that the draft does not name. A gate before a merge uses it.",
+			"With `--fail-outside`, it exits 1 when the commits changed a module that the draft does not name. A module bound to a directory counts only when no other changed module is bound inside it, because it changes with each of them. A gate before a merge uses it.",
 			"",
 			"A repository that cannot read the base or head is named, and the command exits 2. Source refs stay local and no source history is retained.",
 		].join("\n"),
@@ -89,7 +90,8 @@ const outsideOutcome = {
 };
 
 /**
- * The modules that `--fail-outside` fails on: those the commits changed and the draft does not name.
+ * The modules that `--fail-outside` fails on: those the commits changed and the draft does not name,
+ * except a directory that holds another changed module.
  * @param answer The answer of the server.
  * @param failOutside Whether `--fail-outside` was given.
  * @returns The changed modules outside the draft, or none when the gate is off.
@@ -101,7 +103,10 @@ function outsideOf(answer: Answer, failOutside: boolean) {
 			`--fail-outside judges the commits against a draft, and ${answer.state?.name ?? "the selected state"} is no draft. Name a draft with --state; \`archboard model proposals\` lists them.`,
 		);
 	}
-	return answer.changedNotNamed;
+	return outsideDraft(answer.changedNotNamed, [
+		...answer.namedAndChanged,
+		...answer.changedNotNamed,
+	]);
 }
 
 /**

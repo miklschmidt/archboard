@@ -177,7 +177,7 @@ A branch can merge without a pull request, for example a ticket branch that merg
 archboard model footprint --base <integration-branch> --head <ticket-branch> --state <draft> --fail-outside
 ```
 
-It exits <Exit command="model footprint" outcome="outside" /> when the commits changed a module that the draft does not name, and names each module on standard error. Without `--state`, it refuses the option, because only a draft names modules. The `archboard-plan` skill runs this gate before each ticket merge.
+It exits <Exit command="model footprint" outcome="outside" /> when the commits changed a module that the draft does not name, and names each module on standard error. A module bound to a directory counts only when no other changed module is bound inside it, because it changes with each of them. Without a draft, it refuses the option, because only a draft names modules. The `archboard-plan` skill runs this gate before each ticket merge.
 
 ### When the comment cannot be posted
 
