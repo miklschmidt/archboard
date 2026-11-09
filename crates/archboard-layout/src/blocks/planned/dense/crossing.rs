@@ -52,11 +52,6 @@ impl Ends {
         turn(self.from, self.to, to)
     }
 
-    /// Whether the chord crosses another, where this one's turns to the other's ends are known.
-    fn crosses(&self, other: &Ends, turns: (i8, i8)) -> bool {
-        turns.0 * turns.1 < 0 && self.near(other) && other.turn(self.from) * other.turn(self.to) < 0
-    }
-
     /// Whether the chord crosses another.
     fn crossing(&self, other: &Ends) -> bool {
         self.near(other)
@@ -95,11 +90,21 @@ fn count(
     row: &mut [u64],
 ) -> usize {
     let mut count = 0;
-    for (other, (&(from, to), theirs)) in boxes.iter().zip(ends).enumerate() {
-        let turns = (turns[from as usize], turns[to as usize]);
-        if turns.0 * turns.1 < 0 && !has(moved, other) && chord.crosses(theirs, turns) {
-            set(row, other);
-            count += 1;
+    for (word, chunk) in boxes.chunks(64).enumerate() {
+        // The lines whose ends stand on two sides of the chord, 64 at a time.
+        let mut sides = 0;
+        for (bit, &(from, to)) in chunk.iter().enumerate() {
+            sides |= u64::from(turns[from as usize] * turns[to as usize] < 0) << bit;
+        }
+        let mut left = sides & !moved[word];
+        while left != 0 {
+            let other = word * 64 + left.trailing_zeros() as usize;
+            left &= left - 1;
+            let theirs = &ends[other];
+            if chord.near(theirs) && theirs.turn(chord.from) * theirs.turn(chord.to) < 0 {
+                set(row, other);
+                count += 1;
+            }
         }
     }
     count
