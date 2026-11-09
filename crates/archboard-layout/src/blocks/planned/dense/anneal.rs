@@ -379,17 +379,18 @@ impl<'p> Search<'p> {
             .collect()
     }
 
-    /// What a made move changes, all but the new sketches of the lines it moved.
+    /// What a made move changes, all but the new sketches of the lines it moved and the
+    /// crossings they make now.
     fn change(&mut self, old: &[(usize, usize, Rect)]) -> Change {
         let lines = self.stamp_moved(old);
         let rounds = self.rounds(old);
-        let crossings = self.crossing.weigh(&self.scene, lines.iter().copied());
+        let ended = self.crossing.begin(&self.scene, lines.iter().copied());
         let groups = self.regroup(old);
         Change {
             lines,
             fresh: Vec::new(),
             rounds,
-            crossings,
+            crossings: (0, ended),
             groups,
         }
     }
@@ -420,33 +421,41 @@ impl<'p> Search<'p> {
         gap(a.x, a.width, b.x, b.width) + gap(a.y, a.height, b.y, b.height) - SLACK
     }
 
-    /// Sketch the lines a made move moved, one at a time, and tell what the move adds to the
-    /// total and the draw made for it, if any.
+    /// Count the crossings of the lines a made move moved, then sketch them, one line at a time,
+    /// and tell what the move adds to the total and the draw made for it, if any.
     ///
     /// A move that costs more stands when a draw falls below how much its rise weighs at the
-    /// heat. A line not yet sketched costs at least the gap between its boxes, so where even
-    /// that least rise weighs too much for the draw, the move loses it before the rest of its
-    /// lines are sketched: `None`. The margin holds against any rounding of the weight. The
-    /// draw is the one the search makes for that move anyway, so no walk of the search changes.
-    fn sketch(&mut self, change: &mut Change, heat: f64) -> Option<(f64, Option<f64>)> {
+    /// heat. Until a line is counted it makes no crossing, and until it is sketched it costs the
+    /// gap between its boxes, which is no more than it does. Where even that least rise weighs
+    /// too much for the draw, the move loses it before the rest is weighed: `None`. The margin
+    /// holds against any rounding of the weight. The draw is the one the search makes for that
+    /// move anyway, so no walk of the search changes.
+    fn weigh(&mut self, change: &mut Change, heat: f64) -> Option<(f64, Option<f64>)> {
         let mut costs: Vec<f64> = change.lines.iter().map(|&line| self.least(line)).collect();
         change.fresh.clear();
+        let lines = change.lines.len();
         let mut drawn = None;
-        loop {
+        // Counting first ends more moves early than sketching first.
+        for step in 0..=2 * lines {
             let rise = self.delta(change, costs.iter().copied());
-            let Some(&line) = change.lines.get(change.fresh.len()) else {
-                return Some((rise, drawn));
-            };
             if rise > 0.0 && heat > 0.0 {
                 let chance = *drawn.get_or_insert_with(|| self.chance());
                 if chance > (-rise / heat).exp() * (1.0 + 1e-9) + 1e-12 {
                     return None;
                 }
             }
-            let (sketch, cost) = self.scene.sketch(line);
-            costs[change.fresh.len()] = cost;
-            change.fresh.push((sketch, self.scene.chord(line), cost));
+            if step < lines {
+                change.crossings.0 += self.crossing.count(step);
+            } else if step == lines {
+                change.crossings.0 += self.crossing.pairs();
+            } else {
+                let line = change.lines[change.fresh.len()];
+                let (sketch, cost) = self.scene.sketch(line);
+                costs[change.fresh.len()] = cost;
+                change.fresh.push((sketch, self.scene.chord(line), cost));
+            }
         }
+        Some((self.delta(change, costs.into_iter()), drawn))
     }
 
     fn keep(&mut self, delta: f64, change: Change) {
@@ -479,7 +488,7 @@ impl<'p> Search<'p> {
             }
             let old = self.make(&moves);
             let mut change = self.change(&old);
-            let weighed = self.sketch(&mut change, 0.0);
+            let weighed = self.weigh(&mut change, 0.0);
             self.undo(&old);
             let delta = weighed.map_or(0.0, |(delta, _)| delta);
             if delta > 0.0 {
@@ -505,7 +514,7 @@ impl<'p> Search<'p> {
             }
             let old = self.make(&proposed);
             let mut change = self.change(&old);
-            let Some((delta, drawn)) = self.sketch(&mut change, heat) else {
+            let Some((delta, drawn)) = self.weigh(&mut change, heat) else {
                 self.undo(&old);
                 continue;
             };

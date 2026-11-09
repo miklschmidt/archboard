@@ -167,43 +167,57 @@ impl Crossings {
         }
     }
 
-    /// Weigh the crossings of the lines a move moved, where the scene's boxes stand now: how many
-    /// crossings they make, and how many they made before. A pair of moved lines that crossed is
-    /// in both lines' counts.
-    pub(super) fn weigh(
-        &mut self,
-        scene: &Scene,
-        moved: impl Iterator<Item = usize>,
-    ) -> (usize, usize) {
+    /// Begin to weigh the crossings of the lines a move moved, where the scene's boxes stand now,
+    /// and tell how many crossings they made before. A pair of moved lines that crossed is in
+    /// both lines' counts. The crossings they make now come from `count` for each of them, in
+    /// their order, and then from `pairs`.
+    pub(super) fn begin(&mut self, scene: &Scene, moved: impl Iterator<Item = usize>) -> usize {
         let words = self.words;
         self.moved.fill(0);
         self.lines.clear();
         self.lines.extend(moved);
         self.fresh.clear();
-        self.now.clear();
         for &line in &self.lines {
             set(&mut self.moved, line);
             self.fresh.push(Ends::of(scene, line));
         }
+        self.now.clear();
+        self.now.resize(self.lines.len(), 0);
         self.fresh_rows.clear();
         self.fresh_rows.resize(self.lines.len() * words, 0);
         self.middles.clear();
         self.middles.extend(scene.boxes.iter().map(|&at| middle(at)));
-        for (at, chord) in self.fresh.iter().enumerate() {
-            // `turn`, with the chord's own differences made once.
-            let (p, run, rise) = (chord.from, chord.to.0 - chord.from.0, chord.to.1 - chord.from.1);
-            self.turns.clear();
-            let turns = (self.middles.iter()).map(|r| side(run * (r.1 - p.1) - rise * (r.0 - p.0)));
-            self.turns.extend(turns);
-            let row = &mut self.fresh_rows[at * words..][..words];
-            let stayed = (&self.boxes[..], &self.ends[..], &self.moved[..]);
-            self.now.push(count(chord, &self.turns, stayed, row));
-        }
-        let mut made: usize = self.now.iter().sum();
         let mut twice = 0;
         for (one, &line) in self.lines.iter().enumerate() {
+            let row = &self.rows[line * words..][..words];
+            twice += (self.lines.iter().skip(one + 1))
+                .filter(|&&other| has(row, other))
+                .count();
+        }
+        self.lines.iter().map(|&line| self.counts[line]).sum::<usize>() - twice
+    }
+
+    /// How many lines that the move left the moved line at some place in its order crosses now.
+    pub(super) fn count(&mut self, at: usize) -> usize {
+        let words = self.words;
+        let chord = &self.fresh[at];
+        // `turn`, with the chord's own differences made once.
+        let (p, run, rise) = (chord.from, chord.to.0 - chord.from.0, chord.to.1 - chord.from.1);
+        self.turns.clear();
+        let turns = (self.middles.iter()).map(|r| side(run * (r.1 - p.1) - rise * (r.0 - p.0)));
+        self.turns.extend(turns);
+        let row = &mut self.fresh_rows[at * words..][..words];
+        let stayed = (&self.boxes[..], &self.ends[..], &self.moved[..]);
+        self.now[at] = count(chord, &self.turns, stayed, row);
+        self.now[at]
+    }
+
+    /// How many pairs of moved lines cross now.
+    pub(super) fn pairs(&mut self) -> usize {
+        let words = self.words;
+        let mut made = 0;
+        for (one, &line) in self.lines.iter().enumerate() {
             for (two, &other) in self.lines.iter().enumerate().skip(one + 1) {
-                twice += usize::from(has(&self.rows[line * words..][..words], other));
                 if self.fresh[one].crossing(&self.fresh[two]) {
                     set(&mut self.fresh_rows[one * words..][..words], other);
                     set(&mut self.fresh_rows[two * words..][..words], line);
@@ -213,12 +227,11 @@ impl Crossings {
                 }
             }
         }
-        let before = self.lines.iter().map(|&line| self.counts[line]).sum::<usize>() - twice;
-        (made, before)
+        made
     }
 
-    /// Keep the move last weighed: every line that stayed gains or loses the moved lines it
-    /// now crosses or no longer does.
+    /// Keep the move last weighed, once each moved line is counted and then the pairs: every
+    /// line that stayed gains or loses the moved lines it now crosses or no longer does.
     pub(super) fn keep(&mut self) {
         let words = self.words;
         for (at, &line) in self.lines.iter().enumerate() {
