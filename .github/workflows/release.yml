@@ -171,3 +171,16 @@ jobs:
             fi
             npm stage publish "$file" --provenance --access public --tag "$tag"
           done
+
+  # The release's docs, built from its tag, go on its GitHub release, and the site deploys them
+  # beside every other version (ADR 0077).
+  docs:
+    name: Publish the release's docs
+    needs: [release-please, publish]
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/site.yml
+    with:
+      release: ${{ needs.release-please.outputs.tag_name }}

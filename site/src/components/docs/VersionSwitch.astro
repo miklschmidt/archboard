@@ -1,0 +1,86 @@
+---
+// The version of the docs that the reader is in, and the other versions to read instead. The list
+// comes from docs/versions.json at run time, so a page built for an old release still lists the
+// releases after it. Without that file, as in a local build, the switch stays hidden.
+import Icon from "../Icon.astro";
+import { docsVersion } from "../../lib/docs-version";
+
+const label = docsVersion === "next" ? "main" : docsVersion;
+---
+
+<details class="versions" data-versions hidden>
+	<summary aria-label={`Docs version ${label}. Choose another version`}>
+		<span class="current">{label}</span>
+		<Icon name="chevronDown" size={14} />
+	</summary>
+	<ul class="menu" data-version-list></ul>
+</details>
+
+<style>
+	.versions {
+		position: relative;
+	}
+	summary {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		height: 34px;
+		padding: 0 10px;
+		border-radius: var(--radius-control);
+		color: var(--ink-muted);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		list-style: none;
+		cursor: pointer;
+		box-shadow: inset 0 0 0 1px var(--rule);
+		transition: color 160ms var(--ease-out);
+	}
+	summary::-webkit-details-marker {
+		display: none;
+	}
+	summary:hover,
+	.versions[open] summary {
+		color: var(--ink);
+	}
+	.menu {
+		position: absolute;
+		top: calc(100% + 6px);
+		right: 0;
+		z-index: 60;
+		min-width: 176px;
+		margin: 0;
+		padding: 6px;
+		list-style: none;
+		border-radius: var(--radius-panel);
+		background: var(--raised);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule-strong);
+	}
+	.menu :global(a) {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		min-height: 32px;
+		padding: 0 10px;
+		border-radius: var(--radius-control);
+		color: var(--ink-muted);
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		text-decoration: none;
+	}
+	.menu :global(a:hover) {
+		background: var(--highlight);
+		color: var(--ink);
+	}
+	.menu :global(a[aria-current="true"]) {
+		color: var(--ink);
+		box-shadow: inset 2px 0 0 var(--gold-mark);
+	}
+	.menu :global(.tag) {
+		font-family: var(--font-body);
+		font-size: 0.75rem;
+		color: var(--ink-muted);
+	}
+</style>

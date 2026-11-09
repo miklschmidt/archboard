@@ -4,6 +4,7 @@ import Docs from "../../../../layouts/Docs.astro";
 import CommandRef from "../../../../components/docs/CommandRef.astro";
 import { cliGroups } from "../../../../lib/docs-nav";
 import { commandAnchor, commandsUnder, inlineCode } from "../../../../lib/reference";
+import { docsVersion, isRelease } from "../../../../lib/docs-version";
 
 export function getStaticPaths() {
 	return cliGroups.map((group) => ({ params: { group: group.slug }, props: { group } }));
@@ -27,8 +28,17 @@ const headings = commands.map((command) => ({
 	source="site/scripts/reference.ts"
 >
 	<p>
-		Every command below comes from the CLI's own contract on the main branch, so a release on npm
-		can lack an option that it lists. Run <code>archboard help &lt;command&gt;</code> for the same words at your
+		{
+			isRelease ? (
+				<>Every command below comes from the CLI's own contract in release <code>{docsVersion}</code>.</>
+			) : (
+				<>
+					Every command below comes from the CLI's own contract on the main branch, so a release on npm
+					can lack an option that it lists.
+				</>
+			)
+		}{" "}
+		Run <code>archboard help &lt;command&gt;</code> for the same words at your
 		terminal.
 	</p>
 	<table class="index">

@@ -9,7 +9,7 @@
 		"predev": "bun scripts/reference.ts && bun scripts/guides.ts",
 		"dev": "astro dev",
 		"prebuild": "bun scripts/reference.ts && bun test scripts && bun scripts/guides.ts",
-		"build": "astro check && astro build && pagefind --site dist && bun scripts/links.ts",
+		"build": "astro check && astro build && pagefind --site dist/docs && bun scripts/links.ts",
 		"preview": "astro preview",
 		"render": "scripts/render-diagrams.sh"
 	},

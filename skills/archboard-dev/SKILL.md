@@ -66,6 +66,8 @@ The build guards the guides with two more scripts:
 - `site/scripts/links.ts` refuses a dead internal link or anchor in `dist`, and a guide's `{reference.…}` expression that shows as text. So a renamed input or code breaks the build at each guide that links it.
 
 A guide reads a number of the program from `reference.facts`, which `reference.ts` imports from the source, such as the release port. Add a fact there when a guide states a new one.
+
+Each release has its own docs ([ADR 0077](../../docs/adr/0077-each-release-has-its-own-docs.md)). A change to the site reaches `/docs/next/` at once, and `/docs/` at the next release. The release workflow builds the docs of the tag and attaches them to the GitHub release, so a release needs no docs step. In a guide, write `{{version}}` where it pins the CLI and `@{{sha}} # {{ref}}` where it pins an Action. The build refuses a version or an Action ref that a guide pins by hand.
 Follow `site/DESIGN.md` for anything a reader sees.
 
 Run `nix develop -c bun run build` in `site/`, then read each changed page in the running site with `bunx agent-browser`.

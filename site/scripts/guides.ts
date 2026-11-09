@@ -8,7 +8,10 @@
 // - a permission for an Action that its `action.yml` does not name, and a workflow that runs an
 //   Action that needs the whole history without `fetch-depth: 0`;
 // - a code span that names an Action input, an Action output or a finding code without linking to
-//   its row in the reference. The link makes a rename visible: `links.ts` fails on its anchor.
+//   its row in the reference. The link makes a rename visible: `links.ts` fails on its anchor;
+// - a CLI version or an Action ref pinned by hand. A guide writes `{{version}}` and
+//   `@{{sha}} # {{ref}}`, and each version of the docs fills in its own
+//   (`src/lib/remark-version.ts`, ADR 0077).
 //
 // Run from the repository root, after `reference.ts`:
 //   bun site/scripts/guides.ts
@@ -180,6 +183,9 @@ function checkWorkflow(file: string, yaml: string, problems: string[]): void {
 			const action = actions.get(slug);
 			const names = new Set(action?.inputs.map((input) => input.name));
 			if (action === undefined) problems.push(`${file}: no Action "${slug}" in actions/`);
+			if (inputs.version !== undefined && CLI_VERSION.test(String(inputs.version))) {
+				problems.push(`${file}: the Action "${slug}" pins by hand; write {{version}}`);
+			}
 			for (const key of Object.keys(inputs)) {
 				if (action !== undefined && !names.has(key)) {
 					problems.push(`${file}: the Action "${slug}" has no input "${key}"`);
@@ -189,7 +195,7 @@ function checkWorkflow(file: string, yaml: string, problems: string[]): void {
 		Object.values(node).forEach(visit);
 	};
 	try {
-		visit(Bun.YAML.parse(yaml));
+		visit(Bun.YAML.parse(yaml.replaceAll("{{version}}", "latest")));
 	} catch (error) {
 		problems.push(`${file}: a YAML block does not parse: ${String(error)}\n${yaml}`);
 	}
@@ -329,20 +335,53 @@ function checkMentions(file: string, prose: string, problems: string[]): void {
 	}
 }
 
+/** A numeric CLI version, including a range prefix. */
+const CLI_VERSION = /^(?:[\^~]|[<>]=?)?\s*\d/u;
+
+/** Pins that a guide writes by hand, which go stale with the next release. */
+const HAND_PINS = [
+	/\{\s+\{\s*(?:version|ref|sha)\s*\}\s*\}/u,
+	/(?:^|[\s"'])(?:@archboard\/cli|archboard)@(?:[\^~]|[<>]=?)?\d/u,
+	/"(?:@archboard\/cli|archboard)":\s*"[\^~]?\d/u,
+	/miklschmidt\/archboard\/actions\/[\w-]+@(?!\{\{sha\}\} # \{\{ref\}\})/u,
+];
+
+/**
+ * Refuse each line that pins a CLI version or an Action ref by hand.
+ * @param file The guide.
+ * @param source The guide as written.
+ * @param problems Where each disagreement goes.
+ */
+function checkPins(file: string, source: string, problems: string[]): void {
+	for (const line of source.split("\n")) {
+		if (HAND_PINS.some((pin) => pin.test(line))) {
+			problems.push(
+				`${file}: "${line.trim()}" pins by hand; write {{version}} or @{{sha}} # {{ref}}`,
+			);
+		}
+	}
+}
+
 /** Find disagreements with the program in one authored guide. */
-export function guideProblems(file: string, source: string): string[] {
+export function guideProblems(file: string, written: string): string[] {
 	const problems: string[] = [];
-	for (const variable of new Set(source.match(/\bARCHBOARD_[A-Z0-9_]+\b/gu) ?? [])) {
+	checkPins(file, written, problems);
+	// Workflows keep authored pins. Prose checks read the resolved tokens.
+	const blocks = [...written.matchAll(/^([ \t]*)```(\w*)[^\n]*\n([\s\S]*?)^\1```/gmu)];
+	for (const variable of new Set(written.match(/\bARCHBOARD_[A-Z0-9_]+\b/gu) ?? [])) {
 		if (!environment.has(variable))
 			problems.push(`${file}: the CLI reads no environment variable ${variable}`);
 	}
-	const blocks = [...source.matchAll(/^([ \t]*)```(\w*)[^\n]*\n([\s\S]*?)^\1```/gmu)];
 	for (const block of blocks) {
 		const [, , lang = "", body = ""] = block;
 		if (["bash", "sh", "shell"].includes(lang)) checkShell(file, body, problems);
 		if (["yaml", "yml"].includes(lang)) checkWorkflow(file, body, problems);
 	}
-	const prose = blocks.reduce((text, block) => text.replace(block[0], ""), source);
+	const prose = blocks
+		.reduce((text, block) => text.replace(block[0], ""), written)
+		.replaceAll("{{version}}", reference.version)
+		.replaceAll("{{ref}}", "main")
+		.replaceAll("{{sha}}", "0".repeat(40));
 	checkMentions(file, prose, problems);
 	checkExits(file, prose, problems);
 	checkPermissions(file, prose, problems);

@@ -5,19 +5,22 @@ import { Code } from "astro-expressive-code/components";
 import Docs from "../../../layouts/Docs.astro";
 import { docsHref } from "../../../lib/docs-nav";
 import { inlineCode, reference } from "../../../lib/reference";
+import { actionsPin } from "../../../lib/docs-version";
 
+/** A commit, and its tag in a comment: a tag can move, and a commit cannot. */
+const pin = `${actionsPin.sha} # ${actionsPin.ref}`;
 const usage: Record<string, string> = {
 	check: `- uses: actions/checkout@v5
-- uses: miklschmidt/archboard/actions/check@main
+- uses: miklschmidt/archboard/actions/check@${pin}
   with:
-    version: 0.2.0
+    version: ${reference.version}
     fail-on: warning`,
 	"pull-request": `- uses: actions/checkout@v5
   with:
     fetch-depth: 0
-- uses: miklschmidt/archboard/actions/pull-request@main
+- uses: miklschmidt/archboard/actions/pull-request@${pin}
   with:
-    version: 0.2.0
+    version: ${reference.version}
     out-of-plan: warn`,
 };
 const guide: Record<string, { path: string; label: string }> = {
@@ -35,9 +38,10 @@ const headings = reference.actions.map((action) => ({ depth: 2, slug: action.slu
 	source="actions/README.md"
 >
 	<p>
-		Use an Action by its path in this repository. The examples use <code>@main</code>. Pin the
-		Action to a commit SHA, as you pin any third-party Action, because the <code>pull-request</code> Action holds
-		a token that can comment. Pin <code>version</code> to the CLI release that your team runs, the way
+		Use an Action by its path in this repository. The examples pin it to the commit of
+		<code>{actionsPin.ref}</code>, with the tag in a comment. Pin each Action to a commit, as you pin
+		any third-party Action, because a tag can move and the <code>pull-request</code> Action holds a
+		token that can comment. Pin <code>version</code> to the CLI release that your team runs, the way
 		you pin a compiler. Both
 		Actions set up Node.js, install <code>archboard</code> with npm, and stop the Archboard server
 		when they finish. With <a href="#check-cli"><code>cli</code></a>, an Action runs that CLI instead of
@@ -56,7 +60,7 @@ const headings = reference.actions.map((action) => ({ depth: 2, slug: action.slu
 						The guide: <a href={docsHref(guide[action.slug]?.path ?? "")}>{guide[action.slug]?.label}</a>.
 					</p>
 				)}
-				<Code code={usage[action.slug] ?? `- uses: ${action.uses}@main`} lang="yaml" title={action.uses} />
+				<Code code={usage[action.slug] ?? `- uses: ${action.uses}@${pin}`} lang="yaml" title={action.uses} />
 				<h3 class="sub-head">Inputs</h3>
 				<table>
 					<thead>

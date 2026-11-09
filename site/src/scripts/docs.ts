@@ -1,5 +1,5 @@
 // The docs' page script: the section the reader is in, the links on each section's head, the
-// sidebar's scroll across pages, the drawer on a narrow screen and the search.
+// sidebar's scroll across pages, the drawer on a narrow screen, the search and the versions.
 
 /** Mark the section of the page that the reader is in, in the table of contents. */
 function followSections(): void {
@@ -119,14 +119,19 @@ function mountSearch(): void {
 	const input = dialog?.querySelector<HTMLInputElement>("[data-search-input]");
 	const list = dialog?.querySelector<HTMLElement>("[data-search-results]");
 	if (!dialog || !input || !list) return;
-	const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+	// Each version of the docs has its own index at its own root, so a search stays in its version.
+	const root = document.documentElement.dataset["docsRoot"] ?? "/";
 	let pagefind: Promise<Pagefind | null> | undefined;
 	const load = (): Promise<Pagefind | null> => {
-		pagefind ??= import(/* @vite-ignore */ `${base}/pagefind/pagefind.js`).then(
+		pagefind ??= import(/* @vite-ignore */ `${root}pagefind/pagefind.js`).then(
 			async (module: Pagefind) => {
 				// A name that a page repeats often must not outrank the page whose heading is that name,
 				// so how often a term occurs counts for little next to where it occurs.
-				await module.options({ excerptLength: 18, ranking: { termFrequency: 0.2 } });
+				await module.options({
+					baseUrl: root,
+					excerptLength: 18,
+					ranking: { termFrequency: 0.2 },
+				});
 				return module;
 			},
 			() => null,
@@ -270,9 +275,95 @@ function nameCodeRegions(): void {
 	label();
 }
 
+/** What `docs/versions.json` lists: the newest release with docs, and every release with docs. */
+interface Versions {
+	readonly latest: string | null;
+	/** Newest first. */
+	readonly releases: readonly string[];
+}
+
+/**
+ * Fill the version switch, and say on main or an older release which version the page describes.
+ * The list is read at run time, so a page of an old release names the releases after it.
+ */
+async function mountVersions(): Promise<void> {
+	const { docsRoot: root, docsVersion: version } = document.documentElement.dataset;
+	const switcher = document.querySelector<HTMLDetailsElement>("[data-versions]");
+	const list = switcher?.querySelector<HTMLElement>("[data-version-list]");
+	const note = document.querySelector<HTMLElement>("[data-version-note]");
+	if (!root || !version || !switcher || !list || !note) return;
+	const top = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/docs/`;
+	let versions: Versions;
+	try {
+		const response = await fetch(`${top}versions.json`);
+		if (!response.ok) return;
+		versions = (await response.json()) as Versions;
+	} catch {
+		return;
+	}
+	// The same page in another version, at the same path under its root. The latest release is at
+	// the top root, and main is at next/.
+	const page = location.pathname.startsWith(root) ? location.pathname.slice(root.length) : "";
+	const hrefOf = (other: string): string =>
+		other === versions.latest ? `${top}${page}` : `${top}${other}/${page}`;
+	const entries = [
+		...versions.releases.map((release) => ({
+			version: release,
+			tag: release === versions.latest ? "latest" : "",
+		})),
+		{ version: "next", tag: "unreleased" },
+	];
+	list.replaceChildren(
+		...entries.map(({ version: other, tag }) => {
+			const item = document.createElement("li");
+			const link = document.createElement("a");
+			link.href = hrefOf(other);
+			link.append(other === "next" ? "main" : other);
+			if (tag !== "") {
+				const label = document.createElement("span");
+				label.className = "tag";
+				label.textContent = tag;
+				link.append(label);
+			}
+			if (other === version) link.setAttribute("aria-current", "true");
+			item.append(link);
+			return item;
+		}),
+	);
+	switcher.hidden = false;
+	document.addEventListener("click", (event) => {
+		if (switcher.open && !switcher.contains(event.target as Node)) switcher.open = false;
+	});
+	switcher.addEventListener("keydown", (event) => {
+		if (event.key !== "Escape" || !switcher.open) return;
+		switcher.open = false;
+		switcher.querySelector("summary")?.focus();
+	});
+	const latest = versions.latest;
+	if (latest === null || version === latest) return;
+	// A version is data, so it is set as code.
+	const code = (text: string): HTMLElement => {
+		const element = document.createElement("code");
+		element.textContent = text;
+		return element;
+	};
+	const read = document.createElement("a");
+	read.href = hrefOf(latest);
+	read.append("Read the ", code(latest), " docs");
+	note.replaceChildren(
+		...(version === "next"
+			? ["These docs describe main, which is newer than the latest release, ", code(latest), ". "]
+			: ["These docs describe ", code(version), ". The latest release is ", code(latest), ". "]),
+		read,
+		".",
+	);
+	note.hidden = false;
+}
+
 followSections();
 nameCodeRegions();
 copyHeadingLinks();
 keepSidebar();
 mountDrawer();
 mountSearch();
+void mountVersions();

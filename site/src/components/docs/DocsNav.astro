@@ -3,6 +3,7 @@
 // It is the site's nav in its stuck state, so the docs read as the same room.
 import Icon from "../Icon.astro";
 import Mark from "../Mark.astro";
+import VersionSwitch from "./VersionSwitch.astro";
 import { links } from "../../lib/links";
 import { docsHref } from "../../lib/docs-nav";
 
@@ -49,6 +50,7 @@ const items = [
 			</ul>
 		</nav>
 		<div class="bar-actions">
+			<VersionSwitch />
 			<button type="button" class="search-trigger" data-search-open aria-label="Search the docs">
 				<Icon name="search" size={16} />
 				<span class="search-word">Search</span>
