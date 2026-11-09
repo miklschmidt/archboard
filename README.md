@@ -137,7 +137,7 @@ See a change before anyone builds it. Ask your agent for one and you get a **pro
 
 <img src="https://github.com/user-attachments/assets/829a34f1-1636-45cc-b7c2-1ab42b21ac0c" width="100%" alt="An independent planning draft opens in two panes. The left pane turns into the Nightly batch proposal. The right pane turns into the Live events proposal. Both are marked against their shared starting point.">
 
-<p align="center"><sub>Two competing proposals for a recommendations service that does not exist yet, one per pane. Each header starts with its draft's name. Both compare against the same planning root, without adding the proposed service to current architecture.</sub></p>
+<p align="center"><sub>Two competing proposals for a recommendations service that does not exist yet, one per pane. Both compare against the same planning root, without adding the proposed service to current architecture.</sub></p>
 
 - **Competing options, side by side**. Branch two drafts from one starting point and open them in two panes. `archboard model compare --state "Nightly batch" --against "Starting point"` reports the changes.
 - **Honest about what exists**. Planning drafts remain separate from current architecture. Your agent adopts a draft only after it ships.
