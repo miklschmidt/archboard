@@ -185,7 +185,8 @@ fn prices(
     });
     // Only the door moves, so what stands in each line's way stays.
     let in_the_way: Vec<InTheWay> = lines.iter().map(|&line| scene.in_the_way(line)).collect();
-    (boxes.iter())
+    let stood = scene.boxes[door];
+    let costs: Vec<Option<f64>> = (boxes.iter())
         .map(|&at| {
             let at = at?;
             scene.boxes[door] = at;
@@ -205,7 +206,10 @@ fn prices(
             }
             Some(cost)
         })
-        .collect()
+        .collect();
+    // The lines of the doors priced after this one meet it where it stood.
+    scene.boxes[door] = stood;
+    costs
 }
 
 /// The lines of a door whose other end is no door: each door's place is still open.
