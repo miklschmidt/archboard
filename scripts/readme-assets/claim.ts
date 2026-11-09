@@ -45,14 +45,19 @@ const BADGE = "[data-slot='claim-badge']";
 /**
  * Whether the shell marks the claim: on the model in the repository menu, on the subject's row in
  * the left column and, when a selection is asked for, in the Right panel's head.
- * @param row The subject's row in the left column.
+ * @param id The claimed subject.
  * @param badge Whether the head says Claimed.
  * @returns An expression that is true once every mark is on screen.
  */
-function marked(row: string, badge: boolean): string {
-	const marks = [`[data-slot='repository-switcher'] ${MARK}`, `${row} ${MARK}`];
-	const all = badge ? [...marks, BADGE] : marks;
-	return all.map((selector) => `!!document.querySelector("${selector}")`).join(" && ");
+function marked(id: string, badge: boolean): string {
+	const marks = [`[data-slot='repository-switcher'] ${MARK}`, `[data-module-row='${id}'] ${MARK}`];
+	const head = `[data-slot='module-details'][data-module-id='${id}'] header ${BADGE}`;
+	const all = badge ? [...marks, head] : marks;
+	return `(() => {
+		const visible = ${JSON.stringify(all)}.every((selector) =>
+			document.querySelector(selector)?.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }));
+		return visible ${badge ? `&& document.querySelector(${JSON.stringify(head)})?.textContent.includes("Claimed")` : ""};
+	})()`;
 }
 
 /**
@@ -63,8 +68,13 @@ function marked(row: string, badge: boolean): string {
  */
 async function claimSubject(server: TakeServer, terminal: Terminal) {
 	const model = await readModel(server);
-	const subject = model.modules.find((module) => module.name === SUBJECT);
-	if (subject === undefined) throw new Error(`The example has no ${SUBJECT} module.`);
+	const subject = model.modules.find(
+		(module) => module.name === SUBJECT && module.responsibility !== RESPONSIBILITY,
+	);
+	if (subject === undefined)
+		throw new Error(
+			`The example needs ${SUBJECT} with a different responsibility. Check its module or choose a new filmed edit.`,
+		);
 	const target = { model: model.manifest.id, state: model.manifest.current?.id ?? null };
 	const writer = "readme-agent";
 	const inputs = scratch("takes", "claim");
@@ -124,7 +134,13 @@ async function editSubject(server: TakeServer, terminal: Terminal, page: Page, i
 	if (!result.success) throw new Error(JSON.stringify(result));
 	await terminal.done(`Edited ${SUBJECT}`);
 	await page.waitFor(
-		`document.querySelector("[data-slot='model-panel']")?.textContent.includes(${JSON.stringify(RESPONSIBILITY)})`,
+		`(() => {
+			const details = document.querySelector("[data-slot='module-details']");
+			const responsibility = [...(details?.querySelectorAll("p") ?? [])]
+				.find((paragraph) => paragraph.textContent === ${JSON.stringify(RESPONSIBILITY)});
+			return details?.querySelector("header h3")?.textContent === ${JSON.stringify(SUBJECT)}
+				&& responsibility?.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
+		})()`,
 		"the new responsibility in the Right panel",
 	);
 }
@@ -132,14 +148,14 @@ async function editSubject(server: TakeServer, terminal: Terminal, page: Page, i
 /**
  * Select the subject's card, and wait for the Right panel to say that it is claimed.
  * @param page The shell.
- * @param row The subject's row in the left column.
+ * @param id The claimed subject.
  * @returns The card's selector.
  */
-async function selectSubject(page: Page, row: string): Promise<string> {
+async function selectSubject(page: Page, id: string): Promise<string> {
 	const card = await page.card(SUBJECT);
 	await page.moveTo(await page.centreOf(card), 36);
 	await page.click(card, 120);
-	await page.waitFor(marked(row, true), `${SUBJECT} selected and marked Claimed`);
+	await page.waitFor(marked(id, true), `${SUBJECT} selected and marked Claimed`);
 	await restPointer(page);
 	return card;
 }
@@ -170,19 +186,23 @@ const claim: Producer = {
 				...PANE,
 			});
 			await page.atRest();
+			await page.waitFor(
+				`!document.querySelector("${MARK}, ${BADGE}")`,
+				"no claim before the agent claims",
+			);
 			await page.moveTo({ x: 1100, y: 900 }, 1);
 			const take = await filmTogether("claim", [terminal.page, page], async () => {
 				await terminal.you(REQUEST);
 				const claimed = await claimSubject(server, terminal);
 				// A take that fails leaves its claim in the copied vault, which the next take replaces.
-				const row = `[data-module-row='${claimed.id}']`;
-				await page.waitFor(marked(row, false), `the marks of the claim on ${SUBJECT}`);
+				await page.waitFor(marked(claimed.id, false), `the marks of the claim on ${SUBJECT}`);
 				await Bun.sleep(1800);
-				const card = await selectSubject(page, row);
+				const card = await selectSubject(page, claimed.id);
 				await Bun.sleep(600);
 				const shot = await moment(page, [BADGE, card], 960, { x: TERMINAL_WIDTH, y: 0 });
 				await Bun.sleep(1600);
 				await editSubject(server, terminal, page, claimed.edit);
+				await page.waitFor(marked(claimed.id, true), "the claim still marked after the edit");
 				await Bun.sleep(1600);
 				await terminal.command("archboard model release --input release.json");
 				await server.cli(["model", "release", "--input", claimed.release]);
