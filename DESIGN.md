@@ -767,6 +767,10 @@ its top names what it describes, the open scope or the selected subject, and lea
 the other one. Its column is 1320px wide at most and centred. The column
 keeps 40px of room inside each side, or 24px on a page narrower than 1040px.
 
+Presenting a walkthrough from About shows its picture and steps. Leaving it returns
+to About at the same scroll position. Switching to Diagram and back also restores
+the position while the subject stays the same.
+
 The head of the page names the model in the Figure role, in capitals. Under the
 name, one Control line gives the model's level with its mark. Then it gives the
 variant on screen with its lifecycle mark, its name and where it stands in muted
@@ -782,6 +786,10 @@ page with a Rule under it. There the gold piece lies under the entry, and a bar 
 narrow for its entries scrolls sideways. A jump to a section scrolls the page
 smoothly, or at once with reduced motion.
 
+The outline appears only when the page has more than one section. Choosing a section
+gives its heading keyboard focus. The final section keeps enough height for any
+section to reach the top.
+
 A section heading is Subtitle in semibold, and 56px separate one section from the
 next. A walkthrough is a Page Card, 24px from the next one. Its head has the name
 in the Display role and the number of steps in Body in muted ink. Under them is the
@@ -793,6 +801,9 @@ its words are Control at weight 400 and 85% ink, 72 characters wide at most. Bes
 them, the labels View and Focus are Body in muted ink. A subject is a chip 24px
 high on Ground Chalk with a Rule edge and its kind's icon in its kind's colour. A
 picked chip takes Gold Tint and a Gold Mark edge.
+
+With more than three walkthroughs, each card starts folded to its heading. The step
+count opens and closes the list of steps.
 
 The parts and the relationships are lists on the page's own plane, not cards.
 A Rule divides one row from the next, and the names of the columns stand over the
