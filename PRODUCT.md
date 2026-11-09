@@ -154,8 +154,6 @@ Archboard server. Nothing here was dragged into place."
   and walkthroughs.
 - `.archboard/vault`: Archboard's architecture inputs.
   Exact legacy originals remain available through retained migration history.
-- `docs/design/assets/`: the shell reference image and rendered captures of the
-  shell.
 - `docs/assets/`: the social card, cut from the banner.
 - The README's comparison tables with Mermaid, D2, Excalidraw, draw.io,
   Structurizr, LikeC4, PR Lens and Archify, dated September 2026.
