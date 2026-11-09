@@ -11,6 +11,7 @@
 mod anneal;
 mod grid;
 mod ring;
+mod room;
 mod search;
 mod sketch;
 
@@ -24,6 +25,7 @@ use crate::{
 };
 
 use grid::{Grid, Item, Join};
+pub(super) use room::Room;
 pub(super) use search::Grids;
 use search::Staged;
 
@@ -198,9 +200,10 @@ impl<'a> Block<'a> {
         gaps
     }
 
-    /// Size a settled grid's rows and columns and stand each part in its cell. A card takes the
-    /// whole cell. A door keeps its own size in the cell's middle.
-    fn set(&self, grid: &Grid, room: f64) -> Set {
+    /// Size a settled grid's rows and columns, with the room its lines asked for past the gaps,
+    /// and stand each part in its cell. A card takes the whole cell. A door keeps its own size in
+    /// the cell's middle.
+    fn set(&self, grid: &Grid, room: f64, asked: &Room) -> Set {
         let rows = grid.rows();
         let mut widths = vec![0.0_f64; grid.columns];
         let mut heights = vec![0.0_f64; rows];
@@ -210,8 +213,16 @@ impl<'a> Block<'a> {
             heights[y] = heights[y].max(item.node.h());
         }
         let gaps = self.column_gaps(grid, room);
-        let xs = stations(CONTAINER_INSET, &widths, gaps.iter().copied());
-        let ys = stations(self.first_row, &heights, std::iter::repeat(CELL_GAP + room));
+        let xs = stations(
+            CONTAINER_INSET + asked.column(0),
+            &widths,
+            (gaps.iter().enumerate()).map(|(at, gap)| gap + asked.column(at + 1)),
+        );
+        let ys = stations(
+            self.first_row + asked.row(0),
+            &heights,
+            (0..rows).map(|at| CELL_GAP + room + asked.row(at + 1)),
+        );
         let parts = self
             .items
             .iter()
@@ -234,8 +245,11 @@ impl<'a> Block<'a> {
         let last = grid.columns - 1;
         Set {
             size: Point {
-                x: f64::max(xs[last] + widths[last] + CONTAINER_INSET, self.tab.x),
-                y: ys[rows - 1] + heights[rows - 1] + CONTAINER_INSET,
+                x: f64::max(
+                    xs[last] + widths[last] + CONTAINER_INSET + asked.column(grid.columns),
+                    self.tab.x,
+                ),
+                y: ys[rows - 1] + heights[rows - 1] + CONTAINER_INSET + asked.row(rows),
             },
             parts,
         }
@@ -487,10 +501,17 @@ pub(super) fn frames(graph: &Node) -> usize {
     holders(graph).map_or(0, |held| held.len())
 }
 
+/// One dense placement to route: which searched placement, and the page its doors stand within.
+#[derive(Clone, Copy, Debug)]
+pub(super) struct Candidate {
+    index: usize,
+    page: Point,
+}
+
 /// Every dense placement of a reading at one room, the cheapest first: for each grid width and
 /// each way its frames stand together, its doors within a page that reads and within one that
 /// reads once contraction takes back the room round the frames.
-pub(super) fn drawings(grids: &Grids<'_>, room: f64) -> Vec<Placed> {
+pub(super) fn drawings(grids: &Grids<'_>, room: f64) -> Vec<(Candidate, Placed)> {
     let reading = &grids.reading;
     // Contraction takes back room round the frames, so a placement up to a ring gap wider on
     // each side than a page that reads can still read once it is routed.
@@ -499,20 +520,41 @@ pub(super) fn drawings(grids: &Grids<'_>, room: f64) -> Vec<Placed> {
         x: strict.x + 2.0 * (ring::RING_GAP + room),
         y: strict.y + 2.0 * (ring::RING_GAP + room),
     };
-    let drawings: Vec<Placed> = (grids.placements())
-        .flat_map(|(stacked, settled)| {
-            let sets: Vec<Set> = (reading.blocks.iter().zip(settled))
-                .map(|(block, grid)| block.set(grid, room))
-                .collect();
-            let one = reading.drawing(&sets, stacked, room, strict);
-            let other = reading.drawing(&sets, stacked, room, loose);
-            let same = (one.cards.iter().zip(&other.cards)).all(|(a, b)| a.bx == b.bx);
+    let drawings: Vec<(Candidate, Placed)> = (0..grids.count())
+        .flat_map(|index| {
+            let [one, other] = [strict, loose].map(|page| {
+                let candidate = Candidate { index, page };
+                (candidate, redraw(grids, candidate, room, &[]))
+            });
+            let same = (one.1.cards.iter().zip(&other.1.cards)).all(|(a, b)| a.bx == b.bx);
             std::iter::once(one).chain((!same).then_some(other))
         })
         .collect();
-    let short = |drawing: &Placed| drawing.height <= TALLEST;
+    let short = |drawing: &(Candidate, Placed)| drawing.1.height <= TALLEST;
     if reading.blocks.len() == 1 && drawings.iter().any(short) {
         return drawings.into_iter().filter(short).collect();
     }
     drawings
+}
+
+/// A dense placement drawn at one room, with the room its lines asked for on each frame.
+pub(super) fn redraw(grids: &Grids<'_>, candidate: Candidate, room: f64, asked: &[Room]) -> Placed {
+    let reading = &grids.reading;
+    let (stacked, settled) = grids.placement(candidate.index);
+    let none = Room::default();
+    let sets: Vec<Set> = (reading.blocks.iter().zip(settled).enumerate())
+        .map(|(at, (block, grid))| block.set(grid, room, asked.get(at).unwrap_or(&none)))
+        .collect();
+    reading.drawing(&sets, stacked, room, candidate.page)
+}
+
+/// Ask a dense placement, as a drawing of it stood its cards, for room on the direct way of a
+/// line between two cards, and tell whether it gave any.
+pub(super) fn ask(
+    grids: &Grids<'_>,
+    (candidate, drawn): (Candidate, &Placed),
+    asked: &mut Vec<Room>,
+    ends: [&str; 2],
+) -> bool {
+    grids.ask(candidate.index, drawn, asked, ends)
 }

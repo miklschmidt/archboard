@@ -18,6 +18,7 @@ use super::{
     anneal::{Lattice, Part, Search},
     grid::Grid,
     readable, ring,
+    room::Room,
     sketch::{Line, Scene},
     together,
 };
@@ -84,11 +85,15 @@ impl<'a> Grids<'a> {
         Some(Self { reading, searched })
     }
 
-    /// Each searched placement: whether its frames stack, and each frame's grid.
-    pub(super) fn placements(&self) -> impl Iterator<Item = (bool, &[Grid])> {
-        self.searched
-            .iter()
-            .map(|one| (one.stacked, one.grids.as_slice()))
+    /// How many placements the searches found.
+    pub(super) fn count(&self) -> usize {
+        self.searched.len()
+    }
+
+    /// One searched placement: whether its frames stack, and each frame's grid.
+    pub(super) fn placement(&self, index: usize) -> (bool, &[Grid]) {
+        let one = &self.searched[index];
+        (one.stacked, one.grids.as_slice())
     }
 }
 
@@ -109,7 +114,7 @@ impl Reading<'_> {
     fn price(&self, searched: &mut Searched, room: f64) {
         searched.grids.iter_mut().for_each(Grid::compact);
         let sets: Vec<Set> = (self.blocks.iter().zip(&searched.grids))
-            .map(|(block, grid)| block.set(grid, room))
+            .map(|(block, grid)| block.set(grid, room, &Room::default()))
             .collect();
         searched.cost = self.stand(&sets, searched.stacked, room, readable()).cost;
     }

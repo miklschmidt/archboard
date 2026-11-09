@@ -87,14 +87,21 @@ const NEAR_SCALE: f64 = 0.6;
 /// A line is a long detour past this much extra travel, and half again its direct way.
 const LONG_DETOUR: f64 = 300.0;
 
+fn is_long(line: &PlacedLine) -> bool {
+    let (length, direct) = distances(&line.points);
+    length > direct * 1.5 && length - direct > LONG_DETOUR
+}
+
 fn long_detours(lines: &[PlacedLine]) -> usize {
-    lines
-        .iter()
-        .filter(|line| {
-            let (length, direct) = distances(&line.points);
-            length > direct * 1.5 && length - direct > LONG_DETOUR
-        })
-        .count()
+    lines.iter().filter(|line| is_long(line)).count()
+}
+
+/// The lines of a finished drawing that run a long way round, as it was routed.
+pub(super) fn long_lines(drawing: &crate::blocks::assembly::Placed) -> Vec<&str> {
+    let lines = &as_routed(drawing).edges;
+    (lines.iter().filter(|line| is_long(line)))
+        .map(|line| line.id.as_str())
+        .collect()
 }
 
 /// A drawing as it was routed. Contraction brings cards and crossings together, so a

@@ -7,14 +7,17 @@ status: accepted
 Amended on 2026-11-09. The dense placement of [ADR 0064](0064-blocks-is-the-default-layout-engine.md) states one cost and searches for the placement that costs least.
 That cost replaces the rules of the 2026-11-08 amendment (TASK-559.09), which chose each door's wall by the room the page costs.
 The cost sketches each line with at most one bend, between the sides of its two cards that face each other.
-It adds the sketch's length, 120 for each bend, the way round each card or foreign frame in the sketch's way, and 300 for each crossing.
+It adds the sketch's length and 120 for each bend.
+It adds the way round each card or foreign frame in the sketch's way, and 300 for each crossing.
 A line that runs up, against the reading direction, adds 150.
 It also adds three times how far the members of each group stand from the group's middle.
 Simulated annealing from a fixed seed moves the parts between the cells of each frame's grid, and starts from the grid's greedy answer.
 A cell can stay empty, and a whole group can move one cell at a time.
 An exact dynamic program stands the cards outside the frames round them, at one gap from the frames.
-Either the top and bottom walls of that ring reach past the frames' corners, or its side walls do, so no two walls share a corner.
-These cards keep the order round the frames of the places where each would stand alone, so their own lines do not cross.
+Either the top and bottom walls of that ring reach past the frames' corners, or its side walls do.
+Thus no two walls share a corner.
+Each of these cards has a place where it stands when it stands alone.
+The cards keep the order of those places round the frames, so their own lines do not cross.
 The program also pays for the blank space of the box that these cards and the frames fill.
 It refuses a page that does not read where it lands while a page that reads holds the cards.
 Among the routes that pass the guards, the router prefers one that meets such a card on a side that faces the line's far end.
@@ -22,9 +25,17 @@ Each grid width gives one placement, and a reading of several frames gives one m
 Each placement is priced again on its drawn frame, whose columns and rows are as wide as what they hold.
 Each placement also has a variant whose outside cards can stand one gap further out, because contraction takes that room back.
 A reading with more than 64 relationships searches every grid width briefly and goes on with the two cheapest only.
+A line that the router refuses, or sends a long way round, asks its frame's grid for 72 px of room on its direct way.
+The placement then routes again with that room, twice at most.
+The direct way lies between the rows and the columns of the line's two parts.
+For a line to a card outside the frame or to the frame's tab, it lies between the part and the wall that faces that end.
+A way straight along a column or a row past another part asks for the room beside that part instead.
+That room is on the side that faces the frame's middle, because room between the rows that the line passes does not let it by.
+No line asks once the reading has a drawing that reads where it lands and has no long detour.
 Finished drawings rank first by whether the page reads where it lands, then by their long detours.
 Then they rank by route cost plus crowded approaches plus blank space.
-Blank space is the area farther than 48 px from every card, line and label, and 96 px² of it costs as much as 1 px of line.
+Blank space is the area farther than 48 px from every card, line and label.
+96 px² of blank space costs as much as 1 px of line.
 The room cost, its charge for scale, and the promise before routing are gone.
 
 TASK-554 proposes this decision on 2026-10-28 and revises it on 2026-10-29.

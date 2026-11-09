@@ -179,18 +179,65 @@ fn dense_room(
     best: &mut Option<(reading::Order, crate::blocks::assembly::Placed)>,
 ) {
     let crowded = relationships(graph) > PLACEMENT_REFINEMENT_LIMIT;
-    for drawing in dense::drawings(grids, room) {
-        let Ok(next) = fixed::route(graph, drawing, &selection::ORDERS[..1]) else {
-            continue;
-        };
-        let order = reading::order(&next);
-        if best.as_ref().is_none_or(|one| order < one.0) {
-            *best = Some((order, next));
-        }
-        if crowded {
+    for (candidate, drawing) in dense::drawings(grids, room) {
+        if dense_asks(graph, (grids, candidate, room), drawing, best) && crowded {
             return;
         }
     }
+}
+
+/// How many times a placement tries again with the room its lines asked for.
+const ASKS: usize = 2;
+
+/// Route a dense placement, keep its drawing if it is the best so far, and tell whether any
+/// drawing of it routed. A line that the router refuses, or that runs a long way round, asks the
+/// placement for room on its direct way, and the placement tries again with that room, twice at
+/// most. No line asks once the reading has a drawing that reads and runs no long way round,
+/// because more room could then only lower a cost that the drawing already ranks by.
+fn dense_asks(
+    graph: &crate::graph::Node,
+    (grids, candidate, room): (&dense::Grids<'_>, dense::Candidate, f64),
+    first: crate::blocks::assembly::Placed,
+    best: &mut Option<(reading::Order, crate::blocks::assembly::Placed)>,
+) -> bool {
+    let mut asked = Vec::new();
+    let mut drawn = first;
+    let mut routed = false;
+    for tries in 0..=ASKS {
+        let wanting = match fixed::route(graph, drawn.clone(), &selection::ORDERS[..1]) {
+            Ok(next) => {
+                routed = true;
+                let wanting = ends_of(graph, &reading::long_lines(&next));
+                let order = reading::order(&next);
+                if best.as_ref().is_none_or(|one| order < one.0) {
+                    *best = Some((order, next));
+                }
+                wanting
+            }
+            Err(refused) => refused.blocked,
+        };
+        let done =
+            (best.as_ref()).is_some_and(|((unreadable, long, _), _)| !unreadable && *long == 0);
+        if done || tries == ASKS {
+            break;
+        }
+        let given = (wanting.iter()).fold(false, |given, [from, to]| {
+            dense::ask(grids, (candidate, &drawn), &mut asked, [from, to]) || given
+        });
+        if !given {
+            break;
+        }
+        drawn = dense::redraw(grids, candidate, room, &asked);
+    }
+    routed
+}
+
+/// The two ends of each of some lines of a graph.
+fn ends_of(graph: &crate::graph::Node, lines: &[&str]) -> Vec<[String; 2]> {
+    (graph.edges.iter().flatten())
+        .filter(|edge| lines.contains(&edge.id.as_str()))
+        .map(|edge| [edge.source().to_owned(), edge.target().to_owned()])
+        .collect()
 }
 
 mod direct;
