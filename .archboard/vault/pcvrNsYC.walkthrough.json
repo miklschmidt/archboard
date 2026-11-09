@@ -7,17 +7,17 @@
   ],
   "summary": "What an architect who works with a coding agent does with Archboard, and the parts that do it.",
   "target": {
-    "state": "oyXXnyCV"
+    "state": "current"
   },
   "beats": [
     {
       "title": "Your agent draws the map",
-      "narrative": "Point Claude Code or Codex at a repository. The agent reads the code and tells Archboard what the system is: its services, stores and queues, what contains what, and how they talk. Archboard draws every line. Nobody drags a box, so the picture never drifts away from the model.",
+      "narrative": "Point Claude Code or Codex at a repository. The agent reads the code and tells Archboard what the system is: its services, stores and queues, what contains what, and how they talk. Archboard keeps that model in the repository and draws every line. Nobody drags a box, so the picture never drifts away from the model.",
       "reading": {
-        "scope": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
         "selection": [
           "vKEsyHFk/vKEsyHFk#TBnOCNx2",
-          "vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+          "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+          "vKEsyHFk#HgZPVIE2"
         ],
         "focus": [],
         "filters": {
@@ -30,12 +30,12 @@
     },
     {
       "title": "Read a system you did not write",
-      "narrative": "Open the model in your browser. Start with the big parts, open any module to see what it holds, and jump straight to the code it names. You learn a codebase from its map first, and from its files second.",
+      "narrative": "Open the model in your browser. Start with the big parts, open any module to see what it holds, and follow the breadcrumbs back. Open code jumps to the source that a module names. You learn a codebase from its map first, and from its files second.",
       "reading": {
         "scope": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "selection": [
           "vKEsyHFk/yejBBUFY#POloYnX3",
-          "vKEsyHFk/vKEsyHFk#7hdbqGFn"
+          "vKEsyHFk/yejBBUFY#wlbLOPSH"
         ],
         "focus": [],
         "filters": {
@@ -66,14 +66,16 @@
     },
     {
       "title": "Plan the change before the code",
-      "narrative": "Ask your agent for a change, and Archboard draws it as a proposal over today's architecture. Put two options side by side. When one ships, adopt it with its reason, and the architecture that it replaces stays in history.",
+      "narrative": "Ask your agent for a change, and Archboard draws it as a proposal over today's architecture. Put two options side by side. When one ships, your agent adopts it with its reason, and the architecture that it replaces stays in history.",
       "reading": {
-        "scope": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "selection": [
-          "vKEsyHFk/yejBBUFY#wlbLOPSH",
-          "vKEsyHFk/vKEsyHFk#DmbKboxU"
+          "vKEsyHFk/0T9enjhi#KJy5yYuq",
+          "vKEsyHFk/0T9enjhi#Bd4GPG6d"
         ],
-        "focus": [],
+        "focus": [
+          "vKEsyHFk/0T9enjhi#KJy5yYuq",
+          "vKEsyHFk/0T9enjhi#Bd4GPG6d"
+        ],
         "filters": {
           "relationships": [],
           "groups": []
@@ -84,14 +86,16 @@
     },
     {
       "title": "Ask about what you see",
-      "narrative": "Select any part and ask Codex about it, in text or by voice. The question carries exactly what is on your screen, so the answer is about this picture.",
+      "narrative": "Select any part and choose Explain with Codex, or press Talk and ask aloud. Codex gets the exact reading on your screen and the parts that you selected, and it changes nothing. So the answer is about this picture.",
       "reading": {
-        "scope": "vKEsyHFk/vKEsyHFk#lU0khwR0",
         "selection": [
-          "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
-          "vKEsyHFk/yejBBUFY#hO56iL2W"
+          "vKEsyHFk/SJ2JMVyz#bxWDGUJk",
+          "vKEsyHFk/6E6hL0Zk#C9EOzoYB"
         ],
-        "focus": [],
+        "focus": [
+          "vKEsyHFk/SJ2JMVyz#bxWDGUJk",
+          "vKEsyHFk/6E6hL0Zk#C9EOzoYB"
+        ],
         "filters": {
           "relationships": [],
           "groups": []
@@ -102,14 +106,17 @@
     },
     {
       "title": "Share it as a picture or a narrated video",
-      "narrative": "Render any reading as an SVG for a design document, or record a walkthrough like this one for a pull request or a new teammate. It all runs on your own machine: the server, the agent and the renderer.",
+      "narrative": "Render any reading as an SVG or a PNG for a design document, and the picture carries its own legend. Or record a walkthrough like this one for a pull request or a new teammate. The server, the renderer and the recording all run on your own machine.",
       "reading": {
-        "scope": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
         "selection": [
-          "vKEsyHFk/SMjRfwN3#gTwVYQo9",
-          "vKEsyHFk/SMjRfwN3#XtzfRQkG"
+          "vKEsyHFk/XppR9owz#255ksC3D",
+          "vKEsyHFk/SMjRfwN3#gTwVYQo9"
         ],
-        "focus": [],
+        "focus": [
+          "vKEsyHFk/XppR9owz#255ksC3D",
+          "vKEsyHFk/XppR9owz#tXESqrQK",
+          "vKEsyHFk/SMjRfwN3#gTwVYQo9"
+        ],
         "filters": {
           "relationships": [],
           "groups": []
