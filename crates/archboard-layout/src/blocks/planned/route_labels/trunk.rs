@@ -1,6 +1,6 @@
 //! The words of a door's lines, which stand on each line's own branch.
 
-use super::{Model, Own, Point, Rect, Shape, StrokeIndex, spot_on};
+use super::{Model, Own, Point, Rect, Shape, StrokeIndex, spans, spot_on};
 use crate::blocks::{assembly::PlacedLine, planned::label_space::Labels};
 
 /// A route read from the part that owns it.
@@ -28,11 +28,12 @@ pub(in crate::blocks::planned) fn seat(
             continue;
         };
         let path = &shape.routes[index].points;
+        let spans = spans(edge, path, shape, &strokes);
         let spot = |narrow| {
             spot_on(
                 model,
                 Own::new(edge, path),
-                path,
+                &spans,
                 shape,
                 &strokes,
                 &labels,

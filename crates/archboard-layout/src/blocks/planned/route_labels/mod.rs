@@ -100,7 +100,13 @@ impl<'a> Slots<'a> {
         path: &[Point],
     ) -> Option<(Rect, bool)> {
         let (shape, strokes, labels) = (self.shape, &self.strokes, &self.labels);
-        spot_for(model, edge, (shape, path), (strokes, labels), false)
+        let spans = spans(edge, path, shape, strokes);
+        spot_for(
+            model,
+            Own::new(edge, path),
+            (shape, &spans),
+            (strokes, labels),
+        )
     }
     /// A spot that stands beside the route's other stretches, for a route whose words find no
     /// spot clear of them. It is always a fallback.
@@ -111,7 +117,12 @@ impl<'a> Slots<'a> {
         path: &[Point],
     ) -> Option<(Rect, bool)> {
         let (shape, strokes, labels) = (self.shape, &self.strokes, &self.labels);
-        spot_for(model, edge, (shape, path), (strokes, labels), true)
+        let spans = spans(edge, path, shape, strokes);
+        let own = Own {
+            beside: true,
+            ..Own::new(edge, path)
+        };
+        spot_for(model, own, (shape, &spans), (strokes, labels))
     }
 }
 
@@ -128,27 +139,43 @@ fn slot_index(
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Option<(Rect, bool)> {
-    [false, true]
-        .into_iter()
-        .find_map(|beside| spot_for(model, edge, (shape, path), (index, labels), beside))
+    let spans = spans(edge, path, shape, index);
+    [false, true].into_iter().find_map(|beside| {
+        let own = Own {
+            beside,
+            ..Own::new(edge, path)
+        };
+        spot_for(model, own, (shape, &spans), (index, labels))
+    })
 }
 
 /// The spot of `slot_index` that keeps the words clear of the route's other stretches, or
-/// that stands beside them when `beside` says so, and whether it is a fallback.
+/// that stands beside them when `own` says so, on the route's `spans`, and whether it is a
+/// fallback.
 fn spot_for(
     model: &Model<'_>,
-    edge: usize,
-    (shape, path): (&Shape, &[Point]),
+    own: Own<'_>,
+    (shape, spans): (&Shape, &[Span]),
     (index, labels): (&StrokeIndex, &super::label_space::Labels),
-    beside: bool,
 ) -> Option<(Rect, bool)> {
-    let own = Own {
-        beside,
-        ..Own::new(edge, path)
-    };
-    let spot = |narrow| spot_on(model, own, path, shape, index, labels, narrow);
+    let spot = |narrow| spot_on(model, own, spans, shape, index, labels, narrow);
     let (at, fallback) = spot(false).or_else(|| spot(true))?;
-    Some((at, fallback || beside))
+    Some((at, fallback || own.beside))
+}
+
+/// The stretches of a route that no other line shares, where its words can stand: the longest
+/// first, or along the route from its part for a line of a door's trunk.
+fn spans(edge: usize, path: &[Point], shape: &Shape, index: &StrokeIndex) -> Vec<Span> {
+    if let Some(&part_first) = shape.trunk.get(&edge) {
+        return index.private(edge, &from_part(path, part_first));
+    }
+    let mut spans = index.private(edge, path);
+    spans.sort_by(|a, b| {
+        length(&[b.a, b.b])
+            .total_cmp(&length(&[a.a, a.b]))
+            .then(a.before.total_cmp(&b.before))
+    });
+    spans
 }
 
 /// The size of a label's plate, or of its narrow plate where its words wrap narrower.
@@ -168,31 +195,25 @@ fn plate(model: &Model<'_>, edge: usize, narrow: bool) -> Option<Rect> {
     })
 }
 
+/// A spot for a route's words on its `spans`, as `spans` finds them, and whether it is a
+/// fallback.
 fn spot_on(
     model: &Model<'_>,
     own: Own<'_>,
-    path: &[Point],
+    spans: &[Span],
     shape: &Shape,
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
     narrow: bool,
 ) -> Option<(Rect, bool)> {
-    let edge = own.edge;
-    let size = plate(model, edge, narrow)?;
-    if let Some(&part_first) = shape.trunk.get(&edge) {
-        let spans = index.private(edge, &from_part(path, part_first));
-        return nearest(&spans, size, shape, own, index, labels).map(|at| (at, false));
+    let size = plate(model, own.edge, narrow)?;
+    if shape.trunk.contains_key(&own.edge) {
+        return nearest(spans, size, shape, own, index, labels).map(|at| (at, false));
     }
-    let mut spans = index.private(edge, path);
-    spans.sort_by(|a, b| {
-        length(&[b.a, b.b])
-            .total_cmp(&length(&[a.a, a.b]))
-            .then(a.before.total_cmp(&b.before))
-    });
-    let midway = midway(&spans, size, shape, own, index, labels);
+    let midway = midway(spans, size, shape, own, index, labels);
     midway
         .map(|at| (at, false))
-        .or_else(|| nearest(&spans, size, shape, own, index, labels).map(|at| (at, true)))
+        .or_else(|| nearest(spans, size, shape, own, index, labels).map(|at| (at, true)))
 }
 
 /// The middle of the longest run that holds the words.
