@@ -286,6 +286,11 @@ every role and changes the values. The file theme.css holds both themes.
 
 **Label/Mono Font:** Maple Mono NL (served as Archboard Maple Mono), the one mono face of the shell and of every picture.
 
+The shell loads bundled fonts under unique family names, with no `local()` source.
+`font-synthesis: none` prevents the browser from inventing missing weights or styles.
+[The font inventory](packages/renderer/assets/fonts/README.md) records the exact files,
+licenses and supported weights.
+
 **Character:** Tall condensed capitals name the thing that a region is about.
 A plain, round sans carries every other word. A quiet mono sets identifiers,
 paths, versions, counts and times.
