@@ -7,15 +7,15 @@ const repo = "github.com/acme/shop";
 const part = (path: string, other = repo) => ({ repo: other, path });
 
 test("a container of a changed module passes, and a changed module with nothing inside it fails", () => {
-	const packages = part("packages");
-	const workspace = part("packages/workspace/");
-	const installation = part("packages/workspace/src/installation.ts");
+	const libs = part("libs");
+	const workspace = part("libs/workspace/");
+	const installation = part("libs/workspace/src/installation.ts");
 	const vault = part(".archboard/vault");
-	const named = part("packages/cli/src/init.ts");
+	const named = part("libs/cli/src/init.ts");
 	expect(
 		outsideDraft(
-			[packages, workspace, installation, vault],
-			[named, packages, workspace, installation, vault],
+			[libs, workspace, installation, vault],
+			[named, libs, workspace, installation, vault],
 		),
 	).toEqual([installation, vault]);
 });
