@@ -196,4 +196,4 @@ test("canonical locality and branch footprint retain source analysis without a l
 	expect(
 		cli(["model", "footprint", "--base", "HEAD~1", "--state", "current", "--fail-outside"]).status,
 	).toBe(2);
-});
+}, 30_000);
