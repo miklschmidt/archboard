@@ -216,11 +216,55 @@ pub(super) fn stand(scene: &mut Scene, doors: &[usize], whole: Rect, gap: f64, p
     if doors.is_empty() {
         return;
     }
+    // Where the doors stand follows from the rest of the scene alone, so a scene whose other
+    // boxes did not move since the ring last stood its doors stands them there again.
+    let bits = standing(scene, doors, (whole, gap, page));
+    if let Some((before, places)) = &scene.ringed
+        && *before == bits
+    {
+        for (&door, &at) in doors.iter().zip(places) {
+            scene.boxes[door] = at;
+        }
+        return;
+    }
     stand_open(scene, (doors, doors), whole, gap, page);
     let between = |line: &Line| doors.contains(&line.from) && doors.contains(&line.to);
     if scene.lines.iter().any(between) {
         stand_open(scene, (doors, &[]), whole, gap, page);
     }
+    scene.ringed = Some((bits, doors.iter().map(|&door| scene.boxes[door]).collect()));
+}
+
+/// The bits of all that the doors' places follow from: the scene but where the doors stand,
+/// the whole, the gap and the page.
+fn standing(scene: &Scene, doors: &[usize], (whole, gap, page): (Rect, f64, Point)) -> Vec<u64> {
+    let counts = [scene.boxes.len(), scene.frames.len(), scene.lines.len()];
+    let mut bits: Vec<u64> = (counts.iter().chain(doors))
+        .map(|&count| count as u64)
+        .collect();
+    let around = [
+        whole.x,
+        whole.y,
+        whole.width,
+        whole.height,
+        gap,
+        page.x,
+        page.y,
+    ];
+    bits.extend(around.map(f64::to_bits));
+    for (at, one) in scene.boxes.iter().enumerate() {
+        if !doors.contains(&at) {
+            bits.extend([one.x, one.y].map(f64::to_bits));
+        }
+        bits.extend([one.width, one.height].map(f64::to_bits));
+    }
+    let frames = scene.frames.iter();
+    bits.extend(frames.flat_map(|one| [one.x, one.y, one.width, one.height].map(f64::to_bits)));
+    bits.extend(scene.solid.iter().map(|&solid| u64::from(solid)));
+    bits.extend((scene.within.iter()).map(|within| within.map_or(u64::MAX, |at| at as u64)));
+    let lines = scene.lines.iter();
+    bits.extend(lines.flat_map(|line| [line.from as u64, line.to as u64, line.plate.to_bits()]));
+    bits
 }
 
 /// The pages that the doors can stand within round a whole, those that read both ways first. On

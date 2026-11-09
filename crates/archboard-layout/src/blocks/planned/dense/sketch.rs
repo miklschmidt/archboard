@@ -303,6 +303,9 @@ pub(super) struct Scene {
     pub lines: Vec<Line>,
     /// The boxes of each group's members.
     pub groups: Vec<Vec<usize>>,
+    /// Where the door ring last stood this scene's doors, and the bits of what it stood them
+    /// from (`super::ring`).
+    pub ringed: Option<(Vec<u64>, Vec<Rect>)>,
 }
 
 impl Scene {
@@ -480,7 +483,7 @@ mod tests {
             boxes,
             frames: Vec::new(),
             lines,
-            groups: Vec::new(),
+            ..Scene::default()
         }
     }
 
