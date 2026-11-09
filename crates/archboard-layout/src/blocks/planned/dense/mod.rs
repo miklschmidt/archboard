@@ -15,6 +15,8 @@ mod room;
 mod search;
 mod sketch;
 
+use std::cell::RefCell;
+
 use rustc_hash::FxHashMap;
 
 use crate::{
@@ -84,6 +86,9 @@ struct Reading<'a> {
     graph: &'a Node,
     blocks: Vec<Block<'a>>,
     doors: Vec<&'a Node>,
+    /// Where the cards stood for each way to stand them that the reading met, by the bits of
+    /// what they stood from: a placement's price and its first drawing stand it alike.
+    stood: RefCell<FxHashMap<Vec<u64>, Stood>>,
 }
 
 /// What a reading sets on grids: the frames it opens, each holding cards alone,
@@ -364,6 +369,7 @@ fn together(sizes: &[Point], stacked: bool, room: f64) -> (Vec<Point>, Point) {
 }
 
 /// Where the cards of a reading stand: what one way to stand them answers.
+#[derive(Clone)]
 struct Stood {
     /// Where each frame stands, and the frames' whole.
     places: Vec<Point>,
@@ -389,12 +395,34 @@ impl<'a> Reading<'a> {
                 .iter()
                 .filter(|node| framed && !node.has_children())
                 .collect(),
+            stood: RefCell::default(),
         })
     }
 
     /// Stand the frames of some sizes together, and the doors round them, for parts that stand
-    /// in their frames as some sets put them.
+    /// in their frames as some sets put them. A way to stand them that the reading met before
+    /// stands as it stood then.
     fn stand(&self, sets: &[Set], stacked: bool, room: f64, page: Point) -> Stood {
+        let key: Vec<u64> = (sets.iter())
+            .flat_map(|set| {
+                let parts = set.parts.iter();
+                let sides = parts.flat_map(|part| [part.x, part.y, part.width, part.height]);
+                [set.size.x, set.size.y].into_iter().chain(sides)
+            })
+            .chain([room, page.x, page.y, f64::from(u8::from(stacked))])
+            .map(f64::to_bits)
+            .collect();
+        if let Some(stood) = self.stood.borrow().get(&key) {
+            return stood.clone();
+        }
+        let stood = self.stand_anew(sets, stacked, room, page);
+        self.stood.borrow_mut().insert(key, stood.clone());
+        stood
+    }
+
+    /// Stand the frames and the doors for parts that stand as some sets put them, as `stand`
+    /// does the first time.
+    fn stand_anew(&self, sets: &[Set], stacked: bool, room: f64, page: Point) -> Stood {
         let sizes: Vec<Point> = sets.iter().map(|set| set.size).collect();
         let (places, whole) = together(&sizes, stacked, room);
         let parts: Vec<Rect> = (sets.iter().zip(&places))
