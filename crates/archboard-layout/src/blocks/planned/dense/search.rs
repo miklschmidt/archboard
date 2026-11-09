@@ -317,8 +317,15 @@ impl Reading<'_> {
         };
         // A search that goes on from an earlier one starts as cool as that one's second round.
         let cooled = if from.is_some() { ROUNDS[1] } else { 1.0 };
+        let mut stood = search.cells.clone();
         for &warmth in rounds {
             search.anneal(moves.min(MOVES * parts.len()), warmth * cooled);
+            // The doors stand where the parts let them, wherever they stood before, so a round
+            // that moved no part leaves them where they stand.
+            if search.cells == stood {
+                continue;
+            }
+            stood.clone_from(&search.cells);
             ring::stand(&mut search.scene, &doors, bounds, gap, readable());
             search.reweigh();
             if search.total() < best.0 {
