@@ -55,14 +55,14 @@ describe("the plan of a proposal", () => {
 		).toEqual(expected);
 		const footprint = {
 			changed: [...part("Intake"), ...part("Catalog")],
-			unboundFiles: [{ path: "docs/notes.md" }],
+			unboundFiles: [{ repo: "github.com/acme/shop", path: "docs/notes.md" }],
 		};
 		expect(planBuckets(footprint, plan)).toEqual({
 			plannedAndChanged: ["Intake"],
 			outsidePlan: ["Catalog"],
 			plannedUnchanged: ["Billing"],
 			changed: ["Catalog", "Intake"],
-			unbound: ["docs/notes.md"],
+			unbound: [{ repo: "github.com/acme/shop", path: "docs/notes.md" }],
 		});
 	});
 

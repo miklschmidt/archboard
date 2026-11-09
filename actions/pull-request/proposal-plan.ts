@@ -79,7 +79,13 @@ interface FootprintReading {
 	/** The parts it could not read, such as a part in a repository this machine has not registered. */
 	readonly skipped?: readonly (FootprintPart & { readonly reason?: string })[] | undefined;
 	/** The changed files that no module is bound to, so that no module shows their change. */
-	readonly unboundFiles?: readonly { readonly path: string }[] | undefined;
+	readonly unboundFiles?: readonly UnboundFile[] | undefined;
+}
+
+/** A changed file that no module is bound to, in its repository. */
+interface UnboundFile {
+	readonly repo: string;
+	readonly path: string;
 }
 
 /** The module names of each bucket. */
@@ -90,7 +96,7 @@ interface Buckets {
 	/** Every changed module, which the comment lists when there is no proposal. */
 	readonly changed: readonly string[];
 	/** The changed files that no module is bound to. They are listed, and never judged. */
-	readonly unbound: readonly string[];
+	readonly unbound: readonly UnboundFile[];
 }
 
 /** The plan of a proposal. */
@@ -292,7 +298,7 @@ function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 			.map(([, name]) => name)
 			.toSorted(),
 		changed: [...changed.values()].toSorted(),
-		unbound: (footprint.unboundFiles ?? []).map((file) => file.path),
+		unbound: (footprint.unboundFiles ?? []).map(({ repo, path }) => ({ repo, path })),
 	};
 }
 
@@ -303,4 +309,5 @@ export {
 	type FootprintReading,
 	type ModelReading,
 	type ProposalPlan,
+	type UnboundFile,
 };
