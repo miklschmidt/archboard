@@ -10,8 +10,8 @@
 // of every line, from its source to its target.
 //
 // The model's figure shows the top reading of `.archboard/vault`, Archboard's own model, as the app
-// draws it with its dependency relationships filtered out, and the SVG of the same reading stands
-// in where no painter draws.
+// draws it, with the renderer's legend under it. The SVG of the same reading stands in where no
+// painter draws.
 //
 // Run from the repository root, inside `nix develop`, after `bun run build:core`:
 //   bun site/scripts/paint.ts
@@ -52,15 +52,14 @@ type Rect = { x: number; y: number; width: number; height: number };
  * Read a model and draw its reading with every container open.
  * @param vault The vault.
  * @param open Whether to open every module that has parts.
- * @param hideKinds The kinds of relationship the reading leaves out, as the app's filter does.
  * @returns The model, its reading and the renderer's request for it.
  */
-async function read(vault: string, open: boolean, hideKinds: string[] = []) {
+async function read(vault: string, open: boolean) {
 	const model = await readArchitectureModel(vault, undefined, undefined, {});
 	if (!model.success) throw new Error(`The vault ${vault} did not read: ${JSON.stringify(model)}`);
 	const parents = new Set(model.modules.map((module) => module.parent));
 	const expand = open ? model.modules.filter(({ id }) => parents.has(id)).map(({ id }) => id) : [];
-	const reading = projectModel(model, null, null, { expand, hideKinds }, undefined);
+	const reading = projectModel(model, null, null, { expand }, undefined);
 	const request = {
 		content: reading.content,
 		variant: reading.complete,
@@ -384,14 +383,12 @@ async function hero() {
 }
 
 /**
- * Archboard's own model, as the app draws it with its dependency relationships filtered out. Each
- * package that a part imports from would otherwise draw one more line, and the calls, data and
- * events between the parts are what the section shows.
+ * Archboard's own model, as the app draws it, with the legend that an exported picture carries.
  * @returns The painting, the SVG of the same reading and its size.
  */
 async function own() {
-	const { request } = await read(".archboard/vault", false, ["dependency"]);
-	const drawn = await renderArchitecture(request);
+	const { request } = await read(".archboard/vault", false);
+	const drawn = await renderArchitecture({ ...request, frame: { legend: "horizontal" } });
 	return {
 		painting: drawn.painting,
 		svg: drawn.svg,

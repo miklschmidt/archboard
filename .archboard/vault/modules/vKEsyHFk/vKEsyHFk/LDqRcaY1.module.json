@@ -3,6 +3,9 @@
   "name": "skills",
   "kind": "package",
   "responsibility": "Ships the agent skills and evaluates them, when a person starts it",
+  "groups": [
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills"
@@ -16,7 +19,5 @@
     }
   ],
   "outgoing": [],
-  "groups": [
-    "packages"
-  ]
+  "parent": "vKEsyHFk#EuaJBisP"
 }

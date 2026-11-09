@@ -3,6 +3,9 @@
   "name": "timing",
   "kind": "package",
   "responsibility": "Every duration, grouped by the subsystem that owns it, with what it pulls against",
+  "groups": [
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/timing"
@@ -16,7 +19,5 @@
     }
   ],
   "outgoing": [],
-  "groups": [
-    "packages"
-  ]
+  "parent": "vKEsyHFk#EuaJBisP"
 }
