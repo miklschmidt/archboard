@@ -28,3 +28,11 @@ test("a directory holds only bindings of its own repository, and a root binding 
 	expect(outsideDraft([root], [root, part("src/gateway.ts")])).toEqual([]);
 	expect(outsideDraft([root], [root])).toEqual([root]);
 });
+
+test("equivalent binding path spellings preserve directory containment", () => {
+	for (const path of ["./src/", "src//", "src/.", "src\\"]) {
+		const directory = part(path);
+		const child = part("./src/gateway.ts");
+		expect(outsideDraft([directory], [directory, child])).toEqual([]);
+	}
+});

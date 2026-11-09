@@ -2,6 +2,8 @@
 // changes with every module bound inside it, so a container of a changed module would fail every
 // gate. The gate judges the module inside instead. Pure.
 
+import { posix } from "node:path";
+
 /** A part as the footprint lists it: where its binding is. */
 interface Bound {
 	readonly repo: string;
@@ -15,9 +17,10 @@ interface Bound {
  * @returns True when `inner` is below `outer` in the same repository.
  */
 function holds(outer: Bound, inner: Bound): boolean {
-	const directory = outer.path.replace(/\/+$/u, "");
 	if (outer.repo !== inner.repo) return false;
-	return directory === "" || directory === "." || inner.path.startsWith(`${directory}/`);
+	const directory = posix.normalize(outer.path.replaceAll("\\", "/")).replace(/\/+$/u, "");
+	const path = posix.normalize(inner.path.replaceAll("\\", "/"));
+	return directory === "." || path.startsWith(`${directory}/`);
 }
 
 /**
