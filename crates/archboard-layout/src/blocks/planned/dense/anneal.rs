@@ -7,7 +7,10 @@
 
 use crate::geometry::{Point, Rect};
 
-use super::sketch::{CROSSING, Chord, Scene, Sketch, Weighed};
+use super::{
+    crossing::Crossings,
+    sketch::{CROSSING, Chord, Scene, Sketch, Weighed},
+};
 
 /// A frame's grid of cells, as the search sees it: every cell one pitch from the next.
 #[derive(Clone, Copy, Debug)]
@@ -52,9 +55,8 @@ const SAMPLES: usize = 40;
 
 /// What a move changes, before it stands or is undone.
 struct Change {
-    /// Each line that ends on a moved part, with its new sketch, chord and cost, and how many
-    /// lines it crosses now.
-    lines: Vec<(usize, Sketch, Chord, f64, usize)>,
+    /// Each line that ends on a moved part, with its new sketch, chord and cost.
+    lines: Vec<Fresh>,
     /// What every other line adds or saves to go round the moved parts.
     rounds: Vec<(usize, f64)>,
     /// How many crossings the move makes, and how many it ends.
@@ -64,21 +66,6 @@ struct Change {
 
 /// A moved line: its new sketch, chord and cost.
 type Fresh = (usize, Sketch, Chord, f64);
-
-/// How many lines each line of a weighed scene crosses.
-fn crossed(scene: &Scene, weighed: &Weighed) -> Vec<usize> {
-    let chords = &weighed.chords;
-    let mut crossed = vec![0; chords.len()];
-    for one in 0..chords.len() {
-        for two in one + 1..chords.len() {
-            if scene.apart(one, two) && chords[one].crosses(&chords[two]) {
-                crossed[one] += 1;
-                crossed[two] += 1;
-            }
-        }
-    }
-    crossed
-}
 
 /// The lines that end on each box of a scene.
 fn touching(scene: &Scene) -> Vec<Vec<usize>> {
@@ -113,8 +100,8 @@ pub(super) struct Search<'p> {
     occupant: Vec<Vec<Option<usize>>>,
     weighed: Weighed,
     total: f64,
-    /// How many lines each line crosses.
-    crossed: Vec<usize>,
+    /// Which lines cross which.
+    crossing: Crossings,
     /// The lines that end on each box, and the groups each box is in.
     touching: Vec<Vec<usize>>,
     grouped: Vec<Vec<usize>>,
@@ -144,7 +131,7 @@ impl<'p> Search<'p> {
         debug_assert!(parts.iter().enumerate().all(|(at, part)| part.at == at));
         Search {
             total: weighed.total(),
-            crossed: crossed(&scene, &weighed),
+            crossing: Crossings::new(&scene),
             touching: touching(&scene),
             grouped: grouped(&scene),
             stamp: vec![0; scene.lines.len()],
@@ -168,7 +155,7 @@ impl<'p> Search<'p> {
     pub(super) fn reweigh(&mut self) {
         self.weighed = self.scene.weigh();
         self.total = self.weighed.total();
-        self.crossed = crossed(&self.scene, &self.weighed);
+        self.crossing = Crossings::new(&self.scene);
     }
 
     fn random(&mut self) -> u64 {
@@ -312,40 +299,6 @@ impl<'p> Search<'p> {
             .collect()
     }
 
-    /// How many lines each moved line crosses now, how many crossings the moved lines make, and
-    /// how many they made before. A pair of moved lines that crossed is in both lines' counts.
-    fn crossings(&self, fresh: &[Fresh]) -> (Vec<usize>, usize, usize) {
-        let mut now: Vec<usize> = (fresh.iter())
-            .map(|&(line, _, chord, _)| {
-                (0..self.scene.lines.len())
-                    .filter(|&other| !self.moved(other) && self.scene.apart(line, other))
-                    .filter(|&other| chord.crosses(&self.weighed.chords[other]))
-                    .count()
-            })
-            .collect();
-        let mut made: usize = now.iter().sum();
-        let pairs = || {
-            (0..fresh.len())
-                .flat_map(|one| (one + 1..fresh.len()).map(move |two| (one, two)))
-                .filter(|&(one, two)| self.scene.apart(fresh[one].0, fresh[two].0))
-        };
-        for (one, two) in pairs().filter(|&(one, two)| fresh[one].2.crosses(&fresh[two].2)) {
-            now[one] += 1;
-            now[two] += 1;
-            made += 1;
-        }
-        let chords = &self.weighed.chords;
-        let twice = pairs()
-            .filter(|&(one, two)| chords[fresh[one].0].crosses(&chords[fresh[two].0]))
-            .count();
-        let before = fresh
-            .iter()
-            .map(|&(line, ..)| self.crossed[line])
-            .sum::<usize>()
-            - twice;
-        (now, made, before)
-    }
-
     /// The groups of the moved parts, and how far apart each group stands now.
     fn regroup(&self, old: &[(usize, usize, Rect)]) -> Vec<(usize, f64)> {
         let mut groups: Vec<usize> = (old.iter())
@@ -367,7 +320,8 @@ impl<'p> Search<'p> {
             })
             .collect();
         let rounds = self.rounds(old);
-        let (now, made, ended) = self.crossings(&fresh);
+        let lines = fresh.iter().map(|&(line, ..)| line);
+        let (made, ended) = self.crossing.weigh(&self.scene, lines);
         let groups = self.regroup(old);
         let weighed = &self.weighed;
         let delta = fresh
@@ -380,9 +334,7 @@ impl<'p> Search<'p> {
                 .map(|&(group, spread)| spread - weighed.spread[group])
                 .sum::<f64>();
         let change = Change {
-            lines: (fresh.into_iter().zip(now))
-                .map(|((line, sketch, chord, cost), crossed)| (line, sketch, chord, cost, crossed))
-                .collect(),
+            lines: fresh,
             rounds,
             crossings: (made, ended),
             groups,
@@ -390,36 +342,13 @@ impl<'p> Search<'p> {
         (delta, change)
     }
 
-    /// Every line that stayed gains or loses the moved lines it now crosses or no longer does.
-    fn recount(&mut self, lines: &[(usize, Sketch, Chord, f64, usize)]) {
-        let Search {
-            scene,
-            weighed,
-            crossed,
-            stamp,
-            stamps,
-            ..
-        } = self;
-        for other in (0..scene.lines.len()).filter(|&other| stamp[other] != *stamps) {
-            let theirs = weighed.chords[other];
-            for &(line, _, chord, _, _) in lines.iter().filter(|line| scene.apart(line.0, other)) {
-                let (was, is) = (
-                    weighed.chords[line].crosses(&theirs),
-                    chord.crosses(&theirs),
-                );
-                crossed[other] = crossed[other] + usize::from(is) - usize::from(was);
-            }
-        }
-    }
-
     fn keep(&mut self, delta: f64, change: Change) {
-        self.recount(&change.lines);
+        self.crossing.keep();
         let weighed = &mut self.weighed;
-        for (line, sketch, chord, cost, crossed) in change.lines {
+        for (line, sketch, chord, cost) in change.lines {
             weighed.sketches[line] = sketch;
             weighed.chords[line] = chord;
             weighed.own[line] = cost;
-            self.crossed[line] = crossed;
         }
         for (line, added) in change.rounds {
             weighed.own[line] += added;

@@ -9,6 +9,7 @@
 //! cards of each row and column as near as what runs between them lets them stand.
 
 mod anneal;
+mod crossing;
 mod grid;
 mod ring;
 mod room;
