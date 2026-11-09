@@ -27,7 +27,7 @@
     {
       "order": 17000,
       "kind": "call",
-      "label": "report the pane, show a model, take back, pick a checkout",
+      "label": "report the pane, show a model, pick a checkout",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

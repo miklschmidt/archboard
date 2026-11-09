@@ -3,21 +3,25 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "iY0ACR2l",
-    "name": "The release workflow attaches each release's docs to its GitHub release",
-    "summary": "The release workflow builds the docs of the released tag and attaches them to the GitHub release, so every deploy of the docs site serves each release at its own address.",
+    "id": "8XM5Moq9",
+    "name": "The release workflow stages each package, and the owner approves it on npm",
+    "summary": "The publish job stages every package with npm stage publish, because its trusted publisher allows only staging, so a release is public only after the owner approves each staged version on npm with 2FA, and the GitHub environment npm no longer waits for a reviewer.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0077-each-release-has-its-own-docs.md"
+        "path": "docs/agents/releasing.md"
+      },
+      {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
       }
     ],
-    "predecessor": "KNw6tcBa",
-    "baseline": "613dca71f639c87d85ea2d34ddcb09f57409b2d9",
-    "createdAt": "2026-11-09T01:21:15.810Z",
-    "adoptedAt": "2026-11-09T01:23:26.868Z",
-    "reason": "The release workflow calls the site workflow, which builds the tag's docs and attaches docs.tar.gz to the GitHub release (.github/workflows/release.yml, site.yml).",
-    "previousCurrent": "KNw6tcBa"
+    "predecessor": "6KbyNVXO",
+    "baseline": "3171540da026614c83ee5ffae94904b3bae19c5b",
+    "createdAt": "2026-11-08T02:25:44.068Z",
+    "adoptedAt": "2026-11-08T02:26:07.544Z",
+    "reason": "The branch ci/staged-publish implements it: the publish job of the release workflow runs npm stage publish on each tarball, the trusted publisher of each package allows only staging, and the owner approves each staged version on npm with 2FA. The owner authorized this adoption.",
+    "previousCurrent": "6KbyNVXO"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
