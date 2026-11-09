@@ -65,6 +65,23 @@ impl StrokeIndex {
         let end = strokes.partition_point(|stroke| stroke.bin <= last);
         &strokes[start..end]
     }
+    /// Whether a route of a line would cross a box in an index of another line: `crosses` for
+    /// the strokes of that route alone.
+    pub(super) fn path_crosses(line: usize, path: &[Point], edge: usize, rect: Rect) -> bool {
+        path.windows(2).any(|pair| {
+            let (horizontal, stroke) = Stroke::of(line, pair);
+            let (low, high, start, end) = if horizontal {
+                (rect.y, rect.y + rect.height, rect.x, rect.x + rect.width)
+            } else {
+                (rect.x, rect.x + rect.width, rect.y, rect.y + rect.height)
+            };
+            stroke.edge != edge
+                && stroke.across > low
+                && stroke.across < high
+                && stroke.lo < end
+                && stroke.hi > start
+        })
+    }
     pub(super) fn crosses(&self, edge: usize, rect: Rect) -> bool {
         for horizontal in [true, false] {
             let (low, high, start, end) = if horizontal {

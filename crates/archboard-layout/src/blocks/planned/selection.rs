@@ -6,7 +6,7 @@ use super::{
     fixed::route_cost,
     model::Model,
     port_spacing::Peer,
-    route_labels::{StrokeIndex, own::words_clear},
+    route_labels::{Seating, own::words_clear},
     shape::Shape,
     topology::Topology,
 };
@@ -399,9 +399,8 @@ pub(super) struct Fit<'a, 'g> {
     /// The guard of the shape's corridors, without its words, which a fit places again.
     probe: OnceCell<Probe<'a, 'g>>,
     junctions: OnceCell<Junctions<'a>>,
-    /// The placement without routes or words, the lines of the placed routes and the index of
-    /// their ink, on which the words of a candidate's shape find room before it is copied.
-    words: OnceCell<(Shape, Option<Vec<usize>>, StrokeIndex)>,
+    /// The words of the placed routes, which find room beside a candidate before it is copied.
+    words: OnceCell<Option<Seating<'a>>>,
 }
 impl<'a, 'g> Fit<'a, 'g> {
     pub(super) fn new(
@@ -466,19 +465,13 @@ impl<'a, 'g> Fit<'a, 'g> {
         if !super::runs::accepts(model, &shape.routes, line) {
             return None;
         }
-        let (bare, lines, strokes) = self.words.get_or_init(|| {
-            let lines = (shape.routes.iter())
-                .map(|line| model.edge_index.get(line.id.as_str()).copied())
-                .collect();
-            (shape.bare(), lines, StrokeIndex::new(model, shape))
-        });
-        let lines = lines.as_ref()?;
-        let strokes = strokes.with(edge, &line.points);
-        let placed = shape.routes.iter().zip(lines.iter().copied());
-        super::route_labels::available(model, bare, placed.chain([(line, edge)]), &strokes)?;
+        let seating = (self.words)
+            .get_or_init(|| Seating::new(model, shape))
+            .as_ref()?;
+        let strokes = seating.admit(model, edge, line)?;
         let mut next = shape.without_labels();
         next.routes.push(line.clone());
-        let indices: Vec<_> = lines.iter().copied().chain([edge]).collect();
+        let indices: Vec<_> = seating.indices().chain([edge]).collect();
         super::route_labels::seated(model, &mut next, &indices, &strokes)?;
         Some(next)
     }
