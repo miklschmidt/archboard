@@ -150,24 +150,28 @@ impl Peer<'_> {
     }
 }
 
+impl<'a> Peer<'a> {
+    /// A placed route as a peer of a line, if it is one.
+    pub(super) fn of(model: &Model<'_>, edge: usize, line: &'a PlacedLine) -> Option<Self> {
+        let (from, to) = model.ends[edge];
+        let other = model.edge_index[line.id.as_str()];
+        let (a, b) = model.ends[other];
+        let meets = [from, to].map(|at| [a, b].map(|end| one_subject(model, at, end)));
+        (meets != [[false; 2]; 2]).then_some(Self {
+            line,
+            meets: if edge == other {
+                [[false; 2]; 2]
+            } else {
+                meets
+            },
+        })
+    }
+}
+
 /// The peers of a line among some placed routes, in their order.
 pub(super) fn peers<'a>(model: &Model<'_>, routes: &'a [PlacedLine], edge: usize) -> Vec<Peer<'a>> {
-    let (from, to) = model.ends[edge];
-    routes
-        .iter()
-        .filter_map(|line| {
-            let other = model.edge_index[line.id.as_str()];
-            let (a, b) = model.ends[other];
-            let meets = [from, to].map(|at| [a, b].map(|end| one_subject(model, at, end)));
-            (meets != [[false; 2]; 2]).then_some(Peer {
-                line,
-                meets: if edge == other {
-                    [[false; 2]; 2]
-                } else {
-                    meets
-                },
-            })
-        })
+    (routes.iter())
+        .filter_map(|line| Peer::of(model, edge, line))
         .collect()
 }
 

@@ -286,7 +286,8 @@ impl<'a> Junction<'a> {
 }
 /// The junctions of one line's candidates with every placed route, each route indexed once.
 pub(super) struct Junctions<'a> {
-    pairs: Option<Vec<Junction<'a>>>,
+    /// The junction with each placed route, if the route is a line of the model.
+    pairs: Vec<Option<Junction<'a>>>,
     /// The route that refused the last candidate, tested first.
     blocker: std::cell::Cell<usize>,
 }
@@ -306,22 +307,29 @@ impl<'a> Junctions<'a> {
     }
     /// Whether a candidate keeps `shared_junction` with every placed route.
     pub(super) fn clear(&self, points: &[Point]) -> bool {
-        let Some(pairs) = self.pairs.as_ref() else {
-            return false;
-        };
         let bounds = super::junctions::Envelope::new(points);
         let first = self.blocker.get();
-        let refuses = |pair: &Junction<'_>| !pair.clear(points, bounds);
-        if pairs.get(first).is_some_and(refuses) {
+        let refuses = |at: usize| !self.shares(at, points, bounds);
+        if first < self.pairs.len() && refuses(first) {
             return false;
         }
-        if let Some(at) =
-            (pairs.iter().enumerate()).position(|(at, pair)| at != first && refuses(pair))
-        {
+        if let Some(at) = (0..self.pairs.len()).position(|at| at != first && refuses(at)) {
             self.blocker.set(at);
             return false;
         }
         true
+    }
+    /// `shared_junction` of a candidate, whose envelope is `bounds`, with the placed route at
+    /// `at`.
+    pub(super) fn shares(
+        &self,
+        at: usize,
+        points: &[Point],
+        bounds: super::junctions::Envelope,
+    ) -> bool {
+        self.pairs[at]
+            .as_ref()
+            .is_some_and(|pair| pair.clear(points, bounds))
     }
 }
 

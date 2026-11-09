@@ -1,6 +1,6 @@
 //! Reconsider only the connected routes that block one relationship.
 use super::{
-    fixed::{compatible, route_cost},
+    fixed::{Meeting, route_cost},
     model::Model,
     selection::Fit,
     shape::Shape,
@@ -101,15 +101,11 @@ fn conflicts<'a>(
     edge: usize,
     locked: &[usize],
 ) -> Vec<Conflict<'a>> {
+    let meeting = Meeting::new(model, topology, edge, &shape.routes);
     let mut choices: Vec<_> = paths
         .iter()
         .filter_map(|line| {
-            let bad: Vec<_> = shape
-                .routes
-                .iter()
-                .filter(|old| !compatible(model, topology, edge, line, old))
-                .map(|old| model.edge_index[old.id.as_str()])
-                .collect();
+            let bad: Vec<_> = meeting.blocking(line).collect();
             (!bad.is_empty() && bad.len() <= 3 && !bad.iter().any(|e| locked.contains(e)))
                 .then_some(Conflict { bad, line })
         })
