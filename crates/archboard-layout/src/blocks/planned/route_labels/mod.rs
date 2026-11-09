@@ -5,7 +5,7 @@ mod strokes;
 mod trunk;
 
 use own::{Own, keeps, meets};
-use strokes::StrokeIndex;
+pub(super) use strokes::StrokeIndex;
 pub(super) use trunk::{branches, from_part, seat};
 
 use super::{
@@ -325,13 +325,30 @@ fn search_window(a: f64, b: f64, across: f64, across_half: f64, horizontal: bool
 pub(super) fn arrange(model: &Model<'_>, shape: &mut Shape) -> Option<usize> {
     let strokes = StrokeIndex::new(model, shape);
     shape.labels.clear();
-    let mut labels = super::label_space::Labels::default();
     let indices: Vec<_> = shape
         .routes
         .iter()
         .map(|line| model.edge_index.get(line.id.as_str()).copied())
         .collect::<Option<_>>()?;
-    available(model, shape, &indices, &strokes, &labels)?;
+    available(
+        model,
+        shape,
+        shape.routes.iter().zip(indices.iter().copied()),
+        &strokes,
+    )?;
+    seated(model, shape, &indices, &strokes)
+}
+
+/// The rest of `arrange`, for a shape without words whose lines `available` found room for.
+/// `indices` are the lines of its routes, and `strokes` the index of their ink.
+pub(super) fn seated(
+    model: &Model<'_>,
+    shape: &mut Shape,
+    indices: &[usize],
+    strokes: &StrokeIndex,
+) -> Option<usize> {
+    debug_assert!(shape.labels.is_empty());
+    let mut labels = super::label_space::Labels::default();
     let mut order: Vec<_> = (0..shape.routes.len()).collect();
     order.sort_by(|&a, &b| {
         let area = |index: usize| {
@@ -341,28 +358,32 @@ pub(super) fn arrange(model: &Model<'_>, shape: &mut Shape) -> Option<usize> {
         };
         area(b).total_cmp(&area(a)).then(a.cmp(&b))
     });
-    seed(shape, &indices, &order, &strokes, &mut labels);
+    seed(shape, indices, &order, strokes, &mut labels);
     let mut fallbacks = 0;
     for _ in 0..4 {
-        let (count, changed) = update(model, shape, &indices, &order, &strokes, &mut labels)?;
+        let (count, changed) = update(model, shape, indices, &order, strokes, &mut labels)?;
         fallbacks = count;
         if !changed {
             return Some(fallbacks);
         }
     }
-    consistent(model, shape, &indices, &order, &strokes, &labels)?;
+    consistent(model, shape, indices, &order, strokes, &labels)?;
     Some(fallbacks)
 }
 
-fn available(
+/// Whether every worded line, each with its index, has a spot for its words along its route
+/// before any words take space: the first test of `arrange`. `shape` holds no words, and
+/// `strokes` indexes the ink of the lines.
+pub(super) fn available<'l>(
     model: &Model<'_>,
     shape: &Shape,
-    indices: &[usize],
+    lines: impl IntoIterator<Item = (&'l crate::blocks::assembly::PlacedLine, usize)>,
     strokes: &StrokeIndex,
-    labels: &super::label_space::Labels,
 ) -> Option<()> {
+    debug_assert!(shape.labels.is_empty());
+    let labels = &super::label_space::Labels::default();
     // A new or covered label needs a private spot even before other labels take space.
-    for (line, &edge) in shape.routes.iter().zip(indices) {
+    for (line, edge) in lines {
         if model.edges[edge].label().is_some()
             && line
                 .label

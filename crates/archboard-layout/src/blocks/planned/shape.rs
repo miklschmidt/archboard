@@ -78,8 +78,16 @@ impl Shape {
     /// Candidate labels are recomputed, so do not copy the discarded label map.
     pub(super) fn without_labels(&self) -> Self {
         Self {
-            drawing: Rc::clone(&self.drawing),
             routes: self.routes.clone(),
+            ..self.bare()
+        }
+    }
+
+    /// The placement alone, without routes or words.
+    pub(super) fn bare(&self) -> Self {
+        Self {
+            drawing: Rc::clone(&self.drawing),
+            routes: Vec::new(),
             endpoints: Rc::clone(&self.endpoints),
             tabs: Rc::clone(&self.tabs),
             scopes: Rc::clone(&self.scopes),

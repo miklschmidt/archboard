@@ -5,6 +5,7 @@ use super::{Span, subtract};
 use crate::blocks::planned::{geometry::length, model::Model, shape::Shape};
 use crate::geometry::{Point, Rect};
 
+#[derive(Clone)]
 struct Stroke {
     edge: usize,
     across: f64,
@@ -23,34 +24,35 @@ fn bin(at: f64) -> i64 {
     at as i64
 }
 
-pub(super) struct StrokeIndex {
+pub(in crate::blocks::planned) struct StrokeIndex {
     strokes: Strokes,
     pub(super) clearance: std::cell::RefCell<rustc_hash::FxHashMap<(usize, [u64; 4]), bool>>,
 }
 impl StrokeIndex {
-    pub(super) fn new(model: &Model<'_>, shape: &Shape) -> Self {
+    pub(in crate::blocks::planned) fn new(model: &Model<'_>, shape: &Shape) -> Self {
         let mut strokes: Strokes = Default::default();
         for line in &shape.routes {
             let edge = model.edge_index[line.id.as_str()];
-            for pair in line.points.windows(2) {
-                let horizontal = pair[0].y == pair[1].y;
-                let (across, a, b) = if horizontal {
-                    (pair[0].y, pair[0].x, pair[1].x)
-                } else {
-                    (pair[0].x, pair[0].y, pair[1].y)
-                };
-                strokes[usize::from(horizontal)].push(Stroke {
-                    edge,
-                    across,
-                    lo: a.min(b),
-                    hi: a.max(b),
-                    bin: bin((across * 1e6).round()),
-                });
+            for (horizontal, stroke) in line.points.windows(2).map(|pair| Stroke::of(edge, pair)) {
+                strokes[usize::from(horizontal)].push(stroke);
             }
         }
         // Stable bins retain the original subtraction order within each coordinate.
         for axis in &mut strokes {
             axis.sort_by_key(|stroke| stroke.bin);
+        }
+        Self {
+            strokes,
+            clearance: std::cell::RefCell::default(),
+        }
+    }
+    /// The index of these routes and one more route after them, as `new` makes it.
+    pub(in crate::blocks::planned) fn with(&self, edge: usize, path: &[Point]) -> Self {
+        let mut strokes = self.strokes.clone();
+        for (horizontal, stroke) in path.windows(2).map(|pair| Stroke::of(edge, pair)) {
+            let axis = &mut strokes[usize::from(horizontal)];
+            // A later stroke follows every stroke of its bin, as the stable sort of `new` puts it.
+            axis.insert(axis.partition_point(|s| s.bin <= stroke.bin), stroke);
         }
         Self {
             strokes,
@@ -155,6 +157,26 @@ impl StrokeIndex {
             before += length(pair);
         }
         spans
+    }
+}
+
+impl Stroke {
+    /// The stroke of one run of a route, and whether it runs across the page.
+    fn of(edge: usize, pair: &[Point]) -> (bool, Self) {
+        let horizontal = pair[0].y == pair[1].y;
+        let (across, a, b) = if horizontal {
+            (pair[0].y, pair[0].x, pair[1].x)
+        } else {
+            (pair[0].x, pair[0].y, pair[1].y)
+        };
+        let stroke = Self {
+            edge,
+            across,
+            lo: a.min(b),
+            hi: a.max(b),
+            bin: bin((across * 1e6).round()),
+        };
+        (horizontal, stroke)
     }
 }
 
