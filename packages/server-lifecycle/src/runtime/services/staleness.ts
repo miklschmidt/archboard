@@ -132,7 +132,9 @@ interface FrontendState {
 	message: string | null;
 }
 
-const BUILT_ASSET = /^\/assets\//;
+// The build names its entry relative to the page (`./assets/`). A tab opened before the build
+// took a relative base names it from the root (`/assets/`), and is told to reload as well.
+const BUILT_ASSET = /^\.?\/assets\//;
 
 /**
  * Whether a reported entry script is a hashed vite bundle rather than a dev

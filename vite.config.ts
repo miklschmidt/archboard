@@ -523,6 +523,9 @@ export default defineConfig({
 		},
 	},
 	root: join(repositoryRoot, "apps", "web"),
+	// A relative base resolves every asset, worker and core against the page, so a copy of the
+	// build works under any path of a static host, as well as at the root of the Archboard server.
+	base: "./",
 	plugins: [react(), tailwindcss(), rendererBuild(), frontendInputs()],
 	build: {
 		// The server serves the frontend directory of the installation (dist/frontend of the checkout). It lies outside the root, so it is emptied on purpose.
