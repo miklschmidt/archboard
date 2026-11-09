@@ -394,7 +394,7 @@ Give the check's words back to the agent before you review its work:
 archboard check > /dev/null 2> check.log || codex exec "archboard check failed. Fix the code or the model. The findings: $(cat check.log)"
 ```
 
-[The gate guide](https://miklschmidt.github.io/archboard/docs/gate/) has the hook, the Claude Code Stop hook and the loop, and [Architecture on pull requests](https://miklschmidt.github.io/archboard/docs/pull-requests/) has the Action that posts the plan with pictures before and after.
+[The gate guide](https://miklschmidt.github.io/archboard/docs/gate/) covers the hook, the Claude Code Stop hook and the loop. [Architecture on pull requests](https://miklschmidt.github.io/archboard/docs/pull-requests/) covers the Action that posts the proposal, the vault link and the footprint as text.
 
 ## Prompts to try
 
