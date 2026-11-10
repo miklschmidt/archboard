@@ -102,7 +102,11 @@ function installBunHost(): void {
 	if (installed) return;
 	installRendererHost({
 		core: loadedCore,
-		solve: createEnginePool(startEngineWorker, bunWorkerCeiling(availableParallelism())),
+		solve: createEnginePool(
+			startEngineWorker,
+			bunWorkerCeiling(availableParallelism()),
+			(graph, host) => loadedCore().layOutAcross(graph, host),
+		),
 		themeColors: THEME_COLORS,
 		iconPaths,
 	});

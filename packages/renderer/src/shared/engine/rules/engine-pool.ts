@@ -35,6 +35,14 @@
 // again, as every solve of a re-render after an edit that keeps every card's
 // size is, is answered at once and reaches no worker (TASK-548.02).
 //
+// A pool of two workers or more lays a solve asked while no other solve is
+// under way out across them with the core's `layOutAcross` (ADR 0078): a
+// Blocks solve that takes a dense placement becomes parts, which wait in the
+// queue as solves do and go to the workers side by side, and any other solve
+// stays one. The pool remembers the solve's answer, never a part's. Calling
+// the solve off calls off its parts that still wait, and refuses it with the
+// signal's reason.
+//
 // The workers accept `{ id, graph }` and answer with
 // `{ id, data }` or `{ id, error, fatal }`. A worker says `{ ready: true }`
 // once its core is instantiated.
@@ -43,6 +51,15 @@ import type { RendererHost } from "#shared/render/rules/host.ts";
 
 /** What one solve takes and gives, as the renderer host states it. */
 type Solve = RendererHost["solve"];
+
+/**
+ * The core's layout of one solve across the workers (`layOutAcross`): it asks
+ * the pool for each part it needs and answers what one solve answers.
+ */
+type Across = (
+	graph: string,
+	host: { solve: (graph: string, signal: AbortSignal) => Promise<string> },
+) => Promise<string>;
 
 /** What a worker answers one message with: the solved graph, as the core wrote it. */
 interface EngineAnswer {
@@ -197,9 +214,14 @@ function rememberedSolves(bound: number) {
  * A pool of engine workers.
  * @param startWorker Starts one engine worker.
  * @param ceiling The most workers that may run.
+ * @param across The core's layout of a solve across the workers, where the pool runs several.
  * @returns The solve the renderer host uses.
  */
-function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Solve {
+function createEnginePool(
+	startWorker: () => EngineWorker,
+	ceiling: number,
+	across?: Across,
+): Solve {
 	const engines: PooledEngine[] = [];
 	/** Solves no worker is free for yet, in the order they were asked. */
 	const queued: Pending[] = [];
@@ -372,15 +394,16 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 		}
 	}
 
-	return (graph, signal) =>
-		new Promise<string>((resolve, reject) => {
+	/**
+	 * Queue one solve for the first worker free, in the order solves are asked.
+	 * @param graph The graph.
+	 * @param signal Calls the solve off while it waits for a worker.
+	 * @returns Its answer.
+	 */
+	function queue(graph: string, signal: AbortSignal | undefined): Promise<string> {
+		return new Promise<string>((resolve, reject) => {
 			if (signal?.aborted === true) {
 				reject(signal.reason);
-				return;
-			}
-			const known = solved.get(graph);
-			if (known !== undefined) {
-				resolve(known);
 				return;
 			}
 			/**
@@ -393,18 +416,72 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 				queued.splice(index, 1);
 				reject(signal?.reason);
 			};
-			/**
-			 * Remember the answer, so the same solve asked again reaches no worker.
-			 * @param answer The solved graph.
-			 */
-			const remember = (answer: string): void => {
-				solved.remember(graph, answer);
-				resolve(answer);
-			};
-			queued.push({ graph, signal, cancel, resolve: remember, reject, retried: false });
+			queued.push({ graph, signal, cancel, resolve, reject, retried: false });
 			signal?.addEventListener("abort", cancel, { once: true });
 			dispatch();
 		});
+	}
+
+	/**
+	 * Lay a solve out across the workers: each part the core asks for waits in
+	 * the queue, and calling the solve off calls off its parts.
+	 * @param lay The core's layout across the workers.
+	 * @param graph The graph.
+	 * @param signal Calls the solve off.
+	 * @returns Its answer.
+	 */
+	async function split(
+		lay: Across,
+		graph: string,
+		signal: AbortSignal | undefined,
+	): Promise<string> {
+		/**
+		 * Queue one part that the core asks for.
+		 * @param part The part's graph.
+		 * @param called Calls the part off once the core no longer reads it.
+		 * @returns The part's answer.
+		 */
+		const solve = (part: string, called: AbortSignal): Promise<string> =>
+			queue(part, signal === undefined ? called : AbortSignal.any([called, signal]));
+		try {
+			return await lay(graph, { solve });
+		} catch (error) {
+			throw signal?.aborted === true ? signal.reason : error;
+		}
+	}
+
+	/** The core's layout across the workers, where the pool runs several. */
+	const spread = ceiling > 1 ? across : undefined;
+	/** How many solves the pool answers now, whole or in parts. */
+	let answering = 0;
+
+	/**
+	 * Answer a solve in parts across the workers while no other solve is under
+	 * way. Parts cost more processor time than one solve, so a solve asked while
+	 * another one shares the workers stays whole.
+	 * @param graph The graph.
+	 * @param signal Calls the solve off.
+	 * @returns Its answer.
+	 */
+	async function wholeOrInParts(graph: string, signal: AbortSignal | undefined): Promise<string> {
+		const inParts = answering === 0 ? spread : undefined;
+		answering += 1;
+		try {
+			return await (inParts === undefined ? queue(graph, signal) : split(inParts, graph, signal));
+		} finally {
+			answering -= 1;
+		}
+	}
+
+	return async (graph, signal) => {
+		if (signal?.aborted === true) throw signal.reason;
+		const known = solved.get(graph);
+		if (known !== undefined) return known;
+		const answered = await wholeOrInParts(graph, signal);
+		// Remembered, so the same solve asked again reaches no worker.
+		solved.remember(graph, answered);
+		return answered;
+	};
 }
 
-export { createEnginePool, engineAborted, workerCeiling, type EngineWorker };
+export { createEnginePool, engineAborted, workerCeiling, type Across, type EngineWorker };

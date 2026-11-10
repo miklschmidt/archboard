@@ -90,7 +90,11 @@ function startBrowserRenderer(): void {
 	// starts as the page starts, ahead of its first picture.
 	warmPainter();
 	if (started !== undefined) return;
-	const solve = createEnginePool(startLayoutWorker, workerCeiling(navigator.hardwareConcurrency));
+	const solve = createEnginePool(
+		startLayoutWorker,
+		workerCeiling(navigator.hardwareConcurrency),
+		(graph, host) => paintingCore().layOutAcross(graph, host),
+	);
 	installRendererHost({
 		core: paintingCore,
 		solve,
