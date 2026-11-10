@@ -8,6 +8,11 @@
 //! Along one wall of the ring, one way of a line keeps the same segment among the boxes, and
 //! its other segment runs beside the ring, past every box. What such a way adds depends on that
 //! one segment alone, so the line keeps it for the next place.
+//!
+//! A segment runs through a box only where it stands strictly within the box's inner edges
+//! across its course. So each axis is cut into even stretches, each with the bits of the boxes
+//! whose inner edges reach into it, and a way asks only the boxes of its segments' stretches,
+//! in the boxes' order.
 
 use std::cell::Cell;
 
@@ -151,6 +156,49 @@ impl Way {
     }
 }
 
+/// How many even stretches each axis is cut into.
+const STRETCHES: usize = 64;
+
+/// The solid boxes by even stretches of one axis: for each stretch, the bits of the boxes whose
+/// inner edges reach into it, in the boxes' order, some words to a stretch.
+struct Stretches {
+    low: f64,
+    scale: f64,
+    bits: Vec<u64>,
+}
+
+impl Stretches {
+    /// The stretches of an axis between two ends, for the inner edges of each box along it.
+    fn new((low, high): (f64, f64), inner: impl Iterator<Item = (f64, f64)>, words: usize) -> Self {
+        let scale = STRETCHES as f64 / (high - low);
+        let mut stretches = Stretches {
+            low,
+            scale: if scale.is_finite() { scale } else { 0.0 },
+            bits: vec![0; STRETCHES * words],
+        };
+        for (at, (first, last)) in inner.enumerate() {
+            // A box no wider than its two touches has no segment within it.
+            if first < last {
+                for stretch in stretches.at(first)..=stretches.at(last) {
+                    stretches.bits[stretch * words + at / 64] |= 1 << (at % 64);
+                }
+            }
+        }
+        stretches
+    }
+
+    /// The stretch that a place along the axis stands in. A later place never stands in an
+    /// earlier stretch.
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "the cast saturates, so it keeps the order of the places"
+    )]
+    fn at(&self, place: f64) -> usize {
+        (((place - self.low) * self.scale) as usize).min(STRETCHES - 1)
+    }
+}
+
 /// The solid boxes and the foreign frames that a line's sketches go round, each in the scene's
 /// order.
 pub(in crate::blocks::planned::dense) struct InTheWay {
@@ -159,6 +207,10 @@ pub(in crate::blocks::planned::dense) struct InTheWay {
     /// Across each axis, where a segment can stand to run through a solid box: past either end
     /// it runs through none.
     within: [(f64, f64); 2],
+    /// The solid boxes by stretches across and down, and how many words of bits each stretch
+    /// takes.
+    stretches: [Stretches; 2],
+    words: usize,
     /// The last segments that ran through boxes alone in their way, and what each added, and
     /// which of them goes next.
     known: [Cell<Option<(Run, f64)>>; 2],
@@ -176,10 +228,22 @@ impl InTheWay {
             span(|at| at.inner[0], |at| at.inner[2]),
             span(|at| at.inner[1], |at| at.inner[3]),
         ];
+        let words = solid.len().div_ceil(64);
+        let inner = |first: usize, last: usize| {
+            solid
+                .iter()
+                .map(move |at| (at.inner[first], at.inner[last]))
+        };
+        let stretches = [
+            Stretches::new(within[0], inner(0, 2), words),
+            Stretches::new(within[1], inner(1, 3), words),
+        ];
         InTheWay {
             solid,
             frames,
             within,
+            stretches,
+            words,
             known: [Cell::new(None), Cell::new(None)],
             next: Cell::new(0),
         }
@@ -198,7 +262,8 @@ impl InTheWay {
         let way = Way::new(sketch);
         let runs = &way.runs[..if way.bent { 2 } else { 1 }];
         let mut among = runs.iter().filter(|run| !self.clear(run));
-        let lone = match (among.next(), among.next()) {
+        let (one, two) = (among.next(), among.next());
+        let lone = match (one, two) {
             (None, _) => return 0.0,
             (Some(&run), None) => Some(run),
             _ => None,
@@ -210,9 +275,20 @@ impl InTheWay {
         if let Some(added) = known {
             return added;
         }
+        // Only the boxes of the stretches that the segments among the boxes stand in.
+        let words = self.words;
+        let stretch = |run: &Run| {
+            let by = &self.stretches[usize::from(!run.upright)];
+            &by.bits[by.at(run.along) * words..][..words]
+        };
+        let (one, two) = (one.map(stretch), two.map(stretch));
         let mut added = 0.0;
-        for solid in &self.solid {
-            added += way.round(solid);
+        for word in 0..words {
+            let mut near = one.map_or(0, |one| one[word]) | two.map_or(0, |two| two[word]);
+            while near != 0 {
+                added += way.round(&self.solid[word * 64 + near.trailing_zeros() as usize]);
+                near &= near - 1;
+            }
         }
         if let Some(run) = lone {
             let next = self.next.get();
