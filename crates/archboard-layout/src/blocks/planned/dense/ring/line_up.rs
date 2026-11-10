@@ -26,21 +26,24 @@ fn frees(
     slot: impl Fn(usize) -> usize,
 ) -> (Vec<f64>, Vec<usize>) {
     let slots = ring.slots();
+    let takes = Ring::takes(last);
     let mut least = vec![f64::INFINITY; slots + 1];
     let mut from = vec![usize::MAX; slots + 1];
     for (linear, &cost) in best.iter().enumerate().filter(|(_, cost)| cost.is_finite()) {
         // A wall's end is the next wall's start, so `after` stays linear past the cut.
-        let free = ring.after(slot(linear), last) - slot(linear) + linear;
+        let free = ring.after(slot(linear), &takes) - slot(linear) + linear;
         if free <= slots && cost < least[free] {
             least[free] = cost;
             from[free] = linear;
         }
     }
     // A place further along is free wherever an earlier one is.
-    for linear in 1..=slots {
-        if least[linear - 1] < least[linear] {
-            least[linear] = least[linear - 1];
-            from[linear] = from[linear - 1];
+    let mut earlier = (f64::INFINITY, usize::MAX);
+    for (least, from) in least.iter_mut().zip(&mut from) {
+        if earlier.0 < *least {
+            (*least, *from) = earlier;
+        } else {
+            earlier = (*least, *from);
         }
     }
     (least, from)
@@ -65,10 +68,10 @@ fn line_up(
             None => (vec![0.0; slots + 1], vec![usize::MAX; slots + 1]),
             Some(previous) => frees(ring, sizes[order[previous]], &best[previous], slot),
         };
-        let own: Vec<f64> = (0..slots)
-            .map(|linear| {
-                costs[door][slot(linear)].map_or(f64::INFINITY, |cost| least[linear] + cost)
-            })
+        // The door's costs in linear order: from the cut round to it.
+        let (before_cut, after_cut) = costs[door].split_at(cut);
+        let own: Vec<f64> = (after_cut.iter().chain(before_cut).zip(&least))
+            .map(|(cost, &least)| cost.map_or(f64::INFINITY, |cost| least + cost))
             .collect();
         best.push(own);
         before.push(from);

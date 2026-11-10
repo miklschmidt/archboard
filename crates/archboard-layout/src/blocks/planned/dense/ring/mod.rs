@@ -159,13 +159,18 @@ impl Ring {
         })
     }
 
-    /// The first slot that a door after one at this slot can take: past its room on the same
-    /// wall, or the next wall's first slot, which stands clear of it round the corner.
-    fn after(&self, slot: usize, door: Door) -> usize {
+    /// How many slots a door takes on each wall, with the step to the next door.
+    fn takes(door: Door) -> [usize; 4] {
+        [0, 1, 2, 3].map(|wall| slot_count(((door.span(wall) + STEP) / PITCH).ceil()))
+    }
+
+    /// The first slot that a door after one at this slot can take, for the slots that one takes
+    /// on each wall (`takes`): past its room on the same wall, or the next wall's first slot,
+    /// which stands clear of it round the corner.
+    fn after(&self, slot: usize, takes: &[usize; 4]) -> usize {
         let (wall, _) = self.locate(slot);
-        let past = slot + slot_count(((door.span(wall) + STEP) / PITCH).ceil());
         let (start, count) = self.walls[wall];
-        past.min(start + count)
+        (slot + takes[wall]).min(start + count)
     }
 }
 
