@@ -13,6 +13,7 @@ use crate::geometry::{Point, Rect};
 use super::ring::Ringed;
 
 pub(super) use chord::{Chord, Past};
+pub(super) use even::{Even, STRETCHES};
 pub(super) use way::InTheWay;
 
 /// One crossing costs as much as this much line, as the ranking of routed drawings weighs it.
@@ -434,6 +435,7 @@ impl Weighed {
 }
 
 mod chord;
+mod even;
 mod way;
 
 #[cfg(test)]

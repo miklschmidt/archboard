@@ -3,15 +3,14 @@
 //! margin of `Edges::near`, reaches into it. A line near a box shares a stretch with it on both
 //! axes, so only those lines need the exact test.
 
-use super::{Edges, MARGIN};
-
-/// How many even stretches each axis is cut into.
-const STRETCHES: usize = 64;
+use super::{
+    super::sketch::{Even, STRETCHES},
+    Edges, MARGIN,
+};
 
 pub(super) struct Near {
-    /// Where the stretches of each axis start, and how many stretches a unit of length takes.
-    low: [f64; 2],
-    scale: [f64; 2],
+    /// Each axis, cut into even stretches.
+    axes: [Even; 2],
     /// How many words of bits each stretch takes.
     words: usize,
     /// For each axis, the lines in each stretch.
@@ -24,16 +23,11 @@ impl Near {
     /// The lines by the boxes round their ends, in stretches of a box round the scene. A box
     /// past its sides stands in its first or last stretch.
     pub(super) fn new(bounds: &[Edges], scene: Edges) -> Near {
-        let scale = |low: f64, high: f64| {
-            let scale = STRETCHES as f64 / (high - low);
-            if scale.is_finite() { scale } else { 0.0 }
-        };
         let words = bounds.len().div_ceil(64);
         let mut near = Near {
-            low: [scene.left, scene.top],
-            scale: [
-                scale(scene.left, scene.right),
-                scale(scene.top, scene.bottom),
+            axes: [
+                Even::new(scene.left, scene.right),
+                Even::new(scene.top, scene.bottom),
             ],
             words,
             bits: [vec![0; STRETCHES * words], vec![0; STRETCHES * words]],
@@ -47,22 +41,12 @@ impl Near {
         near
     }
 
-    /// The stretch that a place along an axis stands in. A later place never stands in an
-    /// earlier stretch.
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::cast_sign_loss,
-        reason = "the cast saturates, so it keeps the order of the places"
-    )]
-    fn at(&self, axis: usize, place: f64) -> usize {
-        (((place - self.low[axis]) * self.scale[axis]) as usize).min(STRETCHES - 1)
-    }
-
     /// The first and the last stretch of a box on each axis, with the margin past its far sides.
     fn span(&self, at: &Edges) -> [(usize, usize); 2] {
+        let [across, down] = &self.axes;
         [
-            (self.at(0, at.left), self.at(0, at.right + MARGIN)),
-            (self.at(1, at.top), self.at(1, at.bottom + MARGIN)),
+            (across.at(at.left), across.at(at.right + MARGIN)),
+            (down.at(at.top), down.at(at.bottom + MARGIN)),
         ]
     }
 

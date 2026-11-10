@@ -18,7 +18,7 @@ use std::cell::Cell;
 
 use crate::geometry::{Point, Rect};
 
-use super::{BEND, Scene, Sketch, TOUCH, rounds};
+use super::{BEND, Even, STRETCHES, Scene, Sketch, TOUCH, rounds};
 
 /// A solid box by the edges that a sketch is tested against: its own, and each moved in or out
 /// by the room that keeps a touch apart.
@@ -156,46 +156,29 @@ impl Way {
     }
 }
 
-/// How many even stretches each axis is cut into.
-const STRETCHES: usize = 64;
-
 /// The solid boxes by even stretches of one axis: for each stretch, the bits of the boxes whose
 /// inner edges reach into it, in the boxes' order, some words to a stretch.
 struct Stretches {
-    low: f64,
-    scale: f64,
+    axis: Even,
     bits: Vec<u64>,
 }
 
 impl Stretches {
     /// The stretches of an axis between two ends, for the inner edges of each box along it.
     fn new((low, high): (f64, f64), inner: impl Iterator<Item = (f64, f64)>, words: usize) -> Self {
-        let scale = STRETCHES as f64 / (high - low);
         let mut stretches = Stretches {
-            low,
-            scale: if scale.is_finite() { scale } else { 0.0 },
+            axis: Even::new(low, high),
             bits: vec![0; STRETCHES * words],
         };
         for (at, (first, last)) in inner.enumerate() {
             // A box no wider than its two touches has no segment within it.
             if first < last {
-                for stretch in stretches.at(first)..=stretches.at(last) {
+                for stretch in stretches.axis.at(first)..=stretches.axis.at(last) {
                     stretches.bits[stretch * words + at / 64] |= 1 << (at % 64);
                 }
             }
         }
         stretches
-    }
-
-    /// The stretch that a place along the axis stands in. A later place never stands in an
-    /// earlier stretch.
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::cast_sign_loss,
-        reason = "the cast saturates, so it keeps the order of the places"
-    )]
-    fn at(&self, place: f64) -> usize {
-        (((place - self.low) * self.scale) as usize).min(STRETCHES - 1)
     }
 }
 
@@ -279,7 +262,7 @@ impl InTheWay {
         let words = self.words;
         let stretch = |run: &Run| {
             let by = &self.stretches[usize::from(!run.upright)];
-            &by.bits[by.at(run.along) * words..][..words]
+            &by.bits[by.axis.at(run.along) * words..][..words]
         };
         let (one, two) = (one.map(stretch), two.map(stretch));
         let mut added = 0.0;
