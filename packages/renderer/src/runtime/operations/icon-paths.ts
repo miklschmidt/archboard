@@ -7,6 +7,8 @@
 
 import * as RemixIcons from "@remixicon/react";
 import { isValidElement, type ReactNode } from "react";
+import type { SemanticPolicy } from "@archboard/model/policy";
+import { iconsNamedBy } from "#shared/render/rules/policy-icons.ts";
 
 const icons = new Map<string, unknown>(Object.entries(RemixIcons));
 const known = new Map<string, readonly string[] | undefined>();
@@ -45,4 +47,20 @@ function iconNames(): string[] {
 	return [...icons.keys()].filter((name) => /^Ri[A-Za-z0-9]+(?:Line|Fill)$/u.test(name));
 }
 
-export { iconNames, iconPaths };
+/**
+ * The path data of every icon a picture drawn under a policy can name, by
+ * name in sorted order. An icon the package does not have is left out, and
+ * the renderer draws its fallback in its place.
+ * @param policy The vault policy.
+ * @returns The paths of each icon.
+ */
+function policyIconPaths(policy: SemanticPolicy): Record<string, readonly string[]> {
+	return Object.fromEntries(
+		[...iconsNamedBy(policy)].toSorted().flatMap((name) => {
+			const paths = iconPaths(name);
+			return paths === undefined ? [] : [[name, paths] as const];
+		}),
+	);
+}
+
+export { iconNames, iconPaths, policyIconPaths };

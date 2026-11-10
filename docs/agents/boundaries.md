@@ -292,6 +292,11 @@ The package's `exports` declares the public subpaths.
 The shared interface separates these responsibilities:
 
 - `./contract` exposes canonical read, edit, claim, recovery, render, history, import, and initialization schemas.
+  It also exposes `ModelSnapshotSchema`, the portable file of `archboard model snapshot`: one state, its comparison
+  state, the vault check, and icon paths for the policies of both readings and the check.
+  Each reading keeps its own policy. The icon map also covers the default vocabulary and renderer marks.
+  `policyIconPaths` and the browser loader share one naming rule and the same Remix Icon path lookup.
+  A consumer can draw these inputs without a server. The browser app does not yet consume this file.
   Derive local types from those schemas and operation results.
 - `./migration` exposes original inventory and explicit mapping contracts.
   Legacy document schemas remain available for migration and exact retained originals.
@@ -477,8 +482,9 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   the canvas draws with, the code warnings, and what a render asks and answers. The kinds the key lists and each
   subject's appearance arrive with the picture (`@archboard/model/render-reply`). `./shell-geometry` is the shell's fixed geometry and the
   page shape that pictures are laid out for. `./browser` is the browser host. `./bun` draws with the Bun host:
-  `renderLegacyBoard`, `renderArchitecture` and the diagram icon paths. `./rasterizer` is the bitmap of a
-  picture and the receipt of the capture.
+  `renderLegacyBoard`, `renderArchitecture`, the diagram icon paths, and the paths of every icon a picture under a
+  policy can name (`shared/render/rules/policy-icons.ts` names them), which a model snapshot carries. `./rasterizer`
+  is the bitmap of a picture, the scales a caller may ask for, and the receipt of the capture.
   `./recipe` reads, embeds, and replaces render recipes in SVG and PNG artifacts.
   Canonical recipes record the model, vault repository, reading selectors, exact fingerprint, and picture digest.
   Version 2 uses the existing recipe owner and preserves legacy recipes until explicit migration and re-export.
