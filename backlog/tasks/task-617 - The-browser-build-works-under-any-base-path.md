@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: 2026-11-09 01:20
-updated_date: '2026-11-09T05:27:00Z'
+updated_date: '2026-11-10T15:05:00Z'
 labels:
   - frontend
 dependencies: []
@@ -54,11 +54,15 @@ Stale-tab check: the built entry is now ./assets/index-<hash>.js. server-lifecyc
 
 Left as is: /api requests and the two sockets stay root-anchored. They belong to the Archboard server.
 
-Site audit: not needed. The site imports only the painter and the fonts of packages/renderer, not the icon loader or the router, and nothing drawn or shown changes.
+Site audit (PR #86 review, 2026-11-10): completed the required asset rebuild and browser inspection. Repainted the live pictures and regenerated all seven site diagrams. The refreshed SVGs include the current renderer legends and behavioral flow drawings. Inspected every site section and the module opening and return. Inspected three grammars, three evidence tabs, both proposal readings, both claims states, and all four walkthrough beats. Played the conversation demo to its end. Compared the shell mocks and diagram highlights with examples/web-shop in the running app. No source adjustment was needed. Screenshots are in /tmp/pr86-audit-images. The WebGL hero animation could not be assessed: Chromium returned no WebGL2 context, including with software-renderer flags. Live painter drawings and the other demos rendered. This is a browser capability limit, not evidence of a PR regression.
 
 Checked by looking: agent-browser on a scratch server with examples/web-shop, behind a loopback host that serves it under /project/. The page drew the model with icons in dark and light themes, kept /project/ while navigating to a module, and the root of the server still worked.
 
 Gate (inside nix develop, one lane at a time): format:check, types, lint:tests, lint:policy pass; test:repository 170 pass; test:modules 5029 pass; test:system 280 pass; test:serial-browser 71 tests pass, exit 0. The sub-path owner fails, as it should, when the router's basepath is forced to '/' (checked once by hand).
+
+Review scope: b0ec1a9c9c...43aba6b001. Standards found the omitted mandatory site audit. Spec found no product defect. The Browser (vKEsyHFk/vKEsyHFk#6nZjwK9W) and renderer (vKEsyHFk/vKEsyHFk#OHywsFXm) keep the same responsibilities and contracts. This review changes audit evidence and published drawings only, so no architecture proposal is needed.
+
+Review validation: root build passed inside nix develop. Focused browser owners passed 7 tests across 3 files. The frontend staleness owner passed 1 test. Types, test lint, policy lint, and formatting passed. Site guide tests passed 8 tests. Astro reported zero errors, warnings, or hints, and all internal links across 17 pages resolved. The root build retains its existing large-chunk advisory. Manual inspection covered a nested base path, explicit index.html, scoped deep links, reload, Back, Forward, both themes, and the built app at the root.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
