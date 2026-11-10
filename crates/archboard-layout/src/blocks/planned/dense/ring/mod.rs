@@ -21,7 +21,7 @@ use line_up::cheapest;
 
 use super::{
     super::reading::DEAD_SPACE,
-    sketch::{CROSSING, Chord, InTheWay, Line, Scene},
+    sketch::{CROSSING, Chord, InTheWay, Line, Past, Scene},
 };
 
 /// Room between a frame's wall and the doors round it, before routing.
@@ -179,8 +179,12 @@ fn prices(
         let ends = scene.lines[line];
         !doors.contains(&ends.from) || !doors.contains(&ends.to)
     });
-    // Only the door moves, so what stands in each line's way stays.
+    // Only the door moves, so what stands in each line's way stays, and so do the fixed chords
+    // that the line can cross.
     let in_the_way: Vec<InTheWay> = lines.iter().map(|&line| scene.in_the_way(line)).collect();
+    let past: Vec<Past> = (lines.iter())
+        .map(|&line| scene.past(line, door, fixed))
+        .collect();
     let stood = scene.boxes[door];
     let costs: Vec<Option<f64>> = (boxes.iter())
         .map(|&at| {
@@ -190,10 +194,9 @@ fn prices(
             if alone && let Some(&cost) = known.get(&bits) {
                 return Some(cost);
             }
-            let cost = (lines.iter().zip(&in_the_way))
-                .map(|(&line, way)| {
-                    let chord = scene.chord(line);
-                    let crossings = fixed.iter().filter(|other| chord.crosses(other)).count();
+            let cost = (lines.iter().zip(&in_the_way).zip(&past))
+                .map(|((&line, way), past)| {
+                    let crossings = scene.chord(line).crossings(past);
                     scene.cost_among(line, way) + CROSSING * crossings as f64
                 })
                 .sum();

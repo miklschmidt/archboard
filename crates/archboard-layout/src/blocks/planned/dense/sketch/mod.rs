@@ -12,6 +12,7 @@ use crate::geometry::{Point, Rect};
 
 use super::ring::Ringed;
 
+pub(super) use chord::{Chord, Past};
 pub(super) use way::InTheWay;
 
 /// One crossing costs as much as this much line, as the ranking of routed drawings weighs it.
@@ -127,59 +128,6 @@ fn meets(a: Rect, b: Rect) -> bool {
         && b.x < a.x + a.width + TOUCH
         && a.y < b.y + b.height + TOUCH
         && b.y < a.y + a.height + TOUCH
-}
-
-/// The straight chord between the middles of a line's boxes, which crossings are counted on.
-#[derive(Clone, Copy, Debug)]
-pub(super) struct Chord {
-    from: Point,
-    to: Point,
-    span: Rect,
-    /// The span's far sides, moved out by the room that keeps a touch apart.
-    outer: Point,
-}
-
-impl Chord {
-    fn new(a: Rect, b: Rect) -> Chord {
-        let (from, to) = (centre(a), centre(b));
-        let span = Rect {
-            x: from.x.min(to.x),
-            y: from.y.min(to.y),
-            width: (from.x - to.x).abs(),
-            height: (from.y - to.y).abs(),
-        };
-        Chord {
-            from,
-            to,
-            span,
-            outer: Point {
-                x: span.x + span.width + TOUCH,
-                y: span.y + span.height + TOUCH,
-            },
-        }
-    }
-
-    /// Whether two chords cross away from their ends. Chords along one line do not cross.
-    pub(super) fn crosses(&self, other: &Chord) -> bool {
-        // Their spans meet, edges apart.
-        let meets = self.span.x < other.outer.x
-            && other.span.x < self.outer.x
-            && self.span.y < other.outer.y
-            && other.span.y < self.outer.y;
-        if !meets {
-            return false;
-        }
-        let turn = |p: Point, q: Point, r: Point| {
-            let value = (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
-            if value.abs() < 1e-3 {
-                0.0
-            } else {
-                value.signum()
-            }
-        };
-        turn(self.from, self.to, other.from) * turn(self.from, self.to, other.to) < 0.0
-            && turn(other.from, other.to, self.from) * turn(other.from, other.to, self.to) < 0.0
-    }
 }
 
 fn centre(at: Rect) -> Point {
@@ -485,6 +433,7 @@ impl Weighed {
     }
 }
 
+mod chord;
 mod way;
 
 #[cfg(test)]
