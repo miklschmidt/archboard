@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { ModelSnapshotSchema } from "@archboard/model/contract";
 import { readArchitectureModel } from "@archboard/model/store-read";
+import { structureDiagnostics } from "@archboard/model/vault-policy";
 import { claimArchitectureSubjects, editArchitectureModule } from "@archboard/model/store-write";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
@@ -125,6 +126,38 @@ test("a retained state keeps its icons when the current policy names different i
 		expect(parsed.icons["RiRocketLine"]).not.toBeEmpty();
 	} finally {
 		writeFileSync(file, configuration);
+	}
+});
+
+test("a retained snapshot checks its exact checkpoint after the live state changes", async () => {
+	const draft = await readArchitectureModel(vault, undefined, undefined, { state: "Queued" });
+	if (!draft.success || !draft.selectedState?.baseline) throw new Error(JSON.stringify(draft));
+	const current = readArchitectureModel(vault);
+	if (!current.success) throw new Error(JSON.stringify(current));
+	const { file, ...handler } = current.modules.find((module) => module.id === "Shop#Handler")!;
+	const path = join(vault, file);
+	const original = readFileSync(path);
+	try {
+		writeFileSync(path, JSON.stringify({ ...handler, outgoing: [] }));
+		const changed = readArchitectureModel(vault);
+		if (!changed.success) throw new Error(JSON.stringify(changed));
+		expect(
+			structureDiagnostics(changed).some((item) => item.code === "ROOT_UNCONNECTED"),
+		).toBeTrue();
+		const result = snapshot(
+			"--state",
+			draft.selectedState.baseline,
+			"--out",
+			"retained-check.json",
+		);
+		expect(result.status, result.stderr).toBe(0);
+		const parsed = ModelSnapshotSchema.parse(
+			JSON.parse(readFileSync(join(holderOf(vault), "retained-check.json"), "utf8")),
+		);
+		expect(parsed.reading.relationships.some((edge) => edge.id === "Shop#Dispatch")).toBeTrue();
+		expect(parsed.check.diagnostics).toBeEmpty();
+	} finally {
+		writeFileSync(path, original);
 	}
 });
 

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: 2026-11-09 01:20
-updated_date: '2026-11-09T05:39:00Z'
+updated_date: '2026-11-10T15:03:00Z'
 labels:
   - cli
 dependencies: []
@@ -43,6 +43,8 @@ A reader can explore a model only through a running Archboard server today. A te
 4. Keep both package interfaces at their width ceilings (ADR 0058): drop the derivable type export ArchitectureCheckpointRequest from the model contract, and replace RASTER_MIN_SCALE and RASTER_MAX_SCALE with one RasterScaleSchema that the rasterize command used to assemble.
 5. Add the cli-command-audit.json entry, update boundaries.md, and document the new parts in this repository's model so check:model passes.
 6. System test tests/system/models/model-snapshot.test.ts: a draft and its comparison, same bytes twice, parse with the exported schema, no comparison for current, a refused read writes no file.
+
+PR #87 review: preserve the exact checkpoint when selecting snapshot diagnostics. Add one regression to the existing system owner, then run the affected CLI, model, and contract lanes. The Model snapshot module vKEsyHFk#V390L948 and its check relationship vKEsyHFk#NfuvWVgE stay accurate. This correction changes no architecture, so no proposal is needed.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -63,6 +65,8 @@ Evidence:
 - AC2: the parameters are the --state, --against, --model and --flow parameters of the model read contract (snapshot.ts filters them by the selection schema); archboard model snapshot --help lists them, and the system test selects with --state.
 - AC6: docs/design/cli-command-audit.json has the 'model snapshot' entry; tests/system/cli/command-contract-artifacts.test.ts renders one table row per entry and passed.
 Lanes: check:first 19/19 (lint, format, types, core, repository 170 pass); check:model passes with no findings; test:modules 5029 pass, 1 skip, 0 fail; test:system 281 pass, 1 fail (codex-realtime.test.ts timed out at load average 47 and passed 4/4 alone; it does not touch this change); test:solo 15 pass; browser owner browser-drawn-pictures.test.ts passes. The full test:serial-browser lane was not run.
+
+PR #87 review found one P2 error in snapshot diagnostics. The command now checks the exact retained checkpoint before it falls back to a state ID. The existing system fixture proves that a changed live relationship does not alter diagnostics for its retained baseline. That regression failed before correction (3 pass, 1 fail) and passes after correction. Final focused snapshot, comparison-refusal and runner tests: 28 pass, 0 fail. Artifact, interface-width, CLI audit and configuration-route tests: 15 pass, 0 fail. Final types, lint:policy, lint:tests, format:check and check:model pass. The architecture check reports existing evidence skips for 84 exposure-unknown subjects, 9 unbound subjects and 1 text-only checkout. The first combined test invocation without --parallel failed four isolation-sensitive tests. The documented parallel invocation passes. Initial complexity and formatting failures are resolved without rule changes. A test helper deleted this clean checkout vault during an architecture read attempt. The reviewer restored its tracked bytes from HEAD; git diff confirms no vault change. The model remains accurate, so no architecture proposal or model edit is needed. Standards found no verified rule violations. Retained policy icons, comparison coherence and atomic artifact writes remain correct. No push or changes to PR #86.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

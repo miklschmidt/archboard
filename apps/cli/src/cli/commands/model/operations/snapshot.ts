@@ -201,10 +201,8 @@ const modelSnapshotContract = defineCommand({
 		const { out, ...selection } = input;
 		const states = await readStates(selection);
 		if ("success" in states) return { result: states, ...refusedRead(states) };
-		const check = await checkSemanticVaultOnServer(
-			context.signal,
-			states.reading.selectedState?.id,
-		);
+		const checkTarget = states.reading.checkpoint ?? states.reading.selectedState;
+		const check = await checkSemanticVaultOnServer(context.signal, checkTarget?.id);
 		// Loaded here, not with the command table: the icon set is large and only this command reads it.
 		const { policyIconPaths } = await import("@archboard/renderer/bun");
 		const snapshot = ModelSnapshotSchema.parse({
