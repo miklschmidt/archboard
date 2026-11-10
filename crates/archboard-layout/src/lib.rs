@@ -26,7 +26,7 @@ mod viz;
 
 pub use architecture::{
     Content, Edge, Engine, InProcess, Laying, Measured, Node, Solver, Standings, Unsolved, draw,
-    shown_drawing,
+    lay_out_across, shown_drawing,
 };
 pub use blocks::choosing::pair_crossings;
 pub use blocks::place::lay_out_picture;

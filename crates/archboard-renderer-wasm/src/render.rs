@@ -71,7 +71,7 @@ extern "C" {
     fn abort(this: &AbortController);
 
     /// The signal a solve is called off by.
-    type AbortSignal;
+    pub(crate) type AbortSignal;
 
     #[wasm_bindgen(method, getter)]
     fn aborted(this: &AbortSignal) -> bool;
@@ -118,6 +118,24 @@ impl Future for Solving {
     }
 }
 
+impl Solving {
+    /// A solve the host was asked for, with the signal that calls it off.
+    pub(crate) fn asked(ask: impl FnOnce(&AbortSignal) -> Result<JsValue, JsValue>) -> Self {
+        let calling = AbortController::new();
+        let signal = calling.signal();
+        let answer = ask(&signal).map_or_else(
+            |error| js_sys::Promise::reject(&error),
+            |value| js_sys::Promise::resolve(&value),
+        );
+        Solving {
+            answer: JsFuture::from(answer),
+            calling,
+            signal,
+            answered: false,
+        }
+    }
+}
+
 impl Drop for Solving {
     fn drop(&mut self) {
         if !self.answered {
@@ -130,19 +148,7 @@ impl Solver for RenderHost {
     type Solve<'s> = Solving;
 
     fn solve(&self, graph: String) -> Solving {
-        let calling = AbortController::new();
-        let signal = calling.signal();
-        let answer = self.solve_on(graph, &signal).map_or_else(
-            |error| js_sys::Promise::reject(&error),
-            |value| js_sys::Promise::resolve(&value),
-        );
-        let answer = JsFuture::from(answer);
-        Solving {
-            answer,
-            calling,
-            signal,
-            answered: false,
-        }
+        Solving::asked(|signal| self.solve_on(graph, signal))
     }
 }
 

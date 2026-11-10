@@ -1,0 +1,336 @@
+{
+	"id": "architecture:root",
+	"layoutOptions": { "archboard.blocks.nesting": "blocks" },
+	"children": [
+		{
+			"id": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+			"width": 340,
+			"height": 146.602,
+			"layoutOptions": {
+				"archboard.order": "0",
+				"archboard.order-group": "[\"module\",\"run, grade, report, check and pin, and the cancellation a person's interrupt becomes: the command line of the evaluation, kept in the skills package behind its one evaluation entry\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#IOCRa8GO",
+			"width": 340,
+			"height": 129.602,
+			"layoutOptions": {
+				"archboard.order": "4",
+				"archboard.order-group": "[\"config\",\"The scenarios, fixtures, pins, grader settings, coverage and rubric, kept outside every skill package on purpose\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#PCxTuzNW",
+			"width": 650.76,
+			"height": 36,
+			"layoutOptions": {
+				"archboard.order": "5",
+				"archboard.order-group": "[\"module\",\"Reads and validates every canonical input, then plans, runs and resumes the batch, and keeps the copy of the candidate skill that the batch measures\"]",
+				"archboard.header.size": "36"
+			},
+			"children": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#k8wziYS4",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "1",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Reads and validates every canonical input, refusing a fixture, a citation or a skill package that would measure the wrong thing\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/IbGtfJE2#wOZsx1lS",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "2",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Keeps the batch's copy of the candidate skill, and holds every cited passage, catalogue row and rubric section to a heading the skill has\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "3",
+						"archboard.entry": "true",
+						"archboard.order-group": "[\"module\",\"Plans every arm, scenario and repetition, runs them in parallel, and can be resumed only on the same inputs\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk/IbGtfJE2#yohDGrXU",
+					"width": 340,
+					"height": 129.602,
+					"layoutOptions": {
+						"archboard.order": "9",
+						"archboard.entry": "true",
+						"archboard.order-group": "[\"module\",\"Rewrites the pinned versions of the author and grader executables from what is on PATH, and says which change starts a new baseline\"]"
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
+			"width": 222.34,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "6",
+				"archboard.door": "true",
+				"archboard.order-group": "24001"
+			}
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#RrIatpuG",
+			"width": 147.72,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "7",
+				"archboard.door": "true",
+				"archboard.order-group": "26001"
+			}
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#tDDQDe92",
+			"width": 166.72,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "8",
+				"archboard.door": "true",
+				"archboard.order-group": "27000"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "vKEsyHFk/IbGtfJE2#EZG5L7jf",
+			"sources": ["vKEsyHFk/IbGtfJE2#JaLEafPa"],
+			"targets": ["vKEsyHFk/IbGtfJE2#k8wziYS4"],
+			"layoutOptions": {
+				"archboard.order": "1000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "hero",
+				"archboard.relationship.traffic": "on",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#EZG5L7jf:label",
+					"text": "load and validate the inputs",
+					"width": 152.3000030517578,
+					"height": 31,
+					"narrow": { "width": 101.41999816894531, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#ygYCKQLQ",
+			"sources": ["vKEsyHFk/IbGtfJE2#k8wziYS4"],
+			"targets": ["vKEsyHFk/IbGtfJE2#IOCRa8GO"],
+			"layoutOptions": {
+				"archboard.order": "2000",
+				"archboard.relationship.kind": "data",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "data"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#ygYCKQLQ:label",
+					"text": "scenarios, fixtures,\npins, graders, rubric",
+					"width": 114.7300033569336,
+					"height": 46
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#gkJMDrW9",
+			"sources": ["vKEsyHFk/IbGtfJE2#JaLEafPa"],
+			"targets": ["vKEsyHFk/IbGtfJE2#7A4Joh1m"],
+			"layoutOptions": {
+				"archboard.order": "3000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "hero",
+				"archboard.relationship.traffic": "on",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#gkJMDrW9:label",
+					"text": "run the selected arms",
+					"width": 123.5,
+					"height": 31,
+					"narrow": { "width": 86.70999908447266, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#GYwjzXJJ",
+			"sources": ["vKEsyHFk/IbGtfJE2#7A4Joh1m"],
+			"targets": ["vKEsyHFk/IbGtfJE2#8O4XNZOZ"],
+			"layoutOptions": {
+				"archboard.order": "6000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#GYwjzXJJ:label",
+					"text": "to Pinned checkout, Skill install +1",
+					"width": 180.11000061035156,
+					"height": 31,
+					"narrow": { "width": 115.62000274658203, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#pdkMb2Mv",
+			"sources": ["vKEsyHFk/IbGtfJE2#k8wziYS4"],
+			"targets": ["vKEsyHFk/IbGtfJE2#wOZsx1lS"],
+			"layoutOptions": {
+				"archboard.order": "25000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#pdkMb2Mv:label",
+					"text": "every citation lands",
+					"width": 114.0999984741211,
+					"height": 31
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#e1NAqCVh",
+			"sources": ["vKEsyHFk/IbGtfJE2#7A4Joh1m"],
+			"targets": ["vKEsyHFk/IbGtfJE2#wOZsx1lS"],
+			"layoutOptions": {
+				"archboard.order": "26000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#e1NAqCVh:label",
+					"text": "keep the candidate this batch runs",
+					"width": 186.08999633789062,
+					"height": 31,
+					"narrow": { "width": 111.94000244140625, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#7Gbj2xDB",
+			"sources": ["vKEsyHFk/IbGtfJE2#tDDQDe92"],
+			"targets": ["vKEsyHFk/IbGtfJE2#wOZsx1lS"],
+			"layoutOptions": {
+				"archboard.order": "38000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#7Gbj2xDB:label",
+					"text": "from Report, Comparison",
+					"width": 139.38999938964844,
+					"height": 31,
+					"narrow": { "width": 80.13999938964844, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#QqI9VPd1",
+			"sources": ["vKEsyHFk/IbGtfJE2#tDDQDe92"],
+			"targets": ["vKEsyHFk/IbGtfJE2#7A4Joh1m"],
+			"layoutOptions": {
+				"archboard.order": "39000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#QqI9VPd1:label",
+					"text": "the selection the batch saved",
+					"width": 160.9199981689453,
+					"height": 31,
+					"narrow": { "width": 96.87000274658203, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#s7YzBWCX",
+			"sources": ["vKEsyHFk/IbGtfJE2#RrIatpuG"],
+			"targets": ["vKEsyHFk/IbGtfJE2#wOZsx1lS"],
+			"layoutOptions": {
+				"archboard.order": "43000",
+				"archboard.relationship.kind": "data",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "data"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#s7YzBWCX:label",
+					"text": "where the kept skill lives",
+					"width": 136.70999908447266,
+					"height": 31,
+					"narrow": { "width": 85.9000015258789, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#7KrvUnRu",
+			"sources": ["vKEsyHFk/IbGtfJE2#JaLEafPa"],
+			"targets": ["vKEsyHFk/IbGtfJE2#yohDGrXU"],
+			"layoutOptions": {
+				"archboard.order": "48000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#7KrvUnRu:label",
+					"text": "pin the executable versions",
+					"width": 150.63999938964844,
+					"height": 31,
+					"narrow": { "width": 108.11000061035156, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/IbGtfJE2#Vm6nSiIe",
+			"sources": ["vKEsyHFk/IbGtfJE2#yohDGrXU"],
+			"targets": ["vKEsyHFk/IbGtfJE2#k8wziYS4"],
+			"layoutOptions": {
+				"archboard.order": "49000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/IbGtfJE2#Vm6nSiIe:label",
+					"text": "the grader names",
+					"width": 103.7300033569336,
+					"height": 31
+				}
+			]
+		}
+	]
+}

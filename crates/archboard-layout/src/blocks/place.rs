@@ -1,5 +1,8 @@
 //! Parse one measured hierarchy and dispatch without changing the Solver contract.
 
+use serde::Deserialize;
+
+use super::planned::{Routed, Split, Step};
 use super::tree::Nesting;
 use crate::{Graphviz, graph::Node, json::J};
 
@@ -43,8 +46,17 @@ fn answer(graph: &Node, width: f64, height: f64, told: Vec<(&str, String)>) -> S
 ///
 /// An unreadable graph or a refusal from the selected layout engine.
 pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, String> {
-    let graph: Node = serde_json::from_str(graph)
-        .map_err(|error| format!("The measured graph is unreadable: {error}"))?;
+    let unreadable =
+        |error: serde_json::Error| format!("The measured graph is unreadable: {error}");
+    let asked: Option<Asked> = if graph.starts_with(PART) {
+        Some(serde_json::from_str(graph).map_err(unreadable)?)
+    } else {
+        None
+    };
+    let graph: Node = serde_json::from_str(graph).map_err(unreadable)?;
+    if let Some(Asked { part }) = asked {
+        return super::planned::solve_part(&graph, &part);
+    }
     let mode = graph.option(BLOCKS_NESTING).unwrap_or("inline");
     let (placed, frozen) = if mode == "blocks" {
         (hybrid(&graph, host)?, true)
@@ -59,6 +71,91 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
         told.push((BLOCKS_PLANNED, "true".to_owned()));
     }
     Ok(answer(&graph, placed.width, placed.height, told))
+}
+
+/// How the graph of a part of a split solve starts: the part, named first on its root.
+const PART: &str = "{\"part\":";
+
+/// The part of a split solve that a graph asks for, as the core wrote it.
+#[derive(Deserialize)]
+struct Asked {
+    part: String,
+}
+
+/// The graph of one part of a split solve: the solve's graph, with the part named first on its
+/// root.
+pub(crate) fn with_part(graph: &str, part: &str) -> String {
+    let rest = graph.trim_start().strip_prefix('{').unwrap_or_default();
+    format!("{PART}{},{rest}", J::str(part).text())
+}
+
+/// A Blocks solve in parts, which the host's workers solve side by side (ADR 0078): the graph,
+/// and the split solve of the drawing it chooses now. The answer is the answer of one solve.
+pub(crate) struct Across {
+    graph: Node,
+    split: Split,
+}
+
+/// What a solve in parts does next.
+pub(crate) enum Next {
+    /// Ask for these parts, each by what `with_part` names on the graph.
+    Ask(Vec<String>),
+    /// Solve the graph in one solve: its drawing takes no dense placement.
+    Whole,
+    /// The solve's answer.
+    Answer(String),
+}
+
+impl Across {
+    /// The solve in parts of a Blocks graph that takes a dense placement.
+    pub(crate) fn of(graph: &str) -> Option<Across> {
+        let graph: Node = serde_json::from_str(graph).ok()?;
+        if graph.option(BLOCKS_NESTING) != Some("blocks") {
+            return None;
+        }
+        let quiet = super::planned::without_trunk_words(&graph);
+        let plain = quiet.is_none();
+        let split = Split::of(quiet.unwrap_or_else(|| graph.clone()), plain)?;
+        Some(Across { graph, split })
+    }
+
+    /// What to do next, from what the parts answered so far.
+    pub(crate) fn next(&mut self) -> Next {
+        loop {
+            match self.split.step() {
+                Step::Ask(parts) => return Next::Ask(parts),
+                Step::Done(Some(Routed {
+                    told: Some(told), ..
+                })) => {
+                    let (width, height) = (f64::from_bits(told.width), f64::from_bits(told.height));
+                    let told = vec![
+                        (BLOCKS_PLACED, told.placed),
+                        (BLOCKS_PLANNED, "true".to_owned()),
+                    ];
+                    return Next::Answer(answer(&self.graph, width, height, told));
+                }
+                // The drawing without its trunks' words cannot wear them, so the graph is drawn
+                // with them, as `hybrid` draws it.
+                Step::Done(Some(_)) if !self.split.plain() => {
+                    match Split::of(self.graph.clone(), true) {
+                        Some(split) => self.split = split,
+                        None => return Next::Whole,
+                    }
+                }
+                // No dense drawing passes: one solve places the graph with Graphviz.
+                Step::Done(_) => return Next::Whole,
+            }
+        }
+    }
+
+    /// Keep what a part answered.
+    ///
+    /// # Errors
+    ///
+    /// A part or an answer that does not read.
+    pub(crate) fn take(&mut self, part: &str, answer: &str) -> Result<(), String> {
+        self.split.take(part, answer)
+    }
 }
 
 /// A door's lines share a trunk, which their words would hold apart, so they are drawn

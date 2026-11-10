@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 pub use content::{Content, Edge, Node};
 pub use graph::Standings;
 pub use measured::Measured;
-pub use solving::{InProcess, Laying, Solver, Unsolved};
+pub use solving::{InProcess, Laying, Solver, Unsolved, lay_out_across};
 
 use crate::routes::{LineLook, bridge_crossings, bridge_unfolded, unfold_crossings};
 

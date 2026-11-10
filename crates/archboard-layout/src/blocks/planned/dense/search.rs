@@ -8,16 +8,20 @@ use std::collections::BTreeMap;
 use rustc_hash::FxHashMap;
 
 use crate::{
+    blocks::{
+        assembly::Placed,
+        planned::parts::{Found, GridCells, Searching},
+    },
     constants::CONTAINER_INSET,
     geometry::{Point, Rect},
     graph::Node,
 };
 
 use super::{
-    Block, CELL_GAP, MOST_COLUMNS, Reading, Set,
+    Block, CELL_GAP, Candidate, MOST_COLUMNS, Reading, Set, TALLEST,
     anneal::{Lattice, Part, Search},
     grid::Grid,
-    readable, ring,
+    readable, redraw, ring,
     room::Room,
     sketch::{Line, Scene},
     together,
@@ -59,12 +63,8 @@ impl<'a> Grids<'a> {
         crowded: Option<usize>,
     ) -> Option<Self> {
         let reading = Reading::of(graph)?;
-        let widest = reading.blocks.iter().map(|block| block.items.len()).max();
-        let most = MOST_COLUMNS.min(widest.unwrap_or(0));
-        let arrangements = &[false, true][..reading.blocks.len().clamp(1, 2)];
         let scout = crowded.map_or(usize::MAX, |_| CROWDED_MOVES / 4);
-        let mut searched: Vec<Searched> = (1..=most)
-            .flat_map(|columns| arrangements.iter().map(move |&stacked| (columns, stacked)))
+        let mut searched: Vec<Searched> = (reading.ways().into_iter())
             .map(|(columns, stacked)| {
                 let (cost, grids) = reading.search((columns, stacked), room, scout, None);
                 Searched {
@@ -85,6 +85,87 @@ impl<'a> Grids<'a> {
         Some(Self { reading, searched })
     }
 
+    /// Each way a reading searches a placement, as `of` searches them: every grid width, and
+    /// each way its frames stand together.
+    pub(in crate::blocks::planned) fn ways(graph: &Node) -> Option<Vec<(usize, bool)>> {
+        Some(Reading::of(graph)?.ways())
+    }
+
+    /// One placement's search, as `of` searches it, for a part of a split solve.
+    pub(in crate::blocks::planned) fn search_one(
+        graph: &Node,
+        room: f64,
+        (columns, stacked): (usize, bool),
+        how: &Searching,
+    ) -> Option<Found> {
+        let reading = Reading::of(graph)?;
+        let way = (columns, stacked);
+        let (cost, grids) = match how {
+            Searching::Whole => reading.search(way, room, usize::MAX, None),
+            Searching::Scout => reading.search(way, room, CROWDED_MOVES / 4, None),
+            Searching::On(from) => {
+                let from: Vec<Grid> = from.iter().map(grid).collect();
+                reading.search(way, room, CROWDED_MOVES, Some(&from))
+            }
+        };
+        let mut one = Searched {
+            cost,
+            columns,
+            stacked,
+            grids,
+        };
+        if !matches!(how, Searching::Scout) {
+            reading.price(&mut one, room);
+        }
+        Some(Found {
+            cost: one.cost.to_bits(),
+            grids: one.grids.iter().map(cells).collect(),
+        })
+    }
+
+    /// The grids of one placement that a part of a split solve found.
+    pub(in crate::blocks::planned) fn found(
+        graph: &'a Node,
+        (columns, stacked): (usize, bool),
+        found: &Found,
+    ) -> Option<Self> {
+        let searched = vec![Searched {
+            cost: f64::from_bits(found.cost),
+            columns,
+            stacked,
+            grids: found.grids.iter().map(grid).collect(),
+        }];
+        Some(Self {
+            reading: Reading::of(graph)?,
+            searched,
+        })
+    }
+
+    /// The page a drawing's doors stand within, as a part of a split solve carries it.
+    pub(in crate::blocks::planned) fn page(candidate: Candidate) -> [u64; 2] {
+        [candidate.page.x.to_bits(), candidate.page.y.to_bits()]
+    }
+
+    /// The grids' first placement drawn at a room, its doors within a page that a part of a split
+    /// solve carried.
+    pub(in crate::blocks::planned) fn drawing(
+        &self,
+        room: f64,
+        [x, y]: [u64; 2],
+    ) -> (Candidate, Placed) {
+        let page = Point {
+            x: f64::from_bits(x),
+            y: f64::from_bits(y),
+        };
+        let candidate = Candidate { index: 0, page };
+        (candidate, redraw(self, candidate, room, &[]))
+    }
+
+    /// Whether a drawing stands short enough for contraction to bring it into the pane.
+    pub(in crate::blocks::planned) fn short(drawing: &Placed) -> bool {
+        drawing.height <= TALLEST
+    }
+
     /// How many placements the searches found.
     pub(super) fn count(&self) -> usize {
         self.searched.len()
@@ -97,7 +178,36 @@ impl<'a> Grids<'a> {
     }
 }
 
+/// One frame's grid as a part of a split solve carries it.
+fn cells(grid: &Grid) -> GridCells {
+    GridCells {
+        columns: grid.columns,
+        rows: grid.rows,
+        cells: grid.cells.clone(),
+    }
+}
+
+/// One frame's grid from what a part of a split solve carried.
+fn grid(cells: &GridCells) -> Grid {
+    Grid {
+        columns: cells.columns,
+        rows: cells.rows,
+        cells: cells.cells.clone(),
+    }
+}
+
 impl Reading<'_> {
+    /// Each way the reading searches a placement: every grid width that its widest frame
+    /// takes, and each way its frames stand together.
+    fn ways(&self) -> Vec<(usize, bool)> {
+        let widest = self.blocks.iter().map(|block| block.items.len()).max();
+        let most = MOST_COLUMNS.min(widest.unwrap_or(0));
+        let arrangements = &[false, true][..self.blocks.len().clamp(1, 2)];
+        (1..=most)
+            .flat_map(|columns| arrangements.iter().map(move |&stacked| (columns, stacked)))
+            .collect()
+    }
+
     /// The few cheapest of some searched placements, each searched on from where it stands.
     fn search_on(&self, mut searched: Vec<Searched>, tries: usize, room: f64) -> Vec<Searched> {
         searched.sort_by(|a, b| a.cost.total_cmp(&b.cost));

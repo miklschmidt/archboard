@@ -77,6 +77,7 @@ impl From<&str> for Refused {
     }
 }
 
+pub(super) use parts::{Routed, Split, Step, solve_part};
 pub(super) use words::{dress, without_trunk_words};
 
 mod fixed;
@@ -245,8 +246,8 @@ enum Try<D> {
     Routed(reading::Order, D),
 }
 
-/// The tries of a dense reading: routed here, one after another (`Here`), or elsewhere. The
-/// choice between them is the same either way.
+/// The tries of a dense reading: routed here, one after another (`Here`), or answered by the
+/// parts of a split solve (`parts`). The choice between them is the same either way.
 trait Tries {
     /// A routed drawing.
     type Drawing;
@@ -288,8 +289,8 @@ impl<'g> Here<'g> {
         }
     }
 
-    /// Start the tries of a placement of the room.
-    fn start(&mut self, at: usize) {
+    /// Start the tries of a placement of the room, its lines wanting some room.
+    fn start(&mut self, at: usize, wanting: Vec<[String; 2]>) {
         let (candidate, drawn) = self.drawings[at]
             .take()
             .expect("each placement starts once");
@@ -297,8 +298,28 @@ impl<'g> Here<'g> {
             candidate,
             asked: Vec::new(),
             drawn,
-            wanting: Vec::new(),
+            wanting,
         });
+    }
+
+    /// Resume the tries of a placement drawn at a room, from the lines that its first try left
+    /// wanting room.
+    fn resume(
+        &mut self,
+        room: f64,
+        drawn: (dense::Candidate, crate::blocks::assembly::Placed),
+        wanting: Vec<[String; 2]>,
+    ) {
+        self.room = room;
+        self.drawings = vec![Some(drawn)];
+        self.start(0, wanting);
+    }
+
+    /// The ends of the lines that want room in the latest try of the placement under way.
+    fn wanting(&self) -> Vec<[String; 2]> {
+        self.chain
+            .as_ref()
+            .map_or_else(Vec::new, |chain| chain.wanting.clone())
     }
 
     /// Ask the placement under way for the room its wanting lines need, and tell whether it gave any.
@@ -330,7 +351,7 @@ impl Tries for Here<'_> {
 
     fn route(&mut self, at: usize, tried: usize) -> Result<Try<Self::Drawing>, Self::Lack> {
         if tried == 0 {
-            self.start(at);
+            self.start(at, Vec::new());
         } else {
             if !self.gives() {
                 return Ok(Try::Over);
@@ -363,6 +384,7 @@ fn ends_of(graph: &crate::graph::Node, lines: &[&str]) -> Vec<[String; 2]> {
 }
 
 mod direct;
+mod parts;
 
 mod trunks;
 pub(super) fn route_trunks(scene: &archboard_router::Scene) -> Vec<archboard_router::Route> {
