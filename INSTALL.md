@@ -155,10 +155,11 @@ archboard init
 
 The command does these things:
 
-1. It installs two skills of the installation with the
+1. It installs three skills of the installation with the
    [skills CLI](https://skills.sh): `archboard`, which writes and reads
-   canonical models, and `archboard-pr`, which gives a pull request an
-   architecture explainer. It installs them for your user, so they work in
+   canonical models, `archboard-pr`, which gives a pull request an
+   architecture explainer, and `archboard-plan`, which carries a proposal
+   through the `to-spec`, `to-tickets` and `implement-spec` skills. It installs them for your user, so they work in
    every repository. Codex gets them, and Claude Code gets them when `claude`
    is on the `PATH`. A package runner starts the skills CLI. At a terminal,
    `init` asks which runner to use: `bun`, `pnpm` or `npx`, whichever the
@@ -859,8 +860,8 @@ version. If you installed them from GitHub, run `npx skills update -g`.
 
 There is no uninstall command. To remove archboard, delete these things:
 
-- The skill directories, for example `~/.agents/skills/archboard` and
-  `~/.agents/skills/archboard-pr`.
+- The skill directories, for example `~/.agents/skills/archboard`,
+  `~/.agents/skills/archboard-pr` and `~/.agents/skills/archboard-plan`.
 - The `archboard` link on your `PATH`, or the package of a release, for example
   with `npm uninstall --global archboard`.
 - The state directory. It holds the Codex sign-in, `repos.json`, the global

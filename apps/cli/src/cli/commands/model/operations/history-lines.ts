@@ -71,6 +71,20 @@ function localityLines(answer: Locality): string[] {
 }
 
 /**
+ * The line about the changed files that no binding holds, because no part shows their change.
+ * @param files The files.
+ * @returns One line, or none when a binding holds every changed file.
+ */
+function unboundLines(files: readonly { path: string }[]): string[] {
+	if (files.length === 0) return [];
+	const named = files.slice(0, LISTED).map(({ path }) => path);
+	const more = files.length > LISTED ? `, and ${files.length - LISTED} more` : "";
+	return [
+		`Not bound: ${files.length} changed ${files.length === 1 ? "file" : "files"} that no module is bound to: ${named.join(", ")}${more}.`,
+	];
+}
+
+/**
  * The summary of a footprint: how many parts the commits changed, and how that sits beside a plan.
  * @param answer The footprint answer.
  * @returns The lines.
@@ -82,12 +96,13 @@ function footprintLines(answer: Footprint): string[] {
 			? [`${answer.changed.length} parts changed`]
 			: [
 					`${answer.namedAndChanged.length} planned and changed`,
-					`${answer.changedNotNamed.length} changed outside the plan`,
+					`${answer.changedNotNamed.filter((part) => part.holds.length === 0).length} changed outside the plan`,
 					`${answer.namedNotChanged.length} planned and unchanged`,
 				];
 	return [
 		`Footprint of ${readingOf(answer)} from ${answer.base}: ${answer.commits.length} commits in ${read.length} of ${answer.repositories.length} repositories; ${lists.join(", ")}.`,
 		...skippedLines(answer.skipped),
+		...unboundLines(answer.unboundFiles),
 	];
 }
 
@@ -117,4 +132,4 @@ function historyLines(answer: Answer): string[] {
 	];
 }
 
-export { historyLines, unreadLines };
+export { historyLines, unreadLines, type Answer };

@@ -17,7 +17,7 @@ const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".
  * The skills that `archboard init` installs, as BUNDLED_SKILLS in
  * apps/cli/src/cli/commands/init/rules/setup-choices.ts names them. A test may not import the app.
  */
-const BUNDLED_SKILLS = ["archboard", "archboard-pr"] as const;
+const BUNDLED_SKILLS = ["archboard", "archboard-pr", "archboard-plan"] as const;
 
 /** A markdown link's target: `](target)` or `](<target>)`, with an optional title. */
 const LINK = /\]\(<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/gu;

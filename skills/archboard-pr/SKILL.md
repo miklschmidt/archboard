@@ -29,7 +29,8 @@ Read [splitting](references/split.md) only when independent delivery helps and t
 Address the owning vault explicitly, including one in another repository.
 Discover modules and states through `model read` and `model proposals`.
 Use `model footprint --base <base> --head <head>` for bound source changes.
-Read skipped or unavailable source directly from the diff.
+Its `unboundFiles` lists the changed files that no module is bound to.
+Read those files, and skipped or unavailable source, directly from the diff.
 
 Choose the evidence that fits:
 

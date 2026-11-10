@@ -48,19 +48,42 @@ describe("the plan of a proposal", () => {
 			outsidePlan: ["Catalog"],
 			plannedUnchanged: ["Billing"],
 			changed: ["Catalog", "Intake"],
+			unbound: [],
 		};
 		expect(
 			planBuckets({ namedAndChanged: part("Intake"), changedNotNamed: part("Catalog") }, plan),
 		).toEqual(expected);
 		const footprint = {
 			changed: [...part("Intake"), ...part("Catalog")],
+			unboundFiles: [{ repo: "github.com/acme/shop", path: "docs/notes.md" }],
 		};
 		expect(planBuckets(footprint, plan)).toEqual({
 			plannedAndChanged: ["Intake"],
 			outsidePlan: ["Catalog"],
 			plannedUnchanged: ["Billing"],
 			changed: ["Catalog", "Intake"],
+			unbound: [{ repo: "github.com/acme/shop", path: "docs/notes.md" }],
 		});
+	});
+
+	test("a changed module that holds another is never outside the plan, unless the CLI is older", () => {
+		const plan = {
+			comparison: [],
+			named: new Map([["m#installation", "Installation"]]),
+			baseOnlyBindings: new Set<string>(),
+		};
+		const workspace = {
+			subject: { id: "m#workspace", name: "Workspace" },
+			holds: ["m#installation"],
+		};
+		const installation = { subject: { id: "m#installation", name: "Installation" }, holds: [] };
+		expect(planBuckets({ changed: [workspace, installation] }, plan)).toMatchObject({
+			plannedAndChanged: ["Installation"],
+			outsidePlan: [],
+			changed: ["Installation", "Workspace"],
+		});
+		const older = { changed: [{ subject: workspace.subject }, { subject: installation.subject }] };
+		expect(planBuckets(older, plan).outsidePlan).toEqual(["Workspace"]);
 	});
 
 	test("joins by identity when names are ambiguous, and sorts each bucket", () => {
@@ -82,6 +105,7 @@ describe("the plan of a proposal", () => {
 			outsidePlan: ["API", "Zulu"],
 			plannedUnchanged: ["API", "Catalog"],
 			changed: ["API", "Billing", "Zulu"],
+			unbound: [],
 		});
 		expect(
 			decideOutOfPlan({

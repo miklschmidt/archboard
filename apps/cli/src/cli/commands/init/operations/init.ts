@@ -36,7 +36,7 @@ const initContract = defineCommand({
 	shared: [],
 	summary: "Set this repository up for Archboard and hand its language servers to an agent",
 	description: [
-		"Installs the `archboard` and `archboard-pr` skills of this installation globally with the skills CLI (skills.sh). It installs them for Codex, and for Claude Code when `claude` is on the `PATH`.",
+		"Installs the `archboard`, `archboard-pr` and `archboard-plan` skills of this installation globally with the skills CLI (skills.sh). It installs them for Codex, and for Claude Code when `claude` is on the `PATH`.",
 		"",
 		"The skills CLI is started by `bun`, `pnpm` or `npx`:",
 		"- At a terminal, `init` asks which of those on the `PATH` to use, or to skip.",

@@ -63,6 +63,7 @@ describe("the sticky comment", () => {
 			outsidePlan: ["Stock API"],
 			plannedUnchanged: ["Fulfilment worker"],
 			changed: ["Checkout API", "Stock API"],
+			unbound: [{ repo: "github.com/acme/shop", path: "docs/notes.md" }],
 		},
 		outOfPlan: { status: "fail", failed: true },
 		overrideLabel: "archboard: out of plan",
@@ -76,8 +77,25 @@ describe("the sticky comment", () => {
 		expect(text).toContain("Stock API");
 		expect(text).toContain("Fulfilment worker");
 		expect(text).toContain("`archboard: out of plan`");
+		expect(text).toContain("**Changed files that no module is bound to** (1)");
+		expect(text).toContain("- `docs/notes.md`");
 		expect(text).toContain("https://github.test/owner/name/tree/b/.archboard/vault");
 		expect(text).not.toContain("<img");
+	});
+
+	test("a file name stays one code span, and names its repository when the files are in several", () => {
+		const text = pullRequestComment({
+			...report,
+			buckets: {
+				...report.buckets!,
+				unbound: [
+					{ repo: "github.com/acme/shop", path: "notes` **approved** `.md" },
+					{ repo: "github.com/acme/infra", path: "line\nbreak.md" },
+				],
+			},
+		});
+		expect(text).toContain("- ``notes` **approved** `.md`` in github.com/acme/shop");
+		expect(text).toContain("- `line\\nbreak.md` in github.com/acme/infra");
 	});
 
 	test("the action updates the comment that carries the marker", () => {

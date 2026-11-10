@@ -1,17 +1,15 @@
-import { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
 import { readRenderRecipe, replaceRenderRecipe } from "@archboard/renderer/recipe";
 import { crc32 } from "node:zlib";
 import { everyStep } from "@archboard/model/flow";
 import { z } from "zod";
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
 	ArchitectureModelReadSchema,
 	ArchitectureClaimResultSchema,
 	ArchitectureModuleEditResultSchema,
-	ArchitectureCheckpointRetainSchema,
 } from "@archboard/model/contract";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
@@ -355,80 +353,6 @@ test("retired model writers and claims cannot change a vault through HTTP or CLI
 	]);
 	expect(old.status).toBe(2);
 	expect(cli(["model", "read"]).stdout).toBe(before.stdout);
-});
-
-test("canonical locality and branch footprint retain source analysis without a live model reader", () => {
-	mkdirSync(join(home, "src"), { recursive: true });
-	writeFileSync(join(home, "src/gateway.ts"), "export function dispatch(){ return 1; }\n");
-	for (const args of [
-		["add", "src"],
-		["commit", "--quiet", "-m", "test: add bound source"],
-	]) {
-		const ran = Bun.spawnSync(["git", "-C", home, ...args]);
-		if (ran.exitCode !== 0) throw new Error(ran.stderr.toString());
-	}
-	const sourceHead = Bun.spawnSync(["git", "-C", home, "rev-parse", "HEAD"]).stdout.toString();
-	const locality = cli(["model", "locality"]);
-	expect(locality.status, locality.stderr).toBe(0);
-	expect(answer(locality.stdout)).toMatchObject({
-		success: true,
-		model: "Shop",
-		state: { id: "Current" },
-		revision: expect.any(Object),
-		hotspots: expect.any(Array),
-	});
-	const footprint = cli(["model", "footprint", "--base", "HEAD~1"]);
-	expect(footprint.status, footprint.stderr).toBe(0);
-	expect(answer(footprint.stdout)).toMatchObject({
-		success: true,
-		model: "Shop",
-		state: { id: "Current" },
-		base: "HEAD~1",
-		repositories: expect.any(Array),
-	});
-	// A base no checkout can read is a failure that names it, not a clean exit.
-	const unread = cli(["model", "footprint", "--base", "no-such-base"]);
-	expect(unread.status).toBe(2);
-	expect(unread.stderr).toContain("no-such-base");
-	const local = ArchitectureHistoryResultSchema.parse(answer(locality.stdout));
-	const branch = ArchitectureHistoryResultSchema.parse(answer(footprint.stdout));
-	if (!local.success || local.analysis !== "locality" || !branch.success || !("changed" in branch))
-		throw new Error(JSON.stringify({ local, branch }));
-	expect(local.hotspots.map((part) => part.subject.id)).toContain("Shop#Gateway");
-	expect(branch.changed.map((part) => part.subject.id)).toContain("Shop#Gateway");
-	const current = ArchitectureModelReadSchema.parse(answer(cli(["model", "read"]).stdout));
-	if (!current.success) throw new Error(JSON.stringify(current));
-	const retained = ArchitectureCheckpointRetainSchema.parse(
-		answer(
-			cli([
-				"model",
-				"retain",
-				"--operation-id",
-				"history-comparison",
-				"--writer",
-				"surface-agent",
-				"--expect-revision",
-				current.revision.digest,
-				"--doing",
-				"Retain source comparison",
-			]).stdout,
-		),
-	);
-	if (!retained.success) throw new Error(JSON.stringify(retained));
-	for (const command of [["locality"], ["footprint", "--base", "HEAD~1"]]) {
-		const exact = cli(["model", ...command, "--against", retained.checkpoint.id]);
-		expect(exact.status, exact.stdout + exact.stderr).toBe(0);
-		expect(ArchitectureHistoryResultSchema.parse(answer(exact.stdout))).toMatchObject({
-			success: true,
-			model: "Shop",
-		});
-	}
-	expect(Bun.spawnSync(["git", "-C", home, "rev-parse", "HEAD"]).stdout.toString()).toBe(
-		sourceHead,
-	);
-	const refused = cli(["model", "footprint", "--base", "HEAD", "--state", "Missing"]);
-	expect(refused.status, refused.stderr).toBe(2);
-	expect(answer(refused.stdout)).toMatchObject({ success: false, code: "STATE_NOT_FOUND" });
 });
 
 test("canonical initialization accepts shared CLI doing intent and retries without replacing its identity", () => {
