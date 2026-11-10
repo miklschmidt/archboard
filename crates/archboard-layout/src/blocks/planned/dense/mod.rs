@@ -16,6 +16,8 @@ mod room;
 mod search;
 mod sketch;
 mod stand;
+#[cfg(test)]
+mod tests;
 
 use std::cell::RefCell;
 
@@ -52,6 +54,9 @@ const CROWDED_ROOT: usize = 18;
 const TALLEST: f64 = 1950.0;
 /// Room between two frames before routing. Contraction takes back what the routes leave.
 const FRAME_GAP: f64 = 112.0;
+/// The share of the readable page's width that three frames or more fill in their rows. The
+/// doors that stand round the frames widen the page more than they heighten it.
+const ROWS_SHARE: f64 = 0.6;
 
 /// The room outside the outermost cards, where a line may run round them.
 const PAGE_ROOM: f64 = 64.0;
@@ -327,16 +332,48 @@ fn middle_of(cell: Rect, node: &Node) -> Rect {
     }
 }
 
-/// Where each frame stands in the whole that the doors stand round, and that whole's size. A row
-/// holds every frame. A stack holds rows as wide as its widest frame, and each frame takes the
-/// first row with room, so a small frame late in the order fills what a short row leaves.
+/// Where each frame stands in the whole that the doors stand round, and that whole's size. A
+/// stack holds rows as wide as its widest frame. Otherwise one row holds one frame or two. Three
+/// frames or more take rows as wide as lands their whole at the largest scale on the readable
+/// page, so they make neither a strip nor a column.
 fn together(sizes: &[Point], stacked: bool, room: f64) -> (Vec<Point>, Point) {
     let gap = FRAME_GAP + room;
-    let width = if stacked {
-        sizes.iter().map(|size| size.x).fold(0.0, f64::max)
-    } else {
-        f64::INFINITY
-    };
+    let widest = sizes.iter().map(|size| size.x).fold(0.0, f64::max);
+    if stacked {
+        return in_rows(sizes, widest, gap);
+    }
+    if sizes.len() < 3 {
+        return in_rows(sizes, f64::INFINITY, gap);
+    }
+    let page = readable();
+    let scale = |whole: Point| (whole.x / (page.x * ROWS_SHARE)).max(whole.y / page.y);
+    row_widths(sizes, gap, widest)
+        .into_iter()
+        .map(|width| in_rows(sizes, width, gap))
+        .min_by(|a, b| scale(a.1).total_cmp(&scale(b.1)))
+        .unwrap_or_else(|| in_rows(sizes, f64::INFINITY, gap))
+}
+
+/// Each width at which the frames fill their rows another way: the width of every run of frames
+/// in their order, from the widest frame up. The narrowest comes first.
+fn row_widths(sizes: &[Point], gap: f64, widest: f64) -> Vec<f64> {
+    let mut widths: Vec<f64> = (0..sizes.len())
+        .flat_map(|start| {
+            sizes[start..].iter().scan(-gap, move |width, size| {
+                *width += gap + size.x;
+                Some(*width)
+            })
+        })
+        .filter(|&width| width >= widest)
+        .collect();
+    widths.sort_by(f64::total_cmp);
+    widths.dedup();
+    widths
+}
+
+/// The frames in rows no wider than a width, and that whole's size. Each frame takes the first
+/// row with room, so a small frame late in the order fills what a short row leaves.
+fn in_rows(sizes: &[Point], width: f64, gap: f64) -> (Vec<Point>, Point) {
     let mut rows: Vec<Point> = Vec::new();
     let seats: Vec<(usize, f64)> = sizes
         .iter()

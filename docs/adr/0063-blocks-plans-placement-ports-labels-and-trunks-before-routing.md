@@ -22,6 +22,7 @@ The program also pays for the blank space of the box that these cards and the fr
 It refuses a page that does not read where it lands while a page that reads holds the cards.
 Among the routes that pass the guards, the router prefers one that meets such a card on a side that faces the line's far end.
 Each grid width gives one placement, and a reading of several frames gives one more with the frames stacked.
+Otherwise two frames stand in one row. Three frames or more stand in the rows that land them at the largest scale on 0.6 of the readable page's width, because the outside cards widen the page more than they heighten it.
 Each placement is priced again on its drawn frame, whose columns and rows are as wide as what they hold.
 Each placement also has a variant whose outside cards can stand one gap further out, because contraction takes that room back.
 A reading with more than 64 relationships searches every grid width briefly and goes on with the two cheapest only.
