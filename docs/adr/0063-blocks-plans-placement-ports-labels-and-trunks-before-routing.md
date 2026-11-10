@@ -18,6 +18,7 @@ Either the top and bottom walls of that ring reach past the frames' corners, or 
 Thus no two walls share a corner.
 Each of these cards has a place where it stands when it stands alone.
 The cards keep the order of those places round the frames, so their own lines do not cross.
+A line between two of these cards then pulls each card toward the place where the other card stands.
 The program also pays for the blank space of the box that these cards and the frames fill.
 It refuses a page that does not read where it lands while a page that reads holds the cards.
 Among the routes that pass the guards, the router prefers one that meets such a card on a side that faces the line's far end.

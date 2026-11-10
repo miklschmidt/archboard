@@ -185,8 +185,9 @@ fn prices(
     let past: Vec<Past> = (lines.iter())
         .map(|&line| scene.past(line, door, fixed))
         .collect();
-    // The doors priced after this one see this door at its last tested box.
-    (boxes.iter())
+    // The doors priced after this one see this door where it stood before.
+    let stood = scene.boxes[door];
+    let costs = (boxes.iter())
         .map(|&at| {
             let at = at?;
             scene.boxes[door] = at;
@@ -205,7 +206,9 @@ fn prices(
             }
             Some(cost)
         })
-        .collect()
+        .collect();
+    scene.boxes[door] = stood;
+    costs
 }
 
 /// The lines of a door whose other end is no door: each door's place is still open.
