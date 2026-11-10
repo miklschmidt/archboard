@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T16:45:00Z'
-updated_date: '2026-11-10T03:17:00Z'
+updated_date: '2026-11-10T08:01:00Z'
 labels:
   - renderer
 dependencies:
@@ -68,4 +68,16 @@ ADR 0078 lays a dense solve out in parts across the layout workers. The pool spl
 Frames in rows. A module with its six groups open drew its seven frames in one row, 10609 by 1044 px, which landed at 0.12. Three frames or more now stand in the rows that land them largest on 0.6 of the readable page's width. That reading now lands at 0.33 in 3566 by 2868 px, and its crossings fall from 167 to 135. No corpus reading has more than one frame, so the corpus does not change. Eight variants of that reading measured the change.
 
 Shell. The wait notice in a reading shows a small animated picture, and it is the one sign of the wait. DESIGN.md no longer bans looping motion or blur over the picture, at the owner's request.
+
+Strips and test fixes (2026-11-10). The owner said that wide thin strips are the main layout problem, because they are unreadable on normal monitors. Main draws no page of the corpus more than 2.5 times as wide as tall, and an earlier head of this branch drew 16. A finished drawing now pays for the pane that it leaves blank from full scale down, by how far the page grows past the landing room. The door ring pays for the same blank by its square, so it offers a page of the pane's shape. Blank space counts only as a page grows from three quarters of the landing room to the whole room, because space on a smaller page makes no word land smaller. Frame titles and group captions count as ink.
+
+Three renderer tests that pass on main failed on this branch, and they pass again. A line between two doors pulls each door toward where the other stands. A frame's own line to a card outside it is sketched from the frame's tab. If two facing ports stand less than two bend radii apart, the end that holds its port alone lines up, so the line runs straight.
+
+Corpus of 109 readings through the real renderer against main: crossings 3618 to 2798, route length 1334.8k to 1157.9k, bends 232.0 to 209.5, page area 181.8 M to 161.6 M, blank space 39.9 M to 28.5 M, readings at 0.6 or more 93 to 99, mean landing 0.819 to 0.849. Routes through cards and labels off runs stay 0. Four pages are wider than 2.5 to 1: three land at 0.94 or more, and Painting lands at 0.38 against 0.42 on main. bun run check passes every lane, and bun run benchmark passes 224 of 224.
+
+The site's Checkout API and Inventory service diagrams were drawn again. The site audit found that the walkthrough player, the pipeline, the drill-down and the documents tiles show them whole, with each ring and highlight on its part. Four fixes of older site mocks wait on branch fix/site-renderer-shell-audit.
+
+Sol reviewed five rounds on gpt-6.1-sol at xhigh. Round 4 approved the test fixes and agreed to reverse S1. Round 5 asked to charge the blank pane by the scale lost instead of by the growth past the landing room (S5). That was declined, because the corpus measured the growth form, and the ADR now describes the code.
+
+Speed after the strip fix: one solve in WebAssembly takes a mean of 377 ms, a median of 220 ms, a p90 of 930 ms and a max of 2441 ms. Through a pool of six workers the wait is a mean of 120 ms, a median of 68 ms, a p90 of 277 ms and a max of 955 ms, with the same 105 answers as one solve. The two slowest readings rose from about 1.6 s to 2.4 s in one solve, because they now try more drawings.
 <!-- SECTION:NOTES:END -->
