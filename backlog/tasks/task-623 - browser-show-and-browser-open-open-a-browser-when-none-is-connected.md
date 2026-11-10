@@ -1,11 +1,11 @@
 ---
 id: TASK-623
 title: browser show and browser open open a browser when none is connected
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-10T13:43:00Z'
-updated_date: '2026-11-10T13:49:00Z'
+updated_date: '2026-11-10T14:01:00Z'
 labels: []
 dependencies: []
 ordinal: 1066000
@@ -21,7 +21,7 @@ An agent that runs `archboard browser show` with no browser tab connected gets `
 <!-- AC:BEGIN -->
 - [x] #1 `browser show` with no connected browser opens the canvas address of the caller's repository (`?repoA=<identity>`) in the default browser, waits for a pane, then shows the reading
 - [x] #2 `browser open` with no connected browser opens the canvas and reports the one pane instead of splitting
-- [ ] #3 With no display on Linux, a launch failure, or no pane after the wait, the command refuses with `BROWSER_REQUIRED` and names the address
+- [x] #3 With no display on Linux, a launch failure, or no pane after the wait, the command refuses with `BROWSER_REQUIRED` and names the address
 - [x] #4 `browser close` still refuses with `BROWSER_REQUIRED` when no browser is connected
 - [x] #5 Command descriptions, the first-map guide and the archboard skill state the new behavior
 <!-- AC:END -->
@@ -46,4 +46,12 @@ Not verified by hand: a launch error from `open`, and the 20 s timeout. A stub `
 Existing behavior left as is: with a tab on another checkout of the same repository and no `--pane`, `show` still refuses with `BROWSER_REQUIRED`, and the server message says that nothing is on screen.
 No architecture proposal: no module or relationship changes. The CLI already reaches the browser through the server, and the change only launches the default browser.
 Checks: types, oxlint on apps/cli and packages/timing, bun-nix, `bun test --isolate` of apps/cli/tests and the command-contract-artifacts system test (114 pass), and the site build.
+
+The owner accepted the gap: the launch-error and timeout refusals were not exercised by hand.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+With no pane on screen, `browser show` and `browser open` open the canvas on the caller's repository (`?repoA=<identity>`) in the default browser through `open` 11, and wait up to `PANE_MS.browserConnect` (20 s) for a pane, read from `GET /api/panes`. `show` addresses the new pane by its id, because it can read another checkout of the repository. `open` reports that pane instead of splitting. On Linux without a display, on a launch error and on timeout, both refuse with `BROWSER_REQUIRED` and name the address. `browser close` keeps its refusal. Verified by hand against servers with no tab, and by types, lint, CLI tests and the site build. The launch-error and timeout refusals were not exercised; the owner accepted that gap.
+<!-- SECTION:FINAL_SUMMARY:END -->
