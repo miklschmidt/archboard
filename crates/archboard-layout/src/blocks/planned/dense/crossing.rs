@@ -5,7 +5,8 @@
 //!
 //! The test is `Chord::crosses`, made with the same operations in the same order, so it answers
 //! the same. A moved line turns once to the middle of every box, and each other line reads the
-//! turns to its two ends instead of making them again.
+//! turns to its two ends instead of making them again. The moved lines keep those reads of one
+//! another, so two of them ask only whether each one's ends stand on two sides of the other.
 
 use crate::geometry::Rect;
 
@@ -83,11 +84,12 @@ fn set(row: &mut [u64], line: usize) {
 
 /// How many lines that a move left a moved chord crosses, each set in a row: from the chord's
 /// turn to the middle of every box, and each line's boxes and chord, apart from the moved lines.
+/// The moved lines whose ends stand on two sides of the chord are set in another row.
 fn count(
     chord: &Ends,
     turns: &[i8],
     (boxes, ends, moved): (&[(u32, u32)], &[Ends], &[u64]),
-    row: &mut [u64],
+    (row, straddled): (&mut [u64], &mut [u64]),
 ) -> usize {
     let mut count = 0;
     for (word, chunk) in boxes.chunks(64).enumerate() {
@@ -96,6 +98,7 @@ fn count(
         for (bit, &(from, to)) in chunk.iter().enumerate() {
             sides |= u64::from(turns[from as usize] * turns[to as usize] < 0) << bit;
         }
+        straddled[word] = sides & moved[word];
         let mut left = sides & !moved[word];
         while left != 0 {
             let other = word * 64 + left.trailing_zeros() as usize;
@@ -125,11 +128,13 @@ pub(super) struct Crossings {
     /// How many lines each line crosses.
     counts: Vec<usize>,
     /// The move under weighing: the lines it moved, as bits and in order, with their new chords,
-    /// rows and counts, and one moved line's turn to the middle of every box.
+    /// rows and counts, and one moved line's turn to the middle of every box. Each moved line
+    /// also keeps the moved lines whose ends stand on two sides of its chord.
     moved: Vec<u64>,
     lines: Vec<usize>,
     fresh: Vec<Ends>,
     fresh_rows: Vec<u64>,
+    straddled: Vec<u64>,
     now: Vec<usize>,
     middles: Vec<(f64, f64)>,
     turns: Vec<i8>,
@@ -166,6 +171,7 @@ impl Crossings {
             lines: Vec::new(),
             fresh: Vec::new(),
             fresh_rows: Vec::new(),
+            straddled: Vec::new(),
             now: Vec::new(),
             middles: Vec::new(),
             turns: Vec::new(),
@@ -190,6 +196,8 @@ impl Crossings {
         self.now.resize(self.lines.len(), 0);
         self.fresh_rows.clear();
         self.fresh_rows.resize(self.lines.len() * words, 0);
+        self.straddled.clear();
+        self.straddled.resize(self.lines.len() * words, 0);
         self.middles.clear();
         self.middles
             .extend(scene.boxes.iter().map(|&at| middle(at)));
@@ -220,19 +228,27 @@ impl Crossings {
         self.turns.clear();
         let turns = (self.middles.iter()).map(|r| side(run * (r.1 - p.1) - rise * (r.0 - p.0)));
         self.turns.extend(turns);
-        let row = &mut self.fresh_rows[at * words..][..words];
+        let rows = (
+            &mut self.fresh_rows[at * words..][..words],
+            &mut self.straddled[at * words..][..words],
+        );
         let stayed = (&self.boxes[..], &self.ends[..], &self.moved[..]);
-        self.now[at] = count(chord, &self.turns, stayed, row);
+        self.now[at] = count(chord, &self.turns, stayed, rows);
         self.now[at]
     }
 
-    /// How many pairs of moved lines cross now.
+    /// How many pairs of moved lines cross now, once every moved line is counted.
     pub(super) fn pairs(&mut self) -> usize {
         let words = self.words;
         let mut made = 0;
         for (one, &line) in self.lines.iter().enumerate() {
+            let straddled = &self.straddled[one * words..][..words];
             for (two, &other) in self.lines.iter().enumerate().skip(one + 1) {
-                if self.fresh[one].crossing(&self.fresh[two]) {
+                // `Ends::crossing`, from the turns that `count` made.
+                if has(straddled, other)
+                    && has(&self.straddled[two * words..][..words], line)
+                    && self.fresh[one].near(&self.fresh[two])
+                {
                     set(&mut self.fresh_rows[one * words..][..words], other);
                     set(&mut self.fresh_rows[two * words..][..words], line);
                     self.now[one] += 1;
