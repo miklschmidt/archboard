@@ -8,6 +8,7 @@ use super::{
 };
 use crate::{
     blocks::assembly::PlacedLine,
+    constants::BEND_RADIUS,
     geometry::{Point, Rect, Side},
 };
 pub(super) fn ends(
@@ -98,7 +99,8 @@ pub(super) fn aligned(
     let low = (a_start + 12.0).max(b_start + 20.0);
     let high = (b_start + b_size - 20.0).min(a_start + a_size - 12.0);
     let (one, two) = (coordinate(tail.attachment), coordinate(head.attachment));
-    let position = sliding_position(source_slides, target_slides, low, high, one, two);
+    let position = sliding_position(source_slides, target_slides, low, high, one, two)
+        .or_else(|| straightened(model, edge, one, two));
     if let Some(position) = position.filter(|&p| low <= p && p <= high) {
         let (mut one, mut two) = (tail, head);
         if vertical {
@@ -176,6 +178,26 @@ fn extra(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<sup
     ports
 }
 
+/// Two ends too near each other for two whole bends between them would draw a kink: an end
+/// that holds its port alone moves onto the other's line, so the route can run straight.
+fn straightened(model: &Model<'_>, edge: usize, one: f64, two: f64) -> Option<f64> {
+    if (one - two).abs() >= 2.0 * BEND_RADIUS {
+        return None;
+    }
+    let (from, to) = model.ends[edge];
+    let alone = |incidents: &[usize]| {
+        (incidents.iter())
+            .all(|&other| other == edge || model.treatments[other] != model.treatments[edge])
+    };
+    if alone(&model.incoming[to]) {
+        Some(one)
+    } else if alone(&model.outgoing[from]) {
+        Some(two)
+    } else {
+        None
+    }
+}
+
 fn sliding_position(
     source_slides: bool,
     target_slides: bool,
@@ -192,5 +214,78 @@ fn sliding_position(
         Some(one)
     } else {
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Model, Point, Rect, Shape, Side, aligned};
+    use crate::{
+        blocks::{assembly::Placed, planned::ports::on_wall},
+        graph::Node,
+    };
+    use serde_json::json;
+
+    /// `s` sends two lines of one kind, so they share its port; `t` takes lines of two kinds,
+    /// so the line from `s` holds its port on `t` alone.
+    fn graph() -> Node {
+        let line = |id: &str, from: &str, to: &str, kind: &str| {
+            json!({"id": id, "sources": [from], "targets": [to],
+                "layoutOptions": {"archboard.relationship.kind": kind}})
+        };
+        serde_json::from_value(json!({"id": "root", "children": [
+            {"id": "s", "width": 340, "height": 88}, {"id": "t", "width": 300, "height": 120},
+            {"id": "u", "width": 100, "height": 60}, {"id": "v", "width": 100, "height": 60}],
+            "edges": [line("st", "s", "t", "http"), line("su", "s", "u", "http"),
+                line("vt", "v", "t", "other")]}))
+        .unwrap()
+    }
+
+    // Reduced from the IIS pool's arrival: Platform's shared port and the pool's first slot
+    // stood 1.67 apart, and the line jogged sideways by that much just before its head.
+    #[test]
+    fn ends_too_near_for_two_bends_line_up_on_the_end_that_holds_its_port_alone() {
+        let graph = graph();
+        let model = Model::new(&graph).unwrap();
+        let edge = model.edge_index["st"];
+        let (from, to) = model.ends[edge];
+        let mut shape = Shape::new(Placed {
+            width: 1000.0,
+            height: 1000.0,
+            cards: vec![],
+            frames: vec![],
+            regions: vec![],
+            titles: vec![],
+            routed: None,
+            edges: vec![],
+        });
+        let source = Rect {
+            x: 367.67,
+            y: 564.0,
+            width: 340.0,
+            height: 88.0,
+        };
+        let target = Rect {
+            x: 516.0,
+            y: 332.0,
+            width: 300.0,
+            height: 120.0,
+        };
+        std::rc::Rc::make_mut(&mut shape.endpoints).extend([(from, source), (to, target)]);
+        let tail = on_wall(source, Side::Top, Point { x: 537.67, y: 0.0 }, 12.0);
+        let straight = |head_x: f64| {
+            let head = on_wall(target, Side::Bottom, Point { x: head_x, y: 0.0 }, 20.0);
+            aligned(&model, edge, &shape, tail, head)
+                .iter()
+                .any(|(one, two)| *one == tail && two.attachment.x == tail.attachment.x)
+        };
+        assert!(
+            straight(536.0),
+            "a hair apart, the target's own port lines up"
+        );
+        assert!(
+            !straight(560.0),
+            "far enough apart for a real bend, both ports stay"
+        );
     }
 }
