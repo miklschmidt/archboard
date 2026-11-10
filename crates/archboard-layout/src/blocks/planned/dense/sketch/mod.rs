@@ -371,6 +371,16 @@ impl Scene {
             .expect("a line has a way")
     }
 
+    /// What a line costs at least where its boxes stand: what its cheapest way costs with
+    /// nothing in its way. A way round a box only adds to a way's cost.
+    pub(super) fn bare(&self, line: usize) -> f64 {
+        let ways = self.ways(line);
+        (self.costs(line, &ways, ([0.0; 2], [0.0; 2])).into_iter())
+            .flatten()
+            .min_by(f64::total_cmp)
+            .expect("a line has a way")
+    }
+
     /// What a line costs by each of its ways: the way's length, its bend, its way round the
     /// solid boxes and the foreign frames in its way, and the line's climb against the reading.
     fn costs(

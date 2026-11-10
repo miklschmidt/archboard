@@ -57,8 +57,8 @@ const SAMPLES: usize = 40;
 /// Room past a line's ends that the quick test of its way round a box keeps: more than the room
 /// of the exact test (`Sketch::round`) and any rounding of it.
 const MARGIN: f64 = 1.0;
-/// How much less than the gap between its boxes a line's least cost says: more than any
-/// rounding of the sketch's length.
+/// How much less than its cheapest way with nothing in its way a line's least cost says: more
+/// than any rounding of what a way round a box adds.
 const SLACK: f64 = 1e-3;
 
 /// What a move changes, before it stands or is undone.
@@ -413,24 +413,18 @@ impl<'p> Search<'p> {
                 .sum::<f64>()
     }
 
-    /// What a line costs at least where its boxes stand. Its sketch runs from one box to the
-    /// other, so it is no shorter than the gap between them, and a bend, a way round and a climb
-    /// only add to its length.
+    /// What a line costs at least where its boxes stand: its cheapest way with nothing in its
+    /// way, less a margin.
     fn least(&self, line: usize) -> f64 {
-        let Line { from, to, .. } = self.scene.lines[line];
-        let (a, b) = (self.scene.boxes[from], self.scene.boxes[to]);
-        let gap = |a: f64, a_size: f64, b: f64, b_size: f64| {
-            (b - (a + a_size)).max(a - (b + b_size)).max(0.0)
-        };
-        gap(a.x, a.width, b.x, b.width) + gap(a.y, a.height, b.y, b.height) - SLACK
+        self.scene.bare(line) - SLACK
     }
 
     /// Count the crossings of the lines a made move moved, then sketch them, one line at a time,
     /// and tell what the move adds to the total and the draw made for it, if any.
     ///
     /// A move that costs more stands when a draw falls below how much its rise weighs at the
-    /// heat. Until a line is counted it makes no crossing, and until it is sketched it costs the
-    /// gap between its boxes, which is no more than it does. Where even that least rise weighs
+    /// heat. Until a line is counted it makes no crossing, and until it is sketched it costs its
+    /// cheapest way with nothing in its way, which is no more than it does. Where even that least rise weighs
     /// too much for the draw, the move loses it before the rest is weighed: `None`. The margin
     /// holds against any rounding of the weight. The draw is the one the search makes for that
     /// move anyway, so no walk of the search changes.
