@@ -64,6 +64,7 @@ The planner routes fixed measured geometry through four-wall ports, private lane
 Every shared run names one endpoint common to all its members and preserves the full line treatment.
 Pairwise compatibility alone cannot establish trunk ownership.
 A source fan only splits, and a target fan only merges.
+If the ports of a line's two facing ends stand less than two bend radii apart, the end that holds its port alone moves onto the other end's line, so the line runs straight.
 Local conflict repair and grid windows have explicit work limits.
 A failed candidate can request bounded extra room from the legacy placer.
 No unchecked route reaches the painter.
