@@ -135,19 +135,25 @@ pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
 /// the pane's shape for few crossings.
 const BLANK_PANE: f64 = 2.0;
 
-/// The pane that a page leaves blank where it lands smaller than full scale, in the pane's own
+/// The scale below which the camera sees a picture from far away: a card's 14 px name falls under
+/// 12 px there, so the far view says less of each card (`FAR_SCALE` in the web camera).
+const FAR_SCALE: f64 = 12.0 / 14.0;
+
+/// The pane that a page leaves blank where the camera sees it from far away, in the pane's own
 /// measure: the landing room less the page at the scale it lands at. A strip leaves the pane
 /// above and below it blank, and its words land smaller than those of a page of the pane's shape.
-/// The blank counts by the square of how far the page grows past the landing room, up to the size
-/// that lands where words just read, so a page just past full scale pays almost nothing for it.
+/// A page that lands at `FAR_SCALE` or more pays nothing for its shape. Below it, the blank counts
+/// in part, and in full where the page lands at `NEAR_SCALE`, where words just read.
 fn blank_pane(drawing: &crate::blocks::assembly::Placed) -> f64 {
-    let scale = (drawing.width / LANDING_ROOM.0).max(drawing.height / LANDING_ROOM.1);
-    if scale <= 1.0 {
+    // How many times the landing room the page takes along its tighter side.
+    let size = (drawing.width / LANDING_ROOM.0).max(drawing.height / LANDING_ROOM.1);
+    let (near, read) = (1.0 / FAR_SCALE, 1.0 / NEAR_SCALE);
+    let lost = ((size - near) / (read - near)).clamp(0.0, 1.0);
+    if lost == 0.0 {
         return 0.0;
     }
-    let lost = ((scale - 1.0) / (1.0 / NEAR_SCALE - 1.0)).min(1.0);
-    let landed = drawing.width * drawing.height / (scale * scale);
-    (LANDING_ROOM.0 * LANDING_ROOM.1 - landed) * lost * lost
+    let landed = drawing.width * drawing.height / (size * size);
+    (LANDING_ROOM.0 * LANDING_ROOM.1 - landed) * lost
 }
 
 /// How far from every card, line and label a place stands before it is dead space.
