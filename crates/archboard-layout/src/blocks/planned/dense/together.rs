@@ -16,7 +16,8 @@ const SHARED: usize = 8;
 /// Where each frame stands in the whole that the doors stand round, and that whole's size. Two
 /// frames stand in one row, or one above the other. Three frames or more stand in rows, or in
 /// stacks side by side: in as many rows or stacks as land their whole at the largest scale on the
-/// readable page, so they make neither a strip nor a column.
+/// readable page, so they make neither a strip nor a column. The stacks stop short of one for
+/// each frame, which is one row, and the rows already offer it.
 pub(super) fn together(sizes: &[Point], stacked: bool, room: f64) -> (Vec<Point>, Point) {
     let gap = FRAME_GAP + room;
     let widest = sizes.iter().map(|size| size.x).fold(0.0, f64::max);
