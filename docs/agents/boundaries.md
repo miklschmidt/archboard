@@ -293,7 +293,10 @@ The shared interface separates these responsibilities:
 
 - `./contract` exposes canonical read, edit, claim, recovery, render, history, import, and initialization schemas.
   It also exposes `ModelSnapshotSchema`, the portable file of `archboard model snapshot`: one state, its comparison
-  state, the vault check and the policy's icon paths, which a reader draws with no server.
+  state, the vault check, and icon paths for the policies of both readings and the check.
+  Each reading keeps its own policy. The icon map also covers the default vocabulary and renderer marks.
+  `policyIconPaths` and the browser loader share one naming rule and the same Remix Icon path lookup.
+  A consumer can draw these inputs without a server. The browser app does not yet consume this file.
   Derive local types from those schemas and operation results.
 - `./migration` exposes original inventory and explicit mapping contracts.
   Legacy document schemas remain available for migration and exact retained originals.
