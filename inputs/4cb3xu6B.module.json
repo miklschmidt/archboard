@@ -2,27 +2,13 @@
   "order": 960380,
   "name": "Diagram icons",
   "kind": "function",
-  "responsibility": "Answers the drawn paths of a named icon, and of every icon a policy names",
+  "responsibility": "Answers the drawn paths of a named icon",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/runtime/operations/icon-paths.ts"
   },
+  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
   "schemaVersion": 1,
   "id": "vKEsyHFk#4cb3xu6B",
-  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
-  "outgoing": [
-    {
-      "order": 10,
-      "kind": "call",
-      "label": "the icons a policy names",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/operations/icon-paths.ts",
-        "symbol": "policyIconPaths"
-      },
-      "to": "vKEsyHFk#ZgACb0eW",
-      "id": "vKEsyHFk#CUcyRuxr"
-    }
-  ]
+  "outgoing": []
 }
