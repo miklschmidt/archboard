@@ -90,6 +90,7 @@ Plain Blocks views omit hidden comparison subjects before placement, so those su
 The visible subject set stays the same, but turning comparison on can move the remaining cards.
 Planned crossing decoration retains its finite search limits.
 The Solver interface, text shaping, Rust core, worker pool, and Graphviz remain under ADRs 0059 and 0060.
+A pool of several workers lays a dense reading out in parts across them, and the core makes the choice of one solve from their answers ([ADR 0078](0078-a-blocks-solve-is-laid-out-in-parts-across-the-layout-workers.md)).
 Track retains its existing behavior and must remain byte-identical.
 ADRs 0033, 0040, 0061, and 0062 retain their placement and measured-header decisions.
 
