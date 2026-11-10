@@ -107,6 +107,7 @@ Done: each architectural change has exactly one owning ticket, and each publishe
    Compare `namedAndChanged` with the ticket's slice.
    A changed module absent from this ticket's slice is a **deviation**, even if another ticket owns it.
    Read `skipped` and `unboundFiles`. `unboundFiles` lists each changed file that no module is bound to. It never fails the gate.
+   The footprint reads only the repositories that hold a bound module. If the ticket changed another repository, read that repository's diff yourself.
    For each listed file, do one of these:
    - If the file belongs to a module of the slice, bind that module in the proposal so that its binding holds the file.
    - If the file belongs to no module, such as a fixture, a document or a build file, write why on the ticket.
@@ -137,6 +138,7 @@ Done: each architectural change has exactly one owning ticket, and each publishe
    ```
 
    Resolve any exit status 2, and account for `skipped` and `unboundFiles` as before each ticket merge.
+   If the command exits 1, treat each module that it names as a deviation, as in step 4. Adopt only after exit status 0 or a recorded exception for each module.
    Explain each module in `namedNotChanged`: unfinished work, a planned change that needed no code, or a change outside the symbol that its binding names.
    Fix each finding of the code check that the work caused.
 
