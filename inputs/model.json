@@ -3,21 +3,15 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "iY0ACR2l",
-    "name": "The release workflow attaches each release's docs to its GitHub release",
-    "summary": "The release workflow builds the docs of the released tag and attaches them to the GitHub release, so every deploy of the docs site serves each release at its own address.",
-    "documents": [
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0077-each-release-has-its-own-docs.md"
-      }
-    ],
-    "predecessor": "KNw6tcBa",
-    "baseline": "613dca71f639c87d85ea2d34ddcb09f57409b2d9",
-    "createdAt": "2026-11-09T01:21:15.810Z",
-    "adoptedAt": "2026-11-09T01:23:26.868Z",
-    "reason": "The release workflow calls the site workflow, which builds the tag's docs and attaches docs.tar.gz to the GitHub release (.github/workflows/release.yml, site.yml).",
-    "previousCurrent": "KNw6tcBa"
+    "id": "mdEX4O4o",
+    "name": "Footprint names held modules",
+    "summary": "Each changed module of a footprint names the changed modules bound inside it, so that the CLI gate and the pull-request Action judge a container the same way.",
+    "predecessor": "wJDQv2En",
+    "baseline": "ad6bf9759445dc73cf0d81f58386720feecffddd",
+    "createdAt": "2026-11-10T01:12:28.672Z",
+    "adoptedAt": "2026-11-10T01:13:02.934Z",
+    "reason": "The footprint names held modules on the TASK-622 branch, and the CLI gate and the pull-request Action read them.",
+    "previousCurrent": "wJDQv2En"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
