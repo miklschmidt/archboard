@@ -90,11 +90,15 @@ const panes = [
 		font-size: 0.8125rem;
 		color: var(--ink-muted);
 	}
+	/* Both frames take one height, so the captions line up. It fits the taller drawing, Live
+	   events (1174 by 654 with its legend), and its padding. Overflow hidden holds the ratio
+	   whatever a redraw makes of a drawing. */
 	.pane-body {
 		display: grid;
 		place-items: center;
-		aspect-ratio: 1174 / 600;
+		aspect-ratio: 1174 / 720;
 		padding: 18px;
+		overflow: hidden;
 		background: oklch(0.2 0.006 75);
 	}
 	.pane-body img {
