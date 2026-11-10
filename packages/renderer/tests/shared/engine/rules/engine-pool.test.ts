@@ -504,6 +504,18 @@ test("calling off a solve laid out across workers calls off its waiting parts an
 	expect(workers.map(sentTo)).toEqual([["part a"]]);
 });
 
+test("a solve laid out across workers and called off after its parts started refuses with the signal's reason", async () => {
+	const { solve, workers } = heldPool(2, twoParts);
+	const calling = new AbortController();
+	const refused = solve("one", calling.signal).catch((error: unknown) => error);
+	workers[0]!.ready();
+	expect(workers.map(sentTo)).toEqual([["part a"], ["part b"]]);
+	calling.abort();
+	workers[0]!.answer(0, { data: "A" });
+	workers[1]!.answer(0, { data: "B" });
+	expect(await refused).toBe(calling.signal.reason);
+});
+
 test("a solve asked while another is under way stays whole, so that it costs no extra processor time", async () => {
 	const { solve, workers } = heldPool(2, twoParts);
 	const first = solve("one");

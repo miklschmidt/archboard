@@ -444,7 +444,9 @@ function createEnginePool(
 		const solve = (part: string, called: AbortSignal): Promise<string> =>
 			queue(part, signal === undefined ? called : AbortSignal.any([called, signal]));
 		try {
-			return await lay(graph, { solve });
+			const answer = await lay(graph, { solve });
+			signal?.throwIfAborted();
+			return answer;
 		} catch (error) {
 			throw signal?.aborted === true ? signal.reason : error;
 		}
