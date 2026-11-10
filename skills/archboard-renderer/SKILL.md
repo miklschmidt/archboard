@@ -47,14 +47,17 @@ gives up on a route. The wrong fix routes the picture twice and keeps the old pl
   `crates/archboard-scene/src/measure/labels.rs` give a wide and a narrow plate. The layout
   places one. `crates/archboard-layout/src/architecture/drawn.rs` paints the lines of the plate
   that the layout placed.
-- A dense reading routes its placements in the order of their promise. It compares only the first
-  few that route (`dense_routes` and `dense_room` in `crates/archboard-layout/src/blocks/planned/mod.rs`).
-  A change that lets a refused placement route therefore changes which placements compete, and
-  many readings can change.
+- A dense reading routes every placement at each room of its reading, the cheapest first
+  (`dense_room` in `crates/archboard-layout/src/blocks/planned/mod.rs`). A reading past the
+  placement refinement limit keeps the first placement that routes at each room. A wider room runs
+  only while no drawing passes. A change that lets a refused placement route therefore changes
+  which placements compete, and many readings can change.
 - `reading::order` and `reading::rank` in `blocks/planned/reading.rs` rank finished drawings:
-  landing first, then the count of long detours, then route cost plus crossings, times the cost
-  of the room. A long detour outranks every cost, so a change that removes one detour can change
-  which placement wins. If the ranking itself is wrong, change the ranking. Otherwise leave it alone.
+  whether the page reads where it lands, then the count of long detours, then one sum. The sum
+  adds route cost with crossings, crowded approaches, the dead space that counts as the page
+  nears the landing room, and the pane that the page leaves blank below full scale. A long detour
+  outranks every cost, so a change that removes one detour can change which placement wins. If
+  the ranking itself is wrong, change the ranking. Otherwise leave it alone.
 - Routing is greedy. One line that takes a shorter way can force later lines into detours.
 - `finish` in `blocks/planned/fixed.rs` is the last guard. It places the labels, checks every
   line, the port spacing and the fan runs. Contraction runs it again. A pass that edits routes
