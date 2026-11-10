@@ -37,6 +37,10 @@ Finished drawings rank first by whether the page reads where it lands, then by t
 Then they rank by route cost plus crowded approaches plus blank space.
 Blank space is the area farther than 48 px from every card, line and label.
 96 px² of blank space costs as much as 1 px of line.
+A page that lands smaller than full scale also pays for the pane that its shape leaves blank there.
+That blank is the landing room less the page at its landing scale, and it costs twice what blank space costs.
+It counts by the square of the scale that the page gives up on the way to 0.6, the scale where words just read.
+So a page just past full scale pays almost nothing, and a strip loses to a page of the pane's shape.
 The room cost, its charge for scale, and the promise before routing are gone.
 
 TASK-554 proposes this decision on 2026-10-28 and revises it on 2026-10-29.

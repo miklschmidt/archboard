@@ -77,9 +77,9 @@ pub(super) fn rank(lines: &[PlacedLine]) -> (usize, u64) {
 }
 
 /// How a finished drawing ranks: whether its words read where it lands, its long detours, then
-/// the work of tracing its lines, with its crowded approaches, and its dead space. Page shape
-/// counts only where the page lands too small for its words to read. A large page whose space
-/// its cards and lines use costs nothing for its size.
+/// the work of tracing its lines, with its crowded approaches, its dead space and the pane it
+/// leaves blank. A large page whose space its cards and lines use costs nothing for its size,
+/// but a page whose shape leaves the pane blank where it lands pays for that blank.
 pub(super) type Order = (bool, usize, f64);
 
 /// The scale that a landing must reach for its words to read (the first gate of the reader).
@@ -124,8 +124,30 @@ pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
     (
         drawing.width > READABLE.0 || drawing.height > READABLE.1,
         long_detours(routed),
-        f64::from_bits(cost) + crowded as f64 * CROWDED_COST + dead_space(drawing) / DEAD_SPACE,
+        f64::from_bits(cost)
+            + crowded as f64 * CROWDED_COST
+            + (dead_space(drawing) + BLANK_PANE * blank_pane(drawing)) / DEAD_SPACE,
     )
+}
+
+/// What blank pane costs against dead space on the page, for a page that lands where words just
+/// read. The corpus chose it (TASK-559.09): it turns the strips of small readings into pages of
+/// the pane's shape for few crossings.
+const BLANK_PANE: f64 = 2.0;
+
+/// The pane that a page leaves blank where it lands smaller than full scale, in the pane's own
+/// measure: the landing room less the page at the scale it lands at. A strip leaves the pane
+/// above and below it blank, and its words land smaller than those of a page of the pane's shape.
+/// The blank counts by the square of the scale that the page gives up on its way to the scale
+/// where words just read, so a page just past full scale pays almost nothing for it.
+fn blank_pane(drawing: &crate::blocks::assembly::Placed) -> f64 {
+    let scale = (drawing.width / LANDING_ROOM.0).max(drawing.height / LANDING_ROOM.1);
+    if scale <= 1.0 {
+        return 0.0;
+    }
+    let lost = ((scale - 1.0) / (1.0 / NEAR_SCALE - 1.0)).min(1.0);
+    let landed = drawing.width * drawing.height / (scale * scale);
+    (LANDING_ROOM.0 * LANDING_ROOM.1 - landed) * lost * lost
 }
 
 /// How far from every card, line and label a place stands before it is dead space.
@@ -402,26 +424,20 @@ mod tests {
         assert!(order(&readable) < order(&unreadable));
     }
 
-    /// Three pages that land where their words read, each with one line of the same length. A
-    /// page twice as wide pays nothing for its area while a card fills it, and pays for the
-    /// blank space it leaves when nothing does.
+    /// Three pages that land at full scale, each with one line of the same length. A page twice
+    /// as wide pays nothing for its area while a card fills it, and pays for the blank space it
+    /// leaves when nothing does.
     #[test]
-    fn a_readable_page_pays_its_blank_space_not_its_area() {
+    fn a_page_that_lands_whole_pays_its_blank_space_not_its_area() {
         let page = |width: f64, cards: Vec<PlacedCard>| Placed {
             width,
-            height: 1000.0,
+            height: 500.0,
             cards,
             frames: Vec::new(),
             regions: Vec::new(),
             edges: vec![PlacedLine {
                 id: "line".into(),
-                points: vec![
-                    Point { x: 0.0, y: 500.0 },
-                    Point {
-                        x: 1000.0,
-                        y: 500.0,
-                    },
-                ],
+                points: vec![Point { x: 0.0, y: 250.0 }, Point { x: 600.0, y: 250.0 }],
                 label: None,
             }],
             titles: Vec::new(),
@@ -430,17 +446,17 @@ mod tests {
         let filler = PlacedCard {
             id: "filler".into(),
             bx: Rect {
-                x: 1000.0,
+                x: 600.0,
                 y: 0.0,
-                width: 1000.0,
-                height: 1000.0,
+                width: 600.0,
+                height: 500.0,
             },
             depth: 0,
             header: None,
         };
-        let small = page(1000.0, Vec::new());
-        let filled = page(2000.0, vec![filler]);
-        let blank = page(2000.0, Vec::new());
+        let small = page(600.0, Vec::new());
+        let filled = page(1200.0, vec![filler]);
+        let blank = page(1200.0, Vec::new());
         assert!(order(&filled) <= order(&small));
         assert!(order(&small) < order(&blank));
     }

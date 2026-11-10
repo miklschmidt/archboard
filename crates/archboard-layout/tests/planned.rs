@@ -432,3 +432,50 @@ fn a_reading_its_first_rooms_refuse_stays_dense_before_any_graphviz_placement() 
         assert_eq!(host.0, 0);
     }
 }
+
+/// A small reading with one open frame of three parts and eight doors round it, as a package's
+/// reading draws its modules and the packages that they call.
+fn frame_with_doors() -> Value {
+    let parts = [("a", 96.0), ("b", 113.0), ("c", 113.0)]
+        .map(|(id, height)| json!({"id":id,"width":340,"height":height}));
+    let doors = [238.0, 152.0, 121.0, 224.0, 176.0, 200.0, 130.0, 170.0]
+        .iter()
+        .enumerate()
+        .map(|(at, width)| json!({"id":format!("d{at}"),"width":width,"height":34}));
+    let ends = [
+        ("d0", "b"),
+        ("d1", "a"),
+        ("a", "d3"),
+        ("b", "d6"),
+        ("a", "d2"),
+        ("b", "d4"),
+        ("b", "d5"),
+        ("b", "d7"),
+        ("b", "c"),
+        ("a", "b"),
+        ("d0", "c"),
+    ];
+    let edges: Vec<Value> = ends
+        .iter()
+        .map(|(from, to)| {
+            json!({"id":format!("{from}{to}"),"sources":[from],"targets":[to],
+                "labels":[{"id":format!("l{from}{to}"),"text":"calls","width":120,"height":46}]})
+        })
+        .collect();
+    let frame = json!({"id":"frame","width":396,"height":36,
+        "layoutOptions":{"archboard.header.size":"36"},"children":parts});
+    json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+        "children":doors.chain([frame]).collect::<Vec<_>>(),"edges":edges})
+}
+
+/// A strip lands its words smaller than a page of the pane's shape and leaves the pane above and
+/// below it blank, so a small reading stands its frame and doors in the pane's shape.
+#[test]
+fn a_small_reading_with_doors_round_its_frame_stands_in_the_panes_shape_not_a_strip() {
+    let placed = drawing(&frame_with_doors());
+    let (width, height) = (
+        placed["width"].as_f64().unwrap(),
+        placed["height"].as_f64().unwrap(),
+    );
+    assert!(width / height < 2.0, "a {width:.0} by {height:.0} strip");
+}
