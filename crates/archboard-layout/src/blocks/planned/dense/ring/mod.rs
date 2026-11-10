@@ -163,15 +163,6 @@ impl Ring {
     fn takes(door: Door) -> [usize; 4] {
         [0, 1, 2, 3].map(|wall| slot_count(((door.span(wall) + STEP) / PITCH).ceil()))
     }
-
-    /// The first slot that a door after one at this slot can take, for the slots that one takes
-    /// on each wall (`takes`): past its room on the same wall, or the next wall's first slot,
-    /// which stands clear of it round the corner.
-    fn after(&self, slot: usize, takes: &[usize; 4]) -> usize {
-        let (wall, _) = self.locate(slot);
-        let (start, count) = self.walls[wall];
-        (slot + takes[wall]).min(start + count)
-    }
 }
 
 /// What one door costs at each of its boxes along the ring, `None` where it does not fit. A door

@@ -18,24 +18,30 @@ fn alone(costs: &[Option<f64>]) -> f64 {
 
 /// For a door after the doors placed so far, the least those doors cost in all that leaves each
 /// place along the ring free for it, and where the last of them stands for that. `best` holds
-/// what they cost in all with the last door at each place.
-fn frees(
-    ring: &Ring,
-    last: Door,
-    best: &[f64],
-    slot: impl Fn(usize) -> usize,
-) -> (Vec<f64>, Vec<usize>) {
+/// what they cost in all with the last door at each place, in linear order from the first slot
+/// of a wall.
+fn frees(ring: &Ring, last: Door, best: &[f64], first: usize) -> (Vec<f64>, Vec<usize>) {
     let slots = ring.slots();
     let takes = Ring::takes(last);
     let mut least = vec![f64::INFINITY; slots + 1];
     let mut from = vec![usize::MAX; slots + 1];
-    for (linear, &cost) in best.iter().enumerate().filter(|(_, cost)| cost.is_finite()) {
-        // A wall's end is the next wall's start, so `after` stays linear past the cut.
-        let free = ring.after(slot(linear), &takes) - slot(linear) + linear;
-        if free <= slots && cost < least[free] {
-            least[free] = cost;
-            from[free] = linear;
+    // The walls in linear order. The first place free past a door is past its room on the same
+    // wall, or the next wall's first slot, which stands clear of it round the corner. A wall's
+    // end is the next wall's start, so that place stays linear past the cut.
+    let mut start = 0;
+    for wall in (first..first + 4).map(|wall| wall % 4) {
+        let count = ring.walls[wall].1;
+        for (along, &cost) in best[start..start + count].iter().enumerate() {
+            let (linear, free) = (
+                start + along,
+                start + along + takes[wall].min(count - along),
+            );
+            if cost.is_finite() && free <= slots && cost < least[free] {
+                least[free] = cost;
+                from[free] = linear;
+            }
         }
+        start += count;
     }
     // A place further along is free wherever an earlier one is.
     let mut earlier = (f64::INFINITY, usize::MAX);
@@ -49,16 +55,17 @@ fn frees(
     (least, from)
 }
 
-/// The cheapest places of doors that keep one order along the ring from one slot on, and
-/// what they cost in all.
+/// The cheapest places of doors that keep one order along the ring from a wall's first slot
+/// on, and what they cost in all.
 fn line_up(
     ring: &Ring,
     sizes: &[Door],
     costs: &[Vec<Option<f64>>],
     order: &[usize],
-    cut: usize,
+    first: usize,
 ) -> Option<(f64, Vec<usize>)> {
     let slots = ring.slots();
+    let cut = ring.walls[first].0;
     let slot = |linear: usize| (cut + linear) % slots;
     // Each door's least cost in all at each linear place, and where the door before it stands.
     let mut best: Vec<Vec<f64>> = Vec::with_capacity(order.len());
@@ -66,13 +73,15 @@ fn line_up(
     for (rank, &door) in order.iter().enumerate() {
         let (least, from) = match rank.checked_sub(1) {
             None => (vec![0.0; slots + 1], vec![usize::MAX; slots + 1]),
-            Some(previous) => frees(ring, sizes[order[previous]], &best[previous], slot),
+            Some(previous) => frees(ring, sizes[order[previous]], &best[previous], first),
         };
         // The door's costs in linear order: from the cut round to it.
         let (before_cut, after_cut) = costs[door].split_at(cut);
-        let own: Vec<f64> = (after_cut.iter().chain(before_cut).zip(&least))
-            .map(|(cost, &least)| cost.map_or(f64::INFINITY, |cost| least + cost))
-            .collect();
+        let mut own = least;
+        own.truncate(slots);
+        for (own, cost) in own.iter_mut().zip(after_cut.iter().chain(before_cut)) {
+            *own = cost.map_or(f64::INFINITY, |cost| *own + cost);
+        }
         best.push(own);
         before.push(from);
     }
@@ -110,7 +119,7 @@ pub(super) fn cheapest(
             let along = |door: usize| (wanted[door] - cut as f64).rem_euclid(slots as f64);
             let mut order: Vec<usize> = (0..sizes.len()).collect();
             order.sort_by(|&a, &b| along(a).total_cmp(&along(b)).then(a.cmp(&b)));
-            let (total, places) = line_up(ring, sizes, costs, &order, cut)?;
+            let (total, places) = line_up(ring, sizes, costs, &order, wall)?;
             Some((total, order, places))
         })
         .min_by(|a, b| a.0.total_cmp(&b.0))
