@@ -319,7 +319,12 @@ impl Scene {
     /// so goes round the solid boxes first, and the other only where it could cost less still.
     pub(in crate::blocks::planned::dense) fn cost_among(&self, line: usize, way: &InTheWay) -> f64 {
         let ways = self.ways(line);
-        let frames = rounds(&ways, way.frames.iter().copied());
+        // With no frame in the line's way, each way adds nothing to go round frames.
+        let frames = if way.frames.is_empty() {
+            [0.0; 2]
+        } else {
+            rounds(&ways, way.frames.iter().copied())
+        };
         let against = self.against(line);
         let cost = |at: usize, solid: f64| {
             let sketch: &Sketch = ways[at].as_ref().expect("a line's way");
