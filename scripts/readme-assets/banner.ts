@@ -44,6 +44,12 @@ interface Box {
 	readonly height: number;
 }
 
+/** A span along one axis of the page, in CSS pixels. */
+interface Span {
+	readonly from: number;
+	readonly to: number;
+}
+
 /** Words on the page and their font size, in CSS pixels. */
 interface Words {
 	readonly text: string;
@@ -56,12 +62,16 @@ interface Layout {
 	readonly width: number;
 	readonly height: number;
 	/**
-	 * Where the table's canvas lies. The table fits the picture into a fixed part of its canvas. It
-	 * centres the picture across it, at most 0.94 of its width. Under words, it puts the picture from
-	 * a tenth of the canvas's height up to a little above the words' foot. With no words, the picture
-	 * goes from a tenth up to 0.55 of the height.
+	 * Where the table's canvas lies. The table's shader fades the table into the ground near each
+	 * edge of its canvas, so the canvas runs past every edge of the page by more than that fade. The
+	 * table centres the picture across the canvas, at most 0.94 of its width.
 	 */
 	readonly canvas: Box;
+	/**
+	 * Where the picture's cards and trays lie down the page: the top and the foot of the room that
+	 * the table fits them into. A picture too wide for the canvas fills less of the room's height.
+	 */
+	readonly picture: Span;
 	/** The lockup: its left edge and its vertical middle, and the name's font size. */
 	readonly lockup: { readonly left: number; readonly middle: number; readonly size: number };
 	/**
@@ -76,42 +86,43 @@ interface Layout {
 		readonly right: number;
 		readonly bottom: number;
 	} | null;
-	/** How far the canvas fades in from its left edge and up from its foot, as shares of it. */
-	readonly fade: { readonly left: number; readonly foot: number };
 	/**
-	 * Whether the lockup stands above the table as the hero's words do. The table then fits the
-	 * picture under it and darkens the picture behind it.
+	 * Where the table fades into the ground: in from the left across one span of the page, and out
+	 * toward the foot across another. Each is null where the table runs to the page's edge.
 	 */
+	readonly fade: { readonly left: Span | null; readonly foot: Span | null };
+	/** Whether the lockup stands above the table as the hero's words do, darkening it behind them. */
 	readonly above: boolean;
 }
 
 /**
- * The README's banner, 3:1: the lockup at the left, the table at the right. The canvas runs above
- * the banner so that its picture, which takes no words, falls into the banner's middle. The canvas
- * is wider than tall, so the table fits the picture by its height and leaves room at each side
- * for the routes past the outermost cards. It fades in at its left, where it meets the lockup, and
- * at its foot, above the banner's bottom edge.
+ * The README's banner, 3:1: the lockup at the left, the table at the right, its picture in the
+ * banner's middle. The canvas is wider than the picture, so the table fits the picture by its
+ * height and leaves room at each side for the routes past the outermost cards. The table fades in
+ * at its left, where it meets the lockup, and fades out from below the nearest cards down to the
+ * banner's bottom edge.
  */
 const BANNER: Layout = {
 	width: 2172,
 	height: 724,
-	canvas: { left: 637, top: -313, width: 1560, height: 1000 },
+	canvas: { left: 513, top: -100, width: 1800, height: 884 },
+	picture: { from: 137, to: 587 },
 	lockup: { left: 150, middle: 362, size: 120 },
 	corner: null,
-	fade: { left: 0.12, foot: 0.1 },
+	fade: { left: { from: 637, to: 824 }, foot: { from: 540, to: 724 } },
 	above: false,
 };
 
 /**
  * GitHub's social preview and the site's link preview, 2:1: the site's hero in small. The lockup
- * stands where the hero's words stand, and the table fills the card under it. Where the card ends,
- * the table's own edge fades it into the ground. The words in the lower right corner stand on the
- * ground below the table's right half.
+ * stands where the hero's words stand, and the table fills the card under it, out to the card's
+ * edges. The words in the lower right corner stand on the table below its right half.
  */
 const SOCIAL: Layout = {
 	width: 1280,
 	height: 640,
-	canvas: { left: 0, top: 0, width: 1280, height: 640 },
+	canvas: { left: -48, top: -88, width: 1376, height: 768 },
+	picture: { from: 150, to: 540 },
 	lockup: { left: 80, middle: 112, size: 96 },
 	corner: {
 		title: { text: "Stay in charge", size: 60 },
@@ -122,7 +133,7 @@ const SOCIAL: Layout = {
 		right: 80,
 		bottom: 56,
 	},
-	fade: { left: 0, foot: 0 },
+	fade: { left: null, foot: null },
 	above: true,
 };
 

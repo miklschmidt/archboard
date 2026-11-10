@@ -72,9 +72,12 @@ page `scripts/readme-assets/stage/banner.html` runs the hero's own code from `si
 so Vite serves it from the checkout. The page asks for reduced motion, and the table draws its
 finished entry in one still frame. Chromium draws the table's WebGL2 with SwiftShader on the CPU,
 so a make needs no GPU. The banner paints the hero's picture first with `bun site/scripts/paint.ts`.
-The banner is dark in both colour modes, because the site's table has no light theme. When the
-site's hero changes how it fits its picture, read the banner again: the layouts in
-`scripts/readme-assets/banner.ts` place the canvas by those rules.
+The banner is dark in both colour modes, because the site's table has no light theme. The
+layouts in `scripts/readme-assets/banner.ts` set where the picture lies on the page, and run the
+table's canvas past every edge of the page. The hero's shader fades the table into the ground
+near each edge of its canvas, so that fade falls outside the picture. The page fades the table
+itself where a layout asks for it, as the banner does at its left and its foot. When the site's
+hero changes how it fits its picture or where it fades, read the banner and the card again.
 
 The banner's lockup, the mark beside the name, comes from
 `scripts/readme-assets/lockup.ts`. A test in the repository lane holds that mark

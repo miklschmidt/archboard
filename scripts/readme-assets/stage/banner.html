@@ -23,12 +23,20 @@
 				overflow: hidden;
 				background: var(--ground);
 			}
+			/* The frame is the page. The table fades into the ground across its spans of the page. */
+			.frame {
+				position: absolute;
+				inset: 0;
+				overflow: hidden;
+				mask-image:
+					linear-gradient(90deg, transparent var(--left-from), black var(--left-to)),
+					linear-gradient(180deg, black var(--foot-from), transparent var(--foot-to));
+				mask-composite: intersect;
+			}
+			/* The canvas runs past the frame, wider than the site's stylesheet lets a canvas be. */
 			.table {
 				position: absolute;
-				mask-image:
-					linear-gradient(90deg, transparent, black var(--fade-left)),
-					linear-gradient(0deg, transparent, black var(--fade-foot));
-				mask-composite: intersect;
+				max-width: none;
 			}
 			.lockup {
 				position: absolute;
@@ -54,7 +62,7 @@
 		</style>
 	</head>
 	<body>
-		<canvas class="table" data-table></canvas>
+		<div class="frame" data-frame><canvas class="table" data-table></canvas></div>
 		<div class="lockup" data-lockup></div>
 		<div class="corner" data-corner hidden>
 			<p class="display" data-title></p>
@@ -66,13 +74,22 @@
 			import { lockupMarkup } from "../lockup.ts";
 
 			const layout = JSON.parse(new URLSearchParams(location.search).get("layout"));
+			const frame = document.querySelector("[data-frame]");
 			const canvas = document.querySelector("[data-table]");
 			const lockup = document.querySelector("[data-lockup]");
 			const corner = document.querySelector("[data-corner]");
 			for (const side of ["left", "top", "width", "height"])
 				canvas.style.setProperty(side, `${layout.canvas[side]}px`);
-			canvas.style.setProperty("--fade-left", `${layout.fade.left * 100}%`);
-			canvas.style.setProperty("--fade-foot", `${layout.fade.foot * 100}%`);
+			// A side with no fade runs the table to the page's edge.
+			const left = layout.fade.left ?? { from: 0, to: 0 };
+			const foot = layout.fade.foot ?? { from: layout.height, to: layout.height };
+			frame.style.setProperty("--left-from", `${left.from}px`);
+			frame.style.setProperty("--left-to", `${left.to}px`);
+			frame.style.setProperty("--foot-from", `${foot.from}px`);
+			frame.style.setProperty("--foot-to", `${foot.to}px`);
+			// The room the picture takes, 0..1 up the canvas.
+			const upCanvas = (y) => (layout.canvas.top + layout.canvas.height - y) / layout.canvas.height;
+			const room = { bottom: upCanvas(layout.picture.to), top: upCanvas(layout.picture.from) };
 			lockup.style.setProperty("left", `${layout.lockup.left}px`);
 			lockup.style.setProperty("top", `${layout.lockup.middle}px`);
 			lockup.innerHTML = lockupMarkup(layout.lockup.size);
@@ -105,6 +122,7 @@
 							return levels;
 						}),
 					layout.above ? lockup : null,
+					room,
 				);
 			}
 		</script>

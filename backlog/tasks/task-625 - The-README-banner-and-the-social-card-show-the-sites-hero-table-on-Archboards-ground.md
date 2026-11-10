@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-10T20:23:00Z'
-updated_date: '2026-11-10T23:38:00Z'
+updated_date: '2026-11-10T23:52:00Z'
 labels:
   - docs
   - tooling
@@ -46,6 +46,8 @@ Follow-up: the social card carries a line in its lower right corner, "Catch the 
 Second follow-up: the card's corner now holds a headline over a lead, right-aligned, as the site sets its words. The headline is "Stay in charge." in the display face at 60px. The lead is "Plan each change before your agent writes it." and "Catch the calls your architecture doesn’t allow." in the body face at 24px. At X's preview width of about 506px, the lead is small but legible, and a larger lead would run into the Painter card. The take now fails when Archboard Onest does not load, as it already did for Archboard Display.
 
 Third follow-up: the card's headline is "Stay in charge" with no final period, because a title or heading takes no final period. The two lead sentences keep theirs.
+
+Fourth follow-up: removed the inner shadow on the card and the hard black band at the banner's foot. Both came from the hero's shader, which fades the table into the ground near every canvas edge (10% at the top, 4% at the foot, 3% at each side), and from the banner's canvas ending 37px above the banner's bottom edge. lightTable now takes an optional room, which sets where the picture lies up the canvas. The site does not pass it. The kit's layouts set the picture's span on the page and run the canvas past every edge of the picture. The stage page fades the table through a page-sized frame instead: the banner at its left (637-824px) and its foot (540-724px), and the card not at all. The site's stylesheet caps a canvas at its container's width, so the stage lifts that cap.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
