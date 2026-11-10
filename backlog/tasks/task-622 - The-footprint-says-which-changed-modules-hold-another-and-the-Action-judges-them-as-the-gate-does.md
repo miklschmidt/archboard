@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-10T01:07:00Z'
+updated_date: '2026-11-10T01:18:00Z'
 labels:
   - footprint
   - actions
@@ -28,3 +29,13 @@ The pull-request Action lists a module bound to a directory as changed outside t
 - [ ] #4 The CLI summary line counts 'changed outside the plan' the way the gate does
 - [ ] #5 Docs, skills and the vault say the Action applies the same rule
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Review of 1c4aac8967..c67a0f1ca6: approved after one documentation fix in 4ab8277be. The design-lens guide treated every changedNotNamed entry as a gate failure. It now states that only entries with empty holds fail. The site and guide explain the Action fallback for older CLI answers.
+
+The rule matches the previous CLI rule for reachable paths, directory roots, equal scopes, .csproj projects, repository boundaries, and pinned parts. Invalid paths already stay outside the changed lists. The strict schema, HTTP producer, CLI consumers, Action consumers, and fixtures have no verified defect. Unchanged parts keep empty holds. No new architecture proposal is needed because the fix changes guidance only. Current already describes Footprint names held modules, including History lens vKEsyHFk/HBlhIeSD#radK8osF, Model footprint vKEsyHFk/XppR9owz#MrE3v2T6, and Pull-request Action vKEsyHFk#mAh7CmuS.
+
+All required commands passed: bunx vp run type-check; bunx vp run lint:policy (0 warnings, 0 errors); bunx vp run test:modules (5035 passed, 2 skipped); bun test tests/system/models/model-footprint.test.ts tests/system/actions/ (43 passed). The site build passed with 0 errors, warnings, or hints. Its guide tests passed, and all internal links resolved. The changed page rendered correctly in agent-browser. archboard check semantics passed with no diagnostics. bunx vp fmt on both edited files and git diff --check passed. Source inspection found no simpler implementation that preserves the contract. No push or merge was performed.
+<!-- SECTION:NOTES:END -->
