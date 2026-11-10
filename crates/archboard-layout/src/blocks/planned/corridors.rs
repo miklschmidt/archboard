@@ -18,16 +18,28 @@ pub(super) fn joins(
     visit(&[a, Point { x: a.x, y: b.y }, b]);
     visit(&[a, Point { x: b.x, y: a.y }, b]);
     let (xs, ys) = coordinates(a, b, bounds, shape, guide, hint);
-    let clear = |path: &[Point]| obstacles.clear(path);
+    // Every corridor of one family leaves and enters on the same two lines, so the reach
+    // along each line answers its end runs, and only the middle run needs a lookup.
+    let reached = |(low, high): (f64, f64), from: f64, to: f64| {
+        if to < from { to >= low } else { to <= high }
+    };
+    let (leave, enter) = (
+        obstacles.reach(false, a.y, a.x),
+        obstacles.reach(false, b.y, b.x),
+    );
     for &x in &xs {
         let path = [a, Point { x, y: a.y }, Point { x, y: b.y }, b];
-        if clear(&path) {
+        if reached(leave, a.x, x) && reached(enter, b.x, x) && obstacles.clear(&path[1..3]) {
             visit(&path);
         }
     }
+    let (leave, enter) = (
+        obstacles.reach(true, a.x, a.y),
+        obstacles.reach(true, b.x, b.y),
+    );
     for &y in &ys {
         let path = [a, Point { x: a.x, y }, Point { x: b.x, y }, b];
-        if clear(&path) {
+        if reached(leave, a.y, y) && reached(enter, b.y, y) && obstacles.clear(&path[1..3]) {
             visit(&path);
         }
     }
@@ -86,11 +98,26 @@ fn coordinates(
     around_routes(shape, a, b, &mut xs, &mut ys);
     xs.retain(|&x| x >= bounds.x && x <= bounds.x + bounds.width);
     ys.retain(|&y| y >= bounds.y && y <= bounds.y + bounds.height);
-    xs.sort_by(f64::total_cmp);
-    xs.dedup();
-    ys.sort_by(f64::total_cmp);
-    ys.dedup();
+    ordered(&mut xs);
+    ordered(&mut ys);
     (xs, ys)
+}
+
+/// Coordinates in `f64::total_cmp` order without repeats. Each sorts by the integer that
+/// orders as `total_cmp` does, which compares faster, and equal keys are equal bits.
+fn ordered(values: &mut Vec<f64>) {
+    let key = |bits: i64| bits ^ ((bits >> 63).cast_unsigned() >> 1).cast_signed();
+    let mut keys: Vec<i64> = values
+        .iter()
+        .map(|v| key(v.to_bits().cast_signed()))
+        .collect();
+    keys.sort_unstable();
+    values.clear();
+    values.extend(
+        keys.into_iter()
+            .map(|k| f64::from_bits(key(k).cast_unsigned())),
+    );
+    values.dedup();
 }
 
 fn around_boxes(shape: &Shape, a: Point, b: Point, xs: &mut Vec<f64>, ys: &mut Vec<f64>) {
@@ -134,27 +161,18 @@ fn two_channels(
     obstacles: &Clearance,
     mut visit: impl FnMut(&[Point]),
 ) {
-    let clear = |path: &[Point]| obstacles.clear(path);
-    let mut start_x: Vec<_> = xs
-        .iter()
-        .copied()
-        .filter(|&x| clear(&[a, Point { x, y: a.y }]))
-        .collect();
-    let mut end_y: Vec<_> = ys
-        .iter()
-        .copied()
-        .filter(|&y| clear(&[Point { x: b.x, y }, b]))
-        .collect();
-    let mut start_y: Vec<_> = ys
-        .iter()
-        .copied()
-        .filter(|&y| clear(&[a, Point { x: a.x, y }]))
-        .collect();
-    let mut end_x: Vec<_> = xs
-        .iter()
-        .copied()
-        .filter(|&x| clear(&[Point { x, y: b.y }, b]))
-        .collect();
+    // One reach along each end's two lines answers every run that leaves or enters there.
+    let within = |values: &[f64], vertical: bool, at: Point| {
+        let (along, from) = if vertical { (at.x, at.y) } else { (at.y, at.x) };
+        let (low, high) = obstacles.reach(vertical, along, from);
+        (values.iter().copied())
+            .filter(|&to| if to < from { to >= low } else { to <= high })
+            .collect::<Vec<_>>()
+    };
+    let mut start_x = within(xs, false, a);
+    let mut end_y = within(ys, true, b);
+    let mut start_y = within(ys, true, a);
+    let mut end_x = within(xs, false, b);
     start_x.sort_by(|x, y| (x - a.x).abs().total_cmp(&(y - a.x).abs()));
     start_y.sort_by(|x, y| (x - a.y).abs().total_cmp(&(y - a.y).abs()));
     end_x.sort_by(|x, y| (x - b.x).abs().total_cmp(&(y - b.x).abs()));

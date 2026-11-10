@@ -1,11 +1,12 @@
 // A relabel that keeps every card's size asks for the same solves as the
 // render before it, and the engine pool answers a solve it answered before
-// at once (TASK-548.02). What this catches: such a re-render laying its
-// solves out again on the layout workers, which took a wide document's
-// re-render from about 50 ms back to 0.8 s.
+// at once (TASK-548.02), also one that it laid out in parts (ADR 0078). What
+// this catches: such a re-render laying its solves out again on the layout
+// workers, which took a wide document's re-render from about 50 ms back to
+// 0.8 s.
 import { afterAll, expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { compiledCore } from "#runtime/bun-renderer/services/core.ts";
+import { compiledCore, loadCore } from "#runtime/bun-renderer/services/core.ts";
 import { createEnginePool, type EngineWorker } from "#shared/engine/rules/engine-pool.ts";
 import { installRendererHost, rendererHost } from "#shared/render/rules/host.ts";
 import { SemanticPolicySchema } from "@archboard/model/policy";
@@ -53,26 +54,31 @@ test("a re-render after a relabel that keeps every card's size sends no solve to
 	const warm = orderedFixture({ nodes: [{ id: "warm", name: "Warm", kind: "module" }] });
 	await renderArchitecture({ content: warm, theme: "light", policy });
 	const host = rendererHost();
+	const core = loadCore();
 	/** The solves the pool sent to a worker. */
 	let sent = 0;
 	let asked = 0;
-	const pool = createEnginePool((): EngineWorker => {
-		const worker = new Worker(
-			new URL("../../../../src/runtime/bun-renderer/processes/layout-worker.ts", import.meta.url)
-				.href,
-		);
-		started.push(worker);
-		// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin
-		worker.postMessage({ core: compiledCore() });
-		const post = worker.postMessage.bind(worker);
-		return Object.assign(worker, {
-			postMessage(message: unknown): void {
-				sent += 1;
-				// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin
-				post(message);
-			},
-		});
-	}, 2);
+	const pool = createEnginePool(
+		(): EngineWorker => {
+			const worker = new Worker(
+				new URL("../../../../src/runtime/bun-renderer/processes/layout-worker.ts", import.meta.url)
+					.href,
+			);
+			started.push(worker);
+			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin
+			worker.postMessage({ core: compiledCore() });
+			const post = worker.postMessage.bind(worker);
+			return Object.assign(worker, {
+				postMessage(message: unknown): void {
+					sent += 1;
+					// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin
+					post(message);
+				},
+			});
+		},
+		2,
+		(graph, across) => core.layOutAcross(graph, across),
+	);
 	installRendererHost({
 		...host,
 		solve: (graph, signal) => {

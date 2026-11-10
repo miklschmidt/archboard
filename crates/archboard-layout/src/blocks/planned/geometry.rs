@@ -68,9 +68,8 @@ pub(super) fn intersection(a: &[Point], b: &[Point]) -> (bool, bool) {
 /// stroke of its own that it does not turn from. Such a route closes a loop, and no hop can
 /// stand where a line crosses itself, so the loop would read as a junction.
 pub(super) fn meets_itself(path: &[Point]) -> bool {
-    let strokes: Vec<&[Point]> = path.windows(2).collect();
-    strokes.iter().enumerate().any(|(index, stroke)| {
-        strokes.iter().skip(index + 2).any(|later| {
+    path.windows(2).enumerate().any(|(index, stroke)| {
+        path.windows(2).skip(index + 2).any(|later| {
             let (along, across) = pair_intersection(stroke, later);
             along || across
         })

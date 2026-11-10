@@ -1,9 +1,13 @@
 //! Labels use existing private ink. They never alter a route's bends.
 
 pub(super) mod own;
+mod seating;
+mod strokes;
 mod trunk;
 
 use own::{Own, keeps, meets};
+pub(super) use seating::Seating;
+pub(super) use strokes::StrokeIndex;
 pub(super) use trunk::{branches, from_part, seat};
 
 use super::{
@@ -11,7 +15,10 @@ use super::{
     model::Model,
     shape::Shape,
 };
-use crate::geometry::{Point, Rect, inflate};
+use crate::{
+    blocks::assembly::PlacedLine,
+    geometry::{Point, Rect, inflate},
+};
 
 #[derive(Clone, Copy)]
 struct Span {
@@ -36,162 +43,6 @@ fn subtract(parts: &mut Vec<(f64, f64)>, a: f64, b: f64) {
     }
 }
 
-struct Stroke {
-    edge: usize,
-    across: f64,
-    lo: f64,
-    hi: f64,
-    bin: i64,
-}
-
-type Strokes = [Vec<Stroke>; 2];
-
-#[expect(
-    clippy::cast_possible_truncation,
-    reason = "the rounded coordinate is an integer bin, never a drawing coordinate"
-)]
-fn bin(at: f64) -> i64 {
-    at as i64
-}
-
-struct StrokeIndex {
-    strokes: Strokes,
-    clearance: std::cell::RefCell<rustc_hash::FxHashMap<(usize, [u64; 4]), bool>>,
-}
-impl StrokeIndex {
-    fn new(model: &Model<'_>, shape: &Shape) -> Self {
-        let mut strokes: Strokes = Default::default();
-        for line in &shape.routes {
-            let edge = model.edge_index[line.id.as_str()];
-            for pair in line.points.windows(2) {
-                let horizontal = pair[0].y == pair[1].y;
-                let (across, a, b) = if horizontal {
-                    (pair[0].y, pair[0].x, pair[1].x)
-                } else {
-                    (pair[0].x, pair[0].y, pair[1].y)
-                };
-                strokes[usize::from(horizontal)].push(Stroke {
-                    edge,
-                    across,
-                    lo: a.min(b),
-                    hi: a.max(b),
-                    bin: bin((across * 1e6).round()),
-                });
-            }
-        }
-        // Stable bins retain the original subtraction order within each coordinate.
-        for axis in &mut strokes {
-            axis.sort_by_key(|stroke| stroke.bin);
-        }
-        Self {
-            strokes,
-            clearance: std::cell::RefCell::default(),
-        }
-    }
-    fn range(&self, horizontal: bool, first: i64, last: i64) -> &[Stroke] {
-        let strokes = &self.strokes[usize::from(horizontal)];
-        let start = strokes.partition_point(|stroke| stroke.bin < first);
-        let end = strokes.partition_point(|stroke| stroke.bin <= last);
-        &strokes[start..end]
-    }
-    fn crosses(&self, edge: usize, rect: Rect) -> bool {
-        for horizontal in [true, false] {
-            let (low, high, start, end) = if horizontal {
-                (rect.y, rect.y + rect.height, rect.x, rect.x + rect.width)
-            } else {
-                (rect.x, rect.x + rect.width, rect.y, rect.y + rect.height)
-            };
-            let first = bin((low * 1e6).floor()) - 1;
-            let last = bin((high * 1e6).ceil()) + 1;
-            if self.range(horizontal, first, last).iter().any(|stroke| {
-                stroke.edge != edge
-                    && stroke.across > low
-                    && stroke.across < high
-                    && stroke.lo < end
-                    && stroke.hi > start
-            }) {
-                return true;
-            }
-        }
-        false
-    }
-    fn touching(&self, edge: usize, rect: Rect, mut visit: impl FnMut(Rect)) {
-        for horizontal in [true, false] {
-            let (low, high, start, end) = if horizontal {
-                (rect.y, rect.y + rect.height, rect.x, rect.x + rect.width)
-            } else {
-                (rect.x, rect.x + rect.width, rect.y, rect.y + rect.height)
-            };
-            let first = bin((low * 1e6).floor()) - 1;
-            let last = bin((high * 1e6).ceil()) + 1;
-            for stroke in self.range(horizontal, first, last).iter().filter(|stroke| {
-                stroke.edge != edge
-                    && stroke.across >= low
-                    && stroke.across <= high
-                    && stroke.lo <= end
-                    && stroke.hi >= start
-            }) {
-                visit(if horizontal {
-                    Rect {
-                        x: stroke.lo,
-                        y: stroke.across,
-                        width: stroke.hi - stroke.lo,
-                        height: 0.0,
-                    }
-                } else {
-                    Rect {
-                        x: stroke.across,
-                        y: stroke.lo,
-                        width: 0.0,
-                        height: stroke.hi - stroke.lo,
-                    }
-                });
-            }
-        }
-    }
-    fn private(&self, edge: usize, path: &[Point]) -> Vec<Span> {
-        let mut spans = Vec::new();
-        let mut before = 0.0;
-        for pair in path.windows(2) {
-            let horizontal = pair[0].y == pair[1].y;
-            let (across, a, b) = if horizontal {
-                (pair[0].y, pair[0].x, pair[1].x)
-            } else {
-                (pair[0].x, pair[0].y, pair[1].y)
-            };
-            let key = bin((across * 1e6).round());
-            let mut parts = vec![(a.min(b), a.max(b))];
-            for stroke in self
-                .range(horizontal, key - 1, key + 1)
-                .iter()
-                .filter(|stroke| stroke.edge != edge && (stroke.across - across).abs() < 1e-6)
-            {
-                subtract(&mut parts, stroke.lo, stroke.hi);
-            }
-            for (lo, hi) in parts {
-                let point = |at| {
-                    if horizontal {
-                        Point { x: at, y: across }
-                    } else {
-                        Point { x: across, y: at }
-                    }
-                };
-                let (start, end) = span_ends(lo, hi, a < b);
-                spans.push(Span {
-                    a: point(start),
-                    b: point(end),
-                    before: before + (a - start).abs(),
-                });
-            }
-            before += length(pair);
-        }
-        spans
-    }
-}
-
-fn span_ends(lo: f64, hi: f64, forward: bool) -> (f64, f64) {
-    if forward { (lo, hi) } else { (hi, lo) }
-}
 fn clear(
     shape: &Shape,
     edge: usize,
@@ -248,23 +99,38 @@ impl<'a> Slots<'a> {
         edge: usize,
         path: &[Point],
     ) -> Option<(Rect, bool)> {
-        let own = Own::new(edge, path);
-        spot_on(model, own, path, self.shape, &self.strokes, &self.labels)
+        let (shape, strokes, labels) = (self.shape, &self.strokes, &self.labels);
+        let spans = spans(edge, path, shape, strokes);
+        spot_for(
+            model,
+            Own::new(edge, path),
+            (shape, &spans),
+            (strokes, labels),
+        )
     }
-    /// A spot that may stand beside the route's other stretches, for a route with no better.
-    pub(super) fn any_slot(
+    /// A spot that stands beside the route's other stretches, for a route whose words find no
+    /// spot clear of them. It is always a fallback.
+    pub(super) fn beside(
         &self,
         model: &Model<'_>,
         edge: usize,
         path: &[Point],
     ) -> Option<(Rect, bool)> {
-        slot_index(model, edge, self.shape, path, &self.strokes, &self.labels)
+        let (shape, strokes, labels) = (self.shape, &self.strokes, &self.labels);
+        let spans = spans(edge, path, shape, strokes);
+        let own = Own {
+            beside: true,
+            ..Own::new(edge, path)
+        };
+        spot_for(model, own, (shape, &spans), (strokes, labels))
     }
 }
 
 /// Where a route's words stand: clear of the route's other stretches, or as a fallback beside
 /// them when the route leaves no such spot, because a line keeps its words. Words never stand
 /// over another stretch of their own line, where a reader takes them for a different line's.
+/// Words wrap onto their narrow plate before they stand beside their line or the line takes a
+/// longer way round.
 fn slot_index(
     model: &Model<'_>,
     edge: usize,
@@ -273,35 +139,35 @@ fn slot_index(
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Option<(Rect, bool)> {
-    spot_on(model, Own::new(edge, path), path, shape, index, labels).or_else(|| {
-        let beside = Own {
-            beside: true,
+    let spans = spans(edge, path, shape, index);
+    [false, true].into_iter().find_map(|beside| {
+        let own = Own {
+            beside,
             ..Own::new(edge, path)
         };
-        let (at, _) = spot_on(model, beside, path, shape, index, labels)?;
-        Some((at, true))
+        spot_for(model, own, (shape, &spans), (index, labels))
     })
 }
 
-fn spot_on(
+/// The spot of `slot_index` that keeps the words clear of the route's other stretches, or
+/// that stands beside them when `own` says so, on the route's `spans`, and whether it is a
+/// fallback.
+fn spot_for(
     model: &Model<'_>,
     own: Own<'_>,
-    path: &[Point],
-    shape: &Shape,
-    index: &StrokeIndex,
-    labels: &super::label_space::Labels,
+    (shape, spans): (&Shape, &[Span]),
+    (index, labels): (&StrokeIndex, &super::label_space::Labels),
 ) -> Option<(Rect, bool)> {
-    let edge = own.edge;
-    let label = model.edges[edge].label()?;
-    let size = Rect {
-        x: 0.0,
-        y: 0.0,
-        width: label.width.unwrap_or(0.0),
-        height: label.height.unwrap_or(0.0),
-    };
+    let spot = |narrow| spot_on(model, own, spans, shape, index, labels, narrow);
+    let (at, fallback) = spot(false).or_else(|| spot(true))?;
+    Some((at, fallback || own.beside))
+}
+
+/// The stretches of a route that no other line shares, where its words can stand: the longest
+/// first, or along the route from its part for a line of a door's trunk.
+fn spans(edge: usize, path: &[Point], shape: &Shape, index: &StrokeIndex) -> Vec<Span> {
     if let Some(&part_first) = shape.trunk.get(&edge) {
-        let spans = index.private(edge, &from_part(path, part_first));
-        return nearest(&spans, size, shape, own, index, labels).map(|at| (at, false));
+        return index.private(edge, &from_part(path, part_first));
     }
     let mut spans = index.private(edge, path);
     spans.sort_by(|a, b| {
@@ -309,10 +175,45 @@ fn spot_on(
             .total_cmp(&length(&[a.a, a.b]))
             .then(a.before.total_cmp(&b.before))
     });
-    let midway = midway(&spans, size, shape, own, index, labels);
+    spans
+}
+
+/// The size of a label's plate, or of its narrow plate where its words wrap narrower.
+fn plate(model: &Model<'_>, edge: usize, narrow: bool) -> Option<Rect> {
+    let label = model.edges[edge].label()?;
+    let (width, height) = if narrow {
+        let plate = label.narrow?;
+        (plate.width, plate.height)
+    } else {
+        (label.width.unwrap_or(0.0), label.height.unwrap_or(0.0))
+    };
+    Some(Rect {
+        x: 0.0,
+        y: 0.0,
+        width,
+        height,
+    })
+}
+
+/// A spot for a route's words on its `spans`, as `spans` finds them, and whether it is a
+/// fallback.
+fn spot_on(
+    model: &Model<'_>,
+    own: Own<'_>,
+    spans: &[Span],
+    shape: &Shape,
+    index: &StrokeIndex,
+    labels: &super::label_space::Labels,
+    narrow: bool,
+) -> Option<(Rect, bool)> {
+    let size = plate(model, own.edge, narrow)?;
+    if shape.trunk.contains_key(&own.edge) {
+        return nearest(spans, size, shape, own, index, labels).map(|at| (at, false));
+    }
+    let midway = midway(spans, size, shape, own, index, labels);
     midway
         .map(|at| (at, false))
-        .or_else(|| nearest(&spans, size, shape, own, index, labels).map(|at| (at, true)))
+        .or_else(|| nearest(spans, size, shape, own, index, labels).map(|at| (at, true)))
 }
 
 /// The middle of the longest run that holds the words.
@@ -450,16 +351,34 @@ fn search_window(a: f64, b: f64, across: f64, across_half: f64, horizontal: bool
     }
 }
 
-pub(super) fn arrange(model: &Model<'_>, shape: &mut Shape) -> Option<usize> {
+/// Place the words of every route of a shape, if each finds a spot.
+pub(super) fn arrange(model: &Model<'_>, shape: &mut Shape) -> Option<()> {
     let strokes = StrokeIndex::new(model, shape);
     shape.labels.clear();
-    let mut labels = super::label_space::Labels::default();
     let indices: Vec<_> = shape
         .routes
         .iter()
         .map(|line| model.edge_index.get(line.id.as_str()).copied())
         .collect::<Option<_>>()?;
-    available(model, shape, &indices, &strokes, &labels)?;
+    available(
+        model,
+        shape,
+        shape.routes.iter().zip(indices.iter().copied()),
+        &strokes,
+    )?;
+    seated(model, shape, &indices, &strokes)
+}
+
+/// The rest of `arrange`, for a shape without words whose lines `available` found room for.
+/// `indices` are the lines of its routes, and `strokes` the index of their ink.
+pub(super) fn seated(
+    model: &Model<'_>,
+    shape: &mut Shape,
+    indices: &[usize],
+    strokes: &StrokeIndex,
+) -> Option<()> {
+    debug_assert!(shape.labels.is_empty());
+    let mut labels = super::label_space::Labels::default();
     let mut order: Vec<_> = (0..shape.routes.len()).collect();
     order.sort_by(|&a, &b| {
         let area = |index: usize| {
@@ -469,28 +388,47 @@ pub(super) fn arrange(model: &Model<'_>, shape: &mut Shape) -> Option<usize> {
         };
         area(b).total_cmp(&area(a)).then(a.cmp(&b))
     });
-    seed(shape, &indices, &order, &strokes, &mut labels);
-    let mut fallbacks = 0;
+    seed(shape, indices, &order, strokes, &mut labels);
+    let mut moves = Moves {
+        count: 0,
+        searched: vec![None; indices.len()],
+    };
     for _ in 0..4 {
-        let (count, changed) = update(model, shape, &indices, &order, &strokes, &mut labels)?;
-        fallbacks = count;
+        let changed = update(
+            model,
+            shape,
+            (indices, &order),
+            strokes,
+            &mut labels,
+            &mut moves,
+        )?;
         if !changed {
-            return Some(fallbacks);
+            return Some(());
         }
     }
-    consistent(model, shape, &indices, &order, &strokes, &labels)?;
-    Some(fallbacks)
+    consistent(model, shape, indices, &order, strokes, &labels)
 }
 
-fn available(
+/// How many times a line's words moved while `seated` places them, and for each route how
+/// many had moved when its words last found their spot.
+struct Moves {
+    count: usize,
+    searched: Vec<Option<usize>>,
+}
+
+/// Whether every worded line, each with its index, has a spot for its words along its route
+/// before any words take space: the first test of `arrange`. `shape` holds no words, and
+/// `strokes` indexes the ink of the lines.
+fn available<'l>(
     model: &Model<'_>,
     shape: &Shape,
-    indices: &[usize],
+    lines: impl IntoIterator<Item = (&'l PlacedLine, usize)>,
     strokes: &StrokeIndex,
-    labels: &super::label_space::Labels,
 ) -> Option<()> {
+    debug_assert!(shape.labels.is_empty());
+    let labels = &super::label_space::Labels::default();
     // A new or covered label needs a private spot even before other labels take space.
-    for (line, &edge) in shape.routes.iter().zip(indices) {
+    for (line, edge) in lines {
         if model.edges[edge].label().is_some()
             && line
                 .label
@@ -547,19 +485,21 @@ fn seed(
         }
     }
 }
+/// Find each line's words a spot again, and tell whether any moved. A line's spot depends on
+/// its own words and the other lines' words, so while no other words move, the line's words
+/// keep the spot they found last, and its search is not run again.
 fn update(
     model: &Model<'_>,
     shape: &mut Shape,
-    indices: &[usize],
-    order: &[usize],
+    (indices, order): (&[usize], &[usize]),
     strokes: &StrokeIndex,
     labels: &mut super::label_space::Labels,
-) -> Option<(usize, bool)> {
+    moves: &mut Moves,
+) -> Option<bool> {
     let mut changed = false;
-    let mut fallbacks = 0;
     for &index in order {
         let edge = indices[index];
-        if model.edges[edge].label().is_none() {
+        if model.edges[edge].label().is_none() || moves.searched[index] == Some(moves.count) {
             continue;
         }
         let old = shape.labels.remove(&edge);
@@ -569,23 +509,27 @@ fn update(
         {
             shape.labels.insert(edge, kept);
             labels.remember(edge, kept);
+            moves.searched[index] = Some(moves.count);
             continue;
         }
         // A plate that contraction carried with its run can fill the room it has exactly, so
         // that no search finds it, and it can stay where it stands.
-        let (label, fallback) =
-            slot_index(model, edge, shape, path, strokes, labels).or_else(|| {
+        let label = slot_index(model, edge, shape, path, strokes, labels)
+            .map(|(at, _)| at)
+            .or_else(|| {
                 let own = Own::new(edge, path);
                 old.filter(|&at| own.rides_one(at) && clear(shape, edge, at, strokes, labels))
-                    .map(|at| (at, true))
             })?;
-        changed |= old != Some(label);
+        if old != Some(label) {
+            changed = true;
+            moves.count += 1;
+        }
+        moves.searched[index] = Some(moves.count);
         shape.labels.insert(edge, label);
         labels.remember(edge, label);
         shape.routes[index].label = Some(label);
-        fallbacks += usize::from(fallback);
     }
-    Some((fallbacks, changed))
+    Some(changed)
 }
 
 #[cfg(test)]

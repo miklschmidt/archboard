@@ -1,7 +1,10 @@
 //! What moves on one axis of a drawing: each card, wall, word plate and run of a line is a
 //! piece with a mover, and a shift for each mover moves the drawing.
 
-use super::super::{geometry::length, junctions::common_suffix};
+use super::super::{
+    geometry::length,
+    junctions::{common_prefix, common_suffix},
+};
 use crate::{
     blocks::assembly::Placed,
     geometry::{Axis, Point, Rect},
@@ -52,7 +55,7 @@ pub(super) struct Piece {
     pub(super) high: f64,
     pub(super) from: f64,
     pub(super) to: f64,
-    /// For a run where lines join before their target cards, those cards' movers.
+    /// For a run where lines join or part beside a card they share, those cards' movers.
     pub(super) joins: Vec<usize>,
 }
 
@@ -93,22 +96,31 @@ fn runs_of(drawing: &Placed, axis: Axis) -> Vec<Run> {
     runs
 }
 
-/// The card a line joins another line on the way into: the line turns onto its last stretch
-/// on the other line's last stretch, and both end at one point on that card. Where they join
-/// must stay as far from the card as the guard asks of a junction there.
-fn joined_card(drawing: &Placed, line: usize) -> Option<usize> {
+/// How much ink two routes share from one of their ends.
+type Shared = fn(&[Point], &[Point]) -> f64;
+
+/// The card a line joins or leaves another line beside, at its start or at its end: the line
+/// runs its stretch at that end along the other line's, and both meet that card at one point.
+/// At the start, one of the two also draws an arrowhead there, as a line in `two_way` does.
+/// Where they join or part must stay as far from the card as the guard asks of a junction there.
+fn joined_card(drawing: &Placed, line: usize, start: bool, two_way: &[&str]) -> Option<usize> {
     let points = &drawing.edges[line].points;
-    let [.., turn, end] = points.as_slice() else {
-        return None;
+    let (end, approach, shared): (_, _, Shared) = match points.as_slice() {
+        [end, turn, ..] if start => (*end, length(&[*end, *turn]), common_prefix),
+        [.., turn, end] if !start => (*end, length(&[*turn, *end]), common_suffix),
+        _ => return None,
     };
-    let approach = length(&[*turn, *end]);
     let total = length(points);
+    let arrow = |id: &str| !start || two_way.contains(&id);
     let along = |other: &[Point]| {
-        let shared = common_suffix(points, other);
+        let shared = shared(points, other);
         (shared - approach).abs() < 1e-6 && shared < total - 1e-6 && shared < length(other) - 1e-6
     };
-    let joins = (drawing.edges.iter().enumerate())
-        .any(|(other, route)| other != line && along(&route.points));
+    let joins = (drawing.edges.iter().enumerate()).any(|(other, route)| {
+        other != line
+            && along(&route.points)
+            && (arrow(&drawing.edges[line].id) || arrow(&route.id))
+    });
     // A line ends on its card's wall, or a hair off it.
     let holds = |card: &Rect| {
         let (x, y) = (card.x - 1.0, card.y - 1.0);
@@ -177,9 +189,9 @@ impl Sheet {
     }
 
     /// One mover for each run of the drawing's lines. Runs that share ink share a mover.
-    fn runs(&mut self, drawing: &Placed, axis: Axis) {
-        let joined: Vec<Option<usize>> = (0..drawing.edges.len())
-            .map(|line| joined_card(drawing, line))
+    fn runs(&mut self, drawing: &Placed, axis: Axis, two_way: &[&str]) {
+        let joined: Vec<[Option<usize>; 2]> = (0..drawing.edges.len())
+            .map(|line| [true, false].map(|start| joined_card(drawing, line, start, two_way)))
             .collect();
         let mut last: Option<usize> = None;
         for run in runs_of(drawing, axis) {
@@ -189,12 +201,15 @@ impl Sheet {
             });
             let piece = shared.unwrap_or_else(|| self.run(&run));
             self.pieces[piece].to = self.pieces[piece].to.max(run.to);
-            // The run that turns onto the last stretch, where a joining line meets the other.
-            if run.points.end + 1 == drawing.edges[run.line].points.len() {
+            // The run that turns off the first stretch or onto the last, where a line that
+            // shares that stretch parts from or joins the other.
+            let ends = [
+                run.points.start == 1,
+                run.points.end + 1 == drawing.edges[run.line].points.len(),
+            ];
+            for (at_end, card) in ends.into_iter().zip(joined[run.line]) {
                 let joins = &mut self.pieces[piece].joins;
-                if let Some(card) = joined[run.line]
-                    && !joins.contains(&card)
-                {
+                if let Some(card) = card.filter(|card| at_end && !joins.contains(card)) {
                     joins.push(card);
                 }
             }
@@ -245,7 +260,7 @@ impl Sheet {
         }
     }
 
-    fn lines(&mut self, drawing: &Placed, axis: Axis) {
+    fn lines(&mut self, drawing: &Placed, axis: Axis, two_way: &[&str]) {
         for line in &drawing.edges {
             if let Some(label) = line.label {
                 let mover = self.mover();
@@ -254,15 +269,15 @@ impl Sheet {
             }
             self.lines.push(vec![0; line.points.len()]);
         }
-        self.runs(drawing, axis);
+        self.runs(drawing, axis, two_way);
     }
 
-    pub(super) fn of(drawing: &Placed, axis: Axis) -> Sheet {
+    pub(super) fn of(drawing: &Placed, axis: Axis, two_way: &[&str]) -> Sheet {
         let mut sheet = Sheet::default();
         sheet.cards(drawing, axis);
         sheet.frames(drawing, axis);
         sheet.titles(drawing, axis);
-        sheet.lines(drawing, axis);
+        sheet.lines(drawing, axis, two_way);
         sheet
     }
 

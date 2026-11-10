@@ -52,15 +52,22 @@ fn conflicts_at(
     source: bool,
     old: &PlacedLine,
 ) -> bool {
+    // The ends' geometry is cheaper than the lookup of the other line, so it goes first.
+    let near = [true, false].map(|os| {
+        opposite_offset(end(points, source), end(&old.points, os))
+            .is_some_and(|by| by.abs() < APART)
+    });
+    if near == [false, false] {
+        return false;
+    }
     let other = model.edge_index[old.id.as_str()];
     edge != other
-        && [true, false].into_iter().any(|os| {
-            one_subject(
+        && [true, false].into_iter().zip(near).any(|(os, near)| {
+            near && one_subject(
                 model,
                 endpoint(model, edge, source),
                 endpoint(model, other, os),
-            ) && opposite_offset(end(points, source), end(&old.points, os))
-                .is_some_and(|by| by.abs() < APART)
+            )
         })
 }
 
@@ -90,7 +97,7 @@ fn offsets(
     edge: usize,
     points: &[Point],
     source: bool,
-    peers: &[&PlacedLine],
+    peers: &[Peer<'_>],
 ) -> Vec<f64> {
     let mut offsets = OFFSETS.map(|by| if source { by } else { -by }).to_vec();
     let (at, next) = end(points, source);
@@ -98,19 +105,15 @@ fn offsets(
     let (lo, hi) = wall_span(model, shape, edge, source, horizontal);
     let position = if horizontal { at.y } else { at.x };
     offsets.extend([lo - position, hi - position]);
-    for old in peers {
-        let other = model.edge_index[old.id.as_str()];
-        for os in [true, false] {
-            if edge == other
-                || !one_subject(
-                    model,
-                    endpoint(model, edge, source),
-                    endpoint(model, other, os),
-                )
-            {
+    for peer in peers {
+        for (os, meets) in [true, false]
+            .into_iter()
+            .zip(peer.meets[usize::from(!source)])
+        {
+            if !meets {
                 continue;
             }
-            if let Some(by) = opposite_offset(end(points, source), end(&old.points, os)) {
+            if let Some(by) = opposite_offset(end(points, source), end(&peer.line.points, os)) {
                 offsets.extend([by + APART, by - APART]);
             }
         }
@@ -120,73 +123,140 @@ fn offsets(
     offsets
 }
 
-/// Slide an endpoint run and keep its bends and remaining corridor.
-pub(super) fn alternatives(model: &Model<'_>, shape: &Shape, line: &PlacedLine) -> Vec<PlacedLine> {
-    let edge = model.edge_index[line.id.as_str()];
-    let (from, to) = model.ends[edge];
-    let peers: Vec<_> = shape
-        .routes
-        .iter()
-        .filter(|old| {
-            let (a, b) = model.ends[model.edge_index[old.id.as_str()]];
-            [a, b]
-                .iter()
-                .any(|&end| one_subject(model, end, from) || one_subject(model, end, to))
+/// A placed route that ends on one subject with an end of a line: the only kind of route that
+/// the line's ends can conflict with.
+pub(super) struct Peer<'a> {
+    line: &'a PlacedLine,
+    /// For the line's source and its target, whether the peer's source and its target stand on
+    /// the same subject. A route of the line's own relationship stands on none.
+    meets: [[bool; 2]; 2],
+}
+impl Peer<'_> {
+    /// `conflicts_at` with this peer.
+    fn conflicts_at(&self, points: &[Point], source: bool) -> bool {
+        let meets = self.meets[usize::from(!source)];
+        [true, false].into_iter().zip(meets).any(|(os, meets)| {
+            meets
+                && opposite_offset(end(points, source), end(&self.line.points, os))
+                    .is_some_and(|by| by.abs() < APART)
         })
-        .collect();
-    let mut paths = vec![line.points.clone()];
+    }
+
+    /// `conflicts` with this peer.
+    pub(super) fn conflicts(&self, points: &[Point]) -> bool {
+        [true, false]
+            .into_iter()
+            .any(|source| self.conflicts_at(points, source))
+    }
+}
+
+impl<'a> Peer<'a> {
+    /// A placed route as a peer of a line, if it is one.
+    pub(super) fn of(model: &Model<'_>, edge: usize, line: &'a PlacedLine) -> Option<Self> {
+        let (from, to) = model.ends[edge];
+        let other = model.edge_index[line.id.as_str()];
+        let (a, b) = model.ends[other];
+        let meets = [from, to].map(|at| [a, b].map(|end| one_subject(model, at, end)));
+        (meets != [[false; 2]; 2]).then_some(Self {
+            line,
+            meets: if edge == other {
+                [[false; 2]; 2]
+            } else {
+                meets
+            },
+        })
+    }
+}
+
+/// The peers of a line among some placed routes, in their order.
+pub(super) fn peers<'a>(model: &Model<'_>, routes: &'a [PlacedLine], edge: usize) -> Vec<Peer<'a>> {
+    (routes.iter())
+        .filter_map(|line| Peer::of(model, edge, line))
+        .collect()
+}
+
+/// Slide an endpoint run and keep its bends and remaining corridor, clear of the line's peers.
+pub(super) fn alternatives(
+    model: &Model<'_>,
+    shape: &Shape,
+    line: &PlacedLine,
+    peers: &[Peer<'_>],
+) -> Vec<PlacedLine> {
+    let edge = model.edge_index[line.id.as_str()];
+    let mut paths = Paths::new(line.points.clone());
     for source in [true, false] {
         if !peers
             .iter()
-            .any(|old| conflicts_at(model, edge, &line.points, source, old))
+            .any(|peer| peer.conflicts_at(&line.points, source))
         {
             continue;
         }
-        let mut shifted = Vec::new();
-        let offsets = offsets(model, shape, edge, &line.points, source, &peers);
-        for points in &paths {
+        let offsets = offsets(model, shape, edge, &line.points, source, peers);
+        for at in 0..paths.all.len() {
             for &offset in &offsets {
-                if let Some(path) = slide(model, shape, edge, points, source, offset) {
-                    shifted.push(path);
+                if let Some(path) = slide(model, shape, edge, &paths.all[at], source, offset) {
+                    paths.add(path);
                 }
             }
         }
-        paths.extend(shifted);
-        let mut seen = rustc_hash::FxHashSet::default();
-        paths.retain(|path| {
-            seen.insert(
-                path.iter()
-                    .map(|p| [p.x.to_bits(), p.y.to_bits()])
-                    .collect::<Vec<_>>(),
-            )
-        });
     }
-    let mut alternatives: Vec<_> = paths
-        .into_iter()
-        .skip(1)
-        .filter(|points| !peers.iter().any(|old| conflicts(model, edge, points, old)))
-        .map(|points| PlacedLine {
+    let movement = |points: &[Point]| {
+        [true, false]
+            .into_iter()
+            .map(|source| {
+                super::geometry::length(&[end(&line.points, source).0, end(points, source).0])
+            })
+            .sum::<f64>()
+    };
+    let mut alternatives: Vec<_> = (paths.all.into_iter().skip(1))
+        .filter(|points| !peers.iter().any(|peer| peer.conflicts(points)))
+        .map(|points| (movement(&points), super::geometry::length(&points), points))
+        .collect();
+    alternatives.sort_by(|a, b| a.0.total_cmp(&b.0).then_with(|| a.1.total_cmp(&b.1)));
+    (alternatives.into_iter())
+        .map(|(_, _, points)| PlacedLine {
             id: line.id.clone(),
             label: line
                 .label
                 .filter(|&label| super::channel::label_run(&points, label)),
             points,
         })
-        .collect();
-    let movement = |path: &PlacedLine| {
-        [true, false]
-            .into_iter()
-            .map(|source| {
-                super::geometry::length(&[end(&line.points, source).0, end(&path.points, source).0])
-            })
-            .sum::<f64>()
-    };
-    alternatives.sort_by(|a, b| {
-        movement(a).total_cmp(&movement(b)).then_with(|| {
-            super::geometry::length(&a.points).total_cmp(&super::geometry::length(&b.points))
-        })
-    });
-    alternatives
+        .collect()
+}
+
+/// Distinct paths, bit for bit, in the order they first came.
+struct Paths {
+    all: Vec<Vec<Point>>,
+    hashes: rustc_hash::FxHashSet<u64>,
+}
+impl Paths {
+    fn new(first: Vec<Point>) -> Self {
+        let mut paths = Self {
+            all: Vec::new(),
+            hashes: rustc_hash::FxHashSet::default(),
+        };
+        paths.add(first);
+        paths
+    }
+
+    fn add(&mut self, path: Vec<Point>) {
+        let bits = |p: &Point| [p.x.to_bits(), p.y.to_bits()];
+        let hash = {
+            use std::hash::{Hash, Hasher};
+            let mut hasher = rustc_hash::FxHasher::default();
+            for p in &path {
+                bits(p).hash(&mut hasher);
+            }
+            hasher.finish()
+        };
+        // A new hash is a new path. A known hash is a path seen before, or a collision.
+        if !self.hashes.insert(hash)
+            && (self.all.iter()).any(|seen| seen.iter().map(bits).eq(path.iter().map(bits)))
+        {
+            return;
+        }
+        self.all.push(path);
+    }
 }
 
 fn slide(

@@ -27,6 +27,7 @@ pub(super) fn route(
     let candidates = candidates(&model, &topology, &mut shape, &previous)?;
     shape.routes = super::selection::greedy(&model, &topology, &shape, &candidates, orders)
         .map_err(|edges| blocked(&model, &edges))?;
+    super::swaps::untangle(&model, &topology, &mut shape);
     let routed = shape.routed();
     let mut drawing = settled(&model, &topology, &mut shape)?;
     drawing.routed = Some(std::rc::Rc::new(routed));
@@ -39,8 +40,12 @@ pub(super) fn settled(
     topology: &Topology,
     shape: &mut Shape,
 ) -> Result<Placed, super::Refused> {
+    let two_way: Vec<&str> = (model.edges.iter())
+        .filter(|edge| edge.option(super::channel::TWO_WAY).is_some())
+        .map(|edge| edge.id.as_str())
+        .collect();
     for clear in [8.0, 12.0, 16.0, 24.0, 32.0] {
-        if let Some(drawing) = super::compact::drawing(shape, clear)
+        if let Some(drawing) = super::compact::drawing(shape, clear, &two_way)
             && let Ok(mut compact) = placement(model, drawing)
         {
             compact.trunk = std::rc::Rc::clone(&shape.trunk);
@@ -215,56 +220,101 @@ fn overlap(a: Rect, b: Rect) -> bool {
     a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
 }
 
-pub(super) fn compatible(
-    model: &Model<'_>,
-    topology: &Topology,
+/// The placed routes of a shape as the candidates of one line meet them. Whether a candidate
+/// can stand beside a placed route depends on the route's ends, box, words and junctions,
+/// which each placed route finds once.
+pub(super) struct Meeting<'a> {
+    routes: Vec<Met<'a>>,
+    junctions: super::channel::Junctions<'a>,
+}
+
+/// One placed route of a meeting.
+struct Met<'a> {
     edge: usize,
-    a: &PlacedLine,
-    b: &PlacedLine,
-) -> bool {
-    if super::port_spacing::conflicts(model, edge, &a.points, b) {
-        return false;
-    }
-    let bounds = |path: &[Point]| {
-        let x = path.iter().map(|p| p.x).fold(f64::INFINITY, f64::min);
-        let y = path.iter().map(|p| p.y).fold(f64::INFINITY, f64::min);
-        Rect {
-            x,
-            y,
-            width: path.iter().map(|p| p.x).fold(f64::NEG_INFINITY, f64::max) - x,
-            height: path.iter().map(|p| p.y).fold(f64::NEG_INFINITY, f64::max) - y,
+    line: &'a PlacedLine,
+    peer: Option<super::port_spacing::Peer<'a>>,
+    /// The route's box, a point wider each way.
+    reach: Rect,
+    /// The route's words, with the room a line keeps from them.
+    kept: Option<Rect>,
+}
+
+impl<'a> Meeting<'a> {
+    pub(super) fn new(
+        model: &Model<'_>,
+        topology: &Topology,
+        edge: usize,
+        routes: &'a [PlacedLine],
+    ) -> Self {
+        let met = |line: &'a PlacedLine| Met {
+            edge: model.edge_index[line.id.as_str()],
+            line,
+            peer: super::port_spacing::Peer::of(model, edge, line),
+            reach: inflate(bounds(&line.points), 1.0),
+            kept: line.label.map(|r| inflate(r, 12.01)),
+        };
+        Self {
+            routes: routes.iter().map(met).collect(),
+            junctions: super::channel::Junctions::new(model, topology, edge, routes),
         }
-    };
-    if a.label
-        .is_some_and(|r| crosses_box(&b.points, inflate(r, 12.01)))
-        || b.label
-            .is_some_and(|r| crosses_box(&a.points, inflate(r, 12.01)))
-        || a.label
-            .zip(b.label)
-            .is_some_and(|(a, b)| overlap(inflate(a, 8.0), b))
-    {
-        return false;
     }
-    if !overlap(
-        inflate(bounds(&a.points), 1.0),
-        inflate(bounds(&b.points), 1.0),
-    ) {
-        return true;
+
+    /// The lines of the placed routes that a candidate route of the line cannot stand beside:
+    /// its ends stand too close to theirs, its ink or words cover their words, or the two
+    /// meet in a junction that does not read.
+    pub(super) fn blocking(&self, line: &PlacedLine) -> impl Iterator<Item = usize> {
+        let reach = inflate(bounds(&line.points), 1.0);
+        let kept = line.label.map(|r| inflate(r, 12.01));
+        let envelope = super::junctions::Envelope::new(&line.points);
+        let compatible = move |at: usize, old: &Met<'_>| {
+            if (old.peer.as_ref()).is_some_and(|peer| peer.conflicts(&line.points)) {
+                return false;
+            }
+            if kept.is_some_and(|r| crosses_box(&old.line.points, r))
+                || old.kept.is_some_and(|r| crosses_box(&line.points, r))
+                || (line.label.zip(old.line.label))
+                    .is_some_and(|(a, b)| overlap(inflate(a, 8.0), b))
+            {
+                return false;
+            }
+            !overlap(reach, old.reach) || self.junctions.shares(at, &line.points, envelope)
+        };
+        (self.routes.iter().enumerate())
+            .filter(move |&(at, old)| !compatible(at, old))
+            .map(|(_, old)| old.edge)
     }
-    super::channel::shared_junction(model, topology, edge, &a.points, b)
+}
+
+fn bounds(path: &[Point]) -> Rect {
+    let x = path.iter().map(|p| p.x).fold(f64::INFINITY, f64::min);
+    let y = path.iter().map(|p| p.y).fold(f64::INFINITY, f64::min);
+    Rect {
+        x,
+        y,
+        width: path.iter().map(|p| p.x).fold(f64::NEG_INFINITY, f64::max) - x,
+        height: path.iter().map(|p| p.y).fold(f64::NEG_INFINITY, f64::max) - y,
+    }
 }
 
 pub(super) fn route_cost(path: &[Point]) -> f64 {
     length(path) + 120.0 * path.len().saturating_sub(2) as f64
 }
 
-pub(super) fn route_rank(model: &Model<'_>, bounds: Rect, path: &[Point]) -> (u64, u64) {
+/// How a route ranks among the routes of its line. A route that meets a door on a side that
+/// faces its far end comes before every route that does not, so a line meets a door from
+/// behind only when no other route passes the guards.
+pub(super) fn route_rank(
+    (model, shape, edge): (&Model<'_>, &Shape, usize),
+    bounds: Rect,
+    path: &[Point],
+) -> (bool, u64, u64) {
+    let behind = !super::ports::faces_far_end(model, shape, edge, path);
     let page = page_cost(bounds, path).to_bits();
     let route = route_cost(path).to_bits();
     if model.edges.len() <= super::REFINEMENT_LIMIT {
-        (route, page)
+        (behind, route, page)
     } else {
-        (page, route)
+        (behind, page, route)
     }
 }
 
@@ -375,7 +425,7 @@ fn candidates(
         if choices.is_empty() {
             return Err(blocked(model, &[edge]));
         }
-        choices.sort_by_cached_key(|line| route_rank(model, bounds, &line.points));
+        choices.sort_by_cached_key(|line| route_rank((model, shape, edge), bounds, &line.points));
         candidates.push(choices);
     }
     Ok(candidates)

@@ -1,8 +1,8 @@
 //! Reconsider only the connected routes that block one relationship.
 use super::{
-    fixed::{compatible, route_cost},
+    fixed::{Meeting, route_cost},
     model::Model,
-    selection::append,
+    selection::Fit,
     shape::Shape,
     topology::Topology,
 };
@@ -15,25 +15,25 @@ struct Conflict<'a> {
     bad: Vec<usize>,
     line: &'a PlacedLine,
 }
+/// Fit one relationship by moving the routes that block it. `blocked` says that no route of
+/// its pool fits the shape as it stands, because the caller just tried them all.
 pub(super) fn reconsider(
     model: &Model<'_>,
     topology: &Topology,
     shape: &Shape,
     paths: &[Vec<PlacedLine>],
     edge: usize,
+    blocked: bool,
 ) -> Option<Shape> {
-    insert(
-        model,
-        topology,
-        shape,
-        paths,
-        edge,
-        &[],
-        &mut Work {
-            attempts: 96,
-            generated: 0,
-        },
-    )
+    let work = &mut Work {
+        attempts: 96,
+        generated: 0,
+    };
+    if blocked {
+        displace(model, topology, shape, paths, edge, &[], work)
+    } else {
+        insert(model, topology, shape, paths, edge, &[], work)
+    }
 }
 fn insert(
     model: &Model<'_>,
@@ -44,13 +44,26 @@ fn insert(
     locked: &[usize],
     work: &mut Work,
 ) -> Option<Shape> {
+    let fit = Fit::new(model, topology, shape, edge);
     if let Some(next) = paths[edge]
         .iter()
-        .find_map(|line| append(model, topology, shape, line))
-        .or_else(|| extra(model, topology, shape, edge, locked, work))
+        .find_map(|line| fit.append(line))
+        .or_else(|| extra(&fit, locked, work))
     {
         return Some(next);
     }
+    displace(model, topology, shape, paths, edge, locked, work)
+}
+/// Move the routes that block one relationship, and fit it in their place.
+fn displace(
+    model: &Model<'_>,
+    topology: &Topology,
+    shape: &Shape,
+    paths: &[Vec<PlacedLine>],
+    edge: usize,
+    locked: &[usize],
+    work: &mut Work,
+) -> Option<Shape> {
     if locked.len() == 3 || work.attempts == 0 {
         return None;
     }
@@ -63,18 +76,12 @@ fn insert(
         .take(6)
         .find_map(|conflict| replace(model, topology, shape, paths, &held, work, conflict))
 }
-fn extra(
-    model: &Model<'_>,
-    topology: &Topology,
-    shape: &Shape,
-    edge: usize,
-    locked: &[usize],
-    work: &mut Work,
-) -> Option<Shape> {
+fn extra(fit: &Fit<'_, '_>, locked: &[usize], work: &mut Work) -> Option<Shape> {
     if locked.is_empty() || work.generated >= 4 {
         return None;
     }
     work.generated += 1;
+    let (model, topology, shape, edge) = (fit.model, fit.topology, fit.shape, fit.edge);
     super::choices::search(
         model,
         topology,
@@ -84,7 +91,7 @@ fn extra(
         None,
         super::fixed::Search::Ports,
     )
-    .find_map(|line| append(model, topology, shape, &line))
+    .find_map(|line| fit.append(&line))
 }
 fn conflicts<'a>(
     model: &Model<'_>,
@@ -94,15 +101,11 @@ fn conflicts<'a>(
     edge: usize,
     locked: &[usize],
 ) -> Vec<Conflict<'a>> {
+    let meeting = Meeting::new(model, topology, edge, &shape.routes);
     let mut choices: Vec<_> = paths
         .iter()
         .filter_map(|line| {
-            let bad: Vec<_> = shape
-                .routes
-                .iter()
-                .filter(|old| !compatible(model, topology, edge, line, old))
-                .map(|old| model.edge_index[old.id.as_str()])
-                .collect();
+            let bad: Vec<_> = meeting.blocking(line).collect();
             (!bad.is_empty() && bad.len() <= 3 && !bad.iter().any(|e| locked.contains(e)))
                 .then_some(Conflict { bad, line })
         })
@@ -132,7 +135,8 @@ fn replace(
     partial
         .routes
         .retain(|line| !conflict.bad.contains(&model.edge_index[line.id.as_str()]));
-    let partial = append(model, topology, &partial, conflict.line)?;
+    let edge = model.edge_index[conflict.line.id.as_str()];
+    let partial = Fit::new(model, topology, &partial, edge).append(conflict.line)?;
     conflict
         .bad
         .into_iter()

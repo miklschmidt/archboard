@@ -134,10 +134,8 @@ fn hairpin_slots(apart: f64) -> (Found, Found) {
     let path: Vec<Point> = route.iter().map(|&(x, y)| Point { x, y }).collect();
     let edge = model.edge_index["ab"];
     let slots = Slots::new(&model, &shape);
-    (
-        slots.slot(&model, edge, &path),
-        slots.any_slot(&model, edge, &path),
-    )
+    let clear = slots.slot(&model, edge, &path);
+    (clear, clear.or_else(|| slots.beside(&model, edge, &path)))
 }
 
 #[test]
@@ -215,4 +213,59 @@ fn a_drawing_knows_when_words_stand_on_their_own_line() {
     assert!(own::words_clear(&model, &shape));
     shape.labels.insert(edge, words(60.0));
     assert!(!own::words_clear(&model, &shape));
+}
+
+#[test]
+fn words_too_wide_for_their_route_take_their_narrow_plate() {
+    let graph = |narrow: serde_json::Value| -> Node {
+        serde_json::from_value(json!({"id":"root","children":[
+            {"id":"a","width":100,"height":60},{"id":"b","width":100,"height":60}],"edges":[
+            {"id":"ab","sources":["a"],"targets":["b"],
+             "labels":[{"width":190,"height":31,"narrow":narrow}]}]}))
+        .unwrap()
+    };
+    let route: &[(f64, f64)] = &[(100.0, 500.0), (280.0, 500.0)];
+    let wide = graph(serde_json::Value::Null);
+    let mut shape = drawing(&[("ab", route)]);
+    assert_eq!(arrange(&Model::new(&wide).unwrap(), &mut shape), None);
+    let both = graph(json!({"width":106,"height":46}));
+    let mut shape = drawing(&[("ab", route)]);
+    arrange(&Model::new(&both).unwrap(), &mut shape).expect("the narrow plate fits");
+    let plate = shape.labels[&0];
+    assert_eq!((plate.width, plate.height), (106.0, 46.0));
+}
+
+#[test]
+fn a_trunk_branch_tries_its_narrow_plate_before_waiting_for_room() {
+    let graph: Node = serde_json::from_value(json!({"id":"root","children":[
+        {"id":"a","width":100,"height":60},{"id":"b","width":100,"height":60},
+        {"id":"door","width":100,"height":60}],"edges":[
+        {"id":"ad","sources":["a"],"targets":["door"],
+         "labels":[{"width":190,"height":31,"narrow":{"width":106,"height":46}}]},
+        {"id":"bd","sources":["b"],"targets":["door"]}]}))
+    .unwrap();
+    let model = Model::new(&graph).unwrap();
+    let mut shape = drawing(&[
+        ("ad", &[(100.0, 500.0), (280.0, 500.0), (280.0, 800.0)]),
+        ("bd", &[(280.0, 300.0), (280.0, 800.0)]),
+    ]);
+    let edge = model.edge_index["ad"];
+    std::rc::Rc::make_mut(&mut shape.trunk).insert(edge, true);
+    let paths: Vec<_> = shape
+        .routes
+        .iter()
+        .map(|line| line.points.clone())
+        .collect();
+    assert_eq!(seat(&model, &mut shape, &[edge]), Vec::<usize>::new());
+    let plate = shape.routes[0].label.expect("words stay on the branch");
+    assert_eq!((plate.width, plate.height), (106.0, 46.0));
+    assert_eq!(shape.labels[&edge], plate);
+    assert_eq!(
+        shape
+            .routes
+            .iter()
+            .map(|line| line.points.clone())
+            .collect::<Vec<_>>(),
+        paths
+    );
 }

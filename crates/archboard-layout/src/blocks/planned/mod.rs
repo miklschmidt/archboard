@@ -26,6 +26,7 @@ mod reading;
 mod room;
 mod runs;
 mod shape;
+mod swaps;
 mod topology;
 mod words;
 
@@ -76,6 +77,7 @@ impl From<&str> for Refused {
     }
 }
 
+pub(super) use parts::{Routed, Split, Step, solve_part};
 pub(super) use words::{dress, without_trunk_words};
 
 mod fixed;
@@ -120,32 +122,12 @@ pub(super) fn route_candidates(
     Ok(best.ok_or(failure))
 }
 
-/// Past this many lines a dense placement costs too much for a second room or a
-/// second refusal: each refusal costs as much as a route.
+/// Past this many lines a reading starts with more room between its cells.
 const AMPLE_LINES: usize = 40;
 
-/// How many dense placements a reading of some lines routes, the most promising
-/// first: one route of a large reading costs as much as the budget of a drawing.
-fn dense_routes(lines: usize) -> usize {
-    if lines <= 15 { 6 } else { 1 }
-}
-
-/// How many placements past that budget a room can refuse at most.
-const MOST_REFUSALS: usize = 4;
-
-/// How many placements past that budget a room refuses at first. A refusal stops early, and
-/// the placements of the ranks cost far more than a few of them.
-fn dense_refusals(lines: usize) -> usize {
-    if lines <= AMPLE_LINES {
-        MOST_REFUSALS
-    } else {
-        1
-    }
-}
-
-/// The room a dense placement of some lines adds to its gaps, tightest first:
-/// each refusal costs a whole route, so a crowded reading starts wider. Lines
-/// between frames all cross the band between them, so several frames need more.
+/// The room a dense placement of some lines adds to its gaps, tightest first: a crowded
+/// reading starts wider. Lines between frames all cross the band between them, so several
+/// frames need more.
 fn dense_rooms(lines: usize, frames: usize) -> &'static [f64] {
     match (lines, frames) {
         (0..=15, 0..=1) => &[0.0, 48.0],
@@ -161,65 +143,248 @@ fn dense_rooms(lines: usize, frames: usize) -> &'static [f64] {
 /// The rooms a reading goes on to while its own rooms draw nothing.
 const WIDER_ROOMS: [f64; 7] = [144.0, 192.0, 288.0, 384.0, 480.0, 640.0, 800.0];
 
-/// The best dense drawing of a reading, if one passes every guard. A wider room
-/// runs only while no drawing lands readably, and past some lines only while none is drawn.
+/// The best dense drawing of a reading, if one passes every guard. The search weighs a
+/// placement on a sketch of its lines, which misses the detours and labels that routing finds,
+/// so every placement at every room of the reading is routed, the cheapest first. A wider room
+/// runs only while no drawing passes, because even a drawing with more room than it needs
+/// reads far better than a Graphviz placement.
 pub(super) fn dense_drawing(graph: &crate::graph::Node) -> Option<crate::blocks::assembly::Placed> {
-    let grids = dense::Grids::of(graph)?;
+    let rooms = dense_rooms(relationships(graph), dense::frames(graph));
+    let crowded = (relationships(graph) > PLACEMENT_REFINEMENT_LIMIT).then_some(CROWDED_TRIES);
+    let grids = dense::Grids::of(graph, rooms[0], crowded)?;
+    let Ok(best) = densest(graph, &mut Here::new(graph, &grids));
+    best
+}
+
+/// The best of the tries of a dense reading, routed here or elsewhere: the rooms of the reading,
+/// then wider rooms while no drawing passes.
+fn densest<T: Tries>(
+    graph: &crate::graph::Node,
+    tries: &mut T,
+) -> Result<Option<T::Drawing>, T::Lack> {
+    let rooms = dense_rooms(relationships(graph), dense::frames(graph));
     let mut best = None;
-    let lines = relationships(graph);
-    let rooms = dense_rooms(lines, dense::frames(graph));
-    let refusals = dense_refusals(lines);
     for &room in rooms {
-        dense_room(graph, &grids, room, lines, refusals, &mut best);
-        if best
-            .as_ref()
-            .is_some_and(|one| !one.0.0 || lines > AMPLE_LINES)
-        {
-            break;
-        }
+        dense_room(graph, tries, room, &mut best)?;
     }
-    for (room, refusals) in rescues(rooms, refusals) {
+    let widest = rooms.last().copied().unwrap_or_default();
+    for &room in WIDER_ROOMS.iter().filter(|&&room| room > widest) {
         if best.is_some() {
             break;
         }
-        dense_room(graph, &grids, room, lines, refusals, &mut best);
+        dense_room(graph, tries, room, &mut best)?;
     }
-    best.map(|(_, drawing)| drawing)
+    Ok(best.map(|(_, drawing)| drawing))
 }
 
-/// What a reading tries when its rooms drew nothing, because even a drawing with more
-/// room than it needs reads far better than a Graphviz placement: the wider rooms,
-/// then its own rooms again if it has more placements left to try there.
-fn rescues(rooms: &[f64], refusals: usize) -> impl Iterator<Item = (f64, usize)> + use<'_> {
-    let widest = rooms.last().copied().unwrap_or_default();
-    let wider = WIDER_ROOMS.iter().filter(move |&&room| room > widest);
-    let again = rooms.iter().filter(move |_| refusals < MOST_REFUSALS);
-    (wider.map(move |&room| (room, refusals))).chain(again.map(|&room| (room, MOST_REFUSALS)))
-}
+/// How many placements a reading past the placement refinement limit searches to the end, and
+/// routes at each room.
+const CROWDED_TRIES: usize = 2;
 
-/// Route a reading's placements at one room, as many as a reading of its size affords.
-fn dense_room(
+/// Route the placements of a reading at one room, the cheapest first, and keep the best drawing
+/// so far. A reading past the placement refinement limit keeps the first that routes, as its
+/// legacy placements do, because its routes cost more than its render budget.
+fn dense_room<T: Tries>(
     graph: &crate::graph::Node,
-    grids: &dense::Grids<'_>,
+    tries: &mut T,
     room: f64,
-    lines: usize,
-    refusals: usize,
-    best: &mut Option<(reading::Order, crate::blocks::assembly::Placed)>,
-) {
-    let most = dense_routes(lines);
-    let routed = dense::drawings(grids, room)
-        .into_iter()
-        .take(most + refusals)
-        .filter_map(|drawing| fixed::route(graph, drawing, &selection::ORDERS[..1]).ok());
-    for next in routed.take(most) {
-        let order = reading::order(&next);
-        if best.as_ref().is_none_or(|one| order < one.0) {
-            *best = Some((order, next));
+    best: &mut Option<(reading::Order, T::Drawing)>,
+) -> Result<(), T::Lack> {
+    let crowded = relationships(graph) > PLACEMENT_REFINEMENT_LIMIT;
+    for at in 0..tries.drawings(room)? {
+        if dense_asks(tries, at, best)? && crowded {
+            return Ok(());
         }
     }
+    Ok(())
+}
+
+/// How many times a placement tries again with the room its lines asked for.
+const ASKS: usize = 2;
+
+/// Route a dense placement, keep its drawing if it is the best so far, and tell whether any
+/// drawing of it routed. A line that the router refuses, or that runs a long way round, asks the
+/// placement for room on its direct way, and the placement tries again with that room, twice at
+/// most. No line asks once the reading has a drawing that reads and runs no long way round,
+/// because more room could then only lower a cost that the drawing already ranks by.
+fn dense_asks<T: Tries>(
+    tries: &mut T,
+    at: usize,
+    best: &mut Option<(reading::Order, T::Drawing)>,
+) -> Result<bool, T::Lack> {
+    let mut routed = false;
+    for tried in 0..=ASKS {
+        match tries.route(at, tried)? {
+            Try::Over => break,
+            Try::Refused => {}
+            Try::Routed(order, next) => {
+                routed = true;
+                if best.as_ref().is_none_or(|one| order < one.0) {
+                    *best = Some((order, next));
+                }
+            }
+        }
+        if (best.as_ref()).is_some_and(|(order, _)| reads(*order)) || tried == ASKS {
+            break;
+        }
+    }
+    Ok(routed)
+}
+
+/// Whether a drawing of some order reads and runs no long way round: no line asks for room then.
+fn reads((unreadable, long, _): reading::Order) -> bool {
+    !unreadable && long == 0
+}
+
+/// One try of a dense placement at a room.
+enum Try<D> {
+    /// The try before it asked for no room that the placement could give, so it is not made.
+    Over,
+    /// The router refused it.
+    Refused,
+    /// The router drew it, and this is how it ranks.
+    Routed(reading::Order, D),
+}
+
+/// The tries of a dense reading: routed here, one after another (`Here`), or answered by the
+/// parts of a split solve (`parts`). The choice between them is the same either way.
+trait Tries {
+    /// A routed drawing.
+    type Drawing;
+    /// What the tries still lack to answer.
+    type Lack;
+    /// How many placements one room routes, the cheapest first: the tries that follow are theirs.
+    fn drawings(&mut self, room: f64) -> Result<usize, Self::Lack>;
+    /// One try of a placement of the room: the first, or one with the room its lines asked for.
+    fn route(&mut self, at: usize, tried: usize) -> Result<Try<Self::Drawing>, Self::Lack>;
+}
+
+/// The tries of a dense reading, routed here, one after another.
+struct Here<'g> {
+    graph: &'g crate::graph::Node,
+    grids: &'g dense::Grids<'g>,
+    room: f64,
+    drawings: Vec<Option<(dense::Candidate, crate::blocks::assembly::Placed)>>,
+    /// The placement whose tries are under way.
+    chain: Option<Chain>,
+}
+
+/// A placement whose tries are under way: the room its lines asked for, its latest drawing, and
+/// the ends of the lines in its latest try that want room.
+struct Chain {
+    candidate: dense::Candidate,
+    asked: Vec<dense::Room>,
+    drawn: crate::blocks::assembly::Placed,
+    wanting: Vec<[String; 2]>,
+}
+
+impl<'g> Here<'g> {
+    fn new(graph: &'g crate::graph::Node, grids: &'g dense::Grids<'g>) -> Self {
+        Here {
+            graph,
+            grids,
+            room: 0.0,
+            drawings: Vec::new(),
+            chain: None,
+        }
+    }
+
+    /// Start the tries of a placement of the room, its lines wanting some room.
+    fn start(&mut self, at: usize, wanting: Vec<[String; 2]>) {
+        let (candidate, drawn) = self.drawings[at]
+            .take()
+            .expect("each placement starts once");
+        self.chain = Some(Chain {
+            candidate,
+            asked: Vec::new(),
+            drawn,
+            wanting,
+        });
+    }
+
+    /// Resume the tries of a placement drawn at a room, from the lines that its first try left
+    /// wanting room.
+    fn resume(
+        &mut self,
+        room: f64,
+        drawn: (dense::Candidate, crate::blocks::assembly::Placed),
+        wanting: Vec<[String; 2]>,
+    ) {
+        self.room = room;
+        self.drawings = vec![Some(drawn)];
+        self.start(0, wanting);
+    }
+
+    /// The ends of the lines that want room in the latest try of the placement under way.
+    fn wanting(&self) -> Vec<[String; 2]> {
+        self.chain
+            .as_ref()
+            .map_or_else(Vec::new, |chain| chain.wanting.clone())
+    }
+
+    /// Ask the placement under way for the room its wanting lines need, and tell whether it gave any.
+    fn gives(&mut self) -> bool {
+        let chain = self.chain.as_mut().expect("a placement is under way");
+        (chain.wanting.iter()).fold(false, |given, [from, to]| {
+            dense::ask(
+                self.grids,
+                (chain.candidate, &chain.drawn),
+                &mut chain.asked,
+                [from, to],
+            ) || given
+        })
+    }
+}
+
+impl Tries for Here<'_> {
+    type Drawing = crate::blocks::assembly::Placed;
+    type Lack = std::convert::Infallible;
+
+    fn drawings(&mut self, room: f64) -> Result<usize, Self::Lack> {
+        self.room = room;
+        self.drawings = dense::drawings(self.grids, room)
+            .into_iter()
+            .map(Some)
+            .collect();
+        Ok(self.drawings.len())
+    }
+
+    fn route(&mut self, at: usize, tried: usize) -> Result<Try<Self::Drawing>, Self::Lack> {
+        if tried == 0 {
+            self.start(at, Vec::new());
+        } else {
+            if !self.gives() {
+                return Ok(Try::Over);
+            }
+            let chain = self.chain.as_mut().expect("a placement is under way");
+            chain.drawn = dense::redraw(self.grids, chain.candidate, self.room, &chain.asked);
+        }
+        let chain = self.chain.as_mut().expect("a placement is under way");
+        Ok(
+            match fixed::route(self.graph, chain.drawn.clone(), &selection::ORDERS[..1]) {
+                Ok(next) => {
+                    chain.wanting = ends_of(self.graph, &reading::long_lines(&next));
+                    Try::Routed(reading::order(&next), next)
+                }
+                Err(refused) => {
+                    chain.wanting = refused.blocked;
+                    Try::Refused
+                }
+            },
+        )
+    }
+}
+
+/// The two ends of each of some lines of a graph.
+fn ends_of(graph: &crate::graph::Node, lines: &[&str]) -> Vec<[String; 2]> {
+    (graph.edges.iter().flatten())
+        .filter(|edge| lines.contains(&edge.id.as_str()))
+        .map(|edge| [edge.source().to_owned(), edge.target().to_owned()])
+        .collect()
 }
 
 mod direct;
+mod parts;
 
 mod trunks;
 pub(super) fn route_trunks(scene: &archboard_router::Scene) -> Vec<archboard_router::Route> {

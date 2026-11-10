@@ -4,6 +4,7 @@ import {
 	createEnginePool,
 	engineAborted,
 	workerCeiling,
+	type Across,
 } from "#shared/engine/rules/engine-pool.ts";
 
 /** A message a fake engine worker was sent. */
@@ -63,17 +64,34 @@ class HeldWorker extends EventTarget {
 /**
  * A pool over held workers, and the workers it started.
  * @param ceiling The most workers the pool may start.
+ * @param across The core's layout of a solve across the workers.
  * @returns The solve and the started workers.
  */
-function heldPool(ceiling: number) {
+function heldPool(ceiling: number, across?: Across) {
 	const workers: HeldWorker[] = [];
-	const solve = createEnginePool(() => {
-		const worker = new HeldWorker();
-		workers.push(worker);
-		return worker;
-	}, ceiling);
+	const solve = createEnginePool(
+		() => {
+			const worker = new HeldWorker();
+			workers.push(worker);
+			return worker;
+		},
+		ceiling,
+		across,
+	);
 	return { solve, workers };
 }
+
+/**
+ * A layout across the workers that asks for the same two parts of every solve and joins their answers.
+ * @param graph The solve's graph.
+ * @param host Where the parts run.
+ * @returns The parts' answers, joined.
+ */
+const twoParts: Across = async (graph, host) => {
+	const signal = new AbortController().signal;
+	const parts = await Promise.all([host.solve("part a", signal), host.solve("part b", signal)]);
+	return `${graph}: ${parts.join(" + ")}`;
+};
 
 /**
  * The graphs a worker was sent, in order.
@@ -453,6 +471,71 @@ test("a solve asked for again is answered from what the pool remembers, and reac
 	await first;
 	expect(await solve("graph")).toBe("laid out");
 	expect(sentTo(workers[0]!)).toEqual(["graph"]);
+});
+
+test("a pool of two workers lays a solve out across them, and remembers the solve's answer, never a part's", async () => {
+	const { solve, workers } = heldPool(2, twoParts);
+	const first = solve("one");
+	workers[0]!.ready();
+	expect(workers.map(sentTo)).toEqual([["part a"], ["part b"]]);
+	workers[0]!.answer(0, { data: "A" });
+	workers[1]!.answer(0, { data: "B" });
+	expect(await first).toBe("one: A + B");
+	expect(await solve("one")).toBe("one: A + B");
+	expect(workers.map(sentTo)).toEqual([["part a"], ["part b"]]);
+	const second = solve("two");
+	expect(workers.map(sentTo)).toEqual([
+		["part a", "part a"],
+		["part b", "part b"],
+	]);
+	workers[0]!.answer(1, { data: "A" });
+	workers[1]!.answer(1, { data: "B" });
+	expect(await second).toBe("two: A + B");
+});
+
+test("calling off a solve laid out across workers calls off its waiting parts and refuses it with the signal's reason", async () => {
+	const { solve, workers } = heldPool(2, twoParts);
+	const calling = new AbortController();
+	const refused = solve("one", calling.signal).catch((error: unknown) => error);
+	calling.abort();
+	expect(await refused).toBe(calling.signal.reason);
+	// The first part, which a worker holds, still answers; the second never starts a worker.
+	workers[0]!.ready();
+	expect(workers.map(sentTo)).toEqual([["part a"]]);
+});
+
+test("a solve laid out across workers and called off after its parts started refuses with the signal's reason", async () => {
+	const { solve, workers } = heldPool(2, twoParts);
+	const calling = new AbortController();
+	const refused = solve("one", calling.signal).catch((error: unknown) => error);
+	workers[0]!.ready();
+	expect(workers.map(sentTo)).toEqual([["part a"], ["part b"]]);
+	calling.abort();
+	workers[0]!.answer(0, { data: "A" });
+	workers[1]!.answer(0, { data: "B" });
+	expect(await refused).toBe(calling.signal.reason);
+});
+
+test("a solve asked while another is under way stays whole, so that it costs no extra processor time", async () => {
+	const { solve, workers } = heldPool(2, twoParts);
+	const first = solve("one");
+	const second = solve("two");
+	workers[0]!.ready();
+	expect(workers.map(sentTo)).toEqual([["part a"], ["part b"]]);
+	workers[0]!.answer(0, { data: "A" });
+	workers[1]!.answer(0, { data: "B" });
+	expect(await first).toBe("one: A + B");
+	expect(workers.map(sentTo)).toEqual([["part a", "two"], ["part b"]]);
+	workers[0]!.answer(1, { data: "whole" });
+	expect(await second).toBe("whole");
+});
+
+test("a pool of one worker solves whole", async () => {
+	const { solve, workers } = heldPool(1, twoParts);
+	const answer = solve("one");
+	workers[0]!.answer(0, { data: "whole" });
+	expect(await answer).toBe("whole");
+	expect(sentTo(workers[0]!)).toEqual(["one"]);
 });
 
 test("an engine abort, never a layout refusal, marks a worker for replacement", () => {

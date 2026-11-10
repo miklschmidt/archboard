@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use crate::constants::TAB_SHOULDER;
 use crate::geometry::{Rect, Side};
-use crate::graph::{Edge, GROUP_CAPTIONS, Node, PLACING_GROUP, semantic_order};
+use crate::graph::{DOOR, Edge, GROUP_CAPTIONS, Node, PLACING_GROUP, semantic_order};
 
 /// A local handle, never a semantic subject id.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -34,6 +34,8 @@ pub(super) struct Endpoint<'a> {
     pub walls: [Side; 4],
     /// For a frame reached from outside, the endpoint of its tab's foot.
     pub foot: Option<usize>,
+    /// Whether the node is a door.
+    pub door: bool,
 }
 
 /// The measured graph, normalized once without changing either engine's input.
@@ -229,6 +231,7 @@ impl<'a> Model<'a> {
             bounds,
             walls: [Side::Top, Side::Right, Side::Bottom, Side::Left],
             foot: header.then_some(endpoint + 1),
+            door: node.option(DOOR).is_some(),
         });
         self.scopes[parent].children.push(Child::Endpoint(endpoint));
         if header {
@@ -238,6 +241,7 @@ impl<'a> Model<'a> {
                 bounds,
                 walls: [Side::Bottom; 4],
                 foot: None,
+                door: node.option(DOOR).is_some(),
             });
             self.scopes[scope]
                 .children

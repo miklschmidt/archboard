@@ -20,6 +20,8 @@ const LABEL: Style = Style {
 const LABEL_MAX_WIDTH: f64 = 200.0;
 /// The narrowest plate, so a one-glyph label still reads as a plate.
 const LABEL_MIN_WIDTH: f64 = 40.0;
+/// The widest a narrow plate grows, for a route with no room for the wide one.
+const LABEL_NARROW_WIDTH: f64 = 120.0;
 
 /// Words wrapped, balanced, so no line runs wider than a width: each line
 /// whole, with its painted width.
@@ -40,7 +42,25 @@ fn balanced_lines(words: &str, style: Style, width: f64) -> Vec<WordLine> {
 /// The words wrap balanced, the plate hugs the widest line, and every line is
 /// centred, so the text sits on the line the plate is centred on.
 pub fn measure_label(text: &str) -> MeasuredLabel {
-    let limit = LABEL_MAX_WIDTH - 2.0 * ARCHITECTURE_LABEL_PADDING_X;
+    plate(text, LABEL_MAX_WIDTH)
+}
+
+/// The same words wrapped onto a narrower plate, where they wrap narrower at all: a route
+/// takes it only where the wide plate finds no spot. The plate holds its longest word whole.
+pub fn narrow_label(text: &str) -> Option<MeasuredLabel> {
+    let word = |word: &str| paragraph(word, LABEL.font, LABEL.size).natural_width();
+    let longest = text.split_whitespace().map(word).fold(0.0, js_max);
+    let width = js_max(
+        LABEL_NARROW_WIDTH,
+        longest + 2.0 * ARCHITECTURE_LABEL_PADDING_X,
+    );
+    let narrow = plate(text, width);
+    (narrow.width < measure_label(text).width - 1.0).then_some(narrow)
+}
+
+/// Words on a plate no wider than a width, wrapped balanced.
+fn plate(text: &str, max_width: f64) -> MeasuredLabel {
+    let limit = max_width - 2.0 * ARCHITECTURE_LABEL_PADDING_X;
     let lines = balanced_lines(text, LABEL, limit);
     let widest = lines.iter().map(|line| line.width).fold(0.0, js_max);
     let width = js_max(LABEL_MIN_WIDTH, widest + 2.0 * ARCHITECTURE_LABEL_PADDING_X);
@@ -87,4 +107,19 @@ pub fn message_lines(text: &str, width: f64, size: f64, line_height: f64) -> Vec
         ..LABEL
     };
     balanced_lines(text, style, width)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_narrow_plate_wraps_between_words_and_keeps_each_word_whole() {
+        let text = "repositories_changed to every tab";
+        let narrow = narrow_label(text).expect("the words wrap narrower");
+        let lines: Vec<&str> = narrow.runs.iter().map(|run| run.text.as_str()).collect();
+        assert!(lines.len() > 1);
+        assert_eq!(lines.join(" "), text);
+        assert!(narrow.width < measure_label(text).width);
+    }
 }

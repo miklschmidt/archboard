@@ -464,7 +464,9 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   as many workers as the place has and calls off when the core drops it, and the path data of the icons it draws. A
   worker (`engine/rules/layout-engine.ts`) instantiates the core its host's thread compiled and handed it, and runs one
   solve at a time with the core's `layOutPicture`, which lays out each graph it ranks with the core's own Graphviz
-  (`crates/archboard-graphviz` over the vendored graphviz-pure, ADR 0060).
+  (`crates/archboard-graphviz` over the vendored graphviz-pure, ADR 0060). A pool of two workers or more hands a
+  solve asked while no other solve is under way to the core's `layOutAcross` on its host's thread (ADR 0078). That
+  lays a dense Blocks reading out in parts across the workers, and answers what one solve answers.
 - `runtime/` holds the Bun host. `bun-renderer/` draws with it: `services/bun-host.ts` installs the core, the theme
   colors, the icon paths and the pool of layout workers, `services/core.ts` loads the core, `operations/render.ts` has
   the render entry points, and `processes/layout-worker.ts` is the worker thread, started with

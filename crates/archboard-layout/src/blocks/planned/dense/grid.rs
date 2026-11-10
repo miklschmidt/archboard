@@ -1,5 +1,5 @@
 //! Which cell of a frame's grid each part stands in. A short search swaps parts
-//! while that shortens their lines.
+//! while that shortens their lines, which is where the wider search (`super::anneal`) starts.
 
 use crate::{
     geometry::Point,
@@ -50,11 +50,13 @@ pub(super) struct Join {
     pub label: f64,
 }
 
-/// The cell each part stands in, read left to right and top to bottom. The parts
-/// fill the first cells, so every row starts at the left edge and only the last
-/// row can run short.
+/// The cell each part stands in, read left to right and top to bottom. A grid starts with
+/// the parts in its first cells, so that only the last row runs short. A search can leave any
+/// cell empty.
+#[derive(Clone, Debug)]
 pub(super) struct Grid {
     pub columns: usize,
+    pub rows: usize,
     pub cells: Vec<usize>,
 }
 
@@ -112,13 +114,40 @@ impl Grid {
     pub(super) fn new(columns: usize, parts: usize) -> Grid {
         Grid {
             columns,
+            rows: parts.div_ceil(columns),
             cells: (0..parts).collect(),
         }
     }
 
     /// How many rows the grid holds.
     pub(super) fn rows(&self) -> usize {
-        self.cells.len().div_ceil(self.columns)
+        self.rows
+    }
+
+    /// Drop every row and column that no part stands in.
+    pub(super) fn compact(&mut self) {
+        let used = |of: &dyn Fn(usize) -> usize, count: usize| {
+            let mut next = 0;
+            let kept: Vec<Option<usize>> = (0..count)
+                .map(|at| {
+                    let used = self.cells.iter().any(|&cell| of(cell) == at);
+                    used.then(|| {
+                        next += 1;
+                        next - 1
+                    })
+                })
+                .collect();
+            (kept, next)
+        };
+        let columns = self.columns;
+        let (column, width) = used(&|cell| cell % columns, columns);
+        let (row, height) = used(&|cell| cell / columns, self.rows);
+        for cell in &mut self.cells {
+            let (x, y) = (*cell % columns, *cell / columns);
+            *cell = row[y].unwrap_or(0) * width + column[x].unwrap_or(0);
+        }
+        self.columns = width.max(1);
+        self.rows = height.max(1);
     }
 
     /// A cell's column and row.
@@ -126,39 +155,28 @@ impl Grid {
         (cell % self.columns, cell / self.columns)
     }
 
-    fn cost(&self, joins: &[Join], items: &[Item<'_>], pulls: &[Pull], pitch: Point) -> f64 {
-        let joined: f64 = joins
-            .iter()
-            .map(|join| {
-                let (ax, ay) = self.at(self.cells[join.from]);
-                let (bx, by) = self.at(self.cells[join.to]);
-                reach(
-                    bx as f64 - ax as f64,
-                    by as f64 - ay as f64,
-                    pitch,
-                    join.label,
-                )
-            })
-            .sum();
-        let walled: f64 = items
-            .iter()
-            .zip(&self.cells)
-            .map(|(item, &cell)| item.outward * self.wall_distance(cell) * pitch.y)
-            .sum();
-        joined + walled + self.apart(pulls, pitch)
+    /// What one line costs where its parts stand.
+    fn join(&self, join: &Join, pitch: Point) -> f64 {
+        let (ax, ay) = self.at(self.cells[join.from]);
+        let (bx, by) = self.at(self.cells[join.to]);
+        reach(
+            bx as f64 - ax as f64,
+            by as f64 - ay as f64,
+            pitch,
+            join.label,
+        )
     }
 
-    /// How far apart the parts of each door and of each group stand.
-    fn apart(&self, pulls: &[Pull], pitch: Point) -> f64 {
-        let mut cost = 0.0;
-        for &Pull { one, other, shared } in pulls {
-            let (ax, ay) = self.at(self.cells[one]);
-            let (bx, by) = self.at(self.cells[other]);
-            cost += shared
-                * APART
-                * (ax.abs_diff(bx) as f64 * pitch.x + ay.abs_diff(by) as f64 * pitch.y);
-        }
-        cost
+    /// What a part that reaches outside the frame costs, by how far it stands from a wall.
+    fn wall(&self, item: &Item<'_>, part: usize, pitch: Point) -> f64 {
+        item.outward * self.wall_distance(self.cells[part]) * pitch.y
+    }
+
+    /// What two parts that pull together cost, by how far apart they stand.
+    fn pull(&self, &Pull { one, other, shared }: &Pull, pitch: Point) -> f64 {
+        let (ax, ay) = self.at(self.cells[one]);
+        let (bx, by) = self.at(self.cells[other]);
+        shared * APART * (ax.abs_diff(bx) as f64 * pitch.x + ay.abs_diff(by) as f64 * pitch.y)
     }
 
     /// How many cells stand between one cell and the frame's nearest wall.
@@ -171,29 +189,29 @@ impl Grid {
     }
 
     /// One pass over every part and every cell, keeping each swap that lowers the cost.
-    fn pass(
-        &mut self,
-        joins: &[Join],
-        items: &[Item<'_>],
-        pulls: &[Pull],
-        pitch: Point,
-        best: &mut f64,
-    ) -> bool {
+    fn pass(&mut self, costs: &mut Costs<'_, '_>, best: &mut f64) -> bool {
         let mut moved = false;
+        let mut holder: Vec<Option<usize>> = vec![None; self.columns * self.rows];
+        for (part, &cell) in self.cells.iter().enumerate() {
+            holder[cell] = Some(part);
+        }
         for part in 0..self.cells.len() {
             for cell in 0..self.cells.len() {
-                let held = self.cells.iter().position(|&one| one == cell);
-                let other = held.unwrap_or(part);
+                let other = holder[cell].unwrap_or(part);
                 if other == part {
                     continue;
                 }
                 self.cells.swap(part, other);
-                let cost = self.cost(joins, items, pulls, pitch);
+                costs.swapped(self, part, other);
+                let cost = costs.total();
                 if cost + 1e-9 < *best {
                     *best = cost;
                     moved = true;
+                    holder[self.cells[part]] = Some(part);
+                    holder[self.cells[other]] = Some(other);
                 } else {
                     self.cells.swap(part, other);
+                    costs.swapped(self, part, other);
                 }
             }
         }
@@ -208,12 +226,88 @@ impl Grid {
             x: width + CELL_GAP,
             y: height + CELL_GAP,
         };
-        let pulls = pulls(items);
-        let mut best = self.cost(joins, items, &pulls, pitch);
+        let mut costs = Costs::new(self, joins, items, pulls(items), pitch);
+        let mut best = costs.total();
         for _ in 0..PASSES {
-            if !self.pass(joins, items, &pulls, pitch, &mut best) {
+            if !self.pass(&mut costs, &mut best) {
                 break;
             }
         }
+    }
+}
+
+/// What each line, wall and pull of a grid costs, kept as the short search swaps parts: a swap
+/// weighs again only what its two parts change.
+struct Costs<'g, 'a> {
+    joins: &'g [Join],
+    items: &'g [Item<'a>],
+    pulls: Vec<Pull>,
+    pitch: Point,
+    /// What each line, each part's wall and each pull costs.
+    each: [Vec<f64>; 3],
+    /// The lines and the pulls of each part.
+    lines: Vec<Vec<usize>>,
+    pulled: Vec<Vec<usize>>,
+}
+
+impl<'g, 'a> Costs<'g, 'a> {
+    fn new(
+        grid: &Grid,
+        joins: &'g [Join],
+        items: &'g [Item<'a>],
+        pulls: Vec<Pull>,
+        pitch: Point,
+    ) -> Self {
+        let mut lines = vec![Vec::new(); items.len()];
+        for (at, join) in joins.iter().enumerate() {
+            lines[join.from].push(at);
+            lines[join.to].push(at);
+        }
+        let mut pulled = vec![Vec::new(); items.len()];
+        for (at, pull) in pulls.iter().enumerate() {
+            pulled[pull.one].push(at);
+            pulled[pull.other].push(at);
+        }
+        let each = [
+            joins.iter().map(|join| grid.join(join, pitch)).collect(),
+            (items.iter().enumerate())
+                .map(|(part, item)| grid.wall(item, part, pitch))
+                .collect(),
+            pulls.iter().map(|pull| grid.pull(pull, pitch)).collect(),
+        ];
+        Costs {
+            joins,
+            items,
+            pulls,
+            pitch,
+            each,
+            lines,
+            pulled,
+        }
+    }
+
+    /// Weigh again what two parts that traded cells change.
+    fn swapped(&mut self, grid: &Grid, part: usize, other: usize) {
+        let [joins, walls, pulls] = &mut self.each;
+        for moved in [part, other] {
+            for &at in &self.lines[moved] {
+                joins[at] = grid.join(&self.joins[at], self.pitch);
+            }
+            walls[moved] = grid.wall(&self.items[moved], moved, self.pitch);
+            for &at in &self.pulled[moved] {
+                pulls[at] = grid.pull(&self.pulls[at], self.pitch);
+            }
+        }
+    }
+
+    /// What the grid costs: its lines, how far from a wall each part that reaches outside
+    /// stands, and how far apart the parts of each door and of each group stand.
+    fn total(&self) -> f64 {
+        let [joins, walls, pulls] = &self.each;
+        let mut apart = 0.0;
+        for pull in pulls {
+            apart += pull;
+        }
+        joins.iter().sum::<f64>() + walls.iter().sum::<f64>() + apart
     }
 }

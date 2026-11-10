@@ -13,6 +13,9 @@ use super::ports::{center, port};
 use super::shape::{LINE_CLEAR, Shape};
 use super::topology::Topology;
 
+/// The option a line carries when it draws an arrowhead at both ends.
+pub(super) const TWO_WAY: &str = "archboard.relationship.two-way";
+
 pub(super) fn feasible(
     model: &Model<'_>,
     topology: &Topology,
@@ -44,8 +47,13 @@ pub(super) struct Probe<'a, 'g> {
     shape: &'a Shape,
     bounds: Rect,
     fixed: Rc<FixedGeometry>,
+    /// Whether the guard keeps the line off the words of the shape and on its own words.
+    words: bool,
     labels: super::clearance::Clearance,
     junctions: Option<Vec<Junction<'a>>>,
+    /// The line that refused the last candidate. Candidates of one search share their ends,
+    /// so it most likely refuses the next one too, and it is tested first.
+    blocker: std::cell::Cell<usize>,
 }
 impl<'a, 'g> Probe<'a, 'g> {
     pub(super) fn new(
@@ -54,6 +62,24 @@ impl<'a, 'g> Probe<'a, 'g> {
         index: usize,
         shape: &'a Shape,
         bounds: Rect,
+    ) -> Self {
+        Self::guarding(model, topology, (index, shape, bounds), true)
+    }
+    /// The guard of the shape's corridors alone, as if the shape had no words yet.
+    pub(super) fn bare(
+        model: &'a Model<'g>,
+        topology: &'a Topology,
+        index: usize,
+        shape: &'a Shape,
+        bounds: Rect,
+    ) -> Self {
+        Self::guarding(model, topology, (index, shape, bounds), false)
+    }
+    fn guarding(
+        model: &'a Model<'g>,
+        topology: &'a Topology,
+        (index, shape, bounds): (usize, &'a Shape, Rect),
+        words: bool,
     ) -> Self {
         let fixed = Rc::clone(
             shape
@@ -87,10 +113,8 @@ impl<'a, 'g> Probe<'a, 'g> {
                     })
                 }),
         );
-        let labels = shape
-            .labels
-            .iter()
-            .filter(|(id, _)| **id != index)
+        let labels = (shape.labels.iter())
+            .filter(|(id, _)| words && **id != index)
             .map(|(_, &r)| inflate(r, 12.01))
             .collect();
         Self {
@@ -100,13 +124,15 @@ impl<'a, 'g> Probe<'a, 'g> {
             shape,
             bounds,
             fixed,
+            words,
             labels: super::clearance::Clearance::new(labels),
             junctions: shape
                 .routes
                 .iter()
                 .filter(|line| line.id != model.edges[index].id)
-                .map(|line| Junction::new(model, topology, index, line))
+                .map(|line| Junction::new(model, topology, index, line).map(Junction::indexed))
                 .collect(),
+            blocker: std::cell::Cell::new(0),
         }
     }
     pub(super) fn refusal(&self, points: &[Point]) -> Option<&'static str> {
@@ -120,20 +146,25 @@ impl<'a, 'g> Probe<'a, 'g> {
         ) {
             return Some(reason);
         }
-        if shape
-            .labels
-            .get(&index)
+        if (self.words.then(|| shape.labels.get(&index)).flatten())
             .is_some_and(|&label| !label_run(points, label))
         {
             return Some("label run");
         }
         // Most candidates fall here, so test them before the box indexes.
         let bounds = super::junctions::Envelope::new(points);
-        if !self
-            .junctions
-            .as_ref()
-            .is_some_and(|pairs| pairs.iter().all(|pair| pair.clear(points, bounds)))
+        let Some(pairs) = self.junctions.as_ref() else {
+            return Some("junction");
+        };
+        let first = self.blocker.get();
+        let refuses = |pair: &Junction<'_>| !pair.clear(points, bounds);
+        if pairs.get(first).is_some_and(refuses) {
+            return Some("junction");
+        }
+        if let Some(at) =
+            (pairs.iter().enumerate()).position(|(at, pair)| at != first && refuses(pair))
         {
+            self.blocker.set(at);
             return Some("junction");
         }
         if !self.fixed.cards.clear(points) {
@@ -188,9 +219,14 @@ pub(super) fn label_run(points: &[Point], label: Rect) -> bool {
 struct Junction<'a> {
     line: &'a PlacedLine,
     bounds: super::junctions::Envelope,
+    /// The envelope of each run of the line, when a guard compares it with many candidates.
+    runs: Vec<super::junctions::Envelope>,
     shared: bool,
-    source: bool,
-    target: bool,
+    /// Whether the two share their source, and their target.
+    ends: [bool; 2],
+    /// Whether the two share their source and either draws an arrowhead there, and whether
+    /// they share their target.
+    arrows: [bool; 2],
 }
 impl<'a> Junction<'a> {
     fn new(
@@ -200,25 +236,103 @@ impl<'a> Junction<'a> {
         line: &'a PlacedLine,
     ) -> Option<Self> {
         let &other = model.edge_index.get(line.id.as_str())?;
+        let source = model.ends[index].0 == model.ends[other].0;
+        let target = model.ends[index].1 == model.ends[other].1;
+        let two_way = |edge: usize| model.edges[edge].option(TWO_WAY).is_some();
         Some(Self {
             line,
             bounds: super::junctions::Envelope::new(&line.points),
+            runs: Vec::new(),
             shared: topology.memberships[index]
                 .iter()
                 .flatten()
                 .any(|fan| topology.memberships[other].contains(&Some(*fan))),
-            source: model.ends[index].0 == model.ends[other].0,
-            target: model.ends[index].1 == model.ends[other].1,
+            ends: [source, target],
+            arrows: [source && (two_way(index) || two_way(other)), target],
         })
     }
     fn clear(&self, points: &[Point], bounds: super::junctions::Envelope) -> bool {
         bounds.apart(self.bounds)
             || ((!self.shared
-                || super::junctions::sharing(points, &self.line.points, self.source, self.target)
-                    && super::junctions::readable(points, &self.line.points, self.target))
-                && super::junctions::ordered(points, &self.line.points, self.shared))
+                || super::junctions::sharing(
+                    points,
+                    &self.line.points,
+                    self.ends[0],
+                    self.ends[1],
+                ) && super::junctions::readable(
+                    points,
+                    &self.line.points,
+                    self.arrows[0],
+                    self.arrows[1],
+                ))
+                && if self.runs.is_empty() {
+                    super::junctions::ordered(points, &self.line.points, self.shared)
+                } else {
+                    super::junctions::ordered_runs(
+                        points,
+                        &self.line.points,
+                        (self.bounds, &self.runs),
+                        self.shared,
+                    )
+                })
+    }
+    /// The junction with its line's runs indexed, for a guard that compares many candidates.
+    fn indexed(self) -> Self {
+        Self {
+            runs: super::junctions::runs(&self.line.points),
+            ..self
+        }
     }
 }
+/// The junctions of one line's candidates with every placed route, each route indexed once.
+pub(super) struct Junctions<'a> {
+    /// The junction with each placed route, if the route is a line of the model.
+    pairs: Vec<Option<Junction<'a>>>,
+    /// The route that refused the last candidate, tested first.
+    blocker: std::cell::Cell<usize>,
+}
+impl<'a> Junctions<'a> {
+    pub(super) fn new(
+        model: &Model<'_>,
+        topology: &Topology,
+        index: usize,
+        routes: &'a [PlacedLine],
+    ) -> Self {
+        Self {
+            pairs: (routes.iter())
+                .map(|line| Junction::new(model, topology, index, line).map(Junction::indexed))
+                .collect(),
+            blocker: std::cell::Cell::new(0),
+        }
+    }
+    /// Whether a candidate keeps `shared_junction` with every placed route.
+    pub(super) fn clear(&self, points: &[Point]) -> bool {
+        let bounds = super::junctions::Envelope::new(points);
+        let first = self.blocker.get();
+        let refuses = |at: usize| !self.shares(at, points, bounds);
+        if first < self.pairs.len() && refuses(first) {
+            return false;
+        }
+        if let Some(at) = (0..self.pairs.len()).position(|at| at != first && refuses(at)) {
+            self.blocker.set(at);
+            return false;
+        }
+        true
+    }
+    /// `shared_junction` of a candidate, whose envelope is `bounds`, with the placed route at
+    /// `at`.
+    pub(super) fn shares(
+        &self,
+        at: usize,
+        points: &[Point],
+        bounds: super::junctions::Envelope,
+    ) -> bool {
+        self.pairs[at]
+            .as_ref()
+            .is_some_and(|pair| pair.clear(points, bounds))
+    }
+}
+
 pub(super) fn shared_junction(
     model: &Model<'_>,
     topology: &Topology,
@@ -226,8 +340,12 @@ pub(super) fn shared_junction(
     points: &[Point],
     line: &PlacedLine,
 ) -> bool {
-    Junction::new(model, topology, index, line)
-        .is_some_and(|pair| pair.clear(points, super::junctions::Envelope::new(points)))
+    let bounds = super::junctions::Envelope::new(points);
+    // A line far from this one clears it whatever their fans and ends.
+    if bounds.apart(super::junctions::Envelope::new(&line.points)) {
+        return model.edge_index.contains_key(line.id.as_str());
+    }
+    Junction::new(model, topology, index, line).is_some_and(|pair| pair.clear(points, bounds))
 }
 
 pub(super) fn shared_fragment(

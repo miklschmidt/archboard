@@ -20,11 +20,14 @@ Where things are written down:
   [docs/agents/readme-assets.md](docs/agents/readme-assets.md)
 - Using archboard: the [archboard skill](skills/archboard/SKILL.md). Maintaining this repository's
   model and that skill: the [archboard-dev skill](skills/archboard-dev/SKILL.md).
+- Changing how pictures are placed, routed, labeled or painted, and judging the result: the
+  [archboard-renderer skill](skills/archboard-renderer/SKILL.md)
 - This repository's architecture: [.archboard/README.md](.archboard/README.md)
 - Upgrading Codex: [docs/agents/codex-upgrades.md](docs/agents/codex-upgrades.md)
 - Work tracking: Backlog.md through the `backlog` CLI, never by editing `backlog/`
-- Skills: `skills/` holds only the shippable Archboard skills. Tracked symlinks in `.claude/skills/`
-  and `.agents/skills/` expose them, beside the third-party skills tracked there.
+- Skills: `skills/` holds only the Archboard skills. Those marked `internal` serve this repository
+  alone, and the others ship. Tracked symlinks in `.claude/skills/` and `.agents/skills/` expose
+  them, beside the third-party skills tracked there.
 
 ## Judge the look by looking
 

@@ -5,9 +5,9 @@
 // model is there and empty, and the model could not be drawn. A person acting
 // on the wrong one of those wastes their afternoon.
 
-import { RiLoader4Line } from "@remixicon/react";
 import type { JSX, ReactNode } from "react";
 
+import { DrawingMark } from "#ui/architecture-drawing/canvas/presentation/components/DrawingMark.tsx";
 import type { SemanticOfferedView } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { ReadingError } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 
@@ -21,12 +21,13 @@ interface SemanticStateProps {
 }
 
 /**
- * A spinner in the middle of a pane waiting on its picture. It fades in only
- * once a draw has taken a while: most pictures arrive first, and a spinner
- * flashed in front of them would be the only thing on screen that jumps.
+ * The little picture of a drawing, large and on the face of a wait notice, in the
+ * middle of a pane waiting on its picture. It fades in only once a draw has taken
+ * a while: most pictures arrive first, and a sign flashed in front of them would
+ * be the only thing on screen that jumps.
  * @param props Where it goes.
  * @param props.className Classes for its placement.
- * @returns The spinner.
+ * @returns The sign of the wait.
  */
 function StageSpinner(props: { readonly className?: string }): JSX.Element {
 	return (
@@ -35,7 +36,9 @@ function StageSpinner(props: { readonly className?: string }): JSX.Element {
 			data-slot="canvas-spinner"
 			className={`slow-wait-reveal flex items-center justify-center ${props.className ?? ""}`}
 		>
-			<RiLoader4Line className="text-muted-foreground size-6 animate-spin [animation-duration:0.8s]" />
+			<div className="bg-popover border-border shadow-float rounded-panel border p-3">
+				<DrawingMark large />
+			</div>
 		</div>
 	);
 }
@@ -43,7 +46,7 @@ function StageSpinner(props: { readonly className?: string }): JSX.Element {
 /**
  * What the pane shows while the picture is being drawn.
  *
- * Nothing but a spinner in the middle, and only once the draw has taken a
+ * Nothing but the little picture of a drawing in the middle, and only once the draw has taken a
  * while; the pane says nothing about the shape of a model it has not seen.
  * @param props The model being drawn.
  * @returns The waiting pane.

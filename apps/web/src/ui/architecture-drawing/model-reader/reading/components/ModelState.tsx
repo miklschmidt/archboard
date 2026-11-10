@@ -1,5 +1,6 @@
 import { useCallback, useContext, type JSX, type ReactNode } from "react";
 import { Button, cn } from "@archboard/ui-kit/components";
+import { DrawingMark } from "#ui/architecture-drawing/canvas/presentation/components/DrawingMark.tsx";
 import { ModelDraftContext } from "#ui/architecture-drawing/model-reader/state/draft.ts";
 
 /** Inputs for a state. */
@@ -77,9 +78,10 @@ function ModelStateWaiting(props: { readonly children: ReactNode }): JSX.Element
 	return (
 		<output
 			data-slot="model-waiting"
-			className="text-body bg-background border-border rounded-control mt-3 self-center border px-3 py-1"
+			className="text-body text-body-foreground bg-popover border-border shadow-float rounded-panel animate-in fade-in-0 slide-in-from-top-1 mt-3 inline-flex h-7.5 items-center gap-2 self-center border pr-3 pl-2 duration-200 motion-reduce:animate-none"
 		>
-			{props.children}
+			<DrawingMark />
+			<span>{props.children}</span>
 		</output>
 	);
 }

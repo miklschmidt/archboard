@@ -7,12 +7,12 @@ use std::{collections::BTreeMap, rc::Rc};
 
 use super::{
     Refused,
-    channel::{Probe, shared_junction},
+    channel::{Probe, TWO_WAY, shared_junction},
     endpoint_choices::ends,
     fixed::{Search, choose, feasible, placement, settled},
     geometry::{clean, length},
     model::Model,
-    port_spacing::{alternatives, conflicts},
+    port_spacing::{alternatives, conflicts, peers},
     ports::Port,
     room::with_room,
     route_labels::{Slots, branches, from_part, seat},
@@ -53,7 +53,7 @@ fn trunk_lines(model: &Model<'_>) -> BTreeMap<usize, bool> {
             let end = if part_first { to } else { from };
             let line = &model.edges[edge];
             let kind = line.option("archboard.relationship.kind");
-            let two_way = line.option("archboard.relationship.two-way");
+            let two_way = line.option(TWO_WAY);
             trunks
                 .entry((end, part_first, kind, two_way))
                 .or_default()
@@ -320,7 +320,8 @@ fn spaced(model: &Model<'_>, shape: &Shape, edge: usize, line: &PlacedLine) -> V
         .iter()
         .any(|old| conflicts(model, edge, &line.points, old))
     {
-        let others = alternatives(model, shape, line);
+        let peers = peers(model, &shape.routes, edge);
+        let others = alternatives(model, shape, line, &peers);
         others.into_iter().map(|other| other.points).collect()
     } else {
         vec![line.points.clone()]

@@ -3,7 +3,6 @@
 use super::model::Model;
 use super::shape::{CLEAR, Shape};
 use crate::geometry::{Point, Rect, Side};
-use crate::graph::DOOR;
 use crate::track::chains::LANE;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -44,7 +43,7 @@ fn choose_port(
     }
     let at = shape.wall(endpoint, side);
     let kinds = kinds_of(model, incidents);
-    let door = model.endpoints[endpoint].node.option(DOOR).is_some();
+    let door = model.endpoints[endpoint].door;
     // A door cannot widen for its incoming fan. Keep its ports inside the rounded corners
     // with the twelve-point line gap that the geometry guard requires.
     let (margin, spacing) = match (source, door) {
@@ -156,6 +155,53 @@ fn fraction_of(at: Rect, index: usize, count: usize, margin: f64) -> Point {
     Point {
         x: at.x + margin + (at.width - 2.0 * margin) * fraction,
         y: at.y + margin + (at.height - 2.0 * margin) * fraction,
+    }
+}
+
+/// Whether a line meets each door it joins on a side that faces the line's far end. A line
+/// that met a door on another side would loop round the door, or reach it from behind.
+pub(super) fn faces_far_end(
+    model: &Model<'_>,
+    shape: &Shape,
+    edge: usize,
+    points: &[Point],
+) -> bool {
+    let (from, to) = model.ends[edge];
+    let last = points.len() - 1;
+    [
+        (from, to, points[0], points[1]),
+        (to, from, points[last], points[last - 1]),
+    ]
+    .into_iter()
+    .all(|(at, far, attachment, next)| {
+        !model.endpoints[at].door
+            || facing(
+                shape.endpoints[&at],
+                center(shape.endpoints[&far]),
+                attachment,
+                next,
+            )
+    })
+}
+
+/// Whether a line that leaves a box from one point toward the next heads for a far point.
+/// A far point beside the box in neither direction leaves every side open.
+fn facing(at: Rect, far: Point, attachment: Point, next: Point) -> bool {
+    let above = far.y < at.y;
+    let below = far.y > at.y + at.height;
+    let before = far.x < at.x;
+    let after = far.x > at.x + at.width;
+    if !(above || below || before || after) {
+        return true;
+    }
+    if next.y < attachment.y {
+        above
+    } else if next.y > attachment.y {
+        below
+    } else if next.x < attachment.x {
+        before
+    } else {
+        after
     }
 }
 

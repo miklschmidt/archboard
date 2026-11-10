@@ -150,12 +150,20 @@ fn edge_of(edge: &Edge, measured: &Measured, standing: Option<&str>, inline: boo
         .get(&edge.id)
         .map_or_else(Vec::new, |label| {
             let words: Vec<&str> = label.runs.iter().map(|run| run.text.as_str()).collect();
-            vec![J::obj([
-                ("id", J::Str(format!("{}:label", edge.id))),
-                ("text", J::Str(words.join("\n"))),
-                ("width", J::Num(label.width)),
-                ("height", J::Num(label.height)),
-            ])]
+            let mut fields = vec![
+                ("id".to_owned(), J::Str(format!("{}:label", edge.id))),
+                ("text".to_owned(), J::Str(words.join("\n"))),
+                ("width".to_owned(), J::Num(label.width)),
+                ("height".to_owned(), J::Num(label.height)),
+            ];
+            if let Some(narrow) = measured.narrow_labels.get(&edge.id) {
+                let plate = [
+                    ("width", J::Num(narrow.width)),
+                    ("height", J::Num(narrow.height)),
+                ];
+                fields.push(("narrow".to_owned(), J::obj(plate)));
+            }
+            vec![J::Obj(fields)]
         });
     J::obj([
         ("id", J::str(&edge.id)),

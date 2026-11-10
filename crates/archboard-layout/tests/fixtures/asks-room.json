@@ -1,0 +1,283 @@
+{
+	"id": "architecture:root",
+	"layoutOptions": { "archboard.blocks.nesting": "blocks" },
+	"children": [
+		{
+			"id": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+			"width": 209.2,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "0",
+				"archboard.groups": "child",
+				"archboard.door": "true",
+				"archboard.order-group": "6000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+			"width": 607.24,
+			"height": 36,
+			"layoutOptions": {
+				"archboard.order": "2",
+				"archboard.order-group": "[\"module\",\"The wire under the session: one newline-framed JSON object at a time, each way\"]",
+				"archboard.header.size": "36"
+			},
+			"children": [
+				{
+					"id": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "1",
+						"archboard.groups": "child",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Routes decoded child requests and notifications to their registered owners\"]"
+					}
+				},
+				{
+					"id": "vKEsyHFk#Q2Jc26oO",
+					"width": 340,
+					"height": 112.602,
+					"layoutOptions": {
+						"archboard.order": "7",
+						"archboard.entry": "false",
+						"archboard.order-group": "[\"module\",\"Writes and reads newline-framed JSON over the stdio of the child, and tells each owner what arrived\"]"
+					}
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
+			"width": 340,
+			"height": 112.602,
+			"layoutOptions": {
+				"archboard.order": "3",
+				"archboard.order-group": "[\"module\",\"The pinned app-server contract every request and response is decoded against\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
+			"width": 340,
+			"height": 88,
+			"layoutOptions": {
+				"archboard.order": "4",
+				"archboard.groups": "agent",
+				"archboard.order-group": "[\"external\",\"Runs each host's tab sessions as one private child over stdio.\"]"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+			"width": 178.9,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "5",
+				"archboard.groups": "agent packages",
+				"archboard.door": "true",
+				"archboard.order-group": "36000"
+			}
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+			"width": 274.96000000000004,
+			"height": 34,
+			"layoutOptions": {
+				"archboard.order": "6",
+				"archboard.groups": "agent packages",
+				"archboard.door": "true",
+				"archboard.order-group": "38000"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "vKEsyHFk/9ncuT5DP#3vlSu8a3",
+			"sources": ["vKEsyHFk#Q2Jc26oO"],
+			"targets": ["vKEsyHFk/vKEsyHFk#xr1MHYE7"],
+			"layoutOptions": {
+				"archboard.order": "4000",
+				"archboard.relationship.kind": "rpc",
+				"archboard.relationship.emphasis": "hero",
+				"archboard.relationship.traffic": "on",
+				"archboard.relationship.held-kind": "rpc"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/9ncuT5DP#3vlSu8a3:label",
+					"text": "JSON-RPC over stdio",
+					"width": 123.01000213623047,
+					"height": 31,
+					"narrow": { "width": 72.47000122070312, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/wAHh0HTa#blvoJ8p8",
+			"sources": ["vKEsyHFk/qKGcB6vZ#LHBPlItu"],
+			"targets": ["vKEsyHFk/9ncuT5DP#jylkTBp7"],
+			"layoutOptions": {
+				"archboard.order": "12000",
+				"archboard.relationship.kind": "event",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "event"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/wAHh0HTa#blvoJ8p8:label",
+					"text": "a request the child made of us",
+					"width": 163.69000244140625,
+					"height": 31,
+					"narrow": { "width": 97.69999694824219, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/wAHh0HTa#bEmVBBGp",
+			"sources": ["vKEsyHFk/9ncuT5DP#jylkTBp7"],
+			"targets": ["vKEsyHFk#Q2Jc26oO"],
+			"layoutOptions": {
+				"archboard.order": "17000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/wAHh0HTa#bEmVBBGp:label",
+					"text": "from Answer reverse\nrequests, Session composition",
+					"width": 164.97000122070312,
+					"height": 46,
+					"narrow": { "width": 118.16999816894531, "height": 61 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/9ncuT5DP#aoHKAkWD",
+			"sources": ["vKEsyHFk/qKGcB6vZ#LHBPlItu"],
+			"targets": ["vKEsyHFk/vKEsyHFk#sw4oFps0"],
+			"layoutOptions": {
+				"archboard.order": "19000",
+				"archboard.relationship.kind": "event",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "event"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/9ncuT5DP#aoHKAkWD:label",
+					"text": "a tool call from a thread",
+					"width": 132.6999969482422,
+					"height": 31,
+					"narrow": { "width": 84.37999725341797, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/wAHh0HTa#OjFVoTcz",
+			"sources": ["vKEsyHFk/qKGcB6vZ#LHBPlItu"],
+			"targets": ["vKEsyHFk/wAHh0HTa#Sk7GfGta"],
+			"layoutOptions": {
+				"archboard.order": "22000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/wAHh0HTa#OjFVoTcz:label",
+					"text": "decode each inbound frame",
+					"width": 153.4199981689453,
+					"height": 31,
+					"narrow": { "width": 89.2300033569336, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/qKGcB6vZ#8DGohqjh",
+			"sources": ["vKEsyHFk/vKEsyHFk#lU0khwR0"],
+			"targets": ["vKEsyHFk/qKGcB6vZ#LHBPlItu"],
+			"layoutOptions": {
+				"archboard.order": "42000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.two-way": "true",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/qKGcB6vZ#8DGohqjh:label",
+					"text": "with Voice, Voice agent backend +1",
+					"width": 185.9199981689453,
+					"height": 31,
+					"narrow": { "width": 103.58999633789062, "height": 46 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
+			"sources": ["vKEsyHFk/vKEsyHFk#lU0khwR0"],
+			"targets": ["vKEsyHFk#Q2Jc26oO"],
+			"layoutOptions": {
+				"archboard.order": "50000",
+				"archboard.relationship.kind": "mixed kinds",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "mixed kinds"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/9ncuT5DP#7Hqt9ysu:label",
+					"text": "from Approvals, Voice agent backend",
+					"width": 197.24000549316406,
+					"height": 31,
+					"narrow": { "width": 95.37000274658203, "height": 61 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk/vKEsyHFk#Gh6v3DzI",
+			"sources": ["vKEsyHFk/vKEsyHFk#sw4oFps0"],
+			"targets": ["vKEsyHFk#Q2Jc26oO"],
+			"layoutOptions": {
+				"archboard.order": "59000",
+				"archboard.relationship.kind": "dependency",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "dependency"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk/vKEsyHFk#Gh6v3DzI:label",
+					"text": "the private session's tool\nrequests and identities",
+					"width": 138.98999786376953,
+					"height": 46,
+					"narrow": { "width": 117.7699966430664, "height": 61 }
+				}
+			]
+		},
+		{
+			"id": "vKEsyHFk#gdsIiF8h",
+			"sources": ["vKEsyHFk#Q2Jc26oO"],
+			"targets": ["vKEsyHFk/qKGcB6vZ#LHBPlItu"],
+			"layoutOptions": {
+				"archboard.order": "980160",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "vKEsyHFk#gdsIiF8h:label",
+					"text": "route each decoded frame",
+					"width": 146.26000213623047,
+					"height": 31,
+					"narrow": { "width": 92.20999908447266, "height": 46 }
+				}
+			]
+		}
+	]
+}
