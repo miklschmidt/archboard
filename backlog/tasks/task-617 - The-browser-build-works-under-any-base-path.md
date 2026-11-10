@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: 2026-11-09 01:20
-updated_date: '2026-11-10T15:05:00Z'
+updated_date: '2026-11-10T15:15:00Z'
 labels:
   - frontend
 dependencies: []
@@ -33,12 +33,13 @@ The browser build assumes that it is served at the root of its host. Absolute pa
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Set the Vite base to './' so the built index.html, the layout worker and the .wasm files resolve against the page.
-2. Give the router the base path of the document: the directory of document.baseURI. At the root this is '/', so the local server's app is unchanged.
-3. Build the icon URL against document.baseURI in one exported function of the renderer's browser interface, and use it from both icon readers (the renderer's icon loader and the shell's legend and level-mark query).
-4. Accept the './assets/' entry script that a relative base writes in the stale-tab check of server-lifecycle, and update its system owner.
-5. Add one browser owner to browser-drawn-pictures.test.ts: a loopback proxy serves the build under /sub/ (stripping the prefix) and passes /api and the sockets through; the page draws a model there, fetches the icons and the worker under /sub/, and keeps /sub/ in its address.
-6. Check the app under a sub-path and at the root with agent-browser and screenshots, then run the relevant lanes.
+1. Set the Vite base to './' so built assets, the layout worker, and the .wasm files resolve against the page.
+2. Give the router the directory of document.baseURI as its base path. Accept an explicit index.html as the directory route.
+3. Fetch assets/diagram-icons/<name>.json relative to the document base in both browser icon readers. Use the shared policy naming rule and the existing server lookup. No URL helper or new export is needed.
+4. Accept the './assets/' entry script in the stale-tab rule, and retain support for the prior '/assets/' entry.
+5. Extend browser-drawn-pictures.test.ts with a loopback proxy under /project/. Keep the live server for API requests, sockets, and dynamic icon responses. Assert the asset paths, drawing, and router address.
+6. Exercise the relocated app and the root app, then run the relevant lanes and site audit.
+7. Keep boundaries.md and the Workspace router and Icon loading modules accurate. This task relocates a live app. It does not implement snapshot ingestion or a server-free reader. The boundary review documents implemented behavior, so no proposal is needed.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -63,6 +64,10 @@ Gate (inside nix develop, one lane at a time): format:check, types, lint:tests, 
 Review scope: b0ec1a9c9c...43aba6b001. Standards found the omitted mandatory site audit. Spec found no product defect. The Browser (vKEsyHFk/vKEsyHFk#6nZjwK9W) and renderer (vKEsyHFk/vKEsyHFk#OHywsFXm) keep the same responsibilities and contracts. This review changes audit evidence and published drawings only, so no architecture proposal is needed.
 
 Review validation: root build passed inside nix develop. Focused browser owners passed 7 tests across 3 files. The frontend staleness owner passed 1 test. Types, test lint, policy lint, and formatting passed. Site guide tests passed 8 tests. Astro reported zero errors, warnings, or hints, and all internal links across 17 pages resolved. The root build retains its existing large-chunk advisory. Manual inspection covered a nested base path, explicit index.html, scoped deep links, reload, Back, Forward, both themes, and the built app at the root.
+
+Boundary review with PR #87: the two edits of diagram-icons.ts compose without a conflict. Snapshot names and browser names share iconsNamedBy; the server route uses the same iconPaths lookup as the snapshot. Corrected the obsolete exported URL helper in the plan, documented the actual base-path contract in boundaries.md, and updated Workspace router (vKEsyHFk#4DTJtXk6) and Icon loading (vKEsyHFk#pEFBxTks) through the CLI. No runtime correction was needed. Root and sub-path browser owners: 2 pass, 0 fail. Frontend staleness owner: 1 pass, 0 fail. check:model and format:check pass. Architecture evidence retains 84 exposure-unknown subjects, 9 unbound subjects, and 1 text-only checkout as skips. The browser build retains its existing chunk-size advisory. Static-only probe: /project/ returns 200, but /project/assets/diagram-icons/RiServerLine.json and /api/architecture/model return 404. No browser code consumes ModelSnapshotSchema or snapshot.icons; model reads and both sockets still use live root API paths. The proxy browser owner does not prove a server-free snapshot reader. That combined goal remains incomplete, although the individual task criteria are met. This boundary review does not expand either task into a new reader implementation.
+
+Cross-branch contract probe: all 18 icon entries from a snapshot written by PR #87 match the JSON paths served through the browser icon route under /project/ from PR #86. No names or paths differ.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
@@ -71,4 +76,6 @@ Review validation: root build passed inside nix develop. Focused browser owners 
 The browser build now works under any base path. vite.config.ts sets a relative base, so the built page names ./assets/ and every asset, worker, .wasm core and font resolves against the page. The router takes the directory of document.baseURI as its basepath, and both icon readers fetch the relative assets/diagram-icons/<name>.json, which resolves against the document's base. At the root of the Archboard server all of this resolves as before. The stale-tab check accepts the relative entry script, and still tells a tab that loaded a root-anchored build to reload.
 
 Proof: browser-drawn-pictures.test.ts 'a build served under a sub-path loads its assets there and draws a model' serves the build under /project/ through a loopback host and checks that the model is drawn with its icons, that every asset came from /project/assets/, and that the address stays at /project/. The existing owners of the root app, including the first test of that file and staleness-frontend.test.ts, pass. The full gate lanes pass.
+
+Boundary review corrected the plan, module boundary guide, and architecture records. Relocation with a live server passes 2 browser tests and 1 staleness test. Architecture and formatting pass. The pair still lacks snapshot ingestion and an offline icon source, so it does not yet deliver the server-free reader goal.
 <!-- SECTION:FINAL_SUMMARY:END -->
