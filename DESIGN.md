@@ -543,6 +543,12 @@ A count of the left column stands on a low slab: `Badge` with the `count` varian
 
 The words of a chip keep APCA Lc 60: white on the chalk orange, near black on the graphite one, and Ink on the tint. The orange alone reads only Lc 51 to 56 on the tint.
 
+### Wait notice
+
+A wait that lasts 800ms names what it waits for, under the top of the pane, which it never moves. The notice is 30px high on the popover face, with a 1px Rule edge, 6px corners and `shadow-float`. Its words are Body in Body Ink. It comes down 4px into place over 200ms.
+
+A little picture of three cards stands before the words. A spark in Gold Mark draws it again and again while the wait lasts, as the picture itself arrives (The Spark Rule). The spark runs along a line from the card that nothing feeds. Then it runs both ways round the card it lands on, and that card's own line starts. The lines leave together, and the next round draws the mirror picture. A round takes 2600ms. The cards are Face with a Diagram Slate edge, and the lines are Line Ink. With reduced motion, the notice and its picture stand still and drawn.
+
 ### Navigation
 
 - **Style:** the list lies on the chrome, as the right panel's lists do, with no well, tone step or shadow of its own. Nothing in the column is divided by a rule. A row is 28px at least, and a model or folder row 36px. Rails draw its levels: a line of 1px in the Rule tone runs down from the chevron of an open row along the rows it holds. A row lets the rails show through, and a row that sticks while it is open draws the rails it covers into its floor, so they run unbroken. The column marks only where the reader is: the open module, the flow on screen or the walkthrough playing. That row rises off the chrome as a Control Face with `shadow-raised`, with no gold. A selection on the picture marks no row and moves nothing in the column. A row under the pointer takes Control Face at 50%. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.

@@ -245,6 +245,247 @@
 	}
 }
 
+/* The little picture of a wait that lasted (ModelState.tsx). A spark draws it again
+   and again, as the picture itself arrives (DESIGN.md, The Spark Rule): it leaves the
+   card that nothing feeds, runs both ways round the card it lands on, and that card's
+   own line starts. The lines then leave together, and the next round draws the mirror
+   picture. Each round takes 2600ms. At rest the mark stands drawn, so reduced motion
+   shows it still. A spark and a rim reach a share of their path (pathLength 1). */
+[data-slot="drawing-mark"] {
+	width: 32px;
+	height: 18px;
+	flex: none;
+	overflow: visible;
+	fill: none;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+[data-slot="drawing-mark"] [data-part="card"] {
+	fill: var(--face);
+	stroke: var(--diagram-text-muted);
+}
+[data-slot="drawing-mark"] [data-part="ink"] {
+	stroke: var(--diagram-edge);
+	stroke-dasharray: 1 1;
+}
+[data-slot="drawing-mark"] [data-part="head"] {
+	fill: var(--diagram-edge);
+}
+[data-slot="drawing-mark"] :is([data-part="spark"], [data-part="glow"], [data-part="rim"]) {
+	stroke: var(--primary-mark);
+	opacity: 0;
+}
+[data-slot="drawing-mark"] [data-part="spark"] {
+	--reach: 0.14;
+	--peak: 1;
+	stroke-width: 1.4;
+	stroke-dasharray: 0.14 2;
+}
+[data-slot="drawing-mark"] [data-part="glow"] {
+	--reach: 0.34;
+	--peak: 0.2;
+	stroke-width: 3.5;
+	stroke-dasharray: 0.34 2;
+}
+[data-slot="drawing-mark"] [data-part="rim"] {
+	stroke-width: 1.25;
+	stroke-dasharray: 1 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+	/* Longhands: a shorthand without a name reaches the build as `animation: none`. */
+	[data-slot="drawing-mark"] [data-line] > * {
+		animation-duration: 2600ms;
+		animation-iteration-count: infinite;
+		animation-fill-mode: both;
+	}
+	[data-slot="drawing-mark"] [data-part="round"] {
+		transform-box: view-box;
+		transform-origin: 16px 9px;
+		animation: drawing-mark-turn 5200ms step-end infinite;
+	}
+	[data-slot="drawing-mark"] [data-line="1"] > [data-part="ink"] {
+		animation-name: drawing-mark-ink-1;
+	}
+	[data-slot="drawing-mark"] [data-line="1"] > :is([data-part="spark"], [data-part="glow"]) {
+		animation-name: drawing-mark-spark-1;
+	}
+	[data-slot="drawing-mark"] [data-line="1"] > [data-part="head"] {
+		animation-name: drawing-mark-head-1;
+	}
+	[data-slot="drawing-mark"] [data-line="1"] > [data-part="rim"] {
+		animation-name: drawing-mark-rim-1;
+	}
+	[data-slot="drawing-mark"] [data-line="2"] > [data-part="ink"] {
+		animation-name: drawing-mark-ink-2;
+	}
+	[data-slot="drawing-mark"] [data-line="2"] > :is([data-part="spark"], [data-part="glow"]) {
+		animation-name: drawing-mark-spark-2;
+	}
+	[data-slot="drawing-mark"] [data-line="2"] > [data-part="head"] {
+		animation-name: drawing-mark-head-2;
+	}
+	[data-slot="drawing-mark"] [data-line="2"] > [data-part="rim"] {
+		animation-name: drawing-mark-rim-2;
+	}
+}
+@keyframes drawing-mark-turn {
+	0% {
+		transform: none;
+	}
+	50%,
+	100% {
+		transform: scaleX(-1);
+	}
+}
+/* The first line is drawn from 6% to 30% of a round, the second from 34% to 58%.
+   Both leave from 84% to 94%. */
+@keyframes drawing-mark-ink-1 {
+	0%,
+	6% {
+		stroke-dashoffset: 1;
+		opacity: 1;
+		animation-timing-function: cubic-bezier(0.45, 0, 0.3, 1);
+	}
+	30%,
+	84% {
+		stroke-dashoffset: 0;
+		opacity: 1;
+	}
+	94%,
+	100% {
+		stroke-dashoffset: 0;
+		opacity: 0;
+	}
+}
+@keyframes drawing-mark-spark-1 {
+	0%,
+	5.9% {
+		stroke-dashoffset: var(--reach);
+		opacity: 0;
+	}
+	6% {
+		stroke-dashoffset: var(--reach);
+		opacity: var(--peak);
+		animation-timing-function: cubic-bezier(0.45, 0, 0.3, 1);
+	}
+	25% {
+		opacity: var(--peak);
+	}
+	30%,
+	100% {
+		stroke-dashoffset: calc(var(--reach) - 1);
+		opacity: 0;
+	}
+}
+@keyframes drawing-mark-head-1 {
+	0%,
+	29% {
+		opacity: 0;
+	}
+	31%,
+	84% {
+		opacity: 1;
+	}
+	94%,
+	100% {
+		opacity: 0;
+	}
+}
+@keyframes drawing-mark-rim-1 {
+	0%,
+	29.9% {
+		stroke-dashoffset: 1;
+		opacity: 0;
+	}
+	30% {
+		stroke-dashoffset: 1;
+		opacity: 1;
+		animation-timing-function: cubic-bezier(0.2, 0.6, 0.3, 1);
+	}
+	40% {
+		stroke-dashoffset: 0;
+		opacity: 1;
+	}
+	54%,
+	100% {
+		stroke-dashoffset: 0;
+		opacity: 0;
+	}
+}
+@keyframes drawing-mark-ink-2 {
+	0%,
+	34% {
+		stroke-dashoffset: 1;
+		opacity: 1;
+		animation-timing-function: cubic-bezier(0.45, 0, 0.3, 1);
+	}
+	58%,
+	84% {
+		stroke-dashoffset: 0;
+		opacity: 1;
+	}
+	94%,
+	100% {
+		stroke-dashoffset: 0;
+		opacity: 0;
+	}
+}
+@keyframes drawing-mark-spark-2 {
+	0%,
+	33.9% {
+		stroke-dashoffset: var(--reach);
+		opacity: 0;
+	}
+	34% {
+		stroke-dashoffset: var(--reach);
+		opacity: var(--peak);
+		animation-timing-function: cubic-bezier(0.45, 0, 0.3, 1);
+	}
+	53% {
+		opacity: var(--peak);
+	}
+	58%,
+	100% {
+		stroke-dashoffset: calc(var(--reach) - 1);
+		opacity: 0;
+	}
+}
+@keyframes drawing-mark-head-2 {
+	0%,
+	57% {
+		opacity: 0;
+	}
+	59%,
+	84% {
+		opacity: 1;
+	}
+	94%,
+	100% {
+		opacity: 0;
+	}
+}
+@keyframes drawing-mark-rim-2 {
+	0%,
+	57.9% {
+		stroke-dashoffset: 1;
+		opacity: 0;
+	}
+	58% {
+		stroke-dashoffset: 1;
+		opacity: 1;
+		animation-timing-function: cubic-bezier(0.2, 0.6, 0.3, 1);
+	}
+	68% {
+		stroke-dashoffset: 0;
+		opacity: 1;
+	}
+	82%,
+	100% {
+		stroke-dashoffset: 0;
+		opacity: 0;
+	}
+}
+
 /* While a walkthrough is presented, what a step is not about recedes under a
    veil that cross-fades as the step changes. The veil is a filter rather than
    the opacity the picture's own stylesheet uses: a step read through another view carries
