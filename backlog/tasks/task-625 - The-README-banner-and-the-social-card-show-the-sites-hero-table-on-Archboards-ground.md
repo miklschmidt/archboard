@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-10T20:23:00Z'
-updated_date: '2026-11-10T23:01:00Z'
+updated_date: '2026-11-10T23:37:00Z'
 labels:
   - docs
   - tooling
@@ -42,6 +42,8 @@ The owner asked for new banner art and social cards based on the 3D header of th
 Verified 2026-11-10. `bun run readme:assets banner` (inside nix develop) exit 0; `bun run readme:check` lists the banner as current (the 15 other stale assets were stale before this change, measured with the old browser.ts). Ground samples: banner.webp srgb(9,8,6), the site ground; social JPEG srgb(8,9,3). The banner shows all 12 cards of site/model. Lossy WebP at quality 90 and 98 left a chroma ring and blocks in the dark ground when brightened, so the banner is lossless (488 KB). tsc, the policy lint over scripts/readme-assets, the format check and the two README policy tests pass. The site builds after its prebuild generators, and dist/index.html carries twitter:image with the same address as og:image. Vite serves the checkout with watch: null and no dependency discovery, because a watcher walked .skill-evals during the prototype.
 
 Follow-up: the social card carries a line in its lower right corner, "Catch the calls your architecture doesn’t allow.", in the site's display face at 44px. The lockup keeps its first size (96px) above the table. The line names what the check catches, because the page's og:title already says what Archboard is for. The 10 Nov launch research says to lead with what the check catches. The line stands apart from the words that the table fits under, so the table keeps its full room. The text is in the SOCIAL layout in scripts/readme-assets/banner.ts.
+
+Second follow-up: the card's corner now holds a headline over a lead, right-aligned, as the site sets its words. The headline is "Stay in charge." in the display face at 60px. The lead is "Plan each change before your agent writes it." and "Catch the calls your architecture doesn’t allow." in the body face at 24px. At X's preview width of about 506px, the lead is small but legible, and a larger lead would run into the Painter card. The take now fails when Archboard Onest does not load, as it already did for Archboard Display.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

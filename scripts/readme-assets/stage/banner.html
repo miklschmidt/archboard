@@ -1,12 +1,13 @@
 <!doctype html>
 <!--
 	The banner and the social card: the marketing site's hero table and the lockup on the site's
-	ground, and the line that the social card sets in its corner. The page runs the hero's own code
+	ground, and the words that the social card sets in its corner. The page runs the hero's own code
 	(site/src/scripts/hero), so Vite serves it from the checkout. The take opens it with reduced
 	motion, so the table draws its finished entry in one still frame. The take gives the layout as
-	JSON in the query (banner.ts says what each value does). The body's data-painted says how the picture went: "true" once it is painted, "failed"
-	when the painter did not paint it, and "no-webgl" when the browser has no WebGL2. The canvas
-	takes the class is-live once a frame with the picture is drawn.
+	JSON in the query (banner.ts says what each value does). The body's data-painted says how the
+	picture went: "true" once it is painted, "failed" when the painter did not paint it, and
+	"no-webgl" when the browser has no WebGL2. The canvas takes the class is-live once a frame with
+	the picture is drawn.
 -->
 <html>
 	<head>
@@ -34,19 +35,31 @@
 				transform: translateY(-50%);
 				--foreground: var(--ink);
 			}
-			/* The line breaks where its text does, and ends at its right edge. */
-			.line {
+			/* A headline in the display face over a lead in the body face, as the site sets them, each
+			   line ending at the corner's right edge. The lead breaks where its text does. */
+			.corner {
 				position: absolute;
-				margin: 0;
-				white-space: pre-line;
 				text-align: right;
+			}
+			.corner p {
+				margin: 0;
+			}
+			.corner .display {
+				margin-bottom: 0.3em;
+			}
+			.corner .lead {
+				max-width: none;
+				white-space: pre-line;
 			}
 		</style>
 	</head>
 	<body>
 		<canvas class="table" data-table></canvas>
 		<div class="lockup" data-lockup></div>
-		<p class="display line" data-line hidden></p>
+		<div class="corner" data-corner hidden>
+			<p class="display" data-title></p>
+			<p class="lead" data-lead></p>
+		</div>
 		<script type="module">
 			import { lightTable } from "../../../site/src/scripts/hero/table.ts";
 			import { paintPicture } from "../../../site/src/scripts/hero/picture.ts";
@@ -55,7 +68,7 @@
 			const layout = JSON.parse(new URLSearchParams(location.search).get("layout"));
 			const canvas = document.querySelector("[data-table]");
 			const lockup = document.querySelector("[data-lockup]");
-			const line = document.querySelector("[data-line]");
+			const corner = document.querySelector("[data-corner]");
 			for (const side of ["left", "top", "width", "height"])
 				canvas.style.setProperty(side, `${layout.canvas[side]}px`);
 			canvas.style.setProperty("--fade-left", `${layout.fade.left * 100}%`);
@@ -63,12 +76,19 @@
 			lockup.style.setProperty("left", `${layout.lockup.left}px`);
 			lockup.style.setProperty("top", `${layout.lockup.middle}px`);
 			lockup.innerHTML = lockupMarkup(layout.lockup.size);
-			if (layout.line) {
-				line.textContent = layout.line.text;
-				line.style.setProperty("font-size", `${layout.line.size}px`);
-				line.style.setProperty("right", `${layout.line.right}px`);
-				line.style.setProperty("bottom", `${layout.line.bottom}px`);
-				line.hidden = false;
+			if (layout.corner) {
+				const { title, lead, right, bottom } = layout.corner;
+				for (const [selector, words] of [
+					["[data-title]", title],
+					["[data-lead]", lead],
+				]) {
+					const text = corner.querySelector(selector);
+					text.textContent = words.text;
+					text.style.setProperty("font-size", `${words.size}px`);
+				}
+				corner.style.setProperty("right", `${right}px`);
+				corner.style.setProperty("bottom", `${bottom}px`);
+				corner.hidden = false;
 			}
 			// The words stand where they stay before the table fits the picture to them.
 			await Promise.all([...document.fonts].map((face) => face.load().catch(() => undefined)));

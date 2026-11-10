@@ -1,5 +1,6 @@
 // The banner and the social card: the marketing site's hero table, with the lockup beside it or
-// above it, on the site's ground. The social card also sets a line in its lower right corner.
+// above it, on the site's ground. The social card also sets a headline and a lead in its lower
+// right corner.
 //
 // The site's hero (site/src/scripts/hero) lays Archboard's drawing of the site's own model on a
 // table in perspective. It raises each card as a tile and draws each line as a beam of light. The
@@ -43,6 +44,12 @@ interface Box {
 	readonly height: number;
 }
 
+/** Words on the page and their font size, in CSS pixels. */
+interface Words {
+	readonly text: string;
+	readonly size: number;
+}
+
 /** Where one picture puts the table and the lockup. stage/banner.html reads it. */
 interface Layout {
 	/** The page's size, in CSS pixels. */
@@ -58,13 +65,14 @@ interface Layout {
 	/** The lockup: its left edge and its vertical middle, and the name's font size. */
 	readonly lockup: { readonly left: number; readonly middle: number; readonly size: number };
 	/**
-	 * A line in the lower right corner, set as the site sets its headline: its text, which breaks
-	 * where it holds a newline, its font size, and how far it stands from the right and bottom edges.
-	 * The table neither fits the picture around it nor darkens the picture behind it.
+	 * Words in the lower right corner, set as the site sets its words: a headline in the display face
+	 * over a lead in the body face, which breaks where its text holds a newline. Each has its font
+	 * size. The corner says how far the words stand from the right and bottom edges. The table
+	 * neither fits the picture around them nor darkens the picture behind them.
 	 */
-	readonly line: {
-		readonly text: string;
-		readonly size: number;
+	readonly corner: {
+		readonly title: Words;
+		readonly lead: Words;
 		readonly right: number;
 		readonly bottom: number;
 	} | null;
@@ -89,7 +97,7 @@ const BANNER: Layout = {
 	height: 724,
 	canvas: { left: 637, top: -313, width: 1560, height: 1000 },
 	lockup: { left: 150, middle: 362, size: 120 },
-	line: null,
+	corner: null,
 	fade: { left: 0.12, foot: 0.1 },
 	above: false,
 };
@@ -97,8 +105,7 @@ const BANNER: Layout = {
 /**
  * GitHub's social preview and the site's link preview, 2:1: the site's hero in small. The lockup
  * stands where the hero's words stand, and the table fills the card under it. Where the card ends,
- * the table's own edge fades it into the ground. The line in the lower right corner says what the
- * check catches, because the page's title already says what Archboard is for. It stands on the
+ * the table's own edge fades it into the ground. The words in the lower right corner stand on the
  * ground below the table's right half.
  */
 const SOCIAL: Layout = {
@@ -106,9 +113,12 @@ const SOCIAL: Layout = {
 	height: 640,
 	canvas: { left: 0, top: 0, width: 1280, height: 640 },
 	lockup: { left: 80, middle: 112, size: 96 },
-	line: {
-		text: "Catch the calls your\narchitecture doesn’t allow.",
-		size: 44,
+	corner: {
+		title: { text: "Stay in charge.", size: 60 },
+		lead: {
+			text: "Plan each change before your agent writes it.\nCatch the calls your architecture doesn’t allow.",
+			size: 24,
+		},
 		right: 80,
 		bottom: 56,
 	},
@@ -128,8 +138,11 @@ const FILES = {
 	social: "docs/assets/archboard-social-card.jpg",
 } as const;
 
-/** How the page's picture went, and which faces did not load. */
-const DrawnSchema = z.object({ painted: z.string(), display: z.boolean() });
+/** How the page's picture went, and which of its faces loaded. */
+const DrawnSchema = z.object({ painted: z.string(), faces: z.array(z.string()) });
+
+/** The faces the page sets its words in: the lockup and the headlines, and the leads. */
+const FACES = ["Archboard Display", "Archboard Onest"] as const;
 
 /** An expression that is true once the page painted the picture and drew it, or gave up. */
 const DRAWN_EXPRESSION = `(() => {
@@ -143,7 +156,7 @@ const DRAWN_SCRIPT = `(async () => {
 	await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
 	return {
 		painted: document.body.dataset.painted,
-		display: [...document.fonts].some((face) => face.family.includes("Archboard Display") && face.status === "loaded"),
+		faces: [...document.fonts].filter((face) => face.status === "loaded").map((face) => face.family.replaceAll('"', "")),
 	};
 })()`;
 
@@ -181,7 +194,7 @@ async function serveCheckout(): Promise<ViteDevServer> {
  * @param origin Where Vite serves the checkout.
  * @param layout The layout.
  * @param out Where the picture goes.
- * @throws {Error} When the page did not draw the picture, or the display face did not load.
+ * @throws {Error} When the page did not draw the picture, or a face of its words did not load.
  */
 async function photograph(
 	browser: Browser,
@@ -204,7 +217,8 @@ async function photograph(
 	if (drawn.painted !== "true") {
 		throw new Error(RECOVERY[drawn.painted] ?? `The page said ${drawn.painted}.`);
 	}
-	if (!drawn.display) throw new Error("The banner page did not load Archboard Display.");
+	const missing = FACES.filter((face) => !drawn.faces.includes(face));
+	if (missing.length > 0) throw new Error(`The banner page did not load ${missing.join(" and ")}.`);
 	await window.screenshot(out);
 }
 
@@ -268,7 +282,7 @@ const banner: Producer = {
 	plan: [
 		"Paint the site's pictures with bun site/scripts/paint.ts.",
 		"Serve the checkout with Vite, and open stage/banner.html, which runs the site's hero table, in Chromium with SwiftShader's WebGL2 and reduced motion.",
-		`Draw the banner, ${BANNER.width}x${BANNER.height} with the lockup beside the table, and the social card, ${SOCIAL.width}x${SOCIAL.height} with the lockup above it and the line in its lower right corner, at ${PIXEL_RATIO} pixels per CSS pixel.`,
+		`Draw the banner, ${BANNER.width}x${BANNER.height} with the lockup beside the table, and the social card, ${SOCIAL.width}x${SOCIAL.height} with the lockup above it and words in its lower right corner, at ${PIXEL_RATIO} pixels per CSS pixel.`,
 		"Scale each picture down. Encode the banner as a lossless still WebP in docs/readme and the social card as a JPEG in docs/assets.",
 	],
 	make: makeBanner,
