@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T16:45:00Z'
-updated_date: '2026-11-08T14:37:00Z'
+updated_date: '2026-11-10T03:17:00Z'
 labels:
   - renderer
 dependencies:
@@ -60,4 +60,12 @@ Owner review fixes (fix/blocks-dead-space, 2026-11-08). A door on a side wall th
 Corpus of 107 readings against main: crossings 4376 to 4140, route length 1493.2k to 1388.5k, page area 190.3 M to 167.5 M, blank space 39.9 M to 27.1 M, fit 0.6 or more 69 to 98, bends 227.4 to 216.9; routes through cards and labels off runs stay 0; no card overlaps another in any reading. Near-port crossings 20 to 3. Layout of all readings takes 13.8 s (main 10.4 s, this branch before the wrap 19.4 s). Wrapping changes the winning placement of some readings: Model reading, Pane connections and Codex session now land larger with more crossings, because the ranking weighs room over crossings; a trace showed the same placements compete. bun run benchmark passes 220 of 220.
 
 Final head after the review fix that lets trunk words wrap too: crossings 4168 (main 4376), route length 1385.9k (1493.2k), page area 166.8 M (190.3 M), blank space 26.9 M (39.9 M), fit 0.6 or more 98 (69), junctions closer than 26 px to an arrowhead 0 (19), near-port crossings 3 (32), overlapping cards 0. These replace the figures in the note above. Sol approved in round 2, and CI passes on the PR.
+
+Speed (2026-11-10). The owner asked for render times near 500 ms on average, with no change to the layout. Exact changes in the dense search, the door ring, the sketches and the router keep every answer byte-identical: the 104 native and 105 WebAssembly hashes stay the same at each step. One solve in WebAssembly takes a mean of 362 ms (683 before), a median of 221 ms (386), a p90 of 912 ms (1930) and a max of 1621 ms (3530). Main takes a mean of 81 ms.
+
+ADR 0078 lays a dense solve out in parts across the layout workers. The pool splits a solve when it has two workers or more and no other solve is under way. Through a pool of six Bun workers, the wait for one picture is a mean of 116 ms, a median of 65 ms, a p90 of 273 ms and a max of 981 ms, with the same 105 hashes. Processor time over the corpus rises from 38 s to 50 s.
+
+Frames in rows. A module with its six groups open drew its seven frames in one row, 10609 by 1044 px, which landed at 0.12. Three frames or more now stand in the rows that land them largest on 0.6 of the readable page's width. That reading now lands at 0.33 in 3566 by 2868 px, and its crossings fall from 167 to 135. No corpus reading has more than one frame, so the corpus does not change. Eight variants of that reading measured the change.
+
+Shell. The wait notice in a reading shows a small animated picture, and it is the one sign of the wait. DESIGN.md no longer bans looping motion or blur over the picture, at the owner's request.
 <!-- SECTION:NOTES:END -->
