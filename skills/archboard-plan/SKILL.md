@@ -106,8 +106,8 @@ Done: each architectural change has exactly one owning ticket, and each publishe
    Exit status 0 means that no module read by the footprint fails the gate.
    Compare `namedAndChanged` with the ticket's slice.
    A changed module absent from this ticket's slice is a **deviation**, even if another ticket owns it.
-   Read `skipped` and `unboundFiles`. `unboundFiles` lists each changed file that no module is bound to. It never fails the gate.
-   The footprint reads only the repositories that hold a bound module. If the ticket changed another repository, read that repository's diff yourself.
+   Read `skipped` and `unboundFiles`. `unboundFiles` lists each changed file that no module is bound to, in each repository that `repositories` lists with the status `read`. It never fails the gate.
+   If the ticket changed a repository that `repositories` does not list as `read`, read that repository's diff yourself.
    For each listed file, do one of these:
    - If the file belongs to a module of the slice, bind that module in the proposal so that its binding holds the file.
    - If the file belongs to no module, such as a fixture, a document or a build file, write why on the ticket.
