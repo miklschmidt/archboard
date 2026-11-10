@@ -4,6 +4,12 @@
 //! The ring weighs a line at every place of its door against the same solid boxes, so each box
 //! keeps the edges that `Sketch::round` and `rounds` test it by, each made once with the same
 //! operations. The sums are then the ones that `rounds` makes.
+//!
+//! Along one wall of the ring, one way of a line keeps the same segment among the boxes, and
+//! its other segment runs beside the ring, past every box. What such a way adds depends on that
+//! one segment alone, so the line keeps it for the next place.
+
+use std::cell::Cell;
 
 use crate::geometry::{Point, Rect};
 
@@ -51,6 +57,12 @@ struct Run {
 }
 
 impl Run {
+    /// Whether two segments are the same, to the last bit.
+    fn same(&self, other: &Run) -> bool {
+        let bits = |run: &Run| [run.along, run.low, run.high].map(f64::to_bits);
+        self.upright == other.upright && bits(self) == bits(other)
+    }
+
     fn new((a, b): (Point, Point)) -> Run {
         if a.x == b.x {
             Run {
@@ -144,16 +156,68 @@ impl Way {
 pub(in crate::blocks::planned::dense) struct InTheWay {
     solid: Vec<Solid>,
     frames: Vec<Rect>,
+    /// Across each axis, where a segment can stand to run through a solid box: past either end
+    /// it runs through none.
+    within: [(f64, f64); 2],
+    /// The last segments that ran through boxes alone in their way, and what each added, and
+    /// which of them goes next.
+    known: [Cell<Option<(Run, f64)>>; 2],
+    next: Cell<usize>,
 }
 
 impl InTheWay {
+    fn new(solid: Vec<Solid>, frames: Vec<Rect>) -> InTheWay {
+        let span = |low: fn(&Solid) -> f64, high: fn(&Solid) -> f64| {
+            let lowest = solid.iter().map(low).fold(f64::INFINITY, f64::min);
+            let highest = solid.iter().map(high).fold(f64::NEG_INFINITY, f64::max);
+            (lowest, highest)
+        };
+        let within = [
+            span(|at| at.inner[0], |at| at.inner[2]),
+            span(|at| at.inner[1], |at| at.inner[3]),
+        ];
+        InTheWay {
+            solid,
+            frames,
+            within,
+            known: [Cell::new(None), Cell::new(None)],
+            next: Cell::new(0),
+        }
+    }
+
+    /// Whether a segment stands past every solid box, so it runs through none.
+    fn clear(&self, run: &Run) -> bool {
+        let (low, high) = self.within[usize::from(!run.upright)];
+        run.along <= low || run.along >= high
+    }
+
     /// What a way adds to go round the solid boxes, as `rounds` sums it. A box that the way's
-    /// box does not meet adds nothing.
-    fn round(&self, way: &Sketch) -> f64 {
-        let way = Way::new(way);
+    /// box does not meet adds nothing. A way with one segment among the boxes adds what that
+    /// segment adds, so a segment weighed before adds what it added then.
+    fn round(&self, sketch: &Sketch) -> f64 {
+        let way = Way::new(sketch);
+        let runs = &way.runs[..if way.bent { 2 } else { 1 }];
+        let mut among = runs.iter().filter(|run| !self.clear(run));
+        let lone = match (among.next(), among.next()) {
+            (None, _) => return 0.0,
+            (Some(&run), None) => Some(run),
+            _ => None,
+        };
+        let known = (self.known.iter()).find_map(|known| {
+            let (run, added) = known.get()?;
+            lone.is_some_and(|lone| lone.same(&run)).then_some(added)
+        });
+        if let Some(added) = known {
+            return added;
+        }
         let mut added = 0.0;
         for solid in &self.solid {
             added += way.round(solid);
+        }
+        if let Some(run) = lone {
+            let next = self.next.get();
+            self.known[next].set(Some((run, added)));
+            self.next.set(1 - next);
         }
         added
     }
@@ -169,10 +233,7 @@ impl Scene {
         let frames = (self.frames.iter().enumerate())
             .filter(|&(frame, _)| self.foreign(line, frame))
             .map(|(_, &at)| at);
-        InTheWay {
-            solid: solid.collect(),
-            frames: frames.collect(),
-        }
+        InTheWay::new(solid.collect(), frames.collect())
     }
 
     /// What a line costs among the boxes that stand in its way, solid boxes and foreign frames:
