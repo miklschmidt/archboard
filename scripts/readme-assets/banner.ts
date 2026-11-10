@@ -1,5 +1,5 @@
 // The banner and the social card: the marketing site's hero table, with the lockup beside it or
-// above it, on the site's ground.
+// above it, on the site's ground. The social card also sets a line in its lower right corner.
 //
 // The site's hero (site/src/scripts/hero) lays Archboard's drawing of the site's own model on a
 // table in perspective. It raises each card as a tile and draws each line as a beam of light. The
@@ -57,6 +57,17 @@ interface Layout {
 	readonly canvas: Box;
 	/** The lockup: its left edge and its vertical middle, and the name's font size. */
 	readonly lockup: { readonly left: number; readonly middle: number; readonly size: number };
+	/**
+	 * A line in the lower right corner, set as the site sets its headline: its text, which breaks
+	 * where it holds a newline, its font size, and how far it stands from the right and bottom edges.
+	 * The table neither fits the picture around it nor darkens the picture behind it.
+	 */
+	readonly line: {
+		readonly text: string;
+		readonly size: number;
+		readonly right: number;
+		readonly bottom: number;
+	} | null;
 	/** How far the canvas fades in from its left edge and up from its foot, as shares of it. */
 	readonly fade: { readonly left: number; readonly foot: number };
 	/**
@@ -78,6 +89,7 @@ const BANNER: Layout = {
 	height: 724,
 	canvas: { left: 637, top: -313, width: 1560, height: 1000 },
 	lockup: { left: 150, middle: 362, size: 120 },
+	line: null,
 	fade: { left: 0.12, foot: 0.1 },
 	above: false,
 };
@@ -85,13 +97,21 @@ const BANNER: Layout = {
 /**
  * GitHub's social preview and the site's link preview, 2:1: the site's hero in small. The lockup
  * stands where the hero's words stand, and the table fills the card under it. Where the card ends,
- * the table's own edge fades it into the ground.
+ * the table's own edge fades it into the ground. The line in the lower right corner says what the
+ * check catches, because the page's title already says what Archboard is for. It stands on the
+ * ground below the table's right half.
  */
 const SOCIAL: Layout = {
 	width: 1280,
 	height: 640,
 	canvas: { left: 0, top: 0, width: 1280, height: 640 },
 	lockup: { left: 80, middle: 112, size: 96 },
+	line: {
+		text: "Catch the calls your\narchitecture doesn’t allow.",
+		size: 44,
+		right: 80,
+		bottom: 56,
+	},
 	fade: { left: 0, foot: 0 },
 	above: true,
 };
@@ -248,7 +268,7 @@ const banner: Producer = {
 	plan: [
 		"Paint the site's pictures with bun site/scripts/paint.ts.",
 		"Serve the checkout with Vite, and open stage/banner.html, which runs the site's hero table, in Chromium with SwiftShader's WebGL2 and reduced motion.",
-		`Draw the banner, ${BANNER.width}x${BANNER.height} with the lockup beside the table, and the social card, ${SOCIAL.width}x${SOCIAL.height} with the lockup above it, at ${PIXEL_RATIO} pixels per CSS pixel.`,
+		`Draw the banner, ${BANNER.width}x${BANNER.height} with the lockup beside the table, and the social card, ${SOCIAL.width}x${SOCIAL.height} with the lockup above it and the line in its lower right corner, at ${PIXEL_RATIO} pixels per CSS pixel.`,
 		"Scale each picture down. Encode the banner as a lossless still WebP in docs/readme and the social card as a JPEG in docs/assets.",
 	],
 	make: makeBanner,

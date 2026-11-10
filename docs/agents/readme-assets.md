@@ -80,7 +80,9 @@ The banner's lockup, the mark beside the name, comes from
 `scripts/readme-assets/lockup.ts`. A test in the repository lane holds that mark
 to the one the shell draws in `apps/web/src/ui/shell/components/Brand.tsx`. The banner
 also writes `docs/assets/archboard-social-card.jpg`. It is GitHub's social preview and the
-site's link preview, with the lockup above the table as the site's hero sets its words. GitHub does
+site's link preview, with the lockup above the table as the site's hero sets its words. A line in
+its lower right corner names what the check catches: the calls that the architecture does not
+allow. The line is in the social layout in `scripts/readme-assets/banner.ts`. GitHub does
 not read it from the repository: the owner uploads it by hand under Social preview in the
 repository's settings.
 
