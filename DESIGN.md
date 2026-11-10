@@ -335,13 +335,10 @@ phone layout.
 
 The system is layered. Planes stack over the picture under a light from above.
 Each plane shows its height in three ways. The first is a tone step. The second
-is a fine highlight on its top edge. The third is a soft shadow with an offset, tinted toward the warm neutrals: umber on chalk and a warm near-black on graphite. A raised plane keeps a contact line of 1px or 2px under its edge, as the planes of the site do. A trough takes the opposite: an inner shadow under its top edge and a lit line along its foot. The picture is the ground, and only still shadows fall on it. Nothing
-over the picture is blurred or filtered, and nothing there loops but the voice
-orb, which draws itself on a canvas of its own, because every repaint over the
-picture makes it slower to drag. What moves over it moves as a layer of its own,
-once: a tip or a menu as it opens, the floating sidebar when it is shown or put
-away, the voice box as it comes and goes, and each word of a subtitle as it
-arrives. The walkthrough column stands beside the picture, not over it.
+is a fine highlight on its top edge. The third is a soft shadow with an offset, tinted toward the warm neutrals: umber on chalk and a warm near-black on graphite. A raised plane keeps a contact line of 1px or 2px under its edge, as the planes of the site do. A trough takes the opposite: an inner shadow under its top edge and a lit line along its foot. The picture is the ground, and only still shadows fall on it.
+What moves over it moves as a layer of its own. A tip or a menu moves as it
+opens. The floating sidebar moves as it comes and goes, and so does the voice
+box. Each word of a subtitle moves as it arrives. The walkthrough column stands beside the picture, not over it.
 The file app.css holds the values for both themes and gives each one a
 `shadow-*` utility.
 
@@ -459,7 +456,7 @@ along the line on both grounds.
 
 ### Named Rules
 
-**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. No shell layer over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, a presented walkthrough's column or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. A select or a menu takes 160ms to arrive and 110ms to leave. The floating sidebar takes at most 160ms, the column 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, when Narrate is pressed and when a voice ends in the box, in a layer of its own, over 680ms.
+**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. A tip, a menu, the floating sidebar, a presented walkthrough's column or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. A select or a menu takes 160ms to arrive and 110ms to leave. The floating sidebar takes at most 160ms, the column 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, when Narrate is pressed and when a voice ends in the box, in a layer of its own, over 680ms.
 
 **The Cursor Says What a Press Does Rule.** Whatever answers a click shows a pointer, in the shell and on the picture. A frame's floor is canvas, so it shows the arrow. Holding Space over the canvas shows an open hand, a press closes it, and a press with Space picks nothing.
 
@@ -1032,7 +1029,6 @@ Keyboard focus follows the subtitles control to the surface that takes it over.
 
 ### Don't:
 
-- **Do not** put a shell layer with backdrop-filter, filter, blur or a looping animation over the picture viewport. The painter's focus is the picture's own, and it ends with the move.
 - **Do not** take a control out of a row when it cannot be used. Dim it and say why in its tooltip, so the row does not move.
 - **Do not** paint gold or decoration onto a card in the picture.
 - **Do not** use a grey-black blur or a halo without an offset as a shadow.
