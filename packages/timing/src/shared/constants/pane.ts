@@ -94,6 +94,17 @@ const PANE_MS = durations({
 	 * dead request lingers and nothing a person sees.
 	 */
 	presentationPaneCheck: 8000,
+	/**
+	 * How long `browser show` and `browser open` wait for the first pane after they
+	 * opened the canvas in the default browser, because none was connected.
+	 *
+	 * A cold browser start, the page load and the pane's first socket message fit
+	 * well inside it. Failing it refuses the command with `BROWSER_REQUIRED`, so it
+	 * is generous for the same reason `layoutTimeout` is.
+	 */
+	browserConnect: 20_000,
+	/** How often the CLI asks the server whether that first pane has connected. */
+	browserConnectPoll: 250,
 });
 
 export { PANE_MS };
