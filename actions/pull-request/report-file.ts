@@ -4,7 +4,7 @@ import { closeSync, constants, lstatSync, mkdirSync, openSync, writeFileSync } f
 import { dirname, isAbsolute, join, relative, sep } from "node:path";
 
 /**
- * Whether the destination names a file below the workspace.
+ * Whether a relative path names a file below the workspace.
  * @param path The destination relative to the workspace.
  * @returns True for a nonempty path that stays inside the workspace.
  */
@@ -21,13 +21,14 @@ function isWorkspaceFile(path: string): boolean {
  */
 function writeReportFile(workspace: string, file: string, markdown: string): void {
 	const path = relative(workspace, file);
+	const parts = path.split(sep);
 	if (!isWorkspaceFile(path)) {
 		throw new Error(
 			"report-file must name a file inside GITHUB_WORKSPACE. Choose a workspace path.",
 		);
 	}
 	let currentPath = workspace;
-	for (const part of path.split(sep)) {
+	for (const part of parts) {
 		currentPath = join(currentPath, part);
 		if (lstatSync(currentPath, { throwIfNoEntry: false })?.isSymbolicLink()) {
 			throw new Error(

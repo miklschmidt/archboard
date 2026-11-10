@@ -14,6 +14,7 @@ import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts
 import { PaneRefSchema } from "#cli/contract/protocol/schemas.ts";
 import { serverBrowserRefusals, serverRefusal } from "#cli/contract/protocol/refusals.ts";
 import { stagedTokens } from "#cli/commands/pane/rules/staged-tokens.ts";
+import { openCanvas } from "#cli/contract/clients/prerequisites.ts";
 
 const usage = "browser needs a subcommand: panes, open, close, or show.";
 const tokens = z.array(z.string()).default([]);
@@ -87,7 +88,8 @@ const paneOpenContract = defineCommand({
 	path: ["browser", "open"],
 	shared: ["url"],
 	summary: "Open a second browser pane",
-	description: "Splits the connected browser canvas; the new pane inherits the displayed reading.",
+	description:
+		"Splits the connected browser canvas; the new pane inherits the displayed reading. When no browser is connected, it opens the canvas in the default browser instead and waits for its pane.",
 	examples: ["archboard browser open"],
 	parameters: [stagedTokens("open-token")],
 	input: {
@@ -123,6 +125,12 @@ const paneOpenContract = defineCommand({
 	refusals: serverBrowserRefusals,
 	relationships: [
 		{ method: "POST", path: "/api/panes/open", cardinality: "one", description: "Open the pane" },
+		{
+			method: "GET",
+			path: "/api/panes",
+			cardinality: "one",
+			description: "Read the pane of a canvas that it opened in the browser",
+		},
 	],
 	/**
 	 * Splits the browser canvas into one more pane and says where it landed.
@@ -133,7 +141,25 @@ const paneOpenContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "Opening a pane");
 		context.parse(PaneOpenStageSchema, input.tokens);
-		await context.require("browser", "Opening a pane");
+		if ((await openCanvas(await callerVault(), "Opening a pane")) !== null) {
+			const report = PanesResultSchema.parse(await getPanes(null));
+			const onScreen = report.panes.map(({ paneId, place, paneKey }) => ({
+				paneId,
+				place,
+				paneKey,
+			}));
+			return {
+				result: PaneOpenResultSchema.parse({
+					success: true,
+					pane: null,
+					paneCount: report.paneCount,
+					onScreen,
+				}),
+				diagnostics: [
+					"No browser was connected, so the canvas opened in the default browser with one pane. Run `browser open` again to split it.",
+				],
+			};
+		}
 		const result = await openPane();
 		const place = result.pane?.place;
 		const where = place ? paneWords(place) : "a new pane";
@@ -375,7 +401,7 @@ const browserShowContract = defineCommand({
 	shared: ["url", "directory", "as-session"],
 	summary: "Show a canonical reading in one pane",
 	description:
-		"Resolves the exact model, module, state, flow, or walkthrough before moving the existing pane. An agent show preserves the browser's shown conversation.",
+		"Resolves the exact model, module, state, flow, or walkthrough before moving the existing pane. An agent show preserves the browser's shown conversation. When no browser is connected, it opens the canvas on the repository in the default browser and waits for its pane.",
 	examples: [
 		"archboard browser show --pane A --module Gateway",
 		"archboard browser show Shop --pane B --grammar sequence --flow Request",
@@ -493,8 +519,8 @@ const browserShowContract = defineCommand({
 			file === undefined
 				? flags
 				: context.parse(ArchitecturePaneReadingSchema, await statedJson({ input: file }, context));
-		await context.require("browser", "Show architecture");
-		const result = await showModelInPane(reading, pane);
+		const opened = await openCanvas(context.vault?.path ?? null, "Show architecture");
+		const result = await showModelInPane(reading, pane ?? opened ?? undefined);
 		return { result: ShowResultSchema.parse(result), diagnostics: choiceLine(result) };
 	},
 });

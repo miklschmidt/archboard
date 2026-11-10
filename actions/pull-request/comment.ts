@@ -4,7 +4,7 @@
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
 import { COMMENT_MARKER } from "./marker.ts";
 import type { OutOfPlanDecision, StateChoice, StateSource } from "./plan.ts";
-import type { Buckets } from "./proposal-plan.ts";
+import type { Buckets, UnboundFile } from "./proposal-plan.ts";
 
 /** Everything the comment says. */
 interface PullRequestReport {
@@ -59,6 +59,35 @@ function bucket(title: string, names: readonly string[]): string[] {
 		...(names.length === 0 ? ["- none"] : nameList(names)),
 		"",
 	];
+}
+
+/**
+ * Text as one Markdown code span, whatever it holds. The pull request's author names its files, so
+ * a backtick or a line break in a name must not end the span or start formatting.
+ * @param text The text.
+ * @returns The code span.
+ */
+function codeSpan(text: string): string {
+	const flat = text.replaceAll(/\r\n|\r|\n/gu, "\\n");
+	const longest = Math.max(0, ...[...flat.matchAll(/`+/gu)].map(([run]) => run.length));
+	const fence = "`".repeat(longest + 1);
+	const pad = flat.startsWith("`") || flat.endsWith("`") ? " " : "";
+	return `${fence}${pad}${flat}${pad}${fence}`;
+}
+
+/**
+ * The changed files that no module is bound to, when there are any. A file names its repository
+ * when the files are in more than one.
+ * @param files The files.
+ * @returns The Markdown lines, none when a module is bound to every changed file.
+ */
+function unboundBucket(files: readonly UnboundFile[]): string[] {
+	if (files.length === 0) return [];
+	const several = new Set(files.map(({ repo }) => repo)).size > 1;
+	return bucket(
+		"Changed files that no module is bound to",
+		files.map(({ repo, path }) => (several ? `${codeSpan(path)} in ${repo}` : codeSpan(path))),
+	);
 }
 
 /**
@@ -128,13 +157,18 @@ function footprintSection(report: PullRequestReport): string[] {
 			? [...heading, "The footprint was not read.", ""]
 			: heading;
 	if (report.choice.state === undefined) {
-		return [...heading, ...bucket("Modules changed by this pull request", report.buckets.changed)];
+		return [
+			...heading,
+			...bucket("Modules changed by this pull request", report.buckets.changed),
+			...unboundBucket(report.buckets.unbound),
+		];
 	}
 	return [
 		...heading,
 		...bucket("Planned and changed", report.buckets.plannedAndChanged),
 		...bucket("Changed outside the plan", report.buckets.outsidePlan),
 		...bucket("Planned but unchanged", report.buckets.plannedUnchanged),
+		...unboundBucket(report.buckets.unbound),
 	];
 }
 

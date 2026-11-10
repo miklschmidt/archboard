@@ -4,9 +4,13 @@ import {
 	ArchitectureHistoryResultSchema,
 } from "@archboard/code-intel/history";
 import { architectureResult } from "#cli/server-access/clients/architecture-model.ts";
-import { defineCommand } from "#cli/contract/protocol/contract.ts";
+import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
 import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
-import { historyLines, unreadLines } from "#cli/commands/model/operations/history-lines.ts";
+import {
+	type Answer,
+	historyLines,
+	unreadLines,
+} from "#cli/commands/model/operations/history-lines.ts";
 
 /** What each analysis answers, and what each option of it means. */
 const WORDS = {
@@ -39,6 +43,12 @@ const WORDS = {
 			"- Changed outside the plan.",
 			"- Planned but unchanged.",
 			"",
+			"Each changed module lists, in `holds`, the other changed modules bound inside it, because a module bound to a directory changes with each of them. A module that holds another is not counted as changed outside the plan.",
+			"",
+			"It also lists, in `unboundFiles`, each changed file that no module is bound to, because no module shows that change. The files of the vault are not listed.",
+			"",
+			"With `--fail-outside`, it exits 1 when the commits changed a module that the draft does not name. A module that holds another changed module never fails it. A file that no module is bound to never fails it. A gate before a merge uses it.",
+			"",
 			"A repository that cannot read the base or head is named, and the command exits 2. Source refs stay local and no source history is retained.",
 		].join("\n"),
 		options: {
@@ -50,6 +60,76 @@ const WORDS = {
 		},
 	},
 } as const;
+
+/** The footprint's gate, which the CLI judges and the server never reads: `--fail-outside`. */
+const FailOutsideSchema = z.object({ failOutside: z.boolean().optional() });
+
+const failOutsideParameter = {
+	kind: "option",
+	key: "failOutside",
+	spellings: ["--fail-outside"],
+	value: "none",
+	description:
+		"Exit 1 when the commits changed a module that the draft does not name. It needs a draft from `--state`",
+} as const;
+
+const failOutsideStage = {
+	name: "fail-outside-draft",
+	when: "before-server" as const,
+	description: "Only a draft names modules, so the gate needs one",
+	rules: ["Refuse --fail-outside without --state"],
+	schema: FailOutsideSchema.extend({ state: z.string().optional() }).refine(
+		(input) => input.failOutside !== true || input.state !== undefined,
+		"--fail-outside judges the commits against a draft: name it with --state",
+	),
+};
+
+const outsideOutcome = {
+	id: "outside",
+	exit: 1,
+	stream: "stdout-and-stderr" as const,
+	presentation: ["diagnostics", "result"] as const,
+	description: "With `--fail-outside`, the commits changed a module that the draft does not name",
+};
+
+/**
+ * The modules that `--fail-outside` fails on: those the commits changed and the draft does not name,
+ * except a directory that holds another changed module.
+ * @param answer The answer of the server.
+ * @param failOutside Whether `--fail-outside` was given.
+ * @returns The changed modules outside the draft, or none when the gate is off.
+ */
+function outsideOf(answer: Answer, failOutside: boolean) {
+	if (!failOutside || answer.analysis !== "footprint") return [];
+	if (!("changedNotNamed" in answer)) {
+		throw new CliUsageError(
+			`--fail-outside judges the commits against a draft, and ${answer.state?.name ?? "the selected state"} is no draft. Name a draft with --state; \`archboard model proposals\` lists them.`,
+		);
+	}
+	return answer.changedNotNamed.filter((part) => part.holds.length === 0);
+}
+
+/**
+ * What an answer says on standard error, and the outcome it exits with.
+ * @param answer The answer of the server.
+ * @param failOutside Whether `--fail-outside` was given.
+ * @returns The diagnostics, and the outcome when it is not success.
+ */
+function judged(
+	answer: Answer,
+	failOutside: boolean,
+): { diagnostics: string[]; outcome?: "unread" | "outside" } {
+	const outside = outsideOf(answer, failOutside);
+	const names = outside.map(({ subject }) => subject.name).join(", ");
+	const diagnostics = [
+		...historyLines(answer),
+		...(outside.length === 0
+			? []
+			: [`Changed outside the draft: ${names}. Name each in the draft, or undo its change.`]),
+	];
+	if (unreadLines(answer).length > 0) return { diagnostics, outcome: "unread" };
+	return outside.length === 0 ? { diagnostics } : { diagnostics, outcome: "outside" };
+}
 
 /**
  * What an option of an analysis means.
@@ -73,21 +153,26 @@ function historyCommand<I extends z.ZodRawShape>(
 	input: z.ZodObject<I>,
 	result: typeof ArchitectureHistoryResultSchema,
 ) {
+	const gated = name === "footprint";
+	const ingress = input.extend(gated ? FailOutsideSchema.shape : {});
 	return defineCommand({
 		path: ["model", name],
 		shared: ["url", "directory"],
 		summary: WORDS[name].summary,
 		description: WORDS[name].description,
 		examples: [`archboard model ${name}${name === "footprint" ? " --base main" : ""}`],
-		parameters: Object.keys(input.shape).map((key) => ({
-			kind: "option" as const,
-			key,
-			spellings: [`--${key}`] as const,
-			value: "required" as const,
-			placeholder: key,
-			description: optionWords(name, key),
-		})),
-		input: { ingress: input },
+		parameters: [
+			...Object.keys(input.shape).map((key) => ({
+				kind: "option" as const,
+				key,
+				spellings: [`--${key}`] as const,
+				value: "required" as const,
+				placeholder: key,
+				description: optionWords(name, key),
+			})),
+			...(gated ? [failOutsideParameter] : []),
+		],
+		input: { ingress, ...(gated ? { stages: [failOutsideStage] } : {}) },
 		result,
 		output: {
 			cases: [
@@ -122,6 +207,7 @@ function historyCommand<I extends z.ZodRawShape>(
 				presentation: ["diagnostics", "result"],
 				description: "A repository could not read the base or head that was named",
 			},
+			...(gated ? [outsideOutcome] : []),
 		],
 		refusals: [serverRefusal],
 		relationships: [
@@ -139,6 +225,10 @@ function historyCommand<I extends z.ZodRawShape>(
 		 * @returns The runtime result.
 		 */
 		async handler(request, context) {
+			const { failOutside } = context.parse(
+				gated ? failOutsideStage.schema : FailOutsideSchema,
+				request,
+			);
 			await context.require("server", `model ${name}`);
 			const query = new URLSearchParams(
 				Object.entries(request).filter(
@@ -155,11 +245,7 @@ function historyCommand<I extends z.ZodRawShape>(
 					),
 				};
 			}
-			return {
-				result: answer,
-				diagnostics: historyLines(answer),
-				...(unreadLines(answer).length === 0 ? {} : { outcome: "unread" as const }),
-			};
+			return { result: answer, ...judged(answer, failOutside === true) };
 		},
 	});
 }

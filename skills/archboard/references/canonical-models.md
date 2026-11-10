@@ -1018,6 +1018,8 @@ For binding and interface findings, follow [authoring](authoring.md).
 ## Navigate a local agent pane
 
 `browser show [model] --pane <pane>` opens a model in an existing pane.
+If no browser is connected, it opens the canvas in the default browser and waits for its pane.
+On a machine with no display, it refuses with `BROWSER_REQUIRED`. Give the user the address in the refusal.
 The optional model must match the vault's identity or exact name.
 Use `--module`, `--scope`, `--focus`, `--hide-kind`, `--grammar`, and `--flow` for its reading.
 Use `--state`, `--checkpoint`, `--preview`, `--bookmark`, or `--legacy-address` for selection.

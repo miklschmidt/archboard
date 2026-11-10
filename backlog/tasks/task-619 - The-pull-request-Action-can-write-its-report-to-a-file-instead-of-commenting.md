@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: 2026-11-09 01:35
-updated_date: '2026-11-10T15:06:00Z'
+updated_date: '2026-11-10T15:15:00Z'
 labels:
   - actions
 dependencies: []
@@ -62,10 +62,14 @@ Left as it is: the model's Pull-request Action module text describes the default
 Fresh review: the promised workspace path accepted absolute escapes, parent traversal, and checkout symlinks. The report writer now refuses those destinations, accepts absolute paths inside the workspace, and creates missing parent directories. Both guides use reports/architecture.md and explain refusals. The regression test failed before the fix with exit 0 for an external target. Additional assertions cover file outputs for model refusals and missing vaults, and write failures with no output or publication. The writer remains the single file delivery path. GitHub documents contents read as sufficient for GET /pulls/{number}, so the permission claim needs no change.
 
 Standards review: PRODUCT.md requires the canonical model to match changed behavior. The Pull-request Action module, vKEsyHFk#mAh7CmuS, still described unconditional comments and write permissions. The public model edit now describes both delivery paths, the report output, workspace confinement, directory creation and write failures. This corrects implemented architecture without changing modules or relationships, so no new architectural proposal is needed. The claim is released. The applied edit reports reconciliation false. The first two attempts failed before writes on archive ancestry timeouts; the third succeeded.
+
+Integration review: the branch missed main commits 36865dc622 and 12d2750bd9. Main adds footprint container handling and unbound file reports. The shared formatter preserves those additions in file delivery. Merging main required one canonical description conflict resolution. The public model edit preserves both contracts and reports applied true with no reconciliation. Pure report tests move to pull-request-report.test.ts so the merged process owner stays below the existing file-length limit.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
 The pull-request Action has a report-file input. With it set, the Action writes the Markdown that it would post, hidden marker included, to that file, and names the file's absolute path in its report output. It posts and edits no comment and writes no job summary, so the job needs only contents: read. The plan check annotates and fails the step exactly as without the input. Without the input nothing changes. The output is named report, not report-file, because the Actions reference refuses an input and an output with the same name, and the check Action already names its report path that way. A later step can put the file where the team wants it: actions/README.md and the pull requests guide show a job summary step with always(), so the report also lands when the plan check fails the step. A system test proves the file, the output, the absence of comment requests and job summary, and the same exit status and annotations. Gate: format, lint, types, test:system, test:repository, check:model and the site build pass.
+
+Fresh PR review fixed workspace escapes and the stale canonical Action description. Report destinations now stay inside GITHUB_WORKSPACE and cannot use symlinks. The docs use a workspace path. Main is merged, with both report delivery and its newer footprint behavior preserved. Pure report tests have their own owner. The tracked README architecture SVGs are refreshed and inspected in both themes. Final evidence: system 285 pass, repository 172 pass, focused Actions 45 pass, site scripts 8 pass, all with zero failures. Lint, source and browser types, formatting, model semantics, code inspection, embeds, and the site build pass. Model inspection retains existing skips for 84 exposure-unknown subjects, 9 unbound subjects, and one text-only checkout. No lint or type rules changed. No push.
 <!-- SECTION:FINAL_SUMMARY:END -->

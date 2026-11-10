@@ -66,6 +66,11 @@ interface Compared {
 /** The part of a footprint answer that names modules. */
 interface FootprintPart {
 	readonly subject: { readonly id: string; readonly name: string };
+	/**
+	 * The other changed modules that its binding holds. A module bound to a directory changes with
+	 * each of them, so it is never outside the plan. A CLI older than this field leaves it out.
+	 */
+	readonly holds?: readonly string[] | undefined;
 }
 
 /**
@@ -78,6 +83,14 @@ interface FootprintReading {
 	readonly changed?: readonly FootprintPart[] | undefined;
 	/** The parts it could not read, such as a part in a repository this machine has not registered. */
 	readonly skipped?: readonly (FootprintPart & { readonly reason?: string })[] | undefined;
+	/** The changed files that no module is bound to, so that no module shows their change. */
+	readonly unboundFiles?: readonly UnboundFile[] | undefined;
+}
+
+/** A changed file that no module is bound to, in its repository. */
+interface UnboundFile {
+	readonly repo: string;
+	readonly path: string;
 }
 
 /** The module names of each bucket. */
@@ -87,6 +100,8 @@ interface Buckets {
 	readonly plannedUnchanged: readonly string[];
 	/** Every changed module, which the comment lists when there is no proposal. */
 	readonly changed: readonly string[];
+	/** The changed files that no module is bound to. They are listed, and never judged. */
+	readonly unbound: readonly UnboundFile[];
 }
 
 /** The plan of a proposal. */
@@ -263,7 +278,8 @@ function proposalPlan(baseModel: ModelReading, headModel: ModelReading): Proposa
  * @param footprint The answer of `model footprint`. For a draft it sorts the changed modules into
  * named and not named, else it lists them in one list.
  * @param plan The plan.
- * @returns The three buckets.
+ * @returns The three buckets, every changed module, and the changed files that no module is bound to.
+ * A changed module that holds another changed module is never outside the plan.
  */
 function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 	const { named, baseOnlyBindings } = plan;
@@ -273,6 +289,9 @@ function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 		...(footprint.changedNotNamed ?? []),
 	];
 	const changed = new Map(parts.map((part) => [part.subject.id, part.subject.name]));
+	const containers = new Set(
+		parts.filter((part) => (part.holds ?? []).length > 0).map((part) => part.subject.id),
+	);
 	const unread = new Set((footprint.skipped ?? []).map((part) => part.subject.id));
 	return {
 		plannedAndChanged: [...changed]
@@ -280,7 +299,7 @@ function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 			.map(([, name]) => name)
 			.toSorted(),
 		outsidePlan: [...changed]
-			.filter(([id]) => !named.has(id))
+			.filter(([id]) => !named.has(id) && !containers.has(id))
 			.map(([, name]) => name)
 			.toSorted(),
 		plannedUnchanged: [...named]
@@ -288,6 +307,7 @@ function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 			.map(([, name]) => name)
 			.toSorted(),
 		changed: [...changed.values()].toSorted(),
+		unbound: (footprint.unboundFiles ?? []).map(({ repo, path }) => ({ repo, path })),
 	};
 }
 
@@ -298,4 +318,5 @@ export {
 	type FootprintReading,
 	type ModelReading,
 	type ProposalPlan,
+	type UnboundFile,
 };
