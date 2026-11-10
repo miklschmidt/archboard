@@ -311,6 +311,8 @@ The mock window and the demo panels set smaller type (10.5px to 13px) because th
 
 **The Tall Capitals Rule.** Display capitals name what a region is about: the hero line, section heads (h2) and feature claims (h3). Three narrow exceptions exist. The wordmark is display capitals. The language belt sets the languages the code check reads as display words. A module's name inside a demonstration of the product keeps the product's display title (the mock inspector and the interface comparison). Everything else is Onest: buttons, tabs, labels, table heads, captions.
 
+**The No Final Period Rule.** A title or heading ends without a period, even when it fills a line or reads as a complete thought: the hero line, the closing head, section heads, feature claims, step heads and the social card's headline. A question keeps its question mark.
+
 **The Head Leads Rule.** A heading starts its region. No label, kicker, eyebrow or tag sits above a heading. The owner bans them. A line of words beside a belt, such as "The code check reads", labels the belt and sits level with it, not over a heading.
 
 **The Mono Is Data Rule.** Mono sets commands, paths, counts and code, wherever they appear: in prose, a lead, a callout head, a code frame's title, and a heading that names a command, and a link whose label is a file name. It never sets the other words of a heading or a label for a control.
