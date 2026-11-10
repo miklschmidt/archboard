@@ -1,11 +1,11 @@
 ---
 id: TASK-559.09
 title: Remove the dead space that the content rules leave
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T16:45:00Z'
-updated_date: '2026-11-10T15:36:00Z'
+updated_date: '2026-11-10T15:51:00Z'
 labels:
   - renderer
 dependencies:
@@ -27,17 +27,18 @@ The owner saw obscene dead space in Blocks. The content rules remove most of it,
 <!-- AC:BEGIN -->
 - [x] #1 Local compaction and candidates ranked by fit are measured on the merged core and on the content of the design
 - [x] #2 Names, paths, arrows and essential labels stay readable, and no reading regresses on a guard
-- [ ] #3 The grading corpus of Gate 6 passes in the real pane
+- [x] #3 The grading corpus of Gate 6 passes in the real pane
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Measure where the dead space lies on main: 34 M of the 40 M of blank page lies outside frames, round the cards that stand outside an open frame (doors).
-2. Replace the ring's fixed wall capacity with a cost: each door takes the wall where the way of every line, times what the page's room costs, is least. Search greedily in regret order, then move doors while a move lowers the cost.
-3. Share one room cost between the ring, the placement promise and the order of finished drawings: the page's area plus the pane-shaped room it needs past the landing room.
-4. Route two dense placements of a framed reading past 15 lines, because the promise misses the crossings that doors bring.
-5. Prove it with a ring test that fails on the old ring, the full corpus measure against main, real pictures in both themes, the benchmark and the check lanes. Amend ADR 0063.
+1. Measure where the dead space lies on main: 34 M of the 40 M of blank page lies round the cards that stand outside an open frame (doors).
+2. Price each dense placement by one stated cost (line sketches, crossings, group spread). Search the parts with annealing, and stand the doors with an exact ring program that pays for the pane its box leaves blank.
+3. Rank finished drawings by whether they read, then by long detours on a page that reads, then by route cost, crowded approaches, blank space from three quarters of the room, and twice the blank pane.
+4. Stand three frames or more in rows, or in stacks that end level.
+5. Split a dense solve into parts across the layout workers, with the same answer as one solve (ADR 0078).
+6. Prove it with focused tests, the 109 readings and a corpus of 172 readings with several frames open against main, real pictures in both themes, the benchmark and the check lanes. Amend ADR 0063.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -82,4 +83,12 @@ Sol reviewed five rounds on gpt-6.1-sol at xhigh. Round 4 approved the test fixe
 Speed after the strip fix: one solve in WebAssembly takes a mean of 377 ms, a median of 220 ms, a p90 of 930 ms and a max of 2441 ms. Through a pool of six workers the wait is a mean of 120 ms, a median of 68 ms, a p90 of 277 ms and a max of 955 ms, with the same 105 answers as one solve. The two slowest readings rose from about 1.6 s to 2.4 s in one solve, because they now try more drawings.
 
 Frames in stacks (2026-11-10). The owner opened HTTP serving with six groups open and found tall blank holes beside the short frames. Three frames or more stood in rows, and each row was as tall as its tallest frame. The readings of this repository's model open one frame each, so the corpus never reached this code. A second corpus opens every door of each scope: 172 readings of 3 to 14 frames. The stacked placement now stands three frames or more in stacks side by side, shared the way that lands the whole largest (every partition up to 8 frames, else the shortest stack). A page that does not read counts no long detours. On the 172 readings natively, earlier head to now: mean landing 0.272 to 0.288 (92 land larger, 38 smaller), area 3617.7 M to 3171.5 M, blank 1185.5 M to 947.3 M, crossings 136287 to 132270, strips 2 to 0, slowest solve 68.7 s to 28.6 s. Main lands them at 0.251 with 15 strips and 203095 crossings. HTTP serving with six groups open, real renderer: 3590 by 2876 px at 0.33 to 3126 by 2615 at 0.36, card share 0.149 to 0.186, crossings 135 to 134, 1.4 s. The 109 single-frame readings through the real renderer: 3 change, crossings 2798 to 2837, blank 28.5 M to 27.5 M, landing at 0.6 or more stays 99. Tried and dropped: a fixed stack count, the count picked by the sketch cost (twice as slow), and a local search in place of every partition (more crossings than before). One reading fails to draw on main and on the earlier head with no clear planned channel: TASK-624.
+
+Gate 6 (2026-11-10): the owner graded the readings in the real pane on the worktree server, with the frame stacks, and approved.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Blocks pictures of a reading with open frames now pack their cards, frames and doors without the wide blank margins, strips and tall holes they left. A dense placement is priced by one stated cost and searched, the doors stand round the frames by an exact program, finished drawings rank by readability, detours on readable pages, route cost and blank space, and three frames or more stand in rows or in stacks that end level. A dense solve splits across the layout workers with the same answer. On this repository's 109 readings against main: crossings 3618 to 2837, blank space 39.9 M to 27.5 M, readings landing at 0.6 or more 93 to 99. On 172 readings with every door open: mean landing 0.251 to 0.288, strips 15 to 0. One WebAssembly solve averages 381 ms against 81 ms on main, and a pool of six workers waits 123 ms on average. bun run check and the benchmark (224 of 224) pass. Risks: a solve costs more processor time than on main, and Painting still draws as a wide strip at 0.38. Follow-up: TASK-624, a fallback that throws when no planned channel is clear.
+<!-- SECTION:FINAL_SUMMARY:END -->
