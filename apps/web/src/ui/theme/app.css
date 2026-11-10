@@ -245,7 +245,7 @@
 	}
 }
 
-/* The little picture of a wait that lasted (ModelState.tsx). A spark draws it again
+/* The little picture of a drawing that is awaited (DrawingMark.tsx). A spark draws it again
    and again, as the picture itself arrives (DESIGN.md, The Spark Rule): it leaves the
    card that nothing feeds, runs both ways round the card it lands on, and that card's
    own line starts. The lines then leave together, and the next round draws the mirror
@@ -259,6 +259,10 @@
 	fill: none;
 	stroke-linecap: round;
 	stroke-linejoin: round;
+}
+[data-slot="drawing-mark"][data-size="large"] {
+	width: 64px;
+	height: 36px;
 }
 [data-slot="drawing-mark"] [data-part="card"] {
 	fill: var(--face);

@@ -11,7 +11,6 @@ import {
 	ModelDestinationNotice,
 	ModelUnavailableReading,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelDestinationState.tsx";
-import { StageSpinner } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStageStates.tsx";
 import { PictureOverlay } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
 import type {
@@ -105,7 +104,7 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 							/>
 						)}
 					</Suspense>
-					<NoPicture {...props} waiting={waiting} />
+					<NoPicture {...props} />
 					<div
 						data-slot="model-notices"
 						className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col *:pointer-events-auto"
@@ -128,25 +127,19 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 }
 
 /**
- * What the surface shows while no picture stands for the reading.
- * @param props The destination and how it is going.
+ * What the surface shows for a reading that no picture can stand for.
+ * @param props The destination.
  * @param props.vault The reading vault.
  * @param props.paneId The pane.
  * @param props.request The destination.
- * @param props.scene The accepted scene.
- * @param props.waiting Whether the reader waits for it.
- * @returns What the reading lacks, the wait for a first picture, or nothing.
+ * @returns What the reading lacks, or nothing.
  */
 function NoPicture(
-	props: Pick<ModelReadingCanvasProps, "vault" | "paneId" | "request" | "scene"> & {
-		waiting: boolean;
-	},
+	props: Pick<ModelReadingCanvasProps, "vault" | "paneId" | "request">,
 ): JSX.Element | null {
 	const { request, vault, paneId } = props;
-	if (request.settled && request.grammar === null)
-		return <ModelUnavailableReading vault={vault} paneId={paneId} request={request} />;
-	if (props.scene !== null || !props.waiting) return null;
-	return <StageSpinner className="pointer-events-none absolute inset-0" />;
+	if (!request.settled || request.grammar !== null) return null;
+	return <ModelUnavailableReading vault={vault} paneId={paneId} request={request} />;
 }
 
 /**

@@ -254,7 +254,6 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 				<ModelSubjectTip target={tip.shown} scene={scene} camera={camera} />
 				<ModelLineTip target={tip.shown} model={model} projection={projection} />
 			</TipPlace>
-			<LeavingPart departure={leaving} at="spinner" />
 			{rectangle !== null && <ModelSelectionRectangle rectangle={rectangle} />}
 		</section>
 	);
