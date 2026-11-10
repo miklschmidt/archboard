@@ -138,8 +138,8 @@ const BLANK_PANE: f64 = 2.0;
 /// The pane that a page leaves blank where it lands smaller than full scale, in the pane's own
 /// measure: the landing room less the page at the scale it lands at. A strip leaves the pane
 /// above and below it blank, and its words land smaller than those of a page of the pane's shape.
-/// The blank counts by the square of the scale that the page gives up on its way to the scale
-/// where words just read, so a page just past full scale pays almost nothing for it.
+/// The blank counts by the square of how far the page grows past the landing room, up to the size
+/// that lands where words just read, so a page just past full scale pays almost nothing for it.
 fn blank_pane(drawing: &crate::blocks::assembly::Placed) -> f64 {
     let scale = (drawing.width / LANDING_ROOM.0).max(drawing.height / LANDING_ROOM.1);
     if scale <= 1.0 {
