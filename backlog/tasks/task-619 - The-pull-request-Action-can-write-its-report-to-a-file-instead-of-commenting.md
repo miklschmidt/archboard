@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: 2026-11-09 01:35
-updated_date: '2026-11-10T15:05:00Z'
+updated_date: '2026-11-10T15:06:00Z'
 labels:
   - actions
 dependencies: []
@@ -60,6 +60,8 @@ Gate inside nix develop: vp run format:check passed; vp run lint:all passed (9/9
 Left as it is: the model's Pull-request Action module text describes the default comment and its permissions, which still hold. It does not mention the report file. bun install changed bun.lock (a package version left behind by the 0.3.0 release); that change is not part of this work and is not committed.
 
 Fresh review: the promised workspace path accepted absolute escapes, parent traversal, and checkout symlinks. The report writer now refuses those destinations, accepts absolute paths inside the workspace, and creates missing parent directories. Both guides use reports/architecture.md and explain refusals. The regression test failed before the fix with exit 0 for an external target. Additional assertions cover file outputs for model refusals and missing vaults, and write failures with no output or publication. The writer remains the single file delivery path. GitHub documents contents read as sufficient for GET /pulls/{number}, so the permission claim needs no change.
+
+Standards review: PRODUCT.md requires the canonical model to match changed behavior. The Pull-request Action module, vKEsyHFk#mAh7CmuS, still described unconditional comments and write permissions. The public model edit now describes both delivery paths, the report output, workspace confinement, directory creation and write failures. This corrects implemented architecture without changing modules or relationships, so no new architectural proposal is needed. The claim is released. The applied edit reports reconciliation false. The first two attempts failed before writes on archive ancestry timeouts; the third succeeded.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

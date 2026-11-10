@@ -2,8 +2,8 @@
   "order": 5200,
   "name": "Pull-request Action",
   "kind": "package",
-  "responsibility": "Posts one comment on a pull request with its proposal, a link to the vault, and the modules whose code changed inside and outside the plan, as text",
-  "description": "A composite GitHub Action. It finds the proposal from its state input, the archboard-pr marker in the description, or the only draft. It reads the base and the head, and updates one sticky text comment on each push. The job needs only contents read and pull-requests write. The footprint compares the head with the base branch. With out-of-plan set to fail, a module changed outside the plan fails the job unless the override label is on the pull request.",
+  "responsibility": "Reports a pull request proposal and the modules changed inside and outside its plan, through a comment or a Markdown file",
+  "description": "A composite GitHub Action. It finds the proposal from its state input, the archboard-pr marker in the description, or the only draft. It reads the base and the head.\n\nBy default, it updates one sticky text comment and writes the job summary. With report-file set, it writes the same Markdown to a file inside the workspace, with no comment or summary writes. The report output names the absolute file path. The file path cannot use symlinks, and the Action creates missing parent directories. A write failure fails the step without setting the report output. The job needs contents read, plus pull-requests write only for comment delivery. \n\nThe footprint compares the head with the base branch. With out-of-plan set to fail, a module changed outside the plan fails the job unless the override label permits it.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "actions/pull-request"
