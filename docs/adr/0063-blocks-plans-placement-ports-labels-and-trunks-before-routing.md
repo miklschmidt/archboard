@@ -10,6 +10,7 @@ The cost sketches each line with at most one bend, between the sides of its two 
 It adds the sketch's length and 120 for each bend.
 It adds the way round each card or foreign frame in the sketch's way, and 300 for each crossing.
 A line that runs up, against the reading direction, adds 150.
+A frame's own line to a card outside the frame is sketched from the frame's tab, because the line leaves the frame's header.
 It also adds three times how far the members of each group stand from the group's middle.
 Simulated annealing from a fixed seed moves the parts between the cells of each frame's grid, and starts from the grid's greedy answer.
 A cell can stay empty, and a whole group can move one cell at a time.

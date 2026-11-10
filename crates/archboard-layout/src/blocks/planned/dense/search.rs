@@ -237,7 +237,7 @@ pub(super) struct Staged {
 }
 
 /// A scene while it is built: the box that ends lines at each card, the block that holds each
-/// part, and each frame's outline and the foot of its tab, with its block.
+/// part, and each frame's tab and the foot of its tab, with its block.
 #[derive(Default)]
 struct Stage<'r> {
     scene: Scene,
@@ -254,7 +254,8 @@ impl<'r> Stage<'r> {
         self.scene.boxes.len() - 1
     }
 
-    /// A frame's outline ends the lines from outside it, the foot of its tab those from inside.
+    /// A frame's tab ends the lines from outside it, so that a frame's own line leaves its
+    /// header. The foot of its tab ends those from inside.
     fn frame(&mut self, (index, block): (usize, &'r Block<'_>), at: Rect) {
         let frame = self.scene.frames.len();
         self.scene.frames.push(at);
@@ -263,26 +264,25 @@ impl<'r> Stage<'r> {
             height: block.tab.y,
             ..at
         };
-        let outline = self.push(at, false, Some(frame));
-        self.push(tab, true, Some(frame));
+        let tab_at = self.push(tab, true, Some(frame));
         let foot = Rect {
             y: tab.y + tab.height,
             height: 0.0,
             ..tab
         };
         let foot = self.push(foot, false, Some(frame));
-        self.feet.insert(&block.frame.id, (outline, foot, index));
+        self.feet.insert(&block.frame.id, (tab_at, foot, index));
     }
 
     /// The box that ends a line at one card, from the card at its other end.
     fn end(&self, id: &str, other: &str) -> Option<usize> {
-        let Some(&(outline, foot, frame)) = self.feet.get(id) else {
+        let Some(&(tab, foot, frame)) = self.feet.get(id) else {
             return self.ends.get(id).copied();
         };
         Some(if self.held.get(other) == Some(&frame) {
             foot
         } else {
-            outline
+            tab
         })
     }
 
@@ -302,8 +302,8 @@ impl<'r> Stage<'r> {
 
 impl Reading<'_> {
     /// The scene of a placement, from its parts in the order of the blocks' items and each
-    /// block's frame. Its first boxes are the parts, then each frame's outline, tab and the foot
-    /// of its tab, then the doors, which stand nowhere yet.
+    /// block's frame. Its first boxes are the parts, then each frame's tab and the foot of its
+    /// tab, then the doors, which stand nowhere yet.
     pub(super) fn scene(&self, parts: &[Rect], frames: &[Rect]) -> Staged {
         let mut stage = Stage::default();
         let mut groups: BTreeMap<&str, Vec<usize>> = BTreeMap::new();

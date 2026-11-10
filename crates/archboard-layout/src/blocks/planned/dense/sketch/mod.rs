@@ -258,10 +258,10 @@ pub(super) struct Line {
 pub(super) struct Scene {
     /// Every box a line ends on or goes round.
     pub boxes: Vec<Rect>,
-    /// Whether no line runs through the box: a card or a tab. A frame's outline and the foot
-    /// of its tab only end lines.
+    /// Whether no line runs through the box: a card or a tab. The foot of a frame's tab only
+    /// ends lines.
     pub solid: Vec<bool>,
-    /// The frame each box belongs to: a part, the frame's own outline and its tab.
+    /// The frame each box belongs to: a part, and the frame's tab and its foot.
     pub within: Vec<Option<usize>>,
     /// Each frame's outline, which only the lines of what it holds run into.
     pub frames: Vec<Rect>,
