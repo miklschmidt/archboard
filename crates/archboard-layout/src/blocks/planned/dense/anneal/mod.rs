@@ -14,6 +14,10 @@ use super::{
     sketch::{CROSSING, Chord, Line, Scene, Sketch, Weighed},
 };
 
+use near::Near;
+
+mod near;
+
 /// A frame's grid of cells, as the search sees it: every cell one pitch from the next.
 #[derive(Clone, Copy, Debug)]
 pub(super) struct Lattice {
@@ -97,6 +101,26 @@ fn grouped(scene: &Scene) -> Vec<Vec<usize>> {
     grouped
 }
 
+/// The box round every box of a scene and every cell of its grids, where the search moves
+/// parts.
+fn extent(scene: &Scene, lattices: &[Lattice]) -> Edges {
+    let cells = lattices.iter().map(|lattice| Edges {
+        left: lattice.origin.x,
+        top: lattice.origin.y,
+        right: lattice.origin.x + lattice.columns as f64 * lattice.pitch.x,
+        bottom: lattice.origin.y + lattice.rows as f64 * lattice.pitch.y,
+    });
+    (scene.boxes.iter().map(|&at| Edges::of(at)))
+        .chain(cells)
+        .reduce(Edges::round)
+        .unwrap_or(Edges {
+            left: 0.0,
+            top: 0.0,
+            right: 0.0,
+            bottom: 0.0,
+        })
+}
+
 /// A box by its edges.
 #[derive(Clone, Copy, Debug)]
 struct Edges {
@@ -152,9 +176,10 @@ pub(super) struct Search<'p> {
     occupant: Vec<Vec<Option<usize>>>,
     weighed: Weighed,
     total: f64,
-    /// Which lines cross which, and the box round each line's two ends.
+    /// Which lines cross which, and the box round each line's two ends, by where it stands.
     crossing: Crossings,
     bounds: Vec<Edges>,
+    near: Near,
     /// The lines that end on each box, and the groups each box is in.
     touching: Vec<Vec<usize>>,
     grouped: Vec<Vec<usize>>,
@@ -182,12 +207,14 @@ impl<'p> Search<'p> {
         let weighed = scene.weigh();
         // Parts are the scene's first boxes, so a box's part is its index.
         debug_assert!(parts.iter().enumerate().all(|(at, part)| part.at == at));
+        let bounds: Vec<Edges> = (0..scene.lines.len())
+            .map(|line| Edges::line(&scene, line))
+            .collect();
         Search {
             total: weighed.total(),
             crossing: Crossings::new(&scene),
-            bounds: (0..scene.lines.len())
-                .map(|line| Edges::line(&scene, line))
-                .collect(),
+            near: Near::new(&bounds, extent(&scene, lattices)),
+            bounds,
             touching: touching(&scene),
             grouped: grouped(&scene),
             stamp: vec![0; scene.lines.len()],
@@ -215,6 +242,7 @@ impl<'p> Search<'p> {
         self.bounds = (0..self.scene.lines.len())
             .map(|line| Edges::line(&self.scene, line))
             .collect();
+        self.near = Near::new(&self.bounds, extent(&self.scene, self.lattices));
     }
 
     fn random(&mut self) -> u64 {
@@ -343,30 +371,39 @@ impl<'p> Search<'p> {
         self.stamp[line] == self.stamps
     }
 
-    /// What each line that stayed adds or saves to go round the moved parts.
+    /// What each line that stayed adds or saves to go round the moved parts, in the lines' order.
     ///
     /// A line runs round a moved part only where the box round its ends comes near the part,
     /// where the part stood or stands now.
     fn rounds(&self, old: &[(usize, usize, Rect)]) -> Vec<(usize, f64)> {
-        let parts = || {
-            (old.iter())
-                .flat_map(|&(part, _, was)| [Edges::of(was), Edges::of(self.scene.boxes[part])])
-        };
-        let Some(all) = parts().reduce(Edges::round) else {
+        let parts: Vec<Edges> = (old.iter())
+            .flat_map(|&(part, _, was)| [Edges::of(was), Edges::of(self.scene.boxes[part])])
+            .collect();
+        let Some(all) = parts.iter().copied().reduce(Edges::round) else {
             return Vec::new();
         };
+        let mut near = vec![0; self.bounds.len().div_ceil(64)];
+        for part in &parts {
+            self.near.add(part, &mut near);
+        }
         let mut rounds = Vec::new();
-        for (line, bounds) in self.bounds.iter().enumerate() {
-            if !bounds.near(&all) || self.moved(line) || !parts().any(|part| bounds.near(&part)) {
-                continue;
-            }
-            let sketch = &self.weighed.sketches[line];
-            let added: f64 = (old.iter())
-                .filter(|&&(part, _, _)| self.scene.blocks(line, part))
-                .map(|&(part, _, was)| sketch.round(self.scene.boxes[part]) - sketch.round(was))
-                .sum();
-            if added != 0.0 {
-                rounds.push((line, added));
+        for (word, mut near) in near.into_iter().enumerate() {
+            while near != 0 {
+                let line = word * 64 + near.trailing_zeros() as usize;
+                near &= near - 1;
+                let bounds = &self.bounds[line];
+                if !bounds.near(&all) || self.moved(line) || !parts.iter().any(|at| bounds.near(at))
+                {
+                    continue;
+                }
+                let sketch = &self.weighed.sketches[line];
+                let added: f64 = (old.iter())
+                    .filter(|&&(part, _, _)| self.scene.blocks(line, part))
+                    .map(|&(part, _, was)| sketch.round(self.scene.boxes[part]) - sketch.round(was))
+                    .sum();
+                if added != 0.0 {
+                    rounds.push((line, added));
+                }
             }
         }
         rounds
@@ -462,6 +499,7 @@ impl<'p> Search<'p> {
         let weighed = &mut self.weighed;
         for (line, (sketch, chord, cost)) in change.lines.into_iter().zip(change.fresh) {
             self.bounds[line] = Edges::line(&self.scene, line);
+            self.near.set(line, &self.bounds[line]);
             weighed.sketches[line] = sketch;
             weighed.chords[line] = chord;
             weighed.own[line] = cost;
