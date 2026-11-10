@@ -27,6 +27,7 @@ interface PullFacts {
 /** What the workflow's inputs and environment say. */
 interface Inputs {
 	readonly cli: string;
+	readonly workspace: string;
 	readonly directory: string;
 	readonly hosting: Hosting;
 	readonly access: ApiAccess;
@@ -95,6 +96,7 @@ function readInputs(): Inputs {
 	const reportFile = input("ARCHBOARD_INPUT_REPORT_FILE", "");
 	return {
 		cli: input("ARCHBOARD_BIN", "archboard"),
+		workspace,
 		directory: resolve(workspace, input("ARCHBOARD_INPUT_WORKING_DIRECTORY", ".")),
 		hosting: { server: input("GITHUB_SERVER_URL", "https://github.com"), repository },
 		access: {

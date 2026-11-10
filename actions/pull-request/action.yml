@@ -45,8 +45,11 @@ inputs:
     default: "archboard: out of plan"
   report-file:
     description: >-
-      A file, relative to the workspace, that takes the report in place of the comment. The Action
-      writes the Markdown that it would post to that file, its hidden marker included. It then posts
+      A file inside the workspace that takes the report in place of the comment. Relative paths
+      start at the workspace. Absolute paths must stay inside it. Symlinks are refused, and missing
+      parent directories are created. A write failure fails the step without setting `report`.
+
+      The Action writes the Markdown that it would post to that file, its hidden marker included. It then posts
       and edits no comment and writes no job summary. A later step puts the report where the team
       wants it, such as the job summary. The plan check annotates and fails the step as it does
       without this input.

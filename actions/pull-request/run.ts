@@ -6,8 +6,8 @@
 // it is.
 
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
-import { appendFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { appendFileSync, existsSync, rmSync } from "node:fs";
+import { join, relative } from "node:path";
 import { noVaultComment, planProblem, pullRequestComment } from "./comment.ts";
 import type { PullRequestReport } from "./comment.ts";
 import { addWorktree, archboard, firstLine, readContext } from "./context.ts";
@@ -21,6 +21,7 @@ import { chooseState, decideOutOfPlan } from "./plan.ts";
 import type { ModelState, StateChoice } from "./plan.ts";
 import { proposalPlan } from "./proposal-plan.ts";
 import type { Buckets, ModelReading, ProposalPlan } from "./proposal-plan.ts";
+import { writeReportFile } from "./report-file.ts";
 import { input, parseJson, run } from "../shared/process.ts";
 import { annotationLine, outputLines } from "../shared/workflow-commands.ts";
 
@@ -246,8 +247,7 @@ function buildReport(
  */
 async function publish(context: Context, markdown: string, create: boolean): Promise<void> {
 	if (context.reportFile !== undefined) {
-		mkdirSync(dirname(context.reportFile), { recursive: true });
-		writeFileSync(context.reportFile, markdown);
+		writeReportFile(context.workspace, context.reportFile, markdown);
 		const outputs = input("GITHUB_OUTPUT", "");
 		if (outputs !== "") appendFileSync(outputs, outputLines({ report: context.reportFile }));
 		return;

@@ -3,8 +3,8 @@
 // on their own. The entry runs against a stand-in `archboard` and a stand-in GitHub API.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { pullRequestComment } from "../../../actions/pull-request/comment.ts";
 import type { PullRequestReport } from "../../../actions/pull-request/comment.ts";
 import {
@@ -225,6 +225,19 @@ describe("the entry", () => {
 		return { ...result, commands: readFileSync(join(folder, "commands.log"), "utf8"), folder };
 	}
 
+	/**
+	 * Read a saved report and assert its workflow handover.
+	 * @param result The completed step.
+	 * @param file The report's input path.
+	 * @returns The complete Markdown.
+	 */
+	function savedReport(result: Awaited<ReturnType<typeof step>>, file: string): string {
+		const path = resolve(checkout, file);
+		expect(readFileSync(join(result.folder, "output"), "utf8")).toBe(`report=${path}\n`);
+		expect(existsSync(join(result.folder, "summary.md"))).toBe(false);
+		return readFileSync(path, "utf8");
+	}
+
 	test("warns about a change outside the plan and posts a text comment with the vault link", async () => {
 		const result = await step();
 		expect(result.exitCode).toBe(0);
@@ -266,25 +279,30 @@ describe("the entry", () => {
 	});
 
 	test("proposals that cannot be read fail the step in fail mode, whether the CLI refuses or prints nothing", async () => {
-		const refused = await step(
-			{ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" },
-			{
-				proposals: JSON.stringify({
-					success: false,
-					code: "MODEL_INVALID",
-					error: "The canonical model cannot be read coherently.",
-					diagnostics: [
-						{ code: "MALFORMED_JSON", file: "model.json", message: "Unexpected EOF\nat line 1" },
-					],
-				}),
-			},
-		);
+		const proposals = JSON.stringify({
+			success: false,
+			code: "MODEL_INVALID",
+			error: "The canonical model cannot be read coherently.",
+			diagnostics: [
+				{ code: "MALFORMED_JSON", file: "model.json", message: "Unexpected EOF\nat line 1" },
+			],
+		});
+		const refused = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" }, { proposals });
 		expect(refused.exitCode).toBe(1);
 		expect(refused.stdout).toContain("::error title=Archboard plan::");
 		expect(comments.at(-1)?.body).toContain("MODEL_INVALID");
 		expect(comments.at(-1)?.body).toContain(COMMENT_MARKER);
 		expect(comments.at(-1)?.body).toContain("MALFORMED_JSON");
 		expect(comments.at(-1)?.body).toContain("model.json");
+		const body = comments.at(-1)?.body;
+		const filed = await step(
+			{ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail", ARCHBOARD_INPUT_REPORT_FILE: "reports/refused.md" },
+			{ proposals },
+		);
+		expect(filed.exitCode).toBe(refused.exitCode);
+		expect(savedReport(filed, "reports/refused.md")).toBe(body ?? "");
+		expect(annotations(filed.stdout)).toEqual(annotations(refused.stdout));
+		expect(comments.at(-1)?.body).toBe(body);
 		const silent = await step({}, { proposals: "" });
 		expect(silent.exitCode).toBe(0);
 		expect(silent.stdout).toContain("::warning title=Archboard plan::");
@@ -357,15 +375,51 @@ describe("the entry", () => {
 			ARCHBOARD_INPUT_OUT_OF_PLAN: "fail",
 			ARCHBOARD_INPUT_REPORT_FILE: "reports/architecture.md",
 		});
-		const file = join(checkout, "reports/architecture.md");
-		expect(readFileSync(file, "utf8")).toBe(before.at(-1) ?? "");
-		expect(readFileSync(join(filed.folder, "output"), "utf8")).toBe(`report=${file}\n`);
-		expect(existsSync(join(filed.folder, "summary.md"))).toBe(false);
+		expect(savedReport(filed, "reports/architecture.md")).toBe(before.at(-1) ?? "");
 		expect(comments.map((one) => one.body)).toEqual(before);
-		expect(requests.slice(sent).filter((one) => one.includes("/comments"))).toHaveLength(0);
+		expect(requests.slice(sent)).toEqual(["GET /repos/owner/name/pulls/7"]);
 		expect(commented.exitCode).toBe(1);
 		expect(filed.exitCode).toBe(commented.exitCode);
 		expect(annotations(filed.stdout)).toEqual(annotations(commented.stdout));
+	});
+
+	test("escaping paths, symlinks and unwritable report destinations fail without publishing", async () => {
+		const outside = join(root, "work-outside");
+		mkdirSync(outside);
+		const protectedFile = join(outside, "report.md");
+		writeFileSync(protectedFile, "keep");
+		symlinkSync(outside, join(checkout, "outside-link"));
+		symlinkSync(protectedFile, join(checkout, "report-link.md"));
+		symlinkSync(join(outside, "missing.md"), join(checkout, "dangling-report.md"));
+		const before = comments.map((one) => one.body);
+		const sent = requests.length;
+		for (const file of [
+			protectedFile,
+			"../work-outside/report.md",
+			"outside-link/new/report.md",
+			"report-link.md",
+			"dangling-report.md",
+			"reports",
+			"a.txt/report.md",
+		]) {
+			const result = await step({ ARCHBOARD_INPUT_REPORT_FILE: file });
+			expect(result.exitCode).toBe(2);
+			expect(annotations(result.stdout).some((line) => line.startsWith("::error"))).toBe(true);
+			expect(existsSync(join(result.folder, "output"))).toBe(false);
+			expect(existsSync(join(result.folder, "summary.md"))).toBe(false);
+		}
+		expect(readFileSync(protectedFile, "utf8")).toBe("keep");
+		expect(existsSync(join(outside, "new"))).toBe(false);
+		expect(existsSync(join(outside, "missing.md"))).toBe(false);
+		expect(comments.map((one) => one.body)).toEqual(before);
+		expect(requests.slice(sent).filter((one) => one.includes("/comments"))).toHaveLength(0);
+	});
+
+	test("an absolute report path inside the workspace names the written file", async () => {
+		const file = join(checkout, "absolute", "report.md");
+		const result = await step({ ARCHBOARD_INPUT_REPORT_FILE: file });
+		expect(result.exitCode).toBe(0);
+		expect(savedReport(result, file).startsWith(COMMENT_MARKER)).toBe(true);
 	});
 
 	test("a run of an older head does not post its comment", async () => {
@@ -426,6 +480,12 @@ describe("the entry", () => {
 		expect(comments).toHaveLength(count);
 		const sticky = comments.find((one) => one.body.includes(COMMENT_MARKER));
 		expect(sticky?.body).toContain(headSha.slice(0, 7));
+		const sent = requests.length;
+		const filed = await step({ ARCHBOARD_INPUT_REPORT_FILE: "reports/no-vault.md" });
+		expect(filed.exitCode).toBe(updated.exitCode);
+		expect(annotations(filed.stdout)).toEqual(annotations(updated.stdout));
+		expect(savedReport(filed, "reports/no-vault.md")).toBe(sticky?.body ?? "");
+		expect(requests.slice(sent)).toEqual(["GET /repos/owner/name/pulls/7"]);
 		comments.length = 0;
 		expect((await step()).exitCode).toBe(0);
 		expect(comments).toHaveLength(0);

@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: 2026-11-09 01:35
-updated_date: '2026-11-09T05:26:00Z'
+updated_date: '2026-11-10T15:05:00Z'
 labels:
   - actions
 dependencies: []
@@ -38,6 +38,8 @@ The pull-request Action (TASK-615) always posts its report as a pull request com
 4. Docs: actions/README.md and the pull-requests guide show the job summary step. The Actions reference page renders the input and output from action.yml.
 5. System test in tests/system/actions/pull-request-action.test.ts: one run without and one with the input in fail mode. The file equals the posted body, the step makes no comment request and writes no job summary, the output names the file, and the exit status and annotations match.
 6. Gate: format:check, lint:all, types, test:system, test:repository, check:model, and the site build with its guide and link checks.
+
+Fresh PR review: enforce the promised workspace destination, including parent and file symlinks. Align both workflow examples. Correct the Pull-request Action module through the public model interface. Keep report delivery and plan decisions shared.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -56,6 +58,8 @@ Evidence. tests/system/actions/pull-request-action.test.ts, test "a report file 
 Gate inside nix develop: vp run format:check passed; vp run lint:all passed (9/9); vp run types passed; vp run test:system 281 pass, 0 fail; vp run test:repository 170 pass, 0 fail; vp run check:model passed with no findings; the site build passed: scripts 8 pass, 7 guides agree with the CLI and the Actions, astro check 0 errors, every internal link of 17 pages resolves. A fresh worktree needs bun site/scripts/paint.ts before the site build.
 
 Left as it is: the model's Pull-request Action module text describes the default comment and its permissions, which still hold. It does not mention the report file. bun install changed bun.lock (a package version left behind by the 0.3.0 release); that change is not part of this work and is not committed.
+
+Fresh review: the promised workspace path accepted absolute escapes, parent traversal, and checkout symlinks. The report writer now refuses those destinations, accepts absolute paths inside the workspace, and creates missing parent directories. Both guides use reports/architecture.md and explain refusals. The regression test failed before the fix with exit 0 for an external target. Additional assertions cover file outputs for model refusals and missing vaults, and write failures with no output or publication. The writer remains the single file delivery path. GitHub documents contents read as sufficient for GET /pulls/{number}, so the permission claim needs no change.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
