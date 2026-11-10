@@ -79,7 +79,9 @@ pub(super) fn rank(lines: &[PlacedLine]) -> (usize, u64) {
 /// How a finished drawing ranks: whether its words read where it lands, its long detours, then
 /// the work of tracing its lines, with its crowded approaches, its dead space and the pane it
 /// leaves blank. A large page whose space its cards and lines use costs nothing for its size,
-/// but a page whose shape leaves the pane blank where it lands pays for that blank.
+/// but a page whose shape leaves the pane blank where it lands pays for that blank. A page whose
+/// words do not read counts no long detours: a detour there pays for its length only, so a
+/// crowded reading can take a smaller page with fewer crossings over one with no detour.
 pub(super) type Order = (bool, usize, f64);
 
 /// The scale that a landing must reach for its words to read (the first gate of the reader).
@@ -121,9 +123,10 @@ pub(super) const READABLE: (f64, f64) = (LANDING_ROOM.0 / NEAR_SCALE, LANDING_RO
 pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
     let routed = &as_routed(drawing).edges;
     let (crowded, cost) = rank(routed);
+    let unreadable = drawing.width > READABLE.0 || drawing.height > READABLE.1;
     (
-        drawing.width > READABLE.0 || drawing.height > READABLE.1,
-        long_detours(routed),
+        unreadable,
+        if unreadable { 0 } else { long_detours(routed) },
         f64::from_bits(cost)
             + crowded as f64 * CROWDED_COST
             + dead_space(drawing) * crowding(drawing.width, drawing.height) / DEAD_SPACE
@@ -451,6 +454,48 @@ mod tests {
             ..readable.clone()
         };
         assert!(order(&readable) < order(&unreadable));
+    }
+
+    /// The same two pages, one with a short line that runs a long way round, one with a longer
+    /// straight line, at a size whose words read and at one whose words do not. A card fills
+    /// each page, so neither leaves blank space.
+    #[test]
+    fn only_a_page_that_reads_ranks_by_its_long_detours() {
+        let page = |width: f64, points: Vec<Point>| Placed {
+            width,
+            height: 1000.0,
+            cards: vec![PlacedCard {
+                id: "filler".into(),
+                bx: Rect {
+                    x: 0.0,
+                    y: 0.0,
+                    width,
+                    height: 1000.0,
+                },
+                depth: 0,
+                header: None,
+            }],
+            frames: Vec::new(),
+            regions: Vec::new(),
+            edges: vec![PlacedLine {
+                id: "line".into(),
+                points,
+                label: None,
+            }],
+            titles: Vec::new(),
+            routed: None,
+        };
+        let at = |x: f64, y: f64| Point { x, y };
+        let around = vec![
+            at(0.0, 100.0),
+            at(0.0, 400.0),
+            at(1000.0, 400.0),
+            at(1000.0, 100.0),
+        ];
+        let straight = vec![at(0.0, 600.0), at(1950.0, 600.0)];
+        let (reads, wide) = (2000.0, READABLE.0 + 100.0);
+        assert!(order(&page(reads, straight.clone())) < order(&page(reads, around.clone())));
+        assert!(order(&page(wide, around)) < order(&page(wide, straight)));
     }
 
     /// Pages that land at full scale, each with one line of the same length. On pages as tall as

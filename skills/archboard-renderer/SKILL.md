@@ -55,9 +55,14 @@ gives up on a route. The wrong fix routes the picture twice and keeps the old pl
 - `reading::order` and `reading::rank` in `blocks/planned/reading.rs` rank finished drawings:
   whether the page reads where it lands, then the count of long detours, then one sum. The sum
   adds route cost with crossings, crowded approaches, the dead space that counts as the page
-  nears the landing room, and the pane that the page leaves blank below full scale. A long detour
-  outranks every cost, so a change that removes one detour can change which placement wins. If
-  the ranking itself is wrong, change the ranking. Otherwise leave it alone.
+  nears the landing room, and the pane that the page leaves blank below full scale. On a page
+  that reads, a long detour outranks every cost, so a change that removes one detour can change
+  which placement wins. A page that does not read counts no detours. If the ranking itself is
+  wrong, change the ranking. Otherwise leave it alone.
+- Three frames or more stand in rows or in stacks side by side (`together` in
+  `blocks/planned/dense/together.rs`). The readings of the repository's own model open one frame
+  each, so a corpus of them never reaches this code. Measure a change here on readings with
+  several groups open.
 - Routing is greedy. One line that takes a shorter way can force later lines into detours.
 - `finish` in `blocks/planned/fixed.rs` is the last guard. It places the labels, checks every
   line, the port spacing and the fan runs. Contraction runs it again. A pass that edits routes

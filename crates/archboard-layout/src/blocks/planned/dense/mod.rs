@@ -1,5 +1,5 @@
 //! A dense placement: the parts of each open frame on a grid below its edge tab,
-//! the frames in a row or a stack, and the cards outside them round that whole.
+//! the frames in rows or in stacks (`together`), and the cards outside them round that whole.
 //! One stated cost weighs a placement (`sketch`): the length of a quick sketch of every
 //! line, its bends, the way round what it runs through, its crossings, and how far
 //! apart the members of each group stand. A search moves the parts between cells
@@ -18,6 +18,7 @@ mod sketch;
 mod stand;
 #[cfg(test)]
 mod tests;
+mod together;
 
 use std::cell::RefCell;
 
@@ -35,6 +36,7 @@ pub(super) use room::Room;
 pub(super) use search::Grids;
 use search::Staged;
 use stand::Stood;
+use together::together;
 
 /// Room between two cells before routing. Contraction takes back what the routes leave.
 const CELL_GAP: f64 = 96.0;
@@ -52,11 +54,6 @@ const CROWDED_ROOT: usize = 18;
 /// The tallest placement that contraction can still bring into the pane. Several
 /// frames stack past it, because a stack still lands larger than the row they make.
 const TALLEST: f64 = 1950.0;
-/// Room between two frames before routing. Contraction takes back what the routes leave.
-const FRAME_GAP: f64 = 112.0;
-/// The share of the readable page's width that three frames or more fill in their rows. The
-/// doors that stand round the frames widen the page more than they heighten it.
-const ROWS_SHARE: f64 = 0.6;
 
 /// The room outside the outermost cards, where a line may run round them.
 const PAGE_ROOM: f64 = 64.0;
@@ -332,86 +329,6 @@ fn middle_of(cell: Rect, node: &Node) -> Rect {
     }
 }
 
-/// Where each frame stands in the whole that the doors stand round, and that whole's size. A
-/// stack holds rows as wide as its widest frame. Otherwise one row holds one frame or two. Three
-/// frames or more take rows as wide as lands their whole at the largest scale on the readable
-/// page, so they make neither a strip nor a column.
-fn together(sizes: &[Point], stacked: bool, room: f64) -> (Vec<Point>, Point) {
-    let gap = FRAME_GAP + room;
-    let widest = sizes.iter().map(|size| size.x).fold(0.0, f64::max);
-    if stacked {
-        return in_rows(sizes, widest, gap);
-    }
-    if sizes.len() < 3 {
-        return in_rows(sizes, f64::INFINITY, gap);
-    }
-    let page = readable();
-    let scale = |whole: Point| (whole.x / (page.x * ROWS_SHARE)).max(whole.y / page.y);
-    row_widths(sizes, gap, widest)
-        .into_iter()
-        .map(|width| in_rows(sizes, width, gap))
-        .min_by(|a, b| scale(a.1).total_cmp(&scale(b.1)))
-        .unwrap_or_else(|| in_rows(sizes, f64::INFINITY, gap))
-}
-
-/// Each width at which the frames fill their rows another way: the width of every run of frames
-/// in their order, from the widest frame up. The narrowest comes first.
-fn row_widths(sizes: &[Point], gap: f64, widest: f64) -> Vec<f64> {
-    let mut widths: Vec<f64> = (0..sizes.len())
-        .flat_map(|start| {
-            sizes[start..].iter().scan(-gap, move |width, size| {
-                *width += gap + size.x;
-                Some(*width)
-            })
-        })
-        .filter(|&width| width >= widest)
-        .collect();
-    widths.sort_by(f64::total_cmp);
-    widths.dedup();
-    widths
-}
-
-/// The frames in rows no wider than a width, and that whole's size. Each frame takes the first
-/// row with room, so a small frame late in the order fills what a short row leaves.
-fn in_rows(sizes: &[Point], width: f64, gap: f64) -> (Vec<Point>, Point) {
-    let mut rows: Vec<Point> = Vec::new();
-    let seats: Vec<(usize, f64)> = sizes
-        .iter()
-        .map(|size| {
-            let row = rows
-                .iter()
-                .position(|row| row.x + gap + size.x <= width)
-                .unwrap_or_else(|| {
-                    rows.push(Point { x: -gap, y: 0.0 });
-                    rows.len() - 1
-                });
-            let x = rows[row].x + gap;
-            rows[row] = Point {
-                x: x + size.x,
-                y: rows[row].y.max(size.y),
-            };
-            (row, x)
-        })
-        .collect();
-    let tops: Vec<f64> = rows
-        .iter()
-        .scan(0.0, |top, row| {
-            let at = *top;
-            *top += row.y + gap;
-            Some(at)
-        })
-        .collect();
-    let places = seats
-        .into_iter()
-        .map(|(row, x)| Point { x, y: tops[row] })
-        .collect();
-    let size = Point {
-        x: rows.iter().map(|row| row.x).fold(0.0, f64::max),
-        y: rows.iter().map(|row| row.y + gap).sum::<f64>() - gap,
-    };
-    (places, size)
-}
-
 impl<'a> Reading<'a> {
     fn of(graph: &'a Node) -> Option<Reading<'a>> {
         let blocks: Vec<Block<'a>> = holders(graph)?
@@ -432,7 +349,7 @@ impl<'a> Reading<'a> {
         })
     }
 
-    /// This reading's drawing, its frames in a row or a stack, with no routes yet.
+    /// This reading's drawing, its frames in rows or in stacks, with no routes yet.
     fn drawing(&self, sets: &[Set], stacked: bool, room: f64, page: Point) -> Placed {
         let stood = self.stand(sets, stacked, room, page);
         let boxes = || stood.doors.iter();

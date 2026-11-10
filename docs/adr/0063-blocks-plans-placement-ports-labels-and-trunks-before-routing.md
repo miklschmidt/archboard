@@ -25,7 +25,10 @@ It also pays for the pane that this box leaves blank, as a finished drawing does
 It refuses a page that does not read where it lands while a page that reads holds the cards.
 Among the routes that pass the guards, the router prefers one that meets such a card on a side that faces the line's far end.
 Each grid width gives one placement, and a reading of several frames gives one more with the frames stacked.
-Otherwise two frames stand in one row. Three frames or more stand in the rows that land them at the largest scale on 0.6 of the readable page's width, because the outside cards widen the page more than they heighten it.
+Otherwise two frames stand in one row. Three frames or more stand in rows, and in the placement with the frames stacked, in stacks side by side.
+The frames share the stacks the way that lands their whole largest, so a short frame stands under another beside a tall one and leaves no blank as tall as that frame.
+Each stack holds its frames in their order. A reading of more than eight frames puts each frame in the shortest stack, because the ways to share them grow too many to weigh.
+Rows and stacks each take the count that lands the frames at the largest scale on 0.6 of the readable page's width, because the outside cards widen the page more than they heighten it.
 Each placement is priced again on its drawn frame, whose columns and rows are as wide as what they hold.
 Each placement also has a variant whose outside cards can stand one gap further out, because contraction takes that room back.
 A reading with more than 64 relationships searches every grid width briefly and goes on with the two cheapest only.
@@ -37,6 +40,8 @@ A way straight along a column or a row past another part asks for the room besid
 That room is on the side that faces the frame's middle, because room between the rows that the line passes does not let it by.
 No line asks once the reading has a drawing that reads where it lands and has no long detour.
 Finished drawings rank first by whether the page reads where it lands, then by their long detours.
+A page that does not read counts no long detours, and a detour there pays only for its length.
+Such a reading is crowded, and a smaller page with fewer crossings serves it better than a page with no detour.
 Then they rank by route cost plus crowded approaches plus blank space.
 Blank space is the area farther than 48 px from every card, line, label, frame title and group caption.
 On a page that fills the landing room, 96 px² of blank space costs as much as 1 px of line.
