@@ -36,7 +36,7 @@ file, and a later step puts the report where you want it, such as the job summar
 - uses: miklschmidt/archboard/actions/pull-request@<commit SHA of the tag> # v0.3.0
   id: architecture
   with:
-    report-file: reports/architecture.md
+    report-file: ${{ runner.temp }}/architecture.md
 - if: always() && steps.architecture.outputs.report != ''
   run: cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
   env:
@@ -45,8 +45,7 @@ file, and a later step puts the report where you want it, such as the job summar
 
 `always()` runs the last step also when the plan check fails the action's step.
 
-Relative paths start at the workspace. Absolute paths must stay inside it, and paths cannot use symlinks.
-The Action creates missing parent directories. If the file cannot be written, the step fails and sets no `report` output.
+A relative path starts at the workspace. The Action creates missing parent directories. If the file cannot be written, the step fails and sets no `report` output.
 
 ## This repository
 

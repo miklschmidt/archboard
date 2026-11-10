@@ -217,7 +217,7 @@ jobs:
         id: architecture
         with:
           version: "{{version}}"
-          report-file: reports/architecture.md
+          report-file: ${{ runner.temp }}/architecture.md
       - if: always() && steps.architecture.outputs.report != ''
         run: cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
         env:
@@ -226,8 +226,7 @@ jobs:
 
 `always()` runs the last step also when the plan check fails the Action's step.
 
-Relative paths start at the workspace. Absolute paths must stay inside it, and paths cannot use symlinks.
-The Action creates missing parent directories. If the file cannot be written, the step fails and sets no [`report`](../reference/actions/#pull-request-report) output.
+A relative path starts at the workspace. The Action creates missing parent directories. If the file cannot be written, the step fails and sets no [`report`](../reference/actions/#pull-request-report) output.
 
 ## Explain the change in the description
 

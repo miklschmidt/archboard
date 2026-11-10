@@ -3,7 +3,7 @@
 // on their own. The entry runs against a stand-in `archboard` and a stand-in GitHub API.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { COMMENT_MARKER } from "../../../actions/pull-request/marker.ts";
 import { fixture, runEntryAsync, scratch, writeStandIn } from "./support.ts";
@@ -311,40 +311,20 @@ describe("the entry", () => {
 		expect(annotations(filed.stdout)).toEqual(annotations(commented.stdout));
 	});
 
-	test("escaping paths, symlinks and unwritable report destinations fail without publishing", async () => {
-		const outside = join(root, "work-outside");
-		mkdirSync(outside);
-		const protectedFile = join(outside, "report.md");
-		writeFileSync(protectedFile, "keep");
-		symlinkSync(outside, join(checkout, "outside-link"));
-		symlinkSync(protectedFile, join(checkout, "report-link.md"));
-		symlinkSync(join(outside, "missing.md"), join(checkout, "dangling-report.md"));
+	test("an unwritable report file fails the step without publishing", async () => {
 		const before = comments.map((one) => one.body);
 		const sent = requests.length;
-		for (const file of [
-			protectedFile,
-			"../work-outside/report.md",
-			"outside-link/new/report.md",
-			"report-link.md",
-			"dangling-report.md",
-			"reports",
-			"a.txt/report.md",
-		]) {
-			const result = await step({ ARCHBOARD_INPUT_REPORT_FILE: file });
-			expect(result.exitCode).toBe(2);
-			expect(annotations(result.stdout).some((line) => line.startsWith("::error"))).toBe(true);
-			expect(existsSync(join(result.folder, "output"))).toBe(false);
-			expect(existsSync(join(result.folder, "summary.md"))).toBe(false);
-		}
-		expect(readFileSync(protectedFile, "utf8")).toBe("keep");
-		expect(existsSync(join(outside, "new"))).toBe(false);
-		expect(existsSync(join(outside, "missing.md"))).toBe(false);
+		const result = await step({ ARCHBOARD_INPUT_REPORT_FILE: "a.txt/report.md" });
+		expect(result.exitCode).toBe(2);
+		expect(annotations(result.stdout).some((line) => line.startsWith("::error"))).toBe(true);
+		expect(existsSync(join(result.folder, "output"))).toBe(false);
+		expect(existsSync(join(result.folder, "summary.md"))).toBe(false);
 		expect(comments.map((one) => one.body)).toEqual(before);
 		expect(requests.slice(sent).filter((one) => one.includes("/comments"))).toHaveLength(0);
 	});
 
-	test("an absolute report path inside the workspace names the written file", async () => {
-		const file = join(checkout, "absolute", "report.md");
+	test("an absolute report path outside the workspace names the written file", async () => {
+		const file = join(root, "runner-temp", "report.md");
 		const result = await step({ ARCHBOARD_INPUT_REPORT_FILE: file });
 		expect(result.exitCode).toBe(0);
 		expect(savedReport(result, file).startsWith(COMMENT_MARKER)).toBe(true);
