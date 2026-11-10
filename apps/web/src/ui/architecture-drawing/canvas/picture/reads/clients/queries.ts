@@ -246,7 +246,8 @@ function iconQuery(name: string) {
 		 * @returns The paths.
 		 */
 		queryFn: async (context): Promise<readonly string[]> => {
-			const response = await fetch(`/assets/diagram-icons/${encodeURIComponent(name)}.json`, {
+			// Relative, so it resolves against the base of the document, as the renderer's icons do.
+			const response = await fetch(`assets/diagram-icons/${encodeURIComponent(name)}.json`, {
 				signal: context.signal,
 			});
 			if (!response.ok) throw new Error(`No icon called ${name}`);

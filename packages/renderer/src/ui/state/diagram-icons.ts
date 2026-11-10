@@ -11,8 +11,11 @@ import { z } from "zod";
 import type { SemanticPolicy } from "@archboard/model/policy";
 import { iconsNamedBy } from "#shared/render/rules/policy-icons.ts";
 
-/** Where the server serves one icon's path data. */
-const ICON_URL = "/assets/diagram-icons";
+/**
+ * Where the server serves one icon's path data. It is relative, so a fetch resolves it against
+ * the base of the document, and a build served under a sub-path reads its own icons.
+ */
+const ICON_URL = "assets/diagram-icons";
 
 const IconSchema = z.object({ paths: z.array(z.string()) });
 

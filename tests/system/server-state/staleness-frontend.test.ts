@@ -36,7 +36,7 @@ describe.serial("frontend staleness", () => {
 			mkdirSync(dirname(indexFile), { recursive: true });
 			writeFileSync(
 				indexFile,
-				'<!doctype html><script type="module" src="/assets/index-task13008.js"></script>\n',
+				'<!doctype html><script type="module" src="./assets/index-task13008.js"></script>\n',
 			);
 			resources.defer(() => {
 				rmSync(indexFile, { force: true });
@@ -54,7 +54,7 @@ describe.serial("frontend staleness", () => {
 		if (!expectedBuild) {
 			throw new Error("The owned frontend index names no module bundle.");
 		}
-		expect(expectedBuild).toStartWith("/assets/");
+		expect(expectedBuild).toStartWith("./assets/");
 
 		const root = mkdtempSync(join(tmpdir(), "archboard-staleness-frontend-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));

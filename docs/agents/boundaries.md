@@ -858,6 +858,12 @@ behavior has an index: a caller imports the file that defines a name.
   `src/ui/theme/`, because a stylesheet is no role; the plugin judges TypeScript only. Its `@source` paths are
   relative to it. `vite.config.ts` stays at the repository root and names the root, the output and the dev server's
   `fs.allow`, which lets the dev server serve `packages/` and `node_modules` outside the root.
+  The build uses Vite base `./`. Its assets, core, workers, and fonts resolve within the build directory.
+  The router uses the directory of `document.baseURI` and accepts `index.html` as the directory route.
+  Both icon readers fetch `assets/diagram-icons/<name>.json` relative to the document base.
+  That route still needs the Archboard server. The build contains no static icon files.
+  Model reads, API requests, and sockets also still need the live server at its root paths.
+  This relocation does not connect the app to a model snapshot or its embedded icon paths.
 - `src/ui/` is the `ui` area. Each behavior is a folder, and its role folders sit inside it.
   `application` owns the root, the pane records and lists, the agent surfaces and the workspace port.
   `shell` owns the frame, navigator and rows. `panes/` holds the jobs of one pane: `pane-session` owns its socket,

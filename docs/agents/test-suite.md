@@ -840,6 +840,7 @@ Canonical navigation, proposal, and walkthrough browser owners retain visible ar
 
 `measured-text.test.ts` uses canonical input while retaining the browser-versus-Bun font comparison and theme assertions.
 `browser-drawn-pictures.test.ts` retains local rendering, icons, persistent scene reuse, theme recoloring, and invalidation after a public module edit.
+It also serves the build under a sub-path, as a static host serves a project, and draws a model there with every asset, worker, core and icon read from that path.
 Canonical drawings use the existing IndexedDB picture store and the public render schema for cached geometry.
 Their cache identity includes the renderer build and the exact prepared scene.
 

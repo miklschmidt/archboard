@@ -28,7 +28,8 @@ import { initializeSource } from "./support/canonical-model.ts";
 // picture is asked of the server, the icons a picture names arrive, a picture
 // this browser already drew is shown again without laying anything out, a
 // theme switch recolours the picture on screen without drawing another, and a
-// change to the model is drawn again.
+// change to the model is drawn again. A copy of the build served under a
+// sub-path, as a static host serves a project, draws there too.
 
 /** Short on purpose: each wait names itself well inside the owner's budget. */
 const WAIT = { timeoutMs: 8_000 } as const;
@@ -172,6 +173,121 @@ test("the page draws a model itself, keeps the picture, recolours it for a theme
 		WAIT,
 	);
 	expect(keptAfter).not.toEqual(keptBefore);
+
+	await server.assertRunning();
+}, 40_000);
+
+/** Where the host below serves the build, as a static host serves a project. */
+const SUB_PATH = "/project/";
+
+/**
+ * Serve an Archboard server's page under a sub-path: a request under it reaches the server
+ * without it, as a static host serves a build from its own directory. Every other request,
+ * the API and the sockets among them, reaches the server unchanged. The server admits a page
+ * of its own origin only, so the host names that origin when it passes a request on.
+ * @param serverBase The server.
+ * @returns The host's origin, and how to stop it.
+ */
+function serveUnderSubPath(serverBase: string): { base: string; stop: () => Promise<void> } {
+	const target = new URL(serverBase);
+	const forwarded = (url: URL): URL => {
+		const path = url.pathname.startsWith(SUB_PATH)
+			? url.pathname.slice(SUB_PATH.length - 1)
+			: url.pathname;
+		return new URL(`${path}${url.search}`, target);
+	};
+	const sameOrigin = (headers: Headers): Headers => {
+		const next = new Headers(headers);
+		next.delete("host");
+		if (next.has("origin")) next.set("origin", target.origin);
+		if (next.has("referer")) next.set("referer", `${target.origin}/`);
+		return next;
+	};
+	/** One socket of the page, and the socket to the server it relays. Both speak JSON text. */
+	interface Relay {
+		readonly url: URL;
+		upstream?: WebSocket;
+		readonly waiting: string[];
+	}
+	const host = Bun.serve<Relay>({
+		hostname: "127.0.0.1",
+		port: 0,
+		fetch: async (request, server) => {
+			const url = forwarded(new URL(request.url));
+			if (request.headers.get("upgrade")?.toLowerCase() === "websocket") {
+				url.protocol = "ws:";
+				return server.upgrade(request, { data: { url, waiting: [] } })
+					? undefined
+					: new Response("The socket did not open.", { status: 400 });
+			}
+			return fetch(url, {
+				method: request.method,
+				headers: sameOrigin(request.headers),
+				body: request.body,
+				redirect: "manual",
+			});
+		},
+		websocket: {
+			open(socket) {
+				const relay = socket.data;
+				// Sent with no Origin, which the server admits from a loopback Host.
+				const upstream = new WebSocket(relay.url);
+				relay.upstream = upstream;
+				upstream.addEventListener("open", () => {
+					for (const message of relay.waiting.splice(0)) upstream.send(message);
+				});
+				upstream.addEventListener("message", (event) => socket.send(event.data));
+				upstream.addEventListener("close", () => socket.close());
+			},
+			message(socket, message) {
+				const { upstream, waiting } = socket.data;
+				const text = String(message);
+				if (upstream?.readyState === WebSocket.OPEN) upstream.send(text);
+				else waiting.push(text);
+			},
+			close(socket) {
+				socket.data.upstream?.close();
+			},
+		},
+	});
+	return { base: `http://127.0.0.1:${host.port}`, stop: () => host.stop(true) };
+}
+
+test("a build served under a sub-path loads its assets there and draws a model", async () => {
+	await using resources = new AsyncDisposableStack();
+	const { ownerRoot } = browserTestRoots();
+	const vault = vaultIn(join(ownerRoot, "sub-path-vault"));
+	const model = await seedCanonicalModel(vault, "Pipeline");
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const host = serveUnderSubPath(server.base);
+	resources.defer(() => host.stop());
+	registerServerBase(host.base);
+
+	const browser = resources.use(await createAgentBrowser());
+	const page = `${host.base}${SUB_PATH}`;
+	await browser.run(["open", `${page}index.html?modelA=${model.manifest.id}`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await drawn(browser, "the model to be drawn from the explicit index document");
+
+	// The entry, the engine worker, the core and the icons all came from the build's own
+	// directory, and nothing was asked of the root's assets.
+	const urls = await fetched(browser);
+	const assets = urls.filter((url) => new URL(url).pathname.includes("/assets/"));
+	expect(assets.some((url) => /\/layout-worker-[^/]+\.js$/.test(url))).toBeTrue();
+	expect(assets.some((url) => url.endsWith(".wasm"))).toBeTrue();
+	expect(assets.some((url) => url.includes("/assets/diagram-icons/"))).toBeTrue();
+	expect(assets.filter((url) => !url.startsWith(`${page}assets/`))).toEqual([]);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector("${SURFACE} [data-type-icon] path") !== null`,
+		),
+	).toBeTrue();
+	// The router keeps the page where the host serves it while it writes the workspace.
+	expect(new URL(await browser.eval<string>("location.href")).pathname).toBe(SUB_PATH);
+	await browser.run(["open", `${page}?modelA=${model.manifest.id}`]);
+	await drawn(browser, "the model to be drawn under the sub-path");
 
 	await server.assertRunning();
 }, 40_000);
