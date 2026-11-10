@@ -2,14 +2,14 @@
   "order": 63500,
   "name": "Model snapshot",
   "kind": "module",
-  "responsibility": "Writes a selected reading, its comparison reading, the exact vault check, and the icons named by all three policies to one portable file",
+  "responsibility": "Writes a selected state, its comparison state, the vault check and the policy's icon paths to one portable file",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/model/operations/snapshot.ts"
   },
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "schemaVersion": 1,
   "id": "vKEsyHFk#V390L948",
-  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "outgoing": [
     {
       "order": 10,
@@ -21,8 +21,8 @@
         "path": "apps/cli/src/cli/commands/model/operations/snapshot.ts",
         "symbol": "readStates"
       },
-      "id": "vKEsyHFk#ET4L5Dvk",
-      "to": "vKEsyHFk/XppR9owz#TsCise1I"
+      "to": "vKEsyHFk/XppR9owz#TsCise1I",
+      "id": "vKEsyHFk#ET4L5Dvk"
     },
     {
       "order": 20,
@@ -34,8 +34,8 @@
         "path": "apps/cli/src/cli/commands/model/operations/snapshot.ts",
         "symbol": "modelSnapshotContract"
       },
-      "id": "vKEsyHFk#NfuvWVgE",
-      "to": "vKEsyHFk/XppR9owz#OfRn3av3"
+      "to": "vKEsyHFk/XppR9owz#OfRn3av3",
+      "id": "vKEsyHFk#NfuvWVgE"
     },
     {
       "order": 30,
@@ -47,8 +47,8 @@
         "path": "apps/cli/src/cli/commands/model/operations/snapshot.ts",
         "symbol": "modelSnapshotContract"
       },
-      "id": "vKEsyHFk#3LxjuzuP",
-      "to": "vKEsyHFk#4cb3xu6B"
+      "to": "vKEsyHFk#4cb3xu6B",
+      "id": "vKEsyHFk#3LxjuzuP"
     },
     {
       "order": 40,
@@ -60,8 +60,8 @@
         "path": "apps/cli/src/cli/commands/model/operations/snapshot.ts",
         "symbol": "modelSnapshotContract"
       },
-      "id": "vKEsyHFk#2yOgQL3i",
-      "to": "vKEsyHFk#50jWlhsK"
+      "to": "vKEsyHFk#50jWlhsK",
+      "id": "vKEsyHFk#2yOgQL3i"
     }
   ]
 }
