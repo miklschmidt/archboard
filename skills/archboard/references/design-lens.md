@@ -96,9 +96,12 @@ With a proposal, it reports:
 Footprints retain large commits with `large` and list unread modules in `skipped`.
 `unboundFiles` lists each changed file that no module is bound to, because no module shows that change. The vault's files are not listed.
 Findings alone change no exit status.
-With a proposal, `--fail-outside` makes a gate: the command exits 1 when `changedNotNamed` has a module, and names it on standard error.
 Each changed module lists in `holds` the other changed modules that are bound inside it.
-A module that holds another changed module never fails the gate, and the pull-request Action never lists it as changed outside the plan.
+An unchanged module lists none.
+With a proposal, `--fail-outside` exits 1 when a module in `changedNotNamed` has empty `holds`.
+It names each failing module on standard error.
+The pull-request Action excludes modules with nonempty `holds` from its group of modules changed outside the plan.
+If an older CLI omits `holds`, the Action counts every changed module absent from the plan.
 A file in `unboundFiles` never fails the gate.
 If a repository cannot read the requested base or head, the command names it and exits with status 2.
 Source refs stay local. The command retains no source history.
