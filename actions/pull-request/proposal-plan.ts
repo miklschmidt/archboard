@@ -66,6 +66,11 @@ interface Compared {
 /** The part of a footprint answer that names modules. */
 interface FootprintPart {
 	readonly subject: { readonly id: string; readonly name: string };
+	/**
+	 * The other changed modules that its binding holds. A module bound to a directory changes with
+	 * each of them, so it is never outside the plan. A CLI older than this field leaves it out.
+	 */
+	readonly holds?: readonly string[] | undefined;
 }
 
 /**
@@ -274,6 +279,7 @@ function proposalPlan(baseModel: ModelReading, headModel: ModelReading): Proposa
  * named and not named, else it lists them in one list.
  * @param plan The plan.
  * @returns The three buckets, every changed module, and the changed files that no module is bound to.
+ * A changed module that holds another changed module is never outside the plan.
  */
 function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 	const { named, baseOnlyBindings } = plan;
@@ -283,6 +289,9 @@ function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 		...(footprint.changedNotNamed ?? []),
 	];
 	const changed = new Map(parts.map((part) => [part.subject.id, part.subject.name]));
+	const containers = new Set(
+		parts.filter((part) => (part.holds ?? []).length > 0).map((part) => part.subject.id),
+	);
 	const unread = new Set((footprint.skipped ?? []).map((part) => part.subject.id));
 	return {
 		plannedAndChanged: [...changed]
@@ -290,7 +299,7 @@ function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 			.map(([, name]) => name)
 			.toSorted(),
 		outsidePlan: [...changed]
-			.filter(([id]) => !named.has(id))
+			.filter(([id]) => !named.has(id) && !containers.has(id))
 			.map(([, name]) => name)
 			.toSorted(),
 		plannedUnchanged: [...named]

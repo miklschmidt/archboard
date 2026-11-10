@@ -109,6 +109,7 @@ const BUILT = [
 	},
 	{ id: "pS", name: "Stranger", binding: { repo: STRANGER, path: "x.ts" } },
 	{ id: "pO", name: "Other", binding: { repo: OTHER, path: "lib.ts" } },
+	{ id: "pY", name: "Refunds", binding: { repo: SHOP, path: "src/dir/sub/y.ts" } },
 ];
 
 /**
@@ -276,7 +277,7 @@ afterAll(() => {
 test("the parts whose bound files changed between the merge base and HEAD, with their commits, and the commits of the ref's own history left out", async () => {
 	const answer = await footprint("main");
 	if (answer.proposal !== null) throw new Error("no proposal was named");
-	expect(ids(answer.changed)).toEqual(["pA", "pD", "pR", "pE"]);
+	expect(ids(answer.changed)).toEqual(["pA", "pD", "pR", "pE", "pY"]);
 	const [checkout] = answer.changed;
 	expect(checkout && subjectsOf(answer, checkout)).toEqual(["a large commit", "change a.ts"]);
 	expect(answer.changed.find((part) => part.subject.id === "pD")).toMatchObject({
@@ -314,9 +315,14 @@ test("a proposal splits the parts into named and changed, changed but not named,
 	if (answer.proposal === null) throw new Error("a proposal was named");
 	expect(answer.proposal.name).toBe("Plan");
 	expect(ids(answer.namedAndChanged)).toEqual(["pA", "pD", "pC", "pR"]);
-	expect(ids(answer.changedNotNamed)).toEqual(["pE"]);
+	expect(ids(answer.changedNotNamed)).toEqual(["pE", "pY"]);
 	expect(ids(answer.namedNotChanged)).toEqual(["pB", "pL"]);
 	expect(answer.changedNotNamed.every((part) => part.named.length === 0)).toBe(true);
+	// Payments is bound to the directory that holds the file of Refunds, so it changes with it.
+	const held = [...answer.namedAndChanged, ...answer.changedNotNamed, ...answer.namedNotChanged];
+	expect(
+		held.filter((part) => part.holds.length > 0).map((part) => [part.subject.id, part.holds]),
+	).toEqual([["pD", ["pY"]]]);
 });
 
 test("the answer says why the proposal names each part, the far end of a new relationship or step included", async () => {

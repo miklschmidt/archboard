@@ -66,6 +66,26 @@ describe("the plan of a proposal", () => {
 		});
 	});
 
+	test("a changed module that holds another is never outside the plan, unless the CLI is older", () => {
+		const plan = {
+			comparison: [],
+			named: new Map([["m#installation", "Installation"]]),
+			baseOnlyBindings: new Set<string>(),
+		};
+		const workspace = {
+			subject: { id: "m#workspace", name: "Workspace" },
+			holds: ["m#installation"],
+		};
+		const installation = { subject: { id: "m#installation", name: "Installation" }, holds: [] };
+		expect(planBuckets({ changed: [workspace, installation] }, plan)).toMatchObject({
+			plannedAndChanged: ["Installation"],
+			outsidePlan: [],
+			changed: ["Installation", "Workspace"],
+		});
+		const older = { changed: [{ subject: workspace.subject }, { subject: installation.subject }] };
+		expect(planBuckets(older, plan).outsidePlan).toEqual(["Workspace"]);
+	});
+
 	test("joins by identity when names are ambiguous, and sorts each bucket", () => {
 		const named = new Map([
 			["planned", "API"],

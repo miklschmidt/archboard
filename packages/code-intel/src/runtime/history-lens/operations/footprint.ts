@@ -28,6 +28,7 @@ import {
 	type WalkedCommit,
 } from "#runtime/history-lens/operations/commits.ts";
 import { unboundFiles } from "#runtime/history-lens/operations/unbound-files.ts";
+import { withHeld } from "#runtime/history-lens/operations/held-parts.ts";
 import { gitAnswer, type GitRunOptions } from "#runtime/history-lens/clients/git.ts";
 import { namedParts, type Named } from "#runtime/history-lens/operations/named-parts.ts";
 import { partReading, type ReadPart } from "#runtime/history-lens/operations/parts.ts";
@@ -160,6 +161,7 @@ function listed(part: ReadPart, commits: readonly string[], named: NamedReason[]
 		path: part.node.binding?.path ?? part.path,
 		commits: [...commits],
 		named,
+		holds: [],
 	};
 }
 
@@ -509,9 +511,11 @@ async function readFootprintEvidence(request: VariantFootprintRequest): Promise<
 			),
 		),
 	);
-	const changed = inOrder(
-		nodes,
-		repositories.flatMap((one) => one.changed),
+	const changed = withHeld(
+		inOrder(
+			nodes,
+			repositories.flatMap((one) => one.changed),
+		),
 	);
 	const common = {
 		base,

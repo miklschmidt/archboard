@@ -96,7 +96,7 @@ function footprintLines(answer: Footprint): string[] {
 			? [`${answer.changed.length} parts changed`]
 			: [
 					`${answer.namedAndChanged.length} planned and changed`,
-					`${answer.changedNotNamed.length} changed outside the plan`,
+					`${answer.changedNotNamed.filter((part) => part.holds.length === 0).length} changed outside the plan`,
 					`${answer.namedNotChanged.length} planned and unchanged`,
 				];
 	return [

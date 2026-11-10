@@ -179,7 +179,7 @@ archboard model footprint --base <integration-branch> --head <ticket-branch> --s
 
 It exits <Exit command="model footprint" outcome="outside" /> when the commits changed a module that the draft does not name, and names each module on standard error. Without a draft, it refuses the option, because only a draft names modules. The `archboard-plan` skill runs this gate before each ticket merge.
 
-A module bound to a directory counts only when no other changed module is bound inside it, because it changes with each of them. The Action does not apply this exception. For example, `Workspace` is bound to `libs/workspace`, and `Installation` is bound to `libs/workspace/src/installation.ts`:
+A module bound to a directory counts only when no other changed module is bound inside it, because it changes with each of them. The answer lists those other modules in the module's `holds`, and the Action applies the same rule to its group of modules changed outside the plan. For example, `Workspace` is bound to `libs/workspace`, and `Installation` is bound to `libs/workspace/src/installation.ts`:
 
 | The commits change                   | The draft names | Exit status                                                               |
 | ------------------------------------ | --------------- | ------------------------------------------------------------------------- |

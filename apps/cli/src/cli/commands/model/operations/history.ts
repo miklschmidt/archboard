@@ -6,7 +6,6 @@ import {
 import { architectureResult } from "#cli/server-access/clients/architecture-model.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
 import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
-import { outsideDraft } from "#cli/commands/model/rules/outside-draft.ts";
 import {
 	type Answer,
 	historyLines,
@@ -44,9 +43,11 @@ const WORDS = {
 			"- Changed outside the plan.",
 			"- Planned but unchanged.",
 			"",
+			"Each changed module lists, in `holds`, the other changed modules bound inside it, because a module bound to a directory changes with each of them. A module that holds another is not counted as changed outside the plan.",
+			"",
 			"It also lists, in `unboundFiles`, each changed file that no module is bound to, because no module shows that change. The files of the vault are not listed.",
 			"",
-			"With `--fail-outside`, it exits 1 when the commits changed a module that the draft does not name. A module bound to a directory counts only when no other changed module is bound inside it, because it changes with each of them. A file that no module is bound to never fails it. A gate before a merge uses it.",
+			"With `--fail-outside`, it exits 1 when the commits changed a module that the draft does not name. A module that holds another changed module never fails it. A file that no module is bound to never fails it. A gate before a merge uses it.",
 			"",
 			"A repository that cannot read the base or head is named, and the command exits 2. Source refs stay local and no source history is retained.",
 		].join("\n"),
@@ -105,10 +106,7 @@ function outsideOf(answer: Answer, failOutside: boolean) {
 			`--fail-outside judges the commits against a draft, and ${answer.state?.name ?? "the selected state"} is no draft. Name a draft with --state; \`archboard model proposals\` lists them.`,
 		);
 	}
-	return outsideDraft(answer.changedNotNamed, [
-		...answer.namedAndChanged,
-		...answer.changedNotNamed,
-	]);
+	return answer.changedNotNamed.filter((part) => part.holds.length === 0);
 }
 
 /**

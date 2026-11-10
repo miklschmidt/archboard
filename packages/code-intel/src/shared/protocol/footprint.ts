@@ -72,6 +72,11 @@ const FootprintPartSchema = BehindPartSchema.extend({
 	attribution: HistoryAttributionSchema.optional(),
 	/** Why the proposal names it; none for a part it does not name. */
 	named: z.array(NamedReasonSchema),
+	/**
+	 * The ids of the other changed parts that its binding holds: a part bound to a directory
+	 * changes with each part bound inside it. None for an unchanged part (TASK-622).
+	 */
+	holds: z.array(z.string()),
 });
 
 /** Why a checkout's range was not read. */
