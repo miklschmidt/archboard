@@ -73,6 +73,9 @@ Build the core after every change to `crates/` (see [TESTING.md](../../TESTING.m
 - `bun scripts/render-corpus.ts render <out>` and `compare <before> <after>` say which drawings
   changed and how their times moved. Times are honest only with `--jobs 1`.
 - `bun run benchmark` holds the speed limits.
+- A change for speed alone keeps every answer byte-identical. Hash each answer of the corpus
+  before and after it, natively and in WebAssembly. A cache lives inside one layout call, and a
+  solve in parts answers what one solve answers.
 
 Look at the pictures of the readings that changed most, in both themes. A number tells you where
 to look, and the picture decides.
@@ -84,6 +87,8 @@ reading picks a placement or a route, run its layout natively:
 
 1. Make the layout worker in `packages/renderer/src/runtime/bun-renderer/processes/` write each
    graph that it receives to a file, and render the reading.
+   With two workers or more, the pool sends a dense Blocks solve in parts (ADR 0078). Each
+   part is the graph with a `part` member first on its root. Delete that member to get the graph.
 2. Lay out each saved graph with `archboard_layout::lay_out_picture` in a temporary integration
    test under `crates/archboard-layout/tests/`, with `eprintln!` where the decision is made.
 3. Remove the worker change, the test and the trace before you commit.
