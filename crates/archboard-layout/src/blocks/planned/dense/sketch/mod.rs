@@ -69,6 +69,12 @@ impl Sketch {
             .sum()
     }
 
+    /// What a line costs by the sketch: its length, its bend, what it adds to go round what
+    /// stands in its way, and what the line adds where it climbs against the reading.
+    fn cost(&self, round: f64, against: f64) -> f64 {
+        self.length() + if self.bent { BEND } else { 0.0 } + round + against
+    }
+
     /// What the sketch adds to go round a box it runs through: out to the nearer side and
     /// back, with a bend each way.
     pub(super) fn round(&self, solid: Rect) -> f64 {
@@ -251,26 +257,6 @@ fn ways(a: Rect, b: Rect) -> [Option<Sketch>; 2] {
 /// What each of a line's ways adds to go round some boxes, summed in the boxes' order. A box
 /// clear of the box round both ways adds nothing to either.
 fn rounds(ways: &[Option<Sketch>; 2], boxes: impl Iterator<Item = Rect>) -> [f64; 2] {
-    let (low, high) = around(ways);
-    let mut added = [0.0; 2];
-    for at in boxes {
-        let near = low.x < at.x + at.width + TOUCH
-            && at.x < high.x + TOUCH
-            && low.y < at.y + at.height + TOUCH
-            && at.y < high.y + TOUCH;
-        if near {
-            for (sum, way) in added.iter_mut().zip(ways) {
-                if let Some(way) = way {
-                    *sum += way.round(at);
-                }
-            }
-        }
-    }
-    added
-}
-
-/// The box round a line's ways, by its low and its high corner.
-fn around(ways: &[Option<Sketch>; 2]) -> (Point, Point) {
     let spans = ways.iter().flatten().map(|way| way.span);
     let (mut low, mut high) = (
         Point {
@@ -292,7 +278,21 @@ fn around(ways: &[Option<Sketch>; 2]) -> (Point, Point) {
             y: high.y.max(span.y + span.height),
         };
     }
-    (low, high)
+    let mut added = [0.0; 2];
+    for at in boxes {
+        let near = low.x < at.x + at.width + TOUCH
+            && at.x < high.x + TOUCH
+            && low.y < at.y + at.height + TOUCH
+            && at.y < high.y + TOUCH;
+        if near {
+            for (sum, way) in added.iter_mut().zip(ways) {
+                if let Some(way) = way {
+                    *sum += way.round(at);
+                }
+            }
+        }
+    }
+    added
 }
 
 /// One line of a scene, by the boxes it joins, from its source to its target.
@@ -389,21 +389,18 @@ impl Scene {
         ways: &[Option<Sketch>; 2],
         (solid, frames): ([f64; 2], [f64; 2]),
     ) -> [Option<f64>; 2] {
+        let against = self.against(line);
+        [0, 1].map(|at| Some(ways[at].as_ref()?.cost(solid[at] + frames[at], against)))
+    }
+
+    /// What a line adds where it climbs against the reading.
+    fn against(&self, line: usize) -> f64 {
         let Line { from, to, .. } = self.lines[line];
-        let against = if centre(self.boxes[to]).y < centre(self.boxes[from]).y - SHARED {
+        if centre(self.boxes[to]).y < centre(self.boxes[from]).y - SHARED {
             AGAINST
         } else {
             0.0
-        };
-        [0, 1].map(|at| {
-            let sketch = ways[at].as_ref()?;
-            Some(
-                sketch.length()
-                    + if sketch.bent { BEND } else { 0.0 }
-                    + (solid[at] + frames[at])
-                    + against,
-            )
-        })
+        }
     }
 
     /// The chord of a line where its boxes stand.

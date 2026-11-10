@@ -7,7 +7,7 @@
 
 use crate::geometry::{Point, Rect};
 
-use super::{BEND, Scene, Sketch, TOUCH, around, rounds};
+use super::{BEND, Scene, Sketch, TOUCH, rounds};
 
 /// A solid box by the edges that a sketch is tested against: its own, and each moved in or out
 /// by the room that keeps a touch apart.
@@ -147,27 +147,13 @@ pub(in crate::blocks::planned::dense) struct InTheWay {
 }
 
 impl InTheWay {
-    /// What each of a line's ways adds to go round the solid boxes, as `rounds` sums it.
-    fn rounds(&self, ways: &[Option<Sketch>; 2]) -> [f64; 2] {
-        let (low, high) = around(ways);
-        let high = Point {
-            x: high.x + TOUCH,
-            y: high.y + TOUCH,
-        };
-        let tests = ways.map(|way| way.as_ref().map(Way::new));
-        let mut added = [0.0; 2];
+    /// What a way adds to go round the solid boxes, as `rounds` sums it. A box that the way's
+    /// box does not meet adds nothing.
+    fn round(&self, way: &Sketch) -> f64 {
+        let way = Way::new(way);
+        let mut added = 0.0;
         for solid in &self.solid {
-            let near = low.x < solid.outer.x
-                && solid.left < high.x
-                && low.y < solid.outer.y
-                && solid.top < high.y;
-            if near {
-                for (sum, way) in added.iter_mut().zip(&tests) {
-                    if let Some(way) = way {
-                        *sum += way.round(solid);
-                    }
-                }
-            }
+            added += way.round(solid);
         }
         added
     }
@@ -191,13 +177,32 @@ impl Scene {
 
     /// What a line costs among the boxes that stand in its way, solid boxes and foreign frames:
     /// what its cheapest sketch costs.
+    ///
+    /// A way costs no less than it does with no solid box in its way, so the way that costs less
+    /// so goes round the solid boxes first, and the other only where it could cost less still.
     pub(in crate::blocks::planned::dense) fn cost_among(&self, line: usize, way: &InTheWay) -> f64 {
         let ways = self.ways(line);
-        let solid = way.rounds(&ways);
         let frames = rounds(&ways, way.frames.iter().copied());
-        (self.costs(line, &ways, (solid, frames)).into_iter())
-            .flatten()
-            .min_by(f64::total_cmp)
-            .expect("a line has a way")
+        let against = self.against(line);
+        let cost = |at: usize, solid: f64| {
+            let sketch: &Sketch = ways[at].as_ref().expect("a line's way");
+            sketch.cost(solid + frames[at], against)
+        };
+        let round = |at: usize| way.round(ways[at].as_ref().expect("a line's way"));
+        if ways[1].is_none() {
+            return cost(0, round(0));
+        }
+        let least = [cost(0, 0.0), cost(1, 0.0)];
+        let (first, second) = if least[1] < least[0] { (1, 0) } else { (0, 1) };
+        let found = cost(first, round(first));
+        if least[second] >= found {
+            return found;
+        }
+        let other = cost(second, round(second));
+        if other.total_cmp(&found).is_lt() {
+            other
+        } else {
+            found
+        }
     }
 }
