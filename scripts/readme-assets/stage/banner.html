@@ -1,0 +1,76 @@
+<!doctype html>
+<!--
+	The banner and the social card: the marketing site's hero table and the lockup on the site's
+	ground. The page runs the hero's own code (site/src/scripts/hero), so Vite serves it from the
+	checkout. The take opens it with reduced motion, so the table draws its finished entry in one
+	still frame. The take gives the layout as JSON in the query (banner.ts says what each value
+	does). The body's data-painted says how the picture went: "true" once it is painted, "failed"
+	when the painter did not paint it, and "no-webgl" when the browser has no WebGL2. The canvas
+	takes the class is-live once a frame with the picture is drawn.
+-->
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>banner</title>
+		<link rel="stylesheet" href="../../../site/src/styles/global.css" />
+		<style>
+			html,
+			body {
+				margin: 0;
+				width: 100vw;
+				height: 100vh;
+				overflow: hidden;
+				background: var(--ground);
+			}
+			.table {
+				position: absolute;
+				mask-image:
+					linear-gradient(90deg, transparent, black var(--fade-left)),
+					linear-gradient(0deg, transparent, black var(--fade-foot));
+				mask-composite: intersect;
+			}
+			.lockup {
+				position: absolute;
+				transform: translateY(-50%);
+				--foreground: var(--ink);
+			}
+		</style>
+	</head>
+	<body>
+		<canvas class="table" data-table></canvas>
+		<div class="lockup" data-lockup></div>
+		<script type="module">
+			import { lightTable } from "../../../site/src/scripts/hero/table.ts";
+			import { paintPicture } from "../../../site/src/scripts/hero/picture.ts";
+			import { lockupMarkup } from "../lockup.ts";
+
+			const layout = JSON.parse(new URLSearchParams(location.search).get("layout"));
+			const canvas = document.querySelector("[data-table]");
+			const lockup = document.querySelector("[data-lockup]");
+			for (const side of ["left", "top", "width", "height"])
+				canvas.style.setProperty(side, `${layout.canvas[side]}px`);
+			canvas.style.setProperty("--fade-left", `${layout.fade.left * 100}%`);
+			canvas.style.setProperty("--fade-foot", `${layout.fade.foot * 100}%`);
+			lockup.style.setProperty("left", `${layout.lockup.left}px`);
+			lockup.style.setProperty("top", `${layout.lockup.middle}px`);
+			lockup.innerHTML = lockupMarkup(layout.lockup.size);
+			// The words stand where they stay before the table fits the picture to them.
+			await Promise.all([...document.fonts].map((face) => face.load().catch(() => undefined)));
+			if (!document.createElement("canvas").getContext("webgl2")) {
+				document.body.dataset.painted = "no-webgl";
+			} else {
+				lightTable(
+					canvas,
+					(parts) =>
+						paintPicture(parts()).then((levels) => {
+							// The table draws its next frame with the picture, and marks the canvas again.
+							canvas.classList.remove("is-live");
+							document.body.dataset.painted = levels ? "true" : "failed";
+							return levels;
+						}),
+					layout.above ? lockup : null,
+				);
+			}
+		</script>
+	</body>
+</html>

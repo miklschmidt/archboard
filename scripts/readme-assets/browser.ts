@@ -62,6 +62,17 @@ interface WindowOptions {
 	readonly pixelRatio?: number;
 	/** Draw a dot that follows the pointer, since a headless screenshot shows no cursor. */
 	readonly cursor?: boolean;
+	/** Ask the page for reduced motion, so that an animated page draws its finished state at once. */
+	readonly reducedMotion?: boolean;
+}
+
+/** How a browser starts. */
+interface BrowserOptions {
+	/**
+	 * Draw WebGL2 with SwiftShader, on the CPU. The site's hero table needs it, and without a GPU
+	 * Chromium offers WebGL only when it is asked to.
+	 */
+	readonly webgl?: boolean;
 }
 
 /** The page script that draws the pointer, inside the presented element when there is one. */
@@ -356,9 +367,10 @@ class Browser {
 	/**
 	 * Start a private Chromium with no GPU, so that Vello paints on the CPU: a WebGPU canvas shows
 	 * nothing in headless Chromium today (ADR 0071).
+	 * @param options How it starts.
 	 * @returns The browser.
 	 */
-	static async start(): Promise<Browser> {
+	static async start(options: BrowserOptions = {}): Promise<Browser> {
 		const chromium = await launchHeadlessChromium({
 			chromiumPath: chromiumPath(),
 			extraArgs: [
@@ -369,6 +381,7 @@ class Browser {
 				"--force-color-profile=srgb",
 				"--autoplay-policy=no-user-gesture-required",
 				"--disable-gpu",
+				...(options.webgl === true ? ["--enable-unsafe-swiftshader"] : []),
 			],
 			startupTimeoutMs: CALL_MS,
 			cleanupTimeoutMs: 5_000,
@@ -396,7 +409,10 @@ class Browser {
 		await page.call("Emulation.setEmulatedMedia", {
 			features: [
 				{ name: "prefers-color-scheme", value: options.theme },
-				{ name: "prefers-reduced-motion", value: "no-preference" },
+				{
+					name: "prefers-reduced-motion",
+					value: options.reducedMotion === true ? "reduce" : "no-preference",
+				},
 			],
 		});
 		await page.call("Page.addScriptToEvaluateOnNewDocument", {

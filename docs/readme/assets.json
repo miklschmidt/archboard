@@ -6,28 +6,27 @@
 			"kind": "art",
 			"codex": false,
 			"command": "bun run readme:assets banner",
-			"files": [
-				"docs/readme/banner-dark.webp",
-				"docs/readme/banner-light.webp",
-				"docs/assets/archboard-social-card.jpg"
-			],
+			"files": ["docs/readme/banner.webp", "docs/assets/archboard-social-card.jpg"],
 			"sources": [
 				"packages/renderer/src",
 				"packages/model/src/shared",
 				"packages/code-binding/src/shared",
-				"packages/renderer/assets/theme.css",
 				"packages/timing/src",
 				"packages/renderer/assets/fonts/*.ttf",
 				"apps/web/src/ui/shell/components/Brand.tsx",
+				"site/model",
+				"site/scripts/paint.ts",
+				"site/src/scripts/hero",
+				"site/src/scripts/gl.ts",
+				"site/src/scripts/reveal.ts",
+				"site/src/styles/global.css",
 				"scripts/readme-assets/banner.ts",
+				"scripts/readme-assets/stage/banner.html",
 				"scripts/readme-assets/lockup.ts",
 				"scripts/readme-assets/browser.ts",
-				"examples/web-shop",
-				"scripts/readme-assets/server.ts",
-				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "477d696356ebaea481bde88f3678d8a98048b95dda1a1e7cd01a08dc28cd6eca"
+			"hash": "c453ad08aa3e999086d156118e8d7e96035c1eddfcd1147110d047ebfa30f1cd"
 		},
 		{
 			"name": "hero",

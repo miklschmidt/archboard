@@ -1,22 +1,23 @@
-// The banner: the lockup beside a real proposal that Archboard draws, in both themes, and the
-// social card cut from the dark one.
+// The banner and the social card: the marketing site's hero table, with the lockup beside it or
+// above it, on the site's ground.
 //
-// An Archboard server over a copy of examples/web-shop renders the Web shop's Queued fulfilment
-// proposal as an SVG, drawn against the architecture that is built: new parts in green, a changed
-// part in orange, and a removed part as a red ghost. A page in Chromium puts that SVG in as vector,
-// a sheet tilted away from the reader, and sets the lockup (lockup.ts) beside it. The ground of the
-// page is the ground of GitHub's page in the colour mode of the banner, and the drawing is given
-// the same ground, so the banner shows no edge where it lies on the README. The page loads the
-// theme's colours from the renderer package's theme.css and the display face from its fonts. It is
-// photographed at two pixels per CSS pixel and scaled down, so the tilt is sampled finely. Repeated
-// makes agree to within a few anti-aliased pixels of the tilted sheet, not byte for byte.
+// The site's hero (site/src/scripts/hero) lays Archboard's drawing of the site's own model on a
+// table in perspective. It raises each card as a tile and draws each line as a beam of light. The
+// kit's page stage/banner.html runs that same code beside the lockup (lockup.ts). Vite serves the
+// page from the checkout, because the hero's modules import their painting as a URL and load the
+// painter's WebAssembly. The page asks for reduced motion, so the table draws its finished entry in
+// one still frame. Chromium draws the table's WebGL2 with SwiftShader on the CPU, so a make needs
+// no GPU. Each picture is taken at two pixels per CSS pixel and scaled down.
+//
+// The site paints the hero's picture with `bun site/scripts/paint.ts`, which needs the renderer
+// core that `bun run build` makes. The kit builds before it makes an asset that needs Chromium,
+// and this producer paints before it starts the page.
 
-import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { createServer, type ViteDevServer } from "vite";
 import { z } from "zod";
 
-import { DIAGRAM_FONTS_DIRECTORY, THEME_STYLESHEET } from "@archboard/renderer/assets";
+import { coreSourceHash } from "@archboard/renderer/core";
 
 import {
 	Browser,
@@ -25,177 +26,213 @@ import {
 	inOrder,
 	inRepository,
 	readmeFile,
+	run,
 	scratch,
-	startServer,
 	type MakeContext,
 	type Producer,
-	type TakeServer,
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
-import { lockupMarkup } from "./lockup.ts";
+import { ROOT } from "./tools.ts";
 
-/** The model and the proposal the banner shows. */
-const MODEL = "Shop";
-const PROPOSAL = "Queued fulfilment";
-/** Its identity, because the shelved first draft of the example still holds the name as a former one. */
-const PROPOSAL_STATE = "wyzlP1Nf";
+/** A box on the page, in CSS pixels. */
+interface Box {
+	readonly left: number;
+	readonly top: number;
+	readonly width: number;
+	readonly height: number;
+}
 
-/** The banner's size. The README shows it at its full width, and dark through the colour scheme. */
-const BANNER = { width: 2172, height: 724 } as const;
+/** Where one picture puts the table and the lockup. stage/banner.html reads it. */
+interface Layout {
+	/** The page's size, in CSS pixels. */
+	readonly width: number;
+	readonly height: number;
+	/**
+	 * Where the table's canvas lies. The table fits the picture into a fixed part of its canvas. It
+	 * centres the picture across it, at most 0.94 of its width. Under words, it puts the picture from
+	 * a tenth of the canvas's height up to a little above the words' foot. With no words, the picture
+	 * goes from a tenth up to 0.55 of the height.
+	 */
+	readonly canvas: Box;
+	/** The lockup: its left edge and its vertical middle, and the name's font size. */
+	readonly lockup: { readonly left: number; readonly middle: number; readonly size: number };
+	/** How far the canvas fades in from its left edge and up from its foot, as shares of it. */
+	readonly fade: { readonly left: number; readonly foot: number };
+	/**
+	 * Whether the lockup stands above the table as the hero's words do. The table then fits the
+	 * picture under it and darkens the picture behind it.
+	 */
+	readonly above: boolean;
+}
 
-/** GitHub's social preview: the banner's left 2:1, lockup included, at GitHub's size. */
-const SOCIAL = { width: 1280, height: 640 } as const;
+/**
+ * The README's banner, 3:1: the lockup at the left, the table at the right. The canvas runs above
+ * the banner so that its picture, which takes no words, falls into the banner's middle. The canvas
+ * is wider than tall, so the table fits the picture by its height and leaves room at each side
+ * for the routes past the outermost cards. It fades in at its left, where it meets the lockup, and
+ * at its foot, above the banner's bottom edge.
+ */
+const BANNER: Layout = {
+	width: 2172,
+	height: 724,
+	canvas: { left: 637, top: -313, width: 1560, height: 1000 },
+	lockup: { left: 150, middle: 362, size: 120 },
+	fade: { left: 0.12, foot: 0.1 },
+	above: false,
+};
 
-/** Device pixels per CSS pixel of the page, so the tilted drawing is sampled finely. */
+/**
+ * GitHub's social preview and the site's link preview, 2:1: the site's hero in small. The lockup
+ * stands where the hero's words stand, and the table fills the card under it. Where the card ends,
+ * the table's own edge fades it into the ground.
+ */
+const SOCIAL: Layout = {
+	width: 1280,
+	height: 640,
+	canvas: { left: 0, top: 0, width: 1280, height: 640 },
+	lockup: { left: 80, middle: 112, size: 96 },
+	fade: { left: 0, foot: 0 },
+	above: true,
+};
+
+/** Device pixels per CSS pixel of the page, so the table is drawn finely before it is scaled down. */
 const PIXEL_RATIO = 2;
 
-/** The name's size in the lockup, in banner pixels; the mark follows it. */
-const NAME_SIZE = 120;
-
-/** The display face the name is set in. */
-const DISPLAY_FACE = join(DIAGRAM_FONTS_DIRECTORY, "BigShouldersDisplay-wght.ttf");
+/** How long the page may take to paint the picture and draw it, in milliseconds. */
+const DRAW_MS = 120_000;
 
 /** The files it writes. */
 const FILES = {
-	dark: readmeFile("banner-dark.webp"),
-	light: readmeFile("banner-light.webp"),
+	banner: readmeFile("banner.webp"),
 	social: "docs/assets/archboard-social-card.jpg",
 } as const;
 
-type Theme = "dark" | "light";
+/** How the page's picture went, and which faces did not load. */
+const DrawnSchema = z.object({ painted: z.string(), display: z.boolean() });
 
-/** The ground of GitHub's page in each of its colour modes (Primer's default background). */
-const GROUND: Readonly<Record<Theme, string>> = { dark: "#0d1117", light: "#ffffff" };
+/** An expression that is true once the page painted the picture and drew it, or gave up. */
+const DRAWN_EXPRESSION = `(() => {
+	const painted = document.body.dataset.painted;
+	if (painted === undefined) return false;
+	return painted !== "true" || document.querySelector("[data-table]").classList.contains("is-live");
+})()`;
 
-/** What the page says once its drawing and its faces are ready. */
-const PageReadySchema = z.object({ failed: z.array(z.string()), display: z.boolean() });
-
-/**
- * The page script that makes the picture ready: leave the traffic marks at their first frame by
- * removing their animation (none begins later than time zero, so the first frame is the picture
- * without it), and load every face that the page and the drawing declare.
- */
-const READY_SCRIPT = `(async () => {
-	const svg = document.querySelector(".sheet svg");
-	svg.querySelectorAll("animate, animateTransform, animateMotion, set").forEach((animation) => animation.remove());
-	const faces = [...document.fonts];
-	await Promise.all(faces.map((face) => face.load().catch(() => undefined)));
+/** The page script that waits for the drawn frame to reach the screen and reports what loaded. */
+const DRAWN_SCRIPT = `(async () => {
 	await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
 	return {
-		failed: faces.filter((face) => face.status !== "loaded").map((face) => face.family),
-		display: faces.some((face) => face.family.includes("Archboard Display") && face.status === "loaded"),
+		painted: document.body.dataset.painted,
+		display: [...document.fonts].some((face) => face.family.includes("Archboard Display") && face.status === "loaded"),
 	};
 })()`;
 
+/** What to do when the page did not draw the picture, by what it said. */
+const RECOVERY: Readonly<Record<string, string>> = {
+	failed:
+		"The painter did not paint the hero's picture. Run `bun run build` inside `nix develop`, then `bun site/scripts/paint.ts`, and make the banner again.",
+	"no-webgl":
+		"Chromium offered no WebGL2. The kit starts it with --enable-unsafe-swiftshader; check that the Chromium in ARCHBOARD_RENDERER_CHROMIUM or on PATH supports SwiftShader.",
+};
+
 /**
- * The banner of one theme, as a page. GitHub's ground is the ground of the whole banner and of the
- * drawing, so nothing marks where the sheet ends. The drawing lies on it as a tilted sheet, and the
- * ground washes over the sheet's far edges, so the left third stays calm for the lockup.
- * @param theme The theme.
- * @param drawing The SVG that the renderer drew in that theme.
- * @returns The page.
+ * Serve the checkout to the page with Vite. It watches no files and discovers no dependencies,
+ * because the checkout holds the skill evaluations' preserved worlds, which nothing may walk.
+ * @returns The server.
  */
-function bannerPage(theme: Theme, drawing: string): string {
-	return `<!doctype html><html data-theme="${theme}" style="--ground: ${GROUND[theme]}"><head><meta charset="utf-8">
-<link rel="stylesheet" href="${pathToFileURL(THEME_STYLESHEET).toString()}">
-<style>
-@font-face { font-family: "Archboard Display"; src: url("${pathToFileURL(DISPLAY_FACE).toString()}") format("truetype"); font-weight: 100 900; font-display: block; }
-body { position: relative; margin: 0; width: ${BANNER.width}px; height: ${BANNER.height}px; overflow: hidden; background: var(--ground); }
-.sheet { position: absolute; left: 900px; top: -10px; line-height: 0;
-	transform-origin: 0 0; transform: perspective(2400px) rotateX(48deg) rotateZ(-9deg) scale(0.74); }
-.sheet svg { display: block; --background: var(--ground) !important; }
-.falloff { position: absolute; inset: 0; background:
-	linear-gradient(90deg, var(--ground) 34%, transparent 46%),
-	radial-gradient(130% 150% at 60% 75%, transparent 55%, var(--ground) 100%); }
-.lockup { position: absolute; left: 150px; top: 50%; transform: translateY(-50%); }
-</style></head><body>
-<div class="sheet">${drawing}</div>
-<div class="falloff"></div>
-<div class="lockup">${lockupMarkup(NAME_SIZE)}</div>
-</body></html>`;
+async function serveCheckout(): Promise<ViteDevServer> {
+	const server = await createServer({
+		root: ROOT,
+		configFile: false,
+		logLevel: "error",
+		clearScreen: false,
+		server: { host: "127.0.0.1", port: 0, watch: null, hmr: false },
+		optimizeDeps: { noDiscovery: true, include: [], entries: [] },
+		// The painter refuses a build of other sources than the checkout holds.
+		define: { ARCHBOARD_CORE_SOURCE_HASH: JSON.stringify(coreSourceHash()) },
+	});
+	await server.listen();
+	return server;
 }
 
 /**
- * Render the proposal, drawn against today, in one theme.
- * @param server The server over a copy of the example vault.
- * @param theme The theme.
- * @param work Where the drawing goes.
- * @returns The SVG.
- */
-async function drawProposal(server: TakeServer, theme: Theme, work: string): Promise<string> {
-	const file = join(work, `drawing-${theme}.svg`);
-	await server.cli(["model", "render", "--state", PROPOSAL_STATE, "--theme", theme, "--out", file]);
-	return readFileSync(file, "utf8");
-}
-
-/**
- * Lay one theme's banner out in Chromium and save what it shows.
+ * Lay out one picture in Chromium and save what it shows.
  * @param browser The browser.
- * @param theme The theme.
- * @param drawing The SVG that the renderer drew in that theme.
+ * @param origin Where Vite serves the checkout.
+ * @param layout The layout.
  * @param out Where the picture goes.
- * @throws {Error} When a face did not load, so the banner would be photographed in another face.
+ * @throws {Error} When the page did not draw the picture, or the display face did not load.
  */
 async function photograph(
 	browser: Browser,
-	theme: Theme,
-	drawing: string,
+	origin: string,
+	layout: Layout,
 	out: string,
 ): Promise<void> {
-	const page = join(scratch("banner"), `${theme}.html`);
-	writeFileSync(page, bannerPage(theme, drawing));
+	const url = new URL("scripts/readme-assets/stage/banner.html", origin);
+	url.searchParams.set("layout", JSON.stringify(layout));
 	const window = await browser.open({
-		url: pathToFileURL(page).toString(),
-		theme,
+		url: url.toString(),
+		theme: "dark",
 		pixelRatio: PIXEL_RATIO,
-		...BANNER,
+		reducedMotion: true,
+		width: layout.width,
+		height: layout.height,
 	});
-	await window.waitFor('document.querySelector(".sheet svg") !== null', "the drawing");
-	const ready = PageReadySchema.parse(await window.evaluate(READY_SCRIPT));
-	if (ready.failed.length > 0 || !ready.display) {
-		throw new Error(
-			`The banner page did not load every face (${ready.failed.join(", ") || "no Archboard Display"}).`,
-		);
+	await window.waitFor(DRAWN_EXPRESSION, "the hero's table", DRAW_MS);
+	const drawn = DrawnSchema.parse(await window.evaluate(DRAWN_SCRIPT));
+	if (drawn.painted !== "true") {
+		throw new Error(RECOVERY[drawn.painted] ?? `The page said ${drawn.painted}.`);
 	}
+	if (!drawn.display) throw new Error("The banner page did not load Archboard Display.");
 	await window.screenshot(out);
 }
 
 /**
- * Draw the proposal and lay out the banner in each theme, encode both, and cut the social card.
+ * Paint the hero's picture, photograph the banner and the social card, and encode them.
  * @param context What the producer is given.
  */
 async function makeBanner(context: MakeContext): Promise<void> {
 	const work = scratch("banner");
-	const server = await startServer("banner", "examples/web-shop", false);
-	await holding(server.stop, async () => {
-		const browser = await Browser.start();
-		await holding(
-			async () => browser.close(),
-			async () =>
-				inOrder(["dark", "light"] as const, async (theme) => {
-					context.say(`Drawing ${MODEL}'s ${PROPOSAL} proposal in ${theme}, beside the lockup.`);
-					const picture = join(work, `banner-${theme}.png`);
-					await photograph(browser, theme, await drawProposal(server, theme, work), picture);
-					await ffmpeg([
-						"-i",
-						picture,
-						"-vf",
-						`scale=${BANNER.width}:${BANNER.height}:flags=lanczos`,
-						"-c:v",
-						"libwebp",
-						"-quality",
-						"90",
-						inRepository(FILES[theme]),
-					]);
-				}),
-		);
-	});
+	context.say("Painting the site's pictures with bun site/scripts/paint.ts.");
+	await run([process.execPath, "site/scripts/paint.ts"]);
+	const server = await serveCheckout();
+	const origin = server.resolvedUrls?.local[0];
+	await holding(
+		async () => server.close(),
+		async () => {
+			if (origin === undefined) throw new Error("Vite did not say where it serves the checkout.");
+			const browser = await Browser.start({ webgl: true });
+			await holding(
+				async () => browser.close(),
+				async () =>
+					inOrder(["banner", "social"] as const, async (name) => {
+						const layout = name === "banner" ? BANNER : SOCIAL;
+						context.say(`Drawing the hero's table for the ${name}.`);
+						await photograph(browser, origin, layout, join(work, `${name}.png`));
+					}),
+			);
+		},
+	);
+	// Lossy WebP keeps colour at half resolution, which leaves rings in the dark ground.
 	await ffmpeg([
 		"-i",
-		join(work, "banner-dark.png"),
+		join(work, "banner.png"),
 		"-vf",
-		`crop=${BANNER.height * 2 * PIXEL_RATIO}:${BANNER.height * PIXEL_RATIO}:0:0,scale=${SOCIAL.width}:${SOCIAL.height}:flags=lanczos`,
+		`scale=${BANNER.width}:${BANNER.height}:flags=lanczos`,
+		"-c:v",
+		"libwebp",
+		"-lossless",
+		"1",
+		"-compression_level",
+		"6",
+		inRepository(FILES.banner),
+	]);
+	await ffmpeg([
+		"-i",
+		join(work, "social.png"),
+		"-vf",
+		`scale=${SOCIAL.width}:${SOCIAL.height}:flags=lanczos`,
 		"-q:v",
 		"2",
 		inRepository(FILES.social),
@@ -205,14 +242,14 @@ async function makeBanner(context: MakeContext): Promise<void> {
 const banner: Producer = {
 	kind: "art",
 	codex: false,
-	files: [FILES.dark, FILES.light, FILES.social],
+	files: [FILES.banner, FILES.social],
 	attachments: [],
 	needs: ["chromium", "ffmpeg"],
 	plan: [
-		"Start an Archboard server over a copy of examples/web-shop.",
-		`Render ${MODEL}'s ${PROPOSAL} proposal against today in dark and light with archboard model render.`,
-		`Lay each SVG as a tilted sheet beside the lockup (the mark from lockup.ts and archboard in the display face, in theme.css's colours) on GitHub's ground for that colour mode, in Chromium at ${BANNER.width}x${BANNER.height} and ${PIXEL_RATIO} pixels per CSS pixel.`,
-		`Scale each picture down and encode it as a still WebP in docs/readme, and cut the dark banner's left 2:1 into the ${SOCIAL.width}x${SOCIAL.height} social card in docs/assets.`,
+		"Paint the site's pictures with bun site/scripts/paint.ts.",
+		"Serve the checkout with Vite, and open stage/banner.html, which runs the site's hero table, in Chromium with SwiftShader's WebGL2 and reduced motion.",
+		`Draw the banner, ${BANNER.width}x${BANNER.height} with the lockup beside the table, and the social card, ${SOCIAL.width}x${SOCIAL.height} with the lockup above it, at ${PIXEL_RATIO} pixels per CSS pixel.`,
+		"Scale each picture down. Encode the banner as a lossless still WebP in docs/readme and the social card as a JPEG in docs/assets.",
 	],
 	make: makeBanner,
 };

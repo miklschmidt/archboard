@@ -50,7 +50,7 @@ Refresh an asset when `readme:check` lists it after your change. Then:
 | `design-smells`                                     | the Measures dialog over this checkout's vault and Git history, encoded to a WebP with a still  | no    |
 | `ask`                                               | the shell filmed while a Codex agent answers Explain selection from the Right panel             | yes   |
 | `explainer`, `pr-walkthrough`, `newcomer`           | `model record` at an exact checkpoint, narrated by the Codex voice; the MP4 is attached         | yes   |
-| `banner`                                            | `model render` of a web-shop proposal, laid as vector beside the lockup in Chromium             | no    |
+| `banner`                                            | the site's hero table, drawn in Chromium beside the lockup and under it                         | no    |
 
 Most assets also write an index thumbnail (`idx-*.webp`), which stays in the
 repository. The manifest lists the files of each asset in the repository. The
@@ -67,12 +67,22 @@ offers no keyframe interval for it, so a lossy clip cannot be repaired. Check a
 new clip by brightening an empty part of the canvas in a frame (`magick
 clip.webp -coalesce -delete 0-99 -delete 1--1 -level 94%,100% frame.png`): it must be flat.
 
+The banner is the marketing site's hero table beside the lockup, on the site's ground. The
+page `scripts/readme-assets/stage/banner.html` runs the hero's own code from `site/src/scripts/hero`,
+so Vite serves it from the checkout. The page asks for reduced motion, and the table draws its
+finished entry in one still frame. Chromium draws the table's WebGL2 with SwiftShader on the CPU,
+so a make needs no GPU. The banner paints the hero's picture first with `bun site/scripts/paint.ts`.
+The banner is dark in both colour modes, because the site's table has no light theme. When the
+site's hero changes how it fits its picture, read the banner again: the layouts in
+`scripts/readme-assets/banner.ts` place the canvas by those rules.
+
 The banner's lockup, the mark beside the name, comes from
 `scripts/readme-assets/lockup.ts`. A test in the repository lane holds that mark
 to the one the shell draws in `apps/web/src/ui/shell/components/Brand.tsx`. The banner
-also writes `docs/assets/archboard-social-card.jpg`, GitHub's social preview, cut
-from the dark banner. GitHub does not read it from the repository: the owner
-uploads it by hand under Social preview in the repository's settings.
+also writes `docs/assets/archboard-social-card.jpg`. It is GitHub's social preview and the
+site's link preview, with the lockup above the table as the site's hero sets its words. GitHub does
+not read it from the repository: the owner uploads it by hand under Social preview in the
+repository's settings.
 
 The clips are filmed over fresh copies of the tracked files of
 `examples/web-shop` or `.archboard/vault`, never over a vault from elsewhere.

@@ -1,9 +1,6 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/banner-dark.webp">
-  <img src="docs/readme/banner-light.webp" width="100%" alt="Archboard: the gold peak mark and the name archboard in tall capitals, beside a proposal for the example web shop that Archboard drew, on a sheet that tilts away. New modules are green, and changed or removed relationships carry comparison marks.">
-</picture>
+<img src="docs/readme/banner.webp" width="100%" alt="Archboard: the gold peak mark and the name archboard in tall capitals, beside the lit table of Archboard's site. On the table lies Archboard's drawing of its own workings: Claude Code and Codex, the archboard CLI, your repository, the Archboard server and the browser. Each card stands up as a tile, and each relationship is a line of blue light.">
 
 <h3>See where your architecture costs the most, and plan the next step with your coding agent. <br>Archboard draws every proposal against what is built, keeps the record of why it changed, and walks your team through it out loud.
 </h3>
@@ -482,4 +479,4 @@ Five packages are MIT-licensed instead, each with its own `LICENSE` file: [`code
 
 [INSTALL.md](INSTALL.md) · [TESTING.md](TESTING.md) · [CONTEXT.md](CONTEXT.md) · [Architecture decisions](docs/adr/) · [The agent skill](skills/archboard/SKILL.md) · [AGENTS.md](AGENTS.md)
 
-<sub>Archboard drew every diagram in this README. Every clip was filmed from a running Archboard server. The SVGs draw their own glyphs. The banner is a proposal Archboard drew, beside the logo. A GitHub social preview cut from it is in <a href="docs/assets"><code>docs/assets</code></a>. Licensed under the Business Source License 1.1.</sub>
+<sub>Archboard drew every diagram in this README. Every clip was filmed from a running Archboard server. The SVGs draw their own glyphs. The banner is the lit table of the Archboard site, which lays a drawing that Archboard made on a table in 3D, beside the logo. The GitHub social preview, the same table under the logo, is in <a href="docs/assets"><code>docs/assets</code></a>. Licensed under the Business Source License 1.1.</sub>

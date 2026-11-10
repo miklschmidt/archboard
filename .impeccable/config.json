@@ -17,6 +17,20 @@
 				"files": ["site/src/components/docs/SchemaNode.astro"],
 				"createdAt": "2026-11-08T19:29:50.686Z",
 				"reason": "Claude triage: SchemaNode.astro:342 is the zero-size CSS triangle of the disclosure caret (border-left plus transparent top and bottom borders), not a card border"
+			},
+			{
+				"rule": "clipped-overflow-container",
+				"value": "*",
+				"files": ["scripts/readme-assets/stage/banner.html"],
+				"createdAt": "2026-11-10T20:21:26.771Z",
+				"reason": "Claude: the stage page is a fixed-size frame that a take photographs; it clips the table's canvas at the picture's edge on purpose and holds no tooltip or menu"
+			},
+			{
+				"rule": "dark-glow",
+				"value": "*",
+				"files": ["scripts/readme-assets/stage/banner.html"],
+				"createdAt": "2026-11-10T20:21:26.777Z",
+				"reason": "Claude: the glow comes from the site's global.css, which the page loads only for its tokens; the page renders no element that carries that shadow"
 			}
 		]
 	}
