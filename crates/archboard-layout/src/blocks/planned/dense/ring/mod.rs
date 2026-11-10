@@ -10,8 +10,9 @@
 //! door's lines cost the scene (`super::sketch`): their sketches, the bends, the way round what
 //! they run through, and their crossings with the lines that no door ends. The box that the
 //! doors and the whole fill costs its area as dead space, so a door that reaches past a corner
-//! pays for the room it adds, not for a whole band. A page that does not read where it lands is
-//! refused while one that reads holds the doors.
+//! pays for the room it adds, not for a whole band. That box also pays for the pane it leaves
+//! blank where it lands (`super::super::reading`), so a strip loses to a box of the pane's shape.
+//! A page that does not read where it lands is refused while one that reads holds the doors.
 
 use rustc_hash::FxHashMap;
 
@@ -20,7 +21,7 @@ use crate::geometry::{Point, Rect};
 use line_up::cheapest;
 
 use super::{
-    super::reading::DEAD_SPACE,
+    super::reading::{DEAD_SPACE, ring_pane_cost},
     sketch::{CROSSING, Chord, InTheWay, Line, Past, Scene},
 };
 
@@ -426,7 +427,9 @@ fn cheapest_page(
             let stood =
                 (order.iter().zip(&places)).filter_map(|(&door, &slot)| one.boxes[door][slot]);
             let filled = bounds(whole, stood);
-            let total = total + filled.width * filled.height / DEAD_SPACE;
+            let total = total
+                + filled.width * filled.height / DEAD_SPACE
+                + ring_pane_cost(filled.width, filled.height);
             if best
                 .as_ref()
                 .is_none_or(|best| total.total_cmp(&best.0).is_lt())

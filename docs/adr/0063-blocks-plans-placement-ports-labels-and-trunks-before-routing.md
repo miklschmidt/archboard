@@ -21,6 +21,7 @@ Each of these cards has a place where it stands when it stands alone.
 The cards keep the order of those places round the frames, so their own lines do not cross.
 A line between two of these cards then pulls each card toward the place where the other card stands.
 The program also pays for the blank space of the box that these cards and the frames fill.
+It also pays for the pane that this box leaves blank, as a finished drawing does below, but by the square of the scale lost, so that it offers a page of the pane's shape.
 It refuses a page that does not read where it lands while a page that reads holds the cards.
 Among the routes that pass the guards, the router prefers one that meets such a card on a side that faces the line's far end.
 Each grid width gives one placement, and a reading of several frames gives one more with the frames stacked.
@@ -37,13 +38,14 @@ That room is on the side that faces the frame's middle, because room between the
 No line asks once the reading has a drawing that reads where it lands and has no long detour.
 Finished drawings rank first by whether the page reads where it lands, then by their long detours.
 Then they rank by route cost plus crowded approaches plus blank space.
-Blank space is the area farther than 48 px from every card, line and label.
-96 px² of blank space costs as much as 1 px of line.
+Blank space is the area farther than 48 px from every card, line, label, frame title and group caption.
+On a page that fills the landing room, 96 px² of blank space costs as much as 1 px of line.
+On a page that takes at most three quarters of the room, blank space costs nothing, because it makes no word land smaller.
+Between the two, its cost grows with the page, so a small reading keeps its straight lines before it saves blank page.
 A page that lands smaller than full scale also pays for the pane that its shape leaves blank there.
 That blank is the landing room less the page at its landing scale, and it costs twice what blank space costs.
-A page that lands at 12/14 or more, where the camera still sees it near, pays nothing for its shape.
-Below that, the blank counts in part, and in full where the page lands at 0.6, where words just read.
-So a small strip that still reads near keeps its straight lines, and a strip that the camera sees from far loses to a page of the pane's shape.
+It counts by the share of the scale that the page loses on its way to 0.6, where words just read.
+So a strip loses to a page of the pane's shape that lands at full scale.
 The room cost, its charge for scale, and the promise before routing are gone.
 
 TASK-554 proposes this decision on 2026-10-28 and revises it on 2026-10-29.

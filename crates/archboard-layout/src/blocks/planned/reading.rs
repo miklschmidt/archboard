@@ -126,7 +126,8 @@ pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
         long_detours(routed),
         f64::from_bits(cost)
             + crowded as f64 * CROWDED_COST
-            + (dead_space(drawing) + BLANK_PANE * blank_pane(drawing)) / DEAD_SPACE,
+            + dead_space(drawing) * crowding(drawing.width, drawing.height) / DEAD_SPACE
+            + pane_cost(drawing.width, drawing.height),
     )
 }
 
@@ -135,25 +136,44 @@ pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
 /// the pane's shape for few crossings.
 const BLANK_PANE: f64 = 2.0;
 
-/// The scale below which the camera sees a picture from far away: a card's 14 px name falls under
-/// 12 px there, so the far view says less of each card (`FAR_SCALE` in the web camera).
-const FAR_SCALE: f64 = 12.0 / 14.0;
+/// The share of the landing room that a page fills before its dead space starts to count.
+const ROOMY: f64 = 0.75;
 
-/// The pane that a page leaves blank where the camera sees it from far away, in the pane's own
-/// measure: the landing room less the page at the scale it lands at. A strip leaves the pane
-/// above and below it blank, and its words land smaller than those of a page of the pane's shape.
-/// A page that lands at `FAR_SCALE` or more pays nothing for its shape. Below it, the blank counts
-/// in part, and in full where the page lands at `NEAR_SCALE`, where words just read.
-fn blank_pane(drawing: &crate::blocks::assembly::Placed) -> f64 {
-    // How many times the landing room the page takes along its tighter side.
-    let size = (drawing.width / LANDING_ROOM.0).max(drawing.height / LANDING_ROOM.1);
-    let (near, read) = (1.0 / FAR_SCALE, 1.0 / NEAR_SCALE);
-    let lost = ((size - near) / (read - near)).clamp(0.0, 1.0);
-    if lost == 0.0 {
-        return 0.0;
+/// How much a page's dead space counts: nothing on a page that takes at most `ROOMY` of the
+/// landing room, where the space makes no word land smaller, and in full on a page that fills
+/// the room. A small reading keeps its straight lines before it saves blank page.
+fn crowding(width: f64, height: f64) -> f64 {
+    let size = (width / LANDING_ROOM.0).max(height / LANDING_ROOM.1);
+    ((size - ROOMY) / (1.0 - ROOMY)).clamp(0.0, 1.0)
+}
+
+/// What a page of some size pays for the pane that it leaves blank where it lands, in units of
+/// line, as `order` counts it.
+fn pane_cost(width: f64, height: f64) -> f64 {
+    let (blank, lost) = blank_pane(width, height);
+    BLANK_PANE * blank * lost / DEAD_SPACE
+}
+
+/// What the door ring pays for the pane that the box of its doors and frames leaves blank: the
+/// same blank, but by the square of the scale lost, so a box just past the landing room pays
+/// almost nothing before its lines are drawn.
+pub(super) fn ring_pane_cost(width: f64, height: f64) -> f64 {
+    let (blank, lost) = blank_pane(width, height);
+    BLANK_PANE * blank * lost * lost / DEAD_SPACE
+}
+
+/// The pane that a page leaves blank where it lands smaller than full scale, in the pane's own
+/// measure: the landing room less the page at the scale it lands at, and how much of the scale
+/// down to where words just read the page lost. A strip leaves the pane above and below it
+/// blank, and its words land smaller than those of a page of the pane's shape.
+fn blank_pane(width: f64, height: f64) -> (f64, f64) {
+    let size = (width / LANDING_ROOM.0).max(height / LANDING_ROOM.1);
+    if size <= 1.0 {
+        return (0.0, 0.0);
     }
-    let landed = drawing.width * drawing.height / (size * size);
-    (LANDING_ROOM.0 * LANDING_ROOM.1 - landed) * lost
+    let lost = ((size - 1.0) / (1.0 / NEAR_SCALE - 1.0)).min(1.0);
+    let landed = width * height / (size * size);
+    (LANDING_ROOM.0 * LANDING_ROOM.1 - landed, lost)
 }
 
 /// How far from every card, line and label a place stands before it is dead space.
@@ -244,7 +264,9 @@ fn dead_space(drawing: &crate::blocks::assembly::Placed) -> f64 {
         (Point { x: at.x, y: at.y }, far)
     };
     let boxes = (drawing.cards.iter().map(|card| card.bx))
-        .chain(drawing.edges.iter().filter_map(|line| line.label));
+        .chain(drawing.edges.iter().filter_map(|line| line.label))
+        .chain(drawing.titles.iter().map(|title| title.bx))
+        .chain(drawing.regions.iter().map(|region| region.caption));
     for (near, far) in boxes.map(corners) {
         grain.ink(near, far);
     }
@@ -430,40 +452,56 @@ mod tests {
         assert!(order(&readable) < order(&unreadable));
     }
 
-    /// Three pages that land at full scale, each with one line of the same length. A page twice
-    /// as wide pays nothing for its area while a card fills it, and pays for the blank space it
-    /// leaves when nothing does.
+    /// Pages that land at full scale, each with one line of the same length. On pages as tall as
+    /// the landing room, a page twice as wide pays nothing for its area while a card fills it,
+    /// and pays for the blank space it leaves when nothing does. Pages that take at most three
+    /// quarters of the room pay nothing for their blank space.
     #[test]
     fn a_page_that_lands_whole_pays_its_blank_space_not_its_area() {
-        let page = |width: f64, cards: Vec<PlacedCard>| Placed {
+        let page = |width: f64, height: f64, cards: Vec<PlacedCard>| Placed {
             width,
-            height: 500.0,
+            height,
             cards,
             frames: Vec::new(),
             regions: Vec::new(),
             edges: vec![PlacedLine {
                 id: "line".into(),
-                points: vec![Point { x: 0.0, y: 250.0 }, Point { x: 600.0, y: 250.0 }],
+                points: vec![
+                    Point {
+                        x: 0.0,
+                        y: height / 2.0,
+                    },
+                    Point {
+                        x: 600.0,
+                        y: height / 2.0,
+                    },
+                ],
                 label: None,
             }],
             titles: Vec::new(),
             routed: None,
         };
+        let tall = LANDING_ROOM.1;
         let filler = PlacedCard {
             id: "filler".into(),
             bx: Rect {
                 x: 600.0,
                 y: 0.0,
                 width: 600.0,
-                height: 500.0,
+                height: tall,
             },
             depth: 0,
             header: None,
         };
-        let small = page(600.0, Vec::new());
-        let filled = page(1200.0, vec![filler]);
-        let blank = page(1200.0, Vec::new());
+        let small = page(600.0, tall, Vec::new());
+        let filled = page(1200.0, tall, vec![filler]);
+        let blank = page(1200.0, tall, Vec::new());
         assert!(order(&filled) <= order(&small));
         assert!(order(&small) < order(&blank));
+        let (roomy, wider) = (
+            page(600.0, 500.0, Vec::new()),
+            page(900.0, 500.0, Vec::new()),
+        );
+        assert_eq!(order(&roomy), order(&wider));
     }
 }
