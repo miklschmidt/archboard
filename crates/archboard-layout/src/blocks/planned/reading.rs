@@ -155,17 +155,18 @@ fn pane_cost(width: f64, height: f64) -> f64 {
 }
 
 /// What the door ring pays for the pane that the box of its doors and frames leaves blank: the
-/// same blank, but by the square of the scale lost, so a box just past the landing room pays
-/// almost nothing before its lines are drawn.
+/// same blank, but by the square of its share, so a box just past the landing room pays almost
+/// nothing before its lines are drawn.
 pub(super) fn ring_pane_cost(width: f64, height: f64) -> f64 {
     let (blank, lost) = blank_pane(width, height);
     BLANK_PANE * blank * lost * lost / DEAD_SPACE
 }
 
 /// The pane that a page leaves blank where it lands smaller than full scale, in the pane's own
-/// measure: the landing room less the page at the scale it lands at, and how much of the scale
-/// down to where words just read the page lost. A strip leaves the pane above and below it
-/// blank, and its words land smaller than those of a page of the pane's shape.
+/// measure: the landing room less the page at the scale it lands at. Its share is how far the
+/// page grows past the landing room, as a part of the growth that lands it at `NEAR_SCALE`. A
+/// strip leaves the pane above and below it blank, and its words land smaller than those of a
+/// page of the pane's shape.
 fn blank_pane(width: f64, height: f64) -> (f64, f64) {
     let size = (width / LANDING_ROOM.0).max(height / LANDING_ROOM.1);
     if size <= 1.0 {
