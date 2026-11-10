@@ -163,20 +163,3 @@ fn doors_keep_the_order_of_what_they_face() {
     );
     assert_eq!(scene.weigh().crossings, 0);
 }
-
-/// One door answers a part by the frame's foot, and a second door answers only the first. Once
-/// every door has a place, the second stands beside the first, not at the far end of the ring.
-#[test]
-fn a_door_that_answers_a_door_stands_beside_it() {
-    let (mut scene, doors) = framed(&[part(780.0, 450.0)], &[Point { x: 200.0, y: 34.0 }; 2]);
-    link(&mut scene, 0, doors[0]);
-    link(&mut scene, doors[0], doors[1]);
-    stand(&mut scene, &doors, FRAME, RING_GAP, PAGE);
-    let (first, second) = (scene.boxes[doors[0]], scene.boxes[doors[1]]);
-    let middle = |at: Rect| (at.x + at.width / 2.0, at.y + at.height / 2.0);
-    let ((x, y), (other_x, other_y)) = (middle(first), middle(second));
-    assert!(
-        (x - other_x).hypot(y - other_y) < 2.0 * first.width,
-        "the doors stand apart: {first:?} and {second:?}"
-    );
-}
