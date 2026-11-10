@@ -34,6 +34,8 @@ interface Inputs {
 	readonly overrideLabel: string;
 	readonly stateInput: string;
 	readonly extraCheckouts: readonly string[];
+	/** The file that takes the report in place of the comment, when the workflow names one. */
+	readonly reportFile: string | undefined;
 }
 
 /** What this run knows about the pull request and its inputs. */
@@ -90,6 +92,7 @@ function readEvent(): PullFacts {
 function readInputs(): Inputs {
 	const repository = input("GITHUB_REPOSITORY", "");
 	const workspace = resolve(input("GITHUB_WORKSPACE", process.cwd()));
+	const reportFile = input("ARCHBOARD_INPUT_REPORT_FILE", "");
 	return {
 		cli: input("ARCHBOARD_BIN", "archboard"),
 		directory: resolve(workspace, input("ARCHBOARD_INPUT_WORKING_DIRECTORY", ".")),
@@ -105,6 +108,7 @@ function readInputs(): Inputs {
 		extraCheckouts: inputLines(input("ARCHBOARD_INPUT_REPOS", "")).map((folder) =>
 			resolve(workspace, folder),
 		),
+		reportFile: reportFile === "" ? undefined : resolve(workspace, reportFile),
 	};
 }
 

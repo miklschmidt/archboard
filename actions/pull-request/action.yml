@@ -3,7 +3,8 @@ description: >-
   Comment on a pull request with its architecture as text: the proposal it carries, the footprint
   of the change against the plan, and a link to the vault. Optionally warn or fail when modules
   change outside the plan. Runs on `pull_request` events and needs a checkout with
-  `fetch-depth: 0`. The job needs `contents: read` and `pull-requests: write`.
+  `fetch-depth: 0`. The job needs `contents: read` and `pull-requests: write`, or only
+  `contents: read` when `report-file` takes the report in place of the comment.
 author: Mikkel Schmidt
 
 inputs:
@@ -42,11 +43,25 @@ inputs:
   override-label:
     description: The label that lets a pull request through when `out-of-plan` is `fail`.
     default: "archboard: out of plan"
+  report-file:
+    description: >-
+      A file that takes the report in place of the comment. A relative path starts at the
+      workspace. The Action creates missing parent directories and writes the Markdown that it
+      would post to that file, its hidden marker included. It then posts and edits no comment and
+      writes no job summary. A later step puts the report where the team wants it, such as the job
+      summary. The plan check annotates and fails the step as it does without this input. A write
+      failure fails the step without setting `report`.
+    default: ""
   github-token:
     description: >-
-      The token that comments on the pull request. It needs `pull-requests: write`. The job also
-      needs `contents: read`.
+      The token that comments on the pull request. It needs `pull-requests: write`, unless
+      `report-file` is set. The job also needs `contents: read`.
     default: ${{ github.token }}
+
+outputs:
+  report:
+    description: The absolute path of the file that holds the report, when `report-file` is set.
+    value: ${{ steps.report.outputs.report }}
 
 runs:
   using: composite
@@ -61,6 +76,7 @@ runs:
         ARCHBOARD_VERSION: ${{ inputs.version }}
       run: npm install --global "archboard@${ARCHBOARD_VERSION}"
     - name: Report on the pull request
+      id: report
       shell: bash
       env:
         ACTION_PATH: ${{ github.action_path }}
@@ -70,6 +86,7 @@ runs:
         ARCHBOARD_INPUT_STATE: ${{ inputs.state }}
         ARCHBOARD_INPUT_OUT_OF_PLAN: ${{ inputs.out-of-plan }}
         ARCHBOARD_INPUT_OVERRIDE_LABEL: ${{ inputs.override-label }}
+        ARCHBOARD_INPUT_REPORT_FILE: ${{ inputs.report-file }}
         ARCHBOARD_INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
         if [ -n "$ARCHBOARD_CLI" ]; then

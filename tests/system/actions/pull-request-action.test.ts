@@ -3,17 +3,9 @@
 // on their own. The entry runs against a stand-in `archboard` and a stand-in GitHub API.
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { pullRequestComment } from "../../../actions/pull-request/comment.ts";
-import type { PullRequestReport } from "../../../actions/pull-request/comment.ts";
-import {
-	COMMENT_MARKER,
-	findStickyComment,
-	parseBodyMarker,
-} from "../../../actions/pull-request/marker.ts";
-import { chooseState } from "../../../actions/pull-request/plan.ts";
-import type { ModelState } from "../../../actions/pull-request/plan.ts";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { COMMENT_MARKER } from "../../../actions/pull-request/marker.ts";
 import { fixture, runEntryAsync, scratch, writeStandIn } from "./support.ts";
 
 /**
@@ -26,87 +18,14 @@ function part(name: string, id = `m#${name.toLowerCase()}`) {
 	return [{ subject: { id, name } }];
 }
 
-const states: ModelState[] = [
-	{ id: "cur", name: "Synchronous checkout", lifecycle: "current" },
-	{ id: "p1", name: "Queued fulfilment", lifecycle: "draft" },
-	{ id: "p2", name: "Nightly batch", lifecycle: "draft" },
-];
-
-describe("the proposal of a pull request", () => {
-	const marker = parseBodyMarker(
-		'Body\n<!-- archboard-pr:begin -->\n<!-- archboard-pr model="Shop" state="Nightly batch" against="cur" -->',
-	);
-
-	test("is read from the marker of the description, and the begin comment is no marker", () => {
-		expect(marker).toMatchObject({ model: "Shop", state: "Nightly batch", against: "cur" });
-		expect(parseBodyMarker("<!-- archboard-pr:begin -->")).toBeUndefined();
-	});
-
-	test("the input wins over the marker, and the marker over the only draft", () => {
-		expect(chooseState("p1", marker, states).state?.id).toBe("p1");
-		expect(chooseState("", marker, states)).toMatchObject({ source: "pr-body" });
-		expect(chooseState("", undefined, states.slice(0, 2)).state?.id).toBe("p1");
-	});
-
-	test("is none when drafts are several and unnamed, or when the name matches no state", () => {
-		expect(chooseState("", undefined, states)).toEqual({ source: "several-drafts" });
-		expect(chooseState("Nope", undefined, states)).toMatchObject({ source: "unknown" });
-	});
-});
-
-describe("the sticky comment", () => {
-	const report: PullRequestReport = {
-		choice: { state: states[1], source: "input" },
-		comparison: ["modules: 1 added"],
-		buckets: {
-			plannedAndChanged: ["Checkout API"],
-			outsidePlan: ["Stock API"],
-			plannedUnchanged: ["Fulfilment worker"],
-			changed: ["Checkout API", "Stock API"],
-			unbound: [{ repo: "github.com/acme/shop", path: "docs/notes.md" }],
-		},
-		outOfPlan: { status: "fail", failed: true },
-		overrideLabel: "archboard: out of plan",
-		vaultUrl: "https://github.test/owner/name/tree/b/.archboard/vault",
-	};
-
-	test("starts with the marker, lists the buckets by module name and says how to override", () => {
-		const text = pullRequestComment(report);
-		expect(text.startsWith(COMMENT_MARKER)).toBe(true);
-		expect(text).toContain("Checkout API");
-		expect(text).toContain("Stock API");
-		expect(text).toContain("Fulfilment worker");
-		expect(text).toContain("`archboard: out of plan`");
-		expect(text).toContain("**Changed files that no module is bound to** (1)");
-		expect(text).toContain("- `docs/notes.md`");
-		expect(text).toContain("https://github.test/owner/name/tree/b/.archboard/vault");
-		expect(text).not.toContain("<img");
-	});
-
-	test("a file name stays one code span, and names its repository when the files are in several", () => {
-		const text = pullRequestComment({
-			...report,
-			buckets: {
-				...report.buckets!,
-				unbound: [
-					{ repo: "github.com/acme/shop", path: "notes` **approved** `.md" },
-					{ repo: "github.com/acme/infra", path: "line\nbreak.md" },
-				],
-			},
-		});
-		expect(text).toContain("- ``notes` **approved** `.md`` in github.com/acme/shop");
-		expect(text).toContain("- `line\\nbreak.md` in github.com/acme/infra");
-	});
-
-	test("the action updates the comment that carries the marker", () => {
-		const comments = [
-			{ id: 1, body: "unrelated" },
-			{ id: 2, body: pullRequestComment(report) },
-		];
-		expect(findStickyComment(comments)).toBe(2);
-		expect(findStickyComment(comments.slice(0, 1))).toBeUndefined();
-	});
-});
+/**
+ * The workflow commands, such as annotations, that a step printed.
+ * @param stdout The step's output.
+ * @returns Its lines that start with `::`.
+ */
+function annotations(stdout: string): string[] {
+	return stdout.split("\n").filter((line) => line.startsWith("::"));
+}
 
 describe("the entry", () => {
 	const entry = join(import.meta.dir, "../../../actions/pull-request/run.ts");
@@ -180,7 +99,7 @@ describe("the entry", () => {
 	 * Run the action as the pull request's workflow would.
 	 * @param inputs The inputs and the repository's server to override.
 	 * @param answers Answers to replace in the stand-in CLI.
-	 * @returns The step's exit status and output.
+	 * @returns The step's exit status and output, the CLI commands it ran, and its scratch folder.
 	 */
 	async function step(
 		inputs: Record<string, string> = {},
@@ -227,10 +146,24 @@ describe("the entry", () => {
 			GITHUB_SERVER_URL: "https://github.test",
 			GITHUB_API_URL: `http://127.0.0.1:${String(server.port)}`,
 			GITHUB_STEP_SUMMARY: join(folder, "summary.md"),
+			GITHUB_OUTPUT: join(folder, "output"),
 			ARCHBOARD_INPUT_GITHUB_TOKEN: "token",
 			...inputs,
 		});
-		return { ...result, commands: readFileSync(join(folder, "commands.log"), "utf8") };
+		return { ...result, commands: readFileSync(join(folder, "commands.log"), "utf8"), folder };
+	}
+
+	/**
+	 * Read a saved report and assert its workflow handover.
+	 * @param result The completed step.
+	 * @param file The report's input path.
+	 * @returns The complete Markdown.
+	 */
+	function savedReport(result: Awaited<ReturnType<typeof step>>, file: string): string {
+		const path = resolve(checkout, file);
+		expect(readFileSync(join(result.folder, "output"), "utf8")).toBe(`report=${path}\n`);
+		expect(existsSync(join(result.folder, "summary.md"))).toBe(false);
+		return readFileSync(path, "utf8");
 	}
 
 	test("warns about a change outside the plan and posts a text comment with the vault link", async () => {
@@ -274,25 +207,30 @@ describe("the entry", () => {
 	});
 
 	test("proposals that cannot be read fail the step in fail mode, whether the CLI refuses or prints nothing", async () => {
-		const refused = await step(
-			{ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" },
-			{
-				proposals: JSON.stringify({
-					success: false,
-					code: "MODEL_INVALID",
-					error: "The canonical model cannot be read coherently.",
-					diagnostics: [
-						{ code: "MALFORMED_JSON", file: "model.json", message: "Unexpected EOF\nat line 1" },
-					],
-				}),
-			},
-		);
+		const proposals = JSON.stringify({
+			success: false,
+			code: "MODEL_INVALID",
+			error: "The canonical model cannot be read coherently.",
+			diagnostics: [
+				{ code: "MALFORMED_JSON", file: "model.json", message: "Unexpected EOF\nat line 1" },
+			],
+		});
+		const refused = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" }, { proposals });
 		expect(refused.exitCode).toBe(1);
 		expect(refused.stdout).toContain("::error title=Archboard plan::");
 		expect(comments.at(-1)?.body).toContain("MODEL_INVALID");
 		expect(comments.at(-1)?.body).toContain(COMMENT_MARKER);
 		expect(comments.at(-1)?.body).toContain("MALFORMED_JSON");
 		expect(comments.at(-1)?.body).toContain("model.json");
+		const body = comments.at(-1)?.body;
+		const filed = await step(
+			{ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail", ARCHBOARD_INPUT_REPORT_FILE: "reports/refused.md" },
+			{ proposals },
+		);
+		expect(filed.exitCode).toBe(refused.exitCode);
+		expect(savedReport(filed, "reports/refused.md")).toBe(body ?? "");
+		expect(annotations(filed.stdout)).toEqual(annotations(refused.stdout));
+		expect(comments.at(-1)?.body).toBe(body);
 		const silent = await step({}, { proposals: "" });
 		expect(silent.exitCode).toBe(0);
 		expect(silent.stdout).toContain("::warning title=Archboard plan::");
@@ -357,6 +295,41 @@ describe("the entry", () => {
 		expect(body).toContain("Payments");
 	});
 
+	test("a report file takes the comment's text, no comment is touched, and the plan check is the same", async () => {
+		const commented = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" });
+		const before = comments.map((one) => one.body);
+		const sent = requests.length;
+		const filed = await step({
+			ARCHBOARD_INPUT_OUT_OF_PLAN: "fail",
+			ARCHBOARD_INPUT_REPORT_FILE: "reports/architecture.md",
+		});
+		expect(savedReport(filed, "reports/architecture.md")).toBe(before.at(-1) ?? "");
+		expect(comments.map((one) => one.body)).toEqual(before);
+		expect(requests.slice(sent)).toEqual(["GET /repos/owner/name/pulls/7"]);
+		expect(commented.exitCode).toBe(1);
+		expect(filed.exitCode).toBe(commented.exitCode);
+		expect(annotations(filed.stdout)).toEqual(annotations(commented.stdout));
+	});
+
+	test("an unwritable report file fails the step without publishing", async () => {
+		const before = comments.map((one) => one.body);
+		const sent = requests.length;
+		const result = await step({ ARCHBOARD_INPUT_REPORT_FILE: "a.txt/report.md" });
+		expect(result.exitCode).toBe(2);
+		expect(annotations(result.stdout).some((line) => line.startsWith("::error"))).toBe(true);
+		expect(existsSync(join(result.folder, "output"))).toBe(false);
+		expect(existsSync(join(result.folder, "summary.md"))).toBe(false);
+		expect(comments.map((one) => one.body)).toEqual(before);
+		expect(requests.slice(sent).filter((one) => one.includes("/comments"))).toHaveLength(0);
+	});
+
+	test("an absolute report path outside the workspace names the written file", async () => {
+		const file = join(root, "runner-temp", "report.md");
+		const result = await step({ ARCHBOARD_INPUT_REPORT_FILE: file });
+		expect(result.exitCode).toBe(0);
+		expect(savedReport(result, file).startsWith(COMMENT_MARKER)).toBe(true);
+	});
+
 	test("a run of an older head does not post its comment", async () => {
 		const before = comments.map((one) => one.body);
 		const sent = requests.length;
@@ -415,6 +388,12 @@ describe("the entry", () => {
 		expect(comments).toHaveLength(count);
 		const sticky = comments.find((one) => one.body.includes(COMMENT_MARKER));
 		expect(sticky?.body).toContain(headSha.slice(0, 7));
+		const sent = requests.length;
+		const filed = await step({ ARCHBOARD_INPUT_REPORT_FILE: "reports/no-vault.md" });
+		expect(filed.exitCode).toBe(updated.exitCode);
+		expect(annotations(filed.stdout)).toEqual(annotations(updated.stdout));
+		expect(savedReport(filed, "reports/no-vault.md")).toBe(sticky?.body ?? "");
+		expect(requests.slice(sent)).toEqual(["GET /repos/owner/name/pulls/7"]);
 		comments.length = 0;
 		expect((await step()).exitCode).toBe(0);
 		expect(comments).toHaveLength(0);

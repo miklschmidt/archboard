@@ -25,6 +25,28 @@ pull-request action holds a token that can comment, so pin it as you pin any thi
 
 The docs examples carry the SHA of the latest release. A tag can move, and a SHA cannot.
 
+## Take the report as a file
+
+The pull-request action can write its report to a file in place of the comment. Set `report-file`,
+and the action writes the Markdown that it would post to that file. It posts and changes no comment
+and writes no job summary, so the job needs only `contents: read`. Its `report` output names the
+file, and a later step puts the report where you want it, such as the job summary:
+
+```yaml
+- uses: miklschmidt/archboard/actions/pull-request@<commit SHA of the tag> # v0.3.0
+  id: architecture
+  with:
+    report-file: ${{ runner.temp }}/architecture.md
+- if: always() && steps.architecture.outputs.report != ''
+  run: cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+  env:
+    REPORT: ${{ steps.architecture.outputs.report }}
+```
+
+`always()` runs the last step also when the plan check fails the action's step.
+
+A relative path starts at the workspace. The Action creates missing parent directories. If the file cannot be written, the step fails and sets no `report` output.
+
 ## This repository
 
 [`.github/workflows/architecture.yml`](../.github/workflows/architecture.yml) runs both Actions on
