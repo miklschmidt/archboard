@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T16:45:00Z'
-updated_date: '2026-11-10T08:01:00Z'
+updated_date: '2026-11-10T15:36:00Z'
 labels:
   - renderer
 dependencies:
@@ -80,4 +80,6 @@ The site's Checkout API and Inventory service diagrams were drawn again. The sit
 Sol reviewed five rounds on gpt-6.1-sol at xhigh. Round 4 approved the test fixes and agreed to reverse S1. Round 5 asked to charge the blank pane by the scale lost instead of by the growth past the landing room (S5). That was declined, because the corpus measured the growth form, and the ADR now describes the code.
 
 Speed after the strip fix: one solve in WebAssembly takes a mean of 377 ms, a median of 220 ms, a p90 of 930 ms and a max of 2441 ms. Through a pool of six workers the wait is a mean of 120 ms, a median of 68 ms, a p90 of 277 ms and a max of 955 ms, with the same 105 answers as one solve. The two slowest readings rose from about 1.6 s to 2.4 s in one solve, because they now try more drawings.
+
+Frames in stacks (2026-11-10). The owner opened HTTP serving with six groups open and found tall blank holes beside the short frames. Three frames or more stood in rows, and each row was as tall as its tallest frame. The readings of this repository's model open one frame each, so the corpus never reached this code. A second corpus opens every door of each scope: 172 readings of 3 to 14 frames. The stacked placement now stands three frames or more in stacks side by side, shared the way that lands the whole largest (every partition up to 8 frames, else the shortest stack). A page that does not read counts no long detours. On the 172 readings natively, earlier head to now: mean landing 0.272 to 0.288 (92 land larger, 38 smaller), area 3617.7 M to 3171.5 M, blank 1185.5 M to 947.3 M, crossings 136287 to 132270, strips 2 to 0, slowest solve 68.7 s to 28.6 s. Main lands them at 0.251 with 15 strips and 203095 crossings. HTTP serving with six groups open, real renderer: 3590 by 2876 px at 0.33 to 3126 by 2615 at 0.36, card share 0.149 to 0.186, crossings 135 to 134, 1.4 s. The 109 single-frame readings through the real renderer: 3 change, crossings 2798 to 2837, blank 28.5 M to 27.5 M, landing at 0.6 or more stays 99. Tried and dropped: a fixed stack count, the count picked by the sketch cost (twice as slow), and a local search in place of every partition (more crossings than before). One reading fails to draw on main and on the earlier head with no clear planned channel: TASK-624.
 <!-- SECTION:NOTES:END -->
