@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-10T20:23:00Z'
-updated_date: '2026-11-10T23:37:00Z'
+updated_date: '2026-11-10T23:38:00Z'
 labels:
   - docs
   - tooling
@@ -44,6 +44,8 @@ Verified 2026-11-10. `bun run readme:assets banner` (inside nix develop) exit 0;
 Follow-up: the social card carries a line in its lower right corner, "Catch the calls your architecture doesn’t allow.", in the site's display face at 44px. The lockup keeps its first size (96px) above the table. The line names what the check catches, because the page's og:title already says what Archboard is for. The 10 Nov launch research says to lead with what the check catches. The line stands apart from the words that the table fits under, so the table keeps its full room. The text is in the SOCIAL layout in scripts/readme-assets/banner.ts.
 
 Second follow-up: the card's corner now holds a headline over a lead, right-aligned, as the site sets its words. The headline is "Stay in charge." in the display face at 60px. The lead is "Plan each change before your agent writes it." and "Catch the calls your architecture doesn’t allow." in the body face at 24px. At X's preview width of about 506px, the lead is small but legible, and a larger lead would run into the Painter card. The take now fails when Archboard Onest does not load, as it already did for Archboard Display.
+
+Third follow-up: the card's headline is "Stay in charge" with no final period, because a title or heading takes no final period. The two lead sentences keep theirs.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

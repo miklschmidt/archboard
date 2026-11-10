@@ -114,7 +114,7 @@ const SOCIAL: Layout = {
 	canvas: { left: 0, top: 0, width: 1280, height: 640 },
 	lockup: { left: 80, middle: 112, size: 96 },
 	corner: {
-		title: { text: "Stay in charge.", size: 60 },
+		title: { text: "Stay in charge", size: 60 },
 		lead: {
 			text: "Plan each change before your agent writes it.\nCatch the calls your architecture doesn’t allow.",
 			size: 24,

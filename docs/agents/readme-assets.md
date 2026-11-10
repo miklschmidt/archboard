@@ -81,7 +81,7 @@ The banner's lockup, the mark beside the name, comes from
 to the one the shell draws in `apps/web/src/ui/shell/components/Brand.tsx`. The banner
 also writes `docs/assets/archboard-social-card.jpg`. It is GitHub's social preview and the
 site's link preview, with the lockup above the table as the site's hero sets its words. Its lower
-right corner holds a headline and a lead, as the site sets them: "Stay in charge.", then planning
+right corner holds a headline and a lead, as the site sets them: "Stay in charge", then planning
 and the check in one sentence each. The words are in the social layout in
 `scripts/readme-assets/banner.ts`. GitHub does
 not read it from the repository: the owner uploads it by hand under Social preview in the
