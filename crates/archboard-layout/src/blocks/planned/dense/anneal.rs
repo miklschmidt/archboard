@@ -355,20 +355,21 @@ impl<'p> Search<'p> {
         let Some(all) = parts().reduce(Edges::round) else {
             return Vec::new();
         };
-        (0..self.scene.lines.len())
-            .filter(|&line| {
-                let bounds = &self.bounds[line];
-                bounds.near(&all) && !self.moved(line) && parts().any(|part| bounds.near(&part))
-            })
-            .filter_map(|line| {
-                let sketch = &self.weighed.sketches[line];
-                let added: f64 = (old.iter())
-                    .filter(|&&(part, _, _)| self.scene.blocks(line, part))
-                    .map(|&(part, _, was)| sketch.round(self.scene.boxes[part]) - sketch.round(was))
-                    .sum();
-                (added != 0.0).then_some((line, added))
-            })
-            .collect()
+        let mut rounds = Vec::new();
+        for (line, bounds) in self.bounds.iter().enumerate() {
+            if !bounds.near(&all) || self.moved(line) || !parts().any(|part| bounds.near(&part)) {
+                continue;
+            }
+            let sketch = &self.weighed.sketches[line];
+            let added: f64 = (old.iter())
+                .filter(|&&(part, _, _)| self.scene.blocks(line, part))
+                .map(|&(part, _, was)| sketch.round(self.scene.boxes[part]) - sketch.round(was))
+                .sum();
+            if added != 0.0 {
+                rounds.push((line, added));
+            }
+        }
+        rounds
     }
 
     /// The groups of the moved parts, and how far apart each group stands now.
@@ -424,10 +425,10 @@ impl<'p> Search<'p> {
     ///
     /// A move that costs more stands when a draw falls below how much its rise weighs at the
     /// heat. Until a line is counted it makes no crossing, and until it is sketched it costs its
-    /// cheapest way with nothing in its way, which is no more than it does. Where even that least rise weighs
-    /// too much for the draw, the move loses it before the rest is weighed: `None`. The margin
-    /// holds against any rounding of the weight. The draw is the one the search makes for that
-    /// move anyway, so no walk of the search changes.
+    /// cheapest way with nothing in its way, which is no more than it does. Where even that least
+    /// rise weighs too much for the draw, the move loses it before the rest is weighed: `None`.
+    /// The margin holds against any rounding of the weight. The draw is the one the search makes
+    /// for that move anyway, so no walk of the search changes.
     fn weigh(&mut self, change: &mut Change, heat: f64) -> Option<(f64, Option<f64>)> {
         let mut costs: Vec<f64> = change.lines.iter().map(|&line| self.least(line)).collect();
         change.fresh.clear();
