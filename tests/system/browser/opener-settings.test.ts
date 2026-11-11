@@ -32,7 +32,6 @@ import {
 	repository,
 	serverPath,
 	testResultSnapshot,
-	validationSnapshot,
 	verifyVisualModes,
 	visualSnapshot,
 } from "./support/opener-settings.ts";
@@ -225,22 +224,25 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 	expect(audit.violations).toEqual([]);
 	await verifyVisualModes(browser, "light");
 
-	// A relative executable is refused on the way out, before any request.
+	// Each invalid custom field reports its issue before either action sends a request.
 	await fillLabel(browser, "Executable", "./editor");
+	await fillArguments(browser, ["--without-path"]);
 	const beforeInvalidActions = await requests(browser);
 	await roleAction(browser, "button", "Save");
 	await pollUntil(
-		() => validationSnapshot(browser),
-		(value) => value.message !== null,
-		"the client-side relative executable validation",
+		() =>
+			browser.eval<boolean>(`(() => {
+				const dialog = document.querySelector('[role="dialog"]');
+				return ['[data-slot="input"]', 'textarea'].every(selector => {
+					const control = dialog?.querySelector(selector);
+					const issue = control?.closest('[data-slot="field"]')?.querySelector('[data-slot="field-error"][role="alert"]');
+					return control?.getAttribute('aria-invalid') === 'true' &&
+						issue?.checkVisibility() === true;
+				});
+			})()`),
+		Boolean,
+		"the executable and arguments to report their validation issues",
 	);
-	const invalidTree = await browser.run(
-		["snapshot", "--compact", "--selector", '[role="dialog"]'],
-		{
-			timeoutMs: 10_000,
-		},
-	);
-	expect(invalidTree).toContain("alert");
 	await roleAction(browser, "button", "Test");
 	expect(await requests(browser)).toEqual(beforeInvalidActions);
 
