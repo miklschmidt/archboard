@@ -180,6 +180,11 @@ async function openReplayPage(
 		{ features: [{ name: "prefers-color-scheme", value: request.theme }] },
 		RECORDER_MS.call,
 	);
+	// The page's animations move on the stepped clock alone. The browser starts a CSS transition
+	// on the document timeline when it creates it, and the clock adopts it only when it next
+	// stands the page's animations. A short one on a slow machine can run to its end in between,
+	// unseen, so its frames would differ from a fast machine's. On a stopped timeline it waits.
+	await page.call("Animation.setPlaybackRate", { playbackRate: 0 }, RECORDER_MS.call);
 	const url = replayUrl(request.serverUrl);
 	const navigation = await page.call("Page.navigate", { url }, RECORDER_MS.call);
 	const refused = navigation["errorText"];
