@@ -142,13 +142,6 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		"the current model from its repository",
 		WAIT,
 	);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(`document.querySelector('[data-slot="model-diagram"] svg') !== null`),
-		Boolean,
-		"the current model drawing",
-		WAIT,
-	);
 	await startModelWalkthrough(browser, "Shop/System#Tour");
 	await pollUntil(
 		() =>

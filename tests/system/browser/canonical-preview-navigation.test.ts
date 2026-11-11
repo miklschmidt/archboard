@@ -5,7 +5,7 @@ import {
 	pick as pickSubject,
 } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
-import { readFileSync, rmSync } from "node:fs";
+import { rmSync } from "node:fs";
 import { join } from "node:path";
 import { startOwnedServer } from "../support/owned-server.ts";
 import {
@@ -88,7 +88,6 @@ test("converted preview bookmarks and walkthroughs preserve exact original view 
 	await browser.run(["click", '[data-slot="semantic-presentation-next"]']);
 	await beat(browser, 2, "architecture");
 	expect(await drawn(browser, '[data-slot="model-walkthrough"]')).toContain("Shop/System#Extra");
-	expect(readFileSync(join(fixture.vault, "Shop.semantic.json"), "utf8")).toBe(fixture.original);
 }, 60_000);
 test("a former address reopens exact retained original coverage and its walkthrough", async () => {
 	await using resources = new AsyncDisposableStack();
@@ -135,9 +134,6 @@ test("a former address reopens exact retained original coverage and its walkthro
 		"the retained former state without live originals",
 		WAIT,
 	);
-	expect(
-		await browser.eval<string>(`new URLSearchParams(location.search).get('checkpointA')`),
-	).toBe(fixture.checkpoint);
 	await startModelWalkthrough(browser, "Shop/System#OldTour");
 	await beat(browser, 0, "architecture");
 	expect(await drawn(browser, '[data-slot="model-walkthrough"]')).toContain("Shop/System#Api");

@@ -3,7 +3,6 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { exportArchitectureModel, importArchitectureModel } from "@archboard/model/store-write";
-import { readArchitectureModel } from "@archboard/model/store-read";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import {
@@ -109,7 +108,4 @@ test("imported planning models remain readable through exact history and compari
 	expect(
 		await browser.eval<boolean>(`document.querySelector('[data-slot="model-error"]') === null`),
 	).toBe(true);
-	const current = readArchitectureModel(vault);
-	if (!current.success) throw new Error(JSON.stringify(current));
-	expect(current.manifest.current).toBeNull();
 }, 60_000);

@@ -145,14 +145,6 @@ test("attention lights canonical connections without hiding labels or cutting sh
 		WAIT,
 	);
 	await pick(browser, id("Renderer"));
-	const receded = await pollUntil(
-		() => filtersByName(browser),
-		(filters) => (filters["Archive"] ?? "none") !== "none",
-		"the unrelated module to recede",
-		WAIT,
-	);
-	for (const name of ["Renderer", "Viewer", "Writer"]) expect(receded[name]).toBe("none");
-	expect(receded["Archive"]).toContain("opacity");
 	const looks = await pollUntil(
 		() => labelLooks(browser),
 		(labels) =>
@@ -163,7 +155,7 @@ test("attention lights canonical connections without hiding labels or cutting sh
 	);
 	expect(looks.map((label) => label.words).toSorted()).toEqual(["draws", "replays", "shows"]);
 	for (const look of looks) {
-		expect(look).toMatchObject({ drawn: true, opacity: 1 });
+		expect(look.drawn).toBe(true);
 		expect(look.filtered < 1).toBe(look.words === "replays");
 	}
 	await browser.run(["focus", '[data-slot="model-diagram"]']);

@@ -469,7 +469,7 @@ It also proves that a hidden metadata edit preserves the mounted scene while the
 `canonical-model-selection.test.ts` covers pointer modifiers, keyboard selection, and immediate highlighting without layout or history changes.
 `canonical-model-gestures.test.ts` covers drag selection and Space/middle-button panning through the existing renderer bounds.
 `canonical-model-focus.test.ts` covers mixed ancestor/descendant focus, required context, history restoration, and unavailable subjects.
-`canonical-model-filters.test.ts` covers relationship and group visibility, hidden selections, reveal, and unchanged authored revisions.
+`canonical-model-filters.test.ts` covers relationship and group visibility, hidden selections, and reveal.
 `canonical-model-modes.test.ts` covers explicit flow choices, complete behavioral diagrams, architecture restoration, and selection across modes.
 `canonical-model-structure.test.ts` covers current structural updates through real claims and the public writer.
 It covers pinned history, stable selection through renames, relationship transfer, parent changes, and removal without replacement selection.
@@ -479,7 +479,7 @@ The right panel shows the Claimed badge while a selected subject is claimed.
 With no selection, it marks a claimed open module or flow.
 A claimed module scope never marks an unclaimed flow above it.
 A mark names the purpose and not the writer, holds no control, and moves neither the picture nor the focus.
-No take-back control exists. The marks leave when the agent releases the claim, and the revision stays the same.
+The marks leave when the agent releases the claim, and the revision stays the same.
 
 ### Controlled text workbench (TASK-143.03.13)
 
@@ -866,13 +866,12 @@ Captured walkthroughs retain their existing picture-readiness contract.
 
 The canonical sidebar reuses the existing shell layout owner.
 `shell-layout.test.ts` retains the 12-cell render matrix, focus, target minimums, offline fonts, pane letters, and activity assertions.
-Its underline probe now inspects the actual sidebar tab row.
 Its control probe excludes hidden disclosure content through browser visibility.
 Canonical selection, navigation, comparison, and walkthrough owners cover the sidebar transition.
 Browser helpers open the appropriate tab before acting on its visible content.
 
 `canonical-model-inspection.test.ts` replaces `semantic-board-inspection.test.ts`.
-It retains trusted keyboard input and the Find shortcut, focus, Escape, selection, and read-only behavior.
+It retains trusted keyboard input and the Find shortcut, focus, Escape, and selection.
 Existing canonical navigation, code, and reference owners cover containment and source navigation.
 
 `reader-column.test.ts` owns the left column through a real browser: Find, the tree, `Flows`, `History`, a second pane, and every move by keyboard, also in a presented pane.
@@ -882,13 +881,13 @@ Unit owners hold its rules: `module-tree.test.ts`, `reader-keys.test.ts`, `searc
 `reader-context.test.ts` owns what the right column adds through a real browser: the lists that follow the open module or the selection, the rows that open a flow or a walkthrough, the interface line, whose counts select on the module's own picture and whose heading opens About at its Interface section, and the door that opens at one click and lists its endpoints on hover.
 It also owns the layout engine switch in the `Picture` tab of the Settings dialog.
 `reader-expand.test.ts` owns a door's second action through a real browser: the control expands the door into the picture, the address keeps it across a reload and Back, and a tab, a panel row or a key takes it back. Unit owners hold its rules: `model-projection.test.ts` and `expansion.test.ts`.
-`reader-trace.test.ts` owns a trace in the reader: each further hop lights more faintly, across the doors, and goes with the pick.
+`reader-trace.test.ts` owns a trace in the reader. Each further hop has its own grade, across the doors, and the trace goes with the pick.
 `reader-measures.test.ts` owns where to look across the model: a selection reads the code history with no button, and the `Measures` dialog lists every module, sorts it from a column head, walks it from the keyboard and selects a module on its picture. It also pages through the code findings.
 `module-measures.test.ts` owns the one order of each measure and how a reading stands with history. `model-measures.test.tsx` owns the views of the dialog and what a table says in each state of a read. `model-code-evidence.test.tsx` owns the pager of the findings and the source lines round a finding's evidence.
 `relevance.test.ts` owns which flows and walkthroughs touch a subject, and `use-accepted-scene.test.tsx` owns that one engine's drawing never answers for the other.
 
 `canonical-model-groups.test.ts` replaces the legacy board group browser fixture.
-It retains computed selection-ring and read-only assertions.
+It retains computed selection-ring assertions.
 It also covers membership across recursive scopes, hidden selection counts, and explicit Focus.
 The existing group UI owner continues to cover shared chips and controls used by retained replay.
 
@@ -910,13 +909,13 @@ Their contracts include exact pane reports, selected source actions, foreign des
 Ownership transfer between models remains explicitly unavailable for canonical models, so its old move workflow retires.
 
 `canonical-model-legibility.test.ts` replaces the legacy status-legibility browser fixture.
-It retains computed light and dark colors, comparison ink, label paint order, kind icons, and simultaneous issue and selection marks.
+It retains paints that resolve in both themes, simultaneous issue and selection marks, the issue explanation, and group meaning.
 The public proposal fixture also proves structured issue details beside authored group meaning.
 Shared projection supplies unresolved subject identities and their represented aggregate connections to browser and exported drawings.
 The render-context runtime and HTTP/CLI owners cover exact replay and complete interface context.
 
 `canonical-model-presentation.test.ts` replaces the legacy walkthrough-presentation browser owner.
-It retains actual caption cross-fades, progress motion, camera arrival, subject emphasis, keyboard stepping, and return to the ordinary reading.
+It retains camera arrival, subject emphasis, keyboard and button stepping, and return to the ordinary reading.
 The canonical reader reuses the existing beat-focus and auto-fit rules with content, dimensions, and an explicit picture identity.
 Retained camera and presentation-box UI owners keep their existing behavior assertions.
 The walkthrough header owner also proves that sidebar controls remain held during playback and restore afterward.

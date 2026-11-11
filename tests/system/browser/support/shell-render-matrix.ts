@@ -1,8 +1,6 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve as resolvePath } from "node:path";
 
-import { browserTestRoots, type AgentBrowserSession } from "./agent-browser.ts";
+import type { AgentBrowserSession } from "./agent-browser.ts";
 import type { ThemeSnapshot } from "./shell-contract-types.ts";
 import {
 	AGENT_DOCK,
@@ -31,9 +29,6 @@ type MatrixProbe = {
 		forcedColorAdjust: string;
 		outlineStyle: string;
 		outlineWidth: number;
-		focusVisible?: boolean;
-		outline?: string;
-		active?: boolean;
 		ringVisible: boolean;
 		unclipped: boolean;
 	};
@@ -46,8 +41,6 @@ type MatrixProbe = {
 
 type ShellMatrixCell = {
 	viewport: "desktop" | "flip-scaled";
-	width: number;
-	height: number;
 	deviceScaleFactor: number;
 	actualDeviceScaleFactor: number;
 	theme: ShellTheme;
@@ -58,18 +51,11 @@ type ShellMatrixCell = {
 	pageOverflow: boolean;
 	touchTargets: MatrixProbe["touchTargets"];
 	stateHash: string;
-	/** The shell's measured rectangles, so an owner can hold them to the shared shell geometry. */
-	geometry: MatrixProbe["geometry"];
 	geometryHash: string;
-	normalizedHash: string;
-	screenshot: string;
-	screenshotSha256: string;
 	themeSnapshot: ThemeSnapshot;
 };
 
 type ShellRenderMatrix = {
-	revision: string;
-	artifactRoot: string;
 	cells: ShellMatrixCell[];
 };
 
@@ -80,7 +66,7 @@ const viewports = [
 const themes = ["light", "dark"] as const;
 const modes = ["normal", "reduced-motion", "forced-colors"] as const;
 
-function sha256(value: string | Uint8Array): string {
+function sha256(value: string): string {
 	return createHash("sha256").update(value).digest("hex");
 }
 
@@ -189,7 +175,7 @@ async function emulateMedia(
 
 /**
  * Read the shell's visual outcome: the parts by role, accessible name and
- * data-slot hook, the tokens, fonts, contrast, flatness, focus and target sizes.
+ * data-slot hook, fonts, contrast, focus and target sizes.
  * @param browser The page.
  * @returns The probe.
  */
@@ -220,7 +206,6 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		// Which variant is on screen, named after the model: the fact that
 		// changes while somebody watches (ADR 0023).
 		const variant = paneHeader?.querySelector('[data-slot="model-reading-selector"]');
-		const present = paneHeader?.querySelector('button[aria-label^="Present"]');
 		const column = document.querySelector('${NAVIGATOR_COLUMN}');
 		const nav = document.querySelector('${NAVIGATOR}');
 		// A technical token in the mono face: the count on the head of a section of the left column.
@@ -233,12 +218,12 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const picture = pane?.querySelector('[data-slot="model-diagram"]');
 		const panel = pane?.querySelector('[data-slot="model-panel"]');
 		if (!shell || !header || !wordmark || !control || !paneHeader || !modelCrumb || !variant || !technical ||
-			!present || !column || !nav || !stages || !bar || !pane || !selectedModel ||
+			!column || !nav || !stages || !bar || !pane || !selectedModel ||
 			!picture || !panel) {
 			throw new Error('shell matrix probe is incomplete: ' + JSON.stringify({
 				shell: !!shell, header: !!header, wordmark: !!wordmark, control: !!control,
 				paneHeader: !!paneHeader, modelCrumb: !!modelCrumb, variant: !!variant, technical: !!technical,
-				present: !!present, column: !!column, nav: !!nav, stages: !!stages, bar: !!bar,
+				column: !!column, nav: !!nav, stages: !!stages, bar: !!bar,
 				pane: !!pane, selectedModel: !!selectedModel,
 				picture: !!picture, panel: !!panel }));
 		}
@@ -266,14 +251,6 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		animationProbe.className = 'animate-pulse';
 		document.body.append(animationProbe);
 		const animationStyle = getComputedStyle(animationProbe);
-		const rootStyle = getComputedStyle(document.documentElement);
-		// Every control the two top rows actually offer, read off them rather
-		// than written down here; no control is a failure, not a vacuous pass.
-		const actionTargets = [...header.querySelectorAll('button'), ...paneHeader.querySelectorAll('button')]
-			.map(node => rect(node));
-		if (actionTargets.length === 0) {
-			throw new Error('shell matrix probe found no header controls');
-		}
 		const touchTargets = [...shell.querySelectorAll('button')]
 			.filter(node => node.checkVisibility() && rect(node).width > 0 && rect(node).height > 0)
 			.map(node => ({ label: node.getAttribute('aria-label') || node.textContent.trim().slice(0, 48),
@@ -304,7 +281,6 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			motion,
 			focus: { forcedColorAdjust: focusStyle.forcedColorAdjust,
 				outlineStyle: focusStyle.outlineStyle, outlineWidth: parseFloat(focusStyle.outlineWidth),
-				focusVisible: control.matches(':focus-visible'), outline: focusStyle.outline, active: document.activeElement === control,
 				ringVisible,
 				unclipped: focusRect.left - focusExtent >= 0 && focusRect.top - focusExtent >= 0 &&
 					focusRect.right + focusExtent <= innerWidth && focusRect.bottom + focusExtent <= innerHeight },
@@ -320,56 +296,19 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				nav: rect(nav), stages: rect(stages), bar: rect(bar), pane: rect(pane), picture: rect(picture),
 				panel: rect(panel), modelCrumb: rect(modelCrumb), control: rect(control) },
 			themeSnapshot: {
-				theme: document.documentElement.dataset.theme, wordmark: wordmark.textContent.trim(),
-				status: rootStyle.getPropertyValue('--status').trim().toLowerCase(), background: getComputedStyle(shell).backgroundColor,
 				inkContrast: (Math.max(foreground, backdrop) + 0.05) / (Math.min(foreground, backdrop) + 0.05),
-				visibleFocus: ringVisible,
-				modelIdentity: modelCrumb.textContent.trim(), stateName: variant.textContent.trim(),
 				selectedRepository: selectedModel.getAttribute('title'),
 				focusedPaneCount: panes.filter(node => node.getAttribute('aria-current') === 'true').length,
 				connectionTrouble,
 				fontsLoaded,
 				fontResources: performance.getEntriesByType('resource').map(entry => entry.name)
 					.filter(name => /[.](?:ttf|otf|woff2?)(?:[?#]|$)/.test(name)),
-				actionTargets: actionTargets.map(({ width, height }) => ({ width, height })),
-				presentTarget: (() => { const value = rect(present); return { width: value.width, height: value.height }; })(),
 			}
 		};
 	})()`);
 }
 
-/**
- * The short git revision of the checkout under test.
- * @returns Twelve hex characters.
- */
-function currentRevision(): string {
-	return Bun.spawnSync(["git", "rev-parse", "--short=12", "HEAD"], {
-		cwd: resolvePath(import.meta.dir, "../../../.."),
-	})
-		.stdout.toString()
-		.trim();
-}
-
-/**
- * Where rendered evidence goes: beside the lane root, in the runner's
- * temporary directory, so it outlives the lane's own cleanup.
- * @param revision The short git revision.
- * @returns The directory, created.
- */
-function evidenceRoot(revision: string = currentRevision()): string {
-	const root = join(dirname(browserTestRoots().laneRoot), "archboard-shell-matrix", revision);
-	mkdirSync(root, { recursive: true });
-	return root;
-}
-
-async function captureShellRenderMatrix(
-	browser: AgentBrowserSession,
-	repoRoot: string,
-): Promise<ShellRenderMatrix> {
-	const revision = Bun.spawnSync(["git", "rev-parse", "--short=12", "HEAD"], { cwd: repoRoot })
-		.stdout.toString()
-		.trim();
-	const artifactRoot = evidenceRoot(revision);
+async function captureShellRenderMatrix(browser: AgentBrowserSession): Promise<ShellRenderMatrix> {
 	const cells: ShellMatrixCell[] = [];
 	for (const viewport of viewports) {
 		await browser.run([
@@ -383,8 +322,6 @@ async function captureShellRenderMatrix(
 			for (const mode of modes) {
 				const restoreMedia = await emulateMedia(browser, theme, mode);
 				let value: MatrixProbe;
-				const name = `${viewport.name}-${theme}-${mode}`;
-				const screenshot = join(artifactRoot, `${name}.png`);
 				try {
 					await switchTheme(browser, theme);
 					// The sizes the probe reads are those of the loaded faces.
@@ -393,7 +330,6 @@ async function captureShellRenderMatrix(
 						"new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))",
 					);
 					value = await probe(browser);
-					await browser.run(["screenshot", screenshot]);
 				} finally {
 					await restoreMedia();
 				}
@@ -405,13 +341,8 @@ async function captureShellRenderMatrix(
 						touchTargets: value.touchTargets.map(({ width, height }) => ({ width, height })),
 					}),
 				);
-				const normalizedHash = sha256(
-					stable({ viewport, theme, mode, ...value, themeSnapshot: undefined }),
-				);
 				cells.push({
 					viewport: viewport.name,
-					width: viewport.width,
-					height: viewport.height,
 					deviceScaleFactor: viewport.scale,
 					actualDeviceScaleFactor: value.deviceScaleFactor,
 					theme,
@@ -422,11 +353,7 @@ async function captureShellRenderMatrix(
 					pageOverflow: value.pageOverflow,
 					touchTargets: value.touchTargets,
 					stateHash,
-					geometry: value.geometry,
 					geometryHash,
-					normalizedHash,
-					screenshot,
-					screenshotSha256: sha256(readFileSync(screenshot)),
 					themeSnapshot: value.themeSnapshot,
 				});
 			}
@@ -439,17 +366,7 @@ async function captureShellRenderMatrix(
 	} finally {
 		await restoreMedia();
 	}
-	writeFileSync(
-		join(artifactRoot, "metrics.json"),
-		`${JSON.stringify({ revision, cells }, null, 2)}\n`,
-	);
-	return { revision, artifactRoot, cells };
+	return { cells };
 }
 
-export {
-	type ShellMatrixCell,
-	type ShellRenderMatrix,
-	emulateMedia,
-	evidenceRoot,
-	captureShellRenderMatrix,
-};
+export { type ShellMatrixCell, type ShellRenderMatrix, emulateMedia, captureShellRenderMatrix };

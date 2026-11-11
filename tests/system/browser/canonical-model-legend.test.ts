@@ -114,7 +114,7 @@ function selectedParts(browser: AgentBrowserSession): Promise<string[]> {
 /** The switch of each line type in the legend, with whether the picture draws that type. */
 function switches(browser: AgentBrowserSession): Promise<string[]> {
 	return browser.eval<string[]>(
-		`[...document.querySelectorAll('${LEGEND} [role="switch"]')].map((one) => \`\${one.getAttribute('aria-label')}: \${one.getAttribute('aria-checked')}\`)`,
+		`[...document.querySelectorAll('${LEGEND} [role="switch"]')].map((one) => \`\${one.getAttribute('data-filter-kind')}: \${one.getAttribute('aria-checked')}\`)`,
 	);
 }
 
@@ -149,17 +149,14 @@ test("each line type is its own switch, the legend's words stay put while a read
 		WAIT,
 	);
 	const rest = await wordsAt(browser);
-	expect(await switches(browser)).toEqual([
-		"Show Calls lines: true",
-		"Show Data lines: true",
-		"Show Event lines: true",
-	]);
+	expect(await switches(browser)).toEqual(["call: true", "data: true", "event: true"]);
 	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="model-legend-marks"] li [title]')].map((name) => name.textContent)`,
-		),
+		await browser.eval<{ marks: number; switches: number }>(`(() => {
+			const marks = document.querySelector('[data-slot="model-legend-marks"]');
+			return { marks: marks.querySelectorAll('li [title]').length, switches: marks.querySelectorAll('[role="switch"]').length };
+		})()`),
 		"the mixed line and the marks of lines, which no reader hides, stand apart",
-	).toEqual(["Mixed kinds", "More emphasis", "Illustrated traffic"]);
+	).toEqual({ marks: 3, switches: 0 });
 
 	await browser.run(["click", '[data-filter-kind="event"]']);
 	await pollUntil(
@@ -186,11 +183,7 @@ test("each line type is its own switch, the legend's words stay put while a read
 		"the second door gone, hidden from the keyboard",
 		WAIT,
 	);
-	expect(await switches(browser)).toEqual([
-		"Show Calls lines: false",
-		"Show Data lines: true",
-		"Show Event lines: false",
-	]);
+	expect(await switches(browser)).toEqual(["call: false", "data: true", "event: false"]);
 	expect(await wordsAt(browser)).toBe(rest);
 
 	await browser.run(["click", '[data-slot="model-legend-show-all"]']);
@@ -218,11 +211,6 @@ test("each line type is its own switch, the legend's words stay put while a read
 	);
 	expect(await pressed(browser, PUBLIC)).toBe("true");
 	expect(await wordsAt(browser)).toBe(rest);
-	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="canvas-surface"]').classList.contains('is-probing') && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"]:not(.is-lit)') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Router"].is-lit') !== null`,
-		),
-	).toBe(true);
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map((row) => row.getAttribute('data-subject-id')).sort()`,

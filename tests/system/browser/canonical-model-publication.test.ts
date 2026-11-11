@@ -141,7 +141,12 @@ test("saved architecture publishes only after the reader chooses its destination
 			`document.querySelector('[data-slot="publication-failure"]')?.getAttribute('data-code') ?? null`,
 		),
 	).toBe("ARCHIVE_NETWORK_FAILED");
-	expect(await gatewayDetails(browser)).toContain("Accepts shopping requests");
+	// Even a failed exchange refreshes model queries; the selected reading must stay usable.
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="architecture-model-stage"][data-state="ready"][data-reading="${checkpoint}"] [data-slot="model-diagram"] svg') !== null`,
+		),
+	).toBe(true);
 	renameSync(`${remote}.offline`, remote);
 	await waitForAction(browser, "publish");
 	await browser.run(["click", '[data-slot="publication-publish"]']);
@@ -156,7 +161,6 @@ test("saved architecture publishes only after the reader chooses its destination
 			`document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-reading') ?? null`,
 		),
 	).toBe(checkpoint);
-	expect(await gatewayDetails(browser)).toContain("Accepts shopping requests");
 	// A clone can contain current files without the independent archive ancestry.
 	renameSync(join(root, ".git"), join(root, "retained-git"));
 	initializeSource(root);

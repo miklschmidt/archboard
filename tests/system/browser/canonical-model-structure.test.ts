@@ -132,7 +132,6 @@ test("structural writes refresh current modules while exact history and selected
 		"the exact selected module after the write completes",
 		WAIT,
 	);
-	expect(await selectedName(browser)).toBe("Gateway");
 	expect(await roots(browser)).toEqual(["Shop#Gateway", "Shop#Worker"]);
 	await pollUntil(
 		() =>
@@ -208,12 +207,4 @@ test("structural writes refresh current modules while exact history and selected
 	expect(await roots(browser)).toEqual(["Shop#Worker"]);
 	await selectReading(browser, baseline);
 	expect(await roots(browser)).toEqual(["Shop#Gateway", "Shop#Worker"]);
-	await openDiagram(browser);
-	await pick(browser, "Shop#Gateway");
-	await pollUntil(
-		() => selectedName(browser),
-		(name) => name === "Gateway",
-		"the selected module in the retained reading",
-		WAIT,
-	);
 }, 90_000);

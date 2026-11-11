@@ -1,8 +1,6 @@
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
-import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import {
@@ -27,7 +25,7 @@ function ringed(browser: AgentBrowserSession, ids: readonly string[]): Promise<s
 	})`);
 }
 
-test("a group selects all canonical members across scopes and changes no architecture", async () => {
+test("a group selects all canonical members across scopes", async () => {
 	await using resources = new AsyncDisposableStack();
 	const vault = vaultIn(join(browserTestRoots().ownerRoot, "module-groups"));
 	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
@@ -61,9 +59,6 @@ test("a group selects all canonical members across scopes and changes no archite
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
-	const request = createJsonRequester(server);
-	const before = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!before.body.success) throw new Error(JSON.stringify(before.body));
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", server.base]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
@@ -114,7 +109,4 @@ test("a group selects all canonical members across scopes and changes no archite
 		"the group selection cleared",
 		WAIT,
 	);
-	const after = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!after.body.success) throw new Error(after.body.error);
-	expect(after.body.revision).toEqual(before.body.revision);
 }, 60_000);

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { cpSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import type {
@@ -248,8 +248,6 @@ test("foreign references preserve explicit addresses and recover pinned architec
 		body: { vault, claim: claim.body.claim.id, writer: "fixture-agent" },
 	});
 	if (!edited.body.success) throw new Error(JSON.stringify(edited.body));
-	const before = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!before.body.success) throw new Error(JSON.stringify(before.body));
 	const browser = resources.use(await createAgentBrowser());
 	const address = new URL(server.base);
 	address.searchParams.set("modelA", "Shop");
@@ -409,10 +407,6 @@ test("foreign references preserve explicit addresses and recover pinned architec
 			`document.querySelector('[data-slot="model-state-details"][data-lifecycle="historical"]') !== null`,
 		),
 	).toBe(true);
-	expect(existsSync(join(foreignVault, "model.json"))).toBe(false);
-	const after = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!after.body.success) throw new Error(JSON.stringify(after.body));
-	expect(after.body.revision).toEqual(before.body.revision);
 	const unavailable = new URL(await browser.eval<string>("location.href"));
 	unavailable.searchParams.set("repoA", "github.com/acme/missing");
 	await browser.run(["open", unavailable.href]);

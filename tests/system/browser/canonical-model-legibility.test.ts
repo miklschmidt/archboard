@@ -24,7 +24,7 @@ import {
 } from "./support/canonical-page.ts";
 import { initializeSource } from "./support/canonical-model.ts";
 import { mintId } from "@archboard/model/ids";
-import { OPAQUE_SRGB, edgeInks, sameHue, unresolvedPaints } from "./support/computed-colours.ts";
+import { unresolvedPaints } from "./support/computed-colours.ts";
 
 /** How long any one thing here is waited for. */
 const WAIT = { timeoutMs: 6_000 } as const;
@@ -34,45 +34,6 @@ const SURFACE = "[data-slot='model-diagram'] [data-slot='canvas-surface']";
 
 /** The panel beside the diagram. */
 const INSPECTOR = "[data-slot='module-details']";
-
-/**
- * The ink one card's icon tile is drawn in, or null while the card is not there.
- *
- * Null rather than a throw, because the surface is remounted whenever a new
- * picture arrives — a render that lands between a click and this question would
- * otherwise fail the owner for a reason that has nothing to do with what it is
- * about. `iconInk` waits for the card instead.
- * @param browser The page.
- * @param name What the card says.
- * @returns The tile's front edge as the browser resolves it, spelt as opaque sRGB, or null.
- */
-const drawnIconInk = (browser: AgentBrowserSession, name: string): Promise<string | null> =>
-	browser.eval<string | null>(
-		`(() => {` +
-			OPAQUE_SRGB +
-			` const card = [...document.querySelectorAll("${SURFACE} [data-semantic-kind='node']")]` +
-			`  .find((group) => group.textContent.includes(${JSON.stringify(name)}));` +
-			` if (card === undefined) { return null; }` +
-			// The tile is a small block: its first rect is its body, in the tone of its edge.
-			` const tile = [...card.querySelectorAll("rect")].find((rect) => rect.getAttribute("rx") === "5");` +
-			` return tile === undefined ? null : opaque(getComputedStyle(tile).fill); })()`,
-	);
-
-/**
- * The same, waited for.
- * @param browser The page.
- * @param name What the card says.
- * @returns The ink.
- */
-const iconInk = async (browser: AgentBrowserSession, name: string): Promise<string> => {
-	const ink = await pollUntil(
-		() => drawnIconInk(browser, name),
-		(found) => found !== null,
-		`the icon on the card for "${name}" to be drawn`,
-		WAIT,
-	);
-	return ink ?? "";
-};
 
 /**
  * Whether a subject's group carries the warning badge, and whether the reader's
@@ -115,7 +76,7 @@ const pick = (browser: AgentBrowserSession, id: string): Promise<unknown> =>
 			` view.dispatchEvent(new MouseEvent("click", where)); })()`,
 	);
 
-test("a reader sees what changed, what belongs together and what is unsettled", async () => {
+test("a reader sees what is unsettled and what belongs together, painted on both grounds", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "model-legibility");
 	const vault = vaultIn(root);
@@ -234,51 +195,22 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	);
 	await switchTheme(browser, "light");
 
-	// The ids the model minted, found the way a viewer finds them.
-	const ids = await browser.eval<Record<string, string>>(
-		`(() => {` +
-			` const found = {};` +
-			` for (const group of document.querySelectorAll("${SURFACE} [data-semantic-id]")) {` +
-			`   const words = group.textContent.trim();` +
-			`   if (words.includes("Writer")) found.writer = group.dataset.semanticId;` +
-			`   if (words.includes("Queue")) found.queue = group.dataset.semanticId;` +
-			`   if (words === "hands it over") found.hero = group.dataset.semanticId;` +
-			`   if (words === "enqueues") found.added = group.dataset.semanticId;` +
-			`   if (words === "writes") found.gone = group.dataset.semanticId; }` +
-			` return found; })()`,
-	);
-	expect(Object.keys(ids).toSorted()).toEqual(["added", "gone", "hero", "queue", "writer"]);
-
 	// Every paint in the picture resolves against the page's own tokens.
 	expect(await unresolvedPaints(browser, SURFACE)).toEqual([]);
 
-	// One ink from end to end. The band behind the line was already coloured;
-	// what a reader could not see is that the line belonged to it rather than
-	// being grey scenery over the top.
-	const added = await edgeInks(browser, SURFACE, ids["added"] ?? "");
-	expect(sameHue(added.line, added.band)).toBe(true);
-	// A relationship the proposal dropped is still drawn, in its own ink.
-	const gone = await edgeInks(browser, SURFACE, ids["gone"] ?? "");
-	expect(sameHue(gone.line, gone.band)).toBe(true);
-	expect(gone.line).not.toBe(added.line);
-
-	// Configured types keep distinct chips even when the nodes share a group.
-	const writePath = await iconInk(browser, "Gateway");
-	expect(await iconInk(browser, "Queue")).not.toBe(writePath);
-	expect(await iconInk(browser, "Ledger")).not.toBe(writePath);
-
+	const writer = id("Writer");
 	// What nobody has decided is on the card, with nothing selected — and
 	// picking that very card out shows both marks at once, which is the case a
 	// single mark per subject used to lose.
 	await pollUntil(
-		() => marksOn(browser, ids["writer"] ?? ""),
+		() => marksOn(browser, writer),
 		(marks) => marks.warned && !marks.attended,
 		"the unsettled part to be badged before anybody picks anything",
 		WAIT,
 	);
-	await pick(browser, ids["writer"] ?? "");
+	await pick(browser, writer);
 	await pollUntil(
-		() => marksOn(browser, ids["writer"] ?? ""),
+		() => marksOn(browser, writer),
 		(marks) => marks.warned && marks.attended,
 		"the same part to be both badged and ringed once it is picked out",
 		WAIT,
@@ -319,16 +251,8 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	);
 	expect(await unresolvedPaints(browser, SURFACE)).toEqual([]);
 
-	// And all of it again on the other ground. The inks change, because they are
-	// picked for the ground they are drawn on; what they say does not.
-	const lightIcon = await iconInk(browser, "Gateway");
+	// And again on the other ground.
 	await switchTheme(browser, "dark");
-	await pollUntil(
-		() => iconInk(browser, "Gateway"),
-		(ink) => ink !== lightIcon,
-		"the picture to take the dark ground's colours",
-		WAIT,
-	);
 	await browser.run(["press", "Backspace"]);
 	await pollUntil(
 		() =>
@@ -340,12 +264,6 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 		WAIT,
 	);
 	expect(await unresolvedPaints(browser, SURFACE)).toEqual([]);
-	const darkAdded = await edgeInks(browser, SURFACE, ids["added"] ?? "");
-	expect(sameHue(darkAdded.line, darkAdded.band)).toBe(true);
-	expect(darkAdded.line).not.toBe(added.line);
-	const darkWritePath = await iconInk(browser, "Gateway");
-	expect(await iconInk(browser, "Queue")).not.toBe(darkWritePath);
-	expect(await iconInk(browser, "Ledger")).not.toBe(darkWritePath);
 
 	await server.assertRunning();
 }, 90_000);

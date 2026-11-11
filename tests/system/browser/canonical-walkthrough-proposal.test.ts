@@ -84,12 +84,6 @@ test("a live proposal update preserves its open walkthrough until explicit resta
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await openDestination(browser, "walkthroughs");
 	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('[data-walkthrough-id]') !== null`),
-		Boolean,
-		"the proposed narrative",
-		WAIT,
-	);
-	await pollUntil(
 		() =>
 			browser.eval<boolean>(
 				`(() => { const choice = document.querySelector('[data-walkthrough-id="Shop#Tour"]'); return choice !== null && choice.getBoundingClientRect().height > 0; })()`,

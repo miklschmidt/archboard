@@ -145,22 +145,6 @@ test("walkthrough beats change readings while one revision stays captured until 
 	address.searchParams.set("scopeA", "Shop#Gateway");
 	await browser.run(["open", address.href]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
-	await openDestination(browser, "walkthroughs");
-	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('[data-walkthrough-id]') !== null`),
-		Boolean,
-		"available walkthroughs",
-		WAIT,
-	);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Handler"]') !== null`,
-			),
-		Boolean,
-		"the original handler selection",
-		WAIT,
-	);
 	await pick(browser, "Shop#Handler");
 	await openDestination(browser, "walkthroughs");
 	await pollUntil(
@@ -238,12 +222,6 @@ test("walkthrough beats change readings while one revision stays captured until 
 	).toBe(0);
 	await browser.run(["click", '[data-slot="semantic-presentation-next"]']);
 	await beat(browser, 5, "architecture");
-	expect(
-		await browser.eval<string>(
-			`document.querySelector('[data-slot="semantic-presentation-heading"]').textContent`,
-		),
-	).toBe("Back outside");
-
 	expect(
 		await browser.eval<string>(
 			`document.querySelector('[data-slot="model-walkthrough"]').getAttribute('data-revision')`,

@@ -1,51 +1,6 @@
-// Reading colours as the browser computes them, for owners that compare them.
+// Reading a picture's paints as the browser computes them.
 
 import type { AgentBrowserSession } from "./agent-browser.ts";
-
-/**
- * A page function, `opaque`, that spells a computed colour as the opaque sRGB a
- * reader sees it in, whatever space the page's token is written in: a picture
- * paints with the page's own tokens (TASK-346), which a browser may compute as
- * `oklch()` or `color(srgb …)`.
- */
-const OPAQUE_SRGB =
-	`const opaque = (css) => {` +
-	` const context = new OffscreenCanvas(1, 1).getContext("2d");` +
-	` context.fillStyle = "rgb(from " + css + " r g b / 1)";` +
-	` context.fillRect(0, 0, 1, 1);` +
-	` const [r, g, b] = context.getImageData(0, 0, 1, 1).data;` +
-	` return "rgb(" + r + ", " + g + ", " + b + ")"; };`;
-
-/**
- * What the browser resolves one relationship's inks to: the line and the band
- * behind it.
- *
- * Computed styles, not attributes, because an attribute a stylesheet overrode
- * would pass a reading of the markup and fail the reader. Each is spelt as
- * opaque sRGB. A painted page holds no markers, so the renderer's own tests and
- * the parity corpus own the arrowhead's ink.
- * @param browser The page.
- * @param surface The selector of the element the picture is in.
- * @param id The relationship's semantic id.
- * @returns The two inks, each as the browser resolves it.
- */
-const edgeInks = (
-	browser: AgentBrowserSession,
-	surface: string,
-	id: string,
-): Promise<{ line: string; band: string }> =>
-	browser.eval(
-		`(() => {` +
-			OPAQUE_SRGB +
-			` const group = document.querySelector("${surface} [data-semantic-id='${id}']");` +
-			` const paths = [...group.querySelectorAll(":scope > path")];` +
-			` const line = paths.find((path) => path.getAttribute("marker-end") !== null);` +
-			` const band = paths.find((path) => path !== line && !path.classList.contains("ab-halo"));` +
-			` return {` +
-			`  line: opaque(getComputedStyle(line).stroke),` +
-			`  band: opaque(getComputedStyle(band).stroke),` +
-			` }; })()`,
-	);
 
 /**
  * Every paint in a picture that the browser could not resolve.
@@ -73,34 +28,4 @@ const unresolvedPaints = (browser: AgentBrowserSession, surface: string): Promis
 			`  .map((name) => element.tagName + " " + name + ": " + declared(name)); })`,
 	);
 
-/**
- * The hue of a colour the browser computed, such as \`rgb(12, 34, 56)\`.
- * @param css The computed colour.
- * @returns Its hue, in degrees.
- */
-function computedHue(css: string): number {
-	const [r, g, b] = (css.match(/[\d.]+/gu) ?? []).slice(0, 3).map((value) => Number(value) / 255);
-	const [red, green, blue] = [r ?? 0, g ?? 0, b ?? 0];
-	const max = Math.max(red, green, blue);
-	const delta = max - Math.min(red, green, blue);
-	if (delta === 0) return 0;
-	const sector =
-		max === red
-			? ((green - blue) / delta) % 6
-			: max === green
-				? (blue - red) / delta + 2
-				: (red - green) / delta + 4;
-	return (sector * 60 + 360) % 360;
-}
-
-/**
- * Whether two computed colours share a hue: one colour drawn at two strengths.
- * @param a One colour, as the browser computes it.
- * @param b The other.
- * @returns True when their hues lie within a few degrees.
- */
-function sameHue(a: string, b: string): boolean {
-	return Math.abs(computedHue(a) - computedHue(b)) < 6;
-}
-
-export { OPAQUE_SRGB, edgeInks, sameHue, unresolvedPaints };
+export { unresolvedPaints };

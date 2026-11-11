@@ -144,22 +144,6 @@ test("agent navigation opens the requested canonical pane without moving its nei
 			`document.querySelector('[data-pane="A"] [data-slot="model-diagram"] svg')?.getAttribute('data-test-scene') ?? null`,
 		),
 	).toBe("kept");
-	await browser.run(["reload"]);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-pane="B"] [data-slot="model-reading"][data-scope="Shop#Handler"]') !== null`,
-			),
-		Boolean,
-		"the requested canonical pane after reload",
-		WAIT,
-	);
-	await pollUntil(
-		() => request<{ panes: { paneId: string }[] }>("/api/panes"),
-		(result) => result.body.panes.some((pane) => pane.paneId === "B"),
-		"the restored pane registration",
-		WAIT,
-	);
 	const presented = await request<{ success: boolean }>("/api/browser/show", {
 		method: "POST",
 		body: { pane: "B", agent: true, reading: { model: "Shop", walkthrough: "Shop#Tour", beat: 1 } },

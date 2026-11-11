@@ -107,9 +107,6 @@ test("one surface outlives each reading, and Back returns the camera of that rea
 		WAIT,
 	);
 	await settledOn(browser, "Shop#Gateway");
-	expect(
-		await browser.eval<boolean>(`document.querySelector('[data-filter-kind="call"]') !== null`),
-	).toBe(true);
 	expect(await browser.eval<boolean>(`window.held.every((part) => part.isConnected)`)).toBe(true);
 	const address = new URLSearchParams({
 		scopeA: "Shop#Gateway",

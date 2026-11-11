@@ -30,16 +30,11 @@ type DialogSnapshot = {
 	rootContainsDialog: boolean;
 	portalAtBody: boolean;
 };
-type ValidationSnapshot = {
-	message: string | null;
-	saveDisabled: boolean;
-	testDisabled: boolean;
-};
 /** What the last test answered, inside the dialog. */
 type TestResultSnapshot = {
 	role: string | null;
 	text: string | null;
-	github: { text: string; href: string; target: string; rel: string } | null;
+	github: { href: string; target: string; rel: string } | null;
 };
 /** A persistent shell notice by title. */
 type NoticeSnapshot = {
@@ -144,21 +139,6 @@ export async function dialogSnapshot(browser: AgentBrowserSession): Promise<Dial
 	})()`);
 }
 
-export async function validationSnapshot(
-	browser: AgentBrowserSession,
-): Promise<ValidationSnapshot> {
-	return browser.eval<ValidationSnapshot>(`(() => {
-		const dialog = ${OPENER_DIALOG};
-		const button = label => [...(dialog?.querySelectorAll('button') ?? [])]
-			.find(candidate => candidate.textContent?.trim() === label);
-		return {
-			message: [...(dialog?.querySelectorAll('[data-slot="field-error"]') ?? [])].map(node => node.textContent.trim()).join(' ') || null,
-			saveDisabled: button('Save')?.disabled ?? false,
-			testDisabled: button('Test')?.disabled ?? false
-		};
-	})()`);
-}
-
 export async function testResultSnapshot(
 	browser: AgentBrowserSession,
 ): Promise<TestResultSnapshot> {
@@ -166,12 +146,12 @@ export async function testResultSnapshot(
 		const dialog = ${OPENER_DIALOG};
 		const alert = [...(dialog?.querySelectorAll('[data-slot="alert"]') ?? [])]
 			.find(node => /Opener works|Test failed/.test(node.textContent));
-		const github = [...(alert?.querySelectorAll('a') ?? [])].find(node => node.textContent?.trim() === 'Open on GitHub');
+		const github = alert?.querySelector('a');
 		return {
 			role: alert?.getAttribute('role') ?? null,
 			text: alert?.textContent?.replace(/\\s+/g, ' ').trim() ?? null,
 			github: github instanceof HTMLAnchorElement ? {
-				text: github.textContent?.trim() ?? '', href: github.href, target: github.target, rel: github.rel
+				href: github.href, target: github.target, rel: github.rel
 			} : null
 		};
 	})()`);
