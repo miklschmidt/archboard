@@ -11,6 +11,7 @@
 				"packages/renderer/src",
 				"packages/model/src/shared",
 				"packages/code-binding/src/shared",
+				"packages/renderer/assets/theme.css",
 				"packages/timing/src",
 				"packages/renderer/assets/fonts/*.ttf",
 				"apps/web/src/ui/shell/components/Brand.tsx",
@@ -26,7 +27,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "5f562be5841abe855afa1299c5a6d4e6625291d1753ebd3f8234c42b63205135"
+			"hash": "7af61d41afa8c16a53e2c2615f65cb8e53f737a2419ae1578062b4f5883fee34"
 		},
 		{
 			"name": "hero",
