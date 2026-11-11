@@ -77,9 +77,9 @@ interface Layout {
 	/**
 	 * Words in the lower right corner, set as the site sets its words: a headline in the display face
 	 * over a lead in the body face. Each breaks where its text holds a newline. A word between
-	 * tildes is struck out with one red diagonal line. Each has its font size. The corner says how
-	 * far the words stand from the right and bottom edges. The table neither fits the picture around
-	 * them nor darkens the picture behind them.
+	 * tildes is crossed out with two red diagonal lines, and a word between asterisks is set in
+	 * gold. Each has its font size. The corner says how far the words stand from the right and bottom
+	 * edges. The table neither fits the picture around them nor darkens the picture behind them.
 	 */
 	readonly corner: {
 		readonly title: Words;
@@ -126,10 +126,10 @@ const SOCIAL: Layout = {
 	picture: { from: 150, to: 540 },
 	lockup: { left: 80, middle: 112, size: 96 },
 	corner: {
-		title: { text: "Read the ~code~ architecture", size: 54 },
+		title: { text: "Read the ~code~ *architecture*", size: 54 },
 		lead: {
 			text: "Plan each change before your agent writes it.\nCatch the calls your architecture doesn’t allow.",
-			size: 24,
+			size: 26,
 		},
 		right: 80,
 		bottom: 56,

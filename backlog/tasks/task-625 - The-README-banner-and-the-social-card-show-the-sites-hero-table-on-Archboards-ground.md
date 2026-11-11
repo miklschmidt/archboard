@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-10T20:23:00Z'
-updated_date: '2026-11-11T00:27:00Z'
+updated_date: '2026-11-11T00:33:00Z'
 labels:
   - docs
   - tooling
@@ -50,6 +50,8 @@ Third follow-up: the card's headline is "Stay in charge" with no final period, b
 Fourth follow-up: removed the inner shadow on the card and the hard black band at the banner's foot. Both came from the hero's shader, which fades the table into the ground near every canvas edge (10% at the top, 4% at the foot, 3% at each side), and from the banner's canvas ending 37px above the banner's bottom edge. lightTable now takes an optional room, which sets where the picture lies up the canvas. The site does not pass it. The kit's layouts set the picture's span on the page and run the canvas past every edge of the picture. The stage page fades the table through a page-sized frame instead: the banner at its left (637-824px) and its foot (540-724px), and the card not at all. The site's stylesheet caps a canvas at its container's width, so the stage lifts that cap.
 
 Fifth follow-up: the card's headline reads "Read the code architecture" on one line at 54px, with "code" struck out by one red diagonal line in --removed, the colour that the site's drawings give what a change removes. The layout writes a struck word between tildes. At 60px the line ran into the Painter card.
+
+Sixth follow-up: on the card's headline, "code" is in --ink-faint and crossed out by two diagonal lines, 0.1em thick, a step darker than --removed (oklch(from var(--removed) calc(l - 0.12) calc(c + 0.04) h)). "architecture" is in --gold, the colour the site spends on what is chosen. A layout writes a gold word between asterisks. The lead is 26px. A single struck line kept "code" more legible at X's preview size, but the owner chose the cross.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

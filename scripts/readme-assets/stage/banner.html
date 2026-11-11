@@ -59,12 +59,14 @@
 			.corner .lead {
 				max-width: none;
 			}
-			/* A struck word: one diagonal line up through its capitals, in the colour that the site's
-			   drawings give what a change removes. */
+			/* A struck word: in faint ink, crossed out by two diagonal lines through its capitals, a
+			   step darker than the colour that the site's drawings give what a change removes. */
 			.corner s {
 				position: relative;
 				text-decoration: none;
+				color: var(--ink-faint);
 			}
+			.corner s::before,
 			.corner s::after {
 				content: "";
 				position: absolute;
@@ -73,8 +75,16 @@
 				top: calc(50% + 0.05em);
 				height: 0.1em;
 				border-radius: 0.05em;
-				background: var(--removed);
+				background: oklch(from var(--removed) calc(l - 0.12) calc(c + 0.04) h);
 				transform: translateY(-50%) rotate(-18deg);
+			}
+			.corner s::before {
+				transform: translateY(-50%) rotate(18deg);
+			}
+			/* A chosen word, in gold. */
+			.corner em {
+				font-style: normal;
+				color: var(--gold);
 			}
 		</style>
 	</head>
@@ -117,13 +127,13 @@
 					["[data-lead]", lead],
 				]) {
 					const text = corner.querySelector(selector);
-					// A word between tildes is struck out.
+					// A word between tildes is struck out, and a word between asterisks is set in gold.
 					text.replaceChildren(
-						...words.text.split("~").map((part, index) => {
+						...words.text.split(/(~[^~]+~|\*[^*]+\*)/).map((part, index) => {
 							if (index % 2 === 0) return part;
-							const struck = document.createElement("s");
-							struck.textContent = part;
-							return struck;
+							const word = document.createElement(part.startsWith("~") ? "s" : "em");
+							word.textContent = part.slice(1, -1);
+							return word;
 						}),
 					);
 					text.style.setProperty("font-size", `${words.size}px`);

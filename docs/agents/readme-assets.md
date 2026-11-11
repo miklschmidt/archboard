@@ -85,11 +85,11 @@ to the one the shell draws in `apps/web/src/ui/shell/components/Brand.tsx`. The 
 also writes `docs/assets/archboard-social-card.jpg`. It is GitHub's social preview and the
 site's link preview, with the lockup above the table as the site's hero sets its words. Its lower
 right corner holds a headline and a lead, as the site sets them. The headline reads "Read the
-code architecture", with "code" struck out by one red diagonal line in the drawings' colour for
-what a change removes. The lead gives planning and the check in one sentence each. The words are
-in the social layout in
-`scripts/readme-assets/banner.ts`. GitHub does
-not read it from the repository: the owner uploads it by hand under Social preview in the
+code architecture". The word "code" is in faint ink, crossed out by two diagonal lines a step
+darker than the drawings' red for what a change removes. The word "architecture" is in gold.
+The lead gives planning and the check in one sentence each. The words are in the social layout
+in `scripts/readme-assets/banner.ts`. GitHub does not read the card from the repository: the
+owner uploads it by hand under Social preview in the
 repository's settings.
 
 The clips are filmed over fresh copies of the tracked files of
