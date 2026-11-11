@@ -385,6 +385,11 @@ test("a projected connection lists every relationship it joins, and a hidden edi
 			`[...document.querySelectorAll('[data-slot="module-context"] [data-module-id]')].map(node => node.getAttribute('data-module-id'))`,
 		),
 	).toEqual(["Shop#Worker"]);
+	expect(
+		await browser.eval<string[]>(
+			`[...document.querySelectorAll('[data-slot="model-whole-interface"] [data-relationship-id]')].map(node => node.getAttribute('data-relationship-id'))`,
+		),
+	).toEqual(["Shop#Whole"]);
 	await browser.run(["click", '[data-slot="model-connections"] [data-connection-id="Shop#Self"]']);
 	await openAbout(browser, "selection");
 	expect(
