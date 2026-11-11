@@ -1,4 +1,4 @@
-// GitHub Pages serves the static site under /archboard. Environment variables can
+// The static site is served at the root of usearchboard.dev. Environment variables can
 // override the origin and base path for another host.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -21,8 +21,8 @@ const timing = fileURLToPath(
 );
 
 export default defineConfig({
-	site: process.env.SITE_ORIGIN ?? "https://miklschmidt.github.io",
-	base: process.env.SITE_BASE ?? "/archboard",
+	site: process.env.SITE_ORIGIN ?? "https://usearchboard.dev",
+	base: process.env.SITE_BASE ?? "/",
 	trailingSlash: "ignore",
 	// Compression drops the space between a line of text and an element on the next line.
 	compressHTML: false,

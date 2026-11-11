@@ -9,7 +9,7 @@ import { join, relative } from "node:path";
 
 const DIST = process.argv[2] ?? join(import.meta.dir, "../dist");
 /** The path that the site is served under, as `astro.config.mjs` reads it. */
-const BASE = `${(process.env.SITE_BASE ?? "/archboard").replace(/\/$/u, "")}/`;
+const BASE = `${(process.env.SITE_BASE ?? "/").replace(/\/$/u, "")}/`;
 
 /** Every HTML file in `dist`. */
 function pages(directory: string): string[] {

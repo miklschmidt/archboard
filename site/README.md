@@ -1,7 +1,7 @@
 # The Archboard site
 
 This folder holds the marketing site of Archboard. It is a static [Astro](https://astro.build)
-site. GitHub Pages publishes it at <https://miklschmidt.github.io/archboard/>.
+site. It is published at <https://usearchboard.dev/>.
 
 The site is a separate project with its own `package.json` and `bun.lock`. The root workspaces,
 lint and tests do not read it, but the root format check does. `bun run build` here
@@ -31,7 +31,7 @@ bun install
 bun run dev
 ```
 
-Open <http://localhost:4321/archboard/>. When you save a file, the page reloads.
+Open <http://localhost:4321/>. When you save a file, the page reloads.
 
 To see the production build, run:
 
@@ -152,12 +152,20 @@ shop or Archboard's own model. It builds the core and paints the site's pictures
 `nix develop` first. A push to `main` with such a change deploys it.
 You can also start the workflow by hand from the Actions tab.
 
-GitHub Pages must use GitHub Actions as its source. To set it, open the repository settings,
-then Pages, then set Source to GitHub Actions. Do this once.
+The deploy runs `wrangler deploy` with `site/wrangler.jsonc`. It uploads `dist/` to the
+Cloudflare Worker `archboard-site`, which serves the files at <https://usearchboard.dev/> and runs
+no code. The deploy job runs in the `site` environment, which only `main` can use. That
+environment holds the secret `CLOUDFLARE_API_TOKEN` and the variable `CLOUDFLARE_ACCOUNT_ID`. The
+token can deploy this one Worker and nothing else. Because such a token cannot create a Worker or
+attach a domain, the owner created the Worker and gave it the custom domain once, in the
+Cloudflare dashboard.
 
-The site is built for the path `/archboard`. To build it for another host or path, set
-`SITE_ORIGIN` and `SITE_BASE`:
+To build and attach the docs of a release again, for example after a change to the build, start
+the workflow by hand on `main` and enter the release tag, such as `v0.3.0`.
+
+The site is built for the root of `https://usearchboard.dev`. To build it for another host or
+path, set `SITE_ORIGIN` and `SITE_BASE`:
 
 ```sh
-SITE_ORIGIN=https://example.com SITE_BASE=/ bun run build
+SITE_ORIGIN=https://example.com SITE_BASE=/archboard bun run build
 ```

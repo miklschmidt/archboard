@@ -384,7 +384,7 @@ archboard check > /dev/null
 
 In GitHub Actions, the check Action installs the CLI, runs the check and puts
 each finding on the diff of the pull request.
-[The gate guide](https://miklschmidt.github.io/archboard/docs/gate/) has the workflow, pinned to a release.
+[The gate guide](https://usearchboard.dev/docs/gate/) has the workflow, pinned to a release.
 
 In an agent's loop, give the check's output back to the agent before a person
 reviews the work. This loop gives the agent three rounds:
@@ -398,9 +398,9 @@ done
 
 Do not pipe the check into another command. A pipeline exits with the status of
 its last command, so `archboard check | tee check.log` hides a failure.
-[The gate guide](https://miklschmidt.github.io/archboard/docs/gate/) covers the
+[The gate guide](https://usearchboard.dev/docs/gate/) covers the
 Claude Code Stop hook, other CI systems and the job summary.
-[Architecture on pull requests](https://miklschmidt.github.io/archboard/docs/pull-requests/)
+[Architecture on pull requests](https://usearchboard.dev/docs/pull-requests/)
 covers the Action that posts the plan, the pictures before and after and the footprint.
 
 ## Application and infrastructure checkouts

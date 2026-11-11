@@ -179,8 +179,6 @@ jobs:
     needs: [release-please, publish]
     permissions:
       contents: write
-      pages: write
-      id-token: write
     uses: ./.github/workflows/site.yml
     with:
       release: ${{ needs.release-please.outputs.tag_name }}

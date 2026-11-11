@@ -10,8 +10,8 @@ Node 22.18 or later runs their TypeScript as it is.
 
 The docs hold every input and output, and workflows to copy:
 
-- [The Actions reference](https://miklschmidt.github.io/archboard/docs/reference/actions/), generated from each `action.yml`.
-- [The check as a gate](https://miklschmidt.github.io/archboard/docs/gate/) and [architecture on pull requests](https://miklschmidt.github.io/archboard/docs/pull-requests/).
+- [The Actions reference](https://usearchboard.dev/docs/reference/actions/), generated from each `action.yml`.
+- [The check as a gate](https://usearchboard.dev/docs/gate/) and [architecture on pull requests](https://usearchboard.dev/docs/pull-requests/).
 
 ## Pin a release
 

@@ -1,0 +1,11 @@
+// The site's host: a Cloudflare Worker that serves the files of dist/ and runs no code, so its
+// requests cost nothing. The Site workflow deploys it from main with a token that can change this
+// one Worker and nothing else. Such a token cannot create a Worker or attach a domain, so the owner
+// created the Worker and gave it the custom domain usearchboard.dev in the Cloudflare dashboard.
+{
+	"name": "archboard-site",
+	"compatibility_date": "2026-11-01",
+	"assets": { "directory": "./dist" },
+	"workers_dev": false,
+	"preview_urls": false,
+}

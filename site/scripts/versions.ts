@@ -1,4 +1,4 @@
-// Put every version of the docs into one site for GitHub Pages (ADR 0077):
+// Put every version of the docs into one site (ADR 0077):
 // - each release that has docs at /docs/<version>/, and main at /docs/next/;
 // - the newest of those releases at /docs/ too, or main when no release has docs yet;
 // - /docs/versions.json, which each page reads to offer the others.
@@ -31,7 +31,7 @@ const { values } = parseArgs({
 		out: { type: "string", default: join(import.meta.dir, "../dist") },
 	},
 });
-const BASE = `${(process.env["SITE_BASE"] ?? "/archboard").replace(/\/$/u, "")}/`;
+const BASE = `${(process.env["SITE_BASE"] ?? "/").replace(/\/$/u, "")}/`;
 const ROOT = `${BASE}docs/`;
 
 /** A release's version, such as `0.3.0`, as numbers to sort by. */

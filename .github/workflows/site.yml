@@ -4,12 +4,13 @@ name: Site
 # files it imports or draws from (the README drawings, the social card, the fonts, the voice
 # orb's code, the renderer core, its painter and the architecture models that it paints, and the
 # CLI and the GitHub Actions that the docs' reference describes),
-# and deploys to GitHub Pages from main.
+# and deploys to https://usearchboard.dev from main.
 #
 # The deploy holds every version of the docs (ADR 0077): main at /docs/next/, each release at
 # /docs/<version>/, and the newest release at /docs/. The release workflow calls this workflow with
 # the release's tag: it builds that tag's docs too and attaches them to the GitHub release, where
-# every later deploy finds them.
+# every later deploy finds them. To build a release's docs again, start this workflow by hand on
+# main with the release's tag.
 on:
   workflow_call:
     inputs:
@@ -19,6 +20,12 @@ on:
         required: false
         default: ""
   workflow_dispatch:
+    inputs:
+      release:
+        description: A release tag, such as v0.3.0, whose docs to build again and attach to its GitHub release.
+        type: string
+        required: false
+        default: ""
   push:
     branches: [main]
     paths:
@@ -135,10 +142,13 @@ jobs:
       - name: Install the site's dependencies
         run: nix develop --command bun install --frozen-lockfile
 
-      # A release's docs say which release they describe, and link to its tag.
+      # A release's docs say which release they describe, and link to its tag. A tag from before
+      # the move to usearchboard.dev builds for GitHub Pages unless the host is named here.
       - name: Type-check and build
         env:
           RELEASE: ${{ matrix.release }}
+          SITE_ORIGIN: https://usearchboard.dev
+          SITE_BASE: /
         run: |
           if [ -n "$RELEASE" ]; then export DOCS_VERSION="${RELEASE#v}" DOCS_REF="$RELEASE"; fi
           nix develop --command bun run build
@@ -203,11 +213,10 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: read
-      pages: write
-      id-token: write
+    # The environment holds the deploy token, and only main can use it (site/README.md, Deploy).
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: site
+      url: https://usearchboard.dev
 
     steps:
       - name: Checkout code
@@ -246,11 +255,10 @@ jobs:
       - name: Check the links of every version
         run: bun site/scripts/links.ts
 
-      - name: Upload the Pages artifact
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
-        with:
-          path: site/dist
-
       - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+        working-directory: site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: "false"
+        run: bunx wrangler@4.158.0 deploy
