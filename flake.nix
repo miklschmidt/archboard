@@ -4,7 +4,8 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     # The npm dependencies of the release build come from bun.lock through bun.nix, which
-    # `bun2nix > bun.nix` writes (docs/agents/releasing.md).
+    # `nix run --inputs-from . bun2nix > bun.nix` writes (docs/agents/releasing.md). The dev shell
+    # leaves it out: nixpkgs has no build of it, and compiling it cost every CI job a minute.
     bun2nix = {
       url = "github:nix-community/bun2nix/2.1.2";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -197,7 +198,6 @@
             pkgs
             bun
             wasm-bindgen-cli
-            bun2nix
             ;
         in
         {
@@ -213,8 +213,6 @@
               # nixpkgs' rustc links wasm32 with lld.
               pkgs.lld
               wasm-bindgen-cli
-              # Writes bun.nix from bun.lock, which the gate checks.
-              bun2nix
               # The language server `archboard check --code` asks about Rust
               # names, once `repo language-server rust` configures it.
               pkgs.rust-analyzer

@@ -21,8 +21,8 @@ from the flake:
 
 - The npm packages come from `bun.nix`, which `bun2nix` writes from
   `bun.lock`. `bun.nix` is tracked, because a flake reads only tracked files.
-  After a change to `bun.lock`, run `bun2nix > bun.nix` inside
-  `nix develop` and commit both. The gate task `bun-nix` fails while
+  After a change to `bun.lock`, run `nix run --inputs-from . bun2nix > bun.nix`
+  and commit both. The gate task `bun-nix` fails while
   `bun.nix` does not match `bun.lock`.
 - The Rust crates come from `Cargo.lock`. Nix checks each one against the
   checksum that `Cargo.lock` records.
