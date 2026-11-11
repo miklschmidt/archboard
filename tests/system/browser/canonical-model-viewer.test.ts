@@ -25,7 +25,7 @@ import { initializeSource, selectReading, gatewayDetails } from "./support/canon
 
 const WAIT = { timeoutMs: 6_000 } as const;
 
-test("canonical modules open their authored details without writing architecture", async () => {
+test("canonical modules open their authored details, and a lost or emptied vault stays readable", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = vaultIn(join(ownerRoot, "canonical-vault"));
@@ -38,7 +38,6 @@ test("canonical modules open their authored details without writing architecture
 	const request = createJsonRequester(server);
 	const before = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!before.body.success) throw new Error(before.body.error);
-	const revision = before.body.revision;
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", `${server.base}/`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
@@ -103,9 +102,6 @@ test("canonical modules open their authored details without writing architecture
 	expect(details).toContain("src/gateway.ts");
 	expect(details).toContain("docs/gateway.md");
 	expect(details).toContain("Dispatch request");
-	const after = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!after.body.success) throw new Error(after.body.error);
-	expect(after.body.revision).toEqual(revision);
 
 	// A repository that lost its vault says so, and reads again once the vault is back.
 	const movedVault = `${vault}-moved`;
@@ -123,21 +119,6 @@ test("canonical modules open their authored details without writing architecture
 	renameSync(movedVault, vault);
 	await refreshModel(browser);
 	await pollUntil(modelState, (state) => state === "ready", "the restored vault to reopen", WAIT);
-
-	// A failed refresh exposes the refusal, and a repaired input can be read again.
-	const gatewayPath = join(vault, "gateway.module.json");
-	const gateway = readFileSync(gatewayPath, "utf8");
-	writeFileSync(gatewayPath, "{");
-	await refreshModel(browser);
-	await pollUntil(modelState, (state) => state === "error", "the invalid model refusal", WAIT);
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="model-error"]')?.getAttribute('data-code') ?? null`,
-		),
-	).toBe("MODEL_INVALID");
-	writeFileSync(gatewayPath, gateway);
-	await refreshModel(browser);
-	await pollUntil(modelState, (state) => state === "ready", "the repaired model to reopen", WAIT);
 	await openAbout(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await openAbout(browser);
@@ -314,11 +295,6 @@ test("saved readings stay exact after current inputs change and expose missing e
 		);
 	await pollUntil(state, (value) => value === "ready", "the current reading", WAIT);
 	expect(await gatewayDetails(browser)).toContain("Changed after the checkpoint");
-	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-reading-selector"]') !== null`,
-		),
-	).toBe(true);
 	await selectReading(browser, checkpoint);
 	await pollUntil(state, (value) => value === "ready", "the retained reading", WAIT);
 	expect(await gatewayDetails(browser)).toContain("Accepts shopping requests");

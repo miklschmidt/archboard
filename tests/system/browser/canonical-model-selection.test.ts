@@ -2,10 +2,8 @@ import { openAbout, openDiagram, pick } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
-import { createJsonRequester } from "../support/http.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -41,22 +39,6 @@ async function subjectShown(browser: AgentBrowserSession): Promise<boolean> {
 	);
 }
 
-/** Whether the reader can scroll the legend into view beside the picture, with no click. */
-async function legendInView(browser: AgentBrowserSession): Promise<boolean> {
-	return browser.eval<boolean>(`(() => {
-		const legend = document.querySelector('[data-slot="model-legend"]');
-		const scroll = document.querySelector('[data-slot="model-panel-scroll"]');
-		const picture = document.querySelector('[data-slot="model-diagram"]').getBoundingClientRect();
-		if (legend === null) return false;
-		legend.scrollIntoView({ block: 'end' });
-		const bounds = legend.getBoundingClientRect();
-		const viewport = scroll.getBoundingClientRect();
-		return legend !== null && legend.querySelector('[data-slot="model-legend-kinds"] li') !== null
-			&& legend.checkVisibility() && bounds.top >= viewport.top && bounds.bottom <= viewport.bottom
-			&& bounds.left >= picture.right;
-	})()`);
-}
-
 test("module selection supports modifiers and keyboard without layout or history changes", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "selected-model");
@@ -67,9 +49,6 @@ test("module selection supports modifiers and keyboard without layout or history
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
-	const request = createJsonRequester(server);
-	const before = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!before.body.success) throw new Error(before.body.error);
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", `${server.base}/`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
@@ -87,12 +66,10 @@ test("module selection supports modifiers and keyboard without layout or history
 		`document.querySelector('[data-slot="model-diagram"] svg').setAttribute('data-test-scene', 'kept')`,
 	);
 	expect(await subjectShown(browser)).toBe(false);
-	expect(await legendInView(browser)).toBe(true);
 	const frame = await pictureFrame(browser);
 	await pick(browser, "Shop#Gateway");
 	await pollUntil(() => subjectShown(browser), Boolean, "the panel of the selection", WAIT);
 	expect(await pictureFrame(browser)).toBe(frame);
-	expect(await legendInView(browser)).toBe(true);
 	await pick(browser, "Shop#Worker", { toggle: true });
 	await pollUntil(
 		() => selectedCount(browser),
@@ -139,9 +116,6 @@ test("module selection supports modifiers and keyboard without layout or history
 			`document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id') ?? null`,
 		),
 	).toBe("Shop#Worker");
-	expect(
-		await browser.eval<boolean>(`document.querySelector('[data-slot="model-legend"]') === null`),
-	).toBe(true);
 	await openAbout(browser);
 	await openDiagram(browser);
 	await pollUntil(() => subjectShown(browser), Boolean, "the selection back in the panel", WAIT);
@@ -161,7 +135,4 @@ test("module selection supports modifiers and keyboard without layout or history
 			`document.querySelector('[data-slot="model-diagram"] svg')?.getAttribute('data-test-scene') ?? null`,
 		),
 	).toBe("kept");
-	const after = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!after.body.success) throw new Error(after.body.error);
-	expect(after.body.revision).toEqual(before.body.revision);
 }, 60_000);

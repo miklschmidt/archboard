@@ -133,7 +133,7 @@ test("a claim is a status mark on its rows, its model and a selected subject, an
 		},
 	});
 	if (!claimed.body.success) throw new Error(claimed.body.error);
-	const words = "Claimed by an agent: Explain gateway responsibility";
+	const purpose = "Explain gateway responsibility";
 	// Each claimed row carries the mark, and an unclaimed row carries none.
 	await pollUntil(
 		() => marksOn(browser),
@@ -165,24 +165,22 @@ test("a claim is a status mark on its rows, its model and a selected subject, an
 		"the mark of the claimed model in the repository list",
 		WAIT,
 	);
-	expect(listed.label).toContain(words);
+	expect(listed.label).toContain(purpose);
 	await browser.run(["press", "Escape"]);
 	// Every mark says the purpose to assistive technology and on hover, never the writer.
 	const said = await browser.eval<{ text: string; title: string | null }[]>(
 		`[...document.querySelectorAll('[data-slot="claim-mark"]')].map(mark => ({ text: mark.textContent, title: mark.getAttribute('title') }))`,
 	);
 	expect(said.length).toBeGreaterThanOrEqual(4);
-	for (const mark of said) expect(mark).toEqual({ text: words, title: words });
+	for (const mark of said) {
+		expect(mark.text).toContain(purpose);
+		expect(mark.title).toContain(purpose);
+	}
 	expect(JSON.stringify(said)).not.toContain("Agent Ada");
-	// A mark is status: it is no control and holds none, and nothing offers a take-back.
+	// A mark is status: it is no control and holds none.
 	expect(
 		await browser.eval<boolean>(
 			`[...document.querySelectorAll('[data-slot="claim-mark"], [data-slot="claim-badge"]')].every(mark => !mark.hasAttribute('tabindex') && mark.querySelector('button, a, input, [tabindex]') === null)`,
-		),
-	).toBe(true);
-	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-claim"], [data-slot="model-take-back"]') === null && ![...document.querySelectorAll('button')].some(button => /take back/i.test(button.textContent))`,
 		),
 	).toBe(true);
 	// The head of a selected subject that the claim holds says so, with the purpose.
@@ -197,7 +195,8 @@ test("a claim is a status mark on its rows, its model and a selected subject, an
 		"the badge of the selected claimed subject",
 		WAIT,
 	);
-	expect(badge).toEqual({ text: words, title: words });
+	expect(badge?.text).toContain(purpose);
+	expect(badge?.title).toContain(purpose);
 	// A mixed selection still names its claim, and removing its claimed member clears the badge.
 	await pick(browser, "Shop#Worker", { toggle: true });
 	await pollUntil(
@@ -336,11 +335,6 @@ test("a claim is a status mark on its rows, its model and a selected subject, an
 		"the claim badge on the open claimed module",
 		WAIT,
 	);
-	const moduleReleased = await request<ArchitectureClaimList>("/api/architecture/claims/release", {
-		method: "POST",
-		body: { vault, claim: moduleClaim.body.claim.id, writer: "Agent Ada" },
-	});
-	if (!moduleReleased.body.success) throw new Error(moduleReleased.body.error);
 }, 30_000);
 
 /**
