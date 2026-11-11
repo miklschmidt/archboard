@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-07T12:43:00Z'
-updated_date: '2026-11-11 01:01'
+updated_date: '2026-11-11 03:12'
 labels: []
 dependencies: []
 references:
@@ -26,9 +26,9 @@ The owner chose usearchboard.dev as the canonical domain of the site and kept th
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 README, the site and the package metadata link to usearchboard.dev
+- [x] #1 README, the site and the package metadata link to usearchboard.dev
 - [ ] #2 The site copy names the local vault and the deterministic check where it compares Archboard with other tools
-- [ ] #3 The site and every version of the docs are served at https://usearchboard.dev from a Cloudflare Worker that the Site workflow deploys from main, and GitHub Pages is turned off
+- [x] #3 The site and every version of the docs are served at https://usearchboard.dev from a Cloudflare Worker that the Site workflow deploys from main, and GitHub Pages is turned off
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -45,4 +45,6 @@ The owner chose usearchboard.dev as the canonical domain of the site and kept th
 
 <!-- SECTION:NOTES:BEGIN -->
 The owner chose on 2026-11-11 to turn GitHub Pages off rather than redirect from it, so the old AC #1 (the GitHub Pages address leads there) is replaced. AC #3 (copy that tells Archboard apart from getarchboard.app) is not part of this change.
+
+2026-11-11: PR #94 merged as 36c188e. Before the merge, Site ran by hand on the PR branch with release v0.3.0 (run 42947552304) and replaced v0.3.0's docs.tar.gz with a build for the root, because the archive built for /archboard failed links.ts. The push run 42949027737 deployed main to the Worker archboard-site: https://usearchboard.dev/, /docs/ (0.3.0), /docs/next/, /docs/0.3.0/gate/ and /docs/versions.json answer 200. GitHub Pages is turned off, and https://miklschmidt.github.io/archboard/ answers 404. AC #2 (copy that tells Archboard apart from getarchboard.app) is still open.
 <!-- SECTION:NOTES:END -->
