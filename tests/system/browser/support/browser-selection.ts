@@ -68,13 +68,43 @@ function selectionError(message: string): never {
 }
 
 /**
+ * One shard of the package lane, so CI can spread the inventory over several runners.
+ * `ARCHBOARD_TEST_BROWSER_SHARD=2/3` keeps every third owner, starting at the second, so the
+ * shards together run each owner once. A focused selection is never sharded.
+ * @param selection The validated selection.
+ * @param shard The shard as `<index>/<count>`, or undefined for the whole selection.
+ * @returns The owners of that shard.
+ */
+function shardBrowserSelection(
+	selection: BrowserSelection,
+	shard: string | undefined,
+): BrowserSelection {
+	if (shard === undefined || shard === "") return selection;
+	const match = /^([1-9][0-9]*)\/([1-9][0-9]*)$/u.exec(shard);
+	const index = Number(match?.[1]);
+	const count = Number(match?.[2]);
+	if (!match || index > count) {
+		selectionError(`Browser shard \`${shard}\` is not <index>/<count> with 1 <= index <= count.`);
+	}
+	if (selection.mode === "focus") selectionError("A focused browser lane is never sharded.");
+	return {
+		...selection,
+		files: selection.files.filter((_, position) => position % count === index - 1),
+	};
+}
+
+/**
  * What the lane runs. The package command runs the whole inventory; `--focus`
  * runs any subset of it, in the order given, deduplicated. Only what protects
  * against a typo silently running the whole lane is refused: a path that is
  * not an owner, a flag the runner does not know, or `--test-name` without
- * exactly one owner to apply it to (TASK-153).
+ * exactly one owner to apply it to (TASK-153). `ARCHBOARD_TEST_BROWSER_SHARD`
+ * then keeps one shard of a package run.
  */
-function validateBrowserSelection(argv: readonly string[]): BrowserSelection {
+function validateBrowserSelection(
+	argv: readonly string[],
+	env: Record<string, string | undefined> = process.env,
+): BrowserSelection {
 	if (argv[0] !== "bun" || argv[1] !== BROWSER_ADAPTER_PATH) {
 		selectionError(`Browser lane must start with \`bun ${BROWSER_ADAPTER_PATH}\`.`);
 	}
@@ -119,7 +149,10 @@ function validateBrowserSelection(argv: readonly string[]): BrowserSelection {
 	if (testName && files.length !== 1) {
 		selectionError("--test-name requires exactly one focused browser owner.");
 	}
-	return { mode, files: files as BrowserTestPath[], ...(testName ? { testName } : {}) };
+	return shardBrowserSelection(
+		{ mode, files: files as BrowserTestPath[], ...(testName ? { testName } : {}) },
+		env["ARCHBOARD_TEST_BROWSER_SHARD"],
+	);
 }
 
 function browserOwnerCommandArguments(file: BrowserTestPath, testName?: string): string[] {

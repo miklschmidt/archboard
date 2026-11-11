@@ -64,9 +64,11 @@ The six normal native lanes are:
   the owner of the crates' shape rules that no lint sees: every crate
   inherits the workspace lints, and no `.rs` file is over 600 lines
   (`tests/system/repository-policy/rust-crates.test.ts`),
-  and the owner that holds every path a Vite+ task or an Oxlint override names to a file that
+  the owner that holds every path a Vite+ task or an Oxlint override names to a file that
   exists, so a moved test cannot leave a stale lane or ignore pattern behind
-  (`tests/system/repository-policy/config-paths.test.ts`);
+  (`tests/system/repository-policy/config-paths.test.ts`),
+  and the owner that holds every stage of `check:all` to a job of the CI workflow
+  (`tests/system/repository-policy/ci-lanes.test.ts`);
 - `test:serial-browser`: every owner in the executable `BROWSER_TEST_PATHS`
   inventory through the strict adapter, one owner for every six cores.
 
@@ -93,8 +95,9 @@ A test of Track behavior names `layout: "track"` explicitly.
 An engine-independent contract uses the default unless it already tests both engines.
 Changing the default must preserve the assertions of each Track regression.
 
-`bun run check` is the complete normal gate locally and on GitHub Actions.
+`bun run check` is the complete normal gate.
 It runs lint, formatting, both TypeScript projects, the architecture check, and the normal test chain.
+Its first stage, `check:stages`, runs `check:first` and then `check:model`.
 `check:first` holds every stage that waits on no shared timing, and `vp` runs them at once.
 The first failure ends the run with a nonzero status, stops the other stages, and leaves its
 output in the log with the stage name on each line.
@@ -110,8 +113,19 @@ The code check's rust-analyzer builds in `target/rust-analyzer`, so it never wai
 `lint:all` includes `lint:css`, which applies the shared import boundaries to authored CSS.
 `lint:all` includes `lint:workflows`, which runs actionlint and its shellcheck over `.github/workflows`.
 The CSS fixtures and package graph own the refusal and dependency regressions.
+GitHub Actions runs the same tasks as separate jobs of `.github/workflows/ci.yml`, so the slowest
+lane, not the sum of the lanes, sets the time to a result:
+
+- `build` builds the renderer core, the frontend and the workbench example once, and hands them to the
+  test lanes as an artifact;
+- `checks` runs `check:stages`;
+- one job runs `test:modules`, one runs `test:system` and then `test:solo`;
+- three jobs each run one shard of `test:serial-browser`. `ARCHBOARD_TEST_BROWSER_SHARD=<index>/<count>`
+  keeps every count-th owner of the inventory, starting at the index, so the shards together run
+  each owner once. A focused run refuses a shard.
+
+`tests/system/repository-policy/ci-lanes.test.ts` fails when a stage of `check:all` runs in no job.
 The hosted run includes opener persistence and the entire browser inventory.
-The workflow retains its full output as the `validation-log` artifact.
 
 `vite.config.ts` owns the Vite+ tasks, the stage groups and their ordered pipelines.
 The package scripts keep the main commands: `build`, `lint`, `fix`, `type-check`, `test`, and `check`.
@@ -130,7 +144,7 @@ Use `bunx vp run --no-cache check:all` when you need a fresh run of every stage.
 The tests still run under Bun. TASK-516 tracks the runtime trial before a move to `vp test`.
 The trial must prove Bun API support, `process.execPath`, and cleanup of fixture servers.
 
-CI restores the Vite+ task cache after dependency installation and saves it after a successful gate.
+Each CI job restores its own Vite+ task cache after dependency installation and saves it after it passes.
 The browser version joins the test cache key, so a Chrome update invalidates prior results.
 
 A separate macOS CI job runs `test:macos` and exercises the native process observer, Codex lifecycle,
@@ -152,7 +166,7 @@ their cheapest product owner. These commands contain everything outside it:
 | `bunx vp run test:opt-in:topology` | A claim taken through a second server excludes writes here and reaches this server's pane within the lock sweep. A take-back by a pane here ends that server's claim, and its agent hears `CLAIM_REVOKED` after one lease renewal. |
 
 Every test owner belongs to exactly one lane; opt-in package commands are never
-reached from `check`. The Ubuntu CI job invokes the complete `bun run check` gate;
+reached from `check`. The Ubuntu CI jobs together run every stage of `bun run check`;
 the macOS job repeats its selected native owners on that platform.
 
 The whole chain's duration is machine-dependent. Bun takes its worker count from the cores
@@ -412,7 +426,7 @@ The summaries identify the toolchain, selected files, owner progress, and final 
 A completed owner also passed its cleanup audit.
 Full test output streams to the caller alongside the summaries. A failed owner or cleanup
 keeps the lane's status nonzero; the summaries do not turn a failure into a pass.
-The Ubuntu CI job retains this output in its `validation-log` artifact.
+Each Ubuntu CI job keeps this output in its job log.
 For a local gate, retain the full output and print its location before the run:
 
 ```bash

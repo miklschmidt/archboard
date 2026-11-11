@@ -389,10 +389,15 @@ export default defineConfig({
 				],
 				cache: false,
 			},
+			// The stages before the test lanes. CI runs this in one job and each lane of
+			// `check:all` in a job of its own (.github/workflows/ci.yml).
+			"check:stages": {
+				command: [`vp run ${stageOptions} check:first`, "vp run check:model"],
+				cache: false,
+			},
 			"check:all": {
 				command: [
-					`vp run ${stageOptions} check:first`,
-					"vp run check:model",
+					"vp run check:stages",
 					"vp run test:modules",
 					"vp run test:system",
 					"vp run test:solo",
