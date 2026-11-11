@@ -1,8 +1,6 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve as resolvePath } from "node:path";
 
-import { browserTestRoots, type AgentBrowserSession } from "./agent-browser.ts";
+import type { AgentBrowserSession } from "./agent-browser.ts";
 import type { ThemeSnapshot } from "./shell-contract-types.ts";
 import {
 	AGENT_DOCK,
@@ -61,15 +59,10 @@ type ShellMatrixCell = {
 	/** The shell's measured rectangles, so an owner can hold them to the shared shell geometry. */
 	geometry: MatrixProbe["geometry"];
 	geometryHash: string;
-	normalizedHash: string;
-	screenshot: string;
-	screenshotSha256: string;
 	themeSnapshot: ThemeSnapshot;
 };
 
 type ShellRenderMatrix = {
-	revision: string;
-	artifactRoot: string;
 	cells: ShellMatrixCell[];
 };
 
@@ -338,38 +331,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 	})()`);
 }
 
-/**
- * The short git revision of the checkout under test.
- * @returns Twelve hex characters.
- */
-function currentRevision(): string {
-	return Bun.spawnSync(["git", "rev-parse", "--short=12", "HEAD"], {
-		cwd: resolvePath(import.meta.dir, "../../../.."),
-	})
-		.stdout.toString()
-		.trim();
-}
-
-/**
- * Where rendered evidence goes: beside the lane root, in the runner's
- * temporary directory, so it outlives the lane's own cleanup.
- * @param revision The short git revision.
- * @returns The directory, created.
- */
-function evidenceRoot(revision: string = currentRevision()): string {
-	const root = join(dirname(browserTestRoots().laneRoot), "archboard-shell-matrix", revision);
-	mkdirSync(root, { recursive: true });
-	return root;
-}
-
-async function captureShellRenderMatrix(
-	browser: AgentBrowserSession,
-	repoRoot: string,
-): Promise<ShellRenderMatrix> {
-	const revision = Bun.spawnSync(["git", "rev-parse", "--short=12", "HEAD"], { cwd: repoRoot })
-		.stdout.toString()
-		.trim();
-	const artifactRoot = evidenceRoot(revision);
+async function captureShellRenderMatrix(browser: AgentBrowserSession): Promise<ShellRenderMatrix> {
 	const cells: ShellMatrixCell[] = [];
 	for (const viewport of viewports) {
 		await browser.run([
@@ -383,8 +345,6 @@ async function captureShellRenderMatrix(
 			for (const mode of modes) {
 				const restoreMedia = await emulateMedia(browser, theme, mode);
 				let value: MatrixProbe;
-				const name = `${viewport.name}-${theme}-${mode}`;
-				const screenshot = join(artifactRoot, `${name}.png`);
 				try {
 					await switchTheme(browser, theme);
 					// The sizes the probe reads are those of the loaded faces.
@@ -393,7 +353,6 @@ async function captureShellRenderMatrix(
 						"new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))",
 					);
 					value = await probe(browser);
-					await browser.run(["screenshot", screenshot]);
 				} finally {
 					await restoreMedia();
 				}
@@ -404,9 +363,6 @@ async function captureShellRenderMatrix(
 						geometry: value.geometry,
 						touchTargets: value.touchTargets.map(({ width, height }) => ({ width, height })),
 					}),
-				);
-				const normalizedHash = sha256(
-					stable({ viewport, theme, mode, ...value, themeSnapshot: undefined }),
 				);
 				cells.push({
 					viewport: viewport.name,
@@ -424,9 +380,6 @@ async function captureShellRenderMatrix(
 					stateHash,
 					geometry: value.geometry,
 					geometryHash,
-					normalizedHash,
-					screenshot,
-					screenshotSha256: sha256(readFileSync(screenshot)),
 					themeSnapshot: value.themeSnapshot,
 				});
 			}
@@ -439,17 +392,7 @@ async function captureShellRenderMatrix(
 	} finally {
 		await restoreMedia();
 	}
-	writeFileSync(
-		join(artifactRoot, "metrics.json"),
-		`${JSON.stringify({ revision, cells }, null, 2)}\n`,
-	);
-	return { revision, artifactRoot, cells };
+	return { cells };
 }
 
-export {
-	type ShellMatrixCell,
-	type ShellRenderMatrix,
-	emulateMedia,
-	evidenceRoot,
-	captureShellRenderMatrix,
-};
+export { type ShellMatrixCell, type ShellRenderMatrix, emulateMedia, captureShellRenderMatrix };

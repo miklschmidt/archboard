@@ -184,7 +184,7 @@ test(
 		);
 		await browser.eval<boolean>("document.fonts.ready.then(() => true)");
 
-		const matrix = await captureShellRenderMatrix(browser, repoRoot);
+		const matrix = await captureShellRenderMatrix(browser);
 		expect(matrix.cells).toHaveLength(12);
 		expect(new Set(matrix.cells.map(({ stateHash }) => stateHash)).size).toBe(1);
 		for (const viewport of ["desktop", "flip-scaled"] as const) {

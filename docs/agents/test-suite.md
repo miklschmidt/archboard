@@ -469,7 +469,7 @@ It also proves that a hidden metadata edit preserves the mounted scene while the
 `canonical-model-selection.test.ts` covers pointer modifiers, keyboard selection, and immediate highlighting without layout or history changes.
 `canonical-model-gestures.test.ts` covers drag selection and Space/middle-button panning through the existing renderer bounds.
 `canonical-model-focus.test.ts` covers mixed ancestor/descendant focus, required context, history restoration, and unavailable subjects.
-`canonical-model-filters.test.ts` covers relationship and group visibility, hidden selections, reveal, and unchanged authored revisions.
+`canonical-model-filters.test.ts` covers relationship and group visibility, hidden selections, and reveal.
 `canonical-model-modes.test.ts` covers explicit flow choices, complete behavioral diagrams, architecture restoration, and selection across modes.
 `canonical-model-structure.test.ts` covers current structural updates through real claims and the public writer.
 It covers pinned history, stable selection through renames, relationship transfer, parent changes, and removal without replacement selection.
@@ -910,13 +910,13 @@ Their contracts include exact pane reports, selected source actions, foreign des
 Ownership transfer between models remains explicitly unavailable for canonical models, so its old move workflow retires.
 
 `canonical-model-legibility.test.ts` replaces the legacy status-legibility browser fixture.
-It retains computed light and dark colors, comparison ink, label paint order, kind icons, and simultaneous issue and selection marks.
+It retains paints that resolve in both themes, simultaneous issue and selection marks, the issue explanation, and group meaning.
 The public proposal fixture also proves structured issue details beside authored group meaning.
 Shared projection supplies unresolved subject identities and their represented aggregate connections to browser and exported drawings.
 The render-context runtime and HTTP/CLI owners cover exact replay and complete interface context.
 
 `canonical-model-presentation.test.ts` replaces the legacy walkthrough-presentation browser owner.
-It retains actual caption cross-fades, progress motion, camera arrival, subject emphasis, keyboard stepping, and return to the ordinary reading.
+It retains camera arrival, subject emphasis, keyboard and button stepping, and return to the ordinary reading.
 The canonical reader reuses the existing beat-focus and auto-fit rules with content, dimensions, and an explicit picture identity.
 Retained camera and presentation-box UI owners keep their existing behavior assertions.
 The walkthrough header owner also proves that sidebar controls remain held during playback and restore afterward.
