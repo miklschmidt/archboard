@@ -206,6 +206,7 @@ test("a group whose leader pid names another process is never signalled", async 
 	const child = Bun.spawn(["/bin/sh", "-c", "exec sleep 60"], { detached: true });
 	try {
 		const group = captureDetachedProcessGroup(child.pid);
+		if (group === undefined) throw new Error("The sleeping child left no group.");
 		const recycled = { ...group, leader: { ...group.leader, startTime: "another-process" } };
 		expect(() => signalOwnedProcessGroup(recycled, "SIGKILL")).toThrow();
 		expect(child.exitCode).toBeNull();
@@ -213,6 +214,28 @@ test("a group whose leader pid names another process is never signalled", async 
 	} finally {
 		child.kill("SIGKILL");
 		await child.exited;
+	}
+});
+
+test("a detached child reaped before its group is captured leaves no group to own", async () => {
+	const child = Bun.spawn(["/bin/sh", "-c", "exit 0"], { detached: true });
+	await child.exited;
+	expect(captureDetachedProcessGroup(child.pid)).toBeUndefined();
+});
+
+test("a reaped detached child that left a member in its group refuses ownership", async () => {
+	const child = Bun.spawn(["/bin/sh", "-c", "sleep 60 >/dev/null 2>&1 & echo $!"], {
+		detached: true,
+		stdout: "pipe",
+	});
+	const member = Number((await new Response(child.stdout).text()).trim());
+	await child.exited;
+	try {
+		expect(() => captureDetachedProcessGroup(child.pid)).toThrow(
+			"exited before its group could be captured",
+		);
+	} finally {
+		process.kill(member, "SIGKILL");
 	}
 });
 

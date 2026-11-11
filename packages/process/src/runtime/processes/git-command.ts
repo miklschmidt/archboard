@@ -70,15 +70,17 @@ function spawnGit(cwd: string, args: readonly string[], options: GitOptions): Gi
  * Prove Git leads its own process group and put that group under the orphan
  * guard, killing Git when either fails so nothing is left running unsupervised.
  *
- * This runs in the tick of the spawn. Bun reaps a child only from its event
- * loop, so even a Git that has already exited can still be read here.
+ * This runs in the tick of the spawn, so a Git that has exited can usually
+ * still be read here. Bun on macOS can reap a Git that exits before Bun
+ * watches it, and such a Git that left nothing in its group has no group.
  * @param child The spawned Git.
- * @returns The group and its leader's identity.
+ * @returns The group and its leader's identity, or undefined when Git has
+ * already finished and left nothing to own.
  */
-function captureGitGroup(child: GitProcess): ProcessGroupIdentity {
+function captureGitGroup(child: GitProcess): ProcessGroupIdentity | undefined {
 	try {
 		const group = captureDetachedProcessGroup(child.pid);
-		guardGitGroup(group.group);
+		if (group !== undefined) guardGitGroup(group.group);
 		return group;
 	} catch (cause) {
 		child.kill("SIGKILL");
@@ -104,11 +106,11 @@ class GitRun {
 
 	/**
 	 * Track one command against its detached group.
-	 * @param group Git's process group.
+	 * @param group Git's process group, or undefined when Git has already finished.
 	 * @param child Git.
 	 */
 	constructor(
-		private readonly group: ProcessGroupIdentity,
+		private readonly group: ProcessGroupIdentity | undefined,
 		private readonly child: GitProcess,
 	) {
 		this.terminationSignal = new Promise<void>((resolve) => {
@@ -131,6 +133,7 @@ class GitRun {
 			...(cause === undefined ? {} : { cause: asError(cause) }),
 		};
 		this.terminationStarted();
+		if (this.group === undefined) return;
 		this.groupTermination = stopAndKillOwnedGroup(this.group, this.child).catch(
 			(error: unknown) => {
 				this.groupSignalError = asError(error);
@@ -183,10 +186,10 @@ async function settleRun(run: GitRun, handles: RunHandles): Promise<Settled> {
  * Once Git has exited, end the command as unclean when anything is left in
  * its group.
  * @param run The command's termination state.
- * @param group Git's group.
+ * @param group Git's group, or undefined when Git finished before it was captured.
  */
-function inspectExitedGroup(run: GitRun, group: ProcessGroupIdentity): void {
-	if (run.termination) {
+function inspectExitedGroup(run: GitRun, group: ProcessGroupIdentity | undefined): void {
+	if (run.termination || group === undefined) {
 		return;
 	}
 	try {
@@ -238,18 +241,18 @@ function terminationMessage(termination: Termination): string {
  * for: a process nobody can account for is the more serious fact.
  * @param run The command's termination state, which must be terminated.
  * @param termination Why it was terminated.
- * @param group Git's group.
+ * @param group Git's group, or undefined when Git finished before it was captured.
  * @param exitCode Git's exit status, when known.
  * @returns The error to throw.
  */
 async function terminationError(
 	run: GitRun,
 	termination: Termination,
-	group: ProcessGroupIdentity,
+	group: ProcessGroupIdentity | undefined,
 	exitCode: number | undefined,
 ): Promise<GitCommandError> {
 	await run.groupTermination;
-	const gone = await processGroupDisappeared(group.group);
+	const gone = group === undefined || (await processGroupDisappeared(group.group));
 	if (run.groupSignalError || !gone) {
 		return cleanupError(run, termination, exitCode);
 	}
@@ -304,7 +307,8 @@ interface GitOptions {
 /** One Git command that has started, and everything it will settle on. */
 interface RunningCommand {
 	child: GitProcess;
-	group: ProcessGroupIdentity;
+	/** Git's group, or undefined when Git finished before it was captured. */
+	group: ProcessGroupIdentity | undefined;
 	run: GitRun;
 	handles: RunHandles;
 }
@@ -410,7 +414,7 @@ async function git(
 	try {
 		return await commandOutput(command, options);
 	} finally {
-		releaseGitGroup(command.group.group);
+		if (command.group !== undefined) releaseGitGroup(command.group.group);
 	}
 }
 
