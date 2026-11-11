@@ -135,6 +135,19 @@ jobs:
         working-directory: .
         run: nix develop --command bun install --frozen-lockfile
 
+      # CI saves the built core under the hash of its sources. A run whose core sources match one
+      # that CI built restores it, and the build then finds it current and compiles nothing.
+      - name: Hash the core sources
+        id: core-sources
+        working-directory: .
+        run: echo "hash=$(bun --print 'require("@archboard/renderer/core").coreSourceHash()')" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the renderer core
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: packages/renderer/src/shared/protocol/generated/core
+          key: renderer-core-${{ runner.os }}-${{ steps.core-sources.outputs.hash }}
+
       - name: Build the renderer core
         working-directory: .
         run: nix develop --command bun run build:core
