@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.0](https://github.com/miklschmidt/archboard/compare/v0.3.0...v0.4.0) (2026-11-11)
+
+
+### Features
+
+* **actions:** the pull-request Action can write its report to a file ([#85](https://github.com/miklschmidt/archboard/issues/85)) ([faaebfe](https://github.com/miklschmidt/archboard/commit/faaebfe55e3bf4360bd998123f0eea9024388a20))
+* **cli:** archboard model snapshot writes a state and its comparison state to one file ([#87](https://github.com/miklschmidt/archboard/issues/87)) ([665acf1](https://github.com/miklschmidt/archboard/commit/665acf1cd9746c17d38ee7d3d1537b6676878fa5))
+* **cli:** browser show and browser open open a browser when none is connected ([#91](https://github.com/miklschmidt/archboard/issues/91)) ([12d2750](https://github.com/miklschmidt/archboard/commit/12d2750bd93868c79a6e30aed0bfdaa11058c43a))
+* **readme:** draw the banner and social card from the site's hero table ([#92](https://github.com/miklschmidt/archboard/issues/92)) ([82546b4](https://github.com/miklschmidt/archboard/commit/82546b49387ca99300e3b2b74f5b4849b66fbc10))
+* **site:** serve the site and every version of the docs at usearchboard.dev ([#94](https://github.com/miklschmidt/archboard/issues/94)) ([36c188e](https://github.com/miklschmidt/archboard/commit/36c188e1cf56762c63e8f7990c449e33b444473b))
+* **skills:** archboard-plan carries a proposal from spec to merge, and model footprint --fail-outside gates a branch ([#89](https://github.com/miklschmidt/archboard/issues/89)) ([36865dc](https://github.com/miklschmidt/archboard/commit/36865dc62290fe970073142cbab1f13363da4875))
+* **web:** serve the browser build under any base path ([#86](https://github.com/miklschmidt/archboard/issues/86)) ([d9cfda0](https://github.com/miklschmidt/archboard/commit/d9cfda0d3a0291fd0bd3beedcc082abab94bc6ab))
+
+
+### Bug Fixes
+
+* **blocks:** place dense readings by one stated cost, keep the pane's shape, and solve across workers ([#73](https://github.com/miklschmidt/archboard/issues/73)) ([4c74957](https://github.com/miklschmidt/archboard/commit/4c74957ccba788c723197f330a64f5530539df12))
+* **process:** settle a Git that Bun reaped before its group was captured ([#93](https://github.com/miklschmidt/archboard/issues/93)) ([7895c80](https://github.com/miklschmidt/archboard/commit/7895c808ce9b66311f65af85c6ef6e2850fa1eba))
+
 ## [0.3.0](https://github.com/miklschmidt/archboard/compare/v0.2.0...v0.3.0) (2026-11-09)
 
 
