@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-10T20:23:00Z'
-updated_date: '2026-11-10T23:52:00Z'
+updated_date: '2026-11-11T00:27:00Z'
 labels:
   - docs
   - tooling
@@ -48,6 +48,8 @@ Second follow-up: the card's corner now holds a headline over a lead, right-alig
 Third follow-up: the card's headline is "Stay in charge" with no final period, because a title or heading takes no final period. The two lead sentences keep theirs.
 
 Fourth follow-up: removed the inner shadow on the card and the hard black band at the banner's foot. Both came from the hero's shader, which fades the table into the ground near every canvas edge (10% at the top, 4% at the foot, 3% at each side), and from the banner's canvas ending 37px above the banner's bottom edge. lightTable now takes an optional room, which sets where the picture lies up the canvas. The site does not pass it. The kit's layouts set the picture's span on the page and run the canvas past every edge of the picture. The stage page fades the table through a page-sized frame instead: the banner at its left (637-824px) and its foot (540-724px), and the card not at all. The site's stylesheet caps a canvas at its container's width, so the stage lifts that cap.
+
+Fifth follow-up: the card's headline reads "Read the code architecture" on one line at 54px, with "code" struck out by one red diagonal line in --removed, the colour that the site's drawings give what a change removes. The layout writes a struck word between tildes. At 60px the line ran into the Painter card.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

@@ -44,20 +44,37 @@
 				--foreground: var(--ink);
 			}
 			/* A headline in the display face over a lead in the body face, as the site sets them, each
-			   line ending at the corner's right edge. The lead breaks where its text does. */
+			   line ending at the corner's right edge. Each breaks where its text does. */
 			.corner {
 				position: absolute;
 				text-align: right;
 			}
 			.corner p {
 				margin: 0;
+				white-space: pre-line;
 			}
 			.corner .display {
 				margin-bottom: 0.3em;
 			}
 			.corner .lead {
 				max-width: none;
-				white-space: pre-line;
+			}
+			/* A struck word: one diagonal line up through its capitals, in the colour that the site's
+			   drawings give what a change removes. */
+			.corner s {
+				position: relative;
+				text-decoration: none;
+			}
+			.corner s::after {
+				content: "";
+				position: absolute;
+				left: -0.08em;
+				right: -0.08em;
+				top: calc(50% + 0.05em);
+				height: 0.1em;
+				border-radius: 0.05em;
+				background: var(--removed);
+				transform: translateY(-50%) rotate(-18deg);
 			}
 		</style>
 	</head>
@@ -100,7 +117,15 @@
 					["[data-lead]", lead],
 				]) {
 					const text = corner.querySelector(selector);
-					text.textContent = words.text;
+					// A word between tildes is struck out.
+					text.replaceChildren(
+						...words.text.split("~").map((part, index) => {
+							if (index % 2 === 0) return part;
+							const struck = document.createElement("s");
+							struck.textContent = part;
+							return struck;
+						}),
+					);
 					text.style.setProperty("font-size", `${words.size}px`);
 				}
 				corner.style.setProperty("right", `${right}px`);
