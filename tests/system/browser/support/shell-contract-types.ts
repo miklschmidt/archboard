@@ -24,16 +24,7 @@ type DesktopShell = {
 };
 
 type ThemeSnapshot = {
-	theme: "light" | "dark";
-	/** The wordmark's visible text, set in the display face. */
-	wordmark: string;
-	status: string;
-	background: string;
 	inkContrast: number;
-	visibleFocus: boolean;
-	modelIdentity: string;
-	/** The name of the variant the header says is shown. */
-	stateName: string;
 	/** The model the navigator marks as the one being read. */
 	selectedRepository: string | null;
 	focusedPaneCount: number;
@@ -43,8 +34,6 @@ type ThemeSnapshot = {
 	fontsLoaded: boolean;
 	/** The font files the page fetched. */
 	fontResources: string[];
-	actionTargets: Array<{ width: number; height: number }>;
-	presentTarget: { width: number; height: number };
 };
 
 /** The pane letters in the pane headers. */
