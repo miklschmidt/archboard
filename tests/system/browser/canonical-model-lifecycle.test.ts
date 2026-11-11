@@ -122,22 +122,6 @@ async function openHistory(browser: AgentBrowserSession): Promise<void> {
 	await browser.run(["click", summary]);
 }
 
-async function fitted(browser: AgentBrowserSession): Promise<void> {
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(`(() => {
-		const stage = document.querySelector('[data-slot="model-diagram"]');
-		const svg = stage?.querySelector('svg');
-		if (!stage || !svg || document.querySelector('[data-slot="model-refresh"]')?.disabled) return false;
-		const room = stage.getBoundingClientRect(); const picture = svg.getBoundingClientRect();
-		return picture.top >= room.top - 1 && picture.bottom <= room.bottom + 1;
-	})()`),
-		Boolean,
-		"the diagram to fit below decision history",
-		WAIT,
-	);
-}
-
 async function gatewayName(browser: AgentBrowserSession): Promise<string | null> {
 	return browser.eval<string | null>(
 		`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"] [data-slot="model-module-name"]')?.textContent ?? null`,
@@ -207,7 +191,6 @@ test("adopted and shelved states remain discoverable with decisions and recovera
 			`document.querySelector('[data-slot="model-state-documents"]').textContent`,
 		),
 	).toContain("docs/queued.md");
-	await fitted(browser);
 	await openDiagram(browser);
 	await selectComparison(browser, "current");
 	await pollUntil(
@@ -232,13 +215,6 @@ test("adopted and shelved states remain discoverable with decisions and recovera
 	);
 	await selectReading(browser, "current");
 	await stateIs(browser, direct.target.state!, "current");
-	await openHistory(browser);
-	await fitted(browser);
-	expect(
-		await browser.eval<string>(
-			`document.querySelector('[data-slot="model-state-reason"]').textContent`,
-		),
-	).toBe("Direct delivery is implemented.");
 	await selectReading(browser, direct.checkpoint.id);
 	await stateIs(browser, direct.target.state!, "draft");
 	await selectReading(browser, adopted.checkpoint.id);

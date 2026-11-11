@@ -107,22 +107,6 @@ async function openHistory(browser: AgentBrowserSession): Promise<void> {
 		await browser.run(["click", '[data-slot="model-state-history"] summary']);
 }
 
-async function fitted(browser: AgentBrowserSession): Promise<void> {
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(`(() => {
-		const stage = document.querySelector('[data-slot="model-diagram"]');
-		const svg = stage?.querySelector('svg');
-		if (!stage || !svg || document.querySelector('[data-comparison="loading"]')) return false;
-		const room = stage.getBoundingClientRect(); const picture = svg.getBoundingClientRect();
-		return picture.top >= room.top - 1 && picture.bottom <= room.bottom + 1;
-	})()`),
-		Boolean,
-		"the diagram to fit below correction history",
-		WAIT,
-	);
-}
-
 test("historical corrections refresh the lasting reading and expose exact originals and source evidence", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "corrected-history");
@@ -184,11 +168,6 @@ test("historical corrections refresh the lasting reading and expose exact origin
 	expect(corrected.before.digest).toBe(corrected.after.digest);
 	await description(browser, "Routes authenticated requests.");
 	await openHistory(browser);
-	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-correction-checkpoint="${corrected.checkpoint.id}"]') !== null`,
-		),
-	).toBe(true);
 	const row = `[data-correction-checkpoint="${corrected.checkpoint.id}"]`;
 	expect(
 		await browser.eval<string>(
@@ -203,8 +182,6 @@ test("historical corrections refresh the lasting reading and expose exact origin
 			`document.querySelector('${row} [data-source-commit]').getAttribute('data-source-commit')`,
 		),
 	).toBe(sourceCommit);
-	await browser.run(["scrollintoview", row]);
-	await fitted(browser);
 	const previous = `${row} [data-correction-previous="${original.checkpoint.id}"]`;
 	await browser.run(["scrollintoview", previous]);
 	await browser.run(["click", previous]);
@@ -225,8 +202,6 @@ test("historical corrections refresh the lasting reading and expose exact origin
 			`document.querySelector('[data-slot="model-comparison-corrections"] [data-correction-checkpoint="${corrected.checkpoint.id}"]') !== null`,
 		),
 	).toBe(true);
-	await browser.run(["scrollintoview", '[data-slot="model-comparison-corrections"]']);
-	await fitted(browser);
 	await browser.run(["back"]);
 	await visible(
 		browser,

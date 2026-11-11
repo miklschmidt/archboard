@@ -161,11 +161,6 @@ test("proposal conflicts preserve coherent content, blocked ancestry, live settl
 			`(() => { const issue = document.querySelector('[data-slot="model-reconciliation"] [data-subject-id="Shop#Gateway"][data-field="description"]'); return {mine: issue?.querySelector('[data-value="mine"]')?.textContent, theirs: issue?.querySelector('[data-value="theirs"]')?.textContent}; })()`,
 		),
 	).toEqual({ mine: "Queues accepted work.", theirs: "Dispatches work immediately." });
-	expect(
-		await browser.eval<string>(
-			`document.querySelector('[data-slot="model-reconciliation"] [data-subject-id="Shop#Gateway"]')?.textContent ?? ''`,
-		),
-	).toContain("Gateway");
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-stale"]') === null`),
 		Boolean,

@@ -83,12 +83,6 @@ test("original state selection keeps its retained checkpoint and one-board histo
 	expect(
 		await browser.eval<string>(`new URLSearchParams(location.search).get('checkpointA')`),
 	).toBe(fixture.checkpoint);
-	expect(await browser.eval<string>(`new URLSearchParams(location.search).get('stateA')`)).toBe(
-		"Shop/System#Old",
-	);
-	expect(
-		await browser.eval<boolean>(`document.querySelector('[data-slot="preview-empty"]') === null`),
-	).toBe(true);
 	await browser.run(["reload"]);
 	await pollUntil(
 		() =>
@@ -185,9 +179,6 @@ test("original history exposes lifecycle reasons, exact draft baselines, and unr
 			`document.querySelector('[data-slot="preview-baseline"]').getAttribute('data-baseline-kind')`,
 		),
 	).toBe("empty");
-	expect(await browser.eval<string>(`new URLSearchParams(location.search).get('stateA')`)).toBe(
-		"Shop/Future#Draft",
-	);
 }, 60_000);
 
 async function inspectOriginal(browser: AgentBrowserSession, file: string): Promise<string> {

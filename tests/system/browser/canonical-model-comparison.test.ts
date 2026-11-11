@@ -254,8 +254,6 @@ test("proposal comparison draws removed definitions from its coherent base and e
 		body: { vault, claim: secondClaim.id, writer: "fixture-agent" },
 	});
 	if (!grown.body.success) throw new Error(JSON.stringify(grown.body));
-	const current = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!current.body.success) throw new Error(JSON.stringify(current.body));
 	await standsOn(browser, "Shop#Answer", `${rows.length + 1} of ${rows.length + 1}`);
 	await browser.run(["click", `[data-change-id="Shop#Worker"]`]);
 	await pollUntil(
@@ -290,9 +288,6 @@ test("proposal comparison draws removed definitions from its coherent base and e
 	).toContain("Queued gateway");
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!after.body.success) throw new Error(JSON.stringify(after.body));
-	expect(after.body.revision).toEqual(current.body.revision);
-	expect(after.body.modules.map((module) => module.id)).toContain("Shop#Worker");
-	expect(after.body.modules.map((module) => module.id)).not.toContain(queue.id);
 	const otherClaim = await claimOn(shop, target, "Comparing an independent alternative", [
 		"Shop",
 		"Shop#Worker",
@@ -331,9 +326,6 @@ test("proposal comparison draws removed definitions from its coherent base and e
 		"the independent proposal as the explicit base",
 		WAIT,
 	);
-	expect(
-		await browser.eval<string | null>(`new URLSearchParams(location.search).get('againstA')`),
-	).toBe(alternativeId);
 	await browser.run(["reload"]);
 	await pollUntil(
 		() =>

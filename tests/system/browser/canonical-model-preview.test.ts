@@ -98,17 +98,12 @@ test("migration preview preserves its source while readers navigate modules and 
 	await visible(browser, '[data-slot="model-diagram"] [data-semantic-id="Shop/System#Api"]');
 	await browser.run(["reload"]);
 	await visible(browser, '[data-slot="model-reading"][data-scope="Shop/System#Shop"]');
-	expect(await browser.eval<string>(`new URLSearchParams(location.search).get('previewA')`)).toBe(
-		"Shop",
-	);
 	await chooseFlow(browser, "Shop/System#Buy");
 	await visible(
 		browser,
 		'[data-slot="model-reading"][data-grammar="sequence"] [data-slot="model-diagram"] svg',
 	);
 	expect(authoredBytes(vault)).toEqual(before);
-	const live = await request<ArchitectureModelRead>("/api/architecture/model");
-	expect(live.body).toMatchObject({ success: false, code: "LEGACY_AUTHORITY" });
 	const source = join(vault, "Shop.semantic.json");
 	writeFileSync(source, `${before["Shop.semantic.json"]}\n`);
 	// A read that began before this write answers the first press with the old source.

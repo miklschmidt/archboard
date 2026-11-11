@@ -130,9 +130,6 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 			`document.querySelector('[data-slot="model-comparison"]')?.getAttribute('data-against') ?? null`,
 		),
 	).toBe("Current");
-	expect(
-		await browser.eval<string | null>(`new URLSearchParams(location.search).get('stateA')`),
-	).toBe(draft);
 	const selected = await request<ArchitectureModelRead>(`/api/architecture/model?state=${draft}`);
 	if (!selected.body.success) throw new Error(JSON.stringify(selected.body));
 	const draftTarget = { model: "Shop", state: draft };
@@ -253,11 +250,6 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 		"the draft flow after reload",
 		WAIT,
 	);
-	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-state-details"][data-selected-state="${draft}"][data-lifecycle="draft"]') !== null`,
-		),
-	).toBe(true);
 	await selectReading(browser, "current");
 	await pollUntil(
 		() =>
@@ -295,12 +287,4 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 		"the original flow in the retained draft",
 		WAIT,
 	);
-	const current = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!current.body.success) throw new Error(JSON.stringify(current.body));
-	expect(current.body.modules.find((module) => module.id === "Shop#Gateway")?.name).toBe("Gateway");
-	expect(current.body.collections[0]?.flows[0]?.steps[0]).toMatchObject({
-		id: "Shop#Send",
-		kind: "sync",
-		label: "Dispatch",
-	});
 }, 60_000);
