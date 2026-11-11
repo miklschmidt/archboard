@@ -4,7 +4,9 @@
 // time then, which is the frame it began in. From there it is paused and set to
 // how far it has run since. Past its end it is finished once, so whatever waits
 // for it to finish, a ghost that removes itself, still does. One that never
-// ends only ever runs on.
+// ends only ever runs on. The first sight is the frame it began in only while the document's
+// own timeline stands still, as the recorder holds it; on a running one, an animation can end
+// before the clock sees it.
 
 /** An animation the browser runs, as far as the clock drives it. */
 type DrivenAnimation = Pick<Animation, "playbackRate" | "currentTime" | "pause" | "finish"> & {
