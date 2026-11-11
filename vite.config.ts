@@ -267,7 +267,7 @@ export default defineConfig({
 			// from bun.lock (docs/agents/releasing.md).
 			"bun-nix": {
 				command:
-					'test "$(bun2nix)" = "$(cat bun.nix)" || { echo "bun.nix does not match bun.lock. Run bun2nix > bun.nix inside nix develop." >&2; exit 1; }',
+					'test "$(nix run --inputs-from . bun2nix)" = "$(cat bun.nix)" || { echo "bun.nix does not match bun.lock. Run nix run --inputs-from . bun2nix > bun.nix, and commit both." >&2; exit 1; }',
 				cache: { input: ["bun.lock", "bun.nix", "flake.lock"] },
 			},
 			types: {
