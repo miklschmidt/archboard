@@ -381,9 +381,9 @@ Describe this repository with canonical modules, their responsibilities, and the
 Bind each implemented module to its code and add a short walkthrough for a new team member.
 ```
 
-See [INSTALL.md](INSTALL.md) for how a command finds its vault, code bindings and the configuration. [The docs](https://miklschmidt.github.io/archboard/docs/) cover the CLI command by command, the schemas, and [a first map in one session](https://miklschmidt.github.io/archboard/docs/first-map/).
+See [INSTALL.md](INSTALL.md) for how a command finds its vault, code bindings and the configuration. [The docs](https://usearchboard.dev/docs/) cover the CLI command by command, the schemas, and [a first map in one session](https://usearchboard.dev/docs/first-map/).
 
-**Make the check a gate**. `archboard check` exits 1 while the map and the code disagree, so run it where you run `tsc` or `ruff`: in a pre-push hook, in CI and in your agent's loop. In GitHub Actions, [the check Action](https://miklschmidt.github.io/archboard/docs/gate/) puts each finding on the pull request's diff.
+**Make the check a gate**. `archboard check` exits 1 while the map and the code disagree, so run it where you run `tsc` or `ruff`: in a pre-push hook, in CI and in your agent's loop. In GitHub Actions, [the check Action](https://usearchboard.dev/docs/gate/) puts each finding on the pull request's diff.
 
 Give the check's words back to the agent before you review its work:
 
@@ -391,7 +391,7 @@ Give the check's words back to the agent before you review its work:
 archboard check > /dev/null 2> check.log || codex exec "archboard check failed. Fix the code or the model. The findings: $(cat check.log)"
 ```
 
-[The gate guide](https://miklschmidt.github.io/archboard/docs/gate/) covers the hook, the Claude Code Stop hook and the loop. [Architecture on pull requests](https://miklschmidt.github.io/archboard/docs/pull-requests/) covers the Action that posts the proposal, the vault link and the footprint as text.
+[The gate guide](https://usearchboard.dev/docs/gate/) covers the hook, the Claude Code Stop hook and the loop. [Architecture on pull requests](https://usearchboard.dev/docs/pull-requests/) covers the Action that posts the proposal, the vault link and the footprint as text.
 
 ## Prompts to try
 

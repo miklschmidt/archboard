@@ -179,7 +179,7 @@ function findingTitle(finding: Finding): string {
 }
 
 /** Where each finding code is explained. */
-const FINDINGS_REFERENCE = "https://miklschmidt.github.io/archboard/docs/reference/findings/";
+const FINDINGS_REFERENCE = "https://usearchboard.dev/docs/reference/findings/";
 
 /**
  * The address of a code's entry in the findings reference.

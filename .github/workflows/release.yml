@@ -179,8 +179,8 @@ jobs:
     needs: [release-please, publish]
     permissions:
       contents: write
-      pages: write
-      id-token: write
     uses: ./.github/workflows/site.yml
+    secrets:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     with:
       release: ${{ needs.release-please.outputs.tag_name }}
