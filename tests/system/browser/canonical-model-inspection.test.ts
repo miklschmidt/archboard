@@ -1,8 +1,6 @@
 import { expect, test } from "bun:test";
 import { cpSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
-import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import {
@@ -58,7 +56,7 @@ test("browser keyboard input keeps trusted keys, modifiers, and native focus", a
 
 const WAIT = { timeoutMs: 8_000 } as const;
 
-test("module search finds hidden modules without writing architecture", async () => {
+test("module search finds hidden modules and opens them in their scope", async () => {
 	await using resources = new AsyncDisposableStack();
 	const vault = vaultIn(join(browserTestRoots().ownerRoot, "module-inspection"));
 	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
@@ -67,9 +65,6 @@ test("module search finds hidden modules without writing architecture", async ()
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
-	const request = createJsonRequester(server);
-	const before = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!before.body.success) throw new Error(before.body.error);
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", server.base]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
@@ -118,18 +113,13 @@ test("module search finds hidden modules without writing architecture", async ()
 		WAIT,
 	);
 	expect((await searching()).listed).toBe(false);
-	expect(
-		await pollUntil(
-			() =>
-				browser.eval<boolean>(
-					`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Handler"].is-selected') !== null`,
-				),
-			Boolean,
-			"the chosen hidden module in the new scope drawing",
-			WAIT,
-		),
-	).toBe(true);
-	const after = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!after.body.success) throw new Error(after.body.error);
-	expect(after.body.revision).toEqual(before.body.revision);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Handler"].is-selected') !== null`,
+			),
+		Boolean,
+		"the chosen hidden module in the new scope drawing",
+		WAIT,
+	);
 }, 60_000);

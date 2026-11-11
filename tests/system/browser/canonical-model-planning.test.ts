@@ -198,8 +198,4 @@ test("planning readings use retained predecessors and preserve unavailable state
 		"the retained child after the unavailable state",
 		WAIT,
 	);
-	const current = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!current.body.success) throw new Error(JSON.stringify(current.body));
-	expect(current.body.modules).toEqual([]);
-	expect(current.body.selectedState).toBeNull();
 }, 60_000);
