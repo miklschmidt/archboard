@@ -19,6 +19,10 @@ on:
         type: string
         required: false
         default: ""
+    secrets:
+      CLOUDFLARE_API_TOKEN:
+        description: The deploy token from the site environment.
+        required: true
   workflow_dispatch:
     inputs:
       release:
