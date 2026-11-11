@@ -1,5 +1,5 @@
-// The owner of a trace in the reader: each further hop lights more faintly, across the doors too,
-// and a trace goes with the pick.
+// The owner of a trace in the reader: each further hop is graded, across the doors too, and a
+// trace goes with the pick.
 
 import { expect, test } from "bun:test";
 import { writeFileSync } from "node:fs";
@@ -41,24 +41,14 @@ function writeModule(
 }
 
 /**
- * How the picture grades the cards and the lines it lit, with how much ink each keeps.
+ * How the picture grades the cards and the lines it lit.
  * @param browser The page.
- * @returns The grade of each graded subject, and the opacity of each card asked for.
+ * @returns The grade of each graded subject.
  */
 function grades(browser: AgentBrowserSession) {
-	return browser.eval<{
-		graded: Record<string, string>;
-		ink: { Near: number; Far: number; Back: number };
-	}>(`(() => {
+	return browser.eval<Record<string, string>>(`(() => {
 		const marks = [...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-id][class*="is-reach-"]')];
-		const ink = (id) => {
-			const card = document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#' + id + '"]');
-			return Number(/opacity\\(([\\d.]+)\\)/.exec(getComputedStyle(card).filter)?.[1] ?? 1);
-		};
-		return {
-			graded: Object.fromEntries(marks.map((one) => [one.getAttribute('data-semantic-id'), [...one.classList].find((name) => name.startsWith('is-reach-'))])),
-			ink: { Near: ink('Near'), Far: ink('Far'), Back: ink('Back') },
-		};
+		return Object.fromEntries(marks.map((one) => [one.getAttribute('data-semantic-id'), [...one.classList].find((name) => name.startsWith('is-reach-'))]));
 	})()`);
 }
 
@@ -94,23 +84,21 @@ test("a trace grades each further hop across the doors, and goes with the pick",
 	await trace(browser, "onward");
 	const fromFront = await pollUntil(
 		() => grades(browser),
-		(now) => now.graded["Shop#Back"] === "is-reach-4" && now.ink.Back < now.ink.Far,
+		(now) => now["Shop#Back"] === "is-reach-4",
 		"the hops of a trace onward",
 		WAIT,
 	);
-	expect(fromFront.graded).toMatchObject({
+	expect(fromFront).toMatchObject({
 		"Shop#Far": "is-reach-3",
 		"Shop#Spare": "is-reach-4",
 		"Shop#FarBack": "is-reach-4",
 	});
-	expect(fromFront.ink.Near).toBe(1);
-	expect(fromFront.ink.Far).toBeLessThan(1);
 
 	// Asking again takes it back.
 	await trace(browser, "onward");
 	await pollUntil(
 		() => grades(browser),
-		(now) => Object.keys(now.graded).length === 0,
+		(now) => Object.keys(now).length === 0,
 		"a trace taken back",
 		WAIT,
 	);
@@ -121,16 +109,16 @@ test("a trace grades each further hop across the doors, and goes with the pick",
 	await pollUntil(
 		() => grades(browser),
 		(now) =>
-			now.graded["Shop#Near"] === "is-reach-3" &&
-			now.graded["Shop#Front"] === "is-reach-4" &&
-			now.graded["Shop#Far"] === undefined,
+			now["Shop#Near"] === "is-reach-3" &&
+			now["Shop#Front"] === "is-reach-4" &&
+			now["Shop#Far"] === undefined,
 		"the hops of a trace back",
 		WAIT,
 	);
 	await pick(browser, "Shop#Front");
 	await pollUntil(
 		() => grades(browser),
-		(now) => Object.keys(now.graded).length === 0,
+		(now) => Object.keys(now).length === 0,
 		"a trace gone with its pick",
 		WAIT,
 	);

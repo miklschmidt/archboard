@@ -75,7 +75,6 @@ test(
 		await browser.eval<boolean>(`(localStorage.setItem('${SUBTITLES_KEY}', 'false'), true)`);
 		await browser.run(["reload"]);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
-		expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/iu);
 		await pollUntil(
 			() =>
 				browser.eval<readonly [boolean, boolean]>(

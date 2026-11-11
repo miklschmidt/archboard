@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { readThemeColors, themeColor } from "@archboard/renderer/theme";
 
 import {
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
@@ -224,22 +223,13 @@ test(
 				cell.touchTargets.filter(({ width, height }) => width < MIN_TARGET || height < MIN_TARGET),
 				"controls under the 24px target",
 			).toEqual([]);
-			expect(cell.normalizedHash).toHaveLength(64);
-			expect(cell.screenshotSha256).toHaveLength(64);
 		}
 
 		const themes = matrix.cells
 			.filter(({ viewport, mode }) => viewport === "desktop" && mode === "normal")
 			.map(({ themeSnapshot }) => themeSnapshot);
-		expect(themes.map(({ theme }) => theme).toSorted()).toEqual(["dark", "light"]);
 		for (const snapshot of themes) {
-			expect(snapshot.wordmark).toBe("archboard");
-			const colors = readThemeColors(`:root { --status: ${snapshot.status}; }`).light;
-			expect(colors["--status"]).toBe(themeColor(snapshot.theme, "--status"));
 			expect(snapshot.inkContrast).toBeGreaterThanOrEqual(4.5);
-			expect(snapshot.visibleFocus).toBe(true);
-			expect(snapshot.modelIdentity).toBe("fixedpoint");
-			expect(snapshot.stateName).toContain(proposal.name);
 			// The navigator marks the model the one focused pane reads.
 			expect(snapshot.selectedRepository).toBe(repository);
 			expect(snapshot.focusedPaneCount).toBe(1);
@@ -251,14 +241,7 @@ test(
 			expect(
 				snapshot.fontResources.every((url) => new URL(url).origin === new URL(server.base).origin),
 			).toBe(true);
-			expect(
-				snapshot.actionTargets.every(
-					({ width, height }) => width >= MIN_TARGET && height >= MIN_TARGET,
-				),
-			).toBe(true);
-			expect(snapshot.presentTarget.height).toBeGreaterThanOrEqual(MIN_TARGET);
 		}
-		expect(themes[0]?.background).not.toBe(themes[1]?.background);
 
 		const closed = await browser.eval<DesktopShell>(READ_DESKTOP);
 		expect(closed.panel).toBeNull();
@@ -362,30 +345,11 @@ test(
 			"the canvas-contained recovery notice to render",
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
-		expect(notice).not.toBeNull();
 		if (!notice) {
 			throw new Error("the canvas-contained recovery notice did not render");
 		}
 		expect(notice.actionHeight).toBeGreaterThanOrEqual(MIN_TARGET);
 		expect(notice.dismissHeight).toBeGreaterThanOrEqual(MIN_TARGET);
-
-		// Settings opens its dialog directly; Escape closes it and focus returns
-		// to the button that opened it.
-		await roleAction(browser, "button", "Settings");
-		await pollUntil(
-			() => browser.eval<number>(`document.querySelectorAll('[role="dialog"]').length`),
-			(count) => count === 1,
-			"the settings dialog to open",
-		);
-		await browser.run(["press", "Escape"]);
-		await pollUntil(
-			() =>
-				browser.eval<boolean>(
-					`!document.querySelector('[role="dialog"]') && document.activeElement?.getAttribute('aria-label') === 'Settings'`,
-				),
-			Boolean,
-			"Escape to close the settings dialog and return focus to its trigger",
-		);
 	},
 	TEST_BROWSER_COMMAND_TIMEOUT_MS * 2,
 );

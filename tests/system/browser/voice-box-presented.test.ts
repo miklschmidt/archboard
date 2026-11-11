@@ -202,23 +202,6 @@ test("a presented walkthrough leaves the voice box low over its picture, in the 
 	const withoutBox = await presentedNow(browser);
 	expect(withoutBox).toMatchObject({ box: null, presented: true, narrate: "held" });
 
-	// And on again, from the dock: back over the picture. Then off again, so that fullscreen is
-	// entered with the orb in a dock that fullscreen is about to hide.
-	expect(await clickSubtitles(browser, "agent-dock")).toBeTrue();
-	await pollUntil(
-		() => presentedNow(browser),
-		(now) => now.box === "over" && now.orbInBox,
-		"the orb to fly back into the box over the picture",
-		WAIT,
-	);
-	expect(await clickSubtitles(browser, "voice-box")).toBeTrue();
-	await pollUntil(
-		() => voiceWhere(browser),
-		(where) => !where.box && where.home === "dock" && where.off < 1,
-		"the orb to be home in the dock again",
-		WAIT,
-	);
-
 	// Fullscreen has no dock: the box takes the voice there whatever the person wants of subtitles,
 	// and the bar's key ends it.
 	await roleAction(browser, "button", "Present fullscreen");

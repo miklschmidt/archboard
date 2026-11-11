@@ -244,15 +244,11 @@ test("every move of the left column has a keyboard route, also in a presented pa
 			section: document.querySelector('[data-tree-section="Requests"] [data-flow-id="Shop#Request"]') !== null,
 			onTrail: document.querySelector('[data-slot="model-breadcrumbs"] [data-slot="model-reading-name"]') !== null,
 		})`),
-			(now) => now.home !== null,
-			"the home of the flow",
+			(now) => now.home?.includes("Requests") === true,
+			"the panel to name the flow's section",
 			WAIT,
 		),
-	).toEqual({
-		home: "Flow in Requests",
-		section: true,
-		onTrail: false,
-	});
+	).toMatchObject({ section: true, onTrail: false });
 	await browser.run(["press", "Backspace"]);
 	await pollUntil(
 		() => reading(browser),

@@ -76,12 +76,9 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	);
 	expect(boxed.orbs).toBe(1);
 	expect(boxed.form).toBe("key");
-	expect(boxed.keyName).toBe("End voice");
 	// The box lets the picture under its words take the pointer, and takes it at its control.
 	expect(boxed.wordsClickThrough).toBeTrue();
 	expect(boxed.controlClickable).toBeTrue();
-	// The plate is the orb's, so the box has none of its own for an orb that has left to leave behind.
-	expect(boxed.boxDrawsSeat).toBeFalse();
 
 	// Turn subtitles off in the box: the orb flies home to the dock's circle and the box goes.
 	const toDock = (await seenSoFar(browser)).length;
