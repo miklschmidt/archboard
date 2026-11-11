@@ -48,8 +48,10 @@
 				margin: 0;
 				white-space: pre-line;
 			}
-			/* The tagline under the lockup, set as the site sets its headlines. */
+			/* The tagline under the lockup, set as the site sets its headlines. The page sizes it once
+			   the faces load, so it measures its words, not the lockup's width. */
 			.tagline {
+				width: max-content;
 				margin-top: 0.4em;
 			}
 			/* A headline in the display face over a lead in the body face, as the site sets them, each
@@ -125,37 +127,49 @@
 			lockup.style.setProperty("left", `${layout.lockup.left}px`);
 			lockup.style.setProperty("top", `${layout.lockup.middle}px`);
 			/**
-			 * Set words in an element, at their size. A word between tildes is struck out, and a word
+			 * Set words in an element, at a size. A word between tildes is struck out, and a word
 			 * between asterisks is set in gold.
 			 */
-			const setWords = (element, words) => {
+			const setWords = (element, text, size) => {
 				element.replaceChildren(
-					...words.text.split(/(~[^~]+~|\*[^*]+\*)/).map((part, index) => {
+					...text.split(/(~[^~]+~|\*[^*]+\*)/).map((part, index) => {
 						if (index % 2 === 0) return part;
 						const word = document.createElement(part.startsWith("~") ? "s" : "em");
 						word.textContent = part.slice(1, -1);
 						return word;
 					}),
 				);
-				element.style.setProperty("font-size", `${words.size}px`);
+				element.style.setProperty("font-size", `${size}px`);
 			};
 			lockup.innerHTML = lockupMarkup(layout.lockup.size);
-			if (layout.lockup.tagline) {
-				const tagline = document.createElement("p");
+			const tagline = layout.lockup.tagline && document.createElement("p");
+			if (tagline) {
 				tagline.className = "display tagline";
-				setWords(tagline, layout.lockup.tagline);
+				setWords(tagline, layout.lockup.tagline, layout.lockup.size);
 				lockup.append(tagline);
 			}
 			if (layout.corner) {
 				const { title, lead, right, bottom } = layout.corner;
-				setWords(corner.querySelector("[data-title]"), title);
-				setWords(corner.querySelector("[data-lead]"), lead);
+				setWords(corner.querySelector("[data-title]"), title.text, title.size);
+				setWords(corner.querySelector("[data-lead]"), lead.text, lead.size);
 				corner.style.setProperty("right", `${right}px`);
 				corner.style.setProperty("bottom", `${bottom}px`);
 				corner.hidden = false;
 			}
 			// The words stand where they stay before the table fits the picture to them.
 			await Promise.all([...document.fonts].map((face) => face.load().catch(() => undefined)));
+			if (tagline) {
+				// The tagline spans the lockup, from the mark's left edge to the name's last capital. A
+				// line's last letter carries its letter spacing, which neither width counts.
+				const row = lockup.firstElementChild;
+				const name = row.lastElementChild;
+				const after = (element) => parseFloat(getComputedStyle(element).letterSpacing) || 0;
+				const span =
+					name.getBoundingClientRect().right - after(name) - row.getBoundingClientRect().left;
+				const own = tagline.getBoundingClientRect().width - after(tagline);
+				const size = parseFloat(getComputedStyle(tagline).fontSize);
+				tagline.style.setProperty("font-size", `${(size * span) / own}px`);
+			}
 			if (!document.createElement("canvas").getContext("webgl2")) {
 				document.body.dataset.painted = "no-webgl";
 			} else {

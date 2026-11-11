@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-10T20:23:00Z'
-updated_date: '2026-11-11T00:40:00Z'
+updated_date: '2026-11-11T00:45:00Z'
 labels:
   - docs
   - tooling
@@ -54,6 +54,8 @@ Fifth follow-up: the card's headline reads "Read the code architecture" on one l
 Sixth follow-up: on the card's headline, "code" is in --ink-faint and crossed out by two diagonal lines, 0.1em thick, a step darker than --removed (oklch(from var(--removed) calc(l - 0.12) calc(c + 0.04) h)). "architecture" is in --gold, the colour the site spends on what is chosen. A layout writes a gold word between asterisks. The lead is 26px. A single struck line kept "code" more legible at X's preview size, but the owner chose the cross.
 
 Seventh follow-up: the art's lockup sets the name 6 shell pixels from the mark, not the shell's 10, because the shell's gap reads as loose at the art's sizes (GAP in scripts/readme-assets/lockup.ts). The banner sets the card's headline, "Read the ~code~ *architecture*", as a tagline under its lockup at 60px, and the README's alt text names it.
+
+Eighth follow-up: the art's lockup sizes the name so its capitals stand exactly as tall as the mark's ink (NAME in lockup.ts: the display face's capitals are 0.8 of its size), and trims the name's box to its capitals with text-box so the two centre on each other. GAP is now 2 shell pixels. The banner's tagline is sized after the faces load to span from the mark's left edge to the name's last capital, and the banner's lockup size drops from 120 to 100 so the tagline clears the table.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

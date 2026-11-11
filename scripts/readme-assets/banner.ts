@@ -74,15 +74,17 @@ interface Layout {
 	 */
 	readonly picture: Span;
 	/**
-	 * The lockup: its left edge, the name's font size, and a tagline under it, set as the site sets
-	 * its headlines, as the corner's headline is. The middle is the vertical middle of the lockup and
-	 * its tagline together.
+	 * The lockup: its left edge, its size (lockup.ts says how it sets the mark and the name from
+	 * it), and a tagline under it. The tagline is set as the site sets its headlines, at the size
+	 * that spans the lockup from the mark's left edge to the name's last capital, and marks words as
+	 * the corner's words do. The middle is the vertical middle of the lockup and its tagline
+	 * together.
 	 */
 	readonly lockup: {
 		readonly left: number;
 		readonly middle: number;
 		readonly size: number;
-		readonly tagline: Words | null;
+		readonly tagline: string | null;
 	};
 	/**
 	 * Words in the lower right corner, set as the site sets its words: a headline in the display face
@@ -121,8 +123,8 @@ const BANNER: Layout = {
 	lockup: {
 		left: 150,
 		middle: 362,
-		size: 120,
-		tagline: { text: "Read the ~code~ *architecture*", size: 60 },
+		size: 100,
+		tagline: "Read the ~code~ *architecture*",
 	},
 	corner: null,
 	fade: { left: { from: 637, to: 824 }, foot: { from: 540, to: 724 } },

@@ -82,10 +82,11 @@ picture or where it fades, read the banner and the card again.
 
 The banner's lockup, the mark beside the name, comes from
 `scripts/readme-assets/lockup.ts`. A test in the repository lane holds that mark
-to the one the shell draws in `apps/web/src/ui/shell/components/Brand.tsx`. The art sets the
-name closer to the mark than the shell does, because the shell's gap reads as loose at the art's
-sizes. The banner sets the card's headline as a tagline under the lockup. The banner also
-writes `docs/assets/archboard-social-card.jpg`. It is GitHub's social preview and the
+to the one the shell draws in `apps/web/src/ui/shell/components/Brand.tsx`. The art sizes the
+name so that its capitals stand exactly as tall as the mark, and sets it closer to the mark than
+the shell does, because the shell's gap reads as loose at the art's sizes. The banner sets the
+card's headline as a tagline under the lockup, sized to span from the mark's left edge to the
+name's last capital. The banner also writes `docs/assets/archboard-social-card.jpg`. It is GitHub's social preview and the
 site's link preview, with the lockup above the table as the site's hero sets its words. Its lower
 right corner holds a headline and a lead, as the site sets them. The headline reads "Read the
 code architecture". The word "code" is in faint ink, crossed out by two diagonal lines a step
