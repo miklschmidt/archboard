@@ -18,13 +18,21 @@ interface ProcessGroupIdentity {
 /**
  * Capture the group of a process spawned detached, proving it leads its own
  * group rather than having joined ours.
+ *
+ * Only this process's runtime reaps its own child, so a child that is gone has
+ * exited. Bun on macOS reaps a child that exits before Bun can watch it, inside
+ * the spawn or on a thread of its own, so a fast child can be gone before this
+ * reads it. With its group empty, there is nothing left to own.
  * @param leaderPid The detached child's pid.
- * @returns The group and its leader's identity.
+ * @returns The group and its leader's identity, or undefined when the child has
+ * exited and left nothing in its group.
+ * @throws {Error} When the child left a member in its group, or joined another group.
  */
-function captureDetachedProcessGroup(leaderPid: number): ProcessGroupIdentity {
+function captureDetachedProcessGroup(leaderPid: number): ProcessGroupIdentity | undefined {
 	const observation = readProcessObservation(leaderPid);
 	if (observation === undefined) {
-		throw new Error(`Detached process ${leaderPid} vanished before its group could be captured.`);
+		if (!processGroupExists(leaderPid)) return undefined;
+		throw new Error(`Detached process ${leaderPid} exited before its group could be captured.`);
 	}
 	if (observation.pgid <= 0 || observation.pgid !== leaderPid) {
 		throw new Error(
