@@ -179,7 +179,7 @@ function project(camera: Camera, aspect: number, x: number, z: number): { x: num
 }
 
 /** The room the picture has on its canvas: its foot and its top, 0..1 up the canvas. */
-interface Room {
+export interface Room {
 	bottom: number;
 	top: number;
 }
@@ -358,11 +358,16 @@ function roomOf(canvas: HTMLCanvasElement, words: HTMLElement | null): Room {
  * as the densest point it serves, as large as the screen lets the canvas grow.
  * @param canvas The canvas the table lights.
  * @param words The words the picture leaves room for.
+ * @param room The room the picture takes, when the caller sets it rather than the words.
  * @returns The parts.
  */
-export function pictureParts(canvas: HTMLCanvasElement, words: HTMLElement | null): Part[] {
+export function pictureParts(
+	canvas: HTMLCanvasElement,
+	words: HTMLElement | null,
+	room?: Room,
+): Part[] {
 	const aspect = canvas.clientWidth / Math.max(1, canvas.clientHeight);
-	const camera = fit(aspect, roomOf(canvas, words));
+	const camera = fit(aspect, room ?? roomOf(canvas, words));
 	const scale = SHEET.width / plan.width;
 	/** Where a point of the table lies on the picture, 0..1 across and down it. */
 	const onPicture = (point: { x: number; z: number }) => ({
@@ -440,11 +445,14 @@ const SETTLE = 400;
  * @param paint Paint the picture's images, for the parts that a function gives once the painter is
  * ready.
  * @param words The words the picture leaves room for, and lies darker behind.
+ * @param room The room the picture takes on the canvas, when the caller sets it rather than the
+ * words. The README asset kit sets it, so that its canvas can run past its pictures' edges.
  */
 export function lightTable(
 	canvas: HTMLCanvasElement,
 	paint: (parts: () => Part[]) => Promise<Level[] | null>,
 	words: HTMLElement | null,
+	room?: Room,
 ): void {
 	const host = canvas.parentElement ?? canvas;
 	const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -563,7 +571,7 @@ export function lightTable(
 				rest = {
 					width: frame.width,
 					height: frame.height,
-					camera: fit(aspect, roomOf(canvas, words)),
+					camera: fit(aspect, room ?? roomOf(canvas, words)),
 					words: wordsOf(),
 				};
 			}
@@ -775,7 +783,7 @@ export function lightTable(
 	};
 	/** Paint the picture again when the canvas needs a part finer, or one the images do not hold. */
 	function repaint() {
-		const needs = pictureParts(canvas, words);
+		const needs = pictureParts(canvas, words, room);
 		const holds = (inner: Region, outer: Region) =>
 			inner[0] >= outer[0] - 0.02 &&
 			inner[1] >= outer[1] - 0.02 &&
@@ -787,7 +795,7 @@ export function lightTable(
 		});
 		if (stale && painted.length > 0) paintFor(() => needs);
 	}
-	paintFor(() => pictureParts(canvas, words));
+	paintFor(() => pictureParts(canvas, words, room));
 	// The words can reflow while the canvas keeps its size, as when their fonts arrive. The table
 	// then fits the room they leave again, and paints again if that room needs more.
 	if (words)

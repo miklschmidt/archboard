@@ -3,10 +3,10 @@ id: TASK-626
 title: >-
   A Git that Bun reaps before its group is captured settles as a finished
   command
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-11T00:54:00Z'
-updated_date: '2026-11-11T00:56:00Z'
+updated_date: '2026-11-11T01:30:00Z'
 labels:
   - bug
   - ci
@@ -26,7 +26,7 @@ On macOS, Bun collects a child that is already exiting when it cannot register a
 <!-- AC:BEGIN -->
 - [x] #1 A detached leader that has exited and been reaped, and whose group is empty, captures as no group instead of an error
 - [x] #2 A reaped leader whose group still has a member still refuses ownership
-- [ ] #3 A Git command whose leader was reaped before capture returns its output and exit status like any finished command
+- [x] #3 A Git command whose leader was reaped before capture returns its output and exit status like any finished command
 - [x] #4 A focused test fails without the fix and passes with it
 <!-- AC:END -->
 
@@ -42,4 +42,12 @@ On macOS, Bun collects a child that is already exiting when it cannot register a
 
 <!-- SECTION:NOTES:BEGIN -->
 Root cause: on macOS, when kevent cannot register an EVFILT_PROC exit watch for a child that is already exiting (ESRCH), Bun reaps the child itself, in the spawn or on a detached thread (oven-sh/bun #41732, #45483). A fast Git can then be absent from the process census when captureDetachedProcessGroup reads it, which the runner reported as a cleanup failure. Linux watches through a pidfd and keeps the zombie, so the race is macOS-only. The two new tests in packages/process/tests/runtime/processes/git-async.test.ts both fail against the old group.ts and pass with the fix. AC 3 rests on the runner's code path (no group means no guard, nothing to kill or inspect) and waits on the macOS CI job.
+
+AC 3 verified 2026-11-11. With captureDetachedProcessGroup forced to return no group (a temporary local change, reverted), git() returned "true" for git rev-parse --is-inside-work-tree and raised GitCommandError "fatal: Needed a single revision" for a ref that does not exist. The macOS native process ownership job passed on PR #93's head 24696c8c1d.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+On macOS, Bun reaps a child that is already exiting when it cannot watch it, so a fast Git was sometimes gone before the runner read its process group, and the runner failed the command. captureDetachedProcessGroup now returns no group when the leader is gone and its group is empty, and still refuses ownership when a member outlived the leader. The Git runner treats no group as a Git that finished: no orphan guard, nothing to kill, nothing to inspect or release. Two tests in git-async.test.ts fail without the fix and pass with it. Merged in PR #93 (7895c808ce). Risk: one passing macOS run cannot prove an intermittent race gone; a recurrence names a member that outlived its leader, which is the remaining refusal.
+<!-- SECTION:FINAL_SUMMARY:END -->

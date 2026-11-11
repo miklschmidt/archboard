@@ -1,8 +1,8 @@
 // The lockup the README's art sets: the mark beside the name. The mark is a gold peak with a
 // second stroke inside it and a swoosh over its shoulder, in the theme's gradient from --mark-hi
-// to --mark-lo. The name is archboard in the display face's tracked capitals. The shell draws the
-// same lockup (apps/web/src/ui/shell/components/Brand.tsx), and the repository lane holds this geometry to
-// the shell's, so the two cannot drift.
+// to --mark-lo. The name is archboard in the display face's tracked capitals, which stand exactly
+// as tall as the mark. The shell draws the same mark (apps/web/src/ui/shell/components/Brand.tsx),
+// and the repository lane holds this geometry to the shell's, so the two cannot drift.
 
 /** The mark's geometry, as the shell draws it. */
 const MARK = {
@@ -16,6 +16,20 @@ const MARK = {
 } as const;
 
 /**
+ * How far the name stands from the mark, in the shell's pixels. The shell sets them 10 apart. At
+ * the art's far larger sizes that gap reads as loose, so the art sets them closer.
+ */
+const GAP = 2;
+
+/**
+ * The name's font size, as a share of the lockup's size, so that its capitals stand from the top
+ * of the mark's ink to its foot. The mark fits its box, 22 by 21 shell pixels, at 22/60 of a pixel
+ * per unit of its viewBox. Its ink, from the peak's tip at 3 to its feet at 53, is centred in the
+ * box. The display face's capitals are 0.8 of its size.
+ */
+const NAME = (50 * (22 / 60)) / 18 / 0.8;
+
+/**
  * A length of the shell's lockup, whose name is 18px, as a share of the name's size.
  * @param shellPixels The length in the shell, in pixels.
  * @returns The length in em.
@@ -26,9 +40,10 @@ function em(shellPixels: number): string {
 
 /**
  * The lockup as markup for a page that has loaded the renderer package's theme.css and names the display
- * face "Archboard Display". Its proportions are the shell's: at a name of 18px the mark is 22 by
- * 21, 10 away, and the name's line is 21 high.
- * @param size The name's font size, in pixels; the mark scales with it.
+ * face "Archboard Display". At a size of 18px the mark is 22 by 21, as in the shell, and the name
+ * stands GAP away, set at NAME times the size. The name's box is trimmed to its capitals, so the two
+ * centre on each other.
+ * @param size The lockup's size, in pixels: the size of the shell's 18px name.
  * @returns The markup.
  */
 function lockupMarkup(size: number): string {
@@ -40,8 +55,8 @@ function lockupMarkup(size: number): string {
 		<g fill="url(#archboard-mark)">${fills.map((d) => `<path d="${d}"/>`).join("")}</g>
 		<path d="${swoosh.d}" fill="none" stroke="url(#archboard-mark)" stroke-width="${swoosh.width}" stroke-linecap="round"/>
 	</svg>`;
-	const name = `<span style="font-family:'Archboard Display';font-weight:500;text-transform:uppercase;letter-spacing:0.07em;line-height:${em(21)};margin-bottom:${em(-1)};color:var(--foreground)">archboard</span>`;
-	return `<div style="display:flex;align-items:flex-end;gap:${em(10)};font-size:${size}px">${mark}${name}</div>`;
+	const name = `<span style="font-family:'Archboard Display';font-size:${NAME.toFixed(4)}em;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;line-height:1;text-box:trim-both cap alphabetic;color:var(--foreground)">archboard</span>`;
+	return `<div style="display:flex;align-items:center;gap:${em(GAP)};font-size:${size}px">${mark}${name}</div>`;
 }
 
 export { MARK, lockupMarkup };

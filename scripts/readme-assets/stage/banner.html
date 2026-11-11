@@ -1,0 +1,191 @@
+<!doctype html>
+<!--
+	The banner and the social card: the marketing site's hero table and the lockup on the site's
+	ground, and the words that the social card sets in its corner. The page runs the hero's own code
+	(site/src/scripts/hero), so Vite serves it from the checkout. The take opens it with reduced
+	motion, so the table draws its finished entry in one still frame. The take gives the layout as
+	JSON in the query (banner.ts says what each value does). The body's data-painted says how the
+	picture went: "true" once it is painted, "failed" when the painter did not paint it, and
+	"no-webgl" when the browser has no WebGL2. The canvas takes the class is-live once a frame with
+	the picture is drawn.
+-->
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>banner</title>
+		<link rel="stylesheet" href="../../../site/src/styles/global.css" />
+		<style>
+			html,
+			body {
+				margin: 0;
+				width: 100vw;
+				height: 100vh;
+				overflow: hidden;
+				background: var(--ground);
+			}
+			/* The frame is the page. The table fades into the ground across its spans of the page. */
+			.frame {
+				position: absolute;
+				inset: 0;
+				overflow: hidden;
+				mask-image:
+					linear-gradient(90deg, transparent var(--left-from), black var(--left-to)),
+					linear-gradient(180deg, black var(--foot-from), transparent var(--foot-to));
+				mask-composite: intersect;
+			}
+			/* The canvas runs past the frame, wider than the site's stylesheet lets a canvas be. */
+			.table {
+				position: absolute;
+				max-width: none;
+			}
+			.lockup {
+				position: absolute;
+				transform: translateY(-50%);
+				--foreground: var(--ink);
+			}
+			/* Words break where their text does. */
+			p {
+				margin: 0;
+				white-space: pre-line;
+			}
+			/* The tagline under the lockup, set as the site sets its headlines. The page sizes it once
+			   the faces load, so it measures its words, not the lockup's width. */
+			.tagline {
+				width: max-content;
+				margin-top: 0.4em;
+			}
+			/* A headline in the display face over a lead in the body face, as the site sets them, each
+			   line ending at the corner's right edge. Each breaks where its text does. */
+			.corner {
+				position: absolute;
+				text-align: right;
+			}
+			.corner .display {
+				margin-bottom: 0.3em;
+			}
+			.corner .lead {
+				max-width: none;
+			}
+			/* A struck word: in faint ink, crossed out by two diagonal lines through its capitals, a
+			   step darker than the colour that the site's drawings give what a change removes. */
+			s {
+				position: relative;
+				text-decoration: none;
+				color: var(--ink-faint);
+			}
+			s::before,
+			s::after {
+				content: "";
+				position: absolute;
+				left: -0.08em;
+				right: -0.08em;
+				top: calc(50% + 0.05em);
+				height: 0.1em;
+				border-radius: 0.05em;
+				background: oklch(from var(--removed) calc(l - 0.12) calc(c + 0.04) h);
+				transform: translateY(-50%) rotate(-18deg);
+			}
+			s::before {
+				transform: translateY(-50%) rotate(18deg);
+			}
+			/* A chosen word, in gold. */
+			em {
+				font-style: normal;
+				color: var(--gold);
+			}
+		</style>
+	</head>
+	<body>
+		<div class="frame" data-frame><canvas class="table" data-table></canvas></div>
+		<div class="lockup" data-lockup></div>
+		<div class="corner" data-corner hidden>
+			<p class="display" data-title></p>
+			<p class="lead" data-lead></p>
+		</div>
+		<script type="module">
+			import { lightTable } from "../../../site/src/scripts/hero/table.ts";
+			import { paintPicture } from "../../../site/src/scripts/hero/picture.ts";
+			import { lockupMarkup } from "../lockup.ts";
+
+			const layout = JSON.parse(new URLSearchParams(location.search).get("layout"));
+			const frame = document.querySelector("[data-frame]");
+			const canvas = document.querySelector("[data-table]");
+			const lockup = document.querySelector("[data-lockup]");
+			const corner = document.querySelector("[data-corner]");
+			for (const side of ["left", "top", "width", "height"])
+				canvas.style.setProperty(side, `${layout.canvas[side]}px`);
+			// A side with no fade runs the table to the page's edge.
+			const left = layout.fade.left ?? { from: 0, to: 0 };
+			const foot = layout.fade.foot ?? { from: layout.height, to: layout.height };
+			frame.style.setProperty("--left-from", `${left.from}px`);
+			frame.style.setProperty("--left-to", `${left.to}px`);
+			frame.style.setProperty("--foot-from", `${foot.from}px`);
+			frame.style.setProperty("--foot-to", `${foot.to}px`);
+			// The room the picture takes, 0..1 up the canvas.
+			const upCanvas = (y) => (layout.canvas.top + layout.canvas.height - y) / layout.canvas.height;
+			const room = { bottom: upCanvas(layout.picture.to), top: upCanvas(layout.picture.from) };
+			lockup.style.setProperty("left", `${layout.lockup.left}px`);
+			lockup.style.setProperty("top", `${layout.lockup.middle}px`);
+			/**
+			 * Set words in an element, at a size. A word between tildes is struck out, and a word
+			 * between asterisks is set in gold.
+			 */
+			const setWords = (element, text, size) => {
+				element.replaceChildren(
+					...text.split(/(~[^~]+~|\*[^*]+\*)/).map((part, index) => {
+						if (index % 2 === 0) return part;
+						const word = document.createElement(part.startsWith("~") ? "s" : "em");
+						word.textContent = part.slice(1, -1);
+						return word;
+					}),
+				);
+				element.style.setProperty("font-size", `${size}px`);
+			};
+			lockup.innerHTML = lockupMarkup(layout.lockup.size);
+			const tagline = layout.lockup.tagline && document.createElement("p");
+			if (tagline) {
+				tagline.className = "display tagline";
+				setWords(tagline, layout.lockup.tagline, layout.lockup.size);
+				lockup.append(tagline);
+			}
+			if (layout.corner) {
+				const { title, lead, right, bottom } = layout.corner;
+				setWords(corner.querySelector("[data-title]"), title.text, title.size);
+				setWords(corner.querySelector("[data-lead]"), lead.text, lead.size);
+				corner.style.setProperty("right", `${right}px`);
+				corner.style.setProperty("bottom", `${bottom}px`);
+				corner.hidden = false;
+			}
+			// The words stand where they stay before the table fits the picture to them.
+			await Promise.all([...document.fonts].map((face) => face.load().catch(() => undefined)));
+			if (tagline) {
+				// The tagline spans the lockup, from the mark's left edge to the name's last capital. A
+				// line's last letter carries its letter spacing, which neither width counts.
+				const row = lockup.firstElementChild;
+				const name = row.lastElementChild;
+				const after = (element) => parseFloat(getComputedStyle(element).letterSpacing) || 0;
+				const span =
+					name.getBoundingClientRect().right - after(name) - row.getBoundingClientRect().left;
+				const own = tagline.getBoundingClientRect().width - after(tagline);
+				const size = parseFloat(getComputedStyle(tagline).fontSize);
+				tagline.style.setProperty("font-size", `${(size * span) / own}px`);
+			}
+			if (!document.createElement("canvas").getContext("webgl2")) {
+				document.body.dataset.painted = "no-webgl";
+			} else {
+				lightTable(
+					canvas,
+					(parts) =>
+						paintPicture(parts()).then((levels) => {
+							// The table draws its next frame with the picture, and marks the canvas again.
+							canvas.classList.remove("is-live");
+							document.body.dataset.painted = levels ? "true" : "failed";
+							return levels;
+						}),
+					layout.above ? lockup : null,
+					room,
+				);
+			}
+		</script>
+	</body>
+</html>
