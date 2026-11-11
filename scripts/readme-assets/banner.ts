@@ -63,8 +63,9 @@ interface Layout {
 	readonly height: number;
 	/**
 	 * Where the table's canvas lies. The table's shader fades the table into the ground near each
-	 * edge of its canvas, so the canvas runs past every edge of the page by more than that fade. The
-	 * table centres the picture across the canvas, at most 0.94 of its width.
+	 * edge of its canvas, so the canvas runs past each edge of the page by more than that fade,
+	 * except where the layout's own fade hides the canvas's edge. The table centres the picture
+	 * across the canvas, at most 0.94 of its width.
 	 */
 	readonly canvas: Box;
 	/**
