@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/readme/banner.webp" width="100%" alt="Archboard: the gold peak mark and the name archboard in tall capitals, beside the lit table of Archboard's site. On the table lies Archboard's drawing of its own workings: Claude Code and Codex, the archboard CLI, your repository, the Archboard server and the browser. Each card stands up as a tile, and each relationship is a line of blue light.">
+<img src="docs/readme/banner.webp" width="100%" alt="Archboard: the gold peak mark and the name archboard in tall capitals, over the tagline Read the architecture, with the word code crossed out before architecture. Beside them lies the lit table of Archboard's site. On the table lies Archboard's drawing of its own workings: Claude Code and Codex, the archboard CLI, your repository, the Archboard server and the browser. Each card stands up as a tile, and each relationship is a line of blue light.">
 
 <h3>See where your architecture costs the most, and plan the next step with your coding agent. <br>Archboard draws every proposal against what is built, keeps the record of why it changed, and walks your team through it out loud.
 </h3>

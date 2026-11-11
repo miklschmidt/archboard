@@ -43,15 +43,20 @@
 				transform: translateY(-50%);
 				--foreground: var(--ink);
 			}
+			/* Words break where their text does. */
+			p {
+				margin: 0;
+				white-space: pre-line;
+			}
+			/* The tagline under the lockup, set as the site sets its headlines. */
+			.tagline {
+				margin-top: 0.4em;
+			}
 			/* A headline in the display face over a lead in the body face, as the site sets them, each
 			   line ending at the corner's right edge. Each breaks where its text does. */
 			.corner {
 				position: absolute;
 				text-align: right;
-			}
-			.corner p {
-				margin: 0;
-				white-space: pre-line;
 			}
 			.corner .display {
 				margin-bottom: 0.3em;
@@ -61,13 +66,13 @@
 			}
 			/* A struck word: in faint ink, crossed out by two diagonal lines through its capitals, a
 			   step darker than the colour that the site's drawings give what a change removes. */
-			.corner s {
+			s {
 				position: relative;
 				text-decoration: none;
 				color: var(--ink-faint);
 			}
-			.corner s::before,
-			.corner s::after {
+			s::before,
+			s::after {
 				content: "";
 				position: absolute;
 				left: -0.08em;
@@ -78,11 +83,11 @@
 				background: oklch(from var(--removed) calc(l - 0.12) calc(c + 0.04) h);
 				transform: translateY(-50%) rotate(-18deg);
 			}
-			.corner s::before {
+			s::before {
 				transform: translateY(-50%) rotate(18deg);
 			}
 			/* A chosen word, in gold. */
-			.corner em {
+			em {
 				font-style: normal;
 				color: var(--gold);
 			}
@@ -119,25 +124,32 @@
 			const room = { bottom: upCanvas(layout.picture.to), top: upCanvas(layout.picture.from) };
 			lockup.style.setProperty("left", `${layout.lockup.left}px`);
 			lockup.style.setProperty("top", `${layout.lockup.middle}px`);
+			/**
+			 * Set words in an element, at their size. A word between tildes is struck out, and a word
+			 * between asterisks is set in gold.
+			 */
+			const setWords = (element, words) => {
+				element.replaceChildren(
+					...words.text.split(/(~[^~]+~|\*[^*]+\*)/).map((part, index) => {
+						if (index % 2 === 0) return part;
+						const word = document.createElement(part.startsWith("~") ? "s" : "em");
+						word.textContent = part.slice(1, -1);
+						return word;
+					}),
+				);
+				element.style.setProperty("font-size", `${words.size}px`);
+			};
 			lockup.innerHTML = lockupMarkup(layout.lockup.size);
+			if (layout.lockup.tagline) {
+				const tagline = document.createElement("p");
+				tagline.className = "display tagline";
+				setWords(tagline, layout.lockup.tagline);
+				lockup.append(tagline);
+			}
 			if (layout.corner) {
 				const { title, lead, right, bottom } = layout.corner;
-				for (const [selector, words] of [
-					["[data-title]", title],
-					["[data-lead]", lead],
-				]) {
-					const text = corner.querySelector(selector);
-					// A word between tildes is struck out, and a word between asterisks is set in gold.
-					text.replaceChildren(
-						...words.text.split(/(~[^~]+~|\*[^*]+\*)/).map((part, index) => {
-							if (index % 2 === 0) return part;
-							const word = document.createElement(part.startsWith("~") ? "s" : "em");
-							word.textContent = part.slice(1, -1);
-							return word;
-						}),
-					);
-					text.style.setProperty("font-size", `${words.size}px`);
-				}
+				setWords(corner.querySelector("[data-title]"), title);
+				setWords(corner.querySelector("[data-lead]"), lead);
 				corner.style.setProperty("right", `${right}px`);
 				corner.style.setProperty("bottom", `${bottom}px`);
 				corner.hidden = false;

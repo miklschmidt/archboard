@@ -16,6 +16,12 @@ const MARK = {
 } as const;
 
 /**
+ * How far the name stands from the mark, in the shell's pixels. The shell sets them 10 apart. At
+ * the art's far larger sizes that gap reads as loose, so the art sets them closer.
+ */
+const GAP = 6;
+
+/**
  * A length of the shell's lockup, whose name is 18px, as a share of the name's size.
  * @param shellPixels The length in the shell, in pixels.
  * @returns The length in em.
@@ -26,8 +32,8 @@ function em(shellPixels: number): string {
 
 /**
  * The lockup as markup for a page that has loaded the renderer package's theme.css and names the display
- * face "Archboard Display". Its proportions are the shell's: at a name of 18px the mark is 22 by
- * 21, 10 away, and the name's line is 21 high.
+ * face "Archboard Display". Its proportions are the shell's but for the gap: at a name of 18px the
+ * mark is 22 by 21, GAP away, and the name's line is 21 high.
  * @param size The name's font size, in pixels; the mark scales with it.
  * @returns The markup.
  */
@@ -41,7 +47,7 @@ function lockupMarkup(size: number): string {
 		<path d="${swoosh.d}" fill="none" stroke="url(#archboard-mark)" stroke-width="${swoosh.width}" stroke-linecap="round"/>
 	</svg>`;
 	const name = `<span style="font-family:'Archboard Display';font-weight:500;text-transform:uppercase;letter-spacing:0.07em;line-height:${em(21)};margin-bottom:${em(-1)};color:var(--foreground)">archboard</span>`;
-	return `<div style="display:flex;align-items:flex-end;gap:${em(10)};font-size:${size}px">${mark}${name}</div>`;
+	return `<div style="display:flex;align-items:flex-end;gap:${em(GAP)};font-size:${size}px">${mark}${name}</div>`;
 }
 
 export { MARK, lockupMarkup };

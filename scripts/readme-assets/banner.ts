@@ -73,8 +73,17 @@ interface Layout {
 	 * the table fits them into. A picture too wide for the canvas fills less of the room's height.
 	 */
 	readonly picture: Span;
-	/** The lockup: its left edge and its vertical middle, and the name's font size. */
-	readonly lockup: { readonly left: number; readonly middle: number; readonly size: number };
+	/**
+	 * The lockup: its left edge, the name's font size, and a tagline under it, set as the site sets
+	 * its headlines, as the corner's headline is. The middle is the vertical middle of the lockup and
+	 * its tagline together.
+	 */
+	readonly lockup: {
+		readonly left: number;
+		readonly middle: number;
+		readonly size: number;
+		readonly tagline: Words | null;
+	};
 	/**
 	 * Words in the lower right corner, set as the site sets its words: a headline in the display face
 	 * over a lead in the body face. Each breaks where its text holds a newline. A word between
@@ -109,7 +118,12 @@ const BANNER: Layout = {
 	height: 724,
 	canvas: { left: 513, top: -100, width: 1800, height: 884 },
 	picture: { from: 137, to: 587 },
-	lockup: { left: 150, middle: 362, size: 120 },
+	lockup: {
+		left: 150,
+		middle: 362,
+		size: 120,
+		tagline: { text: "Read the ~code~ *architecture*", size: 60 },
+	},
 	corner: null,
 	fade: { left: { from: 637, to: 824 }, foot: { from: 540, to: 724 } },
 	above: false,
@@ -125,7 +139,7 @@ const SOCIAL: Layout = {
 	height: 640,
 	canvas: { left: -48, top: -88, width: 1376, height: 768 },
 	picture: { from: 150, to: 540 },
-	lockup: { left: 80, middle: 112, size: 96 },
+	lockup: { left: 80, middle: 112, size: 96, tagline: null },
 	corner: {
 		title: { text: "Read the ~code~ *architecture*", size: 54 },
 		lead: {

@@ -67,10 +67,10 @@ offers no keyframe interval for it, so a lossy clip cannot be repaired. Check a
 new clip by brightening an empty part of the canvas in a frame (`magick
 clip.webp -coalesce -delete 0-99 -delete 1--1 -level 94%,100% frame.png`): it must be flat.
 
-The banner is the marketing site's hero table beside the lockup, on the site's ground. The
-page `scripts/readme-assets/stage/banner.html` runs the hero's own code from `site/src/scripts/hero`,
-so Vite serves it from the checkout. The page asks for reduced motion, and the table draws its
-finished entry in one still frame. Chromium draws the table's WebGL2 with SwiftShader on the CPU,
+The banner is the marketing site's hero table beside the lockup and its tagline, on the site's
+ground. The page `scripts/readme-assets/stage/banner.html` runs the hero's own code from
+`site/src/scripts/hero`, so Vite serves it from the checkout. The page asks for reduced motion,
+and the table draws its finished entry in one still frame. Chromium draws the table's WebGL2 with SwiftShader on the CPU,
 so a make needs no GPU. The banner paints the hero's picture first with `bun site/scripts/paint.ts`.
 The banner is dark in both colour modes, because the site's table has no light theme. The
 layouts in `scripts/readme-assets/banner.ts` set where the picture lies on the page. The hero's
@@ -82,8 +82,10 @@ picture or where it fades, read the banner and the card again.
 
 The banner's lockup, the mark beside the name, comes from
 `scripts/readme-assets/lockup.ts`. A test in the repository lane holds that mark
-to the one the shell draws in `apps/web/src/ui/shell/components/Brand.tsx`. The banner
-also writes `docs/assets/archboard-social-card.jpg`. It is GitHub's social preview and the
+to the one the shell draws in `apps/web/src/ui/shell/components/Brand.tsx`. The art sets the
+name closer to the mark than the shell does, because the shell's gap reads as loose at the art's
+sizes. The banner sets the card's headline as a tagline under the lockup. The banner also
+writes `docs/assets/archboard-social-card.jpg`. It is GitHub's social preview and the
 site's link preview, with the lockup above the table as the site's hero sets its words. Its lower
 right corner holds a headline and a lead, as the site sets them. The headline reads "Read the
 code architecture". The word "code" is in faint ink, crossed out by two diagonal lines a step
