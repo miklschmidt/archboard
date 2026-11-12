@@ -97,8 +97,8 @@ An agent that plans a change first writes it as a proposal: the architecture aft
 
 1. **The proposal.** Its name and summary, and what it adds, removes and changes.
 2. **The vault.** A link to the vault at the head commit.
-3. **The footprint.** The modules whose code the pull request changed, in three groups: planned and changed, changed outside the plan, and planned but unchanged. Below them, the changed files that no module is bound to, because no module shows their change. Those files are never judged.
-4. **The plan check.** Whether any module changed outside the plan, and what that does to the job.
+3. **The plan check.** Whether any module changed outside the plan, and what that does to the job.
+4. **The footprint.** The modules whose code the pull request changed, in three groups: changed outside the plan, planned and changed, and planned but unchanged. Below them, the changed files that no module is bound to, because no module shows their change. Those files are never judged. Each group is a disclosure with its count. Only the group of modules changed outside the plan starts open.
 
 </Steps>
 

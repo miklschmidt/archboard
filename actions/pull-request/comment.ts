@@ -1,5 +1,6 @@
-// The text of the pull request's sticky comment, in Markdown. Pure: the entry gathers the facts
-// and these functions only write them down.
+// The text of the pull request's sticky comment, in GitHub Markdown. Pure: the entry gathers the
+// facts and these functions only write them down. Each list of modules or files folds into a
+// disclosure, so a large pull request keeps a short comment.
 
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
 import { COMMENT_MARKER } from "./marker.ts";
@@ -22,7 +23,7 @@ interface PullRequestReport {
 	readonly vaultUrl?: string | undefined;
 }
 
-const LISTED_NAMES = 30;
+const LISTED_ENTRIES = 30;
 
 const SOURCE_WORDS: Readonly<Record<StateSource, string>> = {
 	input: "named by the action's `state` input",
@@ -35,30 +36,56 @@ const SOURCE_WORDS: Readonly<Record<StateSource, string>> = {
 };
 
 /**
- * A list of module names.
- * @param names The names.
+ * Text that GitHub shows as written, never as HTML. A module name comes from the pull request, so
+ * a name such as `</details>` must not close the disclosure around it.
+ * @param text The text.
+ * @returns The text with `&`, `<` and `>` as entities.
+ */
+function plain(text: string): string {
+	return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+/**
+ * A list of entries.
+ * @param entries The entries, as Markdown.
  * @returns Markdown bullets, cut after a few dozen.
  */
-function nameList(names: readonly string[]): string[] {
-	const shown = names.slice(0, LISTED_NAMES).map((name) => `- ${name}`);
-	return names.length > LISTED_NAMES
-		? [...shown, `- and ${String(names.length - LISTED_NAMES)} more`]
+function entryList(entries: readonly string[]): string[] {
+	const shown = entries.slice(0, LISTED_ENTRIES).map((entry) => `- ${entry}`);
+	return entries.length > LISTED_ENTRIES
+		? [...shown, `- and ${String(entries.length - LISTED_ENTRIES)} more`]
 		: shown;
 }
 
 /**
- * One footprint bucket.
- * @param title The bucket's name.
- * @param names Its modules.
+ * One footprint group: a disclosure with the count in its summary, or one line when it is empty.
+ * @param title The group's name.
+ * @param entries Its entries, as Markdown.
+ * @param open Whether the disclosure starts open.
  * @returns The Markdown lines.
  */
-function bucket(title: string, names: readonly string[]): string[] {
+function bucket(title: string, entries: readonly string[], open = false): string[] {
+	if (entries.length === 0) return [`${title}: none.`, ""];
 	return [
-		`**${title}** (${String(names.length)})`,
+		open ? "<details open>" : "<details>",
+		`<summary>${title} (${String(entries.length)})</summary>`,
 		"",
-		...(names.length === 0 ? ["- none"] : nameList(names)),
+		...entryList(entries),
+		"",
+		"</details>",
 		"",
 	];
+}
+
+/**
+ * A group of modules.
+ * @param title The group's name.
+ * @param names Its modules.
+ * @param open Whether the disclosure starts open.
+ * @returns The Markdown lines.
+ */
+function moduleBucket(title: string, names: readonly string[], open = false): string[] {
+	return bucket(title, names.map(plain), open);
 }
 
 /**
@@ -99,13 +126,13 @@ function proposalSection(report: PullRequestReport): string[] {
 	const { state, source } = report.choice;
 	if (state === undefined) return [noProposalText(report.choice), ""];
 	return [
-		`Proposal **${state.name}** (${SOURCE_WORDS[source]}).`,
+		`Proposal **${plain(state.name)}** (${SOURCE_WORDS[source]}).`,
 		"",
 		...(state.summary === undefined || state.summary === ""
 			? []
-			: [`> ${state.summary.replaceAll("\n", " ")}`, ""]),
+			: [`> ${plain(state.summary.replaceAll("\n", " "))}`, ""]),
 		...(report.comparison.length === 0 ? [] : [`Changes: ${report.comparison.join("; ")}.`, ""]),
-		...(report.comparisonNote === undefined ? [] : [report.comparisonNote, ""]),
+		...(report.comparisonNote === undefined ? [] : [plain(report.comparisonNote), ""]),
 	];
 }
 
@@ -150,7 +177,7 @@ function footprintSection(report: PullRequestReport): string[] {
 	const heading = [
 		"### Footprint",
 		"",
-		...(report.footprintNote === undefined ? [] : [report.footprintNote, ""]),
+		...(report.footprintNote === undefined ? [] : [plain(report.footprintNote), ""]),
 	];
 	if (report.buckets === undefined)
 		return report.footprintNote === undefined
@@ -159,15 +186,16 @@ function footprintSection(report: PullRequestReport): string[] {
 	if (report.choice.state === undefined) {
 		return [
 			...heading,
-			...bucket("Modules changed by this pull request", report.buckets.changed),
+			...moduleBucket("Modules changed by this pull request", report.buckets.changed),
 			...unboundBucket(report.buckets.unbound),
 		];
 	}
+	// The plan check counts the modules changed outside the plan, so that group starts open.
 	return [
 		...heading,
-		...bucket("Planned and changed", report.buckets.plannedAndChanged),
-		...bucket("Changed outside the plan", report.buckets.outsidePlan),
-		...bucket("Planned but unchanged", report.buckets.plannedUnchanged),
+		...moduleBucket("Changed outside the plan", report.buckets.outsidePlan, true),
+		...moduleBucket("Planned and changed", report.buckets.plannedAndChanged),
+		...moduleBucket("Planned but unchanged", report.buckets.plannedUnchanged),
 		...unboundBucket(report.buckets.unbound),
 	];
 }
@@ -229,8 +257,8 @@ function pullRequestComment(report: PullRequestReport): string {
 		"",
 		...proposalSection(report),
 		...linksSection(report),
-		...footprintSection(report),
 		...outOfPlanSection(report),
+		...footprintSection(report),
 	].join("\n");
 }
 

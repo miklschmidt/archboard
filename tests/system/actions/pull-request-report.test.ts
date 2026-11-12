@@ -62,10 +62,34 @@ describe("the sticky comment", () => {
 		expect(text).toContain("Stock API");
 		expect(text).toContain("Fulfilment worker");
 		expect(text).toContain("`archboard: out of plan`");
-		expect(text).toContain("**Changed files that no module is bound to** (1)");
 		expect(text).toContain("- `docs/notes.md`");
 		expect(text).toContain("https://github.test/owner/name/tree/b/.archboard/vault");
 		expect(text).not.toContain("<img");
+	});
+
+	test("folds each group into a disclosure, opens the one outside the plan, and says the plan first", () => {
+		const text = pullRequestComment({
+			...report,
+			buckets: { ...report.buckets!, plannedUnchanged: [] },
+		});
+		expect(text).toContain(
+			"<details open>\n<summary>Changed outside the plan (1)</summary>\n\n- Stock API\n\n</details>",
+		);
+		expect(text).toContain(
+			"<details>\n<summary>Changed files that no module is bound to (1)</summary>\n\n- `docs/notes.md`\n\n</details>",
+		);
+		expect(text).toContain("<details>\n<summary>Planned and changed (1)</summary>");
+		expect(text).toContain("Planned but unchanged: none.");
+		expect(text.indexOf("### Plan")).toBeLessThan(text.indexOf("### Footprint"));
+	});
+
+	test("a module name shows as written and cannot close its disclosure", () => {
+		const text = pullRequestComment({
+			...report,
+			buckets: { ...report.buckets!, outsidePlan: ["Stock </details> & <b>API</b>"] },
+		});
+		expect(text).toContain("- Stock &lt;/details&gt; &amp; &lt;b&gt;API&lt;/b&gt;");
+		expect(text.match(/<\/details>/gu)).toHaveLength(4);
 	});
 
 	test("a file name stays one code span, and names its repository when the files are in several", () => {

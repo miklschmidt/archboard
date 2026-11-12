@@ -202,7 +202,7 @@ describe("the entry", () => {
 		);
 		expect(result.exitCode).toBe(1);
 		expect(result.stdout).toContain("::error title=Archboard plan::");
-		expect(comments[0]?.body).not.toContain("**Planned and changed**");
+		expect(comments[0]?.body).not.toContain("Planned and changed");
 		expect(comments[0]?.body).toContain(COMMENT_MARKER);
 	});
 
