@@ -85,8 +85,8 @@ archboard model footprint --base main --state "Split payments" --fail-outside
 <Aside type="caution" title="Every repository needs the base">
 	Use a ref that resolves in each checkout, such as `main` or a commit. If a repository cannot read
 	the base or the head, the command names that repository and exits
-	<Exit command="model footprint" outcome="unread" />. The command reads only what
-	each checkout already has, and it fetches nothing.
+	<Exit command="model footprint" outcome="unread" />. The command reads only what each checkout
+	already has, and it fetches nothing.
 </Aside>
 
 The command reads one checkout of each repository, the chosen checkout. `archboard repo list` shows which checkout that is. If an agent commits in a worktree, choose that worktree first with `archboard repo use <dir>`.
