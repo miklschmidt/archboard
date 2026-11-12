@@ -198,7 +198,7 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 		intervals.length = 0;
 		if (trial) {
 			// Fewer pixels did not make the frames faster, so the host draws as many as before.
-			if (typical > trial.typical * 0.9) {
+			if (slow && typical > trial.typical * 0.9) {
 				share = trial.share;
 				failedTrials += 1;
 				settled = failedTrials >= 2;
