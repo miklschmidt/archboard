@@ -9,8 +9,10 @@ author: Mikkel Schmidt
 
 inputs:
   version:
-    description: The version of `archboard` to install, such as `0.2.0`, or `latest`. `cli` replaces it.
-    default: latest
+    description: >-
+      The version of `archboard` to install, such as `0.2.0`, or `latest`. Leave it out to install
+      the version of the archboard release that this Action comes from. `cli` replaces it.
+    default: ""
   cli:
     description: >-
       A CLI to run instead of installing `archboard`: a path to its executable, relative to the
@@ -73,8 +75,9 @@ runs:
       if: inputs.cli == ''
       shell: bash
       env:
+        ACTION_PATH: ${{ github.action_path }}
         ARCHBOARD_VERSION: ${{ inputs.version }}
-      run: npm install --global "archboard@${ARCHBOARD_VERSION}"
+      run: bash "${ACTION_PATH}/../shared/install-cli.sh"
     - name: Report on the pull request
       id: report
       shell: bash

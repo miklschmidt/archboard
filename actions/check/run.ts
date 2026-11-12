@@ -171,6 +171,31 @@ function readRequest(): Request {
 }
 
 /**
+ * Decide whether the step fails. Checks that read a vault, in a checkout without one, could not
+ * run: the CLI skips them and exits 0, and no configuration forgives that.
+ * @param exitCode The exit status of the check.
+ * @param request What the action was asked to do.
+ * @param answer The answer of the check, when it printed one.
+ * @param findings Its findings.
+ * @returns Whether to fail, and why.
+ */
+function outcomeOf(
+	exitCode: number,
+	request: Request,
+	answer: CheckReading | undefined,
+	findings: readonly Finding[],
+): Outcome {
+	if (answer?.skipped !== undefined) {
+		const reason = `${answer.skipped.message} Commit the vault, or set checks to embeds.`;
+		return { failed: true, reason };
+	}
+	const { allowed } = request;
+	const blocking =
+		answer === undefined || allowed.size === 0 ? undefined : countBlocking(findings, allowed);
+	return decideOutcome(exitCode, request.failOn, blocking);
+}
+
+/**
  * Check, annotate and report.
  * @param request What the action was asked to do.
  * @returns The exit status of this step.
@@ -190,9 +215,7 @@ function execute(request: Request): number {
 	const findings = answer === undefined ? [] : collectFindings(answer);
 	const locations = locate(cli, workspace, directory, answer);
 	const dropped = printAnnotations(findings, locations);
-	const blocking =
-		answer === undefined || allowed.size === 0 ? undefined : countBlocking(findings, allowed);
-	const outcome = decideOutcome(result.exitCode, request.failOn, blocking);
+	const outcome = outcomeOf(result.exitCode, request, answer, findings);
 	reportOutcome(outcome, result.exitCode, answer === undefined, dropped);
 	publish(
 		report,

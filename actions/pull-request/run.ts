@@ -45,6 +45,8 @@ interface ProposalsReading {
 interface Trees {
 	/** The vault at the base commit. */
 	readonly baseDir: string;
+	/** The root of the checkout of the base commit. */
+	readonly baseRoot: string;
 	/** The vault at the head commit. */
 	readonly headDir: string;
 	/** The root of the checkout of the head commit. */
@@ -55,28 +57,40 @@ interface Trees {
 const NO_PLAN: ProposalPlan = { comparison: [], named: new Map(), baseOnlyBindings: new Set() };
 
 /**
+ * Whether a checkout holds a vault. A checkout uses only the vault at its root.
+ * @param root The root of the checkout.
+ * @returns True when it holds one.
+ */
+function holdsVault(root: string): boolean {
+	return existsSync(join(root, ".archboard", "vault"));
+}
+
+/**
  * Read one complete model, keeping a refusal distinct from an empty architecture.
  * @param context The run.
  * @param directory The vault to read.
  * @param state The state, or Current when absent.
- * @returns The model only when the command succeeded with a model reading.
+ * @returns The model when the command succeeded with a model reading, else why it did not.
  */
 function readModel(
 	context: Context,
 	directory: string,
 	state?: ModelState,
-): ModelReading | undefined {
+): { model: ModelReading } | { reason: string } {
 	const result = archboard(context, directory, [
 		"model",
 		"read",
 		...(state === undefined ? [] : ["--state", state.id]),
 	]);
-	const model: ModelReading | undefined = parseJson(result.stdout);
-	return result.exitCode === 0 && model?.modules !== undefined ? model : undefined;
+	const answer: (ModelReading & ProposalsReading) | undefined = parseJson(result.stdout);
+	return result.exitCode === 0 && answer?.modules !== undefined
+		? { model: answer }
+		: { reason: refusalOf(answer, result.stderr) };
 }
 
 /**
- * The plan of the proposal: what it changes against the base's Current.
+ * The plan of the proposal: what it changes against the base's Current. A base without a vault,
+ * such as that of the pull request that adds the first vault, has an empty Current.
  * @param context The run.
  * @param trees Where the base's and the head's vaults are.
  * @param state The proposal, if the pull request carries one.
@@ -88,14 +102,22 @@ function readPlan(
 	state: ModelState | undefined,
 ): { plan: ProposalPlan; note?: string } {
 	if (state === undefined) return { plan: NO_PLAN };
-	const base = readModel(context, trees.baseDir);
+	const base = holdsVault(trees.baseRoot) ? readModel(context, trees.baseDir) : { model: {} };
+	if ("reason" in base) return uncompared("base", base.reason);
 	const head = readModel(context, trees.headDir, state);
-	if (base === undefined || head === undefined) {
-		const note =
-			"The proposal could not be compared: a model could not be read at the base or the head.";
-		return { plan: NO_PLAN, note };
-	}
-	return { plan: proposalPlan(base, head) };
+	if ("reason" in head) return uncompared("head", head.reason);
+	return { plan: proposalPlan(base.model, head.model) };
+}
+
+/**
+ * The plan of a proposal that could not be compared, and why.
+ * @param side The commit whose model could not be read.
+ * @param reason What the CLI said.
+ * @returns An empty plan and the note that says why.
+ */
+function uncompared(side: "base" | "head", reason: string): { plan: ProposalPlan; note: string } {
+	const note = `The proposal could not be compared, because the model at the ${side} could not be read: ${reason}.`;
+	return { plan: NO_PLAN, note };
 }
 
 /**
@@ -360,8 +382,7 @@ async function reportNoVault(context: Context): Promise<void> {
  * @returns The exit status of this step.
  */
 async function reportOn(context: Context, trees: Trees): Promise<number> {
-	// A checkout uses only the vault at its root, so without one there is nothing to report.
-	if (!existsSync(join(trees.headRoot, ".archboard", "vault"))) {
+	if (!holdsVault(trees.headRoot)) {
 		await reportNoVault(context);
 		return 0;
 	}
@@ -387,6 +408,7 @@ async function main(): Promise<number> {
 	try {
 		return await reportOn(context, {
 			baseDir: addWorktree(context, "base", context.baseSha),
+			baseRoot: join(context.scratch, "base"),
 			headDir: addWorktree(context, "head", context.headSha),
 			headRoot: join(context.scratch, "head"),
 		});

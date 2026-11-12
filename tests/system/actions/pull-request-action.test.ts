@@ -204,6 +204,26 @@ describe("the entry", () => {
 		expect(result.stdout).toContain("::error title=Archboard plan::");
 		expect(comments[0]?.body).not.toContain("Planned and changed");
 		expect(comments[0]?.body).toContain(COMMENT_MARKER);
+		expect(comments[0]?.body).toContain("the model at the base could not be read: INVALID_MODEL");
+	});
+
+	test("a first vault is planned against an empty model at the base, and its footprint is judged", async () => {
+		const [base, head] = [baseSha, headSha];
+		git("rm", "-q", "-r", ".archboard");
+		git("commit", "-q", "-m", "before the vault");
+		baseSha = git("rev-parse", "HEAD");
+		git("checkout", head, "--", ".archboard");
+		git("commit", "-q", "-m", "the vault");
+		headSha = git("rev-parse", "HEAD");
+		const refused = JSON.stringify({ success: false, code: "NO_VAULT" });
+		const result = await step({ ARCHBOARD_INPUT_OUT_OF_PLAN: "fail" }, { "read-base": refused });
+		[baseSha, headSha] = [base, head];
+		expect(result.exitCode).toBe(0);
+		const reads = result.commands.split("\n").filter((one) => one.includes("model read"));
+		expect(reads.every((one) => one.includes("--state"))).toBe(true);
+		const body = comments.find((one) => one.body.includes(COMMENT_MARKER))?.body ?? "";
+		expect(body).toContain("Planned and changed (2)");
+		expect(body).not.toContain("could not");
 	});
 
 	test("proposals that cannot be read fail the step in fail mode, whether the CLI refuses or prints nothing", async () => {

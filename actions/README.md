@@ -25,6 +25,10 @@ pull-request action holds a token that can comment, so pin it as you pin any thi
 
 The docs examples carry the SHA of the latest release. A tag can move, and a SHA cannot.
 
+Without a `version` input, each Action installs the CLI of the release that it comes from, so the
+Action and its CLI stay one release. An Action pinned to a commit between two releases installs the
+earlier release.
+
 ## Take the report as a file
 
 The pull-request action can write its report to a file in place of the comment. Set `report-file`,
