@@ -112,23 +112,14 @@ commit. Beside it, these jobs run, each after the one before:
    `macos-latest`, which is Apple silicon, once with npm and once with
    `bun add -g`.
 3. `publish` starts only after `gate` and `smoke` pass. It runs in the GitHub
-   environment `npm`, which only `main` can deploy to. It stages the three
-   platform packages, the two launchers and the voice package with
-   `npm stage publish --provenance --access public`. npm trusts the job
-   through trusted publishing: GitHub gives the job an OpenID Connect (OIDC)
-   token, and npm accepts it in place of an npm token. The trusted publisher
-   of each package allows only staging, not `npm publish`. A version with a
-   `-`, such as `0.3.0-rc.1`, goes to the dist-tag `next`. Every other version
-   goes to `latest`. A version that is public already is skipped.
-4. You approve each staged version with 2FA, on the Staged Packages tab of the
-   package on npmjs.com or with `npm stage approve <stage-id>`
-   (`npm stage list` shows the IDs). Approve the platform packages before the
-   launchers, so a launcher never names a version that is not public. Nothing
-   is public before you approve it, and `npm stage reject <stage-id>` drops a
-   staged version.
-
-If the publish job fails, approve or reject what it staged before you run it
-again. npm refuses to stage a version that is staged already.
+   environment `npm`, which only `main` can deploy to. It publishes the three
+   platform packages, then the two launchers and the voice package, with
+   `npm publish --provenance --access public`. So a launcher never names a
+   version that is not on npm. npm trusts the job through trusted publishing:
+   GitHub gives the job an OpenID Connect (OIDC) token, and npm accepts it in
+   place of an npm token. A version with a `-`, such as `0.3.0-rc.1`, goes to
+   the dist-tag `next`. Every other version goes to `latest`. A version that is
+   on npm already is skipped, so you can run a failed job again.
 
 The MIT voice package, `@archboard/codex-realtime-voice`, has the version of
 Archboard. The Archboard executable carries the voice package, and the voice

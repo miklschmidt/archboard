@@ -1,0 +1,41 @@
+{
+  "id": "TGDLt5Ea",
+  "name": "The release workflow publishes each package to npm without staging",
+  "summary": "The publish job publishes every package with npm publish after the gate and the smoke test pass, in place of npm stage publish, so a release reaches npm without the owner approving each staged version.",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/agents/releasing.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
+    }
+  ],
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-12T10:58:52.698Z",
+  "predecessor": "mdEX4O4o",
+  "predecessorRevision": "5aef515992edbbfaf3d497176f54adbeff66a7c3d96973f7f7dfb682bcde0708",
+  "baseline": "6cf2b89b82e00e882169ce446d0336646a96806a",
+  "changes": [
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Vaokwo63",
+      "field": "responsibility",
+      "value": "On a push to main, keeps the release pull request and, when it merges, builds, smoke tests and publishes the release to npm, and attaches its docs to the GitHub release"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Vaokwo63",
+      "field": "description",
+      "value": "release-please reads every Conventional Commit since the last release and keeps one release pull request open. Archboard and the MIT voice package share one version, because the executable carries the voice package and the voice package bundles other workspace packages, so release-please also writes that version into the voice package's package.json. A merge is the release: release-please tags the merge commit and makes the GitHub release. The same run then builds the packages on Linux with nix build .#release, the release output of the flake, which runs bun run release and bun run pack:voice offline in the Nix sandbox and cross-compiles the macOS executable. It smoke tests them on Linux and macOS with npm and with Bun. The publish job runs in the GitHub environment npm, which only main can deploy to. npm trusts only that job, through trusted publishing with provenance, so the repository stores no npm token. The job publishes the platform packages, then the launchers and the voice package, with npm publish, so a launcher never names a version that is not on npm. A version that is on npm already is skipped. Once the packages are published, the docs job calls the site workflow with the release tag. The site workflow builds the docs of that tag, with the release version and tag filled in where the guides pin them, and attaches them to the GitHub release as docs.tar.gz (ADR 0077). Every later deploy of the site fetches the docs.tar.gz of each release and serves it at /docs/<version>/, the newest release also at /docs/, and main at /docs/next/."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#02jxKSM1",
+      "field": "responsibility",
+      "value": "Builds the npm packages of one release from a checkout, proves them by installing them, and publishes them to npm"
+    }
+  ]
+}
