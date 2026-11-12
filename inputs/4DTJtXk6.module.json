@@ -2,13 +2,14 @@
   "order": 70000,
   "name": "Workspace router",
   "kind": "ui",
-  "responsibility": "The one route at / whose search parameters are the workspace, with the application as its component",
+  "responsibility": "Hosts the workspace route at the document base, with the application as its component",
+  "description": "The router uses the directory of document.baseURI as its base path. It accepts an explicit index.html as the directory route and preserves the workspace search and hash. The root server and a build under a sub-path use the same route. The app still reads the live server API and sockets. It does not yet load model snapshot files.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/panes/reading-routing/components/ReadingRoutingHost.tsx"
   },
-  "parent": "vKEsyHFk/yejBBUFY#HCghQa6I",
   "schemaVersion": 1,
   "id": "vKEsyHFk#4DTJtXk6",
+  "parent": "vKEsyHFk/yejBBUFY#HCghQa6I",
   "outgoing": []
 }

@@ -80,6 +80,19 @@
       "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
     },
     {
+      "order": 980110,
+      "kind": "call",
+      "label": "load the icons before drawing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "prepareContentHere"
+      },
+      "id": "vKEsyHFk#X9EXFsm9",
+      "to": "vKEsyHFk#pEFBxTks"
+    },
+    {
       "order": 990100,
       "kind": "call",
       "label": "warm the painter while a picture is prepared",

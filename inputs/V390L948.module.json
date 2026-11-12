@@ -1,0 +1,67 @@
+{
+  "order": 63500,
+  "name": "Model snapshot",
+  "kind": "module",
+  "responsibility": "Writes a selected reading, its comparison reading, the exact vault check, and the icons named by all three policies to one portable file",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/commands/model/operations/snapshot.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#V390L948",
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "the selected state, then its comparison state",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/snapshot.ts",
+        "symbol": "readStates"
+      },
+      "id": "vKEsyHFk#ET4L5Dvk",
+      "to": "vKEsyHFk/XppR9owz#TsCise1I"
+    },
+    {
+      "order": 20,
+      "kind": "call",
+      "label": "the policy and diagnostics of the selected state",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/snapshot.ts",
+        "symbol": "modelSnapshotContract"
+      },
+      "id": "vKEsyHFk#NfuvWVgE",
+      "to": "vKEsyHFk/XppR9owz#OfRn3av3"
+    },
+    {
+      "order": 30,
+      "kind": "call",
+      "label": "the paths of the policy's icons",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/snapshot.ts",
+        "symbol": "modelSnapshotContract"
+      },
+      "id": "vKEsyHFk#3LxjuzuP",
+      "to": "vKEsyHFk#4cb3xu6B"
+    },
+    {
+      "order": 40,
+      "kind": "dependency",
+      "label": "validates the file before it is written",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/snapshot.ts",
+        "symbol": "modelSnapshotContract"
+      },
+      "id": "vKEsyHFk#2yOgQL3i",
+      "to": "vKEsyHFk#50jWlhsK"
+    }
+  ]
+}
