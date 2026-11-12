@@ -58,11 +58,13 @@ Each machine that runs the check registers its own checkouts, because the regist
 
 ## Where the agent runs commands
 
-A session that starts in the Home Repo finds the vault with no option. If the agent runs a command inside another repository, the command refuses with `VAULT_NOT_FOUND`, because that checkout has no vault. The refusal names the Home Repo as the directory to give with `-C`:
+A model command run in the Home Repo finds the vault without `-C`. In another repository, `model read` refuses with `VAULT_NOT_FOUND`. If the Home Repo's model binds that repository, the refusal names the Home Repo as the directory to give with `-C`:
 
 ```bash
 archboard -C ~/repos/acme/home model read
 ```
+
+In a checkout without a vault, `archboard check` skips the semantic and code checks. Pass `-C` to run them against the Home Repo.
 
 ## See what an agent changed
 
