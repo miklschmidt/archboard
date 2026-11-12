@@ -92,6 +92,22 @@ describe("the sticky comment", () => {
 		expect(text.match(/<\/details>/gu)).toHaveLength(4);
 	});
 
+	test("an unavailable proposal's name and diagnostic cannot wrap the report in a disclosure", () => {
+		const html = "<details><summary>Hidden</summary>";
+		for (const choice of [
+			{ source: "unknown", named: html },
+			{ source: "unreadable", reason: html },
+		] as const) {
+			const text = pullRequestComment({
+				...report,
+				choice,
+				outOfPlan: { status: "unjudged", failed: true },
+			});
+			expect(text).toContain("&lt;details&gt;&lt;summary&gt;Hidden&lt;/summary&gt;");
+			expect(text.indexOf("<details>")).toBeGreaterThan(text.indexOf("### Footprint"));
+		}
+	});
+
 	test("a file name stays one code span, and names its repository when the files are in several", () => {
 		const text = pullRequestComment({
 			...report,

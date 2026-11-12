@@ -124,7 +124,7 @@ function unboundBucket(files: readonly UnboundFile[]): string[] {
  */
 function proposalSection(report: PullRequestReport): string[] {
 	const { state, source } = report.choice;
-	if (state === undefined) return [noProposalText(report.choice), ""];
+	if (state === undefined) return [plain(noProposalText(report.choice)), ""];
 	return [
 		`Proposal **${plain(state.name)}** (${SOURCE_WORDS[source]}).`,
 		"",
