@@ -160,6 +160,17 @@ token can deploy this one Worker and nothing else. Because such a token cannot c
 attach a domain, the owner created the Worker and gave it the custom domain once, in the
 Cloudflare dashboard.
 
+The deploy adds [PostHog](https://posthog.com) to every page of every docs version, with
+`scripts/analytics.ts`, when the `site` environment holds the variable `POSTHOG_PROJECT_KEY`.
+Without it, the site has no analytics. PostHog runs in cookieless mode: it sets no cookie and
+stores nothing in the browser. Its requests go to `https://e.usearchboard.dev`, which forwards
+them to PostHog's EU Cloud, because ad blockers drop requests to PostHog's own hosts. A local
+build and a pull request build send nothing.
+
+The PostHog project must allow
+[cookieless tracking](https://posthog.com/tutorials/cookieless-tracking) in its settings.
+Otherwise PostHog drops the site's events.
+
 To build and attach the docs of a release again, for example after a change to the build, start
 the workflow by hand on `main` and enter the release tag, such as `v0.3.0`.
 

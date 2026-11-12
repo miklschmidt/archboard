@@ -269,6 +269,14 @@ jobs:
       - name: Put the versions together
         run: bun site/scripts/versions.ts --releases versions
 
+      # The deploy adds PostHog to every page of every version (site/scripts/analytics.ts). Without
+      # the variable POSTHOG_PROJECT_KEY in the site environment, as in a fork, it adds nothing.
+      - name: Add PostHog to every page
+        if: vars.POSTHOG_PROJECT_KEY != ''
+        env:
+          POSTHOG_PROJECT_KEY: ${{ vars.POSTHOG_PROJECT_KEY }}
+        run: bun site/scripts/analytics.ts
+
       - name: Check the links of every version
         run: bun site/scripts/links.ts
 
