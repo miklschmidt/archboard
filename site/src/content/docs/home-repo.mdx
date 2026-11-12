@@ -76,7 +76,7 @@ archboard model footprint --base main
 
 It reads the commits between `main` and `HEAD` in the chosen checkout of each repository. It lists each module that the commits changed. Under `unboundFiles`, it lists each changed file that no module is bound to.
 
-If the agent worked from a proposal, select the draft with `--state`. The answer then puts the changed modules in three groups: planned and changed, changed outside the plan, and planned but unchanged. Review the modules changed outside the plan first. `--fail-outside` exits <Exit command="model footprint" outcome="outside" /> when there are any, so a script can stop a merge on them.
+If the agent worked from a proposal, select the draft with `--state`. The answer then puts modules in three groups: planned and changed, changed outside the plan, and planned but unchanged. Review the modules changed outside the plan first. `--fail-outside` exits <Exit command="model footprint" outcome="outside" /> for changed modules outside the plan. It ignores an outer directory module when changed modules inside it bind every changed file there. Unbound files never fail this gate.
 
 ```bash
 archboard model footprint --base main --state "Split payments" --fail-outside
