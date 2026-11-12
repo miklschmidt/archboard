@@ -1,0 +1,694 @@
+{
+  "id": "a5K6IbA8",
+  "name": "A reader sees what a branch changed and reads the model on that branch",
+  "summary": "The branch footprint answers only in the CLI and the pull-request Action, so a reader cannot see in the browser which modules a branch changed against its own proposal; Measures gains that view, and a branch reading reads the vault at a source ref from Git.",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0045-git-history-is-read-through-bindings-on-request.md"
+    }
+  ],
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-12T22:57:26.546Z",
+  "predecessor": "TGDLt5Ea",
+  "predecessorRevision": "fdc5e489a3fc658c9f93b8b9ae59d3a2e2154f1bc71172c11f66b1821254ad37",
+  "baseline": "2b8789627660dd75c84d4804eba1fdf2790cf7f1",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#DZAXm2he",
+      "kind": "module",
+      "value": {
+        "order": 90,
+        "name": "Branch reading",
+        "kind": "module",
+        "responsibility": "Reads the vault as a source branch or commit holds it, from Git, as a model that cannot be edited",
+        "description": "Reads the vault's inputs as they stand at a source branch or commit of the vault's repository, from Git objects, without a checkout. It decodes them as a model that can be read and compared but not edited, claimed or retained, and its revision names the commit it read.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model/src/runtime/canonical/read/operations/model-at-ref.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#DZAXm2he"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#DZAXm2he",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#LD4pDpP7",
+      "kind": "module",
+      "value": {
+        "order": 90,
+        "name": "Architecture history routes",
+        "kind": "route",
+        "responsibility": "Serves locality, the branch footprint and the source refs of a model's repositories",
+        "description": "GET /api/architecture/locality, /api/architecture/footprint and /api/architecture/refs adapt the history lens for the browser and the CLI. Each names its vault, and none keeps an answer.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/handlers/reads/routes/history-routes.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#LD4pDpP7"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#LD4pDpP7",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#ETrslazw"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Lcq1c75O",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "footprint, locality and source refs",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#Lcq1c75O",
+        "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Lcq1c75O",
+      "placement": {
+        "holder": "vKEsyHFk#LD4pDpP7"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#TYdGeADR",
+      "kind": "module",
+      "value": {
+        "order": 90,
+        "name": "Branch footprint",
+        "kind": "ui",
+        "responsibility": "Shows which modules the commits from a base to a head changed, against the proposal at that head",
+        "description": "The Measures view What this branch changed. Searchable base, head and against pickers choose the range and the state; the lists say which modules the commits changed against the proposal, with skipped modules and unbound files. Show on picture opens the nearest shared parent, at the head's branch reading when the head is not checked out, and selects each changed module it draws and each drawn module that holds one.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/branch-footprint"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#TYdGeADR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#TYdGeADR",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#U2FGTEDA",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "the footprint, the source refs and the states at head",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#U2FGTEDA",
+        "to": "vKEsyHFk#guvtYApo"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#U2FGTEDA",
+      "placement": {
+        "holder": "vKEsyHFk#TYdGeADR"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#IC59IvHW",
+      "kind": "relationship",
+      "value": {
+        "order": 20,
+        "kind": "call",
+        "label": "open the shared parent, at the head's branch reading",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#IC59IvHW",
+        "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#IC59IvHW",
+      "placement": {
+        "holder": "vKEsyHFk#TYdGeADR"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#radK8osF",
+      "field": "description",
+      "value": "The history interface reads canonical states and their bound source declarations. Locality reports change frequency and coupling. Footprint compares explicit local refs and the selected proposal baseline, and lists each changed file that no binding holds, outside the vault. A named head that resolves in the vault's repository is read with the vault at that head, unless the caller asks for the vault on disk, so its proposals and bindings come from the branch; the answer names the vault it read. Source refs lists the branches of every repository the state binds, merged by name. Each changed part names the other changed parts that its binding holds. Missing source stays unavailable rather than being reported as unchanged."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#MrE3v2T6",
+      "field": "description",
+      "value": "The command passes explicit local source refs and selected architecture to the history interface. With --head on a ref that the vault's repository holds, it reads the vault at that head, so --state names a proposal of that branch; --model-at checkout reads the vault on disk instead, as a gate in the integration worktree needs after it edits the proposal there. Proposal comparisons use their identified baseline. With --fail-outside and a draft, it exits 1 when the commits changed a module that the draft does not name, so a ticket merge without a pull request has a gate like the out-of-plan fail mode of the pull-request Action. A module bound to a directory passes when each file it changed lies in the binding of another changed module inside it."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
+      "field": "description",
+      "value": "Adapts canonical discovery, initialization, exact readings, archive history, branch readings at a source ref, and the existing change feed. Unmigrated vaults receive explicit migration guidance."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#w46oCRoH",
+      "field": "description",
+      "value": "Owns the reading address of a pane, including the source ref of a branch reading, so a branch reading survives reload and browser history."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#tQ2B3iEF",
+      "field": "description",
+      "value": "One history read of a revision answers for every part at once, and a selection shares it. A row selects its module on the picture. An unread part states why, and no count joins a score. A fourth view, What this branch changed, holds the branch footprint."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#0VPEALpM",
+      "kind": "relationship",
+      "value": {
+        "order": 90,
+        "kind": "render",
+        "label": "the view What this branch changed",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#0VPEALpM",
+        "to": "vKEsyHFk#TYdGeADR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#0VPEALpM",
+      "placement": {
+        "holder": "vKEsyHFk#tQ2B3iEF"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#ZGONZKxj",
+      "field": "description",
+      "value": "Reads the current state, a proposal or a checkpoint from the vault on disk, or the vault at a named source ref through the branch reading. A reading at a ref is never live and never writable."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Xfi3Vk8N",
+      "kind": "relationship",
+      "value": {
+        "order": 90,
+        "kind": "call",
+        "label": "read the vault at a source ref",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#Xfi3Vk8N",
+        "to": "vKEsyHFk#DZAXm2he"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Xfi3Vk8N",
+      "placement": {
+        "holder": "vKEsyHFk#ZGONZKxj"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Omvf7Y2Q",
+      "kind": "relationship",
+      "value": {
+        "order": 90,
+        "kind": "http",
+        "label": "read the branch footprint and the source refs",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#Omvf7Y2Q",
+        "to": "vKEsyHFk#LD4pDpP7"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Omvf7Y2Q",
+      "placement": {
+        "holder": "vKEsyHFk#guvtYApo"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#p0EDMxTr",
+      "field": "description",
+      "value": "Shows the reading on screen. A branch reading names its ref in the heading, follows no live feed, and offers no edit, claim, publication or walkthrough recording."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#TJCV96ua",
+      "placement": {
+        "holder": "vKEsyHFk#yejBBUFY",
+        "before": "vKEsyHFk#ENwNxHw2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ENwNxHw2",
+      "kind": "flow",
+      "value": {
+        "id": "vKEsyHFk#ENwNxHw2",
+        "name": "Read what a branch changed",
+        "summary": "A reader picks a base and a head in Measures and sees which modules the commits between them changed, set against the proposal of the vault at that head, so a branch is reviewed against its own plan without checking it out.",
+        "participants": [
+          "vKEsyHFk#TYdGeADR",
+          "vKEsyHFk#guvtYApo",
+          "vKEsyHFk#LD4pDpP7",
+          "vKEsyHFk/HBlhIeSD#radK8osF",
+          "vKEsyHFk#ZGONZKxj",
+          "vKEsyHFk#DZAXm2he"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ENwNxHw2",
+      "placement": {
+        "holder": "vKEsyHFk#yejBBUFY",
+        "before": "vKEsyHFk#I4QPD0zt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Tt7bfIJM",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#Tt7bfIJM",
+        "from": "vKEsyHFk#TYdGeADR",
+        "to": "vKEsyHFk#guvtYApo",
+        "label": "list the source refs",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Tt7bfIJM",
+      "placement": {
+        "holder": "vKEsyHFk#ENwNxHw2",
+        "before": "vKEsyHFk#KsxfbPMj"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#KsxfbPMj",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#KsxfbPMj",
+        "from": "vKEsyHFk#guvtYApo",
+        "to": "vKEsyHFk#LD4pDpP7",
+        "label": "GET /api/architecture/refs",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#KsxfbPMj",
+      "placement": {
+        "holder": "vKEsyHFk#ENwNxHw2",
+        "before": "vKEsyHFk#9dUOHZmF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#9dUOHZmF",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#9dUOHZmF",
+        "from": "vKEsyHFk#LD4pDpP7",
+        "to": "vKEsyHFk/HBlhIeSD#radK8osF",
+        "label": "branches of each bound repository",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#9dUOHZmF",
+      "placement": {
+        "holder": "vKEsyHFk#ENwNxHw2",
+        "before": "vKEsyHFk#YouDouKl"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#YouDouKl",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#YouDouKl",
+        "from": "vKEsyHFk/HBlhIeSD#radK8osF",
+        "to": "vKEsyHFk#TYdGeADR",
+        "label": "refs merged by name, the checked-out head",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#YouDouKl",
+      "placement": {
+        "holder": "vKEsyHFk#ENwNxHw2",
+        "before": "vKEsyHFk#WrveHBnx"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#WrveHBnx",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#WrveHBnx",
+        "from": "vKEsyHFk#TYdGeADR",
+        "to": "vKEsyHFk#guvtYApo",
+        "label": "read the footprint from base to head",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#WrveHBnx",
+      "placement": {
+        "holder": "vKEsyHFk#ENwNxHw2",
+        "before": "vKEsyHFk#qqMwh8Bl"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#qqMwh8Bl",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#qqMwh8Bl",
+        "from": "vKEsyHFk#guvtYApo",
+        "to": "vKEsyHFk#LD4pDpP7",
+        "label": "GET /api/architecture/footprint",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#qqMwh8Bl",
+      "placement": {
+        "holder": "vKEsyHFk#ENwNxHw2",
+        "before": "vKEsyHFk#y0gpKE7l"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#y0gpKE7l",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#y0gpKE7l",
+        "from": "vKEsyHFk#LD4pDpP7",
+        "to": "vKEsyHFk/HBlhIeSD#radK8osF",
+        "label": "readArchitectureFootprint",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#y0gpKE7l",
+      "placement": {
+        "holder": "vKEsyHFk#ENwNxHw2",
+        "before": "vKEsyHFk#7kWFCZPk"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#7kWFCZPk",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#7kWFCZPk",
+        "from": "vKEsyHFk/HBlhIeSD#radK8osF",
+        "to": "vKEsyHFk#ZGONZKxj",
+        "label": "read the selected state at head",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#7kWFCZPk",
+      "placement": {
+        "holder": "vKEsyHFk#ENwNxHw2",
+        "before": "vKEsyHFk#V9jSQhZc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#V9jSQhZc",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#V9jSQhZc",
+        "from": "vKEsyHFk#ZGONZKxj",
+        "to": "vKEsyHFk#DZAXm2he",
+        "label": "decode the vault at the head commit",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#V9jSQhZc",
+      "placement": {
+        "holder": "vKEsyHFk#ENwNxHw2",
+        "before": "vKEsyHFk#2Xuw5HzR"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#2Xuw5HzR",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#2Xuw5HzR",
+        "from": "vKEsyHFk#DZAXm2he",
+        "to": "vKEsyHFk/HBlhIeSD#radK8osF",
+        "label": "the model as the branch holds it",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#2Xuw5HzR",
+      "placement": {
+        "holder": "vKEsyHFk#ENwNxHw2",
+        "before": "vKEsyHFk#HUvMJo6G"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#HUvMJo6G",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#HUvMJo6G",
+        "from": "vKEsyHFk/HBlhIeSD#radK8osF",
+        "to": "vKEsyHFk#TYdGeADR",
+        "label": "the three lists against the proposal",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#HUvMJo6G",
+      "placement": {
+        "holder": "vKEsyHFk#ENwNxHw2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#I4QPD0zt",
+      "kind": "flow",
+      "value": {
+        "id": "vKEsyHFk#I4QPD0zt",
+        "name": "Show a branch footprint on its picture",
+        "summary": "Show on picture opens the nearest module that holds a list's changed modules, in the branch reading of the head when the head is not checked out, and selects what that picture draws of them, so the reader sees the branch's reach on the architecture it plans.",
+        "participants": [
+          "vKEsyHFk#TYdGeADR",
+          "vKEsyHFk/yejBBUFY#w46oCRoH",
+          "vKEsyHFk#p0EDMxTr",
+          "vKEsyHFk#guvtYApo",
+          "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
+          "vKEsyHFk#ZGONZKxj",
+          "vKEsyHFk#DZAXm2he"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#I4QPD0zt",
+      "placement": {
+        "holder": "vKEsyHFk#yejBBUFY"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#NMpsyXFL",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#NMpsyXFL",
+        "from": "vKEsyHFk#TYdGeADR",
+        "to": "vKEsyHFk/yejBBUFY#w46oCRoH",
+        "label": "open the shared parent at the head ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#NMpsyXFL",
+      "placement": {
+        "holder": "vKEsyHFk#I4QPD0zt",
+        "before": "vKEsyHFk#59UXwmre"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#59UXwmre",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#59UXwmre",
+        "from": "vKEsyHFk/yejBBUFY#w46oCRoH",
+        "to": "vKEsyHFk#p0EDMxTr",
+        "label": "the branch reading's address",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#59UXwmre",
+      "placement": {
+        "holder": "vKEsyHFk#I4QPD0zt",
+        "before": "vKEsyHFk#PBt8O2ge"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#PBt8O2ge",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#PBt8O2ge",
+        "from": "vKEsyHFk#p0EDMxTr",
+        "to": "vKEsyHFk#guvtYApo",
+        "label": "read the model at the ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#PBt8O2ge",
+      "placement": {
+        "holder": "vKEsyHFk#I4QPD0zt",
+        "before": "vKEsyHFk#7VhlxUQI"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#7VhlxUQI",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#7VhlxUQI",
+        "from": "vKEsyHFk#guvtYApo",
+        "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
+        "label": "GET /api/architecture/model with ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#7VhlxUQI",
+      "placement": {
+        "holder": "vKEsyHFk#I4QPD0zt",
+        "before": "vKEsyHFk#zyVm7Rb5"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#zyVm7Rb5",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#zyVm7Rb5",
+        "from": "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
+        "to": "vKEsyHFk#ZGONZKxj",
+        "label": "read the state at the ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#zyVm7Rb5",
+      "placement": {
+        "holder": "vKEsyHFk#I4QPD0zt",
+        "before": "vKEsyHFk#XMJlJXOa"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#XMJlJXOa",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#XMJlJXOa",
+        "from": "vKEsyHFk#ZGONZKxj",
+        "to": "vKEsyHFk#DZAXm2he",
+        "label": "decode the vault at the commit",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#XMJlJXOa",
+      "placement": {
+        "holder": "vKEsyHFk#I4QPD0zt",
+        "before": "vKEsyHFk#L9dU9IBJ"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#L9dU9IBJ",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#L9dU9IBJ",
+        "from": "vKEsyHFk#DZAXm2he",
+        "to": "vKEsyHFk#p0EDMxTr",
+        "label": "a read-only model",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#L9dU9IBJ",
+      "placement": {
+        "holder": "vKEsyHFk#I4QPD0zt",
+        "before": "vKEsyHFk#z9fUgfUw"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#z9fUgfUw",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#z9fUgfUw",
+        "from": "vKEsyHFk#TYdGeADR",
+        "to": "vKEsyHFk#p0EDMxTr",
+        "label": "select changed modules and drawn holders",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#z9fUgfUw",
+      "placement": {
+        "holder": "vKEsyHFk#I4QPD0zt"
+      }
+    }
+  ]
+}
