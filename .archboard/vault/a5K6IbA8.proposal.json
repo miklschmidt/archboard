@@ -161,6 +161,32 @@
       "value": "The history interface reads canonical states and their bound source declarations. Locality reports change frequency and coupling. Footprint compares explicit local refs and the selected proposal baseline, and lists each changed file that no binding holds, outside the vault. A named head that resolves in the vault's repository is read with the vault at that head, unless the caller asks for the vault on disk, so its proposals and bindings come from the branch; the answer names the vault it read. Source refs lists the branches of every repository the state binds, merged by name. Each changed part names the other changed parts that its binding holds. Missing source stays unavailable rather than being reported as unchanged."
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#wdqHspP8",
+      "kind": "relationship",
+      "value": {
+        "order": 90,
+        "kind": "call",
+        "label": "read the selected state, at the head",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#wdqHspP8",
+        "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#wdqHspP8",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#radK8osF"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+      "field": "description",
+      "value": "The checker reads current architecture, one selected state, or independent drafts. It reports bindings, anchors, declared relationships, interfaces, and document references with canonical identities. Its state reader also reads one selected state at a source ref, through the branch reading, for the branch footprint of a named head. Git locality and branch footprint use separate requested history operations. The timings of its language servers name the program that ran and the TypeScript that it read."
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/XppR9owz#MrE3v2T6",
       "field": "description",
@@ -277,6 +303,7 @@
           "vKEsyHFk#guvtYApo",
           "vKEsyHFk#LD4pDpP7",
           "vKEsyHFk/HBlhIeSD#radK8osF",
+          "vKEsyHFk/HBlhIeSD#5SMX69gS",
           "vKEsyHFk#ZGONZKxj",
           "vKEsyHFk#DZAXm2he"
         ]
@@ -437,7 +464,7 @@
       "value": {
         "id": "vKEsyHFk#7kWFCZPk",
         "from": "vKEsyHFk/HBlhIeSD#radK8osF",
-        "to": "vKEsyHFk#ZGONZKxj",
+        "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
         "label": "read the selected state at head",
         "kind": "sync"
       }
@@ -445,6 +472,26 @@
     {
       "type": "place",
       "subject": "vKEsyHFk#7kWFCZPk",
+      "placement": {
+        "holder": "vKEsyHFk#ENwNxHw2",
+        "before": "vKEsyHFk#1WYWiMlY"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#1WYWiMlY",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#1WYWiMlY",
+        "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+        "to": "vKEsyHFk#ZGONZKxj",
+        "label": "read the state with the source ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#1WYWiMlY",
       "placement": {
         "holder": "vKEsyHFk#ENwNxHw2",
         "before": "vKEsyHFk#V9jSQhZc"
