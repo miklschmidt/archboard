@@ -34,6 +34,7 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag_name }}
       version: ${{ steps.release.outputs.version }}
       sha: ${{ steps.release.outputs.sha }}
+      pr: ${{ steps.release.outputs.pr }}
 
     steps:
       - name: Run release-please
@@ -42,6 +43,47 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  # release-please raises the workspace version of the voice package, but it cannot write bun.lock.
+  # When it creates or updates the release pull request, this job writes the new version into
+  # bun.lock on the same branch. It commits through the GitHub API, so GitHub signs that commit too.
+  lockfile:
+    name: Keep bun.lock at the release versions
+    needs: release-please
+    if: needs.release-please.outputs.pr != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout the release branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ fromJSON(needs.release-please.outputs.pr).headBranchName }}
+
+      - name: Set up Vite+, Node.js, and Bun
+        uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          version-file: package.json
+          node-version: "26"
+          run-install: false
+
+      - name: Commit bun.lock when it changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ fromJSON(needs.release-please.outputs.pr).headBranchName }}
+        run: |
+          set -euo pipefail
+          bun install --lockfile-only
+          if git diff --quiet -- bun.lock; then
+            echo "bun.lock matches the release versions."
+            exit 0
+          fi
+          jq -n --rawfile content <(base64 -w0 bun.lock) \
+            --arg sha "$(git rev-parse HEAD:bun.lock)" --arg branch "$BRANCH" \
+            '{message: "chore: sync bun.lock with the release versions", content: $content, sha: $sha, branch: $branch}' \
+            | gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/bun.lock" --input - --jq .commit.sha
 
   # The complete gate of CI, on the commit that release-please tagged. It runs beside the build,
   # and the publish job waits for both.

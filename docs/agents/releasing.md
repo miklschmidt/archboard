@@ -125,7 +125,11 @@ The MIT voice package, `@archboard/codex-realtime-voice`, has the version of
 Archboard. The Archboard executable carries the voice package, and the voice
 package bundles other workspace packages. So every commit can change both, and
 one release pull request releases both. release-please writes the version into
-`packages/codex-realtime-voice/package.json` too. The flake's `release`
+`packages/codex-realtime-voice/package.json` too. release-please cannot write
+`bun.lock`, which records that version as well. So when release-please creates
+or updates the release pull request, the job `lockfile` runs
+`bun install --lockfile-only` on its branch and commits a changed `bun.lock`
+there. CI fails when `bun install` changes the committed `bun.lock`. The flake's `release`
 output runs `bun run pack:voice` and packs the result beside the other
 packages.
 
