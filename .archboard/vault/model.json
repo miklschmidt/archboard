@@ -3,15 +3,25 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "mdEX4O4o",
-    "name": "Footprint names held modules",
-    "summary": "Each changed module of a footprint names the changed modules bound inside it, so that the CLI gate and the pull-request Action judge a container the same way.",
-    "predecessor": "wJDQv2En",
-    "baseline": "ad6bf9759445dc73cf0d81f58386720feecffddd",
-    "createdAt": "2026-11-10T01:12:28.672Z",
-    "adoptedAt": "2026-11-10T01:13:02.934Z",
-    "reason": "The footprint names held modules on the TASK-622 branch, and the CLI gate and the pull-request Action read them.",
-    "previousCurrent": "wJDQv2En"
+    "id": "TGDLt5Ea",
+    "name": "The release workflow publishes each package to npm without staging",
+    "summary": "The publish job publishes every package with npm publish after the gate and the smoke test pass, in place of npm stage publish, so a release reaches npm without the owner approving each staged version.",
+    "documents": [
+      {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/agents/releasing.md"
+      },
+      {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
+      }
+    ],
+    "predecessor": "mdEX4O4o",
+    "baseline": "6cf2b89b82e00e882169ce446d0336646a96806a",
+    "createdAt": "2026-11-12T10:58:52.698Z",
+    "adoptedAt": "2026-11-12T11:07:26.152Z",
+    "reason": "Commit 6f92ab8c6e implements it on branch t3/3fb4dfa5: the publish job of the release workflow runs npm publish on each tarball in place of npm stage publish. The owner authorized this adoption.",
+    "previousCurrent": "mdEX4O4o"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
