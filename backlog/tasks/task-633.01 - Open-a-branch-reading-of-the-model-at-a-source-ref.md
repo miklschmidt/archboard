@@ -1,10 +1,11 @@
 ---
 id: TASK-633.01
 title: Open a branch reading of the model at a source ref
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-12T23:49:00Z'
-updated_date: '2026-11-12T23:50:00Z'
+updated_date: '2026-11-12T23:55:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -56,3 +57,11 @@ None (can start immediately).
 - [ ] #6 A branch reading of a proposal compares with its base, as other readings do
 - [ ] #7 DESIGN.md describes the chip of a branch reading
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Implementer (worktree): Branch reading in the model package reads the vault inputs at a source ref from Git objects and decodes them; the read entry and the model routes accept `ref`; refusals for an unknown ref and for a ref with a checkpoint; seam 1 tests with a temporary repository.
+2. Parent: the reading address carries the ref for each pane; the reading stage shows a branch reading as read-only with a chip; the browser query passes the ref; DESIGN.md.
+3. Gate, review, merge into the integration branch.
+<!-- SECTION:PLAN:END -->

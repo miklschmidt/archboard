@@ -3,10 +3,11 @@ id: TASK-633
 title: >-
   Measures shows what a branch changed, and a branch reading reads the model on
   that branch
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-12T23:34:00Z'
-updated_date: '2026-11-12T23:36:00Z'
+updated_date: '2026-11-12T23:55:00Z'
 labels:
   - ready-for-agent
 dependencies: []
