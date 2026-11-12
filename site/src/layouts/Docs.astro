@@ -32,12 +32,14 @@ const { title, description, path, headings, source } = Astro.props;
 const plainDescription = description.replaceAll("`", "");
 // A title can name a command in backticks too, such as "The `check` commands".
 const plainTitle = title.replaceAll("`", "");
+// The docs' home page is titled "Archboard docs" already.
+const pageTitle = plainTitle === "Archboard docs" ? plainTitle : `${plainTitle} · Archboard docs`;
 const group = docsNav.find((entry) => entry.pages.some((page) => page.path === path));
 const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 ---
 
 <Base
-	title={`${plainTitle} · Archboard docs`}
+	title={pageTitle}
 	description={plainDescription}
 	docs={{ root: docsHref(""), version: docsVersion }}
 >

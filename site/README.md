@@ -167,6 +167,18 @@ stores nothing in the browser. Its requests go to `https://e.usearchboard.dev`, 
 them to PostHog's EU Cloud, because ad blockers drop requests to PostHog's own hosts. A local
 build and a pull request build send nothing.
 
+After it puts the docs versions together, the deploy runs `scripts/crawlers.ts`. The script
+writes `sitemap.xml` for search engines and `llms.txt` for agents and AI answers. Both list the
+home page and the pages under `/docs/`, which are the newest release's docs. A copy of a docs
+page under `/docs/<version>/` or `/docs/next/` names the same page under `/docs/` as its
+canonical URL. `public/robots.txt` names the sitemap. Its `Content-Signal` line lets crawlers
+use the site for search, for AI answers and for AI training. Cloudflare adds its own comments
+about content signals to the top of that file.
+
+To register the site with Google, open [Search Console](https://search.google.com/search-console).
+Add `usearchboard.dev` as a domain property, and choose Cloudflare to prove that you own it.
+Then submit `https://usearchboard.dev/sitemap.xml` on the Sitemaps page.
+
 The PostHog project must allow
 [cookieless tracking](https://posthog.com/tutorials/cookieless-tracking) in its settings.
 Otherwise PostHog drops the site's events.
