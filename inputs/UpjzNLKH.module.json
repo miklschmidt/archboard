@@ -13,6 +13,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#UpjzNLKH",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "formerNames": [
     "Browser painter"
   ],
@@ -51,6 +52,5 @@
       "id": "vKEsyHFk#2yn8ZgXE",
       "to": "vKEsyHFk#uoYBS8oN"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }
