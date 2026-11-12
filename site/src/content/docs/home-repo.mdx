@@ -116,7 +116,7 @@ jobs:
             storefront
 ```
 
-A private Home Repo needs a token with read access, as the second checkout shows. A binding into a repository that the run does not register is skipped as [`repository-unregistered`](../reference/findings/#repository-unregistered). A skip never fails the check. To check the whole system in the CI of the Home Repo, check out every repository and list each one under [`repos`](../reference/actions/#check-repos).
+Install the dependencies and the language servers of the storefront before the check, as [The check as a gate](../gate/#in-ci) shows. Without a language server, a call that needs resolved evidence stays information, and the check passes. A private Home Repo needs a token with read access, as the second checkout shows. A binding into a repository that the run does not register is skipped as [`repository-unregistered`](../reference/findings/#repository-unregistered). A skip never fails the check. To check the whole system in the CI of the Home Repo, check out every repository and list each one under [`repos`](../reference/actions/#check-repos).
 
 ## When the vault stays in its repository
 
