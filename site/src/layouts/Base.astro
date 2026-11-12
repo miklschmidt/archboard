@@ -31,10 +31,17 @@ const image = new URL(socialCard, Astro.site);
 		<link rel="preload" href={displayFont} as="font" type="font/ttf" crossorigin />
 		<link rel="preload" href={bodyFont} as="font" type="font/ttf" crossorigin />
 		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Archboard" />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:url" content={canonical} />
 		<meta property="og:image" content={image} />
+		<meta property="og:image:width" content="1280" />
+		<meta property="og:image:height" content="640" />
+		<meta
+			property="og:image:alt"
+			content="Archboard: read the architecture, not the code. A map of Archboard's own system, with lit connections between its parts."
+		/>
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:image" content={image} />
 		<slot name="head" />

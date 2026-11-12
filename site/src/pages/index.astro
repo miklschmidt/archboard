@@ -25,12 +25,21 @@ import ClaimMarks from "../components/demos/ClaimMarks.astro";
 import TalkRelay from "../components/demos/TalkRelay.astro";
 import WalkthroughPlayer from "../components/demos/WalkthroughPlayer.astro";
 import { links } from "../lib/links";
+
+// The site's name for search results: https://developers.google.com/search/docs/appearance/site-names
+const website = {
+	"@context": "https://schema.org",
+	"@type": "WebSite",
+	name: "Archboard",
+	url: new URL(import.meta.env.BASE_URL, Astro.site).href,
+};
 ---
 
 <Base
 	title="Archboard: understand the code your agents write"
 	description="Plan each change with your coding agent on a map of the system before it writes a line. Follow any feature into the code, and see every place where the map and the code disagree."
 >
+	<script type="application/ld+json" slot="head" set:html={JSON.stringify(website)} />
 	<Nav />
 	<main id="main">
 		<Hero />

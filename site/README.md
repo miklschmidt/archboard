@@ -167,6 +167,16 @@ stores nothing in the browser. Its requests go to `https://e.usearchboard.dev`, 
 them to PostHog's EU Cloud, because ad blockers drop requests to PostHog's own hosts. A local
 build and a pull request build send nothing.
 
+The deploy also writes `sitemap.xml` with `scripts/sitemap.ts`, after it puts the docs versions
+together. The sitemap lists each page that names itself as its canonical URL. A copy of a docs
+page under `/docs/<version>/` or `/docs/next/` names the same page under `/docs/` instead, so
+search engines index the newest release. `public/robots.txt` names the sitemap. Cloudflare adds
+its content signals to the top of that file.
+
+To register the site with Google, open [Search Console](https://search.google.com/search-console).
+Add `usearchboard.dev` as a domain property, and choose Cloudflare to prove that you own it.
+Then submit `https://usearchboard.dev/sitemap.xml` on the Sitemaps page.
+
 The PostHog project must allow
 [cookieless tracking](https://posthog.com/tutorials/cookieless-tracking) in its settings.
 Otherwise PostHog drops the site's events.

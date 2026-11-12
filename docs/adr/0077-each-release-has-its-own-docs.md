@@ -28,6 +28,8 @@ docs pages.
   root (`site/scripts/versions.ts`). Each build is made for the root `/docs/`. Moving it rewrites
   that root in its HTML only. Its search index holds paths under its root, and its scripts hold no
   docs path, so both move unchanged.
+- A moved page whose path `/docs/` also serves names that page as its canonical URL. Search
+  engines then index the docs of the newest release, and the sitemap lists only that copy.
 - When a page loads, it reads `/docs/versions.json`. So a page of an old release offers the
   releases after it, and main and an older release say which version they describe.
 - A guide writes `{{version}}` where it pins the CLI and `@{{sha}} # {{ref}}` where it pins an

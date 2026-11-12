@@ -4,7 +4,8 @@
 // - /docs/versions.json, which each page reads to offer the others.
 //
 // Each docs build is made for the root /docs/. This moves a build to another root by rewriting
-// that root in its HTML. Its search index holds paths under its root, so it moves unchanged. The
+// that root in its HTML. A moved page that /docs/ holds too names the page under /docs/ as its
+// canonical URL, so search engines index one copy of each page. Its search index holds paths under its root, so it moves unchanged. The
 // hashed files in assets/ are shared, so the versions' files go into one folder.
 //
 // Run from the repository root, after main's build:
@@ -24,13 +25,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 
-const { values } = parseArgs({
-	options: {
-		main: { type: "string", default: join(import.meta.dir, "../dist") },
-		releases: { type: "string" },
-		out: { type: "string", default: join(import.meta.dir, "../dist") },
-	},
-});
 const BASE = `${(process.env["SITE_BASE"] ?? "/").replace(/\/$/u, "")}/`;
 const ROOT = `${BASE}docs/`;
 
@@ -56,6 +50,25 @@ function files(directory: string, prefix = ""): string[] {
 	});
 }
 
+/** The canonical link and the Open Graph URL of a page, which name the URL that search engines index. */
+const CANONICAL = /(<link rel="canonical" href="|<meta property="og:url" content=")([^"]*)"/gu;
+
+/**
+ * Move a page of a docs build from /docs/ to a root under it, such as `next/`. A page that /docs/
+ * holds too keeps /docs/ as its canonical URL, so search engines index one copy of each page.
+ * @param html The page, built for /docs/.
+ * @param at The root under /docs/, such as `next/` or `0.3.0/`.
+ * @param atDocs Whether /docs/ holds a page at the same path.
+ */
+export function movePage(html: string, at: string, atDocs: boolean): string {
+	const moved = html.replaceAll(ROOT, `${ROOT}${at}`);
+	if (!atDocs) return moved;
+	return moved.replace(
+		CANONICAL,
+		(_, tag: string, url: string) => `${tag}${url.replace(`${ROOT}${at}`, ROOT)}"`,
+	);
+}
+
 /** Copy a docs build to a root under /docs/, such as `next/`, or to /docs/ itself with `""`. */
 function mount(docs: string, out: string, at: string): void {
 	const target = join(out, "docs", at);
@@ -63,7 +76,7 @@ function mount(docs: string, out: string, at: string): void {
 	if (at === "") return;
 	for (const file of files(target).filter((path) => path.endsWith(".html"))) {
 		const html = readFileSync(join(target, file), "utf8");
-		writeFileSync(join(target, file), html.replaceAll(ROOT, `${ROOT}${at}`));
+		writeFileSync(join(target, file), movePage(html, at, existsSync(join(out, "docs", file))));
 	}
 }
 
@@ -79,39 +92,48 @@ function mergeAssets(from: string, out: string): void {
 	}
 }
 
-const main = values.main;
-const out = values.out;
-// Keep main's docs aside first, since the output can be main's own build.
-const scratch = mkdtempSync(join(tmpdir(), "docs-versions-"));
-cpSync(join(main, "docs"), join(scratch, "next"), { recursive: true });
-if (main !== out) cpSync(main, out, { recursive: true });
-rmSync(join(out, "docs"), { recursive: true, force: true });
+if (import.meta.main) {
+	const { values } = parseArgs({
+		options: {
+			main: { type: "string", default: join(import.meta.dir, "../dist") },
+			releases: { type: "string" },
+			out: { type: "string", default: join(import.meta.dir, "../dist") },
+		},
+	});
+	const main = values.main;
+	const out = values.out;
+	// Keep main's docs aside first, since the output can be main's own build.
+	const scratch = mkdtempSync(join(tmpdir(), "docs-versions-"));
+	cpSync(join(main, "docs"), join(scratch, "next"), { recursive: true });
+	if (main !== out) cpSync(main, out, { recursive: true });
+	rmSync(join(out, "docs"), { recursive: true, force: true });
 
-const releases =
-	values.releases === undefined || !existsSync(values.releases)
-		? []
-		: readdirSync(values.releases)
-				.filter((name) => existsSync(join(values.releases ?? "", name, "docs", "index.html")))
-				.sort(byVersion);
-const latest = releases[0] ?? null;
+	const releases =
+		values.releases === undefined || !existsSync(values.releases)
+			? []
+			: readdirSync(values.releases)
+					.filter((name) => existsSync(join(values.releases ?? "", name, "docs", "index.html")))
+					.sort(byVersion);
+	const latest = releases[0] ?? null;
 
-// The latest release, or main without one, at /docs/. Main at /docs/next/, each release at its own.
-mount(
-	latest === null ? join(scratch, "next") : join(values.releases ?? "", latest, "docs"),
-	out,
-	"",
-);
-mount(join(scratch, "next"), out, "next/");
-for (const version of releases) {
-	mount(join(values.releases ?? "", version, "docs"), out, `${version}/`);
-	mergeAssets(join(values.releases ?? "", version, "assets"), out);
+	// The latest release, or main without one, at /docs/. Main at /docs/next/, each release at its own.
+	mount(
+		latest === null ? join(scratch, "next") : join(values.releases ?? "", latest, "docs"),
+		out,
+		"",
+	);
+	mount(join(scratch, "next"), out, "next/");
+	for (const version of releases) {
+		mount(join(values.releases ?? "", version, "docs"), out, `${version}/`);
+		mergeAssets(join(values.releases ?? "", version, "assets"), out);
+	}
+	rmSync(scratch, { recursive: true, force: true });
+
+	writeFileSync(
+		join(out, "docs", "versions.json"),
+		`${JSON.stringify({ latest, releases }, null, "\t")}\n`,
+	);
+	console.log(
+		`versions: /docs/ is ${latest ?? "main"}, ${String(releases.length)} releases, and main at /docs/next/`,
+	);
 }
-rmSync(scratch, { recursive: true, force: true });
-
-writeFileSync(
-	join(out, "docs", "versions.json"),
-	`${JSON.stringify({ latest, releases }, null, "\t")}\n`,
-);
-console.log(
-	`versions: /docs/ is ${latest ?? "main"}, ${String(releases.length)} releases, and main at /docs/next/`,
-);
