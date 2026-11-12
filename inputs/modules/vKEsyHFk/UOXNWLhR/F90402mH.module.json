@@ -91,6 +91,19 @@
       },
       "id": "vKEsyHFk#pRZRhE3w",
       "to": "vKEsyHFk#hKrzJUPf"
+    },
+    {
+      "order": 980110,
+      "kind": "call",
+      "label": "load the icons before drawing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "prepareContentHere"
+      },
+      "to": "vKEsyHFk#pEFBxTks",
+      "id": "vKEsyHFk#X9EXFsm9"
     }
   ]
 }
