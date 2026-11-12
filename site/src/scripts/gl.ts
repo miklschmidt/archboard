@@ -215,6 +215,8 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 			quickWindows += 1;
 			if (share >= 1 || quickWindows < patience) return;
 			quickWindows = 0;
+			settled = false;
+			failedTrials = 0;
 			stepped = share;
 			share = Math.min(1, share * RAISE);
 			resize();
