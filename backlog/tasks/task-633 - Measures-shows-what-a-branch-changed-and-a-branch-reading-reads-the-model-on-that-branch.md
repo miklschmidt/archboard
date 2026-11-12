@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-12T23:34:00Z'
+updated_date: '2026-11-12T23:36:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -117,7 +118,8 @@ The CLI gets the same behavior through the same route. `--model-at checkout` kee
   - Changed: Model address carries the source ref of a branch reading.
   - Changed: Reading stage shows a branch reading as read-only.
   - Changed: Model footprint reads the vault at the head, and `--model-at checkout` reads the vault on disk.
-  - Added relationships: Read entry calls Branch reading. Architecture history routes call History lens. Model queries call Architecture history routes over HTTP. Branch footprint calls Model queries and Model address. Measures renders Branch footprint.
+  - Changed: Code check's state reader reads one state at a source ref, for the footprint of a named head.
+  - Added relationships: History lens calls Code check to read the selected state at the head. Read entry calls Branch reading. Architecture history routes call History lens. Model queries call Architecture history routes over HTTP. Branch footprint calls Model queries and Model address. Measures renders Branch footprint.
   - Added flows: "Read what a branch changed" and "Show a branch footprint on its picture", in the collection Browser application.
 
 ## Testing Decisions
