@@ -46,6 +46,7 @@ export { createElapsedClock } from "#shared/constants/elapsed-clock.ts";
 export { RECORDER_MS, RECORDING_MS } from "#shared/constants/walkthrough-recording.ts";
 export { REPLAY_MS } from "#shared/constants/walkthrough-replay.ts";
 export { SKILL_EVAL_MS } from "#shared/constants/skill-eval.ts";
+export { TELEMETRY_MS } from "#shared/constants/telemetry.ts";
 
 // ── The browser ──────────────────────────────────────────────────────────
 export { PANE_MS } from "#shared/constants/pane.ts";

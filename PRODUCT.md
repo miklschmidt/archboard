@@ -70,6 +70,7 @@ A source merge or approval never adopts a proposal.
 - The agent authors through `archboard model` commands.
   The architect uses browser panes served on `127.0.0.1` without application authentication.
   Rendering, repository access, and agent execution remain local or on the client.
+  Anonymous usage counts and error reports leave the machine unless the person turns them off (ADR 0079).
 - The vault is a checkout's `.archboard/vault` directory.
   A manifest identifies the model.
   Module, flow, active proposal, and walkthrough files contain authored meaning.

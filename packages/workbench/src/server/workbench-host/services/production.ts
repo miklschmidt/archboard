@@ -1,4 +1,5 @@
 import { pinnedCheckoutOf } from "#server/sessions/services/panes.ts";
+import { workbenchTelemetryEnvironment } from "@archboard/telemetry/record";
 import { installWorkbenchTabSessions } from "#server/panes/services/tab-sessions.ts";
 import type { VoiceAgentOptions } from "@archboard/codex-realtime-voice/server";
 import { ARCHBOARD_AGENT } from "#runtime/host/services/archboard.ts";
@@ -96,7 +97,11 @@ export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer):
 		},
 		codex: {
 			executablePath,
-			hostEnvironment: { ARCHBOARD_URL: serverUrl(), ARCHBOARD_NO_AUTOSTART: "1" },
+			hostEnvironment: {
+				ARCHBOARD_URL: serverUrl(),
+				ARCHBOARD_NO_AUTOSTART: "1",
+				...workbenchTelemetryEnvironment(),
+			},
 			pathPrefixes: [installation().binDirectory],
 			onGroupOwned: server.onCodexProcessGroupOwned,
 		},

@@ -29,6 +29,7 @@
   "@archboard/server-lifecycle" = copyPathToStore ./packages/server-lifecycle;
   "@archboard/server-requests" = copyPathToStore ./packages/server-requests;
   "@archboard/skills" = copyPathToStore ./packages/skills;
+  "@archboard/telemetry" = copyPathToStore ./packages/telemetry;
   "@archboard/timing" = copyPathToStore ./packages/timing;
   "@archboard/ui-kit" = copyPathToStore ./packages/ui-kit;
   "@archboard/walkthrough" = copyPathToStore ./packages/walkthrough;

@@ -16,6 +16,10 @@ if (process.platform === "darwin") {
 	process.env["TMPDIR"] = realpathSync(tmpdir());
 }
 
+// A test never records or sends usage (ADR 0079). Bun's NODE_ENV=test already turns it off, and
+// this also covers a process that a test starts with an environment of its own making.
+process.env["ARCHBOARD_TELEMETRY"] = "0";
+
 setDefaultTimeout(TEST_CASE_TIMEOUT_MS);
 
 const monotonicNowMs = Bun.nanoseconds.bind(Bun);

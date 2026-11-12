@@ -1,4 +1,5 @@
 import path from "path";
+import { recordError } from "@archboard/telemetry/record";
 import type { Express, NextFunction, Request, Response } from "express";
 import { logger } from "@archboard/diagnostics/logger";
 import { installation } from "@archboard/workspace/installation";
@@ -79,14 +80,21 @@ function syncStatusRoute(_req: Request, res: Response): void {
 }
 
 /**
- * Answer an error no route handled.
+ * Answer an error no route handled, and record it for usage telemetry (ADR 0079).
  * @param err The error.
- * @param _req The request.
+ * @param req The request.
  * @param res Its response.
  * @param _next Unused; Express needs the arity to treat this as error middleware.
  */
-function unhandledErrorRoute(err: Error, _req: Request, res: Response, _next: NextFunction): void {
+function unhandledErrorRoute(err: Error, req: Request, res: Response, _next: NextFunction): void {
 	logger.error("Unhandled error:", err);
+	// The route's pattern names the operation. Its path can hold a value that a person gave.
+	const pattern: unknown = req.route?.path;
+	recordError(err, {
+		process: "server",
+		operation: `${req.method} ${typeof pattern === "string" ? pattern : "(no route)"}`,
+		exit: null,
+	});
 	if (res.headersSent || res.destroyed) {
 		return;
 	}
