@@ -2,20 +2,24 @@ import { expect, test } from "bun:test";
 import { llmsOf, pagesOf, sitemapOf } from "./crawlers";
 import { movePage } from "./versions";
 
+// The build runs these tests with the base path that it builds for, as `versions.ts` reads it.
+const BASE = `${(process.env["SITE_BASE"] ?? "/").replace(/\/$/u, "")}/`;
+const SITE = `https://usearchboard.dev${BASE}`;
+
 const page = (url: string): string =>
 	`<html><head><link rel="canonical" href="${url}"><meta property="og:url" content="${url}"></head>` +
-	`<body><a href="/docs/install/">Install</a></body></html>`;
+	`<body><a href="${BASE}docs/install/">Install</a></body></html>`;
 
 test("a versioned copy of a docs page names the page under /docs/ as canonical", () => {
-	const moved = movePage(page("https://usearchboard.dev/docs/gate/"), "0.3.0/", true);
-	expect(moved).toContain('<link rel="canonical" href="https://usearchboard.dev/docs/gate/">');
-	expect(moved).toContain('<meta property="og:url" content="https://usearchboard.dev/docs/gate/">');
-	expect(moved).toContain('href="/docs/0.3.0/install/"');
+	const moved = movePage(page(`${SITE}docs/gate/`), "0.3.0/", true);
+	expect(moved).toContain(`<link rel="canonical" href="${SITE}docs/gate/">`);
+	expect(moved).toContain(`<meta property="og:url" content="${SITE}docs/gate/">`);
+	expect(moved).toContain(`href="${BASE}docs/0.3.0/install/"`);
 });
 
 test("a copy whose page /docs/ lacks stays its own canonical", () => {
-	const moved = movePage(page("https://usearchboard.dev/docs/gate/"), "next/", false);
-	expect(moved).toContain('<link rel="canonical" href="https://usearchboard.dev/docs/next/gate/">');
+	const moved = movePage(page(`${SITE}docs/gate/`), "next/", false);
+	expect(moved).toContain(`<link rel="canonical" href="${SITE}docs/next/gate/">`);
 });
 
 const docsPage = (url: string, title: string): string =>
