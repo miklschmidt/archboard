@@ -85,7 +85,7 @@ The job summary lists up to {reference.facts.summaryRows} findings, evidence for
 | [`fail-on: never`](../reference/actions/#check-fail-on)   | The findings show, and the job never fails on them.                                                         |
 | [`allow-codes`](../reference/actions/#check-allow-codes)  | These codes show and never fail the job, such as [`CALLER_UNDRAWN`](../reference/findings/#caller-undrawn). |
 
-A check that cannot run fails the job in every case: a usage error, a refusal or an unreachable server.
+A check that cannot run fails the job in every case: a usage error, a refusal, an unreachable server, or a checkout without a vault when the checks read one. With [`checks: embeds`](../reference/actions/#check-checks) the Action needs no vault.
 
 ## The plan on the pull request
 
@@ -156,6 +156,8 @@ The Action takes the first of these that it finds:
 With none, the comment lists the changed modules and judges nothing against a plan. [Pull request #1 of the relay example](https://github.com/miklschmidt/archboard-relay-example/pull/1) has such a comment.
 
 The plan is what the proposal changes against the current architecture at the base: each module that it adds, removes or changes, and both ends of each relationship or flow step that it adds, removes or changes. This holds for a draft and for a proposal that the branch already adopted, as the skill does once the code matches it.
+
+When the base has no vault, as on the pull request that adds the first one, the current architecture at the base is empty. Then the plan names every module of the proposal. When a model cannot be read, the comment names the commit, base or head, and the reason that the CLI gave.
 
 ### Changes outside the plan
 

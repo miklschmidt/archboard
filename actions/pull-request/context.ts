@@ -2,7 +2,7 @@
 // checks out. Everything here reads the environment, the event file or Git.
 
 /* oxlint-disable archboard/absolute-imports -- actions/ has no # imports; sibling imports stay relative */
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { readPullRequest } from "./github.ts";
@@ -127,7 +127,9 @@ async function readContext(): Promise<Context> {
 		labels: fresh?.labels ?? event.labels,
 		body: fresh?.body ?? event.body,
 		subpath: relative(gitRoot(inputs.directory), inputs.directory),
-		scratch: mkdtempSync(join(tmpdir(), "archboard-pr-")),
+		// The CLI names real paths, so a scratch path through a symlink, such as /var on macOS, would
+		// break the vault link.
+		scratch: realpathSync(mkdtempSync(join(tmpdir(), "archboard-pr-"))),
 	};
 }
 

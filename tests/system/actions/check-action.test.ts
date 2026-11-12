@@ -234,6 +234,20 @@ describe("the entry", () => {
 		expect(step(3, { ARCHBOARD_INPUT_FAIL_ON: "never" }).exitCode).toBe(1);
 	});
 
+	test("a checkout without a vault fails the checks that read one, whatever fail-on says", () => {
+		const message = "app holds no .archboard/vault, so the semantics and code checks did not run.";
+		const skipped = {
+			embeds: { findings: [] },
+			skipped: { checks: ["semantics", "code"], message },
+		};
+		const result = step(0, { ARCHBOARD_INPUT_FAIL_ON: "never" }, skipped);
+		expect(result.exitCode).toBe(1);
+		expect(result.stdout).toContain(`::error title=archboard check::${message}`);
+		expect(
+			step(0, { ARCHBOARD_INPUT_CHECKS: "embeds" }, { embeds: { findings: [] } }).exitCode,
+		).toBe(0);
+	});
+
 	test("allow-codes keeps a finding on the diff and in the summary and lets the step pass", () => {
 		const allowed = step(1, {
 			ARCHBOARD_INPUT_ALLOW_CODES: "OTHER_CODE,\nRELATIONSHIP_UNSUPPORTED",

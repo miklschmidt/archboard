@@ -8,8 +8,10 @@ author: Mikkel Schmidt
 
 inputs:
   version:
-    description: The version of `archboard` to install, such as `0.2.0`, or `latest`. `cli` replaces it.
-    default: latest
+    description: >-
+      The version of `archboard` to install, such as `0.2.0`, or `latest`. Leave it out to install
+      the version of the archboard release that this Action comes from. `cli` replaces it.
+    default: ""
   cli:
     description: >-
       A CLI to run instead of installing `archboard`: a path to its executable, relative to the
@@ -37,7 +39,8 @@ inputs:
     description: >-
       `warning` fails the step when the check exits 1, which means a semantic diagnostic or a
       warning remains. `never` reports findings and never fails on them. A check that cannot run
-      (usage error, refusal, server unreachable) always fails the step.
+      (usage error, refusal, server unreachable, or a checkout without a vault when the checks read
+      one) always fails the step.
     default: warning
   allow-codes:
     description: >-
@@ -76,8 +79,9 @@ runs:
       if: inputs.cli == ''
       shell: bash
       env:
+        ACTION_PATH: ${{ github.action_path }}
         ARCHBOARD_VERSION: ${{ inputs.version }}
-      run: npm install --global "archboard@${ARCHBOARD_VERSION}"
+      run: bash "${ACTION_PATH}/../shared/install-cli.sh"
     - name: Run archboard check
       id: check
       shell: bash
