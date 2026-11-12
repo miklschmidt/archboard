@@ -269,9 +269,9 @@ jobs:
       - name: Put the versions together
         run: bun site/scripts/versions.ts --releases versions
 
-      # The sitemap lists the pages of the assembled site that are their own canonical URL.
-      - name: Write the sitemap
-        run: bun site/scripts/sitemap.ts
+      # sitemap.xml and llms.txt list the newest release's pages of the assembled site.
+      - name: Write the sitemap and llms.txt
+        run: bun site/scripts/crawlers.ts
 
       # The deploy adds PostHog to every page of every version (site/scripts/analytics.ts). Without
       # the variable POSTHOG_PROJECT_KEY in the site environment, as in a fork, it adds nothing.
