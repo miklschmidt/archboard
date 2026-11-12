@@ -1,10 +1,11 @@
 ---
 id: TASK-633.02
 title: Measures lists what the checked-out branch changed since a base
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-12T23:49:00Z'
-updated_date: '2026-11-12T23:50:00Z'
+updated_date: '2026-11-12T23:55:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -58,3 +59,11 @@ None (can start immediately).
 - [ ] #8 A row selects its own module, as the other Measures rows do
 - [ ] #9 DESIGN.md describes the view and its searchable list
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Implementer (worktree): the history lens lists the source refs of every bound repository, merged by name, with the default base and the checked-out head; GET /api/architecture/refs; seam 2 tests for the listing.
+2. Parent: the browser footprint and refs queries; the Measures view What this branch changed with the base list, the lists, Refresh and the checkpoint state; DESIGN.md; the browser owner.
+3. Gate, review, merge into the integration branch.
+<!-- SECTION:PLAN:END -->
