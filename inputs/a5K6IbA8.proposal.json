@@ -23,6 +23,7 @@
         "order": 90,
         "name": "Branch reading",
         "kind": "module",
+        "responsibility": "Reads the vault as a source branch or commit holds it, from Git, as a model that cannot be edited",
         "description": "Reads the vault's inputs as they stand at a source branch or commit of the vault's repository, from Git objects, without a checkout. It decodes them as a model that can be read and compared but not edited, claimed or retained, and its revision names the commit it read.",
         "binding": {
           "repo": "github.com/miklschmidt/archboard",
@@ -47,6 +48,7 @@
         "order": 90,
         "name": "Architecture history routes",
         "kind": "route",
+        "responsibility": "Serves locality, the branch footprint and the source refs of a model's repositories",
         "description": "GET /api/architecture/locality, /api/architecture/footprint and /api/architecture/refs adapt the history lens for the browser and the CLI. Each names its vault, and none keeps an answer.",
         "binding": {
           "repo": "github.com/miklschmidt/archboard",
@@ -91,6 +93,7 @@
         "order": 90,
         "name": "Branch footprint",
         "kind": "ui",
+        "responsibility": "Shows which modules the commits from a base to a head changed, against the proposal at that head",
         "description": "The Measures view What this branch changed. Searchable base, head and against pickers choose the range and the state; the lists say which modules the commits changed against the proposal, with skipped modules and unbound files. Show on picture opens the nearest shared parent, at the head's branch reading when the head is not checked out, and selects each changed module it draws and each drawn module that holds one.",
         "binding": {
           "repo": "github.com/miklschmidt/archboard",
