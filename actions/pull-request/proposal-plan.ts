@@ -68,7 +68,9 @@ interface FootprintPart {
 	readonly subject: { readonly id: string; readonly name: string };
 	/**
 	 * The other changed modules that its binding holds. A module bound to a directory changes with
-	 * each of them, so it is never outside the plan. A CLI older than this field leaves it out.
+	 * each of them, so it is never outside the plan. The CLI lists them only when they bind each file
+	 * that the branch changed in the outer module's binding, so the Action and `--fail-outside` judge
+	 * one list. A CLI older than this field leaves it out.
 	 */
 	readonly holds?: readonly string[] | undefined;
 }

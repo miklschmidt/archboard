@@ -74,7 +74,8 @@ const FootprintPartSchema = BehindPartSchema.extend({
 	named: z.array(NamedReasonSchema),
 	/**
 	 * The ids of the other changed parts that its binding holds: a part bound to a directory
-	 * changes with each part bound inside it. None for an unchanged part (TASK-622).
+	 * changes with each part bound inside it. It lists them only when they bind each file that the
+	 * commits changed in its own binding, else none. None for an unchanged part (TASK-622).
 	 */
 	holds: z.array(z.string()),
 });

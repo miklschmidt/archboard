@@ -1,9 +1,10 @@
 // Which other changed parts each changed part holds (TASK-622). A part bound to a directory, or to
-// a .csproj project, changes with every part bound inside it, so its own change says nothing that
-// theirs does not. `model footprint --fail-outside` and the pull-request Action judge the part
-// inside instead. Pure.
+// a .csproj project, changes with every part bound inside it. When the parts inside bind each file
+// that it changed, its own change says nothing that theirs does not, and `model footprint
+// --fail-outside` and the pull-request Action judge the parts inside instead. When it changed a
+// file that only it binds, it changed in its own right and holds nothing. Pure.
 
-import { bindingPathOf } from "@archboard/code-binding/bindings";
+import { bindingPathOf, filesOfBinding } from "@archboard/code-binding/bindings";
 import { normalizeBoundPath } from "#runtime/history-lens/operations/commits.ts";
 import type { FootprintPart } from "#shared/protocol/footprint.ts";
 
@@ -30,18 +31,37 @@ function holds(outer: FootprintPart, inner: FootprintPart): boolean {
 	return path !== scope && (scope === "" || path.startsWith(`${scope}/`));
 }
 
+/** A changed part, with the files that the commits that changed it changed, under each name. */
+type ChangedPart = FootprintPart & { readonly files: readonly string[] };
+
 /**
- * The changed parts, each with the other changed parts that it holds.
- * @param changed Every changed part, in any repository.
- * @returns The parts in the same order, each with the ids of those it holds.
+ * The other changed parts that a part holds, when they bind each file that it changed in its own
+ * binding.
+ * @param outer The part.
+ * @param changed Every changed part.
+ * @returns The ids of the parts it holds, or none when it changed a file that only it binds.
  */
-function withHeld(changed: readonly FootprintPart[]): FootprintPart[] {
-	return changed.map((part) => ({
-		...part,
-		holds: changed
-			.filter((other) => other !== part && holds(part, other))
-			.map((other) => other.subject.id),
-	}));
+function heldBy(outer: ChangedPart, changed: readonly ChangedPart[]): string[] {
+	const inner = changed.filter((part) => part !== outer && holds(outer, part));
+	const scope = scopeOf(outer.path);
+	if (inner.length === 0 || scope === undefined) return [];
+	const scopes = inner.flatMap((part) => scopeOf(part.path) ?? []);
+	const own = filesOfBinding(scope, outer.files).filter((file) =>
+		scopes.every((one) => filesOfBinding(one, [file]).length === 0),
+	);
+	return own.length > 0 ? [] : inner.map((part) => part.subject.id);
 }
 
-export { withHeld };
+/**
+ * The changed parts, each with the other changed parts that it holds.
+ * @param changed Every changed part, in any repository, with its changed files.
+ * @returns The parts in the same order, each with the ids of those it holds.
+ */
+function withHeld(changed: readonly ChangedPart[]): FootprintPart[] {
+	return changed.map((one) => {
+		const { files: _files, ...part } = one;
+		return { ...part, holds: heldBy(one, changed) };
+	});
+}
+
+export { withHeld, type ChangedPart };

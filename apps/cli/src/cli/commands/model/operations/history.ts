@@ -43,11 +43,11 @@ const WORDS = {
 			"- Changed outside the plan.",
 			"- Planned but unchanged.",
 			"",
-			"Each changed module lists, in `holds`, the other changed modules bound inside it, because a module bound to a directory changes with each of them. A module that holds another is not counted as changed outside the plan.",
+			"Each changed module lists, in `holds`, the other changed modules bound inside it, because a module bound to a directory changes with each of them. It lists them only when they bind each file that the commits changed in its own binding. A module that holds another is not counted as changed outside the plan.",
 			"",
 			"It also lists, in `unboundFiles`, each changed file that no module is bound to, because no module shows that change. The files of the vault are not listed.",
 			"",
-			"With `--fail-outside`, it exits 1 when the commits changed a module that the draft does not name. A module that holds another changed module never fails it. A file that no module is bound to never fails it. A gate before a merge uses it.",
+			"With `--fail-outside`, it exits 1 when the commits changed a module that the draft does not name. A module bound to a directory passes when each file it changed lies in the binding of another changed module inside it. If the commits also changed a file that only the outer module binds, the outer module fails. A file that no module is bound to never fails it. A gate before a merge uses it.",
 			"",
 			"A repository that cannot read the base or head is named, and the command exits 2. Source refs stay local and no source history is retained.",
 		].join("\n"),
@@ -94,7 +94,7 @@ const outsideOutcome = {
 
 /**
  * The modules that `--fail-outside` fails on: those the commits changed and the draft does not name,
- * except a directory that holds another changed module.
+ * except a directory that holds another changed module because that module binds each file it changed.
  * @param answer The answer of the server.
  * @param failOutside Whether `--fail-outside` was given.
  * @returns The changed modules outside the draft, or none when the gate is off.

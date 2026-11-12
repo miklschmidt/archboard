@@ -99,10 +99,11 @@ Done: each architectural change has exactly one owning ticket, and each publishe
 
    If the command exits 2, resolve its refusal or unread source before merging, then run the gate again.
    Exit status 1 means that a changed module outside the proposal fails the gate.
-   A module bound to a directory passes when another changed module is bound inside it.
+   A module bound to a directory passes when each file that it changed lies in the binding of another changed module inside it.
    For example, `Workspace` is bound to `libs/workspace` and `Installation` to `libs/workspace/src/installation.ts`.
    A change to `installation.ts` changes both. `Workspace` passes, and `Installation` fails unless the proposal names it.
    A change to `libs/workspace/README.md` changes only `Workspace`, so `Workspace` fails.
+   A change to both files fails `Workspace` too, because only `Workspace` binds `README.md`.
    Exit status 0 means that no module read by the footprint fails the gate.
    Compare `namedAndChanged` with the ticket's slice.
    A changed module absent from this ticket's slice is a **deviation**, even if another ticket owns it.
