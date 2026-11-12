@@ -167,6 +167,10 @@ stores nothing in the browser. Its requests go to `https://e.usearchboard.dev`, 
 them to PostHog's EU Cloud, because ad blockers drop requests to PostHog's own hosts. A local
 build and a pull request build send nothing.
 
+The PostHog project must allow
+[cookieless tracking](https://posthog.com/tutorials/cookieless-tracking) in its settings.
+Otherwise PostHog drops the site's events.
+
 To build and attach the docs of a release again, for example after a change to the build, start
 the workflow by hand on `main` and enter the release tag, such as `v0.3.0`.
 
