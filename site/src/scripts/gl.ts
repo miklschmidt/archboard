@@ -4,9 +4,12 @@
 // once a frame whether the program is ready, and draws from the first frame that it is.
 //
 // The host draws at the device's pixel ratio, up to a limit. While frames come slowly, it draws
-// fewer pixels. When drawing fewer twice in a row does not make the frames come faster, it stops:
-// the pixels are not what holds the frames back, as when a browser saving power slows every page.
-// Once is not enough, as the picture itself can grow dearer while the host tries.
+// fewer pixels. When drawing fewer twice in a row does not make the frames come faster, it stops
+// drawing fewer: the pixels are not what holds the frames back, as when a browser saving power
+// slows every page. Once is not enough, as the picture itself can grow dearer while the host tries.
+// While frames come quickly, it draws more pixels again, a step at a time, up to the full ratio:
+// what slowed the frames can pass, as when the page finishes loading. Each time it has to draw
+// fewer again, it waits twice as long before the next step up.
 
 import { whileVisible } from "./reveal";
 
@@ -21,6 +24,12 @@ const WINDOW = 16;
 
 /** The fewest device pixels the host draws for each CSS pixel. */
 const FLOOR = 0.5;
+
+/** How much more of the ratio, at most, the host draws in one step up. */
+const RAISE = 1.25;
+
+/** How many quick windows the host first waits before a step up, and the most it comes to wait. */
+const PATIENCE = { first: 4, most: 64 };
 
 const VERTEX = `#version 300 es
 in vec2 position;
@@ -157,6 +166,10 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 	let trial: { share: number; typical: number } | undefined;
 	let failedTrials = 0;
 	let settled = false;
+	let quickWindows = 0;
+	let patience = PATIENCE.first;
+	// The share the host last stepped up from, where the frames came quickly.
+	let stepped = 0;
 	const resize = () => {
 		width = Math.max(1, Math.round(canvas.clientWidth * ratio() * share));
 		height = Math.max(1, Math.round(canvas.clientHeight * ratio() * share));
@@ -167,11 +180,12 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 		gl.viewport(0, 0, width, height);
 	};
 	/**
-	 * Judge the frame rate by the frames of one window, and draw fewer pixels while it is slow.
+	 * Judge the frame rate by the frames of one window: draw fewer pixels while it is slow, and more
+	 * again while it is quick.
 	 * @param interval How long the last frame took, in milliseconds.
 	 */
 	const pace = (interval: number) => {
-		if (settled || interval <= 0) return;
+		if (interval <= 0) return;
 		intervals.push(interval);
 		if (intervals.length < WINDOW) return;
 		// A long task now and then does not count: the slowest two frames of a window are left out.
@@ -184,21 +198,40 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 		intervals.length = 0;
 		if (trial) {
 			// Fewer pixels did not make the frames faster, so the host draws as many as before.
-			if (typical > trial.typical * 0.9) {
+			if (slow && typical > trial.typical * 0.9) {
 				share = trial.share;
 				failedTrials += 1;
 				settled = failedTrials >= 2;
 				resize();
-			} else failedTrials = 0;
+			} else {
+				failedTrials = 0;
+				patience = Math.min(PATIENCE.most, patience * 2);
+			}
 			trial = undefined;
 			return;
 		}
+		if (!slow) {
+			slowWindows = 0;
+			quickWindows += 1;
+			if (share >= 1 || quickWindows < patience) return;
+			quickWindows = 0;
+			settled = false;
+			failedTrials = 0;
+			stepped = share;
+			share = Math.min(1, share * RAISE);
+			resize();
+			return;
+		}
+		quickWindows = 0;
+		if (settled) return;
 		// One slow window can be the page loading; two in a row are the GPU.
-		slowWindows = slow ? slowWindows + 1 : 0;
+		slowWindows += 1;
 		if (slowWindows < 2 || ratio() * share <= FLOOR) return;
 		slowWindows = 0;
 		trial = { share, typical };
-		share = Math.max(FLOOR / ratio(), share * Math.sqrt(AIM / typical));
+		// A step up that made the frames slow goes back to where they came quickly, and no lower.
+		share = Math.max(FLOOR / ratio(), stepped, share * Math.sqrt(AIM / typical));
+		stepped = 0;
 		resize();
 	};
 	const draw = (time: number) => {
