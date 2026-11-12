@@ -113,7 +113,7 @@ function MovedValue(props: MovedValueProps): JSX.Element {
  */
 function wordRuns(before: string, after: string): Record<"was" | "now", WordRun[]> {
 	const parts = diffWords(before, after);
-	if (parts.every((part) => part.added || part.removed)) {
+	if (!parts.some((part) => !part.added && !part.removed && /[\p{L}\p{N}_]/u.test(part.value))) {
 		return {
 			was: [{ at: 0, text: before, moved: false }],
 			now: [{ at: 0, text: after, moved: false }],

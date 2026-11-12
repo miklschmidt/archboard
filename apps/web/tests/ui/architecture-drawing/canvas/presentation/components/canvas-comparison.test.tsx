@@ -7,7 +7,12 @@
 // them, in the words a user reads rather than in the module's internals.
 
 import { expect, test } from "bun:test";
+import { render } from "@testing-library/react";
 
+import {
+	Standing,
+	type StandingProps,
+} from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorStanding.tsx";
 import { drawing, mountStage, server, settle } from "#tests/ui/support/canvas/stage-harness.tsx";
 
 /** The architecture as it is, before the change. */
@@ -69,6 +74,16 @@ const AFTER = {
 		},
 	],
 };
+
+/** Compared responsibilities with shared punctuation but no shared word. */
+const NO_SHARED_WORDS: StandingProps = {
+	standing: "changed",
+	against: "as it is",
+	moved: [{ field: "responsibility", before: "Reads.", after: "Writes." }],
+};
+
+/** The comparison has no unresolved issues. */
+const NO_OPEN_ISSUES = [] as const;
 
 /**
  * A model holding the state it is in and one proposal derived from it.
@@ -196,6 +211,15 @@ test("a changed subject says which field moved and what it moved between", async
 	// And nothing that did not move is listed beside it.
 	expect(moved!.querySelector("[data-field='name']")).toBeNull();
 	expect(moved!.querySelector("[data-field='kind']")).toBeNull();
+});
+
+test("changed values that share only punctuation have no word tint", () => {
+	render(<Standing open={NO_OPEN_ISSUES} code={null} against={NO_SHARED_WORDS} />);
+
+	const field = slot("semantic-inspector-moved")!.querySelector("[data-field='responsibility']")!;
+	expect(field.textContent).toContain("Reads.");
+	expect(field.textContent).toContain("Writes.");
+	expect(field.querySelectorAll("del, ins").length).toBe(0);
 });
 
 test("where a part stands is read before what it is wired to", async () => {
