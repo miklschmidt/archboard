@@ -1,0 +1,119 @@
+---
+title: Archboard in a Home Repo
+description: Keep one model of the whole system in your Home Repo, bind it to the code of every other repository, and see which parts of the system an agent changed across all of them.
+---
+
+import Aside from "../../components/docs/Aside.astro";
+import Steps from "../../components/docs/Steps.astro";
+import Exit from "../../components/docs/Exit.astro";
+
+A Home Repo is one repository that holds your skills, your `AGENTS.md` and your shared docs. You start every agent session there, and its `AGENTS.md` points to each of your other repositories. Matt Pocock describes the pattern in [The Home Repo Pattern](https://www.aihero.dev/the-home-repo-pattern). The architecture of a system that spans those repositories is a shared doc too, so its vault goes in the Home Repo.
+
+## The layout
+
+```text
+~/repos/acme/
+├── home/                  the Home Repo
+│   ├── AGENTS.md          a pointer to each other repository
+│   └── .archboard/vault   one model of the whole system
+├── storefront/
+├── payments-api/
+└── platform/
+```
+
+The other repositories have no vault. A module in the model binds to a file or a directory in any repository, by the identity of the repository and a path, such as `github.com/acme/storefront` and `src/checkout/`. The identity comes from the `origin` remote of the checkout. The binding holds no absolute path, so it resolves on every machine.
+
+## Set it up
+
+<Steps>
+
+1. Run `archboard init` in the Home Repo. It installs the skills for your user, makes the vault and registers the checkout of the Home Repo.
+
+   ```bash
+   cd ~/repos/acme/home
+   archboard init
+   ```
+
+2. Register a checkout of each other repository on this machine. The code check and the browser read the code of a binding from that checkout.
+
+   ```bash
+   archboard repo add ~/repos/acme/storefront
+   archboard repo add ~/repos/acme/payments-api
+   archboard repo add ~/repos/acme/platform
+   archboard repo list
+   ```
+
+3. Commit the vault in the Home Repo.
+
+   ```bash
+   git add .archboard
+   git commit -m "docs(architecture): add the Archboard vault"
+   ```
+
+</Steps>
+
+Each machine that runs the check registers its own checkouts, because the registry belongs to the machine. Register a language server for each language in the repository that holds the code, as [Install and set up](../install/#set-up-the-language-servers) shows.
+
+## Where the agent runs commands
+
+A session that starts in the Home Repo finds the vault with no option. If the agent runs a command inside another repository, the command refuses with `VAULT_NOT_FOUND`, because that checkout has no vault. The refusal names the Home Repo as the directory to give with `-C`:
+
+```bash
+archboard -C ~/repos/acme/home model read
+```
+
+## See what an agent changed
+
+Git tells you which repositories have new commits. `archboard model footprint` tells you which modules those commits changed, in every repository that the model binds. Run it in the Home Repo:
+
+```bash
+archboard model footprint --base main
+```
+
+It reads the commits between `main` and `HEAD` in the chosen checkout of each repository. It lists each module that the commits changed. Under `unboundFiles`, it lists each changed file that no module is bound to.
+
+If the agent worked from a proposal, select the draft with `--state`. The answer then puts the changed modules in three groups: planned and changed, changed outside the plan, and planned but unchanged. Review the modules changed outside the plan first. `--fail-outside` exits <Exit command="model footprint" outcome="outside" /> when there are any, so a script can stop a merge on them.
+
+```bash
+archboard model footprint --base main --state "Split payments" --fail-outside
+```
+
+<Aside type="caution" title="Every repository needs the base">
+	Use a ref that resolves in each checkout, such as `main` or a commit. If a repository cannot read
+	the base or the head, the command names that repository and exits
+	<Exit command="model footprint" outcome="unread" />. The command reads only what
+	each checkout already has, and it fetches nothing.
+</Aside>
+
+The command reads one checkout of each repository, the chosen checkout. `archboard repo list` shows which checkout that is. If an agent commits in a worktree, choose that worktree first with `archboard repo use <dir>`.
+
+## In CI
+
+The other repositories have no vault, so their own `archboard check` has no model to read. Run the check with the vault of the Home Repo, and register the checkout of the code beside it. In the CI of a repository such as the storefront, check out both and list the code in the check Action's [`repos`](../reference/actions/#check-repos) input:
+
+```yaml title=".github/workflows/architecture.yml" {8-12,16-18}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: storefront
+      - uses: actions/checkout@v5
+        with:
+          repository: acme/home
+          path: home
+          token: ${{ secrets.HOME_REPO_TOKEN }}
+      - uses: miklschmidt/archboard/actions/check@{{sha}} # {{ref}}
+        with:
+          version: "{{version}}"
+          working-directory: home
+          repos: |
+            storefront
+```
+
+A private Home Repo needs a token with read access, as the second checkout shows. A binding into a repository that the run does not register is skipped as [`repository-unregistered`](../reference/findings/#repository-unregistered). A skip never fails the check. To check the whole system in the CI of the Home Repo, check out every repository and list each one under [`repos`](../reference/actions/#check-repos).
+
+## When the vault stays in its repository
+
+A Home Repo puts the change to the model and the change to the code in different pull requests. If one repository holds most of the system, keep the vault in that repository. A reviewer then reads both changes in one diff, and that model can still bind into the other repositories, as [Application and infrastructure](../platform/) shows.

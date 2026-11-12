@@ -76,6 +76,7 @@ export const docsNav: readonly DocsGroup[] = [
 			{ path: "gate", label: "The check as a gate" },
 			{ path: "pull-requests", label: "Architecture on pull requests" },
 			{ path: "platform", label: "Application and infrastructure" },
+			{ path: "home-repo", label: "In a Home Repo" },
 		],
 	},
 	{
