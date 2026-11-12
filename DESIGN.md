@@ -614,6 +614,8 @@ once. A new subject opens at the top of the panel and arrives with a 120ms fade.
 Long lists and evidence live on About, which lies over the panel, so the panel keeps its
 room and the picture keeps its camera. A pane presented fullscreen has no panel.
 
+A subject that differs from the state it is read against has an `Against <state>` section. It lists each field that moved: its name, then `was` over `now`, the whole of each value, with the old value in muted ink. Where the two values share words, the words that moved carry a tint of 20% with 2px corners and full ink: the removed standing (`--standing-removed`) under the words taken out of `was`, and the added standing (`--standing-added`) under the words put into `now`. Two values that share no word carry no tint.
+
 The panel heads a module as the site's mock panel does: the chip of its kind, with the icon the picture draws it with, then its name in the display face, and its kind and code path under the name. The chip stands on the top of the name's first line, so a name that wraps leaves it at the top. A subject with no kind, such as a flow or a connection, has only its name. The name and the summary under it stand 8px apart as one block, and the sections follow 20px apart. A section of the panel opens with its label, as a section of the left column does: its title in Body semibold and full ink, and its count beside it in mono and muted ink, 6px from it. Four pixels part the row of the label from its rows, and the rows touch. The words of the panel, its rows and its keys share one left edge and one right edge, 16px from the panel's sides, and the ink of the close key ends on the right one.
 
 With a module expanded into the picture, the panel stays with the module that the reading

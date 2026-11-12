@@ -187,6 +187,12 @@ test("a changed subject says which field moved and what it moved between", async
 	// Both values, not merely a badge saying something happened.
 	expect(field?.textContent).toContain("Reads the note");
 	expect(field?.textContent).toContain("Reads and writes the note");
+	// And the words that moved are marked, so a reader need not compare two long
+	// sentences word by word.
+	expect([...field!.querySelectorAll("ins")].map((mark) => mark.textContent.trim())).toEqual([
+		"and writes",
+	]);
+	expect(field!.querySelector("del")).toBeNull();
 	// And nothing that did not move is listed beside it.
 	expect(moved!.querySelector("[data-field='name']")).toBeNull();
 	expect(moved!.querySelector("[data-field='kind']")).toBeNull();

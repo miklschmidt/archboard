@@ -12,6 +12,7 @@
 // subject is, and this stays about how it is standing. Both read the same
 // comparison and the same reconciliation the picture is drawn from.
 
+import { type ChangeObject, diffWords } from "diff";
 import type { JSX } from "react";
 
 import type { ChangeKind, FieldChange } from "@archboard/model/comparison";
@@ -47,19 +48,32 @@ interface MovedProps {
 
 /** Inputs for one value of a field that moved. */
 interface MovedValueProps {
-	/** What the field said, or says. */
-	text: string;
+	/** What the field said, or says, in runs that are marked where they moved. */
+	runs: readonly WordRun[];
 	/** Which it is. */
 	when: "was" | "now";
+}
+
+/** A run of words of one value, and whether it moved. */
+interface WordRun {
+	/** Where the run starts in the value. */
+	at: number;
+	/** The words. */
+	text: string;
+	/** Whether the other value does not have them. */
+	moved: boolean;
 }
 
 /**
  * One value of a field that moved, after the word that says which it is: what
  * it said first and quieter, what it says under that, the whole of each wrapped.
+ * The words that moved carry a tint: in red where they were taken out, in green
+ * where they were put in.
  * @param props The value.
  * @returns The value.
  */
 function MovedValue(props: MovedValueProps): JSX.Element {
+	const Mark = props.when === "was" ? "del" : "ins";
 	return (
 		<dd className="grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-1.5">
 			<span className="text-muted-foreground text-body">{props.when}</span>
@@ -69,21 +83,93 @@ function MovedValue(props: MovedValueProps): JSX.Element {
 					props.when === "was" && "text-muted-foreground",
 				)}
 			>
-				{props.text}
+				{props.runs.map((run) =>
+					run.moved ? (
+						<Mark
+							key={run.at}
+							className={cn(
+								"text-foreground rounded-[2px] [box-decoration-break:clone] no-underline",
+								props.when === "was" ? "bg-standing-removed/20" : "bg-standing-added/20",
+							)}
+						>
+							{run.text}
+						</Mark>
+					) : (
+						<span key={run.at}>{run.text}</span>
+					),
+				)}
 			</span>
 		</dd>
 	);
 }
 
 /**
+ * The two values of a field that moved, each cut into runs of words that are
+ * marked where they moved. Two values that share no word are left whole: when
+ * all of a value moved, a mark on all of it says nothing the words do not.
+ * @param before What the field said.
+ * @param after What it says.
+ * @returns The runs of each.
+ */
+function wordRuns(before: string, after: string): Record<"was" | "now", WordRun[]> {
+	const parts = diffWords(before, after);
+	if (parts.every((part) => part.added || part.removed)) {
+		return {
+			was: [{ at: 0, text: before, moved: false }],
+			now: [{ at: 0, text: after, moved: false }],
+		};
+	}
+	return {
+		was: runsOf(parts.filter((part) => !part.added)),
+		now: runsOf(parts.filter((part) => !part.removed)),
+	};
+}
+
+/**
+ * The parts of a word diff that make up one value, as runs that know where they
+ * start. The space round the words that moved is not marked, so a mark holds
+ * words alone.
+ * @param parts The parts, in order.
+ * @returns The runs.
+ */
+function runsOf(parts: readonly ChangeObject<string>[]): WordRun[] {
+	const runs: WordRun[] = [];
+	let at = 0;
+	/**
+	 * Add a run that holds any text.
+	 * @param text Its words.
+	 * @param moved Whether they moved.
+	 */
+	const push = (text: string, moved: boolean): void => {
+		if (text !== "") {
+			runs.push({ at, text, moved });
+			at += text.length;
+		}
+	};
+	for (const part of parts) {
+		if (!part.added && !part.removed) {
+			push(part.value, false);
+			continue;
+		}
+		const words = part.value.trim();
+		const lead = part.value.length - part.value.trimStart().length;
+		push(part.value.slice(0, lead), false);
+		push(words, true);
+		push(part.value.slice(lead + words.length), false);
+	}
+	return runs;
+}
+
+/**
  * One field that moved, its name over what it said and what it says: the whole
- * of both, because which part of a long description or a binding moved is
- * exactly what a reader is asking.
+ * of both, with the words that moved marked, because which part of a long
+ * description or a binding moved is exactly what a reader is asking.
  * @param props The field.
  * @returns The field.
  */
 function Moved(props: MovedProps): JSX.Element {
 	const { change } = props;
+	const runs = wordRuns(valueText(change.before), valueText(change.after));
 	return (
 		<div data-field={change.field} className="flex flex-col gap-1">
 			<dt className="text-muted-foreground text-body">{change.field}</dt>
@@ -91,8 +177,8 @@ function Moved(props: MovedProps): JSX.Element {
 				<dd className="text-body">Illustrated traffic changed</dd>
 			) : (
 				<>
-					<MovedValue text={valueText(change.before)} when="was" />
-					<MovedValue text={valueText(change.after)} when="now" />
+					<MovedValue runs={runs.was} when="was" />
+					<MovedValue runs={runs.now} when="now" />
 				</>
 			)}
 		</div>
