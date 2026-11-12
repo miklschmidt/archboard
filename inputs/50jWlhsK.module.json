@@ -3,6 +3,7 @@
   "name": "Model snapshot contract",
   "kind": "module",
   "responsibility": "The portable file of one state and its comparison state, with the vault check and icon paths that a reader draws them with and no server",
+  "description": "The format includes the selected reading, comparison reading, vault check, CLI version, and icon paths. The icon map covers all three policies, the default vocabulary, and renderer marks. A consumer can draw these inputs without a vault or server. The browser app does not yet consume this file.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/shared/canonical-contracts/schemas/model-snapshot.ts"
@@ -24,6 +25,5 @@
       "id": "vKEsyHFk#wPUmbllJ",
       "to": "vKEsyHFk#8539szQJ"
     }
-  ],
-  "description": "The format includes the selected reading, comparison reading, vault check, CLI version, and icon paths. The icon map covers all three policies, the default vocabulary, and renderer marks. A consumer can draw these inputs without a vault or server. The browser app does not yet consume this file."
+  ]
 }

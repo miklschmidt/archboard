@@ -7,8 +7,8 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-binding/src/shared"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
   "schemaVersion": 1,
   "id": "vKEsyHFk#NVlMWCWO",
+  "parent": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
   "outgoing": []
 }
