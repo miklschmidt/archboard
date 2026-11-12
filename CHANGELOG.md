@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.1](https://github.com/miklschmidt/archboard/compare/v0.4.0...v0.4.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **actions:** report a first vault, fail without one, and install the Action's own CLI version ([#101](https://github.com/miklschmidt/archboard/issues/101)) ([7195d7b](https://github.com/miklschmidt/archboard/commit/7195d7b0520ecc1d49e78f4677b37419800d5708))
+* **footprint:** fail a directory module that changed a file only it binds ([#100](https://github.com/miklschmidt/archboard/issues/100)) ([e3956c4](https://github.com/miklschmidt/archboard/commit/e3956c4c321619ce83051a3e7e911e225c0d467b))
+* **site:** the hero draws its full resolution again once frames are quick ([#107](https://github.com/miklschmidt/archboard/issues/107)) ([81d7acc](https://github.com/miklschmidt/archboard/commit/81d7accaaae3787cc13fc1fc1065d637a80059ed))
+* **walkthrough:** stop the replay page's document timeline so slow machines draw the same frames ([#98](https://github.com/miklschmidt/archboard/issues/98)) ([cfc5dc0](https://github.com/miklschmidt/archboard/commit/cfc5dc0ad100a804c6d5f4e33b137893545d3289))
+
 ## [0.4.0](https://github.com/miklschmidt/archboard/compare/v0.3.0...v0.4.0) (2026-11-11)
 
 
