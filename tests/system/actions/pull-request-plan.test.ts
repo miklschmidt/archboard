@@ -86,6 +86,21 @@ describe("the plan of a proposal", () => {
 		expect(planBuckets(older, plan).outsidePlan).toEqual(["Workspace"]);
 	});
 
+	test("a changed module that also changed a file only it binds is outside the plan", () => {
+		const plan = {
+			comparison: [],
+			named: new Map([["m#installation", "Installation"]]),
+			baseOnlyBindings: new Set<string>(),
+		};
+		// The branch changed installation.ts and libs/workspace/README.md, so the CLI lists no holds.
+		const workspace = { subject: { id: "m#workspace", name: "Workspace" }, holds: [] };
+		const installation = { subject: { id: "m#installation", name: "Installation" }, holds: [] };
+		expect(planBuckets({ changed: [workspace, installation] }, plan)).toMatchObject({
+			plannedAndChanged: ["Installation"],
+			outsidePlan: ["Workspace"],
+		});
+	});
+
 	test("joins by identity when names are ambiguous, and sorts each bucket", () => {
 		const named = new Map([
 			["planned", "API"],

@@ -19,6 +19,27 @@ const vault = vaultIn(home);
 let server: OwnedServer | undefined;
 beforeAll(async () => {
 	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	// A module bound to a directory, and a module bound to a file inside it.
+	for (const [id, name, path, order] of [
+		["Wkspace", "Workspace", "libs/workspace", 40],
+		["Install", "Installation", "libs/workspace/src/installation.ts", 50],
+	] as const) {
+		writeFileSync(
+			join(vault, `${id.toLowerCase()}.module.json`),
+			JSON.stringify({
+				schemaVersion: 1,
+				id: `Shop#${id}`,
+				name,
+				kind: "module",
+				order,
+				binding: { repo: "github.com/acme/shop", path },
+				outgoing: [],
+			}),
+		);
+	}
+	mkdirSync(join(home, "libs/workspace/src"), { recursive: true });
+	writeFileSync(join(home, "libs/workspace/README.md"), "Workspace.\n");
+	writeFileSync(join(home, "libs/workspace/src/installation.ts"), "export const installed = 1;\n");
 	for (const args of [
 		["init", "--quiet"],
 		["config", "user.name", "Footprint Author"],
@@ -153,6 +174,8 @@ test("canonical locality and branch footprint retain source analysis without a l
 		changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { description: "Gated." } }],
 	});
 	expect(proposed.status, proposed.stderr).toBe(0);
+	const release = cli(["model", "release"], { claim: claim.claim.id, writer: "surface-agent" });
+	expect(release.status, release.stderr).toBe(0);
 	const draft = ["model", "footprint", "--base", "HEAD~1", "--state", "Gateway only"];
 	expect(cli(draft).status).toBe(0);
 	const outside = cli([...draft, "--fail-outside"]);
@@ -196,4 +219,86 @@ test("canonical locality and branch footprint retain source analysis without a l
 	expect(
 		cli(["model", "footprint", "--base", "HEAD~1", "--state", "current", "--fail-outside"]).status,
 	).toBe(2);
+}, 30_000);
+
+test("a directory module passes the gate only when the modules inside it bind each file it changed", () => {
+	const current = ArchitectureModelReadSchema.parse(answer(cli(["model", "read"]).stdout));
+	if (!current.success || current.manifest.current === null) throw new Error("No Current");
+	const target = { model: current.manifest.id, state: current.manifest.current.id };
+	const claim = ArchitectureClaimResultSchema.parse(
+		answer(
+			cli(["model", "claim"], {
+				target,
+				writer: "held-agent",
+				reason: "proposing the installation",
+				subjects: ["Shop", "Shop#Install"],
+			}).stdout,
+		),
+	);
+	if (!claim.success) throw new Error(JSON.stringify(claim));
+	const read = ArchitectureModelReadSchema.parse(answer(cli(["model", "read"]).stdout));
+	if (!read.success) throw new Error(JSON.stringify(read));
+	const proposed = cli(["model", "edit", "--doing", "proposing the installation"], {
+		target,
+		expectedRevision: read.revision,
+		operationId: "footprint-held-draft",
+		writer: "held-agent",
+		claim: claim.claim.id,
+		proposal: { type: "create", name: "Installation only" },
+		changes: [{ type: "edit-module", subject: "Shop#Install", set: { description: "Gated." } }],
+	});
+	expect(proposed.status, proposed.stderr).toBe(0);
+	let commits = 0;
+
+	/**
+	 * Commit a change to some files of the workspace, and run the gate over that commit.
+	 * @param files The files to change, below `libs/workspace`.
+	 * @returns The gate's run.
+	 */
+	function gate(...files: string[]) {
+		commits += 1;
+		for (const file of files) writeFileSync(join(home, "libs/workspace", file), `${commits}\n`);
+		for (const args of [
+			["add", "libs"],
+			["commit", "--quiet", "-m", `test: change ${files.join(", ")}`],
+		]) {
+			const ran = Bun.spawnSync(["git", "-C", home, ...args]);
+			if (ran.exitCode !== 0) throw new Error(ran.stderr.toString());
+		}
+		const ran = cli([
+			"model",
+			"footprint",
+			"--base",
+			"HEAD~1",
+			"--state",
+			"Installation only",
+			"--fail-outside",
+		]);
+		const parsed = z
+			.object({
+				changedNotNamed: z.array(
+					z.object({ subject: z.object({ name: z.string() }), holds: z.array(z.string()) }),
+				),
+			})
+			.parse(answer(ran.stdout));
+		const holds = Object.fromEntries(
+			parsed.changedNotNamed.map((part) => [part.subject.name, part.holds]),
+		);
+		return { status: ran.status, stderr: ran.stderr, holds };
+	}
+
+	const inner = gate("src/installation.ts");
+	expect(inner.status, inner.stderr).toBe(0);
+	expect(inner.holds).toEqual({ Workspace: ["Shop#Install"] });
+
+	const outer = gate("README.md");
+	expect(outer.status, outer.stderr).toBe(1);
+	expect(outer.holds).toEqual({ Workspace: [] });
+	expect(outer.stderr).toContain("Changed outside the draft: Workspace.");
+
+	const both = gate("src/installation.ts", "README.md");
+	expect(both.status, both.stderr).toBe(1);
+	expect(both.holds).toEqual({ Workspace: [] });
+	expect(both.stderr).toContain("1 changed outside the plan");
+	expect(both.stderr).toContain("Changed outside the draft: Workspace.");
 }, 30_000);

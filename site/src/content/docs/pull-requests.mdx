@@ -97,8 +97,8 @@ An agent that plans a change first writes it as a proposal: the architecture aft
 
 1. **The proposal.** Its name and summary, and what it adds, removes and changes.
 2. **The vault.** A link to the vault at the head commit.
-3. **The footprint.** The modules whose code the pull request changed, in three groups: planned and changed, changed outside the plan, and planned but unchanged. Below them, the changed files that no module is bound to, because no module shows their change. Those files are never judged.
-4. **The plan check.** Whether any module changed outside the plan, and what that does to the job.
+3. **The plan check.** Whether any module changed outside the plan, and what that does to the job.
+4. **The footprint.** The modules whose code the pull request changed, in three groups: changed outside the plan, planned and changed, and planned but unchanged. Below them, the changed files that no module is bound to, because no module shows their change. Those files are never judged. Each group is a disclosure with its count. Only the group of modules changed outside the plan starts open.
 
 </Steps>
 
@@ -159,7 +159,7 @@ The plan is what the proposal changes against the current architecture at the ba
 
 ### Changes outside the plan
 
-The footprint's middle group lists modules whose code changed although the plan did not name them. It excludes modules whose `holds` lists another changed module, because their bindings cover that module's code. If an older CLI omits `holds`, the Action counts every changed module absent from the plan. [`out-of-plan`](../reference/actions/#pull-request-out-of-plan) says what happens then.
+The footprint's middle group lists modules whose code changed although the plan did not name them. It excludes a module whose `holds` lists another changed module, because the modules in its `holds` bind each file that it changed. If an older CLI omits `holds`, the Action counts every changed module absent from the plan. [`out-of-plan`](../reference/actions/#pull-request-out-of-plan) says what happens then.
 
 | [`out-of-plan`](../reference/actions/#pull-request-out-of-plan) | Effect                                                                                                                                                                                                                                                                                                                                                                     |
 | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -179,13 +179,14 @@ archboard model footprint --base <integration-branch> --head <ticket-branch> --s
 
 It exits <Exit command="model footprint" outcome="outside" /> when the commits changed a module that the draft does not name, and names each module on standard error. Without a draft, it refuses the option, because only a draft names modules. The `archboard-plan` skill runs this gate before each ticket merge.
 
-A module bound to a directory counts only when no other changed module is bound inside it, because it changes with each of them. The answer lists those other modules in the module's `holds`, and the Action applies the same rule to its group of modules changed outside the plan. For example, `Workspace` is bound to `libs/workspace`, and `Installation` is bound to `libs/workspace/src/installation.ts`:
+A module bound to a directory changes with each module bound inside it. It counts only when the commits changed a file that no other changed module inside it binds. Otherwise the answer lists those other modules in the module's `holds`, and the module passes. The Action applies the same rule to its group of modules changed outside the plan. For example, `Workspace` is bound to `libs/workspace`, and `Installation` is bound to `libs/workspace/src/installation.ts`:
 
 | The commits change                   | The draft names | Exit status                                                               |
 | ------------------------------------ | --------------- | ------------------------------------------------------------------------- |
 | `libs/workspace/src/installation.ts` | `Installation`  | 0. `Workspace` changed too, and holds `Installation`.                     |
 | `libs/workspace/src/installation.ts` | neither module  | <Exit command="model footprint" outcome="outside" />, for `Installation`. |
 | `libs/workspace/README.md`           | `Installation`  | <Exit command="model footprint" outcome="outside" />, for `Workspace`.    |
+| both files                           | `Installation`  | <Exit command="model footprint" outcome="outside" />, for `Workspace`.    |
 
 The answer's `unboundFiles` lists each changed file that no module is bound to, and standard error names the first few. Those files never change the exit status. Read each one, and bind it to a module or say why it belongs to none.
 

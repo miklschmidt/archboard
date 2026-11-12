@@ -28,7 +28,7 @@ import {
 	type WalkedCommit,
 } from "#runtime/history-lens/operations/commits.ts";
 import { unboundFiles } from "#runtime/history-lens/operations/unbound-files.ts";
-import { withHeld } from "#runtime/history-lens/operations/held-parts.ts";
+import { withHeld, type ChangedPart } from "#runtime/history-lens/operations/held-parts.ts";
 import { gitAnswer, type GitRunOptions } from "#runtime/history-lens/clients/git.ts";
 import { namedParts, type Named } from "#runtime/history-lens/operations/named-parts.ts";
 import { partReading, type ReadPart } from "#runtime/history-lens/operations/parts.ts";
@@ -78,8 +78,8 @@ interface VariantFootprintRequest {
 /** What one repository's checkout holds of the footprint. */
 interface RepositoryFootprint {
 	readonly range: FootprintRepository;
-	/** Parts that commits changed. */
-	readonly changed: readonly FootprintPart[];
+	/** Parts that commits changed, each with the files those commits changed. */
+	readonly changed: readonly ChangedPart[];
 	/** Parts that no commit changed. */
 	readonly unchanged: readonly FootprintPart[];
 	/** Parts of this repository the lens did not read, because its range was not. */
@@ -279,6 +279,24 @@ function unreadRepository(
 }
 
 /**
+ * The files that some commits changed, under each name of a rename.
+ * @param walked The commits of the range.
+ * @param commits The ids of the commits to read.
+ * @returns The files.
+ */
+function filesOf(walked: readonly WalkedCommit[], commits: readonly string[]): string[] {
+	const ids = new Set(commits);
+	const files = walked
+		.filter((commit) => ids.has(commit.commit))
+		.flatMap((commit) =>
+			commit.changes.flatMap((change) =>
+				change.from === undefined ? [change.path] : [change.path, change.from],
+			),
+		);
+	return [...new Set(files)];
+}
+
+/**
  * What a checkout holds when its range was read: the commits between the
  * merge base and the head, mapped onto the parts bound there.
  * @param repo The repository.
@@ -311,7 +329,9 @@ function mappedRepository(
 	const used = new Set(entries.flatMap((entry) => entry.commits));
 	return {
 		range: { status: "read", repo, ...range, commits: walked.length },
-		changed: entries.filter((entry) => entry.commits.length > 0).map((entry) => entry.part),
+		changed: entries
+			.filter((entry) => entry.commits.length > 0)
+			.map((entry) => ({ ...entry.part, files: filesOf(walked, entry.commits) })),
 		unchanged: entries.filter((entry) => entry.commits.length === 0).map((entry) => entry.part),
 		skipped: [],
 		commits: walked
