@@ -14,6 +14,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+  "parent": "vKEsyHFk#EuaJBisP",
   "formerNames": [
     "agent-workbench"
   ],
@@ -23,6 +24,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }

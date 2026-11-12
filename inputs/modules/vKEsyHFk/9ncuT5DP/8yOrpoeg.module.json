@@ -22,6 +22,7 @@
       "order": 25000,
       "kind": "call",
       "label": "the coordinator's and the voice's parts, on the tab's queue",
+      "description": "Each audience of a change gets its own callback on the tab's one queue, while voice is live.",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -29,8 +30,7 @@
         "symbol": "enqueue"
       },
       "id": "vKEsyHFk/9ncuT5DP#Tqxin6z5",
-      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
-      "description": "Each audience of a change gets its own callback on the tab's one queue, while voice is live."
+      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
     },
     {
       "order": 26000,
