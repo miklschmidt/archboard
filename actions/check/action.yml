@@ -39,7 +39,8 @@ inputs:
     description: >-
       `warning` fails the step when the check exits 1, which means a semantic diagnostic or a
       warning remains. `never` reports findings and never fails on them. A check that cannot run
-      (usage error, refusal, server unreachable) always fails the step.
+      (usage error, refusal, server unreachable, or a checkout without a vault when the checks read
+      one) always fails the step.
     default: warning
   allow-codes:
     description: >-
