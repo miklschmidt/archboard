@@ -74,6 +74,7 @@ import {
 	repoUseContract,
 } from "#cli/commands/repo/operations/repo.ts";
 import { initContract } from "#cli/commands/init/operations/init.ts";
+import { telemetryContract } from "#cli/commands/telemetry/operations/telemetry.ts";
 import { type CliBootstrap, runCliWith } from "#cli/routing/operations/session.ts";
 import {
 	type CliRegistryEntry,
@@ -268,6 +269,12 @@ const COMMANDS: Record<string, CommandRoute> = {
 	},
 	init: {
 		owner: contract(initContract, "apps/cli/src/cli/commands/init/operations/init.ts"),
+	},
+	telemetry: {
+		owner: contract(
+			telemetryContract,
+			"apps/cli/src/cli/commands/telemetry/operations/telemetry.ts",
+		),
 	},
 };
 

@@ -1,4 +1,5 @@
 import { closeLogger, forceCloseLogger, logger } from "@archboard/diagnostics/logger";
+import { startTelemetrySender } from "@archboard/telemetry/sender";
 import { removePidFile, reportStartupEnd } from "@archboard/server-lifecycle/server-host";
 import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
 import {
@@ -208,6 +209,11 @@ function processHandlers(
 	};
 }
 
+/** Stops the telemetry sender that the lifetime started. */
+let stopTelemetrySender = (): void => {
+	// Nothing runs until the lifetime starts the sender.
+};
+
 /**
  * Build the lifetime: every resource the server owns, in start order, with
  * how each stops.
@@ -296,6 +302,17 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				start: prepareCodexWorkbench,
 				stop: stopCodexWorkbench,
 				forceStop: stopCodexWorkbench,
+			},
+			{
+				name: "telemetry-sender",
+				/** Send the usage records of this installation every few minutes (ADR 0079). */
+				start: () => {
+					stopTelemetrySender = startTelemetrySender();
+				},
+				/** Stop sending. A round under way finishes on its own or is dropped with the process. */
+				stop: () => {
+					stopTelemetrySender();
+				},
 			},
 			{
 				name: "agent-activity",

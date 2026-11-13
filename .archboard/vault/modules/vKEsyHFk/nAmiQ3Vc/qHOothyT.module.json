@@ -130,6 +130,14 @@
       },
       "id": "vKEsyHFk/XppR9owz#4aWZZKkA",
       "to": "vKEsyHFk/XppR9owz#vAQwlVuz"
+    },
+    {
+      "order": 90000,
+      "kind": "call",
+      "label": "records each command and unexpected error",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#Rd2cwGPl",
+      "to": "vKEsyHFk#EbMc8PH2"
     }
   ]
 }

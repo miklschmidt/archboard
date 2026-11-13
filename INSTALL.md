@@ -881,6 +881,36 @@ move between machines. The state directory and the log are in these places:
 
 `LOG_FILE_PATH` sets another log file.
 
+## Usage telemetry
+
+Archboard sends anonymous usage counts and error reports to its maintainers, so that they can
+see which commands, agents and features people use, and where Archboard fails. The first
+command that records prints a notice once.
+
+The CLI never makes a network call for this. Each command appends one record to `telemetry/` in
+the state directory. The Archboard server sends one `daily usage` event for each finished day,
+and one event for each unexpected error, to PostHog EU Cloud (`eu.i.posthog.com`). An event holds:
+
+- a random installation id, and the operating system and architecture,
+- the Archboard version, and whether it runs from a release or a checkout,
+- the counts of commands by name, by agent and by exit code, and their durations,
+- the agent that ran a command, such as `claude` or `codex`, and whether Archboard's workbench ran it,
+- for an error, its class, its code, and the files and lines of Archboard's own code where it happened.
+
+An event never holds code, a module, file, repository or model name, a path outside Archboard,
+a prompt, or the text of an error message. PostHog keeps no person profile and no location for
+it.
+
+Archboard records and sends nothing in these cases:
+
+- `CI` is not empty, or another CI variable is set. The GitHub Actions of Archboard never send.
+- `DO_NOT_TRACK` is set to a value that is not empty, `0` or `false`, in any case.
+- `ARCHBOARD_TELEMETRY` is `0`, `false` or `off`.
+- You ran `archboard telemetry off`. It also deletes every record that waits to be sent.
+
+Run `archboard telemetry` to see whether it is on, and why it is off. Run `archboard telemetry
+on` to turn it on again. The decision is [ADR 0079](docs/adr/0079-archboard-sends-anonymous-usage-as-wide-events.md).
+
 ## Notes for macOS
 
 On macOS, archboard examines processes through the macOS process API. On Linux

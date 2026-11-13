@@ -1,0 +1,17 @@
+{
+	"name": "@archboard/telemetry",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Whether usage is recorded, the local records of each command and error, and the one sender that rolls a day of records into a wide event (ADR 0079).",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		"./record": "./src/runtime/api/record.ts",
+		"./settings": "./src/runtime/api/settings.ts",
+		"./sender": "./src/runtime/api/sender.ts"
+	}
+}

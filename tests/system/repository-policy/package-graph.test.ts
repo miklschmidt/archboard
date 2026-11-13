@@ -31,6 +31,7 @@ const LAYERS: Record<string, number> = {
 	process: 1,
 	workspace: 2,
 	"code-binding": 3,
+	telemetry: 3,
 	model: 4,
 	"codex-app-server": 5,
 	renderer: 5,

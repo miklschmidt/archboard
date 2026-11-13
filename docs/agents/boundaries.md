@@ -724,7 +724,7 @@ Its capture schemas, brief builder, and catalogue formatting stay in this integr
 The production adapter calls `createVoiceAgent` like any host: Archboard's identity (`archboard`), its role instructions and app tools, admitted vault checkouts, and its extensions.
 Its pane sockets reach the agent through the extension's own browser routing.
 `src/runtime/voice/protocol/extension.ts` names the extension types Archboard implements, derived from `VoiceAgentExtensions`.
-It supplies `ARCHBOARD_URL`, `ARCHBOARD_NO_AUTOSTART`, and its executable path prefix explicitly.
+It supplies `ARCHBOARD_URL`, `ARCHBOARD_NO_AUTOSTART`, the telemetry variables of `workbenchTelemetryEnvironment`, and its executable path prefix explicitly.
 The Codex SDK supplies none of those application values by default.
 Pane registration, captured model context, and narration remain integration concerns.
 Canonical semantic projections come from `@archboard/model/content`.
@@ -754,6 +754,15 @@ Tailwind discovers package class names through the stylesheet's `@source` declar
 Tests of retained integration behavior stay in `packages/workbench/tests/`.
 Tests of the app's routes and startup stay in `apps/server/tests/`.
 Full-product and browser workflows stay in `tests/system/`.
+
+The `telemetry` package (`@archboard/telemetry`) owns anonymous usage records at layer 3 ([ADR 0079](../adr/0079-archboard-sends-anonymous-usage-as-wide-events.md)).
+It reads only `workspace` and `timing`, and `std-env` for the CI, test and agent detections.
+`./record` writes the records of a process: `recordCommand` in the CLI, `recordError` in the CLI and the server, and `workbenchTelemetryEnvironment` for the workbench's Codex child, whose environment is an allowlist.
+`./settings` gives `archboard telemetry` its status and switch, and the CLI its one-time notice.
+`./sender` gives the server's lifetime its sender, the only code of Archboard that posts usage.
+The records live in `telemetry/` of the state directory, or in `ARCHBOARD_TELEMETRY_DIR`.
+A record never holds a module, file, repository or model name, a path outside Archboard, a prompt or an error message.
+Its tests are pure rules and one sender round against a temporary directory.
 
 ## Apps
 

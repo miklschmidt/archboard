@@ -27,6 +27,8 @@ import type { CommandRoutes, RouteOwner } from "#cli/routing/protocol/route.ts";
 import { helpText, usageLine } from "#cli/routing/rules/help.ts";
 import { dispatchedCommand } from "#cli/routing/rules/dispatch.ts";
 import { exitCodeFor, reportFailure } from "#cli/routing/operations/exit-codes.ts";
+import { recordCommand, recordError } from "@archboard/telemetry/record";
+import { takeNotice } from "@archboard/telemetry/settings";
 import {
 	takeDirectoryFlag,
 	takeDoingFlag,
@@ -482,6 +484,7 @@ async function runCliWith(
 	}
 	const [name = "", ...rest] = argv;
 	let selected: RouteOwner = command.owner;
+	const startedAt = performance.now();
 	try {
 		refuseRetiredForms(name, rest);
 		const stated = takeShared(rest, bootstrap);
@@ -499,7 +502,36 @@ async function runCliWith(
 	} catch (error) {
 		reportFailure(error, usageLine(routes, selected.contract.path));
 		process.exitCode = exitCodeFor(error, selected);
+		recordUnexpected(error, selected.contract.path.join(" "));
+	} finally {
+		recordUsage(selected.contract.path.join(" "), startedAt);
 	}
+}
+
+/**
+ * Record a failure that no contract expected, exit code 1, as an error report (ADR 0079).
+ * @param error - The thrown value.
+ * @param command - The path of the command that failed.
+ */
+function recordUnexpected(error: unknown, command: string): void {
+	if (process.exitCode === 1) recordError(error, { process: "cli", operation: command, exit: 1 });
+}
+
+/**
+ * Record the command for Archboard's usage telemetry (ADR 0079), and print its notice once.
+ * Neither touches the network.
+ * @param command - The path of the command that ran.
+ * @param startedAt - When it started, by `performance.now()`.
+ */
+function recordUsage(command: string, startedAt: number): void {
+	const exit = process.exitCode;
+	recordCommand({
+		command,
+		exit: typeof exit === "number" ? exit : Number(exit ?? 0) || 0,
+		ms: Math.round(performance.now() - startedAt),
+	});
+	const notice = takeNotice();
+	if (notice !== null) process.stderr.write(`\n${notice}\n`);
 }
 
 export { runCliWith, type CliBootstrap };

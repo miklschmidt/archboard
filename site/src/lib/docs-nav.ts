@@ -20,11 +20,11 @@ export interface DocsGroup {
 export const cliGroups = [
 	{
 		slug: "setup",
-		label: "`init` and `repo`",
-		title: "Setup and checkouts",
+		label: "`init`, `repo` and `telemetry`",
+		title: "Setup, checkouts and telemetry",
 		description:
-			"Set a repository up for Archboard, and tell this machine where each repository's checkout is.",
-		commands: ["init", "repo"],
+			"Set a repository up for Archboard, tell this machine where each repository's checkout is, and turn usage telemetry on or off.",
+		commands: ["init", "repo", "telemetry"],
 	},
 	{
 		slug: "model",
