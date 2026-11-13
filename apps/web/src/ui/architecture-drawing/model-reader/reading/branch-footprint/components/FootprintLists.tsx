@@ -104,10 +104,12 @@ function ModuleRow(props: FootprintListsProps & { readonly module: FootprintModu
 					<span className="text-control truncate">{name}</span>
 					<span className="text-body text-muted-foreground truncate">{detailOf(module)}</span>
 				</span>
-				<span className="text-technical text-muted-foreground shrink-0 font-mono">
-					{commits.length} {commits.length === 1 ? "commit" : "commits"}
-					{large > 0 && `, ${large} large`}
-				</span>
+				{commits.length > 0 && (
+					<span className="text-technical text-muted-foreground shrink-0 font-mono">
+						{commits.length} {commits.length === 1 ? "commit" : "commits"}
+						{large > 0 && `, ${large} large`}
+					</span>
+				)}
 			</button>
 		</li>
 	);
@@ -119,7 +121,7 @@ function ModuleRow(props: FootprintListsProps & { readonly module: FootprintModu
  * @returns The words, or its bound path when there is nothing else to say.
  */
 function detailOf(module: FootprintModule): string {
-	const words = module.named.map(namedWords);
+	const words = namedWords(module.named);
 	if (module.holds.length > 0)
 		words.push(
 			`holds ${module.holds.length} changed ${module.holds.length === 1 ? "module" : "modules"}`,

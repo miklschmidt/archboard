@@ -79,16 +79,33 @@ const NOT_READ: Readonly<Record<FootprintSkip["reason"], string>> = {
 	"no-merge-base": "the base and the head share no history",
 };
 
+/** What a reason other than the module's own change names, in the singular and the plural. */
+const NAMED_THING: Readonly<Record<Exclude<NamedReason["by"], "part">, readonly [string, string]>> =
+	{
+		relationship: ["line", "lines"],
+		step: ["flow step", "flow steps"],
+	};
+
 /**
- * Why the proposal names a module, in a reader's words.
- * @param reason One reason of the answer.
- * @returns The words.
+ * Why the proposal names a module, in a reader's words: the change to the module itself, and the
+ * lines and flow steps it ends, counted by kind and standing, so that a module at the end of many
+ * reads as one short phrase.
+ * @param named The reasons of the answer.
+ * @returns One phrase for each kind and standing, in the order the answer first gives them.
  */
-function namedWords(reason: NamedReason): string {
-	if (reason.by === "part") return `${reason.status} by the plan`;
-	if (reason.by === "relationship")
-		return `end of a ${reason.status} line, ${reason.from.name} to ${reason.to.name}`;
-	return `end of a ${reason.status} step of ${reason.flow}`;
+function namedWords(named: readonly NamedReason[]): string[] {
+	const counts = new Map<string, { readonly reason: NamedReason; count: number }>();
+	for (const reason of named) {
+		const key = `${reason.by} ${reason.status}`;
+		const entry = counts.get(key);
+		if (entry === undefined) counts.set(key, { reason, count: 1 });
+		else entry.count += 1;
+	}
+	return [...counts.values()].map(({ reason, count }) => {
+		if (reason.by === "part") return `${reason.status} by the plan`;
+		const [one, many] = NAMED_THING[reason.by];
+		return `end of ${count} ${reason.status} ${count === 1 ? one : many}`;
+	});
 }
 
 /**
