@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.5.0](https://github.com/miklschmidt/archboard/compare/v0.4.1...v0.5.0) (2026-11-13)
+
+
+### Features
+
+* **site:** one indexed copy of each docs page, a sitemap and llms.txt ([#108](https://github.com/miklschmidt/archboard/issues/108)) ([45eab9f](https://github.com/miklschmidt/archboard/commit/45eab9f1a9a5c65c5df0454226c00a15e66e73d3))
+* **telemetry:** send anonymous usage as wide events ([#115](https://github.com/miklschmidt/archboard/issues/115)) ([8c0a88c](https://github.com/miklschmidt/archboard/commit/8c0a88c8b366433a5ed9ae20c2587aef7cd23d90))
+* **web:** mark the words that moved in a changed field ([#112](https://github.com/miklschmidt/archboard/issues/112)) ([e2cbb84](https://github.com/miklschmidt/archboard/commit/e2cbb84d077151361c4f28c446cc306f832f6817))
+
+
+### Bug Fixes
+
+* **deps:** update the packages that bun audit flags ([#114](https://github.com/miklschmidt/archboard/issues/114)) ([3d987a2](https://github.com/miklschmidt/archboard/commit/3d987a21e0e068fb0a44ee13d6fbdff921c44ede))
+* **release:** keep bun.lock at the versions a release raises ([#111](https://github.com/miklschmidt/archboard/issues/111)) ([01dc319](https://github.com/miklschmidt/archboard/commit/01dc319974dcb47b10ee25742bb2ec3191ce50e0))
+* **site:** the hero starts still and moves only where the GPU is quick ([#122](https://github.com/miklschmidt/archboard/issues/122)) ([5f195c2](https://github.com/miklschmidt/archboard/commit/5f195c2ba5607af83ae1978f1219a8ea56af00e2))
+* **voice:** a recorded walkthrough narrates each beat instead of answering it ([#123](https://github.com/miklschmidt/archboard/issues/123)) ([babfdc6](https://github.com/miklschmidt/archboard/commit/babfdc65d49045af498c432db1b10c45d367511e))
+* **web:** name the shown proposal at the head of its root reading ([#110](https://github.com/miklschmidt/archboard/issues/110)) ([45daf9e](https://github.com/miklschmidt/archboard/commit/45daf9e700bd76f8f721c64aebe1af0a9c39c88d))
+
 ## [0.4.1](https://github.com/miklschmidt/archboard/compare/v0.4.0...v0.4.1) (2026-11-12)
 
 
