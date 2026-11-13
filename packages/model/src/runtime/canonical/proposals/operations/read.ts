@@ -520,8 +520,8 @@ function presentlyNamed(
 }
 /**
  * Read selected architecture without acquiring the installation lease. With a source ref, the
- * vault at that ref stands where the vault on disk stands for any other reading, so `state` and
- * `against` resolve inside it, and the reading names its ref and commit.
+ * vault at that ref stands for the vault on disk: `state` and `against` resolve inside it, a state
+ * it does not hold is refused though the archive may retain it, and the reading names its ref.
  * @param vault The addressed vault.
  * @param selection The state and comparison intent.
  * @returns A complete selected reading.
@@ -533,7 +533,9 @@ async function selectedReading(
 	if (selection.ref === undefined) return selectedAt(vault, readCurrentModel(vault), selection);
 	const branch = await readModelAtRef(vault, selection.ref);
 	if (!branch.success) return branch;
-	const reading = await selectedAt(vault, branch, selection);
+	// Its own catalogue, so that no state of another branch resolves from the archive.
+	const held = { ...branch, states: stateCatalogue(branch, []) };
+	const reading = await selectedAt(vault, held, selection);
 	return reading.success ? { ...reading, sourceRef: branch.sourceRef } : reading;
 }
 /**
