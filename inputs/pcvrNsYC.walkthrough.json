@@ -11,6 +11,7 @@
   },
   "beats": [
     {
+      "id": "vKEsyHFk#n6Fnzm8u",
       "title": "Your agent draws the map",
       "narrative": "Point Claude Code or Codex at a repository. The agent reads the code and tells Archboard what the system is: its services, stores and queues, what contains what, and how they talk. Archboard keeps that model in the repository and draws every line. Nobody drags a box, so the picture never drifts away from the model.",
       "reading": {
@@ -25,10 +26,10 @@
           "groups": []
         },
         "grammar": "architecture"
-      },
-      "id": "vKEsyHFk#n6Fnzm8u"
+      }
     },
     {
+      "id": "vKEsyHFk#2yby95nv",
       "title": "Read a system you did not write",
       "narrative": "Open the model in your browser. Start with the big parts, open any module to see what it holds, and follow the breadcrumbs back. Open code jumps to the source that a module names. You learn a codebase from its map first, and from its files second.",
       "reading": {
@@ -43,10 +44,10 @@
           "groups": []
         },
         "grammar": "architecture"
-      },
-      "id": "vKEsyHFk#2yby95nv"
+      }
     },
     {
+      "id": "vKEsyHFk#5inRI5ct",
       "title": "See where the design costs the most",
       "narrative": "Measures counts what each module hides, what only passes calls on, and what changes with it in Git. The code check finds calls that the map leaves out. You get the facts behind each design smell, and you decide what they mean.",
       "reading": {
@@ -61,10 +62,10 @@
           "groups": []
         },
         "grammar": "architecture"
-      },
-      "id": "vKEsyHFk#5inRI5ct"
+      }
     },
     {
+      "id": "vKEsyHFk#vGpHJzML",
       "title": "Plan the change before the code",
       "narrative": "Ask your agent for a change, and Archboard draws it as a proposal over today's architecture. Put two options side by side. When one ships, your agent adopts it with its reason, and the architecture that it replaces stays in history.",
       "reading": {
@@ -81,10 +82,10 @@
           "groups": []
         },
         "grammar": "architecture"
-      },
-      "id": "vKEsyHFk#vGpHJzML"
+      }
     },
     {
+      "id": "vKEsyHFk#G1MmkRdc",
       "title": "Ask about what you see",
       "narrative": "Select any part and choose Explain with Codex, or press Talk and ask aloud. Codex gets the exact reading on your screen and the parts that you selected, and it changes nothing. So the answer is about this picture.",
       "reading": {
@@ -101,10 +102,10 @@
           "groups": []
         },
         "grammar": "architecture"
-      },
-      "id": "vKEsyHFk#G1MmkRdc"
+      }
     },
     {
+      "id": "vKEsyHFk#QvR2lRZb",
       "title": "Share it as a picture or a narrated video",
       "narrative": "Render any reading as an SVG or a PNG for a design document, and the picture carries its own legend. Or record a walkthrough like this one for a pull request or a new teammate. The server, the renderer and the recording all run on your own machine.",
       "reading": {
@@ -122,8 +123,7 @@
           "groups": []
         },
         "grammar": "architecture"
-      },
-      "id": "vKEsyHFk#QvR2lRZb"
+      }
     }
   ]
 }
