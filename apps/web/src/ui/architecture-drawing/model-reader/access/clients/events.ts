@@ -136,13 +136,17 @@ function createFeed(
 			 * @param query A reading owned by this vault.
 			 * @returns Whether this event can refresh its complete response.
 			 */
-			predicate: (query: Query) => followsChanges(client, query, failureOf(event) === null),
+			predicate: (query: Query) =>
+				readsCheckout(query) && followsChanges(client, query, failureOf(event) === null),
 		};
 		await client.cancelQueries(changingReadings);
 		if (!isCurrent(accepted)) return;
 		await Promise.all([
 			client.invalidateQueries(changingReadings),
-			client.invalidateQueries({ queryKey: architectureModelKeys.modules(vault) }),
+			client.invalidateQueries({
+				queryKey: architectureModelKeys.modules(vault),
+				predicate: readsCheckout,
+			}),
 			client.invalidateQueries({ queryKey: readKeys.vaultCheck(vault) }),
 		]);
 	}
@@ -228,6 +232,15 @@ function summaryAfter(event: ModelEvent, known: ModelSummary | undefined): Model
 		return { manifest: { id: event.model, name: event.name }, failure: null };
 	if (!event.reading.success) return { manifest: known?.manifest, failure: event.reading };
 	return { manifest: event.reading.manifest, failure: null };
+}
+
+/**
+ * Whether checkout events can change a resource. Branch queries read Git objects at a source ref.
+ * @param query The model or module query.
+ * @returns Whether it reads the checkout.
+ */
+function readsCheckout(query: Query): boolean {
+	return query.meta?.["sourceRef"] == null;
 }
 
 /**

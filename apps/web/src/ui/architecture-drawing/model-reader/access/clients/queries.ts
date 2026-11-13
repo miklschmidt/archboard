@@ -235,6 +235,7 @@ function architectureModelQuery(
 ) {
 	return queryOptions({
 		queryKey: architectureModelKeys.reading(vault, checkpoint, selection),
+		meta: { sourceRef: selection.ref },
 		/**
 		 * Read the addressed model through the shared transport.
 		 * @param context The query cancellation signal.
@@ -300,6 +301,7 @@ function architectureSummaryQuery(vault: string) {
 function architectureModuleQuery(vault: string, target: ModuleTarget, digest: string) {
 	return queryOptions({
 		queryKey: architectureModelKeys.module(vault, target, digest),
+		meta: { sourceRef: target.ref },
 		/**
 		 * Read the details of this module alone.
 		 * @param context The query cancellation signal.
