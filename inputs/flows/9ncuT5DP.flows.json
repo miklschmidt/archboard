@@ -1059,8 +1059,7 @@
         "vKEsyHFk/9ncuT5DP#byMaoUe0",
         "vKEsyHFk/9ncuT5DP#Uz2qReYK",
         "vKEsyHFk/9ncuT5DP#2ffhMTdn",
-        "vKEsyHFk/9ncuT5DP#jylkTBp7",
-        "vKEsyHFk/9ncuT5DP#qTmIytbT"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ],
       "steps": [
         {
@@ -1265,46 +1264,15 @@
           "id": "vKEsyHFk/9ncuT5DP#vDD2NoAE",
           "kind": "decision",
           "question": "What did the child answer?",
-          "note": "A queued acceptance alone does not identify a workhorse turn. If a later event identifies a queued or unknown delegate's turn, the session records it then.",
           "alternatives": [
             {
-              "label": "accepted: direct turn",
+              "label": "accepted",
               "steps": [
                 {
                   "id": "vKEsyHFk/9ncuT5DP#HABlToF8",
                   "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
                   "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
                   "label": "commit the operation",
-                  "kind": "sync",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/durable-settlement.ts",
-                    "symbol": "recordSettlement"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk#NJUAVXIy",
-                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
-                  "to": "vKEsyHFk/9ncuT5DP#qTmIytbT",
-                  "label": "a direct delegate's turn and the coordinator turn that asked",
-                  "kind": "async",
-                  "note": "If no earlier notification records the turn, the direct response emits started here. A steer is never recorded.",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/direct-delegate.ts",
-                    "symbol": "publishTurnStart"
-                  }
-                }
-              ]
-            },
-            {
-              "label": "accepted: queued submission",
-              "steps": [
-                {
-                  "id": "vKEsyHFk#LcM4i7xu",
-                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
-                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
-                  "label": "commit the queued operation",
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",

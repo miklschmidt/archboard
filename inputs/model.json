@@ -3,21 +3,25 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "7XssUp0E",
-    "name": "The workbench shows the voice coordinator's turns and who delegated",
-    "summary": "Each tab session records which voice coordinator turn delegated each workhorse turn, so the snapshot carries the coordinator's turns beside the workhorse's and the workbench marks delegated work with where it came from.",
+    "id": "TGDLt5Ea",
+    "name": "The release workflow publishes each package to npm without staging",
+    "summary": "The publish job publishes every package with npm publish after the gate and the smoke test pass, in place of npm stage publish, so a release reaches npm without the owner approving each staged version.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "backlog/tasks/task-319 - The-workbench-shows-what-the-voice-coordinator-is-doing.md"
+        "path": "docs/agents/releasing.md"
+      },
+      {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
       }
     ],
-    "predecessor": "TGDLt5Ea",
-    "baseline": "29658a40fb9a497e534b216ca251a58445c195a7",
-    "createdAt": "2026-11-13T00:12:12.691Z",
-    "adoptedAt": "2026-11-13T00:14:31.151Z",
-    "reason": "Commits 97388aaf30 and 67c2158e27 implement it (TASK-319): the tab session records which coordinator turn delegated each workhorse turn, the snapshot carries the coordinator's turns, and the workbench shows them with delegated work marked. The owner confirmed the live voice check and authorized this adoption.",
-    "previousCurrent": "TGDLt5Ea"
+    "predecessor": "mdEX4O4o",
+    "baseline": "6cf2b89b82e00e882169ce446d0336646a96806a",
+    "createdAt": "2026-11-12T10:58:52.698Z",
+    "adoptedAt": "2026-11-12T11:07:26.152Z",
+    "reason": "Commit 6f92ab8c6e implements it on branch t3/3fb4dfa5: the publish job of the release workflow runs npm publish on each tarball in place of npm stage publish. The owner authorized this adoption.",
+    "previousCurrent": "mdEX4O4o"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
