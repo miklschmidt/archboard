@@ -3,6 +3,7 @@ import {
 	ArchitectureLocalityRequestSchema,
 	ArchitectureFootprintRequestSchema,
 	ArchitectureSourceRefsRequestSchema,
+	type ArchitectureHistoryRequestSchema,
 } from "#shared/protocol/canonical-history.ts";
 import { readStatesToCheck, type StateToCheck } from "#runtime/code-check/operations/states.ts";
 import { readSourceRefs } from "#runtime/history-lens/operations/source-refs.ts";
@@ -171,4 +172,58 @@ async function readArchitectureSourceRefs(
 		...evidence,
 	};
 }
-export { readArchitectureLocality, readArchitectureFootprint, readArchitectureSourceRefs };
+/** One history analysis as a caller asks for it, named by its `analysis`. */
+type HistoryRequest = z.input<typeof ArchitectureHistoryRequestSchema>;
+/** What any one analysis answers. */
+type HistoryAnswer =
+	| Awaited<ReturnType<typeof readArchitectureLocality>>
+	| Awaited<ReturnType<typeof readArchitectureFootprint>>
+	| Awaited<ReturnType<typeof readArchitectureSourceRefs>>;
+/** The request of one analysis, without the name that chose it. */
+type RequestOf<A extends HistoryRequest["analysis"]> = Omit<
+	Extract<HistoryRequest, { analysis: A }>,
+	"analysis"
+>;
+
+/**
+ * Read one history analysis of the selected architecture: change locality, a branch footprint,
+ * or the source refs that a footprint can read.
+ * @param vault The explicit vault.
+ * @param input The analysis and its request.
+ * @param signal The caller's cancellation signal.
+ * @returns The analysis with canonical identity, or a model refusal.
+ */
+function readArchitectureHistory(
+	vault: string,
+	input: { readonly analysis: "locality" } & RequestOf<"locality">,
+	signal?: AbortSignal,
+): ReturnType<typeof readArchitectureLocality>;
+function readArchitectureHistory(
+	vault: string,
+	input: { readonly analysis: "footprint" } & RequestOf<"footprint">,
+	signal?: AbortSignal,
+): ReturnType<typeof readArchitectureFootprint>;
+function readArchitectureHistory(
+	vault: string,
+	input: { readonly analysis: "refs" } & RequestOf<"refs">,
+	signal?: AbortSignal,
+): ReturnType<typeof readArchitectureSourceRefs>;
+function readArchitectureHistory(
+	vault: string,
+	input: HistoryRequest,
+	signal?: AbortSignal,
+): Promise<HistoryAnswer>;
+function readArchitectureHistory(vault: string, input: HistoryRequest, signal?: AbortSignal) {
+	if (input.analysis === "locality") {
+		const { analysis: _analysis, ...request } = input;
+		return readArchitectureLocality(vault, request, signal);
+	}
+	if (input.analysis === "footprint") {
+		const { analysis: _analysis, ...request } = input;
+		return readArchitectureFootprint(vault, request, signal);
+	}
+	const { analysis: _analysis, ...request } = input;
+	return readArchitectureSourceRefs(vault, request, signal);
+}
+
+export { readArchitectureHistory };
