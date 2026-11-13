@@ -200,9 +200,47 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
+      "field": "description",
+      "value": "Reads one live canonical model or an exact retained reading. The shared decoder orders collections and walkthroughs consistently. Legacy bytes serve explicit migration and original history only. Module navigation reads a branch reading at its source ref."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+      "field": "description",
+      "value": "Stores compact changes against exact retained predecessors. Consistent decoding keeps predecessor fingerprints stable across live and retained inputs. Changed predecessors require explicit reconciliation or replacement decisions. With a source ref, the selected-state reader reads the vault at that ref through the branch reading, and selects the state and its comparison inside it."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#7VDFAywS",
+      "kind": "relationship",
+      "value": {
+        "order": 90,
+        "kind": "call",
+        "label": "read the vault at a source ref",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#7VDFAywS",
+        "to": "vKEsyHFk#DZAXm2he"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#7VDFAywS",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#w46oCRoH",
       "field": "description",
       "value": "Owns the reading address of a pane, including the source ref of a branch reading, so a branch reading survives reload and browser history."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#vvxDSZoQ",
+      "field": "description",
+      "value": "Resolves explicit references and bound code through the public model reader, and passes a source ref through to the selected-state reader."
     },
     {
       "type": "assign",
@@ -232,29 +270,15 @@
     },
     {
       "type": "assign",
-      "subject": "vKEsyHFk#ZGONZKxj",
+      "subject": "vKEsyHFk/0T9enjhi#FlAxCoeb",
       "field": "description",
-      "value": "Reads the current state, a proposal or a checkpoint from the vault on disk, or the vault at a named source ref through the branch reading. A reading at a ref is never live and never writable."
+      "value": "The existing public reader owns model identity, complete revision, state or checkpoint, stable subjects, reading filters, grammar, explicit flow, and the actual proposal comparison base. Missing and stale content refuse coherently. A source ref is refused with a checkpoint, a preview, a legacy address, a walkthrough or an explanation, so none of them silently reads the vault on disk."
     },
     {
-      "type": "add",
-      "subject": "vKEsyHFk#Xfi3Vk8N",
-      "kind": "relationship",
-      "value": {
-        "order": 90,
-        "kind": "call",
-        "label": "read the vault at a source ref",
-        "emphasis": "normal",
-        "id": "vKEsyHFk#Xfi3Vk8N",
-        "to": "vKEsyHFk#DZAXm2he"
-      }
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk#Xfi3Vk8N",
-      "placement": {
-        "holder": "vKEsyHFk#ZGONZKxj"
-      }
+      "type": "assign",
+      "subject": "vKEsyHFk#8539szQJ",
+      "field": "description",
+      "value": "The model contract names a branch reading's ref and commit, carries the ref in a reading's identity, and refuses an unresolved ref with SOURCE_REF_NOT_FOUND."
     },
     {
       "type": "add",
@@ -305,6 +329,7 @@
           "vKEsyHFk/HBlhIeSD#radK8osF",
           "vKEsyHFk/HBlhIeSD#5SMX69gS",
           "vKEsyHFk#ZGONZKxj",
+          "vKEsyHFk/0T9enjhi#KJy5yYuq",
           "vKEsyHFk#DZAXm2he"
         ]
       }
@@ -494,6 +519,26 @@
       "subject": "vKEsyHFk#1WYWiMlY",
       "placement": {
         "holder": "vKEsyHFk#ENwNxHw2",
+        "before": "vKEsyHFk#nndzX2QT"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#nndzX2QT",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#nndzX2QT",
+        "from": "vKEsyHFk#ZGONZKxj",
+        "to": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+        "label": "select the state at the ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#nndzX2QT",
+      "placement": {
+        "holder": "vKEsyHFk#ENwNxHw2",
         "before": "vKEsyHFk#V9jSQhZc"
       }
     },
@@ -503,7 +548,7 @@
       "kind": "step",
       "value": {
         "id": "vKEsyHFk#V9jSQhZc",
-        "from": "vKEsyHFk#ZGONZKxj",
+        "from": "vKEsyHFk/0T9enjhi#KJy5yYuq",
         "to": "vKEsyHFk#DZAXm2he",
         "label": "decode the vault at the head commit",
         "kind": "sync"
@@ -571,6 +616,7 @@
           "vKEsyHFk#guvtYApo",
           "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
           "vKEsyHFk#ZGONZKxj",
+          "vKEsyHFk/0T9enjhi#KJy5yYuq",
           "vKEsyHFk#DZAXm2he"
         ]
       }
@@ -679,6 +725,26 @@
       "subject": "vKEsyHFk#zyVm7Rb5",
       "placement": {
         "holder": "vKEsyHFk#I4QPD0zt",
+        "before": "vKEsyHFk#fF96Kdaa"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#fF96Kdaa",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#fF96Kdaa",
+        "from": "vKEsyHFk#ZGONZKxj",
+        "to": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+        "label": "select the state at the ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#fF96Kdaa",
+      "placement": {
+        "holder": "vKEsyHFk#I4QPD0zt",
         "before": "vKEsyHFk#XMJlJXOa"
       }
     },
@@ -688,7 +754,7 @@
       "kind": "step",
       "value": {
         "id": "vKEsyHFk#XMJlJXOa",
-        "from": "vKEsyHFk#ZGONZKxj",
+        "from": "vKEsyHFk/0T9enjhi#KJy5yYuq",
         "to": "vKEsyHFk#DZAXm2he",
         "label": "decode the vault at the commit",
         "kind": "sync"
@@ -741,5 +807,8 @@
         "holder": "vKEsyHFk#I4QPD0zt"
       }
     }
+  ],
+  "retiredIds": [
+    "vKEsyHFk#Xfi3Vk8N"
   ]
 }
