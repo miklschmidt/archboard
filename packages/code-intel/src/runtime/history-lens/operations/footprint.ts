@@ -306,15 +306,18 @@ function mappedRepository(
 	net: { readonly parts: ReadonlySet<string>; readonly files: readonly string[] },
 ): RepositoryFootprint {
 	const entries = parts.map((part) => {
-		const attributed = byPart.get(part.node.id);
+		const attributed = byPart.get(part.node.id) ?? {
+			commits: [],
+			attribution: { mode: "path" as const },
+		};
 		const changed = net.parts.has(part.node.id);
-		const commits = changed ? (attributed?.commits ?? []) : [];
+		const commits = changed ? attributed.commits : [];
 		return {
 			changed,
 			commits,
 			part: {
 				...listed(part, commits, named.get(part.node.id) ?? []),
-				attribution: attributed?.attribution ?? { mode: "path" as const },
+				attribution: attributed.attribution,
 			},
 		};
 	});
