@@ -1,6 +1,7 @@
 // The files of an installation's usage records in the state directory (ADR 0079):
 //
-//   telemetry/settings.json        the installation id, the person's setting, the notice
+//   telemetry/settings.json        the installation id and the person's setting
+//   telemetry/notice-shown         an exclusive marker for the one-time notice
 //   telemetry/days/<date>.jsonl    one record per line, appended by every process of that day
 //   telemetry/errors/<id>.json     the full report of one error
 //
@@ -29,8 +30,6 @@ const SettingsSchema = z.object({
 	installationId: z.uuid(),
 	/** Whether the person ran `archboard telemetry off`. */
 	turnedOff: z.boolean().default(false),
-	/** Whether the CLI printed the notice. */
-	noticeShown: z.boolean().default(false),
 });
 
 type Settings = z.infer<typeof SettingsSchema>;
@@ -74,7 +73,7 @@ function readSettings(directory: string): Settings {
 	const file = path.join(directory, "settings.json");
 	const existing = parseSettings(file);
 	if (existing !== null) return existing;
-	const settings: Settings = { installationId: randomUUID(), turnedOff: false, noticeShown: false };
+	const settings: Settings = { installationId: randomUUID(), turnedOff: false };
 	try {
 		writeFileAtomic(file, `${JSON.stringify(settings)}\n`, { createParents: true, exclusive: true });
 		return settings;
@@ -96,6 +95,20 @@ function writeSettings(directory: string, settings: Settings): void {
 	writeFileAtomic(path.join(directory, "settings.json"), `${JSON.stringify(settings)}\n`, {
 		createParents: true,
 	});
+}
+
+/**
+ * Mark the one-time notice without replacing consent. Only one concurrent CLI takes it.
+ * @param directory The telemetry directory.
+ * @returns True for the process that first marks the notice, else false.
+ */
+function markNoticeShown(directory: string): boolean {
+	try {
+		fs.writeFileSync(path.join(directory, "notice-shown"), "", { flag: "wx" });
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 /**
@@ -251,6 +264,7 @@ export {
 	appendDayRecord,
 	claim,
 	DIRECTORY_VARIABLE,
+	markNoticeShown,
 	pendingIn,
 	readDayRecords,
 	readSettings,

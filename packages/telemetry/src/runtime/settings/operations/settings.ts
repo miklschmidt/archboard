@@ -3,6 +3,7 @@
 import { isCI, isTest } from "std-env";
 import { consentOf, type Consent } from "#runtime/consent/rules/consent.ts";
 import {
+	markNoticeShown,
 	readSettings,
 	removeRecords,
 	telemetryDirectory,
@@ -68,7 +69,8 @@ function telemetryStatus(): TelemetryStatus {
  */
 function turnTelemetry(on: boolean): TelemetryStatus {
 	const directory = telemetryDirectory(process.env);
-	writeSettings(directory, { ...readSettings(directory), turnedOff: !on, noticeShown: true });
+	writeSettings(directory, { ...readSettings(directory), turnedOff: !on });
+	markNoticeShown(directory);
 	if (!on) removeRecords(directory);
 	return telemetryStatus();
 }
@@ -79,11 +81,7 @@ function turnTelemetry(on: boolean): TelemetryStatus {
  */
 function takeNotice(): string | null {
 	if (!currentConsent().on) return null;
-	const directory = telemetryDirectory(process.env);
-	const settings = readSettings(directory);
-	if (settings.noticeShown) return null;
-	writeSettings(directory, { ...settings, noticeShown: true });
-	return NOTICE;
+	return markNoticeShown(telemetryDirectory(process.env)) ? NOTICE : null;
 }
 
 export { currentConsent, takeNotice, telemetryStatus, turnTelemetry, type TelemetryStatus };
