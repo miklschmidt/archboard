@@ -23,6 +23,7 @@ const ArchitectureFootprintRequestSchema = SelectionSchema.extend({
 });
 /** With both `base` and `head`, the listing also names the range's merge base in the vault's repository. */
 const ArchitectureSourceRefsRequestSchema = SelectionSchema.extend({
+	ref: z.string().min(1).optional(),
 	base: z.string().min(1).optional(),
 	head: z.string().min(1).optional(),
 });

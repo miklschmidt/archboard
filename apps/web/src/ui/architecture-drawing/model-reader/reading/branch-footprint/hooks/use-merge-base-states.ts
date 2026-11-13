@@ -36,7 +36,7 @@ interface MergeBaseStates {
  */
 function useMergeBaseStates(
 	vault: string,
-	model: Pick<Model, "manifest" | "selectedState" | "revision">,
+	model: Pick<Model, "manifest" | "selectedState" | "revision" | "sourceRef">,
 	range: RefRange,
 	needed: boolean,
 ): MergeBaseStates {
