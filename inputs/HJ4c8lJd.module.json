@@ -1,0 +1,9 @@
+{
+  "order": 12004,
+  "name": "PostHog EU Cloud",
+  "kind": "external",
+  "responsibility": "Receives the anonymous daily usage events and error events of each installation",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#HJ4c8lJd",
+  "outgoing": []
+}

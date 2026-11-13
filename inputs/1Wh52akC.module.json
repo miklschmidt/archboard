@@ -1,0 +1,23 @@
+{
+  "order": 69000,
+  "name": "Telemetry command",
+  "kind": "module",
+  "responsibility": "archboard telemetry: reports whether usage is recorded and why not, and turns it on or off",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/commands/telemetry/operations/telemetry.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#1Wh52akC",
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "outgoing": [
+    {
+      "order": 90000,
+      "kind": "call",
+      "label": "archboard telemetry turns usage on or off",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#QOAXIPZe",
+      "to": "vKEsyHFk#EbMc8PH2"
+    }
+  ]
+}

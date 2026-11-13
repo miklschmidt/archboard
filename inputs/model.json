@@ -3,24 +3,20 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "a5K6IbA8",
-    "name": "A reader sees what a branch changed and reads the model on that branch",
-    "summary": "The branch footprint answers only in the CLI and the pull-request Action, so a reader cannot see in the browser which modules a branch changed against its own proposal; Measures gains that view, and a branch reading reads the vault at a source ref from Git.",
+    "id": "e3T8Mjgq",
+    "name": "Anonymous usage as wide events",
+    "summary": "A telemetry package records each CLI command and each unexpected error in the state directory, and the server rolls a day of records into one wide event for each installation and sends it, with an event for each error, to PostHog EU Cloud. CI, tests, DO_NOT_TRACK and archboard telemetry off turn it off.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "backlog/tasks/task-633 - Measures-shows-what-a-branch-changed-and-a-branch-reading-reads-the-model-on-that-branch.md"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0045-git-history-is-read-through-bindings-on-request.md"
+        "path": "docs/adr/0079-archboard-sends-anonymous-usage-as-wide-events.md"
       }
     ],
     "predecessor": "TGDLt5Ea",
-    "baseline": "2b8789627660dd75c84d4804eba1fdf2790cf7f1",
-    "createdAt": "2026-11-12T22:57:26.546Z",
-    "adoptedAt": "2026-11-13T02:02:09.237Z",
-    "reason": "PR #118 implements it on branch feat/branch-footprint-view: Measures shows what a branch changed, a branch reading reads the model at a source ref, and model footprint reads the vault at its head. The request to prepare the implementing PR authorized this adoption.",
+    "baseline": "82c17d0fc654e92e48f96514ed3db040861124ad",
+    "createdAt": "2026-11-12T23:18:09.164Z",
+    "adoptedAt": "2026-11-13T00:36:53.285Z",
+    "reason": "The telemetry package, its callers and the PostHog sender are implemented on feat/telemetry (TASK-632.01).",
     "previousCurrent": "TGDLt5Ea"
   },
   "retiredIds": [
@@ -1662,7 +1658,6 @@
     "vKEsyHFk/SMjRfwN3#44gQ5gUw",
     "vKEsyHFk/vKEsyHFk#mm4DLsd2",
     "vKEsyHFk#8EhrdPUE",
-    "vKEsyHFk#ezZAyT0C",
-    "vKEsyHFk#Xfi3Vk8N"
+    "vKEsyHFk#ezZAyT0C"
   ]
 }

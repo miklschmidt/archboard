@@ -1,0 +1,194 @@
+{
+  "id": "7Kc2FJFu",
+  "name": "A reader sees what a branch changed and reads the model on that branch",
+  "summary": "The branch footprint answers only in the CLI and the pull-request Action, so a reader cannot see in the browser which modules a branch changed against its own proposal; Measures gains that view, and a branch reading reads the vault at a source ref from Git.",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-633 - Measures-shows-what-a-branch-changed-and-a-branch-reading-reads-the-model-on-that-branch.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0045-git-history-is-read-through-bindings-on-request.md"
+    }
+  ],
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-13T02:09:50.182Z",
+  "predecessor": "e3T8Mjgq",
+  "predecessorRevision": "4d065bea7f35872f1f69e005477ad7a57e511bf06f346c281ee8559505669af8",
+  "baseline": "2c13e3ec683a719b0ea28433a253ab05d0e607d8",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#NaYD5kDX",
+      "kind": "module",
+      "value": {
+        "order": 90,
+        "name": "Branch reading",
+        "kind": "module",
+        "responsibility": "Reads the vault as a source branch or commit holds it, from Git, as a model that cannot be edited",
+        "description": "Reads the vault's inputs as they stand at a source branch or commit of the vault's repository, from Git objects, without a checkout. It decodes them as a model that can be read and compared but not edited, claimed or retained, and its revision names the commit it read.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model/src/runtime/canonical/read/operations/model-at-ref.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#NaYD5kDX"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#NaYD5kDX",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#XP2pdIyx",
+      "kind": "module",
+      "value": {
+        "order": 90,
+        "name": "Architecture history routes",
+        "kind": "route",
+        "responsibility": "Serves locality, the branch footprint and the source refs of a model's repositories",
+        "description": "GET /api/architecture/locality, /api/architecture/footprint and /api/architecture/refs adapt the history lens for the browser and the CLI. Each names its vault, and none keeps an answer.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/handlers/reads/routes/history-routes.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#XP2pdIyx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#XP2pdIyx",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#ETrslazw"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#r74vwrNv",
+      "kind": "module",
+      "value": {
+        "order": 90,
+        "name": "Branch footprint",
+        "kind": "ui",
+        "responsibility": "Shows which modules the commits from a base to a head changed, against the proposal at that head",
+        "description": "The Measures view What this branch changed. Searchable base, head and against pickers choose the range and the state; the lists say which modules the commits changed against the proposal, with skipped modules and unbound files. Show on picture opens the nearest shared parent, at the head's branch reading when the head is not checked out, and selects each changed module it draws and each drawn module that holds one.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/branch-footprint"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#r74vwrNv"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#r74vwrNv",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#HCghQa6I",
+      "field": "description",
+      "value": "One TanStack Router route at /, whose search parameters paneA, paneB and pane are the workspace, with repoA and repoB beside them naming each pane's repository by its identity or an untracked vault's registry name, never by a path. The address follows what the panes report; on a first load and on Back or Forward it leads, restoring through the workspace port with the same command the navigator runs, once the repositories are known. It is never legacy board authority. Canonical model, scope, and checkpoint parameters describe each open pane directly, including unavailable readings. Pane closure removes those parameters. Back and reload restore them without altering legacy board command ownership. Canonical focus and hidden relationship kinds also belong to each pane address. Back, Forward, and reload restore them. Transient selection and camera state remain outside browser history. Each canonical pane also preserves diagram grammar and the explicitly selected flow. Grammar changes retain the preceding architecture scope, focus, and filters. Unavailable flow identities remain explicit. Canonical state and comparison selectors coexist with scope, focus, filters, grammar, and flow. Exact checkpoint and mutable state selection are mutually exclusive. History restores unavailable requested states without silently selecting Current. Explicit canonical addresses remain visible when the server remembers a legacy board. The existing operation owner reveals a deliberately opened legacy board. Navigation history uses the visible origin so repeated visits preserve the preview entry. A pane's ref parameter opens a branch reading. Back, Forward and reload restore it, and choosing a state in History, a checkpoint, another repository or a followed reference leaves it."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#radK8osF",
+      "field": "description",
+      "value": "The history interface reads canonical states and their bound source declarations. Locality reports change frequency and coupling. Footprint compares explicit local refs and the selected proposal baseline, and lists each changed file that no binding holds, outside the vault. A named head that resolves in the vault's repository is read with the vault at that head, unless the caller asks for the vault on disk, so its proposals and bindings come from the branch; the answer names the vault it read. Source refs lists the branches of every repository the state binds, merged by name. Each changed part names the other changed parts that its binding holds. Missing source stays unavailable rather than being reported as unchanged."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+      "field": "description",
+      "value": "The checker reads current architecture, one selected state, or independent drafts. It reports bindings, anchors, declared relationships, interfaces, and document references with canonical identities. Its state reader also reads one selected state at a source ref, through the branch reading, for the branch footprint of a named head. Git locality and branch footprint use separate requested history operations. The timings of its language servers name the program that ran and the TypeScript that it read."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#MrE3v2T6",
+      "field": "description",
+      "value": "The command passes explicit local source refs and selected architecture to the history interface. With --head on a ref that the vault's repository holds, it reads the vault at that head, so --state names a proposal of that branch; --model-at checkout reads the vault on disk instead, as a gate in the integration worktree needs after it edits the proposal there. Proposal comparisons use their identified baseline. With --fail-outside and a draft, it exits 1 when the commits changed a module that the draft does not name, so a ticket merge without a pull request has a gate like the out-of-plan fail mode of the pull-request Action. A module bound to a directory passes when each file it changed lies in the binding of another changed module inside it."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
+      "field": "description",
+      "value": "Adapts canonical discovery, initialization, exact readings, archive history, branch readings at a source ref, and the existing change feed. Unmigrated vaults receive explicit migration guidance."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
+      "field": "description",
+      "value": "Reads one live canonical model or an exact retained reading. The shared decoder orders collections and walkthroughs consistently. Legacy bytes serve explicit migration and original history only. Module navigation reads a branch reading at its source ref."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+      "field": "description",
+      "value": "Stores compact changes against exact retained predecessors. Consistent decoding keeps predecessor fingerprints stable across live and retained inputs. Changed predecessors require explicit reconciliation or replacement decisions. With a source ref, the selected-state reader reads the vault at that ref through the branch reading, and selects the state and its comparison inside it."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#TLCeNkdh",
+      "field": "description",
+      "value": "Reads one coherent canonical model and its selected state. Opening a module changes attention without copying architecture. Unmigrated vaults expose explicit migration guidance. Exact retained originals use their captured viewer. A branch reading is keyed by its ref, follows no live change, and offers no claims, code findings or Explain, because each of them reads the vault on disk."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+      "field": "description",
+      "value": "Reads current, draft, completed, and exact architecture with explicit unavailable states. One catalogue supplies reading and comparison choices. Recursive scopes expose complete interfaces and relationship evidence. The router owns scope, state, checkpoint, focus, filters, grammar, flow, comparison, and foreign destinations.\n\nSelection retains canonical identities through renames, hidden subjects, and removed comparison definitions. Pointer modifiers, keyboard commands, and area selection share one owner. Focus opens containment paths. Filters preserve complete interfaces. Behavioral readings retain all participants and steps. A flow opens in the reading that its pane shows larger, and a tie opens the sequence.\n\nCode and foreign navigation preserve exact historical pins. State details expose decisions, dates, documents, correction audit, unresolved issues, and blocked ancestry. Explanation actions capture the exact reading through the existing local action.\n\nEach reader belongs to its resolved vault. Captured walkthroughs reuse its renderer and camera, retain the ordinary reading, and change revision only on explicit restart. Every converted beat requires an explicit view. Unavailable beats draw no replacement architecture.\n\nMigration previews retain original coverage, lifecycle, standing, predecessors, and baselines. Failed composition keeps exact originals inspectable without claiming an empty current model. The browser authors no mapping, settlement, lifecycle decision, or migration.\n\nInstalled bookmarks preserve canonical authority and exact view membership without owning model content. Former addresses reopen retained originals with their exact state and checkpoint. Model ownership transfer remains explicitly unavailable. A branch reading names its ref and commit on the state chip, offers no walkthrough or code history, and compares with its base as other readings do."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#w46oCRoH",
+      "field": "description",
+      "value": "Owns the reading address of a pane, including the source ref of a branch reading, so a branch reading survives reload and browser history."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#vvxDSZoQ",
+      "field": "description",
+      "value": "Resolves explicit references and bound code through the public model reader, and passes a source ref through to the selected-state reader."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#tQ2B3iEF",
+      "field": "description",
+      "value": "One history read of a revision answers for every part at once, and a selection shares it. A row selects its module on the picture. An unread part states why, and no count joins a score. A fourth view, What this branch changed, holds the branch footprint."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#KtBdeME1",
+      "field": "description",
+      "value": "A module's details are read at the ref of a branch reading, without its code."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#FlAxCoeb",
+      "field": "description",
+      "value": "The existing public reader owns model identity, complete revision, state or checkpoint, stable subjects, reading filters, grammar, explicit flow, and the actual proposal comparison base. Missing and stale content refuse coherently. A source ref is refused with a checkpoint, a preview, a legacy address, a walkthrough or an explanation, so none of them silently reads the vault on disk."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#8539szQJ",
+      "field": "description",
+      "value": "The model contract names a branch reading's ref and commit, carries the ref in a reading's identity, and refuses an unresolved ref with SOURCE_REF_NOT_FOUND."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#p0EDMxTr",
+      "field": "description",
+      "value": "Shows the reading on screen. A branch reading names its ref in the heading, follows no live feed, and offers no edit, claim, publication or walkthrough recording."
+    }
+  ]
+}
