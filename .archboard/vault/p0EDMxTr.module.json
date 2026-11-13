@@ -3,6 +3,7 @@
   "name": "Reading stage",
   "kind": "ui",
   "responsibility": "Mounts a reader for the current or a retained reading, and holds its surface, its tree and its shared controls",
+  "description": "Shows the reading on screen. A branch reading names its ref in the heading, follows no live feed, and offers no edit, claim, publication or walkthrough recording.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx"

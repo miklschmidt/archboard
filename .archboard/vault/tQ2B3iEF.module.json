@@ -3,7 +3,7 @@
   "name": "Measures",
   "kind": "module",
   "responsibility": "Lists every module of a reading with its interface counts, commit count and unjoined pairs, sorted by the count a reader chooses",
-  "description": "One history read of a revision answers for every part at once, and a selection shares it. A row selects its module on the picture. An unread part states why, and no count joins a score.",
+  "description": "One history read of a revision answers for every part at once, and a selection shares it. A row selects its module on the picture. An unread part states why, and no count joins a score. A fourth view, What this branch changed, holds the branch footprint.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelMeasures.tsx"
@@ -12,6 +12,14 @@
   "id": "vKEsyHFk#tQ2B3iEF",
   "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
   "outgoing": [
+    {
+      "order": 90,
+      "kind": "render",
+      "label": "the view What this branch changed",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#Z9c4yJnS",
+      "to": "vKEsyHFk#r74vwrNv"
+    },
     {
       "order": 1004000,
       "kind": "call",

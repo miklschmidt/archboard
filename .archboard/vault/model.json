@@ -3,21 +3,25 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "e3T8Mjgq",
-    "name": "Anonymous usage as wide events",
-    "summary": "A telemetry package records each CLI command and each unexpected error in the state directory, and the server rolls a day of records into one wide event for each installation and sends it, with an event for each error, to PostHog EU Cloud. CI, tests, DO_NOT_TRACK and archboard telemetry off turn it off.",
+    "id": "7Kc2FJFu",
+    "name": "A reader sees what a branch changed and reads the model on that branch",
+    "summary": "The branch footprint answers only in the CLI and the pull-request Action, so a reader cannot see in the browser which modules a branch changed against its own proposal; Measures gains that view, and a branch reading reads the vault at a source ref from Git.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0079-archboard-sends-anonymous-usage-as-wide-events.md"
+        "path": "backlog/tasks/task-633 - Measures-shows-what-a-branch-changed-and-a-branch-reading-reads-the-model-on-that-branch.md"
+      },
+      {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/adr/0045-git-history-is-read-through-bindings-on-request.md"
       }
     ],
-    "predecessor": "TGDLt5Ea",
-    "baseline": "82c17d0fc654e92e48f96514ed3db040861124ad",
-    "createdAt": "2026-11-12T23:18:09.164Z",
-    "adoptedAt": "2026-11-13T00:36:53.285Z",
-    "reason": "The telemetry package, its callers and the PostHog sender are implemented on feat/telemetry (TASK-632.01).",
-    "previousCurrent": "TGDLt5Ea"
+    "predecessor": "e3T8Mjgq",
+    "baseline": "2c13e3ec683a719b0ea28433a253ab05d0e607d8",
+    "createdAt": "2026-11-13T02:09:50.182Z",
+    "adoptedAt": "2026-11-13T02:11:28.998Z",
+    "reason": "PR #118 implements it on branch feat/branch-footprint-view: Measures shows what a branch changed, a branch reading reads the model at a source ref, and model footprint reads the vault at its head. It replaces a5K6IbA8, which followed the superseded current state TGDLt5Ea. The request to prepare the implementing PR authorized this adoption.",
+    "previousCurrent": "e3T8Mjgq"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",

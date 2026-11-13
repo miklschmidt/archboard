@@ -12,6 +12,14 @@
   "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
   "outgoing": [
     {
+      "order": 90,
+      "kind": "http",
+      "label": "read the branch footprint and the source refs",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#nf8vhgLc",
+      "to": "vKEsyHFk#XP2pdIyx"
+    },
+    {
       "order": 2000,
       "kind": "http",
       "label": "views and controls",

@@ -3,7 +3,7 @@
   "name": "Canonical model routes",
   "kind": "module",
   "responsibility": "Exposes current, draft, and exact architecture with comparisons, proposal standing, source resolution, and foreign navigation",
-  "description": "Adapts canonical discovery, initialization, exact readings, archive history, and the existing change feed. Unmigrated vaults receive explicit migration guidance.",
+  "description": "Adapts canonical discovery, initialization, exact readings, archive history, branch readings at a source ref, and the existing change feed. Unmigrated vaults receive explicit migration guidance.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts"
