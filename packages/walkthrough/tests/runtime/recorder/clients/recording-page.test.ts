@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { RECORDER_MS } from "@archboard/timing";
+import { RECORDER_MS } from "#shared/constants/durations.ts";
 import type { RecordingState } from "#shared/protocol/recording-page.ts";
 import { drive, type RecordingPageHandle } from "#runtime/recorder/clients/recording-page.ts";
 

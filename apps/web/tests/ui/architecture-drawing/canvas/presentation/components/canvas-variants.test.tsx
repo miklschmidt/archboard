@@ -10,7 +10,7 @@
 import { expect, test } from "bun:test";
 import { act, fireEvent } from "@testing-library/react";
 
-import { PICTURE_MS } from "@archboard/timing";
+import { PICTURE_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import {
 	drawing,
 	surface,

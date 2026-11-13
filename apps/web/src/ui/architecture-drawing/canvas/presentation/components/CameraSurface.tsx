@@ -11,7 +11,7 @@ import {
 	type JSX,
 } from "react";
 
-import { EXPLORING_MS, PRESENTATION_MS } from "@archboard/timing";
+import { EXPLORING_MS, PRESENTATION_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import {
 	attachStage,
 	stageOf,

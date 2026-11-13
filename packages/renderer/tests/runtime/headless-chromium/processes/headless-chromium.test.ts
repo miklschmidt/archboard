@@ -13,7 +13,7 @@ import {
 	HEADLESS_CHROMIUM_CALL_MS,
 	SEMANTIC_RASTER_CLEANUP_MS,
 	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
-} from "@archboard/timing";
+} from "#shared/constants/durations.ts";
 
 // The module is held to what its callers build on: flags of their own reach
 // Chromium, a window's page is exactly the size asked for, events reach

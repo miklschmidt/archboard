@@ -5,7 +5,7 @@ import {
 	createReadingPublisher,
 	type PaneReading,
 } from "#ui/panes/pane-session/state/pane-reading.ts";
-import { PANE_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/workbench/browser-contract";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 

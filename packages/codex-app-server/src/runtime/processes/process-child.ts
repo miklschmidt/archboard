@@ -1,4 +1,8 @@
-import { CODEX_PROCESS_MS, CODEX_SESSION_MS, codexRestartDelayMs } from "@archboard/timing";
+import {
+	CODEX_PROCESS_MS,
+	CODEX_SESSION_MS,
+	codexRestartDelayMs,
+} from "#shared/constants/durations.ts";
 import {
 	CodexProcessError,
 	type ChildExit,

@@ -16,7 +16,7 @@
 
 import { useEffect, useState, type RefObject } from "react";
 
-import { EXPLORING_MS } from "@archboard/timing";
+import { EXPLORING_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { SemanticRenderRequest } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";

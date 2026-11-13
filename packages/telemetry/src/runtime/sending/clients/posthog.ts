@@ -1,6 +1,6 @@
 // The one network call of Archboard's telemetry: one event to PostHog EU Cloud (ADR 0079).
 
-import { TELEMETRY_MS } from "@archboard/timing";
+import { TELEMETRY_MS } from "#runtime/constants/durations.ts";
 import type { CaptureEvent } from "#runtime/sending/rules/events.ts";
 
 /** PostHog EU Cloud's capture endpoint. */

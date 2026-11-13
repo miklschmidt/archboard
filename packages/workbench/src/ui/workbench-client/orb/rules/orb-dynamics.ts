@@ -7,7 +7,7 @@
 // slow one for the sentence, a spark for a hard onset, and a ridge of past values
 // that rolls a loud moment back through the lines.
 
-import { VOICE_MS } from "@archboard/timing";
+import { VOICE_MS } from "#shared/constants/durations.ts";
 
 /** What the orb shows, from the voice's stage. */
 type OrbMode = "off" | "starting" | "listening" | "speaking" | "muted" | "ending";

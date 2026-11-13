@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { CODEX_REALTIME_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "@archboard/codex-realtime-voice/realtime";
 import { SemanticContextLifecycleError } from "#runtime/operations/semantic-context-publisher.ts";
 import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
 import {

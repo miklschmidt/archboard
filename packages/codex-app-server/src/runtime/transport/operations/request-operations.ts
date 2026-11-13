@@ -9,7 +9,7 @@ import {
 	type ResponseMethod,
 } from "#runtime/protocol/protocol-methods.ts";
 import { CODEX_APP_SERVER_CAPACITY } from "#shared/constants/app-server-capacity.ts";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "#shared/constants/durations.ts";
 import type {
 	IdentityAuthority,
 	JsonRpcRequestId,

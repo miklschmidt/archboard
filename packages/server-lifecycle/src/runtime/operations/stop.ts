@@ -2,7 +2,7 @@
 
 import { existsSync } from "node:fs";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
-import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
+import { SERVER_LIFECYCLE_MS } from "#runtime/constants/durations.ts";
 import { ARCHBOARD_URL } from "#runtime/services/config.ts";
 import { type HealthStatus } from "#runtime/clients/server-client.ts";
 import { foreignServiceError } from "#runtime/clients/server-client-transport.ts";

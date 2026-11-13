@@ -151,10 +151,6 @@
       "name": "@archboard/telemetry",
       "version": "0.0.0",
     },
-    "packages/timing": {
-      "name": "@archboard/timing",
-      "version": "0.0.0",
-    },
     "packages/ui-kit": {
       "name": "@archboard/ui-kit",
       "version": "0.0.0",
@@ -209,8 +205,6 @@
     "@archboard/skills": ["@archboard/skills@workspace:packages/skills"],
 
     "@archboard/telemetry": ["@archboard/telemetry@workspace:packages/telemetry"],
-
-    "@archboard/timing": ["@archboard/timing@workspace:packages/timing"],
 
     "@archboard/ui-kit": ["@archboard/ui-kit@workspace:packages/ui-kit"],
 

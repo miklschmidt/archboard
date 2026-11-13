@@ -12,7 +12,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { TELEMETRY_MS } from "@archboard/timing";
+import { TELEMETRY_MS } from "#runtime/constants/durations.ts";
 import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { stateDir } from "@archboard/workspace/state-dir";
 import {

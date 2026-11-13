@@ -14,7 +14,7 @@ import {
 	verifyCodexExecutable,
 } from "#runtime/services/executable.ts";
 import { CODEX_PROTOCOL_BINARY_VERSION } from "#runtime/protocol/protocol-version.ts";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "#shared/constants/durations.ts";
 import { installation } from "@archboard/workspace/installation";
 
 function temporaryRoot(): string {

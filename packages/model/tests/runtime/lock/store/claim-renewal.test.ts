@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
-import { MODEL_LOCK_MS, CLAIM_MS } from "@archboard/timing";
+import { CLAIM_MS, MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 
 // One server renews every claim it holds from timers, and a timer cannot run
 // while the server does one long synchronous piece of work, such as drawing a

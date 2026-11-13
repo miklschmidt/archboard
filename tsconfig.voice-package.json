@@ -11,7 +11,6 @@
 		"packages/codex-realtime-voice/src",
 		"packages/codex-app-server/src",
 		"packages/process/src",
-		"packages/timing/src",
 		"packages/diagnostics/src"
 	],
 	"exclude": ["node_modules", "dist"]

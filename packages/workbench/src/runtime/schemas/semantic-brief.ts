@@ -1,4 +1,4 @@
-import { CODEX_REALTIME_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "@archboard/codex-realtime-voice/realtime";
 import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
 import { copyContext, fitAggregate } from "#runtime/services/semantic-brief-fit.ts";
 import {

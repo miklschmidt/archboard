@@ -1,10 +1,7 @@
 {
 	"extends": "astro/tsconfigs/strictest",
 	"compilerOptions": {
-		"types": ["bun"],
-		"paths": {
-			"@archboard/timing": ["../packages/timing/src/shared/constants/timing.ts"]
-		}
+		"types": ["bun"]
 	},
 	"include": [".astro/types.d.ts", "**/*"],
 	"exclude": ["dist", "scripts/paint.ts", "scripts/reference.ts"]

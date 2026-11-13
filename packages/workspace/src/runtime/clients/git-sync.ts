@@ -7,7 +7,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { GIT_MS } from "@archboard/timing";
+import { GIT_MS } from "@archboard/process/git";
 import { existingDir, repoIdentityFor } from "#runtime/clients/git.ts";
 import { GitCommandError } from "@archboard/process/git";
 

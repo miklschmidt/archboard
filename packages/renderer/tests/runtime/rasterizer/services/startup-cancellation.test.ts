@@ -4,12 +4,18 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createSemanticRasterizer } from "#runtime/rasterizer/services/rasterizer.ts";
 import { listProcessGroupObservations } from "@archboard/process/observation";
-import { CLI_INTERRUPT_CLEANUP_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { CLI_INTERRUPT_CLEANUP_MS } from "@archboard/process/git";
+import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/process/observation";
+import { SEMANTIC_RASTER_CLEANUP_MS } from "#shared/constants/durations.ts";
 
 // Startup cancellation needs a process that never opens DevTools. The fake
 // records its real pid/profile so the test can prove the interrupted owner
 // settles and removes both before the CLI's forced-exit deadline.
 describe("rasterizer startup ownership", () => {
+	test("both cleanup phases leave time inside the CLI interrupt grace", () => {
+		expect(2 * SEMANTIC_RASTER_CLEANUP_MS).toBeLessThan(CLI_INTERRUPT_CLEANUP_MS);
+	});
+
 	test.each(["cancel", "stop"] as const)(
 		"%s during startup removes the owned group and profile",
 		async (action) => {

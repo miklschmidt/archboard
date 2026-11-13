@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 import {
 	VAULT_STATE_DIR,
 	modelMemoryKey,

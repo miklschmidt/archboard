@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { GIT_MS } from "@archboard/timing";
+import { GIT_MS } from "#runtime/constants/durations.ts";
 import { listProcessObservations, readProcessObservation } from "#runtime/processes/observation.ts";
 import {
 	captureDetachedProcessGroup,

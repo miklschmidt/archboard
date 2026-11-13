@@ -14,7 +14,7 @@ import type { ArchitectureModelRead } from "@archboard/model/contract";
 
 import { setTimeout as delay } from "node:timers/promises";
 
-import { RECORDER_MS } from "@archboard/timing";
+import { RECORDER_MS } from "#shared/constants/durations.ts";
 import {
 	RECORDING_PAGE_GLOBAL,
 	RecordingStateSchema,

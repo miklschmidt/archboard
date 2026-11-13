@@ -89,7 +89,7 @@ pub struct Policy {
 }
 
 /// The durations and speeds a picture is drawn with, which the host holds
-/// (`@archboard/timing`).
+/// (the renderer package's durations).
 #[derive(Clone, Copy, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Clock {

@@ -3,6 +3,7 @@ import {
 	type CodexDiagnosticsBuffer,
 } from "#runtime/services/diagnostics.ts";
 import type { CodexChildEnvironment } from "#runtime/services/environment.ts";
+import { CODEX_PROCESS_MS } from "#shared/constants/durations.ts";
 import {
 	CODEX_APP_SERVER_ARGUMENTS,
 	CODEX_PROCESS_STDERR_MAX_BYTES,
@@ -232,6 +233,7 @@ function createOwnerState(options: CodexProcessTestOptions): ProcessOwnerState {
 				 */
 				safeCauseMessage: (cause) => safeCauseMessage(state, cause),
 			},
+			{ termGraceMs: CODEX_PROCESS_MS.termGrace, groupFreezeMs: CODEX_PROCESS_MS.groupFreeze },
 		),
 		hooks: {
 			/**

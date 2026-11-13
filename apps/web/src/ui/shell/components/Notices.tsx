@@ -1,5 +1,5 @@
 import { Toaster, toast } from "sonner";
-import { SHELL_CLOCK_MS } from "@archboard/timing";
+import { SHELL_CLOCK_MS } from "@archboard/workbench/agent";
 import {
 	RiCloseLine,
 	RiErrorWarningLine,

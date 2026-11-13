@@ -11,7 +11,7 @@ import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
 } from "@archboard/process/codex-group";
-import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/process/observation";
 
 import { isJsonRecord } from "#runtime/headless-chromium/clients/devtools.ts";
 

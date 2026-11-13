@@ -22,7 +22,7 @@ import {
 } from "#cli/contract/protocol/shared-options.ts";
 import { stateInvocation } from "@archboard/server-lifecycle/server-client";
 import { packageVersion } from "#cli/routing/store/package-version.ts";
-import { CLI_INTERRUPT_CLEANUP_MS } from "@archboard/timing";
+import { CLI_INTERRUPT_CLEANUP_MS } from "@archboard/process/git";
 import type { CommandRoutes, RouteOwner } from "#cli/routing/protocol/route.ts";
 import { helpText, usageLine } from "#cli/routing/rules/help.ts";
 import { dispatchedCommand } from "#cli/routing/rules/dispatch.ts";

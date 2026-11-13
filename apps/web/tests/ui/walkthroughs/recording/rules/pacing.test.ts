@@ -8,7 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { RECORDING_MS } from "@archboard/timing";
+import { RECORDING_MS } from "@archboard/walkthrough/recording";
 import {
 	pace,
 	type PaceObservation,

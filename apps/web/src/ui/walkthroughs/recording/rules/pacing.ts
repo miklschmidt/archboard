@@ -12,7 +12,7 @@
 //
 // Pure: each tick the page observes the voice and the pane and asks what to do.
 
-import { RECORDING_MS } from "@archboard/timing";
+import { RECORDING_MS } from "@archboard/walkthrough/recording";
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 

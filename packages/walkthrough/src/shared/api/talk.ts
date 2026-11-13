@@ -7,3 +7,4 @@ export {
 	TALK_SAMPLE_RATE,
 } from "#shared/protocol/talk.ts";
 export type { Talk } from "#shared/protocol/talk.ts";
+export { REPLAY_MS } from "#shared/constants/durations.ts";

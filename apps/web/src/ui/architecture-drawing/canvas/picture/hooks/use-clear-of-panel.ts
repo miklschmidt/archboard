@@ -7,7 +7,7 @@
 
 import { useLayoutEffect, type RefObject } from "react";
 
-import { SIDEBAR_MS } from "@archboard/timing";
+import { SIDEBAR_MS } from "#ui/constants/durations.ts";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import { panCamera } from "#ui/architecture-drawing/canvas/picture/camera/rules/camera.ts";
 

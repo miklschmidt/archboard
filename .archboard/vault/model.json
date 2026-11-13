@@ -3,21 +3,21 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "e3T8Mjgq",
-    "name": "Anonymous usage as wide events",
-    "summary": "A telemetry package records each CLI command and each unexpected error in the state directory, and the server rolls a day of records into one wide event for each installation and sends it, with an event for each error, to PostHog EU Cloud. CI, tests, DO_NOT_TRACK and archboard telemetry off turn it off.",
+    "id": "ostXM9oe",
+    "name": "Each duration lives with its owner",
+    "summary": "The timing package is gone. Each package and app keeps its durations in its own constants file, beside the code that reads them, and exports a group only when another package reads it. A relation between durations of two owners is checked by an import or a test.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0079-archboard-sends-anonymous-usage-as-wide-events.md"
+        "path": "docs/adr/0080-each-duration-lives-with-its-owner.md"
       }
     ],
-    "predecessor": "TGDLt5Ea",
-    "baseline": "82c17d0fc654e92e48f96514ed3db040861124ad",
-    "createdAt": "2026-11-12T23:18:09.164Z",
-    "adoptedAt": "2026-11-13T00:36:53.285Z",
-    "reason": "The telemetry package, its callers and the PostHog sender are implemented on feat/telemetry (TASK-632.01).",
-    "previousCurrent": "TGDLt5Ea"
+    "predecessor": "e3T8Mjgq",
+    "baseline": "1147b2db27e2f214593b08678628a9a9ad649a68",
+    "createdAt": "2026-11-13T04:24:07.874Z",
+    "adoptedAt": "2026-11-13T04:27:59.136Z",
+    "reason": "The timing package is dissolved on refactor/dissolve-timing: each package and app holds its own durations, and tests check the relations between owners (TASK-634).",
+    "previousCurrent": "e3T8Mjgq"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
@@ -1658,6 +1658,11 @@
     "vKEsyHFk/SMjRfwN3#44gQ5gUw",
     "vKEsyHFk/vKEsyHFk#mm4DLsd2",
     "vKEsyHFk#8EhrdPUE",
-    "vKEsyHFk#ezZAyT0C"
+    "vKEsyHFk#ezZAyT0C",
+    "vKEsyHFk/vKEsyHFk#aDY2uOmY",
+    "vKEsyHFk#zAB848k7",
+    "vKEsyHFk/vKEsyHFk#YzzrtDSd",
+    "vKEsyHFk/vKEsyHFk#7eSdILxB",
+    "vKEsyHFk/vKEsyHFk#sZ4chHDX"
   ]
 }

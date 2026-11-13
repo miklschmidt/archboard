@@ -11,19 +11,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#06cbjPhn",
   "parent": "vKEsyHFk/vKEsyHFk#vEVm326r",
-  "outgoing": [
-    {
-      "order": 64000,
-      "kind": "dependency",
-      "label": "session durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/executable.ts",
-        "symbol": "CODEX_SESSION_MS"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#YzzrtDSd",
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
-    }
-  ]
+  "outgoing": []
 }

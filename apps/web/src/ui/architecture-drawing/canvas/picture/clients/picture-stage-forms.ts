@@ -2,7 +2,11 @@
 // keeps for a painter that starts late.
 
 import type { startPainter } from "@archboard/renderer/browser";
-import { PICTURE_ENTRY_PHASES, PICTURE_MS, PICTURE_TRANSITION_PHASES } from "@archboard/timing";
+import {
+	PICTURE_ENTRY_PHASES,
+	PICTURE_MS,
+	PICTURE_TRANSITION_PHASES,
+} from "#ui/architecture-drawing/constants/motion.ts";
 import type { Departure } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
 import type { DiveWay } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-dive.ts";
 import type { SemanticBox } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";

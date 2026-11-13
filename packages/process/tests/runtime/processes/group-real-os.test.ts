@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { spawn, type ChildProcess } from "node:child_process";
 
-import { CODEX_PROCESS_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "#runtime/constants/durations.ts";
 import {
 	CodexProcessGroupError,
 	createCodexProcessGroupOperations,
@@ -9,9 +9,12 @@ import {
 } from "#runtime/processes/codex-group.ts";
 import { readProcessObservation } from "#runtime/processes/observation.ts";
 
+/** How long a test waits for a real process group to end. A killed group leaves in milliseconds. */
+const GROUP_END_DEADLINE_MS = 10_000;
+
 async function waitForQuiescent(
 	identity: CodexProcessGroupIdentity,
-	deadlineMs = CODEX_PROCESS_MS.composedShutdown,
+	deadlineMs = GROUP_END_DEADLINE_MS,
 ): Promise<void> {
 	const deadline = Date.now() + deadlineMs;
 	const operations = createCodexProcessGroupOperations();
@@ -36,7 +39,7 @@ async function waitForChildClose(child: ChildProcess): Promise<void> {
 			reject(
 				new Error(`Detached child ${String(child.pid)} did not close before cleanup deadline.`),
 			);
-		}, CODEX_PROCESS_MS.composedShutdown);
+		}, GROUP_END_DEADLINE_MS);
 		child.once("close", onClose);
 	});
 }
@@ -109,5 +112,5 @@ test(
 			}
 		}
 	},
-	CODEX_PROCESS_MS.composedShutdown + PROCESS_GROUP_OBSERVATION_POLL_MS * 4,
+	GROUP_END_DEADLINE_MS + PROCESS_GROUP_OBSERVATION_POLL_MS * 4,
 );

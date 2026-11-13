@@ -8,7 +8,7 @@ import fs from "node:fs";
 import { createServer } from "node:net";
 import path from "node:path";
 import { z } from "zod";
-import { SKILL_EVAL_MS } from "@archboard/timing";
+import { SKILL_EVAL_MS } from "#runtime/evaluation/constants/durations.ts";
 import type { RunPaths } from "#runtime/evaluation/run-world/processes/isolation.ts";
 import { ownProcess, pause, settlesWithin } from "#runtime/evaluation/processes/process.ts";
 

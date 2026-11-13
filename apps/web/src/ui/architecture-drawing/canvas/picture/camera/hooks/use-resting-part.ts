@@ -14,7 +14,7 @@ import {
 } from "#ui/architecture-drawing/canvas/picture/camera/clients/picture-pick.ts";
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
-import { EXPLORING_MS } from "@archboard/timing";
+import { EXPLORING_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { SemanticAtlas } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { tipTargetAt } from "#ui/architecture-drawing/canvas/picture/clients/subject-tips.ts";

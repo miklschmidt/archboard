@@ -12,7 +12,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { SKILL_EVAL_MS } from "@archboard/timing";
+import { SKILL_EVAL_MS } from "#runtime/evaluation/constants/durations.ts";
 import type { Usage } from "#runtime/evaluation/protocol/events.ts";
 import { checkoutFlask } from "#runtime/evaluation/run-world/processes/flask.ts";
 import { claudeGrader } from "#runtime/evaluation/grading/clients/claude-grader.ts";

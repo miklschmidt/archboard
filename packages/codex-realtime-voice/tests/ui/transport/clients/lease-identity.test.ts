@@ -1,6 +1,6 @@
 import { afterEach, expect, jest, test } from "bun:test";
 
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/codex-app-server/contract";
 import { createBrowserWorkbenchTransport } from "#ui/transport/clients/transport.ts";
 import { type BrowserWorkbenchTransport } from "#ui/transport/state/contract.ts";
 import {

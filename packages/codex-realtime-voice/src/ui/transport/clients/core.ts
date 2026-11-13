@@ -3,7 +3,7 @@
 // workbench through these functions, so there is exactly one place a state
 // change, a retirement or an incompatibility is decided.
 
-import { CODEX_REALTIME_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "#shared/constants/durations.ts";
 import type { BrowserCommandLease, BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 import type {
 	BrowserWorkbenchCommandIntent,

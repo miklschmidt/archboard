@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-import { EXPLORING_MS } from "@archboard/timing";
+import { EXPLORING_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import {
 	panCamera,

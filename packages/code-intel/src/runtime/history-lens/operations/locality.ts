@@ -46,7 +46,7 @@ import type {
 	LocalityPeriod,
 } from "#shared/protocol/locality.ts";
 import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
-import { LOCALITY_DEFAULT_PERIOD_MS } from "@archboard/timing";
+import { LOCALITY_DEFAULT_PERIOD_MS } from "#runtime/constants/durations.ts";
 
 /** How many answers the server keeps: the documents that somebody selects parts on. */
 const KEPT_ANSWERS = 32;

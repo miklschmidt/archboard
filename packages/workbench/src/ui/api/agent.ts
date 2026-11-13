@@ -15,3 +15,4 @@ export type {
 export type { AgentActions, AgentView } from "#ui/workbench-client/surfaces/state/contracts.ts";
 export { createDraftStore } from "#ui/workbench-client/surfaces/state/draft-store.ts";
 export type { DraftStore } from "#ui/workbench-client/surfaces/state/draft-store.ts";
+export { SHELL_CLOCK_MS } from "#shared/constants/durations.ts";

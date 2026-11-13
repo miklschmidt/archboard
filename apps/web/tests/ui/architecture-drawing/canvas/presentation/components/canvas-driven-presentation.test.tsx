@@ -10,7 +10,7 @@ import { act, cleanup, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 import { createElement } from "react";
 
-import { PRESENTATION_MS } from "@archboard/timing";
+import { PRESENTATION_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import { takeFrames } from "#tests/ui/support/canvas/camera-probes.ts";
 import { type SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import {

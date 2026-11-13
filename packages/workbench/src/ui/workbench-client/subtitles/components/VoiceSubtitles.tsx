@@ -20,7 +20,7 @@
 
 import type { CSSProperties, JSX } from "react";
 
-import { SUBTITLE_MS } from "@archboard/timing";
+import { SUBTITLE_MS } from "#shared/constants/durations.ts";
 import { cn } from "@archboard/ui-kit/components";
 import { useMeasuredLines } from "#ui/workbench-client/subtitles/hooks/use-measured-lines.ts";
 import { useSubtitleFade } from "#ui/workbench-client/subtitles/hooks/use-subtitle-fade.ts";

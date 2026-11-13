@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { SHELL_CLOCK_MS } from "@archboard/timing";
+import { SHELL_CLOCK_MS } from "#shared/constants/durations.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { AgentSetupSnapshot } from "#ui/agent-setup/state/setup.ts";
 import type { HeldMessage } from "#ui/agent-setup/state/held.ts";

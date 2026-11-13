@@ -1,6 +1,6 @@
 /**
  * The canonical non-duration capacity contract for one Codex app-server
- * connection. Durations remain in `@archboard/timing`.
+ * connection. Its durations are in `durations.ts` beside this file.
  */
 export const CODEX_APP_SERVER_CAPACITY = Object.freeze({
 	frameBytes: 16_777_216,

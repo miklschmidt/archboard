@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { CODEX_PROCESS_STDERR_MAX_BYTES, CodexProcessError } from "#runtime/processes/process.ts";
 import { createCodexProcessForTesting } from "#runtime/processes/process.ts";
-import { CODEX_PROCESS_MS, codexRestartDelayMs } from "@archboard/timing";
+import { CODEX_PROCESS_MS, codexRestartDelayMs } from "#shared/constants/durations.ts";
 import {
 	fixture,
 	processOptions,

@@ -1,4 +1,4 @@
-//! The numbers of a move that live in `@archboard/timing`. The host passes
+//! The numbers of a move that live in the web app's picture motion. The host passes
 //! them, so that no duration or phase is written twice.
 
 use serde::Deserialize;
@@ -61,7 +61,7 @@ pub struct Entry {
     pub labels_start: f64,
 }
 
-/// Every number of a move that lives in `@archboard/timing`.
+/// Every number of a move that lives in the web app's picture motion.
 ///
 /// It reads as `{"transition": PICTURE_TRANSITION_PHASES, "entry":
 /// PICTURE_ENTRY_PHASES, "enter": PICTURE_MS.entry, "exit": PICTURE_MS.exit,
@@ -84,7 +84,7 @@ pub struct Phases {
 pub(crate) mod fixtures {
     use super::{Entry, Phases, Transition};
 
-    /// The values `@archboard/timing` holds today.
+    /// The values the web app's picture motion holds today.
     pub(crate) const PHASES: Phases = Phases {
         transition: Transition {
             exit_end: 0.35,
@@ -123,13 +123,13 @@ mod tests {
     use super::{Phases, fixtures::PHASES};
 
     #[test]
-    fn the_host_hands_over_its_numbers_as_json_in_the_names_of_the_timing_package() {
+    fn the_host_hands_over_its_numbers_as_json_in_the_names_of_the_page() {
         let phases: Phases = serde_json::from_str(
             r#"{"transition":{"exitEnd":0.35,"moveStart":0.06,"moveEnd":0.88,"fadeStart":0.2,"fadeEnd":0.68,"swapAt":0.44,"enterStart":0.54,"arrowheadAt":0.9,"labelsStart":0.66,"insideStart":0.08,"insideEnd":0.46,"drawStart":0.42,"drawEnd":3.0},
                 "entry":{"framesEnd":0.3,"regionSpan":0.6,"cardsStart":0.06,"cardsStartBy":0.36,"cardSpan":0.48,"linesStart":0.32,"drawEnd":2.8,"pulseSpan":0.12,"labelsStart":0.66},
                 "enter":760,"exit":280,"shutter":8}"#,
         )
-        .expect("the timing package's phases");
+        .expect("the page's phases");
         assert_eq!(phases, PHASES);
     }
 }

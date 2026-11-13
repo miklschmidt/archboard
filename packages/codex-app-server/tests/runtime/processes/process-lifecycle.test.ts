@@ -6,7 +6,8 @@ import { readProcessObservation } from "@archboard/process/observation";
 
 import { CodexProcessError } from "#runtime/processes/process.ts";
 import { createCodexProcessForTesting as createCodexProcess } from "#runtime/processes/process.ts";
-import { CODEX_PROCESS_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { CODEX_PROCESS_MS } from "#shared/constants/durations.ts";
+import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/process/observation";
 import {
 	fixture,
 	processOptions as options,

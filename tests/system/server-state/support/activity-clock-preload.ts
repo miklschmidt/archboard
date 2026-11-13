@@ -1,6 +1,6 @@
 // Control model observation, activity idle time, and the claim clock at the process boundary.
 import { readFileSync } from "node:fs";
-import { MODEL_LOCK_MS, CLAIM_MS } from "@archboard/timing";
+import { CLAIM_MS, MODEL_LOCK_MS } from "@archboard/model/lock";
 import { TEST_PANE_MESSAGE_POLL_MS } from "../../support/timing.ts";
 
 const clock = process.env["ARCHBOARD_TEST_ACTIVITY_CLOCK"];
