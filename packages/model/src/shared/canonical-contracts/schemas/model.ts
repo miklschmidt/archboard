@@ -193,6 +193,8 @@ const ArchitectureModelSchema = z
 		selectedFlow: QualifiedSubjectIdSchema.optional(),
 		revision: ModelRevisionSchema,
 		checkpoint: ArchitectureCheckpointSchema.optional(),
+		// A branch reading: the vault as the vault's repository holds it at this commit.
+		sourceRef: z.strictObject({ ref: z.string().min(1), commit: GitObjectIdSchema }).optional(),
 		location: ModelReferenceAddressSchema.optional(),
 		codeBinding: CodeBindingSchema.optional(),
 		resolvedReferences: z
@@ -246,6 +248,7 @@ const ArchitectureModelFailureSchema = z
 			"LEGACY_ADDRESS_AMBIGUOUS",
 			"WALKTHROUGH_AMBIGUOUS",
 			"STATE_NOT_FOUND",
+			"SOURCE_REF_NOT_FOUND",
 			"STATE_AMBIGUOUS",
 			"PREDECESSOR_CHANGED",
 			"PROPOSAL_BLOCKED",
@@ -353,6 +356,7 @@ const ReadingIdentitySchema = z.strictObject({
 	model: ArchitectureManifestSchema.shape.id,
 	state: SelectedStateSchema.shape.id.optional(),
 	checkpoint: GitObjectIdSchema.optional(),
+	ref: z.string().min(1).optional(),
 	preview: z.string().optional(),
 	previewState: z.string().optional(),
 	digest: ModelRevisionSchema.shape.digest,
