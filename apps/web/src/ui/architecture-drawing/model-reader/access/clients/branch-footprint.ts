@@ -21,26 +21,27 @@ interface FootprintRange {
 	readonly base: string;
 	/** The ref that the range runs up to, or null for the HEAD of each checkout. */
 	readonly head: string | null;
+	/** The state the commits are set against, in the vault that the footprint reads. */
+	readonly state: string;
 }
 
 /**
- * Read the branch footprint of the reading on screen, from a base to a head. The answer is kept
- * for the model revision, the state and the range, and nothing reads it again until the reader
- * presses Refresh: the server keeps no footprint, and a HEAD can move without a new revision.
+ * Read the branch footprint of a model, from a base to a head, set against one state. The answer
+ * is kept for the model revision, the state and the range, and nothing reads it again until the
+ * reader presses Refresh: the server keeps no footprint, and a HEAD can move without a new revision.
  * @param vault The explicitly addressed vault.
- * @param model The coherent model and the state on screen.
- * @param range The base and the head.
+ * @param model The coherent model on screen.
+ * @param range The base, the head and the state.
  * @returns One cached footprint request.
  */
 function branchFootprintQuery(
 	vault: string,
-	model: Pick<Model, "manifest" | "selectedState" | "revision">,
+	model: Pick<Model, "manifest" | "revision">,
 	range: FootprintRange,
 ) {
-	const state = model.selectedState?.id;
-	const parameters = new URLSearchParams({ base: range.base });
+	const { state } = range;
+	const parameters = new URLSearchParams({ base: range.base, state });
 	if (range.head !== null) parameters.set("head", range.head);
-	if (state !== undefined) parameters.set("state", state);
 	return queryOptions({
 		queryKey: [
 			...architectureModelKeys.vault(vault),

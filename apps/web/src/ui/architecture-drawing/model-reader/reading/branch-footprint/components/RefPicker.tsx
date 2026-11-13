@@ -1,6 +1,6 @@
 import { RiArrowDownSLine, RiCheckLine } from "@remixicon/react";
 import { useCallback, useMemo, useState, type JSX } from "react";
-import { Command, Popover } from "@archboard/ui-kit/components";
+import { cn, Command, Popover } from "@archboard/ui-kit/components";
 
 /** One choice of a picker: the value it sends, what it shows, and a line under it. */
 interface RefChoice {
@@ -20,6 +20,10 @@ interface RefPickerProps {
 	readonly choices: readonly RefChoice[];
 	/** Whether a typed text that no choice matches can be chosen as it is. */
 	readonly free: boolean;
+	/** What the search field asks for. */
+	readonly find: string;
+	/** Whether the names are refs, which are set in mono, rather than names of states. */
+	readonly mono?: boolean;
 	readonly disabled?: boolean;
 	readonly onChoose: (value: string) => void;
 }
@@ -32,7 +36,8 @@ interface RefPickerProps {
  * @returns The picker.
  */
 function RefPicker(props: RefPickerProps): JSX.Element {
-	const { label, value, shown, choices, free, disabled, onChoose } = props;
+	const { label, value, shown, choices, free, find, disabled, onChoose } = props;
+	const mono = props.mono ?? true;
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const typed = query.trim();
@@ -52,25 +57,25 @@ function RefPicker(props: RefPickerProps): JSX.Element {
 				<Popover.Trigger
 					disabled={disabled}
 					aria-label={`${label}: ${shown}`}
-					className="quiet-key text-control rounded-control flex h-8 min-w-48 items-center justify-between gap-2 px-2.5 font-mono disabled:opacity-60"
+					className={cn(
+						"quiet-key text-control rounded-control flex h-8 max-w-80 min-w-48 items-center justify-between gap-2 px-2.5 disabled:opacity-60",
+						mono && "font-mono",
+					)}
 				>
 					<span className="truncate">{shown}</span>
 					<RiArrowDownSLine aria-hidden="true" className="size-4 shrink-0 opacity-70" />
 				</Popover.Trigger>
 				<Popover.Content align="start" className="w-80 p-0">
 					<Command label={label} shouldFilter={false}>
-						<Command.Input
-							value={query}
-							onValueChange={setQuery}
-							placeholder={`Find a ${label.toLowerCase()}`}
-						/>
+						<Command.Input value={query} onValueChange={setQuery} placeholder={find} />
 						<Command.List>
-							<Command.Empty>No ref matches.</Command.Empty>
+							<Command.Empty>Nothing matches.</Command.Empty>
 							{listed.map((choice) => (
 								<Choice
 									key={choice.value}
 									choice={choice}
 									chosen={choice.value === value}
+									mono={mono}
 									onChoose={choose}
 								/>
 							))}
@@ -87,20 +92,22 @@ function RefPicker(props: RefPickerProps): JSX.Element {
  * @param props The choice, whether it is chosen, and what choosing it does.
  * @param props.choice The choice.
  * @param props.chosen Whether it is the chosen one.
+ * @param props.mono Whether the name is set in mono.
  * @param props.onChoose Choose it.
  * @returns The row.
  */
 function Choice(props: {
 	readonly choice: RefChoice;
 	readonly chosen: boolean;
+	readonly mono: boolean;
 	readonly onChoose: (value: string) => void;
 }): JSX.Element {
-	const { choice, chosen, onChoose } = props;
+	const { choice, chosen, mono, onChoose } = props;
 	const select = useCallback((): void => onChoose(choice.value), [choice.value, onChoose]);
 	return (
 		<Command.Item value={choice.value} onSelect={select} data-ref-choice={choice.value}>
 			<span className="flex min-w-0 flex-1 flex-col">
-				<span className="truncate font-mono">{choice.label}</span>
+				<span className={cn("truncate", mono && "font-mono")}>{choice.label}</span>
 				{choice.detail !== undefined && (
 					<span className="text-body text-muted-foreground truncate">{choice.detail}</span>
 				)}

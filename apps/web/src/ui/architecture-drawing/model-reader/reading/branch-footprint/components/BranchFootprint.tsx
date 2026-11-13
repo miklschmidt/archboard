@@ -1,13 +1,8 @@
-import { useCallback, useMemo, type JSX, type ReactNode } from "react";
+import type { JSX, ReactNode } from "react";
 import type { Model } from "@archboard/model/content";
-import { Button } from "@archboard/ui-kit/components";
-import type { SourceRefsAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
 import { FootprintFacts } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/FootprintFacts.tsx";
 import { FootprintLists } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/FootprintLists.tsx";
-import {
-	RefPicker,
-	type RefChoice,
-} from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/RefPicker.tsx";
+import { FootprintRange } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/FootprintRange.tsx";
 import {
 	useBranchFootprint,
 	type FootprintChoice,
@@ -53,45 +48,28 @@ function BranchFootprint(props: BranchFootprintProps): JSX.Element {
  */
 function LiveFootprint(props: BranchFootprintProps): JSX.Element {
 	const { vault, model, choice, onChoice } = props;
-	const { refs, footprint, base, head, refresh } = useBranchFootprint(vault, model, choice);
-	const choices = useMemo(() => refChoices(refs.data), [refs.data]);
-	const chooseBase = useCallback(
-		(next: string): void => onChoice({ ...choice, base: next }),
-		[choice, onChoice],
+	const { refs, footprint, base, head, read, against, refresh } = useBranchFootprint(
+		vault,
+		model,
+		choice,
 	);
-	const busy = refs.isFetching || footprint.isFetching;
 	return (
 		<div
 			data-slot="branch-footprint"
 			data-footprint-state={footprint.status}
 			className="flex min-h-0 flex-1 flex-col gap-3"
 		>
-			<div className="flex flex-wrap items-end gap-4">
-				<RefPicker
-					label="Base"
-					value={base ?? ""}
-					shown={base ?? "Choose a base"}
-					choices={choices}
-					free
-					onChoose={chooseBase}
-				/>
-				<div className="flex flex-col gap-1">
-					<span className="text-body text-muted-foreground">Head</span>
-					<span data-slot="footprint-head" className="text-control flex h-8 items-center font-mono">
-						{head ?? checkedOut(refs.data)}
-					</span>
-				</div>
-				<Button
-					variant="outline"
-					size="xs"
-					data-slot="footprint-refresh"
-					disabled={busy}
-					onClick={refresh}
-					className="ml-auto"
-				>
-					Refresh
-				</Button>
-			</div>
+			<FootprintRange
+				refs={refs.data}
+				states={read.states}
+				base={base}
+				head={head}
+				against={against}
+				choice={choice}
+				onChoice={onChoice}
+				busy={refs.isFetching || footprint.isFetching}
+				onRefresh={refresh}
+			/>
 			<FootprintBody
 				{...props}
 				base={base}
@@ -146,31 +124,6 @@ function Status(props: { readonly alert?: boolean; readonly children: ReactNode 
 			{props.children}
 		</p>
 	);
-}
-
-/**
- * The branches a base can be, local first, each naming the repositories that hold it.
- * @param answer The source refs, when read.
- * @returns The choices.
- */
-function refChoices(answer: SourceRefsAnswer | undefined): readonly RefChoice[] {
-	return (answer?.refs ?? []).map((ref) => ({
-		value: ref.name,
-		label: ref.name,
-		detail: ref.repos.join(", "),
-	}));
-}
-
-/**
- * What the default head reads: the branch of the vault's checkout, or its commit when detached.
- * @param answer The source refs, when read.
- * @returns The words.
- */
-function checkedOut(answer: SourceRefsAnswer | undefined): string {
-	const vault = answer?.vault;
-	if (vault?.branch != null) return `${vault.branch} (checked out)`;
-	if (vault?.commit != null) return `HEAD at ${vault.commit.slice(0, 7)}`;
-	return "HEAD of each checkout";
 }
 
 export { BranchFootprint };
