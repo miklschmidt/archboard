@@ -139,6 +139,9 @@ async function footprint(input: { state?: string; head?: string; modelAt?: "head
 	);
 }
 
+const names = (parts: readonly { subject: { name: string } }[]) =>
+	parts.map((part) => part.subject.name);
+
 /**
  * A successful footprint's modules, by name.
  * @param answer The parsed answer.
@@ -146,8 +149,6 @@ async function footprint(input: { state?: string; head?: string; modelAt?: "head
  */
 function listed(answer: Awaited<ReturnType<typeof footprint>>) {
 	if (!answer.success || answer.analysis !== "footprint") throw new Error(JSON.stringify(answer));
-	const names = (parts: readonly { subject: { name: string } }[]) =>
-		parts.map((part) => part.subject.name);
 	return "changed" in answer
 		? { changed: names(answer.changed) }
 		: {
@@ -264,4 +265,25 @@ test("a footprint without a head reads the vault on disk whatever modelAt says",
 	expect(none).toMatchObject({ vaultRead: { at: "checkout" } });
 	expect(checkout).toEqual(none);
 	expect(await footprint({ modelAt: "head" })).toEqual(none);
+});
+
+test("a branch footprint can compare its proposal with a retained checkpoint", async () => {
+	const model = await readArchitectureModel(vault, undefined, undefined, {
+		ref: "plan",
+		state: proposal,
+	});
+	if (!model.success || model.selectedState?.baseline === undefined)
+		throw new Error(JSON.stringify(model));
+	const answer = await api.readArchitectureHistory(vault, {
+		analysis: "footprint",
+		base: "main",
+		head: "plan",
+		state: proposal,
+		against: model.selectedState.baseline,
+	});
+	expect(answer).toMatchObject({
+		success: true,
+		vaultRead: { at: "ref", ref: "plan", commit: planCommit },
+		state: { id: proposal },
+	});
 });
