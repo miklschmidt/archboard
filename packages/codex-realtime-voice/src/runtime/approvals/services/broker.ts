@@ -40,7 +40,7 @@ import {
 	fallbackResponse,
 	validateApprovalResponse,
 } from "#runtime/approvals/services/response.ts";
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "#shared/constants/durations.ts";
 import type { JsonRpcRequestId } from "@archboard/codex-app-server/identity";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
 

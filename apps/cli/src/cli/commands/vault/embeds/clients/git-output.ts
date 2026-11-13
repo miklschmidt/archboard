@@ -2,7 +2,7 @@
 // checkout tracks or what its history holds. Git reads the repository of the
 // directory it runs in, never one that the environment names.
 
-import { GIT_MS } from "@archboard/timing";
+import { GIT_MS } from "@archboard/process/git";
 import { gitEnvironment } from "#cli/commands/vault/embeds/clients/git-environment.ts";
 
 /**

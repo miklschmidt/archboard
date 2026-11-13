@@ -1,4 +1,4 @@
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 import { logger } from "@archboard/diagnostics/logger";
 import type {
 	ArchitectureModelRead,

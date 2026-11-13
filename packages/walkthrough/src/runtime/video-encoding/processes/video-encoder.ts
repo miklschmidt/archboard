@@ -6,7 +6,7 @@
 
 import { rmSync, statSync } from "node:fs";
 
-import { RECORDER_MS } from "@archboard/timing";
+import { RECORDER_MS } from "#shared/constants/durations.ts";
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";
 import { SAMPLES_PER_FRAME, TALK_FRAME_RATE, TALK_SAMPLE_RATE } from "#shared/protocol/talk.ts";
 

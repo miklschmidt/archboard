@@ -10,7 +10,7 @@ import {
 	readProcessObservation,
 	type ProcessObservation,
 } from "#runtime/processes/observation.ts";
-import { GIT_MS } from "@archboard/timing";
+import { GIT_MS } from "#runtime/constants/durations.ts";
 
 type KillableProcess = Pick<Subprocess, "kill">;
 type CapturedMembers = Map<number, ProcessObservation>;

@@ -1,6 +1,6 @@
 import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "#runtime/voice/protocol/extension.ts";
 import type { DynamicWaitEvent } from "#runtime/dynamic-tools/protocol/lifecycle-contract.ts";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/codex-app-server/contract";
 import type { ArchboardWorkbenchServer } from "#server/workbench-host/services/production.ts";
 
 type WaitInput = Parameters<ArchboardWorkbenchServer["waitForTargets"]>[0];

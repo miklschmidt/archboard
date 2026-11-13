@@ -12,7 +12,7 @@
 // was drawn, what it is still doing and how long the frame was, to the camera as
 // it is drawn next. Whoever drives it owns the clock (`use-camera-motion`).
 
-import { EXPLORING_MS } from "@archboard/timing";
+import { EXPLORING_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import {
 	ZOOM_STEP,
 	clampScale,

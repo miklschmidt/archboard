@@ -49,8 +49,8 @@ what only a browser has.
 `Between` takes scene A, scene B and a progress value, and gives an in-between list of
 items. It pairs groups by subject id and mixes typed geometry, opacity and transforms.
 The entrance, the departure, the far swap and the dive follow the same rule. All of them
-run with no GPU and no DOM, and the Rust tests own them. The durations stay in
-`@archboard/timing`, and the page hands them to the painter.
+run with no GPU and no DOM, and the Rust tests own them. The durations stay with
+the page, and the page hands them to the painter.
 An in-between is also a scene, so a picture that arrives during a flight starts from
 what shows. Nothing lands first.
 

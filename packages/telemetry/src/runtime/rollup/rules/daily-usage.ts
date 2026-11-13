@@ -1,6 +1,6 @@
 // One installation's day as one wide event (ADR 0079): the counts of every record of that day.
 
-import { TELEMETRY_MS } from "@archboard/timing";
+import { TELEMETRY_MS } from "#runtime/constants/durations.ts";
 import type { CommandRecord, DayRecord } from "#runtime/records/protocol/records.ts";
 
 /** The properties of a `daily usage` event that its records give. */

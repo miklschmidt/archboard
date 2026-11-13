@@ -1,5 +1,5 @@
 import type { TurnId } from "@archboard/codex-app-server/identity";
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "@archboard/codex-realtime-voice/schemas";
 import {
 	CodexDynamicToolsError,
 	type CodexDynamicToolsOptions,

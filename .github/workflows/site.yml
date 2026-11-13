@@ -53,7 +53,8 @@ on:
       - packages/workbench/src/ui/workbench-client/orb/clients/**
       - packages/workbench/src/ui/workbench-client/orb/rules/**
       - packages/workbench/src/ui/workbench-client/orb/state/**
-      - packages/timing/**
+      - packages/workbench/src/shared/constants/**
+      - apps/web/src/ui/architecture-drawing/constants/**
       # The reference reads the CLI's contracts and the facts that these packages hold.
       - packages/code-intel/**
       - packages/workspace/**
@@ -83,7 +84,8 @@ on:
       - packages/workbench/src/ui/workbench-client/orb/clients/**
       - packages/workbench/src/ui/workbench-client/orb/rules/**
       - packages/workbench/src/ui/workbench-client/orb/state/**
-      - packages/timing/**
+      - packages/workbench/src/shared/constants/**
+      - apps/web/src/ui/architecture-drawing/constants/**
       # The reference reads the CLI's contracts and the facts that these packages hold.
       - packages/code-intel/**
       - packages/workspace/**

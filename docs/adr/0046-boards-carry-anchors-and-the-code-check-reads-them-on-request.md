@@ -1038,8 +1038,8 @@ Other servers evaluate project files that can hold code. The C# servers
 evaluate MSBuild files, and sourcekit-lsp evaluates `Package.swift`. The check
 starts such a server only from an entry in `language-servers.json`. The user
 writes that entry for this machine and for checkouts that they trust. The check
-never asks a server to build. Every timeout of the engine lives in
-`packages/timing/src/shared/constants/timing.ts`.
+never asks a server to build. Every timeout of the engine lives with the code
+check, with what it pulls against (ADR 0080).
 
 ### The packages
 

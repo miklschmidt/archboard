@@ -12,7 +12,7 @@
 
 import { expect, test } from "bun:test";
 
-import { VOICE_MS } from "@archboard/timing";
+import { VOICE_MS } from "#shared/constants/durations.ts";
 import {
 	homed,
 	homes,

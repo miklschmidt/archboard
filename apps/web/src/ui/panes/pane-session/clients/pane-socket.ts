@@ -2,7 +2,7 @@
 // reconnected after an abnormal close, and identified by generation so a
 // listener on a superseded socket can tell it is stale.
 
-import { PANE_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/workbench/browser-contract";
 import {
 	createPaneRegistrationLatch,
 	type PaneRegistrationLatch,

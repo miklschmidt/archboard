@@ -10,7 +10,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } fr
 import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useState, type JSX } from "react";
 
-import { PICTURE_MS } from "@archboard/timing";
+import { PICTURE_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import type { SemanticDrawing } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { stagePicture } from "#ui/architecture-drawing/canvas/picture/clients/picture-transition.ts";
 import { usePictureTransition } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts";

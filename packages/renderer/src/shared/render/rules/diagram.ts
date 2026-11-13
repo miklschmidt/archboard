@@ -12,12 +12,12 @@
 // it what only the place it runs in has (`shared/render/rules/host.ts`): the
 // layout engine, the icons, the theme colours a document that stands alone
 // carries, and the durations every picture is drawn with
-// (`@archboard/timing`). So one host draws the same content, theme and policy
+// (`shared/constants/durations.ts`). So one host draws the same content, theme and policy
 // to the same bytes in any order.
 
 import { DEFAULT_TRAFFIC_SPEED } from "@archboard/model/content";
 import { DEFAULT_LAYOUT_ENGINE } from "@archboard/model/render-reply";
-import { FAR_VIEW_SWAP_MS, FLOW_CYCLE_CAP_MS } from "@archboard/timing";
+import { FAR_VIEW_SWAP_MS, FLOW_CYCLE_CAP_MS } from "#shared/constants/durations.ts";
 import type { RenderHost } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import {
 	SemanticRenderError,

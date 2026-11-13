@@ -138,7 +138,7 @@ and the render's choices go in, and the document, its atlas, each subject's
 appearance and the picture's key come out (`render`, TASK-520.08). The core
 also keeps the scene, for a frontend that paints it itself. A host gives the
 core four things that only the place it runs in has. In the request, it gives
-the durations of `@archboard/timing` and, where a document can stand alone, the
+the durations that the host owns and, where a document can stand alone, the
 theme colours. Through a port, it runs the layout's solves and gives the path
 data of the icons that a picture draws.
 

@@ -31,7 +31,7 @@ import {
 } from "react";
 
 import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
-import { SIDEBAR_MS } from "@archboard/timing";
+import { SIDEBAR_MS } from "#ui/constants/durations.ts";
 import { cn, IconButton, Tabs } from "@archboard/ui-kit/components";
 import type {
 	Sidebar,

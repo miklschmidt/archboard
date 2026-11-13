@@ -1,6 +1,6 @@
 import { createAgentActivity } from "#server/panes/announcements/state/agent-activity.ts";
 import { broadcastEverywhere } from "#server/panes/connections/state/pane-vaults.ts";
-import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
+import { SERVER_LIFECYCLE_MS } from "@archboard/server-lifecycle/server-host";
 import {
 	createServerMutationAdmission,
 	type ServerMutationLease,

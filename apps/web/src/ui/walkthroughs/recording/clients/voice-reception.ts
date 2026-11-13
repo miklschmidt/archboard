@@ -6,7 +6,7 @@
 // which a listener hears as a call with bad reception. Nobody talks back to a recording, so it
 // trades latency for an unbroken voice (`RECORDING_MS.voiceBuffer`).
 
-import { RECORDING_MS } from "@archboard/timing";
+import { RECORDING_MS } from "@archboard/walkthrough/recording";
 import type { Talk } from "@archboard/walkthrough/talk";
 import type { BrowserWorkbenchMediaOwnerOptions } from "#ui/application/state/pane-handles.ts";
 

@@ -1,4 +1,4 @@
-import { TAB_SESSION_GRACE_MS } from "@archboard/timing";
+import { TAB_SESSION_GRACE_MS } from "#shared/constants/durations.ts";
 import type { TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 
 /** The chats on screen by tab, and when each tab that has none left ends. */

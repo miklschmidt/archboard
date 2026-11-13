@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import { type DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol/contract.ts";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/codex-realtime-voice/runtime";
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "@archboard/codex-realtime-voice/schemas";
 import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 import {
 	createIdentityAuthorities,

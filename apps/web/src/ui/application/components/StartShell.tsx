@@ -8,7 +8,7 @@ import { useRouter } from "@tanstack/react-router";
 import { useCallback, useMemo, useState, type JSX } from "react";
 
 import { IconButton, shownRepository, Tooltip } from "@archboard/ui-kit/components";
-import { MODEL_CACHE_MS } from "@archboard/timing";
+import { MODEL_CACHE_MS } from "#ui/constants/durations.ts";
 import { RiFileCopyLine } from "@remixicon/react";
 import { SettingsDialog } from "#ui/application/components/SettingsDialog.tsx";
 import { ModelState } from "#ui/architecture-drawing/model-reader/reading/components/ModelState.tsx";

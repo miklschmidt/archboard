@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef } from "react";
 
-import { EXPLORING_MS } from "@archboard/timing";
+import { EXPLORING_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import type { StagedPicture } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts";
 import { stageOf } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts";
 

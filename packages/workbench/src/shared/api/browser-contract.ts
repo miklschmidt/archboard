@@ -8,3 +8,4 @@ export {
 	ExplanationActionRequestSchema,
 	ExplanationActionResultSchema,
 } from "#shared/schemas/architecture-explanation.ts";
+export { PANE_MS } from "#shared/constants/durations.ts";

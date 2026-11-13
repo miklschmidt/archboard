@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/model/store-read";
 import { editArchitectureModule, recoverArchitectureModel } from "@archboard/model/store-write";
 import { fixture, disposeFixtures } from "#tests/runtime/canonical/edit/operations/fixture.ts";

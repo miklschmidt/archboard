@@ -1,7 +1,7 @@
 // What an executable says of its own version, for checking a pin before any
 // model call. `codex --version` and `claude --version` both print one.
 
-import { SKILL_EVAL_MS } from "@archboard/timing";
+import { SKILL_EVAL_MS } from "#runtime/evaluation/constants/durations.ts";
 import { runProcess } from "#runtime/evaluation/processes/process.ts";
 
 /**

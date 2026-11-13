@@ -20,7 +20,7 @@
 // window, cleared site data) or never answer, so every read and write here
 // survives that and simply draws again.
 
-import { PICTURE_MS } from "@archboard/timing";
+import { PICTURE_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { createStore, del, get, keys, set } from "idb-keyval";
 import { z } from "zod";

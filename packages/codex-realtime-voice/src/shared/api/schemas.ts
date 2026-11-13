@@ -13,3 +13,4 @@ export {
 	type BrowserDynamicApprovalEffect,
 	type BrowserDynamicApprovalResponse,
 } from "#shared/dynamic-approval/schemas/approval.ts";
+export { CODEX_APPROVAL_MS } from "#shared/constants/durations.ts";

@@ -1,4 +1,4 @@
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "#shared/constants/durations.ts";
 import type {
 	ChildEpoch,
 	ChildId,

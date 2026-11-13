@@ -2,7 +2,8 @@
 // cancellation, and never leave one behind. Every spawn goes through here so
 // there is one answer to what a timed-out or cancelled process looks like.
 
-import { PROCESS_GROUP_OBSERVATION_POLL_MS, SKILL_EVAL_MS } from "@archboard/timing";
+import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/process/observation";
+import { SKILL_EVAL_MS } from "#runtime/evaluation/constants/durations.ts";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,

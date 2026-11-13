@@ -8,8 +8,8 @@
 //!
 //! The in-between is plain items. Progress is a share of the move, past 1 while
 //! the last sparks run on, and
-//! every phase of it comes from [`Phases`], which the host reads from
-//! `@archboard/timing`. [`Between`] turns one scene into the next, [`Entrance`]
+//! every phase of it comes from [`Phases`], which the host reads from the web
+//! app's picture motion. [`Between`] turns one scene into the next, [`Entrance`]
 //! brings a scene in with nothing to carry it from, and [`departure()`] sends the
 //! last scene off.
 

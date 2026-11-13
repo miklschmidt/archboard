@@ -34,7 +34,7 @@
 
 import type { CSSProperties, JSX } from "react";
 
-import { SUBTITLE_MS, VOICE_MS } from "@archboard/timing";
+import { SUBTITLE_MS, VOICE_MS } from "#shared/constants/durations.ts";
 import { cn } from "@archboard/ui-kit/components";
 import { OrbSlot } from "#ui/workbench-client/orb/components/OrbStage.tsx";
 import { SubtitleWords } from "#ui/workbench-client/subtitles/components/VoiceSubtitles.tsx";

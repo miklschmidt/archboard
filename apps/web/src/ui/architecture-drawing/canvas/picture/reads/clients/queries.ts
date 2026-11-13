@@ -7,7 +7,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 
-import { MODEL_CACHE_MS } from "@archboard/timing";
+import { MODEL_CACHE_MS } from "#ui/constants/durations.ts";
 import {
 	runCodeCheck,
 	type CodeCheckReading,
@@ -62,7 +62,7 @@ function retainedListingQuery(vault: string) {
  * is deliberately no timer here: the cached drawing stays fresh until the
  * model announces a new version over the pane socket, which is what
  * `useModelChanges` listens for. That is also why there is no duration
- * to put in `@archboard/timing` — the absence of one is the contract.
+ * to put in `MODEL_CACHE_MS`: the absence of one is the contract.
  *
  * A network reconnect is the one exception: while the tab was offline a change
  * could have been announced to nobody, so the picture is read again then.

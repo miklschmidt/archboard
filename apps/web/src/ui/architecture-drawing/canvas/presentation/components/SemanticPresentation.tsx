@@ -30,7 +30,7 @@ import {
 	type RefObject,
 } from "react";
 
-import { PRESENTATION_MS } from "@archboard/timing";
+import { PRESENTATION_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import { PresentationFoot } from "#ui/architecture-drawing/canvas/presentation/components/PresentationFoot.tsx";
 import { PresentationKeys } from "#ui/architecture-drawing/canvas/presentation/components/PresentationKeys.tsx";
 import { PresentationRail } from "#ui/architecture-drawing/canvas/presentation/components/PresentationRail.tsx";

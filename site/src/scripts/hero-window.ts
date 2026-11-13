@@ -7,7 +7,7 @@
 // hold the page. Without script, with reduced motion, or where the painter does not start, the
 // renderer's SVG of the same picture stands whole.
 
-import { PICTURE_MS } from "@archboard/timing";
+import { PICTURE_MS } from "../../../apps/web/src/ui/architecture-drawing/constants/motion.ts";
 import { startCpuPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
 import shop from "../paintings/shop.json";
 import paintingUrl from "../paintings/shop.painting.json?url";

@@ -3,7 +3,7 @@ import { expect } from "bun:test";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 
-import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/process/observation";
 
 const MICROTASK_HOPS = 16;
 const FREEZE_POLLS = 4;

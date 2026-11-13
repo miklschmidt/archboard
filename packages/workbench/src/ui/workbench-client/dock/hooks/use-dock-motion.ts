@@ -10,7 +10,7 @@
 
 import { useLayoutEffect, useRef, type RefObject } from "react";
 
-import { VOICE_MS } from "@archboard/timing";
+import { VOICE_MS } from "#shared/constants/durations.ts";
 
 /** A part's box, in pixels from the dock's top left corner, so a resized window does not move it. */
 interface Box {

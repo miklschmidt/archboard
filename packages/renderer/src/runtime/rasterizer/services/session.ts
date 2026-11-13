@@ -19,7 +19,7 @@ import {
 	type HeadlessChromium,
 } from "#runtime/headless-chromium/processes/launch.ts";
 import { type DevTools } from "#runtime/headless-chromium/clients/devtools.ts";
-import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/process/observation";
 
 import { regionOf, type RasterBounds } from "#runtime/rasterizer/operations/bounds.ts";
 import {

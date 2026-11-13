@@ -14,7 +14,7 @@
 
 import { randomUUID } from "node:crypto";
 
-import { PANE_MS } from "@archboard/timing";
+import { PANE_MS } from "#shared/constants/durations.ts";
 import {
 	paneKeyOfClient,
 	panes,

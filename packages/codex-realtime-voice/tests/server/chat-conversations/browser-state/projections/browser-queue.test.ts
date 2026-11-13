@@ -5,7 +5,7 @@ import {
 	createIdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
 import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/codex-app-server/contract";
 import { projectionHarness } from "#tests/server/support/generation/projection-harness.ts";
 
 /** A live workhorse holding one thread, as the ready adapter paths need. */

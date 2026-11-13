@@ -20,7 +20,7 @@
 
 import { useLayoutEffect, useMemo, useRef } from "react";
 
-import { PICTURE_MS, PRESENTATION_MS } from "@archboard/timing";
+import { PICTURE_MS, PRESENTATION_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import type { BeatFocus } from "#ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts";
 import type {

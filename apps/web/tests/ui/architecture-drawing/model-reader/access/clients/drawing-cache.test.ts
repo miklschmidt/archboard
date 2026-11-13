@@ -1,4 +1,4 @@
-import { PICTURE_MS } from "@archboard/timing";
+import { PICTURE_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import { afterAll, expect, test } from "bun:test";
 import {

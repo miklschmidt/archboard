@@ -4,7 +4,7 @@
 import { watchArchitectureModel } from "@archboard/model/store-read";
 import type { ArchitectureEvent, ArchitectureClaim } from "@archboard/model/contract";
 import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
-import { CLAIM_MS } from "@archboard/timing";
+import { CLAIM_MS } from "@archboard/model/lock";
 
 type AgentActivity = AgentActivityMessage["activity"][number];
 

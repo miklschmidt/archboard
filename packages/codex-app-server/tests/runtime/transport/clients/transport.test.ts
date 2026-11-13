@@ -13,7 +13,7 @@ import {
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
 } from "#runtime/schemas/authored-schemas.ts";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "#shared/constants/durations.ts";
 import {
 	captureRejection,
 	createHarness,

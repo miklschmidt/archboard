@@ -1,4 +1,4 @@
-import { COLUMN_MS } from "@archboard/timing";
+import { COLUMN_MS } from "#ui/constants/durations.ts";
 
 /**
  * Put the durations of a popover on the root element. A select or a menu stands in a portal, outside

@@ -21,7 +21,7 @@ import {
 	viewport,
 } from "#tests/ui/support/canvas/stage-harness.tsx";
 import { calls } from "#tests/ui/support/canvas/recording-stage.ts";
-import { EXPLORING_MS } from "@archboard/timing";
+import { EXPLORING_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import {
 	cameraNow,
 	diagramPointUnder,

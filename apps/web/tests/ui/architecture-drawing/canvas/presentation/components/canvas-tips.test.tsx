@@ -3,7 +3,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, spyOn, test } from "bun:test";
 
-import { EXPLORING_MS } from "@archboard/timing";
+import { EXPLORING_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import { takeFrames } from "#tests/ui/support/canvas/camera-probes.ts";
 import { viewport } from "#tests/ui/support/canvas/stage-harness.tsx";
 import { group, served } from "#tests/ui/support/canvas/wiring-fixture.tsx";

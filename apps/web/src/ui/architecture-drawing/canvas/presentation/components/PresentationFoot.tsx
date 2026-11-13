@@ -19,7 +19,7 @@
 import { RiMicLine, RiPhoneFill } from "@remixicon/react";
 import { useCallback, type CSSProperties, type JSX, type MouseEvent } from "react";
 
-import { VOICE_MS } from "@archboard/timing";
+import { VOICE_MS } from "@archboard/workbench/voice";
 import { cn } from "@archboard/ui-kit/components";
 import { OrbSlot, useNarrateKey } from "@archboard/workbench/voice";
 import type { WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";

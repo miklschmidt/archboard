@@ -11,7 +11,7 @@ import type {
 } from "#runtime/protocol/server-startup-terminal.ts";
 import { parseServerStartupProtocolRecord } from "#runtime/protocol/server-startup-terminal.ts";
 import type { Readable } from "node:stream";
-import { CODEX_PROCESS_MS } from "@archboard/timing";
+import { CODEX_PROCESS_MS } from "@archboard/codex-app-server/process";
 import { asError } from "@archboard/diagnostics/thrown-error";
 
 interface FailedServerCleanupTiming {

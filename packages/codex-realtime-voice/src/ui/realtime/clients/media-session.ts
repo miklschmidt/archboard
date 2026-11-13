@@ -2,7 +2,7 @@
 // and dispose, a mute that touches only the captured track, and publications
 // delivered in order to every subscriber whatever a subscriber does.
 
-import { CODEX_REALTIME_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "#shared/constants/durations.ts";
 import { browserRealtimeMediaEnvironment } from "#ui/realtime/clients/browser-environment.ts";
 import { INITIAL_REALTIME_STATE, transitionRealtimeState } from "#ui/realtime/state/contract.ts";
 import type {

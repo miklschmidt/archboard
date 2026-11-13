@@ -4,6 +4,10 @@ Subject, state, and structure claims supersede per-board ownership below. A shor
 [ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
 The original decision below remains historical evidence.
 
+[ADR 0080](0080-each-duration-lives-with-its-owner.md) supersedes the place of the durations
+in Consequences. Each duration now lives with the package that reads it, and a test checks each
+relation between two owners.
+
 [ADR 0022](0022-the-note-decides-and-a-persons-edit-is-optimistic.md) supersedes
 this decision in part. A content gesture no longer revokes a claim. A claimed
 board is read-only to users until an explicit release. An agent is not asked to
@@ -245,8 +249,8 @@ span both.
 
 Shortening either deadline writes the vault more often. Lengthening either
 deadline extends how long an agent can wait. The values that govern progress,
-idle, settling, leases and waiting therefore live together in
-`packages/timing/src/shared/constants/timing.ts`.
+idle, settling, leases and waiting therefore live together, with what each pulls
+against written beside it. ADR 0080 moved them to their owners.
 
 The mutex is one concept with a small interface. A caller asks to write a board,
 and then either writes it or learns who holds it. Acquiring, renewing, expiring

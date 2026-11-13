@@ -473,7 +473,7 @@ Archboard is young and moves fast. Its interfaces change often. Install it from 
 
 Archboard is source-available under the [Business Source License 1.1](LICENSE), not open source. You can read, copy, modify and run it for free. You can use it in production for free if you are an individual, or an organization with fewer than 50 people and under US$1,000,000 in annual revenue, and you do not sell it as a hosted service. Larger organizations need a commercial license: open an issue to ask. Each version turns into an MIT-licensed release four years after its first publication. [Third-party notices](THIRD_PARTY_NOTICES.md) cover the MIT-licensed code inside it.
 
-Five packages are MIT-licensed instead, each with its own `LICENSE` file: [`codex-realtime-voice`](packages/codex-realtime-voice) and the packages that its npm build bundles, [`codex-app-server`](packages/codex-app-server), [`process`](packages/process), [`timing`](packages/timing) and [`diagnostics`](packages/diagnostics).
+Four packages are MIT-licensed instead, each with its own `LICENSE` file: [`codex-realtime-voice`](packages/codex-realtime-voice) and the packages that its npm build bundles, [`codex-app-server`](packages/codex-app-server), [`process`](packages/process) and [`diagnostics`](packages/diagnostics).
 
 ## Learn more
 

@@ -12,7 +12,7 @@
 // its sound is heard. Nothing here draws or captures a picture: the picture is
 // rendered from the talk afterwards, frame by frame.
 
-import { RECORDING_MS } from "@archboard/timing";
+import { RECORDING_MS } from "@archboard/walkthrough/recording";
 import type { publishRecordingPage } from "@archboard/walkthrough/recording";
 import { TALK_SAMPLE_RATE } from "@archboard/walkthrough/talk";
 

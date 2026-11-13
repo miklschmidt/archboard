@@ -81,7 +81,7 @@ describe.serial("source staleness", () => {
 		expect(quiet.stderr).not.toMatch(/older code/);
 
 		// A file of a workspace package counts as source too.
-		const changedFile = "packages/timing/src/shared/constants/timing.ts";
+		const changedFile = "packages/server-lifecycle/src/runtime/constants/durations.ts";
 		const touched = join(repoRoot, changedFile);
 		// So does a file of the server app, which the server loads as its entry.
 		const appFile = "apps/server/src/server.ts";
