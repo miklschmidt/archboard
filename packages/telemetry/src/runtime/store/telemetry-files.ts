@@ -4,7 +4,7 @@
 //   telemetry/days/<date>.jsonl    one record per line, appended by every process of that day
 //   telemetry/errors/<id>.json     the full report of one error
 //
-// A sender claims a file by renaming it to `<name>.sending-<pid>`, so that two servers never send
+// A sender claims a file by renaming it to `<name>.sending-<pid>-<time>`, so that two servers never send
 // one file twice. A claim that outlives its sender goes back to the queue.
 
 import { randomUUID } from "node:crypto";
@@ -126,10 +126,13 @@ function namesIn(folder: string): string[] {
 /**
  * The name of the file that a claim holds.
  * @param name A file name.
- * @returns The original name when the name is a claim, else null.
+ * @returns The original name and the claim time, or null for an unclaimed file.
  */
-function claimedName(name: string): string | null {
-	return /^(?<original>.+)\.sending-\d+$/u.exec(name)?.groups?.["original"] ?? null;
+function claimOf(name: string): { original: string; at: number } | null {
+	const groups = /^(?<original>.+)\.sending-\d+-(?<at>\d+)$/u.exec(name)?.groups;
+	const original = groups?.["original"];
+	const at = groups?.["at"];
+	return original === undefined || at === undefined ? null : { original, at: Number(at) };
 }
 
 /**
@@ -146,9 +149,9 @@ function waiting(folder: string, name: string, now: number): Pending | null {
 	const file = path.join(folder, name);
 	const changedAt = fs.statSync(file, { throwIfNoEntry: false })?.mtimeMs;
 	if (changedAt === undefined) return null;
-	const original = claimedName(name);
-	if (original === null) return { file, changedAt };
-	if (now - changedAt > TELEMETRY_MS.staleClaim) release(file, path.join(folder, original));
+	const held = claimOf(name);
+	if (held === null) return { file, changedAt };
+	if (now - held.at > TELEMETRY_MS.staleClaim) release(file, path.join(folder, held.original));
 	return null;
 }
 
@@ -165,10 +168,11 @@ function pendingIn(folder: string, now: number): Pending[] {
 /**
  * Claim a file for this process.
  * @param file The file.
+ * @param now The time at which the sender claims the file.
  * @returns The claimed path, or null when another sender claimed it first.
  */
-function claim(file: string): string | null {
-	const claimed = `${file}.sending-${process.pid}`;
+function claim(file: string, now: number): string | null {
+	const claimed = `${file}.sending-${process.pid}-${now}`;
 	try {
 		fs.renameSync(file, claimed);
 		return claimed;

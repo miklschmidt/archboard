@@ -49,7 +49,7 @@ async function sendFile(
 	pending: Pending,
 	eventOf: (claimed: string) => CaptureEvent | null,
 ): Promise<void> {
-	const claimed = claim(pending.file);
+	const claimed = claim(pending.file, round.now);
 	if (claimed === null) return;
 	try {
 		const event = eventOf(claimed);

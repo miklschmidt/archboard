@@ -9,7 +9,7 @@ import type { CommandRecord, ErrorReport } from "#runtime/records/protocol/recor
 import type { PostResult } from "#runtime/sending/clients/posthog.ts";
 import { sendRound } from "#runtime/sending/operations/sender.ts";
 import type { CaptureEvent } from "#runtime/sending/rules/events.ts";
-import { appendDayRecord, writeErrorReport } from "#runtime/store/telemetry-files.ts";
+import { appendDayRecord, claim, writeErrorReport } from "#runtime/store/telemetry-files.ts";
 
 const NOW = Date.parse("2026-11-13T08:00:00.000Z");
 const machine = {
@@ -132,6 +132,40 @@ test("a record older than seven days is deleted unsent", async () => {
 	const old = new Date("2026-11-02T00:00:00.000Z");
 	utimesSync(join(directory, "days", "2026-11-01.jsonl"), old, old);
 
+	expect(await round("sent")).toEqual([]);
+	expect(waiting("days")).toEqual([]);
+});
+
+test("another sender cannot recover an active claim of an old record", async () => {
+	appendDayRecord(directory, command("2026-11-12T10:00:00.000Z"));
+	const old = new Date(NOW - 2 * 60 * 60 * 1000);
+	utimesSync(join(directory, "days", "2026-11-12.jsonl"), old, old);
+	let posts = 0;
+	await sendRound({
+		directory,
+		now: NOW,
+		machine,
+		post: async () => {
+			posts += 1;
+			// Another server scans while the first server waits on its post.
+			posts += (await round("sent")).length;
+			posts += (await round("sent")).length;
+			return "sent";
+		},
+	});
+	expect(posts).toBe(1);
+	expect(waiting("days")).toEqual([]);
+});
+
+test("an abandoned claim returns to the queue without renewing the retention period", async () => {
+	appendDayRecord(directory, command("2026-11-01T10:00:00.000Z"));
+	const file = join(directory, "days", "2026-11-01.jsonl");
+	const old = new Date("2026-11-02T00:00:00.000Z");
+	utimesSync(file, old, old);
+	expect(claim(file, NOW - 2 * 60 * 60 * 1000)).not.toBeNull();
+
+	expect(await round("sent")).toEqual([]);
+	expect(waiting("days")).toEqual(["2026-11-01.jsonl"]);
 	expect(await round("sent")).toEqual([]);
 	expect(waiting("days")).toEqual([]);
 });
