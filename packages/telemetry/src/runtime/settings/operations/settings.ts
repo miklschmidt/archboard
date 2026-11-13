@@ -77,11 +77,16 @@ function turnTelemetry(on: boolean): TelemetryStatus {
 
 /**
  * Take the notice the first time that a process records usage.
- * @returns The notice, or null when usage is off or the notice was shown.
+ * @returns The notice, or null when usage is off, the notice was shown, or the state cannot be read.
  */
 function takeNotice(): string | null {
-	if (!currentConsent().on) return null;
-	return markNoticeShown(telemetryDirectory(process.env)) ? NOTICE : null;
+	try {
+		if (!currentConsent().on) return null;
+		return markNoticeShown(telemetryDirectory(process.env)) ? NOTICE : null;
+	} catch {
+		// A state directory that cannot be written costs the notice, never the command's result.
+		return null;
+	}
 }
 
 export { currentConsent, takeNotice, telemetryStatus, turnTelemetry, type TelemetryStatus };
