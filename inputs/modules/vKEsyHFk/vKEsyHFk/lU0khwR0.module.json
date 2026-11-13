@@ -3,7 +3,7 @@
   "name": "codex-realtime-voice",
   "kind": "package",
   "responsibility": "The public MIT voice agent: one host entry for a server and one browser client, over Codex sessions, a coordinator, checkout workhorses and the host's own identity and policy",
-  "description": "Its npm build bundles codex-app-server, process, timing and diagnostics, which are MIT like it; every other workspace package is BUSL and stays out of it. Archboard and the example reach it only through the entries an outside host uses.",
+  "description": "Its npm build bundles codex-app-server, process and diagnostics, which are MIT like it; every other workspace package is BUSL and stays out of it. Archboard and the example reach it only through the entries an outside host uses.",
   "groups": [
     "agent",
     "packages"
@@ -14,6 +14,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+  "parent": "vKEsyHFk#EuaJBisP",
   "formerNames": [
     "agent-workbench"
   ],
@@ -23,6 +24,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }

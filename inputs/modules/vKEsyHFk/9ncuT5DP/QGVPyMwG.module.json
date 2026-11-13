@@ -70,19 +70,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#5gcxxoqv",
       "to": "vKEsyHFk#Q2Jc26oO"
-    },
-    {
-      "order": 66000,
-      "kind": "dependency",
-      "label": "approval, realtime and session durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/approvals/services/broker.ts",
-        "symbol": "CODEX_APPROVAL_MS"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#aDY2uOmY",
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
     }
   ]
 }
