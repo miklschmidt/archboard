@@ -31,7 +31,7 @@ small events.
 - If any of these is true, it is off, and nothing is recorded or sent:
   - Archboard runs in CI (any value of `CI` counts),
   - Archboard runs in a test,
-  - `DO_NOT_TRACK` has a value other than `0` or `false`,
+  - `DO_NOT_TRACK` has a value that is not empty, `0` or `false`,
   - `ARCHBOARD_TELEMETRY` is `0`, `false` or `off`,
   - the person ran `archboard telemetry off`.
 - The GitHub Actions of this repository never send telemetry. They run in CI, so the rule above
