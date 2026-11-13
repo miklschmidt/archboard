@@ -10,9 +10,9 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#C4dZpr3U",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "formerNames": [
     "Text shaping"
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  "outgoing": []
 }

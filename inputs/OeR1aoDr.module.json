@@ -7,8 +7,8 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/ui-kit/src/ui"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#l5jdGkb1",
   "schemaVersion": 1,
   "id": "vKEsyHFk#OeR1aoDr",
+  "parent": "vKEsyHFk/vKEsyHFk#l5jdGkb1",
   "outgoing": []
 }
