@@ -29,7 +29,7 @@ small events.
 - It is on by default. The first command that records prints a notice once to standard error.
   The notice says what Archboard sends and how to turn it off.
 - If any of these is true, it is off, and nothing is recorded or sent:
-  - Archboard runs in CI (any value of `CI` counts),
+  - Archboard runs in CI (any value of `CI` that is not empty counts),
   - Archboard runs in a test,
   - `DO_NOT_TRACK` has a value that is not empty, `0` or `false`,
   - `ARCHBOARD_TELEMETRY` is `0`, `false` or `off`,
