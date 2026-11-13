@@ -52,12 +52,14 @@ function useBranchFootprint(
 		...branchFootprintQuery(vault, model, { base: base ?? "", head, state: against ?? "" }),
 		enabled: ready,
 	});
+	const { refetch: readVault } = read;
 	const { refetch: readRefs } = refs;
 	const { refetch: readFootprint } = footprint;
 	const refresh = useCallback((): void => {
 		void readRefs();
+		void readVault();
 		if (ready) void readFootprint();
-	}, [readRefs, readFootprint, ready]);
+	}, [readRefs, readVault, readFootprint, ready]);
 	return { refs, footprint, base, head, read, against, refresh };
 }
 

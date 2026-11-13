@@ -166,6 +166,11 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 	fixtureGit(root, "add", "--all");
 	fixtureGit(root, "commit", "--quiet", "-m", "Plan beside");
 	fixtureGit(root, "checkout", "--quiet", "feature");
+	fixtureGit(root, "checkout", "--quiet", "-b", "broken", "main");
+	writeFileSync(join(vault, "model.json"), "invalid\n");
+	fixtureGit(root, "add", ".archboard/vault/model.json");
+	fixtureGit(root, "commit", "--quiet", "-m", "Invalid model");
+	fixtureGit(root, "checkout", "--quiet", "feature");
 	const model = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!model.body.success) throw new Error(JSON.stringify(model.body));
 	const reading = `${server.base}/?modelA=${model.body.manifest.id}`;
@@ -228,6 +233,27 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 		WAIT,
 	);
 	expect(await footprintReads(browser)).toBe(2);
+
+	// A head with invalid inputs reports a failure and can be read again after repair.
+	await browser.run(["click", '[data-ref-picker="head"] button']);
+	await browser.run(["click", '[data-ref-choice="broken"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="branch-footprint-status"][role="alert"]') !== null`,
+			),
+		Boolean,
+		"the unreadable head's failure",
+		WAIT,
+	);
+	fixtureGit(root, "update-ref", "refs/heads/broken", "main");
+	await browser.run(["click", '[data-slot="footprint-refresh"]']);
+	await pollUntil(
+		() => lists(browser),
+		(repaired) => repaired.changed !== undefined,
+		"the repaired head after Refresh",
+		WAIT,
+	);
 
 	// The vault at a head that is not checked out lacks the plan on screen, so the footprint is set
 	// against the one proposal that the head adds over the merge base.

@@ -70,13 +70,14 @@ function LiveFootprint(props: BranchFootprintProps): JSX.Element {
 				against={against}
 				choice={choice}
 				onChoice={onChoice}
-				busy={refs.isFetching || footprint.isFetching}
+				busy={refs.isFetching || read.isFetching || footprint.isFetching}
 				onRefresh={refresh}
 			/>
 			<FootprintBody
 				{...props}
 				base={base}
 				refsFailure={refs.error?.message}
+				vaultFailure={read.error?.message}
 				footprint={footprint}
 			/>
 		</div>
@@ -92,12 +93,15 @@ function FootprintBody(
 	props: BranchFootprintProps & {
 		readonly base: string | null;
 		readonly refsFailure: string | undefined;
+		readonly vaultFailure: string | undefined;
 		readonly footprint: ReturnType<typeof useBranchFootprint>["footprint"];
 	},
 ): JSX.Element {
-	const { base, refsFailure, footprint } = props;
+	const { base, refsFailure, vaultFailure, footprint } = props;
 	if (refsFailure !== undefined)
 		return <Status alert>The branches could not be read. {refsFailure}</Status>;
+	if (vaultFailure !== undefined)
+		return <Status alert>The model for this head could not be read. {vaultFailure}</Status>;
 	if (base === null) return <Status>Choose the base that this branch started from.</Status>;
 	if (footprint.status === "error")
 		return <Status alert>The footprint could not be read. {footprint.error.message}</Status>;
