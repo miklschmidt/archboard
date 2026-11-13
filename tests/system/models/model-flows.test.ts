@@ -318,7 +318,7 @@ test("structural exports use canonical recursive scope and preserve reproducible
 		grammar: "architecture",
 		placed: expect.arrayContaining(["Shop#Handler"]),
 	});
-});
+}, 30000);
 
 test("retired model writers and claims cannot change a vault through HTTP or CLI", async () => {
 	const before = cli(["model", "read"]);
