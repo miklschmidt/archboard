@@ -3,25 +3,21 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "TGDLt5Ea",
-    "name": "The release workflow publishes each package to npm without staging",
-    "summary": "The publish job publishes every package with npm publish after the gate and the smoke test pass, in place of npm stage publish, so a release reaches npm without the owner approving each staged version.",
+    "id": "BlKbD4yG",
+    "name": "A workhorse stop ends its whole work tree",
+    "summary": "Spoken Stop and the Stop control end the workhorse's turn, every sub-agent and every queued request, report only what they observed end, and refuse new work meanwhile; inspection reads the real turn, sub-agents and queue, so a stop is never claimed without evidence.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/agents/releasing.md"
-      },
-      {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
+        "path": "docs/adr/0048-a-workhorse-stop-ends-the-whole-work-tree.md"
       }
     ],
-    "predecessor": "mdEX4O4o",
-    "baseline": "6cf2b89b82e00e882169ce446d0336646a96806a",
-    "createdAt": "2026-11-12T10:58:52.698Z",
-    "adoptedAt": "2026-11-12T11:07:26.152Z",
-    "reason": "Commit 6f92ab8c6e implements it on branch t3/3fb4dfa5: the publish job of the release workflow runs npm publish on each tarball in place of npm stage publish. The owner authorized this adoption.",
-    "previousCurrent": "mdEX4O4o"
+    "predecessor": "TGDLt5Ea",
+    "baseline": "1d70245d59edee42ea0b444968946376e1e8d485",
+    "createdAt": "2026-11-13T00:14:28.669Z",
+    "adoptedAt": "2026-11-13T00:57:54.337Z",
+    "reason": "TASK-446 implements the work tree stop and the inspection of real work on this branch; archboard check --state BlKbD4yG is clean.",
+    "previousCurrent": "TGDLt5Ea"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
@@ -1662,6 +1658,10 @@
     "vKEsyHFk/SMjRfwN3#44gQ5gUw",
     "vKEsyHFk/vKEsyHFk#mm4DLsd2",
     "vKEsyHFk#8EhrdPUE",
-    "vKEsyHFk#ezZAyT0C"
+    "vKEsyHFk#ezZAyT0C",
+    "vKEsyHFk/SJ2JMVyz#GxqAt622",
+    "vKEsyHFk/SJ2JMVyz#h0BKG447",
+    "vKEsyHFk/SJ2JMVyz#7TzJNwiF",
+    "vKEsyHFk/SJ2JMVyz#rP5D38QT"
   ]
 }
