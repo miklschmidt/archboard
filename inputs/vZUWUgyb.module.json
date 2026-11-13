@@ -10,6 +10,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#vZUWUgyb",
   "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "formerNames": [
+    "Board document schema"
+  ],
   "outgoing": [
     {
       "order": 26000,
@@ -24,8 +27,5 @@
       "id": "vKEsyHFk/vKEsyHFk#I2n1uZLa",
       "to": "vKEsyHFk#NVlMWCWO"
     }
-  ],
-  "formerNames": [
-    "Board document schema"
   ]
 }

@@ -20,8 +20,8 @@
         "path": "docs/design/wide-board-layout-fixtures/timing.ts",
         "symbol": "readVaultConfiguration"
       },
-      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe",
-      "id": "vKEsyHFk#vo1cE4kF"
+      "id": "vKEsyHFk#vo1cE4kF",
+      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
     },
     {
       "order": 200,
@@ -33,8 +33,8 @@
         "path": "docs/design/wide-board-layout-fixtures/timing.ts",
         "symbol": "renderArchitecture"
       },
-      "to": "vKEsyHFk#jAl99x56",
-      "id": "vKEsyHFk#kOmlZURV"
+      "id": "vKEsyHFk#kOmlZURV",
+      "to": "vKEsyHFk#jAl99x56"
     }
   ]
 }
