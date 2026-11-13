@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: 2026-09-23 21:36
-updated_date: '2026-11-13T00:20:00Z'
+updated_date: '2026-11-13T00:24:00Z'
 labels:
   - voice
   - coordinator
@@ -58,6 +58,10 @@ Review (2026-10-11): the A2 'known limit' is narrower than stated. delegatedBy i
 2026-11-13: the old board drafts D0qvstE4 (Coordinator turn homes record which turn delegated) and YkUcKOJ5 (Workbench client shows the voice coordinator's turns) stood on pre-canonical states (qdsrL4tY, 6C82GLIe) that are not in the state catalogue, and D0qvstE4 anchored at packages/workbench/src/server/services/sessions/factories.ts, which no longer exists. A new proposal on Current TGDLt5Ea, The workbench shows the voice coordinator's turns and who delegated (7XssUp0E), describes the code as it is today: Coordinator turn homes (vKEsyHFk/9ncuT5DP#qTmIytbT, delegations.ts) also keeps which coordinator turn delegated each workhorse turn; a new event relationship Operation lifecycle -> Coordinator turn homes (vKEsyHFk#LTCp4RIQ, anchored at delegations.ts recordDelegations, which the tab session subscribes in factories.ts buildProductionTabSession); a new step in The coordinator delegates work (vKEsyHFk#NJUAVXIy, accepted branch, anchored at events.ts adoptTurn), with Coordinator turn homes added as a participant; Browser gateway (vKEsyHFk/9ncuT5DP#u2LFaG7R) and Workbench client (vKEsyHFk/yejBBUFY#0x47EMoO) responsibilities name the voice coordinator's turns. archboard check semantics: 0 diagnostics. archboard check code --state 7XssUp0E: 197 findings, the same set as Current; the first anchor (factories.ts buildProductionTabSession) gave ANCHOR_MISMATCH and was moved to delegations.ts recordDelegations. Adopted with owner authorization; D0qvstE4 and YkUcKOJ5 shelved with a reason that names 7XssUp0E.
 
 AC #3: commit 5dae569a86 added the description to docs/design/operator-canvas-shell.md ('The voice coordinator's turns stand in the same conversation'). Commit c0c58fca73 (#76, 2026-11-09) later retired that document into DESIGN.md and did not carry this rule over. ADR 0019's TASK-319 amendment still describes where the coordinator's work is shown.
+
+Review S1 (2026-11-13): The coordinator delegates work (vKEsyHFk/9ncuT5DP#ILeym7Ex) now separates accepted direct turns from accepted queued submissions. The recording step (vKEsyHFk#NJUAVXIy) follows the direct commit and anchors at direct-delegate.ts publishTurnStart. A queued acceptance alone identifies no workhorse turn. Later correlated events can record queued or unknown delegations. Direct delegates can also record earlier through correlated notifications. This edit to Current preserves 7XssUp0E and its adoption metadata.
+
+Validation: 25 focused tests pass. archboard check semantics reports zero diagnostics, and check embeds reports zero findings. The code inspection returns the same 197 findings as before the correction, with none added.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
