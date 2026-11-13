@@ -52,20 +52,36 @@ function telemetryDirectory(env: Readonly<Record<string, string | undefined>>): 
 }
 
 /**
- * Read the settings, or make them with a new installation id.
+ * Read a settings file.
+ * @param file The file.
+ * @returns The settings, or null for a file that is missing or holds no settings.
+ */
+function parseSettings(file: string): Settings | null {
+	try {
+		return SettingsSchema.parse(JSON.parse(fs.readFileSync(file, "utf8")));
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Read the settings, or make them with a new installation id. The first write is exclusive, so a
+ * process that starts at the same time keeps the id, and any opt-out, of the one that wrote first.
  * @param directory The telemetry directory.
  * @returns The settings.
  */
 function readSettings(directory: string): Settings {
 	const file = path.join(directory, "settings.json");
+	const existing = parseSettings(file);
+	if (existing !== null) return existing;
+	const settings: Settings = { installationId: randomUUID(), turnedOff: false, noticeShown: false };
 	try {
-		return SettingsSchema.parse(JSON.parse(fs.readFileSync(file, "utf8")));
+		writeFileAtomic(file, `${JSON.stringify(settings)}\n`, { createParents: true, exclusive: true });
+		return settings;
 	} catch {
-		const settings: Settings = {
-			installationId: randomUUID(),
-			turnedOff: false,
-			noticeShown: false,
-		};
+		// Another process wrote the settings first, or the file holds none and is replaced.
+		const raced = parseSettings(file);
+		if (raced !== null) return raced;
 		writeSettings(directory, settings);
 		return settings;
 	}
