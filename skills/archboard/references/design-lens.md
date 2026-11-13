@@ -87,6 +87,10 @@ Investigate a missing dependency or one decision spread across two modules.
 A footprint compares branch changes with modeled subjects.
 `model footprint --base <ref>` reads from the merge base to HEAD.
 `--head <ref>` selects another end. Without `--state`, the result is `changed`.
+If the vault's repository resolves the head, the command reads the vault as that head holds it, so `--state` names a proposal of that branch.
+`--model-at checkout` reads the vault on disk instead, for a proposal that you edit and did not commit to the head.
+`vaultRead` names the vault that the command read: `{"at":"checkout"}`, or `{"at":"ref"}` with the ref and its commit.
+In the browser, Measures shows the same answer in `What this branch changed`.
 With a proposal, it reports:
 
 - `namedAndChanged`: Branch changes that the proposal names.
