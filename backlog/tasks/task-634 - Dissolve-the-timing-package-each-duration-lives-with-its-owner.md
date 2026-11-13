@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-13T04:12:00Z'
+updated_date: '2026-11-13T04:36:00Z'
 labels:
   - refactor
   - architecture
@@ -39,3 +40,9 @@ packages/timing holds every product duration, grouped by owner, in one package t
 5. Update boundaries.md, ADRs (new ADR supersedes the timing part of ADR 0016), the site, the vault through a proposal.
 6. Gate: bunx vp run check:all and bunx vp run test.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Moved every group to its owner and replaced durations() with Object.freeze({...} satisfies Record<string, number>), which keeps each key typed as number. 17 names exported across 8 packages (model 2, process 3, codex-app-server 2, codex-realtime-voice 3, server-lifecycle 1, workbench 3, renderer 1, walkthrough 2); timing 38 removed, net width -21, approved by the owner. Registry lock in workspace has its own REGISTRY_LOCK_MS (workspace sits below model). Relation checks: codex-app-server, codex-realtime-voice, workbench, server-lifecycle, apps/cli and apps/web constants tests; RECORDER_MS.stall/frameCall, SKILL_EVAL serverShutdown and the failed-start cleanup are computed from the owner export. Voice npm bundle: GIT_MS marked pure so the bundle drops it. Vault: proposal ostXM9oe (removes module timing and 4 relationships, fixes 2 descriptions) adopted. Gate on e3a304369e: bunx vp run check:all and bunx vp run test pass; site build passes and the orb and live window draw.
+<!-- SECTION:NOTES:END -->

@@ -221,7 +221,8 @@ const PICTURE_MS = Object.freeze({
 	 * A busy GPU or a long task holds a frame back, and a flight that runs on through the stall
 	 * reaches the reader finished. Past this, the stage's time waits for the frames that show it.
 	 * Pulls against a slow painter: a machine whose frames all take longer sees every motion
-	 * stretched, so this stays above the 33 ms of a recording's slowest frame.
+	 * stretched, so this stays above the 33 ms of a recording's slowest frame. A test of
+	 * the web app checks it.
 	 */
 	longestStep: 50,
 	/**

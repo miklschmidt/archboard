@@ -23,7 +23,7 @@ const SEMANTIC_RASTER_STARTUP_TIMEOUT_MS = 30_000;
 /**
  * Bound for each renderer TERM/KILL phase. Two phases fit inside the CLI
  * interrupt grace, leaving time to remove the private profile after the group
- * is proved absent.
+ * is proved absent. A test of the rasterizer checks it.
  */
 const SEMANTIC_RASTER_CLEANUP_MS = 1000;
 
