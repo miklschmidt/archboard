@@ -7,7 +7,15 @@ import {
 	type SourceRefsAnswer,
 } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
 import { useReadVault } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/hooks/use-read-vault.ts";
-import { defaultAgainst } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/against.ts";
+import {
+	useMergeBaseStates,
+	type RefRange,
+} from "#ui/architecture-drawing/model-reader/reading/branch-footprint/hooks/use-merge-base-states.ts";
+import {
+	defaultAgainst,
+	holds,
+	type VaultStates,
+} from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/against.ts";
 
 /**
  * What the reader chose for the range and the state, each absent until chosen, which takes its
@@ -38,7 +46,7 @@ function useBranchFootprint(
 	const base = baseOf(choice, refs.data);
 	const head = headOf(choice, model);
 	const read = useReadVault(vault, head);
-	const against = choice.against ?? againstOf(read.states, model);
+	const against = useAgainst(vault, model, choice, { base, head }, read.states);
 	const ready = base !== null && against !== null;
 	const footprint = useQuery({
 		...branchFootprintQuery(vault, model, { base: base ?? "", head, state: against ?? "" }),
@@ -75,17 +83,44 @@ function headOf(choice: FootprintChoice, model: Pick<Model, "sourceRef">): strin
 }
 
 /**
- * The default state to set the commits against, once the vault that is read is known.
- * @param read The states of that vault, once read.
+ * The state to set the commits against: the chosen one, else the default, once the vault that is
+ * read is known and, when the default needs them, the states at the merge base.
+ * @param vault The explicitly addressed vault.
  * @param model The reading on screen.
+ * @param choice What the reader chose.
+ * @param range The base and the head.
+ * @param read The states of the vault that is read, once read.
  * @returns The state, or null while it is not known.
  */
-function againstOf(
-	read: ReturnType<typeof useReadVault>["states"],
-	model: Pick<Model, "selectedState">,
+function useAgainst(
+	vault: string,
+	model: Pick<Model, "manifest" | "selectedState" | "revision">,
+	choice: FootprintChoice,
+	range: RefRange,
+	read: VaultStates | undefined,
 ): string | null {
-	if (read === undefined) return null;
-	return defaultAgainst(read, model.selectedState?.id, undefined);
+	const shown = model.selectedState?.id;
+	const before = useMergeBaseStates(vault, model, range, needsMergeBase(choice, read, shown));
+	if (choice.against !== undefined) return choice.against;
+	if (read === undefined || !before.settled) return null;
+	return defaultAgainst(read, shown, before.states);
+}
+
+/**
+ * Whether the default state needs the states at the merge base: the reader chose none, and the
+ * vault that is read does not hold the state on screen.
+ * @param choice What the reader chose.
+ * @param read The states of the vault that is read, once read.
+ * @param shown The state on screen.
+ * @returns Whether it needs them.
+ */
+function needsMergeBase(
+	choice: FootprintChoice,
+	read: VaultStates | undefined,
+	shown: string | undefined,
+): boolean {
+	if (choice.against !== undefined || read === undefined) return false;
+	return !holds(read, shown);
 }
 
 export { useBranchFootprint, type FootprintChoice };

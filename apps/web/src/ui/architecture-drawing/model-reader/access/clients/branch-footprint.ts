@@ -78,6 +78,12 @@ function branchFootprintQuery(
 	});
 }
 
+/** A range whose base and head are both named. */
+interface NamedRange {
+	readonly base: string;
+	readonly head: string;
+}
+
 /** The branches of the repositories that a reading binds, as the route answers them. */
 type SourceRefsAnswer = Extract<
 	z.infer<typeof ArchitectureHistoryResultSchema>,
@@ -130,10 +136,60 @@ function sourceRefsQuery(
 	});
 }
 
+/**
+ * Read where a range runs in the vault's repository: the merge base of the base and the head. It
+ * is kept until the reader presses Refresh, as the branches are.
+ * @param vault The explicitly addressed vault.
+ * @param model The coherent model and the state on screen.
+ * @param range The base and the head, as the reader named them.
+ * @returns One cached request for the range, which answers null where the repository has none.
+ */
+function mergeBaseQuery(
+	vault: string,
+	model: Pick<Model, "manifest" | "selectedState" | "revision">,
+	range: NamedRange,
+) {
+	const state = model.selectedState?.id;
+	const parameters = new URLSearchParams({ base: range.base, head: range.head });
+	if (state !== undefined) parameters.set("state", state);
+	return queryOptions({
+		queryKey: [
+			...architectureModelKeys.vault(vault),
+			"merge-base",
+			model.manifest.id,
+			state,
+			model.revision.digest,
+			range.base,
+			range.head,
+		],
+		/**
+		 * Read the range from the refs listing.
+		 * @returns The range, or null.
+		 */
+		queryFn: async (): Promise<SourceRefsAnswer["range"]> => {
+			const result = await readReply(
+				`${inVault("/api/architecture/refs", vault)}&${parameters}`,
+				ArchitectureHistoryResultSchema,
+			);
+			if (!result.success) throw new ArchitectureReadError(result);
+			if (result.analysis !== "refs")
+				throw new Error("The history response contains another analysis. Retry the read.");
+			return result.range ?? null;
+		},
+		staleTime: Number.POSITIVE_INFINITY,
+		retry: false,
+		retryOnMount: false,
+		refetchOnReconnect: false,
+		refetchOnWindowFocus: false,
+	});
+}
+
 export {
 	branchFootprintQuery,
+	mergeBaseQuery,
 	sourceRefsQuery,
 	type BranchFootprintAnswer,
 	type FootprintRange,
+	type NamedRange,
 	type SourceRefsAnswer,
 };
