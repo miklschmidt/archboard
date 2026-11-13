@@ -1077,6 +1077,194 @@
           ]
         }
       ]
+    },
+    {
+      "id": "vKEsyHFk#ENwNxHw2",
+      "name": "Read what a branch changed",
+      "summary": "A reader picks a base and a head in Measures and sees which modules the commits between them changed, set against the proposal of the vault at that head, so a branch is reviewed against its own plan without checking it out.",
+      "participants": [
+        "vKEsyHFk#TYdGeADR",
+        "vKEsyHFk#guvtYApo",
+        "vKEsyHFk#LD4pDpP7",
+        "vKEsyHFk/HBlhIeSD#radK8osF",
+        "vKEsyHFk/HBlhIeSD#5SMX69gS",
+        "vKEsyHFk#ZGONZKxj",
+        "vKEsyHFk/0T9enjhi#KJy5yYuq",
+        "vKEsyHFk#DZAXm2he"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk#Tt7bfIJM",
+          "from": "vKEsyHFk#TYdGeADR",
+          "to": "vKEsyHFk#guvtYApo",
+          "label": "list the source refs",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#KsxfbPMj",
+          "from": "vKEsyHFk#guvtYApo",
+          "to": "vKEsyHFk#LD4pDpP7",
+          "label": "GET /api/architecture/refs",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#9dUOHZmF",
+          "from": "vKEsyHFk#LD4pDpP7",
+          "to": "vKEsyHFk/HBlhIeSD#radK8osF",
+          "label": "branches of each bound repository",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#YouDouKl",
+          "from": "vKEsyHFk/HBlhIeSD#radK8osF",
+          "to": "vKEsyHFk#TYdGeADR",
+          "label": "refs merged by name, the checked-out head",
+          "kind": "return"
+        },
+        {
+          "id": "vKEsyHFk#WrveHBnx",
+          "from": "vKEsyHFk#TYdGeADR",
+          "to": "vKEsyHFk#guvtYApo",
+          "label": "read the footprint from base to head",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#qqMwh8Bl",
+          "from": "vKEsyHFk#guvtYApo",
+          "to": "vKEsyHFk#LD4pDpP7",
+          "label": "GET /api/architecture/footprint",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#y0gpKE7l",
+          "from": "vKEsyHFk#LD4pDpP7",
+          "to": "vKEsyHFk/HBlhIeSD#radK8osF",
+          "label": "readArchitectureFootprint",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#7kWFCZPk",
+          "from": "vKEsyHFk/HBlhIeSD#radK8osF",
+          "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+          "label": "read the selected state at head",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#1WYWiMlY",
+          "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+          "to": "vKEsyHFk#ZGONZKxj",
+          "label": "read the state with the source ref",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#nndzX2QT",
+          "from": "vKEsyHFk#ZGONZKxj",
+          "to": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+          "label": "select the state at the ref",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#V9jSQhZc",
+          "from": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+          "to": "vKEsyHFk#DZAXm2he",
+          "label": "decode the vault at the head commit",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#2Xuw5HzR",
+          "from": "vKEsyHFk#DZAXm2he",
+          "to": "vKEsyHFk/HBlhIeSD#radK8osF",
+          "label": "the model as the branch holds it",
+          "kind": "return"
+        },
+        {
+          "id": "vKEsyHFk#HUvMJo6G",
+          "from": "vKEsyHFk/HBlhIeSD#radK8osF",
+          "to": "vKEsyHFk#TYdGeADR",
+          "label": "the three lists against the proposal",
+          "kind": "return"
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk#I4QPD0zt",
+      "name": "Show a branch footprint on its picture",
+      "summary": "Show on picture opens the nearest module that holds a list's changed modules, in the branch reading of the head when the head is not checked out, and selects what that picture draws of them, so the reader sees the branch's reach on the architecture it plans.",
+      "participants": [
+        "vKEsyHFk#TYdGeADR",
+        "vKEsyHFk/yejBBUFY#w46oCRoH",
+        "vKEsyHFk#p0EDMxTr",
+        "vKEsyHFk#guvtYApo",
+        "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
+        "vKEsyHFk#ZGONZKxj",
+        "vKEsyHFk/0T9enjhi#KJy5yYuq",
+        "vKEsyHFk#DZAXm2he"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk#NMpsyXFL",
+          "from": "vKEsyHFk#TYdGeADR",
+          "to": "vKEsyHFk/yejBBUFY#w46oCRoH",
+          "label": "open the shared parent at the head ref",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#59UXwmre",
+          "from": "vKEsyHFk/yejBBUFY#w46oCRoH",
+          "to": "vKEsyHFk#p0EDMxTr",
+          "label": "the branch reading's address",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#PBt8O2ge",
+          "from": "vKEsyHFk#p0EDMxTr",
+          "to": "vKEsyHFk#guvtYApo",
+          "label": "read the model at the ref",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#7VhlxUQI",
+          "from": "vKEsyHFk#guvtYApo",
+          "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
+          "label": "GET /api/architecture/model with ref",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#zyVm7Rb5",
+          "from": "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
+          "to": "vKEsyHFk#ZGONZKxj",
+          "label": "read the state at the ref",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#fF96Kdaa",
+          "from": "vKEsyHFk#ZGONZKxj",
+          "to": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+          "label": "select the state at the ref",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#XMJlJXOa",
+          "from": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+          "to": "vKEsyHFk#DZAXm2he",
+          "label": "decode the vault at the commit",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#L9dU9IBJ",
+          "from": "vKEsyHFk#DZAXm2he",
+          "to": "vKEsyHFk#p0EDMxTr",
+          "label": "a read-only model",
+          "kind": "return"
+        },
+        {
+          "id": "vKEsyHFk#z9fUgfUw",
+          "from": "vKEsyHFk#TYdGeADR",
+          "to": "vKEsyHFk#p0EDMxTr",
+          "label": "select changed modules and drawn holders",
+          "kind": "sync"
+        }
+      ]
     }
   ]
 }
