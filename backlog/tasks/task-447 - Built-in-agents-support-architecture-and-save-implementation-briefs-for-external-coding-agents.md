@@ -6,8 +6,8 @@ title: >-
 status: In Progress
 assignee:
   - '@codex'
-created_date: '2026-10-07 19:57'
-updated_date: '2026-10-17 04:20'
+created_date: 2026-10-07 19:57
+updated_date: '2026-11-13T00:16:00Z'
 labels:
   - voice
   - coordinator
@@ -78,6 +78,8 @@ The user requires actual Archboard environment values and concise commands for p
 The board check passes with no diagnostics. semantic compare changes only existing responsibilities. Current content remains unchanged. No proposal is adopted.
 
 2026-10-17: this task's board proposals were rebuilt on the current architecture, which holds the board's calls as flows (TASK-482.07). Each is now named 'TASK-447 after TASK-482.07' on every board that had one (Agent workbench, Browser application, Codex workhorse, Voice coordinator, as applicable); the old 'TASK-447' drafts stood on parents later adoptions made historical, were renamed 'TASK-447 (before flows)' and shelved. A former name stays with the shelved draft, so read and adopt the new proposal by its new name. Calls of the change are steps of the board's flows.
+
+2026-11-13: TASK-447 is not built. Its three board drafts G7qK7B9v (Coordinator instructions add the architecture role and handoff), hhgbZK4Q (Workhorse start carries architecture roles and briefs) and UQo38kRY (Voice coordinator and Workhorse start state their roles) stood on pre-canonical states (O1N446cC, VbwPSZYa, qdsrL4tY) that are not in the state catalogue, so they could not be adopted or reconciled. They are shelved. When the task starts, propose its architecture again on Current.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

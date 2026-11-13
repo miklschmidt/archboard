@@ -46,6 +46,20 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#2ed6AqSF",
       "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    },
+    {
+      "order": 77000,
+      "kind": "event",
+      "label": "a delegate's workhorse turn started",
+      "description": "Each tab session subscribes the recorder to its workhorse operations once. The started event of a delegate_to_workhorse operation names the workhorse turn and the coordinator turn that asked, and the recorder keeps that pair.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/delegations.ts",
+        "symbol": "recordDelegations"
+      },
+      "id": "vKEsyHFk#LTCp4RIQ",
+      "to": "vKEsyHFk/9ncuT5DP#qTmIytbT"
     }
   ]
 }
