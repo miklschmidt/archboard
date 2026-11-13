@@ -1,11 +1,11 @@
 ---
 id: TASK-633.02
 title: Measures lists what the checked-out branch changed since a base
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-12T23:49:00Z'
-updated_date: '2026-11-12T23:55:00Z'
+updated_date: '2026-11-13T00:29:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -49,15 +49,15 @@ None (can start immediately).
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Measures has a fourth view, `What this branch changed`, and it reads only when it opens and when the reader presses Refresh
-- [ ] #2 A new route lists the local and remote branches of every repository that the selected state binds, merged by name with the repositories that hold each, plus the default base and the vault checkout's branch or detached commit, without fetching and without tags
-- [ ] #3 The base list is searchable, defaults to `origin/HEAD`, else `main`, and accepts a typed ref that no entry matches
-- [ ] #4 With a proposal on screen, the view shows the three lists with `Changed but not named` first, and without one it shows the changed modules
-- [ ] #5 The view shows each module's commits, the reason the proposal names it and the changed modules it holds, the large commits, the skipped modules with their reason, the unbound files, and each repository's range or why it was not read
-- [ ] #6 The browser reuses an answer for the same model revision, base, head and state, and never reads while the view is closed
-- [ ] #7 With a checkpoint on screen, the view is disabled and says that a checkpoint is not live
-- [ ] #8 A row selects its own module, as the other Measures rows do
-- [ ] #9 DESIGN.md describes the view and its searchable list
+- [x] #1 Measures has a fourth view, `What this branch changed`, and it reads only when it opens and when the reader presses Refresh
+- [x] #2 A new route lists the local and remote branches of every repository that the selected state binds, merged by name with the repositories that hold each, plus the default base and the vault checkout's branch or detached commit, without fetching and without tags
+- [x] #3 The base list is searchable, defaults to `origin/HEAD`, else `main`, and accepts a typed ref that no entry matches
+- [x] #4 With a proposal on screen, the view shows the three lists with `Changed but not named` first, and without one it shows the changed modules
+- [x] #5 The view shows each module's commits, the reason the proposal names it and the changed modules it holds, the large commits, the skipped modules with their reason, the unbound files, and each repository's range or why it was not read
+- [x] #6 The browser reuses an answer for the same model revision, base, head and state, and never reads while the view is closed
+- [x] #7 With a checkpoint on screen, the view is disabled and says that a checkpoint is not live
+- [x] #8 A row selects its own module, as the other Measures rows do
+- [x] #9 DESIGN.md describes the view and its searchable list
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -67,3 +67,17 @@ None (can start immediately).
 2. Parent: the browser footprint and refs queries; the Measures view What this branch changed with the base list, the lists, Refresh and the checkpoint state; DESIGN.md; the browser owner.
 3. Gate, review, merge into the integration branch.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Gate: the refs schema sits in the shared protocol of code-intel, and the CLI history lines needed a type fix. Both are recorded as an exception on the proposal.
+Fix from looking at the view: the reasons under a row repeated each line and flow step with raw ids. They are now counted by kind and standing.
+Proof: tests/system/browser/reader-branch-footprint.test.ts (no read before the view opens, base defaults to main, three lists against a plan, Refresh reads the new commit, reopening reads nothing, a row selects its module). Source refs tests pass. Screenshots in both themes: origin/main as the default base in this repository, the typed-ref row, and the checkpoint notice.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Measures has a fourth view, What this branch changed. It reads the footprint from a base (origin/HEAD, else main, or any typed ref) to the head of each checkout, only while open and on Refresh. With a proposal it shows Changed but not named, Named and changed and Named but not changed, else Changed. Rows select their module. Lines under the lists say each range and what was not read. GET /api/architecture/refs lists the branches. DESIGN.md describes the view and its searchable list.
+<!-- SECTION:FINAL_SUMMARY:END -->
