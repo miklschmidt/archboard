@@ -88,11 +88,12 @@ function module(name: string, repo: string): void {
 
 /**
  * The listing of the current state, parsed as the browser parses it.
+ * @param range A base and a head to find the merge base of.
  * @returns The answer.
  */
-async function listing() {
+async function listing(range: { base?: string; head?: string } = {}) {
 	const answer = ArchitectureHistoryResultSchema.parse(
-		await api.readArchitectureSourceRefs(vault, {}),
+		await api.readArchitectureSourceRefs(vault, range),
 	);
 	if (!answer.success || answer.analysis !== "refs") throw new Error(JSON.stringify(answer));
 	return answer;
@@ -168,6 +169,27 @@ test("branches merge by name across repositories, local first, with who holds ea
 			detail: expect.any(String),
 		},
 	]);
+});
+
+test("a base and a head name the merge base in the vault's repository, and null when it cannot", async () => {
+	// `ahead` is a commit on top of main that no checkout has out; `unrelated` shares no history.
+	const tree = git(shop, "rev-parse", "HEAD^{tree}");
+	const ahead = git(shop, "commit-tree", tree, "-p", head, "-m", "ahead");
+	git(shop, "update-ref", "refs/heads/ahead", ahead);
+	git(shop, "update-ref", "refs/heads/unrelated", git(shop, "commit-tree", tree, "-m", "orphan"));
+	const full = { mergeBase: head, head: ahead };
+	expect((await listing({ base: "main", head: "ahead" })).range).toEqual(full);
+	expect((await listing({ base: "origin/main", head: ahead })).range).toEqual(full);
+	expect((await listing({ base: "ahead", head: "main" })).range).toEqual({
+		mergeBase: head,
+		head,
+	});
+	expect((await listing({ base: "main", head: "no-such-branch" })).range).toBeNull();
+	expect((await listing({ base: "no-such-branch", head: "ahead" })).range).toBeNull();
+	expect((await listing({ base: "main", head: "unrelated" })).range).toBeNull();
+	// One of the two, or none, names no range.
+	expect("range" in (await listing({ base: "main" }))).toBe(false);
+	expect("range" in (await listing())).toBe(false);
 });
 
 test("the default base is where origin/HEAD points, else main, and the vault checkout's branch is named", async () => {

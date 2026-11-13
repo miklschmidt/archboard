@@ -57,14 +57,19 @@ const WORDS = {
 			"",
 			"With `--fail-preexisting`, it exits 1 when `preexisting` names a module. Model code that exists at the base in the current state first, and repair a binding whose code exists nowhere.",
 			"",
+			"With `--head`, the selected state is read from the vault as the repository that holds the vault has it at that head, without a checkout. A head that only a code repository has leaves the vault on disk. `--model-at checkout` reads the vault on disk, for a gate that runs where the draft was just edited. The answer's `vaultRead` names the vault it read.",
+			"",
 			"A repository that cannot read the base or head is named, and the command exits 2. Source refs stay local and no source history is retained.",
 		].join("\n"),
 		options: {
-			state: "Read this draft by identity or name; current when absent",
+			state:
+				"Read this draft by identity or name; current when absent. It names a draft of the vault that this command reads: with `--head`, the vault at that head, unless `--model-at checkout`",
 			checkpoint: "Read this exact retained checkpoint instead of a live state",
 			against: "Read the draft beside this state; its base or current when absent",
 			base: "The Git ref the branch started from, such as `main` (required)",
 			head: "The Git ref the commits run up to; the `HEAD` of each checkout when absent",
+			modelAt:
+				"`head` (default) reads the vault as the repository that holds it has it at `--head`, so the head's own drafts and bindings count; `checkout` reads the vault on disk. With no `--head`, or a head that only a code repository has, it reads the vault on disk",
 		},
 	},
 } as const;
@@ -210,6 +215,15 @@ function judged(
 }
 
 /**
+ * An option's key as the command line spells it.
+ * @param key The camel-case key.
+ * @returns The dashed spelling, such as `model-at`.
+ */
+function kebab(key: string): string {
+	return key.replaceAll(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+}
+
+/**
  * What an option of an analysis means.
  * @param name The analysis.
  * @param key The option.
@@ -243,9 +257,9 @@ function historyCommand<I extends z.ZodRawShape>(
 			...Object.keys(input.shape).map((key) => ({
 				kind: "option" as const,
 				key,
-				spellings: [`--${key}`] as const,
+				spellings: [`--${kebab(key)}`] as const,
 				value: "required" as const,
-				placeholder: key,
+				placeholder: key === "modelAt" ? "head|checkout" : key,
 				description: optionWords(name, key),
 			})),
 			...(gated ? [failOutsideParameter, failPreexistingParameter] : []),
