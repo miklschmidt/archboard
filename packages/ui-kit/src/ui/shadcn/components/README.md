@@ -1,7 +1,7 @@
 # Shared shadcn Base UI components
 
 Official shadcn registry source, style `base-nova`, generated with the pinned
-CLI (`shadcn` 4.21.0, see package.json) from preset
+CLI (`shadcn` 4.23.0, see package.json) from preset
 [`b3QvqlIdU`](https://ui.shadcn.com/create?preset=b3QvqlIdU) on 2026-09-05
 with `iconLibrary: remixicon`, so the CLI wrote `@remixicon/react` imports.
 Class merging is the registry's own `cn` engine, configured once in

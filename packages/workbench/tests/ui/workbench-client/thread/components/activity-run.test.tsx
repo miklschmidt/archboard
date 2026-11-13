@@ -157,6 +157,7 @@ test("newlines separate commands only outside the script's quotes", () => {
 		items: [
 			command("compound", "completed", compound),
 			command("multiline", "completed", `/bin/bash -c '${script}'`),
+			command("ansi-c", "completed", String.raw`bash -c $'echo first\necho second'`),
 		],
 		ended: false,
 		live: false,
@@ -164,15 +165,12 @@ test("newlines separate commands only outside the script's quotes", () => {
 	expect(rows().map((row) => row.querySelector("span[title]")?.textContent)).toEqual([
 		compound,
 		script,
+		script,
 	]);
 });
 
-test("shell expansions outside literal script quotes keep the exact command", () => {
-	const sent = [String.raw`bash -c $'echo one\necho two'`, 'bash -lc "echo ${HOME}/file"'];
-	mount({
-		items: sent.map((line, index) => command(String(index), "completed", line)),
-		ended: false,
-		live: false,
-	});
-	expect(rows().map((row) => row.querySelector("span[title]")?.textContent)).toEqual(sent);
+test("a shell expansion outside literal script quotes keeps the exact command", () => {
+	const sent = 'bash -lc "echo ${HOME}/file"';
+	mount({ items: [command("0", "completed", sent)], ended: false, live: false });
+	expect(rows()[0]?.querySelector("span[title]")?.textContent).toBe(sent);
 });

@@ -177,9 +177,11 @@ describe("family checks", () => {
 		const after = structuredClone(AFTER);
 		for (const variant of after.variants) {
 			if (variant.name !== "No provider") continue;
-			for (const flow of variant.content.flows) {
-				flow.steps = flow.steps.filter((step) => step.id !== "s3");
-			}
+			// Replaced rather than edited in place: the variants may share one flow object.
+			variant.content.flows = variant.content.flows.map((flow) => ({
+				...flow,
+				steps: flow.steps.filter((step) => step.id !== "s3"),
+			}));
 		}
 		const reading: Reading = { ...READING, documents: new Map([["Flask", after]]) };
 		const verdicts = evaluateOutcomes(
