@@ -87,6 +87,14 @@
       "to": "vKEsyHFk#4FdKQJqK"
     },
     {
+      "order": 90000,
+      "kind": "call",
+      "label": "gives its Codex the telemetry environment",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#xFfU9fxu",
+      "to": "vKEsyHFk#EbMc8PH2"
+    },
+    {
       "order": 100000,
       "kind": "call",
       "label": "subscribe to arrived narration changes",
