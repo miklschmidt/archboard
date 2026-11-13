@@ -3,7 +3,7 @@
   "name": "Canonical model reader",
   "kind": "module",
   "responsibility": "Explores recursive module scopes and their connections",
-  "description": "Reads one coherent canonical model and its selected state. Opening a module changes attention without copying architecture. Unmigrated vaults expose explicit migration guidance. Exact retained originals use their captured viewer. A branch reading is keyed by its ref, follows no live change, and offers no claims, code findings or Explain, because each of them reads the vault on disk.",
+  "description": "Reads one coherent canonical model and its selected state. Opening a module changes attention without copying architecture. Unmigrated vaults expose explicit migration guidance. Exact retained originals use their captured viewer.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader"

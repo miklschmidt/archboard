@@ -7,6 +7,10 @@
   "groups": [
     "walkthrough"
   ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/walkthroughs/replay"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#aixSjfNe",
   "parent": "vKEsyHFk/yejBBUFY#01sVgqBF",
@@ -24,9 +28,5 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/walkthroughs/replay"
-  }
+  "outgoing": []
 }
