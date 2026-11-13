@@ -728,7 +728,7 @@ A pair that nothing in the model joins asks whether the model misses a dependenc
 _Avoid_: temporal coupling, logical coupling, evolutionary coupling, co-change
 
 **Branch footprint**:
-The modules whose bound declarations or paths a local source range changed, set against the modules that a selected proposal names (ADR 0045).
+The modules whose bound declarations or paths differ between the two ends of a local source range, set against the modules that a selected proposal names (ADR 0045).
 _Avoid_: footprint alone, impact, change set, touched parts, diff (that is a comparison)
 
 **Large commit**:

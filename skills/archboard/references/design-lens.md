@@ -93,12 +93,13 @@ With a proposal, it reports:
 - `changedNotNamed`: Changed modules absent from the proposal. Investigate work outside the plan or an incomplete proposal.
 - `namedNotChanged`: Proposed modules without code changes. Identify unfinished work or explain why no code change is needed.
 
+A module counts as changed only when its bound code differs between the merge base and the head. A change that a later commit undoes, or that a merge brings in again from a lower layer of a stack, does not count.
 Footprints retain large commits with `large` and list unread modules in `skipped`.
 `unboundFiles` lists each changed file that no module is bound to, because no module shows that change. The vault's files are not listed.
 Findings alone change no exit status.
 Each changed module lists in `holds` the other changed modules that are bound inside it.
-It lists them only when they bind each file that the commits changed in its own binding.
-If the commits also changed a file that only the outer module binds, its `holds` is empty.
+It lists them only when they bind each file that the branch changed in its own binding.
+If the branch also changed a file that only the outer module binds, its `holds` is empty.
 An unchanged module lists none.
 With a proposal, `--fail-outside` exits 1 when a module in `changedNotNamed` has empty `holds`.
 It names each failing module on standard error.

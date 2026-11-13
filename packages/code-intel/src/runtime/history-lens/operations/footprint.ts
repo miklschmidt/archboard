@@ -6,9 +6,11 @@
 // fetching: a ref resolves only from what the checkout already has, and a
 // checkout where it does not resolve is not read, and says so. A part pinned to
 // a branch or commit that its checkout does not have out is read up to that ref
-// when no head is named (TASK-493). The commits map onto the parts
-// whose bound declarations or paths they changed. Large commits are
-// kept and marked. With a proposal, the footprint sets the changed parts
+// when no head is named (TASK-493). A part changed when its bound declarations
+// or paths differ between the merge base and the head, so a change that a later
+// commit undoes, or that a merge brings in from a lower layer of a stack, does
+// not count (TASK-635). Each changed part keeps the commits that changed it.
+// Large commits are kept and marked. With a proposal, the footprint sets the changed parts
 // against the parts the proposal names, in three lists, and a part the lens
 // skipped is in none of them. A changed file that no binding holds is in a
 // list of its own (TASK-621).
@@ -19,6 +21,7 @@ import { bindingPathOf } from "@archboard/code-binding/bindings";
 import { snapshotCheckoutAccess, type CheckoutSnapshot } from "@archboard/code-binding/resolution";
 import {
 	attributeCommits,
+	netChangedParts,
 	type AttributedCommits,
 } from "#runtime/history-lens/operations/attribution.ts";
 import { markedCommit } from "#runtime/history-lens/operations/answer-commit.ts";
@@ -78,9 +81,9 @@ interface VariantFootprintRequest {
 /** What one repository's checkout holds of the footprint. */
 interface RepositoryFootprint {
 	readonly range: FootprintRepository;
-	/** Parts that commits changed, each with the files those commits changed. */
+	/** Parts that the range changed, each with the files that it changed. */
 	readonly changed: readonly ChangedPart[];
-	/** Parts that no commit changed. */
+	/** Parts that the range did not change. */
 	readonly unchanged: readonly FootprintPart[];
 	/** Parts of this repository the lens did not read, because its range was not. */
 	readonly skipped: readonly FootprintSkip[];
@@ -279,32 +282,18 @@ function unreadRepository(
 }
 
 /**
- * The files that some commits changed, under each name of a rename.
- * @param walked The commits of the range.
- * @param commits The ids of the commits to read.
- * @returns The files.
- */
-function filesOf(walked: readonly WalkedCommit[], commits: readonly string[]): string[] {
-	const ids = new Set(commits);
-	const files = walked
-		.filter((commit) => ids.has(commit.commit))
-		.flatMap((commit) =>
-			commit.changes.flatMap((change) =>
-				change.from === undefined ? [change.path] : [change.path, change.from],
-			),
-		);
-	return [...new Set(files)];
-}
-
-/**
- * What a checkout holds when its range was read: the commits between the
- * merge base and the head, mapped onto the parts bound there.
+ * What a checkout holds when its range was read: the parts bound there that
+ * the range changed, each with the commits between the merge base and the
+ * head that changed it.
  * @param repo The repository.
  * @param parts The parts bound there.
  * @param named Why the proposal names each part.
  * @param range Where the range runs.
  * @param walked The commits in it, newest first.
  * @param byPart Shared declaration attribution for each part.
+ * @param net The parts that the range changed, and the files it changed.
+ * @param net.parts The ids of those parts.
+ * @param net.files Those files, under each name of a rename.
  * @returns The checkout's footprint.
  */
 function mappedRepository(
@@ -314,11 +303,14 @@ function mappedRepository(
 	range: Range,
 	walked: readonly WalkedCommit[],
 	byPart: ReadonlyMap<string, AttributedCommits>,
+	net: { readonly parts: ReadonlySet<string>; readonly files: readonly string[] },
 ): RepositoryFootprint {
 	const entries = parts.map((part) => {
 		const attributed = byPart.get(part.node.id);
-		const commits = attributed?.commits ?? [];
+		const changed = net.parts.has(part.node.id);
+		const commits = changed ? (attributed?.commits ?? []) : [];
 		return {
+			changed,
 			commits,
 			part: {
 				...listed(part, commits, named.get(part.node.id) ?? []),
@@ -330,9 +322,9 @@ function mappedRepository(
 	return {
 		range: { status: "read", repo, ...range, commits: walked.length },
 		changed: entries
-			.filter((entry) => entry.commits.length > 0)
-			.map((entry) => ({ ...entry.part, files: filesOf(walked, entry.commits) })),
-		unchanged: entries.filter((entry) => entry.commits.length === 0).map((entry) => entry.part),
+			.filter((entry) => entry.changed)
+			.map((entry) => ({ ...entry.part, files: net.files })),
+		unchanged: entries.filter((entry) => !entry.changed).map((entry) => entry.part),
 		skipped: [],
 		commits: walked
 			.filter((commit) => used.has(commit.commit))
@@ -366,16 +358,19 @@ async function readRepository(
 	const range = await rangeOf(root, refs.base, refs.head, options);
 	if ("reason" in range) return unreadRepository(repo, parts, named, range);
 	const walked = await walkCommits(root, [`${range.mergeBase}..${range.head}`], options);
-	const mapped = mappedRepository(
-		repo,
-		parts,
-		named,
-		range,
-		walked,
-		await attributeCommits(root, range.head, walked, parts, options),
-	);
+	const [byPart, net] = await Promise.all([
+		attributeCommits(root, range.head, walked, parts, options),
+		netChangedParts(root, { from: range.mergeBase, to: range.head }, parts, options),
+	]);
+	const mapped = mappedRepository(repo, parts, named, range, walked, byPart, net);
 	if (scopes === undefined) return mapped;
-	return { ...mapped, unbound: unboundFiles(walked, scopes).map((file) => ({ repo, ...file })) };
+	const changedFiles = new Set(net.files);
+	return {
+		...mapped,
+		unbound: unboundFiles(walked, scopes)
+			.filter((file) => changedFiles.has(file.path))
+			.map((file) => ({ repo, ...file })),
+	};
 }
 
 /**

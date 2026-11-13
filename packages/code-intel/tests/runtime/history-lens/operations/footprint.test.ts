@@ -10,7 +10,7 @@
 // out of the footprint.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
@@ -264,6 +264,17 @@ beforeAll(async () => {
 	notes = commit(shop, "write notes", { "notes/draft.ts": "draft\n", "notes/todo.md": "todo\n" });
 	git(shop, "mv", "notes/draft.ts", "src/dir/draft.ts");
 	git(shop, "commit", "-q", "--no-gpg-sign", "-m", "move the draft into payments");
+	// Two layers of a stack that make the same change and merge instead of rebasing, and a change
+	// that the upper layer undoes.
+	git(shop, "checkout", "-q", "-b", "lower", "feature");
+	commit(shop, "lower: change the ledger", { "src/ledger.ts": "2\n" });
+	git(shop, "checkout", "-q", "-b", "upper", "feature");
+	commit(shop, "upper: change the ledger as the lower layer does", { "src/ledger.ts": "2\n" });
+	commit(shop, "upper: try billing", { "src/b.ts": "9\n", "notes/scratch.md": "x\n" });
+	unlinkSync(join(shop, "notes/scratch.md"));
+	commit(shop, "upper: undo billing", { "src/b.ts": "1\n" });
+	commit(shop, "upper: change events", { "src/e.ts": "3\n" });
+	git(shop, "merge", "-q", "--no-edit", "--no-gpg-sign", "lower");
 	git(shop, "checkout", "-q", "feature");
 	lens = await import("#tests/runtime/support/history-lens/lens.ts");
 });
@@ -301,6 +312,21 @@ test("a changed file that no binding holds is listed with its commits, and a ski
 test("a file renamed into a bound path is bound under its former name too", async () => {
 	const answer = await footprint("feature", undefined, "renames");
 	expect(answer.unboundFiles).toEqual([{ repo: SHOP, path: "notes/todo.md", commits: [notes] }]);
+});
+
+test("a change that the range undoes, or that a merge brings in again from a lower layer, changes no part", async () => {
+	const answer = await footprint("lower", "Plan", "upper");
+	if (answer.proposal === null) throw new Error("a proposal was named");
+	expect(answer.repositories).toContainEqual(
+		expect.objectContaining({ status: "read", repo: SHOP, commits: 4 }),
+	);
+	expect(ids(answer.namedAndChanged)).toEqual([]);
+	expect(ids(answer.changedNotNamed)).toEqual(["pE"]);
+	expect(ids(answer.namedNotChanged)).toEqual(expect.arrayContaining(["pB", "pL"]));
+	const [events] = answer.changedNotNamed;
+	expect(events && subjectsOf(answer, events)).toEqual(["upper: change events"]);
+	expect(answer.commits.map((one) => one.subject)).toEqual(["upper: change events"]);
+	expect(answer.unboundFiles).toEqual([]);
 });
 
 test("a large commit is kept and marked", async () => {
