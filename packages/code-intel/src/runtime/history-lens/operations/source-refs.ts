@@ -9,6 +9,7 @@
 import { existsSync } from "node:fs";
 import { checkoutsReadFrom, vaultIdentity } from "@archboard/code-binding/resolution";
 import { gitAnswer, type GitRunOptions } from "#runtime/history-lens/clients/git.ts";
+import { commitOf } from "#runtime/history-lens/clients/source-history.ts";
 import type { SourceRef, SourceRefsAnswer } from "#shared/protocol/source-refs.ts";
 
 type Repository = SourceRefsAnswer["repositories"][number];
@@ -135,6 +136,67 @@ async function readCheckout(
 	return { repository: { status: "read", repo }, refs };
 }
 
+/** The refs of a range as the caller named them. */
+interface SourceRange {
+	readonly base: string;
+	readonly head: string;
+}
+
+/**
+ * Where a range runs in the vault's repository, resolving each ref as the footprint does.
+ * @param root The checkout that holds the vault.
+ * @param range The base and the head as asked.
+ * @param options The caller's signal.
+ * @returns The merge base and the head commit, or null when a ref does not resolve or no history is shared.
+ */
+async function mergeBaseIn(
+	root: string | undefined,
+	range: SourceRange,
+	options: GitRunOptions,
+): Promise<SourceRefsAnswer["range"]> {
+	if (root === undefined) return null;
+	const [base, head] = await Promise.all([
+		commitOf(root, range.base, options),
+		commitOf(root, range.head, options),
+	]);
+	if (base === undefined || head === undefined) return null;
+	const mergeBase = await gitAnswer(root, ["merge-base", base, head], options);
+	return mergeBase === undefined ? null : { mergeBase, head };
+}
+
+/**
+ * The answer's `range`: absent unless the caller named a range.
+ * @param root The checkout that holds the vault.
+ * @param range The base and the head as asked, when both were.
+ * @param options The caller's signal.
+ * @returns An empty object, or the range.
+ */
+async function rangeAnswer(
+	root: string | undefined,
+	range: SourceRange | undefined,
+	options: GitRunOptions,
+): Promise<Pick<SourceRefsAnswer, "range">> {
+	return range === undefined ? {} : { range: await mergeBaseIn(root, range, options) };
+}
+
+/**
+ * The vault's own repository, when a checkout holds it and its refs were read.
+ * @param own The vault's repository identity.
+ * @param read What that repository's checkout held.
+ * @param root The checkout that holds the vault.
+ * @param options The caller's signal.
+ * @returns Where the checkout stands, or null.
+ */
+async function vaultStanding(
+	own: string | undefined,
+	read: { refs?: CheckoutRefs } | undefined,
+	root: string | undefined,
+	options: GitRunOptions,
+): Promise<SourceRefsAnswer["vault"]> {
+	if (own === undefined || root === undefined || read?.refs === undefined) return null;
+	return vaultOf(own, root, options);
+}
+
 const KINDS = ["local", "remote"] as const;
 
 /**
@@ -185,12 +247,15 @@ function merged(read: readonly { repo: string; refs?: CheckoutRefs }[]): SourceR
  * @param repos The identities of the bound repositories. The vault's own repository is read too,
  * because the default base is chosen in it.
  * @param options The caller's signal.
- * @returns The merged refs, what each repository was read for, and the vault checkout's standing.
+ * @param range The base and the head to find the merge base of in the vault's repository, when asked.
+ * @returns The merged refs, what each repository was read for, the vault checkout's standing, and
+ * the range when one was asked.
  */
 async function readSourceRefs(
 	vault: string,
 	repos: readonly string[],
 	options: GitRunOptions = {},
+	range?: SourceRange,
 ): Promise<SourceRefsAnswer> {
 	const checkouts = checkoutsReadFrom(vault);
 	const own = vaultIdentity(vault);
@@ -206,13 +271,12 @@ async function readSourceRefs(
 		})),
 	);
 	const ownRead = read.find((one) => one.repo === own);
+	const ownRoot = checkouts.find((one) => one.repo === own)?.root;
 	return {
 		refs: merged(read),
 		repositories: read.map((one) => one.repository),
-		vault:
-			own === undefined || ownRead?.refs === undefined
-				? null
-				: await vaultOf(own, checkouts.find((one) => one.repo === own)!.root, options),
+		vault: await vaultStanding(own, ownRead, ownRoot, options),
+		...(await rangeAnswer(ownRoot, range, options)),
 	};
 }
 

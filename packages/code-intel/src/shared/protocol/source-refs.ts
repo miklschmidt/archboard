@@ -56,6 +56,12 @@ const SourceRefsVaultSchema = z
 	})
 	.strict();
 
+/**
+ * Where a range runs in the vault's repository: the merge base of the base and the head, and the
+ * commit of the head, both complete commit ids.
+ */
+const SourceRefsRangeSchema = z.object({ mergeBase: z.string(), head: z.string() }).strict();
+
 /** What every refs listing says. */
 const SourceRefsAnswerSchema = z
 	.object({
@@ -64,6 +70,12 @@ const SourceRefsAnswerSchema = z
 		repositories: z.array(SourceRefsRepositorySchema),
 		/** None for a vault that no checkout holds, which names no repository of its own. */
 		vault: SourceRefsVaultSchema.nullable(),
+		/**
+		 * Only when the request names a base and a head: the range in the vault's repository, or null
+		 * when that repository does not resolve either ref, or the two share no history. It is read from
+		 * what the vault's checkout has, never fetched.
+		 */
+		range: SourceRefsRangeSchema.nullable().optional(),
 	})
 	.strict();
 

@@ -60,6 +60,39 @@ function footprintVariants(reading: StateToCheck) {
 }
 
 /**
+ * Read the state that a footprint is set against. A footprint that names a head reads it in the
+ * vault as the vault's repository holds that head, the branch reading, so the head's own
+ * proposals and bindings decide what its commits are set against. It reads the vault on disk
+ * when `modelAt` is `checkout`, when no head is named, when a checkpoint is named, and when the
+ * vault's repository does not resolve the head, which only a code repository may hold.
+ * @param vault The explicit vault.
+ * @param request The selected state, the comparison and the range.
+ * @returns The state to read, or a model refusal.
+ */
+async function readFootprintStates(
+	vault: string,
+	request: z.output<typeof ArchitectureFootprintRequestSchema>,
+) {
+	const { head, modelAt, checkpoint, state, against } = request;
+	if (head !== undefined && modelAt !== "checkout" && checkpoint === undefined) {
+		const atHead = await readStatesToCheck(vault, state, { against, ref: head });
+		if ("ok" in atHead || atHead.code !== "SOURCE_REF_NOT_FOUND") return atHead;
+	}
+	return readStatesToCheck(vault, state, { checkpoint, against });
+}
+
+/**
+ * Name the vault that a reading came from.
+ * @param model The reading.
+ * @returns The ref and the commit of a branch reading, else the vault on disk.
+ */
+function vaultRead(model: NonNullable<StateToCheck["model"]>) {
+	return model.sourceRef === undefined
+		? { at: "checkout" as const }
+		: { at: "ref" as const, ...model.sourceRef };
+}
+
+/**
  * Compare a local source branch range with canonical architecture and its proposal.
  * @param vault The explicit vault.
  * @param input The selected state and local source refs.
@@ -72,7 +105,7 @@ async function readArchitectureFootprint(
 	signal?: AbortSignal,
 ) {
 	const request = ArchitectureFootprintRequestSchema.parse(input);
-	const read = await readStatesToCheck(vault, request.state, request);
+	const read = await readFootprintStates(vault, request);
 	if (!("ok" in read)) return read;
 	const reading = read.states[0]!;
 	const model = reading.model!;
@@ -89,6 +122,7 @@ async function readArchitectureFootprint(
 	return {
 		success: true as const,
 		analysis: "footprint" as const,
+		vaultRead: vaultRead(model),
 		model: model.manifest.id,
 		state: model.selectedState,
 		revision: model.revision,
@@ -120,7 +154,13 @@ async function readArchitectureSourceRefs(
 			node.binding === undefined ? [] : [node.binding.repo],
 		),
 	);
-	const evidence = await readSourceRefs(vault, [...new Set(repos)], { signal });
+	const { base, head } = request;
+	const evidence = await readSourceRefs(
+		vault,
+		[...new Set(repos)],
+		{ signal },
+		base === undefined || head === undefined ? undefined : { base, head },
+	);
 	return {
 		success: true as const,
 		analysis: "refs" as const,

@@ -85,14 +85,16 @@ function parentOf(model: Model | undefined): Pick<SemanticVariant, "parent"> {
  * Read and guard the exact comparison source supplied by the canonical reader.
  * @param vault The addressed vault.
  * @param model The selected coherent architecture.
+ * @param ref The source ref the selected state was read at, whose vault holds its predecessor too.
  * @returns Its predecessor, absence, or a structured refusal.
  */
-async function readPredecessor(vault: string, model: Model) {
+async function readPredecessor(vault: string, model: Model, ref?: string) {
 	const comparison = model.comparison;
 	if (comparison?.against == null) return undefined;
 	const predecessor = await readArchitectureModel(vault, undefined, undefined, {
 		state: comparison.checkpoint === undefined ? comparison.against.id : undefined,
 		checkpoint: comparison.checkpoint,
+		ref,
 		compare: false,
 	});
 	if (!predecessor.success) return predecessor;
@@ -119,21 +121,27 @@ async function readPredecessor(vault: string, model: Model) {
  * @param selections The exact checkpoint and comparison selectors.
  * @param selections.checkpoint The retained checkpoint.
  * @param selections.against The comparison source.
+ * @param selections.ref A branch, tag or commit of the vault's repository: read the vault as it holds it there.
  * @returns Complete evidence or its structured refusal.
  */
 async function readStatesToCheck(
 	vault: string,
 	state?: string,
-	selections: { checkpoint?: string | undefined; against?: string | undefined } = {},
+	selections: {
+		checkpoint?: string | undefined;
+		against?: string | undefined;
+		ref?: string | undefined;
+	} = {},
 ): Promise<StatesToCheck | NoSuchDraft> {
 	const model = await readArchitectureModel(vault, undefined, undefined, {
 		checkpoint: selections.checkpoint,
 		against: selections.against,
+		ref: selections.ref,
 		state,
 		compare: true,
 	});
 	if (!model.success) return model;
-	const predecessor = await readPredecessor(vault, model);
+	const predecessor = await readPredecessor(vault, model, selections.ref);
 	if (predecessor?.success === false) return predecessor;
 	return { ok: true, states: [codeReading(model, predecessor)], skipped: [] };
 }
