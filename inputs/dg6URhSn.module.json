@@ -9,6 +9,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#dg6URhSn",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "outgoing": [
     {
       "order": 100,
@@ -62,6 +63,5 @@
       "id": "vKEsyHFk#jsgdn0M9",
       "to": "vKEsyHFk#7yGUY6ta"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }
