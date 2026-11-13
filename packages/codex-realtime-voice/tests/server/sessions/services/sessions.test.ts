@@ -293,6 +293,8 @@ test("a stop for one checkout stops only its workhorse, a stop for the tab every
 	running.set("thread-payments", "turn-p");
 	running.set("thread-shop", "turn-s");
 	running.set("thread-other-tab", "turn-o");
+	// The coordinator's own turn, which carries the voice, is no workhorse work.
+	running.set("thread-a", "coordinator-turn");
 
 	expect(await a.stopWork(PAYMENTS)).toEqual([
 		{ checkout: PAYMENTS, outcome: "stopped", remaining: [] },
@@ -307,6 +309,7 @@ test("a stop for one checkout stops only its workhorse, a stop for the tab every
 	]);
 	expect(interrupts).toEqual([{ threadId: shopThread, turnId: decoder.adoptTurnId("turn-s") }]);
 	expect(running.get("thread-other-tab")).toBe("turn-o");
+	expect(running.get("thread-a")).toBe("coordinator-turn");
 });
 
 test("a turn that ends after New conversation left its thread leaves its workhorse with no running turn", () => {
