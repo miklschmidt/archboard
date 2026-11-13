@@ -25,6 +25,9 @@ function FootprintFacts(props: { readonly answer: BranchFootprintAnswer }): JSX.
 			data-slot="footprint-facts"
 			className="text-body text-muted-foreground flex flex-col gap-1.5"
 		>
+			<p data-slot="footprint-vault" data-vault-read={answer.vaultRead.at}>
+				{vaultWords(answer.vaultRead)}
+			</p>
 			{answer.repositories.map((repository) => (
 				<p
 					key={repository.repo}
@@ -46,6 +49,16 @@ function FootprintFacts(props: { readonly answer: BranchFootprintAnswer }): JSX.
 			{answer.unboundFiles.length > 0 && <UnboundFiles files={answer.unboundFiles} />}
 		</div>
 	);
+}
+
+/**
+ * Which model the footprint read its state, its proposals and its bindings from.
+ * @param read The vault the answer read.
+ * @returns The words.
+ */
+function vaultWords(read: BranchFootprintAnswer["vaultRead"]): string {
+	if (read.at === "checkout") return "The model on disk sets what the commits are read against.";
+	return `The model at ${read.ref}, ${read.commit.slice(0, SHORT)}, sets what the commits are read against.`;
 }
 
 /**
