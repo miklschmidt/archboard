@@ -1,10 +1,10 @@
 ---
 id: TASK-633.04
 title: The reader picks any head and the state it is set against
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-12T23:49:00Z'
-updated_date: '2026-11-12T23:50:00Z'
+updated_date: '2026-11-13T00:43:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -46,10 +46,25 @@ TASK-633 holds the full contract and the test seams. This ticket uses the picker
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The head list is searchable, starts with the checked-out entry labelled with its branch or detached commit, names the repositories that hold each entry, and accepts a typed ref
-- [ ] #2 Choosing the checked-out entry sends no head, and choosing any other entry sends it
-- [ ] #3 `Against` lists the current state and every active proposal of the vault that will be read
-- [ ] #4 `Against` defaults to the state on screen when that vault has it, else to the one proposal that the head adds over the base, else to the current state
-- [ ] #5 The view names the vault that the answer read
-- [ ] #6 DESIGN.md describes the head and `Against` lists
+- [x] #1 The head list is searchable, starts with the checked-out entry labelled with its branch or detached commit, names the repositories that hold each entry, and accepts a typed ref
+- [x] #2 Choosing the checked-out entry sends no head, and choosing any other entry sends it
+- [x] #3 `Against` lists the current state and every active proposal of the vault that will be read
+- [x] #4 `Against` defaults to the state on screen when that vault has it, else to the one proposal that the head adds over the base, else to the current state
+- [x] #5 The view names the vault that the answer read
+- [x] #6 DESIGN.md describes the head and `Against` lists
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Against reads the states of the vault the footprint will read: the model at the head through the branch reading, and the vault on disk when that read answers SOURCE_REF_NOT_FOUND, which is how the server decides.
+The merge-base default reads the range from the refs route and the model at the merge-base commit, only when the vault at the head lacks the state on screen.
+Choosing a head clears a chosen Against, because another vault can be read.
+Proof: tests/system/browser/reader-branch-footprint.test.ts chooses a head that is not checked out and finds Against set to the one proposal that head adds, with the answer naming a vault read at a ref. Screenshots: the head list with the checkout first, and Against falling back to Current at main.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The view has a searchable head list, with the checkout first, and an Against list of the current state and the proposals of the vault that will be read. Against defaults to the state on screen when that vault holds it, else to the one proposal the head adds over the merge base, else to the current state. The view names the model the answer read. DESIGN.md describes both lists.
+<!-- SECTION:FINAL_SUMMARY:END -->
