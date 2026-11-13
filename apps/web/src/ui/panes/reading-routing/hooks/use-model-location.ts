@@ -32,6 +32,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const paneKey = nullableParameter(search[`pane${paneId}`]);
 	const scope = nullableParameter(search[`scope${paneId}`]);
 	const checkpoint = nullableParameter(search[`checkpoint${paneId}`]);
+	const ref = nullableParameter(search[`ref${paneId}`]);
 	const state = nullableParameter(search[`state${paneId}`]);
 	const preview = nullableParameter(search[`preview${paneId}`]);
 	const userChanged = preview === null ? reportUserChange : undefined;
@@ -221,6 +222,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 			userChanged?.("variant");
 			void navigate({
 				checkpoint: next,
+				ref: undefined,
 				bookmark: undefined,
 				state: preview === null ? undefined : (state ?? undefined),
 				against: undefined,
@@ -283,8 +285,10 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const selectState = useCallback(
 		(next: string | null): void => {
 			userChanged?.("variant");
+			// History lists the states of the vault on disk, so choosing one leaves a branch reading.
 			void navigate({
 				state: next ?? undefined,
+				ref: undefined,
 				legacyAddress: undefined,
 				bookmark: undefined,
 				checkpoint: preview === null ? null : checkpoint,
@@ -305,6 +309,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 			userChanged?.("variant");
 			void navigate({
 				checkpoint: next,
+				ref: undefined,
 				state: undefined,
 				bookmark: undefined,
 				against: AFTER,
@@ -339,6 +344,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		preview,
 		openReference,
 		state,
+		ref,
 		against,
 		selectState,
 		compareAgainst,

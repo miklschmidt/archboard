@@ -5,6 +5,7 @@ import { Button } from "@archboard/ui-kit/components";
 import { PartHistory } from "#ui/architecture-drawing/canvas/presentation/components/PartHistory.tsx";
 import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/access/clients/history.ts";
+import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
 
 interface HistoryProps {
 	vault: string;
@@ -28,7 +29,7 @@ interface HistoryProps {
  * @returns Its local Git evidence, or nothing for an unbound or original-only module.
  */
 function ModelHistory(props: HistoryProps): JSX.Element | null {
-	if (props.module.binding === undefined || props.model.migrationPreview !== undefined) return null;
+	if (props.module.binding === undefined || !readsVaultOnDisk(props.model)) return null;
 	return <HistoryReading key={props.module.id} {...props} />;
 }
 

@@ -8,6 +8,11 @@ interface ModelAddress {
 	readonly id: string;
 	readonly scope: string | null;
 	readonly checkpoint: string | null;
+	/**
+	 * The source branch or commit of a branch reading: the model as the vault holds it at that ref,
+	 * read from Git and never written. Absent for the vault on disk.
+	 */
+	readonly ref?: string | undefined;
 	readonly state?: string | undefined;
 	readonly preview?: string | undefined;
 	readonly bookmark?: string | undefined;

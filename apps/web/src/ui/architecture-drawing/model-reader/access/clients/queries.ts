@@ -13,7 +13,7 @@ import {
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
 
 type StateSelection = {
-	readonly [Field in "state" | "against" | "preview" | "bookmark" | "legacyAddress"]?:
+	readonly [Field in "ref" | "state" | "against" | "preview" | "bookmark" | "legacyAddress"]?:
 		| ModelAddress[Field]
 		| null;
 } & {
@@ -38,6 +38,7 @@ interface ModuleTarget {
 	readonly module: string;
 	readonly state: string | undefined;
 	readonly checkpoint: string | undefined;
+	readonly ref: string | undefined;
 	readonly preview: string | undefined;
 	readonly code: boolean;
 }
@@ -238,11 +239,21 @@ function architectureModelQuery(
 		 * @returns The runtime answer.
 		 */
 		queryFn: (context) => readModel(vault, checkpoint, context.signal, selection),
-		...(checkpoint === null && selection.state == null && selection.preview == null
-			? followed
-			: shownFresh),
+		...(followsFeed(checkpoint, selection) ? followed : shownFresh),
 		retry: false,
 	});
+}
+
+/**
+ * Whether a reading follows the live feed: only the current state of the vault on disk does. A
+ * checkpoint, a chosen state, a migration preview and a branch reading are each fixed.
+ * @param checkpoint The addressed checkpoint, or null.
+ * @param selection The addressed state, preview or ref.
+ * @returns Whether the reading follows the feed.
+ */
+function followsFeed(checkpoint: string | null, selection: StateSelection): boolean {
+	if (checkpoint !== null) return false;
+	return selection.state == null && selection.preview == null && selection.ref == null;
 }
 
 /**
