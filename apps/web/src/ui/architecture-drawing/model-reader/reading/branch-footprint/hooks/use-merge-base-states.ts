@@ -51,7 +51,7 @@ function useMergeBaseStates(
 		enabled: named !== null && mergeBase !== undefined,
 	});
 	if (named === null) return { states: undefined, settled: true };
-	return { states: before.data, settled: settledOf(span, before) };
+	return statesOf(span, before);
 }
 
 /**
@@ -65,15 +65,20 @@ function namedOf(range: RefRange): NamedRange | null {
 }
 
 /**
- * Whether the reads of the merge base are over: the range has none, or a read failed, or the
- * states arrived.
+ * The states at the merge base, and whether the reads are over: the range has none, or a read
+ * failed, or the states arrived. Until the range names a merge base, `before` is keyed as the
+ * reading on disk, so its cached data is not taken.
  * @param span The read of the range.
  * @param before The read of the vault at the merge base.
- * @returns Whether they are over.
+ * @returns The states, and whether the reads are over.
  */
-function settledOf(span: Settling, before: Settling): boolean {
-	if (span.isError || span.data === null) return true;
-	return before.isError || before.data !== undefined;
+function statesOf(
+	span: Settling,
+	before: Pick<UseQueryResult<VaultStates>, "data" | "isError">,
+): MergeBaseStates {
+	if (span.isError || span.data === null) return { states: undefined, settled: true };
+	if (span.data === undefined) return { states: undefined, settled: false };
+	return { states: before.data, settled: before.isError || before.data !== undefined };
 }
 
 export { useMergeBaseStates, type RefRange };
