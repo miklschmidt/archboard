@@ -36,12 +36,7 @@ const STRANGER = "github.com/test/stranger";
 let lens: typeof LensModule;
 let clock = 1_790_000_000;
 
-/**
- * Run Git in a test repository with a commit time this owner sets.
- * @param cwd The repository.
- * @param args Git's arguments.
- * @returns Git's trimmed output.
- */
+/** Run Git with a controlled identity, configuration and commit time. */
 function git(cwd: string, ...args: string[]): string {
 	clock += 60;
 	const date = `@${clock} +0000`;
@@ -63,13 +58,7 @@ function git(cwd: string, ...args: string[]): string {
 	return run.stdout.toString().trim();
 }
 
-/**
- * Write files into a repository and commit them.
- * @param root The repository.
- * @param subject The commit's subject.
- * @param files Each path and its text.
- * @returns The commit's id.
- */
+/** Write and commit fixture files, then return the commit id. */
 function commit(root: string, subject: string, files: Record<string, string>): string {
 	for (const [file, text] of Object.entries(files)) {
 		mkdirSync(join(root, file, ".."), { recursive: true });
@@ -80,12 +69,7 @@ function commit(root: string, subject: string, files: Record<string, string>): s
 	return git(root, "rev-parse", "HEAD");
 }
 
-/**
- * Make a repository that identifies as a repository identity.
- * @param root Where.
- * @param identity The identity its origin gives it.
- * @param branch The branch it starts on.
- */
+/** Initialize a fixture repository with an origin and a starting branch. */
 function repository(root: string, identity: string, branch: string): void {
 	mkdirSync(root, { recursive: true });
 	git(root, "init", "-q", "-b", branch);
@@ -112,12 +96,7 @@ const BUILT = [
 	{ id: "pY", name: "Refunds", binding: { repo: SHOP, path: "src/dir/sub/y.ts" } },
 ];
 
-/**
- * A node as the document holds it.
- * @param node What a test says about it.
- * @param index Where it stands.
- * @returns The node.
- */
+/** Give each fixture module its kind and order in the document. */
 function nodeOf(node: (typeof BUILT)[number] & { responsibility?: string }, index: number) {
 	return { ...node, order: (index + 1) * 1000, kind: "module" };
 }
