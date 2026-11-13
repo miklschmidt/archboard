@@ -151,7 +151,6 @@ function onCanvas(preset: FieldPreset, aspect: number): { x: number; y: number }
  */
 export function lightField(canvas: HTMLCanvasElement, preset: FieldPreset): void {
 	const host = canvas.parentElement ?? canvas;
-	const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 	let lamp: { x: number; y: number } | undefined;
 	let pointer: { x: number; y: number } | undefined;
 	let previous: number | undefined;
@@ -169,7 +168,7 @@ export function lightField(canvas: HTMLCanvasElement, preset: FieldPreset): void
 		maxRatio: 1.25,
 		stillTime: 14,
 		uniforms: (gl, at, frame) => {
-			const still = motion.matches;
+			const still = frame.motion !== "moving";
 			const rest = onCanvas(preset, frame.width / frame.height);
 			let target = rest;
 			if (still) scroll = 0;

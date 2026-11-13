@@ -56,7 +56,7 @@ const ACROSS = { landscape: 0.94, portrait: 4.2 };
  */
 const ARRIVAL = { distance: 1.5, yaw: 0.26, pitch: 0.22, x: 0.2, z: 0.5, from: 0.25, rate: 1.5 };
 
-/** The most device pixels the table draws for each CSS pixel. */
+/** The most device pixels the table draws for each CSS pixel while it moves. */
 const RATIO = 2;
 
 /**
@@ -406,8 +406,9 @@ export function pictureParts(
 		return Math.min(1, reach / 0.04);
 	};
 	// How many device pixels a unit of the picture covers, at its densest where each image serves:
-	// along the pixel's shorter reach, which anisotropic filtering keeps sharp.
-	const ratio = Math.min(window.devicePixelRatio || 1, RATIO);
+	// along the pixel's shorter reach, which anisotropic filtering keeps sharp. The still table
+	// draws at the device's own pixel ratio, so the images serve that.
+	const ratio = window.devicePixelRatio || 1;
 	const [wide, tall] = [canvas.clientWidth * ratio, canvas.clientHeight * ratio];
 	const densest = [0, 0];
 	const steps = 40;
@@ -470,8 +471,10 @@ export function lightTable(
 	let ready: number | undefined;
 	let pointer: { x: number; y: number } | undefined;
 	host.addEventListener("pointermove", (event) => {
-		if (event.pointerType === "mouse" || event.pointerType === "pen")
-			pointer = { x: event.clientX, y: event.clientY };
+		if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
+		pointer = { x: event.clientX, y: event.clientY };
+		// With reduced motion, the table lifts the card under the pointer on a frame it asks for.
+		if (motion.matches) redraw?.();
 	});
 	host.addEventListener("pointerleave", () => {
 		pointer = undefined;
@@ -535,27 +538,34 @@ export function lightTable(
 		fragment: FRAGMENT,
 		maxRatio: RATIO,
 		stillTime: 30,
+		// The finished picture costs what the motion does once its images are on the table.
+		ready: () => levels !== null || arriving !== null,
 		uniforms: (gl, at, frame) => {
-			const still = motion.matches;
+			const still = frame.motion !== "moving";
 			const now = performance.now();
 			const step = previous === undefined ? 0 : Math.min(0.1, Math.max(0, frame.time - previous));
 			previous = still ? undefined : frame.time;
 			const aspect = frame.width / frame.height;
 
-			// Start on the frame after the upload, on the host's visible clock. Reduced motion
-			// completes the entry, including when the reader later turns motion back on.
-			if (still) ready = -Infinity;
-			else if (levels) ready ??= frame.time;
-			const t = ready === undefined ? -1 : frame.time - ready;
+			// Start on the frame after the upload, on the host's visible clock. A still frame
+			// shows the finished entry. Reduced motion completes it, including when the reader
+			// later turns motion back on. The still frame the host starts with does not, so the
+			// entry plays when the motion starts.
+			if (motion.matches) ready = -Infinity;
+			else if (levels && !still) ready ??= frame.time;
+			// Before the images arrive, a still frame shows where the entry starts.
+			const t = still && levels ? Infinity : ready === undefined ? -1 : frame.time - ready;
 			const moving = Number.isFinite(t) ? Math.max(0, t - ARRIVAL.from) * ARRIVAL.rate : Infinity;
 			const arrived = Number.isFinite(moving) ? 1 - (1 + moving) * Math.exp(-moving) : 1;
 			const box = host.getBoundingClientRect();
 			const scroll = still ? 0 : Math.min(1, Math.max(0, -box.top / Math.max(1, box.height)));
 			const field = canvas.getBoundingClientRect();
-			const target = pointer
+			// While the GPU is slow, the table leaves the pointer be.
+			const hover = frame.motion === "slow" ? undefined : pointer;
+			const target = hover
 				? {
-						x: (pointer.x - field.left) / field.width,
-						y: 1 - (pointer.y - field.top) / field.height,
+						x: (hover.x - field.left) / field.width,
+						y: 1 - (hover.y - field.top) / field.height,
 					}
 				: { x: 0.5, y: 0.5 };
 			const follow = (rate: number) => (still ? 1 : 1 - Math.exp(-step * rate));
@@ -596,7 +606,7 @@ export function lightTable(
 			const eye = eyeOf(camera);
 
 			// The card under the pointer, once it rests there.
-			const ground = pointer ? onTable(camera, aspect, target) : null;
+			const ground = hover ? onTable(camera, aspect, target) : null;
 			let hovered = -1;
 			if (ground && t > score.end - 1) {
 				const x = (ground.x - SHEET.left) / scale;
@@ -623,7 +633,7 @@ export function lightTable(
 					(cardLit[index] ?? 0) + (shine - (cardLit[index] ?? 0)) * follow(RATES.light);
 			});
 			focus += ((focused >= 0 ? 1 : 0) - focus) * follow(RATES.focus);
-			lamp += ((pointer ? 1 : 0) - lamp) * follow(RATES.focus);
+			lamp += ((hover ? 1 : 0) - lamp) * follow(RATES.focus);
 
 			gl.uniform2f(at("uRes"), frame.width, frame.height);
 			gl.uniform1f(at("uTime"), frame.time);
@@ -805,9 +815,4 @@ export function lightTable(
 			settling = window.setTimeout(repaint, SETTLE);
 			redraw?.();
 		}).observe(words);
-	if (redraw) {
-		host.addEventListener("pointermove", () => {
-			if (motion.matches) redraw();
-		});
-	}
 }

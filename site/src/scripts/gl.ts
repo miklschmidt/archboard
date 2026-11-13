@@ -3,37 +3,37 @@
 // Where the browser compiles shaders in parallel, the page goes on while it does: the host asks
 // once a frame whether the program is ready, and draws from the first frame that it is.
 //
-// The host draws at the device's pixel ratio, up to a limit. While frames come slowly, it draws
-// fewer pixels. When drawing fewer twice in a row does not make the frames come faster, it stops
-// drawing fewer: the pixels are not what holds the frames back, as when a browser saving power
-// slows every page. Once is not enough, as the picture itself can grow dearer while the host tries.
-// While frames come quickly, it draws more pixels again, a step at a time, up to the full ratio:
-// what slowed the frames can pass, as when the page finishes loading. Each time it has to draw
-// fewer again, it waits twice as long before the next step up.
+// The host starts still, at the device's pixel ratio. Once the picture is ready, it draws the
+// finished picture and times one more such frame, from the draw until the GPU is done. If that
+// frame, scaled to the pixels the motion draws, fits one refresh at 60 Hz, the host starts the
+// motion in the same task, so the still frame never reaches the screen. The motion draws at the
+// device's pixel ratio up to a limit. If the frame is slow, as on a phone or a PC without a dedicated GPU,
+// the still frame stands. While the motion runs, frames that stay slow stop it, as when a browser
+// slows every page to save power. A still canvas draws again only when the page asks for a frame.
 
 import { whileVisible } from "./reveal";
+
+/** How long the GPU may take for a frame of the motion, in milliseconds: one refresh at 60 Hz. */
+const BUDGET = 1000 / 60;
 
 /** How long a frame may take, in milliseconds: when a quarter of them take longer, frames are slow. */
 const SLOW = 20;
 
-/** How long the host aims for a frame to take when it draws fewer pixels, in milliseconds. */
-const AIM = 12;
-
-/** How many frames one judgement of the frame rate takes. */
-const WINDOW = 16;
-
-/** The fewest device pixels the host draws for each CSS pixel. */
-const FLOOR = 0.5;
-
-/** How much more of the ratio, at most, the host draws in one step up. */
-const RAISE = 1.25;
-
-/** How many quick windows the host first waits before a step up, and the most it comes to wait. */
-const PATIENCE = { first: 4, most: 64 };
+/**
+ * How many frames one judgement of the frame rate takes at most, and how long, in milliseconds:
+ * on a GPU that takes half a second for a frame, a judgement waits no longer than a second.
+ */
+const WINDOW = { frames: 16, ms: 1000 };
 
 const VERTEX = `#version 300 es
 in vec2 position;
 void main() { gl_Position = vec4(position, 0.0, 1.0); }`;
+
+/**
+ * Whether a frame moves. It stands still with reduced motion, and while the GPU is slow, which it
+ * is until the timed still frame shows otherwise. A still frame shows the finished state.
+ */
+export type Motion = "moving" | "reduced" | "slow";
 
 export interface Frame {
 	/** Seconds of visible motion. */
@@ -41,12 +41,13 @@ export interface Frame {
 	/** Canvas size in device pixels. */
 	width: number;
 	height: number;
+	motion: Motion;
 }
 
 export interface ShaderOptions {
 	canvas: HTMLCanvasElement;
 	fragment: string;
-	/** The largest device pixel ratio to draw at. */
+	/** The largest device pixel ratio to draw the motion at. A still frame takes the device's own. */
 	maxRatio?: number;
 	/** Whether the canvas keeps an alpha channel. */
 	alpha?: boolean;
@@ -56,18 +57,28 @@ export interface ShaderOptions {
 		location: (name: string) => WebGLUniformLocation | null,
 		frame: Frame,
 	) => void;
-	/** The time of the one frame drawn with reduced motion. */
+	/** The time of the still frame. */
 	stillTime?: number;
+	/** Whether the still frame shows what the motion costs, so that the host can time it. */
+	ready?: () => boolean;
 }
 
 /**
  * Run a fragment shader over a canvas.
  * @param options The canvas, the shader and its uniforms.
- * @returns Ask for a frame, which a still canvas needs when what it draws changes; null when the
- * browser has no WebGL2.
+ * @returns Ask for a frame, which a still canvas needs when what it draws changes, and a moving one
+ * ignores; null when the browser has no WebGL2.
  */
 export function runShader(options: ShaderOptions): (() => void) | null {
-	const { canvas, fragment, uniforms, maxRatio = 1.5, alpha = false, stillTime = 8 } = options;
+	const {
+		canvas,
+		fragment,
+		uniforms,
+		maxRatio = 1.5,
+		alpha = false,
+		stillTime = 8,
+		ready = () => true,
+	} = options;
 	const gl = canvas.getContext("webgl2", {
 		alpha,
 		antialias: false,
@@ -158,92 +169,71 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 	let frame = 0;
 	let elapsed = 0;
 	let previous: number | undefined;
-	const ratio = () => Math.min(window.devicePixelRatio || 1, maxRatio);
-	// The share of that ratio the host draws at, and what it judges the frame rate by.
-	let share = 1;
+	const stillRatio = () => window.devicePixelRatio || 1;
+	const movingRatio = () => Math.min(stillRatio(), maxRatio);
+	// Whether the host timed its still frame yet, and whether the GPU holds the motion.
+	let timed = false;
+	let quick = false;
 	const intervals: number[] = [];
 	let slowWindows = 0;
-	let trial: { share: number; typical: number } | undefined;
-	let failedTrials = 0;
-	let settled = false;
-	let quickWindows = 0;
-	let patience = PATIENCE.first;
-	// The share the host last stepped up from, where the frames came quickly.
-	let stepped = 0;
+	const current = (): Motion => (motion.matches ? "reduced" : quick ? "moving" : "slow");
 	const resize = () => {
-		width = Math.max(1, Math.round(canvas.clientWidth * ratio() * share));
-		height = Math.max(1, Math.round(canvas.clientHeight * ratio() * share));
+		const ratio = current() === "moving" ? movingRatio() : stillRatio();
+		width = Math.max(1, Math.round(canvas.clientWidth * ratio));
+		height = Math.max(1, Math.round(canvas.clientHeight * ratio));
 		if (canvas.width !== width || canvas.height !== height) {
 			canvas.width = width;
 			canvas.height = height;
 		}
 		gl.viewport(0, 0, width, height);
 	};
+	const draw = (time: number) => {
+		uniforms(gl, location, { time, width, height, motion: current() });
+		gl.drawArrays(gl.TRIANGLES, 0, 3);
+		canvas.classList.add("is-live");
+	};
 	/**
-	 * Judge the frame rate by the frames of one window: draw fewer pixels while it is slow, and more
-	 * again while it is quick.
+	 * Draw the still frame twice, and time the second from the draw until the GPU is done. Reading
+	 * a pixel waits for the GPU. The first frame takes what only the first one costs, such as
+	 * bringing the picture's images to the GPU.
+	 * @returns How long the second frame took, in milliseconds.
+	 */
+	const costOfStill = (): number => {
+		const pixel = new Uint8Array(4);
+		const finish = () => gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+		draw(stillTime);
+		finish();
+		const start = performance.now();
+		draw(stillTime);
+		finish();
+		return performance.now() - start;
+	};
+	/**
+	 * Judge the frame rate by the frames of one window, and stop the motion when two windows in a
+	 * row are slow: one slow window can be the page loading.
 	 * @param interval How long the last frame took, in milliseconds.
 	 */
 	const pace = (interval: number) => {
 		if (interval <= 0) return;
 		intervals.push(interval);
-		if (intervals.length < WINDOW) return;
-		// A long task now and then does not count: the slowest two frames of a window are left out.
-		// What a frame costs is the mean of the rest. A frame that misses the screen's refresh takes a
-		// whole refresh more, so the mean counts how many miss, where one middle frame would make every
-		// frame seem to miss or none.
-		const kept = intervals.sort((a, b) => a - b).slice(0, WINDOW - 2);
-		const typical = kept.reduce((sum, each) => sum + each, 0) / kept.length;
-		const slow = (kept[WINDOW * 0.75] ?? 0) > SLOW;
+		const spent = intervals.reduce((sum, each) => sum + each, 0);
+		if (intervals.length < WINDOW.frames && spent < WINDOW.ms) return;
+		// A long task now and then does not count: the window is slow when a quarter of its frames are.
+		const sorted = intervals.sort((a, b) => a - b);
+		const slow = (sorted[Math.floor(sorted.length * 0.75)] ?? 0) > SLOW;
 		intervals.length = 0;
-		if (trial) {
-			// Fewer pixels did not make the frames faster, so the host draws as many as before.
-			if (slow && typical > trial.typical * 0.9) {
-				share = trial.share;
-				failedTrials += 1;
-				settled = failedTrials >= 2;
-				resize();
-			} else {
-				failedTrials = 0;
-				patience = Math.min(PATIENCE.most, patience * 2);
-			}
-			trial = undefined;
-			return;
-		}
-		if (!slow) {
-			slowWindows = 0;
-			quickWindows += 1;
-			if (share >= 1 || quickWindows < patience) return;
-			quickWindows = 0;
-			settled = false;
-			failedTrials = 0;
-			stepped = share;
-			share = Math.min(1, share * RAISE);
-			resize();
-			return;
-		}
-		quickWindows = 0;
-		if (settled) return;
-		// One slow window can be the page loading; two in a row are the GPU.
-		slowWindows += 1;
-		if (slowWindows < 2 || ratio() * share <= FLOOR) return;
-		slowWindows = 0;
-		trial = { share, typical };
-		// A step up that made the frames slow goes back to where they came quickly, and no lower.
-		share = Math.max(FLOOR / ratio(), stepped, share * Math.sqrt(AIM / typical));
-		stepped = 0;
-		resize();
-	};
-	const draw = (time: number) => {
-		uniforms(gl, location, { time, width, height });
-		gl.drawArrays(gl.TRIANGLES, 0, 3);
-		canvas.classList.add("is-live");
+		slowWindows = slow ? slowWindows + 1 : 0;
+		if (slowWindows >= 2) quick = false;
 	};
 	const loop = (now: number) => {
 		const interval = now - (previous ?? now);
 		elapsed += interval;
 		previous = now;
 		pace(interval);
+		if (!quick) {
+			update();
+			return;
+		}
 		draw(elapsed / 1000);
 		frame = requestAnimationFrame(loop);
 	};
@@ -251,14 +241,22 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 		cancelAnimationFrame(frame);
 		previous = undefined;
 		intervals.length = 0;
+		slowWindows = 0;
 		if (!visible || gl.isContextLost()) return;
 		if (!linked()) {
 			if (linking) frame = requestAnimationFrame(update);
 			return;
 		}
 		resize();
-		if (motion.matches) draw(stillTime);
-		else frame = requestAnimationFrame(loop);
+		if (!motion.matches && !timed && ready()) {
+			timed = true;
+			// What a frame costs grows with its pixels, and the motion may draw fewer.
+			quick = costOfStill() * (movingRatio() / stillRatio()) ** 2 <= BUDGET;
+			if (!quick) return;
+			resize();
+		}
+		if (current() === "moving") loop(performance.now());
+		else draw(stillTime);
 	};
 	const observer = new ResizeObserver(update);
 	observer.observe(canvas);
@@ -288,7 +286,13 @@ export function runShader(options: ShaderOptions): (() => void) | null {
 		motion.removeEventListener("change", update);
 		release();
 	});
+	// A still canvas draws at most one asked frame for each of the screen's, as a frame can be dear.
+	let asked = 0;
 	return () => {
-		if (visible && resources && !gl.isContextLost() && motion.matches) draw(stillTime);
+		if (current() === "moving" || asked) return;
+		asked = requestAnimationFrame(() => {
+			asked = 0;
+			update();
+		});
 	};
 }

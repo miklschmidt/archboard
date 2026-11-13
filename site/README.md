@@ -59,7 +59,10 @@ Every diagram on the page is real output of the Archboard renderer, in the dark 
   perspective, raises each card as a tile and sinks each tray. It draws each line as a laser that
   floats above the line's real route, with the line's label on a plate. The light that draws the
   lasers reaches each card by the quickest route from the agents, so the entry has no hand-placed
-  timing.
+  timing. The hero starts still, at the device's pixel ratio. Once the images are ready,
+  `src/scripts/gl.ts` times one still frame of the finished picture. If the frame fits one refresh
+  at 60 Hz, the motion starts. If it is slow, as on a phone or a PC without a dedicated GPU, the
+  still picture stands and does not follow the pointer.
 - The window under the hero paints `examples/web-shop` live, as the README draws it. When the
   agent's edit lands, the painter brings the picture in with the app's own entrance. The README's
   SVG of the same picture stands in without script, with reduced motion, or where the painter does
