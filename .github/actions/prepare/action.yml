@@ -20,9 +20,16 @@ runs:
     - name: Setup Nix
       uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
 
+    # `--frozen-lockfile` passes when only the version of a workspace package differs from
+    # bun.lock, so the install may write bun.lock, and the step fails when it did.
     - name: Install dependencies
       shell: bash
-      run: nix develop --command bun install --frozen-lockfile
+      run: |
+        nix develop --command bun install
+        git diff --exit-code -- bun.lock || {
+          echo "::error file=bun.lock::bun install changed bun.lock. Run bun install, and commit bun.lock."
+          exit 1
+        }
 
     # Ubuntu's AppArmor policy permits the installed Chrome Stable sandbox. Isolated test servers
     # discover their renderer through PATH. The browser version joins the test cache key, so a
