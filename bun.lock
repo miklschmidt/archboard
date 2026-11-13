@@ -117,7 +117,7 @@
     },
     "packages/codex-realtime-voice": {
       "name": "@archboard/codex-realtime-voice",
-      "version": "0.4.1",
+      "version": "0.5.0",
     },
     "packages/diagnostics": {
       "name": "@archboard/diagnostics",
