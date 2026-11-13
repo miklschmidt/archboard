@@ -3,21 +3,25 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "e3T8Mjgq",
-    "name": "Anonymous usage as wide events",
-    "summary": "A telemetry package records each CLI command and each unexpected error in the state directory, and the server rolls a day of records into one wide event for each installation and sends it, with an event for each error, to PostHog EU Cloud. CI, tests, DO_NOT_TRACK and archboard telemetry off turn it off.",
+    "id": "TGDLt5Ea",
+    "name": "The release workflow publishes each package to npm without staging",
+    "summary": "The publish job publishes every package with npm publish after the gate and the smoke test pass, in place of npm stage publish, so a release reaches npm without the owner approving each staged version.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0079-archboard-sends-anonymous-usage-as-wide-events.md"
+        "path": "docs/agents/releasing.md"
+      },
+      {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/adr/0076-a-release-is-a-compiled-executable-for-each-platform-on-npm.md"
       }
     ],
-    "predecessor": "TGDLt5Ea",
-    "baseline": "82c17d0fc654e92e48f96514ed3db040861124ad",
-    "createdAt": "2026-11-12T23:18:09.164Z",
-    "adoptedAt": "2026-11-13T00:36:53.285Z",
-    "reason": "The telemetry package, its callers and the PostHog sender are implemented on feat/telemetry (TASK-632.01).",
-    "previousCurrent": "TGDLt5Ea"
+    "predecessor": "mdEX4O4o",
+    "baseline": "6cf2b89b82e00e882169ce446d0336646a96806a",
+    "createdAt": "2026-11-12T10:58:52.698Z",
+    "adoptedAt": "2026-11-12T11:07:26.152Z",
+    "reason": "Commit 6f92ab8c6e implements it on branch t3/3fb4dfa5: the publish job of the release workflow runs npm publish on each tarball in place of npm stage publish. The owner authorized this adoption.",
+    "previousCurrent": "mdEX4O4o"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
