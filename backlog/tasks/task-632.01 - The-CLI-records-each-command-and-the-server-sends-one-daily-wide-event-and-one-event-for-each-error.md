@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-12T23:14:00Z'
-updated_date: '2026-11-12T23:37:00Z'
+updated_date: '2026-11-13T00:35:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-632
@@ -52,4 +52,6 @@ Proposal: state e3T8Mjgq (Anonymous usage as wide events), predecessor TGDLt5Ea,
 Proposal e3T8Mjgq also has the Telemetry command part under Commands and relationships from runCliWith, Telemetry command, Service routes, Application lifetime and Application policy to telemetry, and from telemetry to State directory, Atomic file replacement and Installation. archboard check --state e3T8Mjgq: no errors or warnings, and no information finding names telemetry. Current keeps one information finding (the CLI and server reach Packages) until adoption.
 Checks: lint:policy clean; tsc clean for changed files (the worktree has no core build, so the renderer's generated imports fail as on main); bun test packages/telemetry 12 pass; apps/cli 118 pass; apps/server with workbench server tests 79 pass; tests/system/repository-policy pass.
 Open: no event was sent to the real PostHog project. The owner can start a server from this branch, run a command, then look for a $exception or, the next UTC day, a daily usage event with surface=product.
+
+2026-11-13: live proof. Six real CLI commands of this branch in a fresh state directory, one real thrown TypeError recorded under the operation 'telemetry live check', and one sender round with the real PostHog post and a clock one day ahead. PostHog answered 2xx to the $exception and the daily usage event, and the owner saw the $exception in the project with surface=product, process=cli, agent=claude, install=checkout, version 0.4.1, and no IP-derived location.
 <!-- SECTION:NOTES:END -->
