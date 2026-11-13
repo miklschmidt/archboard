@@ -302,6 +302,15 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 		"the plan after restoring the base",
 		WAIT,
 	);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-footprint-repository="github.com/acme/shop"]')?.textContent?.includes('${originalBase.slice(0, 7)}') ?? false`,
+			),
+		Boolean,
+		"the restored merge base in the footprint",
+		WAIT,
+	);
 
 	// Show on picture opens that head's branch reading in that state, and selects the listed module.
 	await browser.run(["click", '[data-footprint-show="namedNotChanged"]']);
