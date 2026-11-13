@@ -210,6 +210,7 @@ function sameModelAddress(one: ModelAddress | undefined, other: ModelAddress | u
 				"id",
 				"scope",
 				"checkpoint",
+				"ref",
 				"state",
 				"preview",
 				"bookmark",
