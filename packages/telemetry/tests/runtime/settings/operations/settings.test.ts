@@ -1,7 +1,7 @@
 // The notice is shown once, and showing it never changes the person's setting.
 
 import { afterEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { markNoticeShown, readSettings } from "#runtime/store/telemetry-files.ts";
@@ -20,4 +20,11 @@ test("only one CLI takes the notice, and consent stays unchanged", () => {
 	expect(markNoticeShown(directory)).toBe(true);
 	expect(markNoticeShown(directory)).toBe(false);
 	expect(readSettings(directory)).toEqual(settings);
+});
+
+test("settings that cannot be read count as turned off", () => {
+	const directory = mkdtempSync(join(tmpdir(), "archboard-telemetry-settings-"));
+	directories.push(directory);
+	writeFileSync(join(directory, "settings.json"), '{"installationId":"x","turnedOff":true}\n');
+	expect(readSettings(directory).turnedOff).toBe(true);
 });

@@ -14,6 +14,7 @@ test("only Archboard's own frames are kept, relative to its root", () => {
 		"    at helper (/opt/archboard/node_modules/zod/index.js:1:1)",
 		"    at userHook (/home/ada/payments/hook.ts:4:2)",
 		"    at /opt/archboard/apps/cli/src/cli/routing/operations/run.ts:7:9",
+		"    at Object.ada@example.com.run (/opt/archboard/apps/cli/src/bin.ts:10:2)",
 	].join("\n");
 	expect(ownFrames(stack, ROOT)).toEqual([
 		{
@@ -29,6 +30,7 @@ test("only Archboard's own frames are kept, relative to its root", () => {
 			lineno: 7,
 			colno: 9,
 		},
+		{ function: "", filename: "apps/cli/src/bin.ts", lineno: 10, colno: 2 },
 	]);
 });
 

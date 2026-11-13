@@ -66,6 +66,8 @@ function parseSettings(file: string): Settings | null {
 /**
  * Read the settings, or make them with a new installation id. The first write is exclusive, so a
  * process that starts at the same time keeps the id, and any opt-out, of the one that wrote first.
+ * A file that cannot be read or written counts as turned off, because it can hold an opt-out.
+ * `archboard telemetry on` replaces it.
  * @param directory The telemetry directory.
  * @returns The settings.
  */
@@ -81,11 +83,8 @@ function readSettings(directory: string): Settings {
 		});
 		return settings;
 	} catch {
-		// Another process wrote the settings first, or the file holds none and is replaced.
-		const raced = parseSettings(file);
-		if (raced !== null) return raced;
-		writeSettings(directory, settings);
-		return settings;
+		// Another process wrote the settings first, or the file holds no settings.
+		return parseSettings(file) ?? { ...settings, turnedOff: true };
 	}
 }
 

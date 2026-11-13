@@ -66,13 +66,9 @@ function ownFrame(frame: FrameLine, root: string): Frame | null {
 	if (!frame.file.startsWith(root)) return null;
 	const filename = frame.file.slice(root.length);
 	if (filename.split("/").includes("node_modules")) return null;
-	const last =
-		frame.fn
-			.replace(/^async /u, "")
-			.split(".")
-			.pop() ?? "";
+	const parts = frame.fn.replace(/^async /u, "").split(".");
 	return {
-		function: PLAIN_NAME.test(last) ? frame.fn : "",
+		function: parts.every((part) => PLAIN_NAME.test(part)) ? frame.fn : "",
 		filename,
 		lineno: frame.line,
 		colno: frame.col,

@@ -52,11 +52,17 @@ function currentConsent(env: Readonly<Record<string, string | undefined>> = proc
  */
 function telemetryStatus(): TelemetryStatus {
 	const directory = telemetryDirectory(process.env);
-	const consent = currentConsent();
+	const settings = readSettings(directory);
+	const consent = consentOf({
+		env: process.env,
+		ci: isCI,
+		test: isTest,
+		turnedOff: settings.turnedOff,
+	});
 	return {
 		on: consent.on,
 		because: consent.on ? null : consent.because,
-		installationId: readSettings(directory).installationId,
+		installationId: settings.installationId,
 		directory,
 	};
 }

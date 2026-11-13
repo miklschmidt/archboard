@@ -904,7 +904,7 @@ it.
 Archboard records and sends nothing in these cases:
 
 - `CI` or another CI variable is set. The GitHub Actions of Archboard never send.
-- `DO_NOT_TRACK` is set to a value other than `0`.
+- `DO_NOT_TRACK` is set to a value other than `0` or `false`.
 - `ARCHBOARD_TELEMETRY` is `0`, `false` or `off`.
 - You ran `archboard telemetry off`. It also deletes every record that waits to be sent.
 

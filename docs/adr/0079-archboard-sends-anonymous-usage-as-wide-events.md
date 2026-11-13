@@ -29,8 +29,8 @@ small events.
 - It is on by default. The first command that records prints a notice once to standard error.
   The notice says what Archboard sends and how to turn it off.
 - If any of these is true, it is off, and nothing is recorded or sent:
-  - `std-env` detects a CI environment (`isCI`, which counts any value of `CI`),
-  - a test runs (`std-env`'s `isTest`),
+  - Archboard runs in CI (any value of `CI` counts),
+  - Archboard runs in a test,
   - `DO_NOT_TRACK` has a value other than `0` or `false`,
   - `ARCHBOARD_TELEMETRY` is `0`, `false` or `off`,
   - the person ran `archboard telemetry off`.
@@ -47,7 +47,7 @@ small events.
   profile (`$process_person_profile: false`) and no location (`$geoip_disable: true`).
 - No event holds a module, file, repository or model name, a path outside Archboard, a prompt,
   or the text of an error message. An error event names the error's class and code only.
-- The agent that runs a command comes from `std-env`'s `detectAgent()`. A command that
+- Archboard names the agent that runs a command from the agent's environment. A command that
   Archboard's own workbench runs also says so.
 - If a send fails or takes more than five seconds, the server drops it and tries again later.
   The server deletes a record that it cannot send within seven days.
@@ -58,5 +58,5 @@ small events.
   needs the counts of that day, not an event of the command.
 - An installation that never starts the server sends nothing until a server starts.
 - The owner's own checkout records its use too. Its events say `install: "checkout"`.
-- PRODUCT.md no longer says that everything stays local. Usage counts and error reports leave
-  the machine unless the person turns them off.
+- Archboard no longer keeps everything local. Usage counts and error reports leave the machine
+  unless the person turns them off.
