@@ -3,15 +3,15 @@
   "name": "Picture transitions",
   "kind": "module",
   "responsibility": "Decides how one picture follows the next and hands it to the picture stage to move. Steps a walkthrough and follows a card's drill-down, in this vault or another repository's.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#9L5uHzND",
   "parent": "vKEsyHFk/yejBBUFY#dtYjWvlf",
   "formerNames": [
     "Moves between pictures"
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions"
-  }
+  "outgoing": []
 }

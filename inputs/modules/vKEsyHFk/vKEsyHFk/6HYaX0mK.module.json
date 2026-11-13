@@ -13,12 +13,12 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+  "parent": "vKEsyHFk#EuaJBisP",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }
