@@ -2,8 +2,9 @@ import { afterEach, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel } from "@archboard/model/store-read";
+import { editArchitectureModule } from "@archboard/model/store-write";
 import { fixture, git, disposeFixtures } from "#tests/runtime/canonical/edit/operations/fixture.ts";
-import { proposal } from "#tests/runtime/canonical/proposals/operations/fixture.ts";
+import { proposal, request } from "#tests/runtime/canonical/proposals/operations/fixture.ts";
 
 afterEach(disposeFixtures);
 
@@ -90,3 +91,20 @@ test("a ref that the repository cannot resolve, or one named with a checkpoint, 
 		}),
 	).toMatchObject({ success: false, code: "MODEL_INVALID" });
 }, 15_000);
+
+test("a branch reading refuses a state that the branch does not hold, though the archive retains it", async () => {
+	const { vault } = await branchFixture();
+	const shipped = await proposal(vault, "Shipped on main", "Current", [
+		{ type: "edit-module", subject: "Shop#Gateway", set: { description: "Shipped on main." } },
+	]);
+	const adopted = await editArchitectureModule(vault, {
+		...(await request(vault, shipped.target.state!)),
+		proposal: { type: "adopt", reason: "It shipped on main." },
+		changes: [],
+	});
+	if (!adopted.success) throw new Error(JSON.stringify(adopted));
+	for (const selection of [{ state: shipped.target.state! }, { against: shipped.target.state! }])
+		expect(
+			await readArchitectureModel(vault, undefined, undefined, { ref: "plan", ...selection }),
+		).toMatchObject({ success: false, code: "STATE_NOT_FOUND" });
+}, 30_000);
