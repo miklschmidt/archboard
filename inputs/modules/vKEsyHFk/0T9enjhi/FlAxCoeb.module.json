@@ -3,7 +3,7 @@
   "name": "Canonical explanation capture",
   "kind": "module",
   "responsibility": "Captures one exact reading and validates explanation intent without writing architecture",
-  "description": "The existing public reader owns model identity, complete revision, state or checkpoint, stable subjects, reading filters, grammar, explicit flow, and the actual proposal comparison base. Missing and stale content refuse coherently.",
+  "description": "The existing public reader owns model identity, complete revision, state or checkpoint, stable subjects, reading filters, grammar, explicit flow, and the actual proposal comparison base. Missing and stale content refuse coherently. A source ref is refused with a checkpoint, a preview, a legacy address, a walkthrough or an explanation, so none of them silently reads the vault on disk.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/canonical/read/operations/model-explanation.ts"

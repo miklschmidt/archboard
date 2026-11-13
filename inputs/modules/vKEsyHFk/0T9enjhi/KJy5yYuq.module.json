@@ -3,7 +3,7 @@
   "name": "Compact proposals",
   "kind": "module",
   "responsibility": "Materializes compact proposals, reconciles families, and prepares explicit adoption or shelving through the same durable writer.",
-  "description": "Stores compact changes against exact retained predecessors. Consistent decoding keeps predecessor fingerprints stable across live and retained inputs. Changed predecessors require explicit reconciliation or replacement decisions.",
+  "description": "Stores compact changes against exact retained predecessors. Consistent decoding keeps predecessor fingerprints stable across live and retained inputs. Changed predecessors require explicit reconciliation or replacement decisions. With a source ref, the selected-state reader reads the vault at that ref through the branch reading, and selects the state and its comparison inside it.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/canonical/proposals"
@@ -33,6 +33,14 @@
     }
   ],
   "outgoing": [
+    {
+      "order": 90,
+      "kind": "call",
+      "label": "read the vault at a source ref",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#ZGQkdp7D",
+      "to": "vKEsyHFk#NaYD5kDX"
+    },
     {
       "order": 70020,
       "kind": "call",

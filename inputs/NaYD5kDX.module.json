@@ -1,0 +1,32 @@
+{
+  "order": 90,
+  "name": "Branch reading",
+  "kind": "module",
+  "responsibility": "Reads the vault as a source branch or commit holds it, from Git, as a model that cannot be edited",
+  "description": "Reads the vault's inputs as they stand at a source branch or commit of the vault's repository, from Git objects, without a checkout. It decodes them as a model that can be read and compared but not edited, claimed or retained, and its revision names the commit it read.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model/src/runtime/canonical/read/operations/model-at-ref.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#NaYD5kDX",
+  "parent": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "decode the inputs at the ref",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#NDh2pHps",
+      "to": "vKEsyHFk#ZGONZKxj"
+    },
+    {
+      "order": 20,
+      "kind": "call",
+      "label": "read the vault's blobs at the commit",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#VgjM7bCl",
+      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+    }
+  ]
+}

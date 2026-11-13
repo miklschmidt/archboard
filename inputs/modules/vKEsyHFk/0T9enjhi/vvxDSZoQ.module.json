@@ -3,6 +3,7 @@
   "name": "Canonical navigation",
   "kind": "function",
   "responsibility": "Resolves explicit references and bound code through the public model reader",
+  "description": "Resolves explicit references and bound code through the public model reader, and passes a source ref through to the selected-state reader.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/canonical/read/operations/model-navigation.ts"
