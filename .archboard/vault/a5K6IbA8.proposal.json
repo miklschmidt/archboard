@@ -46,6 +46,46 @@
     },
     {
       "type": "add",
+      "subject": "vKEsyHFk#F9ZLnwgK",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "decode the inputs at the ref",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#F9ZLnwgK",
+        "to": "vKEsyHFk#ZGONZKxj"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#F9ZLnwgK",
+      "placement": {
+        "holder": "vKEsyHFk#DZAXm2he"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#QEsizgHC",
+      "kind": "relationship",
+      "value": {
+        "order": 20,
+        "kind": "call",
+        "label": "read the vault's blobs at the commit",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#QEsizgHC",
+        "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#QEsizgHC",
+      "placement": {
+        "holder": "vKEsyHFk#DZAXm2he"
+      }
+    },
+    {
+      "type": "add",
       "subject": "vKEsyHFk#LD4pDpP7",
       "kind": "module",
       "value": {
@@ -156,6 +196,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#HCghQa6I",
+      "field": "description",
+      "value": "One TanStack Router route at /, whose search parameters paneA, paneB and pane are the workspace, with repoA and repoB beside them naming each pane's repository by its identity or an untracked vault's registry name, never by a path. The address follows what the panes report; on a first load and on Back or Forward it leads, restoring through the workspace port with the same command the navigator runs, once the repositories are known. It is never legacy board authority. Canonical model, scope, and checkpoint parameters describe each open pane directly, including unavailable readings. Pane closure removes those parameters. Back and reload restore them without altering legacy board command ownership. Canonical focus and hidden relationship kinds also belong to each pane address. Back, Forward, and reload restore them. Transient selection and camera state remain outside browser history. Each canonical pane also preserves diagram grammar and the explicitly selected flow. Grammar changes retain the preceding architecture scope, focus, and filters. Unavailable flow identities remain explicit. Canonical state and comparison selectors coexist with scope, focus, filters, grammar, and flow. Exact checkpoint and mutable state selection are mutually exclusive. History restores unavailable requested states without silently selecting Current. Explicit canonical addresses remain visible when the server remembers a legacy board. The existing operation owner reveals a deliberately opened legacy board. Navigation history uses the visible origin so repeated visits preserve the preview entry. A pane's ref parameter opens a branch reading. Back, Forward and reload restore it, and choosing a state in History, a checkpoint, another repository or a followed reference leaves it."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/HBlhIeSD#radK8osF",
       "field": "description",
       "value": "The history interface reads canonical states and their bound source declarations. Locality reports change frequency and coupling. Footprint compares explicit local refs and the selected proposal baseline, and lists each changed file that no binding holds, outside the vault. A named head that resolves in the vault's repository is read with the vault at that head, unless the caller asks for the vault on disk, so its proposals and bindings come from the branch; the answer names the vault it read. Source refs lists the branches of every repository the state binds, merged by name. Each changed part names the other changed parts that its binding holds. Missing source stays unavailable rather than being reported as unchanged."
@@ -232,6 +278,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#TLCeNkdh",
+      "field": "description",
+      "value": "Reads one coherent canonical model and its selected state. Opening a module changes attention without copying architecture. Unmigrated vaults expose explicit migration guidance. Exact retained originals use their captured viewer. A branch reading is keyed by its ref, follows no live change, and offers no claims, code findings or Explain, because each of them reads the vault on disk."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+      "field": "description",
+      "value": "Reads current, draft, completed, and exact architecture with explicit unavailable states. One catalogue supplies reading and comparison choices. Recursive scopes expose complete interfaces and relationship evidence. The router owns scope, state, checkpoint, focus, filters, grammar, flow, comparison, and foreign destinations.\n\nSelection retains canonical identities through renames, hidden subjects, and removed comparison definitions. Pointer modifiers, keyboard commands, and area selection share one owner. Focus opens containment paths. Filters preserve complete interfaces. Behavioral readings retain all participants and steps. A flow opens in the reading that its pane shows larger, and a tie opens the sequence.\n\nCode and foreign navigation preserve exact historical pins. State details expose decisions, dates, documents, correction audit, unresolved issues, and blocked ancestry. Explanation actions capture the exact reading through the existing local action.\n\nEach reader belongs to its resolved vault. Captured walkthroughs reuse its renderer and camera, retain the ordinary reading, and change revision only on explicit restart. Every converted beat requires an explicit view. Unavailable beats draw no replacement architecture.\n\nMigration previews retain original coverage, lifecycle, standing, predecessors, and baselines. Failed composition keeps exact originals inspectable without claiming an empty current model. The browser authors no mapping, settlement, lifecycle decision, or migration.\n\nInstalled bookmarks preserve canonical authority and exact view membership without owning model content. Former addresses reopen retained originals with their exact state and checkpoint. Model ownership transfer remains explicitly unavailable. A branch reading names its ref and commit on the state chip, offers no walkthrough or code history, and compares with its base as other readings do."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#w46oCRoH",
       "field": "description",
       "value": "Owns the reading address of a pane, including the source ref of a branch reading, so a branch reading survives reload and browser history."
@@ -267,6 +325,12 @@
       "placement": {
         "holder": "vKEsyHFk#tQ2B3iEF"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#KtBdeME1",
+      "field": "description",
+      "value": "A module's details are read at the ref of a branch reading, without its code."
     },
     {
       "type": "assign",
