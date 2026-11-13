@@ -82,6 +82,27 @@ async function openBranchView(browser: AgentBrowserSession): Promise<void> {
 	await browser.run(["click", '[data-measures-tab="branch"]']);
 }
 
+/**
+ * Wait for the reading of the pane to be, or not to be, a branch reading.
+ * @param browser The page.
+ * @param moment What the wait is for.
+ * @param ref The ref the reading reads at, or null for the vault on disk.
+ * @returns The ref, whether Explain is offered, and the address.
+ */
+function branchReading(browser: AgentBrowserSession, moment: string, ref: string | null = "main") {
+	return pollUntil(
+		() =>
+			browser.eval<{ ref: string | null; explain: boolean; search: string }>(`({
+				ref: document.querySelector('[data-slot="model-reading-selector"]')?.getAttribute('data-source-ref') ?? null,
+				explain: document.querySelector('[data-slot="model-explain"]') !== null,
+				search: location.search,
+			})`),
+		(shown) => shown.ref === ref,
+		`the branch reading ${moment}`,
+		WAIT,
+	);
+}
+
 test("Measures lists what a branch changed, and a branch reading opens at its ref", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "branch-footprint");
@@ -173,32 +194,36 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 		"the row's module selected on its picture",
 		WAIT,
 	);
-	expect(await footprintReads(browser)).toBe(2);
 	expect(
 		await browser.eval<boolean>(`document.querySelector('[data-slot="model-explain"]') !== null`),
 	).toBe(true);
+	// The view keeps the answer for the same range and reading, so opening it again reads nothing.
+	await openBranchView(browser);
+	await pollUntil(
+		() => lists(browser),
+		(shown) => shown.namedAndChanged?.["Shop#Gateway"] === 2,
+		"the kept answer",
+		WAIT,
+	);
+	expect(await footprintReads(browser)).toBe(2);
+	await browser.run(["press", "Escape"]);
 
 	// `main` holds no proposal, so its reading has only the current state.
 	await browser.run(["open", `${reading}&refA=main`]);
 	await drawn(browser);
 	await browser.run(["reload"]);
 	await drawn(browser);
-	const branch = await pollUntil(
-		() =>
-			browser.eval<{ ref: string | null; explain: boolean; search: string }>(`({
-				ref: document.querySelector('[data-slot="model-reading-selector"]')?.getAttribute('data-source-ref') ?? null,
-				explain: document.querySelector('[data-slot="model-explain"]') !== null,
-				search: location.search,
-			})`),
-		(shown) => shown.ref !== null,
-		"the branch reading after a reload",
-		WAIT,
-	);
-	expect(branch).toEqual({
+	expect(await branchReading(browser, "after a reload")).toEqual({
 		ref: "main",
 		explain: false,
 		search: expect.stringContaining("refA=main"),
 	});
+	await browser.run(["back"]);
+	await drawn(browser);
+	expect((await branchReading(browser, "back on the checkout", null)).ref).toBeNull();
+	await browser.run(["forward"]);
+	await drawn(browser);
+	expect((await branchReading(browser, "forward again")).ref).toBe("main");
 	const atMain = await request<ArchitectureModelRead>(
 		`/api/architecture/model?${new URLSearchParams({ ref: "main" })}`,
 	);
