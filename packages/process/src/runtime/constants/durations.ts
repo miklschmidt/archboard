@@ -4,8 +4,14 @@
 /** Observation cadence while proving a killed process group is absent. */
 const PROCESS_GROUP_OBSERVATION_POLL_MS = 10;
 
-/** One Git command: its bound, and the end of its detached process group. */
-const GIT_MS = Object.freeze({
+/** `GIT_MS.groupCleanup`, named once so that the CLI's interrupt grace can be a number of them. */
+const GIT_GROUP_CLEANUP_MS = 3000;
+
+/**
+ * One Git command: its bound, and the end of its detached process group. Marked pure, so that a
+ * bundle that reads only the observation poll, such as the npm build of the voice package, leaves it out.
+ */
+const GIT_MS = /* @__PURE__ */ Object.freeze({
 	/**
 	 * Outer bound for one Git identity probe while an operation captures its checkout snapshot. Snapshot
 	 * work runs before a model lock or synchronous note write, so this never extends either critical
@@ -24,7 +30,7 @@ const GIT_MS = Object.freeze({
 	 * barrier). Three seconds stays below GIT_MS.command, so failed
 	 * cleanup is still diagnosed before the command timeout would be.
 	 */
-	groupCleanup: 3000,
+	groupCleanup: GIT_GROUP_CLEANUP_MS,
 	/** Git process cleanup uses the shared process-group observation cadence. */
 	groupPoll: PROCESS_GROUP_OBSERVATION_POLL_MS,
 } satisfies Record<string, number>);
@@ -36,6 +42,6 @@ const GIT_MS = Object.freeze({
  * reserved for that settled failure to cross the command runner before the CLI
  * re-signals itself; the outer owner must never pre-empt either inner proof.
  */
-const CLI_INTERRUPT_CLEANUP_MS = 3 * GIT_MS.groupCleanup;
+const CLI_INTERRUPT_CLEANUP_MS = 3 * GIT_GROUP_CLEANUP_MS;
 
 export { CLI_INTERRUPT_CLEANUP_MS, GIT_MS, PROCESS_GROUP_OBSERVATION_POLL_MS };

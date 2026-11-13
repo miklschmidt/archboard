@@ -409,7 +409,12 @@ describe("the resolved package graph", () => {
 			write("packages/workspace/src/shared/api.ts", 'import.meta.resolve("@archboard/process");');
 			const fixtureOwners = ownersIn(path.join(base, "packages"), "");
 			const fixtureEdges = readEdges(fixtureOwners);
-			expect(findCycle(fixtureEdges)).toEqual(["diagnostics", "workspace", "process", "diagnostics"]);
+			expect(findCycle(fixtureEdges)).toEqual([
+				"diagnostics",
+				"workspace",
+				"process",
+				"diagnostics",
+			]);
 			expect(layerViolations(fixtureEdges, LAYERS)).toHaveLength(1);
 			expect(privateImports(fixtureEdges, exportsByPackage(fixtureOwners))).toHaveLength(1);
 			write("packages/process/src/shared/api.ts", 'export { x } from "#runtime/private.ts";');
