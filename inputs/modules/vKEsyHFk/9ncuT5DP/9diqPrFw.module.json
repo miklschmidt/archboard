@@ -64,6 +64,7 @@
       "order": 43000,
       "kind": "dependency",
       "label": "own the Codex process group",
+      "description": "It passes the TERM grace and the freeze wait of a Codex process group, which it owns, into the cleanup.",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

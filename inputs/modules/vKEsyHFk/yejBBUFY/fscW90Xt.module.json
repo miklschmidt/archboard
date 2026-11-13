@@ -28,5 +28,19 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "recording durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/walkthroughs/recording/clients/voice-reception.ts",
+        "symbol": "RECORDING_MS"
+      },
+      "id": "vKEsyHFk#S7buWae6",
+      "to": "vKEsyHFk#6RJ25ejV"
+    }
+  ]
 }

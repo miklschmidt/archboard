@@ -92,6 +92,19 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#ZflKJBv6",
       "to": "vKEsyHFk/SMjRfwN3#6uHnaygd"
+    },
+    {
+      "order": 51000,
+      "kind": "dependency",
+      "label": "process group poll interval",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
+        "symbol": "PROCESS_GROUP_OBSERVATION_POLL_MS"
+      },
+      "id": "vKEsyHFk#EMdz18mr",
+      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
     }
   ]
 }

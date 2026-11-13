@@ -24,6 +24,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#FCRYdY4h",
       "to": "vKEsyHFk/vKEsyHFk#nugpFSIX"
+    },
+    {
+      "order": 16000,
+      "kind": "dependency",
+      "label": "recorder bounds",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/video-encoding/processes/video-encoder.ts",
+        "symbol": "RECORDER_MS"
+      },
+      "id": "vKEsyHFk#dMHr4tUr",
+      "to": "vKEsyHFk#6RJ25ejV"
     }
   ]
 }

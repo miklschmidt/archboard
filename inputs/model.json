@@ -3,21 +3,21 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "ostXM9oe",
-    "name": "Each duration lives with its owner",
-    "summary": "The timing package is gone. Each package and app keeps its durations in its own constants file, beside the code that reads them, and exports a group only when another package reads it. A relation between durations of two owners is checked by an import or a test.",
+    "id": "1inLSGhc",
+    "name": "Duration reads between owners",
+    "summary": "A module that reads a duration another module owns depends on that owner. Each such read is a dependency relationship, anchored at the import, so the model shows which owner a module must follow when a duration changes.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
         "path": "docs/adr/0080-each-duration-lives-with-its-owner.md"
       }
     ],
-    "predecessor": "e3T8Mjgq",
-    "baseline": "1147b2db27e2f214593b08678628a9a9ad649a68",
-    "createdAt": "2026-11-13T04:24:07.874Z",
-    "adoptedAt": "2026-11-13T04:27:59.136Z",
-    "reason": "The timing package is dissolved on refactor/dissolve-timing: each package and app holds its own durations, and tests check the relations between owners (TASK-634).",
-    "previousCurrent": "e3T8Mjgq"
+    "predecessor": "ostXM9oe",
+    "baseline": "ccf59226c33879b4838bbefb1e5c7729d0150643",
+    "createdAt": "2026-11-13T10:55:36.068Z",
+    "adoptedAt": "2026-11-13T10:56:56.021Z",
+    "reason": "Each module that reads a duration of another owner imports it on refactor/dissolve-timing, and these dependencies record those imports (TASK-634).",
+    "previousCurrent": "ostXM9oe"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",

@@ -14,5 +14,19 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#hlLOugjc",
   "parent": "vKEsyHFk/SMjRfwN3#ZAj4RMzN",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "recorder bounds",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/recorder/clients/recording-page.ts",
+        "symbol": "RECORDER_MS"
+      },
+      "id": "vKEsyHFk#nECXyJ3H",
+      "to": "vKEsyHFk#6RJ25ejV"
+    }
+  ]
 }

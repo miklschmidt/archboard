@@ -17,5 +17,32 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "Codex process durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/constants/durations.ts",
+        "symbol": "CODEX_PROCESS_MS"
+      },
+      "id": "vKEsyHFk#6zoaSzYr",
+      "to": "vKEsyHFk/vKEsyHFk#vEVm326r"
+    },
+    {
+      "order": 2000,
+      "kind": "dependency",
+      "label": "process group poll interval",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/processes/process.ts",
+        "symbol": "PROCESS_GROUP_OBSERVATION_POLL_MS"
+      },
+      "id": "vKEsyHFk#zseCTUyp",
+      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
+    }
+  ]
 }

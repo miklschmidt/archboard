@@ -76,6 +76,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#pNlMVRMt",
       "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    },
+    {
+      "order": 41000,
+      "kind": "dependency",
+      "label": "recording durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
+        "symbol": "RECORDING_MS"
+      },
+      "id": "vKEsyHFk#D2LlGOm0",
+      "to": "vKEsyHFk#6RJ25ejV"
     }
   ]
 }

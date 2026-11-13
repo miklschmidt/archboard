@@ -104,6 +104,19 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
       "to": "vKEsyHFk#ZGONZKxj"
+    },
+    {
+      "order": 127000,
+      "kind": "dependency",
+      "label": "session durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/explanations/services/actions.ts",
+        "symbol": "CODEX_SESSION_MS"
+      },
+      "id": "vKEsyHFk#ItTAad6i",
+      "to": "vKEsyHFk/vKEsyHFk#vEVm326r"
     }
   ]
 }

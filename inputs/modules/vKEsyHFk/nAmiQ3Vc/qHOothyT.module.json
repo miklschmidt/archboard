@@ -138,6 +138,19 @@
       "emphasis": "normal",
       "id": "vKEsyHFk#Rd2cwGPl",
       "to": "vKEsyHFk#EbMc8PH2"
+    },
+    {
+      "order": 91000,
+      "kind": "dependency",
+      "label": "interrupt cleanup grace",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/session.ts",
+        "symbol": "CLI_INTERRUPT_CLEANUP_MS"
+      },
+      "id": "vKEsyHFk#lIYAsGy9",
+      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
     }
   ]
 }

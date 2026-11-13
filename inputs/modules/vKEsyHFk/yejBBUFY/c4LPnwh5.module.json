@@ -38,6 +38,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#6JBVcBmw",
       "to": "vKEsyHFk/yejBBUFY#OPt4rjAR"
+    },
+    {
+      "order": 74000,
+      "kind": "dependency",
+      "label": "shell clock durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/shell/components/Notices.tsx",
+        "symbol": "SHELL_CLOCK_MS"
+      },
+      "id": "vKEsyHFk#P60LAjBb",
+      "to": "vKEsyHFk/vKEsyHFk#sw4oFps0"
     }
   ]
 }

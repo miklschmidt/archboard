@@ -13,12 +13,39 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "parent": "vKEsyHFk#EuaJBisP",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "session durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/dynamic-tools/services/target-wait.ts",
+        "symbol": "CODEX_SESSION_MS"
+      },
+      "id": "vKEsyHFk#4gFtbNT4",
+      "to": "vKEsyHFk/vKEsyHFk#vEVm326r"
+    },
+    {
+      "order": 2000,
+      "kind": "dependency",
+      "label": "realtime durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/schemas/semantic-brief.ts",
+        "symbol": "CODEX_REALTIME_MS"
+      },
+      "id": "vKEsyHFk#Audb3MQh",
+      "to": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+    }
+  ]
 }

@@ -53,6 +53,19 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#NcnDdoyZ",
       "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
+    },
+    {
+      "order": 106000,
+      "kind": "dependency",
+      "label": "pane durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/feed-socket.ts",
+        "symbol": "PANE_MS"
+      },
+      "id": "vKEsyHFk#cOd9rGDk",
+      "to": "vKEsyHFk/vKEsyHFk#sw4oFps0"
     }
   ]
 }

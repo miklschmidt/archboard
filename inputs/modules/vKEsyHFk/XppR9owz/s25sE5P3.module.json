@@ -57,6 +57,19 @@
       },
       "id": "vKEsyHFk#5yYA6WLY",
       "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    },
+    {
+      "order": 1009020,
+      "kind": "dependency",
+      "label": "Git command bounds",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/vault/embeds/clients/git-output.ts",
+        "symbol": "GIT_MS"
+      },
+      "id": "vKEsyHFk#fzkSpcY3",
+      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
     }
   ]
 }

@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#jPAvfxQA",
       "to": "vKEsyHFk/SMjRfwN3#WSI0A2k3"
+    },
+    {
+      "order": 40000,
+      "kind": "dependency",
+      "label": "recorder bounds",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/video-encoding/services/ffmpeg.ts",
+        "symbol": "RECORDER_MS"
+      },
+      "id": "vKEsyHFk#6F1oYlmA",
+      "to": "vKEsyHFk#6RJ25ejV"
     }
   ]
 }

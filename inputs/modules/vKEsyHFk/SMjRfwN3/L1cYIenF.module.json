@@ -54,6 +54,19 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#5cL4zDLx",
       "to": "vKEsyHFk/SMjRfwN3#QNRrx3i3"
+    },
+    {
+      "order": 28000,
+      "kind": "dependency",
+      "label": "recorder bounds",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/recorder/services/recording-tools.ts",
+        "symbol": "RECORDER_MS"
+      },
+      "id": "vKEsyHFk#O0OCEZSA",
+      "to": "vKEsyHFk#6RJ25ejV"
     }
   ]
 }
