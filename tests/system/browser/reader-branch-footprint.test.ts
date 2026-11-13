@@ -265,6 +265,16 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 		null,
 	]);
 
+	// Measures can read the branch-only proposal after Show on picture opens it.
+	await openBranchView(browser);
+	await pollUntil(
+		() => lists(browser),
+		(reopened) => Object.keys(reopened).length === 3,
+		"the footprint reopened in the branch-only proposal",
+		WAIT,
+	);
+	await browser.run(["press", "Escape"]);
+
 	// `main` holds no proposal, so its reading has only the current state.
 	await browser.run(["open", `${reading}&refA=main`]);
 	await drawn(browser);

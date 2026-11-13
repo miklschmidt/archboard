@@ -94,7 +94,7 @@ function headOf(choice: FootprintChoice, model: Pick<Model, "sourceRef">): strin
  */
 function useAgainst(
 	vault: string,
-	model: Pick<Model, "manifest" | "selectedState" | "revision">,
+	model: Pick<Model, "manifest" | "selectedState" | "revision" | "sourceRef">,
 	choice: FootprintChoice,
 	range: RefRange,
 	read: VaultStates | undefined,

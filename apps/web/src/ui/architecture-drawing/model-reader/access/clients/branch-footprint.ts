@@ -102,14 +102,17 @@ const HISTORY_ARCHIVE_BRANCH = "archboard-history";
  */
 function sourceRefsQuery(
 	vault: string,
-	model: Pick<Model, "manifest" | "selectedState" | "revision">,
+	model: Pick<Model, "manifest" | "selectedState" | "revision" | "sourceRef">,
 ) {
 	const state = model.selectedState?.id;
+	const ref = model.sourceRef?.ref;
 	const parameters = new URLSearchParams(state === undefined ? {} : { state });
+	if (ref !== undefined) parameters.set("ref", ref);
 	return queryOptions({
 		queryKey: [
 			...architectureModelKeys.vault(vault),
 			"refs",
+			ref,
 			model.manifest.id,
 			state,
 			model.revision.digest,
@@ -146,16 +149,19 @@ function sourceRefsQuery(
  */
 function mergeBaseQuery(
 	vault: string,
-	model: Pick<Model, "manifest" | "selectedState" | "revision">,
+	model: Pick<Model, "manifest" | "selectedState" | "revision" | "sourceRef">,
 	range: NamedRange,
 ) {
 	const state = model.selectedState?.id;
+	const ref = model.sourceRef?.ref;
 	const parameters = new URLSearchParams({ base: range.base, head: range.head });
 	if (state !== undefined) parameters.set("state", state);
+	if (ref !== undefined) parameters.set("ref", ref);
 	return queryOptions({
 		queryKey: [
 			...architectureModelKeys.vault(vault),
 			"merge-base",
+			ref,
 			model.manifest.id,
 			state,
 			model.revision.digest,
