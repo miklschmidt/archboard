@@ -75,7 +75,10 @@ function readSettings(directory: string): Settings {
 	if (existing !== null) return existing;
 	const settings: Settings = { installationId: randomUUID(), turnedOff: false };
 	try {
-		writeFileAtomic(file, `${JSON.stringify(settings)}\n`, { createParents: true, exclusive: true });
+		writeFileAtomic(file, `${JSON.stringify(settings)}\n`, {
+			createParents: true,
+			exclusive: true,
+		});
 		return settings;
 	} catch {
 		// Another process wrote the settings first, or the file holds none and is replaced.
