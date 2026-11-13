@@ -72,6 +72,10 @@ function repository(root: string, identity: string): void {
 	mkdirSync(root, { recursive: true });
 	git(root, "init", "-q", "-b", "main");
 	git(root, "remote", "add", "origin", `https://${identity}.git`);
+	// The public write commits with the process's Git, so the machine's signing must not reach it.
+	git(root, "config", "commit.gpgsign", "false");
+	git(root, "config", "user.name", "Owner");
+	git(root, "config", "user.email", "owner@example.com");
 }
 
 /**
