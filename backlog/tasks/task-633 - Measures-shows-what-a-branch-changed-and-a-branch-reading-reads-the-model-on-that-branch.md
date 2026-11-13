@@ -7,14 +7,13 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-12T23:34:00Z'
-updated_date: '2026-11-13T01:25:00Z'
+updated_date: '2026-11-13T02:02:00Z'
 labels:
   - ready-for-agent
 dependencies: []
 documentation:
   - docs/adr/0045-git-history-is-read-through-bindings-on-request.md
   - CONTEXT.md
-  - docs/design/branch-footprint-view/proposal.svg
 priority: high
 type: feature
 ordinal: 1074000
@@ -104,7 +103,7 @@ The CLI gets the same behavior through the same route. `--model-at checkout` kee
 
 - Proposal: "A reader sees what a branch changed and reads the model on that branch", `a5K6IbA8`, in model `vKEsyHFk`.
 - Link: http://archboard.localhost:4242/?modelA=vKEsyHFk&stateA=a5K6IbA8, compared with Current by default. A worktree server serves the same address on its own port.
-- Picture: `docs/design/branch-footprint-view/proposal.svg`. The flows are in `docs/design/branch-footprint-view/read-what-a-branch-changed.svg` and `docs/design/branch-footprint-view/show-a-branch-footprint-on-its-picture.svg`.
+- Picture: `archboard model render --state a5K6IbA8 --out <file>` draws it. The flows are `Read what a branch changed` and `Show a branch footprint on its picture`, in the collection Browser application.
 - Changes:
   - Interface: `Reads and server health` gains the entry point Architecture history routes.
   - Interface: History lens becomes an entry point of `code-intel`, and Architecture history routes calls it.
