@@ -34,6 +34,18 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/vKEsyHFk#7eSdILxB"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#9jix9Dsx",
+      "field": "description",
+      "value": "The entrance, the departure, the far swap and the flight into a card follow the same rule. Nothing here draws, reads a clock or keeps state between frames, so the same inputs give the same items. The durations come from the page that hosts the painter. flight.rs holds what moves a whole picture: a flight from the last picture, a part-by-part entrance, a leaving picture, the ghost of one that left, and the model inside a card that the camera flies into."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+      "field": "description",
+      "value": "Its npm build bundles codex-app-server, process and diagnostics, which are MIT like it; every other workspace package is BUSL and stays out of it. Archboard and the example reach it only through the entries an outside host uses."
     }
   ],
   "retiredIds": [
