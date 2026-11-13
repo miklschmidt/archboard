@@ -1265,10 +1265,23 @@
           "id": "vKEsyHFk/9ncuT5DP#vDD2NoAE",
           "kind": "decision",
           "question": "What did the child answer?",
+          "note": "A queued acceptance alone does not identify a workhorse turn. If a later event identifies a queued or unknown delegate's turn, the session records it then.",
           "alternatives": [
             {
               "label": "accepted: direct turn",
               "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#HABlToF8",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+                  "label": "commit the operation",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/durable-settlement.ts",
+                    "symbol": "recordSettlement"
+                  }
+                },
                 {
                   "id": "vKEsyHFk#NJUAVXIy",
                   "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
@@ -1281,18 +1294,6 @@
                     "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/direct-delegate.ts",
                     "symbol": "publishTurnStart"
                   }
-                },
-                {
-                  "id": "vKEsyHFk/9ncuT5DP#HABlToF8",
-                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
-                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
-                  "label": "commit the operation",
-                  "kind": "sync",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/durable-settlement.ts",
-                    "symbol": "recordSettlement"
-                  }
                 }
               ]
             },
@@ -1300,6 +1301,7 @@
               "label": "accepted: queued submission",
               "steps": [
                 {
+                  "id": "vKEsyHFk#LcM4i7xu",
                   "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
                   "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
                   "label": "commit the queued operation",
@@ -1308,8 +1310,7 @@
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/durable-settlement.ts",
                     "symbol": "recordSettlement"
-                  },
-                  "id": "vKEsyHFk#LcM4i7xu"
+                  }
                 }
               ]
             },
@@ -1347,8 +1348,7 @@
                 }
               ]
             }
-          ],
-          "note": "A queued acceptance alone does not identify a workhorse turn. If a later event identifies a queued or unknown delegate's turn, the session records it then."
+          ]
         },
         {
           "id": "vKEsyHFk/9ncuT5DP#4gO8EfCB",
