@@ -82,6 +82,7 @@ const READING_FIELDS = [
 	"reference",
 	"walkthrough",
 	"shared",
+	"ref",
 ] as const;
 
 /** The canonical readings cached by this tab. */
