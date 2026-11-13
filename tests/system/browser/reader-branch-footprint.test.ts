@@ -271,6 +271,38 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 	);
 	expect(atOther.against).toBe(beside.target.state);
 
+	// Refresh rereads a moved base before choosing the plan that the head adds.
+	const originalBase = fixtureGit(root, "rev-parse", "main");
+	const currentState = model.body.manifest.current?.id;
+	fixtureGit(root, "update-ref", "refs/heads/main", "other");
+	await browser.run(["click", '[data-slot="footprint-refresh"]']);
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-ref-picker="against"] button')?.getAttribute('data-value') ?? null`,
+			),
+		(value) => value === currentState,
+		"Against after the base moves to the head",
+		WAIT,
+	);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="footprint-refresh"]')?.disabled === false`,
+			),
+		Boolean,
+		"the first refresh to finish",
+		WAIT,
+	);
+	fixtureGit(root, "update-ref", "refs/heads/main", originalBase);
+	await browser.run(["click", '[data-slot="footprint-refresh"]']);
+	await pollUntil(
+		() => lists(browser),
+		(restored) => restored.namedNotChanged !== undefined,
+		"the plan after restoring the base",
+		WAIT,
+	);
+
 	// Show on picture opens that head's branch reading in that state, and selects the listed module.
 	await browser.run(["click", '[data-footprint-show="namedNotChanged"]']);
 	const shown = await pollUntil(
