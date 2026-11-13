@@ -3,12 +3,12 @@
   "name": "One run's world",
   "kind": "module",
   "responsibility": "Everything one author turn stands in: a private home, a pinned checkout, a server of its own, the installed skill, and the fixture laid through the CLI",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
-  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
-  "outgoing": [],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/run-world"
-  }
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
+  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
+  "outgoing": []
 }
