@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-12T23:34:00Z'
-updated_date: '2026-11-13T02:02:00Z'
+updated_date: '2026-11-13T02:13:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -160,4 +160,6 @@ The CLI gets the same behavior through the same route. `--model-at checkout` kee
 
 <!-- SECTION:NOTES:BEGIN -->
 All five subtasks are Done. The whole-branch gate (archboard model footprint --base main --state a5K6IbA8 --fail-outside) passes with recorded exceptions for tickets, tests and the vault. namedNotChanged holds Read entry and Archive object I/O, which are relationship ends only, and Model footprint, whose --model-at change lives in shared words and option helpers that the Commands exception covers. Interface width: code-intel exports one readArchitectureHistory(vault, {analysis}) instead of three reads, and the server mounts one route per analysis, so code-intel stays at its ceiling of 11 (ADR 0058). Known flaky tests outside this change (exclusion.test.ts, repositories, browser-show-checkout) pass alone; the Audit and Update Dependencies thread owns them. Waiting on the user: acceptance of the ADR 0045 amendment of 2026-11-13.
+
+Main adopted the telemetry proposal e3T8Mjgq from TGDLt5Ea before this PR merged, which superseded a5K6IbA8. Proposal 7Kc2FJFu carries the same changes on e3T8Mjgq (3 modules, 9 relationships, 16 descriptions, 2 flows with 22 steps, compared field by field) and is adopted on PR #118. a5K6IbA8 could not be shelved, because the local archive holds four retired TGDLt5Ea checkpoints (STATE_AMBIGUOUS), so the branch drops its never-merged file. Gates that named a5K6IbA8 now name 7Kc2FJFu.
 <!-- SECTION:NOTES:END -->
