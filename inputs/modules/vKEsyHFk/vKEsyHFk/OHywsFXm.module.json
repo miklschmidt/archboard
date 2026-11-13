@@ -14,6 +14,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "parent": "vKEsyHFk#EuaJBisP",
   "formerNames": [
     "Semantic renderer"
   ],
@@ -42,6 +43,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }

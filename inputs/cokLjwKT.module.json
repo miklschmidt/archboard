@@ -10,9 +10,9 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#cokLjwKT",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "formerNames": [
     "Orthogonal router"
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  "outgoing": []
 }
