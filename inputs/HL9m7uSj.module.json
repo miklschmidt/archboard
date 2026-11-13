@@ -8,9 +8,9 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-paint/src/warnings.rs"
   },
-  "parent": "vKEsyHFk#NFwqWgrm",
   "schemaVersion": 1,
   "id": "vKEsyHFk#HL9m7uSj",
+  "parent": "vKEsyHFk#NFwqWgrm",
   "outgoing": [
     {
       "order": 4000,
