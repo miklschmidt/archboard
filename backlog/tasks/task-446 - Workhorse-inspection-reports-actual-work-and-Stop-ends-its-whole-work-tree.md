@@ -1,11 +1,11 @@
 ---
 id: TASK-446
 title: Workhorse inspection reports actual work and Stop ends its whole work tree
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: 2026-10-07 19:57
-updated_date: '2026-11-13T00:16:00Z'
+updated_date: '2026-11-13T01:00:00Z'
 labels:
   - voice
   - coordinator
@@ -30,14 +30,14 @@ In the October 7 voice session, inspection returned active status with no turn i
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Inspection reports the current request, authoritative active turn, recent progress, spawned agents, pending requests, and observed stop result. Failed reads remain visibly unavailable.
-- [ ] #2 Queue operations recognize the genuine owned workhorse using canonical source and ownership evidence. Inspection never substitutes an empty queue after a failed ownership test.
-- [ ] #3 Steering targets the current workhorse turn and rejects stale targets. It never uses the coordinator turn identity.
-- [ ] #4 Spoken Stop and workbench Stop interrupt current work and all spawned descendants, clear pending requests, and preserve voice and unrelated tab sessions.
-- [ ] #5 Stop accounts for descendants accepted during cancellation and work that restarts during settlement. Success requires evidence that all affected work ended.
-- [ ] #6 New work is refused during stopping or an unresolved stop. After confirmed completion, only a fresh explicit user request starts work.
-- [ ] #7 Partial or unconfirmed outcomes name remaining work and recovery actions. A request acknowledgment or missing turn identity never proves a successful stop.
-- [ ] #8 Fast contract tests reproduce the original failures and cover source metadata, real API summary shapes, cancellation races, empty work, partial failure, and tab isolation.
+- [x] #1 Inspection reports the current request, authoritative active turn, recent progress, spawned agents, pending requests, and observed stop result. Failed reads remain visibly unavailable.
+- [x] #2 Queue operations recognize the genuine owned workhorse using canonical source and ownership evidence. Inspection never substitutes an empty queue after a failed ownership test.
+- [x] #3 Steering targets the current workhorse turn and rejects stale targets. It never uses the coordinator turn identity.
+- [x] #4 Spoken Stop and workbench Stop interrupt current work and all spawned descendants, clear pending requests, and preserve voice and unrelated tab sessions.
+- [x] #5 Stop accounts for descendants accepted during cancellation and work that restarts during settlement. Success requires evidence that all affected work ended.
+- [x] #6 New work is refused during stopping or an unresolved stop. After confirmed completion, only a fresh explicit user request starts work.
+- [x] #7 Partial or unconfirmed outcomes name remaining work and recovery actions. A request acknowledgment or missing turn identity never proves a successful stop.
+- [x] #8 Fast contract tests reproduce the original failures and cover source metadata, real API summary shapes, cancellation races, empty work, partial failure, and tab isolation.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -78,6 +78,8 @@ The board check passes with no diagnostics. semantic compare matches the planned
 2026-10-17: this task's board proposals were rebuilt on the current architecture, which holds the board's calls as flows (TASK-482.07). Each is now named 'TASK-446 after TASK-482.07' on every board that had one (Agent workbench, Browser application, Codex workhorse, Voice coordinator, as applicable); the old 'TASK-446' drafts stood on parents later adoptions made historical, were renamed 'TASK-446 (before flows)' and shelved. A former name stays with the shelved draft, so read and adopt the new proposal by its new name. Calls of the change are steps of the board's flows.
 
 2026-11-13: proposal 'A workhorse stop ends its whole work tree' (BlKbD4yG) created on Current TGDLt5Ea. archboard check --state BlKbD4yG reports 15 warnings, each for code that the plan adds: stop.ts (BINDING_PATH_MISSING, ANCHOR_PATH_MISSING), guardWorkhorse in sessions.ts and the interrupt anchor in text-actions.ts (ANCHOR_SYMBOL_MISSING). The drafts 93RlBGLx, yM7DOqT4 and zFIdZB1Y are shelved with a reason that names BlKbD4yG.
+
+2026-11-13: implemented. The work guard (guardWorkhorse) lives in stop.ts beside the stop, and sessions.ts wraps each built workhorse with it. Steering reads the running workhorse turn through thread/turns/list (runningWorkhorseTurn in steer.ts). The proposal BlKbD4yG was brought to the built symbols and adopted on Current after the rebase onto main e2cbb84d07; archboard check passes with no diagnostics. Verification: bun run check passes every lane, and the model check passes after adoption; the package suite passes (1147 tests); tsc is clean. Sol review (gpt-6.1-sol, xhigh), 2 rounds, approved. Two findings were declined with evidence: a second admission layer at the Codex session (the repeated read pass already stops work that lands while stopping, and the layer does not cover an operation queued before a stop of an idle workhorse), and a second stop deadline (every Codex request settles within requestSettlement, request-operations.ts:259). Follow-ups to consider: an operation that passed admission before a stop and starts after it; the workbench shows Stop only while the workhorse's own turn runs, so work left only in a sub-agent has no button; browser refusals name remaining work only in general terms.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -89,3 +91,9 @@ created: 2026-10-15 08:51
 TASK-472.11 adds the coordinator tool stop_workhorses (archboard_workhorse namespace, no input), which calls the tab session's stopWork(null) and answers {stopped: [{checkout, outcome: interrupt_sent | idle}]}; the coordinator instructions say to call it when the person asks to stop and to claim a stop only on workhorse news that the turn ended. TASK-446 deepens stopWork (sub-agents, pending requests, observed end of work, ADR 0048) and adds no second tool.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Spoken Stop and the workbench Stop control now run one work tree stop (server/sessions/services/stop.ts, ADR 0048). The stop marks the workhorse stopping. Then it repeats one pass until Codex reports nothing left: it lists every sub-agent at any depth, deletes each queued request and interrupts each running turn, the workhorse first. It reports stopped, idle, partial or unconfirmed, with the remaining threads and the recovery (inspect_workhorse, stop_workhorses). An interrupt acknowledgment or an active thread with no named turn never counts as stopped. New work is refused while the stop runs and after a partial or unconfirmed stop. After a confirmed stop, only the coordinator turn that asked for it is refused. Inspection reads the running turn through thread/turns/list, because a thread summary has no turns. It reports the request, recent progress, sub-agents, the queue, each read that failed and the last stop. Steering targets the workhorse turn that Codex lists, never the coordinator turn. Contract tests reproduce the October 7 incident and cover nested and late sub-agents, a restart during settlement, partial and unreadable outcomes, empty work, refusals during and after a stop, and tab isolation. Verified with bun run check, 1147 package tests, tsc and archboard check after adopting BlKbD4yG. Sol review approved in 2 rounds. No live Codex run was made. Follow-ups are listed in the notes.
+<!-- SECTION:FINAL_SUMMARY:END -->
