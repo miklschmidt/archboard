@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: 2026-09-23 21:36
-updated_date: '2026-11-13T00:16:00Z'
+updated_date: '2026-11-13T00:20:00Z'
 labels:
   - voice
   - coordinator
@@ -63,5 +63,5 @@ AC #3: commit 5dae569a86 added the description to docs/design/operator-canvas-sh
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-The workbench shows the voice coordinator's turns in the one conversation, among the workhorse's turns, and a delegated workhorse turn says 'Delegated by the voice coordinator' with a link to the turn that asked. Code: 97388aaf30 (server projection and delegation record) and 67c2158e27 (UI). The owner confirmed the live voice check for AC #1 and #2. The architecture model now describes it: the proposal The workbench shows the voice coordinator's turns and who delegated (7XssUp0E) was built on Current from the code as it is today, checked (no semantic diagnostics, no new code findings) and adopted. The two pre-canonical drafts D0qvstE4 and YkUcKOJ5 are shelved. Verification: archboard check semantics and check code on the proposal; bun test of delegations.test.ts and coordinator-timeline-projection.test.ts (5 pass) and the workbench delegation.test.tsx (3 pass). Follow-up risk: DESIGN.md, which replaced operator-canvas-shell.md, does not state the conversation's voice coordinator rule; ADR 0019 does.
+The workbench shows the voice coordinator's turns among the workhorse's turns in one conversation. A recorded delegation says 'Delegated by the voice coordinator'. When the coordinator turn is shown, the label scrolls to that turn. Otherwise, the label is plain text. Code: 97388aaf30 (server projection and delegation record) and 67c2158e27 (UI). The owner confirmed the live voice check for AC #1 and #2. The architecture model now describes it: the proposal The workbench shows the voice coordinator's turns and who delegated (7XssUp0E) was built on Current from the code as it is today, checked (no semantic diagnostics, no new code findings) and adopted. The two pre-canonical drafts D0qvstE4 and YkUcKOJ5 are shelved. Verification: archboard check semantics and check code on the proposal; bun test of delegations.test.ts and coordinator-timeline-projection.test.ts (5 pass) and the workbench delegation.test.tsx (3 pass). Follow-up risk: DESIGN.md, which replaced operator-canvas-shell.md, does not state the conversation's voice coordinator rule; ADR 0019 does.
 <!-- SECTION:FINAL_SUMMARY:END -->
