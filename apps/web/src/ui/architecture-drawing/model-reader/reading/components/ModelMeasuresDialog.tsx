@@ -1,9 +1,12 @@
 import {
 	RiCodeSSlashLine,
+	RiGitBranchLine,
 	RiGitCommitLine,
 	RiStackLine,
 	type RemixiconComponentType,
 } from "@remixicon/react";
+import { BranchFootprint } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/BranchFootprint.tsx";
+import type { FootprintChoice } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/hooks/use-branch-footprint.ts";
 import { useCallback, useMemo, useRef, useState, type JSX } from "react";
 import { Dialog, Tabs } from "@archboard/ui-kit/components";
 import { ModelCodeEvidence } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
@@ -19,8 +22,8 @@ import type {
 } from "#ui/architecture-drawing/model-reader/reading/rules/module-measures.ts";
 import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
-/** The three views of the dialog. */
-type MeasuresTab = "code" | "interface" | "changes";
+/** The four views of the dialog. */
+type MeasuresTab = "code" | "interface" | "changes" | "branch";
 
 /** Each view as the selector offers it: an icon, a label and a line that says what it shows. */
 const TABS: readonly {
@@ -46,6 +49,12 @@ const TABS: readonly {
 		Icon: RiGitCommitLine,
 		label: "What changes together",
 		gloss: "Each commit, read through the modules it touched",
+	},
+	{
+		value: "branch",
+		Icon: RiGitBranchLine,
+		label: "What this branch changed",
+		gloss: "The modules that the commits from a base changed",
 	},
 ];
 
@@ -98,6 +107,7 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 	const [tab, setTab] = useState<MeasuresTab>("code");
 	const [exposes, setExposes] = useState(EXPOSES_VIEW);
 	const [together, setTogether] = useState(TOGETHER_VIEW);
+	const [footprint, setFootprint] = useState<FootprintChoice>({});
 	const chosen = useRef<Choice | null>(null);
 	const { findModule } = reader.choices;
 	const { onDiagram } = reader;
@@ -134,8 +144,8 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 				<Dialog.Header>
 					<Dialog.Title>Measures</Dialog.Title>
 					<Dialog.Description className="sr-only">
-						Where the model and its code disagree, what each module exposes, and what changes
-						together, for the reading on screen.
+						Where the model and its code disagree, what each module exposes, what changes together,
+						and what a branch changed, for the reading on screen.
 					</Dialog.Description>
 				</Dialog.Header>
 				<Tabs value={tab} onValueChange={changeTab} className="min-h-0 flex-1 gap-4">
@@ -170,6 +180,16 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 							keys={TOGETHER}
 							view={together}
 							onView={setTogether}
+							onChoose={choose}
+						/>
+					</Tabs.Content>
+					<Tabs.Content value="branch" className={PANEL}>
+						<BranchFootprint
+							vault={reader.vault}
+							model={reader.accepted.shown.model}
+							choice={footprint}
+							onChoice={setFootprint}
+							selected={soleOf(reader.selection.ids)}
 							onChoose={choose}
 						/>
 					</Tabs.Content>
