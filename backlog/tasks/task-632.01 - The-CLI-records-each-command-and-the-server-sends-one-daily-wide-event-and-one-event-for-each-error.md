@@ -3,11 +3,11 @@ id: TASK-632.01
 title: >-
   The CLI records each command, and the server sends one daily wide event and
   one event for each error
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-12T23:14:00Z'
-updated_date: '2026-11-13T00:35:00Z'
+updated_date: '2026-11-13T00:54:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-632
@@ -24,13 +24,13 @@ This is the base that the other subtasks add records to. The CLI runs under agen
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each CLI command writes one local record: the command, its exit code, its duration, the calling agent and whether Archboard's own workbench ran it. The CLI makes no network call for telemetry
-- [ ] #2 The server sends one wide event for each installation and finished UTC day, with counts by command, agent and exit code, and whether two agents worked within the same half hour
-- [ ] #3 An unexpected CLI or server error sends one wide event within minutes, with its context and the stack frames of Archboard's own code, but no message text and no path outside Archboard
-- [ ] #4 No event holds a module, file, repository or model name, a path, a prompt or an error message
-- [ ] #5 Nothing is recorded or sent when CI is detected, when DO_NOT_TRACK or ARCHBOARD_TELEMETRY=0 is set, or after archboard telemetry off; archboard telemetry status says which applies
-- [ ] #6 The first command after install prints a one-time notice to stderr that names what is sent and how to turn it off
-- [ ] #7 A failed or slow send never changes a command's result or the server's behavior, and unsent records stop after seven days
+- [x] #1 Each CLI command writes one local record: the command, its exit code, its duration, the calling agent and whether Archboard's own workbench ran it. The CLI makes no network call for telemetry
+- [x] #2 The server sends one wide event for each installation and finished UTC day, with counts by command, agent and exit code, and whether two agents worked within the same half hour
+- [x] #3 An unexpected CLI or server error sends one wide event within minutes, with its context and the stack frames of Archboard's own code, but no message text and no path outside Archboard
+- [x] #4 No event holds a module, file, repository or model name, a path, a prompt or an error message
+- [x] #5 Nothing is recorded or sent when CI is detected, when DO_NOT_TRACK or ARCHBOARD_TELEMETRY=0 is set, or after archboard telemetry off; archboard telemetry status says which applies
+- [x] #6 The first command after install prints a one-time notice to stderr that names what is sent and how to turn it off
+- [x] #7 A failed or slow send never changes a command's result or the server's behavior, and unsent records stop after seven days
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -54,4 +54,12 @@ Checks: lint:policy clean; tsc clean for changed files (the worktree has no core
 Open: no event was sent to the real PostHog project. The owner can start a server from this branch, run a command, then look for a $exception or, the next UTC day, a daily usage event with surface=product.
 
 2026-11-13: live proof. Six real CLI commands of this branch in a fresh state directory, one real thrown TypeError recorded under the operation 'telemetry live check', and one sender round with the real PostHog post and a clock one day ahead. PostHog answered 2xx to the $exception and the daily usage event, and the owner saw the $exception in the project with surface=product, process=cli, agent=claude, install=checkout, version 0.4.1, and no IP-derived location.
+
+2026-11-13: adopted proposal e3T8Mjgq on the branch and redrew the README architecture SVGs (archboard check embeds --fix from this branch's server). Sol review (gpt-6.1-sol, xhigh): round 1 found four should-level issues, all fixed: a notice that cannot be written failed the command (S1, reproduced: exit 1 before, 0 after), claim expiry read the file's age so a second server could re-send a day (S2), a concurrent first run replaced the installation id and any opt-out (S3), and the notice write could undo a concurrent opt-out (S4, now a marker file). Round 2 approved. bunx vp run types and check:model pass with the core built. The server's route-error call (service-routes.ts) was not provoked live; it calls the same recordError that the live CLI error proved.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Archboard now records anonymous usage as wide events (ADR 0079). The CLI appends one record per command, and an error report for exit code 1, to telemetry/ in the state directory and makes no network call. The server sends each error report as a $exception and one daily usage event per installation and finished UTC day to PostHog EU Cloud, claiming files by rename so that several servers never send one twice. Usage is off in CI, in tests, under DO_NOT_TRACK, under ARCHBOARD_TELEMETRY=0 and after archboard telemetry off, which deletes waiting records; the first command prints a notice once. The workbench gives its Codex child the telemetry directory and a runner marker. Verified by package, CLI, server and policy tests, a full type check, check:model, a reproduction of the notice failure, and a live round whose two events arrived in PostHog. Follow-ups: TASK-632.02 and TASK-632.03.
+<!-- SECTION:FINAL_SUMMARY:END -->

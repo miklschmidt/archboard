@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-12T23:14:00Z'
-updated_date: '2026-11-12T23:37:00Z'
+updated_date: '2026-11-13T00:54:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -21,6 +21,6 @@ The owner cannot see how people use Archboard: which commands agents run, which 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An ADR records the decision: what is sent, what is never sent, when it is off, and where it goes
-- [ ] #2 INSTALL.md and PRODUCT.md tell a reader what Archboard sends and how to turn it off
+- [x] #1 An ADR records the decision: what is sent, what is never sent, when it is off, and where it goes
+- [x] #2 INSTALL.md and PRODUCT.md tell a reader what Archboard sends and how to turn it off
 <!-- AC:END -->
