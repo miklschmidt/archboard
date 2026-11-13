@@ -91,7 +91,7 @@ function ModuleRow(props: FootprintListsProps & { readonly module: FootprintModu
 		[id, onChoose],
 	);
 	return (
-		<li data-footprint-module={id}>
+		<li data-footprint-module={id} data-commits={commits.length}>
 			<button
 				type="button"
 				onClick={choose}

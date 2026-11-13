@@ -146,6 +146,7 @@ function ModelStateChip(props: {
 			variant="outline"
 			size="sm"
 			data-slot="model-reading-selector"
+			data-source-ref={props.model.sourceRef?.ref}
 			aria-label={`Reading ${label}. Open History.`}
 			title={label}
 			onClick={open}
