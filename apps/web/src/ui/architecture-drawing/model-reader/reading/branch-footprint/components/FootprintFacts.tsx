@@ -95,6 +95,8 @@ function UnboundFiles(props: {
 	readonly files: BranchFootprintAnswer["unboundFiles"];
 }): JSX.Element {
 	const { files } = props;
+	// Two repositories can change the same path, so a list of several names each file's.
+	const several = new Set(files.map((file) => file.repo)).size > 1;
 	return (
 		<details data-slot="footprint-unbound">
 			<summary className="cursor-default">
@@ -104,7 +106,7 @@ function UnboundFiles(props: {
 			<ul className="mt-1 flex flex-col gap-0.5 font-mono">
 				{files.map((file) => (
 					<li key={`${file.repo}:${file.path}`} className="text-technical [overflow-wrap:anywhere]">
-						{file.path}
+						{several ? `${file.repo}: ${file.path}` : file.path}
 					</li>
 				))}
 			</ul>

@@ -155,8 +155,13 @@ async function mergeBaseIn(
 	options: GitRunOptions,
 ): Promise<SourceRefsAnswer["range"]> {
 	if (root === undefined) return null;
+	// The footprint resolves its base as Git names it, without the `origin` fallback of a head.
 	const [base, head] = await Promise.all([
-		commitOf(root, range.base, options),
+		gitAnswer(
+			root,
+			["rev-parse", "--verify", "--quiet", "--end-of-options", `${range.base}^{commit}`],
+			options,
+		),
 		commitOf(root, range.head, options),
 	]);
 	if (base === undefined || head === undefined) return null;
