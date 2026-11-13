@@ -10,6 +10,16 @@ import type { FlowGrammar } from "#ui/architecture-drawing/model-reader/rules/fl
 
 type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
 
+/** A reading to open: the vault at a ref or on disk, one of its states, and the module it opens. */
+interface ReadingTarget {
+	/** The ref of a branch reading, or undefined for the vault on disk. */
+	readonly ref: string | undefined;
+	/** The state, or undefined for the current state. */
+	readonly state: string | undefined;
+	/** The module it opens, or null for the root reading. */
+	readonly scope: string | null;
+}
+
 /**
  * Module navigation shares the application's router and browser history.
  * @param paneId The pane that owns this reading.
@@ -32,6 +42,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const paneKey = nullableParameter(search[`pane${paneId}`]);
 	const scope = nullableParameter(search[`scope${paneId}`]);
 	const checkpoint = nullableParameter(search[`checkpoint${paneId}`]);
+	const ref = nullableParameter(search[`ref${paneId}`]);
 	const state = nullableParameter(search[`state${paneId}`]);
 	const preview = nullableParameter(search[`preview${paneId}`]);
 	const userChanged = preview === null ? reportUserChange : undefined;
@@ -159,6 +170,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					id,
 					scope: null,
 					checkpoint: null,
+					ref: undefined,
 					state: undefined,
 					preview: undefined,
 					bookmark: undefined,
@@ -184,6 +196,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					id: reading.model,
 					scope: reading.scope ?? null,
 					checkpoint: reading.checkpoint ?? null,
+					ref: undefined,
 					state: reading.state,
 					preview: reading.preview,
 					bookmark: reading.bookmark,
@@ -216,11 +229,34 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		},
 		[explore, scope, expand],
 	);
+	// A reading of a ref and a state, opened on one module, as a branch footprint shows its list.
+	const openReading = useCallback(
+		(next: ReadingTarget): void => {
+			userChanged?.("variant");
+			void navigate({
+				ref: next.ref,
+				state: next.state,
+				scope: next.scope,
+				checkpoint: null,
+				preview: undefined,
+				bookmark: undefined,
+				legacyAddress: undefined,
+				against: undefined,
+				focus: undefined,
+				expand: undefined,
+				grammar: undefined,
+				flow: undefined,
+				subject: undefined,
+			});
+		},
+		[navigate, userChanged],
+	);
 	const selectCheckpoint = useCallback(
 		(next: string | null): void => {
 			userChanged?.("variant");
 			void navigate({
 				checkpoint: next,
+				ref: undefined,
 				bookmark: undefined,
 				state: preview === null ? undefined : (state ?? undefined),
 				against: undefined,
@@ -283,8 +319,10 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const selectState = useCallback(
 		(next: string | null): void => {
 			userChanged?.("variant");
+			// History lists the states of the vault on disk, so choosing one leaves a branch reading.
 			void navigate({
 				state: next ?? undefined,
+				ref: undefined,
 				legacyAddress: undefined,
 				bookmark: undefined,
 				checkpoint: preview === null ? null : checkpoint,
@@ -305,6 +343,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 			userChanged?.("variant");
 			void navigate({
 				checkpoint: next,
+				ref: undefined,
 				state: undefined,
 				bookmark: undefined,
 				against: AFTER,
@@ -339,7 +378,9 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		preview,
 		openReference,
 		state,
+		ref,
 		against,
+		openReading,
 		selectState,
 		compareAgainst,
 		openRetained,
@@ -383,6 +424,7 @@ function referenceAddress(reading: Model): ModelAddress {
 		subject: location.subject,
 		scope: referenceScope(reading),
 		checkpoint,
+		ref: undefined,
 		state: checkpoint === null || location.preview !== undefined ? location.state : undefined,
 		flow: reading.selectedFlow,
 		grammar: reading.selectedFlow === undefined ? undefined : "sequence",
@@ -433,7 +475,7 @@ function searchValue(value: ModelAddress[keyof ModelAddress]): string | undefine
 	return value.length === 0 ? undefined : value.join(",");
 }
 
-export { useModelLocation };
+export { useModelLocation, type ReadingTarget };
 
 /**
  * The address field of a resolved request's comparison.

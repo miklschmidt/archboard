@@ -1,0 +1,24 @@
+{
+  "order": 90,
+  "name": "Architecture history routes",
+  "kind": "route",
+  "responsibility": "Serves locality, the branch footprint and the source refs of a model's repositories",
+  "description": "GET /api/architecture/locality, /api/architecture/footprint and /api/architecture/refs adapt the history lens for the browser and the CLI. Each names its vault, and none keeps an answer.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/http/handlers/reads/routes/history-routes.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#XP2pdIyx",
+  "parent": "vKEsyHFk/HBlhIeSD#ETrslazw",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "footprint, locality and source refs",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#pWq6Z4bX",
+      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    }
+  ]
+}

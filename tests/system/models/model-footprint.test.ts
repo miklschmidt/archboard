@@ -302,3 +302,39 @@ test("a directory module passes the gate only when the modules inside it bind ea
 	expect(both.stderr).toContain("1 changed outside the plan");
 	expect(both.stderr).toContain("Changed outside the draft: Workspace.");
 }, 30_000);
+
+test("a footprint with a head reads the vault at that head, and --model-at checkout reads the vault on disk", () => {
+	const draftCommit = Bun.spawnSync([
+		"git",
+		"-C",
+		home,
+		"log",
+		"--diff-filter=A",
+		"--format=%H",
+		"-1",
+		"--",
+		"*.proposal.json",
+	])
+		.stdout.toString()
+		.trim();
+	const before = `${draftCommit}~1`;
+	const draft = ["model", "footprint", "--base", before, "--state", "Gateway only"];
+
+	// The draft is in the vault at `draftCommit`, which names it, and not in the vault before it.
+	const atHead = cli([...draft, "--head", draftCommit]);
+	expect(atHead.status, atHead.stderr).toBe(0);
+	expect(answer(atHead.stdout)).toMatchObject({
+		vaultRead: { at: "ref", ref: draftCommit, commit: draftCommit },
+	});
+	const missing = cli([...draft, "--head", before]);
+	expect(missing.status).toBe(2);
+	expect(answer(missing.stdout)).toMatchObject({ success: false, code: "STATE_NOT_FOUND" });
+
+	// The vault on disk has the draft whatever the head is, and an absent head reads it too.
+	const onDisk = cli([...draft, "--head", before, "--model-at", "checkout"]);
+	expect(onDisk.status, onDisk.stderr).toBe(0);
+	expect(answer(onDisk.stdout)).toMatchObject({ vaultRead: { at: "checkout" } });
+	expect(answer(cli(draft).stdout)).toMatchObject({ vaultRead: { at: "checkout" } });
+
+	expect(cli([...draft, "--model-at", "elsewhere"]).status).not.toBe(0);
+}, 30_000);

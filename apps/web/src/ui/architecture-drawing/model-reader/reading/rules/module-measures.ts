@@ -15,10 +15,11 @@ type SkipReason = LocalityAnswer["skipped"][number]["reason"];
 interface HistoryReading {
 	readonly modules: readonly Pick<Model["modules"][number], "binding">[];
 	readonly migrationPreview?: unknown;
+	readonly sourceRef?: unknown;
 }
 
 /** Where a reading stands with code history: whether it can read any. */
-type HistorySource = "bound" | "unbound" | "original";
+type HistorySource = "bound" | "unbound" | "original" | "branch";
 
 /** How the code history of a reading stands, each with one thing to say. */
 type HistoryState = Exclude<HistorySource, "bound"> | "reading" | "read" | "failed";
@@ -140,6 +141,8 @@ const SHOWS: readonly { readonly key: ShowKey; readonly label: string }[] = [
  */
 function historySource(model: HistoryReading): HistorySource {
 	if (model.migrationPreview !== undefined) return "original";
+	// The lens reads each checkout at its HEAD, which is not the commit of a branch reading.
+	if (model.sourceRef !== undefined) return "branch";
 	return model.modules.some((module) => module.binding !== undefined) ? "bound" : "unbound";
 }
 

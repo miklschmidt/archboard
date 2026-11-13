@@ -147,6 +147,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 		bookmark,
 		legacyAddress,
 		checkpoint,
+		ref,
 		state,
 		against,
 		model: requestedModel,
@@ -155,6 +156,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const feed = useArchitectureFeed(props.vault);
 	const query = useQuery({
 		...architectureModelQuery(props.vault, checkpoint, {
+			ref,
 			state,
 			...comparisonIntent(against),
 			bookmark,
@@ -173,7 +175,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	}, [identify, resolvedId, original]);
 	const client = useQueryClient();
 	const { vault } = props;
-	const current = checkpoint === null;
+	const current = followsLive(checkpoint, ref);
 	const lost = feed.connection === "unavailable";
 	const unread = isUnread(query.error);
 	const stale = readingIsStale(query, current, feed);
@@ -568,6 +570,16 @@ function readingProblem(
  */
 function failureCode(error: Error): string {
 	return "code" in error && typeof error.code === "string" ? error.code : "READ_FAILED";
+}
+
+/**
+ * Whether the addressed reading follows live changes. A checkpoint and a branch reading do not.
+ * @param checkpoint The addressed checkpoint, or null.
+ * @param ref The addressed source ref, or null.
+ * @returns Whether it follows them.
+ */
+function followsLive(checkpoint: string | null, ref: string | null): boolean {
+	return checkpoint === null && ref === null;
 }
 
 export { ArchitectureModelStage };

@@ -11,6 +11,7 @@ import {
 	partLocality,
 	type Partner,
 } from "#ui/architecture-drawing/canvas/picture/rules/part-locality.ts";
+import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
 
 /** Inputs for the modules that change with one. */
 interface ModelChangesWithProps {
@@ -44,7 +45,7 @@ function ModelChangesWith(props: ModelChangesWithProps): JSX.Element | null {
 	const { vault, model, module, onSelect } = props;
 	const query = useQuery({
 		...modelHistoryQuery(vault, model),
-		enabled: model.migrationPreview === undefined && module.binding !== undefined,
+		enabled: readsVaultOnDisk(model) && module.binding !== undefined,
 	});
 	const { data } = query;
 	const partners = useMemo(() => {

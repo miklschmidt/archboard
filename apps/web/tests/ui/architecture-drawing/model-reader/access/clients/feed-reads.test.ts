@@ -73,6 +73,9 @@ async function answer(input: Parameters<typeof fetch>[0]): Promise<Response> {
 		selectedState: null,
 		proposals: [],
 		revision: { digest: served, files: [] },
+		...(url.searchParams.has("ref")
+			? { sourceRef: { ref: url.searchParams.get("ref"), commit: "a".repeat(40) } }
+			: {}),
 	});
 }
 globalThis.fetch = Object.assign(answer, { preconnect: realFetch.preconnect });
@@ -139,15 +142,15 @@ afterAll(async () => {
 
 /**
  * Open a followed reading.
+ * @param selection The source ref or state to read.
  * @returns The cache, and how to close the reader.
  */
-async function openReader() {
+async function openReader(selection: Parameters<typeof architectureModelQuery>[2] = {}) {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const stopFeed = architectureFeed(client, VAULT).subscribe(() => {});
-	const stopReading = new QueryObserver(client, architectureModelQuery(VAULT)).subscribe(() => {});
-	await waitFor(() =>
-		expect(client.getQueryData(architectureModelQuery(VAULT).queryKey)).toBeDefined(),
-	);
+	const reading = architectureModelQuery(VAULT, null, selection);
+	const stopReading = new QueryObserver(client, reading).subscribe(() => {});
+	await waitFor(() => expect(client.getQueryData(reading.queryKey)).toBeDefined());
 	expect(reads).toEqual(["/api/architecture/model"]);
 	/** Close the reader and its feed. */
 	const close = (): void => {
@@ -214,4 +217,26 @@ test("checkpoint rows wait for a request and then follow completions", async () 
 	await client.invalidateQueries({ queryKey: architectureCheckpointsQuery(VAULT).queryKey });
 	await waitFor(() => expect(reads).toHaveLength(2));
 	stop();
+});
+
+test("a branch reading does not follow changes to the checkout", async () => {
+	const { client, close } = await openReader({ ref: "plan" });
+	try {
+		served = NEW;
+		hear({
+			type: "architecture_changed",
+			vault: VAULT,
+			model: "Shop",
+			name: "Shop",
+			state: null,
+			revision: { digest: NEW, files: [] },
+			subjects: [],
+			reason: "external",
+		});
+		await settled();
+		expect(reads).toEqual(["/api/architecture/model"]);
+	} finally {
+		close();
+		client.clear();
+	}
 });

@@ -3,6 +3,7 @@
   "name": "Navigation reads",
   "kind": "module",
   "responsibility": "Reads source and reference availability for the exact selected module",
+  "description": "A module's details are read at the ref of a branch reading, without its code.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/module-navigation/hooks/use-model-navigation.ts"

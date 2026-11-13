@@ -36,6 +36,11 @@ selection and when `Measures` opens, and a measurement replaced the one of
 reasons. TASK-590.11 amended that amendment on 2026-11-07: `Measures` is a
 dialog, and it asks when its view What changes together opens.
 
+TASK-633 proposes an amendment of 2026-11-13. `Measures` shows a branch
+footprint, a footprint with a named head reads the vault at that head, and
+`Show on picture` selects what a footprint lists. The amendment after the
+amendment of 2026-10-31 gives the reasons.
+
 The history lens maps commits through bindings to give four readings.
 A board is behind its code by the commits that changed its parts after the
 board last changed. A footprint says what a branch changed, against what its
@@ -477,6 +482,49 @@ subscriber, and the last subscriber of a read leaves before the next one mounts.
 A signal then stops a read that the next selection needs, and a reader who moves
 from module to module never gets an answer. An obsolete read ends on the server
 and its answer stays in the memory.
+
+## Amendment of 2026-11-13: the reader shows a branch footprint
+
+TASK-633 amends this ADR. Its status is proposed until TASK-633 is done.
+Everything above stands, except where this section says otherwise.
+
+`Measures` gets a fourth view, What this branch changed. It is the third place
+where a user sees a reading. The footprint stays derived on request and stored
+nowhere, and the server still keeps no footprint. The view reads at two times
+only: when it opens, and when the reader presses `Refresh`. The browser keeps
+one answer for each model revision, base, head and state, and it shows the
+commits that each repository was read at, so that a stale answer is visible.
+
+The reader chooses the base and the head from searchable lists. A new route
+lists the local and remote branches of every repository that the state binds,
+merged by name, with the repositories that hold each. It reads no remote and
+lists no tags. The base defaults to the vault's `origin/HEAD`, else `main`.
+The head defaults to the checked-out head. That default sends no head, so each
+repository reads up to its own HEAD, as the CLI does without `--head`.
+
+A footprint with a named head now reads the vault at that head, when the
+vault's repository resolves it. It reads the vault from Git objects, with no
+checkout. This is a branch reading (`CONTEXT.md`). The proposals and the
+bindings of the branch then decide what the commits are set against. A head
+that only a code repository holds keeps the vault on disk. The answer names
+the vault that it read. The reason is the main use: a branch that carries its
+own proposal must be set against that proposal, and before this amendment it
+was set against the proposal of whatever checkout was chosen.
+
+The CLI takes `--model-at checkout` to read the vault on disk. The
+archboard-plan gate needs it, because the gate runs in the integration worktree
+after the orchestrator edits the proposal there. The ticket branch still holds
+the older proposal. Without the option, the gate would read that older
+proposal and fail again after a correct fix.
+
+The section "Derived on request, never stored, never drawn" says that no
+reading sets a mark. That stands. The view has `Show on picture`, which opens
+the nearest module that holds a list's modules, at the head's branch reading
+when the head is not checked out. It then selects each drawn module of the list
+and each drawn module that holds one. A module that holds a changed module is
+lit, because the branch changed code inside it. This is the ordinary selection.
+The reader asks for it, and it lasts until the next selection. It is not a
+mark that a reading sets, so no visual channel is taken.
 
 ## What this assumes about the code check
 

@@ -29,6 +29,9 @@ Read [splitting](references/split.md) only when independent delivery helps and t
 Address the owning vault explicitly, including one in another repository.
 Discover modules and states through `model read` and `model proposals`.
 Use `model footprint --base <base> --head <head>` for bound source changes.
+With a head, it reads the model at that head, from Git and with no checkout: the branch reading.
+`--state` then names a proposal that the vault holds at that head, so a stack layer's own proposal and bindings decide what its commits are set against.
+Its `vaultRead` field names the vault that it read.
 Its `unboundFiles` lists the changed files that no module is bound to.
 Read those files, and skipped or unavailable source, directly from the diff.
 
@@ -59,6 +62,7 @@ archboard model footprint --base <base-ref> --head <head-ref> --state <proposal-
 archboard check code --state <proposal-id> -C <checkout>
 ```
 
+If the head does not yet hold your proposal, add `--model-at checkout` to the footprint to read the vault on disk.
 For a planning root, use its empty baseline and omit absent selectors.
 Fix findings caused by the change and record unavailable evidence.
 Commit tracked authored inputs with implementation.

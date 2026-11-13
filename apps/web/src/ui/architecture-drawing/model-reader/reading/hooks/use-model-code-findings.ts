@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Model } from "@archboard/model/content";
 import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import { codeFindingsQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
+import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
 
 type ModelCodeReading = NonNullable<RememberedFindings["models"]>[number];
 
@@ -13,6 +14,8 @@ interface CodeReadingName {
 	readonly revision: Pick<Model["revision"], "digest">;
 	/** A migration preview, which is not in the vault, so no pass reads it. */
 	readonly migrationPreview?: unknown;
+	/** A branch reading, which is the vault at a ref and not on disk, so no pass reads it. */
+	readonly sourceRef?: unknown;
 }
 
 /**
@@ -37,9 +40,9 @@ function useModelCodeFindings(vault: string, model: CodeReadingName) {
 	const query = useQuery({
 		...codeFindingsQuery(vault),
 		select,
-		enabled: model.migrationPreview === undefined,
+		enabled: readsVaultOnDisk(model),
 	});
-	const reading = model.migrationPreview === undefined ? (query.data ?? null) : null;
+	const reading = readsVaultOnDisk(model) ? (query.data ?? null) : null;
 	const read = query.status;
 	const warnings = useMemo(
 		() =>

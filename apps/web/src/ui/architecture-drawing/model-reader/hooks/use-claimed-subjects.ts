@@ -7,6 +7,7 @@ import {
 	NOTHING_CLAIMED,
 	type ClaimedSubjects,
 } from "#ui/architecture-drawing/model-reader/rules/claimed-subjects.ts";
+import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
 
 /**
  * Which subjects of a reading the agents claim. Only the live inputs can be claimed, so a retained
@@ -22,7 +23,7 @@ function useClaimedSubjects(
 	model: Extract<ArchitectureModelRead, { success: true }>,
 	checkpoint: string | null,
 ): ClaimedSubjects {
-	const live = checkpoint === null && model.migrationPreview === undefined;
+	const live = checkpoint === null && readsVaultOnDisk(model);
 	const { data } = useQuery({ ...architectureClaimsQuery(vault), enabled: live });
 	const answer = live ? data : undefined;
 	const state = model.selectedState?.id ?? null;

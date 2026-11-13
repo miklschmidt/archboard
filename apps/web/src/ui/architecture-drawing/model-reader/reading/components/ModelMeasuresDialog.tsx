@@ -1,9 +1,14 @@
 import {
 	RiCodeSSlashLine,
+	RiGitBranchLine,
 	RiGitCommitLine,
 	RiStackLine,
 	type RemixiconComponentType,
 } from "@remixicon/react";
+import { BranchFootprint } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/BranchFootprint.tsx";
+import { useShowFootprint } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/hooks/use-show-footprint.ts";
+import type { FootprintShow } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/show-on-picture.ts";
+import type { FootprintChoice } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/hooks/use-branch-footprint.ts";
 import { useCallback, useMemo, useRef, useState, type JSX } from "react";
 import { Dialog, Tabs } from "@archboard/ui-kit/components";
 import { ModelCodeEvidence } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
@@ -19,8 +24,8 @@ import type {
 } from "#ui/architecture-drawing/model-reader/reading/rules/module-measures.ts";
 import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
-/** The three views of the dialog. */
-type MeasuresTab = "code" | "interface" | "changes";
+/** The four views of the dialog. */
+type MeasuresTab = "code" | "interface" | "changes" | "branch";
 
 /** Each view as the selector offers it: an icon, a label and a line that says what it shows. */
 const TABS: readonly {
@@ -46,6 +51,12 @@ const TABS: readonly {
 		Icon: RiGitCommitLine,
 		label: "What changes together",
 		gloss: "Each commit, read through the modules it touched",
+	},
+	{
+		value: "branch",
+		Icon: RiGitBranchLine,
+		label: "What this branch changed",
+		gloss: "The modules that the commits from a base changed",
 	},
 ];
 
@@ -78,11 +89,10 @@ interface ModelMeasuresDialogProps {
 	readonly onOpenChange: (open: boolean) => void;
 }
 
-/** A module a row chose, which waits for the dialog to go. */
-interface Choice {
-	readonly id: string;
-	readonly beside: boolean;
-}
+/** What a row or a list chose, which waits for the dialog to go. */
+type Choice =
+	| { readonly kind: "module"; readonly id: string; readonly beside: boolean }
+	| { readonly kind: "show"; readonly target: FootprintShow };
 
 /**
  * Measures: the checks of the reading on screen against its code and its history, in one dialog
@@ -98,13 +108,23 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 	const [tab, setTab] = useState<MeasuresTab>("code");
 	const [exposes, setExposes] = useState(EXPOSES_VIEW);
 	const [together, setTogether] = useState(TOGETHER_VIEW);
+	const [footprint, setFootprint] = useState<FootprintChoice>({});
 	const chosen = useRef<Choice | null>(null);
 	const { findModule } = reader.choices;
 	const { onDiagram } = reader;
+	const showFootprint = useShowFootprint(reader);
 	const choose = useCallback(
 		(id: string, beside: boolean): void => {
-			chosen.current = { id, beside };
+			chosen.current = { kind: "module", id, beside };
 			if (!beside) onDiagram();
+			onOpenChange(false);
+		},
+		[onDiagram, onOpenChange],
+	);
+	const show = useCallback(
+		(target: FootprintShow): void => {
+			chosen.current = { kind: "show", target };
+			onDiagram();
 			onOpenChange(false);
 		},
 		[onDiagram, onOpenChange],
@@ -115,9 +135,10 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 		(stillOpen: boolean): void => {
 			const choice = chosen.current;
 			if (stillOpen) chosen.current = null;
-			else if (choice !== null) findModule(choice.id, choice.beside);
+			else if (choice?.kind === "module") findModule(choice.id, choice.beside);
+			else if (choice?.kind === "show") void showFootprint(choice.target);
 		},
-		[findModule],
+		[findModule, showFootprint],
 	);
 	const returnsFocus = useCallback((): boolean => chosen.current === null, []);
 	const changeTab = useCallback((value: unknown): void => {
@@ -134,8 +155,8 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 				<Dialog.Header>
 					<Dialog.Title>Measures</Dialog.Title>
 					<Dialog.Description className="sr-only">
-						Where the model and its code disagree, what each module exposes, and what changes
-						together, for the reading on screen.
+						Where the model and its code disagree, what each module exposes, what changes together,
+						and what a branch changed, for the reading on screen.
 					</Dialog.Description>
 				</Dialog.Header>
 				<Tabs value={tab} onValueChange={changeTab} className="min-h-0 flex-1 gap-4">
@@ -171,6 +192,17 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 							view={together}
 							onView={setTogether}
 							onChoose={choose}
+						/>
+					</Tabs.Content>
+					<Tabs.Content value="branch" className={PANEL}>
+						<BranchFootprint
+							vault={reader.vault}
+							model={reader.accepted.shown.model}
+							choice={footprint}
+							onChoice={setFootprint}
+							selected={soleOf(reader.selection.ids)}
+							onChoose={choose}
+							onShow={show}
 						/>
 					</Tabs.Content>
 				</Tabs>

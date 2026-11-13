@@ -296,6 +296,7 @@ A module with no such count stays last, and a column that is none on every modul
 A tie between counts of pairs goes to the module whose strongest pair shares the most commits.
 A module with parts counts the commits of its whole code path.
 The Right panel of a selected module lists the modules that it changes with, each with its shared commits and a mark where no relationship joins the two.
+A fourth view, `What this branch changed`, shows the branch footprint of a base and a head that the user chooses.
 It shows counts only: no score combines them, and the user judges them (ADR 0044).
 _Avoid_: ranking, scorecard, hotspot list
 
@@ -402,7 +403,7 @@ A chain of modules with one part each, which the module tree shows as one row an
 ### Reading
 
 **Reading**:
-A content-free selection of what to draw: its model, state or checkpoint, scope, expanded modules, focus, filters, grammar and optional flow.
+A content-free selection of what to draw: its model, state, checkpoint or source ref, scope, expanded modules, focus, filters, grammar and optional flow.
 It owns no architecture, so agents and users compose readings on demand and nobody authors one first.
 _Avoid_: view, board
 
@@ -612,6 +613,11 @@ An exact retained copy of a model's authored inputs and their selection metadata
 It selects no current state and leaves a checkout's branch, HEAD and index as they are.
 _Avoid_: snapshot, backup, commit
 
+**Branch reading**:
+A reading of the model as the vault holds it at a source branch or commit, read from Git without a checkout.
+It can be read and compared, but not edited, claimed or retained, and it follows no live change.
+_Avoid_: checkpoint (that is retained in the history archive), snapshot, remote reading, preview
+
 **History archive**:
 The independent Git record that retains checkpoints and lifecycle records apart from source history.
 Its order supplies no architecture ancestry and no current designation.
@@ -728,7 +734,9 @@ A pair that nothing in the model joins asks whether the model misses a dependenc
 _Avoid_: temporal coupling, logical coupling, evolutionary coupling, co-change
 
 **Branch footprint**:
-The modules whose bound declarations or paths a local source range changed, set against the modules that a selected proposal names (ADR 0045).
+The modules whose bound declarations or paths the commits from a base ref to a head ref changed, set against the modules that a selected proposal names (ADR 0045).
+A head that the vault's repository holds is read with the vault as that head holds it, so the proposal and the bindings are the branch's own.
+The view `What this branch changed` of Measures shows it.
 _Avoid_: footprint alone, impact, change set, touched parts, diff (that is a comparison)
 
 **Large commit**:

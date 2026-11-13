@@ -304,6 +304,7 @@ interface HistoryStatusProps {
 const STATED: Readonly<Partial<Record<HistoryState, string>>> = {
 	unbound: "Code history needs code bindings, and no module here has one.",
 	original: "An original under migration has no code history.",
+	branch: "A branch reading has no code history here. Open the checkout's reading to read it.",
 };
 
 /**

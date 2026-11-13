@@ -99,8 +99,9 @@ function footprintLines(answer: Footprint): string[] {
 					`${answer.changedNotNamed.filter((part) => part.holds.length === 0).length} changed outside the plan`,
 					`${answer.namedNotChanged.length} planned and unchanged`,
 				];
+	const vault = answer.vaultRead.at === "ref" ? ` in the vault at ${answer.vaultRead.ref}` : "";
 	return [
-		`Footprint of ${readingOf(answer)} from ${answer.base}: ${answer.commits.length} commits in ${read.length} of ${answer.repositories.length} repositories; ${lists.join(", ")}.`,
+		`Footprint of ${readingOf(answer)}${vault} from ${answer.base}: ${answer.commits.length} commits in ${read.length} of ${answer.repositories.length} repositories; ${lists.join(", ")}.`,
 		...skippedLines(answer.skipped),
 		...unboundLines(answer.unboundFiles),
 	];
@@ -128,7 +129,8 @@ function unreadLines(answer: Answer): string[] {
 function historyLines(answer: Answer): string[] {
 	return [
 		...unreadLines(answer),
-		...(answer.analysis === "locality" ? localityLines(answer) : footprintLines(answer)),
+		...(answer.analysis === "locality" ? localityLines(answer) : []),
+		...(answer.analysis === "footprint" ? footprintLines(answer) : []),
 	];
 }
 
