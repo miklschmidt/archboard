@@ -213,7 +213,8 @@ async function readModel(
 	const url = `${inVault("/api/architecture/model", vault)}&${parameters}`;
 	const result = await readReply(url, ArchitectureModelReadSchema, signal);
 	if (!result.success) throw new ArchitectureReadError(result);
-	return result;
+	// A walkthrough plays the vault on disk, so a branch reading offers none.
+	return selection.ref == null ? result : { ...result, walkthroughs: [] };
 }
 
 /**

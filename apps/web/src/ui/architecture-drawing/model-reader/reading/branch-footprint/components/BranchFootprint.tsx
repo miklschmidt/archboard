@@ -2,6 +2,7 @@ import type { JSX, ReactNode } from "react";
 import type { Model } from "@archboard/model/content";
 import { FootprintFacts } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/FootprintFacts.tsx";
 import { FootprintLists } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/FootprintLists.tsx";
+import type { FootprintShow } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/show-on-picture.ts";
 import { FootprintRange } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/FootprintRange.tsx";
 import {
 	useBranchFootprint,
@@ -20,6 +21,8 @@ interface BranchFootprintProps {
 	readonly selected: string | null;
 	/** Select a module on its picture, here or in the other pane. */
 	readonly onChoose: (id: string, beside: boolean) => void;
+	/** Show a list on its picture. */
+	readonly onShow: (target: FootprintShow) => void;
 }
 
 /**
@@ -101,7 +104,12 @@ function FootprintBody(
 	if (footprint.data === undefined) return <Status>Reading the commits…</Status>;
 	return (
 		<>
-			<FootprintLists answer={footprint.data} selected={props.selected} onChoose={props.onChoose} />
+			<FootprintLists
+				answer={footprint.data}
+				selected={props.selected}
+				onChoose={props.onChoose}
+				onShow={props.onShow}
+			/>
 			<FootprintFacts answer={footprint.data} />
 		</>
 	);

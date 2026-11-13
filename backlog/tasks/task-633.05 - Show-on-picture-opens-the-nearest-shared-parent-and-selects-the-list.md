@@ -1,10 +1,11 @@
 ---
 id: TASK-633.05
 title: Show on picture opens the nearest shared parent and selects the list
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-12T23:49:00Z'
-updated_date: '2026-11-12T23:50:00Z'
+updated_date: '2026-11-13T00:43:00Z'
 labels:
   - ready-for-agent
 dependencies:

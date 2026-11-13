@@ -592,6 +592,8 @@ A count of none is in a quieter ink, so what is there stands out. An empty cell 
 
 A row of a list is at least 36px high. It holds the module's name and, under it, one line in Body and muted ink: why the plan names it, counted by kind (`changed by the plan; end of 2 added flow steps`), and how many changed modules it holds. A module with nothing more to say shows its code path. The commits stand at the right end in mono and Technical, with the large ones counted after them. A module that no commit changed shows no count. A row selects its module as a row of a table does, and it is lit in the same way.
 
+Each list has `Show on picture` at the right end of its head, a small outline key, which a list with no modules disables. It closes the dialog and opens the nearest shared parent of the list's modules, or the root reading when they share none, in the reading the footprint read: the branch reading of the head when the head is not checked out, in the state that `Against` names. There it selects each listed module that the picture draws, and each drawn module that holds one. It is the ordinary selection, and the picture gains no mark of its own.
+
 Under the well, lines in Body and muted ink say what the lists cover: the model that set what the commits are read against, on disk or at a ref and its commit, each repository's range, or why it was not read, the large commits, the modules that were not read, counted by reason, and the changed files that no module binds, folded under one line that opens them. A module that was not read is in no list, so it never looks unchanged. With a checkpoint on screen, the tab says that a saved reading is not live, and it reads nothing.
 
 ### Warning card
