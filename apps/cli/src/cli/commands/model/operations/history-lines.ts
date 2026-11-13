@@ -128,7 +128,8 @@ function unreadLines(answer: Answer): string[] {
 function historyLines(answer: Answer): string[] {
 	return [
 		...unreadLines(answer),
-		...(answer.analysis === "locality" ? localityLines(answer) : footprintLines(answer)),
+		...(answer.analysis === "locality" ? localityLines(answer) : []),
+		...(answer.analysis === "footprint" ? footprintLines(answer) : []),
 	];
 }
 

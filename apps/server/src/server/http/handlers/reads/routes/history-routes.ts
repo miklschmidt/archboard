@@ -5,6 +5,7 @@ import { ArchitectureHistoryRequestSchema } from "@archboard/code-intel/history"
 import {
 	readArchitectureLocality,
 	readArchitectureFootprint,
+	readArchitectureSourceRefs,
 } from "@archboard/code-intel/history-lens";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { respond } from "#server/http/handlers/routes/model-response.ts";
@@ -46,6 +47,24 @@ function mountArchitectureHistoryRoutes(app: Express): void {
 			res,
 			"GET /api/architecture/footprint",
 			(signal) => readArchitectureFootprint(vaultOfRequest(req), input.data, signal),
+		);
+		if (!res.destroyed) respond(res, result);
+	});
+	app.get("/api/architecture/refs", requireVault, async (req, res) => {
+		const input = ArchitectureHistoryRequestSchema.options[2]
+			.omit({ analysis: true })
+			.safeParse(Object.fromEntries(Object.entries(req.query).filter(([key]) => key !== "vault")));
+		if (!input.success) {
+			res
+				.status(400)
+				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(input.error) });
+			return;
+		}
+		const result = await checkoutWork.trackRequest(
+			req,
+			res,
+			"GET /api/architecture/refs",
+			(signal) => readArchitectureSourceRefs(vaultOfRequest(req), input.data, signal),
 		);
 		if (!res.destroyed) respond(res, result);
 	});

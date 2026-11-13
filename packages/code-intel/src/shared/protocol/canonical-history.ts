@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 import { LocalityAnswerSchema, PeriodStartSchema } from "#shared/protocol/locality.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
+import { SourceRefsAnswerSchema } from "#shared/protocol/source-refs.ts";
 const SelectionSchema = z.strictObject({
 	state: z.string().optional(),
 	checkpoint: z.string().optional(),
@@ -14,6 +15,7 @@ const ArchitectureFootprintRequestSchema = SelectionSchema.extend({
 	base: z.string().min(1),
 	head: z.string().min(1).optional(),
 });
+const ArchitectureSourceRefsRequestSchema = SelectionSchema;
 const IdentitySchema = z.strictObject({
 	success: z.literal(true),
 	model: z.string(),
@@ -24,6 +26,7 @@ const IdentitySchema = z.strictObject({
 const ArchitectureHistoryRequestSchema = z.discriminatedUnion("analysis", [
 	ArchitectureLocalityRequestSchema.extend({ analysis: z.literal("locality") }),
 	ArchitectureFootprintRequestSchema.extend({ analysis: z.literal("footprint") }),
+	ArchitectureSourceRefsRequestSchema.extend({ analysis: z.literal("refs") }),
 ]);
 const ArchitectureHistoryResultSchema = z.union([
 	LocalityAnswerSchema.omit({ model: true, version: true, variant: true }).extend({
@@ -36,11 +39,13 @@ const ArchitectureHistoryResultSchema = z.union([
 	FootprintAnswerSchema.options[1]
 		.omit({ model: true, version: true })
 		.extend({ ...IdentitySchema.shape, analysis: z.literal("footprint") }),
+	SourceRefsAnswerSchema.extend({ ...IdentitySchema.shape, analysis: z.literal("refs") }),
 	ArchitectureModelReadSchema.options[1],
 ]);
 export {
 	ArchitectureLocalityRequestSchema,
 	ArchitectureFootprintRequestSchema,
+	ArchitectureSourceRefsRequestSchema,
 	ArchitectureHistoryRequestSchema,
 	ArchitectureHistoryResultSchema,
 };

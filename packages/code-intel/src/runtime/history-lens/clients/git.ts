@@ -5,8 +5,8 @@
 // file versions. So the lens runs its commands here, with the whole output, a
 // caller's signal: a request that hangs up,
 // or a server that stops, ends the command. The lens runs only `git log`,
-// `git rev-list`, `git rev-parse`, `git merge-base`, `git cat-file` and
-// `git check-ignore`. None of them starts another program, so killing the one
+// `git rev-list`, `git rev-parse`, `git merge-base`, `git cat-file`,
+// `git check-ignore`, `git for-each-ref` and `git symbolic-ref`. None of them starts another program, so killing the one
 // process ends the work.
 
 /** How a caller cancels a command, and what it writes to the command's input. */
