@@ -200,7 +200,7 @@ function ReadingSections(props: {
 					/>
 				</ModelColumn.Section>
 			)}
-			{model.walkthroughs.length > 0 && (
+			{playable(model).length > 0 && (
 				<ModelColumn.Section
 					section="walkthroughs"
 					label="Walkthroughs"
@@ -391,6 +391,21 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 			</Activity>
 		</>
 	);
+}
+
+/**
+ * The walkthroughs a reading offers. A walkthrough plays the vault on disk, so a branch reading
+ * offers none.
+ * @param model The reading.
+ * @param model.walkthroughs Its walkthroughs.
+ * @param model.sourceRef The ref of a branch reading.
+ * @returns The walkthroughs it offers.
+ */
+function playable(model: {
+	readonly walkthroughs: readonly unknown[];
+	readonly sourceRef?: unknown;
+}): readonly unknown[] {
+	return model.sourceRef === undefined ? model.walkthroughs : [];
 }
 
 export { ModelReading };

@@ -11,6 +11,7 @@ const READING_FIELDS = [
 	"model",
 	"state",
 	"checkpoint",
+	"ref",
 	"preview",
 	"previewState",
 	"digest",
@@ -27,11 +28,13 @@ type ReadingIdentity = Partial<Record<(typeof READING_FIELDS)[number], string | 
 function useModelNavigation(vault: string, model: Model, module: Model["modules"][number]) {
 	const subject = module.id;
 	const target = navigationTarget(model, subject);
-	const { checkpoint, state, preview } = target;
+	const { checkpoint, ref, state, preview } = target;
+	// The opener opens the files on disk, which a branch reading does not describe.
+	const code = module.binding !== undefined && ref === undefined;
 	const query = useQuery(
 		architectureModuleQuery(
 			vault,
-			{ module: subject, state, checkpoint, preview, code: module.binding !== undefined },
+			{ module: subject, state, checkpoint, ref, preview, code },
 			model.revision.digest,
 		),
 	);
@@ -39,13 +42,14 @@ function useModelNavigation(vault: string, model: Model, module: Model["modules"
 	const follow = useCallback(
 		(index: number, signal: AbortSignal) =>
 			readModel(vault, checkpoint ?? null, signal, {
+				ref,
 				state,
 				preview,
 				module: subject,
 				reference: index,
 				compare: false,
 			}),
-		[vault, checkpoint, state, preview, subject],
+		[vault, checkpoint, ref, state, preview, subject],
 	);
 	return {
 		query,
@@ -81,9 +85,10 @@ function coherentDetails<T extends { reading: ReadingIdentity }>(
  */
 function navigationTarget(model: Model, subject: string) {
 	const checkpoint = model.checkpoint?.id;
+	const ref = model.sourceRef?.ref;
 	const preview = model.migrationPreview?.origin;
 	const state = navigationState(model);
-	return { model: model.manifest.id, subject, state, checkpoint, preview };
+	return { model: model.manifest.id, subject, state, checkpoint, ref, preview };
 }
 
 /**
@@ -106,10 +111,20 @@ function readingIdentity(model: Model): ReadingIdentity {
 		model: model.manifest.id,
 		state: model.selectedState?.id,
 		checkpoint: model.checkpoint?.id,
-		preview: model.migrationPreview?.origin,
-		previewState: model.migrationPreview?.selected?.legacy,
+		ref: model.sourceRef?.ref,
+		...previewIdentity(model),
 		digest: model.revision.digest,
 	};
+}
+
+/**
+ * The part of a reading's identity that a migration preview adds.
+ * @param model One complete query response.
+ * @returns The preview's origin and its chosen legacy state, each absent outside a preview.
+ */
+function previewIdentity(model: Model): Pick<ReadingIdentity, "preview" | "previewState"> {
+	const preview = model.migrationPreview;
+	return { preview: preview?.origin, previewState: preview?.selected?.legacy };
 }
 
 export { useModelNavigation };

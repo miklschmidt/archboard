@@ -17,7 +17,7 @@ function useModelComparison(vault: string, model: Model) {
 		...architectureModelQuery(
 			vault,
 			model.comparison?.checkpoint ?? null,
-			comparisonSelection(model.comparison),
+			comparisonSelection(model.comparison, model.sourceRef?.ref),
 		),
 		enabled: model.comparison !== undefined,
 	});
@@ -36,15 +36,17 @@ function useModelComparison(vault: string, model: Model) {
 
 /**
  * Base reads materialize one state without recursively requesting another comparison.
+ * A live base of a branch reading is a state of the vault at that ref, so it is read there too.
  * @param comparison The exact runtime base metadata.
+ * @param ref The source ref of a branch reading, or undefined for the vault on disk.
  * @returns Only the selectors needed by that base.
  */
-function comparisonSelection(comparison: Model["comparison"]) {
+function comparisonSelection(comparison: Model["comparison"], ref: string | undefined) {
 	if (comparison === undefined) return {};
 	if (comparison.checkpoint !== undefined) return { compare: false };
 	if (comparison.against === null) return { compare: false };
-	if (comparison.against.lifecycle === "current") return {};
-	return { state: comparison.against.id, compare: false };
+	if (comparison.against.lifecycle === "current") return ref === undefined ? {} : { ref };
+	return { ref, state: comparison.against.id, compare: false };
 }
 
 /**
