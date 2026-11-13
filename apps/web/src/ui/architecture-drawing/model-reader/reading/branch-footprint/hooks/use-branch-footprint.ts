@@ -1,8 +1,9 @@
 import { useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Model } from "@archboard/model/content";
 import {
 	branchFootprintQuery,
+	mergeBaseQuery,
 	sourceRefsQuery,
 	type SourceRefsAnswer,
 } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
@@ -42,6 +43,7 @@ function useBranchFootprint(
 	model: Pick<Model, "manifest" | "selectedState" | "revision" | "sourceRef">,
 	choice: FootprintChoice,
 ) {
+	const client = useQueryClient();
 	const refs = useQuery(sourceRefsQuery(vault, model));
 	const base = baseOf(choice, refs.data);
 	const head = headOf(choice, model);
@@ -58,8 +60,12 @@ function useBranchFootprint(
 	const refresh = useCallback((): void => {
 		void readRefs();
 		void readVault();
+		if (base !== null && head !== null)
+			void client.invalidateQueries({
+				queryKey: mergeBaseQuery(vault, model, { base, head }).queryKey,
+			});
 		if (ready) void readFootprint();
-	}, [readRefs, readVault, readFootprint, ready]);
+	}, [readRefs, readVault, readFootprint, ready, client, vault, model, base, head]);
 	return { refs, footprint, base, head, read, against, refresh };
 }
 
