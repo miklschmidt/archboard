@@ -1,11 +1,11 @@
 ---
 id: TASK-635
 title: The footprint counts a module as changed only when the branch changes it
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-13T10:05:00Z'
-updated_date: '2026-11-13T10:09:00Z'
+updated_date: '2026-11-13T10:46:00Z'
 labels: []
 dependencies: []
 ordinal: 1078000
@@ -19,11 +19,11 @@ The footprint judged each commit of the range, not the change of the whole range
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A module counts as changed only when its bound paths or declarations differ between the merge base and the head
-- [ ] #2 A changed module keeps the commits that changed it as evidence
-- [ ] #3 A module whose commits cancel out, through a merged identical change or a revert, is not changed, and --fail-outside passes for it
-- [ ] #4 Unbound files and the files a directory module holds count only files that differ between the merge base and the head
-- [ ] #5 ADR 0045 states the rule
+- [x] #1 A module counts as changed only when its bound paths or declarations differ between the merge base and the head
+- [x] #2 A changed module keeps the commits that changed it as evidence
+- [x] #3 A module whose commits cancel out, through a merged identical change or a revert, is not changed, and --fail-outside passes for it
+- [x] #4 Unbound files and the files a directory module holds count only files that differ between the merge base and the head
+- [x] #5 ADR 0045 states the rule
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -40,4 +40,12 @@ The footprint judged each commit of the range, not the change of the whole range
 
 <!-- SECTION:NOTES:BEGIN -->
 Architecture: the change stays inside the history lens footprint reading; no module, relationship or flow changes, so no proposal is needed.
+
+Validation: history-lens tests (69) pass, and the new footprint test fails on the old code. An end-to-end CLI repro of the #660/#662 shape (a README change made in two merged stack layers, plus an inner change the draft names) made `--fail-outside` exit 1 for Workspace on the old code and exit 0 with the fix. lint:all, format:check and types pass. The model-footprint and pull-request-report system tests pass. Sol round 1 (gpt-6.1-sol, xhigh) found no functional faults and fixed two lint nits.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The footprint now counts a module as changed only when its bound paths or declarations differ between the merge base and the head. It reads the net diff as one commit, with the merge base as its parent, through the same path and declaration attribution policy. Each changed module keeps its per-commit attribution as evidence. Directory-held files and unbound files count only files in the net diff. ADR 0045, the CLI help, CONTEXT.md, the design-lens reference and the pull-requests docs page state the rule. Locality and behind stay per commit.
+<!-- SECTION:FINAL_SUMMARY:END -->
