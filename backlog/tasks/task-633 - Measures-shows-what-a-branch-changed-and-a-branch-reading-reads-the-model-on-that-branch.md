@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-12T23:34:00Z'
-updated_date: '2026-11-12T23:55:00Z'
+updated_date: '2026-11-13T01:25:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -150,9 +150,15 @@ The CLI gets the same behavior through the same route. `--model-at checkout` kee
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Measures has a view, `What this branch changed`, that reads the branch footprint of a chosen base, head and state
-- [ ] #2 A head that the vault's repository holds is read with the vault at that head, and the answer names the vault it read
-- [ ] #3 A branch reading opens as a read-only reading, and `Show on picture` selects the listed modules and their drawn holders at the nearest shared parent
-- [ ] #4 `archboard model footprint` reads the vault at the head, and `--model-at checkout` reads the vault on disk, which the archboard-plan gate uses
-- [ ] #5 ADR 0045, CONTEXT.md, DESIGN.md and the archboard, archboard-plan and archboard-pr skills match the delivered behavior
+- [x] #1 Measures has a view, `What this branch changed`, that reads the branch footprint of a chosen base, head and state
+- [x] #2 A head that the vault's repository holds is read with the vault at that head, and the answer names the vault it read
+- [x] #3 A branch reading opens as a read-only reading, and `Show on picture` selects the listed modules and their drawn holders at the nearest shared parent
+- [x] #4 `archboard model footprint` reads the vault at the head, and `--model-at checkout` reads the vault on disk, which the archboard-plan gate uses
+- [x] #5 ADR 0045, CONTEXT.md, DESIGN.md and the archboard, archboard-plan and archboard-pr skills match the delivered behavior
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+All five subtasks are Done. The whole-branch gate (archboard model footprint --base main --state a5K6IbA8 --fail-outside) passes with recorded exceptions for tickets, tests and the vault. namedNotChanged holds Read entry and Archive object I/O, which are relationship ends only, and Model footprint, whose --model-at change lives in shared words and option helpers that the Commands exception covers. Interface width: code-intel exports one readArchitectureHistory(vault, {analysis}) instead of three reads, and the server mounts one route per analysis, so code-intel stays at its ceiling of 11 (ADR 0058). Known flaky tests outside this change (exclusion.test.ts, repositories, browser-show-checkout) pass alone; the Audit and Update Dependencies thread owns them. Waiting on the user: acceptance of the ADR 0045 amendment of 2026-11-13.
+<!-- SECTION:NOTES:END -->
