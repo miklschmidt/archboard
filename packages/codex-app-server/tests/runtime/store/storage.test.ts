@@ -245,6 +245,36 @@ describe("dedicated Codex storage", () => {
 		}
 	});
 
+	test("adding the realtime default keeps storage movable and preserves existing tables", () => {
+		const root = temporaryRoot();
+		try {
+			const originalRoot = path.join(root, "original");
+			const first = prepareCodexStorage({ rootDirectory: originalRoot });
+			first.release();
+			const trust = '\n[projects."/work/checkout"]\ntrust_level = "trusted"\n';
+			const previous = first.configText.replace(/^experimental_realtime_ws_model.*\n/m, "");
+			writeFileSync(first.configPath, `${previous}${trust}`);
+			const upgraded = prepareCodexStorage({ rootDirectory: originalRoot });
+			upgraded.release();
+			expect(upgraded.configText).toStartWith(
+				`sqlite_home = ${JSON.stringify(first.sqliteHome)}\n`,
+			);
+			expect(Bun.TOML.parse(upgraded.configText)).toMatchObject({
+				experimental_realtime_ws_model: "gpt-live-1.1-codex",
+				projects: { "/work/checkout": { trust_level: "trusted" } },
+			});
+
+			const movedRoot = path.join(root, "moved");
+			fs.renameSync(originalRoot, movedRoot);
+			const moved = prepareCodexStorage({ rootDirectory: movedRoot });
+			moved.release();
+			expect(Bun.TOML.parse(moved.configText)["sqlite_home"]).toBe(moved.sqliteHome);
+			expect(moved.configText).toEndWith(trust);
+		} finally {
+			removeRoot(root);
+		}
+	});
+
 	test("cleans a lock file when lock initialization fails", () => {
 		const root = temporaryRoot();
 		try {

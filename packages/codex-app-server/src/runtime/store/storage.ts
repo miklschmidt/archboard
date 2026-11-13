@@ -356,7 +356,10 @@ function completedConfig(
 		configPath,
 	);
 	const missing = DEFAULT_SETTINGS.filter(({ key }) => !Object.hasOwn(parsed, key));
-	return `${missing.map(({ line }) => `${line}\n`).join("")}${withHome}`;
+	const defaults = missing.map(({ line }) => `${line}\n`).join("");
+	// Keep the client's sqlite home first, so a later storage move can recognize its own line.
+	const insertion = firstLineSqliteHome(withHome) === undefined ? 0 : withHome.indexOf("\n") + 1;
+	return `${withHome.slice(0, insertion)}${defaults}${withHome.slice(insertion)}`;
 }
 
 /**
