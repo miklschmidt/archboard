@@ -10,7 +10,7 @@
 // out of the footprint.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
@@ -36,12 +36,7 @@ const STRANGER = "github.com/test/stranger";
 let lens: typeof LensModule;
 let clock = 1_790_000_000;
 
-/**
- * Run Git in a test repository with a commit time this owner sets.
- * @param cwd The repository.
- * @param args Git's arguments.
- * @returns Git's trimmed output.
- */
+/** Run Git with a controlled identity, configuration and commit time. */
 function git(cwd: string, ...args: string[]): string {
 	clock += 60;
 	const date = `@${clock} +0000`;
@@ -63,13 +58,7 @@ function git(cwd: string, ...args: string[]): string {
 	return run.stdout.toString().trim();
 }
 
-/**
- * Write files into a repository and commit them.
- * @param root The repository.
- * @param subject The commit's subject.
- * @param files Each path and its text.
- * @returns The commit's id.
- */
+/** Write and commit fixture files, then return the commit id. */
 function commit(root: string, subject: string, files: Record<string, string>): string {
 	for (const [file, text] of Object.entries(files)) {
 		mkdirSync(join(root, file, ".."), { recursive: true });
@@ -80,12 +69,7 @@ function commit(root: string, subject: string, files: Record<string, string>): s
 	return git(root, "rev-parse", "HEAD");
 }
 
-/**
- * Make a repository that identifies as a repository identity.
- * @param root Where.
- * @param identity The identity its origin gives it.
- * @param branch The branch it starts on.
- */
+/** Initialize a fixture repository with an origin and a starting branch. */
 function repository(root: string, identity: string, branch: string): void {
 	mkdirSync(root, { recursive: true });
 	git(root, "init", "-q", "-b", branch);
@@ -112,12 +96,7 @@ const BUILT = [
 	{ id: "pY", name: "Refunds", binding: { repo: SHOP, path: "src/dir/sub/y.ts" } },
 ];
 
-/**
- * A node as the document holds it.
- * @param node What a test says about it.
- * @param index Where it stands.
- * @returns The node.
- */
+/** Give each fixture module its kind and order in the document. */
 function nodeOf(node: (typeof BUILT)[number] & { responsibility?: string }, index: number) {
 	return { ...node, order: (index + 1) * 1000, kind: "module" };
 }
@@ -264,6 +243,17 @@ beforeAll(async () => {
 	notes = commit(shop, "write notes", { "notes/draft.ts": "draft\n", "notes/todo.md": "todo\n" });
 	git(shop, "mv", "notes/draft.ts", "src/dir/draft.ts");
 	git(shop, "commit", "-q", "--no-gpg-sign", "-m", "move the draft into payments");
+	// Two layers of a stack that make the same change and merge instead of rebasing, and a change
+	// that the upper layer undoes.
+	git(shop, "checkout", "-q", "-b", "lower", "feature");
+	commit(shop, "lower: change the ledger", { "src/ledger.ts": "2\n" });
+	git(shop, "checkout", "-q", "-b", "upper", "feature");
+	commit(shop, "upper: change the ledger as the lower layer does", { "src/ledger.ts": "2\n" });
+	commit(shop, "upper: try billing", { "src/b.ts": "9\n", "notes/scratch.md": "x\n" });
+	unlinkSync(join(shop, "notes/scratch.md"));
+	commit(shop, "upper: undo billing", { "src/b.ts": "1\n" });
+	commit(shop, "upper: change events", { "src/e.ts": "3\n" });
+	git(shop, "merge", "-q", "--no-edit", "--no-gpg-sign", "lower");
 	git(shop, "checkout", "-q", "feature");
 	lens = await import("#tests/runtime/support/history-lens/lens.ts");
 });
@@ -301,6 +291,21 @@ test("a changed file that no binding holds is listed with its commits, and a ski
 test("a file renamed into a bound path is bound under its former name too", async () => {
 	const answer = await footprint("feature", undefined, "renames");
 	expect(answer.unboundFiles).toEqual([{ repo: SHOP, path: "notes/todo.md", commits: [notes] }]);
+});
+
+test("a change that the range undoes, or that a merge brings in again from a lower layer, changes no part", async () => {
+	const answer = await footprint("lower", "Plan", "upper");
+	if (answer.proposal === null) throw new Error("a proposal was named");
+	expect(answer.repositories).toContainEqual(
+		expect.objectContaining({ status: "read", repo: SHOP, commits: 4 }),
+	);
+	expect(ids(answer.namedAndChanged)).toEqual([]);
+	expect(ids(answer.changedNotNamed)).toEqual(["pE"]);
+	expect(ids(answer.namedNotChanged)).toEqual(expect.arrayContaining(["pB", "pL"]));
+	const [events] = answer.changedNotNamed;
+	expect(events && subjectsOf(answer, events)).toEqual(["upper: change events"]);
+	expect(answer.commits.map((one) => one.subject)).toEqual(["upper: change events"]);
+	expect(answer.unboundFiles).toEqual([]);
 });
 
 test("a large commit is kept and marked", async () => {
