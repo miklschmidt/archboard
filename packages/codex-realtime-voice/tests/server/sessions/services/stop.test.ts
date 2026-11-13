@@ -33,6 +33,8 @@ interface FakeThread {
 	queue: string[];
 	/** True for a turn that keeps running after an interrupt. */
 	ignoresInterrupt?: boolean;
+	/** True for an active thread whose turn list names no running turn. */
+	hidesTurn?: boolean;
 }
 
 /**
@@ -74,9 +76,12 @@ function codexTree(threads: Record<string, FakeThread>) {
 			} as never;
 		},
 		threadTurnsListPage: async ({ threadId }) => {
-			const turn = threads[wire(threadId)]!.turn;
+			const { turn, hidesTurn } = threads[wire(threadId)]!;
 			return {
-				data: turn === null ? [] : [{ id: decoder.adoptTurnId(turn), status: "inProgress" }],
+				data:
+					turn === null || hidesTurn === true
+						? []
+						: [{ id: decoder.adoptTurnId(turn), status: "inProgress" }],
 				nextCursor: null,
 				backwardsCursor: null,
 			} as never;
@@ -179,6 +184,19 @@ describe("the work tree stop", () => {
 		expect(stuck.clock.now()).toBeGreaterThanOrEqual(CODEX_SESSION_MS.workTreeStopSettle);
 		// An acknowledged interrupt is sent once per turn and never counts as an end.
 		expect(stuck.calls.filter((call) => call === "interrupt child/child-turn")).toHaveLength(1);
+
+		// An active thread whose running turn Codex does not name is never taken as stopped.
+		const nameless = codexTree({
+			root: { parent: null, turn: "root-turn", queue: [], hidesTurn: true },
+		});
+		expect(await stopWorkTree(workhorseOn("root"), nameless.session, null, nameless.clock)).toEqual(
+			{
+				checkout: "/work/payments",
+				outcome: "partial",
+				remaining: [{ threadId: decoder.adoptThreadId("root"), state: "running" }],
+			},
+		);
+		expect(nameless.calls).toEqual([]);
 
 		const unlisted = codexTree({ root: { parent: null, turn: null, queue: [] } });
 		unlisted.failing.add("list");
