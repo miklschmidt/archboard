@@ -8,9 +8,9 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-paint/src/outlines.rs"
   },
-  "parent": "vKEsyHFk#NFwqWgrm",
   "schemaVersion": 1,
   "id": "vKEsyHFk#UuRNEE2Z",
+  "parent": "vKEsyHFk#NFwqWgrm",
   "outgoing": [
     {
       "order": 100,
@@ -22,8 +22,8 @@
         "path": "crates/archboard-paint/src/outlines.rs",
         "symbol": "glyph"
       },
-      "to": "vKEsyHFk#C4dZpr3U",
-      "id": "vKEsyHFk#JLh2Mj0G"
+      "id": "vKEsyHFk#JLh2Mj0G",
+      "to": "vKEsyHFk#C4dZpr3U"
     }
   ]
 }

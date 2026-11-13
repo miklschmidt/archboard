@@ -60,6 +60,14 @@
       "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
     },
     {
+      "order": 90000,
+      "kind": "call",
+      "label": "records unhandled route errors",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#2mo2WPJK",
+      "to": "vKEsyHFk#EbMc8PH2"
+    },
+    {
       "order": 120000,
       "kind": "call",
       "label": "whether writes are admitted, and how many run",
