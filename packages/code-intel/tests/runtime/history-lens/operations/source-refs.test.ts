@@ -93,7 +93,7 @@ function module(name: string, repo: string): void {
  */
 async function listing(range: { base?: string; head?: string } = {}) {
 	const answer = ArchitectureHistoryResultSchema.parse(
-		await api.readArchitectureSourceRefs(vault, range),
+		await api.readArchitectureHistory(vault, { analysis: "refs", ...range }),
 	);
 	if (!answer.success || answer.analysis !== "refs") throw new Error(JSON.stringify(answer));
 	return answer;

@@ -135,7 +135,7 @@ async function createProposal(): Promise<string> {
  */
 async function footprint(input: { state?: string; head?: string; modelAt?: "head" | "checkout" }) {
 	return ArchitectureHistoryResultSchema.parse(
-		await api.readArchitectureFootprint(vault, { base: "main", ...input }),
+		await api.readArchitectureHistory(vault, { analysis: "footprint", base: "main", ...input }),
 	);
 }
 
