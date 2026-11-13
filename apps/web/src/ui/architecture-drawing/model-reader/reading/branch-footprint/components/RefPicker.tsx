@@ -11,6 +11,8 @@ interface RefChoice {
 
 /** Inputs for a picker. */
 interface RefPickerProps {
+	/** Which part of the range the picker chooses. */
+	readonly name: "base" | "head" | "against";
 	/** What the picker chooses, as its label says it. */
 	readonly label: string;
 	/** The chosen value. */
@@ -51,11 +53,16 @@ function RefPicker(props: RefPickerProps): JSX.Element {
 		[onChoose],
 	);
 	return (
-		<div data-slot="ref-picker" className="flex min-w-0 flex-col gap-1">
+		<div
+			data-slot="ref-picker"
+			data-ref-picker={props.name}
+			className="flex min-w-0 flex-col gap-1"
+		>
 			<span className="text-body text-muted-foreground">{label}</span>
 			<Popover open={open} onOpenChange={setOpen}>
 				<Popover.Trigger
 					disabled={disabled}
+					data-value={value}
 					aria-label={`${label}: ${shown}`}
 					className={cn(
 						"quiet-key text-control rounded-control flex h-8 max-w-80 min-w-48 items-center justify-between gap-2 px-2.5 disabled:opacity-60",
