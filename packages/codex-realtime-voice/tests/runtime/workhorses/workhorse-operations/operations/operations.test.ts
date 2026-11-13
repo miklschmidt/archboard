@@ -21,7 +21,12 @@ describe("codex workhorse operation authority and correlation", () => {
 			const inspected = await fixtureValue.operations.inspect({
 				call: fixtureValue.setCall("inspect_workhorse"),
 			});
-			expect(inspected).toMatchObject({ status: "idle", queuedSubmissionIds: [] });
+			// An attached workhorse fails the ownership test, so its queue is unavailable, not empty.
+			expect(inspected).toMatchObject({
+				status: "idle",
+				queuedSubmissionIds: [],
+				unavailable: ["queue"],
+			});
 			expect(fixtureValue.queue.calls).toEqual([]);
 			const delegated = await fixtureValue.operations.delegate({
 				call: fixtureValue.setCall("delegate_to_workhorse"),
@@ -37,7 +42,6 @@ describe("codex workhorse operation authority and correlation", () => {
 			expect(
 				await fixtureValue.operations.steer({
 					call: fixtureValue.setCall("steer_workhorse"),
-					expectedTurnId: turnId,
 					input: "related correction",
 				}),
 			).toEqual({ turnId, delivery: "delivered" });
@@ -70,7 +74,11 @@ describe("codex workhorse operation authority and correlation", () => {
 					await fixtureValue.operations.inspect({
 						call: fixtureValue.setCall("inspect_workhorse"),
 					}),
-				).toMatchObject({ status: expected.status, queuedSubmissionIds: [] });
+				).toMatchObject({
+					status: expected.status,
+					queuedSubmissionIds: [],
+					unavailable: ["queue"],
+				});
 				expect(
 					await rejected(
 						fixtureValue.operations.delegate({
@@ -303,7 +311,7 @@ describe("codex workhorse operation authority and correlation", () => {
 		const fixtureValue = fixture();
 		try {
 			fixtureValue.session.nextStartTurn = turn(fixtureValue.identity, "cached", "inProgress");
-			const delegated = await fixtureValue.operations.delegate({
+			await fixtureValue.operations.delegate({
 				call: fixtureValue.setCall("delegate_to_workhorse"),
 				input: "seed cache",
 				transcriptDelta: "",
@@ -313,7 +321,6 @@ describe("codex workhorse operation authority and correlation", () => {
 				await rejected(
 					fixtureValue.operations.steer({
 						call: fixtureValue.setCall("steer_workhorse"),
-						expectedTurnId: delegated.turnId!,
 						input: "must not use cache",
 					}),
 				),

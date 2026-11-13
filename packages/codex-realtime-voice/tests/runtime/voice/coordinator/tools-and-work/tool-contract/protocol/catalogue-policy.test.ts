@@ -166,7 +166,17 @@ describe("dynamic wire envelopes and metadata", () => {
 					"manifestHash",
 					"workhorseThreadId",
 				],
-				successFields: ["threadId", "status", "activeTurnId", "queuedSubmissionIds"],
+				successFields: [
+					"threadId",
+					"status",
+					"activeTurnId",
+					"request",
+					"recentProgress",
+					"subAgents",
+					"queuedSubmissionIds",
+					"unavailable",
+					"lastStop",
+				],
 				refusalErrors: [
 					"invalid_call",
 					"not_ready",

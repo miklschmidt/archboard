@@ -78,6 +78,8 @@ function twoSessions() {
 	const events: string[] = [];
 	const responses: { readonly owner: string; readonly response: unknown }[] = [];
 	const interrupts: unknown[] = [];
+	/** The turn running on each thread, as Codex names both; a thread absent here is idle. */
+	const running = new Map<string, string>();
 	const cleared: string[] = [];
 	const labels = new Map([
 		[tabSession("tab-a"), "a"],
@@ -95,10 +97,39 @@ function twoSessions() {
 			respond: async (_request, owner, response) => void responses.push({ owner, response }),
 		},
 		session: {
-			threadRead: async () => never(),
+			threadRead: async ({ threadId }) =>
+				({
+					thread: {
+						id: threadId,
+						status: {
+							type: running.has(decoder.serializeCodexIdentity(threadId)) ? "active" : "idle",
+						},
+					},
+				}) as never,
 			threadUnsubscribe: async () => never(),
+			threadListPage: async () => ({
+				data: [],
+				readStates: null,
+				nextCursor: null,
+				backwardsCursor: null,
+			}),
+			threadTurnsListPage: async ({ threadId }) => {
+				const turn = running.get(decoder.serializeCodexIdentity(threadId));
+				return {
+					data:
+						turn === undefined
+							? []
+							: [{ id: decoder.adoptTurnId(turn), status: "inProgress", items: [] } as never],
+					nextCursor: null,
+					backwardsCursor: null,
+				};
+			},
+			queueListPage: async () => ({ data: [], nextCursor: null }) as never,
+			queueDelete: async () => never(),
 			turnInterrupt: async (params) => {
 				interrupts.push(params);
+				// Codex ends the interrupted turn; the stop's next read sees the thread idle.
+				running.delete(decoder.serializeCodexIdentity(params.threadId));
 				return {} as never;
 			},
 		},
@@ -151,6 +182,7 @@ function twoSessions() {
 		events,
 		responses,
 		interrupts,
+		running,
 		cleared,
 		decoder,
 		startWorkhorseThread,
@@ -249,32 +281,39 @@ test("a tab session holds one workhorse per checkout, each under its own link an
 	expect(sessions.workhorseForThread(coordinatorThread)).toBeNull();
 });
 
-test("a stop for one checkout interrupts only its workhorse's turn, and a stop for the tab every running one", async () => {
-	const { sessions, a, interrupts, decoder, startWorkhorseThread } = twoSessions();
+test("a stop for one checkout stops only its workhorse, a stop for the tab every one, and another tab keeps its work", async () => {
+	const { a, b, interrupts, running, decoder, startWorkhorseThread } = twoSessions();
 	const payments = a.workhorse(PAYMENTS);
 	const shop = a.workhorse(SHOP);
 	a.workhorse("/work/idle");
+	const otherTab = b.workhorse(PAYMENTS);
 	const paymentsThread = startWorkhorseThread(payments.key, "thread-payments");
 	const shopThread = startWorkhorseThread(shop.key, "thread-shop");
-	sessions.onNotification(notification("thread-payments", "turn/started", "turn-p"));
-	sessions.onNotification(notification("thread-shop", "turn/started", "turn-s"));
+	startWorkhorseThread(otherTab.key, "thread-other-tab");
+	running.set("thread-payments", "turn-p");
+	running.set("thread-shop", "turn-s");
+	running.set("thread-other-tab", "turn-o");
+	// The coordinator's own turn, which carries the voice, is no workhorse work.
+	running.set("thread-a", "coordinator-turn");
 
-	expect(await a.stopWork(PAYMENTS)).toEqual([{ checkout: PAYMENTS, outcome: "interrupted" }]);
+	expect(await a.stopWork(PAYMENTS)).toEqual([
+		{ checkout: PAYMENTS, outcome: "stopped", remaining: [] },
+	]);
 	expect(interrupts).toEqual([{ threadId: paymentsThread, turnId: decoder.adoptTurnId("turn-p") }]);
 
-	// Codex says the interrupted turn ended, so only the other checkout's turn is still running.
-	sessions.onNotification(notification("thread-payments", "turn/completed", "turn-p"));
 	interrupts.length = 0;
 	expect(await a.stopWork(null)).toEqual([
-		{ checkout: PAYMENTS, outcome: "idle" },
-		{ checkout: SHOP, outcome: "interrupted" },
-		{ checkout: "/work/idle", outcome: "idle" },
+		{ checkout: PAYMENTS, outcome: "idle", remaining: [] },
+		{ checkout: SHOP, outcome: "stopped", remaining: [] },
+		{ checkout: "/work/idle", outcome: "idle", remaining: [] },
 	]);
 	expect(interrupts).toEqual([{ threadId: shopThread, turnId: decoder.adoptTurnId("turn-s") }]);
+	expect(running.get("thread-other-tab")).toBe("turn-o");
+	expect(running.get("thread-a")).toBe("coordinator-turn");
 });
 
-test("a turn that ends after New conversation left its thread leaves its workhorse with nothing to stop", async () => {
-	const { sessions, a, interrupts, startWorkhorseThread } = twoSessions();
+test("a turn that ends after New conversation left its thread leaves its workhorse with no running turn", () => {
+	const { sessions, a, startWorkhorseThread } = twoSessions();
 	const payments = a.workhorse(PAYMENTS);
 	startWorkhorseThread(payments.key, "thread-old");
 	sessions.onNotification(notification("thread-old", "turn/started", "turn-old"));
@@ -283,8 +322,7 @@ test("a turn that ends after New conversation left its thread leaves its workhor
 	startWorkhorseThread(payments.key, "thread-new");
 	sessions.onNotification(notification("thread-old", "turn/completed", "turn-old"));
 
-	expect(await a.stopWork(PAYMENTS)).toEqual([{ checkout: PAYMENTS, outcome: "idle" }]);
-	expect(interrupts).toEqual([]);
+	expect(payments.state.activeTurn).toBeNull();
 });
 
 test("a workhorse stays linked when its tab's chats move to another checkout of its repository", () => {

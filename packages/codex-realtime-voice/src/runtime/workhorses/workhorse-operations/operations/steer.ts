@@ -1,3 +1,4 @@
+import type { TurnId } from "@archboard/codex-app-server/identity";
 import { createTextUserInput } from "#runtime/host/turn-input/rules/text-input.ts";
 import { createWorkbenchAdditionalContext } from "#runtime/host/turn-input/rules/bodies.ts";
 import {
@@ -5,8 +6,8 @@ import {
 	type SteerWorkhorseRequest,
 	type SteerWorkhorseResult,
 } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
+import { readActiveTurn } from "#runtime/workhorses/workhorse-operations/operations/inspect.ts";
 import {
-	activeTurnFromClassification,
 	selectOperationIdentity,
 	threadIdWire,
 	validateBoundedInput,
@@ -23,19 +24,46 @@ type SteerParams = Parameters<WorkhorseRuntime["options"]["session"]["turnSteer"
 type SteerClassification = Awaited<ReturnType<WorkhorseRuntime["classify"]>>;
 
 /**
- * Refuse to steer unless the workhorse is active on exactly the turn the caller captured.
- * @param request - The steer request.
+ * The workhorse turn a steer targets: the one Codex lists as running on the workhorse thread. A
+ * thread summary carries no turns, and the coordinator's own turn is never the target.
+ * @param runtime - The operations runtime.
  * @param classification - The fresh classification.
+ * @returns The running workhorse turn.
  */
-function assertExpectedTurn(
-	request: SteerWorkhorseRequest,
+async function runningWorkhorseTurn(
+	runtime: WorkhorseRuntime,
 	classification: SteerClassification,
-): void {
-	if (
-		classification.workhorse.link.status !== "active" ||
-		activeTurnFromClassification(classification.workhorse) !== request.expectedTurnId
-	) {
-		throw operationError("busy", "Steer requires the exact currently active workhorse turn.");
+): Promise<TurnId> {
+	if (classification.workhorse.link.status !== "active") {
+		throw operationError("busy", "Steer requires a running workhorse turn.");
+	}
+	let turnId: TurnId | null;
+	try {
+		turnId = await readActiveTurn(runtime, classification.binding.workhorse.threadId);
+	} catch (error) {
+		throw operationError("transport_failure", "The workhorse turns could not be read.", {
+			cause: error,
+		});
+	}
+	if (turnId === null) {
+		throw operationError("busy", "Steer requires a running workhorse turn.");
+	}
+	return turnId;
+}
+
+/**
+ * Refuse to steer unless the workhorse still runs exactly the turn the steer targets.
+ * @param runtime - The operations runtime.
+ * @param classification - The fresh classification.
+ * @param target - The turn the steer targets.
+ */
+async function assertTargetTurn(
+	runtime: WorkhorseRuntime,
+	classification: SteerClassification,
+	target: TurnId,
+): Promise<void> {
+	if ((await runningWorkhorseTurn(runtime, classification)) !== target) {
+		throw operationError("busy", "The workhorse turn changed before the steer was delivered.");
 	}
 }
 
@@ -45,18 +73,21 @@ function assertExpectedTurn(
  * @param runtime - The operations runtime.
  * @param request - The steer request.
  * @param state - The staged operation state.
+ * @param target - The workhorse turn the steer targets.
  * @param message - The message for the refusal.
  */
 async function revalidateSteer(
 	runtime: WorkhorseRuntime,
 	request: SteerWorkhorseRequest,
 	state: OperationState,
+	target: TurnId,
 	message: string,
 ): Promise<void> {
 	try {
-		assertExpectedTurn(
-			request,
+		await assertTargetTurn(
+			runtime,
 			await runtime.classify(state.binding, request.call, "steer_workhorse"),
+			target,
 		);
 	} catch (error) {
 		const outcome = runtime.settleDurable(state, "not_delivered", messageOf(error));
@@ -80,12 +111,14 @@ async function revalidateSteer(
  * @param runtime - The operations runtime.
  * @param request - The steer request.
  * @param state - The staged operation state.
+ * @param target - The workhorse turn the steer targets.
  * @returns The turn/steer parameters.
  */
 function buildSteerParams(
 	runtime: WorkhorseRuntime,
 	request: SteerWorkhorseRequest,
 	state: OperationState,
+	target: TurnId,
 ): SteerParams {
 	try {
 		const context = runtime.options.contextFor({
@@ -106,7 +139,7 @@ function buildSteerParams(
 			clientUserMessageId: state.operationIdWire,
 			input: [createTextUserInput(request.input)],
 			additionalContext: createWorkbenchAdditionalContext(context, runtime.options.contextCodec),
-			expectedTurnId: request.expectedTurnId,
+			expectedTurnId: target,
 		} satisfies SteerParams;
 	} catch (error) {
 		runtime.settleDurable(state, "not_delivered", "The steer body was invalid.");
@@ -124,20 +157,17 @@ function buildSteerParams(
  * Record the steered turn as active and emit `started` once.
  * @param runtime - The operations runtime.
  * @param state - The delivered operation state.
- * @param request - The steer request.
+ * @param target - The steered workhorse turn.
  */
 function publishSteerStarted(
 	runtime: WorkhorseRuntime,
 	state: OperationState,
-	request: SteerWorkhorseRequest,
+	target: TurnId,
 ): void {
 	if (state.terminalEmitted) {
 		return;
 	}
-	runtime.activeTurns.set(
-		threadIdWire(runtime.options, state.workhorseThreadId),
-		request.expectedTurnId,
-	);
+	runtime.activeTurns.set(threadIdWire(runtime.options, state.workhorseThreadId), target);
 	if (!state.startedEmitted) {
 		state.startedEmitted = true;
 		runtime.emit(state, "started", "delivered", []);
@@ -180,9 +210,10 @@ async function deliverSteer(
 	state: OperationState,
 	params: SteerParams,
 ): Promise<SteerWorkhorseResult> {
+	const target = params.expectedTurnId;
 	try {
 		const response = await runtime.options.session.turnSteer(params);
-		if (response.turnId !== request.expectedTurnId) {
+		if (response.turnId !== target) {
 			throw new TypeError("turn/steer returned a different turn identity");
 		}
 		await runtime.classify(state.binding, request.call, "steer_workhorse");
@@ -195,18 +226,19 @@ async function deliverSteer(
 				[],
 				"The steer response could not be durably committed.",
 			);
-			return Object.freeze({ turnId: request.expectedTurnId, delivery: outcome });
+			return Object.freeze({ turnId: target, delivery: outcome });
 		}
-		publishSteerStarted(runtime, state, request);
-		return Object.freeze({ turnId: request.expectedTurnId, delivery: "delivered" });
+		publishSteerStarted(runtime, state, target);
+		return Object.freeze({ turnId: target, delivery: "delivered" });
 	} catch (error) {
 		const delivery = settleSteerFailure(runtime, state, error);
-		return Object.freeze({ turnId: request.expectedTurnId, delivery });
+		return Object.freeze({ turnId: target, delivery });
 	}
 }
 
 /**
- * Create the steer operation: inject input into the exact active workhorse turn.
+ * Create the steer operation: inject input into the turn the workhorse runs now, as Codex lists
+ * it, and let turn/steer refuse that turn if it ended meanwhile.
  * @param runtime - The operations runtime.
  * @returns The steer operation.
  */
@@ -226,7 +258,7 @@ export function createSteer(
 		return runtime.enqueue(async () => {
 			const binding = runtime.currentBinding();
 			const validated = await runtime.classify(binding, request.call, "steer_workhorse");
-			assertExpectedTurn(request, validated);
+			const target = await runningWorkhorseTurn(runtime, validated);
 			const state = runtime.stage({
 				operationId,
 				operationIdWire,
@@ -237,10 +269,22 @@ export function createSteer(
 				workhorse: validated.workhorse,
 				clientUserMessageId: operationIdWire,
 			});
-			state.turnId = request.expectedTurnId;
-			await revalidateSteer(runtime, request, state, "Steer authority changed after staging.");
-			const params = buildSteerParams(runtime, request, state);
-			await revalidateSteer(runtime, request, state, "Steer authority changed before delivery.");
+			state.turnId = target;
+			await revalidateSteer(
+				runtime,
+				request,
+				state,
+				target,
+				"Steer authority changed after staging.",
+			);
+			const params = buildSteerParams(runtime, request, state, target);
+			await revalidateSteer(
+				runtime,
+				request,
+				state,
+				target,
+				"Steer authority changed before delivery.",
+			);
 			return deliverSteer(runtime, request, state, params);
 		});
 	};

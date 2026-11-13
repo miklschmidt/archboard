@@ -6,10 +6,8 @@ import type { WorkhorseRuntime } from "#runtime/workhorses/workhorse-operations/
 import { createWorkhorseEvents } from "#runtime/workhorses/workhorse-operations/services/events.ts";
 import { createWorkhorseValidation } from "#runtime/workhorses/workhorse-operations/services/validation.ts";
 import { createNotificationHandler } from "#runtime/workhorses/workhorse-operations/services/notifications.ts";
-import {
-	createInspect,
-	createManageQueue,
-} from "#runtime/workhorses/workhorse-operations/operations/queue.ts";
+import { createManageQueue } from "#runtime/workhorses/workhorse-operations/operations/queue.ts";
+import { createInspect } from "#runtime/workhorses/workhorse-operations/operations/inspect.ts";
 import { createSteer } from "#runtime/workhorses/workhorse-operations/operations/steer.ts";
 import { createDelegate } from "#runtime/workhorses/workhorse-operations/operations/turns.ts";
 

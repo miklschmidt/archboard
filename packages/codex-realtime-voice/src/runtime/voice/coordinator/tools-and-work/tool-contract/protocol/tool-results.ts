@@ -19,12 +19,34 @@ const DeliverySchema = z.enum(["delivered", "not_delivered", "outcome_unknown"])
 const NullableOpaqueIdSchema = OpaqueIdSchema.nullable();
 const QueuedSubmissionIdsSchema = z.array(QueueSubmissionIdSchema).max(100);
 
+const STOP_OUTCOMES = ["stopped", "idle", "partial", "unconfirmed"] as const;
+const REMAINING_STATES = ["running", "queued", "unread"] as const;
+const INSPECT_READS = ["turns", "subAgents", "queue"] as const;
+/** What a partial or unconfirmed stop leaves to do: look again, or stop again. */
+const STOP_RECOVERY = ["inspect_workhorse", "stop_workhorses"] as const;
+const INSPECT_TEXT_LIMIT = 400;
+const RemainingWorkSchema = z
+	.array(z.object({ threadId: OpaqueIdSchema, state: z.enum(REMAINING_STATES) }).strict())
+	.max(100);
 const InspectWorkhorseResultSchema = z
 	.object({
 		threadId: OpaqueIdSchema,
 		status: CodexThreadStatusTypeSchema,
 		activeTurnId: NullableOpaqueIdSchema,
+		request: z.string().max(INSPECT_TEXT_LIMIT).nullable(),
+		recentProgress: z.array(z.string().max(INSPECT_TEXT_LIMIT)).max(3),
+		subAgents: z
+			.array(z.object({ threadId: OpaqueIdSchema, status: CodexThreadStatusTypeSchema }).strict())
+			.max(50),
 		queuedSubmissionIds: QueuedSubmissionIdsSchema,
+		unavailable: z.array(z.enum(INSPECT_READS)).max(INSPECT_READS.length),
+		lastStop: z
+			.object({
+				outcome: z.enum(["stopping", ...STOP_OUTCOMES]),
+				remaining: RemainingWorkSchema,
+			})
+			.strict()
+			.nullable(),
 	})
 	.strict();
 const DelegateToWorkhorseResultSchema = z
@@ -47,13 +69,17 @@ const SteerWorkhorseResultSchema = z
 		delivery: DeliverySchema,
 	})
 	.strict();
-const STOP_OUTCOMES = ["interrupt_sent", "idle"] as const;
 const StopWorkhorsesResultSchema = z
 	.object({
 		stopped: z
 			.array(
 				z
-					.object({ checkout: z.string().min(1).max(4_096), outcome: z.enum(STOP_OUTCOMES) })
+					.object({
+						checkout: z.string().min(1).max(4_096),
+						outcome: z.enum(STOP_OUTCOMES),
+						remaining: RemainingWorkSchema,
+						recovery: z.array(z.enum(STOP_RECOVERY)).max(STOP_RECOVERY.length),
+					})
 					.strict(),
 			)
 			.max(100),
@@ -133,6 +159,17 @@ const ResultQueuedSubmissionIdsSchema: JsonSchema = deepFreeze({
 	items: JsonStringSchema,
 	maxItems: 100,
 });
+const ResultRemainingWorkSchema: JsonSchema = deepFreeze({
+	type: "array",
+	maxItems: 100,
+	items: strictResultObject(
+		{
+			threadId: JsonStringSchema,
+			state: deepFreeze({ type: "string", enum: [...REMAINING_STATES] }),
+		},
+		["threadId", "state"],
+	),
+});
 
 const TOOL_SUCCESS_RESULT_SCHEMAS = deepFreeze({
 	inspect_workhorse: strictResultObject(
@@ -140,9 +177,45 @@ const TOOL_SUCCESS_RESULT_SCHEMAS = deepFreeze({
 			threadId: JsonStringSchema,
 			status: ResultStatusSchema,
 			activeTurnId: JsonNullableStringSchema,
+			request: JsonNullableStringSchema,
+			recentProgress: deepFreeze({ type: "array", items: JsonStringSchema, maxItems: 3 }),
+			subAgents: deepFreeze({
+				type: "array",
+				maxItems: 50,
+				items: strictResultObject({ threadId: JsonStringSchema, status: ResultStatusSchema }, [
+					"threadId",
+					"status",
+				]),
+			}),
 			queuedSubmissionIds: ResultQueuedSubmissionIdsSchema,
+			unavailable: deepFreeze({
+				type: "array",
+				items: deepFreeze({ type: "string", enum: [...INSPECT_READS] }),
+			}),
+			lastStop: deepFreeze({
+				anyOf: [
+					strictResultObject(
+						{
+							outcome: deepFreeze({ type: "string", enum: ["stopping", ...STOP_OUTCOMES] }),
+							remaining: ResultRemainingWorkSchema,
+						},
+						["outcome", "remaining"],
+					),
+					Object.freeze({ type: "null" }),
+				],
+			}),
 		},
-		["threadId", "status", "activeTurnId", "queuedSubmissionIds"],
+		[
+			"threadId",
+			"status",
+			"activeTurnId",
+			"request",
+			"recentProgress",
+			"subAgents",
+			"queuedSubmissionIds",
+			"unavailable",
+			"lastStop",
+		],
 	),
 	delegate_to_workhorse: strictResultObject(
 		{
@@ -170,8 +243,13 @@ const TOOL_SUCCESS_RESULT_SCHEMAS = deepFreeze({
 					{
 						checkout: deepFreeze({ type: "string", minLength: 1, maxLength: 4096 }),
 						outcome: deepFreeze({ type: "string", enum: [...STOP_OUTCOMES] }),
+						remaining: ResultRemainingWorkSchema,
+						recovery: deepFreeze({
+							type: "array",
+							items: deepFreeze({ type: "string", enum: [...STOP_RECOVERY] }),
+						}),
 					},
-					["checkout", "outcome"],
+					["checkout", "outcome", "remaining", "recovery"],
 				),
 			}),
 		},

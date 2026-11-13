@@ -2,7 +2,7 @@
   "order": 36000,
   "name": "Typed message actions",
   "kind": "module",
-  "responsibility": "Reads the exact leased thread and starts, steers or interrupts its turn",
+  "responsibility": "Reads the exact leased thread and starts or steers its turn, and hands the Stop control to the work tree stop of the shown checkout",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/text-actions.ts"
@@ -46,6 +46,19 @@
       },
       "id": "vKEsyHFk/SJ2JMVyz#mmo8IFo3",
       "to": "vKEsyHFk#92V2PmcS"
+    },
+    {
+      "order": 40000,
+      "kind": "call",
+      "label": "Stop control: stop the shown checkout's work tree",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/text-actions.ts",
+        "symbol": "stopWork"
+      },
+      "id": "vKEsyHFk#iiMhdeg6",
+      "to": "vKEsyHFk#um2Du0nb"
     }
   ]
 }

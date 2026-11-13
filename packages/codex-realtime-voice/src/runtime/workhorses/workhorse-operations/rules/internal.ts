@@ -339,21 +339,6 @@ function selectOperationIdentity(
 }
 
 /**
- * Read the single in-progress turn from a classification, if exactly one exists.
- * @param classification - The classified linked thread.
- * @returns The active turn identity, or null when none or several turns are in progress.
- */
-function activeTurnFromClassification(
-	classification: WorkhorseOperationClassification,
-): TurnId | null {
-	if (classification.thread === null) {
-		return null;
-	}
-	const active = classification.thread.turns.filter((turn) => turn.status === "inProgress");
-	return active.length === 1 ? active[0]!.id : null;
-}
-
-/**
  * Serialize a thread identity to the wire form used as a map key and in notifications.
  * @param options - The operation options holding the identity decoder.
  * @param threadId - The trusted thread identity.
@@ -431,7 +416,6 @@ export {
 	operationRpc,
 	validateBoundedInput,
 	selectOperationIdentity,
-	activeTurnFromClassification,
 	threadIdWire,
 	turnIdWire,
 	turnIdFromRaw,

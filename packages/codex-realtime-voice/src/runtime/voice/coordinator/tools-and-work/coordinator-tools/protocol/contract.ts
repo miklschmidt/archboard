@@ -72,8 +72,6 @@ type CoordinatorToolCoordinatorAuthority = Pick<
 interface CoordinatorToolAuthorityPort {
 	readonly currentCoordinator: () => CoordinatorToolCoordinatorAuthority | null;
 	readonly currentCall: () => LogicalToolCallCorrelation | null;
-	/** Supplies expectedTurnId; the coordinator never receives it from tool arguments. */
-	readonly expectedTurnId: () => TurnId | null;
 }
 
 /** The only transport capability this module needs. */
@@ -85,6 +83,15 @@ interface CoordinatorToolResponsePort {
 	) => Promise<void>;
 }
 
+type StopEntry = StopWorkhorsesResult["stopped"][number];
+
+/** What one stop observed of one workhorse's work tree, as the stop tool reports it. */
+interface CoordinatorToolStop {
+	readonly checkout: string;
+	readonly outcome: StopEntry["outcome"];
+	readonly remaining: readonly StopEntry["remaining"][number][];
+}
+
 /** The workhorse of one checkout, as the coordinator tools reach it. */
 interface CoordinatorToolWorkhorse {
 	/** The operation binding of this workhorse and the coordinator, or null while they share none. */
@@ -93,12 +100,8 @@ interface CoordinatorToolWorkhorse {
 		CodexWorkhorseOperations,
 		"inspect" | "delegate" | "manageQueue" | "steer"
 	>;
-}
-
-/** What stopping one workhorse did: it had a running turn interrupted, or it had none. */
-interface CoordinatorToolStop {
-	readonly checkout: string;
-	readonly outcome: "interrupted" | "idle";
+	/** Where its last stop stands, as inspection reports it, or null before any stop. */
+	readonly lastStop: () => InspectWorkhorseResult["lastStop"];
 }
 
 interface CodexCoordinatorToolsOptions {
@@ -113,11 +116,13 @@ interface CodexCoordinatorToolsOptions {
 	 */
 	readonly workhorseFor: (checkout: string) => CoordinatorToolWorkhorse | null;
 	/**
-	 * Stop every running workhorse of the calling tab session, whichever
-	 * checkout it works in, and say what each one did, in the order the tab session keeps them. It
-	 * names no checkout and no turn. A rejection with no refusal code leaves the outcome unknown.
+	 * Stop the work tree of every workhorse of the calling tab session, whichever checkout it works
+	 * in, and say what each stop observed, in the order the tab session keeps them. It names no
+	 * checkout and no turn. The coordinator turn of the call starts no work after it. A rejection
+	 * with no refusal code leaves the outcome unknown.
+	 * @param askedBy The coordinator turn whose call asked for the stop.
 	 */
-	readonly stopWork: () => Promise<readonly CoordinatorToolStop[]>;
+	readonly stopWork: (askedBy: TurnId) => Promise<readonly CoordinatorToolStop[]>;
 	readonly spokenApproval: Pick<CodexSpokenApprovalGate, "snapshot" | "resolve">;
 	readonly transport: CoordinatorToolResponsePort;
 }
@@ -217,6 +222,7 @@ export {
 	type CoordinatorToolCoordinatorAuthority,
 	type CoordinatorToolAuthorityPort,
 	type CoordinatorToolStop,
+	type CoordinatorToolWorkhorse,
 	type CodexCoordinatorToolsOptions,
 	type CoordinatorToolsServerRequest,
 	type DynamicToolResponse,

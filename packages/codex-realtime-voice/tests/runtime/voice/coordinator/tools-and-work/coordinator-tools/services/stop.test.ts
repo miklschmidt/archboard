@@ -16,19 +16,28 @@ function dispatch(
 }
 
 describe("stop_workhorses", () => {
-	test("stops the tab session's workhorses once and names what each one did", async () => {
+	test("stops the tab session's work trees once and names what each stop observed", async () => {
 		// The tab session has no workhorse the call could name, and the stop needs none.
 		const h = fixture(undefined, []);
 		const operationId = h.authorities.operation.issuer.mintOperationId();
 		h.operation.setNextIssued(operationId);
+		const child = h.identity.decoder.adoptThreadId("child-thread");
 		h.stop.setResult([
-			{ checkout: "/work/payments", outcome: "interrupted" },
-			{ checkout: "/work/shop", outcome: "idle" },
+			{
+				checkout: "/work/payments",
+				outcome: "partial",
+				remaining: [{ threadId: child, state: "running" }],
+			},
+			{ checkout: "/work/shop", outcome: "stopped", remaining: [] },
+			{ checkout: "/work/docs", outcome: "idle", remaining: [] },
 		]);
-		const result = await dispatch(h, h.request("stop_workhorses"));
+		const request = h.request("stop_workhorses");
+		const result = await dispatch(h, request);
 
 		expect(result.attempted).toBe(true);
 		expect(h.stop.calls.count).toBe(1);
+		// The coordinator turn that asked is recorded, so it cannot start work again itself.
+		expect(h.stop.calls.askedBy).toEqual([request.logicalCall.turnId]);
 		expect(Object.values(h.operations.calls).flat()).toHaveLength(0);
 		expect(h.spokenApproval.calls).toHaveLength(0);
 		expect(responseEnvelope(result.response)).toEqual({
@@ -36,8 +45,14 @@ describe("stop_workhorses", () => {
 			operationId: h.authorities.operation.decoder.serializeOperationId(operationId),
 			value: {
 				stopped: [
-					{ checkout: "/work/payments", outcome: "interrupt_sent" },
-					{ checkout: "/work/shop", outcome: "idle" },
+					{
+						checkout: "/work/payments",
+						outcome: "partial",
+						remaining: [{ threadId: child, state: "running" }],
+						recovery: ["inspect_workhorse", "stop_workhorses"],
+					},
+					{ checkout: "/work/shop", outcome: "stopped", remaining: [], recovery: [] },
+					{ checkout: "/work/docs", outcome: "idle", remaining: [], recovery: [] },
 				],
 			},
 		});

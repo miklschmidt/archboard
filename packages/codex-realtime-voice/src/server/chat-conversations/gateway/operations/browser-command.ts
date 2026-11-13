@@ -1,3 +1,4 @@
+import { WorkhorseStopRefusal } from "#server/sessions/services/stop.ts";
 import { createHash } from "node:crypto";
 
 import type {
@@ -136,6 +137,7 @@ function errorOutcome(error: unknown): DeliveryOutcome {
  */
 function errorCode(error: unknown): CodexWorkbenchGatewayError["code"] {
 	if (error instanceof CodexWorkbenchGatewayError) return error.code;
+	if (error instanceof WorkhorseStopRefusal) return "work_stopping";
 	return errorOutcome(error) === "outcome_unknown" ? "outcome_unknown" : "command_failed";
 }
 
@@ -157,6 +159,10 @@ const REFUSAL_MESSAGES: Partial<Record<CodexWorkbenchGatewayError["code"], strin
 	approval_not_pending: "That approval is no longer pending.",
 	dynamic_approval_not_pending: "That coordination approval is no longer pending.",
 	unsupported_command: "The browser command is not supported by this gateway.",
+	work_stopping:
+		"The workhorse is stopping, or its last stop did not show that all work ended. Press Stop again before new work.",
+	stop_unconfirmed:
+		"Some work of this workhorse or its sub-agents still runs or could not be read. Press Stop again.",
 };
 
 /**
