@@ -18,6 +18,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/reader-context.test.ts",
 	"tests/system/browser/reader-expand.test.ts",
 	"tests/system/browser/reader-measures.test.ts",
+	"tests/system/browser/reader-branch-footprint.test.ts",
 	"tests/system/browser/reader-trace.test.ts",
 	"tests/system/browser/canonical-model-walkthroughs.test.ts",
 	"tests/system/browser/canonical-model-narration.test.ts",
