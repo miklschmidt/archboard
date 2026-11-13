@@ -122,7 +122,7 @@ Compare competing proposals side by side. The comparison lists interface changes
 
 Git records changes to files. Archboard maps their commits onto the modules of your system. See which modules change most often and which repeatedly change together, including pairs without an authored relationship. Select a module to see what changes with it. Its About page lists its recent commits.
 
-Set a branch's commits against its proposal. See which modules the commits changed, which modules the plan named, and where the two differ. Your agent can spot changes to mapped modules outside the plan before it adopts the proposal. Use `model locality` for source history and `model footprint --base <ref>` to compare branch changes with the selected architecture. Both are CLI reports for your agent.
+Set a branch's commits against its proposal. See which modules the commits changed, which modules the plan named, and where the two differ. Your agent can spot changes to mapped modules outside the plan before it adopts the proposal. Use `model locality` for source history and `model footprint --base <ref>` to compare branch changes with the selected architecture. Both are CLI reports for your agent. In the browser, Measures shows the same footprint for any branch in `What this branch changed`, and `Show on picture` opens the model as that branch holds it.
 
 <img src="https://github.com/user-attachments/assets/529523b2-530f-420f-95d7-471a6de5062a" width="100%" alt="The Right panel shows the modules that change together. The terminal reports seven shared commits for Validate order and Save order. A branch comparison then lists planned changes, changes outside the plan, and planned parts with no code change.">
 
