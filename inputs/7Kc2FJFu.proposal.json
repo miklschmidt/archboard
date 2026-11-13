@@ -46,6 +46,46 @@
     },
     {
       "type": "add",
+      "subject": "vKEsyHFk#NDh2pHps",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "decode the inputs at the ref",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#NDh2pHps",
+        "to": "vKEsyHFk#ZGONZKxj"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#NDh2pHps",
+      "placement": {
+        "holder": "vKEsyHFk#NaYD5kDX"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#VgjM7bCl",
+      "kind": "relationship",
+      "value": {
+        "order": 20,
+        "kind": "call",
+        "label": "read the vault's blobs at the commit",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#VgjM7bCl",
+        "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#VgjM7bCl",
+      "placement": {
+        "holder": "vKEsyHFk#NaYD5kDX"
+      }
+    },
+    {
+      "type": "add",
       "subject": "vKEsyHFk#XP2pdIyx",
       "kind": "module",
       "value": {
@@ -67,6 +107,26 @@
       "subject": "vKEsyHFk#XP2pdIyx",
       "placement": {
         "holder": "vKEsyHFk/HBlhIeSD#ETrslazw"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#pWq6Z4bX",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "footprint, locality and source refs",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#pWq6Z4bX",
+        "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#pWq6Z4bX",
+      "placement": {
+        "holder": "vKEsyHFk#XP2pdIyx"
       }
     },
     {
@@ -95,6 +155,46 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#J4AnEXVK",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "the footprint, the source refs and the states at head",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#J4AnEXVK",
+        "to": "vKEsyHFk#guvtYApo"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#J4AnEXVK",
+      "placement": {
+        "holder": "vKEsyHFk#r74vwrNv"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#sfpCCdeV",
+      "kind": "relationship",
+      "value": {
+        "order": 20,
+        "kind": "call",
+        "label": "open the shared parent, at the head's branch reading",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#sfpCCdeV",
+        "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#sfpCCdeV",
+      "placement": {
+        "holder": "vKEsyHFk#r74vwrNv"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#HCghQa6I",
       "field": "description",
@@ -105,6 +205,26 @@
       "subject": "vKEsyHFk/HBlhIeSD#radK8osF",
       "field": "description",
       "value": "The history interface reads canonical states and their bound source declarations. Locality reports change frequency and coupling. Footprint compares explicit local refs and the selected proposal baseline, and lists each changed file that no binding holds, outside the vault. A named head that resolves in the vault's repository is read with the vault at that head, unless the caller asks for the vault on disk, so its proposals and bindings come from the branch; the answer names the vault it read. Source refs lists the branches of every repository the state binds, merged by name. Each changed part names the other changed parts that its binding holds. Missing source stays unavailable rather than being reported as unchanged."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#U7pBAbjQ",
+      "kind": "relationship",
+      "value": {
+        "order": 90,
+        "kind": "call",
+        "label": "read the selected state, at the head",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#U7pBAbjQ",
+        "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#U7pBAbjQ",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#radK8osF"
+      }
     },
     {
       "type": "assign",
@@ -137,6 +257,26 @@
       "value": "Stores compact changes against exact retained predecessors. Consistent decoding keeps predecessor fingerprints stable across live and retained inputs. Changed predecessors require explicit reconciliation or replacement decisions. With a source ref, the selected-state reader reads the vault at that ref through the branch reading, and selects the state and its comparison inside it."
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#ZGQkdp7D",
+      "kind": "relationship",
+      "value": {
+        "order": 90,
+        "kind": "call",
+        "label": "read the vault at a source ref",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#ZGQkdp7D",
+        "to": "vKEsyHFk#NaYD5kDX"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ZGQkdp7D",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#TLCeNkdh",
       "field": "description",
@@ -167,6 +307,26 @@
       "value": "One history read of a revision answers for every part at once, and a selection shares it. A row selects its module on the picture. An unread part states why, and no count joins a score. A fourth view, What this branch changed, holds the branch footprint."
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#Z9c4yJnS",
+      "kind": "relationship",
+      "value": {
+        "order": 90,
+        "kind": "render",
+        "label": "the view What this branch changed",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#Z9c4yJnS",
+        "to": "vKEsyHFk#r74vwrNv"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Z9c4yJnS",
+      "placement": {
+        "holder": "vKEsyHFk#tQ2B3iEF"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk#KtBdeME1",
       "field": "description",
@@ -185,10 +345,531 @@
       "value": "The model contract names a branch reading's ref and commit, carries the ref in a reading's identity, and refuses an unresolved ref with SOURCE_REF_NOT_FOUND."
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#nf8vhgLc",
+      "kind": "relationship",
+      "value": {
+        "order": 90,
+        "kind": "http",
+        "label": "read the branch footprint and the source refs",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#nf8vhgLc",
+        "to": "vKEsyHFk#XP2pdIyx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#nf8vhgLc",
+      "placement": {
+        "holder": "vKEsyHFk#guvtYApo"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk#p0EDMxTr",
       "field": "description",
       "value": "Shows the reading on screen. A branch reading names its ref in the heading, follows no live feed, and offers no edit, claim, publication or walkthrough recording."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#TJCV96ua",
+      "placement": {
+        "holder": "vKEsyHFk#yejBBUFY",
+        "before": "vKEsyHFk#gXiXfxlR"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#gXiXfxlR",
+      "kind": "flow",
+      "value": {
+        "id": "vKEsyHFk#gXiXfxlR",
+        "name": "Read what a branch changed",
+        "summary": "A reader picks a base and a head in Measures and sees which modules the commits between them changed, set against the proposal of the vault at that head, so a branch is reviewed against its own plan without checking it out.",
+        "participants": [
+          "vKEsyHFk#r74vwrNv",
+          "vKEsyHFk#guvtYApo",
+          "vKEsyHFk#XP2pdIyx",
+          "vKEsyHFk/HBlhIeSD#radK8osF",
+          "vKEsyHFk/HBlhIeSD#5SMX69gS",
+          "vKEsyHFk#ZGONZKxj",
+          "vKEsyHFk/0T9enjhi#KJy5yYuq",
+          "vKEsyHFk#NaYD5kDX"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#gXiXfxlR",
+      "placement": {
+        "holder": "vKEsyHFk#yejBBUFY",
+        "before": "vKEsyHFk#QmWLy89O"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Oy0PuzpK",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#Oy0PuzpK",
+        "from": "vKEsyHFk#r74vwrNv",
+        "to": "vKEsyHFk#guvtYApo",
+        "label": "list the source refs",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Oy0PuzpK",
+      "placement": {
+        "holder": "vKEsyHFk#gXiXfxlR",
+        "before": "vKEsyHFk#xZCuHvRx"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#xZCuHvRx",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#xZCuHvRx",
+        "from": "vKEsyHFk#guvtYApo",
+        "to": "vKEsyHFk#XP2pdIyx",
+        "label": "GET /api/architecture/refs",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#xZCuHvRx",
+      "placement": {
+        "holder": "vKEsyHFk#gXiXfxlR",
+        "before": "vKEsyHFk#CJk8doAX"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#CJk8doAX",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#CJk8doAX",
+        "from": "vKEsyHFk#XP2pdIyx",
+        "to": "vKEsyHFk/HBlhIeSD#radK8osF",
+        "label": "branches of each bound repository",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#CJk8doAX",
+      "placement": {
+        "holder": "vKEsyHFk#gXiXfxlR",
+        "before": "vKEsyHFk#DvySRo70"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#DvySRo70",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#DvySRo70",
+        "from": "vKEsyHFk/HBlhIeSD#radK8osF",
+        "to": "vKEsyHFk#r74vwrNv",
+        "label": "refs merged by name, the checked-out head",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#DvySRo70",
+      "placement": {
+        "holder": "vKEsyHFk#gXiXfxlR",
+        "before": "vKEsyHFk#U0aHi6pj"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#U0aHi6pj",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#U0aHi6pj",
+        "from": "vKEsyHFk#r74vwrNv",
+        "to": "vKEsyHFk#guvtYApo",
+        "label": "read the footprint from base to head",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#U0aHi6pj",
+      "placement": {
+        "holder": "vKEsyHFk#gXiXfxlR",
+        "before": "vKEsyHFk#NltlOe35"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#NltlOe35",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#NltlOe35",
+        "from": "vKEsyHFk#guvtYApo",
+        "to": "vKEsyHFk#XP2pdIyx",
+        "label": "GET /api/architecture/footprint",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#NltlOe35",
+      "placement": {
+        "holder": "vKEsyHFk#gXiXfxlR",
+        "before": "vKEsyHFk#EnMoQVs0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#EnMoQVs0",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#EnMoQVs0",
+        "from": "vKEsyHFk#XP2pdIyx",
+        "to": "vKEsyHFk/HBlhIeSD#radK8osF",
+        "label": "readArchitectureFootprint",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#EnMoQVs0",
+      "placement": {
+        "holder": "vKEsyHFk#gXiXfxlR",
+        "before": "vKEsyHFk#dKwS409E"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#dKwS409E",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#dKwS409E",
+        "from": "vKEsyHFk/HBlhIeSD#radK8osF",
+        "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+        "label": "read the selected state at head",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#dKwS409E",
+      "placement": {
+        "holder": "vKEsyHFk#gXiXfxlR",
+        "before": "vKEsyHFk#CQyH3Ouh"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#CQyH3Ouh",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#CQyH3Ouh",
+        "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+        "to": "vKEsyHFk#ZGONZKxj",
+        "label": "read the state with the source ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#CQyH3Ouh",
+      "placement": {
+        "holder": "vKEsyHFk#gXiXfxlR",
+        "before": "vKEsyHFk#qmpRHU5a"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#qmpRHU5a",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#qmpRHU5a",
+        "from": "vKEsyHFk#ZGONZKxj",
+        "to": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+        "label": "select the state at the ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#qmpRHU5a",
+      "placement": {
+        "holder": "vKEsyHFk#gXiXfxlR",
+        "before": "vKEsyHFk#yp5Ss0VP"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#yp5Ss0VP",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#yp5Ss0VP",
+        "from": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+        "to": "vKEsyHFk#NaYD5kDX",
+        "label": "decode the vault at the head commit",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#yp5Ss0VP",
+      "placement": {
+        "holder": "vKEsyHFk#gXiXfxlR",
+        "before": "vKEsyHFk#p6AcGiYc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#p6AcGiYc",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#p6AcGiYc",
+        "from": "vKEsyHFk#NaYD5kDX",
+        "to": "vKEsyHFk/HBlhIeSD#radK8osF",
+        "label": "the model as the branch holds it",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#p6AcGiYc",
+      "placement": {
+        "holder": "vKEsyHFk#gXiXfxlR",
+        "before": "vKEsyHFk#nkAZBy6d"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#nkAZBy6d",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#nkAZBy6d",
+        "from": "vKEsyHFk/HBlhIeSD#radK8osF",
+        "to": "vKEsyHFk#r74vwrNv",
+        "label": "the three lists against the proposal",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#nkAZBy6d",
+      "placement": {
+        "holder": "vKEsyHFk#gXiXfxlR"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#QmWLy89O",
+      "kind": "flow",
+      "value": {
+        "id": "vKEsyHFk#QmWLy89O",
+        "name": "Show a branch footprint on its picture",
+        "summary": "Show on picture opens the nearest module that holds a list's changed modules, in the branch reading of the head when the head is not checked out, and selects what that picture draws of them, so the reader sees the branch's reach on the architecture it plans.",
+        "participants": [
+          "vKEsyHFk#r74vwrNv",
+          "vKEsyHFk/yejBBUFY#w46oCRoH",
+          "vKEsyHFk#p0EDMxTr",
+          "vKEsyHFk#guvtYApo",
+          "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
+          "vKEsyHFk#ZGONZKxj",
+          "vKEsyHFk/0T9enjhi#KJy5yYuq",
+          "vKEsyHFk#NaYD5kDX"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#QmWLy89O",
+      "placement": {
+        "holder": "vKEsyHFk#yejBBUFY"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#rAFX2yol",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#rAFX2yol",
+        "from": "vKEsyHFk#r74vwrNv",
+        "to": "vKEsyHFk/yejBBUFY#w46oCRoH",
+        "label": "open the shared parent at the head ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#rAFX2yol",
+      "placement": {
+        "holder": "vKEsyHFk#QmWLy89O",
+        "before": "vKEsyHFk#g5GIXG7Q"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#g5GIXG7Q",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#g5GIXG7Q",
+        "from": "vKEsyHFk/yejBBUFY#w46oCRoH",
+        "to": "vKEsyHFk#p0EDMxTr",
+        "label": "the branch reading's address",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#g5GIXG7Q",
+      "placement": {
+        "holder": "vKEsyHFk#QmWLy89O",
+        "before": "vKEsyHFk#1KdWx3pG"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#1KdWx3pG",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#1KdWx3pG",
+        "from": "vKEsyHFk#p0EDMxTr",
+        "to": "vKEsyHFk#guvtYApo",
+        "label": "read the model at the ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#1KdWx3pG",
+      "placement": {
+        "holder": "vKEsyHFk#QmWLy89O",
+        "before": "vKEsyHFk#yZQCfc8T"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#yZQCfc8T",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#yZQCfc8T",
+        "from": "vKEsyHFk#guvtYApo",
+        "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
+        "label": "GET /api/architecture/model with ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#yZQCfc8T",
+      "placement": {
+        "holder": "vKEsyHFk#QmWLy89O",
+        "before": "vKEsyHFk#dMDELorr"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#dMDELorr",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#dMDELorr",
+        "from": "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
+        "to": "vKEsyHFk#ZGONZKxj",
+        "label": "read the state at the ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#dMDELorr",
+      "placement": {
+        "holder": "vKEsyHFk#QmWLy89O",
+        "before": "vKEsyHFk#nHJ5Pxhl"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#nHJ5Pxhl",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#nHJ5Pxhl",
+        "from": "vKEsyHFk#ZGONZKxj",
+        "to": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+        "label": "select the state at the ref",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#nHJ5Pxhl",
+      "placement": {
+        "holder": "vKEsyHFk#QmWLy89O",
+        "before": "vKEsyHFk#mm4b5ENs"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#mm4b5ENs",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#mm4b5ENs",
+        "from": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+        "to": "vKEsyHFk#NaYD5kDX",
+        "label": "decode the vault at the commit",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#mm4b5ENs",
+      "placement": {
+        "holder": "vKEsyHFk#QmWLy89O",
+        "before": "vKEsyHFk#gZMwxeye"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#gZMwxeye",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#gZMwxeye",
+        "from": "vKEsyHFk#NaYD5kDX",
+        "to": "vKEsyHFk#p0EDMxTr",
+        "label": "a read-only model",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#gZMwxeye",
+      "placement": {
+        "holder": "vKEsyHFk#QmWLy89O",
+        "before": "vKEsyHFk#QpYOdTU3"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#QpYOdTU3",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#QpYOdTU3",
+        "from": "vKEsyHFk#r74vwrNv",
+        "to": "vKEsyHFk#p0EDMxTr",
+        "label": "select changed modules and drawn holders",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#QpYOdTU3",
+      "placement": {
+        "holder": "vKEsyHFk#QmWLy89O"
+      }
     }
   ]
 }
