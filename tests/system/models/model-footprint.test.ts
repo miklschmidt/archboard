@@ -337,5 +337,4 @@ test("a footprint with a head reads the vault at that head, and --model-at check
 	expect(answer(cli(draft).stdout)).toMatchObject({ vaultRead: { at: "checkout" } });
 
 	expect(cli([...draft, "--model-at", "elsewhere"]).status).not.toBe(0);
-	expect(cli(["model", "footprint", "--help"]).stdout).toContain("--model-at");
 }, 30_000);

@@ -197,9 +197,9 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 	]);
 	expect(
 		await browser.eval<string | null>(
-			`document.querySelector('[data-ref-picker="base"] button')?.getAttribute('aria-label') ?? null`,
+			`document.querySelector('[data-ref-picker="base"] button')?.getAttribute('data-value') ?? null`,
 		),
-	).toBe("Base: main");
+	).toBe("main");
 	expect(await footprintReads(browser)).toBe(1);
 
 	commitGateway(root, 2);
