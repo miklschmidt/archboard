@@ -91,6 +91,18 @@ archboard model footprint --base main --state "Split payments" --fail-outside
 
 The command reads one checkout of each repository, the chosen checkout. `archboard repo list` shows which checkout that is. If an agent commits in a worktree, choose that worktree first with `archboard repo use <dir>`.
 
+To read another branch, name it with `--head`. If the Home Repo holds that branch, the command reads the model as the branch holds it, so `--state` can name a proposal that only the branch has. The answer's `vaultRead` names the model that it read. If you edited a proposal and did not commit it to the head, add `--model-at checkout` to read the model on disk.
+
+```bash
+archboard model footprint --base main --head agent/split-payments --state "Split payments"
+```
+
+### In the browser
+
+Open Measures and choose `What this branch changed`. Choose the base, the head and the state to set the commits against. Each list is searchable, and you can type any ref. The view reads when it opens and when you press Refresh.
+
+`Show on picture` opens the nearest module that holds a list's modules, and selects them. If the head is not checked out, it opens a branch reading: the model as that branch holds it, read from Git. The state chip names the branch and its commit. A branch reading is read-only, and its address survives a reload.
+
 ## In CI
 
 The other repositories have no vault, so their own `archboard check` has no model to read. Run the check with the vault of the Home Repo, and register the checkout of the code beside it. In the CI of a repository such as the storefront, check out both and list the code in the check Action's [`repos`](../reference/actions/#check-repos) input:
