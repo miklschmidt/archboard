@@ -7,7 +7,6 @@ import {
 	DynamicToolRefusalReasonSchema,
 	type DynamicToolRefusalReason,
 } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/dynamic-tool-envelopes.ts";
-import { type CoordinatorToolName } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/manifest.ts";
 import { type ManageWorkhorseQueueInput } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-inputs.ts";
 import type { OperationId } from "@archboard/codex-app-server/identity";
 import type {
@@ -30,9 +29,6 @@ interface IssuedOperationIdentity {
 	readonly id: OperationId;
 	readonly wire: string;
 }
-
-/** The tools whose ok value is the result a workhorse port call produced. */
-type WorkhorseToolName = Exclude<CoordinatorToolName, "resolve_spoken_approval">;
 
 /**
  * Prove an operation identity is a current server-issued one and pair it with its wire form.
@@ -152,16 +148,25 @@ function queueRequest(
 }
 
 /**
- * Start the stop of every workhorse of the tab session, with each outcome named as the tool
- * reports it.
+ * Start the stop of every workhorse's work tree in the tab session. A stop that did not show all
+ * work ended names the tools that recover: look again, or stop again.
  * @param options - The dispatcher options, which stop the tab session's workhorses.
+ * @param call - The coordinator call that asked for the stop.
  * @returns The pending stops.
  */
-function invokeStop(options: CodexCoordinatorToolsOptions): Promise<unknown> {
-	return options.stopWork().then((stops) => ({
-		stopped: stops.map(({ checkout, outcome }) => ({
+function invokeStop(
+	options: CodexCoordinatorToolsOptions,
+	call: WorkhorseCoordinatorCall,
+): Promise<unknown> {
+	return options.stopWork(call.turnId).then((stops) => ({
+		stopped: stops.map(({ checkout, outcome, remaining }) => ({
 			checkout,
-			outcome: outcome === "interrupted" ? "interrupt_sent" : outcome,
+			outcome,
+			remaining: remaining.map(({ threadId, state }) => ({ threadId, state })),
+			recovery:
+				outcome === "partial" || outcome === "unconfirmed"
+					? ["inspect_workhorse", "stop_workhorses"]
+					: [],
 		})),
 	}));
 }
@@ -183,8 +188,8 @@ function invokeCheckoutWorkhorse(
 ): Promise<unknown> {
 	const { call } = validated;
 	const { checkout } = validated.input;
-	const operations = options.workhorseFor(checkout)?.operations;
-	if (operations === undefined) {
+	const workhorse = options.workhorseFor(checkout);
+	if (workhorse === null) {
 		return Promise.reject(
 			Object.assign(new Error(`This conversation has no workhorse in ${checkout}.`), {
 				code: "not_ready",
@@ -192,6 +197,7 @@ function invokeCheckoutWorkhorse(
 			}),
 		);
 	}
+	const { operations } = workhorse;
 	if (validated.tool === "inspect_workhorse") {
 		return operations.inspect({ call });
 	}
@@ -204,7 +210,6 @@ function invokeCheckoutWorkhorse(
 	}
 	return operations.steer({
 		call,
-		expectedTurnId: validated.expectedTurnId,
 		input: validated.input.input,
 		operationId: operation.id,
 	});
@@ -224,23 +229,24 @@ function invokeWorkhorse(
 	operation: IssuedOperationIdentity,
 ): Promise<unknown> {
 	return validated.tool === "stop_workhorses"
-		? invokeStop(options)
+		? invokeStop(options, validated.call)
 		: invokeCheckoutWorkhorse(options, validated, operation);
 }
 
 /**
  * Build the successful response for a workhorse port result under its still-current operation.
  * The result is narrowed by the tool's reviewed result schema rather than by a static pairing of
- * tool name and port type.
+ * tool name and port type. An inspection also says where the workhorse's last stop stands, which
+ * the tab session knows and the workhorse operations do not.
  * @param options - The dispatcher options carrying the operation authority.
- * @param tool - The tool that produced the result.
+ * @param validated - The call that produced the result.
  * @param operation - The issued operation identity the effect ran under.
  * @param result - The result as the port produced it.
  * @returns The frozen response.
  */
 function workhorseResponse(
 	options: CodexCoordinatorToolsOptions,
-	tool: WorkhorseToolName,
+	validated: ValidatedOperationCall,
 	operation: IssuedOperationIdentity,
 	result: unknown,
 ): DynamicToolResponse {
@@ -248,7 +254,29 @@ function workhorseResponse(
 	if (current.id !== operation.id) {
 		throw new TypeError("The workhorse operation identity changed.");
 	}
-	return okPortResponse(tool, current.wire, result);
+	return okPortResponse(validated.tool, current.wire, withLastStop(options, validated, result));
+}
+
+/**
+ * An inspection's answer with where the workhorse's last stop stands, which only this server
+ * knows; any other answer as it is.
+ * @param options - The dispatcher options that find the workhorse.
+ * @param validated - The validated call.
+ * @param result - The port's answer.
+ * @returns The answer the coordinator hears.
+ */
+function withLastStop(
+	options: CodexCoordinatorToolsOptions,
+	validated: ValidatedOperationCall,
+	result: unknown,
+): unknown {
+	if (validated.tool !== "inspect_workhorse" || typeof result !== "object" || result === null) {
+		return result;
+	}
+	return {
+		...result,
+		lastStop: options.workhorseFor(validated.input.checkout)?.lastStop() ?? null,
+	};
 }
 
 /**

@@ -27,18 +27,18 @@ import { refusedResponse } from "#runtime/voice/coordinator/tools-and-work/coord
 import { createCodexThreadUnload } from "#runtime/thread-unload/operations/unload.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { WorkhorseOperationEventListener } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
-import type { IdentityAuthority, ThreadId } from "@archboard/codex-app-server/identity";
+import type { IdentityAuthority, ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 import { workhorseLinkKey, type TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import { endTabSession, settleEach, stopVoice } from "#server/sessions/services/end.ts";
 import {
 	freshWorkhorseState,
 	noteActiveTurn,
-	stopWorkhorses,
 	type CodexWorkbenchWorkhorse,
 	type CodexWorkbenchWorkhorseComponents,
 	type CodexWorkbenchWorkhorseState,
 	type WorkhorseStop,
 } from "#server/sessions/services/workhorses.ts";
+import { guardWorkhorse, stopWorkTree } from "#server/sessions/services/stop.ts";
 import { sessionVoiceStartTrace } from "#server/voice/services/start-trace.ts";
 import {
 	noteCoordinatorTurnStart,
@@ -210,38 +210,41 @@ function createCodexWorkbenchSessions(
 			}
 			return workhorse;
 		};
-		const built = options.buildWorkhorse({
-			session,
-			checkout,
-			key,
-			state,
-			/**
-			 * Claim a thread for this workhorse while its session is live.
-			 * @param threadId The thread.
-			 */
-			claimThread: (threadId) => {
-				assertLive(session, "start no thread");
-				claimThread({ session, workhorse: self() }, threadId);
-			},
-			/**
-			 * Claim a thread for the session's coordinator while the session is live.
-			 * @param threadId The thread.
-			 */
-			claimCoordinatorThread: (threadId) => {
-				assertLive(session, "start no thread");
-				claimThread({ session, workhorse: null }, threadId);
-			},
-			/**
-			 * Unload a thread this workhorse no longer runs on, then stop owning it.
-			 * @param threadId The thread.
-			 * @returns What became of it.
-			 */
-			retireThread: async (threadId) => {
-				const unload = await unloads.unload(threadId);
-				releaseThread(session, threadId);
-				return unload;
-			},
-		});
+		const built = guardWorkhorse(
+			self,
+			options.buildWorkhorse({
+				session,
+				checkout,
+				key,
+				state,
+				/**
+				 * Claim a thread for this workhorse while its session is live.
+				 * @param threadId The thread.
+				 */
+				claimThread: (threadId) => {
+					assertLive(session, "start no thread");
+					claimThread({ session, workhorse: self() }, threadId);
+				},
+				/**
+				 * Claim a thread for the session's coordinator while the session is live.
+				 * @param threadId The thread.
+				 */
+				claimCoordinatorThread: (threadId) => {
+					assertLive(session, "start no thread");
+					claimThread({ session, workhorse: null }, threadId);
+				},
+				/**
+				 * Unload a thread this workhorse no longer runs on, then stop owning it.
+				 * @param threadId The thread.
+				 * @returns What became of it.
+				 */
+				retireThread: async (threadId) => {
+					const unload = await unloads.unload(threadId);
+					releaseThread(session, threadId);
+					return unload;
+				},
+			}),
+		);
 		workhorse = Object.freeze({
 			checkout,
 			key,
@@ -302,16 +305,19 @@ function createCodexWorkbenchSessions(
 		const voiceWorkhorse = (): CodexWorkbenchWorkhorse | null =>
 			state.voiceCheckout === null ? null : (workhorses.get(state.voiceCheckout) ?? null);
 		/**
-		 * Stop the workhorse of one checkout, or every one of the tab.
+		 * Stop the work tree of the workhorse of one checkout, or of every one of the tab.
 		 * @param checkout The checkout, or null for every workhorse.
-		 * @returns What each stopped workhorse did.
+		 * @param askedBy The coordinator turn that asked for the stop, or null for the Stop control.
+		 * @returns What each stop observed, in the order the workhorses were built.
 		 */
-		const stopWork = (checkout: string | null): Promise<readonly WorkhorseStop[]> =>
-			stopWorkhorses(
-				[...workhorses.values()].filter(
-					(candidate) => checkout === null || candidate.checkout === checkout,
-				),
-				options.session,
+		const stopWork = (
+			checkout: string | null,
+			askedBy: TurnId | null = null,
+		): Promise<readonly WorkhorseStop[]> =>
+			Promise.all(
+				[...workhorses.values()]
+					.filter((candidate) => checkout === null || candidate.checkout === checkout)
+					.map((candidate) => stopWorkTree(candidate, options.session, askedBy)),
 			);
 		const built = options.build({
 			id,

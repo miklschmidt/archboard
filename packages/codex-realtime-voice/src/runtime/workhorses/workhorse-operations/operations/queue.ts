@@ -5,34 +5,22 @@ import type {
 	QueueStartResult,
 	WorkhorseQueueResult,
 } from "#runtime/workhorses/workhorse-queue/services/contract.ts";
+import type { OperationId, QueuedSubmissionId } from "@archboard/codex-app-server/identity";
 import type {
-	OperationId,
-	QueuedSubmissionId,
-	ThreadId,
-	TurnId,
-} from "@archboard/codex-app-server/identity";
-import type {
-	InspectWorkhorseRequest,
-	InspectWorkhorseResult,
 	ManageWorkhorseQueueRequest,
 	ManageWorkhorseQueueResult,
 	WorkhorseOperationBinding,
 	WorkhorseOperationClassification,
 } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
 import {
-	activeTurnFromClassification,
 	freeze,
 	queueIds,
 	selectOperationIdentity,
-	threadIdWire,
 	type OperationState,
 	type SettledDelivery,
 	type WorkhorseRuntime,
 } from "#runtime/workhorses/workhorse-operations/rules/internal.ts";
-import {
-	assertCreatedWorkhorse,
-	isCreatedWorkhorse,
-} from "#runtime/workhorses/workhorse-operations/rules/link-provenance.ts";
+import { assertCreatedWorkhorse } from "#runtime/workhorses/workhorse-operations/rules/link-provenance.ts";
 import {
 	messageOf,
 	operationError,
@@ -54,55 +42,6 @@ type StartResult = QueueStartResult<OperationId>;
  */
 function mutationErrorCode(outcome: SettledDelivery): "transport_failure" | "outcome_unknown" {
 	return outcome === "outcome_unknown" ? "outcome_unknown" : "transport_failure";
-}
-
-/**
- * Record the workhorse's active turn from a fresh classification for later notifications.
- * @param runtime - The operations runtime.
- * @param threadId - The workhorse thread.
- * @param classification - The fresh workhorse classification.
- * @returns The active turn identity, or null when none is in progress.
- */
-function activeTurnId(
-	runtime: WorkhorseRuntime,
-	threadId: ThreadId,
-	classification: WorkhorseOperationClassification,
-): TurnId | null {
-	const current = activeTurnFromClassification(classification);
-	const key = threadIdWire(runtime.options, threadId);
-	if (current === null) {
-		runtime.activeTurns.delete(key);
-		return null;
-	}
-	runtime.activeTurns.set(key, current);
-	return current;
-}
-
-/**
- * Create the inspect operation: a read of link status, active turn and queue that never
- * mutates anything.
- * @param runtime - The operations runtime.
- * @returns The inspect operation.
- */
-function createInspect(
-	runtime: WorkhorseRuntime,
-): (request: InspectWorkhorseRequest) => Promise<InspectWorkhorseResult> {
-	return (request) =>
-		runtime.enqueue(async () => {
-			const binding = runtime.currentBinding();
-			const initial = await runtime.classify(binding, request.call, "inspect_workhorse");
-			const result = isCreatedWorkhorse(initial.workhorse)
-				? await runtime.options.queue.list()
-				: { operation: "list" as const, queue: [] };
-			const final = await runtime.classify(binding, request.call, "inspect_workhorse");
-			const currentTurnId = activeTurnId(runtime, binding.workhorse.threadId, final.workhorse);
-			return freeze({
-				threadId: binding.workhorse.threadId,
-				status: final.workhorse.link.status,
-				activeTurnId: currentTurnId,
-				queuedSubmissionIds: queueIds(result.queue),
-			});
-		});
 }
 
 /**
@@ -471,4 +410,4 @@ function createManageQueue(
 	};
 }
 
-export { createInspect, createManageQueue };
+export { createManageQueue };

@@ -191,7 +191,7 @@ function workhorseResult(
 			error instanceof CoordinatorToolValidationError ? error.reason : "unknown_provenance";
 		return complete(refusedResponse(reason, errorMessage(error)), true);
 	}
-	return complete(workhorseResponse(context.options, validated.tool, operation, result), true);
+	return complete(workhorseResponse(context.options, validated, operation, result), true);
 }
 
 /** What one validated call needs before it runs, or the refusal that stops it first. */

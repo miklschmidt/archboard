@@ -13,6 +13,7 @@ import type {
 	WorkbenchContextCodec,
 } from "#runtime/host/protocol/context.ts";
 import type { CodexWorkbenchComponents } from "#server/generation/services/workbench.ts";
+import type { WorkhorseStop } from "#server/sessions/services/workhorses.ts";
 
 /**
  * The thread a text command runs against, refused when the chat's lease names
@@ -33,7 +34,7 @@ interface ServerTextActionOptions {
 	readonly identity: CodexWorkbenchComponents["identity"];
 	readonly session: Pick<
 		CodexWorkbenchComponents["session"],
-		"threadRead" | "turnStart" | "turnSteer" | "turnInterrupt"
+		"threadRead" | "turnStart" | "turnSteer"
 	>;
 	readonly contextForOperation: (
 		context: BrowserActionContext,
@@ -43,6 +44,10 @@ interface ServerTextActionOptions {
 			readonly rpc: "turn/start" | "turn/steer";
 		},
 	) => WorkbenchExecutionContext;
+	/** Refuse a typed message to a workhorse that is stopping or whose stop did not end its work. */
+	readonly refuseNewWork: (context: BrowserActionContext) => void;
+	/** Stop the work tree of the workhorse of the chat's checkout, and say what the stop observed. */
+	readonly stopWork: (context: BrowserActionContext) => Promise<readonly WorkhorseStop[]>;
 }
 
 /**
@@ -76,6 +81,7 @@ export function createServerCanonicalTextActions(
 		 */
 		start: async (command, context) => {
 			const threadId = browserLeaseThreadId(context);
+			options.refuseNewWork(context);
 			// Starting requires authoritative idle metadata, not hydrated history:
 			// the pinned server cannot list turns for a newly created thread.
 			const { thread } = await options.session.threadRead({ threadId, includeTurns: false });
@@ -111,6 +117,7 @@ export function createServerCanonicalTextActions(
 		 */
 		steer: async (command, context) => {
 			const threadId = browserLeaseThreadId(context);
+			options.refuseNewWork(context);
 			const { thread } = await options.session.threadRead({ threadId, includeTurns: false });
 			if (thread.id !== threadId || thread.status.type !== "active") {
 				throw new CodexWorkbenchGatewayError(
@@ -144,16 +151,22 @@ export function createServerCanonicalTextActions(
 			return { outcome: "delivered" };
 		},
 		/**
-		 * Stop the turn that is running on the workhorse of the chat's checkout. The gateway admits
-		 * the command only when its thread is the link of that workhorse.
-		 * @param command The thread and the turn.
+		 * The Stop control: stop the whole work tree of the workhorse of the chat's checkout, the
+		 * same stop that a spoken stop runs. The gateway admits the command only when its thread is
+		 * the link of that workhorse. A stop that did not show all work ended says so.
+		 * @param _command The thread and the turn the control was offered for.
+		 * @param context The chat and the link it named.
 		 * @returns The browser outcome.
 		 */
-		interrupt: async (command) => {
-			await options.session.turnInterrupt({
-				threadId: command.threadId,
-				turnId: command.turnId,
-			});
+		interrupt: async (_command, context) => {
+			const stops = await options.stopWork(context);
+			if (stops.some(({ outcome }) => outcome === "partial" || outcome === "unconfirmed")) {
+				throw new CodexWorkbenchGatewayError(
+					"stop_unconfirmed",
+					"The stop did not show that all work of the workhorse ended.",
+					{ outcome: "delivered" },
+				);
+			}
 			return { outcome: "delivered" };
 		},
 	} satisfies BrowserTextActions);

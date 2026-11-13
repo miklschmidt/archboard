@@ -49,7 +49,10 @@ interface CoordinatorToolsFixture {
 	readonly identity: IdentityAuthority;
 	readonly coordinatorThreadId: ThreadId;
 	readonly workhorseThreadId: ThreadId;
-	readonly expectedTurnId: TurnId;
+	/** The coordinator turn that the fixture's calls come from. */
+	readonly coordinatorTurnId: TurnId;
+	/** The workhorse turn that a delegation starts and a steer reaches. */
+	readonly workhorseTurnId: TurnId;
 	readonly binding: WorkhorseOperationBinding;
 	readonly operation: Pick<OperationAuthority, "issuer" | "validator" | "decoder"> & {
 		setNextIssued: (value: OperationId) => void;
@@ -71,7 +74,7 @@ interface CoordinatorToolsFixture {
 	};
 	/** The tab session's stop of its workhorses; it shares the barrier and error of `operations`. */
 	readonly stop: {
-		readonly calls: { count: number };
+		readonly calls: { count: number; readonly askedBy: TurnId[] };
 		setResult: (result: readonly CoordinatorToolStop[]) => void;
 	};
 	readonly spokenApproval: {
@@ -98,7 +101,6 @@ interface CoordinatorToolsFixture {
 		setCoordinator: (value: CoordinatorToolCoordinatorAuthority | null) => void;
 		setBinding: (value: WorkhorseOperationBinding | null) => void;
 		setCall: (value: LogicalToolCallCorrelation | null) => void;
-		setExpectedTurnId: (value: TurnId | null) => void;
 	};
 	readonly dispatcher: CoordinatorToolDispatcher;
 	readonly request: (
@@ -131,7 +133,8 @@ function fixture(
 	const identity = authorities.identity;
 	const coordinatorThreadId = identity.decoder.adoptThreadId("coordinator");
 	const workhorseThreadId = identity.decoder.adoptThreadId("workhorse");
-	const expectedTurnId = identity.decoder.adoptTurnId("workhorse-turn");
+	const coordinatorTurnId = identity.decoder.adoptTurnId("coordinator-turn");
+	const workhorseTurnId = identity.decoder.adoptTurnId("workhorse-turn");
 	const binding = bindingFor(identity, coordinatorThreadId, workhorseThreadId);
 	let coordinator: CoordinatorToolCoordinatorAuthority | null = readyAuthority(
 		identity,
@@ -139,7 +142,6 @@ function fixture(
 	);
 	let currentBinding: WorkhorseOperationBinding | null = binding;
 	let currentCall: LogicalToolCallCorrelation | null = null;
-	let currentExpectedTurnId: TurnId | null = expectedTurnId;
 	let nextIssuedOperation: OperationId | null = null;
 	let nextOperationError: unknown = null;
 	let operationBarrier: Promise<void> | null = null;
@@ -173,7 +175,11 @@ function fixture(
 				threadId: workhorseThreadId,
 				status: "idle" as const,
 				activeTurnId: null,
+				request: null,
+				recentProgress: [],
+				subAgents: [],
 				queuedSubmissionIds: [],
+				unavailable: [],
 			};
 		},
 		delegate: async (request: Parameters<CodexWorkhorseOperations["delegate"]>[0]) => {
@@ -189,7 +195,7 @@ function fixture(
 				mode: "started" as const,
 				clientUserMessageId: "client-user-message",
 				queuedSubmissionId: null,
-				turnId: expectedTurnId,
+				turnId: workhorseTurnId,
 			};
 		},
 		manageQueue: async (request: Parameters<CodexWorkhorseOperations["manageQueue"]>[0]) => {
@@ -212,7 +218,7 @@ function fixture(
 				nextOperationError = null;
 				throw error;
 			}
-			return { turnId: request.expectedTurnId, delivery: "delivered" as const };
+			return { turnId: workhorseTurnId, delivery: "delivered" as const };
 		},
 		calls: operationCalls,
 		setError: (error: unknown) => {
@@ -234,10 +240,12 @@ function fixture(
 		},
 	};
 
-	const stopCalls = { count: 0 };
-	let stopResult: readonly CoordinatorToolStop[] = [{ checkout: CHECKOUT, outcome: "interrupted" }];
-	const stopWork = async (): Promise<readonly CoordinatorToolStop[]> => {
+	const stopCalls = { count: 0, askedBy: [] as TurnId[] };
+	const stopped: CoordinatorToolStop = { checkout: CHECKOUT, outcome: "stopped", remaining: [] };
+	let stopResult: readonly CoordinatorToolStop[] = [stopped];
+	const stopWork = async (askedBy: TurnId): Promise<readonly CoordinatorToolStop[]> => {
 		stopCalls.count += 1;
+		stopCalls.askedBy.push(askedBy);
 		timeline.push("workhorses.stop");
 		await waitForOperation();
 		if (nextOperationError !== null) {
@@ -345,7 +353,6 @@ function fixture(
 	const authority = {
 		currentCoordinator: () => coordinator,
 		currentCall: () => currentCall,
-		expectedTurnId: () => currentExpectedTurnId,
 		setCoordinator: (value: CoordinatorToolCoordinatorAuthority | null) => {
 			coordinator = value;
 		},
@@ -355,14 +362,10 @@ function fixture(
 		setCall: (value: LogicalToolCallCorrelation | null) => {
 			currentCall = value;
 		},
-		setExpectedTurnId: (value: TurnId | null) => {
-			currentExpectedTurnId = value;
-		},
 	} satisfies CoordinatorToolAuthorityPort & {
 		setCoordinator: (value: CoordinatorToolCoordinatorAuthority | null) => void;
 		setBinding: (value: WorkhorseOperationBinding | null) => void;
 		setCall: (value: LogicalToolCallCorrelation | null) => void;
-		setExpectedTurnId: (value: TurnId | null) => void;
 	};
 	const operation = {
 		issuer: {
@@ -390,7 +393,9 @@ function fixture(
 		 * @returns The workhorse, or null for another checkout.
 		 */
 		workhorseFor: (checkout) =>
-			checkouts.includes(checkout) ? { binding: () => currentBinding, operations } : null,
+			checkouts.includes(checkout)
+				? { binding: () => currentBinding, operations, lastStop: () => null }
+				: null,
 		stopWork,
 		spokenApproval,
 		transport,
@@ -418,7 +423,7 @@ function fixture(
 				? TEST_TOOLS.voice.sha256
 				: TEST_TOOLS.workhorse.sha256);
 		const threadId = options.threadId ?? coordinatorThreadId;
-		const turnId = options.turnId ?? expectedTurnId;
+		const turnId = options.turnId ?? coordinatorTurnId;
 		const callId =
 			options.callId ?? identity.decoder.adoptDynamicToolCallId(`call-${requestNumber++}-${tool}`);
 		const argumentsValue =
@@ -471,7 +476,8 @@ function fixture(
 		identity,
 		coordinatorThreadId,
 		workhorseThreadId,
-		expectedTurnId,
+		coordinatorTurnId,
+		workhorseTurnId,
 		binding,
 		operation,
 		timeline,

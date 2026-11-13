@@ -6,7 +6,11 @@ import { join } from "node:path";
 import { TEST_CONTEXT_SCHEMA } from "#tests/runtime/support/host.ts";
 import { createTextUserInput } from "#runtime/host/turn-input/rules/text-input.ts";
 import { CODEX_SESSION_THREAD_SOURCE } from "@archboard/codex-app-server/session";
-import type { SessionParams, SessionTurn } from "@archboard/codex-app-server/session";
+import type {
+	SessionParams,
+	SessionThread,
+	SessionTurn,
+} from "@archboard/codex-app-server/session";
 import { createCodexEpochStore } from "#runtime/epoch/store/epoch.ts";
 import {
 	type CodexEpochStore,
@@ -39,6 +43,12 @@ const MANIFEST_HASH = "2".repeat(64);
 
 export class FakeSession implements WorkhorseOperationSessionPort {
 	readonly starts: Array<SessionParams<"turn/start">> = [];
+	/** The workhorse's turns, oldest first, as thread/turns/list pages them newest first. */
+	turns: readonly SessionTurn[] = [];
+	/** The sub-agents thread/list returns for the workhorse. */
+	subAgents: SessionThread[] = [];
+	turnsError: Error | null = null;
+	subAgentsError: Error | null = null;
 	readonly steers: Array<SessionParams<"turn/steer">> = [];
 	nextStartTurn: SessionTurn;
 	nextStartError: Error | null = null;
@@ -61,6 +71,24 @@ export class FakeSession implements WorkhorseOperationSessionPort {
 			throw error;
 		}
 		return { turn: this.nextStartTurn };
+	};
+
+	threadTurnsListPage = async (params: SessionParams<"thread/turns/list">) => {
+		if (this.turnsError !== null) throw this.turnsError;
+		const newestFirst = this.turns.toReversed();
+		return {
+			data: newestFirst.slice(0, params.limit ?? newestFirst.length),
+			nextCursor: null,
+			backwardsCursor: null,
+		};
+	};
+
+	threadListPage = async (params?: SessionParams<"thread/list">) => {
+		if (this.subAgentsError !== null) throw this.subAgentsError;
+		if (params?.ancestorThreadId === undefined || params.ancestorThreadId === null) {
+			throw new Error("The workhorse operations list only sub-agents.");
+		}
+		return { data: this.subAgents, readStates: null, nextCursor: null, backwardsCursor: null };
 	};
 
 	turnSteer = async (params: SessionParams<"turn/steer">): Promise<{ readonly turnId: TurnId }> => {
@@ -214,7 +242,6 @@ export function buildFixture(
 	};
 	let currentBinding = binding;
 	let status: "notLoaded" | "idle" | "systemError" | "active" = initialStatus;
-	let turns: readonly SessionTurn[] = [];
 	let created = true;
 	let controllable = true;
 	let currentCall: LogicalToolCallCorrelation | null = null;
@@ -257,7 +284,8 @@ export function buildFixture(
 					? { type: "active" as const, activeFlags: [] }
 					: { type: targetStatus as "idle" | "notLoaded" | "systemError" },
 			canAcceptDirectInput: targetControllable,
-			turns: isWorkhorse ? turns : [],
+			// A thread summary carries no turns; only thread/turns/list names them.
+			turns: [],
 		};
 		const proof = isWorkhorse
 			? created
@@ -333,7 +361,7 @@ export function buildFixture(
 		setCall,
 		setStatus: (nextStatus, nextTurns = []) => {
 			status = nextStatus;
-			turns = nextTurns;
+			session.turns = nextTurns;
 		},
 		setAttached: () => {
 			created = false;

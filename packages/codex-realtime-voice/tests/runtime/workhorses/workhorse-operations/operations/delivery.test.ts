@@ -213,7 +213,6 @@ describe("codex workhorse operation delivery", () => {
 			fixtureValue.operations.subscribe((event) => events.push(event.type));
 			const result = await fixtureValue.operations.steer({
 				call: fixtureValue.setCall("steer_workhorse"),
-				expectedTurnId,
 				input: "stop and inspect",
 			});
 			expect(result).toEqual({ turnId: expectedTurnId, delivery: "delivered" });
@@ -221,18 +220,27 @@ describe("codex workhorse operation delivery", () => {
 			expect(fixtureValue.session.steers[0]).toMatchObject({
 				threadId: fixtureValue.binding.workhorse.threadId,
 				clientUserMessageId: expect.any(String),
-				expectedTurnId,
 				input: [{ type: "text", text: "stop and inspect", text_elements: [] }],
 			});
 			expect(events).toEqual(["accepted", "started"]);
-			const wrong = await rejected(
+			// The turn ends and another starts between the read that chose the target and the
+			// read before delivery: the steer refuses the stale target and sends nothing.
+			const read = fixtureValue.session.threadTurnsListPage;
+			fixtureValue.session.threadTurnsListPage = async (params) => {
+				const page = await read(params);
+				fixtureValue.session.turns = [
+					turn(fixtureValue.identity, "active-steer", "completed"),
+					turn(fixtureValue.identity, "next-turn", "inProgress"),
+				];
+				return page;
+			};
+			const stale = await rejected(
 				fixtureValue.operations.steer({
 					call: fixtureValue.setCall("steer_workhorse"),
-					expectedTurnId: fixtureValue.identity.decoder.adoptTurnId("wrong-turn"),
 					input: "must not send",
 				}),
 			);
-			expect(wrong).toMatchObject({ code: "busy" });
+			expect(stale).toMatchObject({ code: "busy" });
 			expect(fixtureValue.session.steers).toHaveLength(1);
 		} finally {
 			fixtureValue.cleanup();
@@ -343,7 +351,6 @@ describe("codex workhorse operation delivery", () => {
 	test("returns not_delivered for a lost steer without issuing a second request", async () => {
 		const fixtureValue = fixture();
 		try {
-			const expectedTurnId = fixtureValue.identity.decoder.adoptTurnId("steer-loss");
 			fixtureValue.setStatus("active", [turn(fixtureValue.identity, "steer-loss", "inProgress")]);
 			fixtureValue.session.nextSteerError = new CodexSessionMutationError(
 				"turn/steer",
@@ -354,7 +361,6 @@ describe("codex workhorse operation delivery", () => {
 			fixtureValue.operations.subscribe((event) => events.push(event.type));
 			const result = await fixtureValue.operations.steer({
 				call: fixtureValue.setCall("steer_workhorse"),
-				expectedTurnId,
 				input: "one attempt",
 			});
 			expect(result.delivery).toBe("not_delivered");
@@ -385,7 +391,6 @@ describe("codex workhorse operation delivery", () => {
 			});
 			const result = await fixtureValue.operations.steer({
 				call: fixtureValue.setCall("steer_workhorse"),
-				expectedTurnId,
 				input: "one unknown steer",
 			});
 			expect(result).toEqual({ turnId: expectedTurnId, delivery: "outcome_unknown" });

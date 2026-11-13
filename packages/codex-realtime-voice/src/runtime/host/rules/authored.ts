@@ -41,7 +41,7 @@ function readWorkbenchInstructionDocument(text: string, label: string, expected:
 const COORDINATOR_ROLE_INSTRUCTIONS = readWorkbenchInstructionDocument(
 	coordinatorDeveloperInstructions,
 	"coordinator-developer-instructions.txt",
-	"d2b8bffc13daa3b7bd74df037268edd3c0b53b8bacf59553ca3f5c66b6e299ce",
+	"439e9fff54a238739cf0551e8dcc779ca7c3acb0ad183209f99e84889ecc7ddb",
 );
 const WORKHORSE_ROLE_INSTRUCTIONS = readWorkbenchInstructionDocument(
 	workhorseDeveloperInstructions,

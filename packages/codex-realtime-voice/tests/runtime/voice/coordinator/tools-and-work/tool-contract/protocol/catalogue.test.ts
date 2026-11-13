@@ -58,7 +58,7 @@ describe("coordinator namespace manifests", () => {
 		expect(JSON.parse(NAMED.workhorse.text)).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
 		expect(JSON.parse(VOICE_TOOLS_MANIFEST_JSON)).toEqual(VOICE_MANIFEST_SNAPSHOT);
 		expect([NAMED.workhorse.sha256, NAMED.voice.sha256, NAMED.coordinator.sha256]).toEqual([
-			"07dc953628a28401b856d1092412116fd3b876dcc9ffd26d1c77c80d47e2415a",
+			"f369e65c258f7508c8ed1b608531a519c4f7d14aa0c9572517c1344c734a19ad",
 			"92416eb7c07865e66fde019bb9a43f6422a1ba9d4b0993db2fa9dd8240bf8eea",
 			"884f263d14421f061facdc23bf42c3fd4d956c36d6c74a2a229c793428080c15",
 		]);
@@ -269,7 +269,17 @@ describe("dynamic tool schemas and queue protocol", () => {
 		const values = [
 			[
 				InspectWorkhorseResultSchema,
-				{ threadId: "thread-1", status: "idle", activeTurnId: null, queuedSubmissionIds: [] },
+				{
+					threadId: "thread-1",
+					status: "active",
+					activeTurnId: "turn-1",
+					request: "Rename the queue owner",
+					recentProgress: ["Reading the queue module."],
+					subAgents: [{ threadId: "thread-2", status: "active" }],
+					queuedSubmissionIds: [],
+					unavailable: ["queue"],
+					lastStop: { outcome: "partial", remaining: [{ threadId: "thread-2", state: "running" }] },
+				},
 			],
 			[
 				DelegateToWorkhorseResultSchema,
@@ -286,8 +296,13 @@ describe("dynamic tool schemas and queue protocol", () => {
 				StopWorkhorsesResultSchema,
 				{
 					stopped: [
-						{ checkout: "/work/payments", outcome: "interrupt_sent" },
-						{ checkout: "/work/billing", outcome: "idle" },
+						{
+							checkout: "/work/payments",
+							outcome: "unconfirmed",
+							remaining: [{ threadId: "thread-2", state: "unread" }],
+							recovery: ["inspect_workhorse", "stop_workhorses"],
+						},
+						{ checkout: "/work/billing", outcome: "idle", remaining: [], recovery: [] },
 					],
 				},
 			],

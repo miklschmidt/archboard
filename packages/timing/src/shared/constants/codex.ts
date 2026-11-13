@@ -83,6 +83,19 @@ const CODEX_SESSION_MS = durations({
 	 * refresh still reads as immediate.
 	 */
 	queueRereadFloor: 1000,
+	/**
+	 * How often a workhorse stop reads its work tree again after it sent interrupts. Pulls against
+	 * the wait-target poll, the same cadence the server observes thread state at, and against the
+	 * stop settlement below, which must hold several passes.
+	 */
+	workTreeStopPoll: 250,
+	/**
+	 * How long a workhorse stop observes its work tree before it reports what still runs as a
+	 * partial or unconfirmed stop. Pulls against the coordinator's tool call, which waits for the
+	 * stop while the person waits for the voice to answer, and against an interrupt's settlement,
+	 * which Codex acknowledges before the turn reports that it ended.
+	 */
+	workTreeStopSettle: 5000,
 });
 
 /**
