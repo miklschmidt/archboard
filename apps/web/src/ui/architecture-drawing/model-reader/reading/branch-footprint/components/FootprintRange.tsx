@@ -58,6 +58,7 @@ function FootprintRange(props: FootprintRangeProps): JSX.Element {
 	return (
 		<div data-slot="footprint-range" className="flex flex-wrap items-end gap-4">
 			<RefPicker
+				name="base"
 				label="Base"
 				value={base ?? ""}
 				shown={base ?? "Choose a base"}
@@ -67,6 +68,7 @@ function FootprintRange(props: FootprintRangeProps): JSX.Element {
 				onChoose={chooseBase}
 			/>
 			<RefPicker
+				name="head"
 				label="Head"
 				value={head ?? CHECKOUT}
 				shown={head ?? checkedOut(refs)}
@@ -76,6 +78,7 @@ function FootprintRange(props: FootprintRangeProps): JSX.Element {
 				onChoose={chooseHead}
 			/>
 			<RefPicker
+				name="against"
 				label="Against"
 				value={against ?? ""}
 				shown={labelOf(stateChoices, against)}

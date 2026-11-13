@@ -144,6 +144,24 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 	fixtureGit(root, "add", "--all");
 	fixtureGit(root, "commit", "--quiet", "-m", "Plan");
 	commitGateway(root, 1);
+	// A branch beside this one plans a change of its own, which the checkout does not hold.
+	fixtureGit(root, "checkout", "--quiet", "-b", "other", "main");
+	const beside = await editCanonicalModel(
+		request,
+		vault,
+		"plan-beside",
+		[
+			{
+				type: "edit-module",
+				subject: "Shop#Worker",
+				set: { responsibility: "Works from a queue" },
+			},
+		],
+		{ proposal: { type: "create", name: "Queued worker" } },
+	);
+	fixtureGit(root, "add", "--all");
+	fixtureGit(root, "commit", "--quiet", "-m", "Plan beside");
+	fixtureGit(root, "checkout", "--quiet", "feature");
 	const model = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!model.body.success) throw new Error(JSON.stringify(model.body));
 	const reading = `${server.base}/?modelA=${model.body.manifest.id}`;
@@ -170,7 +188,7 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 	]);
 	expect(
 		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="ref-picker"] button')?.getAttribute('aria-label') ?? null`,
+			`document.querySelector('[data-ref-picker="base"] button')?.getAttribute('aria-label') ?? null`,
 		),
 	).toBe("Base: main");
 	expect(await footprintReads(browser)).toBe(1);
@@ -206,6 +224,22 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 		WAIT,
 	);
 	expect(await footprintReads(browser)).toBe(2);
+
+	// The vault at a head that is not checked out lacks the plan on screen, so the footprint is set
+	// against the one proposal that the head adds over the merge base.
+	await browser.run(["click", '[data-ref-picker="head"] button']);
+	await browser.run(["click", '[data-ref-choice="other"]']);
+	const atOther = await pollUntil(
+		() =>
+			browser.eval<{ against: string | null; vault: string | null }>(`({
+				against: document.querySelector('[data-ref-picker="against"] button')?.getAttribute('data-value') ?? null,
+				vault: document.querySelector('[data-slot="footprint-vault"]')?.getAttribute('data-vault-read') ?? null,
+			})`),
+		(shown) => shown.vault === "ref",
+		"the footprint at a head that is not checked out",
+		WAIT,
+	);
+	expect(atOther.against).toBe(beside.target.state);
 	await browser.run(["press", "Escape"]);
 
 	// `main` holds no proposal, so its reading has only the current state.
