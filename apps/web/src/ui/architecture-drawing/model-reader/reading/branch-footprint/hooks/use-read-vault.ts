@@ -21,8 +21,15 @@ function useReadVault(vault: string, head: string | null) {
 	return {
 		states: selected.data,
 		error: selected.error,
-		isFetching: selected.isFetching,
-		refetch: head === null ? disk.refetch : atRef.refetch,
+		isFetching: selected.isFetching || atRef.isFetching,
+		/**
+		 * Retry the head and, when the vault still lacks it, the model on disk.
+		 * @returns The reading that supplies the footprint's states and failure.
+		 */
+		refetch: async () => {
+			const next = await (head === null ? disk.refetch() : atRef.refetch());
+			return head !== null && missingRef(next.error) ? disk.refetch() : next;
+		},
 	};
 }
 
