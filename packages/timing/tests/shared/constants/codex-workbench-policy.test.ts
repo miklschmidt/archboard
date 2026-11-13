@@ -17,6 +17,8 @@ const REVIEWED_GROUPS = {
 		requestSettlement: 30_000,
 		waitTargetPoll: 250,
 		queueRereadFloor: 1000,
+		workTreeStopPoll: 250,
+		workTreeStopSettle: 5000,
 	},
 	CODEX_REALTIME_MS: {
 		start: 15_000,
@@ -54,6 +56,9 @@ describe("Codex workbench timing policy", () => {
 		expect(session.requestSettlement % session.waitTargetPoll).toBe(0);
 		expect(session.queueRereadFloor).toBeGreaterThanOrEqual(session.waitTargetPoll);
 		expect(session.queueRereadFloor).toBeLessThan(session.requestSettlement);
+		expect(session.workTreeStopPoll).toBeGreaterThanOrEqual(session.waitTargetPoll);
+		expect(session.workTreeStopSettle).toBeGreaterThanOrEqual(4 * session.workTreeStopPoll);
+		expect(session.workTreeStopSettle).toBeLessThan(session.requestSettlement);
 		expect(approval.expiry).toBeLessThan(approval.browserCommandLease);
 		expect(approval.spokenGate).toBeLessThanOrEqual(approval.expiry);
 		expect(realtime.contextFreshness).toBeLessThan(realtime.recovery);

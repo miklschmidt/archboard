@@ -57,6 +57,10 @@ const TRANSPORT_REFUSALS: Readonly<Record<string, string>> = {
 	invalid_command:
 		"The server refused this command for the workhorse's current state. Read the timeline, then send again.",
 	gateway_error: "The server refused this command.",
+	work_stopping:
+		"The workhorse is stopping, or its last stop did not show that all work ended. Press Stop again before you send new work.",
+	stop_unconfirmed:
+		"Some work of this workhorse or its sub-agents still runs or could not be read. Press Stop again.",
 };
 
 const GENERIC_TRANSPORT_REFUSAL = "The server refused this workhorse command.";

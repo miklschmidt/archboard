@@ -9,14 +9,14 @@ import { DEFAULT_VOICE_AGENT_IDENTITY } from "#runtime/host/protocol/identity.ts
  * @returns The bindings, and the checkouts the scope was asked to stop.
  */
 function bindingsOfTab(narrative?: { readonly unattended: (narrative: unknown) => boolean }) {
-	const stopped: (string | null)[] = [];
+	const stopped: (readonly [string | null, unknown])[] = [];
 	const scope = {
 		id: "tab-1",
 		state: { currentCoordinatorCall: null },
 		workhorses: () => [],
-		stopWork: async (checkout: string | null) => {
-			stopped.push(checkout);
-			return [{ checkout: "/work/payments", outcome: "interrupted" as const }];
+		stopWork: async (checkout: string | null, askedBy: unknown) => {
+			stopped.push([checkout, askedBy]);
+			return [{ checkout: "/work/payments", outcome: "stopped" as const, remaining: [] }];
 		},
 	};
 	const bindings = createSessionBindings({
@@ -34,12 +34,14 @@ function bindingsOfTab(narrative?: { readonly unattended: (narrative: unknown) =
 	return { bindings, stopped };
 }
 
-test("a coordinator's stop reaches the stop of every workhorse of its tab session", async () => {
+test("a coordinator's stop reaches the stop of every workhorse of its tab session, with the turn that asked", async () => {
 	const { bindings, stopped } = bindingsOfTab();
 	const tools = bindings.coordinatorTools({ coordinator: null } as never);
 
-	expect(await tools.stopWork()).toEqual([{ checkout: "/work/payments", outcome: "interrupted" }]);
-	expect(stopped).toEqual([null]);
+	expect(await tools.stopWork("coordinator-turn" as never)).toEqual([
+		{ checkout: "/work/payments", outcome: "stopped", remaining: [] },
+	]);
+	expect(stopped).toEqual([[null, "coordinator-turn"]]);
 });
 
 test("a live session whose narrative nobody listens to gives the coordinator no workhorse outcome", async () => {

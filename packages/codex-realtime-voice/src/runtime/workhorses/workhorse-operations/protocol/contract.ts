@@ -60,7 +60,10 @@ interface WorkhorseOperationBinding {
 type CurrentWorkhorseOperationBinding = () => WorkhorseOperationBinding | null;
 
 type WorkhorseOperationThreadLinkPort = Pick<CodexThreadLinkPort, "classify">;
-type WorkhorseOperationSessionPort = Pick<CodexSession, "turnStart" | "turnSteer">;
+type WorkhorseOperationSessionPort = Pick<
+	CodexSession,
+	"turnStart" | "turnSteer" | "threadTurnsListPage" | "threadListPage"
+>;
 type WorkhorseOperationEpochPort = Pick<
 	CodexEpochStore,
 	| "snapshot"
@@ -147,16 +150,30 @@ interface SteerWorkhorseRequest {
 	readonly call: WorkhorseCoordinatorCall;
 	/** Reuse this server-issued identity when the dispatcher already owns the effect. */
 	readonly operationId?: OperationId;
-	/** Captured by the server from the exact active workhorse classification. */
-	readonly expectedTurnId: TurnId;
 	readonly input: string;
 }
 
+/** What inspection read about a workhorse. An empty field means Codex reported nothing there. */
 interface InspectWorkhorseResult {
 	readonly threadId: ThreadId;
 	readonly status: CodexThreadStatusType;
+	/** The turn that runs now, as thread/turns/list names it, or null when none runs. */
 	readonly activeTurnId: TurnId | null;
+	/** The request that started the newest turn, or null when it carried no text. */
+	readonly request: string | null;
+	/** What the newest turn did last, oldest first. */
+	readonly recentProgress: readonly string[];
+	/** Every sub-agent the workhorse spawned, at any depth, with its status. */
+	readonly subAgents: readonly {
+		readonly threadId: ThreadId;
+		readonly status: CodexThreadStatusType;
+	}[];
 	readonly queuedSubmissionIds: readonly QueuedSubmissionId[];
+	/**
+	 * Each read that failed, or that ownership did not allow, so its field above is empty for that
+	 * reason and not because Codex reported nothing.
+	 */
+	readonly unavailable: readonly ("turns" | "subAgents" | "queue")[];
 }
 
 interface DelegateToWorkhorseResult {

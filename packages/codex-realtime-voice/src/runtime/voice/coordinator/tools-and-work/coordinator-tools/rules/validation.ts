@@ -34,7 +34,6 @@ import type {
 } from "@archboard/codex-app-server/transport";
 import {
 	type LogicalToolCallCorrelation,
-	type TurnId,
 	logicalToolCallKey,
 } from "@archboard/codex-app-server/identity";
 import {
@@ -42,7 +41,6 @@ import {
 	assertLogicalCall,
 	assertRequestEnvelope,
 	fail,
-	mapIdentityFailure,
 } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/rules/call-identity.ts";
 import {
 	currentCoordinator,
@@ -81,26 +79,10 @@ type ValidatedWorkhorseCall = ValidatedCallEvidence & {
 	readonly role: "workhorse";
 	readonly workhorseBinding: WorkhorseOperationBinding;
 } & (
-		| {
-				readonly tool: "inspect_workhorse";
-				readonly input: InspectWorkhorseInput;
-				readonly expectedTurnId: null;
-		  }
-		| {
-				readonly tool: "delegate_to_workhorse";
-				readonly input: DelegateToWorkhorseInput;
-				readonly expectedTurnId: null;
-		  }
-		| {
-				readonly tool: "manage_workhorse_queue";
-				readonly input: ManageWorkhorseQueueInput;
-				readonly expectedTurnId: null;
-		  }
-		| {
-				readonly tool: "steer_workhorse";
-				readonly input: SteerWorkhorseInput;
-				readonly expectedTurnId: TurnId;
-		  }
+		| { readonly tool: "inspect_workhorse"; readonly input: InspectWorkhorseInput }
+		| { readonly tool: "delegate_to_workhorse"; readonly input: DelegateToWorkhorseInput }
+		| { readonly tool: "manage_workhorse_queue"; readonly input: ManageWorkhorseQueueInput }
+		| { readonly tool: "steer_workhorse"; readonly input: SteerWorkhorseInput }
 	);
 
 /**
@@ -112,7 +94,6 @@ type ValidatedStopCall = ValidatedCallEvidence & {
 	readonly tool: "stop_workhorses";
 	readonly input: StopWorkhorsesInput;
 	readonly workhorseBinding: null;
-	readonly expectedTurnId: null;
 };
 
 /** A call whose effect runs under a server-issued operation identity. */
@@ -123,7 +104,6 @@ type ValidatedVoiceCall = ValidatedCallEvidence & {
 	readonly tool: "resolve_spoken_approval";
 	readonly input: ResolveSpokenApprovalInput;
 	readonly workhorseBinding: null;
-	readonly expectedTurnId: null;
 };
 
 type ValidatedCoordinatorToolCall = ValidatedOperationCall | ValidatedVoiceCall;
@@ -290,33 +270,13 @@ function declaredTool(
 }
 
 /**
- * Resolve the active workhorse turn a steer must target; the server proves it, never the caller.
- * @param options - The dispatcher options carrying the server authority.
- * @returns The expected turn id.
- */
-function steerExpectedTurnId(options: CodexCoordinatorToolsOptions): TurnId {
-	const expectedTurnId = options.authority.expectedTurnId();
-	if (expectedTurnId === null) {
-		fail("busy", "The server has not proven an active workhorse turn.");
-	}
-	try {
-		options.identity.decoder.parseTurnId(expectedTurnId);
-	} catch (error) {
-		throw mapIdentityFailure(error);
-	}
-	return expectedTurnId;
-}
-
-/**
  * Assemble a validated workhorse-namespace call for one parsed input.
- * @param options - The dispatcher options carrying the server authority.
  * @param evidence - The call, fingerprint and coordinator facts.
  * @param parsed - The tagged workhorse tool input.
  * @param binding - The current workhorse binding.
  * @returns The validated call.
  */
 function workhorseCall(
-	options: CodexCoordinatorToolsOptions,
 	evidence: ValidatedCallEvidence,
 	parsed: Exclude<
 		ParsedToolInput,
@@ -324,22 +284,11 @@ function workhorseCall(
 	>,
 	binding: WorkhorseOperationBinding,
 ): ValidatedWorkhorseCall {
-	const role = "workhorse" as const;
-	if (parsed.tool === "steer_workhorse") {
-		return Object.freeze({
-			...evidence,
-			role,
-			...parsed,
-			workhorseBinding: binding,
-			expectedTurnId: steerExpectedTurnId(options),
-		});
-	}
 	return Object.freeze({
 		...evidence,
-		role,
+		role: "workhorse" as const,
 		...parsed,
 		workhorseBinding: binding,
-		expectedTurnId: null,
 	});
 }
 
@@ -370,7 +319,6 @@ function validateCoordinatorToolRequest(
 			role: "voice",
 			...parsed,
 			workhorseBinding: null,
-			expectedTurnId: null,
 		});
 	}
 	if (parsed.tool === "stop_workhorses") {
@@ -379,11 +327,9 @@ function validateCoordinatorToolRequest(
 			role: "workhorse",
 			...parsed,
 			workhorseBinding: null,
-			expectedTurnId: null,
 		});
 	}
 	return workhorseCall(
-		options,
 		evidence,
 		parsed,
 		workhorseBinding(options, call, coordinator, {

@@ -112,9 +112,10 @@ describe("coordinator dynamic-tool dispatcher", () => {
 		expect(h.operations.calls.steer[0]).toMatchObject({
 			call: steerRequest.logicalCall,
 			operationId: expect.any(String),
-			expectedTurnId: h.expectedTurnId,
 			input: "steer input",
 		});
+		// The workhorse operation reads the turn to steer; the coordinator's own turn is no target.
+		expect(h.operations.calls.steer[0]).not.toHaveProperty("expectedTurnId");
 		expect(envelope(inspect.response)).toMatchObject({
 			tag: "ok",
 			value: {
@@ -131,7 +132,7 @@ describe("coordinator dynamic-tool dispatcher", () => {
 				mode: "started",
 				clientUserMessageId: "client-user-message",
 				queuedSubmissionId: null,
-				turnId: h.expectedTurnId,
+				turnId: h.workhorseTurnId,
 			},
 		});
 		expect(envelope(queue.response)).toMatchObject({
@@ -142,7 +143,7 @@ describe("coordinator dynamic-tool dispatcher", () => {
 		expect(envelope(steer.response)).toEqual({
 			tag: "ok",
 			operationId: h.operations.calls.steer[0]!.operationId,
-			value: { turnId: h.expectedTurnId, delivery: "delivered" },
+			value: { turnId: h.workhorseTurnId, delivery: "delivered" },
 		});
 		expect(h.transport.writes).toHaveLength(4);
 		expect(h.timeline).toEqual([
@@ -260,7 +261,12 @@ describe("coordinator dynamic-tool dispatcher", () => {
 			threadId: h.workhorseThreadId,
 			status: "idle",
 			activeTurnId: null,
+			request: null,
+			recentProgress: [],
+			subAgents: [],
 			queuedSubmissionIds: [],
+			unavailable: [],
+			lastStop: null,
 		});
 		const refused = refusedResponse("invalid_call", "bad identity", true);
 		const approval = approvalRequiredResponse("operation-2", "Review the effect");

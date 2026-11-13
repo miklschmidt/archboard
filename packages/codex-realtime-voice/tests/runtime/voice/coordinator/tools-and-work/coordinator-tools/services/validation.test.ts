@@ -126,7 +126,7 @@ describe("coordinator dynamic-tool identity and authority validation", () => {
 					return changedRequest(request, {
 						params: {
 							...request.params,
-							threadId: h.identity.decoder.serializeCodexIdentity(h.expectedTurnId),
+							threadId: h.identity.decoder.serializeCodexIdentity(h.coordinatorTurnId),
 						},
 					});
 				},
@@ -138,15 +138,6 @@ describe("coordinator dynamic-tool identity and authority validation", () => {
 					h.request("delegate_to_workhorse", {
 						arguments: { checkout: CHECKOUT, input: "", transcriptDelta: "" },
 					}),
-			},
-			{
-				label: "active turn proof missing",
-				reason: "busy",
-				make: (h) => {
-					const request = h.request("steer_workhorse");
-					h.authority.setExpectedTurnId(null);
-					return request;
-				},
 			},
 			{
 				label: "current logical call cleared",

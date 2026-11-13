@@ -183,7 +183,7 @@
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
           "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/text-actions.ts",
-          "symbol": "interrupt"
+          "symbol": "stopWork"
         },
         "id": "vKEsyHFk#iiMhdeg6",
         "to": "vKEsyHFk#um2Du0nb"
@@ -207,6 +207,16 @@
       "subject": "vKEsyHFk/SJ2JMVyz#8xJt3Mud",
       "field": "label",
       "value": "turn/start, turn/steer, and the reads of inspection"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#BefJSSzE",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/steer.ts",
+        "symbol": "runningWorkhorseTurn"
+      }
     },
     {
       "type": "assign",
@@ -403,7 +413,7 @@
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
           "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
-          "symbol": "clearQueue"
+          "symbol": "stopThread"
         }
       }
     },
@@ -528,7 +538,7 @@
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
           "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/text-actions.ts",
-          "symbol": "interrupt"
+          "symbol": "stopWork"
         }
       }
     },

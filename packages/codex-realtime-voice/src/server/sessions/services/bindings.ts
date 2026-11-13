@@ -8,6 +8,7 @@ import {
 	createCoordinatorCallbackRealtimePort,
 } from "#runtime/voice/coordinator-callbacks/services/realtime.ts";
 import type { CodexWorkbenchSharedComponents } from "#server/generation/services/lifecycle.ts";
+import { stopReport } from "#server/sessions/services/stop.ts";
 import type {
 	CodexWorkbenchSessionBindings,
 	CodexWorkbenchWorkhorseBindings,
@@ -206,11 +207,6 @@ function coordinatorBindings(
 				 * @returns The call, or null.
 				 */
 				currentCall: () => state.currentCoordinatorCall,
-				/**
-				 * The turn that call is expected to be running.
-				 * @returns The turn, or null.
-				 */
-				expectedTurnId: () => state.currentCoordinatorCall?.turnId ?? null,
 			},
 			/**
 			 * The workhorse of the checkout a call names, and the binding it shares with the
@@ -238,13 +234,20 @@ function coordinatorBindings(
 							shared.epoch,
 						),
 					operations: workhorse.components.operations,
+					/**
+					 * Where this workhorse's last stop stands.
+					 * @returns It, or null before any stop.
+					 */
+					lastStop: () => stopReport(workhorse),
 				};
 			},
 			/**
-			 * Stop every workhorse of this tab session: a spoken stop speaks for the whole app.
-			 * @returns What each one did.
+			 * Stop the work tree of every workhorse of this tab session: a spoken stop speaks for the
+			 * whole app.
+			 * @param askedBy The coordinator turn whose call asked for it.
+			 * @returns What each stop observed.
 			 */
-			stopWork: () => scope.stopWork(null),
+			stopWork: (askedBy) => scope.stopWork(null, askedBy),
 		}),
 		coordinatorCall: {
 			/**

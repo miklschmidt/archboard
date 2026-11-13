@@ -6,7 +6,7 @@
 		{
 			"type": "function",
 			"name": "inspect_workhorse",
-			"description": "Read what the workhorse of one checkout is doing now: whether a turn is running, what is waiting for it, and its recent progress. Returns at once.",
+			"description": "Read what the workhorse of one checkout is doing now: the turn it runs, the request that started its newest turn and that turn's recent progress, the sub-agents it spawned, the requests waiting for it, and what its last stop observed. A read that failed or that is not allowed is named in unavailable, and its field is then empty for that reason. Returns at once.",
 			"inputSchema": {
 				"type": "object",
 				"properties": { "checkout": { "type": "string", "minLength": 1, "maxLength": 4096 } },
@@ -76,7 +76,7 @@
 		{
 			"type": "function",
 			"name": "stop_workhorses",
-			"description": "Stop every running workhorse of this conversation, in every checkout, when the person asks to stop. Returns at once with one entry for each workhorse: interrupt_sent when a stop was sent to its running turn, idle when it had none. A sent interrupt is not proof that work stopped: the work has stopped only once workhorse news says its turn ended.",
+			"description": "Stop all work of this conversation, in every checkout, when the person asks to stop: the turn of each workhorse, every sub-agent it spawned and every request waiting for it. Returns once the stop saw that work end, or after a few seconds with what still runs. One entry for each workhorse: stopped or idle when all its work ended, partial when some still runs or waits, unconfirmed when some could not be read. remaining names that work, and recovery names the tools that recover. Until a stop ends all its work, the workhorse refuses new work.",
 			"inputSchema": { "type": "object", "properties": {}, "additionalProperties": false },
 			"deferLoading": false
 		}

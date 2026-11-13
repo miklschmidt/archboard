@@ -9,8 +9,8 @@
 // A workhorse belongs to a checkout, so it stays linked until its tab session ends.
 
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { CodexThreadContextController } from "#runtime/workhorses/thread-context/services/contract.ts";
+import type { CoordinatorToolStop } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
 import type { CodexWorkhorseOperations } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
 import type { CodexWorkhorseStart } from "#runtime/workhorses/workhorse-start/protocol/contract.ts";
 import type { CodexWorkhorseQueue } from "#runtime/workhorses/workhorse-queue/services/contract.ts";
@@ -47,6 +47,8 @@ interface CodexWorkbenchWorkhorseState {
 	queueThreadId: ThreadId | null;
 	/** The turn running on the workhorse's thread, as Codex last said, or null while none runs. */
 	activeTurn: { readonly threadId: ThreadId; readonly turnId: TurnId } | null;
+	/** Where its last work tree stop stands, or null before any stop. */
+	stop: WorkhorseStopPhase | null;
 }
 
 /** One workhorse of a tab session: the one for one checkout. */
@@ -60,12 +62,35 @@ interface CodexWorkbenchWorkhorse {
 	readonly state: CodexWorkbenchWorkhorseState;
 }
 
-/** What one stop did to one workhorse. */
+/** One thread of a work tree that a stop could not show ended. */
+interface RemainingWork {
+	readonly threadId: ThreadId;
+	/** Running: a turn still runs. Queued: a request still waits. Unread: Codex did not answer. */
+	readonly state: CoordinatorToolStop["remaining"][number]["state"];
+}
+
+/**
+ * What one stop observed of one workhorse's work tree: the workhorse thread and every sub-agent
+ * it spawned. Stopped: all work that ran ended and no request waits. Idle: nothing ran or waited.
+ * Partial: some work still runs or waits. Unconfirmed: nothing was seen running, but some thread
+ * could not be read. Only stopped and idle prove that the work ended.
+ */
 interface WorkhorseStop {
 	readonly checkout: string;
-	/** Interrupted names a turn that was running; idle says none was. */
-	readonly outcome: "interrupted" | "idle";
+	readonly outcome: CoordinatorToolStop["outcome"];
+	/** Each thread that still runs, waits or could not be read; empty when the stop ended all. */
+	readonly remaining: readonly RemainingWork[];
 }
+
+/**
+ * Where a workhorse's last stop stands. While it stops, and after a partial or unconfirmed stop,
+ * it takes no new work. After a stop that ended everything, the coordinator turn that asked for
+ * it starts no work, so only a fresh request does.
+ */
+type WorkhorseStopPhase =
+	| { readonly kind: "stopping"; readonly done: Promise<WorkhorseStop> }
+	| { readonly kind: "stopped"; readonly stop: WorkhorseStop; readonly askedBy: TurnId | null }
+	| { readonly kind: "unresolved"; readonly stop: WorkhorseStop };
 
 /**
  * A workhorse's state before anything was read into it.
@@ -76,6 +101,7 @@ function freshWorkhorseState(): CodexWorkbenchWorkhorseState {
 		queue: { kind: "codex_queue", submissions: null },
 		queueThreadId: null,
 		activeTurn: null,
+		stop: null,
 	};
 }
 
@@ -137,34 +163,13 @@ function noteActiveTurn(
 	}
 }
 
-/**
- * Stop what workhorses are running: interrupt the turn each one runs, and say what each did. A
- * workhorse with no running turn has nothing to interrupt.
- * @param workhorses The workhorses to stop.
- * @param session Interrupts a turn.
- * @returns What each one did, in the order given.
- */
-async function stopWorkhorses(
-	workhorses: readonly CodexWorkbenchWorkhorse[],
-	session: Pick<CodexSession, "turnInterrupt">,
-): Promise<readonly WorkhorseStop[]> {
-	return Promise.all(
-		workhorses.map(async ({ checkout, state }): Promise<WorkhorseStop> => {
-			const running = state.activeTurn;
-			if (running === null) {
-				return { checkout, outcome: "idle" };
-			}
-			await session.turnInterrupt({ threadId: running.threadId, turnId: running.turnId });
-			return { checkout, outcome: "interrupted" };
-		}),
-	);
-}
-
-export { freshWorkhorseState, noteActiveTurn, stopWorkhorses };
+export { freshWorkhorseState, noteActiveTurn };
 export type {
 	CodexWorkbenchWorkhorse,
 	CodexWorkbenchWorkhorseActions,
 	CodexWorkbenchWorkhorseComponents,
 	CodexWorkbenchWorkhorseState,
+	RemainingWork,
 	WorkhorseStop,
+	WorkhorseStopPhase,
 };

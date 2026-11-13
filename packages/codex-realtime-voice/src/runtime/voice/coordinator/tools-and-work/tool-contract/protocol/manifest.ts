@@ -27,7 +27,7 @@ type CoordinatorNamespaceRole = "workhorse" | "voice";
 
 /** The reviewed bytes of each role's template, whose `{namespace}` the host's name fills. */
 const TEMPLATE_DIGESTS = Object.freeze({
-	workhorse: "2032ea1899ba0a0dc0fe5bd269075aa61dbc2496aba3d4ff290c07df2ad61767",
+	workhorse: "dc617d6ed43e2f8f44e6000ed2241eb1aaf4f65e7d81c906ee2a6b0d3c09aa29",
 	voice: "750c75db9abf2765427c5fa9335758cf3ece9c59be50c82fcff22b2fcf82c85e",
 } satisfies Record<CoordinatorNamespaceRole, string>);
 
