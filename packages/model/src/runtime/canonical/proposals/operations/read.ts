@@ -13,6 +13,7 @@ import {
 	selectModule,
 	selectFlow,
 } from "#runtime/canonical/read/operations/model-read.ts";
+import { readModelAtRef } from "#runtime/canonical/read/operations/model-at-ref.ts";
 import { exactReading } from "#runtime/canonical/history/retained-reading/operations/read.ts";
 import {
 	archiveContext,
@@ -518,7 +519,9 @@ function presentlyNamed(
 	return { ...selected, manifest: { ...selected.manifest, name: current.manifest.name } };
 }
 /**
- * Read selected architecture without acquiring the installation lease.
+ * Read selected architecture without acquiring the installation lease. With a source ref, the
+ * vault at that ref stands where the vault on disk stands for any other reading, so `state` and
+ * `against` resolve inside it, and the reading names its ref and commit.
  * @param vault The addressed vault.
  * @param selection The state and comparison intent.
  * @returns A complete selected reading.
@@ -527,7 +530,24 @@ async function selectedReading(
 	vault: string,
 	selection: Selection,
 ): Promise<ArchitectureModelRead> {
-	const current = readCurrentModel(vault);
+	if (selection.ref === undefined) return selectedAt(vault, readCurrentModel(vault), selection);
+	const branch = await readModelAtRef(vault, selection.ref);
+	if (!branch.success) return branch;
+	const reading = await selectedAt(vault, branch, selection);
+	return reading.success ? { ...reading, sourceRef: branch.sourceRef } : reading;
+}
+/**
+ * Select a state and its comparison within one catalogue of inputs.
+ * @param vault The addressed vault, whose repository holds the archive.
+ * @param current The inputs that stand for current: the vault on disk, or the vault at a ref.
+ * @param selection The state and comparison intent.
+ * @returns A complete selected reading.
+ */
+async function selectedAt(
+	vault: string,
+	current: ArchitectureModelRead,
+	selection: Selection,
+): Promise<ArchitectureModelRead> {
 	if ([selection.state, selection.against, selection.beside].every((value) => value === undefined))
 		return readingCatalogue(vault, current);
 	const context = await archiveContext(vault);

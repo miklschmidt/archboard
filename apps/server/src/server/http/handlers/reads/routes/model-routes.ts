@@ -35,6 +35,7 @@ const QuerySchema = z
 			.transform((value) => value === "true")
 			.optional(),
 		checkpoint: z.string().min(1).optional(),
+		ref: z.string().min(1).optional(),
 		model: z.string().min(1).optional(),
 		references: z
 			.enum(["true", "false"])
@@ -64,6 +65,10 @@ const QuerySchema = z
 			query.checkpoint === undefined ||
 			query.state === undefined,
 		"Select either state or checkpoint.",
+	)
+	.refine(
+		(query) => query.ref === undefined || query.checkpoint === undefined,
+		"Select either a source ref or a checkpoint.",
 	);
 const ModuleQuerySchema = z
 	.object({
@@ -71,6 +76,7 @@ const ModuleQuerySchema = z
 		module: z.string().min(1),
 		state: z.string().min(1).optional(),
 		checkpoint: z.string().min(1).optional(),
+		ref: z.string().min(1).optional(),
 		preview: z.string().min(1).optional(),
 		code: z
 			.enum(["true", "false"])

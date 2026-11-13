@@ -129,4 +129,4 @@ function modelRevision(inputs: Map<string, Buffer>): ArchitectureModel["revision
 	return { files, digest: createHash("sha256").update(JSON.stringify(files)).digest("hex") };
 }
 
-export { readModelFiles, modelFilesToken, modelRevision };
+export { readModelFiles, modelFilesToken, modelRevision, isModelInput };

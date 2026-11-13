@@ -95,7 +95,11 @@ async function localReading(
 		beside: options.beside,
 	};
 	const reading = await (options.checkpoint === undefined
-		? readSelectedState(vault, module, flow, { state: options.state, ...comparison })
+		? readSelectedState(vault, module, flow, {
+				state: options.state,
+				ref: options.ref,
+				...comparison,
+			})
 		: readCheckpointModel(vault, options.checkpoint, module, flow, comparison));
 	return selectBookmark(reading, options.bookmark);
 }
