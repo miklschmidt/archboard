@@ -268,7 +268,7 @@ describe("dedicated Codex storage", () => {
 			fs.renameSync(originalRoot, movedRoot);
 			const moved = prepareCodexStorage({ rootDirectory: movedRoot });
 			moved.release();
-			expect(Bun.TOML.parse(moved.configText)["sqlite_home"]).toBe(moved.sqliteHome);
+			expect(Bun.TOML.parse(moved.configText)).toMatchObject({ sqlite_home: moved.sqliteHome });
 			expect(moved.configText).toEndWith(trust);
 		} finally {
 			removeRoot(root);
