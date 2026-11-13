@@ -1,6 +1,6 @@
 {
 	"name": "@archboard/codex-realtime-voice",
-	"version": "0.4.1",
+	"version": "0.5.0",
 	"private": true,
 	"description": "A realtime Codex voice agent for Bun servers and browser pages, with approvals and conversation history.",
 	"license": "MIT",
