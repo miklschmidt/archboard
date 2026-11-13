@@ -91,7 +91,11 @@ archboard model footprint --base main --state "Split payments" --fail-outside
 
 The command reads one checkout of each repository, the chosen checkout. `archboard repo list` shows which checkout that is. If an agent commits in a worktree, choose that worktree first with `archboard repo use <dir>`.
 
-To read another branch, name it with `--head`. If the Home Repo holds that branch, the command reads the model as the branch holds it, so `--state` can name a proposal that only the branch has. The answer's `vaultRead` names the model that it read. If you edited a proposal and did not commit it to the head, add `--model-at checkout` to read the model on disk.
+To read another branch, name it with `--head`. By default, the command reads the vault at that head if the Home Repo holds it. Then `--state` can name a proposal that exists only on that branch. If only a code repository holds the head, the command reads the vault on disk. With `--checkpoint`, it reads the saved state instead.
+
+The answer's `vaultRead` records the model's source. For the vault on disk, it holds `{ "at": "checkout" }`. For a Git ref, it holds `{ "at": "ref", "ref": "<head>", "commit": "<commit>" }`.
+
+If you edited a proposal without a commit to the head, add `--model-at checkout`. The command then reads the model on disk.
 
 ```bash
 archboard model footprint --base main --head agent/split-payments --state "Split payments"
