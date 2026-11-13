@@ -321,7 +321,9 @@ function ModelOwnership(): JSX.Element {
 
 /**
  * What the head of the page says: a flow reading is about its flow, a scope about its module. The
- * roots have no responsibility of their own, so the state on screen says what they are.
+ * roots have no responsibility of their own, so the state on screen says what they are. The current
+ * state is the model as it is, so the model names it. Any other state, such as a proposal, is named
+ * for itself, so that its name stands over its own summary.
  * @param props The page's inputs.
  * @returns The head.
  */
@@ -333,7 +335,9 @@ function scopeHead(
 	if (flow !== null) return { name: flow.name, kindName: "Flow", lead: flow.summary };
 	const module = scopeModel(props).modules.find((entry) => entry.id === scope);
 	if (module !== undefined) return moduleHead(module, tree);
-	return { name: model.manifest.name, lead: model.selectedState?.summary };
+	const state = model.selectedState;
+	const named = state != null && state.lifecycle !== "current";
+	return { name: named ? state.name : model.manifest.name, lead: state?.summary };
 }
 
 /**
