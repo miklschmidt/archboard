@@ -1,0 +1,48 @@
+{
+  "order": 26000,
+  "name": "Work tree stop",
+  "kind": "module",
+  "responsibility": "Stops the whole work tree of a workhorse: its turn, every sub-agent it spawned and every pending request, and refuses new work until the stop ends",
+  "description": "Spoken Stop and the Stop control run this one operation (ADR 0048). It marks the workhorse stopping before any effect, so delegation, queue additions, typed messages and New conversation are refused. It then repeats one pass until all observed work ended or the settle time ran out: read the workhorse thread, list its sub-agents at any depth through thread/list with ancestorThreadId, delete every queued request of each thread, and interrupt each running turn, the workhorse first. An interrupt acknowledgment only starts observation, and a turn that Codex does not name never proves a stop. The result is stopped, idle, partial or unconfirmed. Partial and unconfirmed name the threads that still run or could not be read and the recovery: inspect, or stop again. They keep refusing new work until a later stop succeeds. After a stop succeeds, the coordinator turn that asked for it can start no work, so only a fresh request does.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#um2Du0nb",
+  "parent": "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0048-a-workhorse-stop-ends-the-whole-work-tree.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 10000,
+      "kind": "dependency",
+      "label": "each workhorse's thread and stop phase",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+        "symbol": "stopWorkTree"
+      },
+      "id": "vKEsyHFk#fNZYP45l",
+      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
+    },
+    {
+      "order": 30000,
+      "kind": "rpc",
+      "label": "list sub-agents, clear queues, interrupt, observe the end",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+        "symbol": "stopWorkTree"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#k5kBhD3O",
+      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
+    }
+  ]
+}

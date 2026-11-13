@@ -3,7 +3,7 @@
   "name": "Coordinator tools",
   "kind": "module",
   "responsibility": "Runs the tool calls the coordinator makes, once each, against a replay ledger; each workhorse tool names the checkout whose workhorse it works with, and a spoken stop names none",
-  "description": "A replay of one logical call is the same call only when it names the same checkout: the same arguments in another checkout are work for another workhorse. A delegation to a checkout whose workhorse has no thread that can run turns starts it first; the other three workhorse tools refuse a checkout with no ready workhorse, and say what a checkout is. stop_workhorses stops every running workhorse of the calling tab session and says what each one did.",
+  "description": "A replay of one logical call is the same call only when it names the same checkout: the same arguments in another checkout are work for another workhorse. A delegation to a checkout whose workhorse has no thread that can run turns starts it first; the other three workhorse tools refuse a checkout with no ready workhorse, and say what a checkout is. stop_workhorses stops the work tree of every workhorse of the calling tab session and says what each stop observed. inspect_workhorse adds the outcome of the workhorse's last stop to what its operations read.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services"
@@ -81,7 +81,7 @@
     {
       "order": 34000,
       "kind": "call",
-      "label": "stop_workhorses: stop every running workhorse of the tab",
+      "label": "stop_workhorses: stop every workhorse's work tree",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -89,7 +89,7 @@
         "symbol": "stopWork"
       },
       "id": "vKEsyHFk/SJ2JMVyz#bK9QB2R5",
-      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
+      "to": "vKEsyHFk#um2Du0nb"
     },
     {
       "order": 40000,

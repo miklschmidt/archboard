@@ -3,7 +3,7 @@
   "name": "Session workhorses",
   "kind": "module",
   "responsibility": "One workhorse for each checkout of a tab session: its starter, context delivery, queue, operations and link actions, built on first use",
-  "description": "A workhorse works in its checkout, a directory the host admitted, so it reads that repository's AGENTS.md, skills and Codex configuration. Its thread-link key is the tab session and the checkout together. It belongs to the checkout, so it stays linked until its tab session ends. noteActiveTurn keeps the turn running on a workhorse from turn/started on its current thread to the turn/completed of the thread the turn started on, which New conversation may have left meanwhile, and stopWorkhorses interrupts that turn for one checkout or for every workhorse of the tab. The coordinator's stop_workhorses tool stops every running workhorse of its tab session by voice.",
+  "description": "A workhorse works in its checkout, a directory the host admitted, so it reads that repository's AGENTS.md, skills and Codex configuration. Its thread-link key is the tab session and the checkout together. It belongs to the checkout, so it stays linked until its tab session ends. noteActiveTurn keeps the turn running on a workhorse from turn/started on its current thread to the turn/completed of the thread the turn started on, which New conversation may have left meanwhile. Its state also holds the phase of its last stop, which the work tree stop writes and reads.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/server/sessions/services/workhorses.ts"
@@ -18,19 +18,6 @@
     }
   ],
   "outgoing": [
-    {
-      "order": 30000,
-      "kind": "rpc",
-      "label": "turn/interrupt the turn each stopped workhorse runs",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/sessions/services/workhorses.ts",
-        "symbol": "turnInterrupt"
-      },
-      "id": "vKEsyHFk/SJ2JMVyz#k5kBhD3O",
-      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
-    },
     {
       "order": 31000,
       "kind": "dependency",

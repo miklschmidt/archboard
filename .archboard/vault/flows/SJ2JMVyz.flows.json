@@ -672,7 +672,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/operations/steer.ts",
-                    "symbol": "assertExpectedTurn"
+                    "symbol": "runningWorkhorseTurn"
                   }
                 }
               ]
@@ -772,19 +772,22 @@
     },
     {
       "id": "vKEsyHFk/SJ2JMVyz#MedLccOG",
-      "name": "The coordinator stops its workhorses",
-      "summary": "Interrupts the running turn of every workhorse in the tab session and reports what each one did. It is the one stop for all of a tab's work, in whichever checkout it runs.",
+      "name": "The coordinator stops each workhorse's work tree",
+      "summary": "Stops the turn, every sub-agent and every queued request of each workhorse in the tab session, and reports only what it observed end. Work that still runs or cannot be read keeps new work refused and is named with its recovery.",
       "participants": [
         "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
-        "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+        "vKEsyHFk#um2Du0nb",
         "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      ],
+      "formerNames": [
+        "The coordinator stops its workhorses"
       ],
       "steps": [
         {
           "id": "vKEsyHFk/SJ2JMVyz#zN7XjnGX",
           "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
-          "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
-          "label": "stop every workhorse of the tab session",
+          "to": "vKEsyHFk#um2Du0nb",
+          "label": "stop the work tree of every workhorse of the tab session",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
@@ -798,70 +801,126 @@
           "condition": "for each workhorse of the tab session",
           "steps": [
             {
-              "id": "vKEsyHFk/SJ2JMVyz#GxqAt622",
+              "id": "vKEsyHFk#Rf6NPUmr",
               "kind": "decision",
-              "question": "Is a turn running on this workhorse?",
+              "question": "Did all observed work end, with no request queued?",
               "alternatives": [
                 {
-                  "label": "idle",
+                  "label": "all ended",
                   "steps": [
                     {
-                      "id": "vKEsyHFk/SJ2JMVyz#h0BKG447",
-                      "from": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
-                      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
-                      "label": "report it idle",
+                      "id": "vKEsyHFk#mRFednsl",
+                      "from": "vKEsyHFk#um2Du0nb",
+                      "to": "vKEsyHFk#um2Du0nb",
+                      "label": "stopped: only a fresh request starts work",
                       "kind": "self",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/codex-realtime-voice/src/server/sessions/services/workhorses.ts",
-                        "symbol": "stopWorkhorses"
+                        "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+                        "symbol": "stopWorkTree"
                       }
                     }
                   ]
                 },
                 {
-                  "label": "running",
+                  "label": "some remains, or a read failed",
                   "steps": [
                     {
-                      "id": "vKEsyHFk/SJ2JMVyz#7TzJNwiF",
-                      "from": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
-                      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
-                      "label": "turn/interrupt the running turn",
-                      "kind": "sync",
+                      "id": "vKEsyHFk#IrenvuIf",
+                      "from": "vKEsyHFk#um2Du0nb",
+                      "to": "vKEsyHFk#um2Du0nb",
+                      "label": "partial or unconfirmed: name what remains, refuse work",
+                      "kind": "self",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/codex-realtime-voice/src/server/sessions/services/workhorses.ts",
-                        "symbol": "turnInterrupt"
-                      }
-                    },
-                    {
-                      "id": "vKEsyHFk/SJ2JMVyz#rP5D38QT",
-                      "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
-                      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
-                      "label": "interrupt sent",
-                      "kind": "return",
-                      "anchor": {
-                        "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/codex-realtime-voice/src/server/sessions/services/workhorses.ts",
-                        "symbol": "turnInterrupt"
+                        "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+                        "symbol": "stopWorkTree"
                       }
                     }
                   ]
                 }
               ]
+            },
+            {
+              "id": "vKEsyHFk#dfZfV6ZO",
+              "kind": "loop",
+              "condition": "until all observed work ended, or the settle time ran out",
+              "steps": [
+                {
+                  "id": "vKEsyHFk#1q4DZ8mE",
+                  "from": "vKEsyHFk#um2Du0nb",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "thread/read the workhorse, thread/list its sub-agents",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+                    "symbol": "readTree"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk#RDuRyLSg",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk#um2Du0nb",
+                  "label": "each thread's status, running turn and queue",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+                    "symbol": "readTree"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk#Q2m6YaRE",
+                  "from": "vKEsyHFk#um2Du0nb",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "thread/queue/delete each queued request",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+                    "symbol": "stopThread"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk#Yp1QAEdF",
+                  "from": "vKEsyHFk#um2Du0nb",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "turn/interrupt each running turn, the workhorse first",
+                  "kind": "sync",
+                  "note": "An acknowledgment starts observation and proves nothing; the next pass reads again.",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+                    "symbol": "turnInterrupt"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "vKEsyHFk#mcdRPsHG",
+              "from": "vKEsyHFk#um2Du0nb",
+              "to": "vKEsyHFk#um2Du0nb",
+              "label": "mark it stopping: refuse new work",
+              "kind": "self",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+                "symbol": "stopWorkTree"
+              }
             }
           ]
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#gpHySpmK",
-          "from": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+          "from": "vKEsyHFk#um2Du0nb",
           "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
-          "label": "what each workhorse did",
+          "label": "what each stop observed, what remains and how to recover",
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/codex-realtime-voice/src/server/sessions/services/workhorses.ts",
-            "symbol": "stopWorkhorses"
+            "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+            "symbol": "stopWorkTree"
           }
         }
       ]
@@ -1383,6 +1442,41 @@
               ]
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk#lb3ueHXi",
+      "name": "The Stop control stops the shown workhorse's work tree",
+      "summary": "The workbench Stop runs the same work tree stop as the coordinator, for the workhorse of the checkout the tab shows. It answers with what the stop observed, so a partial stop names what still runs.",
+      "participants": [
+        "vKEsyHFk/9ncuT5DP#62UzyaBR",
+        "vKEsyHFk#um2Du0nb"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk#Pl8WxpOY",
+          "from": "vKEsyHFk/9ncuT5DP#62UzyaBR",
+          "to": "vKEsyHFk#um2Du0nb",
+          "label": "stop the shown checkout's work tree",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/text-actions.ts",
+            "symbol": "stopWork"
+          }
+        },
+        {
+          "id": "vKEsyHFk#6YP0KCN9",
+          "from": "vKEsyHFk#um2Du0nb",
+          "to": "vKEsyHFk/9ncuT5DP#62UzyaBR",
+          "label": "stopped, or what remains and how to recover",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+            "symbol": "stopWorkTree"
+          }
         }
       ]
     }

@@ -169,6 +169,19 @@
       "to": "vKEsyHFk/9ncuT5DP#hCKEBd5f"
     },
     {
+      "order": 90000,
+      "kind": "call",
+      "label": "refuse new work to a workhorse that is stopping",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/sessions/services/sessions.ts",
+        "symbol": "guardWorkhorse"
+      },
+      "id": "vKEsyHFk#ZNqv7oBE",
+      "to": "vKEsyHFk#um2Du0nb"
+    },
+    {
       "order": 99000,
       "kind": "call",
       "label": "own the voice start trace",
