@@ -1,61 +1,96 @@
 ---
-// A branch held to its plan: the three lists `archboard model footprint` answers for the example
-// shop's Queued fulfilment proposal. The branch and its changes are an example. The lists and their
-// meaning are the command's (skills/archboard/references/design-lens.md, Footprint).
-import KindChip from "../KindChip.astro";
-import type { Kind } from "../../lib/icons";
+// A branch held to its plan: the Measures view `What this branch changed`, rebuilt for the page
+// over the example shop's Queued fulfilment proposal. The branch, its commits and the commit hash
+// are an example. The pickers, the lists, their order and their words are the shell's
+// (apps/web/src/ui/architecture-drawing/model-reader/reading/branch-footprint/).
 
-const groups: { title: string; note: string; outside?: boolean; modules: { name: string; kind: Kind }[] }[] = [
+const range = [
+	{ label: "Base", value: "main", mono: true },
+	{ label: "Head", value: "queued-fulfilment", mono: true },
+	{ label: "Against", value: "Queued fulfilment", mono: false },
+];
+
+const lists: {
+	title: string;
+	gloss: string;
+	modules: { name: string; detail: string; commits: number }[];
+}[] = [
 	{
-		title: "Planned and changed",
-		note: "The branch built what the proposal names.",
+		title: "Changed but not named",
+		gloss: "The commits changed these modules, and the plan does not name them.",
+		modules: [{ name: "Basket cache", detail: "services/basket/cache", commits: 1 }],
+	},
+	{
+		title: "Named and changed",
+		gloss: "The plan names these modules, and the commits changed them.",
 		modules: [
-			{ name: "Checkout API", kind: "service" },
-			{ name: "Fulfilment worker", kind: "job" },
-			{ name: "Order events", kind: "queue" },
+			{ name: "Checkout API", detail: "changed by the plan", commits: 4 },
+			{ name: "Fulfilment worker", detail: "added by the plan", commits: 3 },
+			{ name: "Order events", detail: "added by the plan", commits: 2 },
 		],
 	},
 	{
-		title: "Changed outside the plan",
-		note: "Did the branch leave the plan, or does the plan miss a module?",
-		outside: true,
-		modules: [{ name: "Basket cache", kind: "cache" }],
-	},
-	{
-		title: "Planned, not changed yet",
-		note: "Is the work still to do, or does the module need no code change?",
-		modules: [{ name: "Payment webhook", kind: "route" }],
+		title: "Named but not changed",
+		gloss: "The plan names these modules, and no commit changed them yet.",
+		modules: [{ name: "Payment webhook", detail: "changed by the plan", commits: 0 }],
 	},
 ];
 ---
 
 <div class="footprint table">
-	<p class="command mono">
-		<span class="ps">$</span> archboard model footprint --base main --state "Queued fulfilment"
-	</p>
-	<div class="groups">
+	<div class="head">
+		<p class="title">Measures</p>
+		<p class="tab">What this branch changed</p>
+	</div>
+	<div class="range">
 		{
-			groups.map((group) => (
-				<section class:list={["group", { outside: group.outside }]} aria-label={group.title}>
-					<p class="group-head">
-						<span class="group-title">{group.title}</span>
-						<span class="count mono">{group.modules.length}</span>
+			range.map((picker) => (
+				<div class="picker">
+					<span class="picker-label">{picker.label}</span>
+					<span class:list={["picker-value", { mono: picker.mono }]}>
+						<span class="picker-text">{picker.value}</span>
+						<span class="chevron" aria-hidden="true" />
+					</span>
+				</div>
+			))
+		}
+		<span class="key refresh">Refresh</span>
+	</div>
+	<div class="lists">
+		{
+			lists.map((list) => (
+				<section class="list" aria-label={list.title}>
+					<p class="list-head">
+						<span class="list-title">{list.title}</span>
+						<span class="count mono">{list.modules.length}</span>
+						<span class="key show">Show on picture</span>
 					</p>
+					<p class="gloss">{list.gloss}</p>
 					<ul class="modules">
-						{group.modules.map((module) => (
+						{list.modules.map((module) => (
 							<li>
-								<KindChip kind={module.kind} size={20} />
-								<span>{module.name}</span>
+								<span class="module">
+									<span class="module-name">{module.name}</span>
+									<span class="module-detail">{module.detail}</span>
+								</span>
+								{module.commits > 0 && (
+									<span class="commits mono">
+										{module.commits} {module.commits === 1 ? "commit" : "commits"}
+									</span>
+								)}
 							</li>
 						))}
 					</ul>
-					<p class="note">{group.note}</p>
 				</section>
 			))
 		}
 	</div>
+	<p class="vault">The model at queued-fulfilment, 3f2a1c9, sets what the commits are read against.</p>
 </div>
-<p class="caption example-caption">Example branch for the shop's Queued fulfilment proposal.</p>
+<p class="caption example-caption">
+	Example branch for the shop's Queued fulfilment proposal. The CLI gives the same lists:
+	<code>archboard model footprint --base main --head queued-fulfilment --state "Queued fulfilment"</code>.
+</p>
 
 <style>
 	.footprint {
@@ -65,61 +100,131 @@ const groups: { title: string; note: string; outside?: boolean; modules: { name:
 		padding: 6px;
 		background: var(--chrome);
 	}
-	.command {
-		margin: 0;
-		padding: 14px 16px;
-		border-radius: 6px;
-		background: oklch(0.155 0.005 75);
-		box-shadow: inset 0 0 0 1px var(--rule);
-		font-size: 0.8125rem;
-		line-height: 1.6;
-		color: var(--ink);
-		overflow-wrap: anywhere;
-	}
-	.ps {
-		color: var(--gold-mark);
-	}
-	.groups {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 6px;
-	}
-	.group {
-		display: flex;
-		flex-direction: column;
-		gap: 14px;
-		padding: 16px;
-		border-radius: 6px;
-		background: var(--plane);
-		box-shadow: inset 0 0 0 1px var(--rule);
-	}
-	.group.outside {
-		background: color-mix(in oklch, var(--changed) 7%, var(--plane));
-		box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--changed) 45%, transparent);
-	}
-	.group-head {
+	.head {
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
-		gap: 12px;
+		gap: 16px;
+		padding: 12px 14px 8px;
+	}
+	.title {
+		margin: 0;
+		font-size: 0.9375rem;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.tab {
+		margin: 0;
+		padding-bottom: 4px;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: var(--ink);
+		box-shadow: inset 0 -2px 0 var(--gold-mark);
+	}
+	.range {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: 10px;
+		padding: 0 8px 8px;
+	}
+	.picker {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		min-width: 0;
+		flex: 1 1 160px;
+		max-width: 260px;
+	}
+	.picker-label {
+		font-size: 0.75rem;
+		color: var(--ink-muted);
+	}
+	.picker-value {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		height: 34px;
+		padding: 0 10px;
+		border-radius: 5px;
+		background: var(--plane);
+		box-shadow: inset 0 0 0 1px var(--rule);
+		font-size: 0.8125rem;
+		color: var(--ink);
+	}
+	.picker-text {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.chevron {
+		flex: none;
+		width: 6px;
+		height: 6px;
+		margin-top: -3px;
+		border-right: 1.5px solid var(--ink-muted);
+		border-bottom: 1.5px solid var(--ink-muted);
+		rotate: 45deg;
+	}
+	.key {
+		display: inline-flex;
+		align-items: center;
+		height: 26px;
+		padding: 0 9px;
+		border-radius: 4px;
+		box-shadow: inset 0 0 0 1px var(--rule);
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: var(--ink);
+		white-space: nowrap;
+	}
+	.refresh {
+		margin-left: auto;
+		margin-bottom: 4px;
+	}
+	.lists {
+		display: flex;
+		flex-direction: column;
+		gap: 18px;
+		padding: 16px;
+		border-radius: 6px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	.list {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+	.list-head {
+		display: flex;
+		align-items: baseline;
+		gap: 8px;
 		margin: 0;
 	}
-	.group-title {
+	.list-title {
 		font-size: 0.875rem;
 		font-weight: 600;
 		color: var(--ink);
 	}
-	.outside .group-title {
-		color: var(--changed-text);
-	}
 	.count {
+		font-size: 0.75rem;
+		color: var(--ink-muted);
+	}
+	.show {
+		margin-left: auto;
+		align-self: center;
+	}
+	.gloss {
+		margin: 0 0 4px;
 		font-size: 0.8125rem;
+		line-height: 1.5;
 		color: var(--ink-muted);
 	}
 	.modules {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -127,22 +232,51 @@ const groups: { title: string; note: string; outside?: boolean; modules: { name:
 	.modules li {
 		display: flex;
 		align-items: center;
-		gap: 10px;
+		gap: 12px;
+		min-height: 40px;
+		padding: 4px 8px;
+		border-radius: 4px;
+	}
+	.module {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-width: 0;
+	}
+	.module-name {
 		font-size: 0.875rem;
 		color: var(--ink);
 	}
-	.note {
-		margin: auto 0 0;
+	.module-detail {
+		overflow: hidden;
 		font-size: 0.8125rem;
-		line-height: 1.5;
+		color: var(--ink-muted);
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.commits {
+		flex: none;
+		font-size: 0.75rem;
+		color: var(--ink-muted);
+	}
+	.vault {
+		margin: 0;
+		padding: 8px 10px 6px;
+		font-size: 0.8125rem;
 		color: var(--ink-muted);
 	}
 	.example-caption {
 		margin-top: 14px;
 	}
+	.example-caption code {
+		overflow-wrap: anywhere;
+	}
 	@media (max-width: 760px) {
-		.groups {
-			grid-template-columns: minmax(0, 1fr);
+		.picker {
+			max-width: none;
+		}
+		.refresh {
+			margin-left: 0;
 		}
 	}
 </style>
