@@ -132,6 +132,14 @@ const DEFAULT_SETTINGS: readonly { readonly key: string; readonly line: string }
 	{ key: "approvals_reviewer", line: 'approvals_reviewer = "auto_review"' },
 	{ key: "sandbox_mode", line: 'sandbox_mode = "workspace-write"' },
 	{ key: "sandbox_workspace_write", line: "sandbox_workspace_write.network_access = true" },
+	// The realtime voice model. Codex 0.166.0 defaults to gpt-live-1-codex, which answered the
+	// steps of a recorded walkthrough as if a person had spoken them ("Sure", "This one means").
+	// Upstream moved the default to gpt-live-1.1-codex after 0.166.0 (openai/codex b05266d61b);
+	// drop this line once the pinned Codex defaults to it.
+	{
+		key: "experimental_realtime_ws_model",
+		line: 'experimental_realtime_ws_model = "gpt-live-1.1-codex"',
+	},
 ];
 
 /**
