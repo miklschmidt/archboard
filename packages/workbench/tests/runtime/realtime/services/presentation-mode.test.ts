@@ -281,8 +281,9 @@ test("a recording's steps reach the voice model as what to explain, in the words
 		const said = h.session.speeches.map((speech) => speech.text);
 		expect(said).toHaveLength(1);
 		const prompt = h.session.starts[0]?.prompt;
-		// Recorded material omits the heading so that the voice cannot read it aloud.
-		expect(said[0]).not.toContain("One writer");
+		// The step names its heading, so its body reads as a topic to explain and not as something
+		// the user said to the voice.
+		expect(said[0]).toContain("One writer");
 		expect(said[0]).toContain("It owns writes.");
 		expect(said[0]).toContain("Ledger (added)");
 		expect(prompt).toContain(`"${leadIn(said[0])}"`);

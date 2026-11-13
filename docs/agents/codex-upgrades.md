@@ -2,7 +2,7 @@
 
 Archboard pins `@openai/codex` and generates protocol types from that executable.
 A version change also needs a review of the matching upstream source.
-Read this guide when upgrading Codex.
+When you upgrade Codex, read this guide.
 
 ## Review the upstream changes
 
@@ -31,6 +31,8 @@ Keep the type assertions that test compatibility in both directions.
 Update required fields in the standalone fake servers as well as TypeScript fixtures.
 The standalone servers include fixtures under `tests/system/server-state/fixtures` and `tests/system/process-contracts`.
 
+Archboard pins the realtime voice model with `experimental_realtime_ws_model` in `DEFAULT_SETTINGS` of `packages/codex-app-server/src/runtime/store/storage.ts`.
+If the new Codex defaults to that model, delete the pin.
 Read version-specific claims against their cited upstream source at the new tag.
 Keep historical measurements tied to the version that produced them.
 Update version literals in standalone fake executables.
@@ -45,4 +47,4 @@ Keep the default state directory so that the server uses that sign-in.
 
 Open the server in a browser and send one message.
 Make sure that the coordinator and workhorse start and that the message receives an answer.
-Stop the test server when the trial ends.
+When the trial ends, stop the test server.

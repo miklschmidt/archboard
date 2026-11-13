@@ -27,7 +27,7 @@ Plan the next step before anyone writes code. Ask for a change and see it drawn 
 
 **Hear what Archboard does**. A tour from a first map to a narrated video, told by the Codex voice over Archboard's own architecture. Turn the sound on.
 
-https://github.com/user-attachments/assets/f8fd2553-df04-40f8-b174-a7500ec4c65a
+https://github.com/user-attachments/assets/78ebe388-6c15-499e-a2a5-851aa1fba44c
 
 ## What you can do with it
 
@@ -176,7 +176,7 @@ gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this cha
 
 **A pull request, explained to its reviewers**: why the change exists, what it changed, and where to look closely. Turn the sound on.
 
-https://github.com/user-attachments/assets/d5a3c08a-66c5-460d-9dad-b03a61e48b40
+https://github.com/user-attachments/assets/259590d4-4cb3-418f-a77a-00226541c9c1
 
 <p align="center"><sub>Each video is an Archboard recording.</sub></p>
 
@@ -205,7 +205,7 @@ Add a sequence diagram of what happens when a shopper places an order, from the 
 
 Give the tour once, and every new hire can play it back. A newcomer's walkthrough starts with two modules and adds a few at each step until the whole path is on screen. It stops at the place where things go wrong and ends on the one sentence worth remembering.
 
-https://github.com/user-attachments/assets/c41c321c-2813-475f-8217-d96292dad8d8
+https://github.com/user-attachments/assets/503654ce-d862-4150-9ac9-d6bdb63ec5b2
 
 <p align="center"><sub>"How stock is reserved", six steps through the example shop. Turn the sound on.</sub></p>
 
