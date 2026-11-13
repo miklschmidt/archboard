@@ -101,7 +101,9 @@ archboard model footprint --base main --head agent/split-payments --state "Split
 
 Open Measures and choose `What this branch changed`. Choose the base, the head and the state to set the commits against. Each list is searchable, and you can type any ref. The view reads when it opens and when you press Refresh.
 
-`Show on picture` opens the nearest module that holds a list's modules, and selects them. If the head is not checked out, it opens a branch reading: the model as that branch holds it, read from Git. The state chip names the branch and its commit. A branch reading is read-only, and its address survives a reload.
+`Show on picture` opens the nearest module that holds a list's modules, and selects them.
+
+It uses the model that the footprint read, in the state that Against names. If the footprint read a Git ref, it opens a branch reading: the model at that ref's commit. If only a code repository holds the head, it uses the model on disk. The state chip names a branch reading's ref and commit. A branch reading is read-only, and its address survives a reload.
 
 ## In CI
 
