@@ -1,7 +1,8 @@
 // The owner of what a branch changed, beside the Measures owner: the view reads only when it opens
 // and on Refresh, takes `main` as the base and the checkout as the head, lists the modules against
-// the plan, and a row selects its module. A branch reading opens at a ref, reads the model that
-// the ref holds, offers no Explain, and keeps its address over a reload.
+// the plan, and a row selects its module. A head that is not checked out sets the commits against
+// the proposal it adds, and Show on picture opens its branch reading with the list selected. A
+// branch reading opens at a ref, offers no Explain, and keeps its address over a reload and history.
 
 import { expect, test } from "bun:test";
 import { cpSync, mkdirSync, writeFileSync } from "node:fs";
@@ -154,7 +155,10 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 			{
 				type: "edit-module",
 				subject: "Shop#Worker",
-				set: { responsibility: "Works from a queue" },
+				set: {
+					responsibility: "Works from a queue",
+					binding: { repo: "github.com/acme/shop", path: "src/worker.ts" },
+				},
 			},
 		],
 		{ proposal: { type: "create", name: "Queued worker" } },
@@ -240,7 +244,26 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 		WAIT,
 	);
 	expect(atOther.against).toBe(beside.target.state);
-	await browser.run(["press", "Escape"]);
+
+	// Show on picture opens that head's branch reading in that state, and selects the listed module.
+	await browser.run(["click", '[data-footprint-show="namedNotChanged"]']);
+	const shown = await pollUntil(
+		() =>
+			browser.eval<{ dialog: boolean; search: string; selected: string | null }>(`({
+				dialog: document.querySelector('${DIALOG}') !== null,
+				search: location.search,
+				selected: document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id') ?? null,
+			})`),
+		(state) => !state.dialog && state.selected === "Shop#Worker",
+		"the list on its picture",
+		WAIT,
+	);
+	const address = new URLSearchParams(shown.search);
+	expect([address.get("refA"), address.get("stateA"), address.get("scopeA")]).toEqual([
+		"other",
+		beside.target.state,
+		null,
+	]);
 
 	// `main` holds no proposal, so its reading has only the current state.
 	await browser.run(["open", `${reading}&refA=main`]);
@@ -254,7 +277,8 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 	});
 	await browser.run(["back"]);
 	await drawn(browser);
-	expect((await branchReading(browser, "back on the checkout", null)).ref).toBeNull();
+	// Back returns to the list that Show on picture opened, which is a branch reading of its own.
+	expect((await branchReading(browser, "back on the shown list", "other")).ref).toBe("other");
 	await browser.run(["forward"]);
 	await drawn(browser);
 	expect((await branchReading(browser, "forward again")).ref).toBe("main");

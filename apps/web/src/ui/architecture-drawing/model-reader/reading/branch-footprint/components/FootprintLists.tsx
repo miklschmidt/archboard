@@ -1,5 +1,5 @@
 import { useCallback, type JSX, type MouseEvent } from "react";
-import { cn } from "@archboard/ui-kit/components";
+import { Button, cn } from "@archboard/ui-kit/components";
 import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
 import {
 	commitsOf,
@@ -8,6 +8,10 @@ import {
 	type FootprintList,
 	type FootprintModule,
 } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/footprint-lists.ts";
+import {
+	footprintShow,
+	type FootprintShow,
+} from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/show-on-picture.ts";
 import { rowTone } from "#ui/shell/rules/row-tone.ts";
 
 /** Inputs for the lists. */
@@ -17,6 +21,8 @@ interface FootprintListsProps {
 	readonly selected: string | null;
 	/** Select a module on its picture, here or in the other pane. */
 	readonly onChoose: (id: string, beside: boolean) => void;
+	/** Show a list on its picture. */
+	readonly onShow: (target: FootprintShow) => void;
 }
 
 /**
@@ -45,8 +51,18 @@ function FootprintLists(props: FootprintListsProps): JSX.Element {
  * @returns The section.
  */
 function ListSection(props: FootprintListsProps & { readonly list: FootprintList }): JSX.Element {
-	const { list } = props;
+	const { answer, list, onShow } = props;
 	const heading = `footprint-list-${list.key}`;
+	const show = useCallback(
+		(): void =>
+			onShow(
+				footprintShow(
+					answer,
+					list.modules.map((module) => module.subject.id),
+				),
+			),
+		[answer, list.modules, onShow],
+	);
 	return (
 		<section
 			data-footprint-list={list.key}
@@ -60,6 +76,16 @@ function ListSection(props: FootprintListsProps & { readonly list: FootprintList
 				<span className="text-technical text-muted-foreground font-mono">
 					{list.modules.length}
 				</span>
+				<Button
+					variant="outline"
+					size="xs"
+					data-footprint-show={list.key}
+					disabled={list.modules.length === 0}
+					onClick={show}
+					className="ml-auto self-center"
+				>
+					Show on picture
+				</Button>
 			</header>
 			<p className="text-body text-muted-foreground">{list.gloss}</p>
 			{list.modules.length === 0 ? (

@@ -6,6 +6,8 @@ import {
 	type RemixiconComponentType,
 } from "@remixicon/react";
 import { BranchFootprint } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/BranchFootprint.tsx";
+import { useShowFootprint } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/hooks/use-show-footprint.ts";
+import type { FootprintShow } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/show-on-picture.ts";
 import type { FootprintChoice } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/hooks/use-branch-footprint.ts";
 import { useCallback, useMemo, useRef, useState, type JSX } from "react";
 import { Dialog, Tabs } from "@archboard/ui-kit/components";
@@ -87,11 +89,10 @@ interface ModelMeasuresDialogProps {
 	readonly onOpenChange: (open: boolean) => void;
 }
 
-/** A module a row chose, which waits for the dialog to go. */
-interface Choice {
-	readonly id: string;
-	readonly beside: boolean;
-}
+/** What a row or a list chose, which waits for the dialog to go. */
+type Choice =
+	| { readonly kind: "module"; readonly id: string; readonly beside: boolean }
+	| { readonly kind: "show"; readonly target: FootprintShow };
 
 /**
  * Measures: the checks of the reading on screen against its code and its history, in one dialog
@@ -111,10 +112,19 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 	const chosen = useRef<Choice | null>(null);
 	const { findModule } = reader.choices;
 	const { onDiagram } = reader;
+	const showFootprint = useShowFootprint(reader);
 	const choose = useCallback(
 		(id: string, beside: boolean): void => {
-			chosen.current = { id, beside };
+			chosen.current = { kind: "module", id, beside };
 			if (!beside) onDiagram();
+			onOpenChange(false);
+		},
+		[onDiagram, onOpenChange],
+	);
+	const show = useCallback(
+		(target: FootprintShow): void => {
+			chosen.current = { kind: "show", target };
+			onDiagram();
 			onOpenChange(false);
 		},
 		[onDiagram, onOpenChange],
@@ -125,9 +135,10 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 		(stillOpen: boolean): void => {
 			const choice = chosen.current;
 			if (stillOpen) chosen.current = null;
-			else if (choice !== null) findModule(choice.id, choice.beside);
+			else if (choice?.kind === "module") findModule(choice.id, choice.beside);
+			else if (choice?.kind === "show") void showFootprint(choice.target);
 		},
-		[findModule],
+		[findModule, showFootprint],
 	);
 	const returnsFocus = useCallback((): boolean => chosen.current === null, []);
 	const changeTab = useCallback((value: unknown): void => {
@@ -191,6 +202,7 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 							onChoice={setFootprint}
 							selected={soleOf(reader.selection.ids)}
 							onChoose={choose}
+							onShow={show}
 						/>
 					</Tabs.Content>
 				</Tabs>
