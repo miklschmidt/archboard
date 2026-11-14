@@ -27,10 +27,13 @@ pub struct Applied {
     pub icon: Option<Icon>,
 }
 
-/// What two subjects share when one sample keys them both: the icon, the
-/// kind, its name, the kind's colour, the line's colour, dash and arrowhead.
+/// What two subjects share when one sample keys them both: the icon's name,
+/// the kind, its name, the kind's colour, the line's colour, dash and
+/// arrowhead. Not the icon's size and ink: a card, a container's header and a
+/// door draw one kind's icon at different sizes and inks, and the legend
+/// redraws it at its own.
 type SampleKey<'a> = (
-    Option<&'a Icon>,
+    Option<&'a str>,
     &'a str,
     &'a str,
     Option<PaletteColor>,
@@ -50,7 +53,7 @@ impl Applied {
 
     /// What two subjects share when one sample keys them both.
     fn sample_key(&self) -> SampleKey<'_> {
-        let icon = self.icon.as_ref();
+        let icon = self.icon.as_ref().map(|icon| icon.name.as_str());
         match &self.drawn {
             Drawn::Part(appearance) => (
                 icon,
@@ -323,4 +326,43 @@ pub(super) fn entries_of(
     lists.push(lined);
     lists.retain(|list| !list.is_empty());
     lists
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::scene::Colour;
+
+    /// A package of one kind, its icon drawn at some size and ink.
+    fn package(id: &str, container: bool, size: f64, ink: Colour) -> (String, Applied) {
+        let appearance = NodeAppearance {
+            container,
+            tags: Vec::new(),
+            type_color: Some(PaletteColor::Purple),
+            icon: "archive".to_owned(),
+            type_name: "Package".to_owned(),
+            type_kind: "package".to_owned(),
+            drill: None,
+        };
+        let icon = Icon {
+            name: "archive".to_owned(),
+            size,
+            ink,
+        };
+        (
+            id.to_owned(),
+            Applied {
+                drawn: Drawn::Part(appearance),
+                icon: Some(icon),
+            },
+        )
+    }
+
+    #[test]
+    fn one_kind_keys_once_however_its_icon_is_drawn() {
+        let card = package("a", false, 18.0, Colour::palette(PaletteColor::Purple));
+        let header = package("b", true, 20.0, Colour::palette(PaletteColor::Purple));
+        let door = package("c", false, 14.0, Colour::palette(PaletteColor::Amber));
+        assert_eq!(distinct_samples(vec![card, header, door]).len(), 1);
+    }
 }
