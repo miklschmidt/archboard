@@ -3,12 +3,12 @@
   "name": "Batch and inputs",
   "kind": "module",
   "responsibility": "Reads and validates every canonical input, then plans, runs and resumes the batch, and keeps the copy of the candidate skill that the batch measures",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/IbGtfJE2#PCxTuzNW",
-  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
-  "outgoing": [],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/batch"
-  }
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#PCxTuzNW",
+  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
+  "outgoing": []
 }
