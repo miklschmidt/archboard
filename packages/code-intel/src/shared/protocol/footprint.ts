@@ -13,7 +13,8 @@
 // a part that was not read never looks like a part that no commit changed.
 //
 // It also lists the changed files that no binding holds, because no part shows
-// their change.
+// their change. With a proposal it lists the parts the proposal adds whose
+// bound source the range does not add, because their code was there before.
 //
 // It is information: it carries no severity and changes no exit status. It is
 // derived on request and never stored.
@@ -78,6 +79,12 @@ const FootprintPartSchema = BehindPartSchema.extend({
 	 * commits changed in its own binding, else none. None for an unchanged part (TASK-622).
 	 */
 	holds: z.array(z.string()),
+	/**
+	 * Whether the range adds source to it: a file inside its binding that the merge base lacks, or,
+	 * for a binding to a declaration that the lens reads, the declaration. A rename moves source and
+	 * adds none. False for an unchanged part (TASK-637).
+	 */
+	newSource: z.boolean(),
 });
 
 /** Why a checkout's range was not read. */
@@ -169,6 +176,12 @@ const ProposedFootprintSchema = z
 		namedAndChanged: z.array(FootprintPartSchema),
 		changedNotNamed: z.array(FootprintPartSchema),
 		namedNotChanged: z.array(FootprintPartSchema),
+		/**
+		 * The parts the proposal adds whose bound source the range does not add, so their code was
+		 * there at the merge base (TASK-637). Each is also in `namedAndChanged` or `namedNotChanged`.
+		 * A directory part that the range adds a file to is not listed.
+		 */
+		preexisting: z.array(FootprintPartSchema),
 	})
 	.strict();
 

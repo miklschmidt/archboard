@@ -49,8 +49,10 @@ describe("the sticky comment", () => {
 			plannedUnchanged: ["Fulfilment worker"],
 			changed: ["Checkout API", "Stock API"],
 			unbound: [{ repo: "github.com/acme/shop", path: "docs/notes.md" }],
+			preexisting: [],
 		},
 		outOfPlan: { status: "fail", failed: true },
+		preexisting: { status: "in-plan", failed: false },
 		overrideLabel: "archboard: out of plan",
 		vaultUrl: "https://github.test/owner/name/tree/b/.archboard/vault",
 	};
@@ -81,6 +83,21 @@ describe("the sticky comment", () => {
 		expect(text).toContain("<details>\n<summary>Planned and changed (1)</summary>");
 		expect(text).toContain("Planned but unchanged: none.");
 		expect(text.indexOf("### Plan")).toBeLessThan(text.indexOf("### Footprint"));
+	});
+
+	test("lists the added modules with code at the base only when there are some, and says why it fails", () => {
+		expect(pullRequestComment(report)).not.toContain("Added, with code at the base");
+		const text = pullRequestComment({
+			...report,
+			buckets: { ...report.buckets!, preexisting: ["CLI"] },
+			preexisting: { status: "fail", failed: true },
+		});
+		expect(text).toContain(
+			"<details open>\n<summary>Added, with code at the base (1)</summary>\n\n- CLI\n\n</details>",
+		);
+		expect(text.slice(text.indexOf("### Plan"), text.indexOf("### Footprint"))).toContain(
+			"`archboard: out of plan`",
+		);
 	});
 
 	test("a module name shows as written and cannot close its disclosure", () => {

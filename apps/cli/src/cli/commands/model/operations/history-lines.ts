@@ -85,6 +85,21 @@ function unboundLines(files: readonly { path: string }[]): string[] {
 }
 
 /**
+ * The line about the modules that a draft adds whose bound code the branch does not add.
+ * @param answer The footprint answer.
+ * @returns One line, or none without a draft or when the branch adds code to each.
+ */
+function preexistingLines(answer: Footprint): string[] {
+	if (answer.proposal === null || answer.preexisting.length === 0) return [];
+	const { length } = answer.preexisting;
+	const named = answer.preexisting.slice(0, LISTED).map(({ subject }) => subject.name);
+	const more = length > LISTED ? `, and ${length - LISTED} more` : "";
+	return [
+		`Preexisting: ${length} ${length === 1 ? "module" : "modules"} that the draft adds, whose bound code the branch does not add: ${named.join(", ")}${more}.`,
+	];
+}
+
+/**
  * The summary of a footprint: how many parts the commits changed, and how that sits beside a plan.
  * @param answer The footprint answer.
  * @returns The lines.
@@ -103,6 +118,7 @@ function footprintLines(answer: Footprint): string[] {
 		`Footprint of ${readingOf(answer)} from ${answer.base}: ${answer.commits.length} commits in ${read.length} of ${answer.repositories.length} repositories; ${lists.join(", ")}.`,
 		...skippedLines(answer.skipped),
 		...unboundLines(answer.unboundFiles),
+		...preexistingLines(answer),
 	];
 }
 

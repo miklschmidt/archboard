@@ -49,7 +49,11 @@ const WORDS = {
 			"",
 			"It also lists, in `unboundFiles`, each changed file that no module is bound to, because no module shows that change. The files of the vault are not listed.",
 			"",
+			"With a draft selected, it also lists, in `preexisting`, each module that the draft adds and whose bound code the branch does not add, because that code was there at the merge base. A picture of the draft marks such a module as added, although the diff shows no new code for it. The branch adds code to a module when it adds a file inside its binding that the merge base lacks, or, for a binding to a declaration, the declaration. A module bound to a directory that the branch adds a file to is therefore not preexisting. A renamed file adds no code. Each module says in `newSource` whether the branch added code to it.",
+			"",
 			"With `--fail-outside`, it exits 1 when the branch changed a module that the draft does not name. A module bound to a directory passes when each file it changed lies in the binding of another changed module inside it. If the branch also changed a file that only the outer module binds, the outer module fails. A file that no module is bound to never fails it. A gate before a merge uses it.",
+			"",
+			"With `--fail-preexisting`, it exits 1 when `preexisting` names a module. Model the code that exists at the base in the current state first, then add only new code in the draft.",
 			"",
 			"A repository that cannot read the base or head is named, and the command exits 2. Source refs stay local and no source history is retained.",
 		].join("\n"),
@@ -63,8 +67,11 @@ const WORDS = {
 	},
 } as const;
 
-/** The footprint's gate, which the CLI judges and the server never reads: `--fail-outside`. */
-const FailOutsideSchema = z.object({ failOutside: z.boolean().optional() });
+/** The footprint's gates, which the CLI judges and the server never reads. */
+const GatesSchema = z.object({
+	failOutside: z.boolean().optional(),
+	failPreexisting: z.boolean().optional(),
+});
 
 const failOutsideParameter = {
 	kind: "option",
@@ -75,15 +82,29 @@ const failOutsideParameter = {
 		"Exit 1 when the branch changed a module that the draft does not name. It needs a draft from `--state`",
 } as const;
 
-const failOutsideStage = {
-	name: "fail-outside-draft",
+const failPreexistingParameter = {
+	kind: "option",
+	key: "failPreexisting",
+	spellings: ["--fail-preexisting"],
+	value: "none",
+	description:
+		"Exit 1 when the draft adds a module whose bound code the branch does not add. It needs a draft from `--state`",
+} as const;
+
+const gatesStage = {
+	name: "gates-draft",
 	when: "before-server" as const,
-	description: "Only a draft names modules, so the gate needs one",
-	rules: ["Refuse --fail-outside without --state"],
-	schema: FailOutsideSchema.extend({ state: z.string().optional() }).refine(
-		(input) => input.failOutside !== true || input.state !== undefined,
-		"--fail-outside judges the commits against a draft: name it with --state",
-	),
+	description: "Only a draft names and adds modules, so each gate needs one",
+	rules: ["Refuse --fail-outside and --fail-preexisting without --state"],
+	schema: GatesSchema.extend({ state: z.string().optional() })
+		.refine(
+			(input) => input.failOutside !== true || input.state !== undefined,
+			"--fail-outside judges the commits against a draft: name it with --state",
+		)
+		.refine(
+			(input) => input.failPreexisting !== true || input.state !== undefined,
+			"--fail-preexisting judges the commits against a draft: name it with --state",
+		),
 };
 
 const outsideOutcome = {
@@ -94,6 +115,33 @@ const outsideOutcome = {
 	description: "With `--fail-outside`, the branch changed a module that the draft does not name",
 };
 
+const preexistingOutcome = {
+	id: "preexisting",
+	exit: 1,
+	stream: "stdout-and-stderr" as const,
+	presentation: ["diagnostics", "result"] as const,
+	description:
+		"With `--fail-preexisting`, the draft adds a module whose bound code the branch does not add",
+};
+
+type Proposed = Extract<Answer, { analysis: "footprint"; preexisting: unknown }>;
+
+/**
+ * The answer as a footprint set against a draft, which each gate needs.
+ * @param answer The answer of the server.
+ * @param option The gate's option, as the caller spelled it.
+ * @returns The footprint.
+ * @throws {CliUsageError} When the selected state is no draft.
+ */
+function proposedOf(answer: Extract<Answer, { analysis: "footprint" }>, option: string): Proposed {
+	if (!("preexisting" in answer)) {
+		throw new CliUsageError(
+			`${option} judges the commits against a draft, and ${answer.state?.name ?? "the selected state"} is no draft. Name a draft with --state; \`archboard model proposals\` lists them.`,
+		);
+	}
+	return answer;
+}
+
 /**
  * The modules that `--fail-outside` fails on: those the commits changed and the draft does not name,
  * except a directory that holds another changed module because that module binds each file it changed.
@@ -103,34 +151,60 @@ const outsideOutcome = {
  */
 function outsideOf(answer: Answer, failOutside: boolean) {
 	if (!failOutside || answer.analysis !== "footprint") return [];
-	if (!("changedNotNamed" in answer)) {
-		throw new CliUsageError(
-			`--fail-outside judges the commits against a draft, and ${answer.state?.name ?? "the selected state"} is no draft. Name a draft with --state; \`archboard model proposals\` lists them.`,
-		);
-	}
-	return answer.changedNotNamed.filter((part) => part.holds.length === 0);
+	return proposedOf(answer, "--fail-outside").changedNotNamed.filter(
+		(part) => part.holds.length === 0,
+	);
+}
+
+/**
+ * The modules that `--fail-preexisting` fails on: those the draft adds whose bound code the
+ * branch does not add.
+ * @param answer The answer of the server.
+ * @param failPreexisting Whether `--fail-preexisting` was given.
+ * @returns The preexisting modules, or none when the gate is off.
+ */
+function preexistingOf(answer: Answer, failPreexisting: boolean) {
+	if (!failPreexisting || answer.analysis !== "footprint") return [];
+	return proposedOf(answer, "--fail-preexisting").preexisting;
+}
+
+/**
+ * The names of some modules, as one list.
+ * @param parts The modules.
+ * @returns The names, separated by commas.
+ */
+function namesOf(parts: readonly { readonly subject: { readonly name: string } }[]): string {
+	return parts.map(({ subject }) => subject.name).join(", ");
 }
 
 /**
  * What an answer says on standard error, and the outcome it exits with.
  * @param answer The answer of the server.
- * @param failOutside Whether `--fail-outside` was given.
+ * @param gates The gates that were given.
  * @returns The diagnostics, and the outcome when it is not success.
  */
 function judged(
 	answer: Answer,
-	failOutside: boolean,
-): { diagnostics: string[]; outcome?: "unread" | "outside" } {
-	const outside = outsideOf(answer, failOutside);
-	const names = outside.map(({ subject }) => subject.name).join(", ");
+	gates: z.output<typeof GatesSchema>,
+): { diagnostics: string[]; outcome?: "unread" | "outside" | "preexisting" } {
+	const outside = outsideOf(answer, gates.failOutside === true);
+	const preexisting = preexistingOf(answer, gates.failPreexisting === true);
 	const diagnostics = [
 		...historyLines(answer),
 		...(outside.length === 0
 			? []
-			: [`Changed outside the draft: ${names}. Name each in the draft, or undo its change.`]),
+			: [
+					`Changed outside the draft: ${namesOf(outside)}. Name each in the draft, or undo its change.`,
+				]),
+		...(preexisting.length === 0
+			? []
+			: [
+					`Added by the draft, with code at the base: ${namesOf(preexisting)}. Model each in the current state first, or bind it to code that the branch adds.`,
+				]),
 	];
 	if (unreadLines(answer).length > 0) return { diagnostics, outcome: "unread" };
-	return outside.length === 0 ? { diagnostics } : { diagnostics, outcome: "outside" };
+	if (outside.length > 0) return { diagnostics, outcome: "outside" };
+	return preexisting.length === 0 ? { diagnostics } : { diagnostics, outcome: "preexisting" };
 }
 
 /**
@@ -156,7 +230,7 @@ function historyCommand<I extends z.ZodRawShape>(
 	result: typeof ArchitectureHistoryResultSchema,
 ) {
 	const gated = name === "footprint";
-	const ingress = input.extend(gated ? FailOutsideSchema.shape : {});
+	const ingress = input.extend(gated ? GatesSchema.shape : {});
 	return defineCommand({
 		path: ["model", name],
 		shared: ["url", "directory"],
@@ -172,9 +246,9 @@ function historyCommand<I extends z.ZodRawShape>(
 				placeholder: key,
 				description: optionWords(name, key),
 			})),
-			...(gated ? [failOutsideParameter] : []),
+			...(gated ? [failOutsideParameter, failPreexistingParameter] : []),
 		],
-		input: { ingress, ...(gated ? { stages: [failOutsideStage] } : {}) },
+		input: { ingress, ...(gated ? { stages: [gatesStage] } : {}) },
 		result,
 		output: {
 			cases: [
@@ -209,7 +283,7 @@ function historyCommand<I extends z.ZodRawShape>(
 				presentation: ["diagnostics", "result"],
 				description: "A repository could not read the base or head that was named",
 			},
-			...(gated ? [outsideOutcome] : []),
+			...(gated ? [outsideOutcome, preexistingOutcome] : []),
 		],
 		refusals: [serverRefusal],
 		relationships: [
@@ -227,10 +301,7 @@ function historyCommand<I extends z.ZodRawShape>(
 		 * @returns The runtime result.
 		 */
 		async handler(request, context) {
-			const { failOutside } = context.parse(
-				gated ? failOutsideStage.schema : FailOutsideSchema,
-				request,
-			);
+			const gates = context.parse(gated ? gatesStage.schema : GatesSchema, request);
 			await context.require("server", `model ${name}`);
 			const query = new URLSearchParams(
 				Object.entries(request).filter(
@@ -247,7 +318,7 @@ function historyCommand<I extends z.ZodRawShape>(
 					),
 				};
 			}
-			return { result: answer, ...judged(answer, failOutside === true) };
+			return { result: answer, ...judged(answer, gates) };
 		},
 	});
 }

@@ -73,6 +73,11 @@ interface FootprintPart {
 	 * one list. A CLI older than this field leaves it out.
 	 */
 	readonly holds?: readonly string[] | undefined;
+	/**
+	 * Whether the branch adds code to it: a new file in its binding, or a new declaration. A CLI
+	 * older than this field leaves it out, and the Action then counts the part as gaining code.
+	 */
+	readonly newSource?: boolean | undefined;
 }
 
 /**
@@ -104,6 +109,8 @@ interface Buckets {
 	readonly changed: readonly string[];
 	/** The changed files that no module is bound to. They are listed, and never judged. */
 	readonly unbound: readonly UnboundFile[];
+	/** The bound modules that the proposal adds and whose code the branch does not add. */
+	readonly preexisting: readonly string[];
 }
 
 /** The plan of a proposal. */
@@ -117,6 +124,8 @@ interface ProposalPlan {
 	 * Nothing at the head shows their code, so they are never listed as planned but unchanged.
 	 */
 	readonly baseOnlyBindings: ReadonlySet<string>;
+	/** The bound modules it adds, by stable identity. */
+	readonly added: ReadonlyMap<string, string>;
 }
 
 /**
@@ -264,9 +273,13 @@ function proposalPlan(baseModel: ModelReading, headModel: ModelReading): Proposa
 		...relationships.map((one) => ({ subjectKind: "relationship", kind: one.outcome })),
 		...steps.map((one) => ({ subjectKind: "step", kind: one.outcome })),
 	];
+	const added = new Set(
+		modules.filter((one) => one.outcome === "added").map((one) => one.subject.id),
+	);
 	return {
 		comparison: describeComparison(changed),
 		named: new Map([...bound].filter(([id]) => ids.has(id))),
+		added: new Map([...bound].filter(([id]) => added.has(id))),
 		baseOnlyBindings: new Set(
 			base.modules
 				.filter((module) => module.binding !== undefined && !headBindings.has(module.id))
@@ -280,11 +293,13 @@ function proposalPlan(baseModel: ModelReading, headModel: ModelReading): Proposa
  * @param footprint The answer of `model footprint`. For a draft it sorts the changed modules into
  * named and not named, else it lists them in one list.
  * @param plan The plan.
- * @returns The three buckets, every changed module, and the changed files that no module is bound to.
- * A changed module that holds another changed module is never outside the plan.
+ * @returns The three buckets, every changed module, the changed files that no module is bound to,
+ * and the added modules whose code the branch does not add. A changed module that holds another
+ * changed module is never outside the plan. A module the footprint did not read is never
+ * preexisting, and an unchanged one always is.
  */
 function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
-	const { named, baseOnlyBindings } = plan;
+	const { named, baseOnlyBindings, added } = plan;
 	const parts = [
 		...(footprint.changed ?? []),
 		...(footprint.namedAndChanged ?? []),
@@ -295,6 +310,9 @@ function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 		parts.filter((part) => (part.holds ?? []).length > 0).map((part) => part.subject.id),
 	);
 	const unread = new Set((footprint.skipped ?? []).map((part) => part.subject.id));
+	const gained = new Set(
+		parts.filter((part) => part.newSource !== false).map((part) => part.subject.id),
+	);
 	return {
 		plannedAndChanged: [...changed]
 			.filter(([id]) => named.has(id))
@@ -310,6 +328,10 @@ function planBuckets(footprint: FootprintReading, plan: ProposalPlan): Buckets {
 			.toSorted(),
 		changed: [...changed.values()].toSorted(),
 		unbound: (footprint.unboundFiles ?? []).map(({ repo, path }) => ({ repo, path })),
+		preexisting: [...added]
+			.filter(([id]) => !unread.has(id) && !gained.has(id))
+			.map(([, name]) => name)
+			.toSorted(),
 	};
 }
 

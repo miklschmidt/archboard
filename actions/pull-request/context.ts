@@ -31,6 +31,8 @@ interface Inputs {
 	readonly hosting: Hosting;
 	readonly access: ApiAccess;
 	readonly mode: OutOfPlanMode;
+	/** What the `preexisting` input says that added modules with code at the base do. */
+	readonly preexistingMode: OutOfPlanMode;
 	readonly overrideLabel: string;
 	readonly stateInput: string;
 	readonly extraCheckouts: readonly string[];
@@ -103,6 +105,10 @@ function readInputs(): Inputs {
 			repository,
 		},
 		mode: parseOutOfPlanMode(input("ARCHBOARD_INPUT_OUT_OF_PLAN", "warn")),
+		preexistingMode: parseOutOfPlanMode(
+			input("ARCHBOARD_INPUT_PREEXISTING", "warn"),
+			"preexisting",
+		),
 		overrideLabel: input("ARCHBOARD_INPUT_OVERRIDE_LABEL", "archboard: out of plan"),
 		stateInput: input("ARCHBOARD_INPUT_STATE", ""),
 		extraCheckouts: inputLines(input("ARCHBOARD_INPUT_REPOS", "")).map((folder) =>

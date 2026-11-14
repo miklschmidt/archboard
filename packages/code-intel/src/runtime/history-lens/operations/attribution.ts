@@ -27,6 +27,11 @@ interface AttributedCommits {
 	 * Historical declaration ranges, used to exclude duplicate ownership in coupling.
 	 */
 	readonly sites: readonly DeclarationSource[];
+	/**
+	 * Whether a walked commit's parent lacks the bound declaration and the commit has it. Over the
+	 * net change of a range, whether the range adds the declaration. False for a path binding.
+	 */
+	readonly introduced: boolean;
 }
 
 /**
@@ -85,6 +90,7 @@ interface SymbolState {
 	paths: string[];
 	found: boolean;
 	unsupportedSource: boolean;
+	introduced: boolean;
 	readonly commits: Set<string>;
 	readonly unsupported: Set<string>;
 	readonly sites: Map<string, DeclarationSource>;
@@ -100,6 +106,18 @@ function remember(state: SymbolState, reading: SymbolReading): void {
 	if (reading.kind !== "found") return;
 	state.found = true;
 	state.sites.set(`${reading.site.path}\0${reading.site.symbol}`, reading.site);
+}
+
+/**
+ * Remember both readings of a commit, and whether the commit added the declaration.
+ * @param state The symbol reading.
+ * @param previous Its declaration in the parent.
+ * @param next Its declaration in the commit.
+ */
+function rememberChange(state: SymbolState, previous: SymbolReading, next: SymbolReading): void {
+	remember(state, previous);
+	remember(state, next);
+	if (previous.kind === "absent" && next.kind === "found") state.introduced = true;
 }
 
 /**
@@ -147,8 +165,7 @@ async function readChange(
 		readSymbol(before, formerPaths(state.paths, commit), state.symbol),
 		readSymbol(after, state.paths, state.symbol),
 	]);
-	remember(state, previous);
-	remember(state, next);
+	rememberChange(state, previous, next);
 	if (previous.kind === "unsupported" || next.kind === "unsupported") {
 		if (changesBoundPath(state.paths, commit)) state.unsupported.add(commit.commit);
 	} else if (declarationChanged(previous, next)) state.commits.add(commit.commit);
@@ -224,6 +241,7 @@ function symbolAnswer(state: SymbolState, walked: readonly WalkedCommit[]): Attr
 		commits: walked.filter((commit) => commits.has(commit.commit)).map((commit) => commit.commit),
 		attribution: precision(state, fallback),
 		sites: [...state.sites.values()],
+		introduced: state.introduced,
 	};
 }
 
@@ -247,6 +265,7 @@ function symbolState(
 			paths: [part.path],
 			found: false,
 			unsupportedSource: false,
+			introduced: false,
 			commits: new Set(),
 			unsupported: new Set(),
 			sites: new Map(),
@@ -283,6 +302,7 @@ async function attribute(
 				commits: byPath.get(part.path) ?? [],
 				attribution: { mode: "path" },
 				sites: [],
+				introduced: false,
 			},
 		]),
 	);
@@ -326,22 +346,37 @@ async function attributeCommits(
 }
 
 /**
+ * Whether a range adds source to a part: a file inside its binding that the merge base lacks, or,
+ * for a declaration it reads, the declaration. A rename moves source and adds none.
+ * @param part The bound part.
+ * @param answer Its attribution over the net change.
+ * @param net The net change of the range.
+ * @returns True when the range adds source to the part.
+ */
+function addsSource(part: ReadPart, answer: AttributedCommits, net: WalkedCommit): boolean {
+	if (answer.attribution.mode === "symbol") return answer.introduced;
+	const added = net.changes.flatMap((change) => (change.status === "A" ? [change.path] : []));
+	return answer.introduced || filesOfBinding(part.path, added).length > 0;
+}
+
+/**
  * The parts whose bound paths or declarations differ between the two ends of a range, by the
- * policy that attributes each commit (ADR 0045).
+ * policy that attributes each commit (ADR 0045), and the parts that the range adds source to.
  * @param root The checkout.
  * @param range The commit the range starts from and the one it ends at.
  * @param range.from The commit the range starts from: the merge base.
  * @param range.to The commit it ends at: the head.
  * @param parts The bound parts.
  * @param options Cancellation.
- * @returns The ids of the parts that the range changed, and every file it changed under each name.
+ * @returns The ids of the parts that the range changed, the ids of those it adds source to, and
+ * every file it changed under each name.
  */
 async function netChangedParts(
 	root: string,
 	range: { readonly from: string; readonly to: string },
 	parts: readonly ReadPart[],
 	options: GitRunOptions,
-): Promise<{ parts: Set<string>; files: string[] }> {
+): Promise<{ parts: Set<string>; adds: Set<string>; files: string[] }> {
 	const net = await netChange(root, range.from, range.to, options);
 	const answers = await attribute(
 		root,
@@ -354,6 +389,14 @@ async function netChangedParts(
 	return {
 		parts: new Set(
 			[...answers].filter(([, answer]) => answer.commits.length > 0).map(([id]) => id),
+		),
+		adds: new Set(
+			parts
+				.filter((part) => {
+					const answer = answers.get(part.node.id);
+					return answer !== undefined && addsSource(part, answer, net);
+				})
+				.map((part) => part.node.id),
 		),
 		files: net.changes.flatMap((change) =>
 			change.from === undefined ? [change.path] : [change.path, change.from],

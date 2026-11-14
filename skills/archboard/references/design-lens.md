@@ -92,6 +92,7 @@ With a proposal, it reports:
 - `namedAndChanged`: Branch changes that the proposal names.
 - `changedNotNamed`: Changed modules absent from the proposal. Investigate work outside the plan or an incomplete proposal.
 - `namedNotChanged`: Proposed modules without code changes. Identify unfinished work or explain why no code change is needed.
+- `preexisting`: Modules the proposal adds whose bound code the branch does not add. Their code exists at the merge base, so a picture marks existing code as added. Model that code in Current first.
 
 A module counts as changed only when its bound code differs between the merge base and the head. A change that a later commit undoes, or that a merge brings in again from a lower layer of a stack, does not count.
 Footprints retain large commits with `large` and list unread modules in `skipped`.
@@ -106,6 +107,10 @@ It names each failing module on standard error.
 The pull-request Action excludes modules with nonempty `holds` from its group of modules changed outside the plan.
 If an older CLI omits `holds`, the Action counts every changed module absent from the plan.
 A file in `unboundFiles` never fails the gate.
+The branch adds code to a module when it adds a file inside its binding that the merge base lacks, or the declaration that its binding names. A renamed file adds none. Each module states this in `newSource`.
+A module bound to a directory that gains a new file is therefore not preexisting.
+With a proposal, `--fail-preexisting` exits 1 when `preexisting` is not empty.
+The pull-request Action lists these modules in its comment. Its `preexisting` input warns by default and fails only when set to `fail`.
 If a repository cannot read the requested base or head, the command names it and exits with status 2.
 Source refs stay local. The command retains no source history.
 

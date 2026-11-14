@@ -22,6 +22,7 @@ function part(id: string, path: string, other = repo): FootprintPart {
 		commits: ["c1"],
 		named: [],
 		holds: [],
+		newSource: false,
 	};
 }
 

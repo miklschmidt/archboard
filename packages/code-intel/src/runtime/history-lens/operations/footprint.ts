@@ -13,7 +13,9 @@
 // Large commits are kept and marked. With a proposal, the footprint sets the changed parts
 // against the parts the proposal names, in three lists, and a part the lens
 // skipped is in none of them. A changed file that no binding holds is in a
-// list of its own (TASK-621).
+// list of its own (TASK-621). Each part says whether the range adds source to
+// it, and a part the proposal adds that gains none is preexisting: its code was
+// there before the branch (TASK-637).
 
 import { realpathSync } from "node:fs";
 import { isAbsolute, relative, sep } from "node:path";
@@ -155,9 +157,15 @@ async function atOwnRefs(
  * @param part The part read.
  * @param commits The commits that changed it, newest first.
  * @param named Why the proposal names it.
+ * @param newSource Whether the range adds source to it.
  * @returns The listed part.
  */
-function listed(part: ReadPart, commits: readonly string[], named: NamedReason[]): FootprintPart {
+function listed(
+	part: ReadPart,
+	commits: readonly string[],
+	named: NamedReason[],
+	newSource: boolean,
+): FootprintPart {
 	return {
 		subject: { kind: "node", id: part.node.id, name: part.node.name },
 		repo: part.repo,
@@ -165,6 +173,7 @@ function listed(part: ReadPart, commits: readonly string[], named: NamedReason[]
 		commits: [...commits],
 		named,
 		holds: [],
+		newSource,
 	};
 }
 
@@ -293,6 +302,7 @@ function unreadRepository(
  * @param byPart Shared declaration attribution for each part.
  * @param net The parts that the range changed, and the files it changed.
  * @param net.parts The ids of those parts.
+ * @param net.adds The ids of the parts that the range adds source to.
  * @param net.files Those files, under each name of a rename.
  * @returns The checkout's footprint.
  */
@@ -303,7 +313,11 @@ function mappedRepository(
 	range: Range,
 	walked: readonly WalkedCommit[],
 	byPart: ReadonlyMap<string, AttributedCommits>,
-	net: { readonly parts: ReadonlySet<string>; readonly files: readonly string[] },
+	net: {
+		readonly parts: ReadonlySet<string>;
+		readonly adds: ReadonlySet<string>;
+		readonly files: readonly string[];
+	},
 ): RepositoryFootprint {
 	const entries = parts.map((part) => {
 		const attributed = byPart.get(part.node.id) ?? {
@@ -316,7 +330,7 @@ function mappedRepository(
 			changed,
 			commits,
 			part: {
-				...listed(part, commits, named.get(part.node.id) ?? []),
+				...listed(part, commits, named.get(part.node.id) ?? [], net.adds.has(part.node.id)),
 				attribution: attributed.attribution,
 			},
 		};
@@ -560,6 +574,10 @@ async function readFootprintEvidence(request: VariantFootprintRequest): Promise<
 		namedAndChanged: changed.filter(isNamed),
 		changedNotNamed: changed.filter((part) => !isNamed(part)),
 		namedNotChanged: unchanged.filter(isNamed),
+		preexisting: inOrder(nodes, [...changed, ...unchanged]).filter(
+			(part) =>
+				!part.newSource && part.named.some(({ by, status }) => by === "part" && status === "added"),
+		),
 	};
 }
 

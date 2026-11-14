@@ -18,6 +18,8 @@ interface PullRequestReport {
 	readonly buckets?: Buckets | undefined;
 	readonly footprintNote?: string | undefined;
 	readonly outOfPlan: OutOfPlanDecision;
+	/** What the `preexisting` input decided for the added modules whose code the base has. */
+	readonly preexisting: OutOfPlanDecision;
 	readonly overrideLabel: string;
 	/** The vault folder on GitHub at the head commit. */
 	readonly vaultUrl?: string | undefined;
@@ -196,6 +198,9 @@ function footprintSection(report: PullRequestReport): string[] {
 		...moduleBucket("Changed outside the plan", report.buckets.outsidePlan, true),
 		...moduleBucket("Planned and changed", report.buckets.plannedAndChanged),
 		...moduleBucket("Planned but unchanged", report.buckets.plannedUnchanged),
+		...(report.buckets.preexisting.length === 0
+			? []
+			: moduleBucket("Added, with code at the base", report.buckets.preexisting, true)),
 		...unboundBucket(report.buckets.unbound),
 	];
 }
@@ -229,9 +234,32 @@ function outOfPlanSection(report: PullRequestReport): string[] {
 		fail: `${outside} changed outside the plan, so this check fails. Update the proposal to name them, or add the label ${label} to let this pull request through.`,
 		overridden: `${outside} changed outside the plan. The label ${label} lets this pull request through.`,
 	};
-	return by[report.outOfPlan.status] === ""
-		? []
-		: ["### Plan", "", by[report.outOfPlan.status], ""];
+	const lines = [by[report.outOfPlan.status], ...preexistingLines(report)].filter(
+		(line) => line !== "",
+	);
+	return lines.length === 0 ? [] : ["### Plan", "", ...lines.flatMap((line) => [line, ""])];
+}
+
+/**
+ * What the check of added modules decided, when it found some or could not judge and fails.
+ * @param report The report.
+ * @returns The sentence, or none.
+ */
+function preexistingLines(report: PullRequestReport): string[] {
+	const label = `\`${report.overrideLabel}\``;
+	const found = modules(report.buckets?.preexisting.length ?? 0);
+	const what = `${found} that the proposal adds already had code at the base, so a picture of the proposal marks existing code as added. Model them in the current state first, in a documentation layer below this pull request.`;
+	const by: Partial<Record<OutOfPlanDecision["status"], string>> = {
+		warn: `${what} The action warns only; set \`preexisting: fail\` to make it fail.`,
+		fail: `${what} This check fails; add the label ${label} to let this pull request through.`,
+		overridden: `${what} The label ${label} lets this pull request through.`,
+		// A failing plan check already says that the footprint could not be read.
+		unjudged:
+			report.preexisting.failed && !report.outOfPlan.failed
+				? `The added modules could not be checked, so this check fails. Add the label ${label} to let this pull request through.`
+				: "",
+	};
+	return [by[report.preexisting.status] ?? ""];
 }
 
 /**
