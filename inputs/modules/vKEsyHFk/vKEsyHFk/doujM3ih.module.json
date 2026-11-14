@@ -12,26 +12,12 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#doujM3ih",
-  "parent": "vKEsyHFk#EuaJBisP",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "Codex process durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/protocol/server-startup-protocol.ts",
-        "symbol": "CODEX_PROCESS_MS"
-      },
-      "id": "vKEsyHFk#qbuIzCBd",
-      "to": "vKEsyHFk/vKEsyHFk#vEVm326r"
-    }
-  ]
+  "outgoing": [],
+  "parent": "vKEsyHFk#EuaJBisP"
 }

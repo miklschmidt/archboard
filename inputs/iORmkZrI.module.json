@@ -89,19 +89,6 @@
       },
       "id": "vKEsyHFk#2UrR4Yp6",
       "to": "vKEsyHFk#ERy2jAwu"
-    },
-    {
-      "order": 981210,
-      "kind": "dependency",
-      "label": "pane durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/panes/pane-session/clients/pane-socket.ts",
-        "symbol": "PANE_MS"
-      },
-      "id": "vKEsyHFk#l6fsjfwH",
-      "to": "vKEsyHFk/vKEsyHFk#sw4oFps0"
     }
   ]
 }

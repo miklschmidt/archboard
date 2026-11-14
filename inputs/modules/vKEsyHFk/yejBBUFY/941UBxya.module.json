@@ -44,19 +44,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#Lo6Q7GDB",
       "to": "vKEsyHFk#sZUpSKaS"
-    },
-    {
-      "order": 11000,
-      "kind": "dependency",
-      "label": "session durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/transport/clients/socket-run.ts",
-        "symbol": "CODEX_SESSION_MS"
-      },
-      "id": "vKEsyHFk#rGnnwTGB",
-      "to": "vKEsyHFk/vKEsyHFk#vEVm326r"
     }
   ]
 }

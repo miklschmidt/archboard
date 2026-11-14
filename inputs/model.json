@@ -3,21 +3,21 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "1inLSGhc",
-    "name": "Duration reads between owners",
-    "summary": "A module that reads a duration another module owns depends on that owner. Each such read is a dependency relationship, anchored at the import, so the model shows which owner a module must follow when a duration changes.",
+    "id": "e3T8Mjgq",
+    "name": "Anonymous usage as wide events",
+    "summary": "A telemetry package records each CLI command and each unexpected error in the state directory, and the server rolls a day of records into one wide event for each installation and sends it, with an event for each error, to PostHog EU Cloud. CI, tests, DO_NOT_TRACK and archboard telemetry off turn it off.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0080-each-duration-lives-with-its-owner.md"
+        "path": "docs/adr/0079-archboard-sends-anonymous-usage-as-wide-events.md"
       }
     ],
-    "predecessor": "ostXM9oe",
-    "baseline": "ccf59226c33879b4838bbefb1e5c7729d0150643",
-    "createdAt": "2026-11-13T10:55:36.068Z",
-    "adoptedAt": "2026-11-13T10:56:56.021Z",
-    "reason": "Each module that reads a duration of another owner imports it on refactor/dissolve-timing, and these dependencies record those imports (TASK-634).",
-    "previousCurrent": "ostXM9oe"
+    "predecessor": "TGDLt5Ea",
+    "baseline": "82c17d0fc654e92e48f96514ed3db040861124ad",
+    "createdAt": "2026-11-12T23:18:09.164Z",
+    "adoptedAt": "2026-11-13T00:36:53.285Z",
+    "reason": "The telemetry package, its callers and the PostHog sender are implemented on feat/telemetry (TASK-632.01).",
+    "previousCurrent": "TGDLt5Ea"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
@@ -1658,11 +1658,6 @@
     "vKEsyHFk/SMjRfwN3#44gQ5gUw",
     "vKEsyHFk/vKEsyHFk#mm4DLsd2",
     "vKEsyHFk#8EhrdPUE",
-    "vKEsyHFk#ezZAyT0C",
-    "vKEsyHFk/vKEsyHFk#aDY2uOmY",
-    "vKEsyHFk#zAB848k7",
-    "vKEsyHFk/vKEsyHFk#YzzrtDSd",
-    "vKEsyHFk/vKEsyHFk#7eSdILxB",
-    "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    "vKEsyHFk#ezZAyT0C"
   ]
 }

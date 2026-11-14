@@ -63,19 +63,6 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#X6q6P132",
       "to": "vKEsyHFk/qKGcB6vZ#En8mB6jo"
-    },
-    {
-      "order": 45000,
-      "kind": "dependency",
-      "label": "session durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/services/start.ts",
-        "symbol": "CODEX_SESSION_MS"
-      },
-      "id": "vKEsyHFk#W0ElUA84",
-      "to": "vKEsyHFk/vKEsyHFk#vEVm326r"
     }
   ]
 }
