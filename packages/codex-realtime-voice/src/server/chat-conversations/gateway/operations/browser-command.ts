@@ -160,9 +160,9 @@ const REFUSAL_MESSAGES: Partial<Record<CodexWorkbenchGatewayError["code"], strin
 	dynamic_approval_not_pending: "That coordination approval is no longer pending.",
 	unsupported_command: "The browser command is not supported by this gateway.",
 	work_stopping:
-		"The workhorse is stopping, or its last stop did not show that all work ended. Press Stop again before new work.",
+		"The workhorse is stopping, or its last stop did not show that all work ended. Before you send new work, press Stop while it shows, or ask the voice coordinator to stop the work.",
 	stop_unconfirmed:
-		"Some work of this workhorse or its sub-agents still runs or could not be read. Press Stop again.",
+		"Some work of this workhorse or its sub-agents still runs or could not be read. Press Stop again while it shows, or ask the voice coordinator to stop the work.",
 };
 
 /**
