@@ -3,6 +3,7 @@
   "name": "Turn execution",
   "kind": "module",
   "responsibility": "Implements delegation, steering, inspection and queue changes through the shared operation runtime",
+  "description": "Inspection reads the workhorse's turns through thread/turns/list, because a thread summary carries no turns. It reports the running turn, the request that started it, its recent progress, the sub-agents from thread/list, and the queue. It reads the queue only for the workhorse that this server created and proved, and it reports any read that failed as unavailable instead of empty. Steering reads the running workhorse turn the same way and sends it as the expected turn, so Codex refuses a turn that ended meanwhile. The coordinator's own turn never becomes the target.",
   "groups": [
     "workhorse"
   ],
@@ -36,7 +37,7 @@
     {
       "order": 16000,
       "kind": "rpc",
-      "label": "turn/start when idle, turn/steer",
+      "label": "turn/start, turn/steer, and the reads of inspection",
       "emphasis": "hero",
       "traffic": {
         "speed": 40,
