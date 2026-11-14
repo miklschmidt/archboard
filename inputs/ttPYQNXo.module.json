@@ -64,8 +64,8 @@
         "path": "crates/archboard-paint/src/stage/mod.rs",
         "symbol": "find_warnings"
       },
-      "to": "vKEsyHFk#HL9m7uSj",
-      "id": "vKEsyHFk#f9M5SCfi"
+      "id": "vKEsyHFk#f9M5SCfi",
+      "to": "vKEsyHFk#HL9m7uSj"
     },
     {
       "order": 4200,
@@ -77,8 +77,8 @@
         "path": "crates/archboard-paint/src/stage/mod.rs",
         "symbol": "Stage"
       },
-      "to": "vKEsyHFk#UuRNEE2Z",
-      "id": "vKEsyHFk#5png0N2k"
+      "id": "vKEsyHFk#5png0N2k",
+      "to": "vKEsyHFk#UuRNEE2Z"
     }
   ]
 }

@@ -3,6 +3,10 @@
   "name": "Chat conversations",
   "kind": "module",
   "responsibility": "What a chat sees and says: the gateway with its lease, snapshots and commands, the start of a conversation, the list of the tab's workhorses, and the approvals raised to the person",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/chat-conversations"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#i5AuDn9L",
   "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
@@ -15,9 +19,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/chat-conversations"
-  }
+  "outgoing": []
 }
