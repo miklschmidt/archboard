@@ -59,6 +59,19 @@
       "to": "vKEsyHFk/HBlhIeSD#yYQ3AHkf"
     },
     {
+      "order": 33000,
+      "kind": "call",
+      "label": "quote the source of a remembered piece of evidence",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
+        "symbol": "readSourceLines"
+      },
+      "id": "vKEsyHFk#WNmQf72c",
+      "to": "vKEsyHFk#nbkmjsU3"
+    },
+    {
       "order": 53000,
       "kind": "call",
       "label": "requires a vault",
@@ -70,19 +83,6 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#hYCgIdBo",
       "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
-    },
-    {
-      "order": 33000,
-      "kind": "call",
-      "label": "quote the source of a remembered piece of evidence",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
-        "symbol": "readSourceLines"
-      },
-      "to": "vKEsyHFk#nbkmjsU3",
-      "id": "vKEsyHFk#WNmQf72c"
     }
   ]
 }
