@@ -301,4 +301,125 @@ test("a directory module passes the gate only when the modules inside it bind ea
 	expect(both.holds).toEqual({ Workspace: [] });
 	expect(both.stderr).toContain("1 changed outside the plan");
 	expect(both.stderr).toContain("Changed outside the draft: Workspace.");
+	const released = cli(["model", "release"], { claim: claim.claim.id, writer: "held-agent" });
+	expect(released.status, released.stderr).toBe(0);
+}, 30_000);
+
+/**
+ * A change that adds a module bound into the shop.
+ * @param name The module's name.
+ * @param order Its order.
+ * @param path The path it binds.
+ * @param symbol The declaration it binds, if any.
+ * @returns The change.
+ */
+function bound(name: string, order: number, path: string, symbol?: string) {
+	return {
+		type: "add-module",
+		module: {
+			name,
+			kind: "module",
+			order,
+			binding: { repo: "github.com/acme/shop", path, ...(symbol === undefined ? {} : { symbol }) },
+		},
+	};
+}
+
+test("a module the draft adds is preexisting when the branch adds none of its bound code", () => {
+	/**
+	 * Write some files and commit them.
+	 * @param subject The commit's subject.
+	 * @param files Each file and its text.
+	 */
+	function commit(subject: string, files: Record<string, string>) {
+		for (const [file, text] of Object.entries(files)) {
+			mkdirSync(join(home, file, ".."), { recursive: true });
+			writeFileSync(join(home, file), text);
+		}
+		for (const args of [
+			["add", ...Object.keys(files)],
+			["commit", "--quiet", "-m", subject],
+		]) {
+			const ran = Bun.spawnSync(["git", "-C", home, ...args]);
+			if (ran.exitCode !== 0) throw new Error(ran.stderr.toString());
+		}
+	}
+	commit("test: the code at the base", {
+		"tools/cli/main.ts": "export const main = 1;\n",
+		"tools/cli/args.ts": "export const args = 1;\n",
+		"tools/plugins/core.ts": "export const core = 1;\n",
+		"lib/store.ts": "export function load() {\n\treturn 1;\n}\n",
+	});
+	const base = Bun.spawnSync(["git", "-C", home, "rev-parse", "HEAD"]).stdout.toString().trim();
+	commit("test: the branch", {
+		"tools/cli/main.ts": "export const main = 2;\n",
+		"tools/plugins/extra.ts": "export const extra = 1;\n",
+		"src/report.ts": "export const report = 1;\n",
+		"lib/store.ts":
+			"export function load() {\n\treturn 1;\n}\n\nexport function save() {\n\treturn 2;\n}\n",
+	});
+
+	const current = ArchitectureModelReadSchema.parse(answer(cli(["model", "read"]).stdout));
+	if (!current.success || current.manifest.current === null) throw new Error("No Current");
+	const target = { model: current.manifest.id, state: current.manifest.current.id };
+	const claim = ArchitectureClaimResultSchema.parse(
+		answer(
+			cli(["model", "claim"], {
+				target,
+				writer: "adding-agent",
+				reason: "adding modules",
+				subjects: ["Shop"],
+			}).stdout,
+		),
+	);
+	if (!claim.success) throw new Error(JSON.stringify(claim));
+	const read = ArchitectureModelReadSchema.parse(answer(cli(["model", "read"]).stdout));
+	if (!read.success) throw new Error(JSON.stringify(read));
+	const proposed = cli(["model", "edit", "--doing", "adding modules"], {
+		target,
+		expectedRevision: read.revision,
+		operationId: "footprint-preexisting-draft",
+		writer: "adding-agent",
+		claim: claim.claim.id,
+		proposal: { type: "create", name: "Adds modules" },
+		changes: [
+			// The branch changes code that was there at the base, and adds none.
+			bound("Cli", 60, "tools/cli"),
+			// The branch leaves this code alone.
+			bound("Args", 61, "tools/cli/args.ts"),
+			bound("Load", 62, "lib/store.ts", "load"),
+			// The branch adds this code: a new file, a new file in a directory, a new declaration.
+			bound("Report", 63, "src/report.ts"),
+			bound("Plugins", 64, "tools/plugins"),
+			bound("Save", 65, "lib/store.ts", "save"),
+		],
+	});
+	expect(proposed.status, proposed.stderr).toBe(0);
+	const released = cli(["model", "release"], { claim: claim.claim.id, writer: "adding-agent" });
+	expect(released.status, released.stderr).toBe(0);
+
+	const draft = ["model", "footprint", "--base", base, "--state", "Adds modules"];
+	const listed = cli(draft);
+	expect(listed.status, listed.stderr).toBe(0);
+	const parsed = z
+		.object({
+			preexisting: z.array(z.object({ subject: z.object({ name: z.string() }) })),
+			namedAndChanged: z.array(
+				z.object({ subject: z.object({ name: z.string() }), newSource: z.boolean() }),
+			),
+		})
+		.parse(answer(listed.stdout));
+	expect(parsed.preexisting.map(({ subject }) => subject.name).toSorted()).toEqual([
+		"Args",
+		"Cli",
+		"Load",
+	]);
+	expect(
+		Object.fromEntries(parsed.namedAndChanged.map((part) => [part.subject.name, part.newSource])),
+	).toMatchObject({ Cli: false, Report: true, Plugins: true, Save: true });
+
+	const gated = cli([...draft, "--fail-preexisting"]);
+	expect(gated.status, gated.stderr).toBe(1);
+	for (const name of ["Args", "Cli", "Load"]) expect(gated.stderr).toContain(name);
+	expect(cli(["model", "footprint", "--base", base, "--fail-preexisting"]).status).toBe(2);
 }, 30_000);

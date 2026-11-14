@@ -16,9 +16,9 @@ import { readFootprint } from "./footprint.ts";
 import { upsertComment } from "./github.ts";
 import type { PostResult } from "./github.ts";
 import { folderUrl } from "./links.ts";
-import { parseBodyMarker } from "./marker.ts";
+import { mermaidCharts, parseBodyMarker } from "./marker.ts";
 import { chooseState, decideOutOfPlan } from "./plan.ts";
-import type { ModelState, StateChoice } from "./plan.ts";
+import type { ModelState, OutOfPlanStatus, StateChoice } from "./plan.ts";
 import { proposalPlan } from "./proposal-plan.ts";
 import type { Buckets, ModelReading, ProposalPlan } from "./proposal-plan.ts";
 import { input, parseJson, run } from "../shared/process.ts";
@@ -54,7 +54,12 @@ interface Trees {
 }
 
 /** The plan of a pull request with no proposal. */
-const NO_PLAN: ProposalPlan = { comparison: [], named: new Map(), baseOnlyBindings: new Set() };
+const NO_PLAN: ProposalPlan = {
+	comparison: [],
+	named: new Map(),
+	baseOnlyBindings: new Set(),
+	added: new Map(),
+};
 
 /**
  * Whether a checkout holds a vault. A checkout uses only the vault at its root.
@@ -126,13 +131,51 @@ function uncompared(side: "base" | "head", reason: string): { plan: ProposalPlan
  */
 function annotatePlan(report: PullRequestReport): void {
 	annotateUnavailable(report);
+	annotateCharts(report);
 	const outside = report.buckets?.outsidePlan ?? [];
-	const text = `${String(outside.length)} module(s) changed outside the plan: ${outside.join(", ")}.`;
+	annotateFound(
+		report.outOfPlan.status,
+		"Archboard plan",
+		`${String(outside.length)} module(s) changed outside the plan: ${outside.join(", ")}.`,
+	);
+	const preexisting = report.buckets?.preexisting ?? [];
+	annotateFound(
+		report.preexisting.status,
+		"Archboard preexisting",
+		`${String(preexisting.length)} module(s) that the proposal adds bind no code that the pull request adds: ${preexisting.join(", ")}.`,
+	);
+}
+
+/**
+ * Warn in the log about Mermaid charts in the `archboard-pr` section of the description.
+ * @param report The report.
+ */
+function annotateCharts(report: PullRequestReport): void {
+	if (report.mermaidCharts === 0) return;
+	const text = `The archboard-pr section of the description draws ${String(report.mermaidCharts)} Mermaid chart(s). Model each flow and draw it with archboard model render --flow.`;
+	process.stdout.write(`${annotationLine("warning", { title: "Archboard charts" }, text)}\n`);
+}
+
+/**
+ * Put what a check found in the log, at the level its decision gives.
+ * @param status The check's decision.
+ * @param title The annotation's title.
+ * @param text What the check found.
+ */
+function annotateFound(status: OutOfPlanStatus, title: string, text: string): void {
 	const levels = { warn: "warning", fail: "error", overridden: "notice" } as const;
-	const status = report.outOfPlan.status;
 	if (status === "warn" || status === "fail" || status === "overridden") {
-		process.stdout.write(`${annotationLine(levels[status], { title: "Archboard plan" }, text)}\n`);
+		process.stdout.write(`${annotationLine(levels[status], { title }, text)}\n`);
 	}
+}
+
+/**
+ * Whether a check fails the step.
+ * @param report The report.
+ * @returns True when the plan check or the check of added modules fails.
+ */
+function failed(report: PullRequestReport): boolean {
+	return report.outOfPlan.failed || report.preexisting.failed;
 }
 
 /**
@@ -154,9 +197,9 @@ function uncheckedReason(report: PullRequestReport): string {
  * @param report The report.
  */
 function annotateUnavailable(report: PullRequestReport): void {
-	const { status, failed } = report.outOfPlan;
-	if (status !== "unjudged" && status !== "unjudged-overridden") return;
-	const level = failed ? "error" : "warning";
+	const unjudged = new Set(["unjudged", "unjudged-overridden"]);
+	if (!unjudged.has(report.outOfPlan.status) && !unjudged.has(report.preexisting.status)) return;
+	const level = failed(report) ? "error" : "warning";
 	process.stdout.write(
 		`${annotationLine(level, { title: "Archboard plan" }, uncheckedReason(report))}\n`,
 	);
@@ -187,24 +230,36 @@ function registerCheckouts(context: Context): string | undefined {
 }
 
 /**
- * Judge the footprint against the plan.
+ * Judge the footprint against the plan: the modules changed outside it, and the modules it adds
+ * whose bound code the pull request does not add.
  * @param context The run.
  * @param choice The proposal, or why there is none.
  * @param buckets The footprint, if it was read.
- * @returns The decision.
+ * @returns Both decisions.
  */
 function judge(context: Context, choice: StateChoice, buckets: Buckets | undefined) {
 	// A proposal that the pull request names and the model lacks, several drafts and no name, or
 	// proposals that cannot be read: each is a plan that cannot be checked.
 	const unchecked = planProblem(choice) !== undefined;
-	return decideOutOfPlan({
-		mode: context.mode,
+	const lists = buckets ?? { outsidePlan: [], preexisting: [] };
+	const facts = {
 		hasProposal: choice.state !== undefined || unchecked,
 		judgeable: buckets !== undefined && !unchecked,
-		outside: buckets?.outsidePlan ?? [],
 		labels: context.labels,
 		overrideLabel: context.overrideLabel,
-	});
+	};
+	return {
+		outOfPlan: decideOutOfPlan({
+			...facts,
+			mode: context.mode,
+			outside: lists.outsidePlan,
+		}),
+		preexisting: decideOutOfPlan({
+			...facts,
+			mode: context.preexistingMode,
+			outside: lists.preexisting,
+		}),
+	};
 }
 
 /**
@@ -252,8 +307,9 @@ function buildReport(
 		comparisonNote: note,
 		buckets: footprint.buckets,
 		footprintNote: footprint.note,
-		outOfPlan: judge(context, choice, footprint.buckets),
+		...judge(context, choice, footprint.buckets),
 		overrideLabel: context.overrideLabel,
+		mermaidCharts: mermaidCharts(context.body),
 		vaultUrl: vaultAddress(context, trees, proposals.vault?.path),
 	};
 }
@@ -325,8 +381,9 @@ function unreadableReport(context: Context, reason: string): PullRequestReport {
 	return {
 		choice,
 		comparison: [],
-		outOfPlan: judge(context, choice, undefined),
+		...judge(context, choice, undefined),
 		overrideLabel: context.overrideLabel,
+		mermaidCharts: mermaidCharts(context.body),
 	};
 }
 
@@ -394,7 +451,7 @@ async function reportOn(context: Context, trees: Trees): Promise<number> {
 			: buildReport(context, trees, answer);
 	annotatePlan(report);
 	await publish(context, pullRequestComment(report), true);
-	return report.outOfPlan.failed ? 1 : 0;
+	return failed(report) ? 1 : 0;
 }
 
 /**

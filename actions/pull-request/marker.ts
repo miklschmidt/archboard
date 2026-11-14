@@ -35,6 +35,26 @@ function parseBodyMarker(body: string): BodyMarker | undefined {
 	};
 }
 
+const SECTION_BEGIN = "<!-- archboard-pr:begin -->";
+const SECTION_END = "<!-- archboard-pr:end -->";
+/** The opening fence of a Mermaid code block, with backticks or tildes, as GitHub reads it. */
+const MERMAID_FENCE = /^ {0,3}(?:`{3,}|~{3,})[ \t]*mermaid\b/gimu;
+
+/**
+ * Count the Mermaid charts in the `archboard-pr` section of a pull request body. The skill draws
+ * every flowchart and sequence chart there from a model flow, so a Mermaid chart there was drawn by
+ * hand. A section without its end runs to the end of the body.
+ * @param body The pull request body.
+ * @returns The number of fenced `mermaid` blocks in the section, 0 when the body has none.
+ */
+function mermaidCharts(body: string): number {
+	const begin = body.indexOf(SECTION_BEGIN);
+	if (begin === -1) return 0;
+	const end = body.indexOf(SECTION_END, begin);
+	const section = body.slice(begin, end === -1 ? undefined : end);
+	return [...section.matchAll(MERMAID_FENCE)].length;
+}
+
 /** A comment of the pull request, as the REST API lists it. */
 interface IssueComment {
 	readonly id: number;
@@ -50,4 +70,11 @@ function findStickyComment(comments: readonly IssueComment[]): number | undefine
 	return comments.find((comment) => comment.body?.includes(COMMENT_MARKER) === true)?.id;
 }
 
-export { COMMENT_MARKER, findStickyComment, parseBodyMarker, type BodyMarker, type IssueComment };
+export {
+	COMMENT_MARKER,
+	findStickyComment,
+	mermaidCharts,
+	parseBodyMarker,
+	type BodyMarker,
+	type IssueComment,
+};

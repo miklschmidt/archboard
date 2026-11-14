@@ -14,6 +14,28 @@ function part(name: string, id = `m#${name.toLowerCase()}`) {
 	return [{ subject: { id, name } }];
 }
 
+/**
+ * A module bound to code, as `model read` gives it.
+ * @param name The module's name.
+ * @returns The module.
+ */
+function added(name: string) {
+	return { id: `m#${name.toLowerCase()}`, name, binding: { path: name } };
+}
+
+/**
+ * A changed part, as a footprint lists it, with what it says of new code.
+ * @param name The module's name.
+ * @param newSource Whether the branch added code to it; absent from an older CLI.
+ * @returns The part.
+ */
+function changed(name: string, newSource?: boolean) {
+	return {
+		subject: { id: `m#${name.toLowerCase()}`, name },
+		...(newSource === undefined ? {} : { newSource }),
+	};
+}
+
 describe("the plan of a proposal", () => {
 	const intake = { id: "m#intake", name: "Intake", binding: { path: "intake" }, outgoing: [] };
 	const billing = { id: "m#billing", name: "Billing", binding: { path: "billing" } };
@@ -49,6 +71,7 @@ describe("the plan of a proposal", () => {
 			plannedUnchanged: ["Billing"],
 			changed: ["Catalog", "Intake"],
 			unbound: [],
+			preexisting: [],
 		};
 		expect(
 			planBuckets({ namedAndChanged: part("Intake"), changedNotNamed: part("Catalog") }, plan),
@@ -63,7 +86,30 @@ describe("the plan of a proposal", () => {
 			plannedUnchanged: ["Billing"],
 			changed: ["Catalog", "Intake"],
 			unbound: [{ repo: "github.com/acme/shop", path: "docs/notes.md" }],
+			preexisting: [],
 		});
+	});
+
+	test("an added module is preexisting when the branch adds none of its code, unless it was not read", () => {
+		const plan = proposalPlan(
+			{ modules: [] },
+			{ modules: ["Cli", "Args", "Report", "Plugins", "Remote", "Older"].map(added) },
+		);
+		expect([...plan.added.values()]).toHaveLength(6);
+		const buckets = planBuckets(
+			{
+				// Args is unchanged, so the branch adds none of its code.
+				changed: [
+					changed("Cli", false),
+					changed("Report", true),
+					changed("Plugins", true),
+					changed("Older"),
+				],
+				skipped: [changed("Remote")],
+			},
+			plan,
+		);
+		expect(buckets.preexisting).toEqual(["Args", "Cli"]);
 	});
 
 	test("a changed module that holds another is never outside the plan, unless the CLI is older", () => {
@@ -71,6 +117,7 @@ describe("the plan of a proposal", () => {
 			comparison: [],
 			named: new Map([["m#installation", "Installation"]]),
 			baseOnlyBindings: new Set<string>(),
+			added: new Map<string, string>(),
 		};
 		const workspace = {
 			subject: { id: "m#workspace", name: "Workspace" },
@@ -91,6 +138,7 @@ describe("the plan of a proposal", () => {
 			comparison: [],
 			named: new Map([["m#installation", "Installation"]]),
 			baseOnlyBindings: new Set<string>(),
+			added: new Map<string, string>(),
 		};
 		// The branch changed installation.ts and libs/workspace/README.md, so the CLI lists no holds.
 		const workspace = { subject: { id: "m#workspace", name: "Workspace" }, holds: [] };
@@ -113,7 +161,7 @@ describe("the plan of a proposal", () => {
 				changed: [...part("Zulu", "z"), ...part("API", "unplanned"), ...part("Billing", "billing")],
 				skipped: part("Gone", "removed"),
 			},
-			{ comparison: [], named, baseOnlyBindings: new Set() },
+			{ comparison: [], named, baseOnlyBindings: new Set(), added: new Map() },
 		);
 		expect(buckets).toEqual({
 			plannedAndChanged: ["Billing"],
@@ -121,6 +169,7 @@ describe("the plan of a proposal", () => {
 			plannedUnchanged: ["API", "Catalog"],
 			changed: ["API", "Billing", "Zulu"],
 			unbound: [],
+			preexisting: [],
 		});
 		expect(
 			decideOutOfPlan({

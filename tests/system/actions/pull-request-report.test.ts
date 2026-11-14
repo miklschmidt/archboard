@@ -6,6 +6,7 @@ import type { PullRequestReport } from "../../../actions/pull-request/comment.ts
 import {
 	COMMENT_MARKER,
 	findStickyComment,
+	mermaidCharts,
 	parseBodyMarker,
 } from "../../../actions/pull-request/marker.ts";
 import { chooseState } from "../../../actions/pull-request/plan.ts";
@@ -39,6 +40,35 @@ describe("the proposal of a pull request", () => {
 	});
 });
 
+/**
+ * A fenced Mermaid chart.
+ * @param fence The opening fence, which may end in spaces.
+ * @returns The chart's Markdown.
+ */
+function chart(fence: string): string {
+	return `${fence}mermaid\nflowchart LR\n  A --> B\n${fence.trim()}\n`;
+}
+
+describe("the Mermaid charts of a description", () => {
+	test("are counted inside the archboard-pr section only, with either fence", () => {
+		const body = [
+			chart("```"),
+			"<!-- archboard-pr:begin -->",
+			chart("```"),
+			chart("~~~ "),
+			"```ts\nconst mermaid = 1;\n```",
+			"<!-- archboard-pr:end -->",
+			chart("```"),
+		].join("\n");
+		expect(mermaidCharts(body)).toBe(2);
+	});
+
+	test("are none without the section, and run to the end of a section without its end", () => {
+		expect(mermaidCharts(chart("```"))).toBe(0);
+		expect(mermaidCharts(`<!-- archboard-pr:begin -->\n${chart("````")}`)).toBe(1);
+	});
+});
+
 describe("the sticky comment", () => {
 	const report: PullRequestReport = {
 		choice: { state: states[1], source: "input" },
@@ -49,10 +79,13 @@ describe("the sticky comment", () => {
 			plannedUnchanged: ["Fulfilment worker"],
 			changed: ["Checkout API", "Stock API"],
 			unbound: [{ repo: "github.com/acme/shop", path: "docs/notes.md" }],
+			preexisting: [],
 		},
 		outOfPlan: { status: "fail", failed: true },
+		preexisting: { status: "in-plan", failed: false },
 		overrideLabel: "archboard: out of plan",
 		vaultUrl: "https://github.test/owner/name/tree/b/.archboard/vault",
+		mermaidCharts: 0,
 	};
 
 	test("starts with the marker, lists the buckets by module name and says how to override", () => {
@@ -81,6 +114,21 @@ describe("the sticky comment", () => {
 		expect(text).toContain("<details>\n<summary>Planned and changed (1)</summary>");
 		expect(text).toContain("Planned but unchanged: none.");
 		expect(text.indexOf("### Plan")).toBeLessThan(text.indexOf("### Footprint"));
+	});
+
+	test("lists the added modules without new code only when there are some, and says why it fails", () => {
+		expect(pullRequestComment(report)).not.toContain("Added without new code");
+		const text = pullRequestComment({
+			...report,
+			buckets: { ...report.buckets!, preexisting: ["CLI"] },
+			preexisting: { status: "fail", failed: true },
+		});
+		expect(text).toContain(
+			"<details open>\n<summary>Added without new code (1)</summary>\n\n- CLI\n\n</details>",
+		);
+		expect(text.slice(text.indexOf("### Plan"), text.indexOf("### Footprint"))).toContain(
+			"`archboard: out of plan`",
+		);
 	});
 
 	test("a module name shows as written and cannot close its disclosure", () => {
@@ -121,6 +169,13 @@ describe("the sticky comment", () => {
 		});
 		expect(text).toContain("- ``notes` **approved** `.md`` in github.com/acme/shop");
 		expect(text).toContain("- `line\\nbreak.md` in github.com/acme/infra");
+	});
+
+	test("warns about Mermaid charts only when the description's section draws some", () => {
+		expect(pullRequestComment(report)).not.toContain("Mermaid");
+		const text = pullRequestComment({ ...report, mermaidCharts: 2 });
+		expect(text.indexOf("Mermaid")).toBeGreaterThan(-1);
+		expect(text.indexOf("Mermaid")).toBeLessThan(text.indexOf("### Footprint"));
 	});
 
 	test("the action updates the comment that carries the marker", () => {

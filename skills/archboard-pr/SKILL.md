@@ -35,20 +35,23 @@ Read those files, and skipped or unavailable source, directly from the diff.
 Choose the evidence that fits:
 
 - Durable architecture changes: Use the existing model and a compact proposal.
+- New or changed logic: Author it as a flow in the proposal, and render it with `model render --flow <id> --grammar flowchart` so that its markers compare with the review base. When timing and call routing matter more than the logic, render the same flow with `--grammar sequence`. Both grammars draw the same steps.
 - Incidental flows or processes: Use a [temporary model](references/ephemeral.md).
 - Design-only changes: Follow [design evidence](references/design.md).
 - Unchanged architectural meaning: Use concise text or a code example.
 
 For legacy authority, follow the consumer migration reference for inventory and preview.
 Never rewrite originals just to obtain a PR picture.
-Finish when every architectural change has an explanation tied to an identified model state or source evidence.
+Finish when every architectural change has an explanation tied to an identified model state or source evidence, and every flowchart and sequence chart in the body comes from a model flow.
+Never write a flowchart or sequence chart in Mermaid.
 
 ## Prepare the proposal
 
 Read the existing PR state comment before creating a proposal.
 Locate its stable ID through the catalogue.
 For a proposal that predates code, follow [reconciliation](references/reconcile.md).
-Documentation of implemented architecture needs no additional proposal.
+Each added module with a binding binds source that the diff adds.
+If the source exists at the base, model it in Current first, in a documentation layer below this PR. That documentation needs no proposal of its own.
 Use consumer authoring and comparison recipes, preserving source evidence, documents, and order.
 
 Compare with the actual review base:
@@ -62,7 +65,8 @@ archboard check code --state <proposal-id> -C <checkout>
 For a planning root, use its empty baseline and omit absent selectors.
 Fix findings caused by the change and record unavailable evidence.
 Commit tracked authored inputs with implementation.
-Finish when proposal meaning matches implementation and comparison accounts for every changed subject.
+While the proposal is a draft, add `--fail-preexisting` to the footprint. It exits 1 for each added module whose bound code the branch does not add.
+Finish when proposal meaning matches implementation, comparison accounts for every changed subject, and the draft's footprint passes `--fail-preexisting`.
 
 ## Prepare artifacts
 

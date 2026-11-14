@@ -2,7 +2,8 @@ name: Archboard pull request
 description: >-
   Comment on a pull request with its architecture as text: the proposal it carries, the footprint
   of the change against the plan, and a link to the vault. Optionally warn or fail when modules
-  change outside the plan. Runs on `pull_request` events and needs a checkout with
+  change outside the plan, or when the proposal adds modules that bind no code that it adds. It
+  warns when the `archboard-pr` section of the description draws a Mermaid chart. Runs on `pull_request` events and needs a checkout with
   `fetch-depth: 0`. The job needs `contents: read` and `pull-requests: write`, or only
   `contents: read` when `report-file` takes the report in place of the comment.
 author: Mikkel Schmidt
@@ -42,8 +43,17 @@ inputs:
       `fail` fails the step unless the pull request carries the override label, and `off` does not
       judge. With no proposal there is no plan, so nothing is ever out of plan.
     default: warn
+  preexisting:
+    description: >-
+      What modules that the proposal adds, but whose bound code the pull request does not add, do. A
+      picture of the proposal marks such a module as added although the diff adds no code for it. The
+      comment lists them in every mode. `warn` annotates, `fail` fails the step unless the
+      pull request carries the override label, and `off` does not judge. A module bound to a
+      directory that the pull request adds a file to is not counted.
+    default: warn
   override-label:
-    description: The label that lets a pull request through when `out-of-plan` is `fail`.
+    description: >-
+      The label that lets a pull request through when `out-of-plan` or `preexisting` is `fail`.
     default: "archboard: out of plan"
   report-file:
     description: >-
@@ -88,6 +98,7 @@ runs:
         ARCHBOARD_INPUT_REPOS: ${{ inputs.repos }}
         ARCHBOARD_INPUT_STATE: ${{ inputs.state }}
         ARCHBOARD_INPUT_OUT_OF_PLAN: ${{ inputs.out-of-plan }}
+        ARCHBOARD_INPUT_PREEXISTING: ${{ inputs.preexisting }}
         ARCHBOARD_INPUT_OVERRIDE_LABEL: ${{ inputs.override-label }}
         ARCHBOARD_INPUT_REPORT_FILE: ${{ inputs.report-file }}
         ARCHBOARD_INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}

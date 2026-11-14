@@ -4,7 +4,7 @@ description: >-
   Read, author, and visualize local architecture with the archboard CLI.
   Always use in repositories with an .archboard/vault directory: when planning,
   implementing, explaining, visualizing, refactoring, or improving the
-  codebase. Load this skill when loading, reading, or using
+  codebase or code in general. Load this skill when loading, reading, or using
   improve-codebase-architecture. Also use for architecture questions, request
   flows, proposals, and explicit migration of existing architecture vaults.
 ---
@@ -12,6 +12,8 @@ description: >-
 # Archboard
 
 Use the CLI to read architecture, author changes, and produce diagrams.
+Model every flowchart and sequence chart as a flow, and draw it with `model render --flow <id> --grammar flowchart` or `--grammar sequence`.
+Never write a flowchart or sequence chart in Mermaid.
 A vault is the directory that holds one model.
 A reading selects what you see without copying architecture.
 

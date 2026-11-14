@@ -89,14 +89,15 @@ function chooseState(
 type OutOfPlanMode = "warn" | "fail" | "off";
 
 /**
- * Read the `out-of-plan` input.
+ * Read the `out-of-plan` input, or the `preexisting` input, which takes the same modes.
  * @param value The input.
+ * @param name The input's name.
  * @returns The mode.
  * @throws {Error} When the value is not warn, fail or off.
  */
-function parseOutOfPlanMode(value: string): OutOfPlanMode {
+function parseOutOfPlanMode(value: string, name = "out-of-plan"): OutOfPlanMode {
 	if (value === "warn" || value === "fail" || value === "off") return value;
-	throw new Error(`out-of-plan is "${value}". Use "warn", "fail" or "off".`);
+	throw new Error(`${name} is "${value}". Use "warn", "fail" or "off".`);
 }
 
 /**
@@ -171,7 +172,8 @@ function blockingStatus(facts: PlanFacts): keyof typeof OVERRIDDEN | undefined {
 }
 
 /**
- * Decide what modules changed outside the plan mean for the step.
+ * Decide what modules changed outside the plan mean for the step. The same policy decides what
+ * preexisting modules mean, with `outside` holding them and `mode` read from `preexisting`.
  * @param facts What the pull request carries.
  * @returns The status and whether the step fails.
  */
