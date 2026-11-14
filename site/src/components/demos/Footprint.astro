@@ -17,12 +17,12 @@ const lists: {
 }[] = [
 	{
 		title: "Changed but not named",
-		gloss: "The commits changed these modules, and the plan does not name them.",
+		gloss: "The branch changed these modules, and the plan does not name them.",
 		modules: [{ name: "Basket cache", detail: "services/basket/cache", commits: 1 }],
 	},
 	{
 		title: "Named and changed",
-		gloss: "The plan names these modules, and the commits changed them.",
+		gloss: "The plan names these modules, and the branch changed them.",
 		modules: [
 			{ name: "Checkout API", detail: "changed by the plan", commits: 4 },
 			{ name: "Fulfilment worker", detail: "added by the plan", commits: 3 },
@@ -31,7 +31,7 @@ const lists: {
 	},
 	{
 		title: "Named but not changed",
-		gloss: "The plan names these modules, and no commit changed them yet.",
+		gloss: "The plan names these modules, and the branch does not change them yet.",
 		modules: [{ name: "Payment webhook", detail: "changed by the plan", commits: 0 }],
 	},
 ];
