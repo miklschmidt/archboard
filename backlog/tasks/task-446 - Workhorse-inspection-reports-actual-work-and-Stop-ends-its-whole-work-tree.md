@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: 2026-10-07 19:57
-updated_date: '2026-11-14T17:38:00Z'
+updated_date: '2026-11-14T18:03:00Z'
 labels:
   - voice
   - coordinator
@@ -84,6 +84,10 @@ The board check passes with no diagnostics. semantic compare matches the planned
 2026-11-14: rebased onto main f7c9ca977f, where TASK-319's omSpXUMz had become Current. BlKbD4yG stood on a former Current, so the vault work was redone through the CLI: proposal abr2gK6Q restates it on omSpXUMz with the same 58 changes (compared change by change after normalizing the new ids). The drafts 93RlBGLx, yM7DOqT4 and zFIdZB1Y were shelved again with a reason that names abr2gK6Q, and abr2gK6Q was adopted without force; archboard check passes. Its checkpoints were published to origin refs/heads/archboard-history as a fast-forward from a0e3c707 to 81d7555d. CI's module test 'fresh Archboard profiles bind the authored canonical instructions and stable tool identity' pinned the coordinator manifest hash, which the rewritten stop_workhorses and inspect_workhorse descriptions changed; with main's workhorse.json the old hash returns, and the pin now holds c843afeb.
 
 2026-11-14: CodeRabbit review fixes. A stop now waits for work admitted before it (delegations, queue changes, typed messages) before its first read, confirms an empty tree with a second read, always acts once on the work it saw, keeps every asking coordinator turn refused across joined and later stops, and names at most REMAINING_WORK_LIMIT threads. A steer reclassifies its link after its last turn read. The stop flow decides its outcome after the observation loop (checkpoint e09f7795 published). TASK-638 tracks the rest of the Stop gap: the workbench keeps Stop available while a stop is unresolved. Until then the refusal messages name the voice coordinator as the recovery.
+
+2026-11-14: second CodeRabbit round. The coordinator turns that asked for a stop are shared by every workhorse of a tab session, so a workhorse built after the stop refuses them too. A failed read of the workhorse thread counts as unread, not running, so the stop reports unconfirmed. A typed start or steer is refused with link_changed when New conversation moved the workhorse before the request was sent. TASK-639 tracks work that keeps running on a thread New conversation left, which no stop reaches yet.
+
+2026-11-14: CodeRabbit reopened the empty-tree confirmation. A request accepted between the two reads could start after the confirming read's status read and before its queue read, so the stop reported the tree empty while that turn ran. Now a thread whose queue was empty is read again after the listing. The tree reads moved to work-tree-reads.ts to keep stop.ts under the file size limit.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
