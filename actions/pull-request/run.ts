@@ -16,7 +16,7 @@ import { readFootprint } from "./footprint.ts";
 import { upsertComment } from "./github.ts";
 import type { PostResult } from "./github.ts";
 import { folderUrl } from "./links.ts";
-import { parseBodyMarker } from "./marker.ts";
+import { mermaidCharts, parseBodyMarker } from "./marker.ts";
 import { chooseState, decideOutOfPlan } from "./plan.ts";
 import type { ModelState, OutOfPlanStatus, StateChoice } from "./plan.ts";
 import { proposalPlan } from "./proposal-plan.ts";
@@ -131,6 +131,7 @@ function uncompared(side: "base" | "head", reason: string): { plan: ProposalPlan
  */
 function annotatePlan(report: PullRequestReport): void {
 	annotateUnavailable(report);
+	annotateCharts(report);
 	const outside = report.buckets?.outsidePlan ?? [];
 	annotateFound(
 		report.outOfPlan.status,
@@ -143,6 +144,16 @@ function annotatePlan(report: PullRequestReport): void {
 		"Archboard preexisting",
 		`${String(preexisting.length)} module(s) that the proposal adds bind code that the base already has: ${preexisting.join(", ")}.`,
 	);
+}
+
+/**
+ * Warn in the log about Mermaid charts in the `archboard-pr` section of the description.
+ * @param report The report.
+ */
+function annotateCharts(report: PullRequestReport): void {
+	if (report.mermaidCharts === 0) return;
+	const text = `The archboard-pr section of the description draws ${String(report.mermaidCharts)} Mermaid chart(s). Model each flow and draw it with archboard model render --flow.`;
+	process.stdout.write(`${annotationLine("warning", { title: "Archboard charts" }, text)}\n`);
 }
 
 /**
@@ -298,6 +309,7 @@ function buildReport(
 		footprintNote: footprint.note,
 		...judge(context, choice, footprint.buckets),
 		overrideLabel: context.overrideLabel,
+		mermaidCharts: mermaidCharts(context.body),
 		vaultUrl: vaultAddress(context, trees, proposals.vault?.path),
 	};
 }
@@ -371,6 +383,7 @@ function unreadableReport(context: Context, reason: string): PullRequestReport {
 		comparison: [],
 		...judge(context, choice, undefined),
 		overrideLabel: context.overrideLabel,
+		mermaidCharts: mermaidCharts(context.body),
 	};
 }
 

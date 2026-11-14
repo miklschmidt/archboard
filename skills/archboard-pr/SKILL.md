@@ -35,14 +35,15 @@ Read those files, and skipped or unavailable source, directly from the diff.
 Choose the evidence that fits:
 
 - Durable architecture changes: Use the existing model and a compact proposal.
-- New or changed logic: Author it as a flow in the proposal, and render it with `model render --flow <id> --grammar flowchart` so that its markers compare with the review base.
+- New or changed logic: Author it as a flow in the proposal, and render it with `model render --flow <id> --grammar flowchart` so that its markers compare with the review base. When timing and call routing matter more than the logic, render the same flow with `--grammar sequence`. Both grammars draw the same steps.
 - Incidental flows or processes: Use a [temporary model](references/ephemeral.md).
 - Design-only changes: Follow [design evidence](references/design.md).
 - Unchanged architectural meaning: Use concise text or a code example.
 
 For legacy authority, follow the consumer migration reference for inventory and preview.
 Never rewrite originals just to obtain a PR picture.
-Finish when every architectural change has an explanation tied to an identified model state or source evidence, and every chart in the body comes from a model flow.
+Finish when every architectural change has an explanation tied to an identified model state or source evidence, and every flowchart and sequence chart in the body comes from a model flow.
+Never write a flowchart or sequence chart in Mermaid.
 
 ## Prepare the proposal
 

@@ -2,7 +2,8 @@ name: Archboard pull request
 description: >-
   Comment on a pull request with its architecture as text: the proposal it carries, the footprint
   of the change against the plan, and a link to the vault. Optionally warn or fail when modules
-  change outside the plan, or when the proposal adds modules whose code the base already has. Runs on `pull_request` events and needs a checkout with
+  change outside the plan, or when the proposal adds modules whose code the base already has. It
+  warns when the `archboard-pr` section of the description draws a Mermaid chart. Runs on `pull_request` events and needs a checkout with
   `fetch-depth: 0`. The job needs `contents: read` and `pull-requests: write`, or only
   `contents: read` when `report-file` takes the report in place of the comment.
 author: Mikkel Schmidt

@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-11-14T15:07:00Z'
-updated_date: '2026-11-14T15:24:00Z'
+updated_date: '2026-11-14T15:53:00Z'
 labels:
   - skills
   - cli
@@ -32,6 +32,10 @@ An agent updated a stack of PR bodies in a consumer repository and posted mislea
 - [x] #7 System tests with real Git fixtures cover an added module bound to existing code, one bound to new code, and a directory binding that gains new files
 - [x] #8 The pull-request Action lists preexisting modules in its comment, and fails on them only when the workflow opts in
 - [x] #9 Site docs and consumer skill references describe the new list, option and Action input
+- [ ] #10 The archboard and archboard-pr skills model every flowchart and sequence chart as a flow and forbid Mermaid for them
+- [ ] #11 archboard-pr prefers the sequence grammar when timing and call routing matter more than the logic
+- [ ] #12 The archboard description triggers on code in general, in the wording the owner gave
+- [ ] #13 The pull-request Action warns in the log and the comment when the archboard-pr section of the description holds a Mermaid code block, and never fails on it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -56,6 +60,8 @@ Decisions:
 - The Action computes the list from its own plan (added bound modules) and `newSource`, because after adoption on the branch the CLI has no draft to set against. An older CLI without `newSource` never makes a changed module preexisting.
 - archboard-pr evidence case says "so that its markers compare with the review base" in place of "from the base branch": on the base branch the proposal does not exist.
 - renders.md listed `legend` among flags render lacks; `--legend` exists, so it was removed from that list.
+
+Follow-up from the owner: Mermaid is forbidden for flowcharts and sequence charts in both skills, the description uses the owner wording (it replaces the "architecture diagrams and flowcharts" parenthesis), archboard-pr prefers sequence charts for timing and call routing, and the Action counts fenced mermaid blocks (backtick or tilde fences) between the archboard-pr begin and end comments. A section without its end runs to the end of the body. The warning has no input, because it never fails.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

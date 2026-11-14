@@ -23,6 +23,8 @@ interface PullRequestReport {
 	readonly overrideLabel: string;
 	/** The vault folder on GitHub at the head commit. */
 	readonly vaultUrl?: string | undefined;
+	/** How many Mermaid charts the `archboard-pr` section of the description draws. */
+	readonly mermaidCharts: number;
 }
 
 const LISTED_ENTRIES = 30;
@@ -274,6 +276,21 @@ function linksSection(report: PullRequestReport): string[] {
 }
 
 /**
+ * The warning about Mermaid charts in the `archboard-pr` section of the description.
+ * @param report The report.
+ * @returns The Markdown lines, none when the section draws no Mermaid chart.
+ */
+function mermaidSection(report: PullRequestReport): string[] {
+	const count = report.mermaidCharts;
+	if (count === 0) return [];
+	const charts = `${String(count)} Mermaid chart${count === 1 ? "" : "s"}`;
+	return [
+		`The \`archboard-pr\` section of the description draws ${charts}. Model each flow in the proposal and draw it with \`archboard model render --flow <id> --grammar flowchart\` or \`--grammar sequence\`.`,
+		"",
+	];
+}
+
+/**
  * The sticky comment.
  * @param report What the comment says.
  * @returns The comment's Markdown, starting with the hidden marker.
@@ -284,6 +301,7 @@ function pullRequestComment(report: PullRequestReport): string {
 		"## Architecture",
 		"",
 		...proposalSection(report),
+		...mermaidSection(report),
 		...linksSection(report),
 		...outOfPlanSection(report),
 		...footprintSection(report),

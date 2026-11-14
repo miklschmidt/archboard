@@ -254,6 +254,8 @@ Open a pull request for this branch. Use the archboard-pr skill: plan the change
 adopt it on this branch once the code matches, and explain the architecture in the description.
 ```
 
+The skill models every flowchart and sequence chart as a flow and draws it with `archboard model render`. A chart that an agent wrote in Mermaid by hand can contradict the model. So when the `archboard-pr` section of the description holds a Mermaid code block, the Action warns in the log and in the comment. The warning never fails the job.
+
 ## Next
 
 <LinkCards
