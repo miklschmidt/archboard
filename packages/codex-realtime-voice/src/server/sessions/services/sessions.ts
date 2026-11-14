@@ -75,6 +75,7 @@ function freshState(): CodexWorkbenchTabSessionState {
 		voiceTrace: sessionVoiceStartTrace(),
 		voiceCheckout: null,
 		phase: "live",
+		stopAskers: new Set(),
 	};
 }
 
@@ -198,7 +199,7 @@ function createCodexWorkbenchSessions(
 	): CodexWorkbenchWorkhorse => {
 		assertLive(session, "start no workhorse");
 		const key = workhorseLinkKey(session.id, checkout);
-		const state = freshWorkhorseState();
+		const state = freshWorkhorseState(session.state.stopAskers);
 		let workhorse: CodexWorkbenchWorkhorse | null = null;
 		/**
 		 * This workhorse, once it is built.
@@ -313,12 +314,14 @@ function createCodexWorkbenchSessions(
 		const stopWork = (
 			checkout: string | null,
 			askedBy: TurnId | null = null,
-		): Promise<readonly WorkhorseStop[]> =>
-			Promise.all(
+		): Promise<readonly WorkhorseStop[]> => {
+			if (askedBy !== null) state.stopAskers.add(askedBy);
+			return Promise.all(
 				[...workhorses.values()]
 					.filter((candidate) => checkout === null || candidate.checkout === checkout)
 					.map((candidate) => stopWorkTree(candidate, options.session, askedBy, options.stopClock)),
 			);
+		};
 		const built = options.build({
 			id,
 			state,

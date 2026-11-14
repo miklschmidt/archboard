@@ -7,6 +7,7 @@ import {
 	type TabSessionId,
 } from "#server/tab-session/rules/tab-session.ts";
 import { createCodexWorkbenchSessions } from "#server/sessions/services/sessions.ts";
+import { refuseWhileStopping, WorkhorseStopRefusal } from "#server/sessions/services/stop.ts";
 import {
 	type CodexWorkbenchSessionComponents,
 	type CodexWorkbenchTabSessionScope,
@@ -318,6 +319,19 @@ test("a stop for one checkout stops only its workhorse, a stop for the tab every
 	expect(interrupts).toEqual([{ threadId: shopThread, turnId: decoder.adoptTurnId("turn-s") }]);
 	expect(running.get("thread-other-tab")).toBe("turn-o");
 	expect(running.get("thread-a")).toBe("coordinator-turn");
+});
+
+test("a coordinator turn that asked its tab for a stop starts no work on a workhorse built after it", async () => {
+	const { a, b, decoder, startWorkhorseThread } = twoSessions();
+	const asking = decoder.adoptTurnId("coordinator-turn");
+	startWorkhorseThread(a.workhorse(PAYMENTS).key, "thread-payments");
+	await a.stopWork(null, asking);
+	// A tab with no workhorse when its coordinator asked for the stop is covered too.
+	await b.stopWork(null, asking);
+	for (const late of [a.workhorse(SHOP), b.workhorse(PAYMENTS)]) {
+		expect(() => refuseWhileStopping(late, asking)).toThrow(WorkhorseStopRefusal);
+		expect(() => refuseWhileStopping(late, decoder.adoptTurnId("fresh-turn"))).not.toThrow();
+	}
 });
 
 test("a turn that ends after New conversation left its thread leaves its workhorse with no running turn", () => {

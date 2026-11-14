@@ -49,7 +49,10 @@ interface CodexWorkbenchWorkhorseState {
 	activeTurn: { readonly threadId: ThreadId; readonly turnId: TurnId } | null;
 	/** Where its last work tree stop stands, or null before any stop. */
 	stop: WorkhorseStopPhase | null;
-	/** Every coordinator turn that asked for a stop of it; none of them starts work again. */
+	/**
+	 * Every coordinator turn that asked for a stop; none of them starts work again. The workhorses
+	 * of one tab session share it, so a workhorse built after the stop refuses those turns too.
+	 */
 	readonly stopAskers: Set<TurnId>;
 	/** Work it admitted that has not settled yet; a stop waits for it before it reads the tree. */
 	readonly admitted: Set<Promise<void>>;
@@ -98,15 +101,16 @@ type WorkhorseStopPhase =
 
 /**
  * A workhorse's state before anything was read into it.
+ * @param stopAskers The coordinator turns that asked its tab session for a stop.
  * @returns The state.
  */
-function freshWorkhorseState(): CodexWorkbenchWorkhorseState {
+function freshWorkhorseState(stopAskers: Set<TurnId> = new Set()): CodexWorkbenchWorkhorseState {
 	return {
 		queue: { kind: "codex_queue", submissions: null },
 		queueThreadId: null,
 		activeTurn: null,
 		stop: null,
-		stopAskers: new Set(),
+		stopAskers,
 		admitted: new Set(),
 	};
 }

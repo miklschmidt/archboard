@@ -9,8 +9,8 @@ import {
 	stopWorkTree,
 	WorkhorseStopRefusal,
 	type WorkTreeStopClock,
-	type WorkTreeStopSession,
 } from "#server/sessions/services/stop.ts";
+import type { WorkTreeStopSession } from "#server/sessions/services/work-tree-reads.ts";
 import {
 	freshWorkhorseState,
 	type CodexWorkbenchWorkhorse,
@@ -50,6 +50,7 @@ function codexTree(threads: Record<string, FakeThread>) {
 	const failing = new Set<"list" | "read">();
 	const onWait: (() => void)[] = [];
 	const onRead: (() => void)[] = [];
+	const onQueueRead: (() => void)[] = [];
 	let now = 0;
 	const descendants = (ancestor: string): string[] =>
 		Object.entries(threads)
@@ -98,10 +99,9 @@ function codexTree(threads: Record<string, FakeThread>) {
 				thread.startsOnQueueRead = false;
 				thread.turn = thread.queue.shift()!;
 			}
-			return {
-				data: thread.queue.map((id) => ({ id: decoder.adoptQueuedSubmissionId(id) })),
-				nextCursor: null,
-			} as never;
+			const listed = thread.queue.map((id) => ({ id: decoder.adoptQueuedSubmissionId(id) }));
+			onQueueRead.shift()?.();
+			return { data: listed, nextCursor: null } as never;
 		},
 		queueDelete: async ({ threadId, queuedSubmissionId }) => {
 			const thread = threads[wire(threadId)]!;
@@ -131,7 +131,7 @@ function codexTree(threads: Record<string, FakeThread>) {
 	const advance = (ms: number): void => {
 		now += ms;
 	};
-	return { session, clock, calls, threads, failing, onWait, onRead, advance };
+	return { session, clock, calls, threads, failing, onWait, onRead, onQueueRead, advance };
 }
 
 /** The workhorse of one checkout, whose thread is the root of the tree. */
@@ -215,6 +215,17 @@ describe("the work tree stop", () => {
 			},
 		);
 		expect(nameless.calls).toEqual([]);
+
+		// A workhorse thread that cannot be read is unread, not running, even with no sub-agents.
+		const unreadable = codexTree({ root: { parent: null, turn: "root-turn", queue: [] } });
+		unreadable.failing.add("read");
+		expect(
+			await stopWorkTree(workhorseOn("root"), unreadable.session, null, unreadable.clock),
+		).toEqual({
+			checkout: "/work/payments",
+			outcome: "unconfirmed",
+			remaining: [{ threadId: decoder.adoptThreadId("root"), state: "unread" }],
+		});
 
 		const unlisted = codexTree({ root: { parent: null, turn: null, queue: [] } });
 		unlisted.failing.add("list");
@@ -343,6 +354,18 @@ describe("the work tree stop", () => {
 		const stop = await stopWorkTree(workhorseOn("root"), codex.session, null, codex.clock);
 		expect(stop.outcome).toBe("stopped");
 		expect(codex.calls).toEqual(["interrupt root/queued-1"]);
+	});
+
+	test("reads a thread again after its queue, so a request accepted between the reads that starts during the confirming read is stopped", async () => {
+		const codex = codexTree({ root: { parent: null, turn: null, queue: [] } });
+		const root = codex.threads["root"]!;
+		codex.onQueueRead.push(() => {
+			root.queue.push("late-1");
+			root.startsOnQueueRead = true;
+		});
+		const stop = await stopWorkTree(workhorseOn("root"), codex.session, null, codex.clock);
+		expect(stop.outcome).toBe("stopped");
+		expect(codex.calls).toEqual(["interrupt root/late-1"]);
 	});
 
 	test("acts on the work it saw even when the first read outlasted the settle time", async () => {

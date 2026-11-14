@@ -34,7 +34,8 @@ import type {
 	WorkhorseStop,
 } from "#server/sessions/services/workhorses.ts";
 import type { SessionVoiceStartTrace } from "#server/voice/services/start-trace.ts";
-import type { WorkTreeStopClock, WorkTreeStopSession } from "#server/sessions/services/stop.ts";
+import type { WorkTreeStopClock } from "#server/sessions/services/stop.ts";
+import type { WorkTreeStopSession } from "#server/sessions/services/work-tree-reads.ts";
 
 /** The runtime owners a tab session's coordinator and voice run on. */
 interface CodexWorkbenchSessionComponents {
@@ -69,6 +70,8 @@ interface CodexWorkbenchTabSessionState {
 	voiceCheckout: string | null;
 	/** Live while its tab may still use it; ending once the tab has gone, until its threads unload. */
 	phase: "live" | "ending";
+	/** Every coordinator turn that asked this tab for a stop; it starts work on no workhorse again. */
+	readonly stopAskers: Set<TurnId>;
 }
 
 /** One browser tab's conversation: its coordinator and voice, and a workhorse per checkout. */

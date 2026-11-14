@@ -16,10 +16,7 @@
 // coordinator turn that asked for a stop starts work either, so only a fresh request does.
 
 import { CODEX_SESSION_MS } from "@archboard/timing";
-import type { ThreadId, TurnId, QueuedSubmissionId } from "@archboard/codex-app-server/identity";
-import type { CodexSession } from "@archboard/codex-app-server/session";
-import type { CodexThreadStatusType } from "@archboard/codex-app-server/contract";
-import { listSubAgents } from "#runtime/workhorses/workhorse-operations/operations/inspect.ts";
+import type { ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 import type { CoordinatorToolWorkhorse } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
 import { REMAINING_WORK_LIMIT } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
 import type { BuiltWorkhorse } from "#server/generation/protocol/session-contract.ts";
@@ -29,20 +26,15 @@ import type {
 	WorkhorseStop,
 	WorkhorseStopPhase,
 } from "#server/sessions/services/workhorses.ts";
+import { listSubAgents } from "#runtime/workhorses/workhorse-operations/operations/inspect.ts";
+import {
+	observeThread,
+	type ObservedThread,
+	type WorkTreeStopSession,
+} from "#server/sessions/services/work-tree-reads.ts";
 
 /** Where a workhorse's last stop stands, as inspection reports it. */
 type WorkhorseStopReport = ReturnType<CoordinatorToolWorkhorse["lastStop"]>;
-
-/** The reads and effects a stop needs from the Codex session. */
-type WorkTreeStopSession = Pick<
-	CodexSession,
-	| "threadRead"
-	| "threadListPage"
-	| "threadTurnsListPage"
-	| "queueListPage"
-	| "queueDelete"
-	| "turnInterrupt"
->;
 
 /** How a stop tells time and waits between its passes; tests pass their own. */
 interface WorkTreeStopClock {
@@ -68,22 +60,6 @@ const SYSTEM_CLOCK: WorkTreeStopClock = Object.freeze({
 	},
 });
 
-/** What one pass saw of one thread of the work tree. */
-interface ObservedThread {
-	readonly threadId: ThreadId;
-	/** The running turn, null when none runs, or "unknown" when Codex says active but names none. */
-	readonly running: TurnId | null | "unknown";
-	/** The requests waiting in its queue, or null when the queue could not be read. */
-	readonly queued: readonly QueuedSubmissionId[] | null;
-}
-
-/** What one pass saw of the whole tree. */
-interface ObservedTree {
-	readonly threads: readonly ObservedThread[];
-	/** False when the workhorse's sub-agents could not be listed. */
-	readonly listed: boolean;
-}
-
 /**
  * The refusal of new work for a workhorse that is stopping, or whose stop did not end all work,
  * or whose stop the asking coordinator turn requested. Its code is a reviewed tool refusal
@@ -94,76 +70,11 @@ class WorkhorseStopRefusal extends Error {
 	readonly code = "busy";
 }
 
-/**
- * The turn running on a thread that Codex reports as active, from its newest turns. A thread
- * summary carries no turns, so only this listing names the running turn.
- * @param session Lists turns.
- * @param threadId The thread.
- * @returns The running turn, or "unknown" when no listed turn is in progress.
- */
-async function runningTurn(
-	session: WorkTreeStopSession,
-	threadId: ThreadId,
-): Promise<TurnId | "unknown"> {
-	const page = await session.threadTurnsListPage({
-		threadId,
-		limit: 5,
-		sortDirection: "desc",
-		itemsView: "notLoaded",
-	});
-	return page.data.find((turn) => turn.status === "inProgress")?.id ?? "unknown";
-}
-
-/**
- * Every request waiting in a thread's queue.
- * @param session Lists queues.
- * @param threadId The thread.
- * @returns The queued requests, in queue order.
- * @throws {Error} When Codex repeats a cursor, so the listing would never end.
- */
-async function queuedRequests(
-	session: WorkTreeStopSession,
-	threadId: ThreadId,
-): Promise<readonly QueuedSubmissionId[]> {
-	const ids: QueuedSubmissionId[] = [];
-	const seen = new Set<string>();
-	let cursor: string | null = null;
-	do {
-		// oxlint-disable-next-line no-await-in-loop -- pagination is sequential by contract: each page's cursor comes from the one before it
-		const page = await session.queueListPage({ threadId, cursor });
-		ids.push(...page.data.map((submission) => submission.id));
-		cursor = page.nextCursor;
-		if (cursor !== null && seen.has(cursor)) {
-			throw new Error("The queue listing repeated a cursor.");
-		}
-		if (cursor !== null) seen.add(cursor);
-	} while (cursor !== null);
-	return ids;
-}
-
-/**
- * Observe one thread whose status is known. A thread that is not loaded runs nothing and starts
- * nothing until something loads it, so its queue is not read.
- * @param session Reads turns and queues.
- * @param threadId The thread.
- * @param status Its status type as Codex reported it.
- * @returns What it runs and what waits on it; a read that fails reads as unknown.
- */
-async function observeThread(
-	session: WorkTreeStopSession,
-	threadId: ThreadId,
-	status: CodexThreadStatusType,
-): Promise<ObservedThread> {
-	if (status === "notLoaded") {
-		return { threadId, running: null, queued: [] };
-	}
-	const [running, queued] = await Promise.all([
-		status === "active"
-			? runningTurn(session, threadId).catch(() => "unknown" as const)
-			: Promise.resolve(null),
-		queuedRequests(session, threadId).catch(() => null),
-	]);
-	return { threadId, running, queued };
+/** What one pass saw of the whole tree. */
+interface ObservedTree {
+	readonly threads: readonly ObservedThread[];
+	/** False when the workhorse's sub-agents could not be listed. */
+	readonly listed: boolean;
 }
 
 /**
@@ -178,7 +89,7 @@ async function readTree(session: WorkTreeStopSession, root: ThreadId): Promise<O
 		session
 			.threadRead({ threadId: root, includeTurns: false })
 			.then(({ thread }) => observeThread(session, root, thread.status.type))
-			.catch((): ObservedThread => ({ threadId: root, running: "unknown", queued: null })),
+			.catch((): ObservedThread => ({ threadId: root, running: null, queued: null })),
 		listSubAgents(session, root).catch(() => null),
 	]);
 	const observed = await Promise.all(
@@ -431,12 +342,10 @@ function refusal(
 			return `The workhorse of ${checkout} is stopping; new work waits until the stop ends.`;
 		case "unresolved":
 			return `The last stop of the workhorse of ${checkout} did not show that all work ended (${phase.stop.outcome}); inspect it or stop it again before new work.`;
-		case "stopped":
+		default:
 			return askedForStop(workhorse, coordinatorTurn)
 				? `The work of ${checkout} stopped at the user's request; start work again only for a new request from the user.`
 				: null;
-		default:
-			return null;
 	}
 }
 
@@ -593,5 +502,4 @@ export {
 	stopWorkTree,
 	WorkhorseStopRefusal,
 	type WorkTreeStopClock,
-	type WorkTreeStopSession,
 };
