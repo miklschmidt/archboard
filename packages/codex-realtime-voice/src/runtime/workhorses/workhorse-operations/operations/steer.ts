@@ -24,6 +24,25 @@ type SteerParams = Parameters<WorkhorseRuntime["options"]["session"]["turnSteer"
 type SteerClassification = Awaited<ReturnType<WorkhorseRuntime["classify"]>>;
 
 /**
+ * The turn Codex lists as running on the workhorse thread.
+ * @param runtime - The operations runtime.
+ * @param threadId - The workhorse thread.
+ * @returns The running turn, or null when none runs.
+ */
+async function readRunningTurn(
+	runtime: WorkhorseRuntime,
+	threadId: SteerClassification["binding"]["workhorse"]["threadId"],
+): Promise<TurnId | null> {
+	try {
+		return await readActiveTurn(runtime, threadId);
+	} catch (error) {
+		throw operationError("transport_failure", "The workhorse turns could not be read.", {
+			cause: error,
+		});
+	}
+}
+
+/**
  * The workhorse turn a steer targets: the one Codex lists as running on the workhorse thread. A
  * thread summary carries no turns, and the coordinator's own turn is never the target.
  * @param runtime - The operations runtime.
@@ -37,14 +56,7 @@ async function runningWorkhorseTurn(
 	if (classification.workhorse.link.status !== "active") {
 		throw operationError("busy", "Steer requires a running workhorse turn.");
 	}
-	let turnId: TurnId | null;
-	try {
-		turnId = await readActiveTurn(runtime, classification.binding.workhorse.threadId);
-	} catch (error) {
-		throw operationError("transport_failure", "The workhorse turns could not be read.", {
-			cause: error,
-		});
-	}
+	const turnId = await readRunningTurn(runtime, classification.binding.workhorse.threadId);
 	if (turnId === null) {
 		throw operationError("busy", "Steer requires a running workhorse turn.");
 	}
@@ -52,17 +64,23 @@ async function runningWorkhorseTurn(
 }
 
 /**
- * Refuse to steer unless the workhorse still runs exactly the turn the steer targets.
+ * Refuse to steer unless the link is unchanged and the workhorse still runs exactly the turn the
+ * steer targets. The turn is read first and the link classified after it, so a link that changes
+ * while the turn is read is still refused.
  * @param runtime - The operations runtime.
- * @param classification - The fresh classification.
+ * @param request - The steer request.
+ * @param state - The staged operation state.
  * @param target - The turn the steer targets.
  */
 async function assertTargetTurn(
 	runtime: WorkhorseRuntime,
-	classification: SteerClassification,
+	request: SteerWorkhorseRequest,
+	state: OperationState,
 	target: TurnId,
 ): Promise<void> {
-	if ((await runningWorkhorseTurn(runtime, classification)) !== target) {
+	const running = await readRunningTurn(runtime, state.binding.workhorse.threadId);
+	const classification = await runtime.classify(state.binding, request.call, "steer_workhorse");
+	if (classification.workhorse.link.status !== "active" || running !== target) {
 		throw operationError("busy", "The workhorse turn changed before the steer was delivered.");
 	}
 }
@@ -84,11 +102,7 @@ async function revalidateSteer(
 	message: string,
 ): Promise<void> {
 	try {
-		await assertTargetTurn(
-			runtime,
-			await runtime.classify(state.binding, request.call, "steer_workhorse"),
-			target,
-		);
+		await assertTargetTurn(runtime, request, state, target);
 	} catch (error) {
 		const outcome = runtime.settleDurable(state, "not_delivered", messageOf(error));
 		runtime.terminal(state, "failed", [], messageOf(error));
