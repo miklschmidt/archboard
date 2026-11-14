@@ -38,16 +38,18 @@ const WORDS = {
 		description: [
 			"Reads the commits between `--base` and `HEAD` in every repository the selected state binds, and answers which modules they changed.",
 			"",
+			"A module counts as changed only when its bound code differs between the merge base and `HEAD`. A change that a later commit undoes, or that a merge brings in from a lower layer of a stack, does not count. Each changed module lists the commits that changed it.",
+			"",
 			"With a draft selected, it sets those against the draft:",
 			"- Planned and changed.",
 			"- Changed outside the plan.",
 			"- Planned but unchanged.",
 			"",
-			"Each changed module lists, in `holds`, the other changed modules bound inside it, because a module bound to a directory changes with each of them. It lists them only when they bind each file that the commits changed in its own binding. A module that holds another is not counted as changed outside the plan.",
+			"Each changed module lists, in `holds`, the other changed modules bound inside it, because a module bound to a directory changes with each of them. It lists them only when they bind each file that the branch changed in its own binding. A module that holds another is not counted as changed outside the plan.",
 			"",
 			"It also lists, in `unboundFiles`, each changed file that no module is bound to, because no module shows that change. The files of the vault are not listed.",
 			"",
-			"With `--fail-outside`, it exits 1 when the commits changed a module that the draft does not name. A module bound to a directory passes when each file it changed lies in the binding of another changed module inside it. If the commits also changed a file that only the outer module binds, the outer module fails. A file that no module is bound to never fails it. A gate before a merge uses it.",
+			"With `--fail-outside`, it exits 1 when the branch changed a module that the draft does not name. A module bound to a directory passes when each file it changed lies in the binding of another changed module inside it. If the branch also changed a file that only the outer module binds, the outer module fails. A file that no module is bound to never fails it. A gate before a merge uses it.",
 			"",
 			"A repository that cannot read the base or head is named, and the command exits 2. Source refs stay local and no source history is retained.",
 		].join("\n"),
@@ -70,7 +72,7 @@ const failOutsideParameter = {
 	spellings: ["--fail-outside"],
 	value: "none",
 	description:
-		"Exit 1 when the commits changed a module that the draft does not name. It needs a draft from `--state`",
+		"Exit 1 when the branch changed a module that the draft does not name. It needs a draft from `--state`",
 } as const;
 
 const failOutsideStage = {
@@ -89,7 +91,7 @@ const outsideOutcome = {
 	exit: 1,
 	stream: "stdout-and-stderr" as const,
 	presentation: ["diagnostics", "result"] as const,
-	description: "With `--fail-outside`, the commits changed a module that the draft does not name",
+	description: "With `--fail-outside`, the branch changed a module that the draft does not name",
 };
 
 /**

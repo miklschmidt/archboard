@@ -122,6 +122,31 @@ async function walkCommits(
 }
 
 /**
+ * What a range changed as a whole: the files that differ between its two ends,
+ * as one commit from `from` to `to`. A change that a later commit undoes, or
+ * that a merge brings in a second time, is not in it.
+ * @param root The checkout.
+ * @param from The commit the range starts from.
+ * @param to The commit it ends at, whose id the answer carries.
+ * @param options The caller's signal.
+ * @returns The range as one commit.
+ */
+async function netChange(
+	root: string,
+	from: string,
+	to: string,
+	options: GitRunOptions,
+): Promise<WalkedCommit> {
+	const output = await gitText(
+		root,
+		["diff", "-z", "--name-status", "-M", "--no-ext-diff", "--no-textconv", from, to, "--"],
+		options,
+	);
+	const tokens = output.split("\0").filter((token) => token !== "");
+	return { commit: to, committedAt: 0, subject: "", changes: changesOf(tokens) };
+}
+
+/**
  * Whether a commit changes more than the large-commit limit of files.
  * @param commit The commit.
  * @returns True for a large commit.
@@ -233,4 +258,11 @@ function commitsByBoundPath(
 	);
 }
 
-export { type WalkedCommit, commitsByBoundPath, isLargeCommit, normalizeBoundPath, walkCommits };
+export {
+	type WalkedCommit,
+	commitsByBoundPath,
+	isLargeCommit,
+	netChange,
+	normalizeBoundPath,
+	walkCommits,
+};

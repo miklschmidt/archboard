@@ -31,7 +31,7 @@ function holds(outer: FootprintPart, inner: FootprintPart): boolean {
 	return path !== scope && (scope === "" || path.startsWith(`${scope}/`));
 }
 
-/** A changed part, with the files that the commits that changed it changed, under each name. */
+/** A changed part, with the files that the range changed, under each name. */
 type ChangedPart = FootprintPart & { readonly files: readonly string[] };
 
 /**

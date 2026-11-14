@@ -1,7 +1,11 @@
 // One attribution policy serves both locality and footprint. Large commits
 // remain in this walk; each caller applies its existing counting policy.
 import { posix } from "node:path";
-import { commitsByBoundPath, type WalkedCommit } from "#runtime/history-lens/operations/commits.ts";
+import {
+	commitsByBoundPath,
+	netChange,
+	type WalkedCommit,
+} from "#runtime/history-lens/operations/commits.ts";
 import { gitText, type GitRunOptions } from "#runtime/history-lens/clients/git.ts";
 import type { ReadPart } from "#runtime/history-lens/operations/parts.ts";
 import {
@@ -251,19 +255,21 @@ function symbolState(
 }
 
 /**
- * Assign commits to bound declarations, using the same policy for both commands.
+ * Assign commits to bound declarations, given each commit's parent.
  * @param root The checkout.
  * @param head Its immutable HEAD.
  * @param walked The commits, including large commits.
  * @param parts The bound parts.
+ * @param parents Each commit's parent, which its declarations are compared with.
  * @param options Cancellation.
  * @returns Attribution for every part id.
  */
-async function attributeCommits(
+async function attribute(
 	root: string,
 	head: string,
 	walked: readonly WalkedCommit[],
 	parts: readonly ReadPart[],
+	parents: ReadonlyMap<string, string | undefined>,
 	options: GitRunOptions,
 ): Promise<Map<string, AttributedCommits>> {
 	const byPath = commitsByBoundPath(
@@ -295,9 +301,64 @@ async function attributeCommits(
 			remember(state, await readSymbol(headRevision, state.paths, state.symbol)),
 		),
 	);
-	await readChanges(states, walked, history, await parentsOf(root, walked, options), options);
+	await readChanges(states, walked, history, parents, options);
 	for (const state of states) answers.set(state.part.node.id, symbolAnswer(state, walked));
 	return answers;
 }
 
-export { attributeCommits, type AttributedCommits };
+/**
+ * Assign commits to bound declarations, using the same policy for both commands.
+ * @param root The checkout.
+ * @param head Its immutable HEAD.
+ * @param walked The commits, including large commits.
+ * @param parts The bound parts.
+ * @param options Cancellation.
+ * @returns Attribution for every part id.
+ */
+async function attributeCommits(
+	root: string,
+	head: string,
+	walked: readonly WalkedCommit[],
+	parts: readonly ReadPart[],
+	options: GitRunOptions,
+): Promise<Map<string, AttributedCommits>> {
+	return attribute(root, head, walked, parts, await parentsOf(root, walked, options), options);
+}
+
+/**
+ * The parts whose bound paths or declarations differ between the two ends of a range, by the
+ * policy that attributes each commit (ADR 0045).
+ * @param root The checkout.
+ * @param range The commit the range starts from and the one it ends at.
+ * @param range.from The commit the range starts from: the merge base.
+ * @param range.to The commit it ends at: the head.
+ * @param parts The bound parts.
+ * @param options Cancellation.
+ * @returns The ids of the parts that the range changed, and every file it changed under each name.
+ */
+async function netChangedParts(
+	root: string,
+	range: { readonly from: string; readonly to: string },
+	parts: readonly ReadPart[],
+	options: GitRunOptions,
+): Promise<{ parts: Set<string>; files: string[] }> {
+	const net = await netChange(root, range.from, range.to, options);
+	const answers = await attribute(
+		root,
+		range.to,
+		[net],
+		parts,
+		new Map([[net.commit, range.from]]),
+		options,
+	);
+	return {
+		parts: new Set(
+			[...answers].filter(([, answer]) => answer.commits.length > 0).map(([id]) => id),
+		),
+		files: net.changes.flatMap((change) =>
+			change.from === undefined ? [change.path] : [change.path, change.from],
+		),
+	};
+}
+
+export { attributeCommits, netChangedParts, type AttributedCommits };

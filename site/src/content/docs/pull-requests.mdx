@@ -179,11 +179,13 @@ A branch can merge without a pull request, for example a ticket branch that merg
 archboard model footprint --base <integration-branch> --head <ticket-branch> --state <draft> --fail-outside
 ```
 
-It exits <Exit command="model footprint" outcome="outside" /> when the commits changed a module that the draft does not name, and names each module on standard error. Without a draft, it refuses the option, because only a draft names modules. The `archboard-plan` skill runs this gate before each ticket merge.
+It exits <Exit command="model footprint" outcome="outside" /> when the branch changed a module that the draft does not name, and names each module on standard error. Without a draft, it refuses the option, because only a draft names modules. The `archboard-plan` skill runs this gate before each ticket merge.
 
-A module bound to a directory changes with each module bound inside it. It counts only when the commits changed a file that no other changed module inside it binds. Otherwise the answer lists those other modules in the module's `holds`, and the module passes. The Action applies the same rule to its group of modules changed outside the plan. For example, `Workspace` is bound to `libs/workspace`, and `Installation` is bound to `libs/workspace/src/installation.ts`:
+A module counts as changed only when its bound code differs between the merge base and the head. A change that a later commit undoes does not count. In a stack that merges instead of rebasing, a change that a lower layer also made, and that a merge brings in, does not count either. Each changed module lists the commits that changed it.
 
-| The commits change                   | The draft names | Exit status                                                               |
+A module bound to a directory changes with each module bound inside it. It counts only when the branch changed a file that no other changed module inside it binds. Otherwise the answer lists those other modules in the module's `holds`, and the module passes. The Action applies the same rule to its group of modules changed outside the plan. For example, `Workspace` is bound to `libs/workspace`, and `Installation` is bound to `libs/workspace/src/installation.ts`:
+
+| The branch changes                   | The draft names | Exit status                                                               |
 | ------------------------------------ | --------------- | ------------------------------------------------------------------------- |
 | `libs/workspace/src/installation.ts` | `Installation`  | 0. `Workspace` changed too, and holds `Installation`.                     |
 | `libs/workspace/src/installation.ts` | neither module  | <Exit command="model footprint" outcome="outside" />, for `Installation`. |

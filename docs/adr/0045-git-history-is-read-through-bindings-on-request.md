@@ -36,6 +36,11 @@ selection and when `Measures` opens, and a measurement replaced the one of
 reasons. TASK-590.11 amended that amendment on 2026-11-07: `Measures` is a
 dialog, and it asks when its view What changes together opens.
 
+TASK-635 amended this ADR on 2026-11-13. A footprint counts a part as changed
+only when its bound declarations or paths differ between the merge base and the
+head. The section on the footprint gives the rule, and the rejected options give
+the reason.
+
 The history lens maps commits through bindings to give four readings.
 A board is behind its code by the commits that changed its parts after the
 board last changed. A footprint says what a branch changed, against what its
@@ -311,10 +316,18 @@ check resolves a ref a draft pins: the name, else the branch of that name on
 `origin`. A checkout where it does not resolve is not read, as for the base.
 When it resolves in none, the request is refused with `HEAD_UNRESOLVED`. If the
 ref does not resolve in a checkout, the lens does not read that checkout, and
-the answer says so. The
-footprint lists the parts that those commits changed, with each part's
-commits, and it says which commits are large. It uses no period, and it leaves
-no large commit out.
+the answer says so.
+
+A part changed when its bound declarations or paths differ between the merge
+base and the head. The lens compares the two ends as one commit, with the
+mapping and the declaration reading that it uses for each commit. A change that
+a later commit of the range undoes is then no change. A change that a lower
+layer of a stack also made, and that a merge brings in, is no change either.
+The footprint lists the changed parts, each with the commits of the range that
+changed it, and it says which commits are large. It uses no period, and it
+leaves no large commit out. A changed file that no binding holds, and the files
+that tell whether a directory part holds the parts inside it, also count only
+when they differ between the two ends.
 
 With `--variant <proposal>`, the footprint reads the parts of the variant that
 the proposal is read against and of the proposal. That variant is the current
@@ -571,6 +584,14 @@ and labels path-wide fallback when they cannot resolve a symbol.
 
 **Leave out the size filter.** Claims and Panes then look coupled through 10
 large commits.
+
+**Count each commit in a footprint**, as behind and locality do. In a stack
+that merges instead of rebasing, two layers can make the same change. The
+upper layer's own commit then changes the part, but its pull request changes
+nothing there. The same holds for a change and its revert. The footprint then
+names a part that the branch does not change, and `--fail-outside` fails a
+branch for it. A footprint answers what a branch changes, so it reads the two
+ends of the range (TASK-635).
 
 **Apply the size filter to behind and footprint.** A large commit can move what
 a board says. A branch's large commit did change its parts. Those two readings
