@@ -7,8 +7,8 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/shared/render/rules/policy-icons.ts"
   },
-  "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
   "schemaVersion": 1,
   "id": "vKEsyHFk#ZgACb0eW",
+  "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
   "outgoing": []
 }

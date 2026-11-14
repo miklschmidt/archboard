@@ -3,6 +3,7 @@
   "name": "Icon loading",
   "kind": "function",
   "responsibility": "Fetches the icons a policy names from the Archboard server, once each, before a picture is drawn",
+  "description": "Both browser icon readers fetch assets/diagram-icons/<name>.json relative to the document base. The server resolves each name through the same Remix Icon lookup that writes snapshot paths. The shared policy rule names the icons before drawing. The build contains no static icon files, and the browser has no source that reads snapshot.icons.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/ui/state/diagram-icons.ts"
@@ -24,6 +25,5 @@
       "id": "vKEsyHFk#YOV84Hm5",
       "to": "vKEsyHFk#ZgACb0eW"
     }
-  ],
-  "description": "Both browser icon readers fetch assets/diagram-icons/<name>.json relative to the document base. The server resolves each name through the same Remix Icon lookup that writes snapshot paths. The shared policy rule names the icons before drawing. The build contains no static icon files, and the browser has no source that reads snapshot.icons."
+  ]
 }
