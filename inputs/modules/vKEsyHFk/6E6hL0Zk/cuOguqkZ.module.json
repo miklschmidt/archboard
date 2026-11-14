@@ -3,6 +3,10 @@
   "name": "Panes and the workbench",
   "kind": "module",
   "responsibility": "Keeps the panes on screen with their sockets, tabs and model news",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/panes"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#cuOguqkZ",
   "parent": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
@@ -22,9 +26,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/panes"
-  }
+  "outgoing": []
 }

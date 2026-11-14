@@ -14,19 +14,5 @@
   "formerNames": [
     "Render stage states"
   ],
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "voice durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/PresentationFoot.tsx",
-        "symbol": "VOICE_MS"
-      },
-      "id": "vKEsyHFk#hrRRqySb",
-      "to": "vKEsyHFk/vKEsyHFk#sw4oFps0"
-    }
-  ]
+  "outgoing": []
 }

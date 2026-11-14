@@ -19,19 +19,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "Git command bounds",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workspace/src/runtime/clients/git-sync.ts",
-        "symbol": "GIT_MS"
-      },
-      "id": "vKEsyHFk#GZuUSasu",
-      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
-    }
-  ]
+  "outgoing": []
 }

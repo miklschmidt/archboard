@@ -3,6 +3,10 @@
   "name": "HTTP serving",
   "kind": "module",
   "responsibility": "Takes every HTTP call: mounts the routes on one application and listener, refuses foreign browser origins and calls that name no vault, and opens a node's code.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/http"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#nU6dNHBE",
   "parent": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
@@ -22,9 +26,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/http"
-  }
+  "outgoing": []
 }

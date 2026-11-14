@@ -79,19 +79,6 @@
       },
       "id": "vKEsyHFk#9m54YaTh",
       "to": "vKEsyHFk#9FxduWoO"
-    },
-    {
-      "order": 991100,
-      "kind": "dependency",
-      "label": "replay bounds",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/walkthroughs/replay/clients/frame-readiness.ts",
-        "symbol": "REPLAY_MS"
-      },
-      "id": "vKEsyHFk#Nvk6BxbU",
-      "to": "vKEsyHFk#6RJ25ejV"
     }
   ]
 }

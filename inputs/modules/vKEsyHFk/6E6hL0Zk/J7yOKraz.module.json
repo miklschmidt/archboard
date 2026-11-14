@@ -121,19 +121,6 @@
       },
       "id": "vKEsyHFk#25xiZ6jI",
       "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
-    },
-    {
-      "order": 1009050,
-      "kind": "dependency",
-      "label": "server lifecycle durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
-        "symbol": "SERVER_LIFECYCLE_MS"
-      },
-      "id": "vKEsyHFk#Wl0CFsYV",
-      "to": "vKEsyHFk/vKEsyHFk#doujM3ih"
     }
   ]
 }

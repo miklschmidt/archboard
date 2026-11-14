@@ -16,19 +16,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "server lifecycle durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/server-owners.ts",
-        "symbol": "SERVER_LIFECYCLE_MS"
-      },
-      "id": "vKEsyHFk#XwvRKPrx",
-      "to": "vKEsyHFk/vKEsyHFk#doujM3ih"
-    }
-  ]
+  "outgoing": []
 }

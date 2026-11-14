@@ -49,19 +49,6 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#YZuYCZhH",
       "to": "vKEsyHFk/SMjRfwN3#AVCQVNqI"
-    },
-    {
-      "order": 49000,
-      "kind": "dependency",
-      "label": "process group poll interval",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/headless-chromium/processes/process.ts",
-        "symbol": "PROCESS_GROUP_OBSERVATION_POLL_MS"
-      },
-      "id": "vKEsyHFk#C5zvG01o",
-      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
     }
   ]
 }

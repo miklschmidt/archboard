@@ -17,19 +17,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "approval durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/thread-tools/protocol/limits.ts",
-        "symbol": "CODEX_APPROVAL_MS"
-      },
-      "id": "vKEsyHFk#6pj1akOh",
-      "to": "vKEsyHFk/vKEsyHFk#lU0khwR0"
-    }
-  ]
+  "outgoing": []
 }
