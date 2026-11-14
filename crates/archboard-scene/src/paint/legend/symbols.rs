@@ -4,12 +4,11 @@
 
 use crate::drawing::Emphasis;
 use crate::geometry::{Point, Rect, round_coord};
-use crate::paint::appearance::{chip_tile, semantic_ink};
+use crate::paint::appearance::semantic_ink;
 use crate::paint::build::{Items, grouped, lines, point, shape};
+use crate::paint::design::ICON_CHIP_SIZE;
 use crate::paint::design::RAILS;
-use crate::paint::design::{CHIP_THICKNESS, ICON_CHIP_SIZE};
 use crate::paint::edge_line::arrowhead;
-use crate::paint::icons::centred_on;
 use crate::paint::legend::entries::{Applied, Drawn, Entry, Keys};
 use crate::paint::palette::Palette;
 use crate::paint::standing::standing_pin_at;
@@ -18,8 +17,8 @@ use crate::paint::traffic::pulse_look;
 use crate::request::{Arrowhead, Dash};
 use crate::scene::traffic::pulse_breadth;
 use crate::scene::{
-    Cap, Colour, Definition, Gradient, GradientForm, GradientId, Group, Head, Item, PathStep,
-    Purpose, Role, Shape, Stop, Stroke, Viewport,
+    Cap, Colour, Definition, Gradient, GradientForm, GradientId, Group, Head, Icon, Item, PathStep,
+    Purpose, Role, Shape, Stop, Stroke, Transform, Viewport,
 };
 
 /// The height of one legend row.
@@ -35,6 +34,14 @@ const PULSE_STOPS: [(f64, f64); 6] = [
     (1.0, 0.0),
 ];
 const PULSE_SPAN: f64 = 40.0;
+/// A kind's chip in the legend, as the reading panel draws it (`KindChip` in
+/// `apps/web`): how round, how thick its edge, how much of the kind's ink its
+/// face and its edge carry, and how large its icon.
+const LEGEND_CHIP_RADIUS: f64 = 4.0;
+const LEGEND_CHIP_EDGE: f64 = 1.0;
+const LEGEND_CHIP_FACE: f64 = 0.14;
+const LEGEND_CHIP_STROKE: f64 = 0.45;
+const LEGEND_ICON_SIZE: f64 = 16.0;
 const PULSE_GLOW: f64 = 3.0;
 
 /// A straight run across a symbol's row, from one left edge to another.
@@ -116,30 +123,46 @@ fn relationship_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> 
     ])
 }
 
-/// A part kind's symbol: its type chip in the kind's ink, with its icon.
+/// A part kind's symbol: the flat chip the reading panel keys a kind with, a
+/// face and a hairline edge tinted by the kind's ink, and its icon in that ink.
+/// The icon is the one the picture drew, redrawn at the chip's size and ink:
+/// a door or a container's header draws the same icon larger and in another ink.
 fn kind_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Items {
     let color = match &applied.drawn {
         Drawn::Part(appearance) => appearance.type_color,
         Drawn::Line(_) => None,
     };
     let ink = semantic_ink(color).unwrap_or_else(|| palette.glyph.clone());
-    let rect = Rect {
-        x: x + (GLYPH - ICON_CHIP_SIZE) / 2.0,
-        y: y + (ROW - ICON_CHIP_SIZE) / 2.0,
-        width: ICON_CHIP_SIZE,
-        height: ICON_CHIP_SIZE,
-    };
+    let left = x + (GLYPH - ICON_CHIP_SIZE) / 2.0;
+    let top = y + (ROW - ICON_CHIP_SIZE) / 2.0;
+    let mut chip = Shape::rect(
+        Purpose::Box,
+        Rect {
+            x: round_coord(left + LEGEND_CHIP_EDGE / 2.0),
+            y: round_coord(top + LEGEND_CHIP_EDGE / 2.0),
+            width: ICON_CHIP_SIZE - LEGEND_CHIP_EDGE,
+            height: ICON_CHIP_SIZE - LEGEND_CHIP_EDGE,
+        },
+        Some(LEGEND_CHIP_RADIUS),
+    )
+    .filled(&ink)
+    .stroked(Stroke::new(&ink, LEGEND_CHIP_EDGE).at(LEGEND_CHIP_STROKE));
+    chip.fill_opacity = Some(LEGEND_CHIP_FACE);
+    let icons = applied.icon.iter().map(|drawn| {
+        Item::Icon(Icon {
+            name: drawn.name.clone(),
+            size: LEGEND_ICON_SIZE,
+            ink: ink.clone(),
+        })
+    });
+    let inset = (ICON_CHIP_SIZE - LEGEND_ICON_SIZE) / 2.0;
     let glyph = grouped(
-        Group::new(
-            Role::Icon(None),
-            applied.icon.iter().cloned().map(Item::Icon).collect(),
-        )
-        .moved(centred_on(
-            rect.x + ICON_CHIP_SIZE / 2.0,
-            rect.y + (ICON_CHIP_SIZE - CHIP_THICKNESS) / 2.0,
+        Group::new(Role::Icon(None), icons.collect()).moved(Transform::translate(
+            round_coord(left + inset),
+            round_coord(top + inset),
         )),
     );
-    let mut symbol = chip_tile(rect, &ink, palette);
+    let mut symbol = shape(chip);
     symbol.extend(glyph);
     symbol
 }

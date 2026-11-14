@@ -20,14 +20,6 @@ pub const OWN_ICONS: [&str; 2] = [FALLBACK_ICON, FLOW_ICON];
 /// The side of the square an icon is drawn into on its chip.
 pub(super) const ICON_SIZE: f64 = 18.0;
 
-/// The move that centres an icon on a point.
-pub(super) fn centred_on(cx: f64, cy: f64) -> Transform {
-    Transform::translate(
-        round_coord(cx - ICON_SIZE / 2.0),
-        round_coord(cy - ICON_SIZE / 2.0),
-    )
-}
-
 /// A kind's icon at chip size, centred on a point: the icon the kind asked
 /// for when the host has it, else the icon for a name the set does not have.
 pub(super) fn glyph_group(
