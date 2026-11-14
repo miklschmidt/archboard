@@ -29,17 +29,17 @@ interface FootprintList {
 const LISTS: Readonly<Record<ListKey, { readonly label: string; readonly gloss: string }>> = {
 	changedNotNamed: {
 		label: "Changed but not named",
-		gloss: "The commits changed these modules, and the plan does not name them.",
+		gloss: "The branch changed these modules, and the plan does not name them.",
 	},
 	namedAndChanged: {
 		label: "Named and changed",
-		gloss: "The plan names these modules, and the commits changed them.",
+		gloss: "The plan names these modules, and the branch changed them.",
 	},
 	namedNotChanged: {
 		label: "Named but not changed",
-		gloss: "The plan names these modules, and no commit changed them yet.",
+		gloss: "The plan names these modules, and the branch does not change them yet.",
 	},
-	changed: { label: "Changed", gloss: "The commits changed these modules." },
+	changed: { label: "Changed", gloss: "The branch changed these modules." },
 };
 
 /**
