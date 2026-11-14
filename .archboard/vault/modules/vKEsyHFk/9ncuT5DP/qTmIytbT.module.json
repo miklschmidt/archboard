@@ -2,8 +2,8 @@
   "order": 28000,
   "name": "Coordinator turn homes",
   "kind": "module",
-  "responsibility": "Remembers, for each coordinator turn, the conversation shown when it started and the checkouts it gave work to, so the page shows the turn in the right conversation",
-  "description": "A turn that delivered, steered or queued work, or whose delivery may have reached the workhorse, shows in the conversation of each workhorse it reached. A delegation the workhorse refused as busy or with an invalid body gave it nothing, and moves the turn nowhere. A turn that gave work to none shows in the conversation shown while it ran. A turn with no record shows in whatever conversation is shown. The timeline keeps only the turns of the shown conversation before it spends its budget.",
+  "responsibility": "Remembers where each coordinator turn shows (the conversation shown when it started, the checkouts it gave work to) and which coordinator turn delegated each workhorse turn",
+  "description": "A turn that delivered, steered or queued work, or whose delivery may have reached the workhorse, shows in the conversation of each workhorse it reached. A delegation the workhorse refused as busy or with an invalid body gave it nothing, and moves the turn nowhere. A turn that gave work to none shows in the conversation shown while it ran. A turn with no record shows in whatever conversation is shown. The timeline keeps only the turns of the shown conversation before it spends its budget. The tab session also subscribes a recorder to its workhorse operations. A delegate_to_workhorse event that names its workhorse turn records that turn against the coordinator turn that asked. A steer is never recorded, because it adds to a turn that the person or an earlier delegate started. The session keeps the 256 newest records, and the projection of the workhorse timeline marks a recorded turn with delegatedBy.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/server/sessions/services/delegations.ts"
