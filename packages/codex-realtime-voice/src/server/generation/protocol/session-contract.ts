@@ -34,6 +34,8 @@ import type {
 	WorkhorseStop,
 } from "#server/sessions/services/workhorses.ts";
 import type { SessionVoiceStartTrace } from "#server/voice/services/start-trace.ts";
+import type { WorkTreeStopClock } from "#server/sessions/services/stop.ts";
+import type { WorkTreeStopSession } from "#server/sessions/services/work-tree-reads.ts";
 
 /** The runtime owners a tab session's coordinator and voice run on. */
 interface CodexWorkbenchSessionComponents {
@@ -68,6 +70,8 @@ interface CodexWorkbenchTabSessionState {
 	voiceCheckout: string | null;
 	/** Live while its tab may still use it; ending once the tab has gone, until its threads unload. */
 	phase: "live" | "ending";
+	/** Every coordinator turn that asked this tab for a stop; it starts work on no workhorse again. */
+	readonly stopAskers: Set<TurnId>;
 }
 
 /** One browser tab's conversation: its coordinator and voice, and a workhorse per checkout. */
@@ -83,10 +87,14 @@ interface CodexWorkbenchTabSession {
 	/** The workhorse voice is bound to: the one of the checkout voice last started from. */
 	readonly voiceWorkhorse: () => CodexWorkbenchWorkhorse | null;
 	/**
-	 * Stop the workhorse of one checkout, or every workhorse of the tab when the checkout is null.
-	 * Each one that runs a turn has it interrupted; the others have nothing to stop.
+	 * Stop the work tree of the workhorse of one checkout, or of every workhorse of the tab when the
+	 * checkout is null: its turn, every sub-agent it spawned and every queued request. Each answer
+	 * says what the stop observed. The coordinator turn that asked, if one did, starts no work after.
 	 */
-	readonly stopWork: (checkout: string | null) => Promise<readonly WorkhorseStop[]>;
+	readonly stopWork: (
+		checkout: string | null,
+		askedBy?: TurnId | null,
+	) => Promise<readonly WorkhorseStop[]>;
 }
 
 /** What building one tab session's coordinator and voice is handed. */
@@ -146,7 +154,9 @@ interface CreateCodexWorkbenchSessionsOptions {
 	/** Where a refused request is answered. */
 	readonly transport: Pick<CodexTransport, "respond">;
 	/** What reads a thread's status, unsubscribes it once it is idle, and interrupts its turn. */
-	readonly session: Pick<CodexSession, "threadRead" | "threadUnsubscribe" | "turnInterrupt">;
+	readonly session: Pick<CodexSession, "threadUnsubscribe"> & WorkTreeStopSession;
+	/** How a work tree stop tells time and waits between its passes; the system clock if omitted. */
+	readonly stopClock?: WorkTreeStopClock;
 	/** Where a session's links are cleared when the session ends. */
 	readonly threadLink: TabSessionEnding["threadLink"];
 	/** Settle every approval an ended session was still to answer. */

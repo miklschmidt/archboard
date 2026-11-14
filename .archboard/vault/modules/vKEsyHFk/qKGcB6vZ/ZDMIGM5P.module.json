@@ -2,7 +2,7 @@
   "order": 5000,
   "name": "Tool contract",
   "kind": "module",
-  "responsibility": "The reviewed tool templates of each role and their digests: what the coordinator may ask for, the checkout each workhorse tool takes, and the stop of every workhorse that takes none",
+  "responsibility": "Reviewed tool templates of each role and their digests: what the coordinator may ask, the checkout each workhorse tool takes, and the work tree stop, which takes none and reports what it saw",
   "description": "The reviewed documents are imported as text, so the executable of a release embeds them and nothing reads them by path; the digest check still refuses a changed document.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",

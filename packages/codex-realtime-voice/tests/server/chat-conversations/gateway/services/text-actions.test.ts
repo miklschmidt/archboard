@@ -8,6 +8,7 @@ import { expect, test } from "bun:test";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import { createServerCanonicalTextActions } from "#server/chat-conversations/gateway/services/text-actions.ts";
+import { WorkhorseStopRefusal } from "#server/sessions/services/stop.ts";
 
 test("browser start requires the exact authoritative idle thread without hydrating history", async () => {
 	const authorities = createIdentityAuthorities();
@@ -16,6 +17,9 @@ test("browser start requires the exact authoritative idle thread without hydrati
 	let observedThreadId = threadId;
 	let observedStatus = "active";
 	const actions = createServerCanonicalTextActions({
+		admitNewWork: async (_context, start) => start(),
+		workhorseThread: () => threadId,
+		stopWork: async () => [],
 		contextCodec: TEST_CONTEXT_CODEC,
 		identity: authorities,
 		session: {
@@ -30,7 +34,6 @@ test("browser start requires the exact authoritative idle thread without hydrati
 				} as never;
 			},
 			turnSteer: async () => ({}) as never,
-			turnInterrupt: async () => ({}) as never,
 		},
 		contextForOperation: () => {
 			throw new Error("a refused start must fail before context capture");
@@ -96,6 +99,9 @@ test("browser steering preserves the server's atomic expected-turn refusal witho
 	const currentTurnId = authorities.identity.decoder.adoptTurnId("turn-current");
 	let steerCalls = 0;
 	const actions = createServerCanonicalTextActions({
+		admitNewWork: async (_context, start) => start(),
+		workhorseThread: () => threadId,
+		stopWork: async () => [],
 		contextCodec: TEST_CONTEXT_CODEC,
 		identity: authorities,
 		session: {
@@ -111,7 +117,6 @@ test("browser steering preserves the server's atomic expected-turn refusal witho
 					throw new Error("expectedTurnId does not match the current active turn");
 				return { turnId: currentTurnId } as never;
 			},
-			turnInterrupt: async () => ({}) as never,
 		},
 		contextForOperation: (_context, operation) =>
 			TEST_CONTEXT_SCHEMA.parse({
@@ -209,9 +214,11 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 			steers.push(params);
 			return { turnId } as never;
 		},
-		turnInterrupt: async () => ({}) as never,
 	};
 	const actions = createServerCanonicalTextActions({
+		admitNewWork: async (_context, start) => start(),
+		workhorseThread: () => threadId,
+		stopWork: async () => [],
 		contextCodec: TEST_CONTEXT_CODEC,
 		identity: authorities,
 		session,
@@ -305,4 +312,117 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 		{ chatId: "chat-exact", operation: expect.objectContaining({ rpc: "turn/start" }) },
 		{ chatId: "chat-exact", operation: expect.objectContaining({ rpc: "turn/steer" }) },
 	]);
+});
+
+test("the Stop control runs the work tree stop of the chat's checkout, and a refused workhorse takes no typed message", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("thread-stop");
+	const turnId = authorities.identity.decoder.adoptTurnId("turn-stop");
+	const stopped: string[] = [];
+	let outcome: "stopped" | "partial" = "partial";
+	let refusing = true;
+	let stopDuringRead = false;
+	let newConversationDuringRead = false;
+	let linkedThread = threadId;
+	let starts = 0;
+	const actions = createServerCanonicalTextActions({
+		admitNewWork: async (_context, start) => {
+			if (refusing) throw new WorkhorseStopRefusal("stopping");
+			return start();
+		},
+		workhorseThread: () => linkedThread,
+		stopWork: async (context) => {
+			stopped.push(context.checkout);
+			return [{ checkout: context.checkout, outcome, remaining: [] }];
+		},
+		contextCodec: TEST_CONTEXT_CODEC,
+		identity: authorities,
+		session: {
+			turnStart: async () => {
+				starts += 1;
+				return {} as never;
+			},
+			threadRead: async () => {
+				// A stop that begins while the metadata read runs still refuses the start.
+				if (stopDuringRead) refusing = true;
+				// A New conversation that completes meanwhile moves the workhorse off this thread.
+				if (newConversationDuringRead) {
+					linkedThread = authorities.identity.decoder.adoptThreadId("thread-new");
+				}
+				return { thread: { id: threadId, status: { type: "idle" }, turns: [] } } as never;
+			},
+			turnSteer: async () => ({}) as never,
+		},
+		contextForOperation: (_context, operation) =>
+			TEST_CONTEXT_SCHEMA.parse({
+				threadLink: { state: "executable", reason: null },
+				child: {
+					id: authorities.identity.validator.childId,
+					epoch: authorities.identity.validator.epoch,
+				},
+				workhorse: { threadId, turnId: null },
+				coordinator: { threadId: null, realtimeSessionId: null },
+				brief: { text: "selected service", capturedAtMs: 10, freshUntilMs: 20 },
+				operation: { ...operation, outcome: null },
+			}),
+	});
+	const context = {
+		browserId: "browser-1",
+		connection: Object.freeze({}),
+		chatId: "chat-stop",
+		tabSessionId: parseTabSessionId("tab-one")!,
+		checkout: "/work/payments",
+		commandId: authorities.identity.issuer.mintBrowserCommandId(),
+		childId: authorities.identity.validator.childId,
+		epoch: authorities.identity.validator.epoch,
+		linkRevision: 1,
+		link: {
+			kind: "thread_link",
+			state: "executable",
+			childId: authorities.identity.validator.childId,
+			epoch: authorities.identity.validator.epoch,
+			threadId,
+			source: "appServer",
+			status: "active",
+			loaded: true,
+			canAcceptDirectInput: true,
+			reason: null,
+		},
+	} as const;
+	const base = {
+		kind: "browser_command",
+		commandId: context.commandId,
+		chatId: context.chatId,
+		childId: context.childId,
+		epoch: context.epoch,
+		threadId,
+	} as const;
+
+	await expect(
+		actions.start({ ...base, command: "start", prompt: "go on" }, context),
+	).rejects.toThrow(WorkhorseStopRefusal);
+	refusing = false;
+	stopDuringRead = true;
+	await expect(
+		actions.start({ ...base, command: "start", prompt: "go on" }, context),
+	).rejects.toThrow(WorkhorseStopRefusal);
+	stopDuringRead = false;
+	refusing = false;
+	newConversationDuringRead = true;
+	await expect(
+		actions.start({ ...base, command: "start", prompt: "go on" }, context),
+	).rejects.toMatchObject({ code: "link_changed", outcome: "not_delivered" });
+	expect(starts).toBe(0);
+	refusing = true;
+
+	// A partial stop is no success: the browser hears that some work still runs.
+	await expect(
+		actions.interrupt({ ...base, command: "interrupt", turnId }, context),
+	).rejects.toMatchObject({ code: "stop_unconfirmed", outcome: "delivered" });
+	outcome = "stopped";
+	refusing = false;
+	expect(await actions.interrupt({ ...base, command: "interrupt", turnId }, context)).toEqual({
+		outcome: "delivered",
+	});
+	expect(stopped).toEqual(["/work/payments", "/work/payments"]);
 });

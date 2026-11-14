@@ -30,6 +30,7 @@ import type {
 	ServerTimelineOwner,
 } from "#server/timeline/projections/timeline.ts";
 import { createServerCanonicalTextActions } from "#server/chat-conversations/gateway/services/text-actions.ts";
+import { admitWork } from "#server/sessions/services/stop.ts";
 import { createServerBrowserAccountOwner } from "#server/actions/services/account.ts";
 import { watchTranscriptChanges } from "#server/voice/services/transcript-changes.ts";
 import type { ServerReadinessProcessFacts } from "#server/generation/rules/readiness.ts";
@@ -358,6 +359,25 @@ function createServerBrowserGatewayOptions(
 			session: components.session,
 			contextForOperation: input.contextForOperation,
 			contextCodec: input.contextCodec,
+			/**
+			 * Send a typed message as work admitted to the chat's workhorse.
+			 * @param context The chat.
+			 * @param start The message's request to Codex.
+			 * @returns What Codex answered.
+			 */
+			admitNewWork: (context, start) => admitWork(workhorseOf(context), null, start),
+			/**
+			 * The thread the chat's workhorse is linked to now.
+			 * @param context The chat.
+			 * @returns The thread, or null while it has none.
+			 */
+			workhorseThread: (context) => workhorseOf(context).components.workhorse.snapshot().threadId,
+			/**
+			 * Stop the work tree of the chat's workhorse.
+			 * @param context The chat.
+			 * @returns What the stop observed.
+			 */
+			stopWork: (context) => sessionOf(context).stopWork(context.checkout),
 		}),
 		queue: {
 			/**

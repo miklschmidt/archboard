@@ -44,6 +44,8 @@ const BROWSER_GATEWAY_ERROR_CODES = [
 	"unsupported_command",
 	"command_failed",
 	"outcome_unknown",
+	"work_stopping",
+	"stop_unconfirmed",
 ] as const;
 
 type BrowserGatewayErrorCode = (typeof BROWSER_GATEWAY_ERROR_CODES)[number];

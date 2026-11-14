@@ -75,7 +75,6 @@ describe("workhorse server-issued operation identity", () => {
 			await steered.operations.steer({
 				call: steered.setCall("steer_workhorse"),
 				operationId,
-				expectedTurnId: activeTurn.id,
 				input: "canonical correction",
 			});
 			expect(observed).not.toHaveLength(0);

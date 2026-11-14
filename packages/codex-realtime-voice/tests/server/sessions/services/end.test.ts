@@ -82,6 +82,10 @@ function endingStore() {
 				return { status: "unsubscribed" };
 			},
 			turnInterrupt: async () => ({}) as never,
+			threadListPage: async () => ({}) as never,
+			threadTurnsListPage: async () => ({}) as never,
+			queueListPage: async () => ({}) as never,
+			queueDelete: async () => ({}) as never,
 		},
 		threadLink: {
 			read: () => ({ link: { state: "executable" }, cas: { revision: 3 } }) as never,
