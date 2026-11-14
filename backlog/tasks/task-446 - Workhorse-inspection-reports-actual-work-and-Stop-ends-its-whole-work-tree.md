@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: 2026-10-07 19:57
-updated_date: '2026-11-14T16:38:00Z'
+updated_date: '2026-11-14T17:35:00Z'
 labels:
   - voice
   - coordinator
@@ -82,6 +82,8 @@ The board check passes with no diagnostics. semantic compare matches the planned
 2026-11-13: implemented. The work guard (guardWorkhorse) lives in stop.ts beside the stop, and sessions.ts wraps each built workhorse with it. Steering reads the running workhorse turn through thread/turns/list (runningWorkhorseTurn in steer.ts). The proposal BlKbD4yG was brought to the built symbols and adopted on Current after the rebase onto main e2cbb84d07; archboard check passes with no diagnostics. Verification: bun run check passes every lane, and the model check passes after adoption; the package suite passes (1147 tests); tsc is clean. Sol review (gpt-6.1-sol, xhigh), 2 rounds, approved. Two findings were declined with evidence: a second admission layer at the Codex session (the repeated read pass already stops work that lands while stopping, and the layer does not cover an operation queued before a stop of an idle workhorse), and a second stop deadline (every Codex request settles within requestSettlement, request-operations.ts:259). Follow-ups to consider: an operation that passed admission before a stop and starts after it; the workbench shows Stop only while the workhorse's own turn runs, so work left only in a sub-agent has no button; browser refusals name remaining work only in general terms.
 
 2026-11-14: rebased onto main f7c9ca977f, where TASK-319's omSpXUMz had become Current. BlKbD4yG stood on a former Current, so the vault work was redone through the CLI: proposal abr2gK6Q restates it on omSpXUMz with the same 58 changes (compared change by change after normalizing the new ids). The drafts 93RlBGLx, yM7DOqT4 and zFIdZB1Y were shelved again with a reason that names abr2gK6Q, and abr2gK6Q was adopted without force; archboard check passes. Its checkpoints were published to origin refs/heads/archboard-history as a fast-forward from a0e3c707 to 81d7555d. CI's module test 'fresh Archboard profiles bind the authored canonical instructions and stable tool identity' pinned the coordinator manifest hash, which the rewritten stop_workhorses and inspect_workhorse descriptions changed; with main's workhorse.json the old hash returns, and the pin now holds c843afeb.
+
+2026-11-14: CodeRabbit review fixes. A stop now waits for work admitted before it (delegations, queue changes, typed messages) before its first read, confirms an empty tree with a second read, always acts once on the work it saw, keeps every asking coordinator turn refused across joined and later stops, and names at most REMAINING_WORK_LIMIT threads. A steer reclassifies its link after its last turn read. The stop flow decides its outcome after the observation loop (checkpoint e09f7795 published). Follow-up still open: the workbench offers Stop only while the workhorse's own turn runs, so after a partial stop that ended that turn the person recovers through the voice coordinator; offering Stop while a stop is unresolved needs the stop phase in the browser snapshot.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
