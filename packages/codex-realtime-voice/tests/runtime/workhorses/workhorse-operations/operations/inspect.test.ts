@@ -23,6 +23,7 @@ function runningTurn(identity: IdentityAuthority, rawId: string): SessionTurn {
 			},
 			{ type: "agentMessage", id: item("plan"), text: "Reading the queue module." },
 			{ type: "agentMessage", id: item("next"), text: "Spawning a reviewer." },
+			// Inspection reads only these fields of each item, so the rest of each item stays unset.
 		] as unknown as SessionTurn["items"],
 	};
 }
@@ -32,6 +33,7 @@ function subAgent(identity: IdentityAuthority, rawId: string): SessionThread {
 	return {
 		id: identity.decoder.adoptThreadId(rawId),
 		status: { type: "active", activeFlags: [] },
+		// Inspection reads only the id and status of a listed thread, so the rest stays unset.
 	} as unknown as SessionThread;
 }
 

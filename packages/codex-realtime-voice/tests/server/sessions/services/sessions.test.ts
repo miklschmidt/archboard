@@ -90,7 +90,15 @@ function twoSessions() {
 	const threads = new Map<string, { current: ThreadId | null }>();
 	const operationListeners = new Map<string, Set<(event: unknown) => void>>();
 	const shown = { current: null as string | null };
+	let now = 0;
 	const sessions = createCodexWorkbenchSessions({
+		// Each stop poll passes at once, so no case waits on the system clock.
+		stopClock: {
+			now: () => now,
+			wait: async (ms) => {
+				now += ms;
+			},
+		},
 		resolveCheckout: (named) => named,
 		identity: identity.identity,
 		transport: {

@@ -317,7 +317,7 @@ function createCodexWorkbenchSessions(
 			Promise.all(
 				[...workhorses.values()]
 					.filter((candidate) => checkout === null || candidate.checkout === checkout)
-					.map((candidate) => stopWorkTree(candidate, options.session, askedBy)),
+					.map((candidate) => stopWorkTree(candidate, options.session, askedBy, options.stopClock)),
 			);
 		const built = options.build({
 			id,
