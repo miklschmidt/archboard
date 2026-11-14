@@ -30,7 +30,7 @@ import type {
 	ServerTimelineOwner,
 } from "#server/timeline/projections/timeline.ts";
 import { createServerCanonicalTextActions } from "#server/chat-conversations/gateway/services/text-actions.ts";
-import { refuseWhileStopping } from "#server/sessions/services/stop.ts";
+import { admitWork } from "#server/sessions/services/stop.ts";
 import { createServerBrowserAccountOwner } from "#server/actions/services/account.ts";
 import { watchTranscriptChanges } from "#server/voice/services/transcript-changes.ts";
 import type { ServerReadinessProcessFacts } from "#server/generation/rules/readiness.ts";
@@ -360,12 +360,12 @@ function createServerBrowserGatewayOptions(
 			contextForOperation: input.contextForOperation,
 			contextCodec: input.contextCodec,
 			/**
-			 * Refuse a typed message while the chat's workhorse stops or did not stop.
+			 * Send a typed message as work admitted to the chat's workhorse.
 			 * @param context The chat.
+			 * @param start The message's request to Codex.
+			 * @returns What Codex answered.
 			 */
-			refuseNewWork: (context) => {
-				refuseWhileStopping(workhorseOf(context), null);
-			},
+			admitNewWork: (context, start) => admitWork(workhorseOf(context), null, start),
 			/**
 			 * Stop the work tree of the chat's workhorse.
 			 * @param context The chat.

@@ -16,6 +16,7 @@ import {
 	type CodexWorkbenchWorkhorse,
 } from "#server/sessions/services/workhorses.ts";
 import type { BuiltWorkhorse } from "#server/generation/protocol/session-contract.ts";
+import { REMAINING_WORK_LIMIT } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
 
 const { identity } = createIdentityAuthorities();
 const { decoder } = identity;
@@ -35,6 +36,8 @@ interface FakeThread {
 	ignoresInterrupt?: boolean;
 	/** True for an active thread whose turn list names no running turn. */
 	hidesTurn?: boolean;
+	/** True for an idle thread whose first queued request starts while its queue is read. */
+	startsOnQueueRead?: boolean;
 }
 
 /**
@@ -46,6 +49,7 @@ function codexTree(threads: Record<string, FakeThread>) {
 	const ending = new Set<string>();
 	const failing = new Set<"list" | "read">();
 	const onWait: (() => void)[] = [];
+	const onRead: (() => void)[] = [];
 	let now = 0;
 	const descendants = (ancestor: string): string[] =>
 		Object.entries(threads)
@@ -61,7 +65,9 @@ function codexTree(threads: Record<string, FakeThread>) {
 	const session: WorkTreeStopSession = {
 		threadRead: async ({ threadId }) => {
 			if (failing.has("read")) throw new Error("thread/read failed");
-			return { thread: { id: threadId, status: status(wire(threadId)) } } as never;
+			const read = { thread: { id: threadId, status: status(wire(threadId)) } };
+			onRead.shift()?.();
+			return read as never;
 		},
 		threadListPage: async (params) => {
 			if (failing.has("list")) throw new Error("thread/list failed");
@@ -86,13 +92,17 @@ function codexTree(threads: Record<string, FakeThread>) {
 				backwardsCursor: null,
 			} as never;
 		},
-		queueListPage: async ({ threadId }) =>
-			({
-				data: threads[wire(threadId)]!.queue.map((id) => ({
-					id: decoder.adoptQueuedSubmissionId(id),
-				})),
+		queueListPage: async ({ threadId }) => {
+			const thread = threads[wire(threadId)]!;
+			if (thread.startsOnQueueRead === true && thread.queue.length > 0) {
+				thread.startsOnQueueRead = false;
+				thread.turn = thread.queue.shift()!;
+			}
+			return {
+				data: thread.queue.map((id) => ({ id: decoder.adoptQueuedSubmissionId(id) })),
 				nextCursor: null,
-			}) as never,
+			} as never;
+		},
 		queueDelete: async ({ threadId, queuedSubmissionId }) => {
 			const thread = threads[wire(threadId)]!;
 			calls.push(`delete ${wire(queuedSubmissionId)}`);
@@ -114,7 +124,14 @@ function codexTree(threads: Record<string, FakeThread>) {
 			onWait.shift()?.();
 		},
 	};
-	return { session, clock, calls, threads, failing, onWait };
+	/**
+	 * Let time pass without a wait of the stop, as a slow read does.
+	 * @param ms How long.
+	 */
+	const advance = (ms: number): void => {
+		now += ms;
+	};
+	return { session, clock, calls, threads, failing, onWait, onRead, advance };
 }
 
 /** The workhorse of one checkout, whose thread is the root of the tree. */
@@ -128,6 +145,7 @@ function workhorseOn(root: string | null): CodexWorkbenchWorkhorse {
 				snapshot: () => ({ threadId: root === null ? null : decoder.adoptThreadId(root) }),
 			},
 		},
+		// The stop reads only these fields of a workhorse, so the rest of it stays unbuilt.
 	} as unknown as CodexWorkbenchWorkhorse;
 }
 
@@ -278,6 +296,7 @@ describe("the work tree stop", () => {
 				threadLinks: { create: entry("threadLinks.create") },
 				ensureStarted: entry("ensureStarted"),
 			},
+			// The guard wraps only these entries, so the rest of the built workhorse stays unbuilt.
 		} as unknown as BuiltWorkhorse);
 		const { queue, operations } = built.components;
 		const call = { turnId: COORDINATOR_TURN };
@@ -310,14 +329,87 @@ describe("the work tree stop", () => {
 
 		// After a stop that ended all work, only the coordinator turn that asked for it is refused.
 		ran.length = 0;
-		workhorse.state.stop = {
-			kind: "stopped",
-			stop: { ...unresolved, outcome: "stopped" },
-			askedBy: COORDINATOR_TURN,
-		};
+		workhorse.state.stop = { kind: "stopped", stop: { ...unresolved, outcome: "stopped" } };
+		workhorse.state.stopAskers.add(COORDINATOR_TURN);
 		const afterStop = await settled();
 		expect(afterStop.filter((error) => error instanceof WorkhorseStopRefusal)).toHaveLength(4);
 		expect(ran).toEqual(["queue.add", "queue.start", "threadLinks.create", "ensureStarted"]);
+	});
+
+	test("confirms an empty tree with a second read, so a queued request that started during the first is stopped", async () => {
+		const codex = codexTree({
+			root: { parent: null, turn: null, queue: ["queued-1"], startsOnQueueRead: true },
+		});
+		const stop = await stopWorkTree(workhorseOn("root"), codex.session, null, codex.clock);
+		expect(stop.outcome).toBe("stopped");
+		expect(codex.calls).toEqual(["interrupt root/queued-1"]);
+	});
+
+	test("acts on the work it saw even when the first read outlasted the settle time", async () => {
+		const codex = codexTree({
+			root: { parent: null, turn: "root-turn", queue: ["queued-1"], ignoresInterrupt: true },
+		});
+		codex.onRead.push(() => codex.advance(CODEX_SESSION_MS.workTreeStopSettle));
+		const stop = await stopWorkTree(workhorseOn("root"), codex.session, null, codex.clock);
+		expect(stop.outcome).toBe("partial");
+		expect(codex.calls).toEqual(["delete queued-1", "interrupt root/root-turn"]);
+	});
+
+	test("names at most the threads a report holds, and judges the outcome from all of them", async () => {
+		const children = Object.fromEntries(
+			Array.from({ length: REMAINING_WORK_LIMIT + 1 }, (_, index): [string, FakeThread] => [
+				`child-${index}`,
+				{ parent: "root", turn: `turn-${index}`, queue: [], ignoresInterrupt: true },
+			]),
+		);
+		const codex = codexTree({ root: { parent: null, turn: null, queue: [] }, ...children });
+		const stop = await stopWorkTree(workhorseOn("root"), codex.session, null, codex.clock);
+		expect(stop.outcome).toBe("partial");
+		expect(stop.remaining).toHaveLength(REMAINING_WORK_LIMIT);
+	});
+
+	test("keeps every asking coordinator turn refused across a joined stop and a later Stop control", async () => {
+		const codex = codexTree({ root: { parent: null, turn: "root-turn", queue: [] } });
+		const workhorse = workhorseOn("root");
+		const control = stopWorkTree(workhorse, codex.session, null, codex.clock);
+		await stopWorkTree(workhorse, codex.session, COORDINATOR_TURN, codex.clock);
+		expect((await control).outcome).toBe("stopped");
+		expect(catching(() => refuseWhileStopping(workhorse, COORDINATOR_TURN))).toBeInstanceOf(
+			WorkhorseStopRefusal,
+		);
+
+		codex.threads["root"]!.turn = "restarted-turn";
+		await stopWorkTree(workhorse, codex.session, null, codex.clock);
+		expect(catching(() => refuseWhileStopping(workhorse, COORDINATOR_TURN))).toBeInstanceOf(
+			WorkhorseStopRefusal,
+		);
+		expect(catching(() => refuseWhileStopping(workhorse, null))).toBeNull();
+	});
+
+	test("waits for work admitted before the stop, then stops what it started", async () => {
+		const codex = codexTree({ root: { parent: null, turn: null, queue: [] } });
+		const workhorse = workhorseOn("root");
+		const gate = Promise.withResolvers<void>();
+		const built = guardWorkhorse(() => workhorse, {
+			components: {
+				operations: {
+					delegate: async () => {
+						await gate.promise;
+						codex.threads["root"]!.turn = "delegated-turn";
+					},
+				},
+			},
+			actions: {},
+			// The guard wraps only the delegation here, so the rest of the built workhorse stays unbuilt.
+		} as unknown as BuiltWorkhorse);
+		const delegated = built.components.operations.delegate({
+			call: { turnId: decoder.adoptTurnId("earlier-turn") },
+		} as never);
+		const stopping = stopWorkTree(workhorse, codex.session, null, codex.clock);
+		gate.resolve();
+		await delegated;
+		expect((await stopping).outcome).toBe("stopped");
+		expect(codex.calls).toEqual(["interrupt root/delegated-turn"]);
 	});
 });
 

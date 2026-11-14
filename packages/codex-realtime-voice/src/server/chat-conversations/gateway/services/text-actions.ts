@@ -44,8 +44,14 @@ interface ServerTextActionOptions {
 			readonly rpc: "turn/start" | "turn/steer";
 		},
 	) => WorkbenchExecutionContext;
-	/** Refuse a typed message to a workhorse that is stopping or whose stop did not end its work. */
-	readonly refuseNewWork: (context: BrowserActionContext) => void;
+	/**
+	 * Send a typed message as work admitted to the chat's workhorse: refused while it stops or
+	 * after a stop that did not end its work, and waited for by a stop that begins meanwhile.
+	 */
+	readonly admitNewWork: <Result>(
+		context: BrowserActionContext,
+		start: () => Promise<Result>,
+	) => Promise<Result>;
 	/** Stop the work tree of the workhorse of the chat's checkout, and say what the stop observed. */
 	readonly stopWork: (context: BrowserActionContext) => Promise<readonly WorkhorseStop[]>;
 }
@@ -81,7 +87,6 @@ export function createServerCanonicalTextActions(
 		 */
 		start: async (command, context) => {
 			const threadId = browserLeaseThreadId(context);
-			options.refuseNewWork(context);
 			// Starting requires authoritative idle metadata, not hydrated history:
 			// the pinned server cannot list turns for a newly created thread.
 			const { thread } = await options.session.threadRead({ threadId, includeTurns: false });
@@ -106,7 +111,9 @@ export function createServerCanonicalTextActions(
 				},
 				options.contextCodec,
 			);
-			const response = await options.session.turnStart({ ...canonical, threadId });
+			const response = await options.admitNewWork(context, () =>
+				options.session.turnStart({ ...canonical, threadId }),
+			);
 			return { outcome: "delivered", turnId: response.turn.id };
 		},
 		/**
@@ -117,7 +124,6 @@ export function createServerCanonicalTextActions(
 		 */
 		steer: async (command, context) => {
 			const threadId = browserLeaseThreadId(context);
-			options.refuseNewWork(context);
 			const { thread } = await options.session.threadRead({ threadId, includeTurns: false });
 			if (thread.id !== threadId || thread.status.type !== "active") {
 				throw new CodexWorkbenchGatewayError(
@@ -141,13 +147,15 @@ export function createServerCanonicalTextActions(
 				},
 				options.contextCodec,
 			);
-			await options.session.turnSteer({
-				...canonical,
-				threadId,
-				// Codex checks this required precondition atomically against its active
-				// turn; a history pre-read cannot close that race and is unsupported.
-				expectedTurnId: command.turnId,
-			});
+			await options.admitNewWork(context, () =>
+				options.session.turnSteer({
+					...canonical,
+					threadId,
+					// Codex checks this required precondition atomically against its active
+					// turn; a history pre-read cannot close that race and is unsupported.
+					expectedTurnId: command.turnId,
+				}),
+			);
 			return { outcome: "delivered" };
 		},
 		/**

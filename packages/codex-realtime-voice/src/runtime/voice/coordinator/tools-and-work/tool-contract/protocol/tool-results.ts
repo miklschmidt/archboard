@@ -25,9 +25,11 @@ const INSPECT_READS = ["turns", "subAgents", "queue"] as const;
 /** What a partial or unconfirmed stop leaves to do: look again, or stop again. */
 const STOP_RECOVERY = ["inspect_workhorse", "stop_workhorses"] as const;
 const INSPECT_TEXT_LIMIT = 400;
+/** The most threads a stop report names; a stop names the first ones it saw. */
+const REMAINING_WORK_LIMIT = 100;
 const RemainingWorkSchema = z
 	.array(z.object({ threadId: OpaqueIdSchema, state: z.enum(REMAINING_STATES) }).strict())
-	.max(100);
+	.max(REMAINING_WORK_LIMIT);
 const InspectWorkhorseResultSchema = z
 	.object({
 		threadId: OpaqueIdSchema,
@@ -161,7 +163,7 @@ const ResultQueuedSubmissionIdsSchema: JsonSchema = deepFreeze({
 });
 const ResultRemainingWorkSchema: JsonSchema = deepFreeze({
 	type: "array",
-	maxItems: 100,
+	maxItems: REMAINING_WORK_LIMIT,
 	items: strictResultObject(
 		{
 			threadId: JsonStringSchema,
@@ -278,5 +280,6 @@ export {
 	type StopWorkhorsesResult,
 	type ResolveSpokenApprovalResult,
 	parseCoordinatorToolResult,
+	REMAINING_WORK_LIMIT,
 	TOOL_SUCCESS_RESULT_SCHEMAS,
 };

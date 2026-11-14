@@ -9,9 +9,11 @@
 // the tree, delete each queued request, and interrupt each running turn, the workhorse's first.
 // Each pass after an interrupt reads again, so only Codex's own report proves that work ended.
 //
-// While the stop runs, and after it ends with work that still runs or could not be read, the
-// workhorse takes no new work. After it ends all work, the coordinator turn that asked for it
-// starts none either, so only a fresh request starts work again.
+// Work admitted before the stop settles before the first read, so it cannot start after the stop
+// ends. A read that finds nothing is confirmed by one more read, so a queued request that started
+// while the first read ran is still seen. While the stop runs, and after it ends with work that
+// still runs or could not be read, the workhorse takes no new work. After it ends all work, no
+// coordinator turn that asked for a stop starts work either, so only a fresh request does.
 
 import { CODEX_SESSION_MS } from "@archboard/timing";
 import type { ThreadId, TurnId, QueuedSubmissionId } from "@archboard/codex-app-server/identity";
@@ -19,6 +21,7 @@ import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { CodexThreadStatusType } from "@archboard/codex-app-server/contract";
 import { listSubAgents } from "#runtime/workhorses/workhorse-operations/operations/inspect.ts";
 import type { CoordinatorToolWorkhorse } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
+import { REMAINING_WORK_LIMIT } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
 import type { BuiltWorkhorse } from "#server/generation/protocol/session-contract.ts";
 import type {
 	CodexWorkbenchWorkhorse,
@@ -267,8 +270,34 @@ function unsettledOutcome(remaining: readonly RemainingWork[]): WorkhorseStop["o
 }
 
 /**
- * Stop one work tree: repeat a pass until one sees nothing that runs, waits or is unread, or the
- * settle time runs out. Success always comes from a read after the last effect.
+ * What a stop ended with, naming at most the threads a report holds.
+ * @param checkout The workhorse's checkout.
+ * @param outcome The outcome, judged from all the remaining work.
+ * @param remaining All the remaining work.
+ * @returns The stop.
+ */
+function stopOf(
+	checkout: string,
+	outcome: WorkhorseStop["outcome"],
+	remaining: readonly RemainingWork[],
+): WorkhorseStop {
+	return { checkout, outcome, remaining: remaining.slice(0, REMAINING_WORK_LIMIT) };
+}
+
+/**
+ * What a stop ended with when two reads in a row saw nothing left.
+ * @param checkout The workhorse's checkout.
+ * @param acted Whether a pass stopped any work.
+ * @returns Stopped when the stop ended work, otherwise idle.
+ */
+function ended(checkout: string, acted: boolean): WorkhorseStop {
+	return stopOf(checkout, acted ? "stopped" : "idle", []);
+}
+
+/**
+ * Stop one work tree: repeat a pass until two reads in a row see nothing that runs, waits or is
+ * unread, or the settle time runs out. Success always comes from a read after the last effect,
+ * and the first pass that sees work always acts on it, however long its read took.
  * @param checkout The workhorse's checkout.
  * @param root The workhorse thread.
  * @param session Reads and stops the tree.
@@ -284,15 +313,21 @@ async function settle(
 	const deadline = clock.now() + CODEX_SESSION_MS.workTreeStopSettle;
 	const interrupted = new Set<TurnId>();
 	let acted = false;
+	let confirming = false;
 	for (;;) {
 		// oxlint-disable-next-line no-await-in-loop -- each pass reads what the effects of the pass before it left
 		const tree = await readTree(session, root);
 		const remaining = remainingOf(tree);
 		if (remaining.length === 0) {
-			return { checkout, outcome: acted ? "stopped" : "idle", remaining };
+			if (confirming) {
+				return ended(checkout, acted);
+			}
+			confirming = true;
+			continue;
 		}
-		if (clock.now() >= deadline) {
-			return { checkout, outcome: unsettledOutcome(remaining), remaining };
+		confirming = false;
+		if (acted && clock.now() >= deadline) {
+			return stopOf(checkout, unsettledOutcome(remaining), remaining);
 		}
 		// oxlint-disable-next-line no-await-in-loop -- the effects of a pass finish before the next pass reads
 		await act(session, tree, interrupted);
@@ -341,48 +376,63 @@ async function stopWorkTree(
 	clock: WorkTreeStopClock = SYSTEM_CLOCK,
 ): Promise<WorkhorseStop> {
 	const { state } = workhorse;
+	if (askedBy !== null) {
+		state.stopAskers.add(askedBy);
+	}
 	if (state.stop?.kind === "stopping") {
 		return state.stop.done;
 	}
-	const done = observeStop(workhorse, session, clock);
+	const admitted = [...state.admitted];
+	const done = Promise.all(admitted).then(() => observeStop(workhorse, session, clock));
 	state.stop = { kind: "stopping", done };
 	const stop = await done;
-	state.stop =
-		stop.outcome === "stopped" || stop.outcome === "idle"
-			? { kind: "stopped", stop, askedBy }
-			: { kind: "unresolved", stop };
+	state.stop = phaseAfter(stop);
 	return stop;
 }
 
 /**
- * Whether the coordinator turn starting work is the one that asked for the stop.
- * @param askedBy The coordinator turn that asked for the stop, or null for the Stop control.
- * @param coordinatorTurn The coordinator turn starting the work, or null for a person's request.
- * @returns True only for the same coordinator turn.
+ * Where a workhorse stands after a stop.
+ * @param stop What the stop observed.
+ * @returns Stopped when it showed that all work ended, otherwise unresolved.
  */
-function askedForStop(askedBy: TurnId | null, coordinatorTurn: TurnId | null): boolean {
-	return askedBy !== null && askedBy === coordinatorTurn;
+function phaseAfter(stop: WorkhorseStop): WorkhorseStopPhase {
+	return stop.outcome === "stopped" || stop.outcome === "idle"
+		? { kind: "stopped", stop }
+		: { kind: "unresolved", stop };
+}
+
+/**
+ * Whether a coordinator turn asked for a stop of a workhorse.
+ * @param workhorse The workhorse.
+ * @param coordinatorTurn The coordinator turn starting work, or null for a person's request.
+ * @returns True only for a coordinator turn that asked for a stop.
+ */
+function askedForStop(
+	workhorse: Pick<CodexWorkbenchWorkhorse, "state">,
+	coordinatorTurn: TurnId | null,
+): boolean {
+	return coordinatorTurn !== null && workhorse.state.stopAskers.has(coordinatorTurn);
 }
 
 /**
  * Why a workhorse takes no new work now.
- * @param phase Where its last stop stands.
- * @param checkout Its checkout.
+ * @param workhorse The workhorse.
  * @param coordinatorTurn The coordinator turn starting the work, or null for a person's request.
  * @returns The reason, or null when it takes the work.
  */
 function refusal(
-	phase: WorkhorseStopPhase | null,
-	checkout: string,
+	workhorse: Pick<CodexWorkbenchWorkhorse, "state" | "checkout">,
 	coordinatorTurn: TurnId | null,
 ): string | null {
+	const { checkout, state } = workhorse;
+	const phase = state.stop;
 	switch (phase?.kind) {
 		case "stopping":
 			return `The workhorse of ${checkout} is stopping; new work waits until the stop ends.`;
 		case "unresolved":
 			return `The last stop of the workhorse of ${checkout} did not show that all work ended (${phase.stop.outcome}); inspect it or stop it again before new work.`;
 		case "stopped":
-			return askedForStop(phase.askedBy, coordinatorTurn)
+			return askedForStop(workhorse, coordinatorTurn)
 				? `The work of ${checkout} stopped at the user's request; start work again only for a new request from the user.`
 				: null;
 		default:
@@ -401,10 +451,35 @@ function refuseWhileStopping(
 	workhorse: CodexWorkbenchWorkhorse,
 	coordinatorTurn: TurnId | null,
 ): void {
-	const reason = refusal(workhorse.state.stop, workhorse.checkout, coordinatorTurn);
+	const reason = refusal(workhorse, coordinatorTurn);
 	if (reason !== null) {
 		throw new WorkhorseStopRefusal(reason);
 	}
+}
+
+/**
+ * Start work on a workhorse unless it refuses work now, and hold the work as admitted until it
+ * settles, so a stop that begins meanwhile waits for it and then sees what it started.
+ * @param workhorse The workhorse the work is for.
+ * @param coordinatorTurn The coordinator turn starting the work, or null for a person's request.
+ * @param start The work.
+ * @returns What the work returned.
+ * @throws {WorkhorseStopRefusal} When the workhorse takes no new work now.
+ */
+function admitWork<Result>(
+	workhorse: CodexWorkbenchWorkhorse,
+	coordinatorTurn: TurnId | null,
+	start: () => Promise<Result>,
+): Promise<Result> {
+	refuseWhileStopping(workhorse, coordinatorTurn);
+	const running = start();
+	const settled = running.then(
+		() => undefined,
+		() => undefined,
+	);
+	workhorse.state.admitted.add(settled);
+	void settled.then(() => workhorse.state.admitted.delete(settled));
+	return running;
 }
 
 /**
@@ -431,10 +506,7 @@ function guardWorkhorse(
 	const guarded = async <Result>(
 		coordinatorTurn: TurnId | null,
 		start: () => Promise<Result>,
-	): Promise<Result> => {
-		refuseWhileStopping(workhorse(), coordinatorTurn);
-		return start();
-	};
+	): Promise<Result> => admitWork(workhorse(), coordinatorTurn, start);
 	return {
 		components: {
 			...built.components,
@@ -514,6 +586,7 @@ function stopReport(workhorse: CodexWorkbenchWorkhorse): WorkhorseStopReport {
 }
 
 export {
+	admitWork,
 	guardWorkhorse,
 	refuseWhileStopping,
 	stopReport,

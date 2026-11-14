@@ -49,6 +49,10 @@ interface CodexWorkbenchWorkhorseState {
 	activeTurn: { readonly threadId: ThreadId; readonly turnId: TurnId } | null;
 	/** Where its last work tree stop stands, or null before any stop. */
 	stop: WorkhorseStopPhase | null;
+	/** Every coordinator turn that asked for a stop of it; none of them starts work again. */
+	readonly stopAskers: Set<TurnId>;
+	/** Work it admitted that has not settled yet; a stop waits for it before it reads the tree. */
+	readonly admitted: Set<Promise<void>>;
 }
 
 /** One workhorse of a tab session: the one for one checkout. */
@@ -84,12 +88,12 @@ interface WorkhorseStop {
 
 /**
  * Where a workhorse's last stop stands. While it stops, and after a partial or unconfirmed stop,
- * it takes no new work. After a stop that ended everything, the coordinator turn that asked for
- * it starts no work, so only a fresh request does.
+ * it takes no new work. After a stop that ended everything, no coordinator turn that asked for a
+ * stop starts work, so only a fresh request does.
  */
 type WorkhorseStopPhase =
 	| { readonly kind: "stopping"; readonly done: Promise<WorkhorseStop> }
-	| { readonly kind: "stopped"; readonly stop: WorkhorseStop; readonly askedBy: TurnId | null }
+	| { readonly kind: "stopped"; readonly stop: WorkhorseStop }
 	| { readonly kind: "unresolved"; readonly stop: WorkhorseStop };
 
 /**
@@ -102,6 +106,8 @@ function freshWorkhorseState(): CodexWorkbenchWorkhorseState {
 		queueThreadId: null,
 		activeTurn: null,
 		stop: null,
+		stopAskers: new Set(),
+		admitted: new Set(),
 	};
 }
 

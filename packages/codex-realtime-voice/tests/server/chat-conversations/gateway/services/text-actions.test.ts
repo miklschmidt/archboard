@@ -17,7 +17,7 @@ test("browser start requires the exact authoritative idle thread without hydrati
 	let observedThreadId = threadId;
 	let observedStatus = "active";
 	const actions = createServerCanonicalTextActions({
-		refuseNewWork: () => undefined,
+		admitNewWork: async (_context, start) => start(),
 		stopWork: async () => [],
 		contextCodec: TEST_CONTEXT_CODEC,
 		identity: authorities,
@@ -98,7 +98,7 @@ test("browser steering preserves the server's atomic expected-turn refusal witho
 	const currentTurnId = authorities.identity.decoder.adoptTurnId("turn-current");
 	let steerCalls = 0;
 	const actions = createServerCanonicalTextActions({
-		refuseNewWork: () => undefined,
+		admitNewWork: async (_context, start) => start(),
 		stopWork: async () => [],
 		contextCodec: TEST_CONTEXT_CODEC,
 		identity: authorities,
@@ -214,7 +214,7 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 		},
 	};
 	const actions = createServerCanonicalTextActions({
-		refuseNewWork: () => undefined,
+		admitNewWork: async (_context, start) => start(),
 		stopWork: async () => [],
 		contextCodec: TEST_CONTEXT_CODEC,
 		identity: authorities,
@@ -318,10 +318,12 @@ test("the Stop control runs the work tree stop of the chat's checkout, and a ref
 	const stopped: string[] = [];
 	let outcome: "stopped" | "partial" = "partial";
 	let refusing = true;
-	let reads = 0;
+	let stopDuringRead = false;
+	let starts = 0;
 	const actions = createServerCanonicalTextActions({
-		refuseNewWork: () => {
+		admitNewWork: async (_context, start) => {
 			if (refusing) throw new WorkhorseStopRefusal("stopping");
+			return start();
 		},
 		stopWork: async (context) => {
 			stopped.push(context.checkout);
@@ -330,16 +332,29 @@ test("the Stop control runs the work tree stop of the chat's checkout, and a ref
 		contextCodec: TEST_CONTEXT_CODEC,
 		identity: authorities,
 		session: {
-			turnStart: async () => ({}) as never,
+			turnStart: async () => {
+				starts += 1;
+				return {} as never;
+			},
 			threadRead: async () => {
-				reads += 1;
+				// A stop that begins while the metadata read runs still refuses the start.
+				if (stopDuringRead) refusing = true;
 				return { thread: { id: threadId, status: { type: "idle" }, turns: [] } } as never;
 			},
 			turnSteer: async () => ({}) as never,
 		},
-		contextForOperation: () => {
-			throw new Error("no typed message reaches context capture here");
-		},
+		contextForOperation: (_context, operation) =>
+			TEST_CONTEXT_SCHEMA.parse({
+				threadLink: { state: "executable", reason: null },
+				child: {
+					id: authorities.identity.validator.childId,
+					epoch: authorities.identity.validator.epoch,
+				},
+				workhorse: { threadId, turnId: null },
+				coordinator: { threadId: null, realtimeSessionId: null },
+				brief: { text: "selected service", capturedAtMs: 10, freshUntilMs: 20 },
+				operation: { ...operation, outcome: null },
+			}),
 	});
 	const context = {
 		browserId: "browser-1",
@@ -376,7 +391,13 @@ test("the Stop control runs the work tree stop of the chat's checkout, and a ref
 	await expect(
 		actions.start({ ...base, command: "start", prompt: "go on" }, context),
 	).rejects.toThrow(WorkhorseStopRefusal);
-	expect(reads).toBe(0);
+	refusing = false;
+	stopDuringRead = true;
+	await expect(
+		actions.start({ ...base, command: "start", prompt: "go on" }, context),
+	).rejects.toThrow(WorkhorseStopRefusal);
+	stopDuringRead = false;
+	expect(starts).toBe(0);
 
 	// A partial stop is no success: the browser hears that some work still runs.
 	await expect(
