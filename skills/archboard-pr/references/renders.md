@@ -24,7 +24,8 @@ Open the PNG at the reviewer's viewing size.
 If labels are unreadable, narrow the scope or use separate pictures without trimming the proposal.
 
 Before you post the picture, match each added, changed and removed count in its legend with `model compare` and the diff.
-Each added module with a binding needs source that the diff adds. If the legend counts more added modules than that, the proposal documents existing code: model that code in Current first, then render again.
+Each added module with a binding needs source that the diff adds. An added module without a binding, such as an external service, needs none.
+If an added module binds code that exists at the base, the proposal documents existing code: model that code in Current first, then render again.
 
 Use auto-theme SVG when the platform supports it, otherwise PNG.
 Give images alt text that explains their architectural point. Use prose for titles and captions.

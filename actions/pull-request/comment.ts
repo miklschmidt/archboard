@@ -18,7 +18,7 @@ interface PullRequestReport {
 	readonly buckets?: Buckets | undefined;
 	readonly footprintNote?: string | undefined;
 	readonly outOfPlan: OutOfPlanDecision;
-	/** What the `preexisting` input decided for the added modules whose code the base has. */
+	/** What the `preexisting` input decided for the added modules without new code. */
 	readonly preexisting: OutOfPlanDecision;
 	readonly overrideLabel: string;
 	/** The vault folder on GitHub at the head commit. */

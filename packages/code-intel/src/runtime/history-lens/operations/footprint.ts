@@ -15,7 +15,8 @@
 // skipped is in none of them. A changed file that no binding holds is in a
 // list of its own (TASK-621). Each part says whether the range adds source to
 // it, and a part the proposal adds that gains none is preexisting: its code was
-// there before the branch (TASK-637).
+// there before the branch, or its binding names code that exists nowhere
+// (TASK-637).
 
 import { realpathSync } from "node:fs";
 import { isAbsolute, relative, sep } from "node:path";
