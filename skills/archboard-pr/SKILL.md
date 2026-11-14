@@ -35,34 +35,36 @@ Read those files, and skipped or unavailable source, directly from the diff.
 Choose the evidence that fits:
 
 - Durable architecture changes: Use the existing model and a compact proposal.
+- New or changed logic: Author it as a flow in the proposal, and render it with `model render --flow <id> --grammar flowchart` so that its markers compare with the review base.
 - Incidental flows or processes: Use a [temporary model](references/ephemeral.md).
 - Design-only changes: Follow [design evidence](references/design.md).
 - Unchanged architectural meaning: Use concise text or a code example.
 
 For legacy authority, follow the consumer migration reference for inventory and preview.
 Never rewrite originals just to obtain a PR picture.
-Finish when every architectural change has an explanation tied to an identified model state or source evidence.
+Finish when every architectural change has an explanation tied to an identified model state or source evidence, and every chart in the body comes from a model flow.
 
 ## Prepare the proposal
 
 Read the existing PR state comment before creating a proposal.
 Locate its stable ID through the catalogue.
 For a proposal that predates code, follow [reconciliation](references/reconcile.md).
-Documentation of implemented architecture needs no additional proposal.
+Each added subject binds source that the diff adds.
+If the source exists at the base, model it in Current first, in a documentation layer below this PR. That documentation needs no proposal of its own.
 Use consumer authoring and comparison recipes, preserving source evidence, documents, and order.
 
 Compare with the actual review base:
 
 ```bash
 archboard model compare --state <proposal-id> --against <base-state-or-checkpoint> -C <checkout>
-archboard model footprint --base <base-ref> --head <head-ref> --state <proposal-id> --against <base-state-or-checkpoint> -C <checkout>
+archboard model footprint --base <base-ref> --head <head-ref> --state <proposal-id> --against <base-state-or-checkpoint> --fail-preexisting -C <checkout>
 archboard check code --state <proposal-id> -C <checkout>
 ```
 
 For a planning root, use its empty baseline and omit absent selectors.
 Fix findings caused by the change and record unavailable evidence.
 Commit tracked authored inputs with implementation.
-Finish when proposal meaning matches implementation and comparison accounts for every changed subject.
+Finish when proposal meaning matches implementation, comparison accounts for every changed subject, and the footprint's `preexisting` is empty.
 
 ## Prepare artifacts
 
