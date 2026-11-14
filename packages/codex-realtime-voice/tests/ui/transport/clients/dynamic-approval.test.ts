@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
 import { type BrowserDynamicApproval } from "#shared/dynamic-approval/schemas/approval.ts";
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "#shared/constants/durations.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { createBrowserWorkbenchTransport } from "#ui/transport/clients/transport.ts";

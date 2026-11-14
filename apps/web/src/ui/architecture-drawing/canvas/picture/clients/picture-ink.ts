@@ -2,7 +2,7 @@
 // that the painter brings the picture in. A painter that takes longer finds the
 // SVG standing, a correct model.
 
-import { PICTURE_MS } from "@archboard/timing";
+import { PICTURE_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type {
 	PictureHand,

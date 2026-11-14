@@ -1,6 +1,6 @@
 import type { SessionNotificationHandler } from "@archboard/codex-app-server/session";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/codex-app-server/contract";
 import {
 	CodexCoordinatorError,
 	type CodexCoordinatorOptions,

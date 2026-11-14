@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 
 const home = mkdtempSync(join(tmpdir(), "archboard-lock-vaults-"));
 

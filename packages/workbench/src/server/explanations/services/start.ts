@@ -6,7 +6,7 @@ import {
 import { checkoutOfVault } from "@archboard/workspace/vault";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 import { logger } from "@archboard/diagnostics/logger";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/codex-app-server/contract";
 import type { CodexWorkbenchDomainScope } from "#runtime/voice/protocol/extension.ts";
 import type { Entry, Workhorse } from "#server/explanations/services/contract.ts";
 

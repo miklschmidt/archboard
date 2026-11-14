@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "@archboard/codex-realtime-voice/schemas";
 
 const WAIT_THREADS_TIMEOUT_MAX_MS: number = 120_000;
 

@@ -6,3 +6,4 @@ export {
 	reportStartupEnd,
 	reportStartupOwnership,
 } from "#runtime/protocol/server-startup-terminal.ts";
+export { SERVER_LIFECYCLE_MS } from "#runtime/constants/durations.ts";

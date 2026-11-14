@@ -1,4 +1,4 @@
-import { EXPLORING_MS } from "@archboard/timing";
+import { EXPLORING_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import {
 	PAN_STEP,

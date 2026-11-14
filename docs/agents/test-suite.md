@@ -244,7 +244,7 @@ Run the focused owners while implementing a change. Run the complete normal gate
 at a completed checkpoint, then repeat it only after a relevant change or failure.
 
 No `TEST_*` budget comes from a product duration (TASK-154).
-`tests/system/support/timing.ts` imports nothing from `packages/timing`.
+`tests/system/support/timing.ts` imports no product duration.
 A wait deadline is a ceiling that a passing run never reaches.
 A poll cadence and an intentional wait are separate durations.
 A product change must not retune these test values.

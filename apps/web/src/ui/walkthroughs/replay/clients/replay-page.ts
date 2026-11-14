@@ -18,7 +18,7 @@ import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 
-import { REPLAY_MS } from "@archboard/timing";
+import { REPLAY_MS } from "@archboard/walkthrough/talk";
 import {
 	SAMPLES_PER_FRAME,
 	TALK_SAMPLE_RATE,

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { CODEX_REALTIME_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "#shared/constants/durations.ts";
 import { createRealtimeMediaSession } from "#ui/realtime/clients/media-session.ts";
 import type { RealtimeMediaSession } from "#ui/realtime/state/session-contract.ts";
 import type { RealtimeMediaSnapshot } from "#ui/realtime/clients/run.ts";

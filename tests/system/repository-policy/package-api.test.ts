@@ -139,7 +139,7 @@ const PRIVATE_PATH_FILE_USES: Record<string, string> = {
 	"tests/system/repository-policy/package-graph.test.ts":
 		"holds disposable graph fixtures with intentional private imports",
 	"tests/system/server-state/fixtures/public-codex-startup-preload.ts":
-		"replaces the cleanup timing of the one private file that the launcher's spawn imports",
+		"replaces the cleanup timing and the startup readiness of the private files that the launcher's spawn imports",
 	"tests/system/server-state/staleness-source.test.ts":
 		"touches a package file to age the source the server runs",
 };

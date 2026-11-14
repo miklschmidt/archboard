@@ -11,7 +11,7 @@
 // The canvas it draws on is `SIZE` pixels across, and the circle is in the middle
 // of it, with `PAD` of room all round for the rings of light.
 
-import { VOICE_MS } from "@archboard/timing";
+import { VOICE_MS } from "#shared/constants/durations.ts";
 import { rgba, type OrbColors } from "#ui/workbench-client/orb/rules/orb-colors.ts";
 import {
 	TAU,

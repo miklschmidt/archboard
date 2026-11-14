@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useReducer } from "react";
 
-import { PANE_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/workbench/browser-contract";
 
 /** A pane's contact with the server. */
 interface PaneContact {

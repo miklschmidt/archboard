@@ -7,7 +7,7 @@
 // loads and React's commits all run on the browser's own time, and this is
 // where the stepped clock waits for them.
 
-import { REPLAY_MS } from "@archboard/timing";
+import { REPLAY_MS } from "@archboard/walkthrough/talk";
 
 /**
  * One turn of the browser's event loop.

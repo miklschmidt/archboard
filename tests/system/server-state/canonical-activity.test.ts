@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { claimArchitectureSubjects, editArchitectureModule } from "@archboard/model/store-write";
-import { CLAIM_MS } from "@archboard/timing";
+import { CLAIM_MS } from "@archboard/model/lock";
 import { ArchitectureClaimResultSchema } from "@archboard/model/contract";
 import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
 import { startOwnedServer } from "../support/owned-server.ts";

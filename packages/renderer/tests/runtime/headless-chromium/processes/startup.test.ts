@@ -4,7 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { HeadlessChromiumError } from "#runtime/headless-chromium/processes/errors.ts";
 import { launchHeadlessChromium } from "#runtime/headless-chromium/processes/launch.ts";
-import { SEMANTIC_RASTER_STARTUP_TIMEOUT_MS, SEMANTIC_RASTER_CLEANUP_MS } from "@archboard/timing";
+import {
+	SEMANTIC_RASTER_CLEANUP_MS,
+	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
+} from "#shared/constants/durations.ts";
 
 test("an executable that exits before listening keeps its failure and cleans its process and profile", async () => {
 	const directory = mkdtempSync(join(tmpdir(), "archboard-startup-test-"));

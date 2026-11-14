@@ -15,7 +15,7 @@ import {
 	SEMANTIC_RASTER_CLEANUP_MS,
 	SEMANTIC_RASTER_JOB_TIMEOUT_MS,
 	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
-} from "@archboard/timing";
+} from "#shared/constants/durations.ts";
 import { boundsRefusal } from "#runtime/rasterizer/operations/bounds.ts";
 import {
 	RasterSession,

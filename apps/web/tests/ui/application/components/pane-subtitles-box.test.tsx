@@ -16,7 +16,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import type { JSX } from "react";
 
-import { VOICE_MS } from "@archboard/timing";
+import { VOICE_MS } from "@archboard/workbench/voice";
 import { PaneSubtitles } from "#ui/application/components/PaneSubtitles.tsx";
 import type { VoiceFeed } from "#ui/application/rules/subtitled-transcript.ts";
 import { Tooltip } from "@archboard/ui-kit/components";

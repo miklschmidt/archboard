@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, jest, test } from "bun:test";
 
-import { TAB_SESSION_GRACE_MS } from "@archboard/timing";
+import { TAB_SESSION_GRACE_MS } from "#shared/constants/durations.ts";
 import { parseTabSessionId, type TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import { createTabSessions } from "#server/sessions/services/browser-tabs.ts";
 

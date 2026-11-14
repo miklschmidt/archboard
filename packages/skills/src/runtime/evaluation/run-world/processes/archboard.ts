@@ -2,7 +2,7 @@
 // answer. The harness lays fixtures and reads outcomes through the same
 // commands an agent uses, so what the checks read is what the CLI says.
 
-import { SKILL_EVAL_MS } from "@archboard/timing";
+import { SKILL_EVAL_MS } from "#runtime/evaluation/constants/durations.ts";
 import { runProcess } from "#runtime/evaluation/processes/process.ts";
 
 /** What one call answered. */

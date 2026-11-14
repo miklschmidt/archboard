@@ -20,7 +20,7 @@ import { render } from "@testing-library/react";
 import { expect, test } from "bun:test";
 import type { JSX } from "react";
 
-import { VOICE_MS } from "@archboard/timing";
+import { VOICE_MS } from "#shared/constants/durations.ts";
 import {
 	OrbHost,
 	OrbSlot,

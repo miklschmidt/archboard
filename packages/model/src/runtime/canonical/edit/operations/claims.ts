@@ -5,7 +5,7 @@ import type {
 } from "#shared/canonical-contracts/schemas/model.ts";
 import { notifyArchitecture } from "#runtime/canonical/installation/news/store/model-news.ts";
 import { isDeepStrictEqual } from "node:util";
-import { CLAIM_MS } from "@archboard/timing";
+import { CLAIM_MS } from "#runtime/lock/constants/durations.ts";
 import { mintId } from "#shared/rules/ids.ts";
 import {
 	ArchitectureClaimRequestSchema,

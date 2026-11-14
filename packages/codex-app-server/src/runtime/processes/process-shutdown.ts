@@ -1,4 +1,4 @@
-import { CODEX_PROCESS_MS } from "@archboard/timing";
+import { CODEX_PROCESS_MS } from "#shared/constants/durations.ts";
 import { ensureGroupCleanup } from "#runtime/processes/process-child.ts";
 import type {
 	CodexProcessError,

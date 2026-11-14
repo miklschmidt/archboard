@@ -3,7 +3,7 @@
 // and the one thing the person can do about it. Only the first rule that
 // applies speaks, so the line never says two things at once. Pure.
 
-import { SHELL_CLOCK_MS } from "@archboard/timing";
+import { SHELL_CLOCK_MS } from "#shared/constants/durations.ts";
 import type {
 	BrowserApproval,
 	BrowserDynamicApproval,

@@ -8,3 +8,4 @@ export {
 	recordedOwnerPid,
 	recordedOwnerStartTime,
 } from "#runtime/processes/observation.ts";
+export { PROCESS_GROUP_OBSERVATION_POLL_MS } from "#runtime/constants/durations.ts";

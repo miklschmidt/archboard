@@ -3,7 +3,7 @@
 
 import { QueryClient } from "@tanstack/react-query";
 
-import { MODEL_CACHE_MS } from "@archboard/timing";
+import { MODEL_CACHE_MS } from "#ui/constants/durations.ts";
 
 /**
  * A cache with this product's read defaults.

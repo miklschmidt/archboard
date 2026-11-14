@@ -20,7 +20,7 @@ import type {
 	RealtimeCorrelation,
 	RealtimeTranscriptRecord,
 } from "#shared/protocol/realtime-contract.ts";
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "#shared/constants/durations.ts";
 import {
 	failure,
 	failureForIdentity,

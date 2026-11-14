@@ -5,7 +5,7 @@
 // else runs nixpkgs' through Nix, and refuses when there is none of these: a recording is minutes
 // of a live voice session, and a machine that cannot encode it should find out first.
 
-import { RECORDER_MS } from "@archboard/timing";
+import { RECORDER_MS } from "#shared/constants/durations.ts";
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";
 
 /** The variable that names an ffmpeg executable. */

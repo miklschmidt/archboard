@@ -8,7 +8,7 @@
 
 import type { Subprocess } from "bun";
 
-import { GIT_MS } from "@archboard/timing";
+import { GIT_MS } from "#runtime/constants/durations.ts";
 import {
 	captureDetachedProcessGroup,
 	processGroupExists,

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { CODEX_PROCESS_MS } from "@archboard/timing";
+import { CODEX_PROCESS_MS } from "#shared/constants/durations.ts";
 
 import { createCodexProcessForTesting as createCodexProcess } from "#runtime/processes/process.ts";
 import {

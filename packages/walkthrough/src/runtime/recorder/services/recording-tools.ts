@@ -2,7 +2,7 @@
 // it, and a private Chromium started with the flags its page needs. All are found before anything
 // is recorded (TASK-381).
 
-import { RECORDER_MS } from "@archboard/timing";
+import { RECORDER_MS } from "#shared/constants/durations.ts";
 import { extname } from "node:path";
 
 import {

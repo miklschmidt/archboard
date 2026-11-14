@@ -1,6 +1,10 @@
 // What the site's painters (ADR 0071) are told about time, as the app tells its own.
 
-import { PICTURE_ENTRY_PHASES, PICTURE_MS, PICTURE_TRANSITION_PHASES } from "@archboard/timing";
+import {
+	PICTURE_ENTRY_PHASES,
+	PICTURE_MS,
+	PICTURE_TRANSITION_PHASES,
+} from "../../../apps/web/src/ui/architecture-drawing/constants/motion.ts";
 
 /** At which points of a move each of its parts happens, as the painter reads them. */
 export const PHASES = JSON.stringify({

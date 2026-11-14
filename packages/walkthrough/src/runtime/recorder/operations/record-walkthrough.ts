@@ -28,7 +28,7 @@ import { join } from "node:path";
 import type { DiagramTheme, LayoutEngineName } from "@archboard/model/render-reply";
 import type { LegacyBoard } from "@archboard/model/legacy-board";
 import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
-import { RECORDER_MS } from "@archboard/timing";
+import { RECORDER_MS } from "#shared/constants/durations.ts";
 import {
 	RECORDING_AGAINST_SEARCH_PARAM,
 	RECORDING_LANGUAGE_SEARCH_PARAM,

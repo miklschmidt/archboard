@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PICTURE_MS } from "@archboard/timing";
+import { PICTURE_MS } from "#ui/architecture-drawing/constants/motion.ts";
 
 /**
  * Tell when a wait has lasted long enough to name.

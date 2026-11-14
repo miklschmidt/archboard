@@ -22,7 +22,8 @@ import {
 	useSyncExternalStore,
 } from "react";
 
-import { COLUMN_MS, EXPLORING_MS } from "@archboard/timing";
+import { COLUMN_MS } from "#ui/constants/durations.ts";
+import { EXPLORING_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { useCameraGlide } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts";
 import {

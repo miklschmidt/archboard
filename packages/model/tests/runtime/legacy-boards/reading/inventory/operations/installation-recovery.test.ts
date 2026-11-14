@@ -3,7 +3,7 @@ import { chmodSync, existsSync, readFileSync, rmSync, writeFileSync } from "node
 import { join } from "node:path";
 import { readArchitectureModel, readLegacyInventory } from "@archboard/model/store-read";
 import { migrateArchitectureModel, recoverArchitectureModel } from "@archboard/model/store-write";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 import { installationFixture } from "#tests/runtime/legacy-boards/reading/inventory/operations/install-fixture.ts";
 const homes: string[] = [];
 const now = Date.now;

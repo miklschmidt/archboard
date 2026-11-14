@@ -1,5 +1,5 @@
 import { awaitFrozenGroup } from "#runtime/processes/observation.ts";
-import { CODEX_PROCESS_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "#runtime/constants/durations.ts";
 import type {
 	CodexProcessGroupIdentity,
 	CodexProcessGroupInspection,
@@ -17,6 +17,14 @@ interface ProcessGroupCleanupClock {
 interface ProcessGroupCleanupDiagnostics {
 	readonly failure: (message: string) => Error;
 	readonly safeCauseMessage: (cause: unknown) => string;
+}
+
+/** How long the escalation waits at each step. The owner of the process group decides them. */
+interface ProcessGroupCleanupGraces {
+	/** From TERM to KILL. */
+	readonly termGraceMs: number;
+	/** How long KILL waits for the TERMed group to freeze. */
+	readonly groupFreezeMs: number;
 }
 
 interface ProcessGroupCleanupInput {
@@ -104,12 +112,14 @@ function scheduleGuarded(
  * @param operations - Group capture, inspection and signalling.
  * @param clock - Time source and timer scheduling.
  * @param diagnostics - Failure construction with redaction.
+ * @param graces - The TERM grace and the freeze wait of the group's owner.
  * @returns The cleanup and deadline-waiting operations.
  */
 function createProcessGroupCleanup(
 	operations: CodexProcessGroupOperations,
 	clock: ProcessGroupCleanupClock,
 	diagnostics: ProcessGroupCleanupDiagnostics,
+	graces: ProcessGroupCleanupGraces,
 ): ProcessGroupCleanup {
 	/**
 	 * Resolve once the clock reaches the given instant.
@@ -298,10 +308,7 @@ function createProcessGroupCleanup(
 	 * @param input - The group, its close promise and the composed deadline.
 	 */
 	const freezeGroup = async (input: ProcessGroupCleanupInput): Promise<void> => {
-		const freezeDeadlineAtMs = Math.min(
-			input.deadlineAtMs,
-			clock.now() + CODEX_PROCESS_MS.groupFreeze,
-		);
+		const freezeDeadlineAtMs = Math.min(input.deadlineAtMs, clock.now() + graces.groupFreezeMs);
 		try {
 			await awaitFrozenGroup(
 				{
@@ -366,7 +373,7 @@ function createProcessGroupCleanup(
 	 * @returns False when the group is already quiescent, so nothing needs escalating.
 	 */
 	const awaitTermGrace = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
-		const termAtMs = Math.min(input.deadlineAtMs, clock.now() + CODEX_PROCESS_MS.termGrace);
+		const termAtMs = Math.min(input.deadlineAtMs, clock.now() + graces.termGraceMs);
 		const firstEvent = await waitForClosedOrAt(input.childClosed, termAtMs);
 		if (!stillOwned(input.identity, "finish TERM cleanup of the Codex process group")) return false;
 		if (firstEvent === "closed" && clock.now() < termAtMs) {

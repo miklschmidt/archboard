@@ -5,7 +5,7 @@
 import { act } from "@testing-library/react";
 import { afterEach, expect, test } from "bun:test";
 
-import { COLUMN_MS } from "@archboard/timing";
+import { COLUMN_MS } from "#ui/constants/durations.ts";
 import { cameraNow, takeFrames } from "#tests/ui/support/canvas/camera-probes.ts";
 import {
 	drawing,

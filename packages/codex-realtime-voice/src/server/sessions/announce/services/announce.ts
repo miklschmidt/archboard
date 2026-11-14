@@ -5,7 +5,7 @@
 // voice hear it through the tab's one ordered callback queue, only while voice is live.
 
 import { z } from "zod";
-import { CODEX_REALTIME_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "#shared/constants/durations.ts";
 import { EXECUTION_CONTEXT_KEYS } from "#runtime/host/turn-input/rules/context.ts";
 import { BROWSER_VOICE_CONTEXT_TOPIC_MAX_UTF8_BYTES } from "#shared/browser/schemas/vocabulary.ts";
 import type {

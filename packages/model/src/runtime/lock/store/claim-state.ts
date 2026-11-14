@@ -1,4 +1,4 @@
-import { MODEL_LOCK_MS, CLAIM_MS } from "@archboard/timing";
+import { CLAIM_MS, MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 import { modelMemoryKey } from "#runtime/store/legacy-address.ts";
 import type {
 	Claim,

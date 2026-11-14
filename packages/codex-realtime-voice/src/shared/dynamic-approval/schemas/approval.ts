@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "#shared/constants/durations.ts";
 import { createDynamicApprovalBrowserSchemas } from "#shared/dynamic-approval/schemas/browser.ts";
 import { effectHashFor } from "#shared/rules/dynamic-approval-hash.ts";
 import { createDynamicApprovalEffectSchemas } from "#shared/dynamic-approval/schemas/effects.ts";

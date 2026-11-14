@@ -3,7 +3,7 @@ import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/author
 import { type DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol/contract.ts";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/thread-tools/protocol/manifest.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "@archboard/codex-realtime-voice/schemas";
 import { createServerDynamicApprovalOwner } from "#server/actions/services/dynamic-approvals.ts";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 

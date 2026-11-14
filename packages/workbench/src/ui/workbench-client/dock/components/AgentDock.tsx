@@ -27,7 +27,7 @@
 import { RiChat3Line } from "@remixicon/react";
 import { useRef, type CSSProperties, type JSX } from "react";
 
-import { SHELL_CLOCK_MS, VOICE_MS } from "@archboard/timing";
+import { SHELL_CLOCK_MS, VOICE_MS } from "#shared/constants/durations.ts";
 import { cn } from "@archboard/ui-kit/components";
 import { useClock } from "@archboard/ui-kit/time";
 import { useOrbOffered, useOrbPlacement } from "#ui/workbench-client/orb/hooks/use-orb-stage.ts";

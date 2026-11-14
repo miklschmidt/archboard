@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, lstatSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { z } from "zod";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 import { git, GitCommandError } from "@archboard/process/git";
 import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { mintId } from "#shared/rules/ids.ts";

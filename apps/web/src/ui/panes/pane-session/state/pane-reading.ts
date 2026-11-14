@@ -15,7 +15,7 @@
 // reports owns; nothing about it is restated here.
 
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/model/pane-context";
-import { PANE_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/workbench/browser-contract";
 import { createUserMarks } from "#ui/panes/pane-session/state/user-marks.ts";
 import { inVault, requestJson } from "@archboard/server-requests";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";

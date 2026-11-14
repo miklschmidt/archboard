@@ -3,7 +3,7 @@ import { mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { basename, join } from "node:path";
 import { tmpdir } from "node:os";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { CODEX_REALTIME_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "#shared/constants/durations.ts";
 import {
 	createDefaultWorkbenchHost,
 	type DefaultWorkbenchHostInput,

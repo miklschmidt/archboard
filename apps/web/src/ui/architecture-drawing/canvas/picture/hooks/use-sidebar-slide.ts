@@ -12,7 +12,7 @@
 
 import { useEffect, useState } from "react";
 
-import { COLUMN_MS, SIDEBAR_MS } from "@archboard/timing";
+import { COLUMN_MS, SIDEBAR_MS } from "#ui/constants/durations.ts";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 
 /** Where the sidebar is. */

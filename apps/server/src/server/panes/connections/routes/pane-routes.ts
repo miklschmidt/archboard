@@ -11,7 +11,7 @@ import {
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { staleFrontend } from "@archboard/server-lifecycle/server-host";
 import { browserUrl } from "@archboard/workspace/source-checkout";
-import { PANE_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/workbench/browser-contract";
 import {
 	serverUrl,
 	bodyOf,
@@ -192,9 +192,9 @@ function postPaneRoute(req: Request, res: Response): void {
 // pane in front of the human and overwrote what was there (TASK-033).
 //
 // These two routes ask the browser to change its layout and then wait for the
-// registry to agree. How long they wait is in timing.ts, because the settle
-// cap is waiting out PANE_MS.report, which is a number on the other side of
-// the browser boundary.
+// registry to agree. How long they wait is in the workbench's PANE_MS, beside
+// PANE_MS.report, because the settle cap is waiting out that report, a number on
+// the other side of the browser boundary.
 
 /**
  * The model a pane shows, for a refusal to say.

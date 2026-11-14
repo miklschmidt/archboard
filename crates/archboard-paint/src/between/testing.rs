@@ -9,7 +9,7 @@ use archboard_scene::scene::{
 
 use super::phases::Phases;
 
-/// The values `@archboard/timing` holds.
+/// The values the web app's picture motion holds.
 pub(super) const PHASES: Phases = super::phases::fixtures::PHASES;
 
 pub(super) fn rect(x: f64, y: f64, width: f64, height: f64) -> Rect {

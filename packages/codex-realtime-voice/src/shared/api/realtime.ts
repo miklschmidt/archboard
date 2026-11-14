@@ -13,3 +13,4 @@ export {
 	INITIAL_REALTIME_STATE,
 	transitionRealtimeState,
 } from "#shared/rules/realtime-state.ts";
+export { CODEX_REALTIME_MS, TAB_SESSION_GRACE_MS } from "#shared/constants/durations.ts";

@@ -15,7 +15,7 @@ import {
 import { readPidFile, removePidFile } from "#runtime/store/pidfile.ts";
 import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 import { createCodexProcessGroupOperations } from "@archboard/process/codex-group";
-import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
+import { SERVER_LIFECYCLE_MS } from "#runtime/constants/durations.ts";
 import { SERVER_STARTUP_TERMINAL_FD_ENV } from "#runtime/protocol/server-startup-terminal.ts";
 import { readProcessObservation } from "@archboard/process/observation";
 import {

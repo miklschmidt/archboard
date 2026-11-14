@@ -1,7 +1,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { PICTURE_MS } from "@archboard/timing";
+import { PICTURE_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import {
 	drawing,
 	mountStage,

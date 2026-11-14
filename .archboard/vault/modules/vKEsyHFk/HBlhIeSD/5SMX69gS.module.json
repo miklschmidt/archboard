@@ -86,19 +86,6 @@
       "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     },
     {
-      "order": 70054,
-      "kind": "call",
-      "label": "measure source inspection work",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/code-check/operations/check.ts",
-        "symbol": "createElapsedClock"
-      },
-      "id": "vKEsyHFk#zAB848k7",
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
-    },
-    {
       "order": 70055,
       "kind": "call",
       "label": "read each checkout's language server files",

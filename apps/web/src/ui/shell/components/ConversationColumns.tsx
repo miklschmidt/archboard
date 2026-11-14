@@ -23,7 +23,7 @@ import {
 import { usePanelRef, type PanelSize } from "react-resizable-panels";
 
 import { AGENT_PANEL_WIDTH } from "@archboard/renderer/shell-geometry";
-import { COLUMN_MS } from "@archboard/timing";
+import { COLUMN_MS } from "#ui/constants/durations.ts";
 import { Resizable } from "@archboard/ui-kit/components";
 
 const STORAGE_KEY = "archboard.agent.panel.width";

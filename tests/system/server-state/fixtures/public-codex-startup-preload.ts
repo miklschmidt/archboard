@@ -58,13 +58,16 @@ if (
 
 const readinessTimeoutMs = Number(process.env["ARCHBOARD_TEST_PUBLIC_READINESS_TIMEOUT_MS"] ?? "0");
 if (Number.isFinite(readinessTimeoutMs) && readinessTimeoutMs > 0) {
-	const timingPath = "@archboard/timing";
-	const actualTiming = await import(timingPath);
+	const durationsPath = resolve(
+		import.meta.dir,
+		"../../../../packages/server-lifecycle/src/runtime/constants/durations.ts",
+	);
+	const actualDurations = await import(durationsPath);
 	await Promise.resolve(
-		mock.module(timingPath, () => ({
-			...actualTiming,
+		mock.module(durationsPath, () => ({
+			...actualDurations,
 			SERVER_LIFECYCLE_MS: {
-				...actualTiming.SERVER_LIFECYCLE_MS,
+				...actualDurations.SERVER_LIFECYCLE_MS,
 				startupReadiness: readinessTimeoutMs,
 			},
 		})),

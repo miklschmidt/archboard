@@ -7,7 +7,7 @@
 // whole on the CPU. Its traffic keeps a frame running while it is in view, so traffic runs only on
 // WebGPU, where such a frame costs the page little. With reduced motion, the picture stands whole.
 
-import { PICTURE_MS } from "@archboard/timing";
+import { PICTURE_MS } from "../../../apps/web/src/ui/architecture-drawing/constants/motion.ts";
 import { startPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
 import own from "../paintings/own.json";
 import paintingUrl from "../paintings/own.painting.json?url";

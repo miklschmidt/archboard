@@ -12,7 +12,7 @@ import type { TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session";
 import type { OperationId, ThreadId } from "@archboard/codex-app-server/identity";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/codex-app-server/contract";
 import type {
 	WorkbenchExecutionContext,
 	WorkbenchContextCodec,

@@ -1,5 +1,5 @@
 import type { IdentityAuthority } from "#shared/rules/workbench-identity.ts";
-import { CODEX_PROCESS_MS } from "@archboard/timing";
+import { CODEX_PROCESS_MS } from "#shared/constants/durations.ts";
 import {
 	attachChildListeners,
 	destroyQuietly,

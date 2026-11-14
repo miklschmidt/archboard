@@ -20,7 +20,7 @@
 // names is `DOCUMENT_PATH_MISSING` (documents.ts, ADR 0054).
 // What the pass cannot read is listed with the reason, never as a finding.
 
-import { createElapsedClock } from "@archboard/timing";
+import { createElapsedClock } from "#runtime/state/elapsed-clock.ts";
 import path from "node:path";
 import {
 	checkoutSkips,

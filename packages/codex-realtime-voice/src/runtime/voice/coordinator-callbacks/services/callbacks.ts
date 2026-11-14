@@ -4,7 +4,7 @@ import {
 	createSettledLedger,
 	type RealtimeGeneration,
 } from "#runtime/voice/coordinator-callbacks/services/settled-ledger.ts";
-import { CODEX_REALTIME_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "#shared/constants/durations.ts";
 import { createWorkhorseNewsObserver } from "#runtime/voice/coordinator-callbacks/rules/workhorse-news.ts";
 import { createTellCoordinator } from "#runtime/voice/coordinator-callbacks/services/tell-coordinator.ts";
 import {

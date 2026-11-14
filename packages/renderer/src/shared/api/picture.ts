@@ -13,3 +13,4 @@ export { LINE_MARKS, markCounts } from "#shared/render/rules/key-marks.ts";
 export { scopedDrawingKey } from "#shared/render/rules/drawing-key.ts";
 export type { LineMark } from "#shared/render/rules/key-marks.ts";
 export type { SubjectStanding } from "#shared/protocol/render-request.ts";
+export { FAR_VIEW_SWAP_MS } from "#shared/constants/durations.ts";

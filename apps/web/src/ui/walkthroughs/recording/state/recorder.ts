@@ -10,7 +10,7 @@
 // stamped as they happen. The recorder outside the page reads the state and
 // takes the talk; this owns nothing else (TASK-381).
 
-import { RECORDING_MS } from "@archboard/timing";
+import { RECORDING_MS } from "@archboard/walkthrough/recording";
 import type { publishRecordingPage, recordingAskedOf } from "@archboard/walkthrough/recording";
 import { TALK_SAMPLE_RATE } from "@archboard/walkthrough/talk";
 import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/controllers";

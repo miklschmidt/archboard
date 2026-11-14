@@ -6,7 +6,7 @@
 // attempt, until one opens, the server's contract proves unreadable, or the
 // client is disposed. The attempts leave the page's failure as it is.
 
-import { CODEX_REALTIME_MS } from "@archboard/timing";
+import { CODEX_REALTIME_MS } from "#shared/constants/durations.ts";
 import type { RealtimeState } from "#shared/protocol/realtime-contract.ts";
 import { INITIAL_REALTIME_STATE } from "#shared/rules/realtime-state.ts";
 import type { BrowserWorkbenchMediaOwner } from "#ui/media/clients/media-state.ts";

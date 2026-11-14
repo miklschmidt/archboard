@@ -14,7 +14,7 @@ import {
 } from "#runtime/thread-tools/protocol/results.ts";
 import { WAIT_THREADS_TIMEOUT_MAX_MS } from "#runtime/thread-tools/protocol/limits.ts";
 import { parseToolArguments } from "#runtime/thread-tools/protocol/arguments.ts";
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "@archboard/codex-realtime-voice/schemas";
 import {
 	APPROVAL_REQUIRED_ENVELOPE,
 	OUTCOME_UNKNOWN_ENVELOPE,

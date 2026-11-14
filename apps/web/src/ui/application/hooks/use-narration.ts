@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { VOICE_MS } from "@archboard/timing";
+import { VOICE_MS } from "@archboard/workbench/voice";
 
 import type { AgentSetup } from "@archboard/workbench/agent";
 import { narrate } from "#ui/application/clients/agent-setup-ports.ts";

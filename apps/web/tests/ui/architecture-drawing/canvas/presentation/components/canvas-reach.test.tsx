@@ -6,7 +6,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { EXPLORING_MS } from "@archboard/timing";
+import { EXPLORING_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import { cameraNow, takeFrames } from "#tests/ui/support/canvas/camera-probes.ts";
 import { openSidebarTab, surface } from "#tests/ui/support/canvas/stage-harness.tsx";
 import { graded, lighting, lit, pick, served } from "#tests/ui/support/canvas/wiring-fixture.tsx";

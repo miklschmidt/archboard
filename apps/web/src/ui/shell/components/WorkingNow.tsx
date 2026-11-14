@@ -8,7 +8,7 @@
 
 import { useCallback, useState, type JSX, type MouseEvent } from "react";
 
-import { SHELL_CLOCK_MS } from "@archboard/timing";
+import { SHELL_CLOCK_MS } from "@archboard/workbench/agent";
 import { ActivityLamp } from "#ui/shell/components/ActivityLamp.tsx";
 import { PaneChips } from "#ui/shell/components/PaneChips.tsx";
 import { RepositoryName } from "@archboard/ui-kit/components";

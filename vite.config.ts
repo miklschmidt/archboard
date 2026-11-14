@@ -40,7 +40,6 @@ const RENDERER_SOURCES = [
 	"packages/renderer/src/runtime/bun-renderer/processes/layout-worker.ts",
 	"packages/model/src/shared",
 	"packages/code-binding/src/shared",
-	"packages/timing/src",
 	"node_modules/@chenglou/pretext/package.json",
 	"node_modules/@remixicon/react/package.json",
 ];

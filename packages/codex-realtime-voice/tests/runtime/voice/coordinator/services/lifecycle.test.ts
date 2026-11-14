@@ -15,7 +15,7 @@ import {
 	createCoordinatorThreadStartParams,
 } from "#runtime/voice/coordinator/services/model.ts";
 import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/codex-app-server/contract";
 import {
 	WORKING_DIRECTORY,
 	coordinatorModel,

@@ -5,7 +5,7 @@ import path from "node:path";
 import { ownProcess, runProcess } from "#runtime/evaluation/processes/process.ts";
 import { startServer } from "#runtime/evaluation/run-world/processes/server.ts";
 import { readProcessObservation } from "@archboard/process/observation";
-import { SKILL_EVAL_MS } from "@archboard/timing";
+import { SKILL_EVAL_MS } from "#runtime/evaluation/constants/durations.ts";
 
 const env = { PATH: process.env["PATH"] ?? "" };
 const cwd = process.cwd();

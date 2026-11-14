@@ -7,7 +7,7 @@
 // up on a pane that is only slow.
 
 import { describe, expect, jest, test } from "bun:test";
-import { PANE_MS } from "@archboard/timing";
+import { PANE_MS } from "#shared/constants/durations.ts";
 import {
 	createPanePresentations,
 	type UserPresentationChange,

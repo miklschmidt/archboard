@@ -6,3 +6,4 @@ export {
 	RecordingNarrationSchema,
 } from "#shared/protocol/recording-page.ts";
 export { languageName, RecordingLanguageSchema } from "#shared/schemas/recording-language.ts";
+export { RECORDING_MS } from "#shared/constants/durations.ts";

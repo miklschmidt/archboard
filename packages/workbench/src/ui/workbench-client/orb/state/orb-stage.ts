@@ -54,7 +54,7 @@
 // however soon the voice is off. A holder moved in the same task as it is lit has no
 // transition to run, so the stage lets its style settle between the two.
 
-import { VOICE_MS } from "@archboard/timing";
+import { VOICE_MS } from "#shared/constants/durations.ts";
 import { flightAt, type Spot } from "#ui/workbench-client/orb/rules/orb-flight.ts";
 import { SIZE } from "#ui/workbench-client/orb/clients/orb-painter.ts";
 import {

@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useRef } from "react";
 
 import { FIT_MARGIN } from "@archboard/renderer/shell-geometry";
-import { EXPLORING_MS } from "@archboard/timing";
+import { EXPLORING_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import type { SemanticAtlas } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import type { Rect } from "#ui/architecture-drawing/canvas/picture/camera/rules/camera.ts";

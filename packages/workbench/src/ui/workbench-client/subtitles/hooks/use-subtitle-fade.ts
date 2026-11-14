@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { SUBTITLE_MS } from "@archboard/timing";
+import { SUBTITLE_MS } from "#shared/constants/durations.ts";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { SpokenCue } from "#ui/workbench-client/subtitles/hooks/use-voice-subtitles.ts";
 

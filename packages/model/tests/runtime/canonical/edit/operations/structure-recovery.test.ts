@@ -6,7 +6,7 @@ import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 import {
 	readArchitectureModel,
 	readArchitectureCheckpoint,

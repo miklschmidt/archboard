@@ -3,7 +3,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { TELEMETRY_MS } from "@archboard/timing";
+import { TELEMETRY_MS } from "#runtime/constants/durations.ts";
 import { ErrorReportSchema } from "#runtime/records/protocol/records.ts";
 import { dailyUsage } from "#runtime/rollup/rules/daily-usage.ts";
 import { currentConsent } from "#runtime/settings/operations/settings.ts";

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { CodexProcessError } from "#runtime/processes/process.ts";
 import { createCodexProcessForTesting as createCodexProcess } from "#runtime/processes/process.ts";
-import { CODEX_PROCESS_MS } from "@archboard/timing";
+import { CODEX_PROCESS_MS } from "#shared/constants/durations.ts";
 import {
 	driveManual,
 	expectKillAfterGrace,

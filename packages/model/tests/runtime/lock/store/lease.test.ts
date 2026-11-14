@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
 import { logger } from "@archboard/diagnostics/logger";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-lock-lease-"));
 const originalWarn = logger.warn;

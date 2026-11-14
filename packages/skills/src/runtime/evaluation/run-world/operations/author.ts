@@ -7,7 +7,7 @@ import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/evalu
 
 import fs from "node:fs";
 import path from "node:path";
-import { SKILL_EVAL_MS } from "@archboard/timing";
+import { SKILL_EVAL_MS } from "#runtime/evaluation/constants/durations.ts";
 
 import type { CliContext } from "#runtime/evaluation/run-world/processes/archboard.ts";
 import {

@@ -1,7 +1,7 @@
 // How a picture stands in the light, as the painter reads it. The marks say
 // what is lit, and this says how strongly each part of the picture shows.
 
-import { EXPLORING_MS, PRESENTATION_MS } from "@archboard/timing";
+import { EXPLORING_MS, PRESENTATION_MS } from "#ui/architecture-drawing/constants/motion.ts";
 
 /** How strongly the picture lights a poked part's connections. */
 type ProbeMode = "pick" | "hover";

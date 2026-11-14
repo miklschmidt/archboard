@@ -10,7 +10,7 @@
 
 import { queryOptions } from "@tanstack/react-query";
 
-import { MODEL_CACHE_MS } from "@archboard/timing";
+import { MODEL_CACHE_MS } from "#ui/constants/durations.ts";
 import { fetchRepositories } from "#ui/panes/model-catalog/clients/repositories.ts";
 
 /** The one root every catalog resource hangs under, so invalidation can sweep it. */

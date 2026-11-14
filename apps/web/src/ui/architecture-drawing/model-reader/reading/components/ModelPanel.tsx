@@ -18,7 +18,7 @@ import {
 	type ReactNode,
 	type RefObject,
 } from "react";
-import { SIDEBAR_MS } from "@archboard/timing";
+import { SIDEBAR_MS } from "#ui/constants/durations.ts";
 import { cn, IconButton } from "@archboard/ui-kit/components";
 import { ClaimBadge } from "#ui/shell/components/ActivityLamp.tsx";
 import { SectionLabel } from "#ui/shell/components/SectionLabel.tsx";

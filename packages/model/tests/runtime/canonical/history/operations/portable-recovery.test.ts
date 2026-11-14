@@ -8,7 +8,7 @@ import {
 	importArchitectureModel,
 	recoverArchitectureModel,
 } from "@archboard/model/store-write";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 import { fixture, git } from "#tests/runtime/canonical/edit/operations/fixture.ts";
 import {
 	destination,

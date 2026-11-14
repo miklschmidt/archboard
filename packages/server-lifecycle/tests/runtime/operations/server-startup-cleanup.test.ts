@@ -6,7 +6,7 @@ import {
 	serverStartupTerminalRecord,
 	type ServerStartupProtocolEvent,
 } from "#runtime/protocol/server-startup-terminal.ts";
-import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
+import { SERVER_LIFECYCLE_MS } from "#runtime/constants/durations.ts";
 import {
 	completeFailedServerCleanup,
 	createServerStartupProtocolReader,

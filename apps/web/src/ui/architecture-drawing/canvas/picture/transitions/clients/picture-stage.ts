@@ -8,7 +8,7 @@
 // a correct model either way. The SVG under the canvas keeps its words and its
 // marks for search, copy, screen readers and the viewer.
 
-import { PICTURE_MS } from "@archboard/timing";
+import { PICTURE_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { Departure } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
 import { HeldInk } from "#ui/architecture-drawing/canvas/picture/clients/picture-ink.ts";

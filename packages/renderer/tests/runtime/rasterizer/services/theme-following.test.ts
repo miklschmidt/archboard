@@ -16,7 +16,7 @@ import {
 	SEMANTIC_RASTER_CLEANUP_MS,
 	SEMANTIC_RASTER_JOB_TIMEOUT_MS,
 	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
-} from "@archboard/timing";
+} from "#shared/constants/durations.ts";
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/rasterizer/services/cold-start-timing.ts";
 import { withFixtureOrders } from "#tests/runtime/rasterizer/services/fixture-orders.ts";
 import { pngRgbCounts } from "#tests/runtime/rasterizer/services/png-colors.ts";

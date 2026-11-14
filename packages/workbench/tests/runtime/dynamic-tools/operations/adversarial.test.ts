@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { parseDynamicToolCallResponse } from "#runtime/thread-tools/protocol/results.ts";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "@archboard/codex-realtime-voice/schemas";
 import { createCodexDynamicTools } from "#runtime/dynamic-tools/dispatch/operations/dispatcher.ts";
 import {
 	CHECKOUT_ROOT,

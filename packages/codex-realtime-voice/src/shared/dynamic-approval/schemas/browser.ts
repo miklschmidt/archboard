@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { CODEX_APPROVAL_MS } from "#shared/constants/durations.ts";
 import {
 	DYNAMIC_APPROVAL_DECISIONS,
 	DYNAMIC_APPROVAL_STATES,

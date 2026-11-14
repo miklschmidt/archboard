@@ -3,7 +3,7 @@ import {
 	type ArchitectureEvent,
 	type ArchitectureFeedFrame,
 } from "@archboard/model/contract";
-import { PANE_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/workbench/browser-contract";
 
 /** What one vault's feed hears from the socket. */
 interface FeedFollower {

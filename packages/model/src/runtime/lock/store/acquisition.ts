@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 import { modelMemoryKey, normalizePaneKey } from "#runtime/store/legacy-address.ts";
 import { noteClaimRevoked, processClaims } from "#runtime/lock/store/claim-state.ts";
 import {

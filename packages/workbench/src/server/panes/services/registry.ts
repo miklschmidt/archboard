@@ -6,7 +6,7 @@ import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages
 import { addressablePanes, panesInOrder, resolvePane } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { readArchitectureModel } from "@archboard/model/store-read";
-import { PANE_MS } from "@archboard/timing";
+import { PANE_MS } from "#shared/constants/durations.ts";
 import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
 
 // WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because the model file

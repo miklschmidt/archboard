@@ -1,5 +1,5 @@
 //! Time, as the painter uses it. Every duration comes from the host, so that
-//! `@archboard/timing` stays the one place that holds them. This holds only the
+//! the host's constants stay the one place that holds them. This holds only the
 //! shapes of a change.
 
 /// A CSS `cubic-bezier()` timing function.

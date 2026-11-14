@@ -15,7 +15,7 @@ import {
 	configureArchitecturePublication,
 	publishArchitectureHistory,
 } from "@archboard/model/store-write";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 import {
 	untrackedFixture,
 	cleanPrivateArchiveFixtures,

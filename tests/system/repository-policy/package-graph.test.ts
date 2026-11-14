@@ -24,7 +24,6 @@ const appsRoot = path.join(repoRoot, "apps");
 // imports only a lower layer. Nothing imports an app, and the apps share
 // the top layer. App ids include their prefix to distinguish them from packages.
 const LAYERS: Record<string, number> = {
-	timing: 0,
 	diagnostics: 0,
 	"ui-kit": 0,
 	"server-requests": 0,
@@ -172,13 +171,7 @@ const edges = readEdges(owners);
 
 describe("the package graph", () => {
 	test("the reusable workbench depends only on its host-neutral foundation", () => {
-		const foundation = new Set([
-			"codex-app-server",
-			"diagnostics",
-			"process",
-			"timing",
-			"workspace",
-		]);
+		const foundation = new Set(["codex-app-server", "diagnostics", "process", "workspace"]);
 		const violations = edges
 			.filter(({ from, to }) => from === "codex-realtime-voice" && !foundation.has(to))
 			.map(({ file, specifier }) => `${file} imports "${specifier}"`);
@@ -272,13 +265,13 @@ describe("the package graph", () => {
 	});
 
 	test("the detector names a cycle and an upward edge in a synthetic graph", () => {
-		const synthetic = [edge("process", "timing"), edge("workspace", "process")];
+		const synthetic = [edge("process", "diagnostics"), edge("workspace", "process")];
 		expect(findCycle(synthetic)).toBeUndefined();
 		expect(layerViolations(synthetic, LAYERS)).toEqual([]);
 
-		expect(findCycle([...synthetic, edge("timing", "workspace")])).toEqual([
+		expect(findCycle([...synthetic, edge("diagnostics", "workspace")])).toEqual([
 			"process",
-			"timing",
+			"diagnostics",
 			"workspace",
 			"process",
 		]);
@@ -395,7 +388,7 @@ describe("the resolved package graph", () => {
 			fs.writeFileSync(path.join(base, file), text);
 		};
 		try {
-			for (const name of ["timing", "process", "workspace"]) {
+			for (const name of ["diagnostics", "process", "workspace"]) {
 				write(
 					`packages/${name}/package.json`,
 					JSON.stringify({
@@ -407,16 +400,21 @@ describe("the resolved package graph", () => {
 			}
 			write(
 				"packages/process/src/shared/api.ts",
-				'export type A = import("../../../timing/src/shared/api.ts").A;',
+				'export type A = import("../../../diagnostics/src/shared/api.ts").A;',
 			);
 			write(
-				"packages/timing/src/shared/api.ts",
+				"packages/diagnostics/src/shared/api.ts",
 				"mock.module(`@archboard/workspace`, () => ({}));",
 			);
 			write("packages/workspace/src/shared/api.ts", 'import.meta.resolve("@archboard/process");');
 			const fixtureOwners = ownersIn(path.join(base, "packages"), "");
 			const fixtureEdges = readEdges(fixtureOwners);
-			expect(findCycle(fixtureEdges)).toEqual(["process", "timing", "workspace", "process"]);
+			expect(findCycle(fixtureEdges)).toEqual([
+				"diagnostics",
+				"workspace",
+				"process",
+				"diagnostics",
+			]);
 			expect(layerViolations(fixtureEdges, LAYERS)).toHaveLength(1);
 			expect(privateImports(fixtureEdges, exportsByPackage(fixtureOwners))).toHaveLength(1);
 			write("packages/process/src/shared/api.ts", 'export { x } from "#runtime/private.ts";');
@@ -440,7 +438,7 @@ describe("the resolved package graph", () => {
 				browserViolations([path.join(base, "packages/process/src/shared/api.ts")], fixtureOwners),
 			).toHaveLength(1);
 			// CSS in assets contributes edges and is followed through browser-safe exports too.
-			for (const name of ["timing", "process", "workspace"]) {
+			for (const name of ["diagnostics", "process", "workspace"]) {
 				write(`packages/${name}/src/shared/api.ts`, "export {};");
 				write(
 					`packages/${name}/package.json`,
@@ -451,15 +449,15 @@ describe("the resolved package graph", () => {
 					}),
 				);
 			}
-			write("packages/process/assets/theme.css", '@import "@archboard/timing/theme.css";');
-			write("packages/timing/assets/theme.css", '@import "@archboard/workspace/theme.css";');
+			write("packages/process/assets/theme.css", '@import "@archboard/diagnostics/theme.css";');
+			write("packages/diagnostics/assets/theme.css", '@import "@archboard/workspace/theme.css";');
 			write("packages/workspace/assets/theme.css", '@import "@archboard/process/theme.css";');
 			const cssOwners = ownersIn(path.join(base, "packages"), "");
 			const cssEdges = readEdges(cssOwners);
-			expect(findCycle(cssEdges)).toEqual(["process", "timing", "workspace", "process"]);
+			expect(findCycle(cssEdges)).toEqual(["diagnostics", "workspace", "process", "diagnostics"]);
 			expect(layerViolations(cssEdges, LAYERS)).toHaveLength(1);
-			write("packages/timing/assets/theme.css", '@import "#runtime/private.css";');
-			write("packages/timing/src/runtime/private.css", ".a { color: red; }");
+			write("packages/diagnostics/assets/theme.css", '@import "#runtime/private.css";');
+			write("packages/diagnostics/src/runtime/private.css", ".a { color: red; }");
 			expect(
 				browserViolations([path.join(base, "packages/process/assets/theme.css")], cssOwners),
 			).toHaveLength(1);

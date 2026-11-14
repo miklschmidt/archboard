@@ -2,7 +2,7 @@
 // turn, at one speed, and waits until the one before it has arrived.
 import { describe, expect, test } from "bun:test";
 import { DEFAULT_TRAFFIC_SPEED } from "@archboard/model/content";
-import { FLOW_CYCLE_CAP_MS } from "@archboard/timing";
+import { FLOW_CYCLE_CAP_MS } from "#shared/constants/durations.ts";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { messageBeams, slidingSpeedOf } from "#tests/runtime/support/drawn-traffic.ts";
 import {

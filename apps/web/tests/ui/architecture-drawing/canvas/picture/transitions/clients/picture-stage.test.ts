@@ -3,7 +3,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, mock, test } from "bun:test";
 import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
-import { PICTURE_MS } from "@archboard/timing";
+import { PICTURE_MS } from "#ui/architecture-drawing/constants/motion.ts";
 
 /** Every call the painter took, by name. */
 const taken: string[] = [];

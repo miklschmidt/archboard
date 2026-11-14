@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { SUBTITLE_MS } from "@archboard/timing";
+import { SUBTITLE_MS } from "#shared/constants/durations.ts";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import {
 	cuesOf,

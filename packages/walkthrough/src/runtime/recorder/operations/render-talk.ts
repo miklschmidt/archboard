@@ -24,7 +24,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import type { DiagramTheme, LayoutEngineName } from "@archboard/model/render-reply";
 import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
-import { RECORDER_MS } from "@archboard/timing";
+import { RECORDER_MS } from "#shared/constants/durations.ts";
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";
 import {
 	REPLAY_PAGE_GLOBAL,

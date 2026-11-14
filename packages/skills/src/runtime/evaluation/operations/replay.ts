@@ -9,7 +9,7 @@ import path from "node:path";
 import { z } from "zod";
 import { addressedVariant, type LegacyBoard } from "@archboard/model/legacy-board";
 import { DiagramThemeSchema, type DiagramTheme } from "@archboard/model/render-reply";
-import { SKILL_EVAL_MS } from "@archboard/timing";
+import { SKILL_EVAL_MS } from "#runtime/evaluation/constants/durations.ts";
 import {
 	SAMPLES_PER_FRAME,
 	TALK_SAMPLE_RATE,

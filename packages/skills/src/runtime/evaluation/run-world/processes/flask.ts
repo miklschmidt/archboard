@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { SKILL_EVAL_MS } from "@archboard/timing";
+import { SKILL_EVAL_MS } from "#runtime/evaluation/constants/durations.ts";
 import { runProcess, sequentially } from "#runtime/evaluation/processes/process.ts";
 
 const GIT_ENV = { PATH: process.env["PATH"] ?? "", HOME: process.env["HOME"] ?? "" };

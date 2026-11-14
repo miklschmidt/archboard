@@ -2,7 +2,7 @@ import { connectedBrowsers, ensureServerRunning } from "@archboard/server-lifecy
 import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
 import { registeredRepositoryOfVault } from "@archboard/workspace/checkouts";
 import { browserUrl } from "@archboard/workspace/source-checkout";
-import { PANE_MS } from "@archboard/timing";
+import { PANE_MS } from "@archboard/workbench/browser-contract";
 import open from "open";
 import { z } from "zod";
 import type { RuntimePrerequisite } from "#cli/contract/protocol/contract.ts";

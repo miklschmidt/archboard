@@ -1,7 +1,7 @@
 import { closeLogger, forceCloseLogger, logger } from "@archboard/diagnostics/logger";
 import { startTelemetrySender } from "@archboard/telemetry/sender";
 import { removePidFile, reportStartupEnd } from "@archboard/server-lifecycle/server-host";
-import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
+import { SERVER_LIFECYCLE_MS } from "@archboard/server-lifecycle/server-host";
 import {
 	ServerApplicationBusyError,
 	createServerApplicationLifetime,

@@ -4,7 +4,7 @@ import { tabSessionOf } from "#server/panes/services/tab-sessions.ts";
 import { isDeepStrictEqual } from "node:util";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { CODEX_SESSION_MS } from "@archboard/codex-app-server/contract";
 import type {
 	CodexWorkbenchDomainScope,
 	CodexWorkbenchDomain,

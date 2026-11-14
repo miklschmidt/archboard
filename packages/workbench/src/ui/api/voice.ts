@@ -24,3 +24,4 @@ export type {
 	VoiceSessionView,
 } from "#ui/voice-session/state/contract.ts";
 export { createVoiceSession } from "#ui/voice-session/state/session.ts";
+export { VOICE_MS } from "#shared/constants/durations.ts";

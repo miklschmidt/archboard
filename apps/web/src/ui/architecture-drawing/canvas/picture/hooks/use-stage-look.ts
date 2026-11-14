@@ -3,7 +3,8 @@
 
 import { useLayoutEffect, useMemo } from "react";
 
-import { FAR_VIEW_SWAP_MS, PICTURE_MS } from "@archboard/timing";
+import { FAR_VIEW_SWAP_MS } from "@archboard/renderer/picture";
+import { PICTURE_MS } from "#ui/architecture-drawing/constants/motion.ts";
 import { stageOf } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts";
 import { FAR_SCALE } from "#ui/architecture-drawing/canvas/picture/camera/rules/camera.ts";
 import type { StagedPicture } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts";

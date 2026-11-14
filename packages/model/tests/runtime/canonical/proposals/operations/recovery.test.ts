@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "#runtime/lock/constants/durations.ts";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/model/store-read";
 import { editArchitectureModule, recoverArchitectureModel } from "@archboard/model/store-write";
 import { writeInProcess } from "#tests/runtime/canonical/proposals/operations/fixture.ts";

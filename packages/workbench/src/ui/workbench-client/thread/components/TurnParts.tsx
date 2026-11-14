@@ -11,7 +11,7 @@ import {
 } from "@remixicon/react";
 import type { JSX } from "react";
 
-import { SHELL_CLOCK_MS } from "@archboard/timing";
+import { SHELL_CLOCK_MS } from "#shared/constants/durations.ts";
 import { clockDuration, useClock } from "@archboard/ui-kit/time";
 import type { ConversationDataParts } from "#ui/workbench-client/assistant-runtime/rules/messages.ts";
 import { DelegatedFrom } from "#ui/workbench-client/thread/components/VoiceTurn.tsx";
