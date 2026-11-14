@@ -890,6 +890,16 @@ The conversation shows work as rows that open to their evidence. A failed step
 opens its evidence by default. A finished run of more than three steps folds to
 one summary line only when no step failed.
 
+The voice coordinator's turns stand in the same conversation as the workhorse's,
+in the order they started. A turn that gave a workhorse work shows in that
+workhorse's conversation. A turn that gave none shows in the conversation that was
+shown when it started. The head of a coordinator turn reads Voice coordinator with
+a microphone mark. A rule runs down its left side in the colour of the voice lines,
+so it is never read as the workhorse's. A workhorse turn that the
+coordinator delegated starts with the line Delegated by the voice coordinator. While
+that coordinator turn is in the conversation, the line is a key that brings it into
+view. Otherwise the line is plain text.
+
 The composer is in the conversation pane, at its foot on the chrome (with no
 line over it), with its gold Send. It grows upward as a message grows, and
 takes the room from the conversation.
