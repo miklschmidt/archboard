@@ -52,6 +52,8 @@ interface ServerTextActionOptions {
 		context: BrowserActionContext,
 		start: () => Promise<Result>,
 	) => Promise<Result>;
+	/** The thread the chat's workhorse is linked to now, or null while it has none. */
+	readonly workhorseThread: (context: BrowserActionContext) => ThreadId | null;
 	/** Stop the work tree of the workhorse of the chat's checkout, and say what the stop observed. */
 	readonly stopWork: (context: BrowserActionContext) => Promise<readonly WorkhorseStop[]>;
 }
@@ -66,6 +68,22 @@ interface ServerTextActionOptions {
 export function createServerCanonicalTextActions(
 	options: ServerTextActionOptions,
 ): BrowserTextActions {
+	/**
+	 * Refuse a typed message whose thread the chat's workhorse left since the command named it, as
+	 * New conversation does. It runs with no await before the request to Codex, so a link change
+	 * that completed while the command read the thread is always seen.
+	 * @param context The chat and the link it named.
+	 * @param threadId The thread the command names.
+	 */
+	const assertLinkStands = (context: BrowserActionContext, threadId: ThreadId): void => {
+		if (options.workhorseThread(context) !== threadId) {
+			throw new CodexWorkbenchGatewayError(
+				"link_changed",
+				"The workhorse moved to another conversation while this message waited; read it again.",
+				{ outcome: "not_delivered" },
+			);
+		}
+	};
 	/**
 	 * A fresh operation identity, and how it is spelled in the wire field Codex
 	 * carries it back in.
@@ -111,9 +129,10 @@ export function createServerCanonicalTextActions(
 				},
 				options.contextCodec,
 			);
-			const response = await options.admitNewWork(context, () =>
-				options.session.turnStart({ ...canonical, threadId }),
-			);
+			const response = await options.admitNewWork(context, () => {
+				assertLinkStands(context, threadId);
+				return options.session.turnStart({ ...canonical, threadId });
+			});
 			return { outcome: "delivered", turnId: response.turn.id };
 		},
 		/**
@@ -147,15 +166,16 @@ export function createServerCanonicalTextActions(
 				},
 				options.contextCodec,
 			);
-			await options.admitNewWork(context, () =>
-				options.session.turnSteer({
+			await options.admitNewWork(context, () => {
+				assertLinkStands(context, threadId);
+				return options.session.turnSteer({
 					...canonical,
 					threadId,
 					// Codex checks this required precondition atomically against its active
 					// turn; a history pre-read cannot close that race and is unsupported.
 					expectedTurnId: command.turnId,
-				}),
-			);
+				});
+			});
 			return { outcome: "delivered" };
 		},
 		/**

@@ -367,6 +367,12 @@ function createServerBrowserGatewayOptions(
 			 */
 			admitNewWork: (context, start) => admitWork(workhorseOf(context), null, start),
 			/**
+			 * The thread the chat's workhorse is linked to now.
+			 * @param context The chat.
+			 * @returns The thread, or null while it has none.
+			 */
+			workhorseThread: (context) => workhorseOf(context).components.workhorse.snapshot().threadId,
+			/**
 			 * Stop the work tree of the chat's workhorse.
 			 * @param context The chat.
 			 * @returns What the stop observed.

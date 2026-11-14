@@ -18,6 +18,7 @@ test("browser start requires the exact authoritative idle thread without hydrati
 	let observedStatus = "active";
 	const actions = createServerCanonicalTextActions({
 		admitNewWork: async (_context, start) => start(),
+		workhorseThread: () => threadId,
 		stopWork: async () => [],
 		contextCodec: TEST_CONTEXT_CODEC,
 		identity: authorities,
@@ -99,6 +100,7 @@ test("browser steering preserves the server's atomic expected-turn refusal witho
 	let steerCalls = 0;
 	const actions = createServerCanonicalTextActions({
 		admitNewWork: async (_context, start) => start(),
+		workhorseThread: () => threadId,
 		stopWork: async () => [],
 		contextCodec: TEST_CONTEXT_CODEC,
 		identity: authorities,
@@ -215,6 +217,7 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 	};
 	const actions = createServerCanonicalTextActions({
 		admitNewWork: async (_context, start) => start(),
+		workhorseThread: () => threadId,
 		stopWork: async () => [],
 		contextCodec: TEST_CONTEXT_CODEC,
 		identity: authorities,
@@ -319,12 +322,15 @@ test("the Stop control runs the work tree stop of the chat's checkout, and a ref
 	let outcome: "stopped" | "partial" = "partial";
 	let refusing = true;
 	let stopDuringRead = false;
+	let newConversationDuringRead = false;
+	let linkedThread = threadId;
 	let starts = 0;
 	const actions = createServerCanonicalTextActions({
 		admitNewWork: async (_context, start) => {
 			if (refusing) throw new WorkhorseStopRefusal("stopping");
 			return start();
 		},
+		workhorseThread: () => linkedThread,
 		stopWork: async (context) => {
 			stopped.push(context.checkout);
 			return [{ checkout: context.checkout, outcome, remaining: [] }];
@@ -339,6 +345,10 @@ test("the Stop control runs the work tree stop of the chat's checkout, and a ref
 			threadRead: async () => {
 				// A stop that begins while the metadata read runs still refuses the start.
 				if (stopDuringRead) refusing = true;
+				// A New conversation that completes meanwhile moves the workhorse off this thread.
+				if (newConversationDuringRead) {
+					linkedThread = authorities.identity.decoder.adoptThreadId("thread-new");
+				}
 				return { thread: { id: threadId, status: { type: "idle" }, turns: [] } } as never;
 			},
 			turnSteer: async () => ({}) as never,
@@ -397,7 +407,13 @@ test("the Stop control runs the work tree stop of the chat's checkout, and a ref
 		actions.start({ ...base, command: "start", prompt: "go on" }, context),
 	).rejects.toThrow(WorkhorseStopRefusal);
 	stopDuringRead = false;
+	refusing = false;
+	newConversationDuringRead = true;
+	await expect(
+		actions.start({ ...base, command: "start", prompt: "go on" }, context),
+	).rejects.toMatchObject({ code: "link_changed", outcome: "not_delivered" });
 	expect(starts).toBe(0);
+	refusing = true;
 
 	// A partial stop is no success: the browser hears that some work still runs.
 	await expect(
