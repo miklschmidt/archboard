@@ -813,50 +813,21 @@
               }
             },
             {
-              "id": "vKEsyHFk#be7ovob7",
-              "kind": "decision",
-              "question": "Did all observed work end, with no request queued?",
-              "alternatives": [
-                {
-                  "label": "all ended",
-                  "steps": [
-                    {
-                      "id": "vKEsyHFk#kEioUdEH",
-                      "from": "vKEsyHFk#A22BWprk",
-                      "to": "vKEsyHFk#A22BWprk",
-                      "label": "stopped: only a fresh request starts work",
-                      "kind": "self",
-                      "anchor": {
-                        "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
-                        "symbol": "stopWorkTree"
-                      }
-                    }
-                  ]
-                },
-                {
-                  "label": "some remains, or a read failed",
-                  "steps": [
-                    {
-                      "id": "vKEsyHFk#MEdKC4Or",
-                      "from": "vKEsyHFk#A22BWprk",
-                      "to": "vKEsyHFk#A22BWprk",
-                      "label": "partial or unconfirmed: name what remains, refuse work",
-                      "kind": "self",
-                      "anchor": {
-                        "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
-                        "symbol": "stopWorkTree"
-                      }
-                    }
-                  ]
-                }
-              ]
+              "from": "vKEsyHFk#A22BWprk",
+              "to": "vKEsyHFk#A22BWprk",
+              "label": "wait for work admitted before the stop to settle",
+              "kind": "self",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+                "symbol": "stopWorkTree"
+              },
+              "id": "vKEsyHFk#vGF2jbl2"
             },
             {
               "id": "vKEsyHFk#zW87Y6aQ",
               "kind": "loop",
-              "condition": "until all observed work ended, or the settle time ran out",
+              "condition": "until two reads in a row see no work, or time ran out",
               "steps": [
                 {
                   "id": "vKEsyHFk#5p6qHZBg",
@@ -906,6 +877,47 @@
                     "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
                     "symbol": "turnInterrupt"
                   }
+                }
+              ]
+            },
+            {
+              "id": "vKEsyHFk#be7ovob7",
+              "kind": "decision",
+              "question": "Did all observed work end, with no request queued?",
+              "alternatives": [
+                {
+                  "label": "all ended",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk#kEioUdEH",
+                      "from": "vKEsyHFk#A22BWprk",
+                      "to": "vKEsyHFk#A22BWprk",
+                      "label": "stopped: only a fresh request starts work",
+                      "kind": "self",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+                        "symbol": "stopWorkTree"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "some remains, or a read failed",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk#MEdKC4Or",
+                      "from": "vKEsyHFk#A22BWprk",
+                      "to": "vKEsyHFk#A22BWprk",
+                      "label": "partial or unconfirmed: name what remains, refuse work",
+                      "kind": "self",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/codex-realtime-voice/src/server/sessions/services/stop.ts",
+                        "symbol": "stopWorkTree"
+                      }
+                    }
+                  ]
                 }
               ]
             }
