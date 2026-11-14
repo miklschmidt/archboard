@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: 2026-09-23 21:36
-updated_date: '2026-11-14T16:02:00Z'
+updated_date: '2026-11-14T16:16:00Z'
 labels:
   - voice
   - coordinator
@@ -28,7 +28,7 @@ The workbench shows the workhorse thread only. The coordinator's turns (the hand
 <!-- AC:BEGIN -->
 - [x] #1 While voice is live, the user can see each coordinator turn: what it was handed, the tools it called, and what it answered
 - [x] #2 Work the coordinator delegated shows where it came from
-- [x] #3 operator-canvas-shell.md describes where the coordinator's work is shown
+- [x] #3 DESIGN.md describes where the coordinator's work is shown in the conversation
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -64,10 +64,12 @@ Review S1 (2026-11-13): The coordinator delegates work (vKEsyHFk/9ncuT5DP#ILeym7
 Validation: 25 focused tests pass. archboard check semantics reports zero diagnostics, and check embeds reports zero findings. The code inspection returns the same 197 findings as before the correction, with none added.
 
 2026-11-14: main adopted Anonymous usage as wide events (e3T8Mjgq) while PR #113 was open, so the adoption of 7XssUp0E stood on a former Current. The vault work was done again from main's vault: the same content became the proposal The workbench shows the voice coordinator's turns and who delegated (omSpXUMz) on Current e3T8Mjgq, and it is adopted. New IDs: relationship Operation lifecycle -> Coordinator turn homes vKEsyHFk#9NUdYN6K, direct record step vKEsyHFk#ER5TEdWN, queued commit step vKEsyHFk#lnSVJ0W9. They replace LTCp4RIQ, NJUAVXIy and LcM4i7xu named above. 7XssUp0E never reached main. D0qvstE4 and YkUcKOJ5 are shelved again with a reason that names omSpXUMz. archboard check semantics: 0 diagnostics. archboard check code: the same 197 findings as Current e3T8Mjgq, with none added.
+
+2026-11-14 (CodeRabbit review of PR #113): AC #3 named docs/design/operator-canvas-shell.md, which c0c58fca73 retired into DESIGN.md without this rule. DESIGN.md is now the visual authority and holds the conversation's other rules, so the coordinator rule went there, in the Agent dock section after the conversation's failed-step rule. It states turn order, which conversation shows a coordinator turn, the turn head and rule, and the delegated line. Each claim was read against VoiceTurn.tsx, Conversation.tsx, ui/timeline/rules/projection.ts mergeConversation and delegations.ts coordinatorTurnsShownIn. AC #3 now names DESIGN.md. The old document's claim that a coordinator turn never makes the agent look busy was left out, because use-agent-runtime.ts computes running over the merged turns.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-The workbench shows the voice coordinator's turns among the workhorse's turns in one conversation. A recorded delegation says 'Delegated by the voice coordinator'. When the coordinator turn is shown, the label scrolls to that turn. Otherwise, the label is plain text. Code: 97388aaf30 (server projection and delegation record) and 67c2158e27 (UI). The owner confirmed the live voice check for AC #1 and #2. The architecture model now describes it: the proposal The workbench shows the voice coordinator's turns and who delegated (omSpXUMz) was built on Current from the code as it is today, checked (no semantic diagnostics, no new code findings) and adopted. The two pre-canonical drafts D0qvstE4 and YkUcKOJ5 are shelved. Verification: archboard check semantics and check code on the proposal; bun test of delegations.test.ts and coordinator-timeline-projection.test.ts (5 pass) and the workbench delegation.test.tsx (3 pass). Follow-up risk: DESIGN.md, which replaced operator-canvas-shell.md, does not state the conversation's voice coordinator rule; ADR 0019 does.
+The workbench shows the voice coordinator's turns among the workhorse's turns in one conversation. A recorded delegation says 'Delegated by the voice coordinator'. When the coordinator turn is shown, the label scrolls to that turn. Otherwise, the label is plain text. Code: 97388aaf30 (server projection and delegation record) and 67c2158e27 (UI). The owner confirmed the live voice check for AC #1 and #2. DESIGN.md now describes the rule (AC #3), in place of the retired operator-canvas-shell.md. The architecture model now describes it: the proposal The workbench shows the voice coordinator's turns and who delegated (omSpXUMz) was built on Current from the code as it is today, checked (no semantic diagnostics, no new code findings) and adopted. Its checkpoints are published to origin's archboard-history. The two pre-canonical drafts D0qvstE4 and YkUcKOJ5 are shelved. Verification: archboard check semantics and check code on the proposal; bun test of delegations.test.ts and coordinator-timeline-projection.test.ts (5 pass) and the workbench delegation.test.tsx (3 pass).
 <!-- SECTION:FINAL_SUMMARY:END -->
